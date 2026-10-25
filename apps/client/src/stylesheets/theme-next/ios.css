@@ -8,6 +8,7 @@ body.mobile.ios {
     --dropdown-backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
     --mobile-sheet-margin: 8px;
     --mobile-sheet-radius: 28px;
+    --grouped-card-radius: 22px;
     --mobile-screen-corner-radius: calc(var(--mobile-sheet-radius) + var(--mobile-sheet-margin));
     --mobile-sheet-corner-radius: calc(var(--mobile-screen-corner-radius) - var(--mobile-sheet-margin));
 
@@ -59,7 +60,7 @@ body.mobile.ios {
 
     .mobile-note-navigator {
         --navigator-group-inset: 16px;
-        --navigator-group-radius: 22px;
+        --navigator-group-radius: var(--grouped-card-radius);
         --navigator-row-padding: 16px;
         background: var(--grouped-background-color);
 
@@ -117,6 +118,72 @@ body.mobile.ios {
 
         .mobile-navigator-row-chevron {
             opacity: 0.35;
+        }
+    }
+
+    .modal.options-dialog {
+        --modal-background-color: var(--grouped-background-color);
+
+        .tn-card {
+            --card-border-radius: var(--grouped-card-radius);
+            --card-padding-inline: 16px;
+            --card-section-gap: 0px;
+            --card-background-color: var(--grouped-card-background-color);
+        }
+
+        .tn-card-heading {
+            padding-inline: var(--card-padding-inline);
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: normal;
+            text-transform: none;
+            color: var(--muted-text-color);
+        }
+
+        .tn-card-body .tn-card-section {
+            position: relative;
+
+            &.tn-card-section-nested {
+                background-color: var(--card-background-color);
+            }
+
+            &.font-option.disabled {
+                opacity: 1;
+
+                > * {
+                    opacity: 0.5;
+                }
+            }
+
+            &:not(:last-of-type)::before {
+                content: "";
+                position: absolute;
+                inset-block-end: 0;
+                inset-inline: var(--card-padding-inline) 0;
+                height: 1px;
+                background: var(--main-border-color);
+            }
+        }
+
+        .options-mobile-nav .dropdown-menu {
+            --mobile-menu-group-radius: var(--grouped-card-radius);
+            --card-background-color: var(--grouped-card-background-color);
+            --menu-background-color: transparent;
+
+            .dropdown-item {
+                position: relative;
+                border-bottom: 0 !important;
+
+                /* Starts under the name: the item's padding, the 1.4em icon and its 4px margin. */
+                &:not(:last-of-type)::after {
+                    content: "";
+                    position: absolute;
+                    inset-block-end: 0;
+                    inset-inline: calc(var(--dropdown-menu-padding-horizontal) + 1.4em + 4px) 0;
+                    height: 1px;
+                    background: var(--main-border-color);
+                }
+            }
         }
     }
 }
