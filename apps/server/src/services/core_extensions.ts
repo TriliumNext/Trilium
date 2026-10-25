@@ -11,8 +11,9 @@ import {
     setBeccaReplicaSink
 } from "@triliumnext/core";
 
+import { shutdownImageWorkers } from "./image_worker_pool.js";
 import { createReplicaSearchExecutor, type ReplicaSearchExecutor } from "./search_replica/replica_client.js";
-import { createPooledContentJobExecutor } from "./workers/content_job_executor.js";
+import { createPooledContentJobExecutor, type PooledContentJobExecutor } from "./workers/content_job_executor.js";
 import { spawnerPending } from "./workers/worker_host.js";
 
 export interface CoreExtensions {
@@ -30,9 +31,10 @@ export interface CoreExtensions {
  */
 export function createCoreExtensions(): CoreExtensions {
     searchReplica = createReplicaSearchExecutor();
+    contentJobs = createPooledContentJobExecutor();
 
     return {
-        contentJobs: createPooledContentJobExecutor(),
+        contentJobs,
         search: searchReplica,
         replicaSink: searchReplica
     };
@@ -63,4 +65,15 @@ export function startSearchReplica() {
     }
 }
 
+/**
+ * Stops the search replica and the pools' idle workers, for a quit. Searches and content jobs run
+ * in this process from then on; a worker still busy with a job exits with this process.
+ */
+export function shutdownWorkers() {
+    searchReplica?.shutdown();
+    contentJobs?.shutdown();
+    shutdownImageWorkers();
+}
+
 let searchReplica: ReplicaSearchExecutor | null = null;
+let contentJobs: PooledContentJobExecutor | null = null;

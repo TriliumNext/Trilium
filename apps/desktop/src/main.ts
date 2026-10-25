@@ -6,7 +6,7 @@ import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import NodejsInAppHelpProvider from "@triliumnext/server/src/in_app_help_provider.js";
 import ServerLogService from "@triliumnext/server/src/log_provider.js";
 import config from "@triliumnext/server/src/services/config.js";
-import { applyPostInit, createCoreExtensions } from "@triliumnext/server/src/services/core_extensions.js";
+import { applyPostInit, createCoreExtensions, shutdownWorkers } from "@triliumnext/server/src/services/core_extensions.js";
 import { recoverInterruptedRestore } from "@triliumnext/server/src/services/database_restore.js";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import port from "@triliumnext/server/src/services/port.js";
@@ -152,6 +152,7 @@ export async function main() {
 
     app.on("will-quit", () => {
         globalShortcut.unregisterAll();
+        shutdownWorkers();
     });
 
     app.on("second-instance", (event, commandLine) => {

@@ -9,7 +9,11 @@ const h = vi.hoisted(() => {
             loaded = resolve;
         }),
         load: () => loaded(),
-        replica: { start: vi.fn(), run: vi.fn(), onCommit() {}, onReload() {}, onProtectedSession() {} }
+        replica: {
+            start: vi.fn(), run: vi.fn(), shutdown: vi.fn(), onCommit() {}, onReload() {}, onProtectedSession() {}
+        },
+        contentJobs: { concurrency: 4, run: vi.fn(), shutdown: vi.fn() },
+        shutdownImageWorkers: vi.fn()
     };
 });
 
@@ -19,8 +23,10 @@ vi.mock("@triliumnext/core", () => ({
     getLog: () => ({ info() {}, error() {} })
 }));
 vi.mock("./search_replica/replica_client.js", () => ({ createReplicaSearchExecutor: () => h.replica }));
+vi.mock("./workers/content_job_executor.js", () => ({ createPooledContentJobExecutor: () => h.contentJobs }));
+vi.mock("./image_worker_pool.js", () => ({ shutdownImageWorkers: h.shutdownImageWorkers }));
 
-import { applyPostInit, createCoreExtensions, startSearchReplica } from "./core_extensions.js";
+import { applyPostInit, createCoreExtensions, shutdownWorkers, startSearchReplica } from "./core_extensions.js";
 
 describe("core extensions", () => {
     it("supplies the content-job executor and the search replica, wired only once becca has loaded", async () => {
@@ -71,5 +77,14 @@ describe("core extensions", () => {
         } finally {
             setWorkerSpawner(null);
         }
+    });
+
+    it("stops the replica and every pool's workers on shutdown", () => {
+        createCoreExtensions();
+        shutdownWorkers();
+
+        expect(h.replica.shutdown).toHaveBeenCalledTimes(1);
+        expect(h.contentJobs.shutdown).toHaveBeenCalledTimes(1);
+        expect(h.shutdownImageWorkers).toHaveBeenCalledTimes(1);
     });
 });

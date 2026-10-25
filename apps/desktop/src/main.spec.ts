@@ -85,6 +85,7 @@ const h = vi.hoisted(() => ({
     unregisterAll: vi.fn(),
     coreExtensions: { contentJobs: { run: () => Promise.resolve("") }, search: { run: () => Promise.resolve({}) } },
     applyPostInit: vi.fn(),
+    shutdownWorkers: vi.fn(),
     // Controllable server start so tests can simulate a slow/hanging server.
     startServer: (() => Promise.resolve({})) as () => Promise<unknown>
 }));
@@ -218,7 +219,8 @@ vi.mock("@triliumnext/server/src/services/i18n.js", () => ({ initializeTranslati
 vi.mock("@triliumnext/server/src/services/image_provider.js", () => ({ serverImageProvider: {} }));
 vi.mock("@triliumnext/server/src/services/core_extensions.js", () => ({
     createCoreExtensions: () => h.coreExtensions,
-    applyPostInit: (...a: unknown[]) => h.applyPostInit(...a)
+    applyPostInit: (...a: unknown[]) => h.applyPostInit(...a),
+    shutdownWorkers: (...a: unknown[]) => h.shutdownWorkers(...a)
 }));
 vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => h.startServer()) }));
 
@@ -550,12 +552,13 @@ describe("app event handlers", () => {
         expect(h.quit).toHaveBeenCalledTimes(1);
     });
 
-    it("will-quit unregisters global shortcuts", async () => {
+    it("will-quit unregisters global shortcuts and stops the worker processes", async () => {
         await bootAndReady();
         const handler = h.appOn.get("will-quit");
         expect(handler).toBeDefined();
         handler?.();
         expect(h.unregisterAll).toHaveBeenCalled();
+        expect(h.shutdownWorkers).toHaveBeenCalledTimes(1);
     });
 
     describe("second-instance", () => {

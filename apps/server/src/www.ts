@@ -9,7 +9,7 @@ import tmp from "tmp";
 import buildApp from "./app.js";
 import { TRILIUM_LOGO } from "./log_provider.js";
 import config from "./services/config.js";
-import { startSearchReplica } from "./services/core_extensions.js";
+import { shutdownWorkers, startSearchReplica } from "./services/core_extensions.js";
 import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
@@ -44,6 +44,7 @@ export default async function startTriliumServer(): Promise<Express> {
         }
         exiting = true;
         console.log(reason);
+        shutdownWorkers();
         // Writing the profile needs an async inspector round-trip. On a signal this races the process
         // teardown and often loses, so the reliable trigger is the Enter keypress wired up below; the
         // signal path is best-effort.

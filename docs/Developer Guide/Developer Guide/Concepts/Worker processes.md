@@ -42,6 +42,7 @@ On the server and in the desktop app, Trilium moves CPU-heavy backend work into 
 *   **Retire and replace:** a worker that fails to answer is killed and never reused. If a caller is queued, the pool starts a replacement for it (only when `everSpoke`).
 *   **Timeouts:** `bootTimeoutMs` (default 30 s) for the first message; `replyTimeoutMs` per job, which rejects with `WorkerReplyTimeoutError` and retires the worker.
 *   **Idle shutdown:** idle workers are killed after `idleShutdownMs`. Every handle is `unref()`'d.
+*   **Quit:** `shutdownWorkers()` in `core_extensions.ts` stops the replica and every pool's idle workers. The desktop calls it on `will-quit` and the server's `exit()` on SIGINT/SIGTERM; a worker still busy with a job exits with its parent.
 *   **Sizing:** `defaultWorkerCount(heapMb)` uses one core per worker minus one for the main process on desktop, at most `serverMax` (4) on a server, and keeps the workers' heaps within half of `usableMemoryBytes()`: a container's cgroup limit (`process.constrainedMemory()`) when there is one, else `os.totalmem()`, which reads the host inside a container.
 *   **Tracing:** setting the pool's `traceEnv` variable (for example `TRILIUM_CONTENT_JOB_WORKER_DEBUG`) logs every job.
 
