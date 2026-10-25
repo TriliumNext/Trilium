@@ -1,15 +1,23 @@
-import { MULTICOLUMN_LAYOUT_CLASS } from "@triliumnext/commons";
+import { MULTICOLUMN_LAYOUT_CLASS, type TaskStateDef } from "@triliumnext/commons";
 import { renderToHtml as renderToHtmlShared } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HTMLElement, Node, NodeType, parse as parseHtml } from "node-html-parser";
 
+import { getDefaultTaskStates } from "../content_jobs/env.js";
 import { sanitizeHtml } from "../sanitizer.js";
-import { getTaskStates } from "../task_states.js";
 
-function renderToHtml(content: string, title: string, opts?: { obsidian?: boolean }): string {
+export interface RenderToHtmlOptions {
+    obsidian?: boolean;
+    /** Defaults to the task states of the `_taskStates` subtree. */
+    taskStates?: TaskStateDef[];
+    /** Defaults to the `allowedHtmlTags` option. */
+    allowedTags?: readonly string[];
+}
+
+function renderToHtml(content: string, title: string, opts: RenderToHtmlOptions = {}): string {
     const html = renderToHtmlShared(content, title, {
-        sanitize: sanitizeHtml,
-        taskStates: getTaskStates(),
-        obsidian: opts?.obsidian
+        sanitize: (dirtyHtml) => sanitizeHtml(dirtyHtml, opts.allowedTags),
+        taskStates: opts.taskStates ?? getDefaultTaskStates(),
+        obsidian: opts.obsidian
     });
     return normalizeToEditorMarkup(html);
 }

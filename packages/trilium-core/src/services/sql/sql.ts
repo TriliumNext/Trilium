@@ -33,6 +33,16 @@ export class SqlService {
         this.params = restParams;
     }
 
+    /** Whether this connection was opened read-only, in which case writes are logged and skipped. */
+    isReadOnly() {
+        return this.params.isReadOnly;
+    }
+
+    /** Whether a transaction (or a savepoint inside one) is open on this connection. */
+    isInTransaction() {
+        return this.dbConnection.inTransaction;
+    }
+
     /**
      * Replace the underlying database with a fresh in-memory copy of the
      * given buffer. Used by integration tests that need a clean DB per test.

@@ -1,5 +1,6 @@
 import html from "html";
 
+import { getContentJobExecutor } from "../../content_jobs/executor.js";
 import { escapeHtml } from "../../utils/index";
 import { ZipExportProvider, ZipExportProviderData } from "./abstract_provider.js";
 import { NoteMeta } from "../../../meta";
@@ -14,6 +15,8 @@ export default class HtmlExportProvider extends ZipExportProvider {
     private indexMeta: NoteMeta | null = null;
     private cssMeta: NoteMeta | null = null;
     private options: HtmlExportProviderOptions;
+
+    override readonly concurrentPrepare = true;
 
     constructor(data: ZipExportProviderData, options?: HtmlExportProviderOptions) {
         super(data);
@@ -42,7 +45,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
         metaFile.files.push(this.cssMeta);
     }
 
-    prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta): string | Uint8Array {
+    async prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta): Promise<string | Uint8Array> {
         if (noteMeta.format === "html" && typeof content === "string") {
             if (!content.substr(0, 100).toLowerCase().includes("<html") && !this.zipExportOptions?.skipHtmlTemplate) {
                 if (!noteMeta?.notePath?.length) {
@@ -78,7 +81,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
             // an import wrote it as a bare ID.
             content = this.rewriteFn(content, noteMeta);
             if (content.length < 100_000) {
-                content = html.prettyPrint(content, { indent_size: 2 });
+                content = await getContentJobExecutor().run({ kind: "prettyPrintHtml", html: content });
             }
             return content;
         }

@@ -27,6 +27,16 @@ import { getVirtualNoteAssets, referenceAssetsAsAttachments, type VirtualNoteAss
 // Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
 const MAX_FILENAME_BYTES = 255;
 
+/** How many siblings ahead of the one being written have their content prepared already. */
+const PREPARE_WINDOW = 8;
+
+/** A note's data file content, ready to append; `note` is null for a clone's placeholder page. */
+interface PreparedNote {
+    note: BNote | null;
+    content: string | Uint8Array | null;
+    dateModified: Date | null;
+}
+
 /**
  * Where the archive is written: a {@link Response} when a client asked for the download, or the
  * writable a {@link FileStream} exposes when it goes to disk. `"sendStatus" in destination` tells
@@ -371,7 +381,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
     }
 
-    function prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note?: BNote): string | Uint8Array {
+    async function prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note?: BNote): Promise<string | Uint8Array> {
         const isText = ["html", "markdown"].includes(noteMeta?.format || "");
         if (isText) {
             content = content.toString();
@@ -388,7 +398,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             content = referenceAssetsAsAttachments(note.noteId, content, noteIdToVirtualAssets[note.noteId] ?? []);
         }
 
-        content = provider.prepareContent(title, content, noteMeta, note, branch);
+        content = await provider.prepareContent(title, content, noteMeta, note, branch);
 
         // Rewrite markdown-style links for code notes with markdown MIME.
         // These notes store content as markdown (not HTML), so the HTML-based
@@ -400,23 +410,27 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return content;
     }
 
-    async function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
+    /**
+     * Prepares the content of a note's data file. Starting it ahead of {@link saveNote} lets the
+     * conversions of several siblings run while the archive is still written strictly in order.
+     */
+    function startPreparing(noteMeta: NoteMeta): Promise<PreparedNote> {
+        const prepared = prepareNote(noteMeta);
+        // Awaited by saveNote in archive order; until then a rejection is not unhandled.
+        prepared.catch(() => {});
+        return prepared;
+    }
+
+    async function prepareNote(noteMeta: NoteMeta): Promise<PreparedNote> {
         if (!noteMeta.noteId || noteMeta.title === undefined) {
             throw new Error("Missing note meta.");
         }
 
         if (noteMeta.isClone) {
             const targetUrl = getNoteTargetUrl(noteMeta.noteId, noteMeta);
+            const content = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
 
-            let content: string | Uint8Array = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
-
-            content = prepareContent(noteMeta.title, content, noteMeta, undefined);
-
-            archive.append(typeof content === "string" ? content : new Uint8Array(content), {
-                name: filePathPrefix + noteMeta.dataFileName
-            });
-
-            return;
+            return { note: null, content: await prepareContent(noteMeta.title, content, noteMeta, undefined), dateModified: null };
         }
 
         const note = becca.getNote(noteMeta.noteId);
@@ -427,12 +441,27 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             throw new Error("Unable to find modification date.");
         }
 
-        if (noteMeta.dataFileName) {
-            const content = prepareContent(noteMeta.title, note.getContent(), noteMeta, note);
+        const content = noteMeta.dataFileName
+            ? await prepareContent(noteMeta.title, note.getContent(), noteMeta, note)
+            : null;
+        return { note, content, dateModified: dateUtils.parseDateTime(note.utcDateModified) };
+    }
 
-            archive.append(content as string | Uint8Array, {
+    async function saveNote(noteMeta: NoteMeta, filePathPrefix: string, prepared = startPreparing(noteMeta)) {
+        const { note, content, dateModified } = await prepared;
+
+        if (!note || !dateModified) {
+            archive.append(typeof content === "string" ? content : new Uint8Array(content ?? []), {
+                name: filePathPrefix + noteMeta.dataFileName
+            });
+
+            return;
+        }
+
+        if (noteMeta.dataFileName && content !== null) {
+            archive.append(content, {
                 name: filePathPrefix + noteMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified),
+                date: dateModified,
                 store: shouldStoreUncompressed(noteMeta.mime)
             });
 
@@ -441,11 +470,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             await archive.waitForCapacity?.();
         }
 
-        const rawFileName = noteIdToRawFileName[noteMeta.noteId];
+        const rawFileName = noteIdToRawFileName[note.noteId];
         if (rawFileName) {
             archive.append(note.getContent(), {
                 name: filePathPrefix + rawFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified),
+                date: dateModified,
                 store: shouldStoreUncompressed(noteMeta.mime)
             });
 
@@ -473,7 +502,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             archive.append(content, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified),
+                date: dateModified,
                 store: shouldStoreUncompressed(attachmentMeta.mime)
             });
 
@@ -485,11 +514,20 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             // create directory
             if (directoryPath) {
-                archive.append("", { name: `${directoryPath}/`, date: dateUtils.parseDateTime(note.utcDateModified) });
+                archive.append("", { name: `${directoryPath}/`, date: dateModified });
             }
 
-            for (const childMeta of noteMeta.children || []) {
-                await saveNote(childMeta, `${directoryPath}/`);
+            const children = noteMeta.children || [];
+            const windowSize = provider.concurrentPrepare && !zipExportOptions?.customRewriteLinks ? PREPARE_WINDOW : 1;
+            const preparing = new Map<number, Promise<PreparedNote>>();
+            let nextToStart = 0;
+            for (const [ index, childMeta ] of children.entries()) {
+                for (; nextToStart < Math.min(children.length, index + windowSize); nextToStart++) {
+                    preparing.set(nextToStart, startPreparing(children[nextToStart]));
+                }
+                const prepared = preparing.get(index);
+                preparing.delete(index);
+                await saveNote(childMeta, `${directoryPath}/`, prepared);
             }
         }
     }

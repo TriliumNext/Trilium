@@ -6,8 +6,9 @@ import { Request, Response } from "../../http_interface";
 import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
+import { getContentJobExecutor } from "../../services/content_jobs/executor.js";
 import noteService from "../../services/notes.js";
-import { convertOfficeToHtml } from "../../services/office_preview.js";
+import { assertOfficePreviewable } from "../../services/office_preview.js";
 import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
 import { downloadData, downloadNoteInt } from "../helpers";
@@ -123,13 +124,19 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
 async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
+    return await previewOffice(note.getContent(), note.mime, req);
 }
 
 async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
 
-    return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
+    return await previewOffice(attachment.getContent(), attachment.mime, req);
+}
+
+/** Validates here, so that a bad request answers 400, and converts on the content job executor. */
+async function previewOffice(content: string | Uint8Array, mime: string, req: Request) {
+    const bytes = assertOfficePreviewable(content, mime);
+    return await getContentJobExecutor().run({ kind: "officeToHtml", bytes, mime, options: { trim: isTrimmed(req) } });
 }
 
 /**

@@ -5,6 +5,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
+import { type ContentJobExecutor, initContentJobExecutor } from "../content_jobs/executor.js";
+import { runContentJob } from "../content_jobs/jobs.js";
 import { getContext } from "../context.js";
 import { getLog } from "../log.js";
 import noteService from "../notes.js";
@@ -348,6 +350,45 @@ describe("importEnex", () => {
         }
     });
 
+    it("runs the content jobs of queued notes concurrently and saves the notes in document order", async () => {
+        const titles = [ "First", "Second", "Third", "Fourth", "Fifth" ];
+        const executor = delayedExecutor(3, (index) => (titles.length - index) * 10);
+        initContentJobExecutor(executor);
+        try {
+            const parentNote = await createTarget("concurrent enex target");
+            const { importedNote } = await testImport("Concurrent.enex", { buffer: enexOf(titles), parentNote });
+
+            expect(executor.maxInFlight).toBeGreaterThanOrEqual(Math.min(3, titles.length));
+            expect(executor.finished).not.toEqual([ ...executor.finished ].sort((a, b) => a - b));
+            expect(importedNote.getChildNotes().map((n) => n.title)).toEqual(titles);
+            expect(decodeUtf8(importedNote.getChildNotes()[4].getContent())).toContain("Body of Fifth");
+        } finally {
+            initContentJobExecutor();
+        }
+    });
+
+    it("fails the import at the first failed content job without saving the notes after it", async () => {
+        const titles = [ "First", "Second", "Third", "Fourth", "Fifth" ];
+        const executor = delayedExecutor(3, () => 5, new Set([ 2, 3 ]));
+        initContentJobExecutor(executor);
+        const unhandled: unknown[] = [];
+        const onUnhandled = (reason: unknown) => unhandled.push(reason);
+        process.on("unhandledRejection", onUnhandled);
+        try {
+            const parentNote = await createTarget("failing enex target");
+
+            await expect(testImport("Failing.enex", { buffer: enexOf(titles), parentNote })).rejects.toThrow("job 2 failed");
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            const importedNote = parentNote.getChildNotes().find((n) => n.title === "Failing");
+            expect(importedNote?.getChildNotes().map((n) => n.title)).toEqual([ "First", "Second" ]);
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off("unhandledRejection", onUnhandled);
+            initContentJobExecutor();
+        }
+    });
+
     it("marks the imported notes protected when the parent is protected and a session is available", async () => {
         // Protection propagates only via `parentNote.isProtected && isProtectedSessionAvailable()`, so both
         // a protected target and a data key are needed.
@@ -371,3 +412,57 @@ describe("importEnex", () => {
         }
     });
 }, 60_000);
+
+interface DelayedExecutor extends ContentJobExecutor {
+    maxInFlight: number;
+    /** Start indexes of the jobs, in the order they finished. */
+    finished: number[];
+}
+
+/**
+ * Runs each `enexNoteContent` job after `delayFor(index)` milliseconds, where `index` counts the jobs
+ * in the order they started, and rejects the jobs whose index is in `failing`.
+ */
+function delayedExecutor(concurrency: number, delayFor: (index: number) => number, failing = new Set<number>()): DelayedExecutor {
+    let started = 0;
+    let inFlight = 0;
+    const executor: DelayedExecutor = {
+        concurrency,
+        maxInFlight: 0,
+        finished: [],
+        async run(job) {
+            if (job.kind !== "enexNoteContent") {
+                return runContentJob(job);
+            }
+
+            const index = started++;
+            inFlight++;
+            executor.maxInFlight = Math.max(executor.maxInFlight, inFlight);
+            await new Promise((resolve) => setTimeout(resolve, delayFor(index)));
+            inFlight--;
+            executor.finished.push(index);
+            if (failing.has(index)) {
+                throw new Error(`job ${index} failed`);
+            }
+            return runContentJob(job);
+        }
+    };
+    return executor;
+}
+
+function enexOf(titles: string[]) {
+    const notes = titles.map((title) =>
+        `<note><title>${title}</title><content><![CDATA[<en-note><div>Body of ${title}</div></en-note>]]></content><created>20200101T000000Z</created></note>`
+    );
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<en-export>${notes.join("\n")}</en-export>`;
+}
+
+function createTarget(title: string) {
+    return getContext().init(() => noteService.createNewNote({
+        parentNoteId: "root",
+        title,
+        content: "",
+        type: "text",
+        mime: "text/html"
+    }).note);
+}

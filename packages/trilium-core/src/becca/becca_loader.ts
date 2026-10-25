@@ -1,5 +1,5 @@
 import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
-import eventService from "../services/events";
+import eventService, { type BeccaReloadCause, type BeccaReloadedEvent } from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
 import { getLog } from "../services/log.js";
@@ -30,7 +30,7 @@ export const beccaLoaded = new Promise<void>(async (res, rej) => {
     });
 });
 
-function load() {
+function load(cause?: BeccaReloadCause) {
     const start = Date.now();
     becca.reset();
 
@@ -80,6 +80,9 @@ function load() {
     becca.loaded = true;
 
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
+
+    const event: BeccaReloadedEvent = { cause };
+    eventService.emit(eventService.BECCA_RELOADED, event);
 }
 
 // The order each entity's update() destructures its row in. None of these columns holds a
@@ -466,7 +469,7 @@ function attributeUpdated(attributeRow: BAttribute) {
     }
 }
 
-function noteReorderingUpdated(branchIdList: number[]) {
+function noteReorderingUpdated(branchIdList: Record<string, number>) {
     const parentNoteIds = new Set();
 
     for (const branchId in branchIdList) {
@@ -493,9 +496,9 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
     }
 });
 
-eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, load);
+eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, () => load("leaveProtectedSession"));
 
-export { load, reload };
+export { attributeDeleted, branchDeleted, etapiTokenDeleted, load, noteDeleted, noteReorderingUpdated, reload };
 
 export default {
     load,

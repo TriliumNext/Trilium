@@ -71,7 +71,7 @@ describe("HtmlExportProvider", () => {
     });
 
     describe("prepareContent", () => {
-        it("wraps bare HTML content in a full template with escaped title and css path", () => {
+        it("wraps bare HTML content in a full template with escaped title and css path", async () => {
             const rewriteFn = vi.fn((content: string, _noteMeta: NoteMeta) => content);
             const { provider } = buildProvider({ rewriteFn });
             const noteMeta: NoteMeta = {
@@ -79,7 +79,7 @@ describe("HtmlExportProvider", () => {
                 notePath: ["root", "child", "leaf"]
             };
 
-            const result = provider.prepareContent("A <b> & \"Title\"", "<p>Body</p>", noteMeta) as string;
+            const result = await provider.prepareContent("A <b> & \"Title\"", "<p>Body</p>", noteMeta) as string;
 
             // notePath length 3 -> two "../" segments before style.css.
             expect(result).toContain('<link rel="stylesheet" href="../../style.css">');
@@ -96,7 +96,7 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn.mock.calls[0][1]).toBe(noteMeta);
         });
 
-        it("keeps the space after an inline tag that the pretty-printer wraps inside of", () => {
+        it("keeps the space after an inline tag that the pretty-printer wraps inside of", async () => {
             const { provider } = buildProvider({ zipExportOptions: { skipHtmlTemplate: true } });
             const noteMeta: NoteMeta = { format: "html", notePath: ["root", "leaf"] };
             // Long enough that the 70-column wrap lands inside the third <code> tag.
@@ -105,17 +105,17 @@ describe("HtmlExportProvider", () => {
                 + "<code spellcheck=\"false\">dateCreated</code>, "
                 + "<code spellcheck=\"false\">dateModified</code> or the name of a label on the child notes.</p>";
 
-            const result = provider.prepareContent("Sorting", content, noteMeta) as string;
+            const result = await provider.prepareContent("Sorting", content, noteMeta) as string;
 
             expect(result).not.toMatch(/<\/code>[A-Za-z]/);
             expect(result.replace(/\s+/g, " ")).toContain("</code> or the name of a label");
         });
 
-        it("wraps identically however long the href was before rewriteFn shortened it", () => {
+        it("wraps identically however long the href was before rewriteFn shortened it", async () => {
             // Both forms are written by Trilium for the same link: the editor stores a full note
             // path, an import stores a bare ID. rewriteFn collapses each to the same target, so
             // the exported file must not differ.
-            const wrapFor = (href: string) => {
+            const wrapFor = async (href: string) => {
                 const { provider } = buildProvider({
                     zipExportOptions: { skipHtmlTemplate: true },
                     rewriteFn: (content) => content.replace(/href="[^"]*"/g, 'href="#root/_help_eIg8jdvaoNNd"')
@@ -123,22 +123,22 @@ describe("HtmlExportProvider", () => {
                 const content = "<p>To search the whole database while hoisted, use the full "
                     + `<a class="reference-link" href="${href}">Search</a> and leave `
                     + "<em>Ancestor</em> field empty.</p>";
-                return provider.prepareContent("Quick search", content, {
+                return await provider.prepareContent("Quick search", content, {
                     format: "html",
                     notePath: ["root", "leaf"]
                 }) as string;
             };
 
-            const fromImport = wrapFor("#root/eIg8jdvaoNNd");
-            const fromEditor = wrapFor("#root/pOsGYCXsbNQG/BFs8mudNFgCS/BCkXAVs63Ttv/eIg8jdvaoNNd");
+            const fromImport = await wrapFor("#root/eIg8jdvaoNNd");
+            const fromEditor = await wrapFor("#root/pOsGYCXsbNQG/BFs8mudNFgCS/BCkXAVs63Ttv/eIg8jdvaoNNd");
 
             expect(fromEditor).toBe(fromImport);
             expect(fromImport).toContain('href="#root/_help_eIg8jdvaoNNd"');
         });
 
-        it("uses a bare style.css path for a top-level note (notePath length 1)", () => {
+        it("uses a bare style.css path for a top-level note (notePath length 1)", async () => {
             const { provider } = buildProvider();
-            const result = provider.prepareContent("T", "<p>x</p>", {
+            const result = await provider.prepareContent("T", "<p>x</p>", {
                 format: "html",
                 notePath: ["root"]
             }) as string;
@@ -147,21 +147,21 @@ describe("HtmlExportProvider", () => {
             expect(result).not.toContain("../style.css");
         });
 
-        it("throws when notePath is missing for a templated HTML note", () => {
+        it("throws when notePath is missing for a templated HTML note", async () => {
             const { provider } = buildProvider();
 
-            expect(() => provider.prepareContent("T", "<p>x</p>", { format: "html" }))
-                .toThrow("Missing note path.");
-            expect(() => provider.prepareContent("T", "<p>x</p>", { format: "html", notePath: [] }))
-                .toThrow("Missing note path.");
+            await expect(provider.prepareContent("T", "<p>x</p>", { format: "html" }))
+                .rejects.toThrow("Missing note path.");
+            await expect(provider.prepareContent("T", "<p>x</p>", { format: "html", notePath: [] }))
+                .rejects.toThrow("Missing note path.");
         });
 
-        it("does not wrap content that already contains an <html> tag", () => {
+        it("does not wrap content that already contains an <html> tag", async () => {
             const rewriteFn = vi.fn((content: string) => content);
             const { provider } = buildProvider({ rewriteFn });
             const original = "<html><body>already wrapped</body></html>";
 
-            const result = provider.prepareContent("T", original, {
+            const result = await provider.prepareContent("T", original, {
                 format: "html",
                 notePath: ["root"]
             }) as string;
@@ -172,14 +172,14 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn).toHaveBeenCalledTimes(1);
         });
 
-        it("does not wrap content when skipHtmlTemplate is set, but still rewrites", () => {
+        it("does not wrap content when skipHtmlTemplate is set, but still rewrites", async () => {
             const rewriteFn = vi.fn((content: string) => `${content}<!--rw-->`);
             const { provider } = buildProvider({
                 zipExportOptions: { skipHtmlTemplate: true },
                 rewriteFn
             });
 
-            const result = provider.prepareContent("T", "<p>plain</p>", {
+            const result = await provider.prepareContent("T", "<p>plain</p>", {
                 format: "html",
                 // notePath is not required when skipping the template.
             }) as string;
@@ -189,25 +189,25 @@ describe("HtmlExportProvider", () => {
             expect(result).toContain("<!--rw-->");
         });
 
-        it("returns non-HTML content unchanged without invoking rewriteFn", () => {
+        it("returns non-HTML content unchanged without invoking rewriteFn", async () => {
             const rewriteFn = vi.fn((content: string) => content);
             const { provider } = buildProvider({ rewriteFn });
 
             const markdown = "# Heading";
-            expect(provider.prepareContent("T", markdown, { format: "markdown" })).toBe(markdown);
+            expect(await provider.prepareContent("T", markdown, { format: "markdown" })).toBe(markdown);
 
             const binary = new Uint8Array([1, 2, 3]);
-            expect(provider.prepareContent("T", binary, { format: "html" })).toBe(binary);
+            expect(await provider.prepareContent("T", binary, { format: "html" })).toBe(binary);
 
             expect(rewriteFn).not.toHaveBeenCalled();
         });
 
-        it("does not pretty-print very large content but still wraps and rewrites it", () => {
+        it("does not pretty-print very large content but still wraps and rewrites it", async () => {
             const rewriteFn = vi.fn((content: string) => content);
             const { provider } = buildProvider({ rewriteFn });
             const big = "<p>x</p>".repeat(20000); // well over the 100k pretty-print threshold
 
-            const result = provider.prepareContent("T", big, {
+            const result = await provider.prepareContent("T", big, {
                 format: "html",
                 notePath: ["root"]
             }) as string;

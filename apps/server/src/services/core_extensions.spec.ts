@@ -1,0 +1,49 @@
+import type { BeccaReplicaSink } from "@triliumnext/core";
+import { describe, expect, it, vi } from "vitest";
+
+const h = vi.hoisted(() => {
+    let loaded: () => void = () => {};
+    return {
+        setBeccaReplicaSink: vi.fn(),
+        beccaLoaded: new Promise<void>((resolve) => {
+            loaded = resolve;
+        }),
+        load: () => loaded(),
+        replica: { start: vi.fn(), run: vi.fn(), onCommit() {}, onReload() {}, onProtectedSession() {} }
+    };
+});
+
+vi.mock("@triliumnext/core", () => ({
+    setBeccaReplicaSink: h.setBeccaReplicaSink,
+    becca_loader: { beccaLoaded: h.beccaLoaded },
+    getLog: () => ({ info() {}, error() {} })
+}));
+vi.mock("./search_replica/replica_client.js", () => ({ createReplicaSearchExecutor: () => h.replica }));
+
+import { applyPostInit, createCoreExtensions, startSearchReplica } from "./core_extensions.js";
+
+describe("core extensions", () => {
+    it("supplies the content-job executor and the search replica, wired only once becca has loaded", async () => {
+        const extensions = createCoreExtensions();
+
+        expect(typeof extensions.contentJobs.run).toBe("function");
+        expect(extensions.contentJobs.concurrency).toBeGreaterThanOrEqual(1);
+        expect(extensions.search).toBe(h.replica);
+        expect(extensions.replicaSink).toBe(h.replica);
+
+        applyPostInit({ ...extensions, replicaSink: undefined });
+        applyPostInit(extensions);
+        startSearchReplica();
+        await Promise.resolve();
+        expect(h.setBeccaReplicaSink).not.toHaveBeenCalled();
+        expect(h.replica.start).not.toHaveBeenCalled();
+
+        h.load();
+        await h.beccaLoaded;
+        await Promise.resolve();
+
+        expect(h.setBeccaReplicaSink).toHaveBeenCalledTimes(1);
+        expect(h.setBeccaReplicaSink).toHaveBeenCalledWith(h.replica satisfies BeccaReplicaSink);
+        expect(h.replica.start).toHaveBeenCalledTimes(1);
+    });
+});

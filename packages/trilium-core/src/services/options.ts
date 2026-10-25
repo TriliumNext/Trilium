@@ -85,7 +85,7 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
     if (option) {
         option.value = value as string;
 
-        option.save();
+        saveUnlessReadOnly(option);
     } else {
         // The option row is missing (e.g. a write landing before initStartupOptions has created it).
         // Honor the option's declared sync flag so a synced option is not permanently created as
@@ -103,11 +103,11 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
  * @param isSynced `true` if the value should be synced across multiple instances (e.g. locale) or `false` if it should be local-only (e.g. theme).
  */
 function createOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T], isSynced: boolean) {
-    new BOption({
+    saveUnlessReadOnly(new BOption({
         name: name,
         value: value as string,
         isSynced: isSynced
-    }).save();
+    }));
 }
 
 function getOptions() {
@@ -122,6 +122,13 @@ function getOptionMap() {
     }
 
     return map as OptionMap;
+}
+
+/** Stores the option, or on a read-only connection keeps it in becca only. */
+function saveUnlessReadOnly(option: BOption) {
+    if (!getSql().isReadOnly()) {
+        option.save();
+    }
 }
 
 export default {

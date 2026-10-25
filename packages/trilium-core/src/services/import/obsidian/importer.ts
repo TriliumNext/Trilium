@@ -36,6 +36,8 @@
 import { t } from "i18next";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import { captureContentJobEnv } from "../../content_jobs/env.js";
+import { getContentJobExecutor } from "../../content_jobs/executor.js";
 import * as cls from "../../context.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
@@ -65,8 +67,27 @@ interface VaultNote {
 async function importObsidian(taskContext: TaskContext<"importNotes">, source: ZipSource, importRootNote: BNote, fileName?: string): Promise<BNote> {
     const { notes, attachments, types, vaultRoot } = await parseVault(source);
     taskContext.setTotalCount(notes.length);
+    const renderedNotes = await renderNotes(notes);
 
-    return createNotes(importRootNote, notes, attachments, types, vaultTitle(vaultRoot, fileName), taskContext);
+    return createNotes(importRootNote, notes, renderedNotes, attachments, types, vaultTitle(vaultRoot, fileName), taskContext);
+}
+
+/**
+ * Renders the Markdown body of every note but the Excalidraw drawings on the content job executor, all at
+ * once, ahead of the synchronous tree build.
+ */
+async function renderNotes(notes: VaultNote[]): Promise<Map<VaultNote, string>> {
+    const executor = getContentJobExecutor();
+    const env = captureContentJobEnv();
+    const textNotes = notes.filter((vaultNote) => !isExcalidrawPath(vaultNote.path));
+    const rendered = await Promise.all(textNotes.map((vaultNote) => executor.run({
+        kind: "markdownToHtml",
+        markdown: parseFrontmatter(vaultNote.markdown).body,
+        title: vaultNote.title,
+        obsidian: true,
+        env
+    })));
+    return new Map(textNotes.map((vaultNote, index) => [ vaultNote, rendered[index] ]));
 }
 
 /**
@@ -126,7 +147,7 @@ async function parseVault(source: ZipSource): Promise<{ notes: VaultNote[]; atta
  * container note for its folder (created on demand by {@link ensureFolder}, so a folder note exists before
  * its children), with its Markdown rendered to HTML. Returns the import root.
  */
-function createNotes(importRootNote: BNote, notes: VaultNote[], attachments: Map<string, Uint8Array>, types: Map<string, string>, rootTitle: string, taskContext: TaskContext<"importNotes">): BNote {
+function createNotes(importRootNote: BNote, notes: VaultNote[], renderedNotes: Map<VaultNote, string>, attachments: Map<string, Uint8Array>, types: Map<string, string>, rootTitle: string, taskContext: TaskContext<"importNotes">): BNote {
     /* v8 ignore next -- the protected branch needs a protected import root with an active protected session, which the in-memory test DB has no way to set up */
     const isProtected = !!(importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable());
 
@@ -163,7 +184,8 @@ function createNotes(importRootNote: BNote, notes: VaultNote[], attachments: Map
         }
 
         const { body, data } = parseFrontmatter(vaultNote.markdown);
-        const rendered = markdownService.renderToHtml(body, vaultNote.title, { obsidian: true });
+        // A drawing that could not be parsed is rendered here, as the text it falls back to.
+        const rendered = renderedNotes.get(vaultNote) ?? markdownService.renderToHtml(body, vaultNote.title, { obsidian: true });
         const { note } = noteService.createNewNote({ parentNoteId: parent.noteId, title: vaultNote.title, content: rendered, type: "text", mime: "text/html", isProtected });
 
         // Front matter becomes labels: tags → individual labels, aliases → #alias labels,

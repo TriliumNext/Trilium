@@ -20,6 +20,10 @@ async function main() {
     // The image compression worker, which lives in the server it embeds. Built here too so the
     // desktop app can compress off-thread rather than falling back to doing it in the main process.
     await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
+    // The content-job worker (Markdown, HTML, ENEX and office conversions), also from the server.
+    await build.buildBackend([ "../server/src/services/workers/content_job_worker.ts" ]);
+    // The search replica, a read-only copy of the note cache that answers searches.
+    await build.buildBackend([ "../server/src/services/search_replica/search_replica_worker.ts" ]);
     // The meeting transcription process, which transcription/worker_client.ts starts by its .cjs
     // path as an Electron utility process.
     await build.buildBackend([ "src/services/transcription/transcription_worker.ts" ]);

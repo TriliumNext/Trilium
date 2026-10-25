@@ -3,15 +3,15 @@ import { getAttachedFileMime, type NoteType } from "@triliumnext/commons";
 import type BNote from "../../becca/entities/bnote.js";
 import imageService from "../../services/image.js";
 import noteService from "../../services/notes.js";
+import { captureContentJobEnv } from "../content_jobs/env.js";
+import { getContentJobExecutor } from "../content_jobs/executor.js";
 import protectedSessionService from "../protected_session.js";
 import type TaskContext from "../task_context.js";
 import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
-import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
 import importUtils from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
-import { sanitizeHtml } from "../sanitizer.js";
 import { processStringOrBuffer } from "../utils/binary.js";
 
 // MIME of an `.xlsx` upload (Office Open XML spreadsheet), as resolved by `mime-types`.
@@ -233,16 +233,18 @@ function convertTextToHtml(text: string) {
     return text;
 }
 
-function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+async function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
 
     const markdownContent = processStringOrBuffer(file.buffer);
     // YAML front matter (Obsidian/Jekyll/Hugo/…) is lifted into labels and stripped before rendering.
     const { body, attributes } = extractFrontmatter(markdownContent);
-    let htmlContent = markdownService.renderToHtml(body, title);
+    const env = captureContentJobEnv();
+    const executor = getContentJobExecutor();
+    let htmlContent = await executor.run({ kind: "markdownToHtml", markdown: body, title, env });
 
     if (taskContext.data?.safeImport) {
-        htmlContent = sanitizeHtml(htmlContent);
+        htmlContent = await executor.run({ kind: "sanitizeHtml", html: htmlContent, env });
     }
 
     const { note } = noteService.createNewNote({
@@ -263,7 +265,7 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     return note;
 }
 
-function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+async function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     let content = processStringOrBuffer(file.buffer);
 
     // Try to get title from HTML first, fall back to filename
@@ -274,7 +276,7 @@ function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentN
     content = importUtils.handleH1(content, title);
 
     if (taskContext?.data?.safeImport) {
-        content = sanitizeHtml(content);
+        content = await getContentJobExecutor().run({ kind: "sanitizeHtml", html: content, env: captureContentJobEnv() });
     }
 
     const { note } = noteService.createNewNote({

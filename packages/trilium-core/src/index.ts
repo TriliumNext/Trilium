@@ -7,6 +7,7 @@ import BackupService, { initBackup, type BackupOptionsService } from "./services
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
+import { initSearchExecutor, type SearchExecutor } from "./services/search/search_executor";
 import { initRequest, RequestProvider } from "./services/request";
 import { initTranslations, TranslationProvider } from "./services/i18n";
 import { enterSetupMode, initSetupPlatform, type SetupPlatform } from "./services/setup_mode";
@@ -15,6 +16,7 @@ import appInfo from "./services/app_info";
 import { type PlatformProvider, initPlatform } from "./services/platform";
 import { type ZipProvider, initZipProvider } from "./services/zip_provider";
 import { type ZipExportProviderFactory, initZipExportProviderFactory } from "./services/export/zip_export_provider_factory";
+import { type ContentJobExecutor, initContentJobExecutor } from "./services/content_jobs/executor";
 import { InAppHelpProvider, initInAppHelp } from "./services/in_app_help";
 import { type ImageProvider, initImageProvider } from "./services/image_provider";
 import { type CoreConfig, initConfig } from "./services/config";
@@ -179,6 +181,11 @@ export { default as zipExportService } from "./services/export/zip";
 export { type AdvancedExportOptions, type ZipExportProviderData } from "./services/export/zip/abstract_provider";
 export { ZipExportProvider } from "./services/export/zip/abstract_provider";
 export { type ZipExportProviderFactory } from "./services/export/zip_export_provider_factory";
+export { captureContentJobEnv, type ContentJobEnv } from "./services/content_jobs/env";
+export { type ContentJobExecutor, getContentJobExecutor, initContentJobExecutor } from "./services/content_jobs/executor";
+export {
+    type ContentJob, type ContentJobKind, type ContentJobOf, type ContentJobResult, type ContentJobResults, runContentJob
+} from "./services/content_jobs/jobs";
 export { type ExportFormat } from "./meta";
 
 export * as becca_easy_mocking from "./test/becca_easy_mocking";
@@ -190,8 +197,22 @@ export { default as markdownExportService } from "./services/export/markdown";
 export { default as scriptService } from "./services/script";
 export { default as BackendScriptApi, type Api as BackendScriptApiInterface } from "./services/backend_script_api";
 export * as scheduler from "./services/scheduler";
+export {
+    executeSearch, getSearchExecutor, inProcessSearchExecutor, initSearchExecutor, type SearchExecutor
+} from "./services/search/search_executor";
+export {
+    deserializeSearchQueryError, runSearchQuery, serializeSearchQueryError,
+    type AutocompleteArgs, type NeedsMainResult, type QuickSearchArgs, type RelatedNotesArgs, type RelatedNotesResponse,
+    type SearchArgs, type SearchFromNoteArgs, type SearchQueryArgs, type SearchQueryBaseArgs, type SearchQueryError,
+    type SearchQueryKind, type SearchQueryOptions, type SearchQueryResults, type SearchResultDetailsArgs,
+    type SearchResultRecord
+} from "./services/search/search_queries";
+export {
+    type BeccaReplicaSink, type EntityChangeRef, getBeccaReplicaSink, setBeccaReplicaSink
+} from "./services/becca_replica_feed";
+export { applyEntityChanges } from "./becca/becca_follower";
 
-export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image, config, setupMarker, setupPlatform }: {
+export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image, config, setupMarker, setupPlatform, search, contentJobs }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
@@ -219,6 +240,10 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     setupMarker?: SetupMarker | null;
     /** How this platform writes that file, for the route that asks for the next start to be setup. */
     setupPlatform?: SetupPlatform;
+    /** Runs the import and export conversions; they run in this process when it is left out. */
+    contentJobs?: ContentJobExecutor;
+    /** Runs the route-level searches; they run in this process when it is left out. */
+    search?: SearchExecutor;
 }) {
     if (config) {
         initConfig(config);
@@ -239,6 +264,7 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     initCrypto(crypto);
     initZipProvider(zip);
     initZipExportProviderFactory(zipExportProviderFactory);
+    initContentJobExecutor(contentJobs);
     initContext(executionContext);
     if (inAppHelp) {
         // Must precede initSql: it registers the _help virtual note provider, and initSql can
@@ -258,4 +284,5 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     if (request) {
         initRequest(request);
     }
+    initSearchExecutor(search);
 };

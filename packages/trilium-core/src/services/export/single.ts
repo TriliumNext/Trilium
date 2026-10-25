@@ -8,6 +8,8 @@ import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
+import { captureContentJobEnv } from "../content_jobs/env.js";
+import { getContentJobExecutor } from "../content_jobs/executor.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
 import mdService from "./markdown.js";
@@ -36,7 +38,7 @@ async function exportSingleNote(taskContext: TaskContext<"export">, branch: BBra
         content = await inlineVirtualAssets(content, getVirtualNoteAssets(note.noteId));
     }
 
-    const { payload, extension, mime } = mapByNoteType(note, content, format);
+    const { payload, extension, mime } = await mapForExport(note, content, format);
     const fileName = `${note.title}.${extension}`;
 
     res.setHeader("Content-Disposition", getContentDisposition(fileName));
@@ -71,18 +73,10 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
     }
 
     if (note.type === "text") {
-        // Drop CKEditor's editor-only per-list-item bookkeeping from both HTML and Markdown output.
-        content = stripListItemIds(content);
+        content = prepareTextNoteContent(content, format);
 
         if (format === "html") {
-            content = inlineAttachments(content);
-
-            if (!content.toLowerCase().includes("<html")) {
-                content = `<html><head><meta charset="utf-8"></head><body>${content}</body></html>`;
-            }
-
             payload = content.length < 100_000 ? html.prettyPrint(content, { indent_size: 2 }) : content;
-
             extension = "html";
             mime = "text/html";
         } else if (format === "markdown") {
@@ -126,6 +120,40 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
     }
 
     return { payload, extension, mime };
+}
+
+/**
+ * {@link mapByNoteType} with the conversion of a text note sent to the content job executor, so that
+ * a large note does not hold up the thread that owns becca.
+ */
+async function mapForExport(note: BNote, content: string | Uint8Array, format: ExportFormat) {
+    if (note.type !== "text" || typeof content !== "string" || (format !== "html" && format !== "markdown")) {
+        return mapByNoteType(note, content, format);
+    }
+
+    const executor = getContentJobExecutor();
+    const prepared = prepareTextNoteContent(content, format);
+    if (format === "html") {
+        const payload = prepared.length < 100_000 ? await executor.run({ kind: "prettyPrintHtml", html: prepared }) : prepared;
+        return { payload, extension: "html", mime: "text/html" };
+    }
+
+    const payload = await executor.run({ kind: "htmlToMarkdown", html: prepared, env: captureContentJobEnv() });
+    return { payload, extension: "md", mime: "text/x-markdown" };
+}
+
+/** Drops CKEditor's per-list-item bookkeeping and, for HTML, inlines attachments into a full document. */
+function prepareTextNoteContent(content: string, format: ExportFormat) {
+    content = stripListItemIds(content);
+    if (format !== "html") {
+        return content;
+    }
+
+    content = inlineAttachments(content);
+    if (!content.toLowerCase().includes("<html")) {
+        content = `<html><head><meta charset="utf-8"></head><body>${content}</body></html>`;
+    }
+    return content;
 }
 
 /**

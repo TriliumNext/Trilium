@@ -82,6 +82,8 @@ export interface TriliumConfig {
         noDesktopIcon: boolean;
         /** Whether to run in read-only mode (prevents all data modifications) */
         readOnly: boolean;
+        /** Whether to answer searches from a read-only copy of the note cache in its own process */
+        searchWorker: boolean;
     };
     /** Network and server configuration */
     Network: {
@@ -354,6 +356,12 @@ const configMapping = {
             iniGetter: () => getIniSection("General")?.readOnly,
             defaultValue: false,
             transformer: transformBoolean
+        },
+        searchWorker: {
+            standardEnvVar: 'TRILIUM_GENERAL_SEARCHWORKER',
+            iniGetter: () => getIniSection("General")?.searchWorker,
+            defaultValue: true,
+            transformer: transformBoolean
         }
     },
     Network: {
@@ -590,7 +598,8 @@ const config: TriliumConfig = {
         noAuthentication: getConfigValue(configMapping.General.noAuthentication),
         noBackup: getConfigValue(configMapping.General.noBackup),
         noDesktopIcon: getConfigValue(configMapping.General.noDesktopIcon),
-        readOnly: getConfigValue(configMapping.General.readOnly)
+        readOnly: getConfigValue(configMapping.General.readOnly),
+        searchWorker: getConfigValue(configMapping.General.searchWorker)
     },
     Network: {
         host: getConfigValue(configMapping.Network.host),
@@ -658,6 +667,7 @@ const config: TriliumConfig = {
  * - TRILIUM_GENERAL_NOBACKUP             : Disable backups (true/false)
  * - TRILIUM_GENERAL_NODESKTOPICON        : No desktop icon (true/false)
  * - TRILIUM_GENERAL_READONLY             : Read-only mode (true/false)
+ * - TRILIUM_GENERAL_SEARCHWORKER         : Search in a separate process (true/false)
  *
  * Network Section:
  * - TRILIUM_NETWORK_HOST                 : Bind address (e.g., "0.0.0.0")
