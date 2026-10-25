@@ -59,65 +59,28 @@ body.mobile.ios {
     }
 
     .mobile-note-navigator {
-        --navigator-group-inset: 16px;
         --navigator-group-radius: var(--grouped-card-radius);
-        --navigator-row-padding: 16px;
+        --navigator-group-spacing: 22px;
+        --navigator-group-background: var(--grouped-card-background-color);
+        --navigator-separator-color: var(--main-border-color);
+        /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
+        --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
         background: var(--grouped-background-color);
 
         .mobile-navigator-toolbar {
             background: transparent;
         }
 
-        .mobile-navigator-current-tile,
-        .mobile-navigator-list {
-            margin-inline: var(--navigator-group-inset);
-            border-radius: var(--navigator-group-radius);
-            background: var(--grouped-card-background-color);
-        }
-
-        .mobile-navigator-current-tile {
-            margin-block-start: 8px;
-            padding-inline: var(--navigator-row-padding);
-            border-bottom: 0;
-        }
-
         .mobile-navigator-children-label {
-            padding: 22px calc(var(--navigator-group-inset) + var(--navigator-row-padding)) 8px;
+            padding-block-end: 8px;
             font-size: 0.95em;
             letter-spacing: normal;
             text-transform: none;
             opacity: 1;
         }
 
-        .mobile-navigator-list {
-            overflow: hidden;
-        }
-
-        .mobile-navigator-current-tile + .mobile-navigator-list {
-            margin-block-start: 22px;
-        }
-
         .mobile-navigator-row {
-            position: relative;
             min-height: 52px;
-            padding-inline: var(--navigator-row-padding);
-            border-bottom: 0;
-
-            /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
-            &:not(:last-of-type)::after {
-                content: "";
-                position: absolute;
-                inset-block-end: 0;
-                inset-inline: calc(var(--navigator-row-padding) + 1.2em + 12px) 0;
-                height: 1px;
-                background: var(--main-border-color);
-            }
-
-            &.is-active {
-                border-inline-start: 0;
-                padding-inline-start: var(--navigator-row-padding);
-                background: var(--hover-item-background-color);
-            }
         }
 
         .mobile-navigator-row-chevron {

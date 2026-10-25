@@ -1,4 +1,13 @@
+/* The current note and its children are grouped like the mobile settings list in menus.css. */
 .mobile-note-navigator {
+    --navigator-group-inset: 16px;
+    --navigator-group-radius: 6px;
+    --navigator-group-spacing: 16px;
+    --navigator-group-background: var(--card-background-color);
+    --navigator-row-padding: 16px;
+    --navigator-separator-color: var(--menu-item-delimiter-color);
+    --navigator-separator-inset: 0px;
+    --navigator-active-background: color-mix(in srgb, var(--main-text-color) 10%, transparent);
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -108,12 +117,19 @@
     pointer-events: none;
 }
 
+.mobile-navigator-current-tile,
+.mobile-navigator-list {
+    margin-inline: var(--navigator-group-inset);
+    border-radius: var(--navigator-group-radius);
+    background: var(--navigator-group-background);
+}
+
 .mobile-navigator-current-tile {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--main-border-color);
+    margin-block-start: 8px;
+    padding: 14px var(--navigator-row-padding);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -129,7 +145,7 @@
 }
 
 .mobile-navigator-children-label {
-    padding: 14px 16px 6px;
+    padding: var(--navigator-group-spacing) calc(var(--navigator-group-inset) + var(--navigator-row-padding)) 6px;
     font-size: 0.75em;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -255,31 +271,38 @@
 .mobile-navigator-list {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.mobile-navigator-current-tile + .mobile-navigator-list {
+    margin-block-start: var(--navigator-group-spacing);
 }
 
 .mobile-navigator-row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
     min-height: 48px;
-    padding: 10px 14px;
+    padding: 10px var(--navigator-row-padding);
     color: var(--main-text-color);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 
-    &:not(:last-of-type) {
-        border-bottom: 1px solid var(--main-border-color);
+    &:not(:last-of-type)::after {
+        content: "";
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline: var(--navigator-separator-inset) 0;
+        height: 1px;
+        background: var(--navigator-separator-color);
     }
 }
 
-.mobile-navigator-row:active {
-    background: var(--hover-item-background-color);
-}
-
+.mobile-navigator-row:active,
 .mobile-navigator-row.is-active {
-    border-inline-start: 3px solid var(--main-text-color);
-    padding-inline-start: 11px;
+    background: var(--navigator-active-background);
 }
 
 .mobile-navigator-row.is-archived {
