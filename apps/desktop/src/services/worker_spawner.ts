@@ -8,6 +8,8 @@ import { utilityProcess } from "electron";
  *
  * A bundled `.cjs` entry gets neither loader flags nor `NODE_OPTIONS`. A `.ts` entry only exists
  * when running from sources, where the `--import tsx` in `NODE_OPTIONS` is what lets it load.
+ * V8 heap flags such as `--max-old-space-size` go through `--js-flags`: a utility process ignores
+ * them as plain `execArgv` entries.
  */
 export const utilityProcessSpawner: WorkerSpawner = (entryFile, { execArgv, env, serviceName }) => {
     const fromSources = entryFile.endsWith(".ts");
@@ -18,7 +20,7 @@ export const utilityProcessSpawner: WorkerSpawner = (entryFile, { execArgv, env,
     }
 
     const child = utilityProcess.fork(entryFile, [], {
-        execArgv: fromSources ? execArgv : withoutLoaderFlags(execArgv),
+        execArgv: withV8FlagsAsJsFlags(fromSources ? execArgv : withoutLoaderFlags(execArgv)),
         env: childEnv,
         serviceName
     });
@@ -86,4 +88,16 @@ function withoutLoaderFlags(execArgv: string[]): string[] {
     }
 
     return kept;
+}
+
+const V8_FLAGS = [ "--max-old-space-size=", "--max-semi-space-size=" ];
+
+function withV8FlagsAsJsFlags(execArgv: string[]): string[] {
+    const v8Flags = execArgv.filter((arg) => V8_FLAGS.some((flag) => arg.startsWith(flag)));
+    if (v8Flags.length === 0) {
+        return execArgv;
+    }
+
+    const others = execArgv.filter((arg) => !v8Flags.includes(arg));
+    return [ ...others, `--js-flags=${v8Flags.join(" ")}` ];
 }

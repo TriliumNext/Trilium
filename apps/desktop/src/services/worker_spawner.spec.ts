@@ -37,7 +37,7 @@ describe("utilityProcessSpawner", () => {
         });
 
         expect(h.fork).toHaveBeenCalledWith("/app.asar/image_worker.cjs", [], {
-            execArgv: [ "--max-old-space-size=2048" ],
+            execArgv: [ "--js-flags=--max-old-space-size=2048" ],
             env: { PATH: "/bin" },
             serviceName: "Trilium image worker"
         });
@@ -51,9 +51,23 @@ describe("utilityProcessSpawner", () => {
         });
 
         expect(h.fork).toHaveBeenCalledWith("/src/image_worker.ts", [], {
-            execArgv: [ "--max-old-space-size=2048" ],
+            execArgv: [ "--js-flags=--max-old-space-size=2048" ],
             env: { PATH: "/bin", NODE_OPTIONS: "--import tsx" },
             serviceName: "Trilium image worker"
+        });
+    });
+
+    it("passes V8 heap flags through --js-flags, the only form a utility process applies", () => {
+        utilityProcessSpawner("/app.asar/content_job_worker.cjs", {
+            execArgv: [ "--max-old-space-size=1024", "--trace-warnings", "--max-semi-space-size=16" ],
+            env: {},
+            serviceName: "w"
+        });
+
+        expect(h.fork).toHaveBeenCalledWith("/app.asar/content_job_worker.cjs", [], {
+            execArgv: [ "--trace-warnings", "--js-flags=--max-old-space-size=1024 --max-semi-space-size=16" ],
+            env: {},
+            serviceName: "w"
         });
     });
 
