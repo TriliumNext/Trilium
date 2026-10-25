@@ -334,6 +334,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
+    apiRoute(GET, "/api/recent-changes/:ancestorNoteId/note-ids",
+        recentChangesApiRoute.getRecentlyChangedNoteIds);
 
     apiRoute(GET, "/api/deleted-notes/:noteId/metadata", deletedNotesApiRoute.getDeletedNoteMetadata);
     apiRoute(GET, "/api/deleted-notes/:noteId/blob", deletedNotesApiRoute.getDeletedNoteBlob);

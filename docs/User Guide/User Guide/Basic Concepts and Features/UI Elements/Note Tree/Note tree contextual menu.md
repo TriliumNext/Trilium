@@ -51,7 +51,7 @@ The rest of the menu lists its options one per row:
     *   Allows easy creation of a note with a specified [note type](../../../Note%20Types.md).
     *   The _Code_ submenu starts with the scripting notes, each a code note set up for its role: _Custom CSS_ (with `#appCss`), _Widget_ (with `#widget` and a starting skeleton) and _Backend script_. The enabled code languages follow.
     *   <a class="reference-link" href="../../../Collections.md">Collections</a> are grouped in the _Collection_ submenu. The note types created less often, the <a class="reference-link" href="../../../Advanced%20Usage/Snippets.md">Snippets</a> and the AI quick action are in the _More_ submenu.
-    *   <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a> will also be present (if any) at the end of the list.
+    *   <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a> will also be present (if any) at the end of the list, under a _Templates_ heading. The <span class="tn-icon bx bx-cog"></span> button beside the heading opens _Content Manager_ in the <a class="reference-link" href="../Options.md">Options</a>, where the templates can be managed.
     *   To find an entry quickly, type into the search box at the top of the submenu, or just start typing while the submenu is open. The submenu then lists every matching entry, including those inside its own submenus (such as a code language or a collection), each with the submenu it comes from. Use <kbd>↑</kbd> and <kbd>↓</kbd> to pick a match, <kbd>Enter</kbd> to create it, and <kbd>Esc</kbd> to clear the search.
     *   The note will be added on the same level of hierarchy as the note selected.
 *   **Insert child note**

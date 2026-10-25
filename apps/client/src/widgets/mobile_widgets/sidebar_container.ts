@@ -1,10 +1,12 @@
 import type { EventData } from "../../components/app_context.js";
 import type { Screen } from "../../components/mobile_screen_switcher.js";
+import type NoteContext from "../../components/note_context.js";
 import options from "../../services/options.js";
 import { onSystemBack } from "../../services/system_back.js";
 import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer, { type FlexDirection } from "../containers/flex_container.js";
+import { forgetTabs, getTabNavigation, setTabScreen } from "./tab_navigation.js";
 
 const DRAG_STATE_NONE = 0;
 const DRAG_STATE_INITIAL_DRAG = 1;
@@ -28,8 +30,6 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private activeScreenName?: Screen;
     /** The main context ntxId of the active tab. */
     private activeTabId?: string;
-    /** The screen each tab was left on, by its main context ntxId; a tab not in it shows its note. */
-    private screenByTab = new Map<string, Screen>();
     private currentTranslate: number;
     private dragState: number;
     private startX?: number;
@@ -74,8 +74,9 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     }
 
     #onDragStart(e: TouchEvent | MouseEvent) {
-        // The note comes back by opening it, not by a swipe.
-        if (!isNarrowLayout() || this.currentTranslate !== -100) {
+        // The note comes back by opening it, not by a swipe. On the launch bar, a swipe changes tabs.
+        const isOnTabSwipe = e.target instanceof Element && !!e.target.closest("#launcher-pane.tab-swipe");
+        if (!isNarrowLayout() || this.currentTranslate !== -100 || isOnTabSwipe) {
             return;
         }
 
@@ -104,6 +105,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             if (deltaX > DRAG_START_THRESHOLD) {
                 /* Disable the transitions since they affect performance, they are going to reenabled once drag ends. */
                 this.sidebarEl.style.transition = "none";
+                this.sidebarEl.classList.add("dragging");
                 if (this.detailEl) this.detailEl.style.transition = "none";
 
                 this.dragState = DRAG_STATE_DRAGGING;
@@ -128,6 +130,8 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             this.dragState = DRAG_STATE_NONE;
             return;
         }
+
+        this.sidebarEl.classList.remove("dragging");
 
         // Snap the tree open only if the user swiped over a threshold.
         const isOpen = this.translatePercentage > -(100 - DRAG_OPEN_THRESHOLD);
@@ -176,7 +180,9 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         const direction = glob.isRtl ? -1 : 1;
         const openness = 100 + translatePercentage;
         this.sidebarEl.style.transform = `translateX(${-direction * STACK_PARALLAX * (100 - openness) / 100}%)`;
-        if (this.detailEl) this.detailEl.style.transform = `translateX(${direction * openness}%)`;
+        // At rest the note carries no transform: one makes it a stacking context, which keeps a
+        // dialog it renders under Bootstrap's backdrop.
+        if (this.detailEl) this.detailEl.style.transform = openness ? `translateX(${direction * openness}%)` : "";
     }
 
     #setSidebarOpen(isOpen: boolean) {
@@ -204,21 +210,59 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     }
 
     activeContextChangedEvent({ noteContext }: EventData<"activeContextChanged">) {
+        this.#switchToTab(noteContext);
+    }
+
+    noteSwitchedAndActivatedEvent({ noteContext }: EventData<"noteSwitchedAndActivated">) {
+        this.#switchToTab(noteContext);
+    }
+
+    /**
+     * Shows the tree of the active tab once `NoteContext.setEmpty()` leaves it without a note, as
+     * a new tab is. Splits and tabs opened in the background keep their screen.
+     */
+    noteSwitchedEvent({ noteContext, notePath }: EventData<"noteSwitched">) {
+        if (notePath || !isNarrowLayout()) return;
+        if (!noteContext.isMainContext() || noteContext.ntxId !== this.activeTabId) return;
+
+        this.#setInitialState();
+        this.#withoutTransition(() => this.#setSidebarOpen(true));
+        this.triggerCommand("setActiveScreen", { screen: this.screenName });
+    }
+
+    #switchToTab(noteContext: NoteContext) {
         const tabId = noteContext.getMainContext().ntxId;
         if (!tabId || tabId === this.activeTabId) return;
-
-        if (this.activeTabId && this.activeScreenName) {
-            this.screenByTab.set(this.activeTabId, this.activeScreenName);
-        }
         this.activeTabId = tabId;
 
+        // A tab that never showed the tree shows its note.
         if (isNarrowLayout()) {
-            this.triggerCommand("setActiveScreen", { screen: this.screenByTab.get(tabId) ?? "detail" });
+            const screen = getTabNavigation(tabId)?.screen ?? "detail";
+            this.#setInitialState();
+            this.#withoutTransition(() => this.#setSidebarOpen(screen === this.screenName));
+            this.triggerCommand("setActiveScreen", { screen });
         }
+    }
+
+    /** Applies `change` at once: the slide between the tree and the note is for moving within a tab. */
+    #withoutTransition(change: () => void) {
+        const container = this.sidebarEl.parentElement;
+        if (!container) return change();
+
+        container.classList.add("instant-screen-change");
+        change();
+        // Reading the layout applies the change while transitions are off.
+        void container.offsetWidth;
+        container.classList.remove("instant-screen-change");
+    }
+
+    noteContextRemovedEvent({ ntxIds }: EventData<"noteContextRemoved">) {
+        forgetTabs(ntxIds);
     }
 
     activeScreenChangedEvent({ activeScreen }: EventData<"activeScreenChanged">) {
         this.activeScreenName = activeScreen;
+        if (this.activeTabId) setTabScreen(this.activeTabId, activeScreen);
         this.#setInitialState();
         this.#setSidebarOpen(activeScreen === this.screenName);
     }

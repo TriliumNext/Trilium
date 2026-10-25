@@ -6,9 +6,4 @@
     .tn-card:last-child {
         margin-bottom: 0;
     }
-
-    .bulk-actions-add-action {
-        display: flex;
-        justify-content: flex-end;
-    }
 }

@@ -2,11 +2,9 @@ import { useCallback } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
+import { notePathMenuItem } from "../../menus/context_menu_utils";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
-import froca from "../../services/froca";
 import link from "../../services/link";
-import tree from "../../services/tree";
-import { escapeHtml } from "../../services/utils";
 import { useHoldContextMenu } from "../react/hooks";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
@@ -79,11 +77,7 @@ export async function getHistoryItems(
         const { noteId, notePath } = link.parseNavigationStateFromUrl(url);
         if (!noteId || !notePath) continue;
 
-        items.push({
-            title: escapeHtml(await tree.getNotePathTitle(notePath)),
-            uiIcon: froca.getNoteFromCache(noteId)?.getIcon(),
-            handler: go
-        });
+        items.push(await notePathMenuItem(notePath, go));
     }
 
     return items;

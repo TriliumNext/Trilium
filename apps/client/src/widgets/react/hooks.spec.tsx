@@ -9,6 +9,7 @@ import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
 import { buildNote } from "../../test/easy-froca";
+import { setupHoldContextMenu } from "../widget_utils";
 import {
     type DelayedVisibilityPhase,
     useDelayedVisibility,
@@ -787,15 +788,32 @@ describe("useWhenShown", () => {
     });
 });
 
-describe("useHoldContextMenu", () => {
+type HoldMount = (container: HTMLElement, handler: () => void, onClick: () => void) => void;
+
+describe.each<{ name: string, mount: HoldMount }>([
+    {
+        name: "useHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            function HoldProbe() {
+                return <button type="button" onClick={onClick} {...useHoldContextMenu(handler)} />;
+            }
+            act(() => render(<HoldProbe />, container));
+        }
+    },
+    {
+        name: "setupHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            const button = document.createElement("button");
+            button.addEventListener("click", onClick);
+            setupHoldContextMenu(button, handler);
+            container.append(button);
+        }
+    }
+])("$name", ({ mount }) => {
     let container: HTMLElement;
     let button: HTMLButtonElement;
     const handler = vi.fn();
     const onClick = vi.fn();
-
-    function HoldProbe() {
-        return <button type="button" onClick={onClick} {...useHoldContextMenu(handler)} />;
-    }
 
     beforeEach(() => {
         vi.useFakeTimers();
@@ -803,7 +821,7 @@ describe("useHoldContextMenu", () => {
         onClick.mockReset();
         container = document.createElement("div");
         document.body.append(container);
-        act(() => render(<HoldProbe />, container));
+        mount(container, handler, onClick);
         const rendered = container.querySelector("button");
         if (!rendered) throw new Error("The probe did not render its button.");
         button = rendered;
@@ -858,14 +876,18 @@ describe("useHoldContextMenu", () => {
         expect(handler).toHaveBeenCalledTimes(2);
     });
 
-    it("leaves a short press, a press that slides off and another button alone", () => {
+    it("ignores a short press, a press that slides off or is canceled, and another button", () => {
         fire("pointerdown", { button: 0 });
         vi.advanceTimersByTime(300);
         fire("pointerup", { button: 0 });
+        vi.advanceTimersByTime(500);
         fire("click");
 
-        fire("pointerdown", { button: 0 });
-        fire("pointerleave");
+        for (const end of [ "pointerleave", "pointercancel" ]) {
+            fire("pointerdown", { button: 0 });
+            fire(end);
+            vi.advanceTimersByTime(500);
+        }
         fire("pointerdown", { button: 1 });
         vi.runAllTimers();
 

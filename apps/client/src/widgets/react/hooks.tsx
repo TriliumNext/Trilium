@@ -38,6 +38,7 @@ import utils, { getErrorMessage, isShare, randomString, reloadFrontendApp } from
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
+import { createHoldContextMenu } from "../widget_utils";
 import { noteSavedDataStore } from "./NoteStore";
 import { findClosestNoteContext, NoteContextContext, ParentComponent, refToJQuerySelector } from "./react_utils";
 import type FAttachment from "../../entities/fattachment";
@@ -2035,74 +2036,31 @@ export function useLongPressContextMenu(handler: (e: MouseEvent) => void, holdMs
 }
 
 /**
- * Calls `handler` on a right-click, and when a press of the primary button or a finger stays on
- * the element for `holdMs`. After a hold, the click that ends the press and the `contextmenu`
- * event Android raises for the same press do nothing.
+ * Calls `handler` on a right-click, and when a press stays on the element for `holdMs`; see
+ * {@link createHoldContextMenu}.
  *
  * Returns props to spread onto the target element.
  */
 export function useHoldContextMenu(handler: (e: MouseEvent) => void, holdMs = 500) {
-    const timerRef = useRef<number | null>(null);
-    const heldRef = useRef(false);
+    const handlerRef = useRef(handler);
+    useEffect(() => {
+        handlerRef.current = handler;
+    }, [ handler ]);
 
-    const clear = useCallback(() => {
-        if (timerRef.current !== null) {
-            window.clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-    }, []);
-
-    // The click of the press is dispatched in the same task as its `pointerup`, before the timeout.
-    const endHold = useCallback(() => {
-        window.setTimeout(() => heldRef.current = false);
-    }, []);
-
-    useEffect(() => () => {
-        clear();
-        window.removeEventListener("pointerup", endHold, true);
-    }, [clear, endHold]);
-
-    const onPointerDown = useCallback(
-        (e: PointerEvent) => {
-            heldRef.current = false;
-            clear();
-            if (e.button !== 0) return;
-            timerRef.current = window.setTimeout(() => {
-                timerRef.current = null;
-                heldRef.current = true;
-                // The press can end off the element, which then receives no `pointerup`.
-                window.addEventListener("pointerup", endHold, { capture: true, once: true });
-                handler(e);
-            }, holdMs);
-        },
-        [handler, holdMs, clear, endHold]
+    const hold = useMemo(
+        () => createHoldContextMenu((e) => handlerRef.current(e), holdMs),
+        [ holdMs ]
     );
-
-    const onContextMenu = useCallback(
-        (e: MouseEvent) => {
-            clear();
-            if (heldRef.current) {
-                e.preventDefault();
-                return;
-            }
-            handler(e);
-        },
-        [handler, clear]
-    );
-
-    const onClickCapture = useCallback((e: MouseEvent) => {
-        if (!heldRef.current) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-    }, []);
+    useEffect(() => () => hold.dispose(), [ hold ]);
 
     return {
-        onContextMenu,
-        onPointerDown,
-        onPointerUp: clear,
-        onPointerLeave: clear,
-        onPointerCancel: clear,
-        onClickCapture
+        onContextMenu: hold.onContextMenu,
+        onPointerDown: hold.onPointerDown,
+        onPointerMove: hold.onPointerMove,
+        onPointerUp: hold.cancel,
+        onPointerLeave: hold.cancel,
+        onPointerCancel: hold.cancel,
+        onClickCapture: hold.onClickCapture
     };
 }
 

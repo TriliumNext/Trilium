@@ -53,6 +53,8 @@ vi.mock("../services/utils", () => ({
         return mocks.isShare;
     }
 }));
+// `context_menu_utils` imports `tree`, whose imports fail against the partial mocks above.
+vi.mock("../services/tree", () => ({ default: {}, NOTE_PATH_TITLE_SEPARATOR: " › " }));
 
 vi.mock("../widgets/widget_utils", () => ({ getClosestNtxId: mocks.getClosestNtxId }));
 

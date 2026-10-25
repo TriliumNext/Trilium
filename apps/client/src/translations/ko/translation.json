@@ -456,7 +456,8 @@
     "modal_title": "노트 유형 선택",
     "templates": "템플릿",
     "location": "위치",
-    "location_placeholder": "비워 두면 기본 위치를 사용합니다"
+    "location_placeholder": "비워 두면 기본 위치를 사용합니다",
+    "manage_templates": "콘텐츠 관리자에서 템플릿 관리"
   },
   "password_not_set": {
     "title": "비밀번호가 설정되지 않았습니다",
@@ -2662,7 +2663,8 @@
     "subtree-hidden-moved-title": "{{title}}에 추가됨",
     "subtree-hidden-moved-description-collection": "이 컬렉션은 트리에 하위 노트를 숨깁니다.",
     "subtree-hidden-moved-description-other": "이 노트의 트리에는 하위 노트가 숨겨져 있습니다.",
-    "show-all-notes": "모든 노트 표시"
+    "show-all-notes": "모든 노트 표시",
+    "back-to-tree": "노트 트리"
   },
   "mobile_note_navigator": {
     "back": "한 단계 위로",
@@ -2735,7 +2737,10 @@
     "move_tab_to_new_window": "이 탭을 새 창으로 옮기기",
     "copy_tab_to_new_window": "이 탭을 새 창으로 복사",
     "new_tab": "새 탭",
-    "leave_full_screen": "전체 화면 종료"
+    "leave_full_screen": "전체 화면 종료",
+    "add_new_tab_hint": "더 많은 옵션을 보려면 마우스 오른쪽 버튼을 클릭하거나 길게 누르세요.",
+    "show_all_recent_changes": "모든 최근 변경 사항",
+    "recently_changed_notes": "최근 변경된 노트"
   },
   "toc": {
     "table_of_contents": "목차",
@@ -2820,7 +2825,8 @@
     "remove_from_launch_bar": "실행 표시줄에서 제거",
     "configure_launch_bar": "실행 표시줄 구성...",
     "launch_bar_orientation": "실행 표시줄 방향",
-    "will_reload_frontend": "(앱을 다시 불러올 예정입니다)"
+    "will_reload_frontend": "(앱을 다시 불러올 예정입니다)",
+    "show_as_folder": "폴더"
   },
   "highlighting": {
     "title": "코드 블록",
@@ -3994,7 +4000,7 @@
     "provider_group_local": "로컬 / 자체 호스팅",
     "provider_group_local_description": "API 키가 필요 없으며 사용 요금도 없습니다. 노트는 모델을 실행하는 기기에만 전달됩니다.",
     "provider_group_custom": "사용자 지정 엔드포인트",
-    "provider_group_custom_description": "로컬 또는 호스팅 환경의 모든 OpenAI 호환 API(OpenRouter, Groq, Mistral 등)를 사용할 수 있습니다. 비용과 개인정보 보호 수준은 연결할 서비스에 따라 달라집니다.",
+    "provider_group_custom_description": "로컬 또는 호스팅 환경의 모든 OpenAI 호환 API(Groq, Mistral, Together)를 사용할 수 있습니다. 비용과 개인정보 보호 수준은 연결 대상에 따라 달라집니다.",
     "provider_openai_compatible": "OpenAI 호환",
     "provider_desc_openai_compatible": "OpenAI API와 호환되는 엔드포인트에 Trilium을 연결합니다.",
     "api_key_optional_description": "선택 사항입니다. 엔드포인트가 인증 프록시나 게이트웨이 뒤에 있을 때만 필요합니다.",
@@ -4048,7 +4054,8 @@
       "note_moved_from": "<Note/> 항목을 <From/> 위치에서 <To/> 위치로 이동",
       "note_moved": "<Note/> 이동 위치: <To/>",
       "attachment_in_note": "<Title/> 위치: <Note/>",
-      "search_in_subtree": "<Query/> in <Subtree/>"
+      "search_in_subtree": "<Query/> in <Subtree/>",
+      "add_attribute": "속성 추가"
     },
     "provider_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 이 제공업체는 컴퓨터에서 별도의 프로그램을 실행하는 방식으로 작동하며, 여기에는 해당 프로그램을 실행할 컴퓨터가 없습니다.",
     "mcp_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 어시스턴트는 네트워크를 통해 Trilium에 연결해야 하지만, 이 빌드는 이 페이지 안에서만 실행되므로 어시스턴트에 제공할 연결 주소가 없습니다.",
@@ -4349,7 +4356,8 @@
       "move-down": "아래로 이동",
       "image-position": "이미지 위치",
       "list": "목록",
-      "list-type": "목록 유형"
+      "list-type": "목록 유형",
+      "insert-a-preview-of-a-web-page-or-a-video": "웹 페이지 또는 동영상 미리보기 삽입"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4644,7 +4652,8 @@
     "no_matches": "일치하는 항목 없음",
     "filter": "필터",
     "filter_placeholder": "필터할 내용을 입력…",
-    "back": "뒤로"
+    "back": "뒤로",
+    "clear_filter": "필터 지우기"
   },
   "block_reference": {
     "paste_as_link": "참조를 링크로 붙여넣기",

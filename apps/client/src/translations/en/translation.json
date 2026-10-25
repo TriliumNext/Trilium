@@ -456,7 +456,8 @@
     "location": "Location",
     "location_placeholder": "Default location if left empty",
     "modal_title": "Choose note type",
-    "templates": "Templates"
+    "templates": "Templates",
+    "manage_templates": "Manage templates in Content Manager"
   },
   "password_not_set": {
     "title": "Password is not set",
@@ -2859,8 +2860,12 @@
     "back": "Go up one level",
     "loading": "Loading...",
     "empty": "This note has no children.",
-    "children_count_one": "{{count}} note",
-    "children_count_other": "{{count}} notes",
+    "current_note": "This note",
+    "children_count_one": "{{count}} child note",
+    "children_count_other": "{{count}} child notes",
+    "children_hidden": "Child notes are hidden from the tree",
+    "workspaces": "Workspaces",
+    "bookmarks": "Bookmarks",
     "add_child": "Add child note",
     "more_actions": "More actions"
   },
@@ -2929,7 +2934,10 @@
     "move_tab_to_new_window": "Move this tab to a new window",
     "copy_tab_to_new_window": "Copy this tab to a new window",
     "new_tab": "New tab",
-    "leave_full_screen": "Leave full screen"
+    "leave_full_screen": "Leave full screen",
+    "add_new_tab_hint": "Right click or hold for more options.",
+    "show_all_recent_changes": "All recent changes",
+    "recently_changed_notes": "Recently changed notes"
   },
   "toc": {
     "table_of_contents": "Table of Contents",
@@ -3012,6 +3020,7 @@
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remove from launch bar",
+    "show_as_folder": "Folder",
     "configure_launch_bar": "Configure launch bar...",
     "launch_bar_orientation": "Launch bar orientation",
     "will_reload_frontend": "(will reload app)"
@@ -4778,7 +4787,8 @@
     "no_matches": "No matches",
     "filter": "Filter",
     "filter_placeholder": "Type to filter…",
-    "back": "Back"
+    "back": "Back",
+    "clear_filter": "Clear the filter"
   },
   "block_reference": {
     "copy_one": "Copy reference to this block",

@@ -310,6 +310,7 @@ describe("GlobalMenu", () => {
         expect(advanced.at(-1)).toBe("global_menu.switch_to_desktop_version");
         expect([ ...topLevel, ...advanced ].some((row) => row?.startsWith("global_menu.open_new_window"))).toBe(false);
         expect([ ...topLevel, ...advanced ].some((row) => row?.startsWith("global_menu.show-cheatsheet"))).toBe(false);
+        expect(popup()?.querySelector(".bx-palette")).toBeNull();
     });
 
     it("opens a phone's menu on a strip of search and the history views, and pairs fullscreen with Zen mode", async () => {

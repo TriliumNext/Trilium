@@ -39,7 +39,7 @@
     "@openrouter/ai-sdk-provider": "3.1.0",
     "ai": "7.0.148",
     "better-sqlite3": "13.0.3",
-    "i18next": "26.5.3",
+    "i18next": "26.5.5",
     "ipaddr.js": "^2.4.0",
     "js-yaml": "5.5.0",
     "unpdf": "1.9.1"
@@ -98,7 +98,7 @@
     "time2fa": "1.4.2",
     "tmp": "0.2.7",
     "upng-js": "2.1.0",
-    "vite": "8.3.4",
+    "vite": "8.3.5",
     "yauzl": "3.4.0"
   }
 }

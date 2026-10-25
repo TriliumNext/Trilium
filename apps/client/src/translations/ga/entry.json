@@ -134,7 +134,11 @@
         "unlock-refused": "Níor glacadh leis na sonraí sin. Déan iarracht arís.",
         "keep-existing": "Fill ar ais chuig an aip",
         "keep-existing-description": "Coinnigh ort ag úsáid do bhunachar eolais atá ann cheana féin agus téigh ar ais chuig an aip.",
-        "backup-saved-to": "Tá an cóip chúltaca sábháilte in {{- location}}. Brúigh \"Críochnaigh\" chun filleadh ar an bhfeidhmchlár."
+        "backup-saved-to": "Tá an cóip chúltaca sábháilte in {{- location}}. Brúigh \"Críochnaigh\" chun filleadh ar an bhfeidhmchlár.",
+        "sync-from-server-failed": "Theip ar an sioncronú",
+        "server-totp-token": "Pasfhocal aonuaire nó cód aisghabhála (roghnach)",
+        "totp-required": "Éilíonn an freastalaí seo pasfhocal aonuaire nó cód aisghabhála.",
+        "wrong-totp": "Pasfhocal aonuaire nó cód aisghabhála mícheart. Bain triail as arís, le do thoil."
     },
     "login": {
         "password": "Pasfhocal",

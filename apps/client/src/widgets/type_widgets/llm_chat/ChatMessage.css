@@ -3,7 +3,6 @@
     position: relative;
     margin-top: 1rem;
     padding-bottom: 1.25rem;
-    max-width: 85%;
     /* Isolate each message: layout, paint and style invalidations stop at the message
        boundary instead of walking the whole timeline. Deliberately NOT content-visibility:
        auto — skipped messages sit at placeholder sizes, which silently breaks everything

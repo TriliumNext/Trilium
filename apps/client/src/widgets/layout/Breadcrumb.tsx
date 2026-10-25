@@ -22,15 +22,18 @@ import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import options from "../../services/options";
 import tree from "../../services/tree";
+import { escapeHtml } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import { Badge } from "../react/Badge";
 import Dropdown from "../react/Dropdown";
-import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { FormListItem } from "../react/FormList";
 import { useActiveNoteContext, useChildNotes, useNote, useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean, useNoteTitle, useStaticTooltip, useTriliumOptionBool } from "../react/hooks";
 import Icon from "../react/Icon";
+import { MenuItemRows } from "../react/Menu";
 import { NewNoteLink } from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
 
+const PROTECTED_ICON = "bx bx-lock-alt protected-icon";
 const COLLAPSE_THRESHOLD = 5;
 const INITIAL_ITEMS = 2;
 const FINAL_ITEMS = 3;
@@ -187,7 +190,7 @@ interface BreadcrumbSeparatorProps {
     hideArchivedNotes: boolean;
 }
 
-function BreadcrumbSeparator(props: BreadcrumbSeparatorProps) {
+export function BreadcrumbSeparator(props: BreadcrumbSeparatorProps) {
     const notePathComponents = (props.notePath ?? "").split("/");
     const parentNoteId = notePathComponents.at(-1);
     const parentNote = useNote(parentNoteId);
@@ -205,44 +208,60 @@ function BreadcrumbSeparator(props: BreadcrumbSeparatorProps) {
             hideToggleArrow
             dropdownContainerClassName="breadcrumb-child-list"
             placement="top"
+            filterable={!!parentNote?.hasChildren()}
+            keepOrder
         >
             <BreadcrumbSeparatorDropdownContent {...props} />
         </Dropdown>
     );
 }
 
-function BreadcrumbSeparatorDropdownContent({ notePath, noteContext, activeNotePath, hideArchivedNotes }: BreadcrumbSeparatorProps) {
-    const notePathComponents = (notePath ?? "").split("/");
-    const parentNoteId = notePathComponents.at(-1);
+function BreadcrumbSeparatorDropdownContent(props: BreadcrumbSeparatorProps) {
+    const parentNoteId = (props.notePath ?? "").split("/").at(-1);
     const childNotes = useChildNotes(parentNoteId);
+    return <MenuItemRows items={buildChildNoteItems(childNotes, props)} />;
+}
 
-    return (
-        <>
-            {childNotes.map((note) => {
-                if (note.noteId === "_hidden") return;
-                if (hideArchivedNotes && note.isArchived) return null;
+/** The rows of a separator's menu: the children of the note before it, then "Create new note". */
+export function buildChildNoteItems(childNotes: FNote[], props: BreadcrumbSeparatorProps) {
+    const { notePath, activeNotePath, noteContext, hideArchivedNotes } = props;
+    const items: MenuItem<unknown>[] = [];
+    for (const note of childNotes) {
+        if (note.noteId === "_hidden") continue;
+        if (hideArchivedNotes && note.isArchived) continue;
 
-                const childNotePath = `${notePath}/${note.noteId}`;
-                return <li key={note.noteId}>
-                    <FormListItem
-                        icon={note.getIcon()}
-                        className={clsx(note.getColorClass(), note.isArchived && "archived")}
-                        onClick={() => noteContext?.setNote(childNotePath)}
-                    >
-                        {childNotePath !== activeNotePath
-                            ? <span><BreadcrumbNoteTitle note={note} /></span>
-                            : <strong><BreadcrumbNoteTitle note={note} /></strong>}
-                    </FormListItem>
-                </li>;
-            })}
+        const childNotePath = `${notePath}/${note.noteId}`;
+        const title = noteTitleTextHtml(note);
+        items.push({
+            title: childNotePath === activeNotePath ? `<strong>${title}</strong>` : title,
+            titleIcon: note.isProtected ? PROTECTED_ICON : undefined,
+            uiIcon: note.getIcon(),
+            iconColorClass: note.getColorClass(),
+            className: note.isArchived ? "archived" : undefined,
+            handler: () => noteContext?.setNote(childNotePath)
+        });
+    }
 
-            {childNotes.length > 0 && <FormDropdownDivider />}
-            <FormListItem
-                icon="bx bx-plus"
-                onClick={() => note_create.createNote(notePath, { activate: true })}
-            >{t("breadcrumb.create_new_note")}</FormListItem>
-        </>
-    );
+    if (items.length > 0) items.push({ kind: "separator" });
+    items.push({
+        title: t("breadcrumb.create_new_note"),
+        uiIcon: "bx bx-plus",
+        handler: () => note_create.createNote(notePath, { activate: true })
+    });
+    return items;
+}
+
+/** The HTML of {@link BreadcrumbNoteTitle}, with the lock of a protected note. */
+export function noteTitleHtml(note: FNote) {
+    const title = noteTitleTextHtml(note);
+    return note.isProtected ? `${title}<span class="${PROTECTED_ICON} tn-icon"></span>` : title;
+}
+
+/** The HTML of the note's title, or of "Protected" while the protected session is locked. */
+function noteTitleTextHtml(note: FNote) {
+    if (note.isContentAvailable()) return escapeHtml(note.title);
+    const locked = escapeHtml(t("protected_session.locked_note_title"));
+    return `<span class="protected-title">${locked}</span>`;
 }
 
 function BreadcrumbCollapsed({ items, noteContext }: {

@@ -102,8 +102,8 @@ describe("SortChildNotesDialog", () => {
     });
 
     it("builds a multi-level criteria string from the added levels", async () => {
-        await click(container.querySelector(".sort-level-add"));
-        await click(container.querySelector(".sort-level-add"));
+        await click(container.querySelector(".tn-card-adder"));
+        await click(container.querySelector(".tn-card-adder"));
         expect(levels()).toHaveLength(3);
 
         const [ first, second, third ] = levels();
@@ -125,7 +125,7 @@ describe("SortChildNotesDialog", () => {
     });
 
     it("reorders levels with the arrows, which are off at the ends", async () => {
-        await click(container.querySelector(".sort-level-add"));
+        await click(container.querySelector(".tn-card-adder"));
         const [ first, second ] = levels();
         await choose(second.querySelector("select"), "dateCreated");
         expect(first.querySelector(".sort-level-up")).toHaveProperty("disabled", true);

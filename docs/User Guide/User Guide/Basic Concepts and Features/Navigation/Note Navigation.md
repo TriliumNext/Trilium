@@ -7,7 +7,7 @@ To move back and forward in the history of viewed notes, press <kbd>Alt</kbd>+<k
 
 This works identically to browser backwards / forwards, it's actually using built-in browser support for this.
 
-To go several notes back or forward at once, right-click one of the buttons or press and hold it. The back button lists the notes before the current one and the forward button the notes after it, the nearest first. Selecting a note goes straight to it.
+To go several notes back or forward at once, right-click one of the buttons or press and hold it. The back button lists the notes before the current one and the forward button the notes after it, the nearest first. Each entry shows the note's title, with the path of its parent notes at the end of the row. Selecting a note goes straight to it.
 
 The _Go to Previous Note_ and _Go to Next Note_ launchers of the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> list the same notes, below the launch bar's own items.
 

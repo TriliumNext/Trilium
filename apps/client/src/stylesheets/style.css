@@ -63,7 +63,7 @@ body#trilium-app.backdrop-effects-disabled *::after {
 }
 
 :root {
-    --submenu-opening-delay: 150ms;
+    --submenu-opening-delay: 250ms;
     --launcher-pane-size: 53px;
     --bs-body-color: var(--main-text-color);
     /* What a menu, the sidebar or a dialog dims the page behind it with in the phone layout. */
@@ -1891,12 +1891,16 @@ pre.code-embed-editor.read-only .cm-activeLine {
         width: 100%;
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);
-        z-index: 0;
+
+        &:not(.show, .dragging) {
+            visibility: hidden;
+            transition: transform 250ms ease-in-out, visibility 0s 250ms;
+        }
     }
 
     #detail-container {
+        position: relative;
         width: 100%;
-        z-index: 1;
         background: var(--main-background-color);
         transition: transform 250ms ease-in-out;
 
@@ -1914,6 +1918,14 @@ pre.code-embed-editor.read-only .cm-activeLine {
 
     body:has(#mobile-sidebar-wrapper.show) #detail-container::before {
         opacity: 0;
+    }
+
+    #mobile-rest-container.instant-screen-change {
+        > #mobile-sidebar-wrapper,
+        > #detail-container,
+        > #detail-container::before {
+            transition: none !important;
+        }
     }
 
     body[dir="rtl"] #detail-container::before {

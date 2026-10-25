@@ -2,6 +2,9 @@ import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import type { MenuItem } from "../../menus/context_menu";
+import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
+import { getRecentlyChangedNotesMenuItems } from "../../menus/recent_changes_menu_items";
 import date_notes from "../../services/date_notes";
 import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
 import { t } from "../../services/i18n";
@@ -10,7 +13,9 @@ import { getErrorMessage, isMobile } from "../../services/utils";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import QuickSearch from "../quick_search";
-import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget } from "../react/hooks";
+import {
+    useGlobalShortcut, useHoldContextMenu, useLegacyWidget, useNoteLabel, useNoteRelationTarget
+} from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
 import { LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
@@ -18,6 +23,7 @@ import { LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, La
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
     const [ command ] = useNoteLabel(launcherNote, "command");
+    const contextMenuProps = useCommandLauncherContextMenu(command, launcherNote);
 
     return command && (
         <LaunchBarActionButton
@@ -25,8 +31,35 @@ export function CommandButton({ launcherNote }: LauncherNoteProps) {
             icon={icon}
             text={title}
             triggerCommand={command as CommandNames}
+            {...contextMenuProps}
         />
     );
+}
+
+/** The menu sections that command launchers list above "Remove from launch bar". */
+const COMMAND_MENU_ITEMS: Partial<Record<string, () => Promise<MenuItem<CommandNames>[]>>> = {
+    showRecentChanges: getRecentlyChangedNotesMenuItems
+};
+
+/**
+ * Returns props that open the launcher menu with the section of `command` from
+ * {@link COMMAND_MENU_ITEMS}, on a right-click or a held press. Returns nothing for a command
+ * without a section.
+ */
+export function useCommandLauncherContextMenu(
+    command: string | null | undefined,
+    launcherNote: FNote
+) {
+    const getMenuItems = command ? COMMAND_MENU_ITEMS[command] : undefined;
+    const handler = useCallback((e: MouseEvent) => {
+        e.preventDefault();
+        void getMenuItems?.().then((extraItems) => {
+            void showLauncherContextMenu(launcherNote, e, { extraItems });
+        });
+    }, [ getMenuItems, launcherNote ]);
+    const holdProps = useHoldContextMenu(handler);
+
+    return getMenuItems ? holdProps : undefined;
 }
 
 // we're intentionally displaying the launcher title and icon instead of the target,

@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("./local-bridge.js", () => ({
     localFetch: (request: Request) => mocks.localFetch(request),
-    isLocalApiRequest: (url: URL) => url.pathname.startsWith("/api/") || url.pathname.startsWith("/share/")
+    isLocalApiRequest: (url: URL) => ["/api/", "/share/", "/custom/"].some((prefix) => url.pathname.startsWith(prefix))
 }));
 
 interface Channel {
@@ -36,6 +36,7 @@ afterEach(() => {
     delete bridgeWindow.webkit;
     delete bridgeWindow.__triliumNativeRequest;
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
 });
 
 /** Installs the bridge, forwards one request, and returns every message the page sent back. */
@@ -153,5 +154,32 @@ describe("installNativeRequestBridge", () => {
         mocks.localFetch.mockRejectedValue("closed");
         const rejected = await forward({ id: 7, url: "https://localhost/api/notes" });
         expect(rejected).toEqual([{ type: "error", id: 7, message: "closed" }]);
+    });
+
+    it("sends a script's local POST to localFetch with its body, since the native side cannot read it", async () => {
+        const networkFetch = vi.fn(async () => new Response("POST cannot be answered natively", { status: 405 }));
+        vi.stubGlobal("fetch", networkFetch);
+        mocks.localFetch.mockResolvedValue(Response.json({ ok: true }));
+        installNativeRequestBridge();
+
+        const response = await window.fetch("/custom/srs?action=rate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ noteId: "abc", quality: 3 })
+        });
+
+        expect(networkFetch).not.toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true });
+        const request: Request = mocks.localFetch.mock.calls[0][0];
+        expect(request.method).toBe("POST");
+        expect(new URL(request.url).pathname).toBe("/custom/srs");
+        expect(await request.json()).toEqual({ noteId: "abc", quality: 3 });
+
+        await window.fetch("/custom/srs?action=getDue");
+        await window.fetch("https://example.com/custom/srs", { method: "POST", body: "x" });
+        await window.fetch("/assets/upload", { method: "POST", body: "x" });
+        expect(networkFetch).toHaveBeenCalledTimes(3);
+        expect(mocks.localFetch).toHaveBeenCalledTimes(1);
     });
 });

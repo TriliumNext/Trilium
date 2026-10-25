@@ -796,16 +796,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             extraClasses.push("shared");
         }
 
-        if (note.getParentNoteIds().length > 1) {
-            const realClones = note
-                .getParentNoteIds()
-                .map((noteId: string) => froca.notes[noteId])
-                .filter((note: FNote) => !!note)
-                .filter((note: FNote) => !["_share", "_lbBookmarks"].includes(note.noteId) && note.type !== "search");
-
-            if (realClones.length > 1) {
-                extraClasses.push("multiple-parents");
-            }
+        if (note.getRealParentNotes().length > 1) {
+            extraClasses.push("multiple-parents");
         }
 
         const cssClass = note.getCssClass();
@@ -1876,19 +1868,9 @@ function buildEnhanceTitle() {
         }
 
         // Add clone indicator with tooltip if note has multiple parents
-        const parentNotes = note.getParentNotes();
-        const realParents: FNote[] = [];
-        for (const parent of parentNotes) {
-            if (parent.noteId !== "_share" && parent.noteId !== "_lbBookmarks" && parent.type !== "search") {
-                realParents.push(parent);
-            }
-        }
-
+        const realParents = note.getRealParentNotes();
         if (realParents.length > 1) {
-            const parentTitles = realParents.map((p) => p.title).join(", ");
-            const tooltipText = realParents.length === 2
-                ? t("note_tree.clone-indicator-tooltip-single", { parent: realParents[1].title })
-                : t("note_tree.clone-indicator-tooltip", { count: realParents.length, parents: parentTitles });
+            const tooltipText = treeService.getCloneIndicatorTooltip(realParents);
 
             const $cloneIndicator = $(`<span class="note-indicator-icon clone-indicator"></span>`);
             $cloneIndicator.attr("title", tooltipText);

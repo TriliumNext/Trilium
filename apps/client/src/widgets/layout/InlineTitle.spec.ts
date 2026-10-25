@@ -39,8 +39,17 @@ describe("observeTitleInView", () => {
         const [ observer ] = observers;
         expect(observer.options?.root).toBe(container);
 
-        observer.callback([ { isIntersecting: false } as IntersectionObserverEntry ], {} as IntersectionObserver);
+        const report = (isIntersecting: boolean, width: number, height: number) => observer.callback(
+            [ { isIntersecting, boundingClientRect: { width, height } } as IntersectionObserverEntry ],
+            {} as IntersectionObserver);
+        report(false, 300, 40);
         expect(onChange).toHaveBeenLastCalledWith(false);
+        report(true, 300, 40);
+        expect(onChange).toHaveBeenLastCalledWith(true);
+
+        // The title of a hidden tab has no box; it keeps the state it was left in.
+        report(false, 0, 0);
+        expect(onChange).toHaveBeenCalledTimes(2);
 
         stop();
         expect(observer.disconnect).toHaveBeenCalled();
