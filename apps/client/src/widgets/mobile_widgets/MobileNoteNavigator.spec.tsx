@@ -10,7 +10,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { getListedChildCount, TitleWithIndicators, WorkspaceBadges } from "./MobileNoteNavigator";
+import { getListedChildCount, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -95,7 +95,7 @@ describe("TitleWithIndicators", () => {
     });
 });
 
-describe("WorkspaceBadges", () => {
+describe("WorkspaceCards", () => {
     it("lists the workspaces and hoists the tab into the one tapped", async () => {
         const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase" });
         const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace ]);
@@ -108,7 +108,7 @@ describe("WorkspaceBadges", () => {
         await act(async () => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <WorkspaceBadges />
+                    <WorkspaceCards />
                 </ParentComponent.Provider>
             );
         });
@@ -116,11 +116,12 @@ describe("WorkspaceBadges", () => {
         // The search resolves after the effect that starts it.
         await act(async () => {});
         expect(searchForNotes).toHaveBeenCalledWith("#workspace #!template");
-        const badges = [ ...container.querySelectorAll(".mobile-navigator-workspace") ];
-        expect(badges.map((badge) => badge.textContent)).toEqual([ "Work" ]);
-        expect(badges[0]?.querySelector(".bx-briefcase")).not.toBeNull();
+        expect(container.querySelector(".mobile-navigator-workspaces-label")?.textContent).toBe("mobile_note_navigator.workspaces");
+        const cards = [ ...container.querySelectorAll(".mobile-navigator-workspaces .mobile-navigator-workspace") ];
+        expect(cards.map((card) => card.textContent)).toEqual([ "Work" ]);
+        expect(cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase")).not.toBeNull();
 
-        (badges[0] as HTMLElement | undefined)?.click();
+        (cards[0] as HTMLElement | undefined)?.click();
         expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
     });
 });

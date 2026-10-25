@@ -265,7 +265,7 @@ export default function MobileNoteNavigator() {
 
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
-                    {!isHoisted && currentParentId === "root" && <WorkspaceBadges />}
+                    {!isHoisted && currentParentId === "root" && <WorkspaceCards />}
                     {parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
@@ -408,9 +408,10 @@ function HoistedNoteBadge({ hoistedNoteId }: { hoistedNoteId: string }) {
 
 /**
  * The workspace notes, as the empty tab lists them, for the root column of a tab that is not
- * hoisted. Tapping one hoists the tab into it.
+ * hoisted: a heading and a grid of cards, each with the workspace's icon over its title.
+ * Tapping one hoists the tab into it.
  */
-export function WorkspaceBadges() {
+export function WorkspaceCards() {
     const [ workspaceNotes, setWorkspaceNotes ] = useState<FNote[]>([]);
     const parentComponent = useContext(ParentComponent);
 
@@ -425,36 +426,47 @@ export function WorkspaceBadges() {
     if (!workspaceNotes.length) return null;
 
     return (
-        <div className="mobile-navigator-workspaces">
-            {workspaceNotes.map((workspaceNote) => (
-                <WorkspaceBadge
-                    key={workspaceNote.noteId}
-                    note={workspaceNote}
-                    onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
-                />
-            ))}
-        </div>
+        <>
+            <div className="mobile-navigator-children-label mobile-navigator-workspaces-label">
+                {t("mobile_note_navigator.workspaces")}
+            </div>
+            <div className="mobile-navigator-workspaces">
+                {workspaceNotes.map((workspaceNote) => (
+                    <WorkspaceCard
+                        key={workspaceNote.noteId}
+                        note={workspaceNote}
+                        onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
+                    />
+                ))}
+            </div>
+        </>
     );
 }
 
-function WorkspaceBadge({ note, onClick }: { note: FNote, onClick: () => void }) {
+function WorkspaceCard({ note, onClick }: { note: FNote, onClick: () => void }) {
     const icon = useNoteIcon(note);
     const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
     const [ workspaceColor ] = useNoteLabel(note, "workspaceTabBackgroundColor");
     const title = useNoteTitle(note.noteId, undefined);
 
     return (
-        <Badge
-            className="mobile-navigator-workspace"
-            icon={workspaceIconClass || icon}
-            text={title ?? note.title}
+        <div
+            className={clsx("mobile-navigator-workspace", { "has-color": !!workspaceColor })}
+            role="button"
+            tabIndex={0}
             onClick={onClick}
-            style={workspaceColorStyle(workspaceColor)}
-        />
+        >
+            <Icon
+                icon={workspaceIconClass || icon}
+                className="mobile-navigator-workspace-icon"
+                style={workspaceColorStyle(workspaceColor)}
+            />
+            <span className="mobile-navigator-workspace-title">{title ?? note.title}</span>
+        </div>
     );
 }
 
-/** Paints a badge in the workspace's `#workspaceTabBackgroundColor`, with a text color readable on it. */
+/** Paints an element in the workspace's `#workspaceTabBackgroundColor`, with a text color readable on it. */
 function workspaceColorStyle(workspaceColor: string | null | undefined) {
     if (!workspaceColor) return undefined;
     return { "--color": workspaceColor, "color": getReadableTextColor(workspaceColor) } as Record<string, string>;

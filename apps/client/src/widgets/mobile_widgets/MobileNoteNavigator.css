@@ -35,16 +35,54 @@
 }
 
 .mobile-navigator-workspaces {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 16px 2px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-inline: var(--navigator-group-inset);
+
+    & + .mobile-navigator-current-tile {
+        margin-block-start: var(--navigator-group-spacing);
+    }
 }
 
 .mobile-navigator-workspace {
-    --badge-radius: 12px;
-    --color: var(--input-background-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 16px 8px 12px;
+    border-radius: var(--navigator-group-radius);
+    background: var(--navigator-group-background);
     color: var(--main-text-color);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active {
+        background-image: linear-gradient(var(--navigator-pressed-background), var(--navigator-pressed-background));
+    }
+}
+
+.mobile-navigator-workspace-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 2.2em;
+
+    .has-color & {
+        background: var(--color);
+    }
+}
+
+.mobile-navigator-workspace-title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9em;
 }
 
 .mobile-navigator-hoisted-badge .text {
