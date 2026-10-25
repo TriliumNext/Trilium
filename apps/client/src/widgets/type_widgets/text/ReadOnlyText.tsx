@@ -4,6 +4,9 @@ import "./ReadOnlyText.css";
 // (see https://github.com/zadam/trilium/issues/1590 for example of such conflict)
 import "@triliumnext/ckeditor5";
 
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
 import {
     applyStickyTableHeaders
@@ -164,6 +167,7 @@ export function ReadOnlyTextContent({
         ]));
 
         applyNoteImageVersions(container);
+        applyListItemAlignment(container);
         const disposeTableScroll = applyTableScroll(container);
         const disposeStickyTableHeaders = applyStickyTableHeaders(container);
         applyMath(container);

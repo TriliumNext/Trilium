@@ -1,10 +1,13 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
+import events from "../events.js";
 import options from "../options.js";
+import protectedSessionService from "../protected_session.js";
 import { getSql } from "../sql/index.js";
 import scryptService from "./scrypt.js";
 import data_encryption from "./data_encryption.js";
 import { encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import { getCrypto } from "./crypto.js";
+import ws from "../ws.js";
 
 /**
  * Generates a random secure token encoded as base64.
@@ -24,7 +27,7 @@ export function isPasswordSet(): boolean {
 
 /**
  * Changes the password from currentPassword to newPassword.
- * Re-encrypts the data key with the new password.
+ * Re-encrypts the data key with the new password and closes the protected session.
  *
  * Every key is derived from one snapshot of the password options and the result is written in one
  * transaction, which fails the change when another one has committed since the snapshot. Without
@@ -54,7 +57,7 @@ export async function changePassword(
     const dataKey = data_encryption.decrypt(currentDerivedKey, stored.encryptedDataKey);
     const next = await derivePasswordOptions(newPassword, dataKey || null, stored.encryptedDataKey);
 
-    return getSql().transactional(() => {
+    const result = getSql().transactional((): ChangePasswordResponse => {
         const now = readPasswordOptions();
 
         if (PASSWORD_OPTIONS.some((name) => now[name] !== stored[name])) {
@@ -72,6 +75,14 @@ export async function changePassword(
             success: true
         };
     });
+
+    if (result.success && protectedSessionService.isProtectedSessionAvailable()) {
+        protectedSessionService.resetDataKey();
+        events.emit(events.LEAVE_PROTECTED_SESSION);
+        ws.sendMessageToAllClients({ type: "protectedSessionLogout" });
+    }
+
+    return result;
 }
 
 /**

@@ -319,7 +319,11 @@ paths:
                   default: html
         get:
             summary: Export a subtree
-            description: Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId
+            description: >-
+                Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId.
+                Protected notes are exported as "[protected]", without their content or attachments, even while
+                the protected session is open. The "share" format refuses a subtree that contains a protected note
+                with NOTE_IS_PROTECTED.
             tags: [Notes]
             operationId: exportNoteSubtree
             responses:
@@ -1081,6 +1085,12 @@ paths:
                                 password:
                                     type: string
                                     description: user's password used to e.g. login to Trilium server and/or protect notes
+                                totpToken:
+                                    type: string
+                                    description: the current TOTP code, or one of the recovery codes; required when multi-factor authentication with TOTP is enabled. Each code is accepted once.
+                                tokenName:
+                                    type: string
+                                    description: name of the created token, shown in the list of ETAPI tokens
             responses:
                 "201":
                     description: auth token
@@ -1091,6 +1101,12 @@ paths:
                                     authToken:
                                         type: string
                                         example: Bc4bFn0Ffiok_4NpbVCDnFz7B2WU+pdhW8B5Ne3DiR5wXrEyqdjgRIsk=
+                "401":
+                    description: "wrong credentials: `WRONG_PASSWORD`, `TOTP_REQUIRED` (TOTP is enabled and no `totpToken` was sent) or `WRONG_TOTP`"
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 "429":
                     description: too many requests
                 default:

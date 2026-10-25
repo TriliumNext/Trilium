@@ -1,4 +1,4 @@
-import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
+import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import type { Request } from "../../http_interface";
@@ -366,6 +366,10 @@ function setNoteTypeMime(req: Request<{ noteId: string }>) {
     // can't use [] destructuring because req.params is not iterable
     const { noteId } = req.params;
     const { type, mime } = req.body;
+
+    if (!isNoteType(type)) {
+        throw new ValidationError(`'${type}' is not a valid note type`);
+    }
 
     const note = becca.getNoteOrThrow(noteId);
     note.type = type;

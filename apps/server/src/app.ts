@@ -117,9 +117,14 @@ export default async function buildApp() {
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
 
-    const { default: sessionParser, startSessionCleanup } = await import("./routes/session_parser.js");
+    const {
+        default: sessionParser,
+        startSessionCleanup,
+        startSessionRevocationOnPasswordChange
+    } = await import("./routes/session_parser.js");
     app.use(sessionParser);
     startSessionCleanup();
+    startSessionRevocationOnPasswordChange();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
     // Always mount the OIDC middleware, but have it activate reactively from the current `mfaMethod`

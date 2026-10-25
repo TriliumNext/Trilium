@@ -34,6 +34,9 @@ import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
 import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 import "@triliumnext/commons/src/lib/scroll_fade.css";
 
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
 import {
     applyStickyTableHeaders
@@ -82,6 +85,7 @@ function setupTextNote() {
     $try(() => enhanceLinkPreviews(document.body));
     $try(setupTableScroll);
     $try(setupStickyTableHeaders);
+    $try(setupListItemAlignment);
     $try(setupTabs);
     return diagrams;
 }
@@ -118,6 +122,13 @@ function setupStickyTableHeaders() {
     const content = document.getElementById("content");
     if (content) {
         applyStickyTableHeaders(content);
+    }
+}
+
+function setupListItemAlignment() {
+    const content = document.getElementById("content");
+    if (content) {
+        applyListItemAlignment(content);
     }
 }
 

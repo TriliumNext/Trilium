@@ -562,6 +562,22 @@ describe("ReadOnlyText Mermaid diagrams", () => {
     });
 });
 
+describe("ReadOnlyText lists", () => {
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<ul><li><p style=\"text-align:right;\">a</p></li><li>b</li></ul>"
+        }) as never;
+
+        await harness.mount();
+
+        expect([ ...harness.container.querySelectorAll("li") ].map((item) => item.className))
+            .toEqual([ "trilium-list-item-aligned-right", "" ]);
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+    });
+});
+
 describe("ReadOnlyText tables", () => {
     it("sizes its tables for scrolling and keeps their header rows in view", async () => {
         const harness = setupHarness({ isVisible: true });

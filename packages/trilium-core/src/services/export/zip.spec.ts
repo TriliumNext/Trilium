@@ -13,12 +13,14 @@ import type BNote from "../../becca/entities/bnote.js";
 import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
 import sql_init from "../sql_init.js";
-import { decodeUtf8 } from "../utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../virtual_notes.js";
 import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
 import { getZipProvider, initZipProvider } from "../zip_provider.js";
 import zip, { shouldStoreUncompressed } from "./zip.js";
+import type { AdvancedExportOptions } from "./zip/abstract_provider.js";
 import ShareThemeExportProvider from "./zip/share_theme.js";
 import {
     getZipExportProviderFactory,
@@ -38,7 +40,7 @@ let counter = 0;
  */
 function createNote(
     parentNoteId: string,
-    overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
+    overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string; isProtected: boolean }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
     return getContext().init(() =>
@@ -47,7 +49,8 @@ function createNote(
             title: overrides.title ?? `zip-spec-${counter}`,
             content: overrides.content ?? "<p>hello</p>",
             type: overrides.type ?? "text",
-            mime: overrides.mime
+            mime: overrides.mime,
+            isProtected: overrides.isProtected
         })
     );
 }
@@ -100,12 +103,12 @@ async function readArchive(buffer: Buffer): Promise<Record<string, Buffer>> {
     return entries;
 }
 
-async function exportSubtree(branch: BBranch, format: ExportFormat = "html") {
+async function exportSubtree(branch: BBranch, format: ExportFormat = "html", zipExportOptions?: AdvancedExportOptions) {
     const taskContext = (await import("../task_context.js")).default;
     const ctx = new taskContext("no-progress-reporting", "export", null);
     const res = new FakeResponse();
     const done = collect(res);
-    await zip.exportToZip(ctx, branch, format, res);
+    await zip.exportToZip(ctx, branch, format, res, true, zipExportOptions);
     const buffer = await done;
     return { buffer, res, entries: await readArchive(buffer) };
 }
@@ -893,6 +896,74 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             getContext().init(() => note.addLabel("excludeFromExport"));
 
             await expect(exportSubtree(note.getParentBranches()[0], "html")).rejects.toThrow("Unable to create root meta.");
+        });
+    });
+
+    describe("exportToZip with excludeProtected", () => {
+        const SECRET_TITLE = "ProtectedExportSecretTitle";
+        const SECRET_CONTENT = "ProtectedExportSecretContent";
+        const SECRET_ATTACHMENT_TITLE = "ProtectedExportSecretAttachment";
+        const SECRET_ATTACHMENT_CONTENT = "ProtectedExportSecretAttachmentContent";
+        const SECRETS = [ SECRET_TITLE, SECRET_CONTENT, SECRET_ATTACHMENT_TITLE, SECRET_ATTACHMENT_CONTENT ];
+        const FORMATS = [ "html", "markdown", "share" ] as const;
+        // Share pages read titles from becca in the share-theme page model, so ETAPI refuses a
+        // share export of a subtree with a protected note instead.
+        const EXCLUDING_FORMATS = [ "html", "markdown" ] as const;
+
+        let host: BNote;
+        let secret: BNote;
+
+        // The protected session stays open for the whole block: that is the state in which
+        // becca holds the decrypted title and `getContent()` decrypts.
+        beforeAll(() => {
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+            ({ note: host } = createNote("root", { title: "ProtectedExportHost", content: "<p>host body</p>" }));
+            ({ note: secret } = createNote(host.noteId, {
+                title: SECRET_TITLE,
+                content: `<p>${SECRET_CONTENT}</p>`,
+                isProtected: true
+            }));
+            getContext().init(() => secret.saveAttachment({
+                role: "file", mime: "text/plain", title: SECRET_ATTACHMENT_TITLE, content: SECRET_ATTACHMENT_CONTENT
+            }));
+            createNote(secret.noteId, { title: "ProtectedExportPlainChild", content: "<p>plain child body</p>" });
+        });
+
+        afterAll(() => protectedSessionService.resetDataKey());
+
+        function findSecrets(entries: Record<string, Buffer>, res: FakeResponse) {
+            const haystacks = [
+                ...Object.keys(entries),
+                ...Object.values(entries).map((buffer) => buffer.toString("utf-8")),
+                ...Object.values(res.headers)
+            ];
+            return SECRETS.filter((s) => haystacks.some((haystack) => haystack.includes(s)));
+        }
+
+        it.each(FORMATS)("includes protected content without the option (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(host.getParentBranches()[0], format);
+
+            expect(findSecrets(entries, res)).toEqual(SECRETS);
+        });
+
+        it.each(EXCLUDING_FORMATS)("leaves a protected descendant's title, content and attachments out (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(host.getParentBranches()[0], format, { excludeProtected: true });
+
+            expect(findSecrets(entries, res)).toEqual([]);
+            const secretMeta = parseMeta(entries).files[0].children?.find((c) => c.noteId === secret.noteId);
+            expect(secretMeta).toMatchObject({ title: "[protected]", attachments: [] });
+            expect(secretMeta?.dataFileName).toBeUndefined();
+            // Notes around the protected one keep their content.
+            const allContent = Object.values(entries).map((buffer) => buffer.toString("utf-8")).join("\n");
+            expect(allContent).toContain("host body");
+            expect(allContent).toContain("plain child body");
+        });
+
+        it.each(EXCLUDING_FORMATS)("leaves a protected export root's title and content out (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(secret.getParentBranches()[0], format, { excludeProtected: true });
+
+            expect(findSecrets(entries, res)).toEqual([]);
+            expect(res.headers["Content-Disposition"]).toContain("protected");
         });
     });
 

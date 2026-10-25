@@ -36,6 +36,15 @@ The second factor is only asked for when a device is first connected. A device t
 > [!NOTE]
 > Versions prior to v0.107.0 do not ask for the second factor when setting up the sync. Update the desktop and mobile apps along with the server, since older apps have no field to send it.
 
+## Obtaining an ETAPI token with a password
+
+Once TOTP is enabled, obtaining a token for the <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> through the `/auth/login` call also requires the second factor: send the one-time password or a recovery code as `totpToken`, next to `password`. Each code is accepted only once.
+
+For scripts and tools that run unattended, create a token in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _ETAPI_ instead. Such a token works regardless of TOTP.
+
+> [!WARNING]
+> Versions prior to v0.107.0 issue an ETAPI token for the password alone, even with TOTP enabled.
+
 ## Recovery codes
 
 Recovery codes can be used in place of the TOTP if you lose access to your authenticator. Trilium provides 8 different recovery codes, each recovery code can be used once.

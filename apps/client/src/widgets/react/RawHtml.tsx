@@ -69,9 +69,15 @@ export function HighlightedText({ className, text, highlightedTokens }: {
  * Use this instead of {@link RawHtml} when the HTML originates from
  * untrusted sources (e.g. LLM responses, user-generated markdown).
  */
-export function SanitizedHtml({ className, html, style }: { className?: string; html?: HTMLElementLike; style?: CSSProperties }) {
+export function SanitizedHtml({ className, html, style, containerRef }: {
+    className?: string;
+    html?: HTMLElementLike;
+    style?: CSSProperties;
+    containerRef?: RefObject<HTMLDivElement | null>;
+}) {
     return (
         <div
+            ref={containerRef}
             className={className}
             style={style}
             // eslint-disable-next-line react/no-danger

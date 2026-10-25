@@ -621,6 +621,19 @@ describe("Notes API (core)", () => {
             expect(note.body.type).toBe("code");
             expect(note.body.mime).toBe("text/x-python");
         });
+
+        it("rejects a type outside the note type set and leaves the note unchanged", async () => {
+            const { noteId } = await createTextNote(api, { title: "Bad type" });
+            for (const type of ["EVILTYPE", "html", undefined, 42]) {
+                const res = await api.put(`/api/notes/${noteId}/type`, {
+                    body: { type, mime: "application/x-anything" }
+                });
+                expect(res.status).toBe(400);
+            }
+
+            expect(becca.getNoteOrThrow(noteId).type).toBe("text");
+            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/html");
+        });
     });
 
     describe("structural operations", () => {

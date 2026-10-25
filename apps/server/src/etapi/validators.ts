@@ -1,6 +1,5 @@
-import { date_utils as dateUtils, note_types as noteTypeService, utils } from "@triliumnext/core";
-
-import { becca } from "@triliumnext/core";
+import { ALLOWED_NOTE_TYPES, isNoteType as isKnownNoteType } from "@triliumnext/commons";
+import { becca, date_utils as dateUtils, utils } from "@triliumnext/core";
 
 function mandatory(obj: unknown) {
     if (obj === undefined) {
@@ -79,10 +78,8 @@ function isNoteType(obj: unknown) {
         return;
     }
 
-    const noteTypes = noteTypeService.getNoteTypeNames();
-
-    if (typeof obj !== "string" || !noteTypes.includes(obj)) {
-        return `'${obj}' is not a valid note type, allowed types are: ${noteTypes.join(", ")}`;
+    if (!isKnownNoteType(obj)) {
+        return `'${obj}' is not a valid note type, allowed types are: ${ALLOWED_NOTE_TYPES.join(", ")}`;
     }
 }
 

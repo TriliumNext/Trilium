@@ -1,23 +1,24 @@
 /*
  * An aligned list item shrinks to its text and moves to that side, so that its marker or to-do
  * checkbox stays next to the text. The selectors match the `style` that `TableCellProperties`
- * writes on a cell and that `Alignment` writes on the item's paragraph.
+ * writes on a cell, and the class that `ListItemAlignment` (in the editor) and
+ * `applyListItemAlignment()` (elsewhere) put on an item whose first paragraph is aligned.
  */
 .ck-content {
     :is(td, th)[style*="text-align:center"] li,
-    li:has(> p:first-of-type[style*="text-align:center"]) {
+    li.trilium-list-item-aligned-center {
         width: fit-content;
         margin-inline: auto;
     }
 
     :is(td, th)[style*="text-align:right"] li,
-    li:has(> p:first-of-type[style*="text-align:right"]) {
+    li.trilium-list-item-aligned-right {
         width: fit-content;
         margin-left: auto;
     }
 
     :is(td, th)[style*="text-align:left"] li,
-    li:has(> p:first-of-type[style*="text-align:left"]) {
+    li.trilium-list-item-aligned-left {
         width: fit-content;
         margin-right: auto;
     }

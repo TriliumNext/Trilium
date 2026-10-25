@@ -1,3 +1,4 @@
+import type { NoteType } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import froca from "../services/froca.js";
@@ -10,7 +11,7 @@ import FAttachment from "./fattachment.js";
 import FAttribute from "./fattribute.js";
 import FBlob from "./fblob.js";
 import FBranch from "./fbranch.js";
-import FNote, { type FNoteRow, type NoteType } from "./fnote.js";
+import FNote, { type FNoteRow } from "./fnote.js";
 
 vi.mock("../services/search.js", () => ({
     default: {
@@ -1224,6 +1225,16 @@ describe("FNote system-note predicates", () => {
         expect(note.isJavaScript()).toBe(false);
         expect(note.isTriliumSqlite()).toBe(false);
         expect(note.getScriptEnv()).toBeNull();
+    });
+
+    it("title stays a string when a note row arrives without a title", () => {
+        const note = makeNote({ title: "Real title" });
+
+        // The same skeleton row as above; `NoteTreeWidget.getTitleHtml()` passes the title to
+        // `escapeHtml()`, which calls `.replace()` on it.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(note.title).toBe("");
     });
 
     it("getScriptEnv returns frontend / backend / null", () => {

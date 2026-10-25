@@ -1,3 +1,6 @@
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
 import {
     applyStickyTableHeaders
@@ -68,14 +71,15 @@ export async function renderTextContent(
 
 /**
  * Apply the post-render passes that make CKEditor-compatible HTML fully
- * interactive: expand `<figure class="include-note">`, render inline math and
- * Mermaid diagrams, rewrite reference-link titles, and highlight code blocks.
- * Assumes the caller has already appended the HTML inside a `.ck-content` child
- * of `$renderedContent`.
+ * interactive: mark aligned list items, expand `<figure class="include-note">`,
+ * render inline math and Mermaid diagrams, rewrite reference-link titles, and
+ * highlight code blocks. Assumes the caller has already appended the HTML inside
+ * a `.ck-content` child of `$renderedContent`.
  */
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
+    applyListItemAlignment($renderedContent[0]);
     // Runs before the embeds render, as each embed draws its own diagrams.
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await applyInlineMermaid($renderedContent[0] as HTMLDivElement);
