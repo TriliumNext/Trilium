@@ -1,11 +1,10 @@
 import {
-    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType as CommonNoteType, type NoteTypeId,
+    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType, type NoteTypeId,
     type TemplatesResponse
 } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import type { NoteType } from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
@@ -130,7 +129,7 @@ export async function getNoteTypeOptions(): Promise<NoteTypeOption[]> {
         .filter((mapping) => !mapping.reserved && mapping.type !== "book")
         .filter((mapping) => mapping.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
         .map<NoteTypeOption>((mapping) => ({
-            id: buildNoteTypeId(mapping.type as CommonNoteType, mapping.mime),
+            id: buildNoteTypeId(mapping.type, mapping.mime),
             title: mapping.title,
             icon: `bx ${mapping.icon ?? "bx-note"}`,
             group: "type",

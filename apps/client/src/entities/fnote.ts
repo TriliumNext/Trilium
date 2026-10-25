@@ -1,4 +1,4 @@
-import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime, type NoteType } from "@triliumnext/commons";
 
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
@@ -11,13 +11,6 @@ import type { AttributeType, default as FAttribute } from "./fattribute.js";
 
 const LABEL = "label";
 const RELATION = "relation";
-
-/**
- * There are many different Note types, some of which are entirely opaque to the
- * end user. Those types should be used only for checking against, they are
- * not for direct use.
- */
-export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet" | "llmChat";
 
 export interface NotePathRecord {
     isArchived: boolean;
