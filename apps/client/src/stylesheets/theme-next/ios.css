@@ -380,13 +380,27 @@ body.mobile.ios {
                 display: none;
             }
 
-            /* The close button follows the master-detail header; the back button, 32px with a 4px
-               gap, takes part of its width. */
+            /* The close button follows the master-detail header; the back button, 40px with an 8px
+               gap, takes its width. */
             .tn-master-detail-header {
                 padding-inline-start: 48px;
 
                 &:has(> button.icon-action) {
-                    padding-inline-start: 12px;
+                    padding-inline-start: 0;
+                }
+
+                > button.icon-action {
+                    --icon-button-size: 40px;
+                    --icon-button-icon-ratio: 0.6;
+                    --icon-button-color: var(--main-text-color);
+                    --icon-button-hover-color: var(--main-text-color);
+                    --icon-button-hover-background: var(--glass-background);
+                    flex-shrink: 0;
+                    margin-inline-end: 4px;
+                    border-radius: 50%;
+                    background: var(--glass-background);
+                    backdrop-filter: var(--dropdown-backdrop-filter);
+                    box-shadow: var(--glass-edge);
                 }
             }
 
