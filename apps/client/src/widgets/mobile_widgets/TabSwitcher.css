@@ -76,6 +76,10 @@ html[data-tab-slide]:has(body.ios:not(.backdrop-effects-disabled))::view-transit
     backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
 }
 
+html[data-tab-overscroll] #detail-container {
+    overflow: clip;
+}
+
 html[data-tab-drag] {
     --tab-slide-gap: 12px;
 

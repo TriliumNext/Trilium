@@ -32,7 +32,7 @@ import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
 import { useNavigatorChildren } from "./MobileNoteNavigator";
 import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack } from "./tab_navigation";
-import { getTabToward, isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";
+import { isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
@@ -172,12 +172,6 @@ function useTabSwipe() {
                 const direction = getSwipeDirection(dx, dy, glob.isRtl);
                 if (!direction) {
                     if (Math.abs(dy) > SWIPE_START) gestureRef.current = null;
-                    return;
-                }
-                // Past the first or the last tab, the drag still ends in no tap.
-                if (!getTabToward(direction)) {
-                    gestureRef.current = null;
-                    swipedRef.current = true;
                     return;
                 }
                 gesture.swipe = new TabSwipe(direction);

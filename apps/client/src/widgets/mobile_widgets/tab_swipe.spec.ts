@@ -6,11 +6,18 @@ import { forgetTabs, setTabScreen } from "./tab_navigation";
 import { isTabSwipeActive, TabSwipe } from "./tab_swipe";
 
 describe("TabSwipe", () => {
+    const { tabManager } = appContext;
     let log: string[];
 
     beforeEach(() => {
         glob.isRtl = false;
         log = [];
+        // The middle one of three tabs, with a tab both ways.
+        const tabs = [ "before", "middle", "after" ].map((ntxId) => ({ ntxId }) as NoteContext);
+        appContext.tabManager = {
+            getActiveMainContext: () => tabs[1],
+            getMainNoteContexts: () => tabs
+        } as unknown as typeof tabManager;
         vi.spyOn(appContext, "triggerCommand").mockImplementation(async (name) => {
             log.push(name);
         });
@@ -25,6 +32,7 @@ describe("TabSwipe", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        appContext.tabManager = tabManager;
         Reflect.deleteProperty(document, "startViewTransition");
         Reflect.deleteProperty(document, "getAnimations");
         Reflect.deleteProperty(document.documentElement, "animate");
@@ -192,7 +200,6 @@ describe("TabSwipe", () => {
     });
 
     describe("on the note screen of a phone", () => {
-        const { tabManager } = appContext;
         let startViewTransition: ReturnType<typeof vi.fn>;
         let splits: HTMLElement;
         let tabs: NoteContext[];
@@ -232,7 +239,6 @@ describe("TabSwipe", () => {
         });
 
         afterEach(() => {
-            appContext.tabManager = tabManager;
             forgetTabs([ "second" ]);
             document.body.innerHTML = "";
         });
@@ -270,6 +276,46 @@ describe("TabSwipe", () => {
             expect(log).toEqual([]);
             expect(splits.style.transform).toBe("");
             expect(incoming()?.classList.contains("tab-slide-incoming")).toBe(false);
+        });
+
+        it("pulls the note past the last tab against a growing resistance, and springs it back", async () => {
+            active = tabs[2];
+            const pulled = (progress: number) => {
+                swipe.move(progress);
+                const match = /^translateX\(calc\(100% \* (-?[\d.]+)\)\)$/.exec(splits.style.transform);
+                expect(match).not.toBeNull();
+                return Number(match?.[1]);
+            };
+
+            const swipe = new TabSwipe("next");
+            expect(startViewTransition).not.toHaveBeenCalled();
+            expect(isTabSwipeActive()).toBe(true);
+            expect(document.documentElement.dataset.tabOverscroll).toBe("");
+            expect(splits.querySelector(".tab-slide-incoming")).toBeNull();
+            const [ short, half, full ] = [ pulled(0.1), pulled(0.5), pulled(1) ];
+            expect(short).toBeLessThan(0);
+            expect(half).toBeLessThan(short);
+            // Each stretch of the finger pulls less than the one before, up to a quarter of the width.
+            expect(half - full).toBeLessThan(short - half);
+            expect(full).toBeGreaterThan(-0.25);
+
+            swipe.release(2);
+            await vi.waitFor(() => expect(isTabSwipeActive()).toBe(false));
+            expect(log).toEqual([]);
+            expect(splits.style.transform).toBe("");
+            expect(document.documentElement.dataset.tabOverscroll).toBeUndefined();
+
+            // Before the first tab, the tree pulls the other way while it is shown.
+            active = tabs[0];
+            const sidebar = document.getElementById("mobile-sidebar-wrapper");
+            sidebar?.classList.add("show");
+            const tree = sidebar?.appendChild(document.createElement("div"));
+            const back = new TabSwipe("previous");
+            back.move(0.5);
+            expect(tree?.style.transform).toBe(`translateX(calc(100% * ${-half}))`);
+            expect(splits.style.transform).toBe("");
+            back.release(0);
+            await vi.waitFor(() => expect(tree?.style.transform).toBe(""));
         });
 
         it("keeps the view transition for a tab not shown yet, or one left on its tree", () => {

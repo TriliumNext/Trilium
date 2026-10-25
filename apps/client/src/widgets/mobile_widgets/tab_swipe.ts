@@ -16,9 +16,14 @@ const SPRING_REST = 0.002;
 const SPRING_MAX_DURATION = 1000;
 /** Longer than any swipe is held; the animation holding the transition open is canceled long before. */
 const HOLD_DURATION = 1e9;
+/** How far, as a share of its width, a swipe past the first or last tab can pull the screen at most. */
+const OVERSCROLL_LIMIT = 0.25;
+/** How quickly the pull past the first or last tab approaches `OVERSCROLL_LIMIT` as the finger moves. */
+const OVERSCROLL_STIFFNESS = 2;
 
 let activeTransition: ViewTransition | undefined;
 let activeSplitSlide: SplitSlide | undefined;
+let activeOverscroll: HTMLElement | undefined;
 
 /** The note splits of a tab switch that slides them: their container and the incoming tab's split. */
 interface SplitSlide {
@@ -35,6 +40,9 @@ interface SplitSlide {
  * inside a view transition whose animations stay paused while `move()` sets how far they have run,
  * and a slide that runs back switches back. Without view transitions, or with animations off, the
  * tab switches on release instead.
+ *
+ * Past the first or the last tab, the swipe pulls the shown screen with a growing resistance and
+ * springs it back on release, with no tab to switch to.
  */
 export class TabSwipe {
     /** Which way the content slides: toward the start for the next tab. */
@@ -49,12 +57,20 @@ export class TabSwipe {
     private hold?: Animation;
     private skipped = false;
     private splitSlide?: SplitSlide;
+    private readonly isPastEnd: boolean;
+    private overscroll?: HTMLElement;
 
     constructor(direction: SwipeDirection) {
         this.direction = direction;
         this.slide = (direction === "next") !== glob.isRtl ? "left" : "right";
 
+        this.isPastEnd = isPastLastTab(direction);
         if (document.body.classList.contains("motion-disabled")) return;
+        if (this.isPastEnd) {
+            this.overscroll = findShownScreen();
+            if (this.overscroll) this.#startOverscroll();
+            return;
+        }
         this.splitSlide = findSplitSlide(direction);
         if (this.splitSlide) {
             this.#startSplitSlide(this.splitSlide);
@@ -66,7 +82,9 @@ export class TabSwipe {
     /** Moves the slide to `progress`, from 0 (the tab the swipe started on) to 1 (the other tab). */
     move(progress: number) {
         this.progress = Math.min(1, Math.max(0, progress));
-        if (this.splitSlide) {
+        if (this.overscroll) {
+            this.#placeOverscroll(this.overscroll);
+        } else if (this.splitSlide) {
             this.#placeSplits(this.splitSlide);
         } else {
             this.#seek();
@@ -78,6 +96,10 @@ export class TabSwipe {
      * and `room` how far, in px, it travels for the whole slide.
      */
     release(velocity: number, room = window.innerWidth) {
+        if (this.isPastEnd) {
+            if (this.overscroll) void this.#settleOverscroll(this.overscroll);
+            return;
+        }
         this.commit = this.progress >= COMMIT_PROGRESS || velocity >= COMMIT_VELOCITY;
         this.releaseVelocity = velocity / room;
         if (this.splitSlide) {
@@ -89,6 +111,25 @@ export class TabSwipe {
         } else if (this.skipped) {
             this.#switchBackIfCanceled();
         }
+    }
+
+    #startOverscroll() {
+        activeOverscroll = this.overscroll;
+        document.documentElement.dataset.tabOverscroll = "";
+    }
+
+    #placeOverscroll(screen: HTMLElement) {
+        const pull = OVERSCROLL_LIMIT * (1 - 1 / (1 + OVERSCROLL_STIFFNESS * this.progress));
+        const offset = (this.slide === "left" ? -1 : 1) * pull;
+        screen.style.transform = offset ? `translateX(calc(100% * ${offset}))` : "";
+    }
+
+    async #settleOverscroll(screen: HTMLElement) {
+        this.commit = false;
+        await this.#spring(0);
+        screen.style.transform = "";
+        delete document.documentElement.dataset.tabOverscroll;
+        if (activeOverscroll === screen) activeOverscroll = undefined;
     }
 
     #startSplitSlide(slide: SplitSlide) {
@@ -208,7 +249,23 @@ export class TabSwipe {
 
 /** Whether a swipe's slide is still running, during which another swipe does not start. */
 export function isTabSwipeActive() {
-    return !!activeTransition || !!activeSplitSlide;
+    return !!activeTransition || !!activeSplitSlide || !!activeOverscroll;
+}
+
+/** Whether the active tab is the last one toward `direction`. */
+function isPastLastTab(direction: SwipeDirection) {
+    const tabs = appContext.tabManager.getMainNoteContexts();
+    return tabs.some((tab) => tab.ntxId === appContext.tabManager.getActiveMainContext()?.ntxId)
+        && !getTabToward(direction);
+}
+
+/** The screen a swipe past the first or last tab pulls: the tree while a phone shows it, or the notes. */
+function findShownScreen() {
+    const sidebar = document.getElementById("mobile-sidebar-wrapper");
+    if (isNarrowLayout() && sidebar?.classList.contains("show")) {
+        return sidebar.firstElementChild instanceof HTMLElement ? sidebar.firstElementChild : undefined;
+    }
+    return document.querySelector<HTMLElement>("#detail-container > .split-note-container-widget") ?? undefined;
 }
 
 /** The tab next to the active one toward `direction`, if the active one is not the last that way. */
