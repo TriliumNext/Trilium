@@ -6,7 +6,7 @@ import noteService from "../services/notes";
 import protected_session from "../services/protected_session";
 import BAttachment from "../becca/entities/battachment";
 import { unwrapStringOrBuffer } from "../services/utils/binary";
-import { getContentDisposition, sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../services/utils/index";
+import { getContentDisposition, getInlineContentHeaders, sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../services/utils/index";
 
 export function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
     const note = becca.getNote(noteId);
@@ -33,14 +33,28 @@ export function downloadData(noteOrAttachment: BNote | BAttachment, res: Respons
     res.setHeader("Content-Type", noteOrAttachment.mime);
 
     // Without a Content-Disposition the browser renders the response instead of saving it, and an SVG
-    // rendered as a document runs its scripts in Trilium's origin. A download is left byte-for-byte:
+    // or HTML document runs its scripts in Trilium's origin. A download is left byte-for-byte:
     // `getContentDisposition()` marks it `attachment`, which never renders, and the file the user
     // asked for has to reach the disk as it was stored.
-    if (!contentDisposition && isSvgMime(noteOrAttachment.mime)) {
-        return sendSanitizedSvg(res, noteOrAttachment.getContent());
+    if (!contentDisposition) {
+        if (isSvgMime(noteOrAttachment.mime)) {
+            return sendSanitizedSvg(res, noteOrAttachment.getContent());
+        }
+
+        setHeaders(res, getInlineContentHeaders(noteOrAttachment.mime));
     }
 
     res.send(noteService.getPortableContent(noteOrAttachment));
+}
+
+/** Serves stored content inline: an SVG sanitized, anything else as is under {@link getInlineContentHeaders}. */
+export function sendInlineContent(res: Response, mime: string, content: string | Uint8Array) {
+    if (isSvgMime(mime)) {
+        return sendSanitizedSvg(res, content);
+    }
+
+    setHeaders(res, getInlineContentHeaders(mime));
+    res.send(content);
 }
 
 /**
@@ -53,4 +67,10 @@ export function sendSanitizedSvg(res: Response, content: string | Uint8Array) {
     res.setHeader("Content-Security-Policy", SVG_CONTENT_SECURITY_POLICY);
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.send(sanitizeSvg(svgString));
+}
+
+function setHeaders(res: Response, headers: Record<string, string>) {
+    for (const [ name, value ] of Object.entries(headers)) {
+        res.setHeader(name, value);
+    }
 }

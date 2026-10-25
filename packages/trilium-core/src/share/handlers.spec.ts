@@ -249,6 +249,26 @@ describe("share handlers", () => {
         }
     });
 
+    it("sandboxes a note viewed inline unless it is a PDF", () => {
+        buildShareTree([
+            { id: "htmlFile", type: "file", mime: "text/html", content: "<script>alert(1)</script>" },
+            { id: "pdfFile", type: "file", mime: "application/pdf", content: "%PDF" }
+        ]);
+        const view = (noteId: string) => request("/share/api/notes/:noteId/view", { params: { noteId } });
+
+        const html = view("htmlFile");
+        expect(html).toMatchObject({ status: 200, body: "<script>alert(1)</script>" });
+        expect(html.headers).toMatchObject({
+            "Content-Type": "text/html",
+            "Content-Security-Policy": "sandbox",
+            "X-Content-Type-Options": "nosniff"
+        });
+
+        const pdf = view("pdfFile");
+        expect(pdf).toMatchObject({ status: 200, body: "%PDF" });
+        expect(pdf.headers).not.toHaveProperty("Content-Security-Policy");
+    });
+
     it("locks a raw SVG note down with a content security policy, but not raw HTML", () => {
         buildShareTree([
             { id: "rawSvg", type: "image", mime: "image/svg+xml", content: "<svg/>", "#shareRaw": "" },
@@ -405,7 +425,12 @@ describe("share handlers", () => {
 
         const png = image("pngAttachment");
         expect(png).toMatchObject({ status: 200, body: pngBytes });
-        expect(png.headers).toEqual({ "X-Robots-Tag": "noindex", "Content-Type": "image/png" });
+        expect(png.headers).toEqual({
+            "X-Robots-Tag": "noindex",
+            "Content-Type": "image/png",
+            "Content-Security-Policy": "sandbox",
+            "X-Content-Type-Options": "nosniff"
+        });
 
         const svg = image("svgAttachment");
         expect(svg.body).toBe("<svg></svg>");

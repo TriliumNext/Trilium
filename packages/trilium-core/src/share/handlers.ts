@@ -326,7 +326,8 @@ function viewNote(req: ShareRequest): ShareReply {
         headers: {
             ...noIndexHeaders(note),
             "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Content-Type": note.mime
+            "Content-Type": note.mime,
+            ...utils.getInlineContentHeaders(note.mime)
         },
         body: note.getContent()
     };
@@ -659,7 +660,7 @@ function serveImageBytes(content: string | Uint8Array | undefined, mime: string,
 
     return {
         status: 200,
-        headers: { ...headers, "Content-Type": mime },
+        headers: { ...headers, "Content-Type": mime, ...utils.getInlineContentHeaders(mime) },
         body: content
     };
 }
