@@ -10,7 +10,7 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
-import FormSelect from "../../react/FormSelect";
+import FormDropdownList from "../../react/FormDropdownList";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
@@ -65,9 +65,14 @@ function SearchEngineSettings() {
     const choice = customChosen ? CUSTOM_SEARCH_ENGINE : getSearchEngineChoice(url);
 
     const choices = useMemo(() => [
-        { value: NO_SEARCH_ENGINE, title: t("search_engine.none") },
-        ...SEARCH_ENGINE_PRESETS.map(({ url, nameKey }) => ({ value: url, title: t(nameKey) })),
-        { value: CUSTOM_SEARCH_ENGINE, title: t("search_engine.custom") }
+        { value: NO_SEARCH_ENGINE, title: t("search_engine.none"), icon: "bx bx-block" },
+        ...SEARCH_ENGINE_PRESETS.map(({ url, nameKey, icon }, index) => ({
+            value: url, title: t(nameKey), icon, dividerBefore: index === 0
+        })),
+        {
+            value: CUSTOM_SEARCH_ENGINE, title: t("search_engine.custom"),
+            icon: "bx bx-edit-alt", dividerBefore: true
+        }
     ], []);
 
     function choose(value: string) {
@@ -92,7 +97,6 @@ function SearchEngineSettings() {
             description={t("search_engine.custom_search_engine_info")}
         >
             <OptionCardSection
-                className="search-engine-choice"
                 name="search-engine"
                 label={t("search_engine.engine_label")}
                 subSectionsVisible={choice === CUSTOM_SEARCH_ENGINE}
@@ -123,8 +127,10 @@ function SearchEngineSettings() {
                     </OptionCardSection>
                 ]}
             >
-                <FormSelect
+                <FormDropdownList
+                    className="search-engine-picker"
                     values={choices} keyProperty="value" titleProperty="title"
+                    iconProperty="icon" dividerBeforeProperty="dividerBefore"
                     currentValue={choice} onChange={choose}
                 />
             </OptionCardSection>
@@ -135,10 +141,22 @@ function SearchEngineSettings() {
 const CUSTOM_SEARCH_ENGINE = "custom";
 
 const SEARCH_ENGINE_PRESETS = [
-    { url: "https://duckduckgo.com/?q={keyword}", nameKey: "search_engine.duckduckgo" },
-    { url: "https://www.bing.com/search?q={keyword}", nameKey: "search_engine.bing" },
-    { url: "https://www.baidu.com/s?wd={keyword}", nameKey: "search_engine.baidu" },
-    { url: "https://www.google.com/search?q={keyword}", nameKey: "search_engine.google" }
+    {
+        url: "https://duckduckgo.com/?q={keyword}",
+        nameKey: "search_engine.duckduckgo", icon: "bx bx-search-alt"
+    },
+    {
+        url: "https://www.bing.com/search?q={keyword}",
+        nameKey: "search_engine.bing", icon: "bx bxl-bing"
+    },
+    {
+        url: "https://www.baidu.com/s?wd={keyword}",
+        nameKey: "search_engine.baidu", icon: "bx bxl-baidu"
+    },
+    {
+        url: "https://www.google.com/search?q={keyword}",
+        nameKey: "search_engine.google", icon: "bx bxl-google"
+    }
 ] as const;
 
 /** The dropdown entry for a stored URL. An empty one is DuckDuckGo, as in the context menu. */

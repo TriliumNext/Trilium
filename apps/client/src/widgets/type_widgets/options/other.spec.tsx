@@ -86,28 +86,37 @@ function open() {
 const button = (name: string) => host.querySelector<HTMLButtonElement>(`button[name='${name}']`);
 
 describe("the search engine settings", () => {
-    const engine = () => host.querySelector<HTMLSelectElement>(".search-engine-choice select");
+    const toggle = () => host.querySelector<HTMLElement>(".search-engine-picker > button");
     const urlBox = () => host.querySelector<HTMLInputElement>("input[type='url']");
-    function choose(value: string) {
-        const select = engine();
-        expect(select).not.toBeNull();
-        act(() => {
-            if (!select) return;
-            select.value = value;
-            select.dispatchEvent(new Event("change", { bubbles: true }));
-        });
+    /** Opens the engine menu, which is placed in the body, and returns its rows. */
+    function openMenu() {
+        const button = toggle();
+        expect(button).not.toBeNull();
+        act(() => button?.click());
+        return [ ...document.querySelectorAll<HTMLElement>(".dropdown-item") ];
+    }
+    function choose(title: string) {
+        const item = openMenu().find((row) => row.textContent?.trim() === title);
+        expect(item).toBeDefined();
+        act(() => item?.click());
     }
 
-    it("offers none, the presets and custom, picking the entry from the stored URL", () => {
+    it("offers none, the presets and custom, showing the entry for the stored URL", () => {
         open();
-        expect([ ...engine()?.options ?? [] ].map((option) => option.text)).toEqual([
-            "search_engine.none", "search_engine.duckduckgo", "search_engine.bing",
-            "search_engine.baidu", "search_engine.google", "search_engine.custom"
-        ]);
+        expect(toggle()?.textContent?.trim()).toBe("search_engine.duckduckgo");
         expect(urlBox()).toBeNull();
+        expect(openMenu().map((row) => [
+            row.textContent?.trim(),
+            [ ...row.querySelector(".bx")?.classList ?? [] ].find((name) => /^bxl?-/.test(name))
+        ])).toEqual([
+            [ "search_engine.none", "bx-block" ],
+            [ "search_engine.duckduckgo", "bx-search-alt" ],
+            [ "search_engine.bing", "bxl-bing" ],
+            [ "search_engine.baidu", "bxl-baidu" ],
+            [ "search_engine.google", "bxl-google" ],
+            [ "search_engine.custom", "bx-edit-alt" ]
+        ]);
 
-        // An empty URL is DuckDuckGo, as the context menu falls back to it.
-        expect(getSearchEngineChoice("")).toBe("https://duckduckgo.com/?q={keyword}");
         expect(getSearchEngineChoice("none")).toBe("none");
         expect(getSearchEngineChoice("https://www.bing.com/search?q={keyword}"))
             .toBe("https://www.bing.com/search?q={keyword}");
@@ -117,8 +126,8 @@ describe("the search engine settings", () => {
     it("stores the name and address of a preset, and the sentinel for none", () => {
         open();
 
-        choose("https://www.google.com/search?q={keyword}");
-        choose("none");
+        choose("search_engine.google");
+        choose("search_engine.none");
         expect(mocks.saved).toEqual([
             [ "customSearchEngineName", "search_engine.google" ],
             [ "customSearchEngineUrl", "https://www.google.com/search?q={keyword}" ],
@@ -133,19 +142,20 @@ describe("the search engine settings", () => {
         };
         store("https://example.com/?s={keyword}");
         open();
+        expect(toggle()?.textContent?.trim()).toBe("search_engine.custom");
         expect(urlBox()?.type).toBe("url");
         expect(urlBox()?.value).toBe("https://example.com/?s={keyword}");
 
         // Switching from a preset keeps its values to edit; from none, it clears the sentinel.
         store("https://www.bing.com/search?q={keyword}");
         open();
-        choose("custom");
+        choose("search_engine.custom");
         expect(urlBox()).not.toBeNull();
         expect(mocks.saved).toEqual([]);
 
         store("none");
         open();
-        choose("custom");
+        choose("search_engine.custom");
         expect(mocks.saved).toEqual([
             [ "customSearchEngineName", "" ],
             [ "customSearchEngineUrl", "" ]
