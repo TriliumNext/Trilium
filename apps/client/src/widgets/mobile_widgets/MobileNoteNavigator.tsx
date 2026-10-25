@@ -13,7 +13,7 @@ import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
-import utils from "../../services/utils";
+import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
 import { Badge } from "../react/Badge";
 import {
@@ -330,6 +330,7 @@ export default function MobileNoteNavigator() {
                                     childNotePath={`${currentParentPath}/${child.note.noteId}`}
                                     isActive={child.note.noteId === activeNoteId}
                                     isPending={child.note.noteId === pendingChildId}
+                                    hideArchived={hideArchived}
                                     onDrill={drillInto}
                                     onOpen={openNotePath}
                                     parentComponent={parentComponent}
@@ -405,12 +406,13 @@ interface NavigatorRowProps {
     childNotePath: string;
     isActive: boolean;
     isPending: boolean;
+    hideArchived: boolean;
     onDrill: (notePath: string) => void;
     onOpen: (notePath: string) => void;
     parentComponent: Component | null;
 }
 
-function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
+function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, hideArchived, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
     const icon = useNoteIcon(note);
     const [isSubtreeHidden] = useNoteLabelBoolean(note, "subtreeHidden");
     const rawChildCount = note.getChildNoteIds().length;
@@ -450,7 +452,9 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
                     {rawChildCount}
                 </span>
             )}
-            {hasChildren && <span className="mobile-navigator-row-count">{rawChildCount}</span>}
+            {hasChildren && isIOS() && (
+                <span className="mobile-navigator-row-count">{getListedChildCount(note, hideArchived)}</span>
+            )}
             {isPending ? (
                 <Icon icon="bx bx-loader bx-spin" className="mobile-navigator-row-chevron" />
             ) : hasChildren ? (
@@ -458,6 +462,20 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             ) : null}
         </div>
     );
+}
+
+/**
+ * Counts the children that `useNavigatorChildren()` lists for `note`. A child that is not in
+ * froca yet counts as listed, since its archived state is unknown until it loads.
+ */
+export function getListedChildCount(note: FNote, hideArchived: boolean) {
+    let count = 0;
+    for (const childNoteId of note.getChildNoteIds()) {
+        if (childNoteId === "_hidden") continue;
+        if (hideArchived && froca.getNoteFromCache(childNoteId)?.isArchived) continue;
+        count++;
+    }
+    return count;
 }
 
 interface NavigatorChild {
