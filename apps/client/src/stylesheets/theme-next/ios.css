@@ -131,8 +131,12 @@ body.mobile.ios {
             --card-background-color: var(--grouped-card-background-color);
         }
 
-        .tn-card-heading {
+        .tn-card-heading,
+        .tn-card-description {
             padding-inline: var(--card-padding-inline);
+        }
+
+        .tn-card-heading {
             font-size: 0.95rem;
             font-weight: 400;
             letter-spacing: normal;
