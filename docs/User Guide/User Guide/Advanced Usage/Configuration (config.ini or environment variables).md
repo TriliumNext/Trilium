@@ -35,7 +35,7 @@ Additionally, shorter aliases are available for common configurations (see Alter
     | `TRILIUM_GENERAL_NOBACKUP` | boolean | false | Disable automatic backups |
     | `TRILIUM_GENERAL_NODESKTOPICON` | boolean | false | Disable desktop icon creation |
     | `TRILIUM_GENERAL_READONLY` | boolean | false | Enable read-only mode |
-    | `TRILIUM_GENERAL_SEARCHWORKER` | boolean | true | Answer searches from a copy of the note cache in a separate process, which keeps the app responsive during slow searches but holds that copy in memory as well. When off, searches run in the main process. Turned off automatically with less than 2 GiB of memory (a container's memory limit counts) |
+    | `TRILIUM_GENERAL_SEARCHWORKER` | boolean | true | Answer searches from a copy of the note cache in a separate process, which keeps the app responsive during slow searches but holds that copy in memory as well. When off, searches run in the main process. Turned off automatically with less than 2 GiB of memory (a container's memory limit counts) and when the database is on an NFS or SMB share |
 
 === "Network"
 

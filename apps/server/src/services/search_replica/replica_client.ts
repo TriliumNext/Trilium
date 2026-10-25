@@ -11,6 +11,8 @@
  * timeout, or that was waiting on a replica that died, is answered here too.
  */
 
+import { statfsSync } from "node:fs";
+
 import {
     type BeccaReplicaSink,
     deserializeSearchQueryError,
@@ -51,6 +53,8 @@ export interface ReplicaSearchOptions {
     /** Defaults to the platform's database path. */
     documentPath?: string | null;
     totalMemoryBytes?: number;
+    /** Defaults to {@link networkFilesystemOf}. */
+    filesystemOf?: (path: string) => string | null;
     queryTimeoutMs?: number;
     bootTimeoutMs?: number;
 }
@@ -88,11 +92,14 @@ export function createReplicaSearchExecutor(options: ReplicaSearchOptions = {}):
 
         const documentPath = documentPathOf();
         const reason = skipReason();
+        const remote = documentPath ? (options.filesystemOf ?? networkFilesystemOf)(documentPath) : null;
 
         if (reason) {
             disable(reason);
         } else if (!documentPath) {
             disable("the database has no file path");
+        } else if (remote) {
+            disable(`the database is on ${remote}, where SQLite's WAL index cannot be shared between processes`);
         } else {
             spawn(documentPath);
         }
@@ -350,6 +357,39 @@ export function createReplicaSearchExecutor(options: ReplicaSearchOptions = {}):
 export function replicaHeapMb(totalMemoryBytes: number): number {
     return Math.min(4096, Math.floor(totalMemoryBytes / 4 / 1024 / 1024));
 }
+
+/**
+ * Names the network filesystem that holds `path`, or answers `null` for a local one or a path that
+ * cannot be read. SQLite keeps the WAL index in shared memory, which NFS and SMB do not keep
+ * coherent between processes. Only Linux reports a filesystem magic number in `statfs`.
+ */
+export function networkFilesystemOf(
+    path: string,
+    statfs: (path: string) => { type: number } = statfsSync,
+    platform: NodeJS.Platform = process.platform
+): string | null {
+    if (platform !== "linux") {
+        return null;
+    }
+
+    let type: number;
+
+    try {
+        // `>>> 0` reads a 32-bit `f_type` as unsigned.
+        type = statfs(path).type >>> 0;
+    } catch {
+        return null;
+    }
+
+    return NETWORK_FILESYSTEMS.get(type) ?? null;
+}
+
+const NETWORK_FILESYSTEMS = new Map<number, string>([
+    [ 0x6969, "NFS" ],
+    [ 0x517b, "SMB" ],
+    [ 0xff534d42, "SMB" ],
+    [ 0xfe534d42, "SMB" ]
+]);
 
 const ENTRY = "search_replica_worker";
 

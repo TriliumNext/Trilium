@@ -119,7 +119,7 @@ Feed messages and queries share one channel and the replica handles them strictl
 ### Memory and the `searchWorker` switch
 
 *   The replica holds a second copy of becca. Its heap limit is `replicaHeapMb()`: a quarter of `usableMemoryBytes()`, at most 4096 MB.
-*   It is skipped (searches stay in-process) when `searchWorker` is `false` in the `[General]` section of `config.ini` (or `TRILIUM_GENERAL_SEARCHWORKER=false`), when `usableMemoryBytes()` is less than 2 GiB (`MIN_TOTAL_MEMORY_BYTES`), when `TRILIUM_INTEGRATION_TEST` is set, or when no entry file exists.
+*   It is skipped (searches stay in-process) when `searchWorker` is `false` in the `[General]` section of `config.ini` (or `TRILIUM_GENERAL_SEARCHWORKER=false`), when `usableMemoryBytes()` is less than 2 GiB (`MIN_TOTAL_MEMORY_BYTES`), when `TRILIUM_INTEGRATION_TEST` is set, when `networkFilesystemOf()` finds the database on NFS or SMB (on Linux, from the `statfs` magic number; SQLite's WAL index lives in shared memory, which those filesystems do not keep coherent between processes), or when no entry file exists.
 
 ## Testing
 

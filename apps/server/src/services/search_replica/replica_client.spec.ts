@@ -12,7 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setWorkerSpawner, type WorkerHandle, type WorkerSpawnOptions } from "../workers/worker_host.js";
 import {
-    createReplicaSearchExecutor, MIN_TOTAL_MEMORY_BYTES, type ReplicaSearchOptions, replicaHeapMb
+    createReplicaSearchExecutor, MIN_TOTAL_MEMORY_BYTES, networkFilesystemOf, type ReplicaSearchOptions,
+    replicaHeapMb
 } from "./replica_client.js";
 import type { ReplicaReply, ReplicaRequest } from "./replica_protocol.js";
 
@@ -314,6 +315,24 @@ describe("replica search executor", () => {
         expect(started({ documentPath: null }).state).toBe("disabled");
         expect(replicas).toHaveLength(1);
         expect(logs.filter((line) => line.includes("searching in this process"))).toHaveLength(5);
+    });
+
+    it("does not start on a database over NFS or SMB", () => {
+        const statfs = (type: number) => () => ({ type });
+
+        expect(networkFilesystemOf("/d.db", statfs(0x6969), "linux")).toBe("NFS");
+        expect(networkFilesystemOf("/d.db", statfs(0xFE534D42), "linux")).toBe("SMB");
+        // A 32-bit `f_type` reads as a negative number.
+        expect(networkFilesystemOf("/d.db", statfs(0xFF534D42 | 0), "linux")).toBe("SMB");
+        expect(networkFilesystemOf("/d.db", statfs(0xEF53), "linux")).toBeNull();
+        expect(networkFilesystemOf("/d.db", statfs(0x6969), "darwin")).toBeNull();
+        expect(networkFilesystemOf("/d.db", () => {
+            throw new Error("ENOENT");
+        }, "linux")).toBeNull();
+
+        expect(started({ filesystemOf: () => "NFS" }).state).toBe("disabled");
+        expect(replicas).toHaveLength(0);
+        expect(logs.some((line) => line.includes("the database is on NFS"))).toBe(true);
     });
 
     it("sizes the heap at a quarter of the memory, up to 4 GiB, and passes the boot options", () => {
