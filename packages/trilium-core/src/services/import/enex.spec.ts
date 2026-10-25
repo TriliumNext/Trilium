@@ -389,6 +389,27 @@ describe("importEnex", () => {
         }
     });
 
+    it("looks for the end of a note spanning many chunks once", async () => {
+        const body = "x".repeat(10 * 64 * 1024);
+        const buffer = enexOf([ "Short", "Long", "Last" ]).replace("Body of Long", body);
+        const indexOf = vi.spyOn(String.prototype, "indexOf");
+        try {
+            const parentNote = await createTarget("long enex target");
+            const { importedNote } = await testImport("Long.enex", { buffer, parentNote });
+            const noteEndSearches = indexOf.mock.calls
+                .filter(([ search ]) => search === "</note>").length;
+            indexOf.mockRestore();
+
+            const titles = importedNote.getChildNotes().map((n) => n.title);
+            expect(titles).toEqual([ "Short", "Long", "Last" ]);
+            expect(decodeUtf8(importedNote.getChildNotes()[1].getContent())).toContain(body);
+            // One search per note, plus the one that finds no further note.
+            expect(noteEndSearches).toBeLessThanOrEqual(4);
+        } finally {
+            indexOf.mockRestore();
+        }
+    });
+
     it("marks the imported notes protected when the parent is protected and a session is available", async () => {
         // Protection propagates only via `parentNote.isProtected && isProtectedSessionAvailable()`, so both
         // a protected target and a data key are needed.

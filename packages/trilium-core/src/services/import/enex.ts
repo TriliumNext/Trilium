@@ -426,9 +426,14 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
     try {
         let position = 0;
         let nextYield = CHUNK_SIZE;
+        // The end of the note being written, searched for again only once `position` reaches it.
+        let noteEnd = 0;
         while (position < content.length && !saveFailure) {
-            const noteEnd = content.indexOf("</note>", position);
-            const end = Math.min(position + CHUNK_SIZE, noteEnd === -1 ? content.length : noteEnd + "</note>".length);
+            if (noteEnd <= position) {
+                const found = content.indexOf("</note>", position);
+                noteEnd = found === -1 ? content.length : found + "</note>".length;
+            }
+            const end = Math.min(position + CHUNK_SIZE, noteEnd);
             parser.write(content.slice(position, end));
             position = end;
 
