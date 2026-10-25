@@ -84,7 +84,7 @@ function register(router: Router) {
 
     const ALLOWED_PROPERTIES_FOR_PATCH = {
         title: [v.notNull, v.isString],
-        type: [v.notNull, v.isString],
+        type: [v.notNull, v.isNoteType],
         mime: [v.notNull, v.isString],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
         utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
