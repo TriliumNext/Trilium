@@ -234,7 +234,8 @@ button.tn-low-profile:hover {
 }
 
 :root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes,
-:root .ck.ck-toolbar[role="radiogroup"] > .ck-toolbar__items {
+:root .ck.ck-toolbar[role="radiogroup"] > .ck-toolbar__items,
+:root .ck.ck-emoji__categories-list {
     gap: 4px;
     border-radius: 8px;
     background: var(--button-group-background-color);

@@ -616,10 +616,54 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     margin-inline-end: 8px;
 }
 
+/* Special character and emoji tiles, drawn as the cells of the note icon list (shell.css) */
+:root .ck.ck-character-grid button.ck-button.ck-character-grid__tile,
+:root .ck.ck-emoji .ck.ck-emoji__tiles button.ck-button.ck-emoji__tile {
+    box-shadow: none;
+    border-radius: 6px;
+    background: transparent;
+    transition: transform 150ms ease-out;
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+
+    &:hover:not(.ck-disabled) {
+        transform: scale(1.5);
+    }
+
+    /* Emoji fonts advance wider than the tile, and overflowing text ignores `text-align`. */
+    > .ck-button__label {
+        display: flex;
+        justify-content: center;
+    }
+}
+
 /* Emoji dropdown */
 
-.ck-emoji-picker-form .ck-emoji__search .ck-button_with-text:not(.ck-list-item-button) {
-    margin-top: var(--ck-input-label-height);
+:root .ck.ck-emoji {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Categories, drawn as a segmented button (buttons.css) */
+:root .ck.ck-emoji__categories-list {
+    order: 1;
+    margin-top: 12px;
+}
+
+:root .ck.ck-emoji__categories-list > .ck-tab-button::before {
+    display: none;
+}
+
+:root .ck.ck-emoji .ck.ck-emoji__tiles {
+    border-top: none;
+}
+
+:root .ck.ck-emoji-picker-form .ck-emoji__search {
+    align-items: end;
+    padding-bottom: 4px;
 }
 
 /* Find and replace dialog */
@@ -671,7 +715,8 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
  */
 
 /* forms.css draws the arrow as a background and dims the whole box when disabled. */
-:root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow {
+:root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow,
+:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow {
     display: none;
 }
 
