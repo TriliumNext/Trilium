@@ -2,9 +2,9 @@ import { dayjs } from "@triliumnext/commons";
 import express, { type Application } from "express";
 import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, options } from "@triliumnext/core";
+import { cls, events, options } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
 import totp from "../services/totp.js";
@@ -290,6 +290,55 @@ describe("Login Route test", () => {
             vi.advanceTimersByTime(CLEAN_UP_INTERVAL);
             ({ session } = await getSessionFromCookie(setCookieHeader));
             expect(session).toBeFalsy();
+        });
+    });
+
+    describe("Password change revokes sessions", () => {
+        let originalHash: string;
+
+        beforeAll(() => {
+            originalHash = cls.init(() => options.getOption("passwordVerificationHash"));
+        });
+
+        afterEach(() => {
+            cls.init(() => options.setOption("passwordVerificationHash", originalHash));
+        });
+
+        async function logIn() {
+            const res = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234" })
+                .expect(302);
+            const cookie = res.headers["set-cookie"][0];
+            expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
+            return cookie;
+        }
+
+        it("keeps sessions when an unrelated option changes", async () => {
+            const cookie = await logIn();
+            cls.init(() => options.setOption("redirectBareDomain", "false"));
+            expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
+        });
+
+        it("removes every session when the password changes on this instance", async () => {
+            const first = await logIn();
+            const second = await logIn();
+
+            cls.init(() => options.setOption("passwordVerificationHash", "changed-locally"));
+
+            expect((await getSessionFromCookie(first)).session).toBeFalsy();
+            expect((await getSessionFromCookie(second)).session).toBeFalsy();
+        });
+
+        it("removes every session when a password change arrives by sync", async () => {
+            const cookie = await logIn();
+
+            cls.init(() => events.emit(events.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "passwordVerificationHash", value: "changed-remotely", isSynced: 1 }
+            }));
+
+            expect((await getSessionFromCookie(cookie)).session).toBeFalsy();
         });
     });
 }, 100_000);

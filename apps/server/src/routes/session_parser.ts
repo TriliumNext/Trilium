@@ -2,7 +2,7 @@ import type express from "express";
 import session, { Store } from "express-session";
 
 import config from "../services/config.js";
-import { getLog } from "@triliumnext/core";
+import { events, getLog } from "@triliumnext/core";
 import sessionSecret from "../services/session_secret.js";
 import sql from "../services/sql.js";
 import sqlInit from "../services/sql_init.js";
@@ -142,6 +142,30 @@ export function startSessionCleanup() {
         const result = sql.execute(/*sql*/`DELETE FROM sessions WHERE expires < ?`, now);
         console.log("Cleaning up expired sessions: ", result.changes);
     }, CLEAN_UP_INTERVAL);
+}
+
+/**
+ * Logs out every session when `passwordVerificationHash` changes, whether the password is changed
+ * or reset here or the new hash arrives by sync. A changed password must also cut off a stolen
+ * session cookie.
+ */
+export function startSessionRevocationOnPasswordChange() {
+    events.subscribe(events.ENTITY_CHANGED, ({ entityName, entity }) => {
+        if (entityName === "options" && entity.name === "passwordVerificationHash") {
+            revokeAllSessions();
+        }
+    });
+
+    events.subscribe(events.ENTITY_CHANGE_SYNCED, ({ entityName, entityRow }) => {
+        if (entityName === "options" && entityRow.name === "passwordVerificationHash") {
+            revokeAllSessions();
+        }
+    });
+}
+
+function revokeAllSessions() {
+    const result = sql.execute(/*sql*/`DELETE FROM sessions`);
+    getLog().info(`Password changed, logged out ${result.changes} session(s).`);
 }
 
 export default sessionParser;
