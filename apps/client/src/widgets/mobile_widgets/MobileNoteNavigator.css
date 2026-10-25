@@ -150,8 +150,26 @@
     font-size: 1.3em;
 }
 
-.mobile-navigator-current-title {
+.mobile-navigator-title-group {
+    display: flex;
     flex: 1 1 auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mobile-navigator-indicator {
+    flex: 0 0 auto;
+    color: var(--muted-text-color, var(--main-text-color));
+    opacity: 0.8;
+
+    &.clone-indicator {
+        opacity: 0.5;
+    }
+}
+
+.mobile-navigator-current-title {
+    flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -301,7 +319,7 @@
 }
 
 .mobile-navigator-row-title {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

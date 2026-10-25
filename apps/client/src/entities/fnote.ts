@@ -213,6 +213,15 @@ export default class FNote {
         return this.froca.getNotesFromCache(this.parents);
     }
 
+    /**
+     * The parent notes that make this note a clone: the share root, the bookmarks and saved
+     * searches also hold the note as a child, but the tree does not count them.
+     */
+    getRealParentNotes() {
+        return this.getParentNotes().filter((parent) =>
+            parent.noteId !== "_share" && parent.noteId !== "_lbBookmarks" && parent.type !== "search");
+    }
+
     // will sort the parents so that non-search & non-archived are first and archived at the end
     // this is done so that non-search & non-archived paths are always explored as first when looking for a note path
     sortParents() {

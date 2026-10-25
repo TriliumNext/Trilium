@@ -13,8 +13,10 @@ import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
+import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
+import { useShareState } from "../layout/NoteBadges";
 import { Badge } from "../react/Badge";
 import {
     useActiveNoteContext,
@@ -274,7 +276,7 @@ export default function MobileNoteNavigator() {
                         >
                             <div className="mobile-navigator-current-header">
                                 <Icon icon={parentIcon ?? "bx bx-folder"} className="mobile-navigator-current-icon" />
-                                <span className="mobile-navigator-current-title">{parentTitle ?? parentNote.title}</span>
+                                <TitleWithIndicators note={parentNote} title={parentTitle ?? parentNote.title} className="mobile-navigator-current-title" />
                                 <button
                                     type="button"
                                     className="mobile-navigator-current-action"
@@ -449,7 +451,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             {...contextProps}
         >
             <Icon icon={icon ?? "bx bx-note"} className="mobile-navigator-row-icon" />
-            <span className="mobile-navigator-row-title">{title}</span>
+            <TitleWithIndicators note={note} title={title} className="mobile-navigator-row-title" />
             {showHiddenBadge && (
                 <span
                     className="mobile-navigator-row-hidden-badge"
@@ -468,6 +470,49 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             ) : null}
         </div>
     );
+}
+
+/**
+ * A note's title followed by the clone and share icons the desktop tree shows. The title
+ * shortens with an ellipsis, so the icons stay visible next to it.
+ */
+export function TitleWithIndicators({ note, title, className }: { note: FNote, title: string, className: string }) {
+    const [ isShared ] = useShareState(note);
+    const realParents = useRealParentNotes(note);
+
+    return (
+        <span className="mobile-navigator-title-group">
+            <span className={className}>{title}</span>
+            {realParents.length > 1 && (
+                <Icon
+                    icon="bx bxs-directions"
+                    className="mobile-navigator-indicator clone-indicator"
+                    role="img"
+                    aria-label={tree.getCloneIndicatorTooltip(realParents)}
+                />
+            )}
+            {isShared && (
+                <Icon
+                    icon="bx bx-share-alt"
+                    className="mobile-navigator-indicator shared-indicator"
+                    role="img"
+                    aria-label={t("note_tree.shared-indicator-tooltip")}
+                />
+            )}
+        </span>
+    );
+}
+
+/** The real parents of `note`, read again when one of its branches changes. */
+function useRealParentNotes(note: FNote) {
+    const [ realParents, setRealParents ] = useState(() => note.getRealParentNotes());
+    useEffect(() => setRealParents(note.getRealParentNotes()), [ note ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.getBranchRows().some((b) => b.noteId === note.noteId)) {
+            setRealParents(note.getRealParentNotes());
+        }
+    });
+    return realParents;
 }
 
 /**
