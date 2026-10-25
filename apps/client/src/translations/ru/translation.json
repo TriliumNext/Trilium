@@ -3697,11 +3697,15 @@
     "back": "На уровень выше",
     "loading": "Загрузка...",
     "empty": "У этой заметки нет дочерних заметок.",
-    "children_count_one": "{{count}} заметка",
-    "children_count_few": "{{count}} заметки",
-    "children_count_many": "{{count}} заметок",
+    "children_count_one": "{{count}} дочерняя заметка",
+    "children_count_few": "{{count}} дочерние заметки",
+    "children_count_many": "{{count}} дочерних заметок",
     "add_child": "Добавить дочернюю заметку",
-    "more_actions": "Другие действия"
+    "more_actions": "Другие действия",
+    "current_note": "Эта заметка",
+    "children_hidden": "Дочерние заметки скрыты из дерева",
+    "workspaces": "Рабочие пространства",
+    "bookmarks": "Закладки"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Убрать с панели запуска",
