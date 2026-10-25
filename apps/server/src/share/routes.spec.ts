@@ -82,6 +82,7 @@ describe("Share API test", () => {
     it("does not serve a protected note's content over the public share routes (GHSA-xmv9-3v98-7gq8)", async () => {
         // Every route that streams raw note content must refuse a protected note.
         for (const path of [
+            `/share/${PROTECTED_SHARED_NOTE_ID}?raw`,
             `/share/api/notes/${PROTECTED_SHARED_NOTE_ID}/download`,
             `/share/api/notes/${PROTECTED_SHARED_NOTE_ID}/view`,
             `/share/api/images/${PROTECTED_SHARED_NOTE_ID}/image.png`
