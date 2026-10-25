@@ -144,6 +144,19 @@ describe("SidebarContainer", () => {
             expect(getTabNavigation("first")).toBeUndefined();
         });
 
+        // Restoring tabs at startup and opening a note in a new tab activate the tab without
+        // `activeContextChanged`.
+        it("follows a tab activated together with its note", () => {
+            const sidebar = render(true);
+            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            const noteContext = { getMainContext: () => ({ ntxId: "opened" }) } as unknown as NoteContext;
+
+            sidebar.noteSwitchedAndActivatedEvent({ noteContext, notePath: "root/note" });
+            expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
+            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            expect(getTabNavigation("opened")?.screen).toBe("tree");
+        });
+
         it("puts the tree back beside the note once the screen widens to a tablet", () => {
             const sidebar = render(true);
             sidebar.activeScreenChangedEvent({ activeScreen: "tree" });

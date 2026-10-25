@@ -1,5 +1,6 @@
 import type { EventData } from "../../components/app_context.js";
 import type { Screen } from "../../components/mobile_screen_switcher.js";
+import type NoteContext from "../../components/note_context.js";
 import options from "../../services/options.js";
 import { onSystemBack } from "../../services/system_back.js";
 import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils.js";
@@ -208,6 +209,14 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     }
 
     activeContextChangedEvent({ noteContext }: EventData<"activeContextChanged">) {
+        this.#switchToTab(noteContext);
+    }
+
+    noteSwitchedAndActivatedEvent({ noteContext }: EventData<"noteSwitchedAndActivated">) {
+        this.#switchToTab(noteContext);
+    }
+
+    #switchToTab(noteContext: NoteContext) {
         const tabId = noteContext.getMainContext().ntxId;
         if (!tabId || tabId === this.activeTabId) return;
         this.activeTabId = tabId;
