@@ -5,10 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkerHandle } from "./worker_host.js";
 
 const h = vi.hoisted(() => ({
-    logs: [] as string[]
+    logs: [] as string[],
+    cores: 8
 }));
 
-vi.mock("node:os", () => ({ availableParallelism: () => 8, totalmem: () => 32 * 1024 * 1024 * 1024 }));
+vi.mock("node:os", () => ({ availableParallelism: () => h.cores, totalmem: () => 32 * 1024 * 1024 * 1024 }));
 vi.mock("@triliumnext/core", () => ({
     getLog: () => ({ info: (line: string) => h.logs.push(line), error() {} })
 }));
@@ -121,6 +122,18 @@ afterEach(() => {
 });
 
 describe("createPooledContentJobExecutor", () => {
+    it("keeps to four workers on a many-core desktop", async () => {
+        h.cores = 32;
+        Object.defineProperty(process.versions, "electron", { value: "44.0.0", configurable: true });
+        try {
+            const executor = await createExecutor();
+            expect(executor.concurrency).toBe(4);
+        } finally {
+            Reflect.deleteProperty(process.versions, "electron");
+            h.cores = 8;
+        }
+    });
+
     it("sends a large job to a worker and exposes the pool's concurrency", async () => {
         const executor = await createExecutor();
 

@@ -50,7 +50,7 @@ export function createPooledContentJobExecutor(
         entry: "content_job_worker",
         sourceDir: __dirname,
         serviceName: "Trilium content job worker",
-        maxWorkers: () => defaultWorkerCount(WORKER_HEAP_MB),
+        maxWorkers: () => Math.min(MAX_WORKERS, defaultWorkerCount(WORKER_HEAP_MB)),
         heapMb: WORKER_HEAP_MB,
         replyTimeoutMs: 5 * 60 * 1000,
         idleShutdownMs: 30 * 1000,
@@ -67,6 +67,9 @@ export function createPooledContentJobExecutor(
 }
 
 const WORKER_HEAP_MB = 1024;
+
+/** Conversions are short, so more workers add start-up cost and memory rather than speed. */
+const MAX_WORKERS = 4;
 
 async function runPooled<J extends ContentJob>(
     pool: ProcessPool<ContentJob, ContentJobOutcome>,
