@@ -96,10 +96,23 @@ body.mobile .modal.icon-switcher {
         height: 100%;
     }
 
+    /* Every box from `.modal-content` down to `.icon-list` needs a bounded height: react-window
+       renders as many rows as the grid is tall, which unbounded is every icon. */
+    .modal-content {
+        height: 100%;
+    }
+
     .modal-body {
         padding: 0;
         display: flex;
         flex-direction: column;
+    }
+
+    .icon-picker {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
 
         > .filter-row {
             padding: 0.25em var(--bs-modal-padding) 0.5em var(--bs-modal-padding);
@@ -110,9 +123,12 @@ body.mobile .modal.icon-switcher {
     .icon-list {
         --scroll-fade-top: 0px;
         --icon-list-inset: 0px;
-        margin: auto;
+        display: flex;
+        flex-direction: column;
+        margin: 0 auto;
         flex-grow: 1;
-        height: 100%;
+        min-height: 0;
+        height: auto;
 
         span {
             padding: 12px;
