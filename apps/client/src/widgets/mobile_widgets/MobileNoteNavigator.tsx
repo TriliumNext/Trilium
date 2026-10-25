@@ -91,7 +91,6 @@ export default function MobileNoteNavigator() {
 
     const pendingPath = nextStack?.[nextStack.length - 1];
     const pendingId = pendingPath ? getLastSegment(pendingPath) : undefined;
-    const pendingNote = useNote(pendingId);
     const pendingChildId = nextStack && nextStack.length > stack.length ? pendingId : undefined;
     const pendingPop = !!nextStack && nextStack.length < stack.length;
 
@@ -124,15 +123,28 @@ export default function MobileNoteNavigator() {
     const backTargetParentId = stack.length >= 3 ? getLastSegment(stack[stack.length - 3]) : undefined;
     const backTargetTitle = useNoteTitle(backTargetId, backTargetParentId);
 
+    // The columns shown last keep their rendered preview, so going back to one (in another tab,
+    // or a step back) shows it laid out at once. The pending column renders its preview hidden,
+    // and the stack commits once it is ready.
+    const [previewIds, setPreviewIds] = useState<string[]>([]);
+    useEffect(() => {
+        if (currentParentId) setPreviewIds((prev) => getPreviewNoteIds(prev, currentParentId));
+    }, [currentParentId]);
+    const [readyPreviewIds, setReadyPreviewIds] = useState<ReadonlySet<string>>(() => new Set());
+    const setPreviewReady = useCallback((noteId: string, ready: boolean) => {
+        setReadyPreviewIds((prev) => {
+            if (prev.has(noteId) === ready) return prev;
+            const next = new Set(prev);
+            if (ready) next.add(noteId);
+            else next.delete(noteId);
+            return next;
+        });
+    }, []);
+
     // Gate the visible body on the content preview being ready to avoid a layout shift
-    // when the preview finishes rendering. Tied to the parent's noteId so a stale "ready"
-    // flag from the previous column can't leak into the new one.
-    const [readyForNoteId, setReadyForNoteId] = useState<string | null>(null);
-    const previewReady = !!parentNote && readyForNoteId === parentNote.noteId;
+    // when the preview finishes rendering.
+    const previewReady = !!currentParentId && readyPreviewIds.has(currentParentId);
     const bodyVisible = previewReady && isLoaded;
-    const onPreviewReady = useCallback(() => {
-        if (parentNote) setReadyForNoteId(parentNote.noteId);
-    }, [parentNote]);
 
     // Full-screen spinner only for the very first render — once a body has been shown,
     // subsequent navigations swap views without a global placeholder.
@@ -140,27 +152,19 @@ export default function MobileNoteNavigator() {
     if (bodyVisible) hasCommittedOnceRef.current = true;
     const showInitialLoader = !bodyVisible && !hasCommittedOnceRef.current;
 
-    // Preload state for the pending stack target. Once ready, commit the stack change.
-    const [nextReadyNoteId, setNextReadyNoteId] = useState<string | null>(null);
-    const onPendingReady = useCallback(() => {
-        if (pendingNote) setNextReadyNoteId(pendingNote.noteId);
-    }, [pendingNote]);
-
     const scrollRef = useRef<HTMLDivElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
     const directionRef = useRef<"forward" | "backward" | null>(null);
     const [commitCounter, setCommitCounter] = useState(0);
 
     useEffect(() => {
-        if (!nextStack || !pendingId || nextReadyNoteId !== pendingId) return;
+        if (!nextStack || !pendingId || !readyPreviewIds.has(pendingId)) return;
         commitStack(nextStack);
-        setReadyForNoteId(pendingId);
         setNextStack(null);
-        setNextReadyNoteId(null);
         setCommitCounter((c) => c + 1);
         // Reset scroll so the committed tile is visible at the top of the column.
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }, [nextStack, pendingId, nextReadyNoteId, commitStack]);
+    }, [nextStack, pendingId, readyPreviewIds, commitStack]);
 
     // Brief slide-in on forward / back so the swap feels directional without blocking the user.
     useLayoutEffect(() => {
@@ -311,14 +315,15 @@ export default function MobileNoteNavigator() {
                                 </button>
                             </div>
                             <div className="mobile-navigator-current-preview">
-                                <NoteContent
-                                    note={parentNote}
-                                    trim
-                                    noChildrenList
-                                    highlightedTokens={null}
-                                    includeArchivedNotes={!hideArchived}
-                                    onReady={onPreviewReady}
-                                />
+                                {getPreviewNotes(getPreviewNoteIds(previewIds, currentParentId, pendingId)).map((note) => (
+                                    <PreviewSlot
+                                        key={note.noteId}
+                                        note={note}
+                                        shown={note.noteId === currentParentId}
+                                        hideArchived={hideArchived}
+                                        onReady={setPreviewReady}
+                                    />
+                                ))}
                             </div>
                         </div>
                     )}
@@ -360,22 +365,48 @@ export default function MobileNoteNavigator() {
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
 
-            {/* Hidden preloader: renders NoteContent for the pending target so we can
-                commit the stack change only after its preview is ready. */}
-            {pendingNote && (
-                <div className="mobile-navigator-preloader" aria-hidden="true">
-                    <NoteContent
-                        key={pendingNote.noteId}
-                        note={pendingNote}
-                        trim
-                        noChildrenList
-                        highlightedTokens={null}
-                        includeArchivedNotes={!hideArchived}
-                        onReady={onPendingReady}
-                    />
-                </div>
-            )}
+/** How many columns keep their rendered preview. */
+const PREVIEW_CACHE_SIZE = 5;
+
+/**
+ * The columns whose preview stays rendered: the current one, the pending one and those shown
+ * last, most recent first.
+ */
+export function getPreviewNoteIds(recentIds: string[], currentId: string | undefined, pendingId?: string) {
+    const ids = [ currentId, pendingId, ...recentIds ].filter((id): id is string => !!id);
+    return [ ...new Set(ids) ].slice(0, PREVIEW_CACHE_SIZE);
+}
+
+/** Notes in a stable order, so a preview keeps its place in the DOM as the recency changes. */
+function getPreviewNotes(noteIds: string[]) {
+    return [ ...noteIds ].sort()
+        .map((noteId) => froca.getNoteFromCache(noteId))
+        .filter((note): note is FNote => !!note);
+}
+
+function PreviewSlot({ note, shown, hideArchived, onReady }: {
+    note: FNote;
+    shown: boolean;
+    hideArchived: boolean;
+    onReady: (noteId: string, ready: boolean) => void;
+}) {
+    const { noteId } = note;
+    useEffect(() => () => onReady(noteId, false), [ noteId, onReady ]);
+
+    return (
+        <div className="mobile-navigator-preview-slot" hidden={!shown}>
+            <NoteContent
+                note={note}
+                trim
+                noChildrenList
+                highlightedTokens={null}
+                includeArchivedNotes={!hideArchived}
+                onReady={() => onReady(noteId, true)}
+            />
         </div>
     );
 }

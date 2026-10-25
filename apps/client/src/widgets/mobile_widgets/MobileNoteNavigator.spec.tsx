@@ -10,7 +10,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { getListedChildCount, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
+import { getListedChildCount, getPreviewNoteIds, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -34,6 +34,16 @@ describe("getListedChildCount", () => {
 
         expect(getListedChildCount(parent, true)).toBe(2);
         expect(getListedChildCount(parent, false)).toBe(3);
+    });
+});
+
+describe("getPreviewNoteIds", () => {
+    it("keeps the previews of the columns shown last, and the one about to be shown", () => {
+        expect(getPreviewNoteIds([], "a")).toEqual([ "a" ]);
+        expect(getPreviewNoteIds([ "a", "b" ], "b")).toEqual([ "b", "a" ]);
+        expect(getPreviewNoteIds([ "a", "b", "c", "d", "e" ], "f")).toEqual([ "f", "a", "b", "c", "d" ]);
+        expect(getPreviewNoteIds([ "a", "b", "c", "d", "e" ], "a", "f")).toEqual([ "a", "f", "b", "c", "d" ]);
+        expect(getPreviewNoteIds([ "a" ], undefined)).toEqual([ "a" ]);
     });
 });
 
