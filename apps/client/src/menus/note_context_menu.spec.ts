@@ -277,14 +277,27 @@ describe("buildNoteContextMenuItems", () => {
         });
     });
 
-    it("searches with the configured engine, and leaves the web search out when it is none", async () => {
+    it("searches with the configured engine and its icon, leaving it out for none", async () => {
         const host = browserLikeHost();
+        const webSearchIcon = async () =>
+            findItem(await build(), "electron_context_menu.search_online")?.uiIcon;
         h.options = {
             customSearchEngineName: "Google",
             customSearchEngineUrl: "https://www.google.com/search?q={keyword}"
         };
-        run(await build({ selectionText: "trilium" }, host), "electron_context_menu.search_online");
+        const items = await build({ selectionText: "trilium" }, host);
+        expect(await webSearchIcon()).toBe("bx bxl-google");
+        run(items, "electron_context_menu.search_online");
         expect(host.openExternal).toHaveBeenCalledWith("https://www.google.com/search?q=trilium");
+
+        // A custom engine has no logo of its own, and nothing stored means DuckDuckGo.
+        h.options = {
+            customSearchEngineName: "Example",
+            customSearchEngineUrl: "https://example.com/?s={keyword}"
+        };
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
+        h.options = {};
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
 
         h.options = { customSearchEngineName: "", customSearchEngineUrl: "none" };
         expect(titles(await build())).toEqual([

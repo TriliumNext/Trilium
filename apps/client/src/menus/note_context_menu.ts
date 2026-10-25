@@ -4,7 +4,7 @@ import appContext, { type CommandNames } from "../components/app_context.js";
 import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import { t } from "../services/i18n.js";
-import options from "../services/options.js";
+import { getSearchEngine } from "../services/search_engine.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
@@ -12,9 +12,6 @@ import contextMenu, { type MenuItem } from "./context_menu.js";
 import { splitMenuItem } from "./context_menu_utils.js";
 import { buildTableContextMenuSections, hasTableCellSelection } from "./table_context_menu.js";
 import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
-
-/** The `customSearchEngineUrl` that turns off searching the web from the context menu. */
-export const NO_SEARCH_ENGINE = "none";
 
 /** What the pointer was over when the menu was summoned. */
 export interface ContextMenuTarget {
@@ -278,7 +275,7 @@ export async function buildNoteContextMenuItems(
                     term: utils.escapeHtml(shortenedSelection),
                     searchEngine: utils.escapeHtml(searchEngine.name)
                 }),
-                uiIcon: "bx bx-search-alt",
+                uiIcon: searchEngine.icon,
                 handler: () => host.openExternal(searchUrl)
             });
         }
@@ -293,14 +290,6 @@ export async function buildNoteContextMenuItems(
     }
 
     return items;
-}
-
-function getSearchEngine(): { name: string; url: string } | null {
-    const name = options.get("customSearchEngineName");
-    const url = options.get("customSearchEngineUrl");
-    if (url === NO_SEARCH_ENGINE) return null;
-    if (name && url) return { name, url };
-    return { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={keyword}" };
 }
 
 /**

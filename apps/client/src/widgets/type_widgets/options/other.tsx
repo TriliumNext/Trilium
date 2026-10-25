@@ -3,9 +3,9 @@ import "./other.css";
 import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { useMemo, useState } from "preact/hooks";
 
-import { NO_SEARCH_ENGINE } from "../../../menus/note_context_menu";
 import { t } from "../../../services/i18n";
 import search from "../../../services/search";
+import { NO_SEARCH_ENGINE, SEARCH_ENGINE_PRESETS } from "../../../services/search_engine";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
@@ -139,25 +139,6 @@ function SearchEngineSettings() {
 }
 
 const CUSTOM_SEARCH_ENGINE = "custom";
-
-const SEARCH_ENGINE_PRESETS = [
-    {
-        url: "https://duckduckgo.com/?q={keyword}",
-        nameKey: "search_engine.duckduckgo", icon: "bx bx-search-alt"
-    },
-    {
-        url: "https://www.bing.com/search?q={keyword}",
-        nameKey: "search_engine.bing", icon: "bx bxl-bing"
-    },
-    {
-        url: "https://www.baidu.com/s?wd={keyword}",
-        nameKey: "search_engine.baidu", icon: "bx bxl-baidu"
-    },
-    {
-        url: "https://www.google.com/search?q={keyword}",
-        nameKey: "search_engine.google", icon: "bx bxl-google"
-    }
-] as const;
 
 /** The dropdown entry for a stored URL. An empty one is DuckDuckGo, as in the context menu. */
 export function getSearchEngineChoice(url: string) {
