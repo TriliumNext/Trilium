@@ -5,18 +5,36 @@ import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import FBranch from "../../entities/fbranch";
 import type FNote from "../../entities/fnote";
+import content_renderer from "../../services/content_renderer";
 import froca from "../../services/froca";
 import type LoadResults from "../../services/load_results";
 import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, getListedChildCount, getPreviewNoteIds, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
     translationsInitializedPromise: Promise.resolve()
 }));
+
+/** A parent component that collects the `entitiesReloaded` handlers, and fires them with the `LoadResults` methods given. */
+function reloadingParent(extra: object = {}) {
+    const handlers: ((data: unknown) => void)[] = [];
+    const parent = {
+        componentId: "cid",
+        registerHandler: (name: string, callback: (data: unknown) => void) => {
+            if (name === "entitiesReloaded") handlers.push(callback);
+        },
+        removeHandler: () => {},
+        ...extra
+    } as unknown as Component;
+    const reload = (loadResults: object) => act(() => {
+        for (const handler of handlers) handler({ loadResults });
+    });
+    return { parent, reload };
+}
 
 describe("getListedChildCount", () => {
     buildNotes([
@@ -130,6 +148,7 @@ describe("WorkspaceCards", () => {
         expect(container.querySelector(".mobile-navigator-workspaces-label")?.textContent).toBe("mobile_note_navigator.workspaces");
         const cards = [ ...container.querySelectorAll(".mobile-navigator-workspaces .mobile-navigator-workspace") ];
         expect(cards.map((card) => card.textContent)).toEqual([ "Work" ]);
+        expect(cards[0]?.tagName).toBe("BUTTON");
         expect(cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase")).not.toBeNull();
 
         (cards[0] as HTMLElement | undefined)?.click();
@@ -182,5 +201,74 @@ describe("BookmarkList", () => {
                 .toEqual([ "root/bmFolder/bookmarked" ]);
         });
         expect(container.querySelector(".mobile-navigator-bookmarks-label")?.textContent).toBe("mobile_note_navigator.bookmarks");
+    });
+
+    it("follows a bookmarked note moved elsewhere in the tree", async () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "fromFolder", title: "From", children: [ { id: "moved", title: "Moved" } ] },
+            { id: "toFolder", title: "To" }
+        ] });
+        const bookmarks = buildNote({ id: "_lbBookmarks", title: "Bookmarks" });
+        const moved = froca.notes["moved"];
+        const toFolder = froca.notes["toFolder"];
+        if (!moved || !toFolder) throw new Error("expected the notes");
+        const link = (parent: FNote, branchId: string) => {
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId: "moved", parentNoteId: parent.noteId, notePosition: 0, fromSearchNote: false
+            });
+            parent.addChild("moved", branchId, false);
+            moved.addParent(parent.noteId, branchId, false);
+        };
+        link(bookmarks, "_lbBookmarks_moved");
+        const { parent, reload } = reloadingParent();
+
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <BookmarkList renderRow={({ note, notePath }) => <div key={note.noteId} className="row">{notePath}</div>} />
+                </ParentComponent.Provider>
+            );
+        });
+        const rowPaths = () => [ ...container.querySelectorAll(".row") ].map((row) => row.textContent);
+        await vi.waitFor(() => expect(rowPaths()).toEqual([ "root/fromFolder/moved" ]));
+
+        moved.parents = moved.parents.filter((parentNoteId) => parentNoteId !== "fromFolder");
+        delete moved.parentToBranch["fromFolder"];
+        link(toFolder, "toFolder_moved");
+        reload({ getBranchRows: () => [ { noteId: "moved", parentNoteId: "toFolder" } ] });
+        await vi.waitFor(() => expect(rowPaths()).toEqual([ "root/toFolder/moved" ]));
+    });
+});
+
+describe("PreviewSlot", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("renders the preview again once the note's content changes, while it is kept", async () => {
+        const note = buildNote({ title: "Previewed" });
+        let version = 1;
+        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent").mockImplementation(async () => {
+            const $renderedContent = $("<div>").text(`Version ${version}`);
+            return { $renderedContent, type: "text" };
+        });
+        const { parent, reload } = reloadingParent();
+
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <PreviewSlot note={note} shown={false} hideArchived onReady={() => {}} />
+                </ParentComponent.Provider>
+            );
+        });
+        await vi.waitFor(() => expect(container.textContent).toBe("Version 1"));
+
+        version = 2;
+        reload({ isNoteContentReloaded: (noteId: string) => noteId === "other" });
+        expect(getRenderedContent).toHaveBeenCalledTimes(1);
+        reload({ isNoteContentReloaded: (noteId: string) => noteId === note.noteId });
+        await vi.waitFor(() => expect(container.textContent).toBe("Version 2"));
     });
 });

@@ -1,4 +1,3 @@
-/* The current note and its children are grouped like the mobile settings list in menus.css. */
 .mobile-note-navigator {
     --navigator-group-inset: 16px;
     --navigator-group-radius: 6px;
@@ -48,9 +47,11 @@
     gap: 8px;
     min-width: 0;
     padding: 16px 8px 12px;
+    border: 0;
     border-radius: var(--navigator-group-radius);
     background: var(--navigator-group-background);
     color: var(--main-text-color);
+    font: inherit;
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;

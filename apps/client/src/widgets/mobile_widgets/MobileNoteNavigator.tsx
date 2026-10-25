@@ -409,7 +409,7 @@ function getPreviewNotes(noteIds: string[]) {
         .filter((note): note is FNote => !!note);
 }
 
-function PreviewSlot({ note, shown, hideArchived, onReady }: {
+export function PreviewSlot({ note, shown, hideArchived, onReady }: {
     note: FNote;
     shown: boolean;
     hideArchived: boolean;
@@ -417,10 +417,16 @@ function PreviewSlot({ note, shown, hideArchived, onReady }: {
 }) {
     const { noteId } = note;
     useEffect(() => () => onReady(noteId, false), [ noteId, onReady ]);
+    // `NoteContent` renders again only for another note, and froca updates this one in place.
+    const [ contentVersion, setContentVersion ] = useState(0);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.isNoteContentReloaded(noteId)) setContentVersion((version) => version + 1);
+    });
 
     return (
         <div className="mobile-navigator-preview-slot" hidden={!shown}>
             <NoteContent
+                key={contentVersion}
                 note={note}
                 trim
                 noChildrenList
@@ -514,6 +520,14 @@ interface Bookmark {
 export function BookmarkList({ renderRow }: { renderRow: (bookmark: Bookmark) => ComponentChildren }) {
     const bookmarkNotes = useChildNotes("_lbBookmarks");
     const [ bookmarks, setBookmarks ] = useState<Bookmark[]>([]);
+    // A bookmarked note moved elsewhere in the tree changes no branch under `_lbBookmarks`.
+    const [ treeVersion, setTreeVersion ] = useState(0);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const bookmarkIds = new Set(bookmarkNotes.map((note) => note.noteId));
+        if (loadResults.getBranchRows().some((branch) => !!branch.noteId && bookmarkIds.has(branch.noteId))) {
+            setTreeVersion((version) => version + 1);
+        }
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -524,7 +538,7 @@ export function BookmarkList({ renderRow }: { renderRow: (bookmark: Bookmark) =>
             if (!cancelled) setBookmarks(resolved.filter((bookmark): bookmark is Bookmark => !!bookmark));
         });
         return () => { cancelled = true; };
-    }, [ bookmarkNotes ]);
+    }, [ bookmarkNotes, treeVersion ]);
 
     if (!bookmarks.length) return null;
 
@@ -547,10 +561,9 @@ function WorkspaceCard({ note, onClick }: { note: FNote, onClick: () => void }) 
     const title = useNoteTitle(note.noteId, undefined);
 
     return (
-        <div
+        <button
+            type="button"
             className={clsx("mobile-navigator-workspace", { "has-color": !!workspaceColor })}
-            role="button"
-            tabIndex={0}
             onClick={onClick}
         >
             <Icon
@@ -559,7 +572,7 @@ function WorkspaceCard({ note, onClick }: { note: FNote, onClick: () => void }) 
                 style={workspaceColorStyle(workspaceColor)}
             />
             <span className="mobile-navigator-workspace-title">{title ?? note.title}</span>
-        </div>
+        </button>
     );
 }
 
