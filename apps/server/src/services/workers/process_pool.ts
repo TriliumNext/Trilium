@@ -343,16 +343,29 @@ export function createProcessPool<Req, Res>(options: ProcessPoolOptions): Proces
  * The desktop app takes a core per worker and leaves one for the main thread, since the person
  * waiting on the job owns the machine. A server may be serving others, so it stops at `serverMax`.
  * Either way the workers' heaps together stay within half the machine's memory, so a small box is
- * answered 1 rather than paging. `totalmem` reads the host rather than a container's cgroup, so
- * this only guards the obvious overcommit.
+ * answered 1 rather than paging.
  */
 export function defaultWorkerCount(heapMb: number, serverMax = 4): number {
-    const byMemory = Math.floor(totalmem() / 2 / (heapMb * 1024 * 1024));
+    const byMemory = Math.floor(usableMemoryBytes() / 2 / (heapMb * 1024 * 1024));
     const byCores = process.versions.electron !== undefined
         ? availableParallelism() - 1
         : Math.min(availableParallelism(), serverMax);
 
     return Math.max(1, Math.min(byCores, byMemory));
+}
+
+/**
+ * The memory this process tree can use: a container's cgroup limit when there is one, else the
+ * machine's. `totalmem()` alone reads the host inside a container.
+ *
+ * `process.constrainedMemory()` answers 0 without a limit, and a value above the machine's memory
+ * when the cgroup sets none.
+ */
+export function usableMemoryBytes(): number {
+    const total = totalmem();
+    const constrained = process.constrainedMemory();
+
+    return constrained > 0 && constrained < total ? constrained : total;
 }
 
 /** The rejection of {@link ProcessPool.run} when a worker took longer than `replyTimeoutMs`. */

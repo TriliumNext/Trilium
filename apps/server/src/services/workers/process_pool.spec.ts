@@ -6,7 +6,8 @@ import type { WorkerHandle, WorkerSpawnOptions } from "./worker_host.js";
 const h = vi.hoisted(() => ({
     logs: [] as string[],
     cores: 8,
-    memoryBytes: 32 * 1024 * 1024 * 1024
+    memoryBytes: 32 * 1024 * 1024 * 1024,
+    constrainedBytes: 0
 }));
 
 vi.mock("node:os", () => ({ availableParallelism: () => h.cores, totalmem: () => h.memoryBytes }));
@@ -102,6 +103,8 @@ beforeEach(async () => {
     workers = [];
     spawns = [];
     spawnError = undefined;
+    h.constrainedBytes = 0;
+    vi.spyOn(process, "constrainedMemory").mockImplementation(() => h.constrainedBytes);
 
     const host = await import("./worker_host.js");
 
@@ -370,6 +373,24 @@ describe("createProcessPool", () => {
 });
 
 describe("defaultWorkerCount", () => {
+    it("sizes by a container's memory limit rather than the host's", async () => {
+        const { defaultWorkerCount, usableMemoryBytes } = await import("./process_pool.js");
+        const gib = 1024 * 1024 * 1024;
+
+        h.cores = 12;
+        h.memoryBytes = 64 * gib;
+        h.constrainedBytes = 2 * gib;
+        expect(usableMemoryBytes()).toBe(2 * gib);
+        expect(defaultWorkerCount(1024)).toBe(1);
+
+        // No limit reads as 0, or as a value above the host's memory.
+        h.constrainedBytes = 0;
+        expect(usableMemoryBytes()).toBe(64 * gib);
+        h.constrainedBytes = 2 ** 64;
+        expect(usableMemoryBytes()).toBe(64 * gib);
+        expect(defaultWorkerCount(1024)).toBe(4);
+    });
+
     it("caps a server at serverMax and a desktop at its cores less one, both within memory", async () => {
         const { defaultWorkerCount } = await import("./process_pool.js");
         const versions = process.versions as { electron?: string };

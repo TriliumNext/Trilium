@@ -86,6 +86,8 @@ async function flush() {
 
 beforeEach(async () => {
     vi.resetModules();
+    // The memory `totalmem` reports, whatever cgroup the suite runs in.
+    vi.spyOn(process, "constrainedMemory").mockReturnValue(0);
     forked.length = 0;
     spawnOptions.length = 0;
 

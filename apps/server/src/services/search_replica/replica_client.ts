@@ -11,8 +11,6 @@
  * timeout, or that was waiting on a replica that died, is answered here too.
  */
 
-import { totalmem } from "node:os";
-
 import {
     type BeccaReplicaSink,
     deserializeSearchQueryError,
@@ -28,6 +26,7 @@ import {
 
 import config from "../config.js";
 import { getResourceDir } from "../utils.js";
+import { usableMemoryBytes } from "../workers/process_pool.js";
 import { resolveWorkerEntry, spawnWorker, type WorkerHandle, workerEnv } from "../workers/worker_host.js";
 import {
     REPLICA_OPTIONS_ENV, type ReplicaBootOptions, type ReplicaReply, type ReplicaRequest
@@ -64,7 +63,7 @@ export const BOOT_TIMEOUT_MS = 10 * 60 * 1000;
 export function createReplicaSearchExecutor(options: ReplicaSearchOptions = {}): ReplicaSearchExecutor {
     const queryTimeoutMs = options.queryTimeoutMs ?? QUERY_TIMEOUT_MS;
     const bootTimeoutMs = options.bootTimeoutMs ?? BOOT_TIMEOUT_MS;
-    const memoryBytes = options.totalMemoryBytes ?? totalmem();
+    const memoryBytes = options.totalMemoryBytes ?? usableMemoryBytes();
     const heapMb = replicaHeapMb(memoryBytes);
     const pending = new Map<number, PendingQuery>();
     let state: ReplicaState = "idle";

@@ -97,6 +97,8 @@ async function sendToWorker(executor: Awaited<ReturnType<typeof createExecutor>>
 
 beforeEach(async () => {
     vi.resetModules();
+    // The memory `totalmem` reports, whatever cgroup the suite runs in.
+    vi.spyOn(process, "constrainedMemory").mockReturnValue(0);
     vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
     h.logs.length = 0;
     workers = [];
