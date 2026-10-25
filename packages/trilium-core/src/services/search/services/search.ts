@@ -1,5 +1,6 @@
 import type { HighlightedTokenInfo, SearchResultDetails } from "@triliumnext/commons";
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
+import { t } from "i18next";
 import striptags from "striptags";
 
 import becca from "../../../becca/becca.js";
@@ -458,6 +459,11 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
 function parseQueryToExpression(query: string, searchContext: SearchContext) {
     const { fulltextQuery, fulltextTokens, expressionTokens, leadingOperator } = lex(query);
     searchContext.fulltextQuery = fulltextQuery;
+
+    if (!searchContext.allowRegex && expressionTokens.some(({ token }) => token === "%=")) {
+        searchContext.addError(t("search.error.regex-not-allowed"));
+        return null;
+    }
 
     let structuredExpressionTokens: TokenStructure;
 

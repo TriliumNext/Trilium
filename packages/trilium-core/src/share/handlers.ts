@@ -393,7 +393,8 @@ function searchInSubtree(req: ShareRequest): ShareReply {
         includeArchivedNotes: includeArchivedNotes !== "false",
         fuzzyAttributeSearch: false,
         ignoreHoistedNote: true,
-        ancestorNoteId
+        ancestorNoteId,
+        allowRegex: false
     });
     const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
         .filter((result) => {
@@ -459,7 +460,7 @@ function searchNotes(req: ShareRequest): ShareReply {
         return jsonReply(400, { message: "'search' parameter is mandatory." });
     }
 
-    const searchContext = new SearchContext({ ancestorNoteId });
+    const searchContext = new SearchContext({ ancestorNoteId, allowRegex: false });
     const searchResults = searchService.findResultsWithQuery(search, searchContext);
     const authorizedResults = searchResults
         // Apply the same per-note authorization as the direct content routes: drop protected

@@ -526,7 +526,8 @@
       "cannot-compare-with": "cannot compare with \"{{- token}}\". To search for a literal value, use quotes: \"{{- token}}\"",
       "misplaced-expression": "Misplaced or incomplete expression \"{{- token}}\"",
       "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
-      "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
+      "unrecognized-expression": "Unrecognized expression \"{{- token}}\"",
+      "regex-not-allowed": "The regular expression operator \"%=\" is not available here."
     }
   },
   "backup-password-dialog": {

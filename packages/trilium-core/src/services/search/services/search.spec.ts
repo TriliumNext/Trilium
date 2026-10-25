@@ -464,6 +464,36 @@ describe("Search", () => {
         expect(searchResults[0].noteId).toEqual(guide.noteId);
     });
 
+    it("refuses the regex operator when the search context disallows it", () => {
+        const target = getContext().init(() => {
+            const { note: created } = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Regex target",
+                content: "aaaa body",
+                type: "text"
+            });
+            created.setLabel("code", "abc");
+            return created;
+        });
+
+        const queries = [
+            "note.content %= 'a+ body'",
+            "#code %= 'a.c'",
+            "note.title %= '^Regex'",
+            "#code = x OR (note.content %= 'body')",
+            "#code '%=' 'a.c'"
+        ];
+        for (const query of queries) {
+            const allowed = new SearchContext();
+            expect(searchService.findResultsWithQuery(query, allowed).map((r) => r.noteId), query)
+                .toContain(target.noteId);
+
+            const refused = new SearchContext({ allowRegex: false });
+            expect(searchService.findResultsWithQuery(query, refused), query).toEqual([]);
+            expect(refused.getError(), query).toContain("%=");
+        }
+    });
+
     it("fuzzy operator queries (~=) match note properties, labels and relations end-to-end (#9426)", () => {
         const tolkienAuthor = note("Tolkien");
         const booksNote = note("Books")

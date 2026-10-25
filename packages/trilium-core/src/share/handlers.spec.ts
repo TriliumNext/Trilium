@@ -521,7 +521,7 @@ describe("share handlers", () => {
                 highlightedSnippet: "<b>plain</b> snippet"
             } ]
         });
-        expect(findResults.mock.lastCall?.[1].ancestorNoteId).toBe("_share");
+        expect(findResults.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "_share", allowRegex: false });
         expect(buildDetails.mock.lastCall?.[0]).toEqual([ visible ]);
 
         const authorized = search({ search: "anything" }, `Basic ${encodeBase64("root:hunter2")}`);
@@ -566,8 +566,9 @@ describe("share handlers", () => {
             `Basic ${encodeBase64("root:hunter2")}`);
         expect(JSON.parse(String(authorized.body)).searchResultNoteIds).toEqual([ "seen", "guarded" ]);
 
-        const includesArchived = () =>
-            vi.mocked(searchService.findResultsWithQuery).mock.lastCall?.[1].includeArchivedNotes;
+        const lastContext = () => vi.mocked(searchService.findResultsWithQuery).mock.lastCall?.[1];
+        const includesArchived = () => lastContext()?.includeArchivedNotes;
+        expect(lastContext()?.allowRegex).toBe(false);
         expect(includesArchived()).toBe(true);
         filter({ searchString: "seen", ancestorNoteId: "board", includeArchivedNotes: "false" });
         expect(includesArchived()).toBe(false);
