@@ -74,10 +74,10 @@ export interface TreeContextMenuContext {
      */
     target?: "desktop" | "mobile";
     /**
-     * Invoked right before any command's handler runs. Fancytree uses this to
-     * switch to the detail screen on mobile so dialogs/navigations are visible.
+     * Invoked right before a command in `COMMANDS_THAT_SHOW_A_NOTE` runs. On mobile, callers
+     * switch to the detail screen here so that the note the command opens is visible.
      */
-    onBeforeCommand?: () => void;
+    onRevealNote?: () => void;
     /**
      * Fancytree node for the target, when available. A handful of tree
      * commands (cut/paste/export/expand/collapse/sort) read `node.data` or call
@@ -399,7 +399,9 @@ export async function handleTreeContextMenuSelect(
     const resolved = resolveContext(ctx);
     const { note, branch, notePath, component, selectedOrActiveBranchIds, selectedOrActiveNoteIds } = resolved;
 
-    resolved.onBeforeCommand?.();
+    if (command && COMMANDS_THAT_SHOW_A_NOTE.has(command)) {
+        resolved.onRevealNote?.();
+    }
 
     if (command === "openInTab") {
         appContext.tabManager.openTabWithNoteWithHoisting(notePath, { placement: "afterCurrent" });
@@ -472,6 +474,19 @@ export async function handleTreeContextMenuSelect(
         });
     }
 }
+
+/**
+ * The commands whose result is a note on the detail screen: a new note, a duplicate, a split or a
+ * search. Every other command acts on the tree, the clipboard or a dialog, so the tree stays shown.
+ */
+const COMMANDS_THAT_SHOW_A_NOTE = new Set<TreeCommandNames>([
+    "insertNoteAfter",
+    "insertChildNote",
+    "duplicateNote",
+    "duplicateSubtree",
+    "openNoteInSplit",
+    "searchInSubtree"
+]);
 
 /**
  * The choice between copying the children or not, offered only when a note to copy has children.
@@ -548,7 +563,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             selectedNotes,
             isSpotlighted: this.node.extraClasses.includes("spotlighted-node"),
             node: this.node,
-            onBeforeCommand: () => {
+            onRevealNote: () => {
                 if (utils.isMobile()) {
                     this.treeWidget.triggerCommand("setActiveScreen", { screen: "detail" });
                 }

@@ -3,10 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import type Component from "../components/component";
 import clipboard from "../services/clipboard";
 import froca from "../services/froca";
+import noteCreateService from "../services/note_create";
 import noteTypesService from "../services/note_types";
 import { buildNote } from "../test/easy-froca";
 import type { MenuItem } from "./context_menu";
-import { buildTreeContextMenuItems, getDuplicateItems, type TreeCommandNames } from "./tree_context_menu";
+import { buildTreeContextMenuItems, getDuplicateItems, handleTreeContextMenuSelect, type TreeCommandNames } from "./tree_context_menu";
 
 vi.mock("../services/clipboard", () => ({ default: { getContents: vi.fn(() => null) } }));
 vi.mock("../components/app_context", () => ({ default: { tabManager: { getActiveContext: () => undefined } } }));
@@ -156,5 +157,33 @@ describe("getDuplicateItems", () => {
         const items = getDuplicateItems([ leaf, parent ]);
         expect(items?.map((item) => "command" in item && item.command))
             .toStrictEqual([ "duplicateSubtree", "duplicateNote" ]);
+    });
+});
+
+describe("handleTreeContextMenuSelect", () => {
+    it("reveals the note only for the commands that open one", async () => {
+        const parent = buildNote({ title: "Parent", children: [ { title: "Child" } ] });
+        const child = froca.notes[parent.children[0] ?? ""];
+        const [ branch ] = child?.getParentBranches() ?? [];
+        if (!child || !branch) throw new Error("expected the child and its branch");
+        vi.spyOn(noteCreateService, "createNote").mockResolvedValue({ note: null, branch: undefined });
+
+        async function reveals(command: TreeCommandNames) {
+            const onRevealNote = vi.fn();
+            const triggerCommand = vi.fn();
+            await handleTreeContextMenuSelect({ title: command, command }, {
+                note: child, branch, notePath: `${parent.noteId}/${child.noteId}`,
+                component: { triggerCommand } as unknown as Component,
+                onRevealNote
+            });
+            return onRevealNote.mock.calls.length > 0;
+        }
+
+        for (const command of [ "insertChildNote", "duplicateSubtree", "openNoteInSplit", "searchInSubtree" ] as const) {
+            expect(await reveals(command), command).toBe(true);
+        }
+        for (const command of [ "copyNotesToClipboard", "cutNotesToClipboard", "deleteNotes", "toggleNoteHoisting", "moveNotesTo" ] as const) {
+            expect(await reveals(command), command).toBe(false);
+        }
     });
 });

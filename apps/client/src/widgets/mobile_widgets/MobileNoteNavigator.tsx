@@ -572,7 +572,7 @@ function buildNoteContextMenu(notePath: string, parentComponent: Component | nul
             notePath,
             component: parentComponent,
             target: "mobile" as const,
-            onBeforeCommand: () => {
+            onRevealNote: () => {
                 if (utils.isMobile()) {
                     parentComponent.triggerCommand("setActiveScreen", { screen: "detail" });
                 }
