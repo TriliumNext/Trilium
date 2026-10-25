@@ -3170,13 +3170,17 @@ get an ETAPI token based on password for further use with ETAPI. Too many reques
 | Property | Description |
 | --- | --- |
 | `password` | `string`  <br>user's password used to e.g. login to Trilium server and/or protect notes |
+| `totpToken` | `string`  <br>the current TOTP code, or one of the recovery codes; required when multi-factor authentication with TOTP is enabled. Each code is accepted once. |
+| `tokenName` | `string`  <br>name of the created token, shown in the list of ETAPI tokens |
 
 </div>
 <div class="trilium-multicolumn-column">
 
 ```json
 {
-    "password": "string"
+    "password": "string",
+    "totpToken": "string",
+    "tokenName": "string"
 }
 ```
 
@@ -3202,6 +3206,33 @@ get an ETAPI token based on password for further use with ETAPI. Too many reques
     ```json
     {
         "authToken": "Bc4bFn0Ffiok_4NpbVCDnFz7B2WU+pdhW8B5Ne3DiR5wXrEyqdjgRIsk="
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "401: wrong credentials: `WRONG_PASSWORD`, `TOTP_REQUIRED` (TOTP is enabled and no `totpToken` was sent) or `WRONG_TOTP`"
+
+    *   `application/json; charset=utf-8`: [`Error`](#schema-Error)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `integer (int32)`  <br>HTTP status, identical to the one given in HTTP response |
+    | `code`  <br>_required_ | `string`  <br>stable string constant |
+    | `message`  <br>_required_ | `string`  <br>Human readable error, potentially with more details, |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": 400,
+        "code": "NOTE_IS_PROTECTED",
+        "message": "Note 'evnnmvHTCgIn' is protected and cannot be modified through ETAPI"
     }
     ```
 

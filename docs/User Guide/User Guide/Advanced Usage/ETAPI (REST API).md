@@ -12,7 +12,7 @@ As an alternative to calling the API directly, there are client libraries to sim
 
 ## Obtaining a token
 
-All operations with the REST API have to be authenticated using a token. You can get this token either from Options -> ETAPI or programmatically using the `/auth/login` REST call (see the [spec](https://github.com/TriliumNext/Trilium/blob/master/src/etapi/etapi.openapi.yaml)).
+All operations with the REST API have to be authenticated using a token. You can get this token either from Options -> ETAPI or programmatically using the `/auth/login` REST call (see the [spec](https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/etapi.openapi.yaml)). With [multi-factor authentication](../Installation%20%26%20Setup/Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md) enabled, `/auth/login` also needs the one-time password or a recovery code in `totpToken`.
 
 ## Authentication
 
