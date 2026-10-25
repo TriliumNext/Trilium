@@ -19,7 +19,7 @@
     "@phosphor-icons/web": "2.1.2",
     "jsdom": "30.1.3",
     "opentype.js": "2.0.0",
-    "paper": "0.14.0",
+    "paper": "0.16.0",
     "paperjs-offset": "2.2.2",
     "ttf2woff2": "8.0.1"
   }
