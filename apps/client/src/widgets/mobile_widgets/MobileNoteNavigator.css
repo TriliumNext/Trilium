@@ -148,6 +148,7 @@
     touch-action: pan-y;
     overscroll-behavior: contain;
     padding-bottom: calc(var(--navigator-group-spacing) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    mask-image: linear-gradient(to bottom, transparent, #000 var(--navigator-group-spacing));
 }
 
 .mobile-navigator-scroll.is-pending .mobile-navigator-body {
