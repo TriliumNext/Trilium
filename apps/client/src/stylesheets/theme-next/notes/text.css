@@ -7,7 +7,8 @@
  */
 
 .ck.ck-toolbar,
-.ck.ck-block-toolbar-button {
+.ck.ck-block-toolbar-button,
+.ck.ck-color-selector {
     --ck-color-toolbar-background: transparent;
 
     --ck-color-button-default-background: transparent;
@@ -363,11 +364,47 @@ div.ck.ck-collapsible {
 /* Color palette */
 :root .ck.ck-color-selector .ck-color-grid {
     --ck-editor-toolbar-button-on-shadow: none; /* Remove the shadow of the selected color button */
-    --ck-color-grid-gap: 5px;
-    --ck-color-grid-tile-border-radius: var(--ck-border-radius);
-    --ck-color-interactive-focus-border: var(--ck-color-focus-border);
+    --ck-color-grid-gap: 8px;
+    --ck-color-grid-tile-border-radius: 4px;
 
     width: auto;
+}
+
+/* Color tiles, drawn as the cells of ColorPicker.css */
+:root .ck.ck-color-selector .ck-color-grid__tile {
+    &:is(.ck-on, :hover, :focus) {
+        box-shadow: none;
+    }
+
+    &.ck-color-selector__color-tile_bordered {
+        box-shadow: inset 0 0 0 1px var(--ck-color-border-control);
+    }
+
+    &:hover:not(.ck-on, .ck-disabled) {
+        transform: scale(1.2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--input-focus-outline-color);
+        outline-offset: 2px;
+    }
+
+    &.ck-on .ck-icon {
+        display: none;
+    }
+
+    /* The selection ring takes the tile's own color, which only its inline background holds. */
+    &.ck-on::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        background: inherit;
+        mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+        mask-clip: padding-box, border-box;
+        mask-composite: exclude;
+    }
 }
 
 /* Color picker button */
@@ -376,15 +413,6 @@ div.ck.ck-collapsible {
 
     border-bottom-left-radius: var(--ck-border-radius);
     border-bottom-right-radius: var(--ck-border-radius);
-}
-
-/* Current color checkmark */
-:root .ck.ck-color-selector .ck-color-grid .ck-icon {
-    color: white;
-}
-
-:root .ck.ck-color-selector .ck-color-grid .ck-icon__fill {
-    fill: black !important;
 }
 
 /* Hex color input box prefix */

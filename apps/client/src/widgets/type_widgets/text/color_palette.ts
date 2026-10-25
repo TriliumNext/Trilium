@@ -13,12 +13,13 @@ export function buildFontColorConfig() {
     };
 }
 
-/** The same swatches for the table and cell properties. */
+/** The same swatches and rows for the table and cell properties. */
 export function buildTableColorConfig() {
     const colors = buildSwatches();
+    const palette = { borderColors: colors, backgroundColors: colors, colorGridColumns: 4 };
     return {
-        tableProperties: { borderColors: colors, backgroundColors: colors },
-        tableCellProperties: { borderColors: colors, backgroundColors: colors }
+        tableProperties: palette,
+        tableCellProperties: palette
     };
 }
 

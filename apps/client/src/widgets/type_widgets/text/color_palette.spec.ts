@@ -29,8 +29,10 @@ describe("buildFontColorConfig", () => {
 });
 
 describe("buildTableColorConfig", () => {
-    it("gives table and cell borders and backgrounds the same swatches", () => {
+    it("gives table and cell borders and backgrounds the same swatches, four to a row", () => {
         const { tableProperties, tableCellProperties } = buildTableColorConfig();
+        expect(tableProperties.colorGridColumns).toBe(4);
+        expect(tableCellProperties.colorGridColumns).toBe(4);
         for (const colors of [
             tableProperties.borderColors, tableProperties.backgroundColors,
             tableCellProperties.borderColors, tableCellProperties.backgroundColors
