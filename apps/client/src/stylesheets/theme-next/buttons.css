@@ -230,7 +230,8 @@ button.tn-low-profile:hover {
     }
 }
 
-:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
+:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes,
+:root .ck.ck-toolbar[role="radiogroup"] > .ck-toolbar__items {
     gap: 4px;
     border-radius: 8px;
     background: var(--button-group-background-color);
@@ -243,10 +244,16 @@ button.tn-low-profile:hover {
         border-radius: 8px;
         background: transparent;
         border-color: transparent;
+        color: var(--cmd-button-text-color);
 
         &:hover:not(.ck-on) {
-            background: var(--hover-item-background-color);
-            color: var(--hover-item-text-color);
+            background: var(--cmd-button-hover-background-color);
+            color: var(--cmd-button-hover-text-color);
+        }
+
+        &:not(.ck-disabled):active {
+            opacity: 0.85;
+            transform: scale(0.95);
         }
 
         &.ck-on, &.ck-on:hover {

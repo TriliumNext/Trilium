@@ -20,12 +20,6 @@
 
     --ck-color-split-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
 
-    --ck-focus-ring: 1px solid transparent;
-    --ck-button-focus-border-color: transparent;
-    --ck-color-focus-border: var(--input-focus-outline-color);
-    --ck-focus-outer-shadow: none;
-    --ck-focus-disabled-outer-shadow: none;
-
     --ck-border-radius: 6px;
     --ck-toolbar-text-font-size: 13px;
 }
@@ -75,7 +69,7 @@
     background: var(--block-toolbar-button-hover-surface);
 }
 
-.ck.ck-toolbar .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
+.ck.ck-toolbar:not([role="radiogroup"]) .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
 .ck.ck-block-toolbar-button:active svg {
     transform: scale(.8);
 }
@@ -86,7 +80,18 @@
 }
 
 /* Focus visible */
-.ck.ck-toolbar .ck-button:focus-visible {
+.ck.ck-toolbar,
+.ck.ck-block-toolbar-button,
+.ck.ck-dropdown__panel {
+    --ck-focus-ring: 1px solid transparent;
+    --ck-button-focus-border-color: transparent;
+    --ck-color-focus-border: var(--input-focus-outline-color);
+    --ck-focus-outer-shadow: none;
+    --ck-focus-disabled-outer-shadow: none;
+}
+
+.ck.ck-toolbar .ck-button:focus-visible,
+.ck.ck-dropdown__panel .ck-button:focus-visible {
     --ck-focus-ring: 1px solid var(--input-focus-outline-color);
     --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
@@ -631,6 +636,28 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 :root input.ck.ck-input-text[readonly="true"] {
     cursor: not-allowed;
     background: var(--input-background-color);
+}
+
+/*
+ * Combo boxes
+ */
+
+/* forms.css draws the arrow as a background and dims the whole box when disabled. */
+:root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow {
+    display: none;
+}
+
+:root .ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label {
+    opacity: 1;
+}
+
+/*
+ * Button groups
+ */
+
+:root .ck.ck-toolbar[role="radiogroup"] {
+    border: none;
 }
 
 /* AI assistant composer */
