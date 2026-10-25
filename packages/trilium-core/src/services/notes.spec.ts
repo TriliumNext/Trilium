@@ -209,6 +209,20 @@ describe("notes service (real DB)", () => {
             }
         });
 
+        it("refuses a forced noteId that belongs to an existing note", () => {
+            const { note } = createNote("root", { title: "spec-existing", content: "<p>keep</p>" });
+
+            expect(() => createNote("root", { noteId: note.noteId, title: "spec-overwrite", content: "x" }))
+                .toThrow(ValidationError);
+            expect(becca.getNoteOrThrow(note.noteId).title).toBe("spec-existing");
+            expect(getContext().init(() => note.getContent())).toBe("<p>keep</p>");
+            expect(note.getParentNotes().map((parent) => parent.noteId)).toStrictEqual([ "root" ]);
+
+            expect(() => createNote("root", { noteId: "root", title: "spec-root" })).toThrow(/already exists/);
+            expect(becca.getNoteOrThrow("root").title).not.toBe("spec-root");
+            expect(becca.getBranch("root_root")).toBeNull();
+        });
+
         it("inherits the template's mime and adds a template relation when creating from a template", () => {
             const template = createNote("root", { title: "spec-template", content: "<p>tmpl</p>" });
             // Give the template a non-default mime so we can verify inheritance.

@@ -292,6 +292,10 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
+    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+        throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
+    }
+
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
@@ -315,9 +319,6 @@ function createNewNote(params: NoteParams): {
                 cls.disableEntityEvents();
             }
 
-            // TODO: think about what can happen if the note already exists with the forced ID
-            //       I guess on DB it's going to be fine, but becca references between entities
-            //       might get messed up (two note instances for the same ID existing in the references)
             note = new BNote({
                 noteId: params.noteId, // optionally can force specific noteId
                 title: params.title,

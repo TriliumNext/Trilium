@@ -42,7 +42,7 @@ Create a note and place it into the note tree
 | `notePosition` | `integer`  <br>Position of the note in the parent. Normal ordering is 10, 20, 30 ... So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000 |
 | `prefix` | `string`  <br>Prefix is branch (placement) specific title prefix for the note. Let's say you have your note placed into two different places in the tree, but you want to change the title a bit in one of the placements. For this you can use prefix. |
 | `isExpanded` | `boolean`  <br>true if this note (as a folder) should appear expanded |
-| `noteId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific noteId |
+| `noteId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific noteId. It must not belong to an existing note. |
 | `branchId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific branchId |
 | `dateCreated` | [`LocalDateTime`](#schema-LocalDateTime)  <br>Local timestap of the note creation. Specify only if you want to override the default (current datetime in the current timezone/offset). |
 | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>UTC timestap of the note creation. Specify only if you want to override the default (current datetime). |
@@ -136,6 +136,33 @@ Create a note and place it into the note tree
             "isExpanded": true,
             "utcDateModified": "2021-12-31 19:18:11.930Z"
         }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: a note with the given noteId already exists (NOTE\_ALREADY\_EXISTS)"
+
+    *   `application/json; charset=utf-8`: [`Error`](#schema-Error)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `integer (int32)`  <br>HTTP status, identical to the one given in HTTP response |
+    | `code`  <br>_required_ | `string`  <br>stable string constant |
+    | `message`  <br>_required_ | `string`  <br>Human readable error, potentially with more details, |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": 400,
+        "code": "NOTE_IS_PROTECTED",
+        "message": "Note 'evnnmvHTCgIn' is protected and cannot be modified through ETAPI"
     }
     ```
 
@@ -1443,6 +1470,33 @@ create an attribute for a given note
         "position": 0,
         "isInheritable": true,
         "utcDateModified": "2021-12-31 19:18:11.930Z"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: an attribute with the given attributeId already exists (ATTRIBUTE\_ALREADY\_EXISTS)"
+
+    *   `application/json; charset=utf-8`: [`Error`](#schema-Error)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `integer (int32)`  <br>HTTP status, identical to the one given in HTTP response |
+    | `code`  <br>_required_ | `string`  <br>stable string constant |
+    | `message`  <br>_required_ | `string`  <br>Human readable error, potentially with more details, |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": 400,
+        "code": "NOTE_IS_PROTECTED",
+        "message": "Note 'evnnmvHTCgIn' is protected and cannot be modified through ETAPI"
     }
     ```
 
@@ -3595,7 +3649,7 @@ The same data is served by GET /api/metrics to the web session.
 | `notePosition` | `integer`  <br>Position of the note in the parent. Normal ordering is 10, 20, 30 ... So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000 |
 | `prefix` | `string`  <br>Prefix is branch (placement) specific title prefix for the note. Let's say you have your note placed into two different places in the tree, but you want to change the title a bit in one of the placements. For this you can use prefix. |
 | `isExpanded` | `boolean`  <br>true if this note (as a folder) should appear expanded |
-| `noteId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific noteId |
+| `noteId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific noteId. It must not belong to an existing note. |
 | `branchId` | [`EntityId`](#schema-EntityId)  <br>DON'T specify unless you want to force a specific branchId |
 | `dateCreated` | [`LocalDateTime`](#schema-LocalDateTime)  <br>Local timestap of the note creation. Specify only if you want to override the default (current datetime in the current timezone/offset). |
 | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>UTC timestap of the note creation. Specify only if you want to override the default (current datetime). |

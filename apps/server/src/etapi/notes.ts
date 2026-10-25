@@ -65,6 +65,10 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "INVALID_MIME_FOR_IMAGE", `MIME type '${params.mime}' is not allowed for image notes. MIME must start with 'image/'.`);
         }
 
+        if (params.noteId && becca.getNote(params.noteId)) {
+            throw new eu.EtapiError(409, "NOTE_ALREADY_EXISTS", `Note '${params.noteId}' already exists.`);
+        }
+
         try {
             const resp = noteService.createNewNote(params);
             // `save()` stamps the current time, so `setDateCreatedAndModified()` applies the

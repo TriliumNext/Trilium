@@ -145,6 +145,31 @@ describe("etapi/create-entities", () => {
             expect(response.body.code).toStrictEqual("INVALID_MIME_FOR_IMAGE");
         });
 
+        it("refuses to create a note or attribute over an existing one", async () => {
+            for (const [ noteId, parentNoteId ] of [ [ createdNoteId, "root" ], [ "root", "root" ] ]) {
+                const response = await supertest(app)
+                    .post("/etapi/create-note")
+                    .auth(USER, token, { "type": "basic"})
+                    .send({ noteId, parentNoteId, title: "overwritten", type: "text", content: "x" })
+                    .expect(409);
+                expect(response.body.code).toStrictEqual("NOTE_ALREADY_EXISTS");
+            }
+            expect(becca.getNoteOrThrow(createdNoteId).title).toStrictEqual("Hello");
+            expect(becca.getNoteOrThrow("root").title).not.toStrictEqual("overwritten");
+            expect(becca.getBranch("root_root")).toBeNull();
+
+            const response = await supertest(app)
+                .post("/etapi/attributes")
+                .auth(USER, token, { "type": "basic"})
+                .send({ attributeId: createdAttributeId, noteId: "root", type: "label", name: "overwritten" })
+                .expect(409);
+            expect(response.body.code).toStrictEqual("ATTRIBUTE_ALREADY_EXISTS");
+            expect(becca.getAttributeOrThrow(createdAttributeId)).toMatchObject({
+                noteId: createdNoteId,
+                name: "mylabel"
+            });
+        });
+
         it("reports a 500 when note creation throws", async () => {
             vi.spyOn(noteService, "createNewNote").mockImplementation(() => {
                 throw new Error("boom");
