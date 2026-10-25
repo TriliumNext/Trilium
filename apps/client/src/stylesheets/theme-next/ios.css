@@ -348,16 +348,17 @@ body.mobile.ios {
             }
         }
 
-        /* Each button after the title is a 40px circle with the 8px margin from dialogs.css. */
+        /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
         .modal .modal-header {
-            --modal-header-trailing-width: 48px;
+            --modal-header-trailing-width: 52px;
+            padding-block: 12px !important;
 
             &:has(> .modal-title:nth-last-child(3)) {
-                --modal-header-trailing-width: 96px;
+                --modal-header-trailing-width: 104px;
             }
 
             &:has(> .modal-title:nth-last-child(4)) {
-                --modal-header-trailing-width: 144px;
+                --modal-header-trailing-width: 156px;
             }
 
             .modal-title,
@@ -380,18 +381,18 @@ body.mobile.ios {
                 display: none;
             }
 
-            /* The close button follows the master-detail header; the back button, 40px with an 8px
+            /* The close button follows the master-detail header; the back button, 44px with an 8px
                gap, takes its width. */
             .tn-master-detail-header {
-                padding-inline-start: 48px;
+                padding-inline-start: 52px;
 
                 &:has(> button.icon-action) {
                     padding-inline-start: 0;
                 }
 
                 > button.icon-action {
-                    --icon-button-size: 40px;
-                    --icon-button-icon-ratio: 0.6;
+                    --icon-button-size: 44px;
+                    --icon-button-icon-ratio: 0.55;
                     --icon-button-color: var(--main-text-color);
                     --icon-button-hover-color: var(--main-text-color);
                     --icon-button-hover-background: var(--glass-background);
@@ -405,8 +406,9 @@ body.mobile.ios {
             }
 
             :is(.btn-close, .help-button, .custom-title-bar-button) {
-                --modal-control-button-size: 40px;
+                --modal-control-button-size: 44px;
                 flex-shrink: 0;
+                margin-block: 0;
                 margin-inline-end: 0;
                 font-size: 22px;
                 backdrop-filter: var(--dropdown-backdrop-filter);
