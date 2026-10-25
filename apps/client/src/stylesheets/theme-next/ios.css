@@ -128,6 +128,10 @@ body.mobile.ios {
     .modal.options-dialog {
         --modal-background-color: var(--grouped-background-color);
 
+        .modal-header {
+            background-color: color-mix(in srgb, var(--grouped-card-background-color) 60%, var(--grouped-background-color));
+        }
+
         .tn-card {
             --card-border-radius: var(--grouped-card-radius);
             --card-padding-inline: 16px;
