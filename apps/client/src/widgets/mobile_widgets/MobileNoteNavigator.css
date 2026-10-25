@@ -34,6 +34,19 @@
     color: var(--main-text-color);
 }
 
+.mobile-navigator-workspaces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px 2px;
+}
+
+.mobile-navigator-workspace {
+    --badge-radius: 12px;
+    --color: var(--input-background-color);
+    color: var(--main-text-color);
+}
+
 .mobile-navigator-hoisted-badge .text {
     display: flex;
     align-items: center;
@@ -100,7 +113,7 @@
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     overscroll-behavior: contain;
-    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(var(--navigator-group-spacing) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 .mobile-navigator-scroll.is-pending .mobile-navigator-body {

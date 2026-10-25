@@ -265,7 +265,7 @@ body.mobile.ios {
         }
 
         .mobile-navigator-scroll {
-            padding-bottom: var(--mobile-bottom-bar-height);
+            padding-bottom: calc(var(--mobile-bottom-bar-height) + var(--navigator-group-spacing));
         }
 
         &:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
