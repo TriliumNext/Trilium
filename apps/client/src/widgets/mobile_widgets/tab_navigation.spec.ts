@@ -42,5 +42,9 @@ describe("tab navigation", () => {
         expect(getSpotlightedNoteId("root/folder", "root/folder")).toBeUndefined();
         expect(getSpotlightedNoteId("root/folder", "root/folderish/page")).toBeUndefined();
         expect(getSpotlightedNoteId("root/folder", null)).toBeUndefined();
+        // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
+        expect(getSpotlightedNoteId("folder", "root/folder/inner/leaf")).toBe("inner");
+        expect(getSpotlightedNoteId("folder/inner", "root/folder/inner/leaf")).toBe("leaf");
+        expect(getSpotlightedNoteId("folder/inner", "root/folder/page")).toBeUndefined();
     });
 });
