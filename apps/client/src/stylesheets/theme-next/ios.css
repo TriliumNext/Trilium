@@ -231,10 +231,37 @@ body.mobile.ios {
             .dropdown-menu.mobile-bottom-menu
         ).show {
             --menu-background-color: var(--glass-background);
-            --mobile-menu-group-radius: calc(var(--mobile-sheet-radius) - var(--menu-padding-size));
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-radius);
+            --mobile-menu-corner-radius: calc(var(--mobile-sheet-radius) - var(--menu-padding-size));
+            --mobile-menu-bottom-corner-radius: calc(var(--mobile-sheet-bottom-radius) - var(--menu-padding-size));
             border: 0;
-            border-radius: var(--mobile-sheet-radius);
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
             box-shadow: var(--glass-shadow);
+
+            /* Only the corners that sit in a corner of the menu follow its curve. */
+            .tn-menu-scroll {
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:first-child,
+                > .form-list-row:first-child > .form-list-col:first-child > .dropdown-item {
+                    border-start-start-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:last-child,
+                > .form-list-row:first-child > .form-list-col:last-child > .dropdown-item {
+                    border-start-end-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:first-child > .dropdown-item {
+                    border-end-start-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:last-child > .dropdown-item {
+                    border-end-end-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+            }
         }
 
         :is(
@@ -246,7 +273,7 @@ body.mobile.ios {
         }
 
         :is(#context-menu-container, .dropdown-menu).mobile-bottom-menu.show {
-            --mobile-sheet-radius: var(--mobile-sheet-corner-radius);
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
             padding-bottom: var(--menu-padding-size) !important;
         }
 
@@ -336,16 +363,16 @@ body.mobile.ios {
         /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
            rounded corners. */
         .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
-            --mobile-sheet-radius: var(--mobile-sheet-corner-radius);
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
             bottom: var(--mobile-sheet-margin);
             width: calc(100% - 2 * var(--mobile-sheet-margin));
-            border-radius: var(--mobile-sheet-radius);
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
             background: var(--glass-background);
             backdrop-filter: var(--dropdown-backdrop-filter);
             box-shadow: var(--glass-shadow);
 
             > .modal-content {
-                border-radius: var(--mobile-sheet-radius);
+                border-radius: inherit;
                 background: transparent !important;
                 box-shadow: none;
             }
