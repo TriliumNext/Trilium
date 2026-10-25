@@ -30,11 +30,19 @@ const MAX_FILENAME_BYTES = 255;
 /** How many siblings ahead of the one being written have their content prepared already. */
 const PREPARE_WINDOW = 8;
 
+/**
+ * The note content, summed over the whole export, that can be loaded for preparing ahead of its
+ * turn. Prepared content is not in the archive yet, so `waitForCapacity()` does not pace it.
+ */
+const PREPARE_AHEAD_BYTES = 32 * 1024 * 1024;
+
 /** A note's data file content, ready to append; `note` is null for a clone's placeholder page. */
 interface PreparedNote {
     note: BNote | null;
     content: string | Uint8Array | null;
     dateModified: Date | null;
+    /** The length of the stored content that was loaded, counted against `PREPARE_AHEAD_BYTES`. */
+    loadedLength: number;
 }
 
 /**
@@ -410,6 +418,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return content;
     }
 
+    let preparedLength = 0;
+
     /**
      * Prepares the content of a note's data file. Starting it ahead of {@link saveNote} lets the
      * conversions of several siblings run while the archive is still written strictly in order.
@@ -430,7 +440,12 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const targetUrl = getNoteTargetUrl(noteMeta.noteId, noteMeta);
             const content = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
 
-            return { note: null, content: await prepareContent(noteMeta.title, content, noteMeta, undefined), dateModified: null };
+            return {
+                note: null,
+                content: await prepareContent(noteMeta.title, content, noteMeta, undefined),
+                dateModified: null,
+                loadedLength: 0
+            };
         }
 
         const note = becca.getNote(noteMeta.noteId);
@@ -441,14 +456,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             throw new Error("Unable to find modification date.");
         }
 
-        const content = noteMeta.dataFileName
-            ? await prepareContent(noteMeta.title, note.getContent(), noteMeta, note)
+        const stored = noteMeta.dataFileName ? note.getContent() : null;
+        const loadedLength = stored?.length ?? 0;
+        preparedLength += loadedLength;
+        const content = stored !== null
+            ? await prepareContent(noteMeta.title, stored, noteMeta, note)
             : null;
-        return { note, content, dateModified: dateUtils.parseDateTime(note.utcDateModified) };
+        const dateModified = dateUtils.parseDateTime(note.utcDateModified);
+        return { note, content, dateModified, loadedLength };
     }
 
     async function saveNote(noteMeta: NoteMeta, filePathPrefix: string, prepared = startPreparing(noteMeta)) {
-        const { note, content, dateModified } = await prepared;
+        const { note, content, dateModified, loadedLength } = await prepared;
+        preparedLength -= loadedLength;
 
         if (!note || !dateModified) {
             archive.append(typeof content === "string" ? content : new Uint8Array(content ?? []), {
@@ -522,8 +542,15 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const preparing = new Map<number, Promise<PreparedNote>>();
             let nextToStart = 0;
             for (const [ index, childMeta ] of children.entries()) {
+                // Only a note with a `format` is converted. Loading any other note early saves no
+                // time, so `saveNote()` loads it when its turn comes.
                 for (; nextToStart < Math.min(children.length, index + windowSize); nextToStart++) {
-                    preparing.set(nextToStart, startPreparing(children[nextToStart]));
+                    if (preparedLength >= PREPARE_AHEAD_BYTES) {
+                        break;
+                    }
+                    if (children[nextToStart].format) {
+                        preparing.set(nextToStart, startPreparing(children[nextToStart]));
+                    }
                 }
                 const prepared = preparing.get(index);
                 preparing.delete(index);
@@ -610,7 +637,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     // stdout on large exports (e.g. 20k lines for a 20k-note subtree) for no operational benefit.
     log.info(`Exporting ${noteCount} notes with format '${format}'`);
 
-    await saveNote(rootMeta, "");
+    try {
+        await saveNote(rootMeta, "");
+    } catch (e: unknown) {
+        // The archive is already streaming, so the failure cannot become an error response. Closing
+        // the destination fails the download or the file instead of leaving it open. `destroy()`
+        // gets no error: a file stream would emit it with no listener and crash the process.
+        if ("destroy" in res && typeof res.destroy === "function") {
+            res.destroy();
+        }
+        throw e;
+    }
 
     provider.afterDone(rootMeta);
 
