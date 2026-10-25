@@ -53,6 +53,16 @@ describe("RevisionContentText", () => {
         });
     });
 
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const container = await renderRevision(
+            "<p>before</p><ul><li><p style=\"text-align:center;\">a</p></li><li>b</li></ul>");
+
+        await vi.waitFor(() => {
+            expect([ ...container.querySelectorAll("li") ].map((item) => item.className))
+                .toEqual([ "trilium-list-item-aligned-center", "" ]);
+        });
+    });
+
     it("resolves reference link titles against the current note tree", async () => {
         const note = buildNote({ title: "Target note" });
         const container = await renderRevision(

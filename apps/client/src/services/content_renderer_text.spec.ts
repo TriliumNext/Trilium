@@ -311,6 +311,15 @@ describe("Text content renderer", () => {
         expect(tableWidth(excerpt)).toBe("800px");
     });
 
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const full = document.createElement("div");
+        await renderTextContent(buildNote({ title: "Lists" }),
+            "<ul><li><p style=\"text-align:center;\">a</p></li><li>b</li></ul>", $(full));
+
+        expect([ ...full.querySelectorAll("li") ].map((item) => item.className))
+            .toEqual([ "trilium-list-item-aligned-center", "" ]);
+    });
+
     it("renders nothing for an empty note with no children when noChildrenList is set", async () => {
         const contentEl = document.createElement("div");
         const note = buildNote({ title: "Empty note" });

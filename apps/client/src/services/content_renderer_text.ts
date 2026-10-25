@@ -1,3 +1,6 @@
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
 import {
     applyStickyTableHeaders
@@ -55,6 +58,7 @@ export async function renderTextContent(
     } else if (hasContent) {
         addContentDisposer($content[0], applyTableScroll($content[0]));
         addContentDisposer($content[0], applyStickyTableHeaders($content[0]));
+        applyListItemAlignment($content[0]);
         // Runs before `postProcessRichContent()` renders embeds, so their blocks are not searched.
         if (options.highlightBlock) {
             highlightBlockReference($content[0], options.highlightBlock);

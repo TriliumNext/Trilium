@@ -1,5 +1,8 @@
 import "./revisions.css";
 
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { dayjs, type RevisionItem, type RevisionPojo, safeHostname, safeLinkPreviewHref } from "@triliumnext/commons";
 import clsx from "clsx";
 import { diffWords } from "diff";
@@ -685,6 +688,7 @@ export function RevisionContentText({ content, noteId }: {
         if (!container) return;
 
         applyLinkEmbeds(container);
+        applyListItemAlignment(container);
         void applyReferenceLinks(container, noteId);
     }, [content, noteId]);
 

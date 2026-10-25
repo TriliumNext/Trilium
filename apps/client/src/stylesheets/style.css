@@ -1290,7 +1290,7 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     }
 
     &:has(.include-note-content[hidden]) > .ck-widget__resize-handles
-        > :not(.ck-widget__resize-handle_width) {
+        > .ck-widget__resize-handle:not(.ck-widget__resize-handle_width) {
         display: none;
     }
 }
