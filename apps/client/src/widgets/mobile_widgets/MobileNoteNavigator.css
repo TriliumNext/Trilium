@@ -197,7 +197,7 @@
 }
 
 .mobile-navigator-children-label {
-    padding: var(--navigator-group-spacing) calc(var(--navigator-group-inset) + var(--navigator-row-padding)) 6px;
+    padding: var(--navigator-group-spacing) var(--navigator-group-inset) 6px;
     font-size: 0.75em;
     font-weight: 600;
     letter-spacing: 0.08em;
