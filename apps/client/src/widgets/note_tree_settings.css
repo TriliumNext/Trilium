@@ -9,7 +9,7 @@
     border: 1px solid var(--tree-settings-border-color);
     border-radius: 4px;
     padding: 15px;
-    width: 400px;
+    width: 500px;
     max-width: calc(100vw - 20px);
     background-color: var(--tree-settings-background-color);
     overflow: auto;

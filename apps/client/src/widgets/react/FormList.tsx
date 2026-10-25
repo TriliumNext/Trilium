@@ -232,11 +232,12 @@ export function FormListItem({
         run(new MouseEvent("click", { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey }));
     }
 
-    function onPointed(e: { currentTarget: HTMLLIElement }) {
+    function onPointed() {
         if (!menu || isMobile()) return;
+        // Before `menu.setActive()`: closing a submenu can activate the row that opened it.
+        menu.hoverSubmenu(level);
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, undefined, e.currentTarget);
     }
 
     const hasOwnIcon = !!iconSvg || (!!icon && icon !== EMPTY_ICON);
@@ -266,13 +267,13 @@ export function FormListItem({
             tabIndex={menu ? undefined : container ? -1 : 0}
             // While the keys drive the menu, a row entered by a pointer at rest, as when the menu
             // appears under it, keeps the keys' row. See `pointerMoved`.
-            onPointerEnter={menu ? (e) => {
-                if (!menu.keyboardDriven) onPointed(e);
+            onPointerEnter={menu ? () => {
+                if (!menu.keyboardDriven) onPointed();
             } : undefined}
             // The keys can move the active row from under a pointer at rest, whose `:hover` would
             // then mark a second row. The next move of the pointer makes its row the active one.
             onPointerMove={menu ? (e) => {
-                if (!isActive && pointerMoved(e)) onPointed(e);
+                if (!isActive && pointerMoved(e)) onPointed();
             } : undefined}
             // A press keeps focus where it was, as in a native menu: a text editor keeps the
             // selection a command such as a spelling fix acts on, and a field beside a dropdown
@@ -454,7 +455,7 @@ export function FormListHeader({ text, actions = [] }: FormListHeaderOpts) {
                         className="tn-menu-header-actions"
                         // As over a row, the pointer closes the submenu open at this level.
                         onPointerMove={(e) => {
-                            if (menu && pointerMoved(e)) menu.closeSubmenu(level);
+                            if (menu && pointerMoved(e)) menu.hoverSubmenu(level);
                         }}
                         // A press keeps focus where it was, as on a row.
                         onMouseDown={(e) => e.preventDefault()}
@@ -553,7 +554,7 @@ function MenuSubmenu({
         if (isMobile()) return;
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, disabled ? undefined : id, e.currentTarget);
+        menu.hoverSubmenu(level, disabled ? undefined : id, e.currentTarget);
     }
 
     const layer = isMobile()
@@ -587,7 +588,7 @@ function MenuSubmenu({
                 // opens its own only on a press.
                 onPointerMove={(e) => {
                     if (!pointerMoved(e)) return;
-                    if (!open) menu.closeSubmenu(level);
+                    menu.hoverSubmenu(level, open ? id : undefined, e.currentTarget);
                     if (!disabled && !isActive) menu.setActive(level, id);
                 }}
                 // As any row: the press keeps focus where it was, and the release acts.
@@ -684,7 +685,7 @@ function SubmenuLayer({ level, submenu, filter, children }: {
     children: ComponentChildren
 }) {
     const layerRef = useRef<HTMLDivElement>(null);
-    const { dropStart: dropStartLevels, setDropStart, submenuShown } = useMenu();
+    const { dropStart: dropStartLevels, setDropStart, submenuShown, hoverSubmenu } = useMenu();
     const dropStart = !!dropStartLevels[level - 1];
     const pinned = !!filter?.text;
     /** How far below its row's top the layer stands while pinned. */
@@ -748,6 +749,9 @@ function SubmenuLayer({ level, submenu, filter, children }: {
                     onAnimationStart={(e) => {
                         if (e.target === e.currentTarget) submenuShown(submenu);
                     }}
+                    // Over the layer, the pointer keeps it open as over its row, whatever rows it
+                    // crossed on the way.
+                    onPointerEnter={() => hoverSubmenu(level - 1, submenu.id, submenu.anchor)}
                 >
                     <MenuList filter={filter}>{children}</MenuList>
                 </div>

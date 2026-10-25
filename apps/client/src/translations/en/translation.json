@@ -2858,7 +2858,10 @@
     "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
     "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note.",
     "show-all-notes": "Show all notes",
-    "back-to-tree": "Note tree"
+    "back-to-tree": "Note tree",
+    "display-density": "Display density",
+    "display-density-relaxed": "Relaxed",
+    "display-density-dense": "Dense"
   },
   "mobile_note_navigator": {
     "back": "Go up one level",

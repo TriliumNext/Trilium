@@ -88,6 +88,17 @@ const ACTION_TOOLTIP = { placement: "top", animation: false } as const;
 /** How long typed letters keep adding to the text a row is looked up by. */
 const TYPEAHEAD_TIMEOUT = 500;
 
+/** How long a submenu in view stays open once the pointer moves onto another row of its level. */
+const SUBMENU_CLOSE_DELAY = 750;
+
+/** A change to the submenus at `level` that the pointer asked for, held back by `SUBMENU_CLOSE_DELAY`. */
+interface HeldChange {
+    level: number;
+    rowId?: string;
+    anchor?: HTMLElement;
+    timeout: number;
+}
+
 export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
     const menuRef = useRef<HTMLDivElement | null>(null);
     // The submenus' layers render into the menu element, which rows reach through the context.
@@ -102,16 +113,23 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     /** The submenus whose layer waited out the stylesheet's opening delay. */
     const shownSubmenus = useRef(new WeakSet<OpenSubmenu>()).current;
 
+    const heldChange = useRef<HeldChange | undefined>(undefined);
+    const dropHeldChange = useCallback(() => {
+        window.clearTimeout(heldChange.current?.timeout);
+        heldChange.current = undefined;
+    }, []);
+    useLayoutEffect(() => dropHeldChange, [ dropHeldChange ]);
+
     const openSubmenu = useCallback((level: number, rowId?: string, anchor?: HTMLElement, chosen = false) => {
+        dropHeldChange();
         setOpen((current) => {
             if (rowId ? current[level]?.id === rowId : current.length <= level) return current;
             const kept = current.slice(0, level);
             const replaced = current[level];
-            const immediate = chosen
-                || (!!replaced && (replaced.immediate || shownSubmenus.has(replaced)));
+            const immediate = chosen || (!!replaced && isInView(replaced, shownSubmenus));
             return rowId && anchor ? [ ...kept, { id: rowId, anchor, immediate } ] : kept;
         });
-    }, [ shownSubmenus ]);
+    }, [ shownSubmenus, dropHeldChange ]);
     const submenuShown = useCallback((submenu: OpenSubmenu) => {
         shownSubmenus.add(submenu);
     }, [ shownSubmenus ]);
@@ -177,14 +195,46 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             activateFirstRowRef.current(row.level);
         });
     }, [ rows ]);
+    /**
+     * Closes the submenus open at `level` and deeper. If the active row is inside them, the row
+     * that opened them becomes active, so the keys continue from there.
+     */
     const closeSubmenu = (level: number) => {
         const opener = open[level];
         if (!opener) return;
         openSubmenu(level);
         if (active && active.level > level) setActive(level, opener.id);
     };
+    const applyHover = (level: number, rowId?: string, anchor?: HTMLElement) => {
+        if (rowId && anchor) openSubmenu(level, rowId, anchor);
+        else closeSubmenu(level);
+    };
+    // The held change runs with the state of the render it runs after.
+    const applyHoverRef = useRef(applyHover);
+    applyHoverRef.current = applyHover;
+    const hoverSubmenu = (level: number, rowId?: string, anchor?: HTMLElement) => {
+        const standing = open[level];
+        if (!standing || standing.id === rowId || !isInView(standing, shownSubmenus)) {
+            dropHeldChange();
+            applyHover(level, rowId, anchor);
+            return;
+        }
+        // The delay runs from the first row the pointer moved onto; the last one decides.
+        const held = heldChange.current;
+        if (held?.level === level) {
+            Object.assign(held, { rowId, anchor });
+            return;
+        }
+        dropHeldChange();
+        const change: HeldChange = { level, rowId, anchor, timeout: 0 };
+        change.timeout = window.setTimeout(() => {
+            heldChange.current = undefined;
+            applyHoverRef.current(change.level, change.rowId, change.anchor);
+        }, SUBMENU_CLOSE_DELAY);
+        heldChange.current = change;
+    };
     const context: MenuContextValue = {
-        open, openSubmenu, closeSubmenu, submenuShown, active, setActive, rows, registerRow,
+        open, openSubmenu, hoverSubmenu, submenuShown, active, setActive, rows, registerRow,
         keyboardDriven, isReversed, dropStart, setDropStart, close, filter, setFilter, layerHost
     };
 
@@ -284,6 +334,8 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     }, []);
 
     function onKeyDown(e: KeyboardEvent) {
+        // Cancel the pending pointer change, so it cannot undo the key's change to the submenus.
+        dropHeldChange();
         // From a filter input, the keys act on the rows of the submenu it filters.
         const filterInput = e.target instanceof HTMLInputElement && e.target.matches(FILTER_INPUT) ? e.target : undefined;
         // On a phone, the deepest open submenu is the page on show, even before a row in it is active.
@@ -464,9 +516,10 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
                     if (pointerMoved(e)) setKeyboardDriven(false);
                 }}
                 // Fires only when the pointer is off every level, as the submenu layers are children
-                // of this element. Unless the keys drive the menu, only the deepest open submenu's
-                // row stays active.
+                // of this element. The open submenus stay, and unless the keys drive the menu, only
+                // the deepest one's row stays active.
                 onPointerLeave={() => {
+                    dropHeldChange();
                     if (keyboardDriven) return;
                     const deepest = open.at(-1);
                     setActiveRow(deepest && { level: open.length - 1, id: deepest.id });
@@ -682,7 +735,7 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
             // goes on from the action it last pointed at.
             onPointerMove={(e) => {
                 if (!menu || !pointerMoved(e)) return;
-                menu.closeSubmenu(level);
+                menu.hoverSubmenu(level);
                 if (!disabled && menu.active?.id !== id) menu.setActive(level, id);
             }}
             // A press keeps focus where it was, as on a row.
@@ -797,6 +850,14 @@ function hasRowBefore(row: Element | undefined) {
         if (sibling.classList.contains("dropdown-item")) return true;
     }
     return false;
+}
+
+/**
+ * Whether the layer of `submenu` is in view: shown at once, past the stylesheet's opening delay as
+ * `shown` records, or with motion off, which runs no delay.
+ */
+function isInView(submenu: OpenSubmenu, shown: WeakSet<OpenSubmenu>) {
+    return submenu.immediate || shown.has(submenu) || document.body.classList.contains("motion-disabled");
 }
 
 /** The filter input of the submenu open in `menu`, if one is. */

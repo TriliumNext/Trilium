@@ -20,6 +20,7 @@ describe("TreeSettings", () => {
         options.set("hideArchivedNotes_main", "false");
         options.set("autoCollapseNoteTree", "true");
         options.set("treeScrollFollowNavigation", "true");
+        options.set("treeDensity", "relaxed");
     });
 
     afterEach(() => {
@@ -28,14 +29,16 @@ describe("TreeSettings", () => {
     });
 
     function open(props: Partial<TreeSettingsProps> = {}) {
-        renderInto(
-            <TreeSettings
-                anchor={anchor}
-                onHideArchivedNotesChange={vi.fn()}
-                onClose={vi.fn()}
-                {...props}
-            />
-        );
+        act(() => {
+            renderInto(
+                <TreeSettings
+                    anchor={anchor}
+                    onHideArchivedNotesChange={vi.fn()}
+                    onClose={vi.fn()}
+                    {...props}
+                />
+            );
+        });
         const popup = document.querySelector<HTMLElement>(".tree-settings.tn-tool-dialog");
         if (!popup) throw new Error("Expected the tree settings popup.");
         return popup;
@@ -53,23 +56,46 @@ describe("TreeSettings", () => {
         });
     }
 
-    it("shows each option as a toggle holding its value, with no save button", () => {
+    function densityButton(popup: HTMLElement, density: string) {
+        const label = `note_tree.display-density-${density}`;
+        const buttons = popup.querySelectorAll<HTMLButtonElement>(".tn-segmented-choice button");
+        const button = [ ...buttons ].find((candidate) => candidate.textContent?.trim() === label);
+        if (!button) throw new Error(`No ${density} button.`);
+        return button;
+    }
+
+    it("shows each option in a card section of its own, with no save button", () => {
         const popup = open();
 
         expect(popup.getAttribute("role")).toBe("dialog");
         const title = popup.querySelector(".tree-settings-title");
         expect(title?.textContent).toBe("note_tree.tree-settings-title");
         expect(popup.getAttribute("aria-labelledby")).toBe(title?.id);
+        expect(popup.querySelectorAll(".tn-card")).toHaveLength(1);
+        const sections = [ ...popup.querySelectorAll(".tn-card .tn-card-section") ];
+        expect(sections.map((section) => [
+            section.querySelectorAll(".tn-segmented-choice").length,
+            section.querySelectorAll("input.switch-toggle").length
+        ])).toEqual([ [ 1, 0 ], [ 0, 1 ], [ 0, 1 ], [ 0, 1 ] ]);
+        expect(sections[0].classList).not.toContain("tn-card-option-wide");
+        expect(densityButton(popup, "relaxed").getAttribute("aria-pressed")).toBe("true");
+        expect(densityButton(popup, "dense").getAttribute("aria-pressed")).toBe("false");
         expect(toggleNamed(popup, "hide-archived-notes").checked).toBe(false);
         expect(toggleNamed(popup, "auto-collapse-note-tree").checked).toBe(true);
         expect(toggleNamed(popup, "follow-active-note").checked).toBe(true);
-        expect(popup.querySelectorAll("button")).toHaveLength(1);
+        const otherButtons = [ ...popup.querySelectorAll("button") ]
+            .filter((button) => !button.closest(".tn-segmented-choice"));
+        expect(otherButtons).toHaveLength(1);
     });
 
     it("saves each change at once and reloads the tree only for archived notes", async () => {
         const save = vi.spyOn(options, "save");
         const onHideArchivedNotesChange = vi.fn();
         const popup = open({ onHideArchivedNotesChange });
+
+        await act(async () => densityButton(popup, "dense").click());
+        expect(save).toHaveBeenLastCalledWith("treeDensity", "dense");
+        expect(densityButton(popup, "dense").getAttribute("aria-pressed")).toBe("true");
 
         await flip(popup, "follow-active-note");
         expect(save).toHaveBeenLastCalledWith("treeScrollFollowNavigation", "false");

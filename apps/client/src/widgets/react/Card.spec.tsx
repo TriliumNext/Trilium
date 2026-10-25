@@ -145,6 +145,11 @@ describe("OptionCardSection", () => {
         // at every width.
         expect(draw(<OptionCardSection label="Backup" href="#root/_hidden/_options" />))
             .not.toContain("tn-card-option-wide");
+        // The caller knows the control fits.
+        const inline = (
+            <OptionCardSection label="Density" inline><input type="text" /></OptionCardSection>
+        );
+        expect(draw(inline)).not.toContain("tn-card-option-wide");
     });
 });
 
