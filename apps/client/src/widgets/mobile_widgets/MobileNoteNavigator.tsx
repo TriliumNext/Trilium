@@ -1,6 +1,7 @@
 import "./MobileNoteNavigator.css";
 
 import clsx from "clsx";
+import type { ComponentChildren } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type Component from "../../components/component";
@@ -21,6 +22,7 @@ import { useShareState } from "../layout/NoteBadges";
 import { Badge } from "../react/Badge";
 import {
     useActiveNoteContext,
+    useChildNotes,
     useLongPressContextMenu,
     useNote,
     useNoteColorClass,
@@ -270,6 +272,25 @@ export default function MobileNoteNavigator() {
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
                     {!isHoisted && currentParentId === "root" && <WorkspaceCards />}
+                    {!isHoisted && currentParentId === "root" && (
+                        <BookmarkList
+                            renderRow={({ note, notePath, parentNoteId }) => (
+                                <NavigatorRow
+                                    key={note.noteId}
+                                    note={note}
+                                    parentNoteId={parentNoteId}
+                                    childNotePath={notePath}
+                                    isActive={note.noteId === activeNoteId}
+                                    isPending={note.noteId === pendingChildId}
+                                    isSpotlighted={false}
+                                    hideArchived={hideArchived}
+                                    onDrill={drillInto}
+                                    onOpen={openNotePath}
+                                    parentComponent={parentComponent}
+                                />
+                            )}
+                        />
+                    )}
                     {parentNote && (
                         <div className="mobile-navigator-children-label">
                             {t("mobile_note_navigator.current_note")}
@@ -474,6 +495,46 @@ export function WorkspaceCards() {
                         onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
                     />
                 ))}
+            </div>
+        </>
+    );
+}
+
+interface Bookmark {
+    note: FNote;
+    /** The note's best path in the tree, not the one through `_lbBookmarks`. */
+    notePath: string;
+    parentNoteId: string | undefined;
+}
+
+/**
+ * The bookmarks, as the launch bar's Bookmarks button lists them, for the root column of a tab
+ * that is not hoisted: a heading and a list of rows that `renderRow` draws.
+ */
+export function BookmarkList({ renderRow }: { renderRow: (bookmark: Bookmark) => ComponentChildren }) {
+    const bookmarkNotes = useChildNotes("_lbBookmarks");
+    const [ bookmarks, setBookmarks ] = useState<Bookmark[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        Promise.all(bookmarkNotes.map(async (note) => {
+            const notePath = await tree.resolveNotePath(note.noteId);
+            return notePath ? { note, notePath, parentNoteId: notePath.split("/").at(-2) } : null;
+        })).then((resolved) => {
+            if (!cancelled) setBookmarks(resolved.filter((bookmark): bookmark is Bookmark => !!bookmark));
+        });
+        return () => { cancelled = true; };
+    }, [ bookmarkNotes ]);
+
+    if (!bookmarks.length) return null;
+
+    return (
+        <>
+            <div className="mobile-navigator-children-label mobile-navigator-bookmarks-label">
+                {t("mobile_note_navigator.bookmarks")}
+            </div>
+            <div className="mobile-navigator-list">
+                {bookmarks.map(renderRow)}
             </div>
         </>
     );

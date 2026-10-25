@@ -22,3 +22,5 @@ _Folder_ assigns the `#bookmarkFolder` label to the note, so adding the label by
 On mobile, bookmarks are only displayed starting with v0.102.0. Because of the more constrained screen size, the bookmarks are grouped under a single icon instead of displaying them as separate icons.
 
 When pressed, a menu will appear listing all the bookmarks. Bookmark folders are also supported and will appear as submenus. Each submenu starts with its own note, so a note with children can be opened as well as browsed.
+
+On a phone, the bookmarks are also listed at the top of the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a> while it shows the root of a tab that is not hoisted, below the <a class="reference-link" href="Workspaces.md">Workspaces</a>. Tap a bookmark to open it, or, for one with children, to list them, as with the other notes of the tree.

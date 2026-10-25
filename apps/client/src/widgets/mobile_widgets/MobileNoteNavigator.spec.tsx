@@ -1,6 +1,7 @@
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import FBranch from "../../entities/fbranch";
 import type FNote from "../../entities/fnote";
@@ -10,7 +11,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { getListedChildCount, getPreviewNoteIds, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, getListedChildCount, getPreviewNoteIds, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -133,5 +134,53 @@ describe("WorkspaceCards", () => {
 
         (cards[0] as HTMLElement | undefined)?.click();
         expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
+    });
+});
+
+describe("BookmarkList", () => {
+    // `tree.resolveNotePath()` reads the active note path from the tab manager.
+    const { tabManager } = appContext;
+    beforeEach(() => {
+        appContext.tabManager = { getActiveContextNotePath: () => null } as unknown as typeof tabManager;
+    });
+    afterEach(() => {
+        appContext.tabManager = tabManager;
+    });
+
+    it("lists the bookmarks under their path in the tree, and nothing without any", async () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "bmFolder", title: "Folder", children: [ { id: "bookmarked", title: "Bookmarked" } ] }
+        ] });
+        const bookmarks = buildNote({ id: "_lbBookmarks", title: "Bookmarks" });
+        const renderRow = ({ note, notePath }: { note: FNote, notePath: string }) => (
+            <div key={note.noteId} className="row">{notePath}</div>
+        );
+        const mount = async () => {
+            let container = document.body;
+            await act(async () => {
+                container = renderInto(<BookmarkList renderRow={renderRow} />);
+            });
+            // The paths resolve after the bookmarks load.
+            await act(async () => {});
+            return container;
+        };
+
+        expect((await mount()).querySelector(".mobile-navigator-bookmarks-label")).toBeNull();
+
+        const bookmarked = froca.notes["bookmarked"];
+        if (!bookmarked) throw new Error("expected the bookmarked note");
+        const branchId = "_lbBookmarks_bookmarked";
+        froca.branches[branchId] = new FBranch(froca, {
+            branchId, noteId: "bookmarked", parentNoteId: "_lbBookmarks", notePosition: 0, fromSearchNote: false
+        });
+        bookmarks.addChild("bookmarked", branchId, false);
+        bookmarked.addParent("_lbBookmarks", branchId, false);
+
+        const container = await mount();
+        await vi.waitFor(() => {
+            expect([ ...container.querySelectorAll(".mobile-navigator-list .row") ].map((row) => row.textContent))
+                .toEqual([ "root/bmFolder/bookmarked" ]);
+        });
+        expect(container.querySelector(".mobile-navigator-bookmarks-label")?.textContent).toBe("mobile_note_navigator.bookmarks");
     });
 });

@@ -2865,6 +2865,7 @@
     "children_count_other": "{{count}} child notes",
     "children_hidden": "Child notes are hidden from the tree",
     "workspaces": "Workspaces",
+    "bookmarks": "Bookmarks",
     "add_child": "Add child note",
     "more_actions": "More actions"
   },
