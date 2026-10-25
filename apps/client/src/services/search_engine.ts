@@ -10,16 +10,24 @@ export const SEARCH_ENGINE_PRESETS = [
         nameKey: "search_engine.duckduckgo", icon: "bx bx-search-alt"
     },
     {
-        url: "https://www.bing.com/search?q={keyword}",
-        nameKey: "search_engine.bing", icon: "bx bxl-bing"
-    },
-    {
         url: "https://www.baidu.com/s?wd={keyword}",
         nameKey: "search_engine.baidu", icon: "bx bxl-baidu"
     },
     {
+        url: "https://www.bing.com/search?q={keyword}",
+        nameKey: "search_engine.bing", icon: "bx bxl-bing"
+    },
+    {
+        url: "https://search.brave.com/search?q={keyword}",
+        nameKey: "search_engine.brave", icon: "tn-brand tn-brand-brave"
+    },
+    {
         url: "https://www.google.com/search?q={keyword}",
         nameKey: "search_engine.google", icon: "bx bxl-google"
+    },
+    {
+        url: "https://yandex.com/search/?text={keyword}",
+        nameKey: "search_engine.yandex", icon: "bx bx-search-alt"
     }
 ] as const;
 

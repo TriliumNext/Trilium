@@ -107,14 +107,17 @@ describe("the search engine settings", () => {
         expect(urlBox()).toBeNull();
         expect(openMenu().map((row) => [
             row.textContent?.trim(),
-            [ ...row.querySelector(".bx")?.classList ?? [] ].find((name) => /^bxl?-/.test(name))
+            [ ...row.querySelector(".tn-icon")?.classList ?? [] ]
+                .filter((name) => name !== "tn-icon").join(" ")
         ])).toEqual([
-            [ "search_engine.none", "bx-block" ],
-            [ "search_engine.duckduckgo", "bx-search-alt" ],
-            [ "search_engine.bing", "bxl-bing" ],
-            [ "search_engine.baidu", "bxl-baidu" ],
-            [ "search_engine.google", "bxl-google" ],
-            [ "search_engine.custom", "bx-edit-alt" ]
+            [ "search_engine.none", "bx bx-block" ],
+            [ "search_engine.duckduckgo", "bx bx-search-alt" ],
+            [ "search_engine.baidu", "bx bxl-baidu" ],
+            [ "search_engine.bing", "bx bxl-bing" ],
+            [ "search_engine.brave", "tn-brand tn-brand-brave" ],
+            [ "search_engine.google", "bx bxl-google" ],
+            [ "search_engine.yandex", "bx bx-search-alt" ],
+            [ "search_engine.custom", "bx bx-edit-alt" ]
         ]);
 
         expect(getSearchEngineChoice("none")).toBe("none");
