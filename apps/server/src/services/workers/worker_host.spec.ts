@@ -37,7 +37,12 @@ describe("default fork spawner", () => {
         const env = { A: "1" };
         const handle = spawnWorker("/x/worker.cjs", { execArgv: [ "--flag" ], env, serviceName: "unused" });
 
-        expect(h.fork).toHaveBeenCalledWith("/x/worker.cjs", { execArgv: [ "--flag" ], env, serialization: "advanced" });
+        expect(h.fork).toHaveBeenCalledWith("/x/worker.cjs", {
+            execArgv: [ "--flag" ],
+            env,
+            serialization: "advanced",
+            windowsHide: true
+        });
         expect(handle.pid).toBe(1234);
 
         const messages: unknown[] = [];

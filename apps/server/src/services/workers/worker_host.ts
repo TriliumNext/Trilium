@@ -125,7 +125,8 @@ const forkSpawner: WorkerSpawner = (entryFile, { execArgv, env }) => {
         execArgv,
         env,
         // The default JSON serialization mangles binary data; this is structured clone.
-        serialization: "advanced"
+        serialization: "advanced",
+        windowsHide: true
     });
     const errorListeners: ((error: Error) => void)[] = [];
 
