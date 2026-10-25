@@ -1,8 +1,13 @@
 import {
     BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env,
     findClosestScrollableAncestor, IconDragIndicator, type Model, type ModelElement,
-    ModelLiveRange, type ModelRange, Plugin, Rect
+    ModelLiveRange, type ModelRange, type ModelSchema, Plugin, Rect, type ViewElement
 } from "ckeditor5";
+
+import "../theme/block_drag_handle.css";
+
+/** The class of the blocks that a drag from the hovered handle moves. */
+const TARGET_CLASS = "block-drag-handle-target";
 
 /**
  * The drag handle of `BlockToolbar` without the toolbar, for the fixed-toolbar editor: a grip
@@ -13,7 +18,9 @@ export default class BlockDragHandle extends Plugin {
 
     buttonView?: BlockButtonView;
     private isDragging = false;
+    private isHovered = false;
     private isUpdateScheduled = false;
+    private targets: ViewElement[] = [];
     private readonly domEmitter = new (DomEmitterMixin())();
 
     static get pluginName() {
@@ -43,6 +50,14 @@ export default class BlockDragHandle extends Plugin {
             on: {
                 dragstart: buttonView.bindTemplate.to((domEvent) => {
                     this.startDrag(domEvent as DragEvent);
+                }),
+                mouseenter: buttonView.bindTemplate.to(() => {
+                    this.isHovered = true;
+                    this.updateTargets();
+                }),
+                mouseleave: buttonView.bindTemplate.to(() => {
+                    this.isHovered = false;
+                    this.updateTargets();
                 })
             }
         });
@@ -99,6 +114,7 @@ export default class BlockDragHandle extends Plugin {
         const target = this.getTarget();
         if (!target) {
             buttonView.isVisible = false;
+            this.updateTargets();
             return;
         }
 
@@ -112,6 +128,45 @@ export default class BlockDragHandle extends Plugin {
         buttonView.isVisible = !!visibleRect
             && buttonCenter >= visibleRect.top
             && buttonCenter <= visibleRect.bottom;
+        this.updateTargets();
+    }
+
+    /** Tints the blocks that a drag moves while the pointer is over the visible handle. */
+    private updateTargets() {
+        const view = this.editor.editing.view;
+        // `view.change()` throws during rendering, and the `layoutChanged` after it updates again.
+        if (view.isRenderingInProgress) {
+            return;
+        }
+
+        const isShown = this.isHovered && !this.isDragging && !!this.buttonView?.isVisible;
+        const range = isShown ? getDraggedRange(this.editor.model) : null;
+        const targets = range ? this.toViewElements(range) : [];
+        const previous = this.targets;
+        if (targets.length === previous.length
+            && targets.every((target, index) => target === previous[index])) {
+            return;
+        }
+
+        // Set before the change, whose rendering calls `update()` again.
+        this.targets = targets;
+        view.change((writer) => {
+            for (const target of previous) {
+                writer.removeClass(TARGET_CLASS, target);
+            }
+            for (const target of targets) {
+                writer.addClass(TARGET_CLASS, target);
+            }
+        });
+    }
+
+    /** The editing view elements of the outermost nodes in `range`. */
+    private toViewElements(range: ModelRange) {
+        const mapper = this.editor.editing.mapper;
+        return Array.from(range.getItems({ shallow: true }))
+            .filter((item) => item.is("element"))
+            .map((element) => mapper.toViewElement(element))
+            .filter((element) => element !== undefined);
     }
 
     private getTarget(): BlockTarget | null {
@@ -163,27 +218,20 @@ export default class BlockDragHandle extends Plugin {
         return buttonRect;
     }
 
-    /** Selects the whole selected blocks and starts a drag of them in the editing view. */
+    /** Selects the dragged blocks and starts a drag of them in the editing view. */
     private startDrag(domEvent: DragEvent) {
         const editor = this.editor;
-        const model = editor.model;
         const dragDrop = editor.plugins.get(DragDrop);
-        const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
-        const firstBlock = blocks.at(0);
-        // The outermost block that holds the last one, so that a collapsible moves whole even when
-        // the selection ends in its body.
-        const lastAncestors = blocks.at(-1)?.getAncestors({ includeSelf: true });
-        const lastBlock = blocks.find((block) => lastAncestors?.includes(block));
-        if (!dragDrop.isEnabled || !firstBlock || !lastBlock) {
+        const range = getDraggedRange(editor.model);
+        if (!dragDrop.isEnabled || !range) {
             domEvent.preventDefault();
             return;
         }
 
-        const range = widenToWholeContainers(model, model.createRange(
-            model.createPositionBefore(firstBlock),
-            model.createPositionAfter(lastBlock)
-        ));
-        model.change((writer) => writer.setSelection(range));
+        // The drag takes the pointer off the handle.
+        this.isHovered = false;
+        this.updateTargets();
+        editor.model.change((writer) => writer.setSelection(range));
 
         this.isDragging = true;
         editor.editing.view.focus();
@@ -262,9 +310,65 @@ function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
 
+/**
+ * The range that the handle drags: the selected blocks, widened over the limit elements and the
+ * containers that they cover whole.
+ */
+function getDraggedRange(model: Model) {
+    const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
+    const firstBlock = blocks.at(0);
+    // The outermost block that holds the last one, so that a collapsible moves whole even when
+    // the selection ends in its body.
+    const lastAncestors = blocks.at(-1)?.getAncestors({ includeSelf: true });
+    const lastBlock = blocks.find((block) => lastAncestors?.includes(block));
+    if (!firstBlock || !lastBlock) {
+        return null;
+    }
+
+    const range = model.createRange(
+        model.createPositionBefore(firstBlock),
+        model.createPositionAfter(lastBlock)
+    );
+    return widenToWholeContainers(model, widenToCommonLimit(model, range));
+}
+
 /** The block that the handle drags for `block`: the whole collapsible for its title. */
 function getDraggedBlock(block: ModelElement) {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
+}
+
+/**
+ * Widens each end of `range` that is in a different limit element than the other end, such as
+ * another table cell, over its outermost limit element. The selection post-fixer does the same.
+ */
+function widenToCommonLimit(model: Model, range: ModelRange) {
+    const schema = model.schema;
+    const startLimit = schema.getLimitElement(range.start);
+    const endLimit = schema.getLimitElement(range.end);
+    if (startLimit === endLimit) {
+        return range;
+    }
+
+    return model.createRange(
+        startLimit.is("rootElement")
+            ? range.start
+            : model.createPositionBefore(getOutermostLimit(schema, startLimit)),
+        endLimit.is("rootElement")
+            ? range.end
+            : model.createPositionAfter(getOutermostLimit(schema, endLimit))
+    );
+}
+
+/** The outermost limit element below the root that contains `element`, such as its table. */
+function getOutermostLimit(schema: ModelSchema, element: ModelElement) {
+    let outermost = element;
+    let parent = element.parent;
+    while (parent?.is("element") && !parent.is("rootElement") && schema.isLimit(parent)) {
+        outermost = parent;
+        parent = parent.parent;
+    }
+
+    return outermost;
 }
 
 /**

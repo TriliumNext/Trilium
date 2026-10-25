@@ -43,6 +43,11 @@ describe("BlockDragHandle", () => {
             + "<paragraph>cell</paragraph></tableCell></tableRow>"
             + "<caption>Cap[]tion</caption></table>");
         expect(buttonView?.isVisible).toBe(false);
+        const captionStart = new DragEvent("dragstart", {
+            bubbles: true, cancelable: true, dataTransfer: new DataTransfer()
+        });
+        button.dispatchEvent(captionStart);
+        expect(captionStart.defaultPrevented).toBe(true);
 
         getEditable(editor).blur();
         await expect.poll(() => buttonView?.isVisible).toBe(false);
@@ -167,6 +172,96 @@ describe("BlockDragHandle", () => {
             });
             expect(getModelData(editor.model, { withoutSelection: true })).toBe(dropped);
         }
+    });
+
+    it("drags the whole table from a selection of several cells", async () => {
+        const cells = "<tableCell><paragraph>a</paragraph></tableCell>"
+            + "<tableCell><paragraph>b</paragraph></tableCell>";
+        const { editor, button } = await createEditor(
+            "<table><tableRow>[<tableCell><paragraph>a</paragraph></tableCell>]"
+            + "[<tableCell><paragraph>b</paragraph></tableCell>]</tableRow></table>"
+            + "<paragraph>after</paragraph>"
+        );
+
+        drop(button, startDrag(button), {
+            clientX: getEditable(editor).getBoundingClientRect().left - 50,
+            clientY: getBlock(editor, 1).getBoundingClientRect().bottom - 2
+        });
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            `<paragraph>after</paragraph><table><tableRow>${cells}</tableRow></table>`
+        );
+    });
+
+    it("tints the blocks that it drags while the pointer is over it", async () => {
+        const note = (content: string) => `<aside admonitionType="note">${content}</aside>`;
+        const cell = (text: string) => `<tableCell><paragraph>${text}</paragraph></tableCell>`;
+        const cases = [ {
+            modelData: "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>",
+            targets: [ "p:two" ]
+        }, {
+            modelData: `${note("<paragraph>on[e</paragraph>")}<paragraph>tw]o</paragraph>`,
+            targets: [ "aside:one", "p:two" ]
+        }, {
+            modelData: `<table><tableRow>${cell("a[]")}${cell("b")}</tableRow></table>`,
+            targets: [ "span:a" ]
+        }, {
+            modelData: `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow></table>`,
+            targets: [ "figure:ab" ]
+        }, {
+            modelData: `<paragraph>[a]</paragraph><table><tableRow>[${cell("b")}]</tableRow></table>`,
+            targets: [ "p:a", "figure:b" ]
+        }, {
+            modelData: `<table><tableRow>[${cell("a")}]</tableRow></table><paragraph>[b]</paragraph>`,
+            targets: [ "figure:a", "p:b" ]
+        } ];
+        for (const { modelData, targets } of cases) {
+            const { editor, button } = await createEditor(
+                `${modelData}<paragraph>after</paragraph>`
+            );
+            // The editors of the earlier cases stay on the page until the test ends.
+            editor.ui.view.element?.scrollIntoView();
+
+            button.dispatchEvent(new MouseEvent("mouseenter"));
+            expect(getTargets(editor)).toEqual(targets);
+            button.dispatchEvent(new MouseEvent("mouseleave"));
+            expect(getTargets(editor)).toEqual([]);
+        }
+    });
+
+    it("keeps the tint until the pointer leaves the handle or drags the blocks", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+        );
+        button.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(getComputedStyle(getBlock(editor, 1)).boxShadow).toContain("inset");
+        expect(editor.getData()).toBe("<p>one</p><p>two</p>");
+
+        setModelData(editor.model, "<paragraph>o[]ne</paragraph><paragraph>two</paragraph>");
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
+
+        editor.enableReadOnlyMode("spec");
+        expect(getTargets(editor)).toEqual([]);
+        editor.disableReadOnlyMode("spec");
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
+
+        endDrag(button, startDrag(button), "none");
+        expect(getTargets(editor)).toEqual([]);
+        expect(getComputedStyle(getBlock(editor, 0)).boxShadow).toBe("none");
+    });
+
+    it("tints the blocks when the editor gets focus while it renders", async () => {
+        const { editor, button } = await createEditor("<paragraph>on[]e</paragraph>");
+        const view = editor.editing.view;
+        getEditable(editor).blur();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(false);
+        await expect.poll(() => view.document.isFocused).toBe(false);
+        button.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(getTargets(editor)).toEqual([]);
+
+        // The renderer focuses the editable of a focused view document.
+        view.document.isFocused = true;
+        view.forceRender();
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
     });
 
     it("takes drops beside a narrow editor or far out in a wide margin", async () => {
@@ -468,6 +563,14 @@ function endDrag(button: HTMLElement, dataTransfer: DataTransfer, dropEffect: "n
     // A constructed `DataTransfer` ignores `dropEffect` writes.
     Object.defineProperty(dataTransfer, "dropEffect", { value: dropEffect });
     button.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer }));
+}
+
+/** The tag and text of each element tinted as a target of the handle. */
+function getTargets(editor: ClassicEditor) {
+    return Array.from(
+        getEditable(editor).querySelectorAll(".block-drag-handle-target"),
+        (element) => `${element.localName}:${element.textContent}`
+    );
 }
 
 function getEditable(editor: ClassicEditor) {
