@@ -86,7 +86,8 @@ interface SwipeGesture {
 /**
  * Slides to the next or the previous tab as a finger swipes sideways anywhere on the launch bar, while
  * the bar fits all its launchers: one that scrolls sideways keeps that drag for scrolling. The click
- * that ends a swipe reaches none of the bar's buttons.
+ * that ends a swipe reaches none of the bar's buttons. A swipe that starts on the bar follows the
+ * pointer off it, since a mouse, unlike a finger, does not keep sending its events to the bar.
  */
 export function useLaunchBarTabSwipe(containerRef: RefObject<HTMLElement | null>, enabled: boolean) {
     const swipe = useTabSwipe();
@@ -123,18 +124,19 @@ export function useLaunchBarTabSwipe(containerRef: RefObject<HTMLElement | null>
         }
         updateSwipeable();
         bar.addEventListener("pointerdown", onPointerDown);
-        bar.addEventListener("pointermove", onPointerMove);
-        bar.addEventListener("pointerup", onPointerEnd);
-        bar.addEventListener("pointercancel", onPointerEnd);
+        window.addEventListener("pointermove", onPointerMove);
+        window.addEventListener("pointerup", onPointerEnd);
+        window.addEventListener("pointercancel", onPointerEnd);
         bar.addEventListener("click", onClickCapture, { capture: true });
         return () => {
             observer.disconnect();
             bar.classList.remove("tab-swipe");
             bar.removeEventListener("pointerdown", onPointerDown);
-            bar.removeEventListener("pointermove", onPointerMove);
-            bar.removeEventListener("pointerup", onPointerEnd);
-            bar.removeEventListener("pointercancel", onPointerEnd);
+            window.removeEventListener("pointermove", onPointerMove);
+            window.removeEventListener("pointerup", onPointerEnd);
+            window.removeEventListener("pointercancel", onPointerEnd);
             bar.removeEventListener("click", onClickCapture, { capture: true });
+            swipeRef.current.cancel();
         };
     }, [ containerRef, enabled ]);
 }
@@ -186,11 +188,18 @@ function useTabSwipe() {
         },
         onPointerEnd(e: PointerEvent) {
             const gesture = gestureRef.current;
+            if (!gesture || gesture.pointerId !== e.pointerId) return;
             gestureRef.current = null;
-            if (!gesture?.swipe) return;
+            if (!gesture.swipe) return;
 
             const isFlick = e.type === "pointerup" && e.timeStamp - gesture.lastTime <= FLICK_WINDOW;
             gesture.swipe.release(isFlick ? gesture.velocity : 0, gesture.room);
+        },
+        /** Settles a running swipe where it stands, as when the pointer lifts slowly. */
+        cancel() {
+            const gesture = gestureRef.current;
+            gestureRef.current = null;
+            gesture?.swipe?.release(0, gesture.room);
         },
         takeSwipe() {
             const swiped = swipedRef.current;

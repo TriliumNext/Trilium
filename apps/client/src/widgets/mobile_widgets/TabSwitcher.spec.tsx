@@ -1,3 +1,4 @@
+import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -181,6 +182,43 @@ describe("tab swipe", () => {
         expect(triggerCommand).toHaveBeenCalledTimes(3);
         expect(onTap).toHaveBeenCalledTimes(2);
         expect(bar.querySelector("#launcher-pane")?.classList.contains("tab-swipe")).toBe(false);
+
+        appContext.tabManager = tabManager;
+    });
+
+    it("ends a swipe released off the launch bar, and one still running as the bar unmounts", () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        const tabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getMainNoteContexts: () => [ { ntxId: "a" }, { ntxId: "b" } ]
+        } as unknown as typeof appContext.tabManager;
+        function LaunchBar() {
+            const containerRef = useRef<HTMLDivElement>(null);
+            useLaunchBarTabSwipe(containerRef, true);
+            return <div id="launcher-pane"><div ref={containerRef}><button /></div></div>;
+        }
+        const send = (target: EventTarget, type: string, clientX: number) => {
+            target.dispatchEvent(new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 1, clientX, clientY: 10 }));
+        };
+
+        let bar = document.createElement("div");
+        act(() => {
+            bar = renderInto(<LaunchBar />);
+        });
+        const button = bar.querySelector("button");
+        if (!button) throw new Error("No button");
+
+        send(button, "pointerdown", 600);
+        send(button, "pointermove", 590);
+        send(document.body, "pointermove", 300);
+        send(document.body, "pointerup", 300);
+        expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ] ]);
+
+        send(button, "pointerdown", 600);
+        send(button, "pointermove", 590);
+        send(button, "pointermove", 300);
+        act(() => render(null, bar));
+        expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ], [ "activateNextTab" ] ]);
 
         appContext.tabManager = tabManager;
     });
