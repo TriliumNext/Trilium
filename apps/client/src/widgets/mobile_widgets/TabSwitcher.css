@@ -28,7 +28,7 @@ html[data-tab-slide] {
     &::view-transition-old(tab-content),
     &::view-transition-new(tab-content) {
         animation-duration: 250ms;
-        animation-timing-function: ease-in-out;
+        animation-timing-function: linear;
         animation-fill-mode: both;
         mix-blend-mode: normal;
     }

@@ -50,7 +50,7 @@ The same applies to a tab opened in the background, for example with a middle cl
 
 Tabs are also supported on the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>.
 
-Since v0.102.0, the tabs are displayed by pressing the dedicated tab switcher button in the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>. In this view the tabs are laid out on a grid with a preview of the note content. On a phone, a tab left on the note tree shows the folder it was on instead, with the tab's note highlighted. Swiping left or right across the tab switcher button goes to the next or previous tab directly.
+Since v0.102.0, the tabs are displayed by pressing the dedicated tab switcher button in the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>. In this view the tabs are laid out on a grid with a preview of the note content. On a phone, a tab left on the note tree shows the folder it was on instead, with the tab's note highlighted. Swiping left or right across the tab switcher button goes to the next or previous tab directly, with the page following the finger until it lets go.
 
 The context menu button at the top-right of the popup allows creating a new tab, reopening the last closed tab and closing all the tabs.
 

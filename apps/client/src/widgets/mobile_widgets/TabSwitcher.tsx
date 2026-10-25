@@ -32,6 +32,7 @@ import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
 import { useNavigatorChildren } from "./MobileNoteNavigator";
 import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack } from "./tab_navigation";
+import { isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
@@ -43,8 +44,10 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
 /** The most rows a tree card renders, more than its height shows. */
 const MAX_TREE_PREVIEW_ROWS = 12;
 
-/** How far a sideways swipe across the tab switcher button travels before it switches tabs. */
-const SWIPE_THRESHOLD = 30;
+/** How far a finger travels sideways across the tab switcher button before it is taken for a swipe. */
+const SWIPE_START = 10;
+/** How long a finger can rest before release and still count as a flick. */
+const FLICK_WINDOW = 100;
 
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
@@ -72,33 +75,69 @@ export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     );
 }
 
+interface SwipeGesture {
+    pointerId: number;
+    x: number;
+    y: number;
+    lastX: number;
+    lastTime: number;
+    /** How fast, in px/ms, the finger last moved toward the other tab. */
+    velocity: number;
+    swipe?: TabSwipe;
+}
+
 /**
- * Switches to the next or the previous tab on a sideways swipe across the tab switcher button. The
- * click that ends a swipe is not a tap, so `takeSwipe()` tells the button not to open the switcher.
+ * Slides to the next or the previous tab as a finger swipes sideways across the tab switcher button,
+ * following the finger until it lifts. The click that ends a swipe is not a tap, so `takeSwipe()`
+ * tells the button not to open the switcher.
  */
 export function useTabSwipe(enabled: boolean) {
-    const startRef = useRef<{ x: number, y: number, pointerId: number } | null>(null);
+    const gestureRef = useRef<SwipeGesture | null>(null);
     const swipedRef = useRef(false);
 
     return {
         onPointerDown(e: PointerEvent) {
             swipedRef.current = false;
-            startRef.current = enabled && e.isPrimary
-                ? { x: e.clientX, y: e.clientY, pointerId: e.pointerId }
-                : null;
+            const canSwipe = enabled && e.isPrimary && !isTabSwipeActive();
+            gestureRef.current = canSwipe ? {
+                pointerId: e.pointerId,
+                x: e.clientX,
+                y: e.clientY,
+                lastX: e.clientX,
+                lastTime: e.timeStamp,
+                velocity: 0
+            } : null;
         },
         onPointerMove(e: PointerEvent) {
-            const start = startRef.current;
-            if (!start || start.pointerId !== e.pointerId) return;
+            const gesture = gestureRef.current;
+            if (!gesture || gesture.pointerId !== e.pointerId) return;
 
-            const direction = getSwipeDirection(e.clientX - start.x, e.clientY - start.y, glob.isRtl);
-            if (!direction) return;
-            startRef.current = null;
-            swipedRef.current = true;
-            switchTabWithSlide(direction);
+            const dx = e.clientX - gesture.x;
+            if (!gesture.swipe) {
+                const dy = e.clientY - gesture.y;
+                const direction = getSwipeDirection(dx, dy, glob.isRtl);
+                if (!direction) {
+                    if (Math.abs(dy) > SWIPE_START) gestureRef.current = null;
+                    return;
+                }
+                gesture.swipe = new TabSwipe(direction);
+                swipedRef.current = true;
+            }
+
+            const toward = gesture.swipe.slide === "left" ? -1 : 1;
+            const elapsed = e.timeStamp - gesture.lastTime;
+            if (elapsed > 0) gesture.velocity = toward * (e.clientX - gesture.lastX) / elapsed;
+            gesture.lastX = e.clientX;
+            gesture.lastTime = e.timeStamp;
+            gesture.swipe.move(toward * dx / getSlideWidth());
         },
-        onPointerEnd() {
-            startRef.current = null;
+        onPointerEnd(e: PointerEvent) {
+            const gesture = gestureRef.current;
+            gestureRef.current = null;
+            if (!gesture?.swipe) return;
+
+            const isFlick = e.type === "pointerup" && e.timeStamp - gesture.lastTime <= FLICK_WINDOW;
+            gesture.swipe.release(isFlick ? gesture.velocity : 0);
         },
         takeSwipe() {
             const swiped = swipedRef.current;
@@ -108,46 +147,16 @@ export function useTabSwipe(enabled: boolean) {
     };
 }
 
-/** The tab a swipe by `dx`, `dy` switches to, if it is long and level enough to be one. */
-export function getSwipeDirection(dx: number, dy: number, isRtl: boolean): "next" | "previous" | undefined {
-    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < 2 * Math.abs(dy)) return;
+/** The tab a finger moving by `dx`, `dy` swipes toward, once it has moved far and level enough. */
+export function getSwipeDirection(dx: number, dy: number, isRtl: boolean): SwipeDirection | undefined {
+    if (Math.abs(dx) < SWIPE_START || Math.abs(dx) < 2 * Math.abs(dy)) return;
     // A swipe toward the start brings in the next tab from the end, as in Safari.
     return (dx < 0) !== isRtl ? "next" : "previous";
 }
 
-let tabSlide: ViewTransition | undefined;
-
-/**
- * Switches tabs while the content area slides, the outgoing tab out and the incoming one in, through
- * a view transition. Without view transitions, or with animations off, the tab switches at once.
- */
-export async function switchTabWithSlide(direction: "next" | "previous") {
-    const command = direction === "next" ? "activateNextTab" : "activatePreviousTab";
-    const canSlide = typeof document.startViewTransition === "function"
-        && !document.body.classList.contains("motion-disabled");
-    if (!canSlide) {
-        await appContext.triggerCommand(command);
-        return;
-    }
-
-    const movesLeft = (direction === "next") !== glob.isRtl;
-    document.documentElement.dataset.tabSlide = movesLeft ? "left" : "right";
-    // The browser renders no frames until the update finishes, so it must not wait for one; what
-    // Preact renders later still shows, as the incoming side of the slide is live.
-    const transition = document.startViewTransition(async () => {
-        await appContext.triggerCommand(command);
-    });
-    // A skipped slide (another swipe, a timeout) still switches the tab.
-    transition.ready.catch(() => {});
-    tabSlide = transition;
-    try {
-        await transition.finished;
-    } finally {
-        if (tabSlide === transition) {
-            delete document.documentElement.dataset.tabSlide;
-            tabSlide = undefined;
-        }
-    }
+/** The distance a finger travels for the slide to go all the way to the other tab. */
+function getSlideWidth() {
+    return document.getElementById("mobile-rest-container")?.offsetWidth || window.innerWidth;
 }
 
 function TabBarModal({ mainNoteContexts, shown, setShown }: {

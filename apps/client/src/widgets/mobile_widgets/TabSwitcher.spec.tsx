@@ -7,7 +7,7 @@ import froca from "../../services/froca";
 import { buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { setTabScreen, setTabTree } from "./tab_navigation";
-import { getSwipeDirection, switchTabWithSlide, Tab, useTabSwipe } from "./TabSwitcher";
+import { getSwipeDirection, Tab, useTabSwipe } from "./TabSwitcher";
 
 describe("Tab", () => {
     buildNotes([
@@ -112,38 +112,15 @@ describe("tab swipe", () => {
         vi.restoreAllMocks();
     });
 
-    it("takes a long, level swipe toward the start for the next tab", () => {
-        expect(getSwipeDirection(-40, 5, false)).toBe("next");
-        expect(getSwipeDirection(40, 5, false)).toBe("previous");
-        expect(getSwipeDirection(40, 5, true)).toBe("next");
-        expect(getSwipeDirection(-20, 0, false)).toBeUndefined();
+    it("takes a level swipe toward the start for the next tab", () => {
+        expect(getSwipeDirection(-20, 5, false)).toBe("next");
+        expect(getSwipeDirection(20, 5, false)).toBe("previous");
+        expect(getSwipeDirection(20, 5, true)).toBe("next");
+        expect(getSwipeDirection(-5, 0, false)).toBeUndefined();
         expect(getSwipeDirection(-40, 30, false)).toBeUndefined();
     });
 
-    it("slides the content while the tab switches, and switches at once without view transitions", async () => {
-        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
-        const slides: (string | undefined)[] = [];
-        // The browser renders no frames while a view transition updates the page, and rejects
-        // `ready` when it skips the animation.
-        vi.spyOn(window, "requestAnimationFrame").mockReturnValue(0);
-        document.startViewTransition = ((update: () => Promise<void>) => {
-            slides.push(document.documentElement.dataset.tabSlide);
-            return { finished: update(), ready: Promise.reject(new DOMException("Skipped", "AbortError")) };
-        }) as unknown as typeof document.startViewTransition;
-
-        await switchTabWithSlide("next");
-        await switchTabWithSlide("previous");
-        expect(slides).toEqual([ "left", "right" ]);
-        expect(triggerCommand.mock.calls.map(([ name ]) => name)).toEqual([ "activateNextTab", "activatePreviousTab" ]);
-        expect(document.documentElement.dataset.tabSlide).toBeUndefined();
-
-        Reflect.deleteProperty(document, "startViewTransition");
-        await switchTabWithSlide("next");
-        expect(triggerCommand).toHaveBeenLastCalledWith("activateNextTab");
-        expect(slides).toHaveLength(2);
-    }, 1000);
-
-    it("switches tabs on a swipe across the button, whose click then is not a tap", () => {
+    it("switches tabs once a swipe across the button is far or fast enough, and its click is not a tap", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
         const onTap = vi.fn();
         function SwipeButton({ enabled }: { enabled: boolean }) {
@@ -155,29 +132,38 @@ describe("tab swipe", () => {
                 onPointerUp={swipe.onPointerEnd}
             />;
         }
-        const press = (button: HTMLButtonElement, moves: number[]) => {
-            const send = (type: string, clientX: number) => button.dispatchEvent(
-                new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 1, clientX, clientY: 10 }));
-            send("pointerdown", 100);
-            for (const clientX of moves) send("pointermove", clientX);
-            send("pointerup", moves.at(-1) ?? 100);
+        // Each move is [ clientX, ms since the press ]; the finger lifts `liftAfter` ms after the last.
+        const press = (button: HTMLButtonElement, moves: [ number, number ][], liftAfter = 200) => {
+            const send = (type: string, clientX: number, time: number) => {
+                const event = new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 1, clientX, clientY: 10 });
+                Object.defineProperty(event, "timeStamp", { value: time });
+                button.dispatchEvent(event);
+            };
+            send("pointerdown", 100, 0);
+            for (const [ clientX, time ] of moves) send("pointermove", clientX, time);
+            const [ lastX, lastTime ] = moves.at(-1) ?? [ 100, 0 ];
+            send("pointerup", lastX, lastTime + liftAfter);
             button.click();
         };
 
         const button = renderInto(<SwipeButton enabled />).querySelector("button");
         if (!button) throw new Error("No button");
-        press(button, [ 90, 60, 20 ]);
+        // Without view transitions, the tab switches on release; the window is 1024px wide.
+        press(button, [ [ 90, 200 ], [ 60, 400 ] ]);
+        expect(triggerCommand).not.toHaveBeenCalled();
+        press(button, [ [ 90, 200 ], [ 60, 400 ], [ -300, 600 ] ]);
         expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ] ]);
+        press(button, [ [ 120, 16 ], [ 170, 32 ] ], 8);
+        expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ], [ "activatePreviousTab" ] ]);
         expect(onTap).not.toHaveBeenCalled();
 
         press(button, []);
         expect(onTap).toHaveBeenCalledTimes(1);
-        expect(triggerCommand).toHaveBeenCalledTimes(1);
 
         const single = renderInto(<SwipeButton enabled={false} />).querySelector("button");
         if (!single) throw new Error("No button");
-        press(single, [ 20 ]);
-        expect(triggerCommand).toHaveBeenCalledTimes(1);
+        press(single, [ [ -500, 200 ] ]);
+        expect(triggerCommand).toHaveBeenCalledTimes(2);
         expect(onTap).toHaveBeenCalledTimes(2);
     });
 });
