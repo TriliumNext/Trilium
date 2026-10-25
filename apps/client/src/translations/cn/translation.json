@@ -1585,7 +1585,6 @@
   "search_engine": {
     "title": "搜索引擎",
     "custom_search_engine_info": "用于在网络上搜索所选文本。如果未配置，默认使用 DuckDuckGo 作为搜索引擎。",
-    "predefined_templates_label": "模板",
     "bing": "必应",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",

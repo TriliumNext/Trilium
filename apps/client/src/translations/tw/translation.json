@@ -1230,7 +1230,6 @@
   "search_engine": {
     "title": "搜尋引擎",
     "custom_search_engine_info": "用於在網路上搜尋選取的文字。若未設定，將使用 DuckDuckGo。",
-    "predefined_templates_label": "模板",
     "bing": "Bing",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",

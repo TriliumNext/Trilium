@@ -2086,7 +2086,6 @@
   "search_engine": {
     "title": "Arama Motoru",
     "custom_search_engine_info": "Seçili metin için web'de arama yapılırken kullanılır. Yapılandırılmamışsa DuckDuckGo kullanılır.",
-    "predefined_templates_label": "Ön ayarlar",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

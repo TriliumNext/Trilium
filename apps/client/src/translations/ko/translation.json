@@ -1993,7 +1993,6 @@
   "search_engine": {
     "title": "검색 엔진",
     "custom_search_engine_info": "웹에서 선택된 텍스트를 검색할 때 사용됩니다. 설정하지 않으면 DuckDuckGo가 사용됩니다.",
-    "predefined_templates_label": "프리셋",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

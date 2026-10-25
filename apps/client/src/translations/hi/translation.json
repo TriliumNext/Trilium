@@ -1185,7 +1185,6 @@
   "search_engine": {
     "title": "सर्च इंजन",
     "custom_search_engine_info": "कस्टम सर्च इंजन के लिए नाम और URL दोनों ज़रूरी हैं। अगर कोई भी एक नहीं भरा गया, तो DuckDuckGo का इस्तेमाल होगा।",
-    "predefined_templates_label": "पहले से बने सर्च इंजन टेम्पलेट्स",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

@@ -1557,7 +1557,6 @@
   "search_engine": {
     "title": "Motor de búsqueda",
     "custom_search_engine_info": "Utilizado al buscar la web para el texto seleccionado. Si no está configurado, DuckDuckGo será utilizado.",
-    "predefined_templates_label": "Valores predeterminados",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

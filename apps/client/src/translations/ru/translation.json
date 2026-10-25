@@ -1950,7 +1950,6 @@
     "title": "Поисковый движок",
     "custom_url_label": "URL",
     "custom_search_engine_info": "Используется при поиске в интернете выделенного текста. Если не настроено, будет использоваться DuckDuckGo.",
-    "predefined_templates_label": "Предустановки",
     "custom_name_label": "Название",
     "custom_name_placeholder": "Название поисковой системы",
     "custom_url_placeholder": "URL поисковой системы",

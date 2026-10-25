@@ -2056,7 +2056,6 @@
   "search_engine": {
     "title": "موتور جستجو",
     "custom_search_engine_info": "هنگام جستجوی وب برای متن انتخاب‌شده استفاده می‌شود. اگر پیکربندی نشده باشد، DuckDuckGo استفاده خواهد شد.",
-    "predefined_templates_label": "قالب‌های از پیش تعریف‌شده",
     "bing": "بینگ",
     "baidu": "بایدو",
     "duckduckgo": "داک‌داک‌گو",

@@ -2066,7 +2066,6 @@
   "search_engine": {
     "title": "Công cụ tìm kiếm",
     "custom_search_engine_info": "Được sử dụng khi tìm kiếm trên web cho văn bản được chọn. Nếu không được cấu hình, DuckDuckGo sẽ được sử dụng.",
-    "predefined_templates_label": "Cài đặt sẵn",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

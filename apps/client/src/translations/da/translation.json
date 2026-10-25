@@ -2098,7 +2098,6 @@
   "search_engine": {
     "title": "Søgemaskine",
     "custom_search_engine_info": "Bruges ved websøgning efter markeret tekst. Hvis den ikke er konfigureret, bruges DuckDuckGo.",
-    "predefined_templates_label": "Forudindstillinger",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

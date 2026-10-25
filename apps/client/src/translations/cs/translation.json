@@ -1143,7 +1143,6 @@
   "search_engine": {
     "title": "Vyhledávač",
     "custom_search_engine_info": "Vlastní vyhledávač vyžaduje nastavení jak názvu, tak URL. Pokud některý z nich není nastaven, bude použit DuckDuckGo jako výchozí vyhledávač.",
-    "predefined_templates_label": "Předdefinované šablony vyhledávačů",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

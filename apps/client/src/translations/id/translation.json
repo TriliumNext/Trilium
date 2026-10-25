@@ -1664,7 +1664,6 @@
   "search_engine": {
     "title": "Mesin Pencari",
     "custom_search_engine_info": "Digunakan saat mencari di web untuk teks yang dipilih. Jika tidak dikonfigurasi, DuckDuckGo akan digunakan.",
-    "predefined_templates_label": "Preset",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

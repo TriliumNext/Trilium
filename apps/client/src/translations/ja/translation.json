@@ -1201,7 +1201,6 @@
   "search_engine": {
     "title": "検索エンジン",
     "custom_search_engine_info": "選択したテキストをウェブ上で検索する際に使用します。設定されていない場合は、DuckDuckGo が使用されます。",
-    "predefined_templates_label": "プリセット",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

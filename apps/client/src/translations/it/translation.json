@@ -802,7 +802,6 @@
     "save_button": "Salva",
     "title": "Motore di ricerca",
     "custom_search_engine_info": "Da utilizzare per effettuare ricerche sul web in base al testo selezionato. Se non viene configurato, verrà utilizzato DuckDuckGo.",
-    "predefined_templates_label": "Impostazioni predefinite",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

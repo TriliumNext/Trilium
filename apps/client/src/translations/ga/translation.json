@@ -1585,7 +1585,6 @@
   "search_engine": {
     "title": "Inneall Cuardaigh",
     "custom_search_engine_info": "Úsáidtear é seo agus téacs roghnaithe á chuardach ar an ngréasán. Mura bhfuil sé cumraithe, úsáidfear DuckDuckGo.",
-    "predefined_templates_label": "Réamhshocruithe",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
