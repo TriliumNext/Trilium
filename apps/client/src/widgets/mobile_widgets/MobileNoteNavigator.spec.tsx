@@ -246,29 +246,44 @@ describe("PreviewSlot", () => {
         vi.restoreAllMocks();
     });
 
-    it("renders the preview again once the note's content changes, while it is kept", async () => {
+    it("renders the preview again once the note's content changes, keeping the old one until then", async () => {
         const note = buildNote({ title: "Previewed" });
+        let finishRender = () => {};
         let version = 1;
-        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent").mockImplementation(async () => {
+        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent").mockImplementation(() => {
             const $renderedContent = $("<div>").text(`Version ${version}`);
-            return { $renderedContent, type: "text" };
+            const rendered = { $renderedContent, type: "text" };
+            if (version === 1) return Promise.resolve(rendered);
+            return new Promise((resolve) => {
+                finishRender = () => resolve(rendered);
+            });
         });
+        const onReady = vi.fn();
         const { parent, reload } = reloadingParent();
 
         let container = document.body;
         await act(async () => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <PreviewSlot note={note} shown={false} hideArchived onReady={() => {}} />
+                    <PreviewSlot note={note} shown hideArchived onReady={onReady} />
                 </ParentComponent.Provider>
             );
         });
-        await vi.waitFor(() => expect(container.textContent).toBe("Version 1"));
+        const shownText = () => [ ...container.querySelectorAll(".mobile-navigator-preview-slot:not([hidden]) > .note-book-content") ]
+            .map((content) => content.textContent);
+        await vi.waitFor(() => expect(shownText()).toEqual([ "Version 1" ]));
+        expect(onReady).toHaveBeenLastCalledWith(note.noteId, true);
 
         version = 2;
         reload({ isNoteContentReloaded: (noteId: string) => noteId === "other" });
         expect(getRenderedContent).toHaveBeenCalledTimes(1);
         reload({ isNoteContentReloaded: (noteId: string) => noteId === note.noteId });
-        await vi.waitFor(() => expect(container.textContent).toBe("Version 2"));
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledTimes(2));
+        expect(shownText()).toEqual([ "Version 1" ]);
+        expect(onReady).toHaveBeenLastCalledWith(note.noteId, false);
+
+        await act(async () => finishRender());
+        await vi.waitFor(() => expect(shownText()).toEqual([ "Version 2" ]));
+        expect(onReady).toHaveBeenLastCalledWith(note.noteId, true);
     });
 });

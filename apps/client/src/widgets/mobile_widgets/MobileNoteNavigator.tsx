@@ -417,24 +417,37 @@ export function PreviewSlot({ note, shown, hideArchived, onReady }: {
 }) {
     const { noteId } = note;
     useEffect(() => () => onReady(noteId, false), [ noteId, onReady ]);
-    // `NoteContent` renders again only for another note, and froca updates this one in place.
-    const [ contentVersion, setContentVersion ] = useState(0);
+    // `NoteContent` renders again only for another note, and froca updates this one in place, so
+    // a content change mounts a new one, hidden until it is ready.
+    const [ versions, setVersions ] = useState({ shown: 0, latest: 0 });
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.isNoteContentReloaded(noteId)) setContentVersion((version) => version + 1);
+        if (!loadResults.isNoteContentReloaded(noteId)) return;
+        onReady(noteId, false);
+        setVersions(({ shown, latest }) => ({ shown, latest: latest + 1 }));
     });
+    const renderedVersions = versions.shown === versions.latest
+        ? [ versions.shown ]
+        : [ versions.shown, versions.latest ];
 
     return (
-        <div className="mobile-navigator-preview-slot" hidden={!shown}>
-            <NoteContent
-                key={contentVersion}
-                note={note}
-                trim
-                noChildrenList
-                highlightedTokens={null}
-                includeArchivedNotes={!hideArchived}
-                onReady={() => onReady(noteId, true)}
-            />
-        </div>
+        <>
+            {renderedVersions.map((version) => (
+                <div key={version} className="mobile-navigator-preview-slot" hidden={!shown || version !== versions.shown}>
+                    <NoteContent
+                        note={note}
+                        trim
+                        noChildrenList
+                        highlightedTokens={null}
+                        includeArchivedNotes={!hideArchived}
+                        onReady={() => {
+                            if (version !== versions.latest) return;
+                            setVersions((prev) => prev.shown === version ? prev : { shown: version, latest: version });
+                            onReady(noteId, true);
+                        }}
+                    />
+                </div>
+            ))}
+        </>
     );
 }
 
