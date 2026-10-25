@@ -65,7 +65,9 @@
     "edit_link": "Modifier le lien",
     "button_edit_link": "Enregistrer le lien",
     "fix_link": "Corriger le lien",
-    "button_fix_link": "Corriger le lien"
+    "button_fix_link": "Corriger le lien",
+    "web_link": "Lien Web",
+    "mirror_title_description": "Le lien montre le titre actuel de la note et change lorsque la note est rebaptisée."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifier le préfixe de branche",
