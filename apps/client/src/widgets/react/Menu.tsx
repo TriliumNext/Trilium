@@ -334,7 +334,7 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     }, []);
 
     function onKeyDown(e: KeyboardEvent) {
-        // The keys take over from the pointer, whose held change would undo where they go.
+        // Cancel the pending pointer change, so it cannot undo the key's change to the submenus.
         dropHeldChange();
         // From a filter input, the keys act on the rows of the submenu it filters.
         const filterInput = e.target instanceof HTMLInputElement && e.target.matches(FILTER_INPUT) ? e.target : undefined;

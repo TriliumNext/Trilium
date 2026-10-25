@@ -234,7 +234,7 @@ export function FormListItem({
 
     function onPointed() {
         if (!menu || isMobile()) return;
-        // First, as it can make the row of the submenus it closes active.
+        // Before `menu.setActive()`: closing a submenu can activate the row that opened it.
         menu.hoverSubmenu(level);
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);

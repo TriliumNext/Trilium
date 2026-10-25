@@ -175,21 +175,29 @@ describe("BlockDragHandle", () => {
     });
 
     it("drags the whole table from a selection of several cells", async () => {
-        const cells = "<tableCell><paragraph>a</paragraph></tableCell>"
-            + "<tableCell><paragraph>b</paragraph></tableCell>";
-        const { editor, button } = await createEditor(
-            "<table><tableRow>[<tableCell><paragraph>a</paragraph></tableCell>]"
-            + "[<tableCell><paragraph>b</paragraph></tableCell>]</tableRow></table>"
-            + "<paragraph>after</paragraph>"
-        );
+        const cell = (text: string) => `<tableCell><paragraph>${text}</paragraph></tableCell>`;
+        const tables = [
+            `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow></table>`,
+            // Some cells of one row.
+            `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}${cell("d")}</tableRow></table>`,
+            // Some cells of each row.
+            `<table><tableRow>${cell("a")}[${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}[${cell("d")}]</tableRow></table>`
+        ];
+        for (const table of tables) {
+            const { editor, button } = await createEditor(`${table}<paragraph>after</paragraph>`);
+            // The editors of the earlier cases stay on the page until the test ends.
+            editor.ui.view.element?.scrollIntoView();
 
-        drop(button, startDrag(button), {
-            clientX: getEditable(editor).getBoundingClientRect().left - 50,
-            clientY: getBlock(editor, 1).getBoundingClientRect().bottom - 2
-        });
-        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            `<paragraph>after</paragraph><table><tableRow>${cells}</tableRow></table>`
-        );
+            drop(button, startDrag(button), {
+                clientX: getEditable(editor).getBoundingClientRect().left - 50,
+                clientY: getBlock(editor, 1).getBoundingClientRect().bottom - 2
+            });
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                `<paragraph>after</paragraph>${table.replace(/[[\]]/g, "")}`
+            );
+        }
     });
 
     it("tints the blocks that it drags while the pointer is over it", async () => {
@@ -207,6 +215,10 @@ describe("BlockDragHandle", () => {
         }, {
             modelData: `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow></table>`,
             targets: [ "figure:ab" ]
+        }, {
+            modelData: `<table><tableRow>${cell("a")}[${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}[${cell("d")}]</tableRow></table>`,
+            targets: [ "figure:abcd" ]
         }, {
             modelData: `<paragraph>[a]</paragraph><table><tableRow>[${cell("b")}]</tableRow></table>`,
             targets: [ "p:a", "figure:b" ]
