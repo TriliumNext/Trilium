@@ -145,6 +145,22 @@ describe("NoteTreeWidget", () => {
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
     });
 
+    it("follows the display density option, also when it changes", async () => {
+        options.set("treeDensity", "dense");
+        const widget = await renderWidget();
+        vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+        expect(widget.$widget.hasClass("dense")).toBe(true);
+
+        options.set("treeDensity", "relaxed");
+        await widget.entitiesReloadedEvent({
+            loadResults: {
+                isOptionReloaded: (name: string) => name === "treeDensity",
+                isEmptyForTree: () => true
+            }
+        } as unknown as EventData<"entitiesReloaded">);
+        expect(widget.$widget.hasClass("dense")).toBe(false);
+    });
+
     describe("the title of a protected note", () => {
         function prepareProtectedNode(isUnlocked: boolean) {
             vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(isUnlocked);
@@ -192,6 +208,7 @@ describe("NoteTreeWidget", () => {
 
             await widget.entitiesReloadedEvent({
                 loadResults: {
+                    isOptionReloaded: () => false,
                     isEmptyForTree: () => false,
                     getAttributeRows: () => [],
                     getBranchRows: () => [],

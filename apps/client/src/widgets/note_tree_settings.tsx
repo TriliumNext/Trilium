@@ -1,15 +1,17 @@
 import "./note_tree_settings.css";
 
 import type { ReferenceElement } from "@floating-ui/dom";
+import type { TreeDensity } from "@triliumnext/commons";
 import { useEffect, useMemo } from "preact/hooks";
 
 import { t } from "../services/i18n.js";
 import ActionButton from "./react/ActionButton.jsx";
 import { Card, OptionCardSection } from "./react/Card.jsx";
 import FormToggle from "./react/FormToggle.jsx";
-import { useTriliumOptionBool, useUniqueName } from "./react/hooks.jsx";
+import { useTriliumOption, useTriliumOptionBool, useUniqueName } from "./react/hooks.jsx";
 import { suspendModalFocusTraps } from "./react/modal_focustrap.js";
 import Popup from "./react/Popup.jsx";
+import SegmentedChoice, { type SegmentedChoiceOption } from "./react/SegmentedChoice.jsx";
 
 export interface TreeSettingsProps {
     /** The tree toolbar. The popup opens above its inline-end edge. */
@@ -26,6 +28,11 @@ export default function TreeSettings(props: TreeSettingsProps) {
     const [ isAutoCollapsed, setAutoCollapsed ] = useTriliumOptionBool("autoCollapseNoteTree");
     const [ isFollowingActiveNote, setFollowingActiveNote ] =
         useTriliumOptionBool("treeScrollFollowNavigation");
+    const [ density, setDensity ] = useTriliumOption("treeDensity");
+    const densities: SegmentedChoiceOption<TreeDensity>[] = [
+        { value: "relaxed", label: t("note_tree.display-density-relaxed") },
+        { value: "dense", label: t("note_tree.display-density-dense") }
+    ];
     const titleId = useUniqueName("tree-settings-title");
     // The toolbar's start edge moves when it collapses. Its end edge does not.
     const reference = useMemo(() => inlineEndEdge(anchor), [ anchor ]);
@@ -59,6 +66,14 @@ export default function TreeSettings(props: TreeSettingsProps) {
             </div>
 
             <Card>
+                <OptionCardSection label={t("note_tree.display-density")} inline>
+                    <SegmentedChoice
+                        options={densities}
+                        currentValue={density}
+                        onChange={setDensity}
+                    />
+                </OptionCardSection>
+
                 <OptionCardSection
                     name="hide-archived-notes"
                     label={t("note_tree.hide-archived-notes")}

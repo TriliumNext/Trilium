@@ -13,6 +13,9 @@ type KeyboardShortcutsOptions<T extends KeyboardActionNames> = {
     [key in T as `keyboardShortcuts${Capitalize<key>}`]: string;
 };
 
+/** How tall the rows of the note tree are. */
+export type TreeDensity = "relaxed" | "dense";
+
 export type FontFamily = "theme" | "serif" | "sans-serif" | "monospace" | string;
 
 /**
@@ -227,6 +230,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     debugModeEnabled: boolean;
     autoCollapseNoteTree: boolean;
     treeScrollFollowNavigation: boolean;
+    /** Not synced, so each device keeps its own. */
+    treeDensity: TreeDensity;
     dailyBackupEnabled: boolean;
     weeklyBackupEnabled: boolean;
     monthlyBackupEnabled: boolean;

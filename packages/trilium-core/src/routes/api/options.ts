@@ -84,6 +84,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "headingStyle",
     "autoCollapseNoteTree",
     "treeScrollFollowNavigation",
+    "treeDensity",
     "autoReadonlySizeText",
     "customDateTimeFormat",
     "autoReadonlySizeCode",

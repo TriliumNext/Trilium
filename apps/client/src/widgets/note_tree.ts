@@ -224,7 +224,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         });
 
         // note tree starts initializing already during render which is atypical
-        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => this.initFancyTree());
+        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => {
+            this.applyDensity();
+            this.initFancyTree();
+        });
 
         this.setupNoteTitleTooltip();
     }
@@ -270,6 +273,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     get treeScrollFollowNavigation() {
         return options.is("treeScrollFollowNavigation");
+    }
+
+    /** Makes the rows compact while the `treeDensity` option is `dense`. */
+    private applyDensity() {
+        this.$widget.toggleClass("dense", options.get("treeDensity") === "dense");
     }
 
     private toggleSettings(isShown: boolean) {
@@ -1181,6 +1189,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         this.activityDetected();
+
+        if (loadResults.isOptionReloaded("treeDensity")) {
+            this.applyDensity();
+        }
 
         if (loadResults.isEmptyForTree()) {
             return;
