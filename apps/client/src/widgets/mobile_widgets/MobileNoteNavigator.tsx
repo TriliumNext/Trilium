@@ -30,6 +30,7 @@ import {
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
+import { getLastSegment, getTreeStack, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -48,21 +49,21 @@ export default function MobileNoteNavigator() {
     // This keeps the previously-committed view visible during drill/back transitions
     // so there's no placeholder flash.
     const [nextStack, setNextStack] = useState<string[] | null>(null);
-    const manualStackRef = useRef(false);
 
-    // Hoisting always reframes the navigator around the hoisted note, so drop
-    // any manual drill position when it changes.
-    useEffect(() => {
-        manualStackRef.current = false;
-    }, [effectiveHoistedId]);
-
-    // Sync stack with the active note path unless the user has manually drilled.
-    useEffect(() => {
-        if (manualStackRef.current) return;
-        const newStack = buildStackForActiveNote(activeNotePath, effectiveHoistedId);
+    // Each tab keeps the column its tree was left on, until the tab opens another note or hoists.
+    const tabId = noteContext?.getMainContext().ntxId;
+    const treeOwnerRef = useRef({ tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId });
+    treeOwnerRef.current = { tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId };
+    const commitStack = useCallback((newStack: string[]) => {
         setStack(newStack);
+        const { tabId, ...owner } = treeOwnerRef.current;
+        if (tabId) setTabTree(tabId, { ...owner, stack: newStack });
+    }, []);
+
+    useEffect(() => {
+        commitStack(getTreeStack(tabId, activeNotePath, effectiveHoistedId));
         setNextStack(null);
-    }, [activeNotePath, effectiveHoistedId]);
+    }, [tabId, activeNotePath, effectiveHoistedId, commitStack]);
 
     // Rebuild when Froca reports structural changes that could affect the current column.
     // `useNavigatorChildren` is responsible for loading any newly-added child notes asynchronously.
@@ -147,14 +148,14 @@ export default function MobileNoteNavigator() {
 
     useEffect(() => {
         if (!nextStack || !pendingId || nextReadyNoteId !== pendingId) return;
-        setStack(nextStack);
+        commitStack(nextStack);
         setReadyForNoteId(pendingId);
         setNextStack(null);
         setNextReadyNoteId(null);
         setCommitCounter((c) => c + 1);
         // Reset scroll so the committed tile is visible at the top of the column.
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }, [nextStack, pendingId, nextReadyNoteId]);
+    }, [nextStack, pendingId, nextReadyNoteId, commitStack]);
 
     // Brief slide-in on forward / back so the swap feels directional without blocking the user.
     useLayoutEffect(() => {
@@ -178,15 +179,14 @@ export default function MobileNoteNavigator() {
             if (hasCommittedOnceRef.current) {
                 setNextStack(newStack);
             } else {
-                setStack(newStack);
+                commitStack(newStack);
             }
         },
-        []
+        [commitStack]
     );
 
     const goBack = useCallback(() => {
         if (stack.length <= 1) return;
-        manualStackRef.current = true;
         directionRef.current = "backward";
         navigateTo(stack.slice(0, -1));
     }, [stack, navigateTo]);
@@ -207,7 +207,6 @@ export default function MobileNoteNavigator() {
     const openNotePath = useCallback(
         async (notePath: string) => {
             await noteContext?.setNote(notePath);
-            manualStackRef.current = false;
             parentComponent?.triggerCommand("setActiveScreen", { screen: "detail" });
         },
         [noteContext, parentComponent]
@@ -220,7 +219,6 @@ export default function MobileNoteNavigator() {
 
     const drillInto = useCallback(
         (childNotePath: string) => {
-            manualStackRef.current = true;
             directionRef.current = "forward";
             navigateTo([...stack, childNotePath]);
         },
@@ -467,7 +465,7 @@ interface NavigatorChild {
     branchId: string;
 }
 
-function useNavigatorChildren(
+export function useNavigatorChildren(
     parentNote: FNote | null | undefined,
     hideArchived: boolean,
     isLoaded: boolean,
@@ -506,39 +504,6 @@ function useNavigatorChildren(
     }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden]);
 
     return children;
-}
-
-function getLastSegment(notePath: string): string {
-    const idx = notePath.lastIndexOf("/");
-    return idx >= 0 ? notePath.slice(idx + 1) : notePath;
-}
-
-function buildStackForActiveNote(activeNotePath: string | null | undefined, hoistedId: string): string[] {
-    if (!activeNotePath) return [hoistedId];
-
-    const segments = activeNotePath.split("/");
-    const activeNoteId = segments[segments.length - 1];
-    const activeNote = froca.getNoteFromCache(activeNoteId);
-
-    // If the active note is a folder, show its own children; otherwise show its parent's.
-    // Notes marked with `#subtreeHidden` hide their children (e.g. options), so we
-    // treat them like leaves and land on the parent column instead of an empty one.
-    const treatAsFolder = !!activeNote?.hasChildren() && !activeNote.isLabelTruthy("subtreeHidden");
-    const parentSegments = treatAsFolder ? segments : segments.slice(0, -1);
-
-    // Clamp to the hoisted root.
-    let start = parentSegments.indexOf(hoistedId);
-    if (start < 0) start = 0;
-    const clamped = parentSegments.slice(start);
-    if (clamped.length === 0) {
-        return [hoistedId];
-    }
-
-    const stack: string[] = [];
-    for (let i = 0; i < clamped.length; i++) {
-        stack.push(clamped.slice(0, i + 1).join("/"));
-    }
-    return stack;
 }
 
 /**

@@ -12,14 +12,26 @@ import { getHue, parseColor } from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewMode, ViewScope } from "../../services/link";
+import { isNarrowLayout } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
 import { LaunchBarActionButton, LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import { ICON_MAPPINGS } from "../note_bars/CollectionProperties";
 import ActionButton from "../react/ActionButton";
-import { useActiveNoteContext, useNoteIcon, useTriliumEvents } from "../react/hooks";
+import {
+    useActiveNoteContext,
+    useNote,
+    useNoteColorClass,
+    useNoteIcon,
+    useNoteLabelBoolean,
+    useNoteTitle,
+    useTriliumEvents,
+    useTriliumOptionBool
+} from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
+import { useNavigatorChildren } from "./MobileNoteNavigator";
+import { getLastSegment, getTabNavigation, type TreeStack } from "./tab_navigation";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
@@ -27,6 +39,9 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     "note-map": "bx bxs-network-chart",
     attachments: "bx bx-paperclip"
 };
+
+/** The most rows a tree card renders, more than its height shows. */
+const MAX_TREE_PREVIEW_ROWS = 12;
 
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
@@ -140,7 +155,7 @@ function TabBarModelContent({ mainNoteContexts, selectTab, shown }: {
     );
 }
 
-function Tab({ noteContext, containerRef, selectTab, activeNtxId }: {
+export function Tab({ noteContext, containerRef, selectTab, activeNtxId }: {
     containerRef: (el: HTMLDivElement | null) => void;
     noteContext: NoteContext;
     selectTab: (noteContextToActivate: NoteContext) => void;
@@ -150,6 +165,8 @@ function Tab({ noteContext, containerRef, selectTab, activeNtxId }: {
     const colorClass = note?.getColorClass() || '';
     const workspaceTabBackgroundColorHue = getWorkspaceTabBackgroundColorHue(noteContext);
     const subContexts = noteContext.getSubContexts();
+    const navigation = isNarrowLayout() ? getTabNavigation(noteContext.ntxId) : undefined;
+    const tree = navigation?.screen === "tree" ? navigation.tree : undefined;
 
     return (
         <div
@@ -157,19 +174,70 @@ function Tab({ noteContext, containerRef, selectTab, activeNtxId }: {
             class={clsx("tab-card", {
                 active: noteContext.ntxId === activeNtxId,
                 "with-hue": workspaceTabBackgroundColorHue !== undefined,
-                "with-split": subContexts.length > 1
+                "with-split": !tree && subContexts.length > 1
             })}
             onClick={() => selectTab(noteContext)}
             style={{
                 "--bg-hue": workspaceTabBackgroundColorHue
             }}
         >
-            {subContexts.map(subContext => (
+            {tree ? (
+                <TreeTabContent noteContext={noteContext} tree={tree} />
+            ) : subContexts.map(subContext => (
                 <Fragment key={subContext.ntxId}>
                     <TabHeader noteContext={subContext} colorClass={colorClass} />
                     <TabPreviewContent note={subContext.note} viewScope={subContext.viewScope} />
                 </Fragment>
             ))}
+        </div>
+    );
+}
+
+/** A tab left on its note tree: the column the tree stands on, with the tab's note highlighted. */
+function TreeTabContent({ noteContext, tree }: { noteContext: NoteContext, tree: TreeStack }) {
+    const columnPath = tree.stack[tree.stack.length - 1];
+    const columnNoteId = getLastSegment(columnPath);
+    const columnParentId = tree.stack.length >= 2 ? getLastSegment(tree.stack[tree.stack.length - 2]) : undefined;
+    const columnNote = useNote(columnNoteId);
+    const icon = useNoteIcon(columnNote);
+    const colorClass = useNoteColorClass(columnNote);
+    const title = useNoteTitle(columnNoteId, columnParentId);
+    const [ hideArchived ] = useTriliumOptionBool("hideArchivedNotes_main");
+    const [ isSubtreeHidden ] = useNoteLabelBoolean(columnNote, "subtreeHidden");
+    const rows = useNavigatorChildren(columnNote, hideArchived, true, isSubtreeHidden).slice(0, MAX_TREE_PREVIEW_ROWS);
+    const activeNoteId = tree.notePath ? getLastSegment(tree.notePath) : undefined;
+    const isEmpty = isSubtreeHidden || !columnNote?.getChildNoteIds().length;
+
+    return (
+        <>
+            <header className={colorClass}>
+                <Icon icon={icon ?? "bx bx-folder"} />
+                <span className="title">{title ?? columnNote?.title}</span>
+                <CloseTabButton noteContext={noteContext} />
+            </header>
+            <div className={clsx("tab-preview type-tree", { "tab-preview-placeholder": isEmpty })}>
+                {isEmpty ? <PreviewPlaceholder icon="bx bx-folder-open" /> : rows.map(({ note, branchId }) => (
+                    <TreeTabRow
+                        key={branchId}
+                        note={note}
+                        parentNoteId={columnNoteId}
+                        isActive={note.noteId === activeNoteId}
+                    />
+                ))}
+            </div>
+        </>
+    );
+}
+
+function TreeTabRow({ note, parentNoteId, isActive }: { note: FNote, parentNoteId: string, isActive: boolean }) {
+    const icon = useNoteIcon(note);
+    const colorClass = useNoteColorClass(note);
+    const title = useNoteTitle(note.noteId, parentNoteId);
+
+    return (
+        <div className={clsx("tree-row", colorClass, { active: isActive })}>
+            <Icon icon={icon ?? "bx bx-note"} />
+            <span className="title">{title ?? note.title}</span>
         </div>
     );
 }
@@ -187,16 +255,22 @@ function TabHeader({ noteContext, colorClass }: { noteContext: NoteContext, colo
         <header className={colorClass}>
             {noteContext.note && <Icon icon={iconClass} />}
             <span className="title">{navigationTitle ?? noteContext.note?.title ?? t("tab_row.new_tab")}</span>
-            {noteContext.isMainContext() && <ActionButton
-                icon="bx bx-x"
-                text={t("tab_row.close_tab")}
-                onClick={(e) => {
-                    // We are closing a tab, so we need to prevent propagation for click (activate tab).
-                    e.stopPropagation();
-                    appContext.tabManager.removeNoteContext(noteContext.ntxId);
-                }}
-            />}
+            {noteContext.isMainContext() && <CloseTabButton noteContext={noteContext} />}
         </header>
+    );
+}
+
+function CloseTabButton({ noteContext }: { noteContext: NoteContext }) {
+    return (
+        <ActionButton
+            icon="bx bx-x"
+            text={t("tab_row.close_tab")}
+            onClick={(e) => {
+                // We are closing a tab, so we need to prevent propagation for click (activate tab).
+                e.stopPropagation();
+                appContext.tabManager.removeNoteContext(noteContext.ntxId);
+            }}
+        />
     );
 }
 

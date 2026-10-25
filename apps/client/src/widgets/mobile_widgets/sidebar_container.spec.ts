@@ -4,6 +4,7 @@ import type NoteContext from "../../components/note_context";
 import options from "../../services/options";
 import { handleSystemBack } from "../../services/system_back";
 import SidebarContainer from "./sidebar_container";
+import { getTabNavigation } from "./tab_navigation";
 
 describe("SidebarContainer", () => {
     let save: MockInstance<typeof options.save>;
@@ -134,6 +135,13 @@ describe("SidebarContainer", () => {
 
             switchTo("first");
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "tree" });
+
+            // The tab switcher reads the screen of every tab, the active one included.
+            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            expect(getTabNavigation("first")?.screen).toBe("tree");
+            expect(getTabNavigation("second")?.screen).toBe("detail");
+            sidebar.noteContextRemovedEvent({ ntxIds: [ "first" ] });
+            expect(getTabNavigation("first")).toBeUndefined();
         });
 
         it("puts the tree back beside the note once the screen widens to a tablet", () => {

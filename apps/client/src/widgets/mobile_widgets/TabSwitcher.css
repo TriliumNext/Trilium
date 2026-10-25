@@ -116,6 +116,31 @@
                     }
                 }
 
+                &.type-tree:not(.tab-preview-placeholder) {
+                    padding: 0.5em;
+                    font-size: 0.75em;
+
+                    .tree-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4em;
+                        padding: 0.25em 0.4em;
+                        border-radius: 0.5em;
+                        color: var(--custom-color, inherit);
+
+                        .title {
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            text-wrap: nowrap;
+                        }
+
+                        &.active {
+                            background: var(--more-accented-background-color);
+                            font-weight: bold;
+                        }
+                    }
+                }
+
                 .preview-placeholder {
                     font-size: 500%;
                 }

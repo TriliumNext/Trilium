@@ -5,6 +5,7 @@ import { onSystemBack } from "../../services/system_back.js";
 import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer, { type FlexDirection } from "../containers/flex_container.js";
+import { forgetTabs, getTabNavigation, setTabScreen } from "./tab_navigation.js";
 
 const DRAG_STATE_NONE = 0;
 const DRAG_STATE_INITIAL_DRAG = 1;
@@ -28,8 +29,6 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private activeScreenName?: Screen;
     /** The main context ntxId of the active tab. */
     private activeTabId?: string;
-    /** The screen each tab was left on, by its main context ntxId; a tab not in it shows its note. */
-    private screenByTab = new Map<string, Screen>();
     private currentTranslate: number;
     private dragState: number;
     private startX?: number;
@@ -211,19 +210,21 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     activeContextChangedEvent({ noteContext }: EventData<"activeContextChanged">) {
         const tabId = noteContext.getMainContext().ntxId;
         if (!tabId || tabId === this.activeTabId) return;
-
-        if (this.activeTabId && this.activeScreenName) {
-            this.screenByTab.set(this.activeTabId, this.activeScreenName);
-        }
         this.activeTabId = tabId;
 
+        // A tab that never showed the tree shows its note.
         if (isNarrowLayout()) {
-            this.triggerCommand("setActiveScreen", { screen: this.screenByTab.get(tabId) ?? "detail" });
+            this.triggerCommand("setActiveScreen", { screen: getTabNavigation(tabId)?.screen ?? "detail" });
         }
+    }
+
+    noteContextRemovedEvent({ ntxIds }: EventData<"noteContextRemoved">) {
+        forgetTabs(ntxIds);
     }
 
     activeScreenChangedEvent({ activeScreen }: EventData<"activeScreenChanged">) {
         this.activeScreenName = activeScreen;
+        if (this.activeTabId) setTabScreen(this.activeTabId, activeScreen);
         this.#setInitialState();
         this.#setSidebarOpen(activeScreen === this.screenName);
     }
