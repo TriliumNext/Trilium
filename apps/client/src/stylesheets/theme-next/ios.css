@@ -201,7 +201,6 @@ body.mobile.ios {
             border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
             box-shadow: var(--glass-shadow);
 
-            /* Only the corners that sit in a corner of the menu follow its curve. */
             .tn-menu-scroll {
                 > :first-child.dropdown-item,
                 > :first-child > .tn-menu-action:first-child,
