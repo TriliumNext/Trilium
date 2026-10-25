@@ -82,7 +82,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
 
             {!isMobile() && <SwitchToOptions />}
             <MenuItem command="showLaunchBarSubtree" icon={`bx ${isMobile() ? "bx-mobile" : "bx-sidebar"}`} text={t("global_menu.configure_launchbar")} />
-            <ThemeMenu />
+            {!isMobile() && <ThemeMenu />}
             <AdvancedMenu />
             <MenuItem command="showOptions" icon="bx bx-cog" text={t("global_menu.options")} />
             <FormDropdownDivider />
