@@ -59,8 +59,8 @@ export function prepareNoteText(input: PrepareNoteTextInput, env?: ContentJobEnv
             content = sanitizeHtml(content, env?.allowedHtmlTags);
         }
 
-        content = content.replace(/<html.*<body[^>]*>/gis, "");
-        content = content.replace(/<\/body>.*<\/html>/gis, "");
+        content = removeDocumentHead(content);
+        content = unwrap(content, /<\/body>/gi, /<\/html>/gi, false);
     }
 
     return { content, frontmatterAttributes };
@@ -77,8 +77,64 @@ export function removeTriliumTags(content: string) {
     }
 
     // Remove ckeditor tags
-    content = content.replace(/<div class="ck-content">(.*)<\/div>/gms, "$1");
-    content = content.replace(/<div class="content">(.*)<\/div>/gms, "$1");
+    content = unwrap(content, /<div class="ck-content">/g, /<\/div>/g, true);
+    content = unwrap(content, /<div class="content">/g, /<\/div>/g, true);
 
     return content;
+}
+
+/**
+ * Removes the span from the first match of `open` to the last match of `close` after it, keeping
+ * what lies between when `keepInner` is set. This is what a greedy `open(.*)close` regex replaces,
+ * found in linear time: the regex backtracks over the rest of the input from every `open` that has
+ * no `close` after it. Both patterns must have the `g` flag.
+ */
+function unwrap(content: string, open: RegExp, close: RegExp, keepInner: boolean) {
+    open.lastIndex = 0;
+    const opening = open.exec(content);
+    if (!opening) {
+        return content;
+    }
+
+    const innerStart = opening.index + opening[0].length;
+    const closing = lastMatch(content, close, innerStart, content.length);
+    if (!closing) {
+        return content;
+    }
+
+    const inner = keepInner ? content.slice(innerStart, closing.index) : "";
+    const after = content.slice(closing.index + closing[0].length);
+    return content.slice(0, opening.index) + inner + after;
+}
+
+/** Removes what `/<html.*<body[^>]*>/is` matches, in linear time. */
+function removeDocumentHead(content: string) {
+    const opening = /<html/i.exec(content);
+    if (!opening) {
+        return content;
+    }
+
+    // `[^>]*>` matches after a `<body` only when some `>` follows it, so take the last `<body`
+    // before the last `>`.
+    const lastGt = content.lastIndexOf(">");
+    const body = lastMatch(content, /<body/gi, opening.index + opening[0].length, lastGt);
+    if (!body) {
+        return content;
+    }
+
+    const end = content.indexOf(">", body.index + body[0].length) + 1;
+    return content.slice(0, opening.index) + content.slice(end);
+}
+
+/** The last match of the global `pattern` that starts at or after `from` and ends by `until`. */
+function lastMatch(content: string, pattern: RegExp, from: number, until: number) {
+    let last: RegExpExecArray | null = null;
+    pattern.lastIndex = from;
+    for (let match = pattern.exec(content); match; match = pattern.exec(content)) {
+        if (match.index + match[0].length > until) {
+            break;
+        }
+        last = match;
+    }
+    return last;
 }
