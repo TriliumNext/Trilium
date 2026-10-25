@@ -21,7 +21,7 @@
 		"eslint-config-preact": "2.0.0",
 		"typescript": "6.0.3",
 		"user-agent-data-types": "0.4.3",
-		"vite": "8.3.4",
+		"vite": "8.3.5",
 		"vitest": "5.0.5"
 	},
 	"eslintConfig": {
