@@ -1,4 +1,3 @@
-import { getSql } from "../sql/index.js";
 import {
     runSearchQuery, type SearchQueryArgs, type SearchQueryKind, type SearchQueryResults
 } from "./search_queries.js";
@@ -56,5 +55,5 @@ export async function executeSearch<K extends SearchQueryKind>(
 function runOnMain<K extends SearchQueryKind>(
     kind: K, args: SearchQueryArgs[K]
 ): SearchQueryResults[K] {
-    return getSql().transactional(() => runSearchQuery(kind, args));
+    return runSearchQuery(kind, args, { transactional: true });
 }

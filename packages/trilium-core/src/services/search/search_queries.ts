@@ -9,6 +9,7 @@ import { ConflictError, ForbiddenError, GoneError, HttpError, NotFoundError, Val
 import attributeFormatter from "../attribute_formatter.js";
 import * as cls from "../context.js";
 import { getLog } from "../log.js";
+import { getSql } from "../sql/index.js";
 import { escapeHtml } from "../utils/index.js";
 import SearchContext from "./search_context.js";
 import type SearchResult from "./search_result.js";
@@ -97,6 +98,11 @@ export interface NeedsMainResult {
 export interface SearchQueryOptions {
     /** Answer a script-based saved search with {@link NeedsMainResult} instead of running the script. */
     deferScripts?: boolean;
+    /**
+     * Runs the query in a transaction opened inside its execution context, so that the commit and
+     * rollback hooks see the entity changes a search script records there.
+     */
+    transactional?: boolean;
 }
 
 /** An error thrown by a query, in a form that crosses a process boundary. */
@@ -119,7 +125,8 @@ export function runSearchQuery<K extends SearchQueryKind>(
 ): SearchQueryResults[K] {
     return cls.init(() => {
         cls.set("hoistedNoteId", args.hoistedNoteId || "root");
-        return queries[kind](args, options);
+        const run = () => queries[kind](args, options);
+        return options.transactional ? getSql().transactional(run) : run();
     });
 }
 

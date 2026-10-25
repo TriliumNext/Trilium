@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { NotFoundError, ValidationError } from "../../errors.js";
 import attributeService from "../attributes.js";
@@ -164,18 +164,37 @@ describe("search executor", () => {
                 needsMain: { run: () => Promise.resolve({ needsMain: true }) as never }
             };
 
+            // The commit and rollback hooks read the entity changes from the context that
+            // `transactional()` returns or throws in, so record what that context holds.
+            const sql = getSql();
+            const transactional = sql.transactional.bind(sql);
+            const changesSeenByHooks: number[] = [];
+            vi.spyOn(sql, "transactional").mockImplementation((func) => {
+                try {
+                    return transactional(func);
+                } finally {
+                    const changeIds = getContext().get<string[]>("entityChangeIds");
+                    changesSeenByHooks.push(changeIds?.length ?? 0);
+                }
+            });
+
             for (const [ name, executor ] of Object.entries(executors)) {
                 initSearchExecutor(executor);
                 const failingBefore = countTitled("ZzFailingScriptWrite");
                 const succeedingBefore = countTitled("ZzSucceedingScriptWrite");
 
+                changesSeenByHooks.length = 0;
                 expect((await api.get(`/api/search-note/${failing}`)).status).toBe(500);
                 expect(countTitled("ZzFailingScriptWrite"), name).toBe(failingBefore);
+                expect(changesSeenByHooks.at(-1), name).toBeGreaterThan(0);
 
+                changesSeenByHooks.length = 0;
                 expect((await api.get(`/api/search-note/${succeeding}`)).status).toBe(200);
                 expect(countTitled("ZzSucceedingScriptWrite"), name).toBe(succeedingBefore + 1);
+                expect(changesSeenByHooks.at(-1), name).toBeGreaterThan(0);
             }
         } finally {
+            vi.restoreAllMocks();
             config.Security.backendScriptingEnabled = originalScriptingEnabled;
         }
     });
