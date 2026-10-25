@@ -344,8 +344,8 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
       tabulator-tables:
-        specifier: 6.6.1
-        version: 6.6.1
+        specifier: 6.7.0
+        version: 6.7.0
       temporal-polyfill:
         specifier: 1.0.6
         version: 1.0.6
@@ -979,8 +979,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       tabulator-tables:
-        specifier: 6.6.1
-        version: 6.6.1
+        specifier: 6.7.0
+        version: 6.7.0
       temporal-polyfill:
         specifier: 1.0.6
         version: 1.0.6
@@ -10878,8 +10878,8 @@ packages:
     resolution: {integrity: sha512-9kY+CygyYM6j02t5YFHbNz2FN5QmYGv9zAjVp4lCDjlCw7amdckXlEt/bjMhUIfj4ThGRE4gCUH5+yGnNuPo5A==}
     engines: {node: '>=10.0.0'}
 
-  tabulator-tables@6.6.1:
-    resolution: {integrity: sha512-8A77aN30vJS34w1P5h4HtgEajB7vX2v0AD1fXFIKxp6SxplpGGfKn0Y4ouY91+6gdGK8/quqXoCA2LkrhBVE3A==}
+  tabulator-tables@6.7.0:
+    resolution: {integrity: sha512-JO4sU6BapqZiwlFHoXJY+PXQdqjgGaWafoDYJUAvdF/qpDp4ihp23psIYKwA+xEIqk5iHtY6pFWL8IOaARR3/w==}
 
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
@@ -19552,7 +19552,7 @@ snapshots:
       once: 1.4.0
       parseurl: 1.3.3
       proxy-addr: 2.0.8
-      qs: 6.16.0
+      qs: 6.16.1
       range-parser: 1.3.0
       router: 2.2.0(supports-color@10.2.2)
       send: 1.2.1(supports-color@10.2.2)
@@ -23596,7 +23596,7 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
 
-  tabulator-tables@6.6.1: {}
+  tabulator-tables@6.7.0: {}
 
   tagged-tag@1.0.0: {}
 
