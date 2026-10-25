@@ -1,6 +1,5 @@
 #launcher-container .mobile-tab-switcher {
     position: relative;
-    touch-action: pan-y;
 
     &::after {
         content: attr(data-tab-count);
@@ -11,6 +10,11 @@
         left: 50%;
         transform: translate(-50%, -50%);
     }
+}
+
+#launcher-pane.tab-swipe,
+#launcher-pane.tab-swipe #launcher-container {
+    touch-action: pan-y;
 }
 
 html[data-tab-slide] {

@@ -108,6 +108,27 @@ describe("SidebarContainer", () => {
             expect(tree.classList.contains("dragging")).toBe(false);
         });
 
+        it("leaves a swipe from the edge of a swipeable launch bar to the tabs", () => {
+            render(true);
+            const bar = document.body.appendChild(document.createElement("div"));
+            bar.id = "launcher-pane";
+            bar.className = "tab-swipe";
+            const launcher = bar.appendChild(document.createElement("button"));
+            const touch = (type: string, clientX: number) => launcher.dispatchEvent(
+                Object.assign(new Event(type, { bubbles: true, cancelable: true }), { touches: [ { clientX } ] }));
+
+            touch("touchstart", 5);
+            touch("touchmove", 40);
+            expect(tree.classList.contains("dragging")).toBe(false);
+            touch("touchend", 40);
+
+            bar.className = "";
+            touch("touchstart", 5);
+            touch("touchmove", 40);
+            expect(tree.classList.contains("dragging")).toBe(true);
+            touch("touchend", 40);
+        });
+
         it("goes back from the note to the tree on the system back, and not from the tree", () => {
             const sidebar = render(true);
             const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);

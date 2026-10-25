@@ -2056,6 +2056,7 @@ export function useHoldContextMenu(handler: (e: MouseEvent) => void, holdMs = 50
     return {
         onContextMenu: hold.onContextMenu,
         onPointerDown: hold.onPointerDown,
+        onPointerMove: hold.onPointerMove,
         onPointerUp: hold.cancel,
         onPointerLeave: hold.cancel,
         onPointerCancel: hold.cancel,

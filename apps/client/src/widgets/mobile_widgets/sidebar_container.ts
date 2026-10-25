@@ -74,8 +74,9 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     }
 
     #onDragStart(e: TouchEvent | MouseEvent) {
-        // The note comes back by opening it, not by a swipe.
-        if (!isNarrowLayout() || this.currentTranslate !== -100) {
+        // The note comes back by opening it, not by a swipe. On the launch bar, a swipe changes tabs.
+        const isOnTabSwipe = e.target instanceof Element && !!e.target.closest("#launcher-pane.tab-swipe");
+        if (!isNarrowLayout() || this.currentTranslate !== -100 || isOnTabSwipe) {
             return;
         }
 

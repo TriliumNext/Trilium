@@ -1,3 +1,4 @@
+import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,7 +8,7 @@ import froca from "../../services/froca";
 import { buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { setTabScreen, setTabTree } from "./tab_navigation";
-import { getSwipeDirection, Tab, useTabSwipe } from "./TabSwitcher";
+import { getSwipeDirection, Tab, useLaunchBarTabSwipe } from "./TabSwitcher";
 
 describe("Tab", () => {
     buildNotes([
@@ -120,17 +121,18 @@ describe("tab swipe", () => {
         expect(getSwipeDirection(-40, 30, false)).toBeUndefined();
     });
 
-    it("switches tabs once a swipe across the button is far or fast enough, and its click is not a tap", () => {
+    it("switches tabs on a swipe anywhere on a launch bar that fits, whose click then is not a tap", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        const tabManager = appContext.tabManager;
+        const fakeContext = (ntxId: string) => ({ ntxId }) as NoteContext;
+        appContext.tabManager = {
+            getMainNoteContexts: () => [ fakeContext("a"), fakeContext("b") ]
+        } as unknown as typeof appContext.tabManager;
         const onTap = vi.fn();
-        function SwipeButton({ enabled }: { enabled: boolean }) {
-            const swipe = useTabSwipe(enabled);
-            return <button
-                onClick={() => !swipe.takeSwipe() && onTap()}
-                onPointerDown={swipe.onPointerDown}
-                onPointerMove={swipe.onPointerMove}
-                onPointerUp={swipe.onPointerEnd}
-            />;
+        function LaunchBar() {
+            const containerRef = useRef<HTMLDivElement>(null);
+            useLaunchBarTabSwipe(containerRef, true);
+            return <div id="launcher-pane"><div ref={containerRef}><button onClick={onTap} /></div></div>;
         }
         // Each move is [ clientX, ms since the press ]; the finger lifts `liftAfter` ms after the last.
         const press = (button: HTMLButtonElement, startX: number, moves: [ number, number ][], liftAfter = 200) => {
@@ -146,8 +148,14 @@ describe("tab swipe", () => {
             button.click();
         };
 
-        const button = renderInto(<SwipeButton enabled />).querySelector("button");
+        let bar = document.createElement("div");
+        act(() => {
+            bar = renderInto(<LaunchBar />);
+        });
+        const button = bar.querySelector("button");
         if (!button) throw new Error("No button");
+        expect(bar.querySelector("#launcher-pane")?.classList.contains("tab-swipe")).toBe(true);
+
         // Without view transitions, the tab switches on release. The window is 1024px wide, and a
         // swipe has the room from where it starts to the edge it heads for.
         press(button, 600, [ [ 590, 200 ], [ 560, 400 ] ]);
@@ -164,10 +172,16 @@ describe("tab swipe", () => {
         press(button, 600, []);
         expect(onTap).toHaveBeenCalledTimes(1);
 
-        const single = renderInto(<SwipeButton enabled={false} />).querySelector("button");
-        if (!single) throw new Error("No button");
-        press(single, 600, [ [ 100, 200 ] ]);
+        // A bar with more launchers than fit scrolls sideways instead.
+        const scroller = button.parentElement;
+        if (!scroller) throw new Error("No container");
+        Object.defineProperty(scroller, "scrollWidth", { value: 500 });
+        Object.defineProperty(scroller, "clientWidth", { value: 300 });
+        press(button, 600, [ [ 590, 200 ], [ 300, 400 ] ]);
         expect(triggerCommand).toHaveBeenCalledTimes(3);
         expect(onTap).toHaveBeenCalledTimes(2);
+        expect(bar.querySelector("#launcher-pane")?.classList.contains("tab-swipe")).toBe(false);
+
+        appContext.tabManager = tabManager;
     });
 });

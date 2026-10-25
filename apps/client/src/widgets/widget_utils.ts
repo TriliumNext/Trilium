@@ -24,6 +24,8 @@ export function onWheelHorizontalScroll(event: WheelEvent) {
 export interface HoldContextMenu {
     onContextMenu(e: MouseEvent): void;
     onPointerDown(e: PointerEvent): void;
+    /** Cancels a pending hold once the press moves away from where it started. */
+    onPointerMove(e: PointerEvent): void;
     /** Cancels a pending hold. Listens to `pointerup`, `pointerleave` and `pointercancel`. */
     cancel(): void;
     /** Listens to `click` in the capture phase. */
@@ -31,6 +33,9 @@ export interface HoldContextMenu {
     /** Cancels a pending hold and removes the listener a hold adds to `window`. */
     dispose(): void;
 }
+
+/** How far a press can drift and still be held, as a finger never stays quite still. */
+const HOLD_SLOP = 10;
 
 /**
  * Returns listeners that call `handler` on a right-click, and when a press of the primary button
@@ -43,6 +48,7 @@ export function createHoldContextMenu(
 ): HoldContextMenu {
     let timer: number | null = null;
     let isHeld = false;
+    let start = { x: 0, y: 0 };
 
     function cancel() {
         if (timer !== null) {
@@ -69,6 +75,7 @@ export function createHoldContextMenu(
             isHeld = false;
             cancel();
             if (e.button !== 0) return;
+            start = { x: e.clientX, y: e.clientY };
             timer = window.setTimeout(() => {
                 timer = null;
                 isHeld = true;
@@ -76,6 +83,11 @@ export function createHoldContextMenu(
                 window.addEventListener("pointerup", endHold, { capture: true, once: true });
                 handler(e);
             }, holdMs);
+        },
+        onPointerMove(e) {
+            if (timer !== null && Math.hypot(e.clientX - start.x, e.clientY - start.y) > HOLD_SLOP) {
+                cancel();
+            }
         },
         cancel,
         onClickCapture(e) {
@@ -99,6 +111,7 @@ export function setupHoldContextMenu(
     const hold = createHoldContextMenu(handler, holdMs);
     element.addEventListener("contextmenu", hold.onContextMenu);
     element.addEventListener("pointerdown", hold.onPointerDown);
+    element.addEventListener("pointermove", hold.onPointerMove);
     element.addEventListener("pointerup", hold.cancel);
     element.addEventListener("pointerleave", hold.cancel);
     element.addEventListener("pointercancel", hold.cancel);

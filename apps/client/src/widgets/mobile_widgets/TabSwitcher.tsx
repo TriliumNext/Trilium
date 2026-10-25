@@ -1,7 +1,7 @@
 import "./TabSwitcher.css";
 
 import clsx from "clsx";
-import { ComponentChild, createPortal, Fragment } from "preact";
+import { ComponentChild, createPortal, Fragment, type RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
@@ -44,7 +44,7 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
 /** The most rows a tree card renders, more than its height shows. */
 const MAX_TREE_PREVIEW_ROWS = 12;
 
-/** How far a finger travels sideways across the tab switcher button before it is taken for a swipe. */
+/** How far a finger travels sideways across the launch bar before it is taken for a swipe. */
 const SWIPE_START = 10;
 /** How long a finger can rest before release and still count as a flick. */
 const FLICK_WINDOW = 100;
@@ -54,7 +54,6 @@ const MIN_ROOM = 48;
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
     const mainNoteContexts = useMainNoteContexts();
-    const swipe = useTabSwipe(mainNoteContexts.length > 1);
 
     return (
         <>
@@ -63,13 +62,7 @@ export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
                 className="mobile-tab-switcher"
                 icon="bx bx-rectangle"
                 text="Tabs"
-                onClick={() => {
-                    if (!swipe.takeSwipe()) setShown(true);
-                }}
-                onPointerDown={swipe.onPointerDown}
-                onPointerMove={swipe.onPointerMove}
-                onPointerUp={swipe.onPointerEnd}
-                onPointerCancel={swipe.onPointerEnd}
+                onClick={() => setShown(true)}
                 data-tab-count={mainNoteContexts.length > 99 ? "∞" : mainNoteContexts.length}
             />
             {createPortal(<TabBarModal mainNoteContexts={mainNoteContexts} shown={shown} setShown={setShown} />, document.body)}
@@ -91,18 +84,73 @@ interface SwipeGesture {
 }
 
 /**
- * Slides to the next or the previous tab as a finger swipes sideways across the tab switcher button,
- * following the finger until it lifts. The click that ends a swipe is not a tap, so `takeSwipe()`
- * tells the button not to open the switcher.
+ * Slides to the next or the previous tab as a finger swipes sideways anywhere on the launch bar, while
+ * the bar fits all its launchers: one that scrolls sideways keeps that drag for scrolling. The click
+ * that ends a swipe reaches none of the bar's buttons.
  */
-export function useTabSwipe(enabled: boolean) {
+export function useLaunchBarTabSwipe(containerRef: RefObject<HTMLElement | null>, enabled: boolean) {
+    const swipe = useTabSwipe();
+    const swipeRef = useRef(swipe);
+    swipeRef.current = swipe;
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!enabled || !container) return;
+        const bar = container.closest<HTMLElement>("#launcher-pane") ?? container;
+
+        // The class also sets `touch-action`, which the browser reads before the press reaches us.
+        const updateSwipeable = () => {
+            const isSwipeable = container.scrollWidth <= container.clientWidth;
+            bar.classList.toggle("tab-swipe", isSwipeable);
+            return isSwipeable;
+        };
+        const onPointerDown = (e: PointerEvent) => {
+            const hasOtherTabs = appContext.tabManager.getMainNoteContexts().length > 1;
+            if (updateSwipeable() && hasOtherTabs) swipeRef.current.onPointerDown(e);
+        };
+        const onPointerMove = (e: PointerEvent) => swipeRef.current.onPointerMove(e);
+        const onPointerEnd = (e: PointerEvent) => swipeRef.current.onPointerEnd(e);
+        const onClickCapture = (e: MouseEvent) => {
+            if (!swipeRef.current.takeSwipe()) return;
+            e.preventDefault();
+            e.stopPropagation();
+        };
+
+        const observer = new ResizeObserver(updateSwipeable);
+        observer.observe(container);
+        for (const launcher of container.children) {
+            observer.observe(launcher);
+        }
+        updateSwipeable();
+        bar.addEventListener("pointerdown", onPointerDown);
+        bar.addEventListener("pointermove", onPointerMove);
+        bar.addEventListener("pointerup", onPointerEnd);
+        bar.addEventListener("pointercancel", onPointerEnd);
+        bar.addEventListener("click", onClickCapture, { capture: true });
+        return () => {
+            observer.disconnect();
+            bar.classList.remove("tab-swipe");
+            bar.removeEventListener("pointerdown", onPointerDown);
+            bar.removeEventListener("pointermove", onPointerMove);
+            bar.removeEventListener("pointerup", onPointerEnd);
+            bar.removeEventListener("pointercancel", onPointerEnd);
+            bar.removeEventListener("click", onClickCapture, { capture: true });
+        };
+    }, [ containerRef, enabled ]);
+}
+
+/**
+ * Slides to the next or the previous tab as a finger swipes sideways, following the finger until it
+ * lifts. The click that ends a swipe is not a tap, so `takeSwipe()` tells the caller to drop it.
+ */
+function useTabSwipe() {
     const gestureRef = useRef<SwipeGesture | null>(null);
     const swipedRef = useRef(false);
 
     return {
         onPointerDown(e: PointerEvent) {
             swipedRef.current = false;
-            const canSwipe = enabled && e.isPrimary && !isTabSwipeActive();
+            const canSwipe = e.isPrimary && !isTabSwipeActive();
             gestureRef.current = canSwipe ? {
                 pointerId: e.pointerId,
                 x: e.clientX,
@@ -161,7 +209,7 @@ export function getSwipeDirection(dx: number, dy: number, isRtl: boolean): Swipe
 
 /**
  * How far a finger pressed at `x` travels for the slide to go all the way to the other tab: up to the
- * edge it heads for, as the tab switcher button can sit close to either one.
+ * edge it heads for, which can be close by.
  */
 function getRoom(x: number, slide: "left" | "right") {
     return Math.max(MIN_ROOM, slide === "left" ? x : window.innerWidth - x);
