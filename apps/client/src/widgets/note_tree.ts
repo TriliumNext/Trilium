@@ -449,7 +449,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 dragEnter: (node, data) => {
                     publishDropMarkerShift(node);
 
-                    if (node.data.noteType === "search") {
+                    // Content dragged out of a text note lists no notes, and its editor deletes
+                    // the content once a drop accepts it as a move.
+                    if (data.dataTransfer.types.includes("application/ckeditor5-dragging-uid")) {
+                        return false;
+                    } else if (node.data.noteType === "search") {
                         return false;
                     } else if (node.data.noteId === "_lbRoot") {
                         return false;

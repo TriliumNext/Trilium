@@ -32,7 +32,7 @@ The fixed formatting offers a more traditional editing paradigm, usually useful 
 
 All the options are combined into a single toolbar that will appear at the above the note. When using <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Split%20View.md">Split View</a>, a single toolbar will be available to save space and it acts on the active note.
 
-The sequence of dots to the left of the current paragraph is still shown, but only as a drag handle: drag it to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Clicking it does not open a popup, and right-clicking it copies a reference to the block, see <a class="reference-link" href="Block%20references.md">Block references</a>. The drag handle is not shown in the mobile layout.
+The sequence of dots to the left of the current paragraph is still shown, but only as a drag handle: drag it to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Releasing it above the first paragraph or below the last one moves it to the start or the end of the note. Clicking it does not open a popup, and right-clicking it copies a reference to the block, see <a class="reference-link" href="Block%20references.md">Block references</a>. The drag handle is not shown in the mobile layout.
 
 <figure class="image"><img style="aspect-ratio:1440/60;" src="Formatting toolbar_image.png" width="1440" height="60"></figure>
 

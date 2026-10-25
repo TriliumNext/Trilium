@@ -1,6 +1,7 @@
 import {
-    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator,
-    type Model, type ModelElement, ModelLiveRange, type ModelRange, Plugin, Rect
+    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env,
+    findClosestScrollableAncestor, IconDragIndicator, type Model, type ModelElement,
+    ModelLiveRange, type ModelRange, Plugin, Rect
 } from "ckeditor5";
 
 /**
@@ -65,9 +66,8 @@ export default class BlockDragHandle extends Plugin {
         this.domEmitter.listenTo(document, "drop", (_evt, domEvent: DragEvent) => {
             this.forwardDrag(domEvent);
         });
-        this.domEmitter.listenTo(document, "dragend", () => {
-            this.isDragging = false;
-            this.update();
+        this.domEmitter.listenTo(document, "dragend", (_evt, domEvent: DragEvent) => {
+            this.endDrag(domEvent);
         }, { useCapture: true });
     }
 
@@ -192,34 +192,43 @@ export default class BlockDragHandle extends Plugin {
     }
 
     /**
-     * Passes a `dragover` or `drop` in the margin beside the blocks, over an element that holds
-     * the editable, to the editing view: 100px into the content from the pointer and within the
-     * editable. The editing view takes a drop over the content itself, and another pane its own.
+     * Passes a `dragover` or `drop` around the blocks to the editing view, 100px into the content
+     * from the pointer and within the editable: over an element that holds the editable, or
+     * anywhere in its scrolling container, where a drop above or below the blocks lands at their
+     * start or end. The editing view takes a drop over the content itself. Anywhere else, the
+     * editing view gets a `dragleave`, which removes the drop marker.
      */
     private forwardDrag(domEvent: DragEvent) {
         const domEditable = this.editor.ui.getEditableElement();
         const pointedNode = domEvent.target;
         if (!this.isDragging || !domEditable || !(pointedNode instanceof Node)
-            || !pointedNode.contains(domEditable)) {
+            || (pointedNode !== domEditable && domEditable.contains(pointedNode))) {
             return;
         }
 
         const isLtr = this.editor.locale.contentLanguageDirection === "ltr";
         const editableRect = domEditable.getBoundingClientRect();
-        const clientX = Math.min(
-            Math.max(domEvent.clientX + (isLtr ? 100 : -100), editableRect.left + 1),
+        const clientX = clamp(
+            domEvent.clientX + (isLtr ? 100 : -100),
+            editableRect.left + 1,
             editableRect.right - 1
         );
-        const clientY = domEvent.clientY;
-        const target = document.elementFromPoint(clientX, clientY);
-        if (!target || !domEditable.contains(target)) {
-            return;
-        }
+        // Without a scrolling ancestor, the closest one is the body, which holds the other panes.
+        const scrollable = findClosestScrollableAncestor(domEditable);
+        const isInScrollable = !!scrollable && scrollable !== document.body
+            && scrollable.contains(pointedNode);
+        const clientY = isInScrollable
+            ? clamp(domEvent.clientY, editableRect.top + 1, editableRect.bottom - 1)
+            : domEvent.clientY;
+        const target = isInScrollable || pointedNode.contains(domEditable)
+            ? document.elementFromPoint(clientX, clientY)
+            : null;
+        const isBesideBlocks = !!target && domEditable.contains(target);
 
         const forwardedEvent = {
-            type: domEvent.type,
+            type: isBesideBlocks ? domEvent.type : "dragleave",
             dataTransfer: domEvent.dataTransfer,
-            target,
+            target: isBesideBlocks ? target : domEditable,
             clientX,
             clientY,
             preventDefault: () => domEvent.preventDefault(),
@@ -227,11 +236,30 @@ export default class BlockDragHandle extends Plugin {
         } as unknown as DragEvent;
         this.editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(forwardedEvent);
     }
+
+    /**
+     * Passes the `dragend` of a drag from the handle to the editing view, which does not get it
+     * because the handle is outside the editable. `DragDrop` ends the drag on it: it removes the
+     * drop marker, and deletes the dragged blocks when a drop outside this editor moved them.
+     */
+    private endDrag(domEvent: DragEvent) {
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(domEvent);
+        }
+
+        this.update();
+    }
+
 }
 
 interface BlockTarget {
     domBlock: HTMLElement;
     domEditable: HTMLElement;
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
 }
 
 /** The block that the handle drags for `block`: the whole collapsible for its title. */

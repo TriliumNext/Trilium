@@ -255,13 +255,15 @@ describe("the drop marker's distance from the row boundary", () => {
     });
 });
 
-describe("files dropped on the tree", () => {
+describe("drags onto the tree", () => {
+    const target = { data: { noteId: "target", noteType: "text" } };
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
 
-    /** Drives the fancytree drop handler the widget registers, with nothing live behind the tree. */
-    async function dropFiles(files: File[]) {
+    /** The fancytree drag-and-drop handlers the widget registers, with no live tree behind them. */
+    async function getDndHandlers() {
         const widget = new NoteTreeWidget();
         let treeOptions: Fancytree.FancytreeOptions | undefined;
         vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
@@ -276,18 +278,31 @@ describe("files dropped on the tree", () => {
         await new Promise((resolve) => setTimeout(resolve));
         widget.initFancyTree();
 
-        const dnd = treeOptions?.dnd5 as { dragDrop(node: unknown, data: unknown): Promise<void> };
-        await dnd.dragDrop(
-            { data: { noteId: "target", noteType: "text" } },
-            { hitMode: "over", dataTransfer: { files, getData: () => "" } }
-        );
+        return treeOptions?.dnd5 as {
+            dragEnter(node: unknown, data: unknown): unknown;
+            dragDrop(node: unknown, data: unknown): Promise<void>;
+        };
     }
 
-    it("tags the upload \"auto\", so an archive the importer recognizes is not imported as a plain zip", async () => {
+    it("tags dropped files \"auto\", so the importer can recognize an archive", async () => {
         const file = new File(["zip bytes"], "MyVault.zip");
-        await dropFiles([file]);
+        const dnd = await getDndHandlers();
+        await dnd.dragDrop(target, {
+            hitMode: "over",
+            dataTransfer: { files: [ file ], getData: () => "" }
+        });
 
         const { uploadFiles } = await import("../services/import.js");
         expect(uploadFiles).toHaveBeenCalledWith("notes", "target", [file], expect.objectContaining({ format: "auto" }));
+    });
+
+    it("refuses content dragged out of a text note, which carries no notes", async () => {
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
+        const dnd = await getDndHandlers();
+        const dragOf = (...types: string[]) => ({ dataTransfer: { types } });
+
+        const editorTypes = [ "text/plain", "text/html", "application/ckeditor5-dragging-uid" ];
+        expect(dnd.dragEnter(target, dragOf(...editorTypes))).toBe(false);
+        expect(dnd.dragEnter(target, dragOf("text/plain", "text/html"))).toBe(true);
     });
 });
