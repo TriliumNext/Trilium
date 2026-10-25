@@ -4,10 +4,9 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
 import type { ExportFormat } from "../../meta.js";
+import { shuffledExecutor } from "../../test/shuffled_executor.js";
 import cloningService from "../cloning.js";
-import type { ContentJobExecutor } from "../content_jobs/executor.js";
 import { initContentJobExecutor } from "../content_jobs/executor.js";
-import { type ContentJob, runContentJob } from "../content_jobs/jobs.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import sql_init from "../sql_init.js";
@@ -15,6 +14,10 @@ import TaskContext from "../task_context.js";
 import { md5 } from "../utils/index.js";
 import { getZipProvider } from "../zip_provider.js";
 import zip from "./zip.js";
+import {
+    getZipExportProviderFactory,
+    initZipExportProviderFactory
+} from "./zip_export_provider_factory.js";
 
 const FORMATS: ExportFormat[] = [ "html", "markdown" ];
 
@@ -28,55 +31,39 @@ describe("export with conversions that finish out of order", () => {
     afterEach(() => initContentJobExecutor());
 
     for (const format of FORMATS) {
-        it(`writes the same ${format} archive as converting one note at a time`, async () => {
-            initContentJobExecutor();
-            const expected = await exportEntries(format);
+        it(`writes the same ${format} entries as converting one note at a time`, async () => {
+            const sequential = shuffledExecutor({ delays: false });
+            initContentJobExecutor(sequential);
+            const expected = await withoutConcurrentPrepare(() => exportEntries(format));
 
-            const executor = new ShuffledExecutor(Array.from(format).reduce((seed, char) => seed + char.charCodeAt(0), 7));
-            initContentJobExecutor(executor);
+            const shuffled = shuffledExecutor();
+            initContentJobExecutor(shuffled);
             const actual = await exportEntries(format);
 
             expect(actual).toEqual(expected);
+            expect(sequential.maxInFlight).toBe(1);
             // The comparison only means something if the conversions really overlapped and
             // finished in a different order from the one they were started in.
-            expect(executor.started.length).toBeGreaterThan(20);
-            expect(executor.maxInFlight).toBeGreaterThan(1);
-            expect(executor.finished).not.toEqual(executor.started);
+            expect(shuffled.calls.length).toBeGreaterThan(20);
+            expect(shuffled.maxInFlight).toBeGreaterThan(1);
+            expect(shuffled.finished).not.toEqual(shuffled.calls.map((_, index) => index));
         });
     }
 });
 
-/** Runs each job after a seeded random delay, so later jobs regularly finish first. */
-class ShuffledExecutor implements ContentJobExecutor {
-    started: number[] = [];
-    finished: number[] = [];
-    maxInFlight = 0;
-    private inFlight = 0;
-    private nextId = 0;
-
-    constructor(private seed: number) {}
-
-    async run<J extends ContentJob>(job: J) {
-        const id = this.nextId++;
-        this.started.push(id);
-        this.inFlight++;
-        this.maxInFlight = Math.max(this.maxInFlight, this.inFlight);
-        try {
-            await new Promise((resolve) => setTimeout(resolve, this.random() * 4));
-            return await runContentJob(job);
-        } finally {
-            this.inFlight--;
-            this.finished.push(id);
-        }
-    }
-
-    private random() {
-        this.seed = (this.seed * 1103515245 + 12345) % 2147483648;
-        return this.seed / 2147483648;
+/** Runs `run` with providers that prepare each note only after the note before it is written. */
+async function withoutConcurrentPrepare<T>(run: () => Promise<T>) {
+    const factory = getZipExportProviderFactory();
+    initZipExportProviderFactory(async (format, data) =>
+        Object.defineProperty(await factory(format, data), "concurrentPrepare", { value: false }));
+    try {
+        return await run();
+    } finally {
+        initZipExportProviderFactory(factory);
     }
 }
 
-/** The archive's entries in order: names and content hashes. */
+/** The archive's entries in order: names, lengths and hashes of the decompressed content. */
 async function exportEntries(format: ExportFormat) {
     const branch = becca.getNoteOrThrow(FIXTURE_ROOT_ID).getParentBranches()[0];
     const taskContext = new TaskContext("no-progress-reporting", "export", null);

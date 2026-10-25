@@ -5,9 +5,9 @@ import { fileURLToPath } from "url";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type BNote from "../../becca/entities/bnote.js";
+import { shuffledExecutor } from "../../test/shuffled_executor.js";
 import { captureContentJobEnv } from "../content_jobs/env.js";
 import { type ContentJobExecutor, initContentJobExecutor } from "../content_jobs/executor.js";
-import { type ContentJob, runContentJob } from "../content_jobs/jobs.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import { getSql } from "../sql/index.js";
@@ -72,7 +72,7 @@ describe("import golden output", () => {
                     const taskData = { textImportedAsText: true, safeImport };
                     const expected = await importZipFixture(buffer, taskData);
 
-                    const executor = shuffledExecutor();
+                    const executor = depthTrackingExecutor();
                     initContentJobExecutor(executor);
                     const actual = await importZipFixture(buffer, taskData);
                     initContentJobExecutor();
@@ -95,7 +95,7 @@ describe("import golden output", () => {
             let parsed = 0;
             let saved = 0;
             let maxQueue = 0;
-            const executor = shuffledExecutor(1);
+            const executor = depthTrackingExecutor(1);
             const createNewNote = noteService.createNewNote;
             vi.spyOn(noteService, "createNewNote").mockImplementation((params) => {
                 if (notes.includes(params.title)) {
@@ -125,30 +125,23 @@ describe("import golden output", () => {
 });
 
 /**
- * An executor that answers every job after a pseudo-random delay, so that jobs started in one order
- * finish in another. It records the depth of `getSql().transactional()` when a job starts and ends.
+ * The shared out-of-order executor, also recording the depth of `getSql().transactional()` when a
+ * job starts and when its result arrives.
  */
-function shuffledExecutor(concurrency?: number) {
-    let seed = 42;
-    const nextDelay = () => {
-        seed = (seed * 1103515245 + 12345) % 2147483648;
-        return seed % 5;
-    };
-    const calls: ContentJob[] = [];
+function depthTrackingExecutor(concurrency?: number) {
+    const shuffled = shuffledExecutor({ concurrency });
     const depthsAtCall: number[] = [];
     const depthsAtResult: number[] = [];
     const executor: ContentJobExecutor = {
         concurrency,
         async run(job) {
-            calls.push(job);
             depthsAtCall.push(currentTransactionDepth);
-            await new Promise((resolve) => setTimeout(resolve, nextDelay()));
-            const result = await runContentJob(structuredClone(job));
+            const result = await shuffled.run(job);
             depthsAtResult.push(currentTransactionDepth);
-            return structuredClone(result);
+            return result;
         }
     };
-    return Object.assign(executor, { calls, depthsAtCall, depthsAtResult });
+    return Object.assign(executor, { calls: shuffled.calls, depthsAtCall, depthsAtResult });
 }
 
 let currentTransactionDepth = 0;
