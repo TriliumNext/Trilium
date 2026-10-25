@@ -68,9 +68,11 @@ describe("SidebarContainer", () => {
                 removeEventListener: vi.fn()
             }) as unknown as MediaQueryList);
 
-            tree = document.body.appendChild(document.createElement("div"));
+            const rest = document.body.appendChild(document.createElement("div"));
+            rest.id = "mobile-rest-container";
+            tree = rest.appendChild(document.createElement("div"));
             tree.id = "mobile-sidebar-wrapper";
-            detail = document.body.appendChild(document.createElement("div"));
+            detail = rest.appendChild(document.createElement("div"));
             detail.id = "detail-container";
         });
 
@@ -155,6 +157,36 @@ describe("SidebarContainer", () => {
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
             sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
             expect(getTabNavigation("opened")?.screen).toBe("tree");
+        });
+
+        it("swaps the screen in place on a tab switch, and slides it within a tab", () => {
+            const sidebar = render(true);
+            vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            const rest = tree.parentElement;
+            if (!rest) throw new Error("No container");
+            const flushes: { instant: boolean, transform: string }[] = [];
+            Object.defineProperty(rest, "offsetWidth", { get: () => {
+                flushes.push({ instant: rest.classList.contains("instant-screen-change"), transform: detail.style.transform });
+                return 0;
+            } });
+            const switchTo = (ntxId: string) => sidebar.activeContextChangedEvent({
+                noteContext: { getMainContext: () => ({ ntxId }) } as unknown as NoteContext
+            });
+
+            switchTo("swap-tree");
+            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            switchTo("swap-note");
+            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            flushes.length = 0;
+
+            switchTo("swap-tree");
+            expect(flushes).toEqual([ { instant: true, transform: "translateX(100%)" } ]);
+            expect(rest.classList.contains("instant-screen-change")).toBe(false);
+
+            flushes.length = 0;
+            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            expect(flushes).toEqual([]);
+            expect(detail.style.transform).toBe("");
         });
 
         it("puts the tree back beside the note once the screen widens to a tablet", () => {

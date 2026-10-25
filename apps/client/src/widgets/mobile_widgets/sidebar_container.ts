@@ -223,8 +223,23 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
 
         // A tab that never showed the tree shows its note.
         if (isNarrowLayout()) {
-            this.triggerCommand("setActiveScreen", { screen: getTabNavigation(tabId)?.screen ?? "detail" });
+            const screen = getTabNavigation(tabId)?.screen ?? "detail";
+            this.#setInitialState();
+            this.#withoutTransition(() => this.#setSidebarOpen(screen === this.screenName));
+            this.triggerCommand("setActiveScreen", { screen });
         }
+    }
+
+    /** Applies `change` at once: the slide between the tree and the note is for moving within a tab. */
+    #withoutTransition(change: () => void) {
+        const container = this.sidebarEl.parentElement;
+        if (!container) return change();
+
+        container.classList.add("instant-screen-change");
+        change();
+        // Reading the layout applies the change while transitions are off.
+        void container.offsetWidth;
+        container.classList.remove("instant-screen-change");
     }
 
     noteContextRemovedEvent({ ntxIds }: EventData<"noteContextRemoved">) {
