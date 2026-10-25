@@ -267,6 +267,11 @@ export default function MobileNoteNavigator() {
                 <div ref={bodyRef} className="mobile-navigator-body">
                     {!isHoisted && currentParentId === "root" && <WorkspaceCards />}
                     {parentNote && (
+                        <div className="mobile-navigator-children-label">
+                            {t("mobile_note_navigator.current_note")}
+                        </div>
+                    )}
+                    {parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
                                 "is-active": isCurrentActive,

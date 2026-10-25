@@ -39,10 +39,6 @@
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
     margin-inline: var(--navigator-group-inset);
-
-    & + .mobile-navigator-current-tile {
-        margin-block-start: var(--navigator-group-spacing);
-    }
 }
 
 .mobile-navigator-workspace {
@@ -180,7 +176,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-block-start: 8px;
     padding: 14px var(--navigator-row-padding);
     cursor: pointer;
     user-select: none;
