@@ -756,6 +756,14 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     border-bottom: none;
 }
 
+/* Back button, drawn as an icon button (buttons.css) */
+:root button.ck.ck-button.ck-button-back {
+    --ck-icon-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+
+    box-shadow: none;
+    background: transparent;
+}
+
 /*
  * Multistate checkboxes
  */
