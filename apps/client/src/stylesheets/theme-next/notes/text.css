@@ -663,7 +663,7 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
 
 :root .ck.ck-emoji-picker-form .ck-emoji__search {
     align-items: end;
-    padding-bottom: 4px;
+    padding-bottom: 12px;
 }
 
 /* Find and replace dialog */
