@@ -2,10 +2,11 @@ import type express from "express";
 import session, { Store } from "express-session";
 
 import config from "../services/config.js";
-import { events, getLog } from "@triliumnext/core";
+import { events, getLog, getMessagingProvider, isMessagingInitialized } from "@triliumnext/core";
 import sessionSecret from "../services/session_secret.js";
 import sql from "../services/sql.js";
 import sqlInit from "../services/sql_init.js";
+import { isHttpAttachableMessagingProvider } from "../services/ws_messaging_provider.js";
 
 /**
  * The amount of time in milliseconds after which expired sessions are cleaned up.
@@ -147,7 +148,7 @@ export function startSessionCleanup() {
 /**
  * Logs out every session when `passwordVerificationHash` changes, whether the password is changed
  * or reset here or the new hash arrives by sync. A changed password must also cut off a stolen
- * session cookie.
+ * session cookie, including its open WebSocket connection.
  */
 export function startSessionRevocationOnPasswordChange() {
     events.subscribe(events.ENTITY_CHANGED, ({ entityName, entity }) => {
@@ -166,6 +167,11 @@ export function startSessionRevocationOnPasswordChange() {
 function revokeAllSessions() {
     const result = sql.execute(/*sql*/`DELETE FROM sessions`);
     getLog().info(`Password changed, logged out ${result.changes} session(s).`);
+
+    const messaging = isMessagingInitialized() ? getMessagingProvider() : null;
+    if (messaging && isHttpAttachableMessagingProvider(messaging)) {
+        messaging.disconnectAllClients("password changed");
+    }
 }
 
 export default sessionParser;

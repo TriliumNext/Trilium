@@ -51,7 +51,7 @@ cookieMaxAge=86400
 
 When “Remember me” is unchecked, the behavior is different. At client/browser level the authentication does not have any expiration date, but it will be automatically cleared as soon as the user closes the browser. Nevertheless, the server will also dismiss this authentication in around 24 hours from the _last interaction with the application_.
 
-Changing or resetting the password logs out every session, including the one that made the change, so you have to log in again with the new password. This also applies when the password is changed on another instance and reaches the server through synchronization. If you suspect that someone has obtained your session cookie, changing the password cuts off their access.
+Changing or resetting the password logs out every session, including the one that made the change: open tabs return to the login screen, where you log in again with the new password. This also applies when the password is changed on another instance and reaches the server through synchronization. If you suspect that someone has obtained your session cookie, changing the password cuts off their access.
 
 ## Viewing active sessions
 

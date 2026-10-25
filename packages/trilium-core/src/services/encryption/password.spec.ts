@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import options from "../options.js";
 import { getContext } from "../context.js";
+import protectedSessionService from "../protected_session.js";
 import passwordEncryptionService from "./password_encryption.js";
 import passwordService from "./password.js";
 
@@ -59,6 +60,7 @@ describe("password service (real DB)", () => {
                 FIXTURE_PASSWORD
             )) as Uint8Array;
             expect(dataKeyBefore).toBeInstanceOf(Uint8Array);
+            protectedSessionService.setDataKey(dataKeyBefore);
 
             const newPassword = "brandNewPass-123";
             const result = await getContext().init(() =>
@@ -76,6 +78,9 @@ describe("password service (real DB)", () => {
             // The new password verifies, the old one no longer does.
             expect(await passwordEncryptionService.verifyPassword(newPassword)).toBe(true);
             expect(await passwordEncryptionService.verifyPassword(FIXTURE_PASSWORD)).toBe(false);
+
+            // The protected session opened with the old password is closed.
+            expect(protectedSessionService.isProtectedSessionAvailable()).toBe(false);
 
             // The underlying data key is preserved across the re-encryption.
             const dataKeyAfter = (await passwordEncryptionService.getDataKey(

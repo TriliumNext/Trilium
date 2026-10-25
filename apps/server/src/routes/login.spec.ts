@@ -4,7 +4,7 @@ import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, events, options } from "@triliumnext/core";
+import { cls, events, initMessaging, options } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
 import totp from "../services/totp.js";
@@ -295,13 +295,22 @@ describe("Login Route test", () => {
 
     describe("Password change revokes sessions", () => {
         let originalHash: string;
+        const disconnectAllClients = vi.fn();
 
         beforeAll(() => {
             originalHash = cls.init(() => options.getOption("passwordVerificationHash"));
+            initMessaging({
+                attachToHttpServer() {},
+                disconnectAllClients,
+                sendMessageToAllClients() {},
+                sendMessageToClient: () => false,
+                setClientMessageHandler() {}
+            } as Parameters<typeof initMessaging>[0]);
         });
 
         afterEach(() => {
             cls.init(() => options.setOption("passwordVerificationHash", originalHash));
+            disconnectAllClients.mockClear();
         });
 
         async function logIn() {
@@ -318,6 +327,7 @@ describe("Login Route test", () => {
             const cookie = await logIn();
             cls.init(() => options.setOption("redirectBareDomain", "false"));
             expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
+            expect(disconnectAllClients).not.toHaveBeenCalled();
         });
 
         it("removes every session when the password changes on this instance", async () => {
@@ -328,6 +338,7 @@ describe("Login Route test", () => {
 
             expect((await getSessionFromCookie(first)).session).toBeFalsy();
             expect((await getSessionFromCookie(second)).session).toBeFalsy();
+            expect(disconnectAllClients).toHaveBeenCalled();
         });
 
         it("removes every session when a password change arrives by sync", async () => {
@@ -339,6 +350,7 @@ describe("Login Route test", () => {
             }));
 
             expect((await getSessionFromCookie(cookie)).session).toBeFalsy();
+            expect(disconnectAllClients).toHaveBeenCalled();
         });
     });
 }, 100_000);
