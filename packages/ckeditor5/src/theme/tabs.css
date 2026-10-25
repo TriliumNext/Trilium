@@ -67,14 +67,6 @@
             padding: .75rem 1rem;
             border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
             background: var(--_tabs-background);
-
-            & > :first-child {
-                margin-top: 0;
-            }
-
-            & > :last-child {
-                margin-bottom: 0;
-            }
         }
 
         & > .trilium-tab.trilium-tab--active > .trilium-tab-panel {
@@ -114,6 +106,19 @@
                 > .trilium-tab > .trilium-tab-panel {
                 border-bottom-left-radius: var(--_tabs-border-radius);
             }
+        }
+    }
+
+    /* Only the active panel is shown. Kept out of the `:has()` block: under a `:has()`, a selector
+       ending without a class or tag makes Chromium restyle whole subtrees. */
+    :is(.ck-editor__editable, .ck-content) .trilium-tabs > .trilium-tab.trilium-tab--active
+        > .trilium-tab-panel {
+        & > :first-child {
+            margin-top: 0;
+        }
+
+        & > :last-child {
+            margin-bottom: 0;
         }
     }
 }

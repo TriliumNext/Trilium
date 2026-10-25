@@ -67,6 +67,7 @@ import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
 import CollapsibleListItems from "./plugins/collapsible_list_items.js";
+import ListItemAlignment from "./plugins/list_item_alignment.js";
 import TableIndent from "./plugins/table_indent.js";
 import TableContextMenu from "./plugins/table_context_menu.js";
 import TableMove from "./plugins/table_move/table_move.js";
@@ -121,6 +122,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     LinkEmbedToolbar,
     TodoListMultistate,
     CollapsibleListItems,
+    ListItemAlignment,
     TableIndent,
     TableContextMenu,
     TableMove,

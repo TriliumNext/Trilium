@@ -311,6 +311,21 @@ describe("Text content renderer", () => {
         expect(tableWidth(excerpt)).toBe("800px");
     });
 
+    it("marks the list items whose first paragraph is aligned, in text and Markdown", async () => {
+        const list = "<ul><li><p style=\"text-align:center;\">a</p></li><li>b</li></ul>";
+        const classes = (root: HTMLElement) =>
+            [ ...root.querySelectorAll("li") ].map((item) => item.className);
+
+        const text = document.createElement("div");
+        await renderTextContent(buildNote({ title: "Lists" }), list, $(text));
+        expect(classes(text)).toEqual([ "trilium-list-item-aligned-center", "" ]);
+
+        // The Markdown renderers run only `postProcessRichContent()` on their HTML.
+        const $markdown = $("<div>").append($("<div class=\"ck-content\">").html(list));
+        await postProcessRichContent(buildNote({ title: "Markdown" }), $markdown);
+        expect(classes($markdown[0])).toEqual([ "trilium-list-item-aligned-center", "" ]);
+    });
+
     it("renders nothing for an empty note with no children when noChildrenList is set", async () => {
         const contentEl = document.createElement("div");
         const note = buildNote({ title: "Empty note" });

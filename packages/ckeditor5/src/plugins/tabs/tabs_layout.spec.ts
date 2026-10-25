@@ -172,6 +172,24 @@ describe("tabs layout styles", () => {
         }
     });
 
+    it("trims the outer margins of the shown panel's content, saved and edited", async () => {
+        const html = `<div class="trilium-tabs">` +
+            `${tab("A", "<p>First</p><p>Middle</p><p>Last</p>")}${tab("B", "<p>Other</p>")}</div>`;
+        const editor = await createTestEditor([Essentials, Paragraph, Tabs]);
+        editor.setData(html);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+
+        for (const root of [renderSaved(html).container, editable]) {
+            const panel = root.querySelector(".trilium-tab--active > .trilium-tab-panel");
+            const blocks = [...panel?.querySelectorAll(":scope > p") ?? []];
+            expect(blocks.map(block => block.textContent)).toEqual(["First", "Middle", "Last"]);
+            const [first, middle, last] = blocks.map(block => getComputedStyle(block));
+            expect({ top: first.marginTop, bottom: last.marginBottom })
+                .toEqual({ top: "0px", bottom: "0px" });
+            expect(middle.marginTop).not.toBe("0px");
+        }
+    });
+
     it("clips a long title at 30% of the block (45% on mobile) and scrolls it back", async () => {
         const long = tab("A title far too long for a third of the block", "<p>Body</p>");
         const html = `<div class="trilium-tabs">${long}${tab("B", "")}</div>`;

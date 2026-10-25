@@ -7,9 +7,19 @@ import type { ClassicEditor } from "ckeditor5";
 import { describe, expect, it, onTestFinished } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import ListItemAlignment from "../plugins/list_item_alignment.js";
+import { applyListItemAlignment } from "../plugins/list_item_alignment_read_only.js";
 
-const PLUGINS = [Essentials, Paragraph, List, TodoList, Table, TableCellProperties, Alignment];
+const PLUGINS = [
+    Essentials, Paragraph, List, TodoList, Table, TableCellProperties, Alignment, ListItemAlignment
+];
 const TODO_ITEM = `<li><label class="todo-list__label"><input type="checkbox" disabled="disabled"></label>`;
+const ALIGNED_ITEMS = `
+    <ul><li><p style="text-align:center">a</p></li></ul>
+    <ol><li><p style="text-align:right">b</p></li></ol>
+    <ul><li>c</li></ul>
+    <ul class="todo-list">${TODO_ITEM}<p style="text-align:center">d</p></li></ul>
+`;
 
 describe("lists.css", () => {
     it("moves the items of a list in a centered or right-aligned cell with their text", async () => {
@@ -22,7 +32,7 @@ describe("lists.css", () => {
             <td><ul><li>d</li></ul></td>
             <td style="text-align:center"><ul class="todo-list">${TODO_ITEM}<p>e</p></li></ul></td>
         </tr></tbody></table></figure>`);
-        const [ centered, rightAligned, plain, todo ] = items(editor);
+        const [ centered, rightAligned, plain, todo ] = items(editingRoot(editor));
 
         expectCentered(centered);
         expectRightAligned(rightAligned);
@@ -32,13 +42,23 @@ describe("lists.css", () => {
     });
 
     it("moves list items aligned with the alignment button with their text", async () => {
-        const editor = await editorWith(`
-            <ul><li><p style="text-align:center">a</p></li></ul>
-            <ol><li><p style="text-align:right">b</p></li></ol>
-            <ul><li>c</li></ul>
-            <ul class="todo-list">${TODO_ITEM}<p style="text-align:center">d</p></li></ul>
-        `);
-        const [ centered, rightAligned, plain, todo ] = items(editor);
+        const editor = await editorWith(ALIGNED_ITEMS);
+        const [ centered, rightAligned, plain, todo ] = items(editingRoot(editor));
+
+        expectCentered(centered);
+        expectRightAligned(rightAligned);
+        expectFullWidth(plain);
+        expectCentered(todo);
+        expectCheckboxBeforeText(todo);
+    });
+
+    it("moves aligned list items in saved content shown outside the editor", () => {
+        const container = document.body.appendChild(document.createElement("div"));
+        onTestFinished(() => container.remove());
+        container.className = "ck-content";
+        container.innerHTML = ALIGNED_ITEMS;
+        applyListItemAlignment(container);
+        const [ centered, rightAligned, plain, todo ] = items(container);
 
         expectCentered(centered);
         expectRightAligned(rightAligned);
@@ -53,7 +73,7 @@ describe("lists.css", () => {
             <p>-</p>
             <ul><li>b</li></ul>
         `, "ar");
-        const [ leftAligned, plain ] = items(editor);
+        const [ leftAligned, plain ] = items(editingRoot(editor));
 
         expect(leftAligned.getBoundingClientRect().left).toBeCloseTo(listBox(leftAligned).left, 0);
         expect(leftAligned.getBoundingClientRect().width).toBeLessThan(listBox(leftAligned).width / 2);
@@ -67,13 +87,17 @@ async function editorWith(data: string, contentLanguage = "en") {
     return editor;
 }
 
-/** The first list item of each top-level list, or of each table cell, in document order. */
-function items(editor: ClassicEditor) {
+function editingRoot(editor: ClassicEditor) {
     const root = editor.editing.view.getDomRoot();
     if (!root) {
         throw new Error("The editor has no editing root.");
     }
-    const lists = root.querySelectorAll(":is(td, .ck-editor__editable_inline) > :is(ul, ol)");
+    return root;
+}
+
+/** The first list item of each top-level list, or of each table cell, in document order. */
+function items(root: HTMLElement) {
+    const lists = root.querySelectorAll(":is(td, .ck-content) > :is(ul, ol)");
     const result: HTMLLIElement[] = [];
     for (const list of lists) {
         const item = list.querySelector("li");
