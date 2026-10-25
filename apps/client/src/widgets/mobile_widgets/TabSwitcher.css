@@ -87,6 +87,15 @@ html[data-tab-drag] {
         position: relative;
         will-change: transform;
 
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: var(--tab-slide-gap);
+            height: 100%;
+            background: color-mix(in srgb, var(--main-text-color) 20%, var(--main-background-color));
+        }
+
         > .note-split.tab-slide-incoming {
             display: flex !important;
             position: absolute;
@@ -97,12 +106,24 @@ html[data-tab-drag] {
     }
 }
 
-html[data-tab-drag="left"] #detail-container > .split-note-container-widget > .tab-slide-incoming {
-    left: calc(100% + var(--tab-slide-gap));
+html[data-tab-drag="left"] #detail-container > .split-note-container-widget {
+    &::before {
+        left: 100%;
+    }
+
+    > .tab-slide-incoming {
+        left: calc(100% + var(--tab-slide-gap));
+    }
 }
 
-html[data-tab-drag="right"] #detail-container > .split-note-container-widget > .tab-slide-incoming {
-    left: calc(-100% - var(--tab-slide-gap));
+html[data-tab-drag="right"] #detail-container > .split-note-container-widget {
+    &::before {
+        right: 100%;
+    }
+
+    > .tab-slide-incoming {
+        left: calc(-100% - var(--tab-slide-gap));
+    }
 }
 
 html[data-tab-slide="left"] {
