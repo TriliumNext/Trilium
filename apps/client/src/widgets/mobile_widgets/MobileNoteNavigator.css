@@ -7,7 +7,8 @@
     --navigator-row-padding: 16px;
     --navigator-separator-color: var(--menu-item-delimiter-color);
     --navigator-separator-inset: 0px;
-    --navigator-active-background: color-mix(in srgb, var(--main-text-color) 10%, transparent);
+    --navigator-pressed-background: color-mix(in srgb, var(--main-text-color) 10%, transparent);
+    --navigator-active-indicator-color: var(--main-text-color);
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -300,9 +301,17 @@
     }
 }
 
-.mobile-navigator-row:active,
-.mobile-navigator-row.is-active {
-    background: var(--navigator-active-background);
+.mobile-navigator-row:active {
+    background: var(--navigator-pressed-background);
+}
+
+.mobile-navigator-row.is-active::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--navigator-active-indicator-color);
 }
 
 .mobile-navigator-row.is-archived {
