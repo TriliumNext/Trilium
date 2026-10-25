@@ -30,6 +30,28 @@ html[data-tab-slide] {
         view-transition-name: tab-launch-bar;
     }
 
+    body.ios {
+        #mobile-bottom-bar {
+            view-transition-name: none;
+        }
+
+        #mobile-bottom-bar > #launcher-pane {
+            view-transition-name: tab-launch-bar;
+        }
+    }
+
+    &::view-transition-group(tab-launch-bar) {
+        animation: none;
+    }
+
+    &::view-transition-old(tab-launch-bar) {
+        display: none;
+    }
+
+    &::view-transition-new(tab-launch-bar) {
+        animation: none;
+    }
+
     &::view-transition-group(tab-content) {
         background: color-mix(in srgb, var(--main-text-color) 20%, var(--main-background-color));
     }
@@ -41,6 +63,17 @@ html[data-tab-slide] {
         animation-fill-mode: both;
         mix-blend-mode: normal;
     }
+}
+
+/* Safari bakes the bar's own `backdrop-filter` into its snapshot, so the group blurs the sliding content instead. */
+html[data-tab-slide-captured] body.ios #mobile-bottom-bar > #launcher-pane {
+    backdrop-filter: none;
+}
+
+html[data-tab-slide]:has(body.ios:not(.backdrop-effects-disabled))::view-transition-group(tab-launch-bar) {
+    border-radius: calc(var(--launcher-pane-horiz-size) / 2);
+    /* Must match `--dropdown-backdrop-filter` in theme-next/ios.css. */
+    backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
 }
 
 html[data-tab-slide="left"] {

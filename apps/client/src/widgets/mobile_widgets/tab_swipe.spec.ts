@@ -60,15 +60,20 @@ describe("TabSwipe", () => {
         const unrelated = animation(document.body, "");
         document.getAnimations = () => [ outgoing, incoming, unrelated ] as unknown as Animation[];
 
+        /** Whether `data-tab-slide-captured` is set as the transition starts and as its hold ends. */
+        const captured: string[] = [];
+        const isCaptured = () => root.dataset.tabSlideCaptured !== undefined;
         let end = () => {};
         const finished = new Promise<void>((resolve) => { end = resolve; });
         document.documentElement.animate = vi.fn(() => ({
             cancel() {
+                captured.push(`at end: ${isCaptured()}`);
                 log.push("end");
                 end();
             }
         })) as unknown as typeof root.animate;
         document.startViewTransition = ((update: () => Promise<void>) => {
+            captured.push(`at start: ${isCaptured()}`);
             const updated = update();
             if (skipped) updated.then(end);
             return {
@@ -76,17 +81,19 @@ describe("TabSwipe", () => {
                 finished
             };
         }) as unknown as typeof document.startViewTransition;
-        return { outgoing, incoming, unrelated, finished };
+        return { outgoing, incoming, unrelated, finished, captured, isCaptured };
     }
 
     it("follows the finger, then plays on to the other tab once released far enough", async () => {
-        const { outgoing, incoming, unrelated, finished } = fakeTransition();
+        const { outgoing, incoming, unrelated, finished, captured, isCaptured } = fakeTransition();
 
         const swipe = new TabSwipe("next");
         expect(document.documentElement.dataset.tabSlide).toBe("left");
         expect(isTabSwipeActive()).toBe(true);
         await vi.waitFor(() => expect(outgoing.paused).toBe(true));
         expect(log).toEqual([ "activateNextTab" ]);
+        // Marked only once the old state is captured, so the live page never paints with it.
+        expect(isCaptured()).toBe(true);
 
         swipe.move(0.5);
         expect([ outgoing.currentTime, incoming.currentTime, unrelated.currentTime ]).toEqual([ 125, 125, 0 ]);
@@ -108,6 +115,9 @@ describe("TabSwipe", () => {
         await vi.waitFor(() => expect(isTabSwipeActive()).toBe(false));
         expect(log).toEqual([ "activateNextTab", "end" ]);
         expect(document.documentElement.dataset.tabSlide).toBeUndefined();
+        // Kept as the hold ends, since the snapshots stay up until the next frame removes them.
+        expect(captured).toEqual([ "at start: false", "at end: true" ]);
+        expect(isCaptured()).toBe(false);
     });
 
     it("runs back and switches back to the first tab, before the slide ends, when released short", async () => {

@@ -74,6 +74,8 @@ export class TabSwipe {
         // The browser renders no frames until the update finishes, so it must not wait for one; what
         // Preact renders later still shows, as the incoming side of the slide is live.
         const transition = document.startViewTransition(async () => {
+            // Styles that only the snapshots can show, as the page behind the transition no longer paints.
+            root.dataset.tabSlideCaptured = "";
             await appContext.triggerCommand(getCommand(this.direction));
         });
         this.transition = transition;
@@ -87,6 +89,7 @@ export class TabSwipe {
         const cleanUp = () => {
             if (activeTransition !== transition) return;
             delete root.dataset.tabSlide;
+            delete root.dataset.tabSlideCaptured;
             activeTransition = undefined;
         };
         transition.finished.then(cleanUp, cleanUp);
@@ -128,6 +131,9 @@ export class TabSwipe {
             await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         }
         this.hold?.cancel();
+        // The snapshots stay up until the next frame removes them, and that frame paints the
+        // revealed page after its `requestAnimationFrame()` callbacks run.
+        requestAnimationFrame(() => delete document.documentElement.dataset.tabSlideCaptured);
     }
 
     /** Moves the slide to `target` on a critically damped spring, which settles without bouncing. */
