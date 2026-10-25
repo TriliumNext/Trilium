@@ -2862,6 +2862,7 @@
     "empty": "This note has no children.",
     "children_count_one": "{{count}} note",
     "children_count_other": "{{count}} notes",
+    "children_hidden": "Child notes are hidden from the tree",
     "add_child": "Add child note",
     "more_actions": "More actions"
   },

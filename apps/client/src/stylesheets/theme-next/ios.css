@@ -93,6 +93,10 @@ body.mobile.ios {
             overflow: hidden;
         }
 
+        .mobile-navigator-current-tile + .mobile-navigator-list {
+            margin-block-start: 22px;
+        }
+
         .mobile-navigator-row {
             position: relative;
             min-height: 52px;

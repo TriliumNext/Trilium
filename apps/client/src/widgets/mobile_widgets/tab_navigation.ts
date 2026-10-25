@@ -50,6 +50,15 @@ export function getTreeStack(tabId: string | null | undefined, notePath: string 
     return buildStackForActiveNote(notePath, hoistedNoteId);
 }
 
+/**
+ * The child of the column at `columnPath` that leads to `notePath`, which a column with
+ * `#subtreeHidden` still lists, as the desktop tree's spotlight does.
+ */
+export function getSpotlightedNoteId(columnPath: string | undefined, notePath: string | null | undefined) {
+    if (!columnPath || !notePath?.startsWith(`${columnPath}/`)) return undefined;
+    return notePath.slice(columnPath.length + 1).split("/")[0];
+}
+
 export function getLastSegment(notePath: string): string {
     const idx = notePath.lastIndexOf("/");
     return idx >= 0 ? notePath.slice(idx + 1) : notePath;

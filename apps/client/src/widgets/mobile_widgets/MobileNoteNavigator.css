@@ -268,6 +268,10 @@
     opacity: 0.55;
 }
 
+.mobile-navigator-row.is-spotlighted .mobile-navigator-row-title {
+    font-style: italic;
+}
+
 /* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
    (see css_class_manager.createClassForColor). Apply it to the title/icon. */
 .mobile-navigator-row.use-note-color .mobile-navigator-row-title,

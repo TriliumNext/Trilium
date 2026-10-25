@@ -13,6 +13,10 @@ describe("Tab", () => {
         { id: "folder", title: "Folder", children: [
             { id: "first", title: "First" },
             { id: "second", title: "Second" }
+        ] },
+        { id: "collection", title: "Collection", "#subtreeHidden": "", children: [
+            { id: "shown", title: "Shown" },
+            { id: "spotlit", title: "Spotlit" }
         ] }
     ]);
 
@@ -62,6 +66,27 @@ describe("Tab", () => {
         expect(rows.map((row) => row.textContent)).toEqual([ "First", "Second" ]);
         expect(rows.map((row) => row.classList.contains("active"))).toEqual([ false, true ]);
         expect(card.querySelector(".tab-preview-placeholder")).toBeNull();
+    });
+
+    it("lists only the child on the tab's note path in a column whose subtree is hidden", async () => {
+        setTabTree("in-collection", { notePath: "root/collection/spotlit", hoistedNoteId: "root", stack: [ "root", "root/collection" ] });
+        setTabScreen("in-collection", "tree");
+
+        const card = await renderTab("in-collection");
+        const rows = await vi.waitFor(() => {
+            const rows = [ ...card.querySelectorAll(".tab-preview.type-tree .tree-row") ];
+            expect(rows).toHaveLength(1);
+            return rows;
+        });
+        expect(rows[0].textContent).toBe("Spotlit");
+        expect(rows[0].classList.contains("active")).toBe(true);
+        expect(card.querySelector(".tab-preview-placeholder")).toBeNull();
+
+        setTabTree("off-collection", { notePath: "root/folder/second", hoistedNoteId: "root", stack: [ "root", "root/collection" ] });
+        setTabScreen("off-collection", "tree");
+        const offCard = await renderTab("off-collection");
+        expect(offCard.querySelector(".tab-preview-placeholder")).not.toBeNull();
+        expect(offCard.querySelectorAll(".tree-row")).toHaveLength(0);
     });
 
     it("shows the note of a tab left on it, and on a tablet whatever the tab was left on", async () => {

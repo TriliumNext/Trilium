@@ -31,7 +31,7 @@ import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
 import { useNavigatorChildren } from "./MobileNoteNavigator";
-import { getLastSegment, getTabNavigation, type TreeStack } from "./tab_navigation";
+import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack } from "./tab_navigation";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
@@ -204,9 +204,10 @@ function TreeTabContent({ noteContext, tree }: { noteContext: NoteContext, tree:
     const title = useNoteTitle(columnNoteId, columnParentId);
     const [ hideArchived ] = useTriliumOptionBool("hideArchivedNotes_main");
     const [ isSubtreeHidden ] = useNoteLabelBoolean(columnNote, "subtreeHidden");
-    const rows = useNavigatorChildren(columnNote, hideArchived, true, isSubtreeHidden).slice(0, MAX_TREE_PREVIEW_ROWS);
+    const spotlightedNoteId = getSpotlightedNoteId(columnPath, tree.notePath);
+    const rows = useNavigatorChildren(columnNote, hideArchived, true, isSubtreeHidden, spotlightedNoteId).slice(0, MAX_TREE_PREVIEW_ROWS);
     const activeNoteId = tree.notePath ? getLastSegment(tree.notePath) : undefined;
-    const isEmpty = isSubtreeHidden || !columnNote?.getChildNoteIds().length;
+    const isEmpty = isSubtreeHidden ? !spotlightedNoteId : !columnNote?.getChildNoteIds().length;
 
     return (
         <>

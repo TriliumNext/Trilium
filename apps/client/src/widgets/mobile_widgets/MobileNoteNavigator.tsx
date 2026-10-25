@@ -30,7 +30,7 @@ import {
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
-import { getLastSegment, getTreeStack, setTabTree } from "./tab_navigation";
+import { getLastSegment, getSpotlightedNoteId, getTreeStack, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -113,7 +113,8 @@ export default function MobileNoteNavigator() {
     }, [currentParentId, loadedParents]);
 
     const isLoaded = !!currentParentId && loadedParents.has(currentParentId);
-    const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden);
+    const spotlightedNoteId = getSpotlightedNoteId(currentParentPath, activeNotePath);
+    const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId);
     const canGoBack = stack.length > 1;
     const backTargetId = canGoBack ? getLastSegment(stack[stack.length - 2]) : undefined;
     const backTargetParentId = stack.length >= 3 ? getLastSegment(stack[stack.length - 3]) : undefined;
@@ -314,7 +315,9 @@ export default function MobileNoteNavigator() {
 
                     {isLoaded && parentNote && children.length > 0 && (
                         <div className="mobile-navigator-children-label">
-                            {t("mobile_note_navigator.children_count", { count: children.length })}
+                            {isParentSubtreeHidden
+                                ? t("mobile_note_navigator.children_hidden")
+                                : t("mobile_note_navigator.children_count", { count: children.length })}
                         </div>
                     )}
 
@@ -330,6 +333,7 @@ export default function MobileNoteNavigator() {
                                     childNotePath={`${currentParentPath}/${child.note.noteId}`}
                                     isActive={child.note.noteId === activeNoteId}
                                     isPending={child.note.noteId === pendingChildId}
+                                    isSpotlighted={isParentSubtreeHidden}
                                     hideArchived={hideArchived}
                                     onDrill={drillInto}
                                     onOpen={openNotePath}
@@ -406,13 +410,14 @@ interface NavigatorRowProps {
     childNotePath: string;
     isActive: boolean;
     isPending: boolean;
+    isSpotlighted: boolean;
     hideArchived: boolean;
     onDrill: (notePath: string) => void;
     onOpen: (notePath: string) => void;
     parentComponent: Component | null;
 }
 
-function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, hideArchived, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
+function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, isSpotlighted, hideArchived, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
     const icon = useNoteIcon(note);
     const [isSubtreeHidden] = useNoteLabelBoolean(note, "subtreeHidden");
     const rawChildCount = note.getChildNoteIds().length;
@@ -435,6 +440,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
                 "is-active": isActive,
                 "is-archived": note.isArchived,
                 "is-pending": isPending,
+                "is-spotlighted": isSpotlighted,
                 "has-children": hasChildren
             })}
             role="button"
@@ -487,7 +493,8 @@ export function useNavigatorChildren(
     parentNote: FNote | null | undefined,
     hideArchived: boolean,
     isLoaded: boolean,
-    isParentSubtreeHidden: boolean
+    isParentSubtreeHidden: boolean,
+    spotlightedNoteId: string | undefined
 ): NavigatorChild[] {
     const [children, setChildren] = useState<NavigatorChild[]>([]);
     // Re-run when the parent's child list mutates in place (e.g., a new branch is added by
@@ -496,12 +503,15 @@ export function useNavigatorChildren(
     const childrenKey = parentNote?.children?.join(",");
 
     useEffect(() => {
-        if (!parentNote || !isLoaded || isParentSubtreeHidden) {
+        if (!parentNote || !isLoaded || (isParentSubtreeHidden && !spotlightedNoteId)) {
             setChildren([]);
             return;
         }
         let cancelled = false;
-        const branches = parentNote.getChildBranches().filter((b): b is NonNullable<typeof b> => !!b);
+        // A parent with `#subtreeHidden` lists only the child on the active note's path.
+        const branches = parentNote.getChildBranches()
+            .filter((b): b is NonNullable<typeof b> => !!b)
+            .filter((b) => !isParentSubtreeHidden || b.noteId === spotlightedNoteId);
         // Use the async loader so notes that aren't yet in cache (e.g., freshly created via "+")
         // are pulled in. `processNoteChange` only updates notes already in froca, so without this
         // newly-created child notes would be silently skipped.
@@ -519,7 +529,7 @@ export function useNavigatorChildren(
             setChildren(result);
         });
         return () => { cancelled = true; };
-    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden]);
+    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId]);
 
     return children;
 }

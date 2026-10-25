@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { forgetTabs, getTabNavigation, getTreeStack, setTabScreen, setTabTree } from "./tab_navigation";
+import { forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, setTabScreen, setTabTree } from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -34,5 +34,13 @@ describe("tab navigation", () => {
 
         forgetTabs([ "closing" ]);
         expect(getTabNavigation("closing")).toBeUndefined();
+    });
+
+    it("spotlights the child of a column that leads to the tab's note", () => {
+        expect(getSpotlightedNoteId("root/folder", "root/folder/inner/leaf")).toBe("inner");
+        expect(getSpotlightedNoteId("root/folder", "root/folder/page")).toBe("page");
+        expect(getSpotlightedNoteId("root/folder", "root/folder")).toBeUndefined();
+        expect(getSpotlightedNoteId("root/folder", "root/folderish/page")).toBeUndefined();
+        expect(getSpotlightedNoteId("root/folder", null)).toBeUndefined();
     });
 });
