@@ -1123,6 +1123,17 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     background: var(--link-hover-background);
 }
 
+/* Anchors */
+
+.ck-content .ck-bookmark.ck-widget {
+    --ck-bookmark-icon-hover-fill-color: var(--quick-search-result-highlight-color);
+    --ck-bookmark-icon-selected-fill-color: var(--quick-search-result-highlight-color);
+
+    .ck-bookmark__icon .ck-icon__fill {
+        fill: var(--quick-search-result-highlight-color);
+    }
+}
+
 /* Reference link */
 
 .ck-content a.reference-link,
