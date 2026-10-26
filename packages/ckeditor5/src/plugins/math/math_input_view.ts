@@ -13,7 +13,7 @@ interface MathFieldElement extends HTMLElement {
 	readOnly: boolean;
 	mathVirtualKeyboardPolicy: string;
 	inlineShortcuts?: InlineShortcutDefinitions;
-	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
+	setValue: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
 // Wrapper for the MathLive element to make it focusable in CKEditor's UI system
@@ -272,11 +272,7 @@ export default class MathInputView extends View {
 		if ( !this.mathfield ) {
 			return;
 		}
-		if ( this.mathfield.setValue ) {
-			this.mathfield.setValue( value, { silenceNotifications: true } );
-		} else {
-			this.mathfield.value = value;
-		}
+		this.mathfield.setValue( value, { silenceNotifications: true } );
 	}
 
 	public hideKeyboard(): void {

@@ -534,16 +534,6 @@ describe( 'MathInputView', () => {
 
 			expect( view.mathfield ).toBe( first );
 		} );
-
-		it( 'falls back to assigning value when setValue is unavailable', async () => {
-			const mathfield = await renderAndWait();
-			// Older MathLive builds expose no setValue; the view must still update the field.
-			delete ( mathfield as { setValue?: unknown } ).setValue;
-
-			view.value = 'q^2';
-
-			expect( mathfield.value ).toBe( 'q^2' );
-		} );
 	} );
 
 	describe( 'read-only state', () => {
