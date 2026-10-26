@@ -23,7 +23,7 @@ Setting up authentication with OpenID connect is a two-step process:
     | Base URL\* | `oauthBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | The URL of your Trilium instance (e.g. `https://example.com`). |
     | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | The client ID from your provider configuration. |
     | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | The client secret from your provider configuration. |
-    | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate` or `invalid_client` error. |
+    | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate`, `invalid_client` or `Record not found` error. |
     | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32);">error.</span> |
     
     Asterisk (\*) marks a required field
@@ -92,7 +92,7 @@ To disable the OpenID Connect authentication and instead rely on the local passw
 
 ## Troubleshooting
 
-### Setup fails with a `WWW-Authenticate` or `invalid_client` error
+### Setup fails with a `WWW-Authenticate`, `invalid_client` or `Record not found` error
 
 Your provider disagrees with Trilium about how client credentials should be sent to the token endpoint. Set `oauthClientAuthMethod` to `client_secret_post` (or `client_secret_basic` if it's already set to post) and restart. Providers vary: some reject `client_secret_post` outright because the method is fixed when the client is registered (e.g. Authelia), so if one value doesn't work, try the other.
 

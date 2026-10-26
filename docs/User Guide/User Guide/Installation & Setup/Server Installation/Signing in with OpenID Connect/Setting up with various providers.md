@@ -138,6 +138,9 @@ This page contains instructions on how to set up <a class="reference-link" href
     > [!IMPORTANT]
     > Pocket ID generates an RS256 signing key on first start, which works without further configuration. If you rotate it to Ed25519 (`pocket-id key-rotate --alg EdDSA --crv Ed25519`), ID tokens are signed with EdDSA instead. Trilium detects this automatically on v0.105.0 and later; older versions fail with `unexpected JWT alg received, expected RS256, got: EdDSA`.
 
+    > [!WARNING]
+    > Pocket ID versions prior to v2.3.0 do not decode client credentials sent via HTTP Basic, so the dashes in the client ID reach Pocket ID encoded and sign-in fails with `server responded with an error in the response body Record not found`. Upgrade Pocket ID, or add `oauthClientAuthMethod=client_secret_post` to the configuration above and restart Trilium.
+
 === "<span style="--tn-color:#e64d4d;color:#e64d4d;"><span class="tn-icon bx bx-x"></span> GitHub</span>"
 
     GitHub cannot be used as an identity provider because it is plain OAuth 2.0 and not OpenID Connect, so it will fail with `OAUTH_RESPONSE_IS_NOT_CONFORM`.

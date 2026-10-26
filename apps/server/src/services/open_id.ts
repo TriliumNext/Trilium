@@ -703,6 +703,8 @@ export type ClientAuthMethod = (typeof CLIENT_AUTH_METHODS)[number];
  * - **GitLab** — client secrets are `gloas-` prefixed; fails with OAUTH_WWW_AUTHENTICATE_CHALLENGE
  *   (#10585, a regression from the openid-client v5 → v6 upgrade, where v5's plainer
  *   `encodeURIComponent` left those characters intact).
+ * - **Pocket ID before v2.3.0** — client_ids are UUIDs; the token endpoint looks up the encoded
+ *   id and fails with "Record not found" (#12301).
  *
  * This deliberately is *not* derived from the discovery document. `token_endpoint_auth_methods_supported`
  * advertises what the **server** supports, but the method is agreed **per client** at registration and
@@ -710,8 +712,8 @@ export type ClientAuthMethod = (typeof CLIENT_AUTH_METHODS)[number];
  * clients to `client_secret_basic` and rejecting anything else with `invalid_client`. Preferring
  * `client_secret_post` on the strength of discovery alone therefore breaks spec-compliant providers.
  *
- * Only exact issuer matches are listed, so a self-hosted GitLab needs `oauthClientAuthMethod` set
- * explicitly — see {@link resolveClientAuthMethod}.
+ * Only exact issuer matches are listed, so a self-hosted GitLab and every Pocket ID instance (always
+ * self-hosted) need `oauthClientAuthMethod` set explicitly — see {@link resolveClientAuthMethod}.
  */
 const BASIC_AUTH_INCOMPATIBLE_ISSUERS = new Set([
     "https://accounts.google.com",
