@@ -167,6 +167,34 @@ describe("TableInsertUI", () => {
             expect(gap).toBeLessThan(30);
         });
 
+        it("is at least 250px wide, with the inputs and the button at the right edge", async () => {
+            const form = await openForm(editor);
+            form.useHeaders = true;
+
+            expect(getElement(form).getBoundingClientRect().width).toBeGreaterThanOrEqual(250);
+
+            const buttonRect = getElement(form.insertButtonView).getBoundingClientRect();
+            const labelRect = getElement(form.columnsField.labelView).getBoundingClientRect();
+            const contentRight = getElement(form).getBoundingClientRect().right
+                - parseFloat(getComputedStyle(getElement(form)).paddingRight);
+            expect(buttonRect.right).toBeCloseTo(contentRight, 0);
+
+            for (const field of ["columns", "rows", "headingColumns", "headingRows"] as const) {
+                const input = getInput(form, field);
+                const rect = input.getBoundingClientRect();
+                const fontSize = parseFloat(getComputedStyle(input).fontSize);
+                expect(rect.width, field).toBeCloseTo(5 * fontSize, 0);
+                expect(rect.right, field).toBeCloseTo(contentRight, 0);
+            }
+
+            // The switch row lines up with the fields.
+            const toggleElement = getElement(form.headersSwitchView);
+            const switchLabel = toggleElement.querySelector(".ck-button__label");
+            const toggle = toggleElement.querySelector(".ck-button__toggle");
+            expect(switchLabel?.getBoundingClientRect().left).toBeCloseTo(labelRect.left, 0);
+            expect(toggle?.getBoundingClientRect().right).toBeCloseTo(contentRight, 0);
+        });
+
         it("inserts a table of the typed size and closes", async () => {
             const form = await openForm(editor);
 
@@ -175,6 +203,7 @@ describe("TableInsertUI", () => {
             await userEvent.click(getElement(form.insertButtonView));
 
             expect(getTableSize(editor)).toEqual({ rows: 5, columns: 7 });
+            expect(getTableHeadings(editor)).toEqual({ rows: 0, columns: 0 });
             expect(balloon.hasView(form)).toBe(false);
             expect(editor.editing.view.document.isFocused).toBe(true);
             expect(editor.model.document.selection.getFirstPosition()?.findAncestor("tableCell"))
@@ -184,6 +213,39 @@ describe("TableInsertUI", () => {
             editor.execute("undo");
             expect(getModelData(editor.model, { withoutSelection: true }))
                 .toBe("<paragraph>foo</paragraph>");
+        });
+
+        it("inserts a table with the typed header rows and columns", async () => {
+            const form = await openForm(editor);
+
+            await userEvent.fill(getInput(form, "rows"), "5");
+            await userEvent.fill(getInput(form, "columns"), "4");
+            await userEvent.click(getElement(form.headersSwitchView));
+            await userEvent.fill(getInput(form, "headingColumns"), "1");
+            await userEvent.fill(getInput(form, "headingRows"), "2");
+            await userEvent.click(getElement(form.insertButtonView));
+
+            expect(getTableSize(editor)).toEqual({ rows: 5, columns: 4 });
+            expect(getTableHeadings(editor)).toEqual({ rows: 2, columns: 1 });
+            expect(balloon.hasView(form)).toBe(false);
+        });
+
+        it("keeps the form open while there are more header rows than rows", async () => {
+            const form = await openForm(editor);
+
+            await userEvent.click(getElement(form.headersSwitchView));
+            await userEvent.fill(getInput(form, "headingRows"), "3");
+            await userEvent.keyboard("{Enter}");
+
+            expect(getTableSize(editor)).toBeNull();
+            expect(balloon.visibleView).toBe(form);
+            expect(form.headingRowsField.errorText)
+                .toBe(`Enter a whole number between 0 and ${DEFAULT_TABLE_SIZE}.`);
+
+            await userEvent.fill(getInput(form, "rows"), "3");
+            await userEvent.keyboard("{Enter}");
+            expect(getTableSize(editor)).toEqual({ rows: 3, columns: DEFAULT_TABLE_SIZE });
+            expect(getTableHeadings(editor)).toEqual({ rows: 3, columns: 0 });
         });
 
         it("inserts the table on Enter", async () => {
@@ -275,8 +337,9 @@ describe("TableInsertUI", () => {
             expect(balloon.visibleView).toBe(form);
         });
 
-        it("opens with the default size every time", async () => {
+        it("opens with the default size and without headers every time", async () => {
             let form = await openForm(editor);
+            await userEvent.click(getElement(form.headersSwitchView));
             await userEvent.fill(getInput(form, "rows"), "0");
             await userEvent.keyboard("{Enter}");
             await userEvent.keyboard("{Escape}");
@@ -285,6 +348,7 @@ describe("TableInsertUI", () => {
 
             expect(getInput(form, "rows").value).toBe(String(DEFAULT_TABLE_SIZE));
             expect(form.rowsField.errorText).toBeNull();
+            expect(form.useHeaders).toBe(false);
         });
 
         it("showForm() leaves an open form alone", async () => {
@@ -321,7 +385,11 @@ describe("TableInsertUI", () => {
                             "Insert table…": "Tabel personalizat…",
                             "Rows": "Rânduri",
                             "Columns": "Coloane",
-                            "Enter a whole number between 1 and %0.": "Între 1 și %0."
+                            "Use headers": "Cu antet",
+                            "Header columns": "Coloane antet",
+                            "Header rows": "Rânduri antet",
+                            "Enter a whole number between 1 and %0.": "Între 1 și %0.",
+                            "Enter a whole number between 0 and %0.": "Între 0 și %0."
                         }
                     }
                 }]
@@ -334,11 +402,15 @@ describe("TableInsertUI", () => {
             const form = getForm(translated.plugins.get(ContextualBalloon));
             const labels = Array.from(getElement(form).querySelectorAll("label"))
                 .map((label) => label.textContent);
-            expect(labels).toEqual(["Coloane", "Rânduri"]);
+            expect(labels).toEqual(["Coloane", "Rânduri", "Coloane antet", "Rânduri antet"]);
+            expect(getElement(form.headersSwitchView).textContent).toBe("Cu antet");
 
             getInput(form, "rows").value = "0";
+            form.useHeaders = true;
+            getInput(form, "headingColumns").value = "9";
             form.validate();
             expect(form.rowsField.errorText).toBe("Între 1 și 1000.");
+            expect(form.headingColumnsField.errorText).toBe(`Între 0 și ${DEFAULT_TABLE_SIZE}.`);
         });
     });
 
@@ -408,23 +480,41 @@ async function openForm(editor: ClassicEditor): Promise<TableInsertFormView> {
     return getForm(editor.plugins.get(ContextualBalloon));
 }
 
-function getInput(form: TableInsertFormView, field: "rows" | "columns"): HTMLInputElement {
-    const view = field === "rows" ? form.rowsField.inputView : form.columnsField.inputView;
-    return getElement(view) as HTMLInputElement;
+function getInput(
+    form: TableInsertFormView,
+    field: "rows" | "columns" | "headingRows" | "headingColumns"
+): HTMLInputElement {
+    return getElement(form[`${field}Field`].inputView) as HTMLInputElement;
 }
 
 /** The size of the table in the document, or `null` when there is none. */
 function getTableSize(editor: ClassicEditor): { rows: number; columns: number } | null {
-    const root = editor.model.document.getRoot();
-    const children = root ? Array.from(root.getChildren()) : [];
-    const table = children.find((child) => child.is("element", "table")) as
-        ModelElement | undefined;
+    const table = findTable(editor);
     if (!table) {
         return null;
     }
 
     const tableUtils = editor.plugins.get(TableUtils);
     return { rows: tableUtils.getRows(table), columns: tableUtils.getColumns(table) };
+}
+
+/** The number of header rows and columns of the table in the document. */
+function getTableHeadings(editor: ClassicEditor): { rows: number; columns: number } {
+    const table = findTable(editor);
+    if (!table) {
+        throw new Error("The document has no table.");
+    }
+
+    return {
+        rows: Number(table.getAttribute("headingRows") ?? 0),
+        columns: Number(table.getAttribute("headingColumns") ?? 0)
+    };
+}
+
+function findTable(editor: ClassicEditor): ModelElement | undefined {
+    const root = editor.model.document.getRoot();
+    const children = root ? Array.from(root.getChildren()) : [];
+    return children.find((child) => child.is("element", "table")) as ModelElement | undefined;
 }
 
 function getCaretRect(editor: ClassicEditor): DOMRect {
