@@ -1,14 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-    applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle,
-    initThemeChangeNotifier, onEffectiveThemeStyleChange, updateColorSchemeClasses
+    applyTheme, applyThemeFromOptions, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle,
+    getThemeStyle, hasCustomThemeContentChanged, initThemeChangeNotifier, onEffectiveThemeStyleChange,
+    updateColorSchemeClasses
 } from "./theme.js";
+import LoadResults from "./load_results.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
 // without pulling the whole app graph into happy-dom.
 const { triggerEvent } = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
 vi.mock("../components/app_context.js", () => ({ default: { triggerEvent } }));
+
+// `applyThemeFromOptions` lazily imports options and server; mock them so tests control what theme is active.
+const { serverGet, optionsGet } = vi.hoisted(() => ({ serverGet: vi.fn(), optionsGet: vi.fn() }));
+vi.mock("./server.js", () => ({ default: { get: serverGet } }));
+vi.mock("./options.js", () => ({ default: { get: optionsGet } }));
 
 const STYLESHEETS_PATH = "/assets/stylesheets";
 
@@ -423,6 +430,51 @@ describe("initThemeChangeNotifier", () => {
         updateColorSchemeClasses();
         expect(darkReaderLocks()).toHaveLength(1);
         expect(document.body.classList.contains("dark-theme")).toBe(true);
+    });
+});
+
+describe("hasCustomThemeContentChanged", () => {
+    /** A LoadResults carrying a content change for each of `noteIds`. */
+    function reloadOf(...noteIds: string[]) {
+        const loadResults = new LoadResults([]);
+        for (const noteId of noteIds) {
+            loadResults.addNoteContent(noteId, "someComponent");
+        }
+        return loadResults;
+    }
+
+    beforeEach(() => {
+        const happyDOM = (window as unknown as { happyDOM?: { settings: { disableCSSFileLoading: boolean } } }).happyDOM;
+        if (happyDOM) {
+            happyDOM.settings.disableCSSFileLoading = true;
+        }
+        win.glob = { ...(win.glob ?? {}), assetPath: "/assets" };
+        document.head.innerHTML = "";
+        serverGet.mockReset();
+        optionsGet.mockReset();
+    });
+
+    afterEach(() => {
+        document.head.innerHTML = "";
+    });
+
+    it("returns true only when the active custom theme note content changes", async () => {
+        optionsGet.mockReturnValue("my-theme");
+        serverGet.mockResolvedValue([{ val: "my-theme", noteId: "noteT1", title: "My Theme", icon: "" }]);
+
+        await applyThemeFromOptions();
+
+        expect(hasCustomThemeContentChanged(reloadOf("noteT1"))).toBe(true);
+        expect(hasCustomThemeContentChanged(reloadOf("someOtherNote"))).toBe(false);
+        expect(hasCustomThemeContentChanged(reloadOf())).toBe(false);
+    });
+
+    it("returns false when a built-in theme is active", async () => {
+        optionsGet.mockReturnValue("dark");
+
+        await applyThemeFromOptions();
+
+        expect(hasCustomThemeContentChanged(reloadOf("noteT1"))).toBe(false);
     });
 });
 

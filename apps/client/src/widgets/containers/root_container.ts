@@ -5,7 +5,7 @@ import { getEnabledExperimentalFeatureIds } from "../../services/experimental_fe
 import { applyCustomFontsFromOptions, hasCustomFontContentChanged } from "../../services/custom_fonts.js";
 import { applyFontsFromOptions } from "../../services/font.js";
 import options from "../../services/options.js";
-import { applyThemeFromOptions, onEffectiveThemeStyleChange, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
+import { applyThemeFromOptions, hasCustomThemeContentChanged, onEffectiveThemeStyleChange, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
 import utils, { isIOS, isMobile, isMobileApp } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer from "./flex_container.js";
@@ -75,6 +75,8 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
     entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         if (loadResults.isOptionReloaded("theme")) {
+            void applyThemeFromOptions();
+        } else if (hasCustomThemeContentChanged(loadResults)) {
             void applyThemeFromOptions();
         }
 

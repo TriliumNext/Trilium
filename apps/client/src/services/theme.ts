@@ -1,6 +1,7 @@
 import type { UserTheme } from "@triliumnext/commons";
 
 import { readCssVar } from "../utils/css-var.js";
+import type LoadResults from "./load_results.js";
 
 export function getThemeStyle(): "auto" | "light" | "dark" {
     const configuredTheme = window.glob?.theme;
@@ -47,6 +48,9 @@ type ThemeBase = "next" | "next-light" | "next-dark";
 
 /** Built-in themes whose stylesheets can be resolved purely on the client, without a server lookup. */
 const BUILTIN_THEMES = new Set([ "auto", "light", "dark", "next", "next-light", "next-dark" ]);
+
+/** The note ID whose CSS the active custom theme is sourced from; `null` for built-in themes. */
+let currentThemeNoteId: string | null = null;
 
 /** Marks the always-present baseline `theme-light.css` link, used as the insertion anchor when swapping themes. */
 const THEME_BASE_ATTR = "data-theme-base";
@@ -166,6 +170,7 @@ export async function applyThemeFromOptions() {
     const { default: options } = await import("./options.js");
     const theme = options.get("theme");
     if (BUILTIN_THEMES.has(theme)) {
+        currentThemeNoteId = null;
         applyTheme(theme);
         return;
     }
@@ -181,11 +186,17 @@ export async function applyThemeFromOptions() {
     }
 
     const match = userThemes.find((userTheme) => userTheme.val === theme);
+    currentThemeNoteId = match?.noteId ?? null;
     applyTheme(
         theme,
         match ? `api/notes/download/${match.noteId}` : undefined,
         match?.appThemeBase
     );
+}
+
+/** Returns true when the CSS note the active custom theme is sourced from was edited since the last reload. */
+export function hasCustomThemeContentChanged(loadResults: LoadResults): boolean {
+    return currentThemeNoteId !== null && !!loadResults.isNoteContentReloaded(currentThemeNoteId);
 }
 
 /**
