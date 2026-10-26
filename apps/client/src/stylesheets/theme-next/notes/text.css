@@ -699,7 +699,8 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
  * Buttons
  */
 
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text {
     --ck-color-text: var(--cmd-button-text-color);
 
     min-width: 60px;
