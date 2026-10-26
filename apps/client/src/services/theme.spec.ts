@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import LoadResults from "./load_results.js";
 import {
     applyTheme, applyThemeFromOptions, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle,
     getThemeStyle, hasCustomThemeContentChanged, initThemeChangeNotifier, onEffectiveThemeStyleChange,
     updateColorSchemeClasses
 } from "./theme.js";
-import LoadResults from "./load_results.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
 // without pulling the whole app graph into happy-dom.
