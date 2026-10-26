@@ -864,12 +864,12 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 /* Forms */
 
-:root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
-    margin-inline-start: 16px;
+:root .ck.ck-form__row.ck-form__row_with-submit {
+    align-items: baseline;
 }
 
-.ck.ck-form__row_with-submit button {
-    margin-top: var(--ck-input-label-height);
+:root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
+    margin-inline-start: 16px;
 }
 
 :root .ck.ck-form__header {
