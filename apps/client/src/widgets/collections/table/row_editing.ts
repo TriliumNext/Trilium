@@ -29,12 +29,13 @@ export default function useRowTableEditing(api: RefObject<Tabulator | null>, att
                     isProtected: parentNote.isProtected,
                     ...customOpts
                 };
+                // Off the button, so that keys meant for the new title can't press it again.
+                if (document.activeElement instanceof HTMLButtonElement) {
+                    document.activeElement.blur();
+                }
                 note_create.createNote(notePath, opts).then(({ branch }) => {
                     if (branch) {
-                        setTimeout(() => {
-                            if (!api.current) return;
-                            focusOnBranch(api.current, branch?.branchId);
-                        }, 100);
+                        focusWhenShown(api, branch.branchId);
                     }
                 });
             }
@@ -103,9 +104,19 @@ export default function useRowTableEditing(api: RefObject<Tabulator | null>, att
     };
 }
 
+/** The new row arrives with the next rebuild of the rows, which in a long table takes a while. */
+function focusWhenShown(api: RefObject<Tabulator | null>, branchId: string, attempts = 20) {
+    setTimeout(() => {
+        if (!api.current) return;
+        if (!focusOnBranch(api.current, branchId) && attempts > 1) {
+            focusWhenShown(api, branchId, attempts - 1);
+        }
+    }, 100);
+}
+
 function focusOnBranch(api: Tabulator, branchId: string) {
     const row = findRowDataById(api.getRows(), branchId);
-    if (!row) return;
+    if (!row) return false;
 
     // Expand the parent tree if any.
     if (api.options.dataTree) {
@@ -115,7 +126,9 @@ function focusOnBranch(api: Tabulator, branchId: string) {
         }
     }
 
-    row.getCell("title").edit();
+    // A row past the rendered part of a long table has no cell to edit until it is scrolled to.
+    void row.scrollTo("nearest", false).catch(() => {}).then(() => row.getCell("title").edit());
+    return true;
 }
 
 function findRowDataById(rows: RowComponent[], branchId: string): RowComponent | null {

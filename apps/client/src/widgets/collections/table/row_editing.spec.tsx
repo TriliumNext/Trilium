@@ -6,11 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import { setAttribute, setLabel, setLabelValues, setRelationValues } from "../../../services/attributes";
+import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import type AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 import { ParentComponent } from "../../react/react_utils";
 import useRowTableEditing from "./row_editing";
+
+vi.mock("../../../services/note_create", () => ({
+    default: { createNote: vi.fn() }
+}));
 
 vi.mock("../../../services/attributes", () => ({
     setAttribute: vi.fn(),
@@ -99,5 +104,46 @@ describe("useRowTableEditing", () => {
 
         await editCell("relations.tags", [ "a", "b" ]);
         expect(setRelationValues).toHaveBeenCalledWith(note, "tags", [ "a", "b" ], "table-cid");
+    });
+});
+
+describe("useRowTableEditing: New row", () => {
+    const container = document.createElement("div");
+
+    afterEach(() => {
+        render(null, container);
+        vi.useRealTimers();
+    });
+
+    it("leaves the button, then scrolls to the new row and edits its title once the row is there", async () => {
+        vi.useFakeTimers();
+        const edit = vi.fn();
+        const scrollTo = vi.fn(() => Promise.resolve());
+        const newRow = { getIndex: () => "new-branch", getTreeChildren: () => [], getCell: () => ({ edit }), scrollTo };
+        let rows: unknown[] = [];
+        const api = { current: { getRows: () => rows, options: {} } } as never;
+        vi.mocked(note_create.createNote).mockResolvedValue({ branch: { branchId: "new-branch" } } as never);
+
+        const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component & { addNewRowCommand: (data: object) => void };
+        function Probe() {
+            useRowTableEditing(api, {} as AttributeDetailWidget, buildNote({ title: "Collection" }));
+            return null;
+        }
+        act(() => render(<ParentComponent.Provider value={parent}><Probe /></ParentComponent.Provider>, container));
+
+        const button = document.createElement("button");
+        document.body.appendChild(button);
+        button.focus();
+        await act(async () => { parent.addNewRowCommand({}); });
+        expect(document.activeElement).not.toBe(button);
+
+        // The row shows up a few rebuilds later, as in a long table.
+        await vi.advanceTimersByTimeAsync(500);
+        expect(edit).not.toHaveBeenCalled();
+        rows = [ newRow ];
+        await vi.advanceTimersByTimeAsync(100);
+        expect(scrollTo).toHaveBeenCalledWith("nearest", false);
+        expect(edit).toHaveBeenCalledOnce();
+        button.remove();
     });
 });
