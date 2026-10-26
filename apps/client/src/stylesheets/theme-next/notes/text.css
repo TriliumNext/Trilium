@@ -7,7 +7,8 @@
  */
 
 .ck.ck-toolbar,
-.ck.ck-block-toolbar-button {
+.ck.ck-block-toolbar-button,
+.ck.ck-color-selector {
     --ck-color-toolbar-background: transparent;
 
     --ck-color-button-default-background: transparent;
@@ -19,12 +20,6 @@
     --ck-color-button-default-active-background: var(--hover-item-background-color);
 
     --ck-color-split-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
-
-    --ck-focus-ring: 1px solid transparent;
-    --ck-button-focus-border-color: transparent;
-    --ck-color-focus-border: var(--input-focus-outline-color);
-    --ck-focus-outer-shadow: none;
-    --ck-focus-disabled-outer-shadow: none;
 
     --ck-border-radius: 6px;
     --ck-toolbar-text-font-size: 13px;
@@ -75,7 +70,7 @@
     background: var(--block-toolbar-button-hover-surface);
 }
 
-.ck.ck-toolbar .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
+.ck.ck-toolbar:not([role="radiogroup"]) .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
 .ck.ck-block-toolbar-button:active svg {
     transform: scale(.8);
 }
@@ -86,7 +81,18 @@
 }
 
 /* Focus visible */
-.ck.ck-toolbar .ck-button:focus-visible {
+.ck.ck-toolbar,
+.ck.ck-block-toolbar-button,
+.ck.ck-dropdown__panel {
+    --ck-focus-ring: 1px solid transparent;
+    --ck-button-focus-border-color: transparent;
+    --ck-color-focus-border: var(--input-focus-outline-color);
+    --ck-focus-outer-shadow: none;
+    --ck-focus-disabled-outer-shadow: none;
+}
+
+.ck.ck-toolbar .ck-button:focus-visible,
+.ck.ck-dropdown__panel .ck-button:focus-visible {
     --ck-focus-ring: 1px solid var(--input-focus-outline-color);
     --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
@@ -358,11 +364,51 @@ div.ck.ck-collapsible {
 /* Color palette */
 :root .ck.ck-color-selector .ck-color-grid {
     --ck-editor-toolbar-button-on-shadow: none; /* Remove the shadow of the selected color button */
-    --ck-color-grid-gap: 5px;
-    --ck-color-grid-tile-border-radius: var(--ck-border-radius);
-    --ck-color-interactive-focus-border: var(--ck-color-focus-border);
+    --ck-color-grid-gap: 8px;
+    --ck-color-grid-tile-border-radius: 4px;
 
     width: auto;
+}
+
+/* Color tiles, drawn as the cells of ColorPicker.css */
+:root .ck.ck-color-selector .ck-color-grid__tile {
+    &:is(.ck-on, :hover, :focus) {
+        box-shadow: none;
+    }
+
+    &.ck-color-selector__color-tile_bordered {
+        box-shadow: inset 0 0 0 1px var(--ck-color-border-control);
+    }
+
+    &:hover:not(.ck-on, .ck-disabled) {
+        transform: scale(1.2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--input-focus-outline-color);
+        outline-offset: 2px;
+    }
+
+    &.ck-on .ck-icon {
+        display: none;
+    }
+
+    /* The selection ring takes the tile's own color, which only its inline background holds. */
+    &.ck-on::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        background: inherit;
+        mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+        mask-clip: padding-box, border-box;
+        mask-composite: exclude;
+    }
+
+    &.ck-color-selector__color-tile_bordered.ck-on::after {
+        background: var(--main-text-color);
+    }
 }
 
 /* Color picker button */
@@ -371,15 +417,6 @@ div.ck.ck-collapsible {
 
     border-bottom-left-radius: var(--ck-border-radius);
     border-bottom-right-radius: var(--ck-border-radius);
-}
-
-/* Current color checkmark */
-:root .ck.ck-color-selector .ck-color-grid .ck-icon {
-    color: white;
-}
-
-:root .ck.ck-color-selector .ck-color-grid .ck-icon__fill {
-    fill: black !important;
 }
 
 /* Hex color input box prefix */
@@ -575,6 +612,21 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     border-top: none;
 }
 
+/* Anchors, drawn as a menu item (menus.css, Menu.css) */
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button {
+    border-color: transparent;
+    color: var(--menu-text-color);
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+
+    > .ck-icon {
+        color: var(--menu-item-arrow-color);
+    }
+}
+
 /* Math popup */
 
 .ck-math-form .ck-labeled-field-view {
@@ -583,10 +635,54 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     margin-inline-end: 8px;
 }
 
+/* Special character and emoji tiles, drawn as the cells of the note icon list (shell.css) */
+:root .ck.ck-character-grid button.ck-button.ck-character-grid__tile,
+:root .ck.ck-emoji .ck.ck-emoji__tiles button.ck-button.ck-emoji__tile {
+    box-shadow: none;
+    border-radius: 6px;
+    background: transparent;
+    transition: transform 150ms ease-out;
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+
+    &:hover:not(.ck-disabled) {
+        transform: scale(1.5);
+    }
+
+    /* Emoji fonts advance wider than the tile, and overflowing text ignores `text-align`. */
+    > .ck-button__label {
+        display: flex;
+        justify-content: center;
+    }
+}
+
 /* Emoji dropdown */
 
-.ck-emoji-picker-form .ck-emoji__search .ck-button_with-text:not(.ck-list-item-button) {
-    margin-top: var(--ck-input-label-height);
+:root .ck.ck-emoji {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Categories, drawn as a segmented button (buttons.css) */
+:root .ck.ck-emoji__categories-list {
+    order: 1;
+    margin-top: 12px;
+}
+
+:root .ck.ck-emoji__categories-list > .ck-tab-button::before {
+    display: none;
+}
+
+:root .ck.ck-emoji .ck.ck-emoji__tiles {
+    border-top: none;
+}
+
+:root .ck.ck-emoji-picker-form .ck-emoji__search {
+    align-items: end;
+    padding-bottom: 12px;
 }
 
 /* Find and replace dialog */
@@ -633,6 +729,129 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     background: var(--input-background-color);
 }
 
+/*
+ * Combo boxes
+ */
+
+/* forms.css draws the arrow as a background and dims the whole box when disabled. */
+:root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow,
+:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow {
+    display: none;
+}
+
+:root .ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label {
+    opacity: 1;
+}
+
+/*
+ * Color inputs
+ */
+
+:root .ck.ck-input-color {
+    --input-group-padding-inline-end: 0;
+    --ck-input-color-preview-border-radius: 4px;
+}
+
+:root .ck.ck-input-color > .ck.ck-dropdown > button.ck.ck-input-color__button {
+    box-shadow: none;
+    border-color: transparent;
+    background: transparent;
+}
+
+:root .ck.ck-input-color__button__preview {
+    --ck-color-input-border: transparent;
+}
+
+:root .ck.ck-input-color__button:focus-visible > .ck-input-color__button__preview {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+}
+
+/* No color, drawn as the reset cell of ColorPicker.css */
+:root .ck.ck-input-color__button__preview:not(:has(> .ck-hidden)) {
+    background: var(--note-color-picker-clear-color-cell-background);
+
+    &::after {
+        content: "\ec8d";
+        display: flex;
+        position: absolute;
+        inset: 0;
+        justify-content: center;
+        align-items: center;
+        font-family: boxicons;
+        font-size: 16px;
+        color: var(--note-color-picker-clear-color-cell-color);
+    }
+
+    > .ck-input-color__button__preview__no-color-indicator {
+        visibility: hidden;
+    }
+}
+
+/*
+ * Button groups
+ */
+
+:root .ck.ck-toolbar[role="radiogroup"] {
+    border: none;
+}
+
+/*
+ * Toggle switches, drawn as the switches of menu rows (FormToggle.css, FormList.css)
+ */
+
+:root button.ck.ck-button.ck-switchbutton {
+    --ck-switch-button-toggle-width: 40px;
+    --ck-switch-button-toggle-inner-size: 12px;
+    --ck-switch-button-translation: 20px;
+    --ck-switch-button-toggle-border-radius: 24px;
+    --ck-switch-button-toggle-inner-border-radius: 50%;
+    --ck-switch-button-inner-hover-shadow: none;
+    --ck-color-switch-button-off-background: var(--switch-off-track-background);
+    --ck-color-switch-button-off-hover-background: var(--switch-off-track-background);
+    --ck-color-switch-button-on-background: var(--switch-on-track-background);
+    --ck-color-switch-button-on-hover-background: var(--switch-on-track-background);
+    --ck-color-switch-button-inner-background: var(--switch-off-thumb-background);
+    --ck-color-list-button-hover-background: var(--hover-item-background-color);
+    --ck-color-list-background: transparent;
+    --ck-color-surface-control: transparent;
+
+    &:focus-visible {
+        --ck-color-surface-control: var(--input-focus-outline-color);
+
+        border-color: var(--input-focus-outline-color);
+    }
+
+    .ck-button__toggle {
+        box-shadow: none;
+        outline: none;
+        border: none;
+        padding: 4px;
+        transition: background 200ms ease-in;
+    }
+
+    .ck-button__toggle__inner {
+        transition:
+            transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+            background 200ms ease-out;
+    }
+
+    &.ck-on {
+        --ck-color-switch-button-inner-background: var(--switch-on-thumb-background);
+
+        .ck-button__toggle {
+            transition: background 100ms ease-out;
+        }
+
+        .ck-button__toggle__inner {
+            transition:
+                transform 200ms cubic-bezier(0.64, 0, 0.78, 0),
+                background 100ms ease-in;
+        }
+    }
+}
+
 /* AI assistant composer */
 
 :root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text,
@@ -654,6 +873,14 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 :root .ck.ck-form__header {
     border-bottom: none;
+}
+
+/* Back button, drawn as an icon button (buttons.css) */
+:root button.ck.ck-button.ck-button-back {
+    --ck-icon-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+
+    box-shadow: none;
+    background: transparent;
 }
 
 /*

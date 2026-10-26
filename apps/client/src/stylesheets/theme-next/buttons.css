@@ -132,7 +132,8 @@ button.tn-low-profile:hover {
 :root .icon-action:not(.global-menu-button),
 :root .tn-tool-button,
 :root .btn-group .tn-tool-button:not(:last-child),
-:root .btn-group .tn-tool-button:last-child {
+:root .btn-group .tn-tool-button:last-child,
+:root button.ck.ck-button.ck-button-back {
     width: var(--icon-button-size);
     height: var(--icon-button-size);
     border: unset !important;
@@ -180,7 +181,8 @@ button.tn-low-profile:hover {
 :root .icon-action:not(.global-menu-button):hover,
 :root .icon-action:not(.global-menu-button).show,
 :root .tn-tool-button:hover,
-:root .tn-tool-button.show {
+:root .tn-tool-button.show,
+:root button.ck.ck-button.ck-button-back:hover {
     background: var(--icon-button-hover-background);
     color: var(--icon-button-hover-color);
 }
@@ -191,7 +193,8 @@ button.tn-low-profile:hover {
 }
 
 :root .icon-action:not(.global-menu-button):focus-visible,
-:root .tn-tool-button:focus-visible {
+:root .tn-tool-button:focus-visible,
+:root button.ck.ck-button.ck-button-back:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
 }
 
@@ -230,7 +233,9 @@ button.tn-low-profile:hover {
     }
 }
 
-:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
+:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes,
+:root .ck.ck-toolbar[role="radiogroup"] > .ck-toolbar__items,
+:root .ck.ck-emoji__categories-list {
     gap: 4px;
     border-radius: 8px;
     background: var(--button-group-background-color);
@@ -243,10 +248,16 @@ button.tn-low-profile:hover {
         border-radius: 8px;
         background: transparent;
         border-color: transparent;
+        color: var(--cmd-button-text-color);
 
         &:hover:not(.ck-on) {
-            background: var(--hover-item-background-color);
-            color: var(--hover-item-text-color);
+            background: var(--cmd-button-hover-background-color);
+            color: var(--cmd-button-hover-text-color);
+        }
+
+        &:not(.ck-disabled):active {
+            opacity: 0.85;
+            transform: scale(0.95);
         }
 
         &.ck-on, &.ck-on:hover {
