@@ -1017,25 +1017,34 @@ const INTERACTIVE_MOUNT_ATTR = "data-interactive-mount";
  * Wrapping it in a {@link ParentComponent} provider connected to {@link appContext} is what lets its
  * `useTriliumEvent` subscriptions actually receive events — a bare standalone Preact root has no
  * parent component in context, so otherwise e.g. an embedded collection never reacts to new notes.
+ *
+ * The widget gets a component of its own under appContext rather than appContext itself: the
+ * command handlers it registers (`useLegacyImperativeHandlers`, e.g. a table's "New row") are
+ * written onto its parent component, and `AppContext.triggerCommand` never looks there.
  */
 export async function mountInteractiveWidget(vnode: JSX.Element, container: HTMLElement) {
-    const [ { renderReactWidgetAtElement }, { default: appContext } ] = await Promise.all([
+    const [ { renderReactWidgetAtElement }, { default: appContext }, { default: Component } ] = await Promise.all([
         import("../widgets/react/react_utils"),
-        import("../components/app_context")
+        import("../components/app_context"),
+        import("../components/component")
     ]);
-    renderReactWidgetAtElement(appContext, vnode, container);
+    const component = new Component();
+    appContext.child(component);
+    addContentDisposer(container, () => appContext.removeChild(component));
+    renderReactWidgetAtElement(component, vnode, container);
     // Mark the standalone Preact root so disposeInteractiveContent() can later unmount it.
     container.setAttribute(INTERACTIVE_MOUNT_ATTR, "");
 
     // The global [data-trigger-command] click delegate resolves its handler via
     // closest(".component").prop("component"). A standalone mount has no legacy widget setting that
     // prop (ReactWrappedWidget does it in the note detail), so point the rendered ".component"
-    // element(s) at appContext — an unhandled command there is converted into an event, reaching the
-    // widget's own useTriliumEvent subscription. Without it an embedded command button (e.g. the geo
-    // map "Add marker") throws "component is undefined".
+    // element(s) at the widget's component — a command it does not handle goes on to appContext,
+    // which converts it into an event, reaching the widget's own useTriliumEvent subscription.
+    // Without it an embedded command button (e.g. the geo map "Add marker") throws "component is
+    // undefined".
     for (const el of container.querySelectorAll<HTMLElement>(".component")) {
         if (!$(el).prop("component")) {
-            $(el).prop("component", appContext);
+            $(el).prop("component", component);
         }
     }
 }
