@@ -3,7 +3,7 @@ import "./index.css";
 import { createPortal } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { DataTreeModule, EditModule, FormatModule, FrozenColumnsModule, InteractionModule, MoveColumnsModule, MoveRowsModule, Options, PersistenceModule, ResizeColumnsModule, RowComponent,SortModule, Tabulator as VanillaTabulator} from 'tabulator-tables';
+import { DataTreeModule, EditModule, FormatModule, FrozenColumnsModule, InteractionModule, MoveColumnsModule, MoveRowsModule, Options, PersistenceModule, ResizeColumnsModule, ResizeTableModule, RowComponent,SortModule, Tabulator as VanillaTabulator} from 'tabulator-tables';
 
 import { t } from "../../../services/i18n";
 import SpacedUpdate from "../../../services/spaced_update";
@@ -23,8 +23,12 @@ import Tabulator from "./tabulator";
 
 const TableEditing = lazy(() => import("./editing"));
 
-/** What every table shows with; an editable one adds {@link EDITING_MODULES}. */
-const VIEW_MODULES = [ SortModule, FormatModule, InteractionModule, ResizeColumnsModule, FrozenColumnsModule, PersistenceModule, MoveColumnsModule, DataTreeModule ];
+/**
+ * What every table shows with; an editable one adds {@link EDITING_MODULES}. `ResizeTableModule`
+ * redraws a table built while hidden (an embed still collapsed) once it is shown; without it the
+ * rows rendered for a zero-height table stay empty.
+ */
+const VIEW_MODULES = [ SortModule, FormatModule, InteractionModule, ResizeColumnsModule, ResizeTableModule, FrozenColumnsModule, PersistenceModule, MoveColumnsModule, DataTreeModule ];
 const EDITING_MODULES = [ ...VIEW_MODULES, EditModule, MoveRowsModule ];
 
 export default function TableView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<TableConfig>) {
