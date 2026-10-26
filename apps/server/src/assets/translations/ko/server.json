@@ -511,7 +511,8 @@
       "cannot-compare-with": "\"{{- token}}\"과(와) 비교할 수 없습니다. 값을 그대로 검색하려면 따옴표로 감싸세요: \"{{- token}}\"",
       "misplaced-expression": "잘못 배치되었거나 불완전한 표현식 ‘{{- token}}’",
       "fulltext-after-expression": "\"{{- token}}\"은(는) 올바른 표현식이 아닙니다. 텍스트를 검색하려면 속성 필터 앞에 배치하세요(예: \"#label {{- token}}\" 대신 \"{{- token}} #label\").",
-      "unrecognized-expression": "인식할 수 없는 표현식 ‘{{- token}}’"
+      "unrecognized-expression": "인식할 수 없는 표현식 ‘{{- token}}’",
+      "regex-not-allowed": "정규 표현식 연산자 \"%=\"는 여기에서 사용할 수 없습니다."
     }
   },
   "security-dialog": {
