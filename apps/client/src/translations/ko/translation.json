@@ -2677,7 +2677,7 @@
     "back": "한 단계 위로",
     "loading": "로딩 중...",
     "empty": "이 노트에는 하위 노트가 없습니다.",
-    "children_count_other": "노트 {{count}}개",
+    "children_count_other": "하위 노트 {{count}}개",
     "add_child": "하위 노트 추가",
     "more_actions": "추가 작업",
     "current_note": "이 노트",
