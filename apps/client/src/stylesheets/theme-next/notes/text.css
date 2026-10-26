@@ -612,8 +612,9 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     border-top: none;
 }
 
-/* Anchors, drawn as a menu item (menus.css, Menu.css) */
-:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button {
+/* Anchors and the anchors list, drawn as menu items (menus.css, Menu.css) */
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button,
+:root .ck.ck-link-providers .ck-link-providers__list .ck-list__item > .ck-button {
     border-color: transparent;
     color: var(--menu-text-color);
 
@@ -621,10 +622,10 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
         background: var(--hover-item-background-color);
         color: var(--hover-item-text-color);
     }
+}
 
-    > .ck-icon {
-        color: var(--menu-item-arrow-color);
-    }
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button > .ck-icon {
+    color: var(--menu-item-arrow-color);
 }
 
 /* Math popup */
