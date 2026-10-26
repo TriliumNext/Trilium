@@ -8,7 +8,8 @@
 
 .ck.ck-toolbar,
 .ck.ck-block-toolbar-button,
-.ck.ck-color-selector {
+.ck.ck-color-selector,
+.ck-math-form .ck-math-button-row {
     --ck-color-toolbar-background: transparent;
 
     --ck-color-button-default-background: transparent;
@@ -62,6 +63,10 @@
     z-index: 1600;
 }
 
+:root .ck.block-drag-handle:not(:hover) {
+    color: var(--main-border-color);
+}
+
 :root .ck.ck-toolbar .ck-button:not(.ck-disabled):active {
     background-color: var(--hover-item-background-color);
 }
@@ -83,7 +88,8 @@
 /* Focus visible */
 .ck.ck-toolbar,
 .ck.ck-block-toolbar-button,
-.ck.ck-dropdown__panel {
+.ck.ck-dropdown__panel,
+.ck-math-form .ck-math-button-row {
     --ck-focus-ring: 1px solid transparent;
     --ck-button-focus-border-color: transparent;
     --ck-color-focus-border: var(--input-focus-outline-color);
@@ -92,7 +98,8 @@
 }
 
 .ck.ck-toolbar .ck-button:focus-visible,
-.ck.ck-dropdown__panel .ck-button:focus-visible {
+.ck.ck-dropdown__panel .ck-button:focus-visible,
+.ck-math-form .ck-math-button-row .ck-button:focus-visible {
     --ck-focus-ring: 1px solid var(--input-focus-outline-color);
     --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
@@ -612,8 +619,9 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     border-top: none;
 }
 
-/* Anchors, drawn as a menu item (menus.css, Menu.css) */
-:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button {
+/* Anchors and the anchors list, drawn as menu items (menus.css, Menu.css) */
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button,
+:root .ck.ck-link-providers .ck-link-providers__list .ck-list__item > .ck-button {
     border-color: transparent;
     color: var(--menu-text-color);
 
@@ -621,18 +629,104 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
         background: var(--hover-item-background-color);
         color: var(--hover-item-text-color);
     }
+}
 
-    > .ck-icon {
-        color: var(--menu-item-arrow-color);
-    }
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button > .ck-icon {
+    color: var(--menu-item-arrow-color);
 }
 
 /* Math popup */
 
-.ck-math-form .ck-labeled-field-view {
-    --ck-input-label-height: 0;
+:root .ck-math-form .ck-math-button-row {
+    --ck-button-border-radius: var(--ck-border-radius);
+}
 
-    margin-inline-end: 8px;
+/* Room inside the scrolling view for the fields' focus ring animation */
+:root .ck.ck-math-input > :is(.ck-mathlive-container, .ck-latex-textarea) {
+    margin: 4px;
+}
+
+:root .ck.ck-math-input > .ck-mathlive-container {
+    padding-inline: 12px;
+}
+
+:root .ck.ck-math-input > .ck-latex-textarea {
+    padding-inline: 16px;
+}
+
+:root .ck-math-form math-field::part(virtual-keyboard-toggle),
+:root .ck-math-form math-field::part(menu-toggle) {
+    color: var(--icon-button-color);
+}
+
+:root .ck-math-form math-field::part(virtual-keyboard-toggle):hover,
+:root .ck-math-form math-field::part(menu-toggle):hover {
+    background: var(--icon-button-hover-background);
+    color: var(--icon-button-hover-color);
+}
+
+:root .ck-math-form math-field {
+    --ui-font-family: var(--ck-font-face);
+    --ui-font-size: 0.9rem;
+    --ui-menu-bg: var(--menu-background-color);
+    --ui-menu-text: var(--ck-color-text);
+    --ui-menu-bg-active: var(--hover-item-background-color);
+    --ui-menu-text-active: var(--ck-color-text);
+    --ui-menu-bg-active-muted: var(--hover-item-background-color);
+    --ui-menu-text-active-muted: var(--ck-color-text);
+    --ui-menu-divider: var(--menu-item-delimiter-color);
+    --ui-menu-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+
+    /* CKEditor's list row geometry: 27px tall, 4px apart, 11px from the menu's edge */
+    --ui-line-height: 21px;
+    --ck-math-menu-item-margin: 4px 11px;
+    --ck-math-menu-item-padding: 1px 15px;
+    --ck-math-menu-item-border-radius: 6px;
+
+    --ck-math-menu-heading-margin: 0 0 8px;
+    --ck-math-menu-heading-padding: 2px 26px 1px;
+    --ck-math-menu-heading-border: 1px solid var(--menu-item-delimiter-color);
+    --ck-math-menu-heading-opacity: 1;
+    --ck-math-menu-heading-font-size: 0.8em;
+    --ck-math-menu-heading-font-weight: 500;
+    --ck-math-menu-heading-letter-spacing: 1pt;
+    --ck-math-menu-heading-text-transform: uppercase;
+    --ck-math-menu-heading-color: var(--menu-item-group-header-color);
+
+    --ck-math-menu-checkmark-order: 1;
+    --ck-math-menu-checkmark-margin-inline: 12px 2px;
+    --ck-math-menu-checkmark-color: var(--menu-item-icon-color);
+    --ck-math-menu-checkmark-indent: 0;
+
+    --ck-math-menu-swatch-size: var(--ck-color-grid-tile-size);
+    --ck-math-menu-swatch-gap: 8px;
+    --ck-math-menu-swatch-background: transparent;
+    --ck-math-menu-swatch-border-radius: 4px;
+    --ck-math-menu-swatch-shadow: inset 0 0 0 1px var(--main-border-color);
+}
+
+:root .ck-math-form math-field::part(ui-menu-container) {
+    /* An outline takes no room from the four swatch columns of `.swatches-submenu` */
+    outline: 1px solid var(--ck-editor-popup-border-color);
+    outline-offset: -1px;
+    border-radius: var(--dropdown-border-radius);
+    padding-block: 7px;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+}
+
+:root .ck-math-form math-field::part(menu-divider) {
+    margin: calc(.5em + 2px) 0;
+    padding: 0;
+    width: 100%;
+    opacity: 1;
+}
+
+body.background-effects .ck-math-form math-field {
+    --ui-menu-bg: var(--menu-background-color-no-backdrop);
+}
+
+body.background-effects .ck-math-form math-field::part(ui-menu-container) {
+    backdrop-filter: none;
 }
 
 /* Special character and emoji tiles, drawn as the cells of the note icon list (shell.css) */
@@ -699,7 +793,8 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
  * Buttons
  */
 
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text {
     --ck-color-text: var(--cmd-button-text-color);
 
     min-width: 60px;
@@ -735,13 +830,20 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 /* forms.css draws the arrow as a background and dims the whole box when disabled. */
 :root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow,
-:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow {
+:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow,
+:root .ck-link-embed-form__actions > .ck-dropdown .ck-dropdown__arrow {
     display: none;
 }
 
 :root .ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label,
+:root .ck-link-embed-form__actions > .ck.ck-dropdown
     > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label {
     opacity: 1;
+}
+
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button {
+    padding-inline-start: var(--ck-spacing-padding);
 }
 
 /*
@@ -863,12 +965,12 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 /* Forms */
 
-:root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
-    margin-inline-start: 16px;
+:root .ck.ck-form__row.ck-form__row_with-submit {
+    align-items: baseline;
 }
 
-.ck.ck-form__row_with-submit button {
-    margin-top: var(--ck-input-label-height);
+:root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
+    margin-inline-start: 16px;
 }
 
 :root .ck.ck-form__header {
@@ -1112,6 +1214,17 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     outline: none;
     box-shadow: 0 0 0 2px var(--link-selection-outline-color);
     background: var(--link-hover-background);
+}
+
+/* Anchors */
+
+.ck-content .ck-bookmark.ck-widget {
+    --ck-bookmark-icon-hover-fill-color: var(--quick-search-result-highlight-color);
+    --ck-bookmark-icon-selected-fill-color: var(--quick-search-result-highlight-color);
+
+    .ck-bookmark__icon .ck-icon__fill {
+        fill: var(--quick-search-result-highlight-color);
+    }
 }
 
 /* Reference link */
