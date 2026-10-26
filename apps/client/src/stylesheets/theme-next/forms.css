@@ -543,7 +543,8 @@ optgroup {
     --icon-button-size: 28px;
 }
 
-div.switch-widget {
+div.switch-widget,
+:root .ck.ck-switchbutton {
     --switch-off-track-background: var(--cmd-button-background-color);
     --switch-on-track-background: var(--cmd-button-text-color);
 

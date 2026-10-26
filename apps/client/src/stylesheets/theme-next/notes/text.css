@@ -778,6 +778,61 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     border: none;
 }
 
+/*
+ * Toggle switches, drawn as the switches of menu rows (FormToggle.css, FormList.css)
+ */
+
+:root button.ck.ck-button.ck-switchbutton {
+    --ck-switch-button-toggle-width: 40px;
+    --ck-switch-button-toggle-inner-size: 12px;
+    --ck-switch-button-translation: 20px;
+    --ck-switch-button-toggle-border-radius: 24px;
+    --ck-switch-button-toggle-inner-border-radius: 50%;
+    --ck-switch-button-inner-hover-shadow: none;
+    --ck-color-switch-button-off-background: var(--switch-off-track-background);
+    --ck-color-switch-button-off-hover-background: var(--switch-off-track-background);
+    --ck-color-switch-button-on-background: var(--switch-on-track-background);
+    --ck-color-switch-button-on-hover-background: var(--switch-on-track-background);
+    --ck-color-switch-button-inner-background: var(--switch-off-thumb-background);
+    --ck-color-list-button-hover-background: var(--hover-item-background-color);
+    --ck-color-list-background: transparent;
+    --ck-color-surface-control: transparent;
+
+    &:focus-visible {
+        --ck-color-surface-control: var(--input-focus-outline-color);
+
+        border-color: var(--input-focus-outline-color);
+    }
+
+    .ck-button__toggle {
+        box-shadow: none;
+        outline: none;
+        border: none;
+        padding: 4px;
+        transition: background 200ms ease-in;
+    }
+
+    .ck-button__toggle__inner {
+        transition:
+            transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+            background 200ms ease-out;
+    }
+
+    &.ck-on {
+        --ck-color-switch-button-inner-background: var(--switch-on-thumb-background);
+
+        .ck-button__toggle {
+            transition: background 100ms ease-out;
+        }
+
+        .ck-button__toggle__inner {
+            transition:
+                transform 200ms cubic-bezier(0.64, 0, 0.78, 0),
+                background 100ms ease-in;
+        }
+    }
+}
+
 /* AI assistant composer */
 
 :root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text,
