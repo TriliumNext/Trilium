@@ -46,7 +46,7 @@ export default class BlockDragHandle extends Plugin {
             isToggleable: false
         });
         buttonView.extendTemplate({
-            attributes: { draggable: "true" },
+            attributes: { class: "block-drag-handle", draggable: "true" },
             on: {
                 dragstart: buttonView.bindTemplate.to((domEvent) => {
                     this.startDrag(domEvent as DragEvent);

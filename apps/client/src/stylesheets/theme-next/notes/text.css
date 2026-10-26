@@ -62,6 +62,10 @@
     z-index: 1600;
 }
 
+:root .ck.block-drag-handle:not(:hover) {
+    color: var(--main-border-color);
+}
+
 :root .ck.ck-toolbar .ck-button:not(.ck-disabled):active {
     background-color: var(--hover-item-background-color);
 }

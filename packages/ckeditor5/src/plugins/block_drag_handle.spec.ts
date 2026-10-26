@@ -27,6 +27,8 @@ describe("BlockDragHandle", () => {
         const buttonView = editor.plugins.get(BlockDragHandle).buttonView;
         expect(buttonView?.isVisible).toBe(true);
         expect(button.getAttribute("draggable")).toBe("true");
+        expect(button.classList).toContain("block-drag-handle");
+        expect(getComputedStyle(button).cursor).toBe("grab");
         expect(isBesideBlock(editor, button, 1)).toBe(true);
 
         button.focus();
