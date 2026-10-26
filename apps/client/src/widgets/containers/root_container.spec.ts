@@ -4,6 +4,19 @@ import LoadResults from "../../services/load_results";
 import options from "../../services/options";
 import RootContainer from "./root_container";
 
+const { applyThemeFromOptions, hasCustomThemeContentChanged } = vi.hoisted(() => ({
+    applyThemeFromOptions: vi.fn(),
+    hasCustomThemeContentChanged: vi.fn().mockReturnValue(false)
+}));
+
+vi.mock("../../services/theme.js", () => ({
+    applyThemeFromOptions,
+    hasCustomThemeContentChanged,
+    onEffectiveThemeStyleChange: vi.fn().mockReturnValue(vi.fn()),
+    updateColorSchemeClasses: vi.fn(),
+    updateThemeCapabilities: vi.fn()
+}));
+
 /**
  * Stands in for `window.visualViewport`, which happy-dom does not implement. Only the parts the
  * root container reads (`height`) and listens on (`resize`) are modelled.
@@ -132,5 +145,27 @@ describe("RootContainer", () => {
 
         userAgent.mockRestore();
         document.body.classList.remove("backdrop-effects-disabled", "ios");
+    });
+});
+
+describe("entitiesReloadedEvent theme content change", () => {
+    afterEach(() => {
+        applyThemeFromOptions.mockClear();
+        hasCustomThemeContentChanged.mockReturnValue(false);
+    });
+
+    it("re-applies the theme when the active custom theme note content is reloaded", () => {
+        hasCustomThemeContentChanged.mockReturnValue(true);
+        const container = new RootContainer(false);
+        const loadResults = new LoadResults([]);
+        container.entitiesReloadedEvent({ loadResults });
+        expect(applyThemeFromOptions).toHaveBeenCalledOnce();
+    });
+
+    it("does not re-apply the theme when neither the theme option nor its content changed", () => {
+        const container = new RootContainer(false);
+        const loadResults = new LoadResults([]);
+        container.entitiesReloadedEvent({ loadResults });
+        expect(applyThemeFromOptions).not.toHaveBeenCalled();
     });
 });
