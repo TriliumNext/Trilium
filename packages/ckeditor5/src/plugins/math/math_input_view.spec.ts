@@ -214,6 +214,86 @@ describe( 'MathInputView', () => {
 		expect( look( swatchMark ) ).toEqual( [ '0', '0px', '0px', 'rgb(255, 255, 255)' ] );
 	} );
 
+	describe( 'MathLive\'s own menu', () => {
+		let menu: Element | null = null;
+
+		/** Open the menu of a math field from its toggle, as a user does. */
+		async function showMenu( theme: Record<string, string> ): Promise<Element> {
+			const mathfield = await renderAndWait();
+			for ( const [ name, value ] of Object.entries( theme ) ) {
+				mathfield.style.setProperty( `--ck-math-menu-${ name }`, value );
+			}
+			const toggle = mathfield.shadowRoot?.querySelector( '[part=menu-toggle]' ) as Element;
+			toggle.dispatchEvent( new PointerEvent( 'pointerdown', { bubbles: true } ) );
+			menu = mathfield.shadowRoot?.querySelector( '.ui-menu-container' ) ?? null;
+			expect( menu ).not.toBeNull();
+			return menu as Element;
+		}
+
+		/** The row of a menu with the given label. */
+		function menuRow( parent: Element, label: string ): Element {
+			const row = Array.from( parent.children )
+				.find( item => item.querySelector( ':scope > .label' )?.textContent === label );
+			expect( row, label ).toBeDefined();
+			return row as Element;
+		}
+
+		/** Click a row of a menu and return the submenu it opens. */
+		function openSubmenu( row: Element ): Element {
+			// MathLive selects on `pointerup`, or on `click` if the menu opened under 120ms ago.
+			row.dispatchEvent( new PointerEvent( 'pointerup', { bubbles: true } ) );
+			row.dispatchEvent( new MouseEvent( 'click', { bubbles: true } ) );
+			const scrim = row.parentElement?.parentElement as Element;
+			const menus = scrim.querySelectorAll( ':scope > .ui-menu-container' );
+			expect( menus.length ).toBeGreaterThan( 1 );
+			return menus[ menus.length - 1 ];
+		}
+
+		// MathLive's menus share one scrim, so a menu left open blocks the next one.
+		afterEach( () => {
+			menu?.dispatchEvent( new KeyboardEvent( 'keydown', { key: 'Escape', bubbles: true } ) );
+			menu = null;
+		} );
+
+		it( 'lets a theme style its rows, headings and checkmarks', async () => {
+			const root = await showMenu( {
+				'item-padding': '1px 15px', 'heading-padding': '2px 26px 1px',
+				'heading-text-transform': 'uppercase', 'checkmark-order': '1',
+				'checkmark-indent': '0px'
+			} );
+			const insert = menuRow( root, 'Insert' );
+			const divider = root.querySelector( ':scope > [role=divider]' ) as Element;
+			const heading = openSubmenu( insert ).querySelector( ':scope > li > .heading' );
+			const headingRow = heading?.parentElement as Element;
+			const math = menuRow( openSubmenu( menuRow( root, 'Mode' ) ), 'Math' );
+			const mark = math.querySelector( ':scope > .ui-checkmark' ) as Element;
+			const label = math.querySelector( ':scope > .label' ) as Element;
+
+			expect( spacing( insert ) ).toEqual( [ '0px 6px', '1px 15px', '4px' ] );
+			expect( spacing( divider ) ).toEqual( [ '0px 15px 5px', '5px 0px 0px', '0px' ] );
+			expect( getComputedStyle( headingRow ).padding ).toBe( '2px 26px 1px' );
+			expect( getComputedStyle( heading as Element ).textTransform ).toBe( 'uppercase' );
+			expect( getComputedStyle( mark ).order ).toBe( '1' );
+			expect( getComputedStyle( label ).marginInlineStart ).toBe( '0px' );
+		} );
+
+		it( 'lets a theme draw its color swatches, but not space its matrix cells', async () => {
+			const root = await showMenu( {
+				'item-margin': '4px 10px', 'item-padding': '1px 15px', 'item-border-radius': '6px',
+				'swatch-size': '24px', 'swatch-gap': '8px', 'swatch-border-radius': '4px'
+			} );
+			const colors = openSubmenu( menuRow( root, 'Color' ) );
+			const color = colors.querySelector( '.menu-swatch > .label > span' ) as Element;
+			const matrix = openSubmenu( menuRow( root, 'Insert Matrix' ) );
+			const cell = matrix.querySelector( ':scope > li' ) as Element;
+
+			expect( getComputedStyle( colors ).maxWidth ).toBe( '144px' );
+			expect( getComputedStyle( color ).borderRadius ).toBe( '4px' );
+			expect( getComputedStyle( color ).minWidth ).toBe( '24px' );
+			expect( spacing( cell ) ).toEqual( [ '0px', '0px', '0px' ] );
+		} );
+	} );
+
 	it( 'anchors the tooltips of the toggles to them, out of the scrolling field', async () => {
 		onTestFinished( () => document.body.style.removeProperty( 'padding-top' ) );
 		document.body.style.paddingTop = '100px';
