@@ -258,7 +258,8 @@ export async function loadCustomCss(note: FNote) {
         if (!printCssNote || (printCssNote.type !== "code" && printCssNote.mime !== "text/css")) continue;
 
         const linkEl = document.createElement("link");
-        linkEl.href = `/api/notes/${printCssNote.noteId}/download`;
+        // Relative like the fonts link above, so it resolves under a subpath deployment
+        linkEl.href = `api/notes/${printCssNote.noteId}/download`;
         linkEl.rel = "stylesheet";
 
         const promise = $.Deferred();
