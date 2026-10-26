@@ -449,7 +449,8 @@
       "cannot-compare-with": "\"{{- token}}\" と比較できません。リテラル値を検索するには、引用符を使用してください: \"{{- token}}\"",
       "misplaced-expression": "\"{{- token}}\" という式が不適切または不完全です",
       "fulltext-after-expression": "\"{{- token}}\" は有効な式ではありません。テキストを検索するには、属性フィルターの前に記述してください（例: \"#label {{- token}}\" ではなく \"{{- token}} #label\"）。",
-      "unrecognized-expression": "認識されない式 \"{{- token}}\""
+      "unrecognized-expression": "認識されない式 \"{{- token}}\"",
+      "regex-not-allowed": "ここでは正規表現演算子 \"%=\" は使用できません。"
     }
   },
   "script": {
