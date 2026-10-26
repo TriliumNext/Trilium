@@ -3403,7 +3403,8 @@
       "note_moved_from": "<Note/> 从 <From/> 移动到 <To/>",
       "note_moved": "<Note/> 移动到 <To/>",
       "attachment_in_note": "<Title/> in <Note/>",
-      "search_in_subtree": "<Query/> 在 <Subtree/> 中"
+      "search_in_subtree": "<Query/> 在 <Subtree/> 中",
+      "add_attribute": "添加属性"
     },
     "base_url": "基础 URL",
     "base_url_description": "可选。通过代理或网关访问同一 API。要自行运行模型，请改为添加 Ollama 或 LM Studio 提供商。",
@@ -3430,7 +3431,7 @@
     "provider_group_local": "本地 / 自托管",
     "provider_group_local_description": "无需 API 密钥，无使用成本。你的笔记仅到达运行模型的机器。",
     "provider_group_custom": "自定义端点",
-    "provider_group_custom_description": "任何兼容 OpenAI 的 API，无论是本地托管还是远程服务（OpenRouter、Groq、Mistral）。费用和隐私取决于你所指向的端点。",
+    "provider_group_custom_description": "任何兼容 OpenAI 的 API，本地或托管均可（Groq、Mistral、Together）。费用和隐私取决于你所指向的端点。",
     "provider_openai_compatible": "兼容 OpenAI",
     "provider_desc_openai_compatible": "将 Trilium 指向任何支持 OpenAI API 的端点。",
     "api_key_optional_description": "可选。仅当你的端点位于需要身份验证的代理或网关之后时才需要。",
@@ -3957,7 +3958,8 @@
       "move-down": "下移",
       "image-position": "图片位置",
       "list": "列表",
-      "list-type": "列表类型"
+      "list-type": "列表类型",
+      "insert-a-preview-of-a-web-page-or-a-video": "插入网页或视频的预览"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4677,7 +4679,8 @@
     "no_matches": "没有匹配项",
     "filter": "筛选",
     "filter_placeholder": "输入以筛选…",
-    "back": "返回"
+    "back": "返回",
+    "clear_filter": "清除筛选"
   },
   "block_reference": {
     "copy_other": "复制对这{{count}}个块的引用",
