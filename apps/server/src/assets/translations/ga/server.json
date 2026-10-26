@@ -456,7 +456,8 @@
       "cannot-compare-with": "ní féidir comparáid a dhéanamh le \"{{- token}}\". Chun luach liteartha a chuardach, bain úsáid as comharthaí athfhriotail: \"{{- token}}\"",
       "misplaced-expression": "Slonn mí-áitithe nó neamhiomlán \"{{- token}}\"",
       "fulltext-after-expression": "Ní abairt bhailí í \"{{- token}}\". Chun téacs a chuardach, cuir é roimh scagairí tréithe (m.sh., \"{{- token}} #label\" in ionad \"#label {{- token}}\").",
-      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\""
+      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\"",
+      "regex-not-allowed": "Níl an t-oibreoir slonn rialta \"%=\" ar fáil anseo."
     }
   },
   "password": {
