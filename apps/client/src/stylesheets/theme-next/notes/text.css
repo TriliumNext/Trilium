@@ -405,6 +405,10 @@ div.ck.ck-collapsible {
         mask-clip: padding-box, border-box;
         mask-composite: exclude;
     }
+
+    &.ck-color-selector__color-tile_bordered.ck-on::after {
+        background: var(--main-text-color);
+    }
 }
 
 /* Color picker button */
@@ -606,6 +610,21 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
 
 :root .ck.ck-form.ck-link-form ul.ck-link-form__providers-list {
     border-top: none;
+}
+
+/* Anchors, drawn as a menu item (menus.css, Menu.css) */
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button {
+    border-color: transparent;
+    color: var(--menu-text-color);
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+
+    > .ck-icon {
+        color: var(--menu-item-arrow-color);
+    }
 }
 
 /* Math popup */

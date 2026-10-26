@@ -12,6 +12,7 @@ const LABELS = [
     "Red", "Orange", "Yellow", "Light green", "Green", "Aquamarine", "Turquoise",
     "Light blue", "Blue", "Purple", "text-editor.colors.pink"
 ];
+const BORDERED = [ "Black", "White" ];
 
 describe("buildFontColorConfig", () => {
     it("lists four greys, then every note color hue, four to a row", () => {
@@ -19,6 +20,7 @@ describe("buildFontColorConfig", () => {
             expect(palette.columns).toBe(4);
             expect(palette.colors.map(({ label }) => label)).toEqual(LABELS);
             expect(palette.colors.map(({ color }) => color)).toEqual(SOURCES);
+            expect(borderedLabels(palette.colors)).toEqual(BORDERED);
         }
     });
 
@@ -39,6 +41,14 @@ describe("buildTableColorConfig", () => {
         ]) {
             expect(colors.map(({ label }) => label)).toEqual(LABELS);
             expect(colors.map(({ color }) => color)).toEqual(SOURCES);
+            expect(borderedLabels(colors)).toEqual(BORDERED);
         }
     });
 });
+
+/** The labels of the swatches CKEditor draws with an edge. */
+function borderedLabels(colors: { label: string }[]) {
+    return colors
+        .filter((swatch) => "hasBorder" in swatch && swatch.hasBorder)
+        .map(({ label }) => label);
+}
