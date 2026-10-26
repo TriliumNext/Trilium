@@ -3,7 +3,7 @@ import './math.js';
 
 import { type DISPLAYABLE_LOCALE_IDS, LOCALES } from '@triliumnext/commons';
 import { Locale } from 'ckeditor5';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import getCkLocale from '../../i18n.js';
 import MathInputView, { LatexTextAreaView, MathFieldFocusableView } from './math_input_view.js';
@@ -32,10 +32,36 @@ describe( 'MathInputView', () => {
 		return view.latexTextAreaView.element;
 	}
 
+	/** Margin, padding and corner radius of a menu row. */
+	function spacing( item: Element ): string[] {
+		const style = getComputedStyle( item );
+		return [ style.margin, style.padding, style.borderRadius ];
+	}
+
 	afterEach( () => {
 		view?.element?.remove();
 		view?.destroy();
 		vi.restoreAllMocks();
+	} );
+
+	// First in the file, so MathLive is not yet loaded in this file's frame.
+	it( 'styles the menu of a field given its value before MathLive loads', async () => {
+		expect( customElements.get( 'math-field' ) ).toBeUndefined();
+		view = new MathInputView( new Locale() );
+		view.render();
+		document.body.appendChild( view.element as HTMLElement );
+		view.value = 'x^2';
+
+		await vi.waitFor( () => expect( view.mathfield?.shadowRoot ).toBeTruthy(), { timeout: 10000 } );
+		const mathfield = view.mathfield as MathField;
+		const menu = document.createElement( 'menu' );
+		menu.className = 'ui-menu-container';
+		menu.innerHTML = '<li part="menu-item"></li>';
+		( mathfield.shadowRoot as ShadowRoot ).append( menu );
+		mathfield.style.setProperty( '--ck-math-menu-item-padding', '1px 15px' );
+
+		expect( getComputedStyle( menu.children[ 0 ] ).padding ).toBe( '1px 15px' );
+		expect( mathfield.value ).toBe( 'x^2' );
 	} );
 
 	it( 'renders a LaTeX textarea, a label and a MathLive container', async () => {
@@ -44,6 +70,7 @@ describe( 'MathInputView', () => {
 		expect( view.element?.querySelector( '.ck-mathlive-container' ) ).not.toBeNull();
 		expect( view.element?.querySelector( '.ck-latex-label' ) ).not.toBeNull();
 		expect( textarea().tagName ).toBe( 'TEXTAREA' );
+		expect( textarea().classList.contains( 'ck-input' ) ).toBe( true );
 		expect( textarea().spellcheck ).toBe( false );
 	} );
 
@@ -52,6 +79,182 @@ describe( 'MathInputView', () => {
 
 		expect( mathfield.tagName.toLowerCase() ).toBe( 'math-field' );
 		expect( mathfield.getAttribute( 'tabindex' ) ).toBe( '0' );
+	} );
+
+	it( 'lets a theme space the menu rows, but not the grid cells or dividers', async () => {
+		const mathfield = await renderAndWait();
+		const root = mathfield.shadowRoot as ShadowRoot;
+		const menu = document.createElement( 'menu' );
+		menu.className = 'ui-menu-container';
+		menu.innerHTML = '<li part="menu-item"></li><li part="menu-divider" role="divider"></li>';
+		const grid = document.createElement( 'menu' );
+		grid.className = 'ui-menu-container insert-matrix-submenu';
+		grid.innerHTML = '<li part="menu-item"></li>';
+		root.append( menu, grid );
+		const [ row, divider ] = Array.from( menu.children );
+		const cell = grid.children[ 0 ];
+
+		expect( spacing( row ) ).toEqual( [ '0px 6px', '1px 7px', '4px' ] );
+
+		mathfield.style.setProperty( '--ck-math-menu-item-margin', '4px 10px' );
+		mathfield.style.setProperty( '--ck-math-menu-item-padding', '1px 15px' );
+		mathfield.style.setProperty( '--ck-math-menu-item-border-radius', '6px' );
+
+		expect( spacing( row ) ).toEqual( [ '4px 10px', '1px 15px', '6px' ] );
+		expect( spacing( cell ) ).toEqual( [ '0px', '0px', '0px' ] );
+		expect( spacing( divider ) ).toEqual( [ '0px 15px 5px', '5px 0px 0px', '0px' ] );
+	} );
+
+	it( 'lets a theme draw the color swatches', async () => {
+		const mathfield = await renderAndWait();
+		const swatch = '<li part="menu-item" class="menu-swatch">'
+			+ '<span class="label"><span></span></span></li>';
+		const grid = document.createElement( 'menu' );
+		grid.className = 'ui-menu-container swatches-submenu';
+		grid.innerHTML = swatch + swatch;
+		grid.children[ 1 ].classList.add( 'active' );
+		( mathfield.shadowRoot as ShadowRoot ).append( grid );
+		const swatches = Array.from( grid.children );
+		const colors = swatches.map( item => item.querySelector( 'span > span' ) as Element );
+		const radii = () => colors.map( color => getComputedStyle( color ).borderRadius );
+
+		expect( radii() ).toEqual( [ '50%', '2px' ] );
+		expect( getComputedStyle( colors[ 0 ] ).minWidth ).toBe( '32px' );
+		expect( [ getComputedStyle( colors[ 0 ] ).margin, getComputedStyle( grid ).maxWidth ] )
+			.toEqual( [ '6px', '216px' ] );
+
+		mathfield.style.setProperty( '--ck-math-menu-swatch-size', '24px' );
+		mathfield.style.setProperty( '--ck-math-menu-swatch-gap', '8px' );
+		mathfield.style.setProperty( '--ck-math-menu-swatch-background', 'transparent' );
+		mathfield.style.setProperty( '--ck-math-menu-swatch-border-radius', '4px' );
+		mathfield.style.setProperty( '--ck-math-menu-swatch-shadow', 'inset 0 0 0 1px red' );
+
+		expect( radii() ).toEqual( [ '4px', '4px' ] );
+		expect( swatches.map( item => getComputedStyle( item ).backgroundColor ) )
+			.toEqual( [ 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)' ] );
+		expect( getComputedStyle( colors[ 0 ] ).boxShadow )
+			.toBe( 'rgb(255, 0, 0) 0px 0px 0px 1px inset' );
+		const { minWidth, minHeight, margin } = getComputedStyle( colors[ 0 ] );
+		expect( [ minWidth, minHeight, margin ] ).toEqual( [ '24px', '24px', '1px' ] );
+		expect( getComputedStyle( grid ).maxWidth ).toBe( '144px' );
+	} );
+
+	it( 'lets a theme draw the menu headings', async () => {
+		const mathfield = await renderAndWait();
+		const menu = document.createElement( 'menu' );
+		menu.className = 'ui-menu-container';
+		menu.innerHTML = '<li part="menu-item" aria-disabled="true">'
+			+ '<span class="label heading">Calculus</span></li>';
+		( mathfield.shadowRoot as ShadowRoot ).append( menu );
+		const heading = menu.children[ 0 ];
+		const label = heading.children[ 0 ];
+		const look = () => {
+			const row = getComputedStyle( heading );
+			const text = getComputedStyle( label );
+			return [ row.margin, row.padding, row.borderBottom, row.opacity, text.fontSize, text.fontWeight,
+				text.letterSpacing, text.textTransform, text.color, text.opacity ];
+		};
+		const { fontSize, letterSpacing, color } = getComputedStyle( heading );
+
+		expect( look() ).toEqual( [ `${ parseFloat( fontSize ) / 2 }px 6px 0px`, '1px 7px',
+			`0px none ${ color }`, '0.5', fontSize, '700', letterSpacing, 'none', color, '0.4' ] );
+
+		const theme: Record<string, string> = {
+			margin: '0px 0px 8px', padding: '2px 26px 1px', border: '1px solid rgb(0, 128, 0)',
+			opacity: '1', 'font-size': '10px', 'font-weight': '500', 'letter-spacing': '1px',
+			'text-transform': 'uppercase', color: 'rgb(255, 0, 0)'
+		};
+		for ( const [ name, value ] of Object.entries( theme ) ) {
+			mathfield.style.setProperty( `--ck-math-menu-heading-${ name }`, value );
+		}
+
+		expect( look() ).toEqual( [ '0px 0px 8px', '2px 26px 1px', '1px solid rgb(0, 128, 0)', '1',
+			'10px', '500', '1px', 'uppercase', 'rgb(255, 0, 0)', '1' ] );
+	} );
+
+	it( 'lets a theme place and color the checkmarks of menu rows, but not of swatches', async () => {
+		const mathfield = await renderAndWait();
+		const menu = document.createElement( 'menu' );
+		menu.className = 'ui-menu-container';
+		menu.innerHTML = '<li part="menu-item" aria-checked="true"><span class="ui-checkmark"></span>'
+			+ '<span class="label indent">Math</span></li>'
+			+ '<li part="menu-item" aria-checked="mixed"><span class="ui-mixedmark"></span>'
+			+ '<span class="label indent">Bold</span></li>';
+		const grid = document.createElement( 'menu' );
+		grid.className = 'ui-menu-container swatches-submenu';
+		grid.innerHTML = '<li part="menu-item" class="menu-swatch" aria-checked="true">'
+			+ '<span class="ui-checkmark"></span><span class="label"><span></span></span></li>';
+		( mathfield.shadowRoot as ShadowRoot ).append( menu, grid );
+		const rows = Array.from( menu.children );
+		const marks = rows.map( row => row.children[ 0 ] );
+		const look = ( mark: Element ) => {
+			const style = getComputedStyle( mark );
+			return [ style.order, style.marginInlineStart, style.marginInlineEnd, style.color ];
+		};
+		const indents = () => rows.map( row => getComputedStyle( row.children[ 1 ] ).marginInlineStart );
+		const swatchMark = grid.querySelector( '.ui-checkmark' ) as Element;
+		const { color } = getComputedStyle( rows[ 0 ] );
+
+		const mathLive = [ '0', '-4px', '-11px', color ];
+		expect( marks.map( look ) ).toEqual( [ mathLive, mathLive ] );
+		expect( indents() ).toEqual( [ '12px', '12px' ] );
+
+		mathfield.style.setProperty( '--ck-math-menu-checkmark-order', '1' );
+		mathfield.style.setProperty( '--ck-math-menu-checkmark-margin-inline', '12px 2px' );
+		mathfield.style.setProperty( '--ck-math-menu-checkmark-color', 'rgb(255, 0, 0)' );
+		mathfield.style.setProperty( '--ck-math-menu-checkmark-indent', '0px' );
+
+		const red = [ '1', '12px', '2px', 'rgb(255, 0, 0)' ];
+		expect( marks.map( look ) ).toEqual( [ red, red ] );
+		expect( indents() ).toEqual( [ '0px', '0px' ] );
+		for ( const [ index, mark ] of marks.entries() ) {
+			const labelEnd = rows[ index ].children[ 1 ].getBoundingClientRect().right;
+			expect( mark.getBoundingClientRect().left ).toBeGreaterThan( labelEnd );
+		}
+		expect( look( swatchMark ) ).toEqual( [ '0', '0px', '0px', 'rgb(255, 255, 255)' ] );
+	} );
+
+	it( 'anchors the tooltips of the toggles to them, out of the scrolling field', async () => {
+		onTestFinished( () => document.body.style.removeProperty( 'padding-top' ) );
+		document.body.style.paddingTop = '100px';
+		const mathfield = await renderAndWait();
+		const toggle = mathfield.shadowRoot?.querySelector( '[part=menu-toggle]' );
+		expect( toggle ).toBeTruthy();
+		const tooltip = getComputedStyle( toggle as Element, '::after' );
+
+		expect( [ tooltip.position, tooltip.positionArea ] ).toEqual( [ 'fixed', 'top' ] );
+		expect( tooltip.positionAnchor ).toBe( getComputedStyle( toggle as Element ).anchorName );
+		expect( tooltip.positionAnchor ).toMatch( /^--/ );
+
+		document.body.style.paddingTop = '0px';
+		await new Promise( resolve => requestAnimationFrame( resolve ) );
+		expect( tooltip.positionArea ).toBe( 'bottom' );
+	} );
+
+	it( 'resizes the math field within the limits of the LaTeX textarea', async () => {
+		const mathfield = await renderAndWait();
+		const form = document.createElement( 'div' );
+		form.className = 'ck ck-math-form';
+		document.body.append( form );
+		form.append( view.element as HTMLElement );
+		const container = view.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement;
+		form.style.setProperty( '--ck-input-width', '18em' );
+		const limits = ( element: Element ) => {
+			const { resize, maxWidth, minHeight, maxHeight } = getComputedStyle( element );
+			return [ resize, maxWidth, minHeight, maxHeight ];
+		};
+
+		expect( limits( container ) ).toEqual( limits( textarea() ) );
+		expect( limits( container ) ).toEqual( [ 'both', '100%', '60px', '120px' ] );
+		// CKEditor's `.ck-input` sets the textarea's min-width to `--ck-input-width` at its font size.
+		expect( parseFloat( getComputedStyle( container ).minWidth ) )
+			.toBeCloseTo( 18 * parseFloat( getComputedStyle( textarea() ).fontSize ) );
+
+		container.style.height = '200px';
+		const { paddingTop, paddingBottom } = getComputedStyle( container );
+		expect( mathfield.getBoundingClientRect().height )
+			.toBeCloseTo( container.clientHeight - parseFloat( paddingTop ) - parseFloat( paddingBottom ) );
+		form.remove();
 	} );
 
 	it( 'localizes MathLive in the editor UI language rather than the browser one', async () => {

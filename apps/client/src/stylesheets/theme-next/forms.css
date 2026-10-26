@@ -50,6 +50,7 @@ input[type="datetime-local"],
 textarea.form-control,
 textarea,
 :root textarea.ck.ck-textarea,
+:root .ck.ck-math-input > .ck-mathlive-container,
 .tn-input-field {
     outline: 3px solid transparent;
     outline-offset: 6px;
@@ -72,6 +73,7 @@ input[type="datetime-local"]:hover,
 textarea.form-control:hover,
 textarea:hover,
 :root textarea.ck.ck-textarea:hover,
+:root .ck.ck-math-input > .ck-mathlive-container:hover,
 .tn-input-field:hover {
     background: var(--input-hover-background);
     color: var(--input-hover-color);
@@ -90,6 +92,7 @@ input[type="datetime-local"]:focus,
 textarea.form-control:focus,
 textarea:focus,
 :root textarea.ck.ck-textarea:focus,
+:root .ck.ck-math-input > .ck-mathlive-container:focus-within,
 .tn-input-field:focus,
 .tn-input-field:focus-within {
     box-shadow: unset;
