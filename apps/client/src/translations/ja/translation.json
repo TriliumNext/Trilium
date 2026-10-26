@@ -1200,7 +1200,7 @@
   },
   "search_engine": {
     "title": "検索エンジン",
-    "custom_search_engine_info": "選択したテキストをウェブ上で検索する際に使用します。設定されていない場合は、DuckDuckGo が使用されます。",
+    "custom_search_engine_info": "ノート内で選択したテキストをウェブで検索するために使用します。",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1210,7 +1210,12 @@
     "custom_url_label": "URL",
     "custom_url_placeholder": "検索エンジンの URL",
     "save_button": "保存",
-    "custom_url_description": "検索語句の代わりに {keyword} を使用してください。"
+    "custom_url_description": "検索語句の代わりに {keyword} を使用してください。",
+    "engine_label": "検索エンジン",
+    "brave": "Brave",
+    "yandex": "Yandex",
+    "none": "なし",
+    "custom": "カスタム"
   },
   "tray": {
     "title": "システムトレイ",
@@ -1757,7 +1762,10 @@
     "follow-active-note": "アクティブなノートに追従",
     "follow-active-note-title": "ツリーをスクロールし、親ノードを展開してアクティブなノートを表示します。無効にすると、ツリーは固定されたままとなり、背景のハイライトのみが更新されます。",
     "show-all-notes": "すべてのノートを表示",
-    "back-to-tree": "ノートツリー"
+    "back-to-tree": "ノートツリー",
+    "display-density": "表示密度",
+    "display-density-relaxed": "ゆったり",
+    "display-density-dense": "コンパクト"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
