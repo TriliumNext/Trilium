@@ -13,7 +13,12 @@ const { triggerEvent } = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
 vi.mock("../components/app_context.js", () => ({ default: { triggerEvent } }));
 
 // `applyThemeFromOptions` lazily imports options and server; mock them so tests control what theme is active.
-const { serverGet, optionsGet } = vi.hoisted(() => ({ serverGet: vi.fn(), optionsGet: vi.fn() }));
+// `serverGet` defaults to a resolved empty array so that keyboard_actions.ts module-init (.then on the result)
+// does not throw an unhandled rejection when this mock replaces server.js for the entire test file.
+const { serverGet, optionsGet } = vi.hoisted(() => ({
+    serverGet: vi.fn().mockResolvedValue([]),
+    optionsGet: vi.fn()
+}));
 vi.mock("./server.js", () => ({ default: { get: serverGet } }));
 vi.mock("./options.js", () => ({ default: { get: optionsGet } }));
 
