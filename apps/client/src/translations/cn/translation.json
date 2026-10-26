@@ -330,7 +330,8 @@
     "modal_title": "选择笔记类型",
     "templates": "模板",
     "location": "位置",
-    "location_placeholder": "留空则使用默认位置"
+    "location_placeholder": "留空则使用默认位置",
+    "manage_templates": "在扩展管理中管理模板"
   },
   "password_not_set": {
     "title": "密码未设置",
@@ -1257,7 +1258,8 @@
     "upload_attachments": "上传附件",
     "no_attachments": "此笔记没有附件。",
     "no_user_attachments": "这篇笔记本身没有任何附件。\n下面列出的是 Trilium 为它生成的附件。",
-    "system_group": "由 Trilium 生成（{{amount}}）"
+    "system_group": "由 Trilium 生成（{{amount}}）",
+    "drop_files": "拖放文件，将其作为附件上传"
   },
   "book": {
     "no_children_help": "此集合没有任何子笔记，因此没有内容显示。",
@@ -1297,7 +1299,8 @@
     "protecting-finished-successfully": "保护操作已成功完成。",
     "unprotecting-finished-successfully": "解除保护操作已成功完成。",
     "protecting-in-progress": "保护进行中：{{count}}",
-    "unprotecting-in-progress-count": "解除保护进行中：{{count}}"
+    "unprotecting-in-progress-count": "解除保护进行中：{{count}}",
+    "locked_note_title": "受保护的笔记"
   },
   "relation_map": {
     "remove_note": "删除笔记...",
@@ -1584,7 +1587,7 @@
   },
   "search_engine": {
     "title": "搜索引擎",
-    "custom_search_engine_info": "用于在网络上搜索所选文本。如果未配置，默认使用 DuckDuckGo 作为搜索引擎。",
+    "custom_search_engine_info": "用于在网络上搜索笔记中选中的文本。",
     "bing": "必应",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",
@@ -1594,7 +1597,12 @@
     "custom_url_label": "URL",
     "custom_url_placeholder": "搜索引擎 URL",
     "save_button": "保存",
-    "custom_url_description": "使用 {keyword} 作为搜索词的占位符。"
+    "custom_url_description": "使用 {keyword} 作为搜索词的占位符。",
+    "engine_label": "搜索引擎",
+    "brave": "Brave",
+    "yandex": "Yandex",
+    "none": "无",
+    "custom": "自定义"
   },
   "tray": {
     "title": "系统托盘",
@@ -1958,8 +1966,11 @@
     "show-subtree": "显示子树",
     "duplicate-with-children": "笔记及其子笔记",
     "duplicate-note-only": "仅此笔记",
-    "clone": "克隆",
-    "clone-tooltip": "克隆，让同一条笔记同时出现在两处"
+    "clone": "复制",
+    "clone-tooltip": "复制，以便在笔记树的其他位置粘贴为克隆，或作为链接粘贴进笔记",
+    "delete-short": "删除",
+    "paste-into-tooltip_other": "粘贴到此笔记\n笔记将以克隆的方式粘贴：它是同一条笔记（不是副本），只是同时出现在多个位置。",
+    "paste-after-tooltip_other": "粘贴到此后\n笔记将以克隆的方式粘贴：它是同一条笔记（不是副本），只是同时出现在多个位置。"
   },
   "note_types": {
     "text": "文本",
@@ -2054,7 +2065,11 @@
     "subtree-hidden-moved-description-other": "子笔记隐藏于此笔记的树中。",
     "follow-active-note": "跟随活跃笔记",
     "follow-active-note-title": "自动滚动笔记树并展开父节点，以显示当前活跃的笔记。禁用后，笔记树保持不动，仅背景高亮会更新。",
-    "show-all-notes": "显示所有笔记"
+    "show-all-notes": "显示所有笔记",
+    "back-to-tree": "笔记树",
+    "display-density": "显示密度",
+    "display-density-relaxed": "宽松",
+    "display-density-dense": "紧凑"
   },
   "title_bar_buttons": {
     "window-on-top": "始终置顶"
@@ -2119,7 +2134,10 @@
     "pin_tab": "固定标签页",
     "unpin_tab": "取消固定标签页",
     "pinned_prefix": "已固定: ",
-    "leave_full_screen": "退出全屏"
+    "leave_full_screen": "退出全屏",
+    "add_new_tab_hint": "右键点击或长按可查看更多选项。",
+    "show_all_recent_changes": "全部最近更改",
+    "recently_changed_notes": "最近更改的笔记"
   },
   "toc": {
     "table_of_contents": "目录",
@@ -2531,7 +2549,12 @@
     "new-column-label": "标签...",
     "new-column-relation": "关联...",
     "properties": "表格属性…",
-    "properties-title": "表格属性"
+    "properties-title": "表格属性",
+    "column-note-id": "笔记 ID",
+    "column-title": "标题",
+    "column-date-created": "创建时间",
+    "column-date-modified": "修改时间",
+    "open-note": "打开"
   },
   "book_properties_config": {
     "hide-weekends": "隐藏周末",
@@ -3558,7 +3581,8 @@
     "remove_from_launch_bar": "从启动栏中移除",
     "configure_launch_bar": "配置启动栏...",
     "launch_bar_orientation": "启动栏方向",
-    "will_reload_frontend": "（将重新加载应用）"
+    "will_reload_frontend": "（将重新加载应用）",
+    "show_as_folder": "文件夹"
   },
   "link": {
     "failed_to_open": "无法打开链接“{{- href}}”：{{- message}}"
@@ -3669,9 +3693,13 @@
     "back": "返回上一级",
     "loading": "正在加载...",
     "empty": "这个笔记下还没有子笔记。",
-    "children_count_other": "{{count}} 条笔记",
+    "children_count_other": "{{count}} 条子笔记",
     "add_child": "添加子笔记",
-    "more_actions": "更多操作"
+    "more_actions": "更多操作",
+    "current_note": "此笔记",
+    "children_hidden": "子笔记已从笔记树中隐藏",
+    "workspaces": "工作区",
+    "bookmarks": "书签"
   },
   "text-editor": {
     "validation-errors": {
