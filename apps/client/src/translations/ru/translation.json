@@ -4051,7 +4051,11 @@
       "image-position": "Положение изображения",
       "list": "Список",
       "list-type": "Тип списка",
-      "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео"
+      "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео",
+      "use-headers": "Использовать заголовки",
+      "header-columns": "Заголовки столбцов",
+      "header-rows": "Заголовки строк",
+      "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0."
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
