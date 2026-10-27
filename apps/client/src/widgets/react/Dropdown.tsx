@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MenuItem } from "../../menus/context_menu";
 import { isMobile, isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import { focusListItem } from "./FormList";
-import { useTooltip, useUniqueName } from "./hooks";
+import { useBodyClass, useTooltip, useUniqueName } from "./hooks";
 import { suspendModalFocusTraps } from "./modal_focustrap";
 import Menu from "./Menu";
 import Popup, { type PopupProps } from "./Popup";
@@ -202,6 +202,7 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const popupRef = useRef<HTMLDivElement | null>(null);
     const [ shown, setShown ] = useState(false);
+    useBodyClass("backdrop-open", shown && !!backdrop);
     /** The item to start at once the popup shows, for a popup a key on the toggle opened. */
     const [ startAt, setStartAt ] = useState<"first" | "last">();
 

@@ -60,6 +60,12 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
                 classList.add(cls);
             }
         }
+
+        // `bgfx` can change here without SplitNoteContainer refreshing.
+        const container = this.$widget[0].parentElement;
+        if (container) {
+            markVisibleSplits(container);
+        }
     }
 
     /** The classes of the split, each entry holding one or more class names split by whitespace. */
@@ -110,6 +116,28 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
 /** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
 const CONTAINER_OWNED_CLASSES = [ "active", "last-visible" ];
+
+/**
+ * Marks the rightmost visible split of `container` with `last-visible`, and the container with
+ * `multiple-splits` while it shows more than one. Sets `first-split-bgfx` and `last-split-bgfx` on
+ * `body` while the outer visible splits are translucent, for the peek buttons on either side of
+ * `#center-pane`. Reads the DOM order, since `SplitNoteContainer` reorders the splits in place.
+ */
+export function markVisibleSplits(container: HTMLElement) {
+    const splits = [ ...container.children ]
+        .filter((child) => child.classList.contains("note-split"));
+    const visibleSplits = splits.filter((split) => !split.classList.contains("hidden-ext"));
+    const firstVisible = visibleSplits.at(0);
+    const lastVisible = visibleSplits.at(-1);
+    for (const split of splits) {
+        split.classList.toggle("last-visible", split === lastVisible);
+    }
+
+    const bodyClasses = document.body.classList;
+    container.classList.toggle("multiple-splits", visibleSplits.length > 1);
+    bodyClasses.toggle("first-split-bgfx", !!firstVisible?.classList.contains("bgfx"));
+    bodyClasses.toggle("last-split-bgfx", !!lastVisible?.classList.contains("bgfx"));
+}
 
 /**
  * Whether the split should be translucent (`bgfx`), letting the window background effect show through.

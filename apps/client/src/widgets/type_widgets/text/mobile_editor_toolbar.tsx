@@ -8,7 +8,9 @@ import { isIOS } from "../../../services/utils";
 import {
     HideKeyboardAction, holdVisibleBottom, usePositioningOniOS
 } from "../../mobile_widgets/hide_keyboard_button";
-import { useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent } from "../../react/hooks";
+import {
+    useBodyClass, useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent
+} from "../../react/hooks";
 import { useNestedEditor } from "./editable_embed";
 
 /**
@@ -31,6 +33,8 @@ export default function MobileEditorToolbar() {
     const editor = nestedEditor?.ui.view.toolbar ? nestedEditor : noteEditor;
     const toolbarElement = useShownToolbarElement(editor);
     const isActive = useEditorsFocused(noteEditor, nestedEditor) || dropdownActive;
+    // The toolbar has its own hide-keyboard action; this class hides `HideKeyboardButton`.
+    useBodyClass("mobile-toolbar-active", shouldDisplay && isActive);
     // A press outside the menu closes it as it starts, so the X's click only brings the keyboard
     // back, focusing the text within the tap.
     const isPanelOpen = useIsKeyboardPanelOpen();

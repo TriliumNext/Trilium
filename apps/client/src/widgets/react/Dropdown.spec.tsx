@@ -644,6 +644,11 @@ describe("Dropdown", () => {
             await vi.waitFor(() => expect(popup()).not.toBeNull());
             const drawn = [ ...popup()?.parentElement?.children ?? [] ].map((child) => child.classList[0]);
             expect(drawn).toEqual([ "tn-dropdown-backdrop", "tn-popup" ]);
+            expect(document.body.classList.contains("backdrop-open")).toBe(true);
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            expect(document.body.classList.contains("backdrop-open")).toBe(false);
         });
     });
 });

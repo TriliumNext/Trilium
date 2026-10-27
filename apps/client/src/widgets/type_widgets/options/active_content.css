@@ -6,7 +6,7 @@
     --options-card-max-width: 100%;
 }
 
-.note-detail-content-widget-content.options:has(.active-content-toolbar) > *:not(.options-page-header) {
+.note-detail-content-widget-content.options > .active-content-list {
     margin-bottom: 0;
 }
 

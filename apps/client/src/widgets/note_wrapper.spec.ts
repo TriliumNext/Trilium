@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
-import NoteWrapperWidget, { hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote } from "./note_wrapper";
+import NoteWrapperWidget, {
+    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote, markVisibleSplits
+} from "./note_wrapper";
 
 describe("NoteWrapperWidget", () => {
     it("preserves the classes owned by SplitNoteContainer in refresh()", () => {
@@ -91,6 +93,56 @@ describe("NoteWrapperWidget", () => {
         const doc = buildNote({ title: "Doc", type: "file" });
         doc.mime = "application/msword";
         expect(hasBackgroundEffects(doc)).toBe(false);
+    });
+
+    it("updates the body classes of the outer splits when its note changes translucency", () => {
+        const container = document.createElement("div");
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        container.append(widget.$widget[0]);
+
+        showNote(widget, buildNote({ title: "Photo", type: "image" }));
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(true);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(true);
+
+        showNote(widget, buildNote({ title: "Plain", type: "text" }));
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(false);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(false);
+    });
+});
+
+describe("markVisibleSplits", () => {
+    afterEach(() => {
+        document.body.classList.remove("first-split-bgfx", "last-split-bgfx");
+    });
+
+    function buildContainer(...splitClasses: string[]) {
+        const container = document.createElement("div");
+        for (const classes of splitClasses) {
+            const split = document.createElement("div");
+            split.className = `note-split ${classes}`;
+            container.append(split);
+        }
+        return container;
+    }
+
+    it("marks the last visible split, multiple splits and the translucent outer splits", () => {
+        const container = buildContainer("bgfx", "", "bgfx hidden-ext last-visible");
+        const [ first, second, hidden ] = container.children;
+
+        markVisibleSplits(container);
+        expect(first.classList.contains("last-visible")).toBe(false);
+        expect(second.classList.contains("last-visible")).toBe(true);
+        expect(hidden.classList.contains("last-visible")).toBe(false);
+        expect(container.classList.contains("multiple-splits")).toBe(true);
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(true);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(false);
+
+        second.classList.add("hidden-ext");
+        markVisibleSplits(container);
+        expect(first.classList.contains("last-visible")).toBe(true);
+        expect(container.classList.contains("multiple-splits")).toBe(false);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(true);
     });
 });
 

@@ -122,8 +122,7 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
     --note-split-bottom-border-radius: var(--center-pane-border-radius);
 }
 
-/* Matches when a status bar panel is open */
-#horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+body.status-bar-panel-open #horizontal-main-container {
     --note-split-bottom-border-radius: 0;
 }
 
@@ -1185,8 +1184,9 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after,
-body.mobile #detail-container > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after {
+#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+body.mobile #detail-container > .split-note-container-widget.multiple-splits
+    > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
 }
 

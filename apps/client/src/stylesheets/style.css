@@ -1916,7 +1916,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
         }
     }
 
-    body:has(#mobile-sidebar-wrapper.show) #detail-container::before {
+    body.mobile-sidebar-open #detail-container::before {
         opacity: 0;
     }
 
@@ -2612,7 +2612,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.note-split > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split > .scrolling-container:is(.detail-full-height, .list-full-height) {
     display: flex;
     flex-direction: column;
 }
@@ -2634,7 +2634,7 @@ iframe.print-iframe {
 
 /* A full-height note fills the container instead of scrolling it, so the padding that lets
    flowing content scroll past its end would only take height away from the note. */
-.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+.scrolling-container.detail-full-height > .scroll-padding-widget {
     display: none;
 }
 

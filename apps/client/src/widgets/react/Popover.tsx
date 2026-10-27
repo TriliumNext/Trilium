@@ -6,6 +6,7 @@ import { ComponentChildren, createPortal } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
 import { FLOATING_LAYER_SELECTOR, isWithinFloatingLayer } from "./floating_layers";
+import { useBodyClass } from "./hooks";
 import { placeFloating } from "./Popup";
 
 export interface PopoverProps {
@@ -67,6 +68,7 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
     const elRef = useRef<HTMLDivElement>(null);
     const arrowRef = useRef<HTMLDivElement>(null);
     const updateRef = useRef<(() => void) | undefined>(undefined);
+    useBodyClass("backdrop-open", !!maximized);
 
     // In a ref, so the placement set up once reads the latest `getAnchorRect`. Setting it up again
     // on every render would reset the position mid-interaction.

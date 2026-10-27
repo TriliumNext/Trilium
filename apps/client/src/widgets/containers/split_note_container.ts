@@ -6,6 +6,7 @@ import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import { getTabToward } from "../mobile_widgets/tab_swipe.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import { markVisibleSplits } from "../note_wrapper.js";
 import FlexContainer from "./flex_container.js";
 
 interface SplitNoteWidget extends BasicWidget {
@@ -275,12 +276,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             child.$widget.toggleClass("active", !!child.noteContext?.isActive());
         }
 
-        // Mark the rightmost visible split. CSS can't reach a split from outside #center-pane, so
-        // siblings of it (the right pane peek button) need this hook to match its background.
-        // Read the DOM, not `this.children`: splits are reordered in place, the array is not.
-        const $visibleSplits = this.$widget.children(".note-split:not(.hidden-ext)");
-        $visibleSplits.removeClass("last-visible");
-        $visibleSplits.last().addClass("last-visible");
+        markVisibleSplits(this.$widget[0]);
     }
 
     toggleInt(show: boolean) {} // not needed

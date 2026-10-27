@@ -30,7 +30,7 @@ body.layout-vertical .right-pane-peek-button {
 }
 
 /* The button follows the translucency of the rightmost split. */
-body.desktop.background-effects #center-pane:has(.note-split.last-visible.bgfx) ~ .right-pane-peek-button {
+body.desktop.background-effects.last-split-bgfx #center-pane ~ .right-pane-peek-button {
     --peek-button-expand-background-color: var(--center-pane-background-color-bgfx, var(--main-background-color));
 }
 
