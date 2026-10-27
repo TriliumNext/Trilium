@@ -3,10 +3,6 @@ figure img {
     height: auto !important;
 }
 
-span.katex-html {
-    display: none !important;
-}
-
 p:has(span.text-tiny),
 p:has(span.text-small),
 p:has(span.text-big),

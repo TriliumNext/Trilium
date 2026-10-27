@@ -5,14 +5,17 @@ import { tmpdir } from "os";
 import { dirname, join } from "path";
 import { describe, expect, it } from "vitest";
 
+import { findSlowSelectors } from "./src/test/css_invalidation";
 import {
     buildShareThemeManifest,
     checkHostedGroups,
     ENGINE_RENDER_ENTRY,
     LANGUAGE_DETECTOR_PACKAGE,
+    narrowSelectorsSource,
     readLoaderTable,
     resolveUniverHyphenationStub,
     stripUniverEmojiSource,
+    THIRD_PARTY_STYLESHEETS,
     UI_ENTRY
 } from "./vite-plugins.mjs";
 
@@ -316,6 +319,33 @@ describe("checkHostedGroups", () => {
         const partial = all.filter((name) => name !== "view:calendar" && name !== "type:noteMap");
         expect(() => checkHostedGroups(partial))
             .toThrow("hosts types with no group of files: view:calendar, type:noteMap.");
+    });
+});
+
+/**
+ * Canary for `narrowThirdPartySelectors`. An upgrade of Bootstrap or CKEditor can reword a
+ * selector the plugin rewrites, or add another `* + *`, which brings back a whole-note restyle
+ * on every Enter.
+ */
+describe("narrowThirdPartySelectors", () => {
+    it("rewrites every listed selector, leaving no `*` after a sibling or position", () => {
+        for (const { specifier } of THIRD_PARTY_STYLESHEETS) {
+            const path = createRequire(import.meta.url).resolve(specifier);
+            const narrowed = narrowSelectorsSource(readFileSync(path, "utf8"), path);
+            expect(narrowed, specifier).not.toBeNull();
+
+            const universal = findSlowSelectors(narrowed ?? "", path).filter(({ shape }) =>
+                shape === "sibling-then-universal" || shape === "positional-then-universal");
+            expect(universal, specifier).toEqual([]);
+        }
+    });
+
+    it("leaves other modules alone and fails once a selector no longer matches", () => {
+        const other = "/app/node_modules/other/dist/a.css";
+        const ckeditor = "/app/node_modules/ckeditor5/dist/ckeditor5.css?direct";
+        expect(narrowSelectorsSource("a + * { color: red }", other)).toBeNull();
+        expect(() => narrowSelectorsSource("", ckeditor))
+            .toThrow("narrow-third-party-selectors: expected 1");
     });
 });
 

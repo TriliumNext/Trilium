@@ -93,7 +93,7 @@ export default function EditableText({
         ? watchEditorBlocks(block, onBlockChange)
         : undefined));
     const [ attachmentSaves ] = useState(() =>
-        new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
+        new AttachmentSaves(() => spacedUpdate, parentComponent?.componentId));
     const [ inlineSourceSaves ] = useState(() =>
         new InlineSourceSaves(() => spacedUpdate.scheduleUpdate()));
     const [ embedHistories ] = useState(() => new EmbedHistories(() => editorRef.current));
@@ -504,6 +504,8 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 onChange={() => {
+                    // `getData()` serializes the whole note, so saves wait for typing to pause.
+                    spacedUpdate.resetUpdateTimer();
                     spacedUpdate.scheduleUpdate();
                     const editor = editorRef.current;
                     if (editor) {

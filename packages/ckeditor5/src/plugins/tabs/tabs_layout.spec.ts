@@ -259,6 +259,8 @@ describe("tabs layout styles", () => {
         );
         const blocks = [...editable.querySelectorAll<HTMLElement>(".trilium-tabs.ck-widget")];
         const outlines = () => blocks.map(block => getComputedStyle(block).outlineColor);
+        const focused = () => blocks.map(block =>
+            block.classList.contains("trilium-tabs--focused"));
         const ring = (element: Element | null) => {
             expect(element).not.toBeNull();
             const style = getComputedStyle(element as Element);
@@ -277,12 +279,14 @@ describe("tabs layout styles", () => {
         const innerPanel = blocks[1].querySelector(".trilium-tab-panel");
         expect(ring(innerPanel)).toEqual(["rgba(0, 0, 0, 0)", "none", "0s"]);
         await expect.poll(outlines).toEqual(["rgba(0, 0, 0, 0)", "rgb(65, 43, 21)"]);
+        expect(focused()).toEqual([false, true]);
 
         select([1, 0, 0, 0]);
         const outerTitle = blocks[0].querySelector(".trilium-tab-title");
         expect(ring(outerTitle).filter((_, index) => index !== 1))
             .toEqual(["rgb(12, 34, 56)", "0s"]);
         await expect.poll(outlines).toEqual(["rgb(65, 43, 21)", "rgba(0, 0, 0, 0)"]);
+        expect(focused()).toEqual([true, false]);
     });
 
     it("keeps overflowing titles on one scrolling row and rounds the panel corners", async () => {

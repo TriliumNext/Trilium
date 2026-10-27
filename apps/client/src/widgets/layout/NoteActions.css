@@ -21,7 +21,7 @@
         height: 36px;
         gap: var(--button-gap);
 
-        &> button:last-of-type {
+        &> button.icon-action:last-of-type {
             margin-inline-end: 0.5em;
         }
     }

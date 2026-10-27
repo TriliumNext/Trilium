@@ -161,7 +161,7 @@ export default function TranscriptView({ attachment }: { attachment: FAttachment
                         <TurnTime startedAt={transcript.startedAt} offsetMs={turn.offsetMs} />
                     </div>
                     {turn.paragraphs.map((paragraph, index) => (
-                        <p key={index}>
+                        <p key={index} className="transcript-paragraph">
                             {paragraph.map((utterance, position) => {
                                 const text = shownTexts.get(utterance) ?? utterance.text;
                                 return (

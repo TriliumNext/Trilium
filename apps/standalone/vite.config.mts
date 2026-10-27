@@ -6,7 +6,9 @@ import prefresh from "@prefresh/vite";
 import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
-import { shareTheme, stripUniverEmojiData, stripUniverHyphenation } from "../client/vite-plugins.mjs";
+import {
+    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+} from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
@@ -194,6 +196,7 @@ function copyHelpAssetsPlugin(): Plugin {
 let plugins: any = [
     stripUniverHyphenation(),
     stripUniverEmojiData(),
+    narrowThirdPartySelectors(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
     viteStaticCopy({

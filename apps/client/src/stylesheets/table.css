@@ -256,7 +256,8 @@
 
 /* Align items without children/expander to the ones with. */
 .tabulator-cell[tabulator-field="title"] > span:first-child,         /* 1st level */
-.tabulator-cell[tabulator-field="title"] > div:first-child + span {  /* sub-level */
+.tabulator-cell[tabulator-field="title"]
+    > .tabulator-data-tree-branch-empty:first-child + span {         /* sub-level */
     padding-inline-start: 21px;
 }
 

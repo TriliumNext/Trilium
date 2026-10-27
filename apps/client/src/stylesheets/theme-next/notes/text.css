@@ -606,7 +606,7 @@ div.ck-template-form .ck-search__info > span {
     color: var(--muted-text-color);
 }
 
-div.ck-template-form .ck-search__info span:nth-child(2) {
+div.ck-template-form .ck-search__info span:last-child {
     display: block;
     opacity: .5;
     margin-top: 8px;

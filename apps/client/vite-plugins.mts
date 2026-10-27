@@ -116,6 +116,128 @@ function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ..
     return code.replace(pattern, replacer);
 }
 
+/**
+ * Rewrites the third-party selectors that make Chromium restyle a whole container each time an
+ * element is inserted into it, which in a large note is the whole note on every Enter: a `*`
+ * after `+`, `~` or a position pseudo-class, and a sibling or `:nth-*` compound without a class.
+ * `vite-plugins.spec.ts` checks every rewrite still matches the installed stylesheet.
+ */
+export function narrowThirdPartySelectors(): Plugin {
+    return {
+        name: "narrow-third-party-selectors",
+        enforce: "pre",
+        transform: (code, id) => narrowSelectorsSource(code, id)
+    };
+}
+
+/**
+ * Returns `code` with the rewrites of the stylesheet `id` applied, and `null` for other
+ * modules.
+ */
+export function narrowSelectorsSource(code: string, id: string): string | null {
+    const path = id.replace(/\\/g, "/").replace(/\?.*$/, "");
+    const stylesheet = THIRD_PARTY_STYLESHEETS.find(({ file }) =>
+        path.endsWith(`/node_modules/${file}`));
+    if (!stylesheet) {
+        return null;
+    }
+
+    let narrowed = code;
+    for (const { from, to, count } of stylesheet.rewrites) {
+        const found = narrowed.split(from).length - 1;
+        if (found !== count) {
+            throw new Error(`narrow-third-party-selectors: expected ${count} × "${from}" in `
+                + `${stylesheet.file}, found ${found}; update vite-plugins.mts.`);
+        }
+        narrowed = narrowed.replaceAll(from, to);
+    }
+    return narrowed;
+}
+
+interface SelectorRewrite {
+    from: string;
+    to: string;
+    /** How often `from` occurs in the installed stylesheet. */
+    count: number;
+}
+
+/**
+ * Bootstrap's minified selectors, the same in its LTR and RTL builds. Trilium uses no `<legend>`,
+ * `.table-striped-columns` or `.has-validation`; floating labels need `.form-control` or
+ * `.form-select` on the field.
+ */
+const BOOTSTRAP_REWRITES: SelectorRewrite[] = [
+    // The cells only read the stripe's custom properties, so the row can set them.
+    {
+        from: ".table-striped>tbody>tr:nth-of-type(odd)>*",
+        to: ".table-striped>tbody>tr:nth-of-type(odd)",
+        count: 1
+    },
+    {
+        from: ".table-striped-columns>:not(caption)>tr>:nth-child(2n)",
+        to: ".table-striped-columns>:not(caption)>tr>td:nth-child(2n),"
+            + ".table-striped-columns>:not(caption)>tr>th:nth-child(2n)",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:focus~",
+        to: ".form-floating>textarea.form-control:focus~",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:not(:placeholder-shown)~",
+        to: ".form-floating>textarea.form-control:not(:placeholder-shown)~",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:disabled~",
+        to: ".form-floating>textarea.form-control:disabled~",
+        count: 1
+    },
+    {
+        from: ".form-floating>:disabled~label",
+        to: ".form-floating>.form-select:disabled~label",
+        count: 1
+    },
+    {
+        from: ",.input-group.has-validation>:nth-last-child(n+3)"
+            + ":not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating)",
+        to: "",
+        count: 1
+    }
+];
+
+/** CKEditor's nested selectors. Its UI views all carry the `ck` class. */
+const CKEDITOR_REWRITES: SelectorRewrite[] = [
+    { from: "&:not(.ck-hidden) ~ * {", to: "&:not(.ck-hidden) ~ .ck {", count: 1 },
+    { from: "& > * + * {", to: "& > .ck + .ck {", count: 2 },
+    { from: "& + * {", to: "&.ck + .ck {", count: 3 },
+    // The keys of a keystroke, with only text between them.
+    { from: "& + kbd {", to: "&:not(:first-child) {", count: 1 }
+];
+
+/**
+ * The stylesheets rewritten: `specifier` resolves to the file, `file` is its path in
+ * `node_modules`.
+ */
+export const THIRD_PARTY_STYLESHEETS = [
+    {
+        specifier: "bootstrap/dist/css/bootstrap.min.css",
+        file: "bootstrap/dist/css/bootstrap.min.css",
+        rewrites: [ { from: "legend+*{clear:left}", to: "", count: 1 }, ...BOOTSTRAP_REWRITES ]
+    },
+    {
+        specifier: "bootstrap/dist/css/bootstrap.rtl.min.css",
+        file: "bootstrap/dist/css/bootstrap.rtl.min.css",
+        rewrites: [ { from: "legend+*{clear:right}", to: "", count: 1 }, ...BOOTSTRAP_REWRITES ]
+    },
+    {
+        specifier: "ckeditor5/ckeditor5.css",
+        file: "ckeditor5/dist/ckeditor5.css",
+        rewrites: CKEDITOR_REWRITES
+    }
+];
+
 /** The share theme's sources, which the app build bundles into the files shared pages load. */
 const SHARE_THEME_SRC = join(import.meta.dirname, "../../packages/share-theme/src");
 

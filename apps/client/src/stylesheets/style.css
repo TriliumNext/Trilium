@@ -2459,7 +2459,20 @@ footer.webview-footer button {
     100% { opacity: 0.3; }
 }
 
+/* Reset on every item, so the nested items of a checked item are not struck through. */
+.ck-content ul.todo-list li {
+    --todo-description-decoration: none;
+    --todo-description-opacity: 1;
+}
+
+.ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) {
+    --todo-description-decoration: line-through;
+    --todo-description-opacity: 0.6;
+}
+
 .ck-content ul.todo-list li span.todo-list__label__description {
+    text-decoration: var(--todo-description-decoration);
+    opacity: var(--todo-description-opacity);
     transition: opacity 200ms ease;
 }
 
@@ -2478,11 +2491,6 @@ footer.webview-footer button {
 .ck-editor__editable.ck-content ul.todo-list li span.todo-list__label__description:has(> br[data-cke-filler="true"]) {
     display: inline-block;
     min-width: 1px;
-}
-
-.ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) > span.todo-list__label span.todo-list__label__description {
-    text-decoration: line-through;
-    opacity: 0.6;
 }
 
 .chat-options-container {

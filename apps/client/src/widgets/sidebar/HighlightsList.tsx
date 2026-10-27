@@ -78,9 +78,10 @@ function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHi
             <span className="highlights-list">
                 {filteredHighlights.length > 0 ? (
                     <ol>
-                        {filteredHighlights.map(highlight => (
+                        {/* Keyed by position, so a new extraction updates the items in place. */}
+                        {filteredHighlights.map((highlight, index) => (
                             <HighlightItem
-                                key={highlight.id}
+                                key={index}
                                 highlight={highlight}
                                 onClick={() => scrollToHighlight(highlight)}
                             />
