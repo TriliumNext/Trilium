@@ -192,8 +192,12 @@ function register(router: Router) {
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new eu.EtapiError(400, "ZIP_FILE_REQUIRED", "The request body must be a ZIP file sent as 'application/zip' or 'application/octet-stream'.");
+        }
+
+        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
         zipImportService.importZip(taskContext, req.body, note).then((importedNote) => {
             res.status(201).json({
                 note: mappers.mapNoteToPojo(importedNote),

@@ -739,6 +739,13 @@ Imports ZIP file into a given note.
 | --- | --- |
 | `noteId`  <br>_required_ | [`EntityId`](#schema-EntityId) |
 
+**Request body** (required)
+
+The ZIP file, sent as `application/zip` or `application/octet-stream`; other content types are not accepted.
+
+*   `application/zip`: `string (binary)`
+*   `application/octet-stream`: `string (binary)`
+
 **Responses**
 
 === "201: note created"
