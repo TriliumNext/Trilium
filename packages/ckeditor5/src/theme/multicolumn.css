@@ -50,7 +50,7 @@
         column-gap: 12px;
         border-radius: var(--multicolumn-layout-border-radius);
 
-        &:has(.ck-editor__nested-editable_focused) {
+        &.trilium-multicolumn-layout--focused {
             outline: var(--ck-widget-outline-thickness, 3px) solid
                      var(--multicolumn-layout-focus-border-color);
         }

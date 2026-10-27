@@ -46,38 +46,50 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
     }
 
     refresh() {
-        // These are owned by SplitNoteContainer, not by the note — preserve them through the reset below.
-        const isHiddenExt = this.isHiddenExt();
-        const containerClasses = CONTAINER_OWNED_CLASSES.filter((cls) => this.$widget.hasClass(cls));
+        const classes = new Set(this.getClasses().join(" ").split(" ").filter(Boolean));
 
-        this.$widget.removeClass();
+        // Only the difference is applied: a class change on the split restyles the whole note.
+        const classList = this.$widget[0].classList;
+        for (const cls of [ ...classList ]) {
+            if (!classes.has(cls)) {
+                classList.remove(cls);
+            }
+        }
+        for (const cls of classes) {
+            if (!classList.contains(cls)) {
+                classList.add(cls);
+            }
+        }
+    }
 
-        this.toggleExt(!isHiddenExt);
-        this.$widget.addClass(containerClasses.join(" "));
-
-        this.$widget.addClass("component note-split");
+    /** The classes of the split, each entry holding one or more space-separated class names. */
+    private getClasses() {
+        // These are owned by SplitNoteContainer, not by the note, so they are kept as they are.
+        const classes = CONTAINER_OWNED_CLASSES.filter((cls) => this.$widget.hasClass(cls));
+        classes.push(this.isHiddenExt() ? "hidden-ext" : "visible", "component", "note-split");
 
         const note = this.noteContext?.note;
         if (!note) {
-            this.$widget.addClass("bgfx empty-note");
-            return;
+            classes.push("bgfx", "empty-note");
+            return classes;
         }
 
-        this.$widget.toggleClass("full-content-width", isFullWidthNote(note));
-
-        this.$widget.addClass(note.getCssClass());
-
-        this.$widget.addClass(utils.getNoteTypeClass(note.type));
-        this.$widget.addClass(utils.getMimeTypeClass(note.mime));
-        this.$widget.addClass(`view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`);
-        this.$widget.addClass(note.getColorClass());
-        this.$widget.toggleClass("options", note.isOptions());
-        this.$widget.toggleClass("bgfx", hasBackgroundEffects(note));
-        this.$widget.toggleClass("protected", note.isProtected);
-
+        classes.push(
+            note.getCssClass(),
+            utils.getNoteTypeClass(note.type),
+            utils.getMimeTypeClass(note.mime),
+            `view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`,
+            note.getColorClass()
+        );
+        if (isFullWidthNote(note)) classes.push("full-content-width");
+        if (note.isOptions()) classes.push("options");
+        if (hasBackgroundEffects(note)) classes.push("bgfx");
+        if (note.isProtected) classes.push("protected");
         // Resolved rather than read straight off the label: a note with no language of its own
         // still follows the default content language.
-        this.$widget.toggleClass("rtl", isContentRightToLeft(note?.getLabelValue("language")));
+        if (isContentRightToLeft(note.getLabelValue("language"))) classes.push("rtl");
+
+        return classes;
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {

@@ -244,6 +244,8 @@ function EditableTextTableOfContents() {
             affectsHeading = attributeChangeAffectsHeading;
         });
 
+        // One extraction per frame, however many changes arrive in it.
+        let frame: number | undefined;
         const changeCallback = () => {
             const changes = textEditor.model.document.differ.getChanges();
 
@@ -253,8 +255,9 @@ function EditableTextTableOfContents() {
                     (change.type === 'attribute' && (affectsHeading?.(change, textEditor) ?? false))
                 );
             });
-            if (affectsHeadings) {
-                requestAnimationFrame(() => {
+            if (affectsHeadings && frame === undefined) {
+                frame = requestAnimationFrame(() => {
+                    frame = undefined;
                     setHeadings(extractTocFromTextEditor(textEditor));
                 });
             }
@@ -262,7 +265,12 @@ function EditableTextTableOfContents() {
 
         textEditor.model.document.on("change:data", changeCallback);
 
-        return () => textEditor.model.document.off("change:data", changeCallback);
+        return () => {
+            textEditor.model.document.off("change:data", changeCallback);
+            if (frame !== undefined) {
+                cancelAnimationFrame(frame);
+            }
+        };
     }, [ textEditor, note?.noteId ]);
 
     useEffect(() => {

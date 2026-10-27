@@ -17,6 +17,7 @@ import {
 
 import { BLOCK_ID } from "../block_reference/block_reference_editing.js";
 import FindReveal from "../find_reveal.js";
+import { markFocusedContainers } from "../widget_utils.js";
 import {
     ALIGNMENT_ATTRIBUTE, ALIGNMENT_DATA_ATTRIBUTE, CLASSES, DEFAULT_TAB_ALIGNMENT, ELEMENTS,
     parseTabAlignment, TABS_WIDGET_PROPERTY
@@ -66,6 +67,8 @@ export default class TabsEditing extends Plugin {
         this.registerConversion();
         this.registerPostFixer();
         this.registerActiveTabTracking();
+        markFocusedContainers(editor, CLASSES.focusedTabs,
+            element => element.hasClass(CLASSES.tabs), { isInnermostOnly: true });
         this.registerEnterInTitle();
         this.registerFindReveal();
     }

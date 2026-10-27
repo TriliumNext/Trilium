@@ -161,6 +161,17 @@ describe("TableOfContents while an auto-read-only note is temporarily editable",
 
         expect(toc.headings()).toEqual([ "Typed while loading" ]);
     });
+
+    it("reads the headings once per frame, however many changes arrive in it", async () => {
+        const toc = await setupUnlockScenario();
+        await toc.unlock();
+        const createRangeIn = vi.spyOn(toc.editor.editor.model, "createRangeIn");
+
+        await toc.editor.loadNote(toc.noteId, [ [ 2, "Current" ] ], { changes: 3 });
+
+        expect(createRangeIn).toHaveBeenCalledTimes(1);
+        expect(toc.headings()).toEqual([ "Current" ]);
+    });
 });
 
 async function setupUnlockScenario() {
@@ -250,12 +261,17 @@ function fakeTextEditor() {
 
     return {
         editor,
-        /** Stands in for the note detail feeding the editor a note's content once its blob arrives. */
-        async loadNote(noteId: string, headings: [ number, string ][]) {
+        /**
+         * Stands in for the note detail feeding the editor a note's content once its blob arrives,
+         * reported as `changes` separate changes within one frame.
+         */
+        async loadNote(noteId: string, headings: [ number, string ][], { changes = 1 } = {}) {
             items = headings.map(([ level, text ]) => fakeHeadingItem(level, text));
             setEditorNoteId(editor, noteId);
             await act(async () => {
-                for (const listener of [ ...listeners ]) listener();
+                for (let i = 0; i < changes; i++) {
+                    for (const listener of [ ...listeners ]) listener();
+                }
                 await new Promise((resolve) => requestAnimationFrame(resolve));
             });
         }

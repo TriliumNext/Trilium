@@ -504,6 +504,8 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 onChange={() => {
+                    // `getData()` serializes the whole note, so saves wait for typing to pause.
+                    spacedUpdate.resetUpdateTimer();
                     spacedUpdate.scheduleUpdate();
                     const editor = editorRef.current;
                     if (editor) {
