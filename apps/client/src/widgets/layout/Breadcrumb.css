@@ -67,11 +67,6 @@
         }
     }
 
-    > span:last-of-type a {
-        max-width: 300px;
-        flex-shrink: 1;
-    }
-
     ul {
         flex-direction: column;
         list-style-type: none;

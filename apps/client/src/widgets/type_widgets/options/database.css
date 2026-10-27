@@ -11,7 +11,7 @@
 .admonition.start-over-pending {
     margin-bottom: 16px;
 
-    p:last-of-type {
+    p:last-child {
         margin-bottom: 12px;
     }
 }

@@ -174,10 +174,12 @@ describe("multicolumn layout styles", () => {
             }
         });
         await expect.poll(outline).toBe("solid 3px rgb(12, 34, 56)");
+        expect(widget.classList.contains("trilium-multicolumn-layout--focused")).toBe(true);
 
         viewDocument.isFocused = false;
         editor.editing.view.forceRender();
         await expect.poll(outline).toBe("solid 3px rgba(0, 0, 0, 0)");
+        expect(widget.classList.contains("trilium-multicolumn-layout--focused")).toBe(false);
     });
 
     it("lines the text of saved content up with the content around it, 2em apart", () => {

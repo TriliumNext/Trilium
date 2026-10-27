@@ -93,3 +93,46 @@ export function findSelectedWidget(
 function isMarkedWidget(element: ViewElement, property: string) {
     return !!element.getCustomProperty(property) && isWidget(element);
 }
+
+/**
+ * Keeps `className` on the view elements that `isContainer` accepts and that hold the focused
+ * nested editable, like CKEditor keeps `ck-editor__nested-editable_focused` on the editable.
+ * With `isInnermostOnly`, only the closest such element gets it. Stylesheets match this class
+ * instead of a `:has()` on CKEditor's: that `:has()` re-checks large ancestors on each caret move.
+ */
+export function markFocusedContainers(
+    editor: Editor,
+    className: string,
+    isContainer: (element: ViewElement) => boolean,
+    { isInnermostOnly = false } = {}
+) {
+    const viewDocument = editor.editing.view.document;
+    let marked = new Set<ViewElement>();
+
+    viewDocument.registerPostFixer(writer => {
+        const containers = new Set<ViewElement>();
+        const editable = viewDocument.isFocused ? viewDocument.selection.editableElement : null;
+        for (const ancestor of editable?.getAncestors({ parentFirst: true }) ?? []) {
+            if (ancestor.is("element") && isContainer(ancestor)) {
+                containers.add(ancestor);
+                if (isInnermostOnly) break;
+            }
+        }
+
+        let isChanged = false;
+        for (const element of marked) {
+            if (!containers.has(element) && element.hasClass(className)) {
+                writer.removeClass(className, element);
+                isChanged = true;
+            }
+        }
+        for (const element of containers) {
+            if (!element.hasClass(className)) {
+                writer.addClass(className, element);
+                isChanged = true;
+            }
+        }
+        marked = containers;
+        return isChanged;
+    });
+}

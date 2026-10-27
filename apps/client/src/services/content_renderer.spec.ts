@@ -400,6 +400,7 @@ describe("getRenderedContent editable code", () => {
             canEdit: vi.fn(() => true),
             getUnsavedContent: vi.fn((): string | undefined => undefined),
             scheduleSave: vi.fn(),
+            postponeSave: vi.fn(),
             release: vi.fn(),
             getSaveState: vi.fn((): SaveState | undefined => "saving"),
             subscribeSaveState: vi.fn(() => () => {})

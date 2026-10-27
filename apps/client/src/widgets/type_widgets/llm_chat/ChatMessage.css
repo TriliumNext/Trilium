@@ -139,7 +139,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     padding: 0.25rem 0.75rem;
 }
 
-.llm-chat-citations-list tr + tr td {
+.llm-chat-citations-list tr:not(:first-child) td {
     border-top: 1px solid var(--main-border-color);
 }
 
@@ -416,7 +416,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
    own: a dot that belongs to the item it precedes can never be orphaned onto a line by
    itself, and it always shares that item's baseline. `gap` spaces the dot from the item
    before it, the margin from the item it introduces. */
-.llm-chat-footer > * + *::before {
+.llm-chat-footer > :not(:first-child)::before {
     content: "·";
     margin-inline-end: 0.375rem;
     opacity: 0.5;

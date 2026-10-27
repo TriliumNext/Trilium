@@ -1219,7 +1219,7 @@ body.mobile .note-title {
     margin-inline-end: 0;
 }
 
-.title-row > *:nth-child(2) {
+.title-row > .component:nth-child(2) {
     margin-inline-start: 0;
 }
 
@@ -1424,7 +1424,7 @@ div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
     padding: 8px;
 }
 
-.find-replace-widget > div + div {
+.find-replace-widget > .replace-widget-box {
     padding-top: 0;
 }
 

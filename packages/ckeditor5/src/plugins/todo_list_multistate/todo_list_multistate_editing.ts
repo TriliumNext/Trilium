@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
-import { Command, ListEditing, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewElement } from "ckeditor5";
+import { Command, ListEditing, MouseObserver, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
 
 import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
@@ -120,6 +120,19 @@ export default class TodoListMultistateEditing extends Plugin {
             });
             evt.stop();
         }, { priority: "high" });
+
+        // A left-button press on a checkbox keeps the focus in a focused editable.
+        // The click still toggles the checkbox.
+        editor.editing.view.addObserver(MouseObserver);
+        const viewDocument = editor.editing.view.document;
+        this.listenTo<ViewDocumentMouseDownEvent>(viewDocument, "mousedown", (_evt, data) => {
+            const target = data.target;
+            if (viewDocument.isFocused && data.domEvent.button === 0
+                && target.is("element", "input") && target.getAttribute("type") === "checkbox"
+                && target.findAncestor({ classes: "todo-list__label" })) {
+                data.preventDefault();
+            }
+        });
 
         editor.keystrokes.set(STATE_CYCLE_SHORTCUT, (_data, cancel) => {
             const command = editor.commands.get("setTaskState");

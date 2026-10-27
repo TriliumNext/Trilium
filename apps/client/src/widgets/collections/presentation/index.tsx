@@ -8,6 +8,7 @@ import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 import { openInCurrentNoteContext } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import katexStylesheet from "../../../services/katex.scss?inline";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
@@ -87,6 +88,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
             let stylesheets = [
                 slideBaseStylesheet,
                 themeStylesheet,
+                katexStylesheet,
                 slideCustomStylesheet
             ];
             if (media === "screen") {

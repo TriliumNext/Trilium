@@ -370,6 +370,6 @@ div.alert {
     font-size: .85em;
 }
 
-div.alert p + p {
+div.alert p:not(:first-child) {
     margin-block: 1em 0;
 }
