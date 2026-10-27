@@ -1,7 +1,9 @@
 import {
     CaptureUpdateAction, exportToSvg, getSceneVersion, restoreElements
 } from "@excalidraw/excalidraw";
-import { ExcalidrawElement, NonDeletedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import {
+    ExcalidrawElement, ExcalidrawFreeDrawElement, NonDeletedExcalidrawElement
+} from "@excalidraw/excalidraw/element/types";
 import {
     AppState, BinaryFileData, BinaryFiles, ExcalidrawImperativeAPI, ExcalidrawInitialDataState,
     ExcalidrawProps, LibraryItem
@@ -45,6 +47,9 @@ type ImportantAppState = Pick<AppState, "gridModeEnabled" | "viewBackgroundColor
 
 /** The part of a scene that its picture shows. */
 type PictureScene = Pick<DrawingScene, "elements" | "appState">;
+
+/** A point of a pen stroke, relative to the stroke. */
+type StrokePoint = ExcalidrawFreeDrawElement["points"][number];
 
 /**
  * How long the saves of a canvas note pause before its picture is drawn, in ms. Previews in the app
@@ -965,7 +970,7 @@ function buildSceneContent(
     return {
         type: "excalidraw",
         version: 2,
-        elements,
+        elements: elements.map(roundStroke),
         files,
         appState: {
             scrollX: appState.scrollX,
@@ -975,6 +980,43 @@ function buildSceneContent(
             viewBackgroundColor: appState.viewBackgroundColor
         }
     };
+}
+
+/** The saved copy of each pen stroke, with the version of the stroke that it copies. */
+const roundedStrokes = new WeakMap<ExcalidrawElement, {
+    version: number;
+    versionNonce: number;
+    stroke: ExcalidrawFreeDrawElement;
+}>();
+
+/**
+ * `element`, with the coordinates and the pressures of a pen stroke rounded to thousandths.
+ * Excalidraw keeps the full precision of the pointer events, which adds about half to the size of
+ * a handwritten scene. Excalidraw changes an element in place, so the copy is kept by version.
+ */
+export function roundStroke(element: ExcalidrawElement): ExcalidrawElement {
+    if (element.type !== "freedraw") return element;
+    const rounded = roundedStrokes.get(element);
+    if (rounded?.version === element.version && rounded.versionNonce === element.versionNonce) {
+        return rounded.stroke;
+    }
+
+    const round = (value: number) => Math.round(value * 1000) / 1000;
+    const stroke: ExcalidrawFreeDrawElement = {
+        ...element,
+        x: round(element.x),
+        y: round(element.y),
+        width: round(element.width),
+        height: round(element.height),
+        points: element.points.map(([ x, y ]) => [ round(x), round(y) ] as StrokePoint),
+        pressures: element.pressures.map(round),
+        // Excalidraw clears it when it loads a scene.
+        lastCommittedPoint: null
+    };
+    roundedStrokes.set(element, {
+        version: element.version, versionNonce: element.versionNonce, stroke
+    });
+    return stroke;
 }
 
 /** The files that an element of the scene uses. */

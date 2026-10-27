@@ -11,6 +11,7 @@
  * switches on an already-initialized instance) may use `updateScene`.
  */
 import { exportToSvg, restoreElements } from "@excalidraw/excalidraw";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from "@excalidraw/excalidraw/types";
 import type { HostHistoryStep } from "@triliumnext/codemirror";
 import { type RefObject, render } from "preact";
@@ -29,7 +30,7 @@ import type { SavedData } from "../../react/hooks";
 import type { EmbedHostHistory } from "../text/embed_history";
 import { CANVAS_EXPORT_TITLE } from "./image_attachments";
 import useCanvasPersistence, {
-    saveDrawingPicture, useCanvasDrawingPersistence
+    roundStroke, saveDrawingPicture, useCanvasDrawingPersistence
 } from "./persistence";
 
 interface FakeElement {
@@ -72,6 +73,26 @@ vi.mock("@excalidraw/excalidraw", () => ({
 
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
+
+/** A pen stroke as Excalidraw keeps it, at the precision of the pointer events of the pen. */
+const PEN_STROKE = {
+    id: "s1", type: "freedraw", version: 7, versionNonce: 11,
+    x: 197.3699951171875, y: 33.61000061035156,
+    width: 1.3700103759765625, height: 41.64099884033203,
+    points: [
+        [ 0, 0 ], [ 0.031005859375, 2.4990005493164062 ], [ 1.3700103759765625, 41.64099884033203 ]
+    ],
+    pressures: [ 0.4892578125, 0.51171875, 0.3017578125 ],
+    lastCommittedPoint: [ 1.3700103759765625, 41.64099884033203 ]
+};
+/** `PEN_STROKE` as a save keeps it. */
+const SAVED_PEN_STROKE = {
+    ...PEN_STROKE,
+    x: 197.37, y: 33.61, width: 1.37, height: 41.641,
+    points: [ [ 0, 0 ], [ 0.031, 2.499 ], [ 1.37, 41.641 ] ],
+    pressures: [ 0.489, 0.512, 0.302 ],
+    lastCommittedPoint: null
+};
 
 type PersistenceProps = ReturnType<typeof useCanvasPersistence>;
 
@@ -352,6 +373,19 @@ describe("useCanvasPersistence saves", () => {
         );
     });
 
+    it("saves a pen stroke to 3 decimals", async () => {
+        const { note, elements } = buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME);
+        await mount(note);
+        sceneElements = elements;
+        change();
+
+        sceneElements = [ ...elements, PEN_STROKE ];
+        change();
+        await waitFor(1500);
+        expect(JSON.parse(puts[0]?.data.content ?? "null")?.elements)
+            .toEqual([ ...elements, SAVED_PEN_STROKE ]);
+    });
+
     it("holds the save while the pointer is down, also a save that waits", async () => {
         const { note, elements } = buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME);
         await mount(note);
@@ -620,6 +654,18 @@ describe("useCanvasDrawingPersistence", () => {
 
         act(() => render(null, container));
         expect(editor.release).toHaveBeenCalledOnce();
+    });
+
+    it("saves a pen stroke to 3 decimals", async () => {
+        const { attachment } = buildAttachment({ elements: [] });
+        const editor = buildEditor();
+        await mount(attachment, editor);
+        change();
+
+        sceneElements = [ PEN_STROKE ];
+        change();
+        const [ getContent ] = editor.scheduleSave.mock.calls[0] ?? [];
+        expect(JSON.parse(getContent?.() ?? "null")?.elements).toEqual([ SAVED_PEN_STROKE ]);
     });
 
     it("postpones the save at each change and holds it while the pointer is down", async () => {
@@ -1271,6 +1317,24 @@ describe("saveDrawingPicture", () => {
             f1: expect.objectContaining({ dataURL: "data:image/png;base64,QUJD" })
         });
         expect(post).toHaveBeenCalledOnce();
+    });
+});
+
+describe("roundStroke", () => {
+    it("rounds a pen stroke to 3 decimals once for each version, and keeps other elements", () => {
+        const stroke = { ...PEN_STROKE } as unknown as ExcalidrawElement;
+        const saved = roundStroke(stroke);
+        expect(saved).toEqual(SAVED_PEN_STROKE);
+        expect(roundStroke(stroke)).toBe(saved);
+
+        // Excalidraw changes an element in place, with a new version.
+        Object.assign(stroke, { version: 8, versionNonce: 12, x: 10.12345 });
+        expect(roundStroke(stroke)).toEqual({
+            ...SAVED_PEN_STROKE, version: 8, versionNonce: 12, x: 10.123
+        });
+
+        const rectangle = { id: "r1", type: "rectangle", x: 1.23456 } as ExcalidrawElement;
+        expect(roundStroke(rectangle)).toBe(rectangle);
     });
 });
 
