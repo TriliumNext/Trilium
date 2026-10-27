@@ -487,6 +487,7 @@
     "edit-locked": "Your access to editing ended. Enter the password to go on.",
     "edit-retry": "Editing could not be unlocked again. Try again once the connection is back.",
     "edit-ended": "Your latest changes could not be saved for over a minute, so editing ended.",
+    "edit-log-out-failed": "Logging out failed, so editing stays open. Try again once the connection is back.",
     "created-on": "Created on {{- date}}",
     "modified-on": "Modified on {{- date}}",
     "open-notes": "Open notes",

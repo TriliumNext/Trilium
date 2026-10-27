@@ -8,6 +8,8 @@ interface Window {
         theme: string;
         /** Set by `setupAppView()` for the app's views, which read their translations from it. */
         assetPath?: string;
+        /** Set by `mountEditView()` on a page that edits its note; the app's saves renew it. */
+        csrfToken?: string;
     };
 }
 

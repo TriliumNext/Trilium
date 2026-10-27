@@ -356,4 +356,32 @@ describe("share edit API", () => {
         await setChild({ enabled: true, attachments: true }).expect(400);
         expect(owned(NOTE)).toEqual({});
     });
+
+    it("renews, for a logout, the token of a session replaced by another unlock", async () => {
+        const setChild = (body: Record<string, unknown>) => host.agent
+            .put(`/api/notes/${NOTE}/share-edit`).set("x-csrf-token", host.csrfToken).send(body);
+        const guest = supertest.agent(host.app);
+        const session = async (noteId: string) =>
+            (await guest.get(`/share/api/edit/session?noteId=${noteId}`).expect(200)).body;
+        const logout = (noteId: string, csrfToken: string) => guest.post("/share/api/edit/logout")
+            .set("x-csrf-token", csrfToken).send({ noteId });
+        await setShareEdit({ enabled: true, password: "secret1" }).expect(200);
+        await setChild({ enabled: true, password: "branch1" }).expect(200);
+
+        const first = await guest.post("/share/api/edit/login")
+            .send({ noteId: ROOT, password: "secret1" }).expect(200);
+        await guest.post("/share/api/edit/login")
+            .send({ noteId: NOTE, password: "branch1" }).expect(200);
+        await logout(ROOT, first.body.csrfToken).expect(403);
+
+        const renewed = await session(ROOT);
+        expect(renewed.unlocked).toBe(true);
+        await logout(ROOT, renewed.csrfToken).expect(204);
+        expect(await session(ROOT)).toMatchObject({ unlocked: false });
+        expect(await session(ROOT)).not.toHaveProperty("csrfToken");
+        expect(await session(NOTE)).toMatchObject({ unlocked: true });
+
+        await setShareEdit({ enabled: false }).expect(200);
+        await setChild({ enabled: false }).expect(200);
+    });
 });

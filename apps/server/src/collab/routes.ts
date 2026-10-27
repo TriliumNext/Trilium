@@ -83,7 +83,8 @@ function getSession(req: Request, res: Response) {
             unsaved: t("share_theme.edit-unsaved"),
             locked: t("share_theme.edit-locked"),
             retry: t("share_theme.edit-retry"),
-            ended: t("share_theme.edit-ended")
+            ended: t("share_theme.edit-ended"),
+            logOutFailed: t("share_theme.edit-log-out-failed")
         }
     };
 }

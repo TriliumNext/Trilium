@@ -10,6 +10,8 @@ export interface EditSession {
     unlocked?: boolean;
     rootNoteId?: string;
     attachments?: boolean;
+    /** The CSRF token of a session that holds the note unlocked. */
+    csrfToken?: string;
     /** The texts of the page's controls, in the share's language. */
     strings?: Record<string, string>;
 }
@@ -67,7 +69,8 @@ export default async function setupShareEdit() {
 }
 
 type Controls = ReturnType<typeof buildControls>;
-type ErrorKey = "wrongPassword" | "failed" | "unsaved" | "locked" | "retry" | "ended";
+type ErrorKey =
+    "wrongPassword" | "failed" | "unsaved" | "locked" | "retry" | "ended" | "logOutFailed";
 
 interface Editing {
     /**
@@ -133,18 +136,15 @@ async function unlock(
         controls.setError(needsPassword ? "locked" : "retry");
         controls.passwordInput.focus();
     };
-    const logOut = (signal?: AbortSignal) => fetch("api/edit/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
-        body: JSON.stringify({ noteId }),
-        signal
-    });
+    // The editor's token, which its saves renew once an unlock in another tab replaced the session.
+    const logOut = (signal?: AbortSignal) =>
+        dropGrant(noteId, window.glob?.csrfToken ?? csrfToken, signal);
     // Saves that keep failing end the editing, which the page says once it is back. The editor
     // keeps its leave guards until the page leaves, so a logout that stalls is cut short.
     const giveUp = async (release: () => void) => {
         const abort = new AbortController();
         const timer = setTimeout(() => abort.abort(), LOGOUT_WAIT);
-        await logOut(abort.signal).catch(() => undefined);
+        await logOut(abort.signal);
         clearTimeout(timer);
         rememberEnded(noteId);
         release();
@@ -164,18 +164,23 @@ async function unlock(
         return true;
     };
     // A click while the editor is still loading waits for it, so nothing pending is lost, and the
-    // editor stays open while something is unsaved. An editor that never mounted holds nothing.
-    const leave = async (beforeReload?: () => Promise<unknown>) => {
+    // editor stays open while something is unsaved or the session keeps its access. An editor that
+    // never mounted holds nothing.
+    const leave = async (beforeReload?: () => Promise<boolean>) => {
+        controls.setError(null);
         const saved = await mounted.then((view) => view.stop(), () => true);
         if (!saved) {
             controls.setError("unsaved");
             return;
         }
-        await beforeReload?.();
+        if (beforeReload && !await beforeReload()) {
+            controls.setError("logOutFailed");
+            return;
+        }
         window.location.reload();
     };
     controls.stopButton.addEventListener("click", () => void leave());
-    controls.logOutButton.addEventListener("click", () => void leave(logOut));
+    controls.logOutButton.addEventListener("click", () => void leave(() => logOut()));
     try {
         await mounted;
     } catch (e) {
@@ -278,9 +283,37 @@ function takeEnded(noteId: string) {
     }
 }
 
-async function fetchSession(noteId: string): Promise<EditSession | null> {
+/**
+ * Drops the session's grant on the subtree of `noteId`, renewing once a `token` the session no
+ * longer knows, and resolves to whether the session is left without access to the note.
+ */
+async function dropGrant(noteId: string, token: string, signal?: AbortSignal) {
+    const post = (csrfToken: string) => fetch("api/edit/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+        body: JSON.stringify({ noteId }),
+        signal
+    });
     try {
-        const response = await fetch(`api/edit/session?noteId=${encodeURIComponent(noteId)}`);
+        const response = await post(token);
+        if (response.status !== 403) {
+            return response.ok;
+        }
+        const session = await fetchSession(noteId, signal);
+        if (!session?.csrfToken) {
+            // Only a session that holds the note unlocked gets a token.
+            return !!session && !session.unlocked;
+        }
+        return (await post(session.csrfToken)).ok;
+    } catch {
+        return false;
+    }
+}
+
+async function fetchSession(noteId: string, signal?: AbortSignal): Promise<EditSession | null> {
+    try {
+        const url = `api/edit/session?noteId=${encodeURIComponent(noteId)}`;
+        const response = await fetch(url, { signal });
         return response.ok ? await response.json() as EditSession : null;
     } catch {
         return null;

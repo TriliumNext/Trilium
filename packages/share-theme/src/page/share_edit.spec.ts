@@ -17,7 +17,8 @@ vi.mock("../content/edit_view.js", () => ({ default: mocks.mountEditView }));
 const STRINGS = {
     edit: "Edit", unlock: "Unlock", password: "Password", stop: "Stop", logOut: "Log out",
     wrongPassword: "Wrong password.", failed: "Failed.", unsaved: "Not saved yet.",
-    locked: "Locked.", retry: "Try again.", ended: "Editing ended."
+    locked: "Locked.", retry: "Try again.", ended: "Editing ended.",
+    logOutFailed: "Still logged in."
 };
 const LOGIN = { csrfToken: "csrf", version: "blob1", payload: { notes: [] } };
 const PAGE = `
@@ -67,7 +68,7 @@ describe("setupShareEdit", () => {
         document.body.dataset.noteId = "note";
         answerSession({ editable: false });
         await setupShareEdit();
-        expect(fetchMock).toHaveBeenCalledWith("api/edit/session?noteId=note");
+        expect(fetchMock).toHaveBeenCalledWith("api/edit/session?noteId=note", expect.anything());
         expect(document.querySelector(".share-edit-bar")).toBeNull();
 
         fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
@@ -296,22 +297,33 @@ describe("setupShareEdit", () => {
             mocks.mountEditView.mock.calls as [ [ unknown, EditViewOptions ] ];
 
         vi.useFakeTimers();
-        let signal: AbortSignal | undefined;
-        fetchMock.mockImplementationOnce((_url: string, init: RequestInit) => {
-            signal = init.signal ?? undefined;
+        const signals: (AbortSignal | null | undefined)[] = [];
+        const stall = (_url: string, init: RequestInit) => {
+            signals.push(init.signal);
             return new Promise((_resolve, reject) => {
-                signal?.addEventListener("abort", () => reject(new Error("aborted")));
+                init.signal?.addEventListener("abort", () => reject(new Error("aborted")));
             });
-        });
+        };
+        fetchMock.mockImplementationOnce(stall);
         const release = vi.fn();
         options.onSavesFailing(release);
         await vi.advanceTimersByTimeAsync(4_999);
         expect(release).not.toHaveBeenCalled();
         expect(reload).not.toHaveBeenCalled();
         await vi.advanceTimersByTimeAsync(1);
-        expect(signal?.aborted).toBe(true);
+        expect(signals.map((signal) => signal?.aborted)).toEqual([ true ]);
         expect(release).toHaveBeenCalled();
         expect(reload).toHaveBeenCalled();
+
+        // Renewing a token the session no longer knows is cut short the same way.
+        fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+        fetchMock.mockImplementationOnce(stall);
+        options.onSavesFailing(vi.fn());
+        await vi.advanceTimersByTimeAsync(5_000);
+        expect(fetchMock)
+            .toHaveBeenLastCalledWith("api/edit/session?noteId=note", expect.anything());
+        expect(signals.map((signal) => signal?.aborted)).toEqual([ true, true ]);
+        expect(reload).toHaveBeenCalledTimes(2);
     });
 
     it("asks for the password again once access ends, and resumes the editor with it", async () => {
@@ -449,6 +461,75 @@ describe("setupShareEdit", () => {
         expect(mocks.stop).toHaveBeenCalledTimes(2);
         expect(fetchMock).not.toHaveBeenCalledWith("api/edit/logout", expect.anything());
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    it("logs out under the editor's token, renewing one the session no longer knows", async () => {
+        answerSession({ editable: true, needsPassword: true, unlocked: true, strings: STRINGS });
+        await setupShareEdit();
+        answerJson(LOGIN);
+        document.querySelector<HTMLButtonElement>(".share-edit-start")?.click();
+        await vi.waitFor(() => expect(mocks.mountEditView).toHaveBeenCalled());
+        const logOut = document.querySelector<HTMLButtonElement>(".share-edit-log-out");
+        // A save renewed the token after an unlock in another tab replaced the session.
+        vi.stubGlobal("glob", { ...window.glob, csrfToken: "renewed-by-save" });
+
+        // A token the session no longer knows is renewed by the session route once.
+        fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+        answerSession({
+            editable: true, needsPassword: true, unlocked: true, csrfToken: "renewed"
+        });
+        fetchMock.mockResolvedValueOnce({ ok: true, status: 204 });
+        logOut?.click();
+        await vi.waitFor(() => expect(reload).toHaveBeenCalled());
+        const tokens = fetchMock.mock.calls
+            .filter(([ url ]) => url === "api/edit/logout")
+            .map(([ , init ]) => (init as RequestInit & { headers: Record<string, string> })
+                .headers["x-csrf-token"]);
+        expect(tokens).toEqual([ "renewed-by-save", "renewed" ]);
+
+        // A session that no longer holds the note unlocked has nothing left to log out of.
+        fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+        answerSession({ editable: true, needsPassword: true, unlocked: false });
+        logOut?.click();
+        await vi.waitFor(() => expect(reload).toHaveBeenCalledTimes(2));
+        fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+        answerSession({ editable: false });
+        logOut?.click();
+        await vi.waitFor(() => expect(reload).toHaveBeenCalledTimes(3));
+    });
+
+    it("stays in the editor while logging out fails, and says so", async () => {
+        answerSession({ editable: true, needsPassword: true, unlocked: true, strings: STRINGS });
+        await setupShareEdit();
+        answerJson(LOGIN);
+        document.querySelector<HTMLButtonElement>(".share-edit-start")?.click();
+        await vi.waitFor(() => expect(mocks.mountEditView).toHaveBeenCalled());
+        const logOut = document.querySelector<HTMLButtonElement>(".share-edit-log-out");
+        const error = document.querySelector<HTMLElement>(".share-edit-error");
+
+        const failures = [
+            () => fetchMock.mockResolvedValueOnce({ ok: false, status: 500 }),
+            () => fetchMock.mockRejectedValueOnce(new Error("offline")),
+            // The session route cannot renew the token.
+            () => fetchMock.mockResolvedValueOnce({ ok: false, status: 403 })
+                .mockResolvedValueOnce({ ok: false, status: 502 }),
+            // The renewed token is refused as well.
+            () => {
+                fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+                answerSession({ editable: true, unlocked: true, csrfToken: "renewed" });
+                fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
+            }
+        ];
+        for (const fail of failures) {
+            fail();
+            logOut?.click();
+            expect(error?.hidden).toBe(true);
+            await vi.waitFor(() => expect(error?.textContent).toBe("Still logged in."));
+            expect(error?.hidden).toBe(false);
+        }
+        expect(mocks.stop).toHaveBeenCalledTimes(failures.length);
+        expect(reload).not.toHaveBeenCalled();
+        expect(document.querySelector<HTMLButtonElement>(".share-edit-stop")?.hidden).toBe(false);
     });
 
     it("reports an editor that fails to mount; no labels without the share's texts", async () => {
