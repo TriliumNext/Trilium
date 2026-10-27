@@ -1,6 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import becca from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
 import { getSql } from "../../services/sql/index";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -30,6 +34,7 @@ function setExpanded(branchIds: string[], isExpanded: number) {
             "UPDATE branches SET isExpanded = ? WHERE branchId = ?",
             [ isExpanded, branchId ]
         );
+        becca.getBranchOrThrow(branchId).isExpanded = !!isExpanded;
     }
 }
 
@@ -287,6 +292,73 @@ describe("Branches API (core)", () => {
                 expect(getBranchRow(branchId)?.isExpanded).toBe(0);
             }
         });
+
+        it("reaches the virtual subtree below a note, and a subtree that is virtual itself", async () => {
+            const anchor = await createTextNote(api, { title: "Virtual anchor" });
+            const persistedChild = await createTextNote(api, { parentNoteId: anchor.noteId, title: "Persisted child" });
+            registerVirtualNoteProvider({
+                namespace: "_vexp",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [{
+                    id: "_vexp",
+                    title: "Virtual root",
+                    type: "book",
+                    children: [{
+                        id: "_vexpBook",
+                        title: "Virtual book",
+                        type: "book",
+                        children: [{ id: "_vexpPage", title: "Virtual page", type: "text" }]
+                    }]
+                }]
+            });
+
+            try {
+                getContext().init(() => load());
+                const virtualBranchIds = [ `${anchor.noteId}__vexp`, "_vexp__vexpBook", "_vexpBook__vexpPage" ];
+                const isExpanded = (branchId: string) => becca.getBranch(branchId)?.isExpanded;
+
+                const expand = await api.put<{ branchIds: string[] }>(`/api/branches/${anchor.branchId}/expanded-subtree/1`);
+                expect(new Set(expand.body.branchIds)).toEqual(new Set([ anchor.branchId, persistedChild.branchId, ...virtualBranchIds ]));
+                expect(getBranchRow(persistedChild.branchId)?.isExpanded).toBe(1);
+                expect(virtualBranchIds.map(isExpanded)).toEqual([ true, true, true ]);
+
+                const collapse = await api.put<{ branchIds: string[] }>(`/api/branches/_vexp__vexpBook/expanded-subtree/0`);
+                expect(new Set(collapse.body.branchIds)).toEqual(new Set([ "_vexp__vexpBook", "_vexpBook__vexpPage" ]));
+                expect(virtualBranchIds.map(isExpanded)).toEqual([ true, false, false ]);
+                expect(getBranchRow(persistedChild.branchId)?.isExpanded).toBe(1);
+            } finally {
+                unregisterVirtualNoteProvider("_vexp");
+                getContext().init(() => load());
+            }
+        });
+
+        it("expands a note with more children than a call can take as arguments", async () => {
+            const anchor = await createTextNote(api, { title: "Crowded anchor" });
+            const childCount = 200_000;
+            registerVirtualNoteProvider({
+                namespace: "_vbig",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [{
+                    id: "_vbig",
+                    title: "Crowded note",
+                    type: "book",
+                    children: Array.from({ length: childCount }, (_, index) => ({
+                        id: `_vbig${index}`, title: `Child ${index}`, type: "text" as const
+                    }))
+                }]
+            });
+
+            try {
+                getContext().init(() => load());
+
+                const res = await api.put<{ branchIds: string[] }>(`/api/branches/${anchor.noteId}__vbig/expanded-subtree/1`);
+                expect(res.status).toBe(200);
+                expect(res.body.branchIds).toHaveLength(childCount + 1);
+            } finally {
+                unregisterVirtualNoteProvider("_vbig");
+                getContext().init(() => load());
+            }
+        }, 60_000);
     });
 
     describe("prefixes", () => {

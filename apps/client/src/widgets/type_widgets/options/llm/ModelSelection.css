@@ -9,7 +9,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5em;
-    margin-bottom: 0.5em;
 }
 
 .model-selection-count {
@@ -22,12 +21,30 @@
     gap: 0.5em;
 }
 
+.model-selection {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .model-selection-list {
-    max-height: 40vh;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 0.25em;
+    --scroll-fade-top: 12px;
+    padding-top: var(--scroll-fade-top);
+}
+
+.tn-card-section.tn-no-padding > .model-selection {
+    > .model-selection-toolbar {
+        padding: var(--card-padding-block) var(--card-padding-inline) 0;
+    }
+
+    > .model-selection-list {
+        padding: var(--scroll-fade-top) var(--card-padding-inline) var(--card-padding-block);
+    }
 }
 
 .model-selection-label {
@@ -51,4 +68,9 @@
     & li {
         margin-bottom: 0.25em;
     }
+}
+
+.no-items.model-selection-error {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }

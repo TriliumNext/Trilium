@@ -57,7 +57,7 @@ To do so:
 
 1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth._
 2.  In the _Sign-in with_ field, choose _OpenID Connect provider._
-3.  In the _OpenID Connect_ section, look for the _Connect account_ button.
+3.  In the _OpenID Connect_ section, look for the _Connect account_ (<span class="tn-icon bx bx-log-in"></span>) button.
 4.  This will redirect you to your authentication provider, where you can sign in or confirm the action if needed.
 5.  Once you are authenticated you will be redirected back to the Trilium application.
 
@@ -70,7 +70,7 @@ When logging out of Trilium, a request is made to the authentication provider to
 When switching providers (e.g. going from Google to Authelia), it's important to take the following steps:
 
 1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth_.
-2.  In the _OpenID Connect_ section, press the _Disconnect_ button.
+2.  In the _OpenID Connect_ section, press the _Disconnect_ (<span class="tn-icon bx bx-trash"></span>) button.
 3.  Wait for the section to indicate that you are disconnected.
 4.  Change the configuration pointing to the new provider.
 5.  Restart your server.

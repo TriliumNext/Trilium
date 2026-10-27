@@ -169,8 +169,6 @@
     "help_on_links": "Bağlantılar konusunda yardım",
     "note": "Not",
     "search_note": "notu isme göre ara",
-    "link_title_mirrors": "bağlantı başlığı, notun güncel başlığını yansıtır",
-    "link_title_arbitrary": "bağlantı başlığı isteğe bağlı olarak değiştirilebilir",
     "link_title": "Bağlantı başlığı",
     "button_add_link": "Bağlantı ekle",
     "anchor": "Bağlantı (isteğe bağlı)",
@@ -180,11 +178,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Toplu eylemler",
-    "affected_notes": "Etkilenen notlar",
     "include_descendants": "Seçili notların alt notlarını da ekle",
-    "available_actions": "Mevcut eylemler",
     "chosen_actions": "Seçili eylemler",
-    "execute_bulk_actions": "Toplu eylemleri uygula",
+    "execute_bulk_actions_one": "Toplu eylemleri uygula",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Toplu eylemler başarıyla uygulandı.",
     "none_yet": "Henüz yok... yukarıda mevcut eylemler arasından birine tıklayarak eylem ekle.",
     "labels": "Etiketler",
@@ -277,13 +274,8 @@
     "save": "Kaydet"
   },
   "move_note": {
-    "clone_note_new_parent": "Notun birden fazla klonu veya dalı varsa, notu yeni üst nota klonla (hangi dalın kaldırılması gerektiği belli değil)",
     "move_note": "Notu taşı",
-    "to": "şuraya",
-    "target_parent_note": "hedef üst not",
-    "on_all_matched_notes": "Eşleşen tüm notlarda",
-    "move_note_new_parent": "notun tek bir üst notu varsa notu yeni üst nota taşı (yani eski dal kaldırılır ve yeni üst notta yeni bir dal oluşturulur)",
-    "nothing_will_happen": "not hedef nota taşınamıyorsa hiçbir şey olmaz (yani bu bir ağaç döngüsü oluşturur)"
+    "target_parent_note": "hedef üst not"
   },
   "note_paths": {
     "clone_button": "Notu yeni bir konuma klonla...",
@@ -361,7 +353,6 @@
     "automatically-collapse-notes-title": "Ağacı düzenli tutmak için notlar bir hareketsizlik süresinden sonra daraltılacaktır.",
     "follow-active-note": "Etkin notu izle",
     "follow-active-note-title": "Etkin notu göstermek için ağacı kaydırır ve üst düğümleri genişletir. Devre dışı bırakıldığında, ağaç yerinde kalır ve yalnızca arka plan vurgusu güncellenir.",
-    "save-changes": "Değişiklikleri kaydet ve uygula",
     "auto-collapsing-notes-after-inactivity": "Hareketsizlikten sonra notlar otomatik daraltılıyor...",
     "saved-search-note-refreshed": "Kaydedilmiş arama notu yenilendi.",
     "hoist-this-note-workspace": "Bu notu yükselt (çalışma alanı)",
@@ -541,7 +532,6 @@
       "insert-an-empty-mermaid-diagram": "Boş bir Mermaid diyagramı ekle",
       "insert-date-time": "Tarih/saat ekle",
       "insert-footnote-0": "%0 dipnotunu ekle",
-      "insert-mermaid-source-code": "Mermaid kaynak kodu ekle",
       "insert-paragraph-after-code-block": "Kod bloğundan sonra paragraf ekle",
       "insert-paragraph-before-code-block": "Kod bloğundan önce paragraf ekle",
       "insert-text-snippet": "Metin parçacığı ekle",
@@ -558,8 +548,6 @@
       "medium": "Orta",
       "mermaid-diagram": "Mermaid diyagramı",
       "mermaid-diagram-0": "Mermaid diyagramı: %0",
-      "mermaid-toolbar": "Mermaid araç çubuğu",
-      "mermaid-widget": "Mermaid widget'ı",
       "missing-definition": "(eksik tanım)",
       "new-footnote": "Yeni dipnot",
       "no-anchors-available": "Mevcut bağlantı noktası yok.",
@@ -571,7 +559,6 @@
       "plain-link": "Düz bağlantı",
       "preview": "Önizleme",
       "quote-a-passage-from-another-source": "Başka bir kaynaktan bir pasaj alıntılar.",
-      "read-more-about-mermaid-diagram-syntax": "Mermaid diyagram söz dizimi hakkında daha fazla bilgi edinin",
       "remove-anchor": "Bağlantı noktasını kaldır",
       "right-click-or-press-0-to-change-state": "Durumu değiştirmek için sağ tıklayın veya %0'a basın.",
       "scroll-to-anchor": "Bağlantı noktasına kaydır",
@@ -608,12 +595,6 @@
   "include_note": {
     "dialog_title": "Not ekle",
     "label_note": "Not",
-    "placeholder_search": "Notu adına göre ara",
-    "box_size_prompt": "Eklenen notun kutu boyutu:",
-    "box_size_small": "kısa (~ 10 satır)",
-    "box_size_medium": "orta (~ 30 satır)",
-    "box_size_full": "tam (kutuda metnin tamamı gösterilir)",
-    "box_size_expandable": "genişletilebilir (varsayılan olarak daraltılmış)",
     "button_include": "Not ekle"
   },
   "jump_to_note": {
@@ -674,10 +655,7 @@
     "move_success_message": "Seçilen notlar şuraya taşındı:"
   },
   "note_type_chooser": {
-    "change_path_prompt": "Yeni notun oluşturulacağı yeri değiştirin:",
-    "search_placeholder": "İsimle arama yolu (boşsa varsayılan değer)",
     "modal_title": "Not türünü seçin",
-    "modal_body": "Yeni notun not türünü / şablonunu seçin:",
     "templates": "Şablonlar"
   },
   "password_not_set": {
@@ -1138,14 +1116,6 @@
   },
   "attribute_list_panel": {
     "no_attributes": "Özellik yok",
-    "owned_one": "{{count}} sahip olunan özellik",
-    "owned_other": "{{count}} sahip olunan özellik",
-    "inherited_one": "{{count}} kalıtımlı özellik",
-    "inherited_other": "{{count}} kalıtımlı özellik",
-    "definitions_one": "{{count}} tanım",
-    "definitions_other": "{{count}} tanım",
-    "internal_one": "{{count}} dahili sistem özelliği",
-    "internal_other": "{{count}} dahili sistem özelliği",
     "back": "Özelliklere geri dön",
     "inheritable": "Kalıtımlı: bu nota ve tüm alt ağacına uygulanır",
     "delete": "Bu özelliği sil",
@@ -1172,21 +1142,13 @@
     "remove_this_search_action": "Bu arama eylemini kaldır"
   },
   "execute_script": {
-    "execute_script": "Betik çalıştır",
-    "help_text": "Eşleşen notlarda basit betikler çalıştırabilirsiniz.",
-    "example_1": "Örneğin bir notun başlığına bir dize eklemek için şu küçük betiği kullanın:",
-    "example_2": "Daha karmaşık bir örnek, eşleşen tüm notların özelliklerini silmek olabilir:"
+    "execute_script": "Betik çalıştır"
   },
   "add_label": {
     "add_label": "Etiket ekle",
     "label_name_placeholder": "etiket adı",
     "label_name_title": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir.",
-    "to_value": "değere",
-    "new_value_placeholder": "yeni değer",
-    "help_text": "Eşleşen tüm notlarda:",
-    "help_text_item1": "not henüz sahip değilse verilen etiketi oluştur",
-    "help_text_item2": "veya mevcut etiketin değerini değiştir",
-    "help_text_note": "Bu yöntemi değer olmadan da çağırabilirsiniz; bu durumda etiket nota değer olmadan atanır."
+    "new_value_placeholder": "yeni değer"
   },
   "delete_label": {
     "delete_label": "Etiketi sil",
@@ -1195,9 +1157,7 @@
   },
   "rename_label": {
     "rename_label": "Etiketi yeniden adlandır",
-    "rename_label_from": "Etiketi şundan yeniden adlandır",
     "old_name_placeholder": "eski ad",
-    "to": "Şuna",
     "new_name_placeholder": "yeni ad",
     "name_title": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir."
   },
@@ -1205,55 +1165,34 @@
     "update_label_value": "Etiket değerini güncelle",
     "label_name_placeholder": "etiket adı",
     "label_name_title": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir.",
-    "to_value": "değere",
-    "new_value_placeholder": "yeni değer",
-    "help_text": "Eşleşen tüm notlarda, mevcut etiketin değerini değiştir.",
-    "help_text_note": "Bu yöntemi değer olmadan da çağırabilirsiniz; bu durumda etiket nota değer olmadan atanır."
+    "new_value_placeholder": "yeni değer"
   },
   "delete_note": {
-    "delete_note": "Notu sil",
-    "delete_matched_notes": "Eşleşen notları sil",
-    "delete_matched_notes_description": "Bu, eşleşen notları silecektir.",
-    "undelete_notes_instruction": "Silme işleminden sonra, Son Değişiklikler iletişim kutusundan geri getirilebilirler.",
-    "erase_notes_instruction": "Notları kalıcı olarak silmek için, silme işleminden sonra Seçenekler -> Diğer'e gidip \"Silinmiş notları şimdi kalıcı olarak sil\" düğmesine tıklayabilirsiniz."
+    "delete_note": "Notu sil"
   },
   "save_revision": {
     "save_revision": "Revizyon kaydet",
-    "revision_name_placeholder": "Revizyon adı (isteğe bağlı)",
-    "help": "Eşleşen her not için, geçerli içeriği ve başlığını yakalayan adlandırılmış bir revizyon kaydedilecektir."
+    "revision_name_placeholder": "Revizyon adı (isteğe bağlı)"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Not revizyonlarını sil",
-    "all_past_note_revisions": "Eşleşen notların tüm geçmiş revizyonları silinecektir. Notun kendisi tamamen korunacaktır. Başka bir deyişle, notun geçmişi kaldırılacaktır."
+    "delete_note_revisions": "Not revizyonlarını sil"
   },
   "convert_note": {
     "convert_note": "Dönüştür",
-    "convert_note_to": "Notu dönüştür",
     "choose_conversion": "(bir dönüştürme seçin)",
     "conversion_htmlToMarkdown": "Metin Notları → Markdown Notları (kayıplı)",
     "conversion_markdownToHtml": "Markdown Notları → Metin Notları",
-    "help_text": "Dönüştürme yalnızca kaynak türle eşleşen notlara uygulanır; diğer notlara dokunulmaz. Dönüştürülen her notun bir revizyonu önceden kaydedilir.",
     "warning": "Notlar dönüştürülürken bazı biçimlendirmeler kaybolabilir ve sonrasında birkaç şeyi düzeltmeniz gerekebilir. Geri yükleyebilmeniz için dönüştürülen her notun bir revizyonu önceden kaydedilecektir. Devam etmek istiyor musunuz?",
     "warning_risky": "Aynı yeteneklere sahip olmayan iki biçim arasında dönüştürme yapıyorsunuz, bu nedenle bazı biçimlendirmeler kaybolabilir ve bazı desteklenmeyen öğeler düşürülebilir.<br><br>Bu riski tamamen kabul ediyor ve dönüştürmeye devam etmek istiyor musunuz?<br><br>Özgün biçime geri dönebilmeniz için dönüştürülen her notun bir revizyonu önceden kaydedilecektir."
   },
   "rename_note": {
-    "rename_note": "Notu yeniden adlandır",
-    "rename_note_title_to": "Not başlığını şuna yeniden adlandır",
-    "new_note_title": "yeni not başlığı",
-    "click_help_icon": "Tüm seçenekleri görmek için sağdaki yardım simgesine tıklayın",
-    "evaluated_as_js_string": "Verilen değer bir JavaScript dizesi olarak değerlendirilir ve bu nedenle enjekte edilen <code>note</code> değişkeni (yeniden adlandırılan not) ile dinamik içerikle zenginleştirilebilir. Örnekler:",
-    "example_note": "<code>Note</code> - eşleşen tüm notlar 'Note' olarak yeniden adlandırılır",
-    "example_new_title": "<code>NEW: ${note.title}</code> - eşleşen notların başlıklarının başına 'NEW: ' eklenir",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - eşleşen notların başına notun oluşturulma ay-günü eklenir",
-    "api_docs": "Ayrıntılar için <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a> ve onun <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj özellikleri</a> için API belgelerine bakın."
+    "rename_note": "Notu yeniden adlandır"
   },
   "add_relation": {
     "add_relation": "İlişki ekle",
     "relation_name": "ilişki adı",
     "allowed_characters": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir.",
-    "to": "şuna",
-    "target_note": "hedef not",
-    "create_relation_on_all_matched_notes": "Eşleşen tüm notlarda verilen ilişkiyi oluştur."
+    "target_note": "hedef not"
   },
   "delete_relation": {
     "delete_relation": "İlişkiyi sil",
@@ -1262,20 +1201,14 @@
   },
   "rename_relation": {
     "rename_relation": "İlişkiyi yeniden adlandır",
-    "rename_relation_from": "İlişkiyi şundan yeniden adlandır",
     "old_name": "eski ad",
-    "to": "Şuna",
     "new_name": "yeni ad",
     "allowed_characters": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir."
   },
   "update_relation_target": {
-    "update_relation": "İlişkiyi güncelle",
     "relation_name": "ilişki adı",
     "allowed_characters": "Alfasayısal karakterler, alt çizgi ve iki nokta üst üste izin verilen karakterlerdir.",
-    "to": "şuna",
     "target_note": "hedef not",
-    "on_all_matched_notes": "Eşleşen tüm notlarda",
-    "change_target_note": "mevcut ilişkinin hedef notunu değiştir",
     "update_relation_target": "İlişki hedefini güncelle"
   },
   "attachments_actions": {
@@ -1428,7 +1361,6 @@
     "in_progress": "Sunucuyla senkronizasyon devam ediyor."
   },
   "left_pane_toggle": {
-    "show_panel": "Paneli göster",
     "hide_panel": "Paneli gizle"
   },
   "move_pane_button": {
@@ -1455,7 +1387,6 @@
     "import_files": "Dosyaları içe aktar",
     "export_note": "Notu dışa aktar",
     "delete_note": "Notu sil",
-    "print_note": "Notu yazdır...",
     "print_or_export_to_pdf": "PDF olarak yazdır/dışa aktar...",
     "view_revisions": "Not revizyonları...",
     "save_revision": "Revizyon kaydet",
@@ -1522,7 +1453,6 @@
     "no_backlinks": "Buna bağlantı veren bir not yok."
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Alt not ekle",
     "delete_this_note": "Bu notu sil",
     "note_revisions": "Not revizyonları",
     "error_cannot_get_branch_id": "'{{notePath}}' not yolu için branchId alınamıyor",
@@ -1637,18 +1567,8 @@
   },
   "search_definition": {
     "add_search_option": "Arama seçeneği ekle:",
-    "search_string": "arama dizesi",
-    "search_script": "arama betiği",
-    "ancestor": "üst kuşak",
-    "fast_search": "hızlı arama",
-    "fast_search_description": "Hızlı arama seçeneği, not içeriğinin tam metin aramasını devre dışı bırakır; bu, büyük veritabanlarında aramayı hızlandırabilir.",
-    "include_archived": "arşivlenmişleri dahil et",
     "include_archived_notes_description": "Arşivlenmiş notlar varsayılan olarak arama sonuçlarının dışında tutulur, bu seçenekle dahil edilirler.",
-    "order_by": "sıralama ölçütü",
-    "limit": "sınır",
     "limit_description": "Sonuç sayısını sınırla",
-    "debug": "hata ayıklama",
-    "debug_description": "Hata ayıklama, karmaşık sorguların hatalarını ayıklamaya yardımcı olmak için konsola ek hata ayıklama bilgisi yazdırır",
     "action": "eylem",
     "option": "seçenek",
     "search_button": "Ara",
@@ -1707,8 +1627,7 @@
     "include_archived_notes": "Arşivlenmiş notları dahil et"
   },
   "limit": {
-    "limit": "Sınır",
-    "take_first_x_results": "Yalnızca belirtilen ilk X sonucu al."
+    "limit": "Sınır"
   },
   "search_script": {
     "title": "Arama betiği:",
@@ -3174,11 +3093,9 @@
     "compress_resize_help": "Seçilen boyuttan büyük resimleri küçültür. Zaten sığan resimler değiştirilmeden bırakılır.",
     "compress_max_dimensions": "Resim boyutunu şuna küçült:",
     "compress_jpeg_handling": "JPEG resim",
-    "compress_jpeg_handling_help": "Resmi korumak geçerli kalitesini muhafaza eder. Sıkıştırmak, boyutunu küçültmek için onu daha düşük kalitede tekrar kaydeder; bu geri alınamaz.",
     "compress_jpeg_keep": "Olduğu gibi koru",
     "compress_jpeg_compress": "Sıkıştır",
     "compress_png_handling": "PNG resim",
-    "compress_png_handling_help": "Resmi korumak onu tam olarak muhafaza eder. Optimize etmek renk sayısını azaltır; bu genellikle ekran görüntülerinde ve diyagramlarda fark edilmez. JPEG'e dönüştürmek en fazla alanı kazandırır, ancak saydamlığı olan resimlere uygulanamaz; bunlar bunun yerine optimize edilir.",
     "compress_png_keep": "Olduğu gibi koru",
     "compress_png_optimize": "Optimize et",
     "compress_png_jpeg": "JPEG'e dönüştür",
@@ -3368,7 +3285,6 @@
     "processing_complete": "OCR işleme tamamlandı.",
     "processing_failed": "OCR işleme başlatılamadı",
     "text_filtered_low_confidence": "OCR, %{{confidence}} güvenle metin algıladı, ancak en düşük eşiğiniz %{{threshold}} olduğu için bu göz ardı edildi.",
-    "image_based_pdf_not_supported": "Bu PDF resim tabanlı (taranmış) görünüyor. Resim tabanlı PDF'lerden metin çıkarma henüz desteklenmiyor.",
     "open_media_settings": "Ayarları Aç",
     "view_extracted_text": "Çıkarılan metni görüntüle (OCR)"
   },

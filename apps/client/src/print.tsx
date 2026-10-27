@@ -1,10 +1,9 @@
 import { render } from "preact";
-import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import Component from "./components/component";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
-import { applyInlineMermaid } from "./services/content_renderer_text";
 import froca from "./services/froca";
 import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
@@ -30,6 +29,7 @@ export type PrintReport = {
 export async function main() {
     const notePath = window.location.hash.substring(1);
     const noteId = notePath.split("/").at(-1);
+    console.debug("[print] Rendering the print page for", notePath || "(no note path)");
     if (!noteId) return;
 
     await import("./print.css");
@@ -49,10 +49,15 @@ export async function main() {
     document.head.appendChild(fontLink);
 
     const note = await froca.getNote(noteId);
+    console.debug("[print] Note loaded:", noteId, note?.type);
 
     // printToPDF() and the browser print dialog name the document after document.title.
     if (note?.title) {
         document.title = note.title;
+    }
+
+    if (!note) {
+        reportPrintError(new Error(`The note to print (${noteId}) could not be loaded.`));
     }
 
     const bodyWrapper = document.createElement("div");
@@ -90,7 +95,7 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
 
     return (
         <>
-            {note.type === "book"
+            {note.type === "book" || note.type === "search"
                 ? <CollectionRenderer {...props} />
                 : <SingleNoteRenderer {...props} />
             }
@@ -149,11 +154,6 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                         });
                     })
                 );
-
-                // Initialize mermaid.
-                if (note.type === "text") {
-                    await applyInlineMermaid(container);
-                }
             }
 
             // Check custom CSS.
@@ -165,7 +165,14 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
 
         load().then(() => requestAnimationFrame(() => onReady({
             type: "single-note"
-        })));
+        }))).catch((error: unknown) => {
+            console.error("[print] Rendering the note failed:", error);
+            onReady({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        });
     }, [ note ]);
 
     return <>
@@ -176,6 +183,47 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
 
 export function CollectionRenderer({ note, onReady, onProgressChanged }: RendererProps) {
     const viewType = useNoteViewType(note);
+    // A saved search holds its results as virtual children only once it has run server-side.
+    const [ ready, setReady ] = useState(note.type !== "search");
+
+    useEffect(() => {
+        if (note.type !== "search") {
+            return;
+        }
+
+        let cancelled = false;
+        console.debug("[print] Running the saved search…");
+        void froca.loadSearchNote(note.noteId)
+            .then((result) => {
+                if (cancelled) return;
+
+                // The query's own errors come back resolved, in `error`.
+                if (result?.error) {
+                    console.warn("[print] The saved search failed:", result.error);
+                    onReady({ type: "error", message: result.error });
+                    return;
+                }
+
+                console.debug("[print] The saved search run finished.");
+                setReady(true);
+            })
+            .catch((e: unknown) => {
+                if (cancelled) return;
+
+                console.warn("[print] Unable to run the saved search being printed:", e);
+                onReady({
+                    type: "error",
+                    message: e instanceof Error ? e.message : String(e),
+                    stack: e instanceof Error ? e.stack : undefined
+                });
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [ note, onReady ]);
+
+    if (!ready) return null;
+
     return <CustomNoteList
         viewType={viewType}
         isEnabled
@@ -228,4 +276,20 @@ export async function loadCustomCss(note: FNote) {
 }
 
 /** index.ts holds the splash up until the note has rendered. */
-export const ready = main();
+window.addEventListener("error", (e) => console.error("[print] Uncaught error in the print page:", e.error ?? e.message));
+window.addEventListener("unhandledrejection", (e) => console.error("[print] Unhandled rejection in the print page:", e.reason));
+
+export const ready = main().catch((error: unknown) => {
+    console.error("[print] The print page failed to render:", error);
+    reportPrintError(error);
+});
+
+/**
+ * Tells the window that opened the print page that it should not wait for a render any longer, so a
+ * failure shows as the print report rather than as a print that never starts.
+ */
+function reportPrintError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    window.dispatchEvent(new CustomEvent("note-ready", { detail: { type: "error", message, stack } }));
+}

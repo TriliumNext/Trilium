@@ -39,10 +39,10 @@ interface Source {
     [key: string]: unknown;
 }
 
-export function main(argv: string[]) {
+export function main(argv: string[], generator = [ "flatpak-node-generator" ]) {
     const outputPath = resolveOutputPath(argv[0]);
     checkPnpm(readFileSync(PACKAGE_JSON_PATH, "utf-8"));
-    generateSources(outputPath);
+    generateSources(outputPath, generator);
 
     const sources: Source[] = JSON.parse(readFileSync(outputPath, "utf-8"));
     const kept = filterSources(sources);
@@ -96,10 +96,11 @@ export function filterSources(sources: Source[]): Source[] {
     return kept;
 }
 
-function generateSources(outputPath: string) {
+function generateSources(outputPath: string, [ command, ...args ]: string[]) {
     mkdirSync(dirname(outputPath), { recursive: true });
     try {
-        execFileSync("flatpak-node-generator", [
+        execFileSync(command, [
+            ...args,
             "pnpm", LOCKFILE_PATH,
             "--pnpm-store-version", STORE_VERSION,
             "-o", outputPath

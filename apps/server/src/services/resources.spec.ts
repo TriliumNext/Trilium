@@ -499,7 +499,10 @@ function serveModel(req: http.IncomingMessage, res: http.ServerResponse) {
         const length = dropModelAfter;
         dropModelAfter = null;
         res.writeHead(200, { "Content-Length": MODEL.length });
-        res.write(MODEL.subarray(0, length), () => setTimeout(() => res.destroy(), 20));
+        res.write(MODEL.subarray(0, length));
+        // A reset that arrives before the client reads the bytes discards them.
+        const drop = () => res.destroy();
+        waitFor(() => partialModelSize() === length).then(drop, drop);
     } else {
         res.end(MODEL);
     }
@@ -535,6 +538,13 @@ async function waitForEnd() {
     reports = broadcasts;
     broadcasts = [];
     return last;
+}
+
+/** The size of the `.partial` a download of `test.model` writes its model to, or 0 before it exists. */
+function partialModelSize() {
+    const directory = fs.readdirSync(baseDir).find((name) => name.startsWith("test.model-"));
+    const partial = directory && path.join(baseDir, directory, "nested", "model.bin.partial");
+    return partial && fs.existsSync(partial) ? fs.statSync(partial).size : 0;
 }
 
 async function waitFor(condition: () => boolean) {

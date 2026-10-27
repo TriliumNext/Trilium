@@ -1,4 +1,4 @@
-import { type Editor, isWidget, type ViewDocumentSelection, type ViewElement } from "ckeditor5";
+import { type Editor, isWidget, type Plugin, type ViewDocumentSelection, type ViewElement } from "ckeditor5";
 
 /**
  * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
@@ -23,6 +23,21 @@ export function preventCKEditorHandling(domElement: HTMLElement, editor: Editor)
         //@ts-expect-error: We are accessing a private field.
         editor.editing.view._renderer.isFocused = false;
     }
+}
+
+/**
+ * Sets `_renderer.isFocused` back to `view.document.isFocused` on a press or key in the text,
+ * after `preventCKEditorHandling()` turned it off. The view ignores the events of widget UI
+ * (`data-cke-ignore-events`), so a press or key that the view sees is back in the text.
+ */
+export function restoreRendererFocusOnInput(plugin: Plugin) {
+    const view = plugin.editor.editing.view;
+    const restore = () => {
+        //@ts-expect-error: We are accessing a private field.
+        view._renderer.isFocused = view.document.isFocused;
+    };
+    plugin.listenTo(view.document, "mousedown", restore, { priority: "highest" });
+    plugin.listenTo(view.document, "keydown", restore, { priority: "highest" });
 }
 
 /**

@@ -58,8 +58,6 @@
     "help_on_links": "Bantuan tentang tautan",
     "note": "Catatan",
     "search_note": "cari catatan berdasarkan namanya",
-    "link_title_mirrors": "judul tautan mencerminkan judul catatan saat ini",
-    "link_title_arbitrary": "judul tautan dapat diubah secara bebas",
     "link_title": "Judul tautan",
     "button_add_link": "Tambahkan tautan",
     "anchor": "Anchor (opsional)",
@@ -82,9 +80,7 @@
   },
   "bulk_actions": {
     "bulk_actions": "Tindakan massal",
-    "affected_notes": "Catatan yang terdampak",
     "include_descendants": "Sertakan turunan dari catatan yang dipilih",
-    "available_actions": "Tindakan yang tersedia",
     "chosen_actions": "Tindakan yang dipilih",
     "execute_bulk_actions": "Jalankan tindakan massal",
     "bulk_actions_executed": "Tindakan massal telah berhasil dijalankan.",
@@ -269,12 +265,6 @@
   "include_note": {
     "dialog_title": "Sertakan catatan",
     "label_note": "Catatan",
-    "placeholder_search": "cari catatan berdasarkan namanya",
-    "box_size_prompt": "Ukuran kotak catatan yang disertakan:",
-    "box_size_small": "kecil (~ 10 baris)",
-    "box_size_medium": "sedang (~ 30 baris)",
-    "box_size_full": "penuh (kotak menampilkan seluruh teks)",
-    "box_size_expandable": "dapat diperluas (default dalam keadaan terlipat)",
     "button_include": "Sertakan catatan"
   },
   "info": {
@@ -327,10 +317,7 @@
     "move_success_message": "Catatan yang dipilih telah dipindahkan ke "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Ubah tempat membuat catatan baru:",
-    "search_placeholder": "cari jalur berdasarkan nama (default jika kosong)",
     "modal_title": "Pilih jenis catatan",
-    "modal_body": "Pilih jenis catatan / templat catatan baru:",
     "templates": "Templat"
   },
   "password_not_set": {
@@ -744,21 +731,13 @@
     "remove_this_search_action": "Hapus tindakan pencarian ini"
   },
   "execute_script": {
-    "execute_script": "Jalankan skrip",
-    "help_text": "Anda dapat menjalankan skrip sederhana pada catatan yang cocok.",
-    "example_1": "Sebagai contoh, untuk menambahkan string ke judul catatan, gunakan skrip kecil ini:",
-    "example_2": "Contoh yang lebih kompleks adalah menghapus semua atribut dari catatan yang cocok:"
+    "execute_script": "Jalankan skrip"
   },
   "add_label": {
     "add_label": "Tambahkan label",
     "label_name_placeholder": "nama label",
     "label_name_title": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua.",
-    "to_value": "ke nilai",
-    "new_value_placeholder": "nilai baru",
-    "help_text": "Pada semua catatan yang cocok:",
-    "help_text_item1": "buat label yang diberikan jika catatan belum memilikinya",
-    "help_text_item2": "atau ubah nilai label yang sudah ada",
-    "help_text_note": "Anda juga dapat memanggil metode ini tanpa nilai; dalam hal tersebut label akan ditetapkan ke catatan tanpa nilai."
+    "new_value_placeholder": "nilai baru"
   },
   "delete_label": {
     "delete_label": "Hapus label",
@@ -767,9 +746,7 @@
   },
   "rename_label": {
     "rename_label": "Ganti nama label",
-    "rename_label_from": "Ganti nama label dari",
     "old_name_placeholder": "nama lama",
-    "to": "Menjadi",
     "new_name_placeholder": "nama baru",
     "name_title": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua."
   },
@@ -777,49 +754,26 @@
     "update_label_value": "Perbarui nilai label",
     "label_name_placeholder": "nama label",
     "label_name_title": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua.",
-    "to_value": "ke nilai",
-    "new_value_placeholder": "nilai baru",
-    "help_text": "Pada semua catatan yang cocok, ubah nilai label yang sudah ada.",
-    "help_text_note": "Anda juga dapat memanggil metode ini tanpa nilai; dalam hal tersebut label akan ditetapkan ke catatan tanpa nilai."
+    "new_value_placeholder": "nilai baru"
   },
   "delete_note": {
-    "delete_note": "Hapus catatan",
-    "delete_matched_notes": "Hapus catatan yang cocok",
-    "delete_matched_notes_description": "Ini akan menghapus catatan yang cocok.",
-    "undelete_notes_instruction": "Setelah penghapusan, catatan tersebut dapat dipulihkan dari dialog Perubahan terbaru.",
-    "erase_notes_instruction": "Untuk menghapus catatan secara permanen, setelah penghapusan Anda dapat masuk ke Opsi -> Lainnya lalu klik tombol \"Hapus permanen catatan yang dihapus sekarang\"."
+    "delete_note": "Hapus catatan"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Hapus revisi catatan",
-    "all_past_note_revisions": "Semua revisi catatan terdahulu dari catatan yang cocok akan dihapus. Catatan itu sendiri akan tetap sepenuhnya dipertahankan. Dengan kata lain, riwayat catatan akan dihapus."
+    "delete_note_revisions": "Hapus revisi catatan"
   },
   "move_note": {
     "move_note": "Pindahkan catatan",
-    "to": "ke",
-    "target_parent_note": "catatan induk target",
-    "on_all_matched_notes": "Pada semua catatan yang cocok",
-    "move_note_new_parent": "pindahkan catatan ke induk baru jika catatan hanya memiliki satu induk (yaitu branch lama dihapus dan branch baru ke induk baru dibuat)",
-    "clone_note_new_parent": "kloning catatan ke induk baru jika catatan memiliki beberapa klon/branch (tidak jelas branch mana yang harus dihapus)",
-    "nothing_will_happen": "tidak akan terjadi apa pun jika catatan tidak dapat dipindahkan ke catatan target (misalnya karena akan membuat siklus tree)"
+    "target_parent_note": "catatan induk target"
   },
   "rename_note": {
-    "rename_note": "Ganti nama catatan",
-    "rename_note_title_to": "Ganti judul catatan menjadi",
-    "new_note_title": "judul catatan baru",
-    "click_help_icon": "Klik ikon bantuan di sebelah kanan untuk melihat semua opsi",
-    "evaluated_as_js_string": "Nilai yang diberikan dievaluasi sebagai string JavaScript sehingga dapat diperkaya dengan konten dinamis melalui variabel <code>note</code> yang disuntikkan (catatan yang sedang diganti namanya). Contoh:",
-    "example_note": "<code>Note</code> - semua catatan yang cocok akan diganti namanya menjadi 'Note'",
-    "example_new_title": "<code>NEW: ${note.title}</code> - judul catatan yang cocok diberi awalan 'NEW: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - catatan yang cocok diberi awalan bulan-tanggal pembuatan catatan",
-    "api_docs": "Lihat dokumentasi API untuk <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a> dan <a href='https://day.js.org/docs/en/display/format'>properti dateCreatedObj / utcDateCreatedObj</a> untuk detail."
+    "rename_note": "Ganti nama catatan"
   },
   "add_relation": {
     "add_relation": "Tambahkan relasi",
     "relation_name": "nama relasi",
     "allowed_characters": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua.",
-    "to": "ke",
-    "target_note": "catatan target",
-    "create_relation_on_all_matched_notes": "Pada semua catatan yang cocok, buat relasi yang diberikan."
+    "target_note": "catatan target"
   },
   "delete_relation": {
     "delete_relation": "Hapus relasi",
@@ -828,20 +782,14 @@
   },
   "rename_relation": {
     "rename_relation": "Ganti nama relasi",
-    "rename_relation_from": "Ganti nama relasi dari",
     "old_name": "nama lama",
-    "to": "Menjadi",
     "new_name": "nama baru",
     "allowed_characters": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua."
   },
   "update_relation_target": {
-    "update_relation": "Perbarui relasi",
     "relation_name": "nama relasi",
     "allowed_characters": "Karakter yang diperbolehkan adalah karakter alfanumerik, underscore, dan titik dua.",
-    "to": "ke",
     "target_note": "catatan target",
-    "on_all_matched_notes": "Pada semua catatan yang cocok",
-    "change_target_note": "ubah catatan target dari relasi yang sudah ada",
     "update_relation_target": "Perbarui target relasi"
   },
   "attachments_actions": {
@@ -991,7 +939,6 @@
     "in_progress": "Sinkronisasi dengan server sedang berlangsung."
   },
   "left_pane_toggle": {
-    "show_panel": "Tampilkan panel",
     "hide_panel": "Sembunyikan panel"
   },
   "move_pane_button": {
@@ -1017,7 +964,6 @@
     "import_files": "Impor file",
     "export_note": "Ekspor catatan",
     "delete_note": "Hapus catatan",
-    "print_note": "Cetak catatan...",
     "print_or_export_to_pdf": "Cetak/ekspor ke PDF...",
     "view_revisions": "Revisi catatan...",
     "save_revision": "Simpan revisi",
@@ -1068,7 +1014,6 @@
     "no_backlinks": "Tidak ada catatan yang menaut ke catatan ini."
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Sisipkan catatan anak",
     "delete_this_note": "Hapus catatan ini",
     "note_revisions": "Revisi catatan",
     "error_cannot_get_branch_id": "Tidak dapat memperoleh branchId untuk notePath '{{notePath}}'",
@@ -1197,18 +1142,8 @@
   },
   "search_definition": {
     "add_search_option": "Tambahkan opsi pencarian:",
-    "search_string": "string pencarian",
-    "search_script": "skrip pencarian",
-    "ancestor": "ancestor",
-    "fast_search": "pencarian cepat",
-    "fast_search_description": "Opsi pencarian cepat menonaktifkan pencarian teks lengkap pada isi catatan yang dapat mempercepat pencarian dalam basis data besar.",
-    "include_archived": "sertakan yang diarsipkan",
     "include_archived_notes_description": "Catatan yang diarsipkan secara default dikecualikan dari hasil pencarian; dengan opsi ini catatan tersebut akan disertakan.",
-    "order_by": "urutkan berdasarkan",
-    "limit": "batas",
     "limit_description": "Batasi jumlah hasil",
-    "debug": "debug",
-    "debug_description": "Debug akan mencetak informasi debugging tambahan ke konsol untuk membantu men-debug kueri yang kompleks",
     "action": "tindakan",
     "option": "opsi",
     "search_button": "Pencarian",
@@ -1251,8 +1186,7 @@
     "include_archived_notes": "Sertakan catatan yang diarsipkan"
   },
   "limit": {
-    "limit": "Batas",
-    "take_first_x_results": "Ambil hanya X hasil pertama yang ditentukan."
+    "limit": "Batas"
   },
   "order_by": {
     "order_by": "Urutkan berdasarkan",
@@ -2264,7 +2198,6 @@
     "tool_call_no_result": "Belum ada hasil.",
     "search_notes_count_other": "({{count}} catatan)",
     "search_notes_limited_other": "{{count}} total hasil, dibatasi hingga {{limit}}",
-    "search_notes_scope": "Dicari dalam <Note/>",
     "child_notes_count_other": "({{count}} turunan)",
     "child_count_other": "{{count}} turunan",
     "search_help_count_other": "({{count}} halaman)",
@@ -2339,7 +2272,6 @@
     "hide-archived-notes": "Sembunyikan catatan yang diarsipkan",
     "automatically-collapse-notes": "Ciutkan catatan secara otomatis",
     "automatically-collapse-notes-title": "Catatan akan diciutkan setelah periode tidak aktif untuk merapikan pohon.",
-    "save-changes": "Simpan & terapkan perubahan",
     "auto-collapsing-notes-after-inactivity": "Sedang menciutkan catatan otomatis setelah tidak aktif...",
     "saved-search-note-refreshed": "Catatan pencarian tersimpan telah diperbarui.",
     "hoist-this-note-workspace": "Hoist catatan ini (workspace)",
@@ -2950,7 +2882,6 @@
     "processing_complete": "Pemrosesan OCR selesai.",
     "processing_failed": "Gagal memulai pemrosesan OCR",
     "text_filtered_low_confidence": "OCR mendeteksi teks dengan kepercayaan {{confidence}}%, tetapi teks tersebut dibatalkan karena ambang batas minimum Anda adalah {{threshold}}%.",
-    "image_based_pdf_not_supported": "PDF ini tampaknya berbasis gambar (scanned). Ekstraksi teks dari PDF berbasis gambar belum didukung.",
     "open_media_settings": "Buka Pengaturan",
     "view_extracted_text": "Lihat teks yang diekstrak (OCR)"
   },
@@ -3500,7 +3431,6 @@
       "insert-a-table": "Sisipkan tabel.",
       "insert-date-time": "Sisipkan tanggal/waktu",
       "insert-footnote-0": "Sisipkan catatan kaki %0",
-      "insert-mermaid-source-code": "Sisipkan kode sumber Mermaid",
       "insert-paragraph-after-code-block": "Sisipkan paragraf setelah blok kode",
       "insert-paragraph-before-code-block": "Sisipkan paragraf sebelum blok kode",
       "insert-text-snippet": "Sisipkan cuplikan teks",
@@ -3517,8 +3447,6 @@
       "medium": "Sedang",
       "mermaid-diagram": "Diagram Mermaid",
       "mermaid-diagram-0": "Diagram Mermaid: %0",
-      "mermaid-toolbar": "Toolbar Mermaid",
-      "mermaid-widget": "Widget Mermaid",
       "missing-definition": "(definisi tidak ditemukan)",
       "new-footnote": "Catatan kaki baru",
       "no-anchors-available": "Tidak ada anchor yang tersedia.",
@@ -3530,7 +3458,6 @@
       "plain-link": "Tautan biasa",
       "preview": "Pratinjau",
       "quote-a-passage-from-another-source": "Kutip bagian dari sumber lain.",
-      "read-more-about-mermaid-diagram-syntax": "Pelajari lebih lanjut tentang sintaks diagram Mermaid",
       "remove-anchor": "Hapus anchor",
       "scroll-to-anchor": "Gulir ke anchor",
       "search-text-snippet": "Cari cuplikan teks",
@@ -3709,10 +3636,6 @@
   },
   "attribute_list_panel": {
     "no_attributes": "Tidak ada atribut",
-    "owned_other": "{{count}} atribut milik sendiri",
-    "inherited_other": "{{count}} atribut yang diwariskan",
-    "definitions_other": "{{count}} definisi",
-    "internal_other": "{{count}} atribut sistem internal",
     "back": "Kembali ke atribut",
     "inheritable": "Dapat diwariskan: berlaku untuk catatan ini dan seluruh subpohonnya",
     "delete": "Hapus atribut ini",
@@ -3737,16 +3660,13 @@
   },
   "save_revision": {
     "save_revision": "Simpan revisi",
-    "revision_name_placeholder": "Nama revisi (opsional)",
-    "help": "Sebuah revisi bernama akan disimpan untuk setiap catatan yang cocok, menangkap isi dan judulnya saat ini."
+    "revision_name_placeholder": "Nama revisi (opsional)"
   },
   "convert_note": {
     "convert_note": "Konversi",
-    "convert_note_to": "Konversi catatan",
     "choose_conversion": "(pilih jenis konversi)",
     "conversion_htmlToMarkdown": "Catatan Teks → Catatan Markdown (berpotensi kehilangan data)",
     "conversion_markdownToHtml": "Catatan Markdown → Catatan Teks",
-    "help_text": "Konversi hanya diterapkan pada catatan yang sesuai dengan jenis sumber; catatan lainnya tidak diubah. Revisi setiap catatan yang dikonversi akan disimpan terlebih dahulu.",
     "warning": "Sebagian pemformatan mungkin hilang saat mengonversi catatan dan Anda mungkin perlu memperbaiki beberapa hal setelahnya. Revisi setiap catatan akan disimpan terlebih dahulu sehingga Anda dapat memulihkannya. Apakah Anda ingin melanjutkan?",
     "warning_risky": "Anda sedang mengonversi antara dua format yang tidak memiliki kemampuan yang sama, sehingga sebagian pemformatan mungkin hilang dan beberapa elemen yang tidak didukung mungkin akan dihapus.<br><br>Apakah Anda sepenuhnya menerima risiko ini dan ingin melanjutkan konversi?<br><br>Revisi setiap catatan yang dikonversi akan disimpan terlebih dahulu sehingga Anda dapat mengembalikannya ke format semula."
   },
@@ -3950,11 +3870,9 @@
     "compress_resize_help": "Mengurangi ukuran gambar yang lebih besar daripada ukuran yang dipilih. Gambar yang sudah sesuai akan dibiarkan tanpa perubahan.",
     "compress_max_dimensions": "Kurangi ukuran gambar menjadi",
     "compress_jpeg_handling": "Gambar JPEG",
-    "compress_jpeg_handling_help": "Mempertahankan gambar akan menjaga kualitasnya saat ini. Mengompres akan menyimpan ulang gambar dengan kualitas yang lebih rendah untuk mengurangi ukurannya, dan tindakan ini tidak dapat dibatalkan.",
     "compress_jpeg_keep": "Biarkan apa adanya",
     "compress_jpeg_compress": "Kompres",
     "compress_png_handling": "Gambar PNG",
-    "compress_png_handling_help": "Mempertahankan gambar akan menjaganya tetap sama persis. Mengoptimalkan akan mengurangi jumlah warna, yang biasanya tidak terlihat pada tangkapan layar dan diagram. Mengonversi ke JPEG akan menghemat ruang paling banyak, tetapi tidak dapat diterapkan pada gambar yang memiliki transparansi; gambar tersebut akan dioptimalkan sebagai gantinya.",
     "compress_png_keep": "Biarkan apa adanya",
     "compress_png_optimize": "Optimalkan",
     "compress_png_jpeg": "Konversi ke JPEG",

@@ -1,7 +1,7 @@
 /**
- * Live integration test for the Claude Agent keep-alive: drives the user's real
- * `claude` CLI and asserts a second turn reuses the warm subprocess instead of
- * re-paying the spawn.
+ * Live integration tests for the Claude Agent keep-alive: drive the user's real
+ * `claude` CLI and assert that a second chat turn, and a later chat title, reuse
+ * the warm subprocess instead of re-paying the spawn.
  *
  * Opt-in — it spawns a subprocess, needs `claude /login`, and spends the
  * subscription's budget, so it never runs in CI:
@@ -56,5 +56,49 @@ describe.runIf(live)("ClaudeAgentProvider keep-alive (live CLI)", () => {
         // The warm turn skips the ~1.3 s subprocess spawn. Assert a fraction of
         // that so the test tracks the behaviour, not this machine's numbers.
         expect(warm.firstTokenMs).toBeLessThan((cold.firstTokenMs ?? 0) - 500);
+    }, 180_000);
+});
+
+describe.runIf(live)("ClaudeAgentProvider titles (live CLI)", () => {
+    it("names each chat after its own message in one warm session, emptied by /clear", async () => {
+        const provider = new ClaudeAgentProvider();
+        resetClaudeSessionPoolForTests();
+
+        async function title(message: string) {
+            const startedAt = Date.now();
+            const text = await provider.generateTitle(message);
+            return { text, ms: Date.now() - startedAt };
+        }
+
+        // Titles arrive far apart in use, so each `/clear` has finished before the next title.
+        const pause = () => new Promise(resolve => setTimeout(resolve, 2000));
+        const cold = await title("Give me a sourdough bread recipe with a long cold proof.");
+        const warm: { text: string; ms: number }[] = [];
+        for (const message of [
+            "How do I change the oil on a 2015 Honda Civic?",
+            "Explain how photosynthesis works in plants.",
+            "Plan a week in Lisbon."
+        ]) {
+            await pause();
+            warm.push(await title(message));
+        }
+
+        console.log(`live titles: ${JSON.stringify([cold, ...warm])}`);
+
+        expect(cold.text.toLowerCase()).toMatch(/sourdough|bread/);
+        expect(warm.map(t => t.text.toLowerCase())).toEqual([
+            expect.stringMatching(/oil|civic|honda/),
+            expect.stringMatching(/photosynthesis|plant|sunlight|light/),
+            expect.stringMatching(/lisbon/)
+        ]);
+        for (const later of warm) {
+            expect(later.text.toLowerCase()).not.toMatch(/sourdough|bread/);
+        }
+        // The model overshoots the five-word limit now and then; without the
+        // examples in the system prompt it did so for about a third of titles.
+        expect([cold, ...warm].filter(({ text }) => text.split(/\s+/).length > 5).length).toBeLessThanOrEqual(1);
+        // A warm title skips the spawn, but the model's own latency varies by
+        // about as much, so only the fastest one is held to the margin.
+        expect(Math.min(...warm.map(t => t.ms))).toBeLessThan(cold.ms - 500);
     }, 180_000);
 });

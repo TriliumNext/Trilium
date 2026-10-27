@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
+import { onSystemBack } from "../../services/system_back";
 import utils from "../../services/utils";
 import ActionButton from "./ActionButton";
 import { useWindowSize } from "./hooks";
@@ -130,6 +131,16 @@ interface MasterDetailHeaderProps {
 export function MasterDetailHeader({
     inPage, onBack, backTitle, pageTitle, listTitle, listIcon, listActions, pageActions
 }: MasterDetailHeaderProps) {
+    const back = useRef(onBack);
+    back.current = onBack;
+    useEffect(() => {
+        if (!inPage) return;
+        return onSystemBack(() => {
+            back.current();
+            return true;
+        });
+    }, [ inPage ]);
+
     return (
         <div class="tn-master-detail-header">
             {inPage ? (

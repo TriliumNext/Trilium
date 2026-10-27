@@ -1,0 +1,28 @@
+:where(:root) {
+    --tree-settings-shadow-color: black;
+    --tree-settings-border-color: var(--main-border-color);
+    --tree-settings-background-color: var(--accented-background-color);
+}
+
+.tree-settings {
+    box-shadow: 10px 10px 93px -25px var(--tree-settings-shadow-color);
+    border: 1px solid var(--tree-settings-border-color);
+    border-radius: 4px;
+    padding: 15px;
+    width: 500px;
+    max-width: calc(100vw - 20px);
+    background-color: var(--tree-settings-background-color);
+    overflow: auto;
+
+    .tree-settings-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .tree-settings-title {
+        margin: 0;
+        margin-inline-end: auto;
+    }
+}

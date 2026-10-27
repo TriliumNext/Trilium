@@ -5,7 +5,7 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { replaceHtmlEscapedSlashes } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import Admonition from "./Admonition";
+import { ExtendedAdmonition } from "./Admonition";
 import Button from "./Button";
 
 /**
@@ -15,7 +15,7 @@ import Button from "./Button";
  * sticky footer) on top of the gradient background defined by `body.setup` in
  * `setup.css`. Consumers are expected to mount this inside a `.setup-container`.
  */
-export default function SetupPage({ title, description, className, illustration, children, footer, error, errorId, onBack }: {
+export default function SetupPage({ title, description, className, illustration, children, footer, error, errorTitle, errorId, onBack }: {
     title: string;
     description?: string;
     /**
@@ -23,6 +23,8 @@ export default function SetupPage({ title, description, className, illustration,
      * with the technical detail underneath it rather than in place of it.
      */
     error?: ComponentChildren;
+    /** Heading above `error` that names what failed. Without it, the icon sits beside the message. */
+    errorTitle?: string;
     errorId?: number;
     className?: string;
     illustration?: ComponentChildren;
@@ -49,12 +51,14 @@ export default function SetupPage({ title, description, className, illustration,
                 />
             )}
             {error && showError && (
-                <Admonition className="page-error" type="caution">
+                <ExtendedAdmonition className="page-error" type="caution" icon="bx bx-error-circle" title={errorTitle}>
                     <ActionButton icon="bx bx-x" text={t("setup.dismiss-error")} onClick={() => setShowError(false)}  />
                     {/* A message built from components renders as it was built; a bare sentence still
                         gets the slashes a server error may have had escaped along the way. */}
-                    {typeof error === "string" ? replaceHtmlEscapedSlashes(error) : error}
-                </Admonition>
+                    <div className="page-error-message">
+                        {typeof error === "string" ? replaceHtmlEscapedSlashes(error) : error}
+                    </div>
+                </ExtendedAdmonition>
             )}
 
             {illustration}

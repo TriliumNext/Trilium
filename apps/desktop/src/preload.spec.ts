@@ -756,5 +756,18 @@ describe("preload script", () => {
             unsubscribe();
             expect(ipcRendererListeners.has("transcription-state")).toBe(false);
         });
+
+        it("onLevel relays each source's level until unsubscribed", () => {
+            const callback = vi.fn();
+            const unsubscribe = transcription().onLevel(callback);
+
+            const listeners = ipcRendererListeners.get("transcription-level") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, "microphone", 0.25);
+            expect(callback).toHaveBeenCalledExactlyOnceWith("microphone", 0.25);
+
+            unsubscribe();
+            expect(ipcRendererListeners.has("transcription-level")).toBe(false);
+        });
     });
 });

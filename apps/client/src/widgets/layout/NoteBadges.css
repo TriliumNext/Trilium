@@ -24,6 +24,10 @@
         &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
         &.snippet-badge {--color: var(--badge-snippet-background-color);}
+        &.template-badge {
+            --color: var(--badge-template-background-color);
+            color: var(--badge-template-text-color);
+        }
         &.excerpt-badge {
             --color: var(--main-border-color);
             color: var(--main-text-color);

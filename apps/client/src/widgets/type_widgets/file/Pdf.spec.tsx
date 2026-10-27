@@ -32,11 +32,14 @@ vi.mock("../../collections/NoteList", () => ({
     useViewModeConfig: () => ({ config: { files: [] }, storeFn: historyStore })
 }));
 // The viewer iframe itself is a separate component with its own spec; here it only has to hand
-// back a frame the messages can be addressed to, and report it loaded.
+// back a frame the messages can be addressed to, and report it loaded. happy-dom does not load
+// iframe pages, so the frame gets a stand-in window from `attachFrameWindow()`.
 vi.mock("./PdfViewer", () => ({
     default: ({ iframeRef, onLoad, noteId, ntxId }: {
         iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void; noteId?: string; ntxId?: string | null;
-    }) => <iframe ref={iframeRef} class="pdf-preview" onLoad={onLoad} data-note-id={noteId} data-ntx-id={ntxId} />,
+    }) => <iframe
+        ref={(iframe) => { iframeRef.current = iframe && attachFrameWindow(iframe); }}
+        class="pdf-preview" onLoad={onLoad} data-note-id={noteId} data-ntx-id={ntxId} />,
     getPdfUrl: (path: string) => `/api/${path}`
 }));
 const activateNoteContext = vi.hoisted(() => vi.fn());
@@ -84,13 +87,25 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-/**
- * Records what the component posts into its iframe. Recorded rather than delivered: the blank
- * frame has no origin the real call would accept.
- */
+/** Records what the component posts into its iframe. */
 function recordPostsToViewer() {
     const iframe = container.querySelector("iframe") as HTMLIFrameElement;
     return vi.spyOn(iframe.contentWindow as Window, "postMessage").mockImplementation(() => {});
+}
+
+/**
+ * Gives `iframe` a window with the members the component uses: `postMessage`, `location.reload()`
+ * and click listeners. The window is created once per element, so spies on it survive re-renders.
+ */
+function attachFrameWindow(iframe: HTMLIFrameElement) {
+    if (!Object.hasOwn(iframe, "contentWindow")) {
+        const frameWindow = Object.assign(new EventTarget(), {
+            postMessage: () => {},
+            location: { reload: () => {} }
+        });
+        Object.defineProperty(iframe, "contentWindow", { value: frameWindow });
+    }
+    return iframe;
 }
 
 /** Delivers a message the way the viewer iframe posts it to the parent window. */

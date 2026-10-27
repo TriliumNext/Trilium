@@ -375,6 +375,10 @@ development](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20G
   από σημειώσεις κειμένου.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - επεξεργαστής κώδικα
   με υποστήριξη για τεράστιο αριθμό γλωσσών.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - ο άπειρος πίνακας που
   χρησιμοποιείται στις σημειώσεις του Καμβά.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - παροχή της

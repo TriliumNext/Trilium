@@ -9,9 +9,18 @@ import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { bookPropertiesConfig } from "./collection-properties-config";
 import CollectionProperties from "./CollectionProperties";
 
 describe("CollectionProperties", () => {
+    it("leaves the nesting depth to the properties dialogs, out of every settings dropdown", () => {
+        for (const { properties } of Object.values(bookPropertiesConfig)) {
+            const bindsDepth = properties.some((property) =>
+                "bindToLabel" in property && property.bindToLabel === "maxNestingDepth");
+            expect(bindsDepth).toBe(false);
+        }
+    });
+
     it("focuses the view type switcher on its shortcut only for its own note context", async () => {
         const note = buildNote({ title: "Collection", type: "book" });
         const noteContext = new NoteContext("ntx-split-2");

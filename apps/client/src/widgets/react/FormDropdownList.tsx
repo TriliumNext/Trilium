@@ -18,11 +18,16 @@ interface FormDropdownList<T> extends Omit<DropdownProps, "children"> {
      * whose entries are not all the same sort of choice, e.g. one that changes more than the others do.
      */
     dividerBeforeProperty?: keyof T;
+    /**
+     * Property holding why an item cannot be chosen. An item with a reason is shown disabled, with the
+     * reason as its tooltip.
+     */
+    disabledProperty?: keyof T;
     currentValue: string;
     onChange(newValue: string): void;
 }
 
-export default function FormDropdownList<T>({ values, keyProperty, titleProperty, titleSuffixProperty, descriptionProperty, iconProperty, dividerBeforeProperty, currentValue, onChange, ...restProps }: FormDropdownList<T>) {
+export default function FormDropdownList<T>({ values, keyProperty, titleProperty, titleSuffixProperty, descriptionProperty, iconProperty, dividerBeforeProperty, disabledProperty, currentValue, onChange, ...restProps }: FormDropdownList<T>) {
     const currentValueData = values.find(value => value[keyProperty] === currentValue);
 
     const renderTitle = (item: T) => {
@@ -44,6 +49,9 @@ export default function FormDropdownList<T>({ values, keyProperty, titleProperty
         <Dropdown text={currentValueData ? renderLabel(currentValueData) : ""} {...restProps}>
             {values.map(item => {
                 const isCurrent = currentValue === item[keyProperty];
+                const disabledReason = disabledProperty
+                    ? item[disabledProperty] as string | undefined
+                    : undefined;
                 return (
                     <Fragment key={item[keyProperty] as string}>
                         {dividerBeforeProperty && !!item[dividerBeforeProperty] && <FormDropdownDivider />}
@@ -56,6 +64,8 @@ export default function FormDropdownList<T>({ values, keyProperty, titleProperty
                             checked={!iconProperty && isCurrent}
                             active={!!iconProperty && isCurrent}
                             description={descriptionProperty && item[descriptionProperty] as string}
+                            disabled={!!disabledReason}
+                            disabledTooltip={disabledReason}
                             selected={isCurrent}
                         >
                             {renderTitle(item)}

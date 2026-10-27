@@ -1,0 +1,69 @@
+.modal.include-note-dialog {
+    @container (min-width: 501px) {
+        :is(.include-note-note, .include-note-size) {
+            > .tn-card-option-label {
+                flex: 0 0 8em;
+                min-width: max-content;
+            }
+
+            > :is(.input-group, .include-note-size-control) {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+        }
+    }
+
+    .include-note-size-control {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .include-note-as-image {
+        margin: 0;
+        opacity: .7;
+    }
+
+    .include-note-size-hint {
+        opacity: .7;
+    }
+
+    .include-note-size-description {
+        display: grid;
+        font-size: .85em;
+        opacity: .7;
+
+        > * {
+            grid-area: 1 / 1;
+            visibility: hidden;
+        }
+
+        > .active {
+            visibility: visible;
+        }
+    }
+
+    .include-note-size-choice {
+        display: flex;
+        width: 100%;
+
+        .btn {
+            flex: 1;
+        }
+
+        .tn-segmented-choice-glyph-label {
+            font-size: .8em;
+        }
+    }
+
+    @container (max-width: 400px) {
+        .include-note-size-choice .tn-segmented-choice-glyph-label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+        }
+    }
+}

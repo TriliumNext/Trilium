@@ -32,3 +32,16 @@ export default function CanvasDrawingMenu({ apiRef, isEditable }: CanvasDrawingM
         </MainMenu>
     );
 }
+
+export function CanvasNoteMenu() {
+    return (
+        <MainMenu>
+            <MainMenu.DefaultItems.LoadScene />
+            <MainMenu.DefaultItems.SaveAsImage />
+            <MainMenu.DefaultItems.SearchMenu />
+            <MainMenu.DefaultItems.Help />
+            <MainMenu.DefaultItems.ClearCanvas />
+            <MainMenu.DefaultItems.ChangeCanvasBackground />
+        </MainMenu>
+    );
+}

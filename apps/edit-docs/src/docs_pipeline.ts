@@ -2,7 +2,7 @@
  * The import/export half of edit-docs, with no Electron dependency: `edit-docs.ts` runs it
  * behind a window, `sync-docs.ts` runs it headless.
  */
-import { BackupService, initializeCore, type AdvancedExportOptions, type MessagingProvider, type NoteMeta, type NoteMetaFile } from "@triliumnext/core";
+import { BackupService, initializeCore, type MessagingProvider, type NoteMeta, type NoteMetaFile } from "@triliumnext/core";
 import AsyncLocalStorageExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
@@ -16,14 +16,49 @@ import { load } from "js-yaml";
 import path from "path";
 
 import { deferred } from "../../../packages/commons/src/index.js";
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler, stripAppVersion } from "./help_meta_generator.js";
+import { buildHelpBundle } from "./help_bundle_generator.js";
+import { buildHelpMeta, serializeHelpMeta, stripAppVersion } from "./help_meta_generator.js";
+import { openApiToMarkdown, type OpenApiSpec } from "./openapi_markdown.js";
+import { runTypeDoc, typeDocToDeclarations, type TypeDocMarkdownOptions, typeDocToMarkdown } from "./typedoc_markdown.js";
 
 export interface NoteMapping {
     rootNoteId: string;
     path: string;
-    format: "markdown" | "html";
+    format: "markdown";
     ignoredFiles?: string[];
     exportOnly?: boolean;
+    /**
+     * Where to write the in-app help tree derived from this mapping's export, if it is the one
+     * backing the User Guide. Relative to the configuration file.
+     */
+    helpMeta?: string;
+    /** Where to write the rendered content of that tree. Relative to the configuration file. */
+    helpContent?: string;
+    /** Pages whose Markdown is generated from an OpenAPI document before every import. */
+    openApiPages?: OpenApiPage[];
+    /** Pages whose Markdown is generated from TypeScript declarations before every import. */
+    typeDocPages?: TypeDocPage[];
+}
+
+export interface OpenApiPage {
+    /** A text note of this mapping with a Markdown data file. */
+    noteId: string;
+    /** The OpenAPI document in YAML. Relative to the configuration file. */
+    spec: string;
+}
+
+export interface TypeDocPage extends TypeDocMarkdownOptions {
+    /** A text note of this mapping with a Markdown data file. */
+    noteId: string;
+    /** The module whose exports the page documents. Relative to the configuration file. */
+    entryPoint: string;
+    /** The tsconfig that compiles it. Relative to the configuration file. */
+    tsconfig: string;
+    /**
+     * Where to also write the declarations as compact TypeScript, for the LLM skill sheets that
+     * `load_skill` serves. Relative to the configuration file.
+     */
+    skillReference?: string;
 }
 
 export interface Config {
@@ -51,7 +86,16 @@ export async function loadConfig(configPath?: string): Promise<Config> {
         baseUrl: config.baseUrl,
         noteMappings: config.noteMappings.map((mapping) => ({
             ...mapping,
-            path: path.resolve(configDir, mapping.path)
+            path: path.resolve(configDir, mapping.path),
+            helpMeta: mapping.helpMeta ? path.resolve(configDir, mapping.helpMeta) : undefined,
+            helpContent: mapping.helpContent ? path.resolve(configDir, mapping.helpContent) : undefined,
+            openApiPages: mapping.openApiPages?.map((page) => ({ ...page, spec: path.resolve(configDir, page.spec) })),
+            typeDocPages: mapping.typeDocPages?.map((page) => ({
+                ...page,
+                entryPoint: path.resolve(configDir, page.entryPoint),
+                tsconfig: path.resolve(configDir, page.tsconfig),
+                skillReference: page.skillReference ? path.resolve(configDir, page.skillReference) : undefined
+            }))
         }))
     };
 }
@@ -128,6 +172,7 @@ export async function importData(path: string) {
 export async function importMappings(mappings: NoteMapping[]) {
     for (const mapping of mappings) {
         if (!mapping.exportOnly) {
+            await writeGeneratedPages(mapping);
             await importData(mapping.path);
         }
     }
@@ -136,12 +181,91 @@ export async function importMappings(mappings: NoteMapping[]) {
 /** Exports every mapping, in config order, replacing each target directory. */
 export async function exportMappings(mappings: NoteMapping[], baseUrl: string) {
     for (const mapping of mappings) {
-        const ignoredFiles = mapping.ignoredFiles ? new Set(mapping.ignoredFiles) : undefined;
-        await exportData(mapping.rootNoteId, mapping.format, mapping.path, baseUrl, ignoredFiles);
+        await exportData(mapping, baseUrl);
     }
 }
 
-export async function exportData(noteId: string, format: "markdown" | "html", outputPath: string, baseUrl: string, ignoredFiles?: Set<string>) {
+/**
+ * Regenerates the Markdown of the mapping's `openApiPages` and `typeDocPages` from their sources,
+ * and the skill references of the `typeDocPages` that name one.
+ */
+async function writeGeneratedPages(mapping: NoteMapping) {
+    const pages = [
+        ...(mapping.openApiPages ?? []).map((page) => ({
+            noteId: page.noteId,
+            render: async () => openApiToMarkdown(load(await fs.readFile(page.spec, "utf-8")) as OpenApiSpec)
+        })),
+        ...(mapping.typeDocPages ?? []).map((page) => ({
+            noteId: page.noteId,
+            render: async () => {
+                const project = await runTypeDoc(page.entryPoint, page.tsconfig);
+                if (page.skillReference) {
+                    await writeArtifact(page.skillReference, renderSkillReference(project, page));
+                }
+                return typeDocToMarkdown(project, page);
+            }
+        }))
+    ];
+    if (!pages.length) {
+        return;
+    }
+
+    const meta = JSON.parse(await fs.readFile(path.join(mapping.path, "!!!meta.json"), "utf-8")) as NoteMetaFile;
+    for (const page of pages) {
+        const found = findDataFile(meta.files, page.noteId);
+        if (!found?.dataFile.endsWith(".md")) {
+            throw new Error(`Generated page ${page.noteId} needs a Markdown data file in ${mapping.path}.`);
+        }
+
+        const markdown = await toExportedMarkdown(await page.render(), found.note.title ?? "");
+        await fs.writeFile(path.join(mapping.path, found.dataFile), markdown);
+    }
+}
+
+/** The skill reference of a TypeDoc page: its declarations under a heading `readSkill()` appends. */
+function renderSkillReference(project: Awaited<ReturnType<typeof runTypeDoc>>, page: TypeDocPage) {
+    return [
+        `<!-- Generated from ${path.basename(page.entryPoint)} by \`pnpm edit-docs:sync-docs\`. Do not edit. -->`,
+        "## API reference",
+        "Every member of `api` and of the objects it returns, as TypeScript declarations, each under the first sentence of its description.",
+        `\`\`\`ts\n${typeDocToDeclarations(project, page)}\n\`\`\``
+    ].join("\n\n") + "\n";
+}
+
+/**
+ * Converts generated Markdown to the form `MarkdownExportProvider` writes, so an import that no
+ * export follows leaves the page unchanged on disk.
+ */
+async function toExportedMarkdown(markdown: string, title: string) {
+    const { markdownImportService, markdownExportService } = await import("@triliumnext/core");
+    const html = markdownImportService.renderToHtml(markdown, title);
+    const exported = markdownExportService.toMarkdown(html);
+    return exported.startsWith("# ") ? exported : `# ${title}\n${exported}`;
+}
+
+/** A note's meta and the path of its data file relative to the export root. */
+function findDataFile(
+    notes: NoteMeta[], noteId: string, dir = ""
+): { note: NoteMeta; dataFile: string } | undefined {
+    for (const note of notes) {
+        if (note.noteId === noteId) {
+            return note.dataFileName
+                ? { note, dataFile: path.join(dir, note.dataFileName) }
+                : undefined;
+        }
+
+        const found = findDataFile(note.children ?? [], noteId, path.join(dir, note.dirFileName ?? ""));
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
+}
+
+export async function exportData(mapping: NoteMapping, baseUrl: string) {
+    const { path: outputPath, ignoredFiles: ignoredFileNames } = mapping;
+    const ignoredFiles = ignoredFileNames ? new Set(ignoredFileNames) : undefined;
     const zipFilePath = "output.zip";
 
     try {
@@ -151,59 +275,20 @@ export async function exportData(noteId: string, format: "markdown" | "html", ou
         // First export as zip.
         const { zipExportService } = (await import("@triliumnext/core"));
 
-        const exportOpts: AdvancedExportOptions = {};
-        if (format === "html") {
-            exportOpts.skipHtmlTemplate = true;
-            exportOpts.customRewriteLinks = (originalRewriteLinks, getNoteTargetUrl) => {
-                return (content: string, noteMeta: NoteMeta) => {
-                    content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/[^"]*"/g, (match, targetNoteId) => {
-                        const url = getNoteTargetUrl(targetNoteId, noteMeta);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `href="${url}"` : match;
-                    });
-
-                    content = rewriteHelpLinks(content);
-
-                    return content;
-
-                    function findAttachment(targetAttachmentId: string) {
-                        let url;
-
-                        const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === targetAttachmentId);
-                        if (attachmentMeta) {
-                            // easy job here, because attachment will be in the same directory as the note's data file.
-                            url = attachmentMeta.dataFileName;
-                        } else {
-                            console.info(`Could not find attachment meta object for attachmentId '${targetAttachmentId}'`);
-                        }
-                        return url;
-                    }
-                };
-            };
-        }
-
-        await zipExportService.exportToZipFile(noteId, format, zipFilePath, exportOpts);
+        await zipExportService.exportToZipFile(mapping.rootNoteId, mapping.format, zipFilePath, {});
         await extractZip(zipFilePath, outputPath, ignoredFiles);
     } finally {
         await fs.rm(zipFilePath, { force: true });
     }
 
-    await cleanUpMeta(outputPath, format === "html", baseUrl);
+    await cleanUpMeta(outputPath, mapping, baseUrl);
 }
 
-async function cleanUpMeta(outputPath: string, minify: boolean, baseUrl: string) {
+/**
+ * Normalizes the freshly exported `!!!meta.json` so it doesn't churn between runs, and — for the
+ * mapping backing the User Guide — derives the in-app help tree and its rendered content.
+ */
+async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: string) {
     const metaPath = path.join(outputPath, "!!!meta.json");
     const meta = JSON.parse(await fs.readFile(metaPath, "utf-8")) as NoteMetaFile;
     for (const file of meta.files) {
@@ -217,27 +302,44 @@ async function cleanUpMeta(outputPath: string, minify: boolean, baseUrl: string)
         }
 
         el.isExpanded = false;
-
-        // Rewrite web view URLs that point to root.
-        if (el.type === "webView" && minify) {
-            const srcAttr = el.attributes.find(attr => attr.name === "webViewSrc");
-            if (srcAttr.value.startsWith("/")) {
-                srcAttr.value = baseUrl + srcAttr.value;
-            }
-        }
     }
 
-    if (minify) {
-        const subtree = parseNoteMetaFile(meta, serverTextNoteHandler, baseUrl);
-        await fs.writeFile(metaPath, JSON.stringify(subtree));
+    await fs.writeFile(metaPath, JSON.stringify(stripAppVersion(meta), null, 4));
 
-        // Generate standalone meta: webView-based, pointing to online docs.
-        const standaloneSubtree = parseNoteMetaFile(meta, standaloneTextNoteHandler, baseUrl);
-        const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
-        await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
-    } else {
-        await fs.writeFile(metaPath, JSON.stringify(stripAppVersion(meta), null, 4));
+    if (!mapping.helpMeta && !mapping.helpContent) {
+        return;
     }
+
+    const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
+
+    if (mapping.helpMeta) {
+        await writeArtifact(mapping.helpMeta, serializeHelpMeta(helpMeta));
+    }
+
+    if (mapping.helpContent) {
+        const { markdownImportService } = await import("@triliumnext/core");
+        const bundle = buildHelpBundle(
+            helpMeta,
+            sources,
+            (source) => {
+                try {
+                    return readFileSync(path.join(outputPath, source), "utf-8");
+                } catch {
+                    return null;
+                }
+            },
+            (markdown, title) => markdownImportService.renderToHtml(markdown, title)
+        );
+
+        // One page per line: the bundle is a flat map from note ID to HTML.
+        await writeArtifact(mapping.helpContent, JSON.stringify(bundle, null, 4));
+    }
+}
+
+/** Writes a generated help artifact, creating its directory if needed. */
+async function writeArtifact(filePath: string, content: string) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, content);
 }
 
 async function createImportZip(path: string) {
@@ -266,36 +368,6 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
         archive.on("error", rej);
         archive.finalize().catch(rej);
     });
-}
-
-/**
- * Rewrites internal `#root/...` note links in exported help HTML so that they resolve
- * against the help subtree once imported into a production Trilium instance.
- *
- * In the edit-docs instance the help notes carry plain, randomly generated IDs, but in
- * production they live under the `_help` subtree with a `_help_` prefix. This adds that
- * prefix to the link's target note ID, and reduces the link to that ID alone: the editor
- * writes a full note path when a link is created, whose intermediate IDs belong to the
- * docs instance and match nothing in the tree a reader has, leaving the client to fall
- * back to the note's own path. The importer writes the same single-ID form, so a note
- * exported straight after an edit now matches one that has been through an import.
- */
-export function rewriteHelpLinks(content: string): string {
-    return content.replace(/href="([^"]*#root)(?:[a-zA-Z0-9_/]*\/)?([a-zA-Z0-9_]+)([^"]*)"/g,
-        (match, prefix: string, targetNoteId: string, suffix: string) => {
-            if (targetNoteId.startsWith("_help_")) {
-                return `href="${prefix}/${targetNoteId}${suffix}"`;
-            }
-
-            // Canonical hidden-subtree notes (e.g. _options, _optionsTextNotes) keep their IDs in
-            // production, so they already start with an underscore, and their path is a real one.
-            // Only help notes (random alphanumeric IDs) get the `_help_` prefix; prefixing the
-            // others would produce broken `_help__optionsTextNotes`-style links (see issue #9646).
-            if (targetNoteId.startsWith("_")) {
-                return match;
-            }
-            return `href="${prefix}/_help_${targetNoteId}${suffix}"`;
-        });
 }
 
 export async function createZipFromDirectory(dirPath: string, zipPath: string) {
@@ -329,7 +401,7 @@ export async function extractZip(zipFilePath: string, outputPath: string, ignore
 
 /**
  * Rewrites CRLF line endings to LF, so that `extractZip` writes the same bytes on Windows as it
- * does elsewhere. The exported trees (`docs/`, the help HTML, the demo) are stored with LF, and
+ * does elsewhere. The exported trees (`docs/`, the demo) are stored with LF, and
  * Git only hides the difference once a file is staged.
  *
  * Binary entries such as images keep their bytes. They are detected the way Git detects them: a

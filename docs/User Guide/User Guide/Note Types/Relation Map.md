@@ -25,7 +25,7 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   To edit the title of a note, change its color or delete it (either from the map, or delete it completely), right click the note.
 *   To rename or delete a relationship, right click it and select the corresponding option.
 *   On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) map, notes cannot be moved and relationships cannot be drawn, renamed or deleted. The right click menu of a note only offers to open it, and a relationship has no right click menu.
-*   To move around the map, drag an empty part of it, and zoom with the mouse wheel or the buttons at the bottom-right corner. Clicking the zoom percentage goes back to 100%, and <span class="tn-icon bx bx-scan"></span> _Fit to view_ zooms and pans so that all the notes are visible.
+*   To move around the map, drag an empty part of it, and zoom with the mouse wheel or the <span class="tn-icon bx bx-minus-circle"></span> and <span class="tn-icon bx bx-plus-circle"></span> buttons at the bottom-right corner. Clicking the zoom percentage goes back to 100%, and <span class="tn-icon bx bx-scan"></span> _Fit to view_ zooms and pans so that all the notes are visible.
     *   Once the map has been clicked, the arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> pan it, and <kbd>+</kbd> and <kbd>-</kbd> zoom it. The <kbd>?</kbd> button at the top-right corner of the map lists all its keyboard shortcuts.
 
 ## Note panel
@@ -33,11 +33,11 @@ Relation map is a type of note which visualizes notes and their [relations](..
 When a note on the map is clicked, a panel opens to the right of the map and the note is highlighted. If the panel would cover the note, or the note is partly off-screen, the map pans to bring it into view. The panel contains:
 
 *   The title and icon of the note, both editable.
-*   A button to expand the panel over the whole map, and to restore it afterwards.
+*   A <span class="tn-icon bx bx-expand-alt"></span> button to expand the panel over the whole map, and to restore it afterwards.
 *   Buttons to interact with the note:
-    *   Open the note in the current tab, or, through the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu, in a new tab, split, window or the quick edit popup.
-    *   A color picker to change the color of the note.
-    *   A button to remove the note from the map, which can optionally delete the note as well.
+    *   <span class="tn-icon bx bx-log-in"></span> Open the note in the current tab, or, through the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu, in a new tab, split, window or the quick edit popup.
+    *   A <span class="tn-icon bx bx-palette"></span> color picker to change the color of the note.
+    *   A <span class="tn-icon bx bx-trash"></span> button to remove the note from the map, which can optionally delete the note as well.
 *   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the note, if any.
 *   The note's content, which can be edited directly from the panel.
 
@@ -45,7 +45,7 @@ The color picker and the remove button are not shown if the map is read-only.
 
 Clicking another note on the map switches the panel to it. Similarly, clicking an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> inside the panel switches the panel to that note, as long as it is on the map.
 
-To close the panel, press the X button at its top-right, click an empty part of the map, or press <kbd>Esc</kbd>.
+To close the panel, press the <span class="tn-icon bx bx-x"></span> button at its top-right, click an empty part of the map, or press <kbd>Esc</kbd>.
 
 On mobile, the note opens as a dialog over the whole screen instead of a panel.
 

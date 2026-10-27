@@ -53,7 +53,13 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                 if (!active) return;
                 setModels(fetched);
                 setLoading(false);
-                if (autoSelectDefaults && selected.length === 0 && fetched.length > 0) {
+                const seedFresh = autoSelectDefaults && selected.length === 0;
+                // A stored selection the listing no longer carries any part of is one the provider
+                // has moved on from, so it is seeded again as for a new provider: the old ids are
+                // ones the provider now refuses, so keeping them would offer nothing usable.
+                const seedSuperseded = selected.length > 0
+                    && !selected.some(model => fetched.some(f => f.id === model.id));
+                if ((seedFresh || seedSuperseded) && fetched.length > 0) {
                     onChange(defaultSelectedModels(fetched));
                     return;
                 }
@@ -86,7 +92,11 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
     if (error) {
         return (
             // JSX escapes the text itself, so i18next must not escape the message as well.
-            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}>
+            <NoItems
+                icon="bx bx-error-circle"
+                className="model-selection-error"
+                text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}
+            >
                 {troubleshooting}
             </NoItems>
         );
@@ -110,7 +120,7 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                     </button>
                 </div>
             </div>
-            <div className="model-selection-list">
+            <div className="model-selection-list scroll-edge-fade">
                 {models.map(model => (
                     <FormCheckbox
                         key={model.id}

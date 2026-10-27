@@ -1,0 +1,31 @@
+:where(:root) {
+    --content-languages-english-name-color: var(--muted-text-color);
+}
+
+.tn-card.content-languages-card {
+    .content-languages-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .content-languages-title {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .content-languages-native-name {
+        font-weight: 600;
+    }
+
+    .content-languages-english-name {
+        margin-inline-start: 0.5em;
+        color: var(--content-languages-english-name-color);
+    }
+
+    .content-languages-remove {
+        flex-shrink: 0;
+    }
+}

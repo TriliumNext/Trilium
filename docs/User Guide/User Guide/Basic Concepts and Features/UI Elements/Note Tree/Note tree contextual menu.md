@@ -21,17 +21,17 @@ The most frequent actions stand side by side at the top of the menu, each as an 
 *   **Cut**
     *   Will place the given notes in clipboard.
     *   Use one of the two paste functions (or the keyboard shortcuts) to move them to the desired location.
-*   **Clone**
+*   **Copy**
     *   Will place the given notes in clipboard.
     *   Use one of the two paste functions (or the keyboard shortcuts) to copy them to the desired location.
     *   Note that the copy function here works according to the <a class="reference-link" href="../../Notes/Cloning%20Notes.md">Cloning Notes</a> functionality (i.e. the note itself will be present in two locations at once, and editing it in one place will edit it everywhere).
     *   To simply create a duplicate note that can be modified independently, look for _Duplicate_.
 *   **Paste into**
     *   Pastes the notes in clipboard as child notes of the right-clicked one.
-    *   Shown only after notes have been cut or cloned.
+    *   Shown only after notes have been cut or copied.
 *   **Paste after**
     *   Pastes the notes in clipboard underneath the right-clicked one.
-    *   Shown only after notes have been cut or cloned.
+    *   Shown only after notes have been cut or copied.
 *   **Delete**
     *   Will delete the given notes, asking for confirmation first.
     *   In the dialog, the following options can be configured:
@@ -51,7 +51,7 @@ The rest of the menu lists its options one per row:
     *   Allows easy creation of a note with a specified [note type](../../../Note%20Types.md).
     *   The _Code_ submenu starts with the scripting notes, each a code note set up for its role: _Custom CSS_ (with `#appCss`), _Widget_ (with `#widget` and a starting skeleton) and _Backend script_. The enabled code languages follow.
     *   <a class="reference-link" href="../../../Collections.md">Collections</a> are grouped in the _Collection_ submenu. The note types created less often, the <a class="reference-link" href="../../../Advanced%20Usage/Snippets.md">Snippets</a> and the AI quick action are in the _More_ submenu.
-    *   <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a> will also be present (if any) at the end of the list.
+    *   <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a> will also be present (if any) at the end of the list, under a _Templates_ heading. The <span class="tn-icon bx bx-cog"></span> button beside the heading opens _Content Manager_ in the <a class="reference-link" href="../Options.md">Options</a>, where the templates can be managed.
     *   To find an entry quickly, type into the search box at the top of the submenu, or just start typing while the submenu is open. The submenu then lists every matching entry, including those inside its own submenus (such as a code language or a collection), each with the submenu it comes from. Use <kbd>↑</kbd> and <kbd>↓</kbd> to pick a match, <kbd>Enter</kbd> to create it, and <kbd>Esc</kbd> to clear the search.
     *   The note will be added on the same level of hierarchy as the note selected.
 *   **Insert child note**
@@ -74,9 +74,9 @@ The rest of the menu lists its options one per row:
 *   **Protect subtree/Unprotect subtree**
     *   On a note that is not protected, _Protect subtree_ marks this note and all of its descendants as protected. On a protected note, the item reads _Unprotect subtree_ and unprotects them instead. See <a class="reference-link" href="../../Notes/Protected%20Notes.md">Protected Notes</a> for more information.
     *   Hovering the item or clicking its arrow opens a submenu with both actions, for instance to unprotect the protected notes below a note that is not protected itself.
-*   **Import into note**
+*   **Import into note…**
     *   Opens the [import](../../Import%20%26%20Export.md) dialog and places the imported notes as child notes of the selected one.
-*   **Export**
+*   **Export…**
     *   Opens the [export](../../Import%20%26%20Export.md) dialog for the selected notes.
 *   **Search in subtree**
     *   Opens a full <a class="reference-link" href="../../Navigation/Search.md">Search</a> with it preconfigured to only look into this note and its descendants (the _Ancestor_ field).
@@ -89,11 +89,11 @@ The advanced options menu offers some of the less frequently used actions for no
 
 To access these options, first look for the _Advanced_ option at the bottom of the contextual menu to reveal a sub-menu with:
 
-*   **Apply bulk actions**
+*   **Apply bulk actions…**
     *   Opens the <a class="reference-link" href="../../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a> dialog, to apply actions such as adding labels or moving notes to multiple notes at once (see <a class="reference-link" href="Multiple%20selection.md">Multiple selection</a>).
-*   **Edit branch prefix**
+*   **Edit branch prefix…**
     *   Opens a dialog to assign a name to be able to distinguish [clones](../../Notes/Cloning%20Notes.md), see <a class="reference-link" href="../../Notes/Cloning%20Notes/Branch%20prefix.md">Branch prefix</a> for more information.
-*   **Convert to attachment**
+*   **Convert to attachment…**
     *   Converts the selected notes to <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a> of their parent notes.
     *   This functional is most useful when dealing with image <a class="reference-link" href="../../../Note%20Types/File.md">File</a> notes that were imported from an external source or an older version of Trilium.
 *   **Expand subtree**

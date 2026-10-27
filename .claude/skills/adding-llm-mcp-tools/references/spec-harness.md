@@ -1,6 +1,6 @@
 # Spec harness for LLM/MCP tools
 
-Tools are tested in-source: `packages/trilium-core/src/services/llm/tools/<name>_tools.spec.ts`. Because they live in `trilium-core`, which has no runner of its own, **both** app suites pick these specs up and run them against different platform providers — node + better-sqlite3, and happy-dom + sqlite-wasm. Green under one is not proof:
+Tools are tested in-source: `packages/trilium-core/src/services/llm/tools/<name>_tools.spec.ts`. Because they live in `trilium-core`, which has no runner of its own, **both** app suites pick these specs up and run them against different platform providers — node + better-sqlite3, and sqlite-wasm in a scope shaped like standalone's Web Worker. Green under one is not proof:
 
 ```bash
 pnpm --filter server test src/services/llm/tools/note_tools.spec.ts

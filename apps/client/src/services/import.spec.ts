@@ -52,78 +52,73 @@ beforeEach(() => {
 });
 
 describe("uploadFiles", () => {
+    const fileA = new File([ "a" ], "a.md");
+    const fileB = new File([ "b" ], "b.md");
+    let uploadForm: ReturnType<typeof vi.fn>;
+
     beforeEach(() => {
-        ($ as any).ajax = vi.fn(async () => ({}));
+        uploadForm = vi.fn(async () => ({}));
+        server.uploadForm = uploadForm as typeof server.uploadForm;
         server.getHeaders = vi.fn(async () => ({ "x-h": "1" })) as typeof server.getHeaders;
     });
 
     it("throws on an unrecognized entity type", async () => {
-        await expect(uploadFiles("bogus", "p1", ["f"], { shrinkImages: false })).rejects.toThrow(
+        await expect(uploadFiles("bogus", "p1", [ fileA ], { shrinkImages: false })).rejects.toThrow(
             "Unrecognized import entity type 'bogus'."
         );
-        expect(($ as any).ajax).not.toHaveBeenCalled();
+        expect(uploadForm).not.toHaveBeenCalled();
     });
 
     it("returns early without uploading when there are no files", async () => {
         const result = await uploadFiles("notes", "p1", [], { shrinkImages: false });
         expect(result).toBeUndefined();
-        expect(($ as any).ajax).not.toHaveBeenCalled();
+        expect(uploadForm).not.toHaveBeenCalled();
     });
 
-    it("posts one ajax request per file, flagging the last, and forwards options + headers", async () => {
-        await uploadFiles("notes", "parent1", ["a", "b"], {
+    it("posts one form per file, flagging the last, and forwards options + headers", async () => {
+        await uploadFiles("notes", "parent1", [ fileA, fileB ], {
             shrinkImages: true,
             safeImport: "true"
         });
 
-        const ajax = ($ as any).ajax as ReturnType<typeof vi.fn>;
-        expect(ajax).toHaveBeenCalledTimes(2);
+        expect(uploadForm).toHaveBeenCalledTimes(2);
 
-        const first = ajax.mock.calls[0][0];
-        expect(first.url).toContain("notes/parent1/notes-import");
-        expect(first.type).toBe("POST");
-        expect(first.headers).toEqual({ "x-h": "1" });
-        const firstData = first.data as FormData;
-        expect(firstData.get("last")).toBe("false");
-        expect(firstData.get("upload")).toBe("a");
-        expect(firstData.get("shrinkImages")).toBe("true");
-        expect(firstData.get("safeImport")).toBe("true");
+        const [ firstUrl, first ] = uploadForm.mock.calls[0];
+        expect(firstUrl).toBe("notes/parent1/notes-import");
+        expect(first).toMatchObject({ method: "POST", headers: { "x-h": "1" }, file: fileA, dataType: "json" });
+        expect(first.fields).toMatchObject({ last: "false", shrinkImages: "true", safeImport: "true" });
         // taskId is shared across files in the same upload batch.
-        const taskId = firstData.get("taskId");
-        expect(typeof taskId).toBe("string");
+        expect(typeof first.fields.taskId).toBe("string");
 
-        const second = ajax.mock.calls[1][0];
-        const secondData = second.data as FormData;
-        expect(secondData.get("last")).toBe("true");
-        expect(secondData.get("upload")).toBe("b");
-        expect(secondData.get("taskId")).toBe(taskId);
+        const [ , second ] = uploadForm.mock.calls[1];
+        expect(second.file).toBe(fileB);
+        expect(second.fields).toMatchObject({ last: "true", taskId: first.fields.taskId });
     });
 
     it("uses the attachments endpoint for the attachments entity type", async () => {
-        await uploadFiles("attachments", "host1", ["a"], { shrinkImages: false });
-        const first = ($ as any).ajax.mock.calls[0][0];
-        expect(first.url).toContain("notes/host1/attachments-import");
+        await uploadFiles("attachments", "host1", [ fileA ], { shrinkImages: false });
+        expect(uploadForm.mock.calls[0][0]).toBe("notes/host1/attachments-import");
     });
 
-    it("surfaces an upload error through the toast service via the ajax error callback", async () => {
-        // Spy on the i18n binding so we can verify xhr.responseText is forwarded
+    it("surfaces an upload error through the toast service and rejects", async () => {
+        // Spy on the i18n binding so we can verify responseText is forwarded
         // without depending on i18next interpolation (i18next is uninitialised in
         // the test env, so t() returns the key and never interpolates). We assert
         // the call args/structure rather than a human-readable translated string.
         const tSpy = vi.spyOn(i18n, "t");
         vi.useFakeTimers();
         try {
-            ($ as any).ajax = vi.fn(async (opts: any) => {
-                opts.error({ responseText: "boom" });
-                return {};
-            });
-            await uploadFiles("notes", "p1", ["a"], { shrinkImages: false });
+            const failure = { status: 500, responseText: "boom" };
+            uploadForm.mockRejectedValue(failure);
+            await expect(uploadFiles("notes", "p1", [ fileA, fileB ], { shrinkImages: false })).rejects.toBe(failure);
+            // The first failure ends the batch.
+            expect(uploadForm).toHaveBeenCalledTimes(1);
             // The error toast is deferred (so a WebSocket taskError can claim the taskId first and
             // win), so the fallback only fires after IMPORT_ERROR_FALLBACK_DELAY — flush it first.
             vi.runOnlyPendingTimers();
             expect(toastService.showError).toHaveBeenCalledTimes(1);
-            // The xhr.responseText ("boom") must be forwarded into the message
-            // interpolation, not dropped or replaced with the whole xhr object.
+            // The responseText ("boom") must be forwarded into the message
+            // interpolation, not dropped or replaced with the whole error object.
             expect(tSpy).toHaveBeenCalledWith("import.failed", { message: "boom" });
         } finally {
             tSpy.mockRestore();
@@ -132,8 +127,8 @@ describe("uploadFiles", () => {
     });
 
     it("is also reachable through the default export", async () => {
-        await importService.uploadFiles("notes", "p1", ["a"], { shrinkImages: false });
-        expect(($ as any).ajax).toHaveBeenCalledTimes(1);
+        await importService.uploadFiles("notes", "p1", [ fileA ], { shrinkImages: false });
+        expect(uploadForm).toHaveBeenCalledTimes(1);
     });
 });
 

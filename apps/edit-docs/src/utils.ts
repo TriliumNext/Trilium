@@ -1,5 +1,6 @@
 import IpcMessagingProvider from "@triliumnext/desktop/src/ipc_messaging_provider.js";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "@triliumnext/desktop/src/protocol.js";
+import { setupTranscriptionHandlers } from "@triliumnext/desktop/src/services/transcription/index.js";
 import windowService, { setupWindowing } from "@triliumnext/desktop/src/services/window.js";
 import electron from "electron";
 
@@ -57,6 +58,9 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
         // (This also installs the WebContents security policy — webview-attach
         // vetting, window-open/navigation guards, permission handlers.)
         setupWindowing();
+
+        // The launcher bar's `RecordMeetingButton` calls `transcription-get-state` on mount.
+        setupTranscriptionHandlers();
 
         // Create the main window.
         await windowService.createMainWindow();

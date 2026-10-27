@@ -1,7 +1,7 @@
 import { ContextualBalloon, type ClassicEditor, _setModelData as setModelData } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createTestEditor, installLinkEmbedComponentMock, LINK_EMBED_TEST_PLUGINS } from "../../../test/link-embed-kit.js";
+import { createLinkEmbedHost, createTestEditor, LINK_EMBED_TEST_PLUGINS } from "../../../test/link-embed-kit.js";
 import { LINK_EMBED_COMMAND } from "./link_embed_commands.js";
 import LinkEmbedFormView from "./link_embed_form.js";
 
@@ -9,8 +9,7 @@ describe("LinkEmbedUI", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        installLinkEmbedComponentMock();
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: createLinkEmbedHost() });
     });
 
     it("binds the button to the insert command and opens the balloon form on click", () => {

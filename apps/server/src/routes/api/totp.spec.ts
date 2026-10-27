@@ -1,9 +1,10 @@
 import { cls, options } from "@triliumnext/core";
 import type { Request } from "express";
+import type { TotpConfig, TotpOptions } from "time2fa";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
-    mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
+    mockGenerateKey: vi.fn<GenerateKey>(),
     mockValidate: vi.fn<typeof import("time2fa").Hotp.validate>()
 }));
 
@@ -37,7 +38,8 @@ describe("TOTP API", () => {
         expect(result.message).toMatch(/^[A-Z2-7]+$/);
         expect(result.url).toContain("otpauth://");
         // The request hostname is used as the account label under the "Trilium" issuer.
-        expect(mockGenerateKey).toHaveBeenCalledWith({ issuer: "Trilium", user: "localhost" });
+        expect(mockGenerateKey).toHaveBeenCalledWith(
+            { issuer: "Trilium", user: "localhost" }, expect.anything());
         // Generation must not store the secret — that only happens at enable.
         expect(totpRoute.getTOTPStatus().set).toBe(false);
     });
@@ -114,3 +116,5 @@ function runVerify(body: unknown) {
 function runEnable(body: unknown) {
     return cls.init(() => totpRoute.enableSecret({ body } as unknown as Request));
 }
+
+type GenerateKey = (opts: TotpOptions, config?: TotpConfig) => { secret: string; url: string };

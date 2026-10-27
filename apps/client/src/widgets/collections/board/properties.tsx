@@ -4,7 +4,7 @@ import type FNote from "../../../entities/fnote";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { CollectionPropertiesDialog } from "../../note_bars/CollectionProperties";
+import { CollectionPropertiesDialog, IncludedNotesCard } from "../../note_bars/CollectionProperties";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
 import FormToggle from "../../react/FormToggle";
@@ -30,6 +30,10 @@ export default function BoardProperties({ api, note, shown, onClose }: {
         (templates: string[]) => api.setCardTemplateIds(templates), [ api ]);
     const storeAttributes = useCallback(
         (attributes: PromotedAttribute[]) => api.setPromotedAttributes(attributes), [ api ]);
+    const deleteGrouping = useCallback(
+        (deletion: () => Promise<void>, type: "label" | "relation", name: string) =>
+            api.deleteGrouping(type === "relation" ? `~${name}` : name, deletion),
+        [ api ]);
 
     return (
         <CollectionPropertiesDialog
@@ -40,6 +44,8 @@ export default function BoardProperties({ api, note, shown, onClose }: {
         >
             <General api={api} note={note} />
 
+            <IncludedNotesCard note={note} archivedLabel={t("board_view.show-archived")} />
+
             <PromotedAttributesCard
                 heading={t("board_view.promoted-attributes")}
                 instruction={t("board_view.promoted-attributes-hint")}
@@ -48,6 +54,7 @@ export default function BoardProperties({ api, note, shown, onClose }: {
                 drawnByCollection={[ api.statusAttribute ]}
                 itemNotes={api.getCardNotes()}
                 onChange={storeAttributes}
+                runDeletion={deleteGrouping}
             />
 
             <TemplateSelectionCard
@@ -62,10 +69,9 @@ export default function BoardProperties({ api, note, shown, onClose }: {
     );
 }
 
-/** What the board draws besides its own cards: the inbox column and what is filed as archived. */
+/** What the board draws besides its own cards, such as the inbox column, and how. */
 function General({ api, note }: { api: BoardApi, note: FNote }) {
     const [ inboxShown ] = useNoteLabelBoolean(note, "board:showInbox");
-    const [ archivedShown ] = useNoteLabelBoolean(note, "includeArchived");
     const [ addColumnHidden ] = useNoteLabelBoolean(note, "board:hideAddColumn");
     const [ columnWidth ] =
         useNoteLabelWithDefault(note, COLUMN_WIDTH_LABEL, DEFAULT_COLUMN_WIDTH);
@@ -88,16 +94,6 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
                 <FormToggle
                     currentValue={inboxShown}
                     onChange={(shown) => api.setInboxEnabled(shown)}
-                />
-            </OptionCardSection>
-
-            <OptionCardSection
-                name="board-show-archived"
-                label={t("board_view.show-archived")}
-            >
-                <FormToggle
-                    currentValue={archivedShown}
-                    onChange={(shown) => api.setArchivedShown(shown)}
                 />
             </OptionCardSection>
 

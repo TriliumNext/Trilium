@@ -1,5 +1,5 @@
 # Content language & Right-to-left support
-![](Content%20language%20&%20Right-to-left%20support_image.png)
+![](Content%20language%20&%20Right-to-left%20support_image.jpg)
 
 The content language determines:
 
@@ -15,7 +15,10 @@ To set the language of the content of a <a class="reference-link" href="../Text
 
 ## Adjusting the list of languages
 
-By default there will be no language configured, they can be configured by going to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Language & Region or by selecting the _Configure languages_ item when setting the language.
+By default, no language is configured. To configure them, go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Content languages_, or select the _Configure languages..._ item when setting the language. The enabled languages are listed by their native names, sorted alphabetically, which is also the order the language selector shows them in. Here you can:
+
+*   Add a language by pressing the <span class="tn-icon bx bx-plus"></span> _Add a language_ button (_Add another language_ once one is enabled), which also shows how many languages are left, and then selecting it.
+*   Press the <span class="tn-icon bx bx-x"></span> button beside a language to remove it from the list.
 
 ## Default content language
 

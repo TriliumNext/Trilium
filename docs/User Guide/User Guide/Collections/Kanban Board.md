@@ -11,20 +11,22 @@ When you first create a collection of the _Board_ type, a few subnotes are creat
 
 Notes are displayed recursively, so even grandchildren and more deeply nested notes will be displayed. However, unlike the <a class="reference-link" href="Table.md">Table</a>, the notes are not displayed hierarchically.
 
+To limit how deep the board looks, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and set _Maximum nesting depth_ (under the _Included notes_ section), or apply the `#maxNestingDepth` label to the board note: `0` shows only the children, `1` adds their children, and so on. Without a value, every level is shown.
+
 ## Working with columns
 
 ### Creating columns
 
-You can create a new column by pressing the <span class="tn-icon bx bx-plus"></span> _Add column_ button located after the last column.
+You can create a new column by pressing the <span class="tn-icon bx bx-plus"></span>_Add column_ button located after the last column.
 
 Enter the new name (which must not match another column), optionally select an icon by pressing the circle at the start of the text box, and then press the (+) button or <kbd>Enter</kbd>. Click or tap outside the text box, or press <kbd>Esc</kbd>, to dismiss it.
 
 Columns can also be added from a context menu:
 
-*   To add a column at the end of the board, right-click an empty area of the board and select <span class="tn-icon bx bx-columns"></span> _Add new column_.
-*   To add a column next to an existing one, open its column menu and select <span class="tn-icon bx bx-columns"></span> _Add new column_ → _Before_ (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>) or _After_ (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
+*   To add a column at the end of the board, right-click an empty area of the board and select <span class="tn-icon bx bx-columns"></span>_Add new column_.
+*   To add a column next to an existing one, open its column menu and select <span class="tn-icon bx bx-columns"></span>_Add new column_ → _Before_ (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>) or _After_ (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
 
-Once a board is set up, the _Add column_ button can be hidden. To do so, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and turn off _Show the "Add column" button_ (under the _General_ section), or apply the `#board:hideAddColumn` label to the board note. Columns can still be added from the context menus above.
+Once a board is set up, the _Add column_ button can be hidden. To do so, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and turn off _Show the "Add column" button_ (under the _General_ section), or apply the `#board:hideAddColumn` label to the board note. Columns can still be added from the context menus above.
 
 ### Reordering columns
 
@@ -112,7 +114,7 @@ When cards are sorted by an attribute, they are ordered according to the followi
 | Date, Date & time | oldest → newest |
 | Time | earliest hour (closest to 0) → latest hour (closest to 24) |
 | Checkbox | unchecked → checked |
-| Select | The order in which the options are declared.      <br>For example, a select attribute declared with “Low”, “Medium”, and “High” options will be sorted as follows: Low → Medium → High. |
+| Select | The order in which the options are declared.       <br>For example, a select attribute declared with “Low”, “Medium”, and “High” options will be sorted as follows: Low → Medium → High. |
 | Color | Grays → colors. Colors are ordered by their color-wheel [hue](https://en.wikipedia.org/wiki/Hue) angle (from 0° to 360°). |
 
 Relation attributes are ordered according to the title of the target note.
@@ -121,7 +123,7 @@ Cards with attributes that have no value set are always sorted at the end of the
 
 #### Configuring the default sorting options
 
-Every new column uses the _Board's default_ sorting option, which is initially set to manual sorting on new boards. However, the default can be changed to any other sorting criterion and direction. To configure it, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Default card order_ (under the _General_ section).
+Every new column uses the _Board's default_ sorting option, which is initially set to manual sorting on new boards. However, the default can be changed to any other sorting criterion and direction. To configure it, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Default card order_ (under the _General_ section).
 
 Once the default is changed, all columns set to the _Board's default_ sorting option will follow the new sorting options.
 
@@ -146,7 +148,7 @@ A column that has reached its limit can still accept new cards. Blocking new car
 
 If you want to hide a column from the board without deleting it, you can archive it by opening the column menu → <span class="tn-icon bx bx-archive-in"></span> _Archive column_. Archiving a column does not set the archived flag (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a>) on the notes corresponding to its cards.
 
-To show archived columns again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_. Archived columns will appear faded. To restore one, open its column menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive column_.
+To show archived columns again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_, or turn on _Show archived cards and columns_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ (under the _Included notes_ section). Archived columns will appear faded. To restore one, open its column menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive column_.
 
 ### Deleting a column
 
@@ -166,7 +168,7 @@ Optionally, the inbox column can also list nested notes from the board collectio
 
 ### Changing the width of columns
 
-There are three predefined widths for board columns: narrow (default), medium, and wide. To change the width, open the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Column width_ (under the _General_ section). This option applies to every column on the board, except in the mobile version.
+There are three predefined widths for board columns: narrow (default), medium, and wide. To change the width, open the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Column width_ (under the _General_ section). This option applies to every column on the board, except in the mobile version.
 
 The same option is also available through the `#board:columnWidth` label (read more about <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Attributes</a>) on the board note, which accepts “`narrow`”, “`medium`”, or “`wide`” as its value.
 
@@ -184,7 +186,7 @@ You can also redefine these three widths by using custom app CSS (read more abou
 
 ### Creating a new card
 
-To create a new card, press the <span class="tn-icon bx bx-plus"></span> _New card_ button located at the bottom of each column. To create a new card above or below a specific card, right-click or hold that card, and then select <span class="tn-icon bx bx-list-plus bx-flip-vertical"></span> _Insert new above_ or <span class="tn-icon bx bx-list-plus"></span> _Insert new below_ from the context menu. Alternatively, press <kbd>Shift</kbd> + <kbd>Enter</kbd> to create a new card above the focused card, or <kbd>Enter</kbd> to create one below it.
+To create a new card, press the <span class="tn-icon bx bx-plus"></span>_New card_ button located at the bottom of each column. To create a new card above or below a specific card, right-click or hold that card, and then select <span class="tn-icon bx bx-list-plus bx-flip-vertical"></span> _Insert new above_ or <span class="tn-icon bx bx-list-plus"></span> _Insert new below_ from the context menu. Alternatively, press <kbd>Shift</kbd> + <kbd>Enter</kbd> to create a new card above the focused card, or <kbd>Enter</kbd> to create one below it.
 
 Next, type the title of the new card, and then press the <span class="tn-icon bx bx-plus-circle"></span> button or <kbd>Enter</kbd> to complete it. Tap or click anywhere outside the text box to dismiss it. You can also select a different icon and card template. To learn more about card templates, see Card templates (learn more about <a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a>).
 
@@ -201,7 +203,7 @@ In the dialog that opens, search for the note by name, and then press the _Add t
 If the target note is already in the board collection's subtree, it will already be listed in the **inbox column**.
 
 > [!IMPORTANT]
-> Notes added to the board are cloned, not duplicated. This means that changes to their titles, content, and attributes on the board are reflected in their original locations as well. Learn more about cloned notes.
+> Notes added to the board are cloned, not duplicated. This means that changes to their titles, content, and attributes on the board are reflected in their original locations as well. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Cloning Notes</a> for more information.
 
 ### Selecting multiple cards
 
@@ -220,7 +222,7 @@ You can select multiple cards in the following ways:
 *   **Using only the keyboard:**
     *   To add the currently focused card to the selection, press <kbd>Ctrl</kbd> + <kbd>Space</kbd>. Repeat this for the other cards you want to select. Pressing <kbd>Ctrl</kbd> + <kbd>Space</kbd> again on a selected card will deselect it.
     *   To select a continuous sequence of cards within a column, hold <kbd>Shift</kbd> and use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to expand or shrink the selection.
-    *   To select every card in the column the focus is in, press <kbd>Ctrl</kbd> + <kbd>A</kbd>. The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span> _Select all cards_.
+    *   To select every card in the column the focus is in, press <kbd>Ctrl</kbd> + <kbd>A</kbd>. The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span>_Select all cards_.
     *   Press <kbd>Esc</kbd> to clear the selection.
 
 ### Moving cards between columns
@@ -289,7 +291,7 @@ Each card can be tinted with a different color. Open the card's context menu and
 
 A card can be hidden from the board without deleting it by using the <span class="tn-icon bx bx-archive-in"></span> _Archive note_ command from the card's context menu.
 
-To show archived cards again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_. Archived cards will appear faded. To restore one, open its context menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive note_.
+To show archived cards again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_, or turn on _Show archived cards and columns_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ (under the _Included notes_ section). Archived cards will appear faded. To restore one, open its context menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive note_.
 
 > [!WARNING]
 > Archiving a card sets the `#archived` flag on its note. If the note exists in multiple locations in the tree, it will appear archived in those locations as well. Read more about <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a>.
@@ -317,7 +319,7 @@ By default, the face of a card displays a minimal set of information: the title,
 
 To create a new attribute, follow these steps:
 
-1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the _Card attributes_ section, and then press the <span class="tn-icon bx bx-plus"></span> _Create a new attribute_ button.
+1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the _Card attributes_ section, and then press the <span class="tn-icon bx bx-plus"></span> _Create a new attribute_ button.
 2.  Enter a name for the attribute. This is the internal name used by Trilium, so do not use spaces or special characters.
 3.  Select a type (text, number, checkbox, and so on).
 4.  Set the display name. This is the name shown on the card.
@@ -338,11 +340,11 @@ Here is an example of the attributes you can define for a typical Kanban board u
 
 To set the value of a custom attribute, click or tap the card, and then enter or select the desired value in the dialog header.
 
-For attributes of the “select” or “checkbox” type, you can quickly change the value by using the card's context menu under the _Attributes_ section.
+For attributes of the “select”, “checkbox” or “date” type, you can quickly change the value by using the card's context menu under the _Attributes_ section. A date attribute's submenu offers _Not set_ to clear the value, and a date picker: a calendar to pick any day, with buttons below it for _Today_, _Tomorrow_ and _Next week_ (the first day of next week, as set in the first day of the week option). Use the arrows to change the month, and click a day to set it. From the keyboard, the arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, and <kbd>Enter</kbd> sets the day; <kbd>↓</kbd> from the last week moves to the buttons, <kbd>←</kbd> and <kbd>→</kbd> move between them, and <kbd>↑</kbd> returns to the calendar.
 
 #### Reordering, hiding, redefining, and deleting custom attributes
 
-Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_. Under the _Card attributes_ section, you can:
+Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_. Under the _Card attributes_ section, you can:
 
 *   Hold the **\=** handle shown beside an attribute, and then drag the item up or down to reorder the attributes. This determines the order in which the attributes are displayed on the card.
 *   Turn off the toggle to hide an attribute from the card's face. The attribute remains available when you edit the card. For the current grouping attribute, the toggle is disabled.
@@ -357,7 +359,7 @@ If cards define an attribute with the same name but a different type or differen
 
 When you create a new card, Trilium offers four templates by default: _Text_, _Markdown_, _Canvas_, and _Spreadsheet_. You can customize this list to include other note types or custom templates with predefined placeholder content and prefilled card attributes.
 
-To customize the card templates, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and find _Card templates_. Here you can:
+To customize the card templates, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and find _Card templates_. Here you can:
 
 *   Include a note type or note template already created in your knowledge base by pressing the <span class="tn-icon bx bx-list-plus"></span> _Add existing template_ button and then selecting the desired note type or template.
 *   Create a new template by pressing the <span class="tn-icon bx bx-plus"></span> _Create a new template_ button. The template editor will open, where you can define the icon, title, default attribute values, and default content. The note template will be created as a child of the board collection.
@@ -395,7 +397,7 @@ Switching the grouping attribute lets you view your cards by priority, category,
 
 #### Deleting a grouping attribute
 
-To delete a grouping attribute, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the attribute under the _Card attributes_ section, and press the corresponding <span class="tn-icon bx bx-trash"></span> button.
+To delete a grouping attribute, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the attribute under the _Card attributes_ section, and press the corresponding <span class="tn-icon bx bx-trash"></span> button.
 
 #### Grouping by relations
 
@@ -461,4 +463,4 @@ In a text note, the pasted link displays the title, icon, and color of the colum
 
 ## Read-only boards
 
-A board marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) only shows its cards. It has no buttons to add a card or a column, column and card titles can't be renamed, and column icons can't be changed. Cards and columns can't be dragged, moved or deleted with the keyboard, and notes dragged in from the note tree aren't added. The context menus of a card or a column keep only the entries that change nothing, such as opening the note or <span class="tn-icon bx bx-copy"></span> _Copy reference_, and the board's own menu doesn't open. The cards can still be grouped by another attribute, but the choice isn't saved, and no new grouping attribute can be created.
+A board marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) only shows its cards. It has no buttons to add a card or a column, column and card titles can't be renamed, and column icons can't be changed. Cards and columns can't be dragged, moved or deleted with the keyboard, and notes dragged in from the note tree aren't added. The context menus of a card or a column keep only the entries that change nothing, such as opening the note or <span class="tn-icon bx bx-copy"></span>_Copy reference_, and the board's own menu doesn't open. The cards can still be grouped by another attribute, but the choice isn't saved, and no new grouping attribute can be created.

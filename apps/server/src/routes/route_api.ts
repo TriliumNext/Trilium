@@ -1,10 +1,12 @@
-import { entity_changes as entityChangesService, HttpError, routes, utils as coreUtils } from "@triliumnext/core";
+import { entity_changes as entityChangesService, HttpError, MAX_BLOB_CONTENT_LENGTH, routes, utils as coreUtils } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { mkdirSync } from "fs";
 import { readFile, rm } from "fs/promises";
+import { t } from "i18next";
 import multer from "multer";
 import { join } from "path";
+import { PassThrough, Transform } from "stream";
 
 import { bindEmitter } from "../cls_provider.js";
 import auth from "../services/auth.js";
@@ -129,6 +131,16 @@ function handleResponse(resultHandler: ApiResultHandler, req: express.Request, r
 
     const responseLength = resultHandler(req, res, result);
     getLog().request(req, res, Date.now() - start, responseLength);
+
+    // The request log above measures only the handler, so a client that times out during the
+    // transfer would otherwise leave nothing but a successful entry behind.
+    res.once("close", () => {
+        if (!res.writableFinished) {
+            const elapsedMs = Date.now() - start;
+            getLog().info(`Aborted ${res.statusCode} ${req.method} ${req.url} after ${elapsedMs}ms: `
+                + `the client disconnected before receiving the ${responseLength}-byte response`);
+        }
+    });
 }
 
 function handleException(e: unknown | Error, method: HttpMethod, path: string, res: express.Response) {
@@ -192,16 +204,113 @@ export function createImportUploadMiddleware(): RequestHandler {
     // Disk storage: imports can be large archives, so stream the upload to Trilium's tmp dir instead of
     // buffering the whole multipart in memory during the HTTP receive. The temp file is read back into
     // `file.buffer` and deleted by importMiddlewareWithErrorHandling before the handler runs.
+    return multer({
+        ...baseMulterOptions(),
+        storage: tmpDirStorage()
+    }).single("upload");
+}
+
+/** The most files a single Web Share Target request can carry. */
+export const MAX_SHARED_FILES = 20;
+
+/**
+ * Parses a Web Share Target POST into `req.body` and `req.files` and deletes its temp files once
+ * the response closes. Each shared file becomes one blob, so `maxFileSize` defaults to the blob limit:
+ * a file above it is rejected here, before the handler creates any note.
+ */
+export function createShareTargetMiddleware(maxFileSize = MAX_BLOB_CONTENT_LENGTH): RequestHandler {
+    const uploadMiddleware = createShareTargetUploadMiddleware(maxFileSize);
+
+    return (req, res, next) => {
+        uploadMiddleware(req, res, (err) => {
+            const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+            res.on("close", () => {
+                for (const file of files) {
+                    void rm(file.path, { force: true }).catch(() => {});
+                }
+            });
+
+            if (rejectedNestedField(err, res)) {
+                return;
+            }
+            if (err instanceof multer.MulterError) {
+                res.setHeader("Content-Type", "text/plain").status(400).send(t("share_target.rejected", { reason: err.message }));
+                return;
+            }
+            if (err) {
+                next(err);
+                return;
+            }
+            next();
+        });
+    };
+}
+
+function createShareTargetUploadMiddleware(maxFileSize: number): RequestHandler {
+    // Disk storage: a share can carry several large files, so the handler reads them back from
+    // `file.path` one at a time instead of holding all of them in memory.
+    const options: multer.Options & { streamHandler?: (req: express.Request, busboy: NodeJS.WritableStream) => void } = {
+        ...baseMulterOptions(),
+        storage: tmpDirStorage(),
+        // `streamHandler` is not yet in @types/multer 2.3.0.
+        streamHandler: (req, busboy) => {
+            req.pipe(stripNulBeforeDelimiters(multipartBoundary(req.headers["content-type"]))).pipe(busboy);
+        }
+    };
+    options.limits = { ...options.limits, files: MAX_SHARED_FILES, fileSize: maxFileSize };
+
+    return multer(options).array("files");
+}
+
+/** The `boundary` parameter of a multipart `Content-Type`, quoted or not. */
+export function multipartBoundary(contentType: string | undefined): string | undefined {
+    const match = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(contentType ?? "");
+    return match?.[1] ?? match?.[2];
+}
+
+/**
+ * Removes the NUL byte that Samsung Internet writes between the CRLF and a boundary delimiter
+ * (`\r\n\0--boundary`) in a Web Share Target body; busboy rejects that body as "Unexpected end of
+ * form".
+ */
+export function stripNulBeforeDelimiters(boundary: string | undefined): Transform {
+    if (!boundary) {
+        return new PassThrough();
+    }
+
+    const needle = Buffer.from(`\r\n\0--${boundary}`, "latin1");
+    let pending = Buffer.alloc(0);
+
+    return new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+            const data = Buffer.concat([ pending, chunk ]);
+            const parts: Buffer[] = [];
+            let start = 0;
+            for (let index = data.indexOf(needle); index !== -1; index = data.indexOf(needle, start)) {
+                parts.push(data.subarray(start, index + 2));
+                start = index + 3;
+            }
+            // Holds back a tail that could be the start of a needle split across chunks.
+            const keepFrom = Math.max(start, data.length - (needle.length - 1));
+            parts.push(data.subarray(start, keepFrom));
+            pending = data.subarray(keepFrom);
+            callback(null, Buffer.concat(parts));
+        },
+        flush(callback) {
+            callback(null, pending);
+        }
+    });
+}
+
+/** Writes each uploaded file to `upload/` under `dataDirs.TMP_DIR`. */
+function tmpDirStorage(): multer.StorageEngine {
     const outDir = join(dataDirs.TMP_DIR, "upload");
     mkdirSync(outDir, { recursive: true });
 
-    return multer({
-        ...baseMulterOptions(),
-        storage: multer.diskStorage({
-            destination: (req, file, cb) => cb(null, outDir),
-            filename: (req, file, cb) => cb(null, `upload-${coreUtils.randomString(13)}.trilium`)
-        })
-    }).single("upload");
+    return multer.diskStorage({
+        destination: (req, file, cb) => cb(null, outDir),
+        filename: (req, file, cb) => cb(null, `upload-${coreUtils.randomString(13)}.trilium`)
+    });
 }
 
 const uploadMiddleware = createUploadMiddleware();
@@ -251,6 +360,8 @@ export const importMiddlewareWithErrorHandling = function (req: express.Request,
         void materializeUploadedImport(file, next);
     });
 };
+
+export const shareTargetMiddlewareWithErrorHandling = createShareTargetMiddleware();
 
 /**
  * Whether this upload is a `.zip` read by a zip-reading importer — the case worth streaming from disk. That

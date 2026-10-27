@@ -1,6 +1,6 @@
 ---
 name: building-client-ui
-description: Use when building or changing any UI in the Trilium client (`apps/client`) — a dialog, a settings pane, a form, a toolbar, a badge, a link, a dropdown menu, a type widget, a control floating over a note's content (map, mind map, image, diagram, presentation), or any component that reads/writes a note's title, label, relation, blob or option. Catalogues the froca-reactive hooks (useNoteProperty / useNoteLabel / useNoteBlob / useChildNotes / useTriliumOption / useNoteContext) and which `loadResults` filter each already wires, the reusable Preact components under `apps/client/src/widgets/react/` (which one to reach for instead of a hand-rolled `<input>`/`<button>`/`<a>`/pill), when a dropdown is a `Dropdown` menu and when a `DropdownPanel`, the `OverlayControlGroup` / `OverlayToolbar` contract for controls over a canvas, the event-summoned Modal/LazyDialog wiring, and how to boot a login-free fixture instance to inspect real computed styles when a style, placement or stacking bug cannot be read off the stylesheets. The home for client UI guidance that outgrows CLAUDE.md.
+description: Use when building or changing any UI in the Trilium client (`apps/client`) — a dialog, settings pane, form, toolbar, badge, link, dropdown, type widget, or a control floating over a note's content. Catalogues the froca-reactive hooks (useNoteProperty / useNoteLabel / useNoteBlob / useChildNotes / useTriliumOption / useNoteContext) and the `loadResults` filter each wires, the reusable Preact components under `apps/client/src/widgets/react/` (which to reach for instead of a hand-rolled `<input>`/`<button>`/`<a>`/pill), `Dropdown` menu vs `DropdownPanel`, the `OverlayControlGroup` / `OverlayToolbar` contract, Modal/LazyDialog wiring, and how to boot a login-free fixture to inspect computed styles. The home for client UI guidance that outgrows CLAUDE.md.
 ---
 
 # Building client UI
@@ -95,12 +95,13 @@ Display and layout:
 
 - `NoItems` — empty state placeholder with icon and message ("no results", "too many items", error states).
 - `Badge` — colored pill/label with optional icon, tooltip and `onClick` (counts, status flags). Set its color through the `--color` CSS variable on a wrapper class, not inline styles; pass `outline` for a colored-border/transparent-fill variant. `BadgeWithDropdown` pairs a badge with a dropdown menu. Don't hand-roll pill/badge markup.
-- `Chip` — one entry of a set, with a remove button.
+- `Chip` — one entry of a set, with a remove button. `NoteChips` — a set of notes as chips (icon and title, linking to the note), the first five then "+N more" revealing a page of 100 at a time; read-only unless given `onRemove`. Use it wherever a dialog shows "these notes" (the bulk actions and delete dialogs do) rather than a list of `NoteLink`s.
 - `Alert`, `InfoBar`, `Admonition`, `ContentErrorMessage`, `RenderErrorCard` — inline notices and error surfaces of increasing weight.
-- `Card` — a titled group of sections (filter-aware under `FilterProvider`). `Collapsible` — animated, theme-styled expandable section with self-managed `initiallyExpanded`; `ExternallyControlledCollapsible` is the controlled variant (caller owns `expanded`/`setExpanded`).
+- `Card` — a titled group of sections (filter-aware under `FilterProvider`). **Anything that scrolls inside a card** (a list, a set of chips, a log, a table with a `max-height`) goes in a `CardSection noPadding`, with the card's padding moved onto the scrolling element itself: `padding: var(--card-padding-block) var(--card-padding-inline)`. In a padded section the scroller stops short of the card's border, so scrolled content is cut off along an inset edge with an empty strip of padding between the cut and the border. `NoteChips` (`.tn-card-section.tn-no-padding > .note-chips`) is the worked example. `Collapsible` — animated, theme-styled expandable section with self-managed `initiallyExpanded`; `ExternallyControlledCollapsible` is the controlled variant (caller owns `expanded`/`setExpanded`).
 - `TabStrip` — a row of icon-only tabs named by tooltips, heading a panel divided into groups.
 - `Modal`, `WizardModal` — dialogs; `Popover` — a card anchored beside something, with an arrow pointing at it, as the calendar's event card (portaled to the body and placed by `placeFloating()`, so no scroll container clips it).
-- `LoadingSpinner`, `LazyComponent`, `Icon`, `MaskedIcon`, `NoteList`, `SiblingNavigator`, `ImageViewer`, `CodeBlock`, `charts/DonutChart`, `charts/Treemap`.
+- `LoadingSpinner`, `LazyComponent`, `Icon`, `NoteList`, `SiblingNavigator`, `ImageViewer`, `CodeBlock`, `charts/DonutChart`, `charts/Treemap`.
+- A third-party mark (an AI provider, an import source) is an `Icon` from the built-in `tn-brand` pack (`"tn-brand tn-brand-notion"`), not an imported SVG. A new mark is an SVG in `apps/icon-pack-builder/brand-icons/`, built with `pnpm --filter @triliumnext/icon-pack-builder start tn-brand`.
 
 Data grids and calendars (outside `widgets/react/`, but equally generic):
 
@@ -129,6 +130,20 @@ Rules for both:
 - **A bottom sheet is only ever `mobileBottomSheet`.** Never put `mobile-bottom-menu` in `dropdownContainerClassName`: the stylesheet then pins the popup to the bottom while Floating UI still places it beside its toggle, and Floating UI's inline `max-height` caps the sheet to the room the toggle had. `mobileBottomSheet` also dims the page, so it needs no `mobileBackdrop`.
 - **`dropdownRef` holds a `DropdownHandle`** (`show`, `hide`, `toggle`), exported from `Dropdown.tsx`. Type the ref with it, never with Bootstrap's `Dropdown`, which compiles but promises methods the handle doesn't have.
 - **Submenus**: `FormDropdownSubmenu` opens a submenu only inside a `Dropdown` menu (elsewhere, its title is rendered as a header above its rows). Which side a submenu opens on, and which way its row's arrow points, is detected from the room around the menu; there is no prop for it.
+- **A menu heading takes the place of a separator; never put one right above it.** In the Next theme, `.dropdown-menu h6::before` draws a full-width line under every `FormListHeader` / `{ kind: "header" }`, so a separator above it shows two lines with only the heading between them. Start a group with its heading alone, as the board's card menu does. A builder that returns a section opening with a heading (`buildAttributeMenuItems()`, which returns `[]` when it has nothing) needs the separator only when it comes back empty: `...(items.length ? items : [ { kind: "separator" } ])`. `Menu` collapses a run of separators but leaves a separator above a heading alone, because the legacy light and dark themes draw no line under a heading.
+- **A menu item that needs more input before it completes ends in "..."**. This follows the Windows convention, where a confirmation counts as more input. The rule covers `FormListItem`, `CommandItem` and `contextMenu.show()` items alike. Add the "..." when the item opens:
+  - a dialog with options (Export..., Board properties...)
+  - a prompt or popover that asks for a value (Rename attachment..., Edit column...)
+  - a file or app chooser (Upload new revision..., Open custom...)
+  - a confirm (Delete note..., Reset..., Convert to attachment...)
+
+  An item that acts at once, toggles, navigates, opens a note or tab, opens a submenu, or opens a dialog that only displays information (Recent changes, Note Info, About) has no "...". Write three periods, which most catalogue keys use. The "..." belongs in the English string, before any `<kbd>` in it (`"Delete... <kbd data-command=\"deleteNotes\"></kbd>"`). When the dialog's title or a heading shows the same words, give that use its own key without the "..." (`board_view.properties` / `board_view.properties-title`).
+- **Name a menu item by what it gives the user: a verb only for an action.** This follows the Windows and macOS menu convention.
+  - An item that opens a place (a dialog, a note, a subtree, a log) is a noun, without "Show" or "Open": _Deleted notes_, _Backend log_, _SQL console_, _Help_, _Keyboard shortcuts_. The dialog's own title is usually the right noun.
+  - A toggle is a noun for the mode, never "Toggle X": _Fullscreen_, _Zen mode_, _Always on top_. Its row shows the state (`checkable`/`checked`, or `active`).
+  - A submenu is a noun: _Theme_, _Advanced_.
+  - An item that does something once, or acts on the selection, keeps an imperative verb: _Cut_, _Delete note..._, _Reload frontend_, _Switch to desktop version_, _Log out_ (the verb, not the noun "Logout"). Keep the verb as well where the noun alone would read as a toggle: _Configure launch bar..._, not _Launch bar_.
+  - "New window" is the platform phrase for opening another window. Don't write "Open new window".
 - **Style a popup by its own classes.** It lives in `<body>`, inside a `.tn-dropdown-portal` wrapper that carries the dropdown's `className`, so a rule scoped under the toggle's ancestors (`.status-bar .dropdown-menu`) never matches it. Use `dropdownContainerClassName` with top-level rules. Its z-index (1200, over dialogs) is set in `Popup.css`; `--bs-dropdown-zindex` doesn't reach it.
 
 Other floating surfaces:
@@ -246,11 +261,13 @@ use parameter defaults.
 - **Dialog registered but not wired** — no `<LazyDialog triggerEvents={…}>` in `applyModals()`, so the summon event has no listener and nothing happens.
 - **Modal can't reopen** — a missing/empty `onHidden`, or a dynamic `className` fighting Bootstrap's `fade`/`show`.
 - **Bootstrap utility classes or inline static styles on `Form*` components** — use the sibling per-component `.css` scoped under a root class.
+- **A scroller inside a padded `CardSection`** — scrolled content is clipped short of the card's border. Use `noPadding` on the section and put `--card-padding-block`/`--card-padding-inline` on the scrolling element (see `Card` in the catalogue).
 - **Hand-rolled overlay buttons** — `tn-overlay-*` classes at a call site instead of `OverlayControlGroup` / `OverlayControlButton`.
 - **Copying the jQuery lifecycle** (`doRenderBody` / `refreshWithNote` / `this.$widget`) into new `.tsx` — use `useLegacyWidget` only to embed an existing widget.
 - **A `useEffect` cleanup that must run during the unmount** — it runs after paint; reporting to a host or reading a child instance belongs in a `useLayoutEffect` cleanup (see "Preact 11 conventions").
 - **Importing core names through `preact/compat`** — `createPortal`, hooks and types come from `preact` / `preact/hooks`; compat is for `memo`, `lazy`, `Suspense`, `flushSync`, `useSyncExternalStore`.
 - **Diagnosing a style or placement bug from the stylesheets** — the load order in a hand-built test page does not match the app's, so the bug can fail to reproduce and send you after the wrong cause. Measure computed styles in a running instance: [references/inspecting-the-running-app.md](references/inspecting-the-running-app.md).
+- **Reasoning about what a device's browser reports instead of measuring it** — a bug that lives in mobile Safari's keyboard or viewport cannot be reproduced here, and the specs do not predict WebKit's behavior. Log readings from the device into the dev server's log and replay them: [references/measuring-on-a-device.md](references/measuring-on-a-device.md).
 
 > Not a footgun here: `isElectron()` / `isMac()` from `apps/client/src/services/utils.ts` are runtime checks safe at module load. The "call only after init" trap is a **trilium-core** concern (`utils/index.ts` → `getPlatform()`), not client UI.
 
@@ -260,6 +277,7 @@ use parameter defaults.
 |---|---|
 | [references/hooks-catalog.md](references/hooks-catalog.md) | All 60 `use*` hooks grouped by purpose, one line each with the `loadResults` filter it wires — the anti-re-derivation asset. |
 | [references/dialogs.md](references/dialogs.md) | Full `Modal` prop reference, the 5-step summon→register recipe, `LazyDialog` mechanics, the four eager exceptions, the `sort_child_notes.tsx` walkthrough. |
+| [references/measuring-on-a-device.md](references/measuring-on-a-device.md) | Diagnosing a bug that exists only on the user's device (mobile Safari's keyboard, the visual viewport): temporary `window.logInfo` readings into the dev server's log, what to log, and replaying the readings offline to verify a fix. |
 | [references/inspecting-the-running-app.md](references/inspecting-the-running-app.md) | Booting a login-free instance on the e2e fixture document (in memory, no build, no password) to measure real computed styles, plus how to read a cascade or stacking problem in the running app. Reach for it whenever the answer depends on what actually won, not on what the stylesheets say. |
 
 Related skills: **writing-unit-tests** (rendering these components and testing hooks with the easy-froca fixtures), **analyzing-coverage** (measuring client coverage), **working-with-translations** (adding the English strings these components display).

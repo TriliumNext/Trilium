@@ -1,14 +1,15 @@
 import { ClassicEditor, Essentials, Paragraph } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
-import { applyTabs, revealFragment, revealTab } from "./tabs_read_only.js";
+import { applyTabs, getTabTitle, revealFragment, revealTab } from "./tabs_read_only.js";
 
 const PLACEHOLDER = "Tab title";
+const OPTIONS = { placeholder: PLACEHOLDER, scrollLabels: { start: "Back", end: "Next" } };
 
 function renderTabs(html: string) {
     const container = document.createElement("div");
     container.innerHTML = html;
-    applyTabs(container, { placeholder: PLACEHOLDER });
+    applyTabs(container, OPTIONS);
     return container;
 }
 
@@ -25,7 +26,7 @@ function titleOf(container: HTMLElement, text: string) {
 }
 
 function activeTitles(container: HTMLElement) {
-    return [...container.querySelectorAll(".trilium-tab--active > .trilium-tab-title")]
+    return [...container.querySelectorAll(".trilium-tab-title--active")]
         .map(title => title.textContent);
 }
 
@@ -53,6 +54,31 @@ describe("applyTabs", () => {
             expect(panel.getAttribute("aria-labelledby")).toBe(title.id);
         }
         expect(new Set([...titles, ...panels].map(element => element.id)).size).toBe(4);
+    });
+
+    it("moves the titles into a title bar at the start of the block, in order", () => {
+        const container = renderTabs(
+            `<div class="trilium-tabs">${tab("A", "<p>a</p>")}${tab("B", "<p>b</p>")}</div>`
+        );
+        const block = container.querySelector(".trilium-tabs");
+        const bar = block?.firstElementChild;
+        expect(bar?.className).toBe("scrollable-bar trilium-tabs-bar");
+        expect([...bar?.querySelectorAll(":scope > .scrollable-bar-edge > button") ?? []]
+            .map(button => button.getAttribute("aria-label"))).toEqual(["Back", "Next"]);
+        expect([...bar?.querySelector(".scrollable-bar-viewport")?.children ?? []]
+            .map(title => title.textContent)).toEqual(["A", "B"]);
+
+        const sections = [...block?.querySelectorAll(":scope > .trilium-tab") ?? []];
+        expect(sections).toHaveLength(2);
+        for (const [index, section] of sections.entries()) {
+            const panel = section.firstElementChild as HTMLElement | null;
+            const title = getTabTitle(section);
+            expect([...section.children]).toEqual([panel]);
+            expect(title?.textContent).toBe(["A", "B"][index]);
+            for (const element of [title, panel]) {
+                expect(element?.style.getPropertyValue("--trilium-tab-index")).toBe(String(index));
+            }
+        }
     });
 
     it("switches tabs on click, Enter and Space", () => {
@@ -96,7 +122,7 @@ describe("applyTabs", () => {
         expect(document.activeElement).toBe(titleOf(container, "A"));
 
         titleOf(container, "B").click();
-        applyTabs(container, { placeholder: PLACEHOLDER });
+        applyTabs(container, OPTIONS);
         expect(activeTitles(container)).toEqual(["B"]);
         press(titleOf(container, "B"), "ArrowRight");
         expect(activeTitles(container)).toEqual(["C"]);

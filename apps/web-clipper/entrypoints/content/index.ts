@@ -186,8 +186,10 @@ export default defineContentScript({
                 const container = document.createElement('div');
 
                 const selection = window.getSelection();
+                // The popup asks on every opening, and Firefox reports no range after the page
+                // loses focus, so an empty selection is an answer, not an error.
                 if (!selection || selection.rangeCount === 0) {
-                    throw new Error('No selection available to clip');
+                    return undefined;
                 }
 
                 for (let i = 0; i < selection.rangeCount; i++) {

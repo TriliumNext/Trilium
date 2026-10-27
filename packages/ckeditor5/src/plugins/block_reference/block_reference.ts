@@ -6,7 +6,8 @@ import BlockReferenceEditing, {
 
 /**
  * References to blocks of a text note. A right click on the block handle calls
- * `openBlockHandleMenu()` of the host, whose menu copies a reference to the selected blocks.
+ * `blockReference.openHandleMenu()` of the host, whose menu copies a reference to the selected
+ * blocks.
  */
 export default class BlockReference extends Plugin {
 
@@ -62,12 +63,23 @@ export default class BlockReference extends Plugin {
             return;
         }
 
-        const component = glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
-        component?.openBlockHandleMenu?.(event, command.value);
+        editor.config.get("blockReference")?.openHandleMenu?.(event, command.value);
     }
 }
 
+/** What the host of the editor does with references to blocks. */
+export interface BlockReferenceHost {
+    /** Opens the menu of the block handle at `event`, for `count` selected blocks. */
+    openHandleMenu(event: MouseEvent, count: number): void;
+    /** Copies a reference to the selected blocks. */
+    copyReference(): void;
+}
+
 declare module "ckeditor5" {
+    interface EditorConfig {
+        blockReference?: Partial<BlockReferenceHost>;
+    }
+
     interface PluginsMap {
         [BlockReference.pluginName]: BlockReference;
         [BlockReferenceEditing.pluginName]: BlockReferenceEditing;

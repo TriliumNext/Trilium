@@ -102,6 +102,20 @@ describe("the formatting toolbar", () => {
     });
 });
 
+describe("the editor features", () => {
+    it("offers sticky table header rows after link previews, and writes the switch back", () => {
+        open();
+        const labels = optionLabels();
+        expect(labels.indexOf("editorfeatures.sticky_table_headers_enabled"))
+            .toBe(labels.indexOf("editorfeatures.auto_link_previews_enabled") + 1);
+
+        const stickyHeaders = toggle("sticky-table-headers-enabled");
+        expect(stickyHeaders).not.toBeNull();
+        act(() => stickyHeaders?.click());
+        expect(mocks.saved).toContainEqual([ "textNoteStickyTableHeadersEnabled", true ]);
+    });
+});
+
 describe("the code block appearance", () => {
     it("asks for one theme when it is not to follow the app, and for a pair when it is", () => {
         open();

@@ -1,6 +1,5 @@
 import "./search_result.css";
 
-import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -8,10 +7,9 @@ import type FNote from "../entities/fnote";
 import { t } from "../services/i18n";
 import search from "../services/search";
 import toast from "../services/toast";
-import { SearchNoteList, useNoteViewType } from "./collections/NoteList";
-import SearchResultsList from "./collections/search/SearchResultsList";
+import { SearchNoteList } from "./collections/NoteList";
 import Button from "./react/Button";
-import { useHasTabBeenShown, useNoteContext, useTriliumEvent } from "./react/hooks";
+import { useNoteContext, useTriliumEvent } from "./react/hooks";
 import NoItems from "./react/NoItems";
 
 enum SearchResultState {
@@ -21,14 +19,13 @@ enum SearchResultState {
 }
 
 export default function SearchResult() {
-    const { note, notePath, ntxId, noteContext, parentComponent } = useNoteContext();
-    const viewType = useNoteViewType(note);
+    const { note, notePath, ntxId, parentComponent } = useNoteContext();
     const [ , setRefreshCount ] = useState(0);
     const state = getSearchResultState(note);
     const { isSearching, runSearch } = useSavedSearchRun(
         note,
         state === SearchResultState.NOT_EXECUTED,
-        { noteContext, ntxId, parentComponent }
+        { ntxId, parentComponent }
     );
     const highlightedTokens = note?.highlightedTokenInfos ?? note?.highlightedTokens;
 
@@ -65,47 +62,32 @@ export default function SearchResult() {
             )}
 
             {state === SearchResultState.GOT_RESULTS && (
-                viewType === "list"
-                    ? (
-                        <SearchResultsList
-                            media="screen"
-                            note={note}
-                            notePath={notePath}
-                            highlightedTokens={highlightedTokens}
-                            ntxId={ntxId}
-                        />
-                    )
-                    : (
-                        <SearchNoteList
-                            media="screen"
-                            note={note}
-                            notePath={notePath}
-                            highlightedTokens={highlightedTokens}
-                            ntxId={ntxId}
-                        />
-                    )
+                <SearchNoteList
+                    media="screen"
+                    note={note}
+                    notePath={notePath}
+                    highlightedTokens={highlightedTokens}
+                    ntxId={ntxId}
+                />
             )}
         </div>
     );
 }
 
-type SearchRunContext = Pick<
-    ReturnType<typeof useNoteContext>,
-    "noteContext" | "ntxId" | "parentComponent"
->;
+type SearchRunContext = Pick<ReturnType<typeof useNoteContext>, "ntxId" | "parentComponent">;
 
 /**
  * Runs a saved search that has no results yet, through `search.runSearchNote()`, when it is
- * shown in a visible tab, and reports while a run is in progress. A failed request waits for
- * `runSearch()` ("Search now") or the next showing. Safe mode runs nothing on its own, so a
- * hanging search cannot hang every start-up.
+ * shown, and reports while a run is in progress. A pane of a background tab gets its note from
+ * `SplitNoteContainer` only when the tab is shown. A failed request waits for `runSearch()`
+ * ("Search now") or the next showing. Safe mode runs nothing on its own, so a hanging search
+ * cannot hang every start-up.
  */
 function useSavedSearchRun(
     note: FNote | null | undefined,
     hasNotRun: boolean,
-    { noteContext, ntxId, parentComponent }: SearchRunContext
+    { ntxId, parentComponent }: SearchRunContext
 ) {
-    const hasTabBeenShown = useHasTabBeenShown(noteContext);
     // Tracks in-flight searches started by this hook by note ID.
     const [ runningNoteIds, setRunningNoteIds ] = useState<ReadonlySet<string>>(new Set());
     const autoRunNoteId = useRef<string | undefined>(undefined);
@@ -132,7 +114,7 @@ function useSavedSearchRun(
     }
 
     const isRunning = !!note && runningNoteIds.has(note.noteId);
-    const runsOnShow = hasNotRun && hasTabBeenShown && !glob.TRILIUM_SAFE_MODE
+    const runsOnShow = hasNotRun && !glob.TRILIUM_SAFE_MODE
         && !!note && autoRunNoteId.current !== note.noteId;
     useEffect(() => {
         if (autoRunNoteId.current !== note?.noteId) {

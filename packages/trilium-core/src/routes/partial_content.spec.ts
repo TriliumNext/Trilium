@@ -13,7 +13,7 @@ interface ServeResult {
 }
 
 /** Serves `content` through the real handler, capturing what it wrote to the response. */
-function serve(content: string | Uint8Array, range?: string, etag?: string): ServeResult {
+function serve(content: string | Uint8Array, range?: string, etag?: string, maxOpenRangeLength?: number): ServeResult {
     const captured: ServeResult = { status: 200, headers: {}, body: "", byteLength: 0 };
 
     const res = {
@@ -33,7 +33,7 @@ function serve(content: string | Uint8Array, range?: string, etag?: string): Ser
     } as unknown as Response;
 
     const req = { headers: range ? { range } : {} } as unknown as Request;
-    serveContentWithRanges(req, res, { content, fileName: "clip.mp3", mimeType: "audio/mpeg", etag });
+    serveContentWithRanges(req, res, { content, fileName: "clip.mp3", mimeType: "audio/mpeg", etag, maxOpenRangeLength });
 
     return captured;
 }
@@ -88,6 +88,24 @@ describe("serveContentWithRanges", () => {
 
         // A suffix longer than the content is the whole content.
         expect(serve(CONTENT, "bytes=-500").headers["Content-Range"]).toBe("bytes 0-9/10");
+    });
+
+    it("cuts an open-ended range to maxOpenRangeLength, and leaves every other form whole", () => {
+        const capped = serve(CONTENT, "bytes=2-", undefined, 4);
+        expect(capped.status).toBe(206);
+        expect(capped.body).toBe("2345");
+        expect(capped.headers["Content-Range"]).toBe("bytes 2-5/10");
+        expect(capped.headers["Content-Length"]).toBe("4");
+
+        // Near the end there is less left than the cap.
+        expect(serve(CONTENT, "bytes=8-", undefined, 4).headers["Content-Range"]).toBe("bytes 8-9/10");
+
+        // The client named these lengths itself, and a request with no range wants the whole body.
+        expect(serve(CONTENT, "bytes=1-8", undefined, 4).body).toBe("12345678");
+        expect(serve(CONTENT, "bytes=-6", undefined, 4).body).toBe("456789");
+        const whole = serve(CONTENT, undefined, undefined, 4);
+        expect(whole.status).toBe(200);
+        expect(whole.body).toBe(CONTENT);
     });
 
     it("clamps an end past the content instead of refusing it", () => {

@@ -7,9 +7,12 @@ import { DataTreeModule, EditModule, FormatModule, FrozenColumnsModule, Interact
 
 import { t } from "../../../services/i18n";
 import SpacedUpdate from "../../../services/spaced_update";
-import CollectionProperties from "../../note_bars/CollectionProperties";
+import CollectionProperties, {
+    CollectionPropertiesDialog, IncludedNotesCard
+} from "../../note_bars/CollectionProperties";
 import Button, { ButtonOrActionButton } from "../../react/Button";
-import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks";
+import { FormListItem } from "../../react/FormList";
+import { useEffectiveReadOnly, useNoteContext, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { useContextMenu } from "./context_menu";
@@ -39,6 +42,14 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
     const { noteContext } = useNoteContext();
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const canAddRows = !isReadOnly && note.type !== "search";
+    const [ isEditingProperties, setIsEditingProperties ] = useState(false);
+
+    // The note actions menu offers the properties dialog, which lives here rather than in the menu.
+    useTriliumEvent("showCollectionProperties", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId && !isReadOnly) {
+            setIsEditingProperties(true);
+        }
+    });
     const contextMenuEvents = useContextMenu(note, parentComponent, tabulatorRef, isReadOnly);
     const persistenceProps = usePersistence(viewConfig, saveConfig);
     const [ editingEvents, setEditingEvents ] = useState<TableEditingEvents>();
@@ -73,6 +84,11 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
         <div className="table-view">
             <CollectionProperties
                 note={note}
+                optionsChildren={!isReadOnly && (
+                    <FormListItem icon="bx bx-cog" onClick={() => setIsEditingProperties(true)}>
+                        {t("table_view.properties")}
+                    </FormListItem>
+                )}
                 rightChildren={canAddRows &&
                     <>
                         <ButtonOrActionButton triggerCommand="addNewRow" icon="bx bx-plus" text={t("table_view.new-row")} />
@@ -134,6 +150,17 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
                     />
                 </Suspense>
             )}
+            {isEditingProperties && createPortal(
+                <CollectionPropertiesDialog
+                    className="table-properties-dialog"
+                    title={t("table_view.properties-title")}
+                    show
+                    onHidden={() => setIsEditingProperties(false)}
+                >
+                    <IncludedNotesCard note={note} />
+                </CollectionPropertiesDialog>,
+                document.body
+            )}
         </div>
     );
 }
@@ -152,6 +179,7 @@ function usePersistence(viewConfig: TableConfig | null | undefined, saveConfig: 
                 return viewConfigLocal.tableData?.[type];
             },
             persistenceWriterFunc(_, type, data) {
+                viewConfigLocal.tableData ??= {};
                 (viewConfigLocal.tableData as Record<string, {}>)[type] = data;
                 spacedUpdate.scheduleUpdate();
             },

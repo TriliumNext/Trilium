@@ -294,7 +294,7 @@
  * reads as a marker rather than competing with the name it qualifies.
  */
 .llm-chat-model-icon {
-    --masked-icon-size: 1.05em;
+    font-size: 1.05em;
 
     opacity: 0.8;
 }

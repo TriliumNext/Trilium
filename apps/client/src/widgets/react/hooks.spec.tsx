@@ -9,16 +9,19 @@ import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
 import { buildNote } from "../../test/easy-froca";
+import { setupHoldContextMenu } from "../widget_utils";
 import {
     type DelayedVisibilityPhase,
     useDelayedVisibility,
     useDetachedNoteContext,
     useFocusWithin,
+    useHoldContextMenu,
     useImperativeSearchHighlighlighting,
     useMediaQuery,
     useNoteLabelBoolean,
     useStaticTooltip,
-    useTooltip
+    useTooltip,
+    useWhenShown
 } from "./hooks";
 
 /**
@@ -388,6 +391,41 @@ describe("useStaticTooltip", () => {
         expect(span && Tooltip.getInstance(span), "instance untouched by the observer").not.toBeNull();
     });
 
+    it("hides a delegated tooltip once scrolling moves its child out of view", async () => {
+        const removeListener = vi.spyOn(document, "removeEventListener");
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+        act(() => {
+            if (span) {
+                Tooltip.getOrCreateInstance(span, {
+                    animation: false,
+                    title() {
+                        return this.getAttribute("title") || "";
+                    }
+                }).show();
+            }
+        });
+        expect(document.querySelector(".tooltip"), "shown").not.toBeNull();
+
+        // The test container is the scroller, its view 100px tall; the span is 20px tall.
+        container.getBoundingClientRect = () => new DOMRect(0, 0, 300, 100);
+        const scrollSpanTo = (top: number) => act(() => {
+            if (span) span.getBoundingClientRect = () => new DOMRect(0, top, 50, 20);
+            container.dispatchEvent(new Event("scroll"));
+        });
+
+        scrollSpanTo(40);
+        expect(document.querySelector(".tooltip"), "kept while in view").not.toBeNull();
+
+        scrollSpanTo(90);
+        expect(document.querySelector(".tooltip"), "hidden once partly out of view").toBeNull();
+        expect(removeListener.mock.calls.some(([ type ]) => type === "scroll"),
+            "stops listening once nothing is shown").toBe(true);
+        removeListener.mockRestore();
+    });
+
     it("leaves a shown delegated tooltip standing when the mutation removed something else", async () => {
         await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
 
@@ -696,5 +734,172 @@ describe("useMediaQuery", () => {
         expect(listeners.size).toBe(0);
         host.remove();
         vi.restoreAllMocks();
+    });
+});
+
+describe("useWhenShown", () => {
+    it("runs at once while shown, otherwise the last callback once the element shows", async () => {
+        const observers: { callback: () => void; disconnect: ReturnType<typeof vi.fn> }[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            disconnect = vi.fn();
+            constructor(callback: () => void) {
+                observers.push({ callback, disconnect: this.disconnect });
+            }
+            observe() {}
+        } as unknown as typeof ResizeObserver;
+        let whenShown: ((callback: () => void) => void) | undefined;
+        function Consumer() {
+            const ref = useRef<HTMLDivElement>(null);
+            whenShown = useWhenShown(ref);
+            return <div ref={ref} />;
+        }
+        const host = document.body.appendChild(document.createElement("div"));
+
+        try {
+            await act(async () => { render(<Consumer />, host); });
+            const runs: string[] = [];
+            whenShown?.(() => runs.push("shown"));
+            expect(runs).toEqual([ "shown" ]);
+
+            host.style.display = "none";
+            whenShown?.(() => runs.push("first"));
+            whenShown?.(() => runs.push("last"));
+            expect(observers).toHaveLength(1);
+            observers[0].callback();
+            expect(runs).toEqual([ "shown" ]);
+
+            host.style.display = "";
+            observers[0].callback();
+            observers[0].callback();
+            expect(runs).toEqual([ "shown", "last" ]);
+            expect(observers[0].disconnect).toHaveBeenCalled();
+
+            // Unmounted while a callback waits, it stops watching.
+            host.style.display = "none";
+            whenShown?.(() => runs.push("unmounted"));
+            await act(async () => { render(null, host); });
+            expect(observers[1].disconnect).toHaveBeenCalled();
+            expect(runs).toEqual([ "shown", "last" ]);
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+            host.remove();
+        }
+    });
+});
+
+type HoldMount = (container: HTMLElement, handler: () => void, onClick: () => void) => void;
+
+describe.each<{ name: string, mount: HoldMount }>([
+    {
+        name: "useHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            function HoldProbe() {
+                return <button type="button" onClick={onClick} {...useHoldContextMenu(handler)} />;
+            }
+            act(() => render(<HoldProbe />, container));
+        }
+    },
+    {
+        name: "setupHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            const button = document.createElement("button");
+            button.addEventListener("click", onClick);
+            setupHoldContextMenu(button, handler);
+            container.append(button);
+        }
+    }
+])("$name", ({ mount }) => {
+    let container: HTMLElement;
+    let button: HTMLButtonElement;
+    const handler = vi.fn();
+    const onClick = vi.fn();
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        handler.mockReset();
+        onClick.mockReset();
+        container = document.createElement("div");
+        document.body.append(container);
+        mount(container, handler, onClick);
+        const rendered = container.querySelector("button");
+        if (!rendered) throw new Error("The probe did not render its button.");
+        button = rendered;
+    });
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+        vi.useRealTimers();
+    });
+
+    function fire(type: string, init: PointerEventInit = {}) {
+        const event = type === "click" || type === "contextmenu"
+            ? new MouseEvent(type, { bubbles: true, cancelable: true, ...init })
+            : new PointerEvent(type, { bubbles: true, cancelable: true, ...init });
+        button.dispatchEvent(event);
+        return event;
+    }
+
+    it("opens after a 500 ms hold and swallows the click that ends it", () => {
+        fire("pointerdown", { button: 0, clientX: 12, clientY: 34 });
+        vi.advanceTimersByTime(499);
+        expect(handler).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(handler).toHaveBeenCalledOnce();
+        expect(handler.mock.calls[0][0])
+            .toMatchObject({ type: "pointerdown", clientX: 12, clientY: 34 });
+
+        // The `contextmenu` Android raises for the same press.
+        expect(fire("contextmenu").defaultPrevented).toBe(true);
+        fire("pointerup", { button: 0 });
+        expect(fire("click").defaultPrevented).toBe(true);
+        expect(handler).toHaveBeenCalledOnce();
+        expect(onClick).not.toHaveBeenCalled();
+
+        vi.runAllTimers();
+        fire("click");
+        expect(onClick).toHaveBeenCalledOnce();
+    });
+
+    it("ends the hold when the press is released off the button", () => {
+        fire("pointerdown", { button: 0 });
+        vi.advanceTimersByTime(500);
+        fire("pointerleave");
+        document.body.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, button: 0 }));
+        vi.runAllTimers();
+
+        // A keyboard click and the context menu key.
+        fire("click");
+        expect(onClick).toHaveBeenCalledOnce();
+        fire("contextmenu");
+        expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    it("ignores a short press, a press that slides off or is canceled, and another button", () => {
+        fire("pointerdown", { button: 0 });
+        vi.advanceTimersByTime(300);
+        fire("pointerup", { button: 0 });
+        vi.advanceTimersByTime(500);
+        fire("click");
+
+        for (const end of [ "pointerleave", "pointercancel" ]) {
+            fire("pointerdown", { button: 0 });
+            fire(end);
+            vi.advanceTimersByTime(500);
+        }
+        fire("pointerdown", { button: 1 });
+        vi.runAllTimers();
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(onClick).toHaveBeenCalledOnce();
+    });
+
+    it("opens on a right-click", () => {
+        fire("pointerdown", { button: 2 });
+        const event = fire("contextmenu");
+        expect(handler).toHaveBeenCalledWith(event);
+        vi.runAllTimers();
+        expect(handler).toHaveBeenCalledOnce();
     });
 });

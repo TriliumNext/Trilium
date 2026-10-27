@@ -4,8 +4,8 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import link from "../../../services/link";
 import CKEditor, { type CKEditorApi } from "./CKEditor";
+import { buildConfig } from "./config";
 
 const mocks = vi.hoisted(() => ({
     options: {} as Record<string, string | boolean>,
@@ -14,8 +14,7 @@ const mocks = vi.hoisted(() => ({
     stopReportingErrors: vi.fn(),
     reportError: undefined as ((error: Error) => void) | undefined,
     reportingEditor: undefined as unknown,
-    note: undefined as { noteId: string; title: string } | undefined,
-    handlers: {} as Record<string, (...args: unknown[]) => unknown>
+    note: undefined as { noteId: string; title: string } | undefined
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
@@ -47,9 +46,6 @@ vi.mock("@triliumnext/ckeditor5", () => {
 
 vi.mock("../../react/hooks", () => ({
     useKeyboardShortcuts: () => {},
-    useLegacyImperativeHandlers: (handlers: typeof mocks.handlers) => {
-        mocks.handlers = handlers;
-    },
     useNoteContext: () => ({
         parentComponent: undefined,
         ntxId: undefined,
@@ -172,10 +168,8 @@ describe("CKEditor", () => {
         expect(props.editorRef.current).toBeNull();
     });
 
-    it("labels its reference links as links in the note it edits", async () => {
+    it("tells the editor config which note it edits, as the note changes", async () => {
         mocks.note = { noteId: "host1", title: "Host" };
-        const loadReferenceLinkTitle = vi.spyOn(link, "loadReferenceLinkTitle")
-            .mockResolvedValue(undefined);
         const props = {
             contentLanguage: null,
             editorRef: createRef<CKTextEditor>(),
@@ -187,11 +181,15 @@ describe("CKEditor", () => {
             render(<CKEditor {...props} />, host);
         });
 
-        const $el = $("<span>");
-        await mocks.handlers.loadReferenceLinkTitle($el, "#root/host1?block=b1", "Stored");
+        await vi.waitFor(() => expect(buildConfig).toHaveBeenCalled());
+        const opts = vi.mocked(buildConfig).mock.lastCall?.[0];
+        expect(opts?.getNoteId?.()).toBe("host1");
 
-        expect(loadReferenceLinkTitle)
-            .toHaveBeenCalledWith($el, "#root/host1?block=b1", "host1", "Stored");
-        loadReferenceLinkTitle.mockRestore();
+        mocks.note = { noteId: "host2", title: "Other" };
+        await act(async () => {
+            render(<CKEditor {...props} className="force-rerender" />, host);
+        });
+
+        expect(opts?.getNoteId?.()).toBe("host2");
     });
 });

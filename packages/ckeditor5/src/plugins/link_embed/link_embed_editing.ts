@@ -1,10 +1,11 @@
 import { Plugin, toWidget, viewToModelPositionOutsideModelElement, Widget } from 'ckeditor5';
-import { preventCKEditorHandling } from '../widget_utils.js';
+import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
 import {
     CHANGE_LINK_DISPLAY_COMMAND,
     CHANGE_LINK_PREVIEW_TITLE_COMMAND,
     ChangeLinkDisplayCommand,
     ChangeLinkPreviewTitleCommand,
+    getLinkEmbedHost,
     InsertLinkEmbedCommand,
     LINK_EMBED_COMMAND,
     META_KEYS,
@@ -38,6 +39,8 @@ export default class LinkEmbedEditing extends Plugin {
         this.editor.commands.add(CHANGE_LINK_DISPLAY_COMMAND, new ChangeLinkDisplayCommand(this.editor));
         this.editor.commands.add(REMOVE_LINK_EMBED_COMMAND, new RemoveLinkEmbedCommand(this.editor));
         this.editor.commands.add(CHANGE_LINK_PREVIEW_TITLE_COMMAND, new ChangeLinkPreviewTitleCommand(this.editor));
+
+        restoreRendererFocusOnInput(this);
     }
 
     _defineSchema() {
@@ -111,9 +114,7 @@ export default class LinkEmbedEditing extends Plugin {
                     'data-cke-ignore-events': 'true'
                 }, function (domDocument) {
                     const domElement = this.toDomElement(domDocument);
-                    const editorEl = editor.editing.view.getDomRoot();
-                    const component = glob.getComponentByEl<EditorComponent>(editorEl);
-                    component.renderLinkEmbed(domElement, { url, embedType, title, description, favicon, siteName, image }, true);
+                    getLinkEmbedHost(editor).renderEmbed(domElement, { url, embedType, title, description, favicon, siteName, image }, true);
                     preventCKEditorHandling(domElement, editor);
                     return domElement;
                 });
@@ -173,9 +174,7 @@ export default class LinkEmbedEditing extends Plugin {
                     'data-cke-ignore-events': 'true'
                 }, function (domDocument) {
                     const domElement = this.toDomElement(domDocument);
-                    const editorEl = editor.editing.view.getDomRoot();
-                    const component = glob.getComponentByEl<EditorComponent>(editorEl);
-                    component.renderLinkMention(domElement, { url, title, favicon }, true);
+                    getLinkEmbedHost(editor).renderMention(domElement, { url, title, favicon }, true);
                     preventCKEditorHandling(domElement, editor);
                     return domElement;
                 });

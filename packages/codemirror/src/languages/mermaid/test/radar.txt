@@ -1,0 +1,134 @@
+# Radar
+
+radar-beta
+
+==>
+
+RadarDiagram(DiagramName)
+
+# Trilium's sample
+
+radar-beta
+  axis m["Math"], s["Science"], e["English"]
+  axis h["History"], g["Geography"], a["Art"]
+  curve a["Alice"]{85, 90, 80, 70, 75, 90}
+  curve b["Bob"]{70, 75, 85, 80, 90, 85}
+
+  max 100
+  min 0
+
+==>
+
+RadarDiagram(DiagramName,
+  Axes(Keyword,Axis(Name,Label("[",String,"]")),",",Axis(Name,Label("[",String,"]")),",",Axis(Name,Label("[",String,"]"))),
+  Axes(Keyword,Axis(Name,Label("[",String,"]")),",",Axis(Name,Label("[",String,"]")),",",Axis(Name,Label("[",String,"]"))),
+  Curves(Keyword,Curve(Name,Label("[",String,"]"),"{",Number,",",Number,",",Number,",",Number,",",Number,",",Number,"}")),
+  Curves(Keyword,Curve(Name,Label("[",String,"]"),"{",Number,",",Number,",",Number,",",Number,",",Number,",",Number,"}")),
+  Option(Keyword,Number),
+  Option(Keyword,Number))
+
+# Title with a comment after it
+
+radar-beta
+  title Grades of the class %% a comment
+
+==>
+
+RadarDiagram(DiagramName,Title(Keyword,TitleText),LineComment)
+
+# Empty title
+
+radar-beta
+  title
+  axis a
+
+==>
+
+RadarDiagram(DiagramName,Title(Keyword),Axes(Keyword,Axis(Name)))
+
+# Entries by axis, over several lines
+
+radar-beta:
+  axis a, b
+  curve c{ a: 1, b 2.5 }, d {
+    1,
+    2
+  }
+
+==>
+
+RadarDiagram(DiagramName,":",
+  Axes(Keyword,Axis(Name),",",Axis(Name)),
+  Curves(Keyword,Curve(Name,"{",Entry(AxisRef,":",Number),",",Entry(AxisRef,Number),"}"),",",Curve(Name,"{",Number,",",Number,"}")))
+
+# Options
+
+radar-beta
+  showLegend false, ticks 5, graticule polygon
+  graticule circle
+  max 1.5
+
+==>
+
+RadarDiagram(DiagramName,
+  Option(Keyword,Boolean),",",Option(Keyword,Number),",",Option(Keyword,Graticule),
+  Option(Keyword,Graticule),
+  Option(Keyword,Number))
+
+# Single-quoted label and hyphenated name
+
+radar-beta
+  axis my-axis['Single']
+  %% a comment line
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,Axis(Name,Label("[",String,"]"))),LineComment)
+
+# Statement on the diagram line
+
+radar-beta axis a
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,Axis(Name)))
+
+# Keyword as a name (invalid)
+
+radar-beta
+  axis max
+  curve c{1}
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,⚠),Option(Keyword,⚠),Curves(Keyword,Curve(Name,"{",Number,"}")))
+
+# Numbers mixed with entries by axis (invalid)
+
+radar-beta
+  axis a
+  curve c{1, a: 2}
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,Axis(Name)),Curves(Keyword,Curve(Name,"{",Number,",",⚠,⚠(":"),Number,"}")))
+
+# Number with a leading zero (invalid)
+
+radar-beta
+  axis a
+  curve c{01}
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,Axis(Name)),Curves(Keyword,Curve(Name,"{",Number,⚠(Number),"}")))
+
+# Negative number (invalid)
+
+radar-beta
+  axis a
+  curve c{-1}
+
+==>
+
+RadarDiagram(DiagramName,Axes(Keyword,Axis(Name)),Curves(Keyword,Curve(Name,"{",⚠,Number,"}")))

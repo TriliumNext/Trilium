@@ -13,18 +13,18 @@
  *   rename <page> <title>                  retitle a page (meta + H1); links follow on `sync`
  *   move <page> <parent> [--after s|--first]   reparent a page and its files
  *   delete <page>                          remove a page; refuses when the app links to it
- *   icons <query...> [--pack bx|cke]       search the icon fonts the docs can use
+ *   icons <query...> [--pack bx|cke|tn-brand]   search the icon fonts the docs can use
  *   impact [--diff [range]] [terms...]     which pages a code change or a term touches
  *   check [--tree t]                       consistency + style audit of the trees
- *   sync                                   regenerate everything (help HTML, meta) headless
+ *   sync                                   regenerate everything (help meta + content) headless
  *
  *   <page>  a noteId, a shareAlias, or a unique title/path fragment. <parent> likewise.
  *   --tree  user (default) | dev | release
  *
- * The meta file is 6000+ lines and the HTML mirror is generated, so nothing here should ever
- * need either read by hand. `new`/`image`/`rename`/`move`/`delete` edit `!!!meta.json` through
- * the file's own layout (4-space indent, exporter key order); `sync` then makes the Markdown,
- * the help HTML and the standalone meta agree, the same way edit-docs does after an edit.
+ * The meta file is 6000+ lines and the in-app help artifacts are generated, so nothing here should
+ * ever need either read by hand. `new`/`image`/`rename`/`move`/`delete` edit `!!!meta.json`
+ * through the file's own layout (4-space indent, exporter key order); `sync` then makes the
+ * Markdown, `help_meta.json` and `help_content.json` agree, the same way edit-docs does after an edit.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
@@ -43,9 +43,8 @@ const TREES = {
     user: {
         dir: "docs/User Guide",
         rootId: "pOsGYCXsbNQG",
-        html: "apps/server/src/assets/doc_notes/en/User Guide",
-        helpMeta: "apps/server/src/assets/doc_notes/en/User Guide/!!!meta.json",
-        standaloneMeta: "apps/standalone/src/assets/help_meta.json"
+        helpMeta: "apps/server/src/assets/help/help_meta.json",
+        helpContent: "apps/server/src/assets/help/help_content.json"
     },
     dev: { dir: "docs/Developer Guide", rootId: "jdjRLhLV3TtI" },
     release: { dir: "docs/Release Notes", rootId: "hD3V4hiu2VW4" }
@@ -53,14 +52,17 @@ const TREES = {
 
 const ICON_PACKS = {
     bx: "packages/trilium-core/src/services/icon_pack_boxicons-v2.json",
-    cke: "packages/trilium-core/src/services/icon_pack_text_editor.json"
+    cke: "packages/trilium-core/src/services/icon_pack_text_editor.json",
+    "tn-brand": "packages/trilium-core/src/services/icon_pack_brands.json"
 };
+const ICON_PACK_LABELS = { bx: "app UI, boxicons", cke: "text editor toolbar", "tn-brand": "AI providers and import sources" };
 const CKE_BUILDER = "apps/icon-pack-builder/src/providers/ckeditor.ts";
-const CKE_REBUILD = "run `pnpm --filter @triliumnext/icon-pack-builder start cke` and commit "
-    + "apps/client/src/fonts/text-editor-icons.woff2 with " + ICON_PACKS.cke;
-
-/** `apps/client/src/services/doc_renderer.ts` refuses any other character in a help page path. */
-const DOC_NAME_CHARS = /^[a-zA-Z0-9_/\- ()&.,`]+$/;
+const BRAND_ICON_DIR = "apps/icon-pack-builder/brand-icons";
+/** The packs built from SVGs in the repository, which `staleIconFonts()` compares with their sources. */
+const BUILT_ICON_PACKS = {
+    cke: { font: "text-editor-icons.woff2", missing: () => staleCkeIcons() },
+    "tn-brand": { font: "brand-icons.woff2", missing: () => staleBrandIcons() }
+};
 
 /** Where the app hard-codes help pages (by noteId) and public docs URLs (by alias path). */
 const CODE_SCAN_DIRS = ["apps/client/src", "apps/server/src", "apps/desktop/src", "apps/standalone/src", "apps/website/src", "apps/web-clipper", "apps/edit-docs/demo", "packages/trilium-core/src", "packages/commons/src"];
@@ -125,9 +127,8 @@ function show() {
     console.log(`  path       ${page.ancestors.map((a) => a.title).concat(page.title).join(" › ")}`);
     console.log(`  position   ${page.entry.notePosition ?? "(clone)"}   siblings: ${page.parent ? page.parent.entry.children.length : 0}`);
     console.log(`  type       ${page.entry.type}${page.entry.mime ? ` (${page.entry.mime})` : ""}`);
-    console.log(`  alias      ${page.alias ?? "(none — no docUrl, dropped from the standalone help)"}`);
+    console.log(`  alias      ${page.alias ?? "(none — no public URL, no docUrl in the in-app help)"}`);
     console.log(`  url        ${page.url ?? "(none)"}`);
-    if (page.treeName === "user") console.log(`  docName    ${page.docName ?? "(none)"}`);
     console.log(`  icon       ${page.icon ?? "(none → bx bx-file / bx bx-folder)"}`);
     const otherAttrs = (page.entry.attributes ?? []).filter((a) => !["shareAlias", "iconClass"].includes(a.name));
     if (otherAttrs.length) console.log(`  attributes ${otherAttrs.map((a) => `${a.type === "relation" ? "~" : "#"}${a.name}=${a.value}`).join("  ")}`);
@@ -156,8 +157,8 @@ function show() {
     console.log(`  referenced from code: ${refs.length ? "" : "none — safe to rename, move or delete"}`);
     for (const r of refs) console.log(`    ${r}`);
     if (page.treeName === "user" && page.file) {
-        const html = page.file.replace(/\.md$/, ".html").replace(TREES.user.dir, TREES.user.html);
-        console.log(`  help html  ${fs.existsSync(path.join(ROOT, html)) ? html : "(missing — run sync)"}`);
+        const html = readHelpContent()[`_help_${page.noteId}`];
+        console.log(`  help html  ${html === undefined ? "(missing — run sync)" : `${html.length} chars in ${TREES.user.helpContent}`}`);
     }
 }
 
@@ -234,7 +235,7 @@ function newPage() {
     console.log(`created ${filePath}`);
     console.log(`  noteId ${noteId}   alias ${alias ?? "(none)"}   icon ${icon ?? "(none)"}   position ${entry.notePosition}`);
     if (alias) console.log(`  url    ${computeUrl(parent, alias)}`);
-    console.log(`\nWrite the page, then \`docs.mjs sync\` to normalize it and generate the help HTML.`);
+    console.log(`\nWrite the page, then \`docs.mjs sync\` to normalize it and regenerate the in-app help.`);
     console.log(`Link it from its parent with:\n  <a class="reference-link" href="${relativeHref(parent, { ...entry, file: filePath })}">${escapeHtml(title)}</a>`);
 }
 
@@ -266,7 +267,7 @@ function image() {
     } else {
         console.log(`  <img src="${src}">`);
     }
-    console.log(`Then \`docs.mjs sync\` copies it into the help HTML tree.`);
+    console.log(`Then \`docs.mjs sync\` rewrites its path in the in-app help.`);
 }
 
 function rename() {
@@ -370,15 +371,14 @@ function icons() {
         console.log(problems.length ? `${problems.length} unknown icon class(es)` : "every icon class in the docs exists in a built-in pack");
         return;
     }
-    const stale = packs.includes("cke") ? staleCkeIcons() : [];
-    if (stale.length) console.log(`! cke font is out of date, no glyph for ${stale.join(", ")}\n  ${CKE_REBUILD}\n`);
+    for (const problem of staleIconFonts(packs)) console.log(`! ${problem}\n`);
     const query = flags._.map((q) => q.toLowerCase());
-    if (!query.length) die("usage: icons <query...> [--pack bx|cke] | icons --check");
+    if (!query.length) die("usage: icons <query...> [--pack bx|cke|tn-brand] | icons --check");
     for (const pack of packs) {
         const manifest = loadIconPack(pack);
         const matches = Object.entries(manifest.icons).filter(([name, def]) => query.every((q) => name.includes(q) || (def.terms ?? []).some((t) => t.includes(q))));
         if (!matches.length) continue;
-        console.log(`${pack} (${pack === "cke" ? "text editor toolbar" : "app UI, boxicons"}) — ${matches.length} match(es)`);
+        console.log(`${pack} (${ICON_PACK_LABELS[pack]}) — ${matches.length} match(es)`);
         for (const [name] of matches.slice(0, 40)) console.log(`  <span class="tn-icon ${pack} ${name}"></span>`);
         if (matches.length > 40) console.log(`  … ${matches.length - 40} more`);
     }
@@ -389,7 +389,7 @@ function impact() {
     const pagesFromCode = new Map(); // noteId → files
     if (flags.diff !== undefined) {
         const range = typeof flags.diff === "string" ? flags.diff : defaultDiffBase();
-        const diff = git(["diff", range, "--", "apps", "packages", ":!apps/server/src/assets/doc_notes", ":!apps/standalone/src/assets/help_meta.json"]);
+        const diff = git(["diff", range, "--", "apps", "packages", `:!${TREES.user.helpMeta}`, `:!${TREES.user.helpContent}`]);
         let file = "";
         const touched = new Set();
         for (const line of diff.split("\n")) {
@@ -451,10 +451,9 @@ function check() {
         const index = loadTree(treeName);
         checkStructure(index, errors, warnings);
         checkContent(index, errors, warnings);
-        if (treeName === "user") checkHtmlMirror(index, errors, warnings);
+        if (treeName === "user") checkHelpArtifacts(index, errors, warnings);
     }
-    const stale = staleCkeIcons();
-    if (stale.length) warnings.push(`cke font is out of date, no glyph for ${stale.join(", ")}: ${CKE_REBUILD}`);
+    warnings.push(...staleIconFonts(Object.keys(BUILT_ICON_PACKS)));
     if (trees.includes("user")) {
         checkCodeReferences(loadTree("user"), errors);
         checkUrlLiterals(errors);
@@ -476,12 +475,11 @@ function sync() {
         die("sync failed — the import rejects a tree whose !!!meta.json and files disagree; run `check`");
     }
     const after = gitStatusDocs();
-    const groups = { "docs/ Markdown": [], "docs/ !!!meta.json": [], "help HTML (doc_notes)": [], "help meta": [], images: [] };
+    const groups = { "docs/ Markdown": [], "docs/ !!!meta.json": [], "help artifacts": [], images: [] };
     for (const [status, file] of after) {
         const bucket = /!!!meta\.json$/.test(file) && file.startsWith("docs/") ? "docs/ !!!meta.json"
-            : /help_meta\.json$|doc_notes.*!!!meta\.json$/.test(file) ? "help meta"
             : /\.(png|gif|webp|jpe?g|svg)$/i.test(file) ? "images"
-            : file.startsWith("docs/") ? "docs/ Markdown" : "help HTML (doc_notes)";
+            : file.startsWith("docs/") ? "docs/ Markdown" : "help artifacts";
         groups[bucket].push(`${status} ${file}`);
     }
     const changedBySync = after.filter(([, f]) => !before.some(([, g]) => g === f)).length;
@@ -492,7 +490,7 @@ function sync() {
         for (const f of files.slice(0, 8)) console.log(`    ${f}`);
         if (files.length > 8) console.log(`    … ${files.length - 8} more`);
     }
-    console.log(`\nReview with \`git diff -- docs\` (your Markdown, normalized) and \`git diff --stat -- apps/server/src/assets/doc_notes\`.`);
+    console.log(`\nReview with \`git diff -- docs\` (your Markdown, normalized) and \`git diff --word-diff -- ${TREES.user.helpContent}\`.`);
     console.log(`Reflow, shifted &nbsp; and <li><p> churn in the HTML is expected; a changed href, a dropped <img> or lost text is not.`);
 }
 
@@ -551,9 +549,8 @@ function checkStructure(index, errors, warnings) {
             if (i > 0 && siblings[i - 1].notePosition > page.entry.notePosition) errors.push(`${where}: children are not in ascending notePosition order`);
             else if (i > 0 && siblings[i - 1].notePosition === page.entry.notePosition) warnings.push(`${where}: shares notePosition ${page.entry.notePosition} with "${siblings[i - 1].title}"`);
         }
-        if (treeName === "user" && page.docName && !DOC_NAME_CHARS.test(page.docName)) errors.push(`${where}: title/folder has a character the in-app help refuses (allowed: letters, digits, _ - ( ) & . , \` and space)`);
         if (page.entry.type === "text" && page.file && treeName !== "release") {
-            if (!page.alias) warnings.push(`${where}: no shareAlias — no public URL, and dropped from the standalone help`);
+            if (!page.alias) warnings.push(`${where}: no shareAlias — no public URL`);
             if (!page.icon && treeName === "user") warnings.push(`${where}: no iconClass`);
         }
         if (page.alias && !/^[a-z0-9]+([.-][a-z0-9]+)*$/.test(page.alias)) warnings.push(`${where}: shareAlias "${page.alias}" is not kebab-case`);
@@ -635,14 +632,16 @@ function checkContent(index, errors, warnings) {
     }
 }
 
-function checkHtmlMirror(index, errors, warnings) {
+function checkHelpArtifacts(index, errors, warnings) {
     const status = gitStatusDocs();
     const modifiedMd = status.filter(([, f]) => f.startsWith(`${TREES.user.dir}/`) && f.endsWith(".md")).map(([, f]) => f);
+    const content = readHelpContent();
     for (const page of index.pages) {
-        if (!page.file || page.depth === 0) continue;
-        const html = page.file.replace(/\.md$/, ".html").replace(TREES.user.dir, TREES.user.html);
-        if (page.file.endsWith(".md") && !fs.existsSync(path.join(ROOT, html))) { errors.push(`user: ${page.relPath} has no help HTML twin — run \`sync\``); continue; }
-        if (modifiedMd.includes(page.file) && !status.some(([, f]) => f === html)) warnings.push(`user: ${page.relPath} is modified but its help HTML is not — run \`sync\``);
+        if (!page.file?.endsWith(".md") || page.depth === 0 || page.isClone) continue;
+        if (content[`_help_${page.noteId}`] === undefined) errors.push(`user: ${page.relPath} has no entry in ${TREES.user.helpContent} — run \`sync\``);
+    }
+    if (modifiedMd.length && !status.some(([, f]) => f === TREES.user.helpContent)) {
+        warnings.push(`user: ${modifiedMd.length} page(s) modified but ${TREES.user.helpContent} is not — run \`sync\``);
     }
     const helpMeta = JSON.parse(fs.readFileSync(path.join(ROOT, TREES.user.helpMeta), "utf-8"));
     const helpIds = new Set();
@@ -699,7 +698,7 @@ function checkIconUsage(index) {
 // Tree model
 // ---------------------------------------------------------------------------------------------
 
-/** Reads a tree's `!!!meta.json` and indexes every entry with its path, URL and docName. */
+/** Reads a tree's `!!!meta.json` and indexes every entry with its path and URL. */
 function loadTree(treeName) {
     if (treeCache.has(treeName)) return treeCache.get(treeName);
     const tree = TREES[treeName];
@@ -708,7 +707,7 @@ function loadTree(treeName) {
     const raw = fs.readFileSync(metaPath, "utf-8");
     const meta = JSON.parse(raw);
     const index = { treeName, tree, meta, metaPath, raw, pages: [], byId: new Map(), root: null };
-    const visit = (entry, parent, dir, parentUrl, docNameRoot) => {
+    const visit = (entry, parent, dir, parentUrl) => {
         const alias = entry.attributes?.find((a) => a.type === "label" && a.name === "shareAlias")?.value;
         const currentUrl = parentUrl && alias ? `${parentUrl}/${alias}` : parentUrl;
         const page = {
@@ -722,15 +721,13 @@ function loadTree(treeName) {
             children: []
         };
         page.relPath = page.file ?? path.join(dir, entry.dirFileName ?? entry.title);
-        page.docName = treeName === "user" && entry.type === "text" && entry.dataFileName ? `${docNameRoot}/${path.basename(entry.dataFileName, ".md")}`.substring(1) : undefined;
         index.pages.push(page);
         if (!page.isClone) index.byId.set(entry.noteId, page);
         const childDir = entry.dirFileName ? path.join(dir, entry.dirFileName) : dir;
-        const childDocRoot = entry.dirFileName ? `${docNameRoot}/${entry.dirFileName}` : docNameRoot;
-        for (const child of entry.children ?? []) page.children.push(visit(child, page, childDir, currentUrl, childDocRoot));
+        for (const child of entry.children ?? []) page.children.push(visit(child, page, childDir, currentUrl));
         return page;
     };
-    index.root = visit(meta.files[0], null, tree.dir, BASE_URL, `/${meta.files[0].dirFileName ?? ""}`);
+    index.root = visit(meta.files[0], null, tree.dir, BASE_URL);
     treeCache.set(treeName, index);
     return index;
 }
@@ -855,8 +852,6 @@ function otherTreesHave(id) {
 
 function checkTitle(title, parent, self) {
     if (!title.trim()) die("empty title");
-    const docName = `${parent ? childrenDir(parent) : ""}/${sanitize(title)}`;
-    if (parent && parent.treeName === "user" && !DOC_NAME_CHARS.test(docName.replace(/^docs\/User Guide\//, ""))) die(`the in-app help cannot open a page whose title has characters outside letters, digits, _ - ( ) & . , \` and space: "${title}"`);
     const fileBase = sanitize(title).toLowerCase();
     for (const c of parent?.entry.children ?? []) {
         if (c === self?.entry) continue;
@@ -882,6 +877,29 @@ function loadIconPack(pack) {
     return iconCache.get(pack);
 }
 
+/** A line per built pack among `packs` whose font lacks a glyph for one of its SVGs, with the rebuild command. */
+function staleIconFonts(packs) {
+    const problems = [];
+    for (const pack of packs.filter((p) => p in BUILT_ICON_PACKS)) {
+        const { font, missing } = BUILT_ICON_PACKS[pack];
+        const stale = missing();
+        if (!stale.length) continue;
+        problems.push(`${pack} font is out of date, no glyph for ${stale.join(", ")}: run `
+            + `\`pnpm --filter @triliumnext/icon-pack-builder start ${pack}\` and commit `
+            + `apps/client/src/fonts/${font} with ${ICON_PACKS[pack]}`);
+    }
+    return problems;
+}
+
+/** The `tn-brand-*` classes of the SVGs in `BRAND_ICON_DIR` that the font has no glyph for. */
+function staleBrandIcons() {
+    const known = loadIconPack("tn-brand").icons;
+    return fs.readdirSync(path.join(ROOT, BRAND_ICON_DIR))
+        .filter((f) => f.endsWith(".svg"))
+        .map((f) => `tn-brand-${f.slice(0, -".svg".length)}`)
+        .filter((id) => !(id in known));
+}
+
 /**
  * The `cke-trilium-*` classes of the SVGs in `packages/ckeditor5` that the font has no glyph for.
  * The folders come from `TRILIUM_ICON_DIRS` in the builder, so the two cannot drift.
@@ -903,7 +921,7 @@ function staleCkeIcons() {
     return stale;
 }
 
-/** `bx bx-star`, `bx bxs-grid`, `cke cke-quote`, with optional modifiers such as `bx-flip-horizontal`. */
+/** `bx bx-star`, `bx bxs-grid`, `cke cke-quote`, `tn-brand tn-brand-openai`, with optional modifiers such as `bx-flip-horizontal`. */
 function iconExists(cls) {
     const parts = cls.trim().split(/\s+/);
     const pack = parts[0];
@@ -913,8 +931,8 @@ function iconExists(cls) {
 }
 
 function normalizeIconClass(input) {
-    const name = input.trim().replace(/^(bx|cke)\s+/, "");
-    const pack = name.startsWith("cke-") ? "cke" : "bx";
+    const name = input.trim().replace(/^(bx|cke|tn-brand)\s+/, "");
+    const pack = name.startsWith("cke-") ? "cke" : name.startsWith("tn-brand-") ? "tn-brand" : "bx";
     return `${pack} ${name}`;
 }
 
@@ -984,7 +1002,7 @@ function unescapeHtml(s) {
 
 function grep(pattern, paths) {
     const existing = paths.filter((p) => fs.existsSync(path.join(ROOT, p)));
-    const result = spawnSync("grep", ["-rnoE", "--include=*.ts", "--include=*.tsx", "--include=*.js", "--include=*.json", "--include=*.md", "--include=*.html", "--exclude-dir=node_modules", "--exclude-dir=dist", "--exclude-dir=doc_notes", "--exclude=help_meta.json", pattern, ...existing], { cwd: ROOT, encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 });
+    const result = spawnSync("grep", ["-rnoE", "--include=*.ts", "--include=*.tsx", "--include=*.js", "--include=*.json", "--include=*.md", "--include=*.html", "--exclude-dir=node_modules", "--exclude-dir=dist", "--exclude=help_meta.json", "--exclude=help_content.json", pattern, ...existing], { cwd: ROOT, encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 });
     return (result.stdout ?? "").split("\n").filter(Boolean);
 }
 
@@ -992,8 +1010,12 @@ function git(argv) {
     return execFileSync("git", argv, { cwd: ROOT, encoding: "utf-8", maxBuffer: 256 * 1024 * 1024 });
 }
 
+function readHelpContent() {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, TREES.user.helpContent), "utf-8"));
+}
+
 function gitStatusDocs() {
-    return git(["status", "--porcelain", "--", "docs", TREES.user.html, TREES.user.standaloneMeta]).split("\n").filter(Boolean).map((l) => [l.slice(0, 2).trim() || "M", l.slice(3).replace(/^"|"$/g, "").replace(/\\"/g, '"')]);
+    return git(["status", "--porcelain", "--", "docs", TREES.user.helpMeta, TREES.user.helpContent]).split("\n").filter(Boolean).map((l) => [l.slice(0, 2).trim() || "M", l.slice(3).replace(/^"|"$/g, "").replace(/\\"/g, '"')]);
 }
 
 function defaultDiffBase() {

@@ -6,7 +6,8 @@ import type {
     NativeImportOptions,
     OneNoteLoginResult,
     RendererStartupMetric,
-    TranscriptionState
+    TranscriptionState,
+    TranscriptSource
 } from "@triliumnext/commons";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
@@ -277,6 +278,12 @@ contextBridge.exposeInMainWorld("electronApi", {
             const listener = (_event: unknown, state: TranscriptionState) => callback(state);
             ipcRenderer.on("transcription-state", listener);
             return () => ipcRenderer.removeListener("transcription-state", listener);
+        },
+        onLevel(callback: (source: TranscriptSource, level: number) => void) {
+            const listener = (_event: unknown, source: TranscriptSource, level: number) =>
+                callback(source, level);
+            ipcRenderer.on("transcription-level", listener);
+            return () => ipcRenderer.removeListener("transcription-level", listener);
         }
     },
 

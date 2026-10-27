@@ -364,6 +364,10 @@ Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editorul de cod cu
   suport pentru foarte multe limbaje de programare.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - tehnologia de
   desenare folosită în notițele de tip schiță.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - pentru

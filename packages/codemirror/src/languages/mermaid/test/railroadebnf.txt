@@ -1,0 +1,29 @@
+# EBNF railroad
+
+railroad-ebnf-beta
+
+==>
+
+RailroadEbnfDiagram(DiagramName)
+
+# Groups, postfixes, exceptions and special sequences
+
+railroad-ebnf-beta
+  title Numbers
+  number = [ "-" ], digit, { digit } ;
+  digit ::= "0" | '1' | ? any digit ? ;
+  letter = (a | b)+ - "x" c* d? ;
+
+==>
+
+RailroadEbnfDiagram(DiagramName,Title(Keyword,TitleText),Rule(RuleName,"=",Optional("[",String,"]"),",",NonTerminal,",",Repetition("{",NonTerminal,"}"),";"),Rule(RuleName,"::=",String,"|",String,"|",Special,";"),Rule(RuleName,"=",Group("(",NonTerminal,"|",NonTerminal,")"),Postfix("+"),Exception("-",String),NonTerminal,Postfix("*"),NonTerminal,Postfix("?"),";"))
+
+# Question marks open a special sequence where one can close
+
+railroad-ebnf-beta
+  a = b? c? ;
+  d = e ? f ;
+
+==>
+
+RailroadEbnfDiagram(DiagramName,Rule(RuleName,"=",NonTerminal,Special,";"),Rule(RuleName,"=",NonTerminal,Postfix("?"),NonTerminal,";"))

@@ -29,3 +29,9 @@ body.mobile .note-actions-custom-display-mode {
     }
 }
 
+
+/* Starts a group, as `.dropdown-divider + .dropdown-item` does in theme-next/menus.css. */
+body.mobile .dropdown-menu .note-actions-custom + .dropdown-item {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}

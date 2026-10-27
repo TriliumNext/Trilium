@@ -17,7 +17,7 @@ A note's read-only behavior can be changed via <a class="reference-link" href="
     This is the default behavior in which the note will be editable by default, unless it becomes large enough to trigger read-only mode.
 *   **Read-only**  
     The note will be always marked as read-only, regardless of its size. Nevertheless, it's still possible to temporarily edit the note if needed. This is generally useful for notes that are not prone to change.
-*   **Always Editable**  
+*   **Always editable**  
     This option will bypass the automatic read-only activation for this particular note. It's useful for large notes that are frequently edited.
 
 If the _Editable_ section is missing from the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, then the note type does not support read-only mode.
@@ -34,3 +34,5 @@ Apart from using the <a class="reference-link" href="../UI%20Elements/Note%20me
 When accessing a read-only note, it's possible to temporarily edit it pressing the _Read-only_ badge.
 
 When pressed, the note will become editable but will become read-only again after navigating to a different note.
+
+The pages of the built-in user guide are an exception: they are part of Trilium itself and cannot be edited, not even temporarily. Their _Read-only_ badge cannot be pressed, the note menu does not offer to edit them, and their attributes are shown in the right sidebar without a way to change them.

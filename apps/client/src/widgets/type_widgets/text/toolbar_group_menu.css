@@ -1,0 +1,31 @@
+/* `--_size` is set per size in `theme-next/notes/text.css`, as it is for CKEditor's own list. */
+.tn-dropdown-menu .dropdown-item.ck-fontsize-option .toolbar-group-menu-label {
+    font-size: var(--_size);
+}
+
+.tn-dropdown-menu .tn-menu-actions.toolbar-group-menu-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    &:has(> .tn-menu-action:nth-child(4):last-child) {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    & > .tn-menu-action > .tn-menu-action-title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        white-space: normal;
+        text-align: center;
+        text-wrap: balance;
+    }
+
+    & > .tn-menu-action[aria-checked="true"] {
+        color: var(--left-pane-item-selected-color, var(--active-item-text-color));
+        background-image: linear-gradient(
+            var(--left-pane-item-selected-background, var(--active-item-background-color)),
+            var(--left-pane-item-selected-background, var(--active-item-background-color))
+        );
+    }
+}

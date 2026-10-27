@@ -10,7 +10,7 @@ import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
 import { filterAvailableFamilies, listSystemFonts, quoteFamily, type SystemFont } from "../../../services/font";
 import { t } from "../../../services/i18n";
-import { isElectron } from "../../../services/utils";
+import { isElectron, isMobile } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import { filterTokens, matchesFilter } from "../../react/filter";
@@ -633,18 +633,20 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                     {target.sizeDescription && <small className="font-size-description">{target.sizeDescription}</small>}
                 </div>
 
-                <div className="font-preview">
-                    <label>{t("fonts.preview")}</label>
-                    <div
-                        className="font-preview-text"
-                        style={{
-                            fontFamily: cssFontFamily(target, family),
-                            fontSize: `${size}%`
-                        }}
-                    >
-                        {Preview ? <Preview /> : PREVIEW_TEXT}
+                {!isMobile() && (
+                    <div className="font-preview">
+                        <label>{t("fonts.preview")}</label>
+                        <div
+                            className="font-preview-text"
+                            style={{
+                                fontFamily: cssFontFamily(target, family),
+                                fontSize: `${size}%`
+                            }}
+                        >
+                            {Preview ? <Preview /> : PREVIEW_TEXT}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </Modal>,
         document.body

@@ -199,6 +199,32 @@ describe("Board data", () => {
         expect(titles("")).toEqual([ "Unassigned" ]);
     });
 
+    it("collects cards only as deep as #maxNestingDepth says", async () => {
+        const board = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { title: "Child", "#status": "To Do", children: [
+                    { title: "Grandchild", "#status": "To Do", children: [
+                        { title: "Great-grandchild", "#status": "To Do" }
+                    ] }
+                ] }
+            ]
+        });
+
+        async function titlesAt(maxDepth: number | undefined) {
+            const data = await getBoardData(
+                board, "status", {}, false, [], new Map(), false, maxDepth);
+            return (data.byColumn.get("To Do") ?? []).map((item) => item.note.title).sort();
+        }
+
+        expect(await titlesAt(0)).toEqual([ "Child" ]);
+        expect(await titlesAt(1)).toEqual([ "Child", "Grandchild" ]);
+        expect(await titlesAt(undefined)).toEqual([ "Child", "Grandchild", "Great-grandchild" ]);
+        expect(await titlesAt(-1)).toEqual([ "Child", "Grandchild", "Great-grandchild" ]);
+    });
+
     /**
      * A column inserted or dragged is written to the attachment at once and to the definition a
      * round trip later. The refresh in between must not put it back where the definition says.

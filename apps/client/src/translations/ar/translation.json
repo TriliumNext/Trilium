@@ -54,8 +54,6 @@
     "link_title": "عنوان الرابط",
     "button_add_link": "اضافة رابط",
     "help_on_links": "مساعدة حول الارتباطات التشعبية",
-    "link_title_mirrors": "عنوان الرابط يعكس العنوان الحالي للملاحظة",
-    "link_title_arbitrary": "يمكن تغيير عنوان الرابط حسب الرغبة",
     "anchor": "ارتباط (اختياري)",
     "anchor_none": "لا يوجد (رابط إلى الملاحظة)"
   },
@@ -74,15 +72,18 @@
   },
   "bulk_actions": {
     "bulk_actions": "اجراءات جماعية",
-    "available_actions": "الاجراءات المتاحة",
     "chosen_actions": "الأجراءات المختارة",
-    "execute_bulk_actions": "تنفيذ الأجراءات الجماعية",
+    "execute_bulk_actions_zero": "تنفيذ الأجراءات الجماعية",
+    "execute_bulk_actions_one": "",
+    "execute_bulk_actions_two": "",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_many": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "تم تنفيذ الاجراءات الجماعية بنجاح،",
     "none_yet": "لايوجد أجراء بعد... اضف اجراء بالنقر على احد الأجراءات المتاحة اعلاه.",
     "relations": "العلاقات",
     "notes": "الملاحظات",
     "other": "أخرى",
-    "affected_notes": "الملاحظات المتأثرة",
     "labels": "التسميات",
     "include_descendants": "تضمين الملاحظات الفرعية للملاحظات المحددة"
   },
@@ -213,47 +214,32 @@
     "run": "يحدد الأحداث التي يجب أن يتم تشغيل السكربت عندها. القيم الممكنة هي:\n\n<ul>\n<li>frontendStartup - عند بدء تشغيل واجهة Trilium Notes (أو إعادة تحميلها)، ولكن ليس على الهاتف.</li>\n<li>mobileStartup - عند بدء تشغيل الواجهة على الهاتف أو إعادة تحميلها.</li>\n<li>backendStartup - عند بدء تشغيل الخادم الخلفي.</li>\n<li>hourly - يتم التشغيل مرة كل ساعة. يمكنك استخدام الوسم الإضافي <code>runAtHour</code> لتحديد الساعة.</li>\n<li>daily - يتم التشغيل مرة واحدة يوميًا.</li>\n</ul>"
   },
   "rename_label": {
-    "to": "الى",
     "old_name_placeholder": "الاسم القديم",
     "new_name_placeholder": "الاسم الجديد",
     "rename_label": "اعادة تسمية التسمية",
-    "rename_label_from": "اعادة تسمية التسمية من",
     "name_title": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية (A–Z, 0–9)، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "move_note": {
-    "to": "الى",
     "move_note": "نقل الملاحظة",
-    "target_parent_note": "ملاحظة الاصل الهدف",
-    "on_all_matched_notes": "على كل الملاحظات المطابقة",
-    "move_note_new_parent": "نقل الملاحظة إلى أب جديد إذا كان للملاحظة أب واحد فقط (أي يتم إزالة الفرع القديم وإنشاء فرع جديد تحت الأب الجديد)",
-    "clone_note_new_parent": "استنساخ الملاحظة إلى أب جديد إذا كانت للملاحظة عدة نسخ/فروع (حيث لا يكون من الواضح أي فرع يجب إزالته)",
-    "nothing_will_happen": "لن يحدث أي شيء إذا تعذر نقل الملاحظة إلى الملاحظة الهدف (مثلًا إذا أدى ذلك إلى إنشاء دورة في الشجرة)"
+    "target_parent_note": "ملاحظة الاصل الهدف"
   },
   "add_relation": {
-    "to": "الى",
     "add_relation": "اضافة علاقة",
     "relation_name": "اسم العلاقة",
     "target_note": "الملاحظة الهدف",
-    "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:).",
-    "create_relation_on_all_matched_notes": "في جميع الملاحظات المطابقة، يتم إنشاء العلاقة (Relation) المحددة."
+    "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "rename_relation": {
-    "to": "الى",
     "rename_relation": "اعادة تسمية العلاقة",
     "old_name": "الاسم القديم",
     "new_name": "الاسم الجديد",
-    "rename_relation_from": "اعادة تسمية العلاقة من",
     "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "update_relation_target": {
-    "to": "الى",
-    "update_relation": "تحديث العلاقة",
     "relation_name": "اسم العلاقة",
     "target_note": "الملاحظة الهدف",
     "update_relation_target": "تحدث علاقة الهدف",
-    "on_all_matched_notes": "على كل الملاحظات المطابقة",
-    "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:).",
-    "change_target_note": "تغيير الملاحظة الهدف للعلاقة (Relation) الموجودة"
+    "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "attachments_actions": {
     "download": "تنزيل",
@@ -432,16 +418,8 @@
     "outside_hoisted": "هذا المسار يقع خارج الملاحظة المُثبّتة، وستحتاج إلى إلغاء التثبيت للوصول إليه."
   },
   "search_definition": {
-    "ancestor": "السلف",
-    "limit": "الحد الاقصى",
     "action": "أجراء",
     "search_button": "بحث",
-    "debug": "تصحيح الاخطاء",
-    "search_string": "سلسة البحث",
-    "search_script": "نص البحث",
-    "fast_search": "بحث سريع",
-    "include_archived": "تضمين العناصر المؤرشفة",
-    "order_by": "ترتيب حسب",
     "search_parameters": "معايير البحث",
     "add_search_option": "اضافة خيار البحث:",
     "save_to_note": "حفظ في تلملاحظة",
@@ -451,10 +429,8 @@
     "actions_executed": "اجراءات تم تنفيذها.",
     "option": "خيار",
     "include_archived_notes_description": "يتم استبعاد الملاحظات المؤرشفة افتراضيًا من نتائج البحث، لكن مع هذا الخيار سيتم تضمينها.",
-    "debug_description": "سيقوم وضع التصحيح (Debug) بطباعة معلومات تصحيح إضافية في وحدة التحكم (Console) للمساعدة في تصحيح الاستعلامات المعقدة",
     "search_note_saved": "تم حفظ ملاحظة البحث في {{- notePathTitle}}",
-    "view_options": "خيارات العرض:",
-    "fast_search_description": "خيار البحث السريع يعطّل البحث النصي الكامل داخل محتوى الملاحظات، مما قد يؤدي إلى تسريع عملية البحث في قواعد البيانات الكبيرة."
+    "view_options": "خيارات العرض:"
   },
   "ancestor": {
     "label": "السلف",
@@ -467,8 +443,7 @@
     "placeholder": "ابحث عن ملاحظة حسب اسمها"
   },
   "limit": {
-    "limit": "الحد الاقصى",
-    "take_first_x_results": "خذ فقط أول X من النتائج المحددة."
+    "limit": "الحد الاقصى"
   },
   "debug": {
     "debug": "تصحيح الاخطاء",
@@ -672,13 +647,7 @@
   "include_note": {
     "label_note": "ملاحظة",
     "dialog_title": "تضمين ملاحظة",
-    "button_include": "تضمين ملاحظة",
-    "box_size_small": "صغير (10 سطور تقريبا)",
-    "box_size_medium": "متوسط ( 30 سطر تقريبا)",
-    "placeholder_search": "البحث عن ملاحظة حسب اسمها",
-    "box_size_prompt": "حجم الصندوق للملاحظة المضمّنة:",
-    "box_size_full": "كامل (يعرض الصندوق النص بالكامل)",
-    "box_size_expandable": "قابل للتوسيع (مُطوى افتراضيًا)"
+    "button_include": "تضمين ملاحظة"
   },
   "info": {
     "closeButton": "أغلاق",
@@ -694,10 +663,7 @@
   },
   "note_type_chooser": {
     "templates": "قوالب",
-    "modal_title": "اختر نوع الملاحظة",
-    "search_placeholder": "البحث في المسار حسب الاسم (الافتراضي إذا كان فارغًا)",
-    "modal_body": "اختر نوع الملاحظة / قالب الملاحظة الجديدة:",
-    "change_path_prompt": "تغيير مكان إنشاء الملاحظة الجديدة:"
+    "modal_title": "اختر نوع الملاحظة"
   },
   "prompt": {
     "title": "ترقية",
@@ -1167,7 +1133,6 @@
     "automatically-collapse-notes": "طي الملاحظات تلقائيا",
     "create-child-note": "انشاء ملاحظة فرعية",
     "scroll-active-title": "تمرير الى الملاحظة النشطة",
-    "save-changes": "حفظ وتطبيق التغييرات",
     "saved-search-note-refreshed": "تم تحديث ملاحظة البحث المحفوظة.",
     "hoist-this-note-workspace": "تثبيت هذه الملاحظة (مساحة العمل)",
     "refresh-saved-search-results": "تحديث نتائج البحث المحفوظة",
@@ -1287,21 +1252,13 @@
     "oauth_description": "OpenID هو معيار يتيح لك تسجيل الدخول إلى المواقع باستخدام حساب من خدمة أخرى، مثل Google، للتحقق من هويتك. المُصدر الافتراضي هو Google، ولكن يمكنك تغييره إلى أي مزود OpenID آخر. راجع <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">هنا</a> لمزيد من المعلومات. اتبع هذه <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">الإرشادات</a> لإعداد خدمة OpenID عبر Google."
   },
   "execute_script": {
-    "execute_script": "تنفيذ السكريبت",
-    "help_text": "يمكنك تنفيذ سكربتات بسيطة على الملاحظات المطابقة.",
-    "example_1": "على سبيل المثال، لإضافة نص إلى عنوان الملاحظة، استخدم هذا السكربت البسيط:",
-    "example_2": "مثال أكثر تعقيدًا هو حذف جميع سمات (Attributes) الملاحظات المطابقة:"
+    "execute_script": "تنفيذ السكريبت"
   },
   "add_label": {
     "add_label": "اضافة تسمية",
-    "to_value": "الى القيمة",
     "new_value_placeholder": "قيمة جديدة",
     "label_name_placeholder": "اسم التسمية",
-    "help_text": "عل كل الملاحظات المطابقة:",
-    "label_name_title": "الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:) هي الأحرف المسموح بها.",
-    "help_text_item1": "إنشاء التسمية (Label) المحددة إذا لم تكن الملاحظة تحتوي عليها بعد",
-    "help_text_item2": "أو تغيير قيمة التسمية (Label) الموجودة",
-    "help_text_note": "يمكنك أيضًا استدعاء هذه الطريقة بدون قيمة، وفي هذه الحالة سيتم تعيين التسمية (Label) للملاحظة بدون قيمة."
+    "label_name_title": "الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:) هي الأحرف المسموح بها."
   },
   "delete_label": {
     "delete_label": "حذف التسمية",
@@ -1309,31 +1266,16 @@
     "label_name_title": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "update_label_value": {
-    "to_value": "الى القيمة",
     "new_value_placeholder": "قيمة جديدة",
     "label_name_placeholder": "اسم التسمية",
     "update_label_value": "تحديث قيمة التصنيف",
-    "label_name_title": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:).",
-    "help_text": "في جميع الملاحظات المطابقة، يتم تغيير قيمة التسمية (Label) الموجودة.",
-    "help_text_note": "يمكنك أيضًا استدعاء هذه الطريقة بدون قيمة، وفي هذه الحالة سيتم تعيين التسمية (Label) للملاحظة بدون قيمة."
+    "label_name_title": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "delete_note": {
-    "delete_note": "حذف الملاحظة",
-    "delete_matched_notes": "حف الملاحظات المطابقة",
-    "delete_matched_notes_description": "سوف يؤدي هذا الى حذف الملاحظات المطابقة.",
-    "undelete_notes_instruction": "بعد الحذف، يمكن استعادتها من نافذة \"التغييرات الأخيرة\" (Recent Changes).",
-    "erase_notes_instruction": "لحذف الملاحظات بشكل نهائي، يمكنك بعد الحذف الانتقال إلى Options → Other ثم الضغط على زر \"Erase deleted notes now\"."
+    "delete_note": "حذف الملاحظة"
   },
   "rename_note": {
-    "rename_note": "اعادة تسمية الملاحظة",
-    "new_note_title": "عنوان ملاحظة جديد",
-    "rename_note_title_to": "اعادة تسمية عنوان الملاحظة الى",
-    "click_help_icon": "اضغط على أيقونة المساعدة على اليمين لعرض جميع الخيارات",
-    "example_new_title": "NEW: ${note.title} — عناوين الملاحظات المطابقة يتم إضافة بادئة \"NEW: \" إليها",
-    "evaluated_as_js_string": "يتم تقييم القيمة المُعطاة كسلسلة JavaScript، وبالتالي يمكن تعزيزها بمحتوى ديناميكي عبر المتغير المُحقن ‎<code>note</code>‎ (مع إعادة تسمية الملاحظة). أمثلة:",
-    "example_note": "‎<code>Note</code>‎ - تتم إعادة تسمية جميع الملاحظات المطابقة إلى \"Note\"",
-    "example_date_prefix": "‎<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code>‎ - تتم إضافة بادئة للملاحظات المطابقة تتضمن شهر ويوم إنشاء الملاحظة",
-    "api_docs": "راجع وثائق API الخاصة بـ Trilium Notes للاطلاع على تفاصيل <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a>، وكذلك خصائص <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a> لمزيد من المعلومات."
+    "rename_note": "اعادة تسمية الملاحظة"
   },
   "delete_relation": {
     "delete_relation": "حذف العلاقة",
@@ -1341,7 +1283,6 @@
     "allowed_characters": "الأحرف المسموح بها هي الأحرف الأبجدية الرقمية، والشرطة السفلية (_) والنقطتان الرأسيتان (:)."
   },
   "left_pane_toggle": {
-    "show_panel": "عرض اللوحة",
     "hide_panel": "اخفاء اللوحة"
   },
   "move_pane_button": {
@@ -1355,7 +1296,6 @@
     "import_files": "استيراد الملفات",
     "export_note": "تصدير الملاحظة",
     "delete_note": "حذف الملاحظة",
-    "print_note": "طباعة الملاحظة...",
     "save_revision": "حفظ المراجعة",
     "convert_into_attachment": "تحويل الى مرفق",
     "search_in_note": "بحث في الملاحظة",
@@ -1688,7 +1628,6 @@
   },
   "mobile_detail_menu": {
     "note_revisions": "مراجعات الملاحظة",
-    "insert_child_note": "ادراج ملاحظة فرعية",
     "delete_this_note": "حذف هذه الملاحظة",
     "error_unrecognized_command": "امر غير معروف {{command}}",
     "backlinks": "الروابط الخلفية",
@@ -1705,8 +1644,7 @@
     "move_success_message": "تم نقل الملاحظات المحددة إلى . "
   },
   "delete_revisions": {
-    "delete_note_revisions": "حذف مراجعات الملاحظة",
-    "all_past_note_revisions": "سيتم حذف جميع الإصدارات السابقة (revisions) للملاحظات المطابقة، بينما ستبقى الملاحظة نفسها محفوظة بالكامل. بمعنى آخر، سيتم حذف سجل تاريخ الملاحظة فقط."
+    "delete_note_revisions": "حذف مراجعات الملاحظة"
   },
   "close_pane_button": {
     "close_this_pane": "اغلاق هذه اللوحة"
@@ -2190,7 +2128,6 @@
     "processing_failed": "فشل بدء معالجة التعرف الضوئي على الحروف (OCR)",
     "no_text_explanation": "لم تتم معالجة هذه الملاحظة لاستخراج نص OCR أو لم يتم العثور على نص.",
     "text_filtered_low_confidence": "تم اكتشاف نص عبر OCR بنسبة ثقة {{confidence}}٪، لكن تم تجاهله لأن الحد الأدنى المطلوب هو {{threshold}}٪.",
-    "image_based_pdf_not_supported": "يبدو أن هذا ملف PDF قائم على الصور (ممسوح ضوئيًا). استخراج النص من ملفات PDF المصوّرة غير مدعوم حاليًا.",
     "processing_started": "بدأت معالجة التعرف الضوئي على الحروف (OCR). يرجى الانتظار قليلًا ثم تحديث الصفحة."
   },
   "search": {

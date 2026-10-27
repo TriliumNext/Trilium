@@ -1,0 +1,74 @@
+:where(:root) {
+    --scrollable-bar-button-color: currentColor;
+    --scrollable-bar-edge-width: 36px;
+}
+
+@media (pointer: coarse) {
+    :where(:root) {
+        --scrollable-bar-edge-width: 48px;
+    }
+}
+
+.scrollable-bar {
+    display: flex;
+    container-type: inline-size;
+    min-width: 0;
+
+    & > .scrollable-bar-viewport {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+
+    & > .scrollable-bar-edge {
+        display: none;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        min-width: var(--scrollable-bar-edge-width);
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+
+        &:has(> .scrollable-bar-button:disabled) {
+            cursor: default;
+        }
+    }
+
+    &.scrollable-bar--overflowing > .scrollable-bar-edge {
+        display: flex;
+    }
+
+    & > .scrollable-bar-edge > .scrollable-bar-button {
+        --icon-button-size: 28px;
+        --icon-button-icon-ratio: .75;
+
+        flex: none;
+    }
+
+    &:dir(rtl) > .scrollable-bar-edge > .scrollable-bar-button::before {
+        scale: -1 1;
+    }
+}
+
+/* Shared pages draw the buttons without the application's `icon-action` rules. */
+:where(.scrollable-bar-edge > .scrollable-bar-button) {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    background: none;
+    color: var(--scrollable-bar-button-color);
+    font-size: 20px;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: .35;
+        cursor: default;
+    }
+}

@@ -13,7 +13,7 @@ const SHARE_EDIT_HIDDEN_ITEMS = new Set([
 ]);
 
 /** The toolbar items that upload into the note, which a guest gets with `#shareAttachments`. */
-const SHARE_EDIT_UPLOAD_ITEMS = new Set([ "imageUpload", "fileUpload" ]);
+const SHARE_EDIT_UPLOAD_ITEMS = new Set([ "attachMenu" ]);
 
 /**
  * Whether a text note is edited with the classic toolbar — a bar standing above the note — rather
@@ -76,26 +76,98 @@ export function withoutItems<T extends { toolbar: { items: ToolbarItem[] } }>(
     return { ...config, toolbar: { ...config.toolbar, items } };
 }
 
+/**
+ * The bar above the virtual keyboard: scrolling rows whose only nested group is the insert menu,
+ * which holds the least used insertions. Undo and redo lead the main row, since a virtual keyboard
+ * has no key for either. The `textFormatting` button swaps in a second row of the formatting
+ * applied to text, which `TextFormattingToolbar` builds.
+ */
 export function buildMobileToolbar(aiAssistant: boolean) {
-    const classicConfig = buildClassicToolbar(false, aiAssistant);
-    const items: string[] = [];
-
-    for (const item of classicConfig.toolbar.items) {
-        if (typeof item === "object" && "items" in item) {
-            for (const subitem of item.items) {
-                items.push(subitem);
-            }
-        } else {
-            items.push(item);
-        }
-    }
-
     return {
-        ...classicConfig,
         toolbar: {
-            ...classicConfig.toolbar,
-            items
-        }
+            items: [
+                "undo",
+                "redo",
+                // Shown while the selection is in a widget, in place of the widget's balloon toolbar.
+                "contextToolbar",
+                "|",
+                "blockType",
+                {
+                    ...buildInsertGroup(),
+                    // Groups of three fill the rows of tiles.
+                    asMenu: { layout: "tiles" },
+                    items: [
+                        // The image and the to-do list are also under the paperclip and in the block
+                        // type menu, and these blocks in the latter, where a reader might not look.
+                        // The size grid of `insertTable` needs a pointer that hovers over its cells.
+                        "addImage", "insertTableMenu", "todoList",
+                        "|",
+                        "codeBlock", "blockQuote", "admonition",
+                        "|",
+                        "collapsible", "tabs", "multicolumnLayout",
+                        "|",
+                        "horizontalLine", "pageBreak", "footnote",
+                        "|",
+                        "math", "drawingCanvas", "mermaid",
+                        "|",
+                        "bookmark", "linkEmbed", "contentEmbed",
+                        "|",
+                        "specialCharacters", "emoji", "insertIcon",
+                        "|",
+                        "dateTime", "insertTemplate", "markdownImport"
+                    ]
+                },
+                "textFormatting",
+                "|",
+                // The most used after the blocks and text formatting, so they show without scrolling.
+                // One button for links to notes and to addresses, which the link dialog tells apart.
+                "addLink",
+                "attachMenu",
+                "|",
+                "outdent",
+                "indent",
+                "moveBlockUp",
+                "moveBlockDown",
+                ...(aiAssistant ? ["|", "aiAssistantMenu"] : [])
+            ]
+        },
+        textFormattingToolbar: [
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "code",
+            "|",
+            // Turns the selection into a link.
+            "addLink",
+            "|",
+            "superscript",
+            "subscript",
+            "kbd",
+            "|",
+            "fontSizeMenu",
+            "colorMenu",
+            "|",
+            "removeFormat",
+            "formatPainter",
+            "|",
+            // Of the block, but set as the look of selected text is.
+            "alignment:left",
+            "alignment:center",
+            "alignment:right",
+            "alignment:justify",
+            "|",
+            // Acts on the selection, which brings this row up.
+            "cuttonote"
+        ],
+        // The row of the `contextToolbar` button in a list, as a list has no toolbar of its own. It
+        // replaces the main row, so it repeats the indentation and the moves, used most in a list.
+        listToolbar: [
+            "outdent", "indent", "moveBlockUp", "moveBlockDown",
+            "|",
+            "listTypeMenu", "listStartAt", "listReversed"
+        ],
+        attachMenu: { camera: true }
     };
 }
 
@@ -127,8 +199,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 // down among the last items the assistant was grouped away at every ordinary note
                 // width.
                 ...(aiAssistant ? ["aiAssistant"] : []),
-                "imageUpload",
-                "fileUpload",
+                "attachMenu",
                 "blockQuote",
                 "admonition",
                 "insertTable",
@@ -201,8 +272,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "numberedList",
             "todoList",
             "|",
-            "imageUpload",
-            "fileUpload",
+            "attachMenu",
             "blockQuote",
             "admonition",
             "codeBlock",

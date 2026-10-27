@@ -10,7 +10,7 @@ import type { ShareReply } from '@triliumnext/core/src/share/handlers.js';
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from '@triliumnext/core/src/share/route_paths.js';
 
 import packageJson from '../../package.json' with { type: 'json' };
-import { type BrowserRequest, BrowserRouter } from './browser_router';
+import { type BrowserRequest, BrowserRouter, type RouteOptions } from './browser_router';
 import { dbLock } from './db_lock';
 
 /** Minimal response object used by apiResultHandler to capture the processed result. */
@@ -35,14 +35,20 @@ type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 function toCoreRequest(req: BrowserRequest): Request {
     /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
     const headers = req.headers ?? {};
+    // Express gives both URLs relative to the host, path and query string only.
+    const { pathname, search } = new URL(req.url);
+    const url = pathname + search;
     return {
         params: req.params,
         query: req.query,
         body: req.body,
         headers,
         method: req.method,
-        file: req.file,
-        get originalUrl() { return req.url; },
+        url,
+        originalUrl: url,
+        // A file posted for an import route has no `buffer` until an importer that needs one calls
+        // `loadUploadedBytes()`, as on the server when multer leaves a zip on disk.
+        file: req.file as Request["file"],
         // `fetch` lower-cases the header names it sends, which is the form BrowserRouter stores them in.
         get: (name: string) => headers[name.toLowerCase()]
     };
@@ -63,19 +69,21 @@ function setContextFromHeaders(req: BrowserRequest) {
 
 /**
  * Wraps a core route handler to work with the BrowserRouter.
- * Core handlers expect an Express-like request object with params, query, and body.
+ * Core handlers expect an Express-like request object with params, query, and body, and a
+ * response, as on the server.
  * Each request is wrapped in an execution context (like cls.init() on the server)
  * to ensure entity change tracking works correctly.
  */
-function wrapHandler(handler: (req: Request) => unknown, transactional: boolean) {
+function wrapHandler(handler: (req: Request, res: Response) => unknown, transactional: boolean) {
     return (req: BrowserRequest) => {
         return dbLock.runShared(() => getContext().init(() => {
             setContextFromHeaders(req);
             const coreReq = toCoreRequest(req);
+            const mockRes = createMockResponse();
             if (transactional) {
-                return getSql().transactional(() => handler(coreReq));
+                return getSql().transactional(() => handler(coreReq, mockRes));
             }
-            return handler(coreReq);
+            return handler(coreReq, mockRes);
         }));
     };
 }
@@ -85,7 +93,7 @@ function wrapHandler(handler: (req: Request) => unknown, transactional: boolean)
  * This bridges the core's route registration to the BrowserRouter.
  */
 function createApiRoute(router: BrowserRouter, transactional: boolean) {
-    return (method: HttpMethod, path: string, handler: (req: Request) => unknown) => {
+    return (method: HttpMethod, path: string, handler: (req: Request, res: Response) => unknown) => {
         router.register(method, path, wrapHandler(handler, transactional));
     };
 }
@@ -99,7 +107,7 @@ function createApiRoute(router: BrowserRouter, transactional: boolean) {
  * - The resultHandler is applied to post-process the result (entity conversion, status codes).
  */
 function createRoute(router: BrowserRouter) {
-    return (method: HttpMethod, path: string, _middleware: any[], handler: (req: Request, res: Response) => unknown, resultHandler?: ((req: Request, res: ResultHandlerResponse, result: unknown) => unknown) | null) => {
+    return (method: HttpMethod, path: string, middleware: any[], handler: (req: Request, res: Response) => unknown, resultHandler?: ((req: Request, res: ResultHandlerResponse, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
             return dbLock.runShared(() => getContext().init(() => {
                 setContextFromHeaders(req);
@@ -122,7 +130,7 @@ function createRoute(router: BrowserRouter) {
 
                 return result;
             }));
-        });
+        }, routeOptions(middleware));
     };
 }
 
@@ -133,7 +141,7 @@ function createRoute(router: BrowserRouter) {
  * passed an async callback.
  */
 function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) {
-    return (method: HttpMethod, path: string, _middleware: any[], handler: (req: Request, res: Response) => Promise<unknown>, resultHandler?: ((req: Request, res: ResultHandlerResponse, result: unknown) => unknown) | null) => {
+    return (method: HttpMethod, path: string, middleware: any[], handler: (req: Request, res: Response) => Promise<unknown>, resultHandler?: ((req: Request, res: ResultHandlerResponse, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
             // Exclusive: this transaction stays open across awaits, so no other
             // route may touch the connection until it commits. See db_lock.ts.
@@ -159,7 +167,7 @@ function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) 
 
                 return result;
             }) as Promise<unknown>);
-        });
+        }, routeOptions(middleware));
     };
 }
 
@@ -282,6 +290,18 @@ function noopMiddleware() {
     // No-op.
 }
 
+/**
+ * Marks a route whose importer reads a posted `File` in place, which `routeOptions()` turns into
+ * `readsUploadsInPlace`. The server's counterpart keeps a zip import on disk for the same reason.
+ */
+function importUploadMiddleware() {
+    // No-op.
+}
+
+function routeOptions(middleware: unknown[]): RouteOptions {
+    return { readsUploadsInPlace: middleware.includes(importUploadMiddleware) };
+}
+
 function checkAppNotInitialized() {
     if (sql_init.isDbInitialized()) {
         throw new Error("App already initialized.");
@@ -325,9 +345,7 @@ export function registerRoutes(router: BrowserRouter): void {
         checkCredentials: noopMiddleware,
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
-        // The browser variant has no disk; uploads already arrive as a buffer (see browser_router.ts), so
-        // imports use the same no-op middleware rather than the server's disk-storage one.
-        importMiddlewareWithErrorHandling: noopMiddleware,
+        importMiddlewareWithErrorHandling: importUploadMiddleware,
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);

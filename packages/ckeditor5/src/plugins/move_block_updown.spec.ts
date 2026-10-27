@@ -1,8 +1,11 @@
 import {
     _getModelData as getModelData,
     _setModelData as setModelData,
+    ButtonView,
     ClassicEditor,
     Essentials,
+    IconArrowDown,
+    IconArrowUp,
     Paragraph,
     Plugin,
     Table,
@@ -620,5 +623,61 @@ describe("MoveBlockUpDownPlugin inside tables", () => {
                 "</tableCell></tableRow></table>"
             );
         });
+    });
+});
+
+describe("MoveBlockUpDownPlugin buttons", () => {
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        editor = await createTestEditor([Essentials, Paragraph, Table, MoveBlockUpDownPlugin, TableMove], {
+            toolbar: ["moveBlockUp", "moveBlockDown"]
+        });
+    });
+
+    function buttons() {
+        const [up, down] = [...editor.ui.view.toolbar.items];
+        if (!(up instanceof ButtonView) || !(down instanceof ButtonView)) {
+            throw new Error("The toolbar has no move buttons.");
+        }
+        return { up, down };
+    }
+
+    it("moves the block, and is disabled where it cannot move", () => {
+        const { up, down } = buttons();
+        expect(up).toMatchObject({ label: "Move up", icon: IconArrowUp, tooltip: true });
+        expect(down).toMatchObject({ label: "Move down", icon: IconArrowDown, tooltip: true });
+
+        setModelData(editor.model, "<paragraph>First[]</paragraph><paragraph>Second</paragraph>");
+        expect(up.isEnabled).toBe(false);
+        expect(down.isEnabled).toBe(true);
+
+        down.fire("execute");
+        expect(getModelData(editor.model)).toBe("<paragraph>Second</paragraph><paragraph>First[]</paragraph>");
+        expect(up.isEnabled).toBe(true);
+        expect(down.isEnabled).toBe(false);
+
+        editor.enableReadOnlyMode("spec");
+        expect(up.isEnabled).toBe(false);
+    });
+
+    it("moves the table row in a table, as Alt+Up and Alt+Down do", () => {
+        const { up, down } = buttons();
+        setModelData(editor.model,
+            "<table>" +
+            "<tableRow><tableCell><paragraph>a[]</paragraph></tableCell></tableRow>" +
+            "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+            "</table>"
+        );
+        expect(up.isEnabled).toBe(false);
+        expect(down.isEnabled).toBe(true);
+
+        down.fire("execute");
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<table>" +
+            "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+            "<tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow>" +
+            "</table>"
+        );
     });
 });

@@ -24,3 +24,7 @@ body.zen.electron:not(.platform-darwin):not(.native-titlebar) .close-zen-contain
     inset-inline-start: calc(env(titlebar-area-width) - var(--zen-button-size) - 2px);
     inset-inline-end: unset;
 }
+
+body:not(.full-screen) .leave-full-screen-button {
+    display: none;
+}

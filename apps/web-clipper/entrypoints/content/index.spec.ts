@@ -118,7 +118,7 @@ describe("content script", () => {
             expect(attributes(container, "a", "href")).toEqual(links);
         });
 
-        it("falls back to the document title and fails without a selection", async () => {
+        it("falls back to the document title and answers nothing without a selection", async () => {
             document.head.innerHTML = "";
             document.body.innerHTML = "<p id=\"p\">Text</p>";
             selectRange("p", "p");
@@ -133,7 +133,7 @@ describe("content script", () => {
 
             window.getSelection()?.removeAllRanges();
             expect(await send({ name: "trilium-save-selection" })).toBeUndefined();
-            expect(console.error).toHaveBeenCalledOnce();
+            expect(console.error).not.toHaveBeenCalled();
         });
     });
 

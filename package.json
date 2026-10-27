@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.106.0",
+  "version": "0.106.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -19,6 +19,8 @@
     "desktop:start": "pnpm run --filter desktop dev",
     "desktop:build": "pnpm run --filter desktop build",
     "desktop:start-prod": "pnpm run --filter desktop start-prod",
+    "desktop:flathub-build": "pnpm run --filter desktop flathub:build",
+    "desktop:flathub-start": "pnpm run --filter desktop flathub:start",
     "standalone:start": "pnpm run --filter standalone dev",
     "standalone:build": "pnpm run --filter standalone build",
     "standalone:test": "pnpm run --filter standalone test",
@@ -58,34 +60,34 @@
   "devDependencies": {
     "@fast-csv/parse": "5.0.8",
     "@stylistic/eslint-plugin": "5.10.0",
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
     "@typescript/native": "npm:typescript@7.0.2",
-    "@vitest/browser-playwright": "5.0.3",
-    "@vitest/coverage-v8": "5.0.3",
-    "@vitest/ui": "5.0.3",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/ui": "5.0.5",
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
-    "eslint": "10.12.0",
+    "eslint": "10.13.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.12.1",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "happy-dom": "20.14.6",
+    "happy-dom": "21.0.4",
     "http-server": "14.1.1",
     "jiti": "2.7.0",
-    "js-yaml": "5.4.3",
-    "playwright": "1.64.0",
+    "js-yaml": "5.5.0",
+    "playwright": "1.64.1",
     "tslib": "2.8.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.1",
-    "vite": "8.3.4",
-    "vitest": "5.0.3"
+    "typescript-eslint": "8.72.0",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
   },
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Trilium Notes Team",
     "email": "contact@eliandoran.me",
@@ -99,5 +101,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.11.2"
+  "packageManager": "pnpm@12.15.0"
 }

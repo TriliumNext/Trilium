@@ -150,6 +150,8 @@ function EditorFeatures() {
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
+    const [stickyTableHeadersEnabled, setStickyTableHeadersEnabled] =
+        useTriliumOptionBool("textNoteStickyTableHeadersEnabled");
     const [htmlSupportEnabled, setHtmlSupportEnabled] = useTriliumOptionBool("textNoteHtmlSupportEnabled");
 
     return (
@@ -176,6 +178,17 @@ function EditorFeatures() {
                 description={t("editorfeatures.auto_link_previews_description")}
             >
                 <FormToggle currentValue={autoLinkPreviewsEnabled} onChange={setAutoLinkPreviewsEnabled} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="sticky-table-headers-enabled"
+                label={t("editorfeatures.sticky_table_headers_enabled")}
+                description={t("editorfeatures.sticky_table_headers_description")}
+            >
+                <FormToggle
+                    currentValue={stickyTableHeadersEnabled}
+                    onChange={setStickyTableHeadersEnabled}
+                />
             </OptionCardSection>
 
             <OptionCardSection

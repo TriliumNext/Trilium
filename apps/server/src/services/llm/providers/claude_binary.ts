@@ -20,7 +20,7 @@ import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { promisify } from "util";
 
-import { cachedProbe, findOnPath } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -76,5 +76,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error("Claude Code CLI not found. Install it (`npm install -g @anthropic-ai/claude-code`) and run `claude /login` on the machine running the Trilium server, or set the TRILIUM_CLAUDE_CODE_PATH environment variable to its location.");
+    throw new Error(await describeFlatpakSandbox("Claude Code") ?? "Claude Code CLI not found. Install it (`npm install -g @anthropic-ai/claude-code`) and run `claude /login` on the machine running the Trilium server, or set the TRILIUM_CLAUDE_CODE_PATH environment variable to its location.");
 }

@@ -20,6 +20,7 @@ export const LOCALES: Locale[] = [
     { id: "en", name: "English (United States)" },
     { id: "en-GB", name: "English (United Kingdom)" },
     { id: "es", name: "Español" },
+    { id: "fa", name: "فارسی", rtl: true },
     { id: "fr", name: "Français" },
     { id: "ga", name: "Gaeilge" },
     { id: "hi", name: "हिन्दी" },

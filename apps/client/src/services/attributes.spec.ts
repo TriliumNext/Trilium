@@ -137,6 +137,88 @@ describe("Set boolean with inheritance", () => {
             isInheritable: false
         }, undefined);
     });
+
+    it("compares with the inherited value when the note owns the label too", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [
+                { id: "ownsTrue", title: "Owns true", "#foo": "" },
+                { id: "ownsFalse", title: "Owns false", "#foo": "false" }
+            ]
+        });
+        const ownsTrue = froca.notes["ownsTrue"];
+        const ownsFalse = froca.notes["ownsFalse"];
+
+        const overrideId = ownsFalse.getOwnedLabel("foo")?.attributeId;
+        expect(overrideId).toBeTruthy();
+        await setBooleanWithInheritance(ownsFalse, "foo", true);
+        expect(server.remove).toHaveBeenCalledWith(`notes/ownsFalse/attributes/${overrideId}`);
+        expect(server.put).not.toHaveBeenCalled();
+
+        vi.clearAllMocks();
+        // Removing the owned label would leave the inherited one in effect.
+        await setBooleanWithInheritance(ownsTrue, "foo", false);
+        expect(server.put).toHaveBeenCalledWith(`notes/ownsTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("removes every owned duplicate to restore the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoFalse", title: "Owns false twice", "#foo": [ "false", "false" ] } ]
+        });
+        const note = froca.notes["twoFalse"];
+        const [ first, second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", true);
+        expect(server.remove).toHaveBeenCalledTimes(2);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${first.attributeId}`);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${second.attributeId}`);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned duplicates before overriding the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoTrue", title: "Owns true twice", "#foo": [ "", "" ] } ]
+        });
+        const note = froca.notes["twoTrue"];
+        const [ , second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", false);
+        expect(server.remove).toHaveBeenCalledExactlyOnceWith(
+            `notes/twoTrue/attributes/${second.attributeId}`
+        );
+        expect(server.put).toHaveBeenCalledExactlyOnceWith(`notes/twoTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        // `set-attribute` updates whichever owned label it finds, so only one can be left by then.
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+
+    it("waits for the label write and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note" });
+        vi.mocked(server.put).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", true)).rejects.toThrow("offline");
+    });
+
+    it("waits for the label removal and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note", "#foo": "" });
+        vi.mocked(server.remove).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", false)).rejects.toThrow("offline");
+    });
 });
 
 describe("addLabel / setLabel / setRelation", () => {
@@ -348,29 +430,31 @@ describe("removeAttributeById / removeOwnedAttributesByNameOrType", () => {
 describe("removeOwnedLabelByName / removeOwnedRelationByName", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("removeOwnedLabelByName removes an existing label and returns true", () => {
+    it("removeOwnedLabelByName removes an existing label and returns true", async () => {
         const note = buildNote({ title: "N", "#color": "red" });
         const labelId = note.getOwnedLabel("color")!.attributeId;
-        expect(attributeService.removeOwnedLabelByName(note, "color")).toBe(true);
+        await expect(attributeService.removeOwnedLabelByName(note, "color")).resolves.toBe(true);
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${labelId}`);
     });
 
-    it("removeOwnedLabelByName returns false when label is absent", () => {
+    it("removeOwnedLabelByName returns false when label is absent", async () => {
         const note = buildNote({ title: "N" });
-        expect(attributeService.removeOwnedLabelByName(note, "missing")).toBe(false);
+        await expect(attributeService.removeOwnedLabelByName(note, "missing")).resolves.toBe(false);
         expect(server.remove).not.toHaveBeenCalled();
     });
 
-    it("removeOwnedRelationByName removes an existing relation and returns true", () => {
+    it("removeOwnedRelationByName removes an existing relation and returns true", async () => {
         const note = buildNote({ title: "N", "~template": "tpl1" });
         const relId = note.getOwnedRelation("template")!.attributeId;
-        expect(attributeService.removeOwnedRelationByName(note, "template")).toBe(true);
+        await expect(attributeService.removeOwnedRelationByName(note, "template"))
+            .resolves.toBe(true);
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${relId}`);
     });
 
-    it("removeOwnedRelationByName returns false when relation is absent", () => {
+    it("removeOwnedRelationByName returns false when relation is absent", async () => {
         const note = buildNote({ title: "N" });
-        expect(attributeService.removeOwnedRelationByName(note, "missing")).toBe(false);
+        await expect(attributeService.removeOwnedRelationByName(note, "missing"))
+            .resolves.toBe(false);
         expect(server.remove).not.toHaveBeenCalled();
     });
 });

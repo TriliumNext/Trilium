@@ -116,7 +116,7 @@ export { default as BNote } from "./becca/entities/bnote";
 export { default as BOption } from "./becca/entities/boption";
 export { default as BRecentNote } from "./becca/entities/brecent_note";
 export { default as BRevision } from "./becca/entities/brevision";
-export { default as AbstractBeccaEntity } from "./becca/entities/abstract_becca_entity";
+export { default as AbstractBeccaEntity, MAX_BLOB_CONTENT_LENGTH } from "./becca/entities/abstract_becca_entity";
 export { default as Becca } from "./becca/becca-interface";
 export type { NotePojo } from "./becca/becca-interface";
 
@@ -141,6 +141,16 @@ export { default as sync_mutex } from "./services/sync_mutex";
 export { default as setup } from "./services/setup";
 export { getPlatform, type PlatformProvider } from "./services/platform";
 export { InAppHelpProvider } from "./services/in_app_help";
+export {
+    getVirtualNoteContent,
+    getVirtualNoteProvider,
+    getVirtualNoteProviders,
+    registerVirtualNoteProvider,
+    unregisterVirtualNoteProvider,
+    type VirtualNoteProvider,
+    type VirtualSubtreeAttribute,
+    type VirtualSubtreeItem
+} from "./services/virtual_notes";
 export { type ImageProvider, type ImageFormat, type ImageCompressionOutcome, type ImageCompressionRequest, type ImageShrink, type ProcessedImage, getImageProvider } from "./services/image_provider";
 export { default as imageCompressionService } from "./services/image_compression";
 export { default as imageInventoryService, type ImageInventoryOptions } from "./services/image_inventory";
@@ -155,7 +165,9 @@ export { default as imageService } from "./services/image";
 export { t } from "i18next";
 export type { RequestProvider, ExecOpts, CookieJar, FetchApiOpts, FetchResourceOpts, FetchedResource } from "./services/request";
 export type * from "./meta";
-export type { QueryString, QueryValue, Request, RequestHeaders, Response } from "./http_interface";
+export type {
+    QueryString, QueryValue, Request, RequestHeaders, Response, ResponseLocals
+} from "./http_interface";
 export * as routeHelpers from "./routes/helpers";
 export { resolveYouTubePreview, storeFavicon } from "./routes/api/link_embed";
 
@@ -228,6 +240,11 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     initZipProvider(zip);
     initZipExportProviderFactory(zipExportProviderFactory);
     initContext(executionContext);
+    if (inAppHelp) {
+        // Must precede initSql: it registers the _help virtual note provider, and initSql can
+        // resolve dbReady, which triggers the becca load that injects virtual subtrees.
+        initInAppHelp(inAppHelp);
+    }
     await initSql(new SqlService(dbConfig, getLog()));
     initSchema(schema);
     initImageProvider(image);
@@ -240,8 +257,5 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     }
     if (request) {
         initRequest(request);
-    }
-    if (inAppHelp) {
-        initInAppHelp(inAppHelp);
     }
 };

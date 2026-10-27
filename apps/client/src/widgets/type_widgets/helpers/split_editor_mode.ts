@@ -2,6 +2,13 @@ import type FNote from "../../../entities/fnote";
 
 export type DisplayMode = "source" | "split" | "preview";
 
+/** The display modes, in the order their switchers show them, with the icon and label of each. */
+export const DISPLAY_MODE_OPTIONS = [
+    { value: "source", icon: "bx bx-code", titleKey: "display_mode.source" },
+    { value: "split", icon: "bx bxs-dock-left", titleKey: "display_mode.split" },
+    { value: "preview", icon: "bx bx-show", titleKey: "display_mode.preview" }
+] as const satisfies readonly { value: DisplayMode; icon: string; titleKey: string }[];
+
 /**
  * Resolves the active split-editor mode from the `#displayMode` label. When the label is unset it
  * falls back to the note's read-only state — read-only → `preview`, editable → `split`. Kept as a

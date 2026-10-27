@@ -13,7 +13,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import ContentEmbed from "./content_embed/content_embed.js";
 import ImageToDrawing from "./image_to_drawing.js";
 
@@ -34,17 +33,16 @@ describe("ImageToDrawing", () => {
             calls.push(`convert ${src}`);
             return "d1";
         });
-        installGlobMock({
-            getComponentByEl: () => ({
-                convertImageToDrawing,
-                focusContentEmbed: (id: string) => calls.push(`focus ${id}`),
-                loadEmbeddedAttachment: (id: string) => calls.push(`load ${id}`)
-            })
-        });
         editor = await createTestEditor([
             Essentials, Paragraph, Image, ImageBlock, ImageInline, ImageCaption, ContentEmbed,
             ImageToDrawing
-        ]);
+        ], {
+            imageToDrawing: { convert: convertImageToDrawing },
+            contentEmbed: {
+                focusAttachment: (id: string) => calls.push(`focus ${id}`),
+                loadAttachment: (id: string) => calls.push(`load ${id}`)
+            }
+        });
     });
 
     /** Holds the next conversion until the returned function finishes it with an attachment ID. */
@@ -128,6 +126,12 @@ describe("ImageToDrawing", () => {
         await editor.execute("convertImageToDrawing");
         expect(getModelData(editor.model, { withoutSelection: true }))
             .toBe(`<paragraph>a</paragraph>${IMAGE}`);
+
+        editor.config.set("imageToDrawing", { convert: undefined });
+        await editor.execute("convertImageToDrawing");
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe(`<paragraph>a</paragraph>${IMAGE}`);
+        editor.config.set("imageToDrawing", { convert: convertImageToDrawing });
 
         const finish = holdConversion();
         const conversion = editor.execute("convertImageToDrawing");

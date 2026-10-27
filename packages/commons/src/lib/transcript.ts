@@ -138,10 +138,20 @@ const KEPT_AT_END = "'-";
 
 const NUMBER_WORD = /^(\d|zero$|one$|two$|three$|four$|five$|six$|seven$|eight$|nine$|ten$)/;
 
-interface Word {
+/** A word of an utterance as said, and whether {@link cleanUtteranceText} removes it. */
+export interface MarkedWord {
     text: string;
+    isDisfluency: boolean;
+}
+
+interface Word {
+    /** The word as the cleaned text shows it, which can take a removed filler's sentence end. */
+    text: string;
+    /** The word as said. */
+    said: string;
     /** The word lowercased, without surrounding punctuation. */
     key: string;
+    isDisfluency: boolean;
 }
 
 /**
@@ -153,12 +163,7 @@ interface Word {
  */
 export function cleanUtteranceText(text: string): string {
     const startsCapitalized = /^\p{Lu}/u.test(text);
-    let words: Word[] = text.split(/\s+/).filter(Boolean)
-        .map((word) => ({ text: word, key: toKey(word) }));
-
-    words = removeFillers(words);
-    words = words.filter((word) => !/^[b-hj-z][,.]?$/.test(word.text));
-    collapseRestarts(words);
+    const words = findDisfluencies(text).filter((word) => !word.isDisfluency);
 
     let cleaned = words.map((word) => word.text).join(" ")
         .replace(/^[,;:]\s*/, "")
@@ -168,6 +173,29 @@ export function cleanUtteranceText(text: string): string {
         cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     }
     return cleaned;
+}
+
+/**
+ * Splits the text of one utterance into its words as said, marking the ones
+ * {@link cleanUtteranceText} removes.
+ */
+export function markDisfluencies(text: string): MarkedWord[] {
+    return findDisfluencies(text)
+        .map(({ said, isDisfluency }) => ({ text: said, isDisfluency }));
+}
+
+/** Marks the disfluencies of `text`, in the order {@link cleanUtteranceText} documents. */
+function findDisfluencies(text: string) {
+    const words: Word[] = text.split(/\s+/).filter(Boolean)
+        .map((word) => ({ text: word, said: word, key: toKey(word), isDisfluency: false }));
+
+    const kept = markFillers(words)
+        .filter((word) => {
+            word.isDisfluency = /^[b-hj-z][,.]?$/.test(word.text);
+            return !word.isDisfluency;
+        });
+    markRestarts(kept);
+    return words;
 }
 
 /**
@@ -184,14 +212,18 @@ export function setSpeakerName(transcript: Transcript, key: string, name: string
     return { ...transcript, speakers };
 }
 
-/** Drops filler words; the sentence end a filler carried ("…because uh.") moves to the word before. */
-function removeFillers(words: Word[]) {
+/**
+ * Marks filler words, and returns the others; the sentence end a filler carried ("…because uh.")
+ * moves to the word before.
+ */
+function markFillers(words: Word[]) {
     const kept: Word[] = [];
     for (const word of words) {
         if (!FILLER_WORDS.has(word.key)) {
             kept.push(word);
             continue;
         }
+        word.isDisfluency = true;
         const sentenceEnd = /[.?!]$/.exec(word.text)?.[0];
         const previous = kept.at(-1);
         if (sentenceEnd && previous && !/[.?!]$/.test(previous.text)) {
@@ -201,13 +233,15 @@ function removeFillers(words: Word[]) {
     return kept;
 }
 
-/** Removes the first copy of each immediately repeated phrase, longest phrases first. */
-function collapseRestarts(words: Word[]) {
+/** Marks the first copy of each immediately repeated phrase, longest phrases first. */
+function markRestarts(words: Word[]) {
     for (let size = MAX_RESTART_WORDS; size >= 1; size--) {
         let start = 0;
         while (start + 2 * size <= words.length) {
             if (isRestart(words, start, size)) {
-                words.splice(start, size);
+                for (const word of words.splice(start, size)) {
+                    word.isDisfluency = true;
+                }
             } else {
                 start++;
             }

@@ -373,6 +373,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— كۆپلىگەن پروگرامما
   تىللىرىنى قوللايدىغان كود تەھرىرلىگۈچ.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— (Canvas) خاتىرىسىدە
   ئىشلىتىلىدىغان چەكسىز ئاق دوسكا.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— تەپەككۇر

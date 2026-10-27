@@ -31,7 +31,7 @@ describe("createShareFrocaSource", () => {
         expect(await source.searchNoteIds("tag", "root")).toEqual([ "found" ]);
         await source.saveAttachment("note 1", {} as never);
         await source.removeAttachment("att 1");
-        await source.searchInSubtree("#done", "root");
+        await source.searchInSubtree("#done", "root", false);
         await source.getAttributeNames("label", "do");
         await source.lintSearch("#done");
         await source.getNoteMap("map 1", "link",
@@ -51,7 +51,7 @@ describe("createShareFrocaSource", () => {
             "api/notes/note%201/attachments",
             "api/notes/note%201/blob",
             "api/notes?search=tag&ancestorNoteId=root",
-            "api/search?searchString=%23done&ancestorNoteId=root",
+            "api/search?searchString=%23done&ancestorNoteId=root&includeArchivedNotes=false",
             "api/attribute-names?type=label&query=do",
             "api/search/lint?searchString=%23done",
             "api/note-map/map%201/link?excludeRelation=template&includeRelation=author",
@@ -144,7 +144,7 @@ describe("createStaticFrocaSource", () => {
         const source = createStaticFrocaSource({}, "");
 
         expect(await source.searchNoteIds("#a", "root")).toEqual([]);
-        expect(await source.searchInSubtree("#a", "root"))
+        expect(await source.searchInSubtree("#a", "root", true))
             .toEqual({ searchResultNoteIds: [], highlightedTokens: [], error: null });
         expect(await source.lintSearch("#a")).toEqual({ error: null });
         expect(await source.getAttributeNames("label", "a")).toEqual([]);

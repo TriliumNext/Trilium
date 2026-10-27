@@ -32,6 +32,11 @@ vi.mock("./acp_mcp_endpoint.js", () => ({ getAcpMcpEndpointUrl: mcpEndpointMock 
 const buildNoteHintMock = vi.hoisted(() => vi.fn((noteId: string): string | null => `NOTE_META(${noteId})`));
 vi.mock("@triliumnext/core/src/services/llm/note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
 
+// Trilium's note tools, as the permission policy looks them up.
+vi.mock("@triliumnext/core/src/services/llm/tools/index.js", () => ({
+    allToolRegistries: [ new Map([ [ "search_notes", {} ], [ "rename_note", {} ] ]) ]
+}));
+
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
 vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/attachment_content.js")>(),
@@ -141,9 +146,11 @@ class FakeAcpError extends Error {
 
 vi.mock("./acp_client.js", () => ({ AcpClient: FakeAcpClient, AcpError: FakeAcpError }));
 
-const { buildPromptBlocks, createUpdateCollector, denyPermission, MAX_TITLES_PER_SESSION } = await import("./acp_agent.js");
+const { AnnouncedMcpCalls, buildPromptBlocks, createUpdateCollector, denyPermission } = await import("./acp_agent.js");
+const { ToolApprovals } = await import("@triliumnext/core/src/services/llm/tool_approval.js");
+const { MAX_TITLES_PER_SESSION } = await import("./transcript.js");
 const { IDLE_TIMEOUT_MS } = await import("./acp_client_pool.js");
-const { buildCopilotModelList, CopilotAgentProvider, resetModelCatalogCacheForTests } = await import("./copilot_agent.js");
+const { buildCopilotModelList, CopilotAgentProvider, decideCopilotPermission, resetModelCatalogCacheForTests } = await import("./copilot_agent.js");
 
 const decidePermission = (request: Parameters<typeof denyPermission>[0]) => denyPermission(request, "Copilot Agent provider");
 
@@ -374,13 +381,13 @@ describe("CopilotAgentProvider.chatChunks", () => {
         expect(mcpEndpointMock).not.toHaveBeenCalled();
     });
 
-    it("spawns the CLI with the note-tool allow-list and built-in tool denials", async () => {
+    it("spawns the CLI with the built-in tools denied and the note tools left to ask", async () => {
         const startSpy = vi.spyOn(FakeAcpClient, "start");
         const provider = new CopilotAgentProvider();
         await collect(provider.chatChunks([userMessage("hi")], {}));
 
         const args = startSpy.mock.calls[0][1].args ?? [];
-        expect(args).toContain("--allow-tool=trilium");
+        expect(args.some(arg => arg.startsWith("--allow-tool"))).toBe(false);
         expect(args).toContain("--deny-tool=shell");
         expect(args).toContain("--deny-tool=write");
         startSpy.mockRestore();
@@ -970,10 +977,83 @@ describe("CopilotAgentProvider.generateTitle", () => {
     });
 });
 
+describe("decideCopilotPermission", () => {
+    beforeEach(resetFakes);
+
+    const OPTIONS = [
+        { optionId: "allow_once", kind: "allow_once" },
+        { optionId: "allow_always", kind: "allow_always" },
+        { optionId: "reject_always", kind: "reject_always" },
+        { optionId: "reject_once", kind: "reject_once" }
+    ];
+    const ALLOWED = { outcome: { outcome: "selected", optionId: "allow_once" } };
+    const REJECTED_ONCE = { outcome: { outcome: "selected", optionId: "reject_once" } };
+    const REJECTED_ALWAYS = { outcome: { outcome: "selected", optionId: "reject_always" } };
+    const rename = (title: string) => ({
+        toolCall: { toolCallId: "toolu_r", title, kind: "other", rawInput: { noteId: "n", newTitle: "New" } },
+        options: OPTIONS
+    });
+    const answering = (approved: boolean, asked: unknown[]) => {
+        const approvals = new ToolApprovals();
+        approvals.onRequest = (request) => {
+            asked.push(request);
+            queueMicrotask(() => approvals.answer(request.toolCallId, approved));
+        };
+        return approvals;
+    };
+
+    it("asks the user about a note tool named bare or behind the trilium server, and rejects a declined call once", async () => {
+        const asked: unknown[] = [];
+        expect(await decideCopilotPermission(rename("rename_note"), "Copilot", { toolApprovals: answering(true, asked) })).toEqual(ALLOWED);
+        expect(await decideCopilotPermission(rename("trilium-rename_note"), "Copilot", { toolApprovals: answering(true, asked) })).toEqual(ALLOWED);
+        expect(await decideCopilotPermission(rename("trilium/rename_note"), "Copilot", { toolApprovals: answering(false, asked) })).toEqual(REJECTED_ONCE);
+        expect(asked).toEqual(Array(3).fill({ toolCallId: "toolu_r", toolName: "rename_note", toolInput: { noteId: "n", newTitle: "New" } }));
+        // Outside a chat turn there is no one to ask, as with the API providers.
+        expect(await decideCopilotPermission(rename("rename_note"), "Copilot")).toEqual(ALLOWED);
+    });
+
+    it("takes the tool and its arguments from the call its own session announced when the request leaves them out", async () => {
+        const mcpCalls = new AnnouncedMcpCalls();
+        mcpCalls.observe("session/update", {
+            sessionId: "sess-1",
+            update: { sessionUpdate: "tool_call", toolCallId: "toolu_s", title: "search_notes", rawInput: { query: "x" } }
+        });
+        const asked: unknown[] = [];
+        const request = (sessionId: string) => ({ sessionId, toolCall: { toolCallId: "toolu_s" }, options: OPTIONS });
+
+        expect(await decideCopilotPermission(request("sess-1"), "Copilot", { mcpCalls, toolApprovals: answering(true, asked) })).toEqual(ALLOWED);
+        expect(asked).toEqual([ { toolCallId: "toolu_s", toolName: "search_notes", toolInput: { query: "x" } } ]);
+        expect(await decideCopilotPermission(request("sess-2"), "Copilot", { mcpCalls, toolApprovals: answering(true, asked) })).toEqual(REJECTED_ALWAYS);
+        expect(asked).toHaveLength(1);
+    });
+
+    it("denies a built-in tool, another server's tool and a tool Trilium does not define, without asking", async () => {
+        const asked: unknown[] = [];
+        const toolApprovals = answering(true, asked);
+        for (const title of [ "Echo hello", "github-rename_note", "trilium-create_issue", "create_issue" ]) {
+            expect(await decideCopilotPermission(rename(title), "Copilot", { toolApprovals })).toEqual(REJECTED_ALWAYS);
+        }
+        expect(await decideCopilotPermission({ toolCall: { title: "rename_note" }, options: OPTIONS }, "Copilot", { toolApprovals })).toEqual(REJECTED_ALWAYS);
+        expect(asked).toEqual([]);
+    });
+
+    it("asks through the approvals of the turn that drives the session", async () => {
+        const asked: unknown[] = [];
+        const answers: unknown[] = [];
+        FakeAcpClient.promptScript = async client => {
+            answers.push(await client.onAgentRequest?.("session/request_permission", { sessionId: "sess-1", ...rename("rename_note") }));
+            return { stopReason: "end_turn" };
+        };
+        await collect(new CopilotAgentProvider().chatChunks([userMessage("hi")], { enableNoteTools: true, toolApprovals: answering(false, asked) }));
+
+        expect(answers).toEqual([ REJECTED_ONCE ]);
+        expect(asked).toHaveLength(1);
+    });
+});
+
 describe("denyPermission (fail-closed)", () => {
-    // Note tools are pre-approved via --allow-tool and never reach the callback;
-    // anything that does is denied. Payload shapes mirror the real CLI 1.0.71
-    // permission request captured live (opaque toolCallId, kind "execute").
+    // Payload shapes mirror the real CLI 1.0.71 permission request captured
+    // live (opaque toolCallId, kind "execute").
     it("rejects a built-in shell tool, preferring a persistent reject_always", () => {
         const decision = decidePermission({
             toolCall: { toolCallId: "toolu_011pPt1cC28vErGNDqhwut15", title: "Echo hello", kind: "execute" },

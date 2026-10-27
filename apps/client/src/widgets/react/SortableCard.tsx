@@ -8,8 +8,7 @@ import {
 } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import Button from "./Button";
-import { Card, type CardProps } from "./Card";
+import { Card, type CardProps, ItemCreationRow, type ItemCreationRowButton } from "./Card";
 import { createEdgeScroller, type Insets, type ScrollTarget } from "./edge_scroll";
 import { useFlip } from "./flip";
 import Icon from "./Icon";
@@ -63,12 +62,8 @@ export interface SortableItem {
  * `onCreateItem` decides what the entry is, and can open a dialog or a picker first. Returning
  * nothing creates no entry.
  */
-export interface ItemCreationButton<T extends SortableItem> {
-    label: string;
-    /** An icon class, `bx` prefix included. */
-    icon?: string;
-    /** Turns the button off, for a caller that cannot make an entry yet. */
-    disabled?: boolean;
+export interface ItemCreationButton<T extends SortableItem>
+    extends Pick<ItemCreationRowButton, "label" | "icon" | "disabled"> {
     /** Answers with the entry to add, or with nothing where none was made. */
     onCreateItem: (event?: MouseEvent) => T | undefined | Promise<T | undefined>;
 }
@@ -96,6 +91,11 @@ export interface SortableCardProps<T extends SortableItem> extends CardProps {
      */
     gripPlacement?: "start" | "end";
     /**
+     * Whether the reader can reorder the entries. Off, the card draws no grip and ignores drags
+     * and Ctrl+arrow keys, for a caller that sorts the entries itself. Defaults to true.
+     */
+    isReorderable?: boolean;
+    /**
      * Called for a key the card does not answer itself, with the entry that had the focus. For a
      * caller whose entries have commands of their own.
      */
@@ -113,8 +113,8 @@ export interface SortableCardProps<T extends SortableItem> extends CardProps {
  * back. Entries are not interpreted, so anything identified by a key can be sorted.
  */
 export function SortableCard<T extends SortableItem>({
-    items, onChange, renderItem, itemCreationButtons, gripPlacement = "end", onItemKeyDown,
-    selectedKey, onSelect, className, ...card
+    items, onChange, renderItem, itemCreationButtons, gripPlacement = "end", isReorderable = true,
+    onItemKeyDown, selectedKey, onSelect, className, ...card
 }: SortableCardProps<T>) {
     if ((itemCreationButtons?.length ?? 0) > MAX_CREATION_BUTTONS) {
         throw new Error("Up to three item creation buttons are supported");
@@ -160,9 +160,13 @@ export function SortableCard<T extends SortableItem>({
     const pendingFocus = useRef<string | undefined>(undefined);
 
     const shown = draft ?? items;
-    /** The current list, for a callback that resumes after an await. */
+    // The current list and `onChange`, for a callback that resumes after an await.
     const shownRef = useRef(shown);
+    const onChangeRef = useRef(onChange);
+    /** Read before the commit, which can remove the focused segment. */
+    const focused = focusedEntry(listRef.current, shownRef.current);
     shownRef.current = shown;
+    onChangeRef.current = onChange;
     const selected = selectedKey ?? ownSelection;
 
     useEffect(() => {
@@ -213,6 +217,21 @@ export function SortableCard<T extends SortableItem>({
         select(key);
         segmentOf(key)?.focus();
     }, [ segmentOf, select, shown ]);
+
+    // Removing the focused segment leaves the focus on `document.body`, so it moves to the entry
+    // in its place, else the one before it, else the creation row.
+    useLayoutEffect(() => {
+        if (!focused || shown.some((item) => item.key === focused.key)
+                || (document.activeElement && document.activeElement !== document.body)) {
+            return;
+        }
+
+        if (shown.length) {
+            focusEntry(Math.min(focused.index, shown.length - 1));
+        } else {
+            adderRef.current?.querySelector<HTMLElement>(".tn-card-adder")?.focus();
+        }
+    });
 
     /** Moves the entry at `from` to `to`, keeping the focus on it. */
     const moveItem = useCallback((from: number, to: number) => {
@@ -302,7 +321,7 @@ export function SortableCard<T extends SortableItem>({
     useEffect(() => () => cancelHold(), [ cancelHold ]);
 
     const beginDrag = useCallback((event: PointerEvent, key: string) => {
-        if (!listRef.current || !segmentOf(key)) {
+        if (!isReorderable || !listRef.current || !segmentOf(key)) {
             return;
         }
 
@@ -362,7 +381,7 @@ export function SortableCard<T extends SortableItem>({
                 }
             }, TOUCH_HOLD_MS)
         };
-    }, [ cancelHold, segmentOf, startDrag ]);
+    }, [ cancelHold, isReorderable, segmentOf, startDrag ]);
 
     const dragTo = useCallback((clientY: number) => {
         const drag = dragRef.current;
@@ -404,8 +423,8 @@ export function SortableCard<T extends SortableItem>({
             return;
         }
 
-        // Read again instead of closed over: `create` can open a dialog, and an order built from
-        // the stale list would undo a reorder made meanwhile.
+        // Both read again instead of closed over: `create` can open a dialog, and the stale list or
+        // `onChange` would undo a change made meanwhile.
         const order = [ ...shownRef.current ];
         order.splice(at ?? order.length, 0, created);
         setAddedKey(created.key);
@@ -414,8 +433,8 @@ export function SortableCard<T extends SortableItem>({
             pendingFocus.current = created.key;
         }
 
-        onChange(order);
-    }, [ onChange ]);
+        onChangeRef.current(order);
+    }, []);
 
     /**
      * Ends what `event.pointerId` was doing, and nothing else: a second finger pressed and lifted
@@ -469,9 +488,13 @@ export function SortableCard<T extends SortableItem>({
             // Ctrl+Down moves nothing there.
             if (!control && event.key === "ArrowDown" && index === last) {
                 event.preventDefault();
-                adderRef.current?.querySelector<HTMLElement>(".tn-sortable-adder")?.focus();
+                adderRef.current?.querySelector<HTMLElement>(".tn-card-adder")?.focus();
             }
 
+            return;
+        }
+
+        if (control && !isReorderable) {
             return;
         }
 
@@ -481,7 +504,9 @@ export function SortableCard<T extends SortableItem>({
         } else {
             focusEntry(to);
         }
-    }, [ add, endDrag, focusEntry, itemCreationButtons, moveItem, onItemKeyDown, shown ]);
+    }, [
+        add, endDrag, focusEntry, isReorderable, itemCreationButtons, moveItem, onItemKeyDown, shown
+    ]);
 
     const onAddKeyDown = useCallback((event: KeyboardEvent) => {
         // Moves back into the entries. Home and End address the first and last entry, as they do
@@ -565,7 +590,7 @@ export function SortableCard<T extends SortableItem>({
                         onKeyDown={(event) => onSegmentKeyDown(event, index)}
                         onAnimationEnd={() => setAddedKey(undefined)}
                     >
-                        {gripPlacement === "start" && grip()}
+                        {isReorderable && gripPlacement === "start" && grip()}
 
                         <span className="tn-sortable-content">
                             {renderItem
@@ -576,38 +601,34 @@ export function SortableCard<T extends SortableItem>({
                                 </>}
                         </span>
 
-                        {gripPlacement === "end" && grip()}
+                        {isReorderable && gripPlacement === "end" && grip()}
                     </section>
                 ))}
 
-                {/* Transparent: each button paints itself, and the gaps show the card through. */}
                 {!!itemCreationButtons?.length && (
-                    <section
-                        ref={adderRef}
-                        className="tn-card-section tn-sortable-adders"
+                    <ItemCreationRow
+                        elementRef={adderRef}
                         onKeyDown={onAddKeyDown}
-                    >
-                        {itemCreationButtons.map((button, index) => (
-                            <Button
-                                // The position in the row: two buttons can share a label.
-                                key={index}
-                                // Not a command button: the theme gives those a background, a
-                                // shadow and a minimum width, none of which suit a segment.
-                                kind="lowProfile"
-                                className="tn-sortable-adder"
-                                text={<>
-                                    {button.icon && <Icon icon={button.icon} />}
-                                    <span>{button.label}</span>
-                                </>}
-                                disabled={button.disabled}
-                                onClick={(event) => add(button.onCreateItem, undefined, event)}
-                            />
-                        ))}
-                    </section>
+                        buttons={itemCreationButtons.map((button) => ({
+                            label: button.label,
+                            icon: button.icon,
+                            disabled: button.disabled,
+                            onClick: (event) => add(button.onCreateItem, undefined, event)
+                        }))}
+                    />
                 )}
             </div>
         </Card>
     );
+}
+
+/** The entry whose segment holds the focus, directly or through a control, and its index. */
+function focusedEntry(list: HTMLElement | null, shown: SortableItem[]) {
+    const segment = document.activeElement?.closest<HTMLElement>(".tn-sortable-segment");
+    const index = segment && segment.parentElement === list
+        ? shown.findIndex((item) => item.key === segment.dataset.key)
+        : -1;
+    return index < 0 ? undefined : { key: shown[index].key, index };
 }
 
 /**

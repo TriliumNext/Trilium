@@ -2,30 +2,23 @@ import { _setModelData as setModelData, Bold, Bookmark, ClassicEditor, Essential
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import CopyAnchorLinkButton from "./copy_anchor_link.js";
 
 describe("CopyAnchorLinkButton", () => {
     let editor: ClassicEditor;
-    let getActiveContextNote: ReturnType<typeof vi.fn>;
+    let getNoteId: ReturnType<typeof vi.fn<() => string | undefined>>;
     let getReferenceLinkTitleSync: ReturnType<typeof vi.fn>;
-    let getComponentByEl: ReturnType<typeof vi.fn>;
     let copyHtml: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        getActiveContextNote = vi.fn(() => ({ noteId: "noteAbc" }));
+        getNoteId = vi.fn<() => string | undefined>(() => "noteAbc");
         getReferenceLinkTitleSync = vi.fn(() => "Some title");
-        getComponentByEl = vi.fn(() => ({}));
-        installGlobMock({
-            getActiveContextNote,
-            getReferenceLinkTitleSync,
-            getComponentByEl
-        });
-
         copyHtml = vi.fn();
 
         editor = await createTestEditor([Essentials, Paragraph, Bold, Bookmark, CopyAnchorLinkButton], {
-            clipboard: { copy: vi.fn(), copyHtml }
+            getNoteId,
+            clipboard: { copy: vi.fn(), copyHtml },
+            referenceLink: { getTitle: async () => "Some title", getTitleSync: getReferenceLinkTitleSync }
         });
     });
 
@@ -44,18 +37,17 @@ describe("CopyAnchorLinkButton", () => {
         getButton().fire("execute");
 
         const href = "#root/noteAbc?bookmark=my%20anchor";
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith(href);
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith(href, undefined);
         expect(copyHtml).toHaveBeenCalledWith(`<a class="reference-link" href="${href}">Some title</a>`, href);
     });
 
-    it("links to the note of the editor, which can differ from the active one", () => {
-        getComponentByEl.mockReturnValue({ getNoteId: () => "includedNote" });
+    it("links to the note the editor holds when the button is pressed", () => {
+        getNoteId.mockReturnValue("includedNote");
         setModelData(editor.model, "<paragraph>[<bookmark bookmarkId=\"anchor\"></bookmark>]</paragraph>");
 
         getButton().fire("execute");
 
         const href = "#root/includedNote?bookmark=anchor";
-        expect(getComponentByEl).toHaveBeenCalledWith(editor.editing.view.getDomRoot());
         expect(copyHtml).toHaveBeenCalledWith(`<a class="reference-link" href="${href}">Some title</a>`, href);
     });
 
@@ -77,7 +69,7 @@ describe("CopyAnchorLinkButton", () => {
 
         getButton().fire("execute");
 
-        expect(getActiveContextNote).not.toHaveBeenCalled();
+        expect(getNoteId).not.toHaveBeenCalled();
         expect(copyHtml).not.toHaveBeenCalled();
     });
 
@@ -86,12 +78,12 @@ describe("CopyAnchorLinkButton", () => {
 
         getButton().fire("execute");
 
-        expect(getActiveContextNote).not.toHaveBeenCalled();
+        expect(getNoteId).not.toHaveBeenCalled();
         expect(copyHtml).not.toHaveBeenCalled();
     });
 
-    it("does nothing when there is no active context note", () => {
-        getActiveContextNote.mockReturnValue(undefined);
+    it("does nothing when the editor names no note", () => {
+        getNoteId.mockReturnValue(undefined);
         setModelData(editor.model, "<paragraph>[<bookmark bookmarkId=\"anchor\"></bookmark>]</paragraph>");
 
         getButton().fire("execute");

@@ -21,4 +21,4 @@ Of note:
 
 ## Using a quick action
 
-Once a quick action is defined, the actoin will appear under the _Quick Actions_ dropdown in a group called _Custom_.
+Once a quick action is defined, the action will appear under the _Quick Actions_ dropdown in a group called _Custom_.

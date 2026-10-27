@@ -3,7 +3,7 @@ import { join, resolve, sep } from "path";
 
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import prefresh from "@prefresh/vite";
-import { defineConfig, type Plugin } from "vite";
+import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 import { shareTheme, stripUniverEmojiData, stripUniverHyphenation } from "../client/vite-plugins.mjs";
@@ -120,6 +120,77 @@ const sqliteWasmPlugin = viteStaticCopy({
     ]
 });
 
+/** Source of the in-app help's images and attachments, and the URL the app requests them under. */
+const HELP_ASSETS_SOURCE = join(__dirname, "../../docs/User Guide");
+const HELP_ASSETS_DEST = join(__dirname, "dist/server-assets/help");
+const HELP_ASSETS_URL = "/server-assets/help/";
+
+const HELP_ASSET_MIME_TYPES: Record<string, string> = {
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    svg: "image/svg+xml",
+    json: "application/json"
+};
+
+/** The guide's own files, as opposed to the content bundle that arrives with the server's assets. */
+function isHelpAsset(sourcePath: string) {
+    return !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json");
+}
+
+/**
+ * Serves the guide's images and attachments beside the content bundle that comes with the
+ * server's assets. They belong to the User Guide rather than to the server, so no other copy step
+ * brings them in, and the markdown they were built from is not needed at runtime.
+ *
+ * Both halves are needed: a build copies them into the output, and the dev server reads them
+ * straight from the guide — without that, requests fall through to the SPA fallback and every
+ * image on a help page comes back as index.html with a 200.
+ */
+function copyHelpAssetsPlugin(): Plugin {
+    return {
+        name: "trilium-copy-help-assets",
+        configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                if (!req.url?.startsWith(HELP_ASSETS_URL)) {
+                    return next();
+                }
+
+                const relativePath = decodeURIComponent(req.url.slice(HELP_ASSETS_URL.length).split("?")[0]);
+                const filePath = join(HELP_ASSETS_SOURCE, relativePath);
+
+                // Same prefix-collision guard as the PDF.js middleware above.
+                if (!resolve(filePath).startsWith(resolve(HELP_ASSETS_SOURCE) + sep) || !isHelpAsset(filePath)) {
+                    return next();
+                }
+
+                // Anything not found here — the content bundle and the tree — is copied in from
+                // the server's assets, so it belongs to the next middleware.
+                if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+                    return next();
+                }
+
+                const extension = filePath.split(".").pop()?.toLowerCase() ?? "";
+                res.setHeader("Content-Type", HELP_ASSET_MIME_TYPES[extension] ?? "application/octet-stream");
+                fs.createReadStream(filePath).pipe(res);
+            });
+        },
+        closeBundle() {
+            if (isDev) {
+                return;
+            }
+
+            fs.cpSync(HELP_ASSETS_SOURCE, HELP_ASSETS_DEST, {
+                recursive: true,
+                dereference: true,
+                filter: isHelpAsset
+            });
+        }
+    };
+}
+
 let plugins: any = [
     stripUniverHyphenation(),
     stripUniverEmojiData(),
@@ -142,15 +213,14 @@ let plugins: any = [
         targets: [
             {
                 src: [
-                    "../../server/src/assets/**/*",
-                    // Exclude the User Guide (~20 MB) since it's not needed in standalone mode.
-                    "!../../server/src/assets/doc_notes/en/User Guide/**"
+                    "../../server/src/assets/**/*"
                 ],
                 dest: "server-assets",
                 rename: { stripBase: 3 }
             }
         ]
     }),
+    copyHelpAssetsPlugin(),
     // What the share theme's own pages load besides its bundle: the icon-pack fonts the client ships
     // and the logo, each at the path content_renderer.ts writes into the page. The server answers
     // these from express.static routes it registers in routes/assets.ts; here they are copied into
@@ -302,9 +372,17 @@ export default defineConfig(() => ({
                 find: /^puppeteer$/,
                 replacement: join(__dirname, "src/stubs/empty.ts")
             },
+            // Turnish's `browser` entry parses HTML with the page's `DOMParser` or `document`, but the
+            // Web Worker that runs core has neither. Its Node entry falls back to domino, a DOM written
+            // in plain JavaScript that loads no Node built-ins.
+            {
+                find: /^turnish$/,
+                replacement: join(__dirname, "../../node_modules/turnish/dist/index.node.mjs")
+            },
             // EJS renders the share pages. Its ESM entry imports `node:fs` and `node:path` for the
-            // file-loading it only reaches without an `includer`; the share renderer always passes
-            // one, so the package's own browser build serves it and resolves in this bundle.
+            // file-loading it only reaches through its own `include()` without an `includer`; the
+            // share renderer resolves includes itself or passes an `includer`, so the package's own
+            // browser build serves it and resolves in this bundle.
             {
                 find: /^ejs$/,
                 replacement: join(__dirname, "../../node_modules/ejs/ejs.min.js")
@@ -405,9 +483,31 @@ export default defineConfig(() => ({
             // package dir to match the other apps and the CI upload path.
             ["junit", { outputFile: join(__dirname, "test-output/vitest/junit.xml"), addFileAttribute: true }]
         ],
-        include: [
-            "src/**/*.{test,spec}.{ts,tsx}",
-            "../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: "standalone",
+                    include: ["src/**/*.{test,spec}.{ts,tsx}"]
+                }
+            },
+            // Core runs in a dedicated Web Worker, so its specs run in a scope shaped like one, with
+            // dependencies resolved as the worker bundle resolves them. `ssr.resolve.conditions`
+            // reaches the packages Node loads itself, through `--conditions`.
+            {
+                extends: true,
+                resolve: { conditions: defaultClientConditions },
+                ssr: { resolve: { conditions: ["browser", "development|production"] } },
+                test: {
+                    name: "core",
+                    include: ["../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"],
+                    environment: join(__dirname, "src/test_environment_worker.ts"),
+                    alias: {
+                        // The specs make their test images with Jimp, whose `browser` entry is an empty stub.
+                        jimp: join(__dirname, "../../node_modules/jimp/dist/esm/index.js")
+                    }
+                }
+            }
         ],
         coverage: {
             // Absolute path for the same reason as the junit reporter above: the

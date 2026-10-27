@@ -10,12 +10,14 @@
  * own installed `copilot` CLI (see copilot_binary.ts). The protocol handling is
  * shared with the other ACP providers (see acp_agent.ts); Copilot's built-in
  * file/shell tools are denied on its command line and again in the permission
- * callback.
+ * callback, which asks the user about each call to Trilium's note tools.
  */
 
-import type { ModelInfo } from "@triliumnext/core/src/services/llm/types.js";
+import type { ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
+import { allToolRegistries } from "@triliumnext/core/src/services/llm/tools/index.js";
+import type { LlmProviderConfig, ModelInfo } from "@triliumnext/core/src/services/llm/types.js";
 
-import { AcpAgentProvider, type AcpLaunchSpec, type AcpModel, type AcpSessionModelState, describeError, resetAcpAgentStateForTests } from "./acp_agent.js";
+import { AcpAgentProvider, type AcpLaunchSpec, type AcpModel, type AcpPermissionOutcome, type AcpPermissionRequest, type AcpSessionModelState, type AnnouncedMcpCalls, answerNoteToolCalls, denyPermission, describeError, mcpArguments, NOTE_TOOLS_MCP_SERVER_NAME, resetAcpAgentStateForTests } from "./acp_agent.js";
 import { AcpError } from "./acp_client.js";
 import { needsShell } from "./binary_lookup.js";
 import { resolveCopilotBinaryPath } from "./copilot_binary.js";
@@ -46,12 +48,9 @@ const premiumMultiplierById = new Map<string, number>();
 
 /**
  * CLI arguments. These form the *primary* security boundary; the permission
- * callback (see `denyPermission` in acp_agent.ts) is a fail-closed backstop.
+ * callback (see {@link decideCopilotPermission}) asks the user about note tools
+ * and denies everything else.
  *   - `--acp` runs the CLI as an ACP agent over stdio.
- *   - `--allow-tool=trilium` auto-approves every tool from our "trilium" MCP
- *     server, so note tools run without a permission round-trip (and without
- *     relying on us recognizing them — the CLI presents MCP tool calls with
- *     opaque IDs and human-friendly titles that don't embed the server name).
  *   - `--deny-tool` on each built-in file/shell/network tool guarantees they
  *     can never run even if a future CLI build changed the permission-prompt
  *     defaults. The agent's only capability surface is Trilium's note tools.
@@ -61,7 +60,6 @@ const premiumMultiplierById = new Map<string, number>();
  */
 const COPILOT_ACP_ARGS = [
     "--acp",
-    "--allow-tool=trilium",
     ...["shell", "powershell", "write", "edit", "create", "view", "glob", "grep", "task", "web_fetch"].map(t => `--deny-tool=${t}`),
     "--no-custom-instructions",
     "--no-auto-update"
@@ -96,6 +94,14 @@ export class CopilotAgentProvider extends AcpAgentProvider {
 
     protected titleModelId(): string {
         return TITLE_MODEL;
+    }
+
+    protected decidePermission(
+        request: AcpPermissionRequest,
+        config?: LlmProviderConfig,
+        mcpCalls?: AnnouncedMcpCalls
+    ): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
+        return decideCopilotPermission(request, this.logLabel, { mcpCalls, toolApprovals: config?.toolApprovals });
     }
 
     protected async launchSpec(): Promise<AcpLaunchSpec> {
@@ -172,6 +178,47 @@ export function buildCopilotModelList(remote: AcpModel[], curated: ModelInfo[]):
     const preferred = models.find(m => curatedById.get(m.id)?.isDefault) ?? models[0];
     return models.map(m => (m === preferred ? { ...m, isDefault: true } : m));
 }
+
+/**
+ * Ask the user about a call to Trilium's note tools through the turn's `toolApprovals`; deny
+ * everything else.
+ *
+ * Copilot asks before every MCP tool call it was not told to allow. Its request marks neither the
+ * server nor the tool: the call is recognized by its title, which Copilot fills in with the tool's
+ * name, from the request or from the `tool_call` it announced under the same id. A title that
+ * names the `trilium` server in front of the tool is recognized too. Only a name one of Trilium's
+ * tool registries defines counts, so a built-in tool never reaches the user.
+ */
+export function decideCopilotPermission(
+    request: AcpPermissionRequest,
+    logLabel: string,
+    { mcpCalls, toolApprovals }: { mcpCalls?: AnnouncedMcpCalls; toolApprovals?: ToolApprovals } = {}
+): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
+    const toolCall = request.toolCall;
+    const announced = mcpCalls?.announcementOf(request.sessionId, toolCall?.toolCallId);
+    const tool = noteToolName(toolCall?.title) ?? noteToolName(announced?.title);
+    if (!toolCall?.toolCallId || !tool) {
+        return denyPermission(request, logLabel);
+    }
+    const call = {
+        toolCallId: toolCall.toolCallId,
+        server: NOTE_TOOLS_MCP_SERVER_NAME,
+        tool,
+        input: mcpArguments(toolCall.rawInput ?? announced?.rawInput)
+    };
+    return answerNoteToolCalls(request, logLabel, [ call ], toolApprovals);
+}
+
+/** The note tool a title names, bare or behind the `trilium` server's name. */
+function noteToolName(title: string | undefined): string | undefined {
+    const name = title?.trim().replace(NOTE_TOOLS_SERVER_PREFIX, "");
+    return name && allToolRegistries.some(registry => [ ...registry ].some(([ toolName ]) => toolName === name))
+        ? name
+        : undefined;
+}
+
+/** `trilium-`, `trilium/`, `trilium.`, `trilium_`, `trilium: ` or `mcp__trilium__` in front of a tool name. */
+const NOTE_TOOLS_SERVER_PREFIX = new RegExp(`^(?:mcp__)?${NOTE_TOOLS_MCP_SERVER_NAME}(?:__|[-/._]|:\\s*)`);
 
 /** For tests: forget the probed catalog and the premium rates recorded from it. */
 export function resetModelCatalogCacheForTests(): void {

@@ -24,9 +24,16 @@ body.desktop .modal.popup-editor-dialog .modal-dialog .modal-content {
 }
 
 body.mobile .modal.popup-editor-dialog .modal-dialog {
-    max-width: min(var(--preferred-max-content-width), 95vw);
     max-height: var(--tn-modal-max-height);
     height: 100%;
+}
+
+/* Bootstrap caps every `.modal-dialog` at 500px from 576px up; the quick editor is a sheet, so it
+   takes the whole width on phones and leaves the tablet rule (80%) to apply above 992px. */
+@media (max-width: 991px) {
+    body.mobile .modal.popup-editor-dialog .modal-dialog {
+        max-width: none;
+    }
 }
 
 .modal.popup-editor-dialog .modal-content {
@@ -87,9 +94,22 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 .modal.popup-editor-dialog .modal-body {
     padding: 0;
     height: 75vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal.popup-editor-dialog .popup-editor-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
     display: flex;
     flex-direction: column;
+}
+
+body.mobile .modal.popup-editor-dialog .popup-editor-scroll {
+    --scroll-fade-top: 16px;
+    padding-top: var(--scroll-fade-top);
 }
 
 .modal.popup-editor-dialog .title-row,
@@ -124,6 +144,7 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 }
 
 .modal.popup-editor-dialog .classic-toolbar-outer-container.visible {
+    --mobile-toolbar-backdrop: var(--modal-background-color);
     background-color: transparent;
 }
 
@@ -131,7 +152,11 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     margin-block: 0;
 }
 
-.modal.popup-editor-dialog .classic-toolbar-widget {
+body.mobile #root-widget:not(.virtual-keyboard-opened) .modal.popup-editor-dialog .promoted-attributes-widget {
+    flex-shrink: 0;
+}
+
+body.desktop .modal.popup-editor-dialog .classic-toolbar-widget {
     position: sticky;
     margin-inline: 8px;
     top: 0;
@@ -140,6 +165,30 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     background: var(--modal-background-color);
     z-index: 998;
     align-items: flex-start;
+}
+
+body.mobile .modal.popup-editor-dialog .modal-content:has(.classic-toolbar-outer-container.visible) .note-type-switcher {
+    inset-block-end: calc(12px + var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap));
+}
+
+body.mobile .modal.popup-editor-dialog .modal-body {
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+@media (max-width: 991px) {
+    body.mobile:not(.keyboard-panel-open) .modal.popup-editor-dialog {
+        --mobile-toolbar-clearance: calc(var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+    }
+
+    body.mobile:not(.keyboard-panel-open) .modal.popup-editor-dialog .classic-toolbar-island {
+        bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+    }
+
+    body.mobile .modal.popup-editor-dialog .modal-content:has(.classic-toolbar-outer-container.visible) .note-type-switcher {
+        inset-block-end: calc(12px + var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+    }
 }
 
 .modal.popup-editor-dialog .note-detail {
@@ -154,6 +203,10 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 .modal.popup-editor-dialog .note-detail-editable-text-editor {
     margin: 0 28px;
     overflow: visible; /* Allow selection rectangle to go outside of the editor area */
+}
+
+body.mobile .modal.popup-editor-dialog .note-detail-editable-text-editor {
+    margin-inline: 8px;
 }
 
 .modal.popup-editor-dialog .note-detail-file {

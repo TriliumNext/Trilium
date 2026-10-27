@@ -6,26 +6,25 @@
  * to the prompt text).
  */
 
-import becca from "../../becca/becca.js";
 import { dump } from "js-yaml";
 
-import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "./tools/helpers.js";
+import { getLlmNote, getNoteMeta, SYSTEM_PROMPT_LIMITS } from "./tools/helpers.js";
 
 /**
  * Build a context hint about the current note with full metadata (same shape as
- * get_note / ETAPI). Returns `null` when the note no longer exists.
+ * get_note / ETAPI). Returns `null` when the note no longer exists or is excluded from the LLM.
  */
 export function buildNoteHint(noteId: string, hasAttachments: boolean): string | null {
-    const note = becca.getNote(noteId);
+    const note = getLlmNote(noteId);
     if (!note) {
         return null;
     }
 
     const metadata = dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
     const lines = [
-        "The user is currently viewing the following note.",
-        "Use this metadata (including contentPreview) to answer questions about the note without calling tools when possible.",
-        "Use get_note_content only if the preview is insufficient."
+        "The user is currently viewing the note below.",
+        "To answer about any other note the user mentions or links, read it with the note tools.",
+        "For questions about this note, its metadata and contentPreview might be enough; use get_note_content when they are not."
     ];
     if (hasAttachments) {
         // When the user has attached files alongside this turn, those are

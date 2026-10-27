@@ -89,6 +89,11 @@ export function sanitizeHtml(dirtyHtml: string) {
                 "--include-note-width": sizeRegex,
                 "--include-note-height": sizeRegex
             },
+            // The size of a resized embed that keeps its source in the note, as a code block.
+            pre: {
+                "--include-note-width": sizeRegex,
+                "--include-note-height": sizeRegex
+            },
             img: {
                 // Allow fractional ratios too (e.g. OneNote reports 577.5×277.5 screen clippings).
                 "aspect-ratio": [ /^\d+(\.\d+)?\/\d+(\.\d+)?$/ ],

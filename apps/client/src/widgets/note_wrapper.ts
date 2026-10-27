@@ -19,6 +19,12 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.css("flex-grow", "1").collapsible();
     }
 
+    doRender() {
+        super.doRender();
+        // Adds `note-split` before the note context arrives: `resizer.ts` selects the panes by it.
+        this.refresh();
+    }
+
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
         this.refresh();

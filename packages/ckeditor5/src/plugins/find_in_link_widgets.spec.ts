@@ -12,7 +12,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import FindInLinkWidgets from "./find_in_link_widgets.js";
 import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
 import ReferenceLink from "./referencelink.js";
@@ -21,15 +20,21 @@ describe("FindInLinkWidgets", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        installGlobMock({
-            getComponentByEl: () => ({
-                loadReferenceLinkTitle: vi.fn((element: unknown) => {
-                    if (element instanceof HTMLElement) {
-                        element.textContent = "Reference match";
-                    }
-                    return Promise.resolve();
-                }),
-                renderLinkEmbed: vi.fn((container: HTMLElement, metadata: LinkEmbedMetadata) => {
+        editor = await createTestEditor([
+            Essentials,
+            Paragraph,
+            LinkEditing,
+            ReferenceLink,
+            LinkEmbedEditing,
+            FindAndReplaceEditing,
+            FindInLinkWidgets
+        ], {
+            referenceLink: {
+                getTitle: vi.fn(async () => "Reference match"),
+                getTitleSync: vi.fn(() => "Reference match")
+            },
+            linkEmbed: {
+                renderEmbed: vi.fn((container: HTMLElement, metadata: LinkEmbedMetadata) => {
                     if (metadata.embedType === "youtube") {
                         return;
                     }
@@ -40,23 +45,11 @@ describe("FindInLinkWidgets", () => {
                         metadata.siteName || safeHostname(metadata.url)
                     );
                 }),
-                renderLinkMention: vi.fn((container: HTMLElement, metadata: LinkEmbedMetadata) => {
+                renderMention: vi.fn((container: HTMLElement, metadata: LinkEmbedMetadata) => {
                     appendText(container, metadata.title || safeHostname(metadata.url));
                 })
-            }),
-            getReferenceLinkTitle: vi.fn(async () => "Reference match"),
-            getReferenceLinkTitleSync: vi.fn(() => "Reference match")
+            }
         });
-
-        editor = await createTestEditor([
-            Essentials,
-            Paragraph,
-            LinkEditing,
-            ReferenceLink,
-            LinkEmbedEditing,
-            FindAndReplaceEditing,
-            FindInLinkWidgets
-        ]);
     });
 
     it("finds text and all rendered link widgets in document order", () => {
@@ -309,6 +302,19 @@ describe("FindInLinkWidgets", () => {
         editor.execute("replace", "broken", state?.highlightedResult);
         expect(editor.getData()).toContain('class="reference-link"');
         expect(editor.getData()).not.toContain("broken");
+    });
+
+    it("tells which results the replace commands replace", () => {
+        setModelData(
+            editor.model,
+            '<paragraph><reference href="#root/ref"></reference> match</paragraph>'
+        );
+        editor.execute("find", "match");
+
+        const results = [ ...editor.plugins.get(FindAndReplaceEditing).state?.results ?? [] ];
+        const plugin = editor.plugins.get(FindInLinkWidgets);
+        expect(resultElementNames(results)).toEqual([ "reference", "text" ]);
+        expect(results.map((result) => plugin.canReplace(result))).toEqual([ false, true ]);
     });
 });
 

@@ -6,54 +6,35 @@
  * id — two Ollama configurations show the same mark, which is why the model picker keeps its
  * per-configuration group headers rather than relying on the icon alone to tell them apart.
  *
- * Rendered through `MaskedIcon`, so these are tinted monochrome with `currentColor` rather
- * than shown in brand colours: the shape is what distinguishes them, and monochrome sits
- * with the rest of Trilium's chrome.
+ * The marks are glyphs of the built-in `tn-brand` icon pack, built from the SVGs in
+ * `apps/icon-pack-builder/brand-icons`.
  */
-
-import anthropicIcon from "./icons/anthropic.svg?url";
-import antigravityIcon from "./icons/antigravity.svg?url";
-import braveIcon from "./icons/brave.svg?url";
-import claudeAgentIcon from "./icons/claude-ai.svg?url";
-import codexIcon from "./icons/codex.svg?url";
-import deepseekIcon from "./icons/deepseek.svg?url";
-import exaIcon from "./icons/exa.svg?url";
-import geminiIcon from "./icons/gemini.svg?url";
-import githubCopilotIcon from "./icons/github-copilot.svg?url";
-import lmStudioIcon from "./icons/lmstudio.svg?url";
-import ollamaIcon from "./icons/ollama.svg?url";
-import openaiIcon from "./icons/openai.svg?url";
-import perplexityIcon from "./icons/perplexity.svg?url";
-import openAiCompatibleIcon from "./icons/robot.svg?url";
-import searxngIcon from "./icons/searxng.svg?url";
-import serperIcon from "./icons/serper.svg?url";
-import tavilyIcon from "./icons/tavily.svg?url";
-
 export const PROVIDER_ICONS: Record<string, string> = {
-    anthropic: anthropicIcon,
-    "antigravity-agent": antigravityIcon,
-    brave: braveIcon,
-    "claude-agent": claudeAgentIcon,
-    "codex-agent": codexIcon,
-    "copilot-agent": githubCopilotIcon,
-    deepseek: deepseekIcon,
-    exa: exaIcon,
-    google: geminiIcon,
-    lmstudio: lmStudioIcon,
-    ollama: ollamaIcon,
-    openai: openaiIcon,
-    "openai-compatible": openAiCompatibleIcon,
-    perplexity: perplexityIcon,
-    searxng: searxngIcon,
-    serper: serperIcon,
-    tavily: tavilyIcon
+    "anthropic": "tn-brand tn-brand-anthropic",
+    "antigravity-agent": "tn-brand tn-brand-antigravity",
+    "brave": "tn-brand tn-brand-brave",
+    "claude-agent": "tn-brand tn-brand-claude",
+    "codex-agent": "tn-brand tn-brand-codex",
+    "copilot-agent": "tn-brand tn-brand-github-copilot",
+    "deepseek": "tn-brand tn-brand-deepseek",
+    "exa": "tn-brand tn-brand-exa",
+    "google": "tn-brand tn-brand-gemini",
+    "lmstudio": "tn-brand tn-brand-lmstudio",
+    "ollama": "tn-brand tn-brand-ollama",
+    "openai": "tn-brand tn-brand-openai",
+    "openai-compatible": "bx bx-bot",
+    "openrouter": "tn-brand tn-brand-openrouter",
+    "perplexity": "tn-brand tn-brand-perplexity",
+    "searxng": "tn-brand tn-brand-searxng",
+    "serper": "tn-brand tn-brand-serper",
+    "tavily": "tn-brand tn-brand-tavily"
 };
 
 /**
- * The mark for a provider type, falling back to the generic one so a provider added later —
- * or a configuration restored from a newer version — still gets a glyph rather than a gap
+ * The icon class of a provider type's mark, falling back to the generic one so a provider added
+ * later — or a configuration restored from a newer version — still gets a glyph rather than a gap
  * that would misalign the row.
  */
-export function providerIconUrl(provider: string | undefined): string {
-    return (provider && PROVIDER_ICONS[provider]) || openAiCompatibleIcon;
+export function providerIcon(provider: string | undefined): string {
+    return (provider && PROVIDER_ICONS[provider]) || PROVIDER_ICONS["openai-compatible"];
 }

@@ -4,38 +4,26 @@ import { ensureSyntaxTree } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import VanillaCodeMirror from "@triliumnext/codemirror";
 import type { MimeType, TaskStateDef } from "@triliumnext/commons";
-import { h, render } from "preact";
-import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
 import mime_types from "../../../services/mime_types.js";
-import type { NoteSuggestionOptions, Suggestion } from "../../../services/note_autocomplete";
-import type { TypeWidgetProps } from "../type_widget";
-import { buildCodeFenceOptions, buildSlashCommands, buildTaskItemInsert, codeFenceCompletionSource, isClosingFence, markdownCompletionAt, parseCodeFencePrefix, useMarkdownCompletions } from "./completions";
+import {
+    buildCodeFenceOptions, buildMarkdownCommands, buildTaskItemInsert, codeFenceCompletionSource,
+    isClosingFence, markdownCompletionAt, parseCodeFencePrefix
+} from "./completions";
 
-// The hook's two asynchronous sources of menu entries, stubbed so mounting it needs no server.
-const { getNoteSuggestions, createNoteFromSuggestion } = vi.hoisted(() => ({
-    getNoteSuggestions: vi.fn<(term: string, options?: NoteSuggestionOptions) => Promise<Suggestion[]>>(async () => []),
-    createNoteFromSuggestion: vi.fn<(suggestion: Suggestion, childParentNotePath?: string | null) => Promise<string | undefined>>()
+const editorUtils = vi.hoisted(() => ({
+    uploadImageAndInsert: vi.fn(),
+    insertDateTime: vi.fn(),
+    showAddLinkDialog: vi.fn(),
+    showIncludeNoteDialog: vi.fn()
 }));
-vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../../services/note_autocomplete")>(),
-    getNoteSuggestions,
-    createNoteFromSuggestion
-}));
-
-const { uploadImageAndInsert } = vi.hoisted(() => ({ uploadImageAndInsert: vi.fn() }));
 vi.mock("./editor_utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("./editor_utils")>(),
-    uploadImageAndInsert
+    ...editorUtils
 }));
 
-vi.mock("../code/snippets", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../code/snippets")>(),
-    useCodeSnippets: () => ({ current: [] })
-}));
-vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: () => Promise.resolve([]) }));
 // The catalogue is not loaded in specs, and the sample diagrams translate their names as they load.
 vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/i18n")>(),
@@ -221,12 +209,11 @@ describe("markdownCompletionAt", () => {
     });
 });
 
-describe("buildSlashCommands", () => {
+describe("buildMarkdownCommands", () => {
     let editor: VanillaCodeMirror;
-    const triggerCommand = vi.fn();
 
     beforeEach(() => {
-        triggerCommand.mockReset();
+        vi.clearAllMocks();
         const parent = document.createElement("div");
         document.body.append(parent);
         editor = new VanillaCodeMirror({ parent });
@@ -234,17 +221,15 @@ describe("buildSlashCommands", () => {
 
     afterEach(() => editor.destroy());
 
-    let currentNote = { noteId: "first" } as FNote;
+    let currentNote: FNote | null = { noteId: "first" } as FNote;
 
     const todo = (name: string, markdownSymbol: string): TaskStateDef => ({ name, title: name, markdownSymbol, isCompleted: false, icon: `bx bx-${name}` });
 
     function commands(taskStates: TaskStateDef[] = []) {
-        return buildSlashCommands({
-            parentComponent: { triggerCommand } as unknown as TypeWidgetProps["parentComponent"],
-            getNote: () => currentNote,
+        return buildMarkdownCommands({
             editorView: editor,
-            taskStates,
-            snippets: [ { noteId: "s1", title: "Greeting", description: "Says hello", content: "Hello!" } ]
+            getOwnerNote: () => currentNote,
+            taskStates
         });
     }
 
@@ -265,13 +250,11 @@ describe("buildSlashCommands", () => {
         expect(byId("table")?.iconSvg).toContain("<svg");
         expect(byId("tip")?.iconSvg).toContain("<svg");
         expect(byId("todo:done")).toMatchObject({ aliases: expect.arrayContaining([ "todo:done", "done" ]), icon: "bx bx-done" });
-        expect(byId("snippet:Greeting")).toMatchObject({ title: "Greeting", description: "Says hello", icon: "bx bx-code-curly" });
         // One run of commands, with no dividers, as the text editor lists them.
         expect(entries.some((entry) => entry.startsGroup)).toBe(false);
     });
 
     it("replaces the typed command with what it inserts", () => {
-        expect(run("snippet:Greeting", "Hi /snip")).toBe("Hi Hello!");
         expect(run("todo:done", "- /todo", [ todo("done", "x") ])).toBe("- [x] ");
         expect(run("todo:done", "/todo", [ todo("done", "x") ])).toBe("- [x] ");
         expect(run("tip", "/tip")).toBe("> [!TIP]\n> ");
@@ -321,133 +304,23 @@ describe("buildSlashCommands", () => {
         if (!picker) throw new Error("no file picker opened");
         Object.defineProperty(picker, "files", { value: [ file ] });
         picker.dispatchEvent(new Event("change"));
-        expect(uploadImageAndInsert).toHaveBeenCalledExactlyOnceWith(editor, currentNote, file);
+        expect(editorUtils.uploadImageAndInsert)
+            .toHaveBeenCalledExactlyOnceWith(editor, currentNote, file);
+
+        // Without an owner note, nothing uploads.
+        currentNote = null;
+        picker.dispatchEvent(new Event("change"));
+        expect(editorUtils.uploadImageAndInsert).toHaveBeenCalledOnce();
         click.mockRestore();
     });
 
-    it("removes the typed command before running one of the text editor's commands", () => {
+    it("removes the typed command, then runs a dialog or an insertion on the editor", () => {
         expect(run("date", "On /date")).toBe("On ");
-        expect(triggerCommand).toHaveBeenCalledExactlyOnceWith("insertDateTimeToText");
-    });
-});
-
-describe("useMarkdownCompletions", () => {
-    let container: HTMLElement;
-
-    beforeEach(() => {
-        container = document.createElement("div");
-        document.body.appendChild(container);
-    });
-
-    afterEach(() => {
-        render(null, container);
-        container.remove();
-    });
-
-    /** Mounts the hook against `editorView`. */
-    function mount(editorView: VanillaCodeMirror) {
-        function Probe() {
-            useMarkdownCompletions({} as TypeWidgetProps["parentComponent"], editorView, { noteId: "n1" } as FNote, () => "root/parent");
-            return null;
+        expect(run("link", "See /link")).toBe("See ");
+        expect(run("include", "/include")).toBe("");
+        const { insertDateTime, showAddLinkDialog, showIncludeNoteDialog } = editorUtils;
+        for (const action of [ insertDateTime, showAddLinkDialog, showIncludeNoteDialog ]) {
+            expect(action).toHaveBeenCalledExactlyOnceWith(editor);
         }
-
-        act(() => render(h(Probe, {}), container));
-    }
-
-    it("registers the list and the fence languages with the editor, and withdraws both on unmount", () => {
-        const setNamedExtension = vi.fn();
-        const setCompletionSource = vi.fn();
-        mount({ setNamedExtension, setCompletionSource } as unknown as VanillaCodeMirror);
-
-        expect(setNamedExtension).toHaveBeenCalledExactlyOnceWith("markdownCompletions", expect.anything());
-        expect(setCompletionSource).toHaveBeenCalledExactlyOnceWith("markdownCodeFence", expect.any(Function));
-
-        act(() => render(null, container));
-        expect(setNamedExtension).toHaveBeenLastCalledWith("markdownCompletions", []);
-        expect(setCompletionSource).toHaveBeenLastCalledWith("markdownCodeFence", null);
-    });
-
-    it("lists the commands for what follows a slash, as the text editor does, and runs the one picked", async () => {
-        const parent = document.createElement("div");
-        document.body.append(parent);
-        const editor = new VanillaCodeMirror({ parent });
-        mount(editor);
-        editor.focus();
-
-        editor.dispatch({ changes: { from: 0, insert: "/tip" }, selection: { anchor: 4 } });
-        const rows = () => [ ...document.querySelectorAll(".note-autocomplete-menu [role=option]") ];
-        // Found by its title, without the slash.
-        await vi.waitFor(() => expect(rows().map((row) => row.textContent)).toEqual([ expect.stringContaining("titles.tip") ]));
-        expect(rows()[0]?.querySelector("b")?.textContent).toBe("tip");
-        // Sized as the text editor's `/` list is.
-        expect(document.querySelector(".note-autocomplete-menu.slash-command-menu")).not.toBeNull();
-
-        // Opened on the best match, so Enter runs it.
-        editor.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("> [!TIP]\n> "));
-        await vi.waitFor(() => expect(rows()).toEqual([]));
-
-        act(() => render(null, container));
-        editor.destroy();
-    });
-
-    it("lists the notes for what follows an @ or a [[, as the text editor does, and links the one picked or created", async () => {
-        getNoteSuggestions.mockResolvedValue([
-            { notePath: "root/projects/abc123", noteTitle: "Alpha", notePathTitle: "Projects / Alpha", highlightedNotePathTitle: "<b>Al</b>pha" },
-            { action: "create-child-note", noteTitle: "Al", parentNoteId: "parent", highlightedNotePathTitle: "Create child note" }
-        ]);
-        const parent = document.createElement("div");
-        document.body.append(parent);
-        const editor = new VanillaCodeMirror({ parent });
-        mount(editor);
-        editor.focus();
-        const rows = () => [ ...document.querySelectorAll(".note-autocomplete-menu [role=option]") ];
-        const press = (key: string) => editor.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-
-        editor.dispatch({ changes: { from: 0, insert: "see @Al" }, selection: { anchor: 7 } });
-        await vi.waitFor(() => expect(rows()).toHaveLength(2));
-        // At most ten notes, and creation under the note being edited.
-        expect(getNoteSuggestions).toHaveBeenLastCalledWith("Al", { allowCreatingNotes: true, limit: 10 });
-
-        // Opened on the best match, so Enter links it.
-        press("Enter");
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("see [[abc123]]"));
-
-        // A note created is linked once it exists, past the dialog taking the focus.
-        let created: (notePath: string | undefined) => void = () => {};
-        createNoteFromSuggestion.mockReturnValueOnce(new Promise((resolve) => { created = resolve; }));
-        editor.dispatch({ changes: { from: 14, insert: " @Al" }, selection: { anchor: 18 } });
-        await vi.waitFor(() => expect(rows()).toHaveLength(2));
-        press("ArrowDown");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        press("Enter");
-        await vi.waitFor(() => expect(createNoteFromSuggestion).toHaveBeenCalledWith(expect.objectContaining({ action: "create-child-note" }), "root/parent"));
-        editor.contentDOM.blur();
-        created("root/parent/new1");
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("see [[abc123]] [[new1]]"));
-
-        // After [[ the same list opens, and a pick inside a link already closed takes its brackets too.
-        editor.focus();
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: "see [[Al" }, selection: { anchor: 8 } });
-        await vi.waitFor(() => expect(rows()).toHaveLength(2));
-        press("Enter");
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("see [[abc123]]"));
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: "see [[Al]] x" }, selection: { anchor: 8 } });
-        await vi.waitFor(() => expect(rows()).toHaveLength(2));
-        press("Enter");
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("see [[abc123]] x"));
-        expect(editor.state.selection.main.head).toBe(14);
-
-        // So does a note created there, once it exists.
-        createNoteFromSuggestion.mockResolvedValueOnce("root/parent/new2");
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: "see [[Al]] x" }, selection: { anchor: 8 } });
-        await vi.waitFor(() => expect(rows()).toHaveLength(2));
-        press("ArrowDown");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        press("Enter");
-        await vi.waitFor(() => expect(editor.state.doc.toString()).toBe("see [[new2]] x"));
-
-        act(() => render(null, container));
-        editor.destroy();
     });
 });

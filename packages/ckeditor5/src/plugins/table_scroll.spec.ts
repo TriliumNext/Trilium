@@ -1,3 +1,4 @@
+import "@triliumnext/commons/src/lib/scroll_fade.css";
 import "../theme/table_scroll.css";
 
 import {
@@ -15,8 +16,10 @@ import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { modelTable } from "../../test/table-kit.js";
-import TriliumTableScroll, { REFERENCE_WIDTH_PROPERTY } from "./table_scroll.js";
+import { fadeClasses, modelTable, scrollFigure } from "../../test/table-kit.js";
+import TriliumTableScroll, {
+    REFERENCE_WIDTH_PROPERTY, VIEWPORT_WIDTH_PROPERTY
+} from "./table_scroll.js";
 
 const PLUGINS = [Essentials, Paragraph, BlockQuote, Table, TableColumnResize, TriliumTableScroll];
 const LONG_WORD = "x".repeat(400);
@@ -175,8 +178,9 @@ describe("a table with content wider than the editable", () => {
         const figure = domFigure(editor);
         expect(figure.classList.contains("ck-table-overflowing")).toBe(false);
 
-        figure.querySelector("table")?.style.setProperty("min-width", "2000px");
-        figure.querySelector("td")?.dispatchEvent(new Event("load"));
+        const cell = figure.querySelector("td");
+        cell?.style.setProperty("min-width", "2000px");
+        cell?.dispatchEvent(new Event("load"));
         expect(figure.classList.contains("ck-table-overflowing")).toBe(true);
     });
 
@@ -201,21 +205,9 @@ describe("a table with content wider than the editable", () => {
 });
 
 describe("the controls of a scrolling table", () => {
-    const link = document.createElement("link");
+    useEditorStylesheet();
 
-    beforeAll(() => new Promise<void>((resolve, reject) => {
-        link.rel = "stylesheet";
-        link.href = editorStylesheetUrl;
-        link.onload = () => resolve();
-        link.onerror = () => reject(new Error("the editor stylesheet did not load"));
-        document.head.appendChild(link);
-    }));
-
-    afterAll(() => {
-        link.remove();
-    });
-
-    it("keeps the caption, the handle and the buttons whole and in view", async () => {
+    it("keeps the controls whole and in view, above and below the caption and table", async () => {
         const editor = await createTestEditor([...PLUGINS, TableCaption]);
         setEditableWidth(editor, 400);
         setModelData(editor.model, '<table tableWidth="150%"><tableRow><tableCell>'
@@ -240,16 +232,111 @@ describe("the controls of a scrolling table", () => {
             expect(scrolledLefts[index]).toBeCloseTo(left, 0);
         }
 
-        const [caption, , before] = controls;
-        const table = figure.querySelector("table");
-        expect(caption?.getBoundingClientRect().top)
-            .toBeCloseTo(figure.getBoundingClientRect().top + figure.clientTop, 0);
-        expect(table?.getBoundingClientRect().top)
-            .toBeCloseTo(caption?.getBoundingClientRect().bottom ?? 0, 0);
-        expect(before && getComputedStyle(before).borderBottomLeftRadius)
-            .toBe(before && getComputedStyle(before).borderTopLeftRadius);
+        const [caption, handle, before, after] = controls.map(rectOf);
+        const table = rectOf(figure.querySelector("table"));
+        expect(handle.top).toBeCloseTo(before.top, 0);
+        expect(handle.bottom).toBeLessThanOrEqual(caption.top + 0.5);
+        expect(caption.top).toBeCloseTo(before.bottom, 0);
+        expect(table.top).toBeCloseTo(caption.bottom, 0);
+        expect(after.top).toBeCloseTo(table.bottom, 0);
+        const beforeButton = controls[2];
+        expect(beforeButton && getComputedStyle(beforeButton).borderBottomLeftRadius)
+            .toBe(beforeButton && getComputedStyle(beforeButton).borderTopLeftRadius);
     });
 });
+
+describe("the edge fades of a scrolling table", () => {
+    useEditorStylesheet();
+
+    it("masks the visible part of the table as it scrolls, and stops once it fits", async () => {
+        const editor = await createTestEditor(PLUGINS);
+        setEditableWidth(editor, 400);
+        setModelData(editor.model, modelTable([ [ "a", "b" ] ], 'tableWidth="150%"'));
+        const figure = domFigure(editor);
+        const table = domTable(figure);
+        expect(figure.classList.contains("ck-table-overflowing")).toBe(true);
+        expect(fadeClasses(figure)).toEqual([]);
+        expect(fadeClasses(table))
+            .toEqual([ "scroll-fade", "scroll-fade-horizontal", "scroll-fade-end" ]);
+        expect(table.style.getPropertyValue(VIEWPORT_WIDTH_PROPERTY))
+            .toBe(`${figure.clientWidth}px`);
+        expect(getComputedStyle(table).maskImage).toContain("linear-gradient");
+        await expect.poll(() => getComputedStyle(table).getPropertyValue("--scroll-fade-end"))
+            .toBe("2.5%");
+
+        await scrollFigure(figure, 100);
+        expect(fadeClasses(table)).toContain("scroll-fade-start");
+        expect(fadeClasses(table)).toContain("scroll-fade-end");
+        const maskLeft = table.getBoundingClientRect().left
+            + parseFloat(getComputedStyle(table).maskPosition);
+        expect(maskLeft).toBeCloseTo(figure.getBoundingClientRect().left + figure.clientLeft, 0);
+
+        await scrollFigure(figure, figure.scrollWidth - figure.clientWidth);
+        expect(fadeClasses(table)).toContain("scroll-fade-start");
+        expect(fadeClasses(table)).not.toContain("scroll-fade-end");
+
+        editor.model.change((writer) => {
+            writer.setAttribute("tableWidth", "50%", firstTable(editor));
+        });
+        const fitting = domTable(domFigure(editor));
+        expect(domFigure(editor).classList.contains("ck-table-overflowing")).toBe(false);
+        expect(fadeClasses(fitting)).toEqual([]);
+        expect(fitting.style.getPropertyValue(VIEWPORT_WIDTH_PROPERTY)).toBe("");
+
+        // A table that replaces a scrolling one gets a fade of its own.
+        editor.model.change((writer) => {
+            writer.setAttribute("tableWidth", "150%", firstTable(editor));
+        });
+        setModelData(editor.model, modelTable([ [ "c", "d" ] ], 'tableWidth="200%"'));
+        expect(fadeClasses(domTable(domFigure(editor)))).toContain("scroll-fade-end");
+    });
+
+    it("anchors the mask on the right of a right-to-left table", async () => {
+        const editor = await createTestEditor(PLUGINS, { language: { content: "ar" } });
+        setEditableWidth(editor, 400);
+        setModelData(editor.model, modelTable([ [ "a", "b" ] ], 'tableWidth="150%"'));
+        const figure = domFigure(editor);
+        const table = domTable(figure);
+        expect(getComputedStyle(figure).direction).toBe("rtl");
+        expect(fadeClasses(table)).toEqual([
+            "scroll-fade", "scroll-fade-horizontal", "scroll-fade-end", "scroll-fade-rtl"
+        ]);
+        expect(getComputedStyle(table).getPropertyValue("--scroll-fade-direction")).toBe("to left");
+        expect(getComputedStyle(table).maskPosition).toContain("100%");
+
+        // `table_scroll.css` puts the mask at the full overflow plus the negative `scrollLeft`.
+        await scrollFigure(figure, -100);
+        const visibleLeft = figure.getBoundingClientRect().left + figure.clientLeft;
+        expect(visibleLeft - table.getBoundingClientRect().left)
+            .toBeCloseTo(table.offsetWidth - figure.clientWidth - 100, 0);
+        expect(fadeClasses(table)).toContain("scroll-fade-start");
+    });
+});
+
+/** Loads the stylesheet of the editor for the tests of the enclosing `describe`. */
+function useEditorStylesheet() {
+    const link = document.createElement("link");
+
+    beforeAll(() => new Promise<void>((resolve, reject) => {
+        link.rel = "stylesheet";
+        link.href = editorStylesheetUrl;
+        link.onload = () => resolve();
+        link.onerror = () => reject(new Error("the editor stylesheet did not load"));
+        document.head.appendChild(link);
+    }));
+
+    afterAll(() => {
+        link.remove();
+    });
+}
+
+function domTable(figure: HTMLElement) {
+    const table = figure.querySelector(":scope > table");
+    if (!(table instanceof HTMLTableElement)) {
+        throw new Error("The figure has no table.");
+    }
+    return table;
+}
 
 /** Expects `control` within the visible part of `figure` and returns its left edge. */
 function expectInside(figure: HTMLElement, control: Element | null) {
@@ -262,6 +349,10 @@ function expectInside(figure: HTMLElement, control: Element | null) {
     expect(rect?.left).toBeGreaterThanOrEqual(left - 0.5);
     expect(rect?.right).toBeLessThanOrEqual(left + figure.clientWidth + 0.5);
     return rect?.left ?? NaN;
+}
+
+function rectOf(element: Element | null) {
+    return element?.getBoundingClientRect() ?? new DOMRect(NaN, NaN, NaN, NaN);
 }
 
 function setReferenceWidth(width: string) {

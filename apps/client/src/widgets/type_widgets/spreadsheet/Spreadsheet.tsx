@@ -333,8 +333,8 @@ function useDarkMode(apiRef: RefObject<FUniver | undefined>) {
 }
 
 function useSearchIntegration(apiRef: RefObject<FUniver | undefined>, noteContext: NoteContext | undefined) {
-    useTriliumEvent("findInText", () => {
-        if (!noteContext?.isActive()) return;
+    useTriliumEvent("findInText", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId)) return;
 
         const univerAPI = apiRef.current;
         if (!univerAPI) return;

@@ -6,8 +6,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 // override ws.js for this spec to CAPTURE them (hoisted so the factory runs
 // before any transitive load of the module under test). protected_session only
 // consumes `subscribeToMessages`; nothing else in its graph needs ws at load.
-const { messageHandlers } = vi.hoisted(() => ({
-    messageHandlers: [] as ((message: any) => Promise<void> | void)[]
+const { messageHandlers, reloadFroca } = vi.hoisted(() => ({
+    messageHandlers: [] as ((message: any) => Promise<void> | void)[],
+    reloadFroca: vi.fn(async () => {})
 }));
 
 vi.mock("./ws.js", () => ({
@@ -15,7 +16,8 @@ vi.mock("./ws.js", () => ({
         subscribeToMessages(cb: (message: any) => Promise<void> | void) {
             messageHandlers.push(cb);
         },
-        waitForMaxKnownEntityChangeId: async () => {}
+        waitForMaxKnownEntityChangeId: async () => {},
+        reloadFroca
     }
 }));
 
@@ -30,7 +32,6 @@ vi.mock("./i18n.js", () => ({
 }));
 
 import appContext from "../components/app_context.js";
-import froca from "./froca.js";
 import options from "./options.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import server from "./server.js";
@@ -157,11 +158,8 @@ describe("protectNote", () => {
 });
 
 describe("protectedSessionLogin / logout ws handler", () => {
-    it("reloads data, fires events, resolves a pending deferred, and shows a message on login", async () => {
-        // Build a note so reloadData has something to gather/reload.
-        const note = froca.notes;
-        froca.loadInitialTree = vi.fn(async () => ({}) as any);
-        froca.reloadNotes = vi.fn(async () => {});
+    it("reloads froca, fires events, resolves a pending deferred, and shows a message on login", async () => {
+        reloadFroca.mockClear();
         const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined as any);
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined as any);
         const showMessage = vi.spyOn(toastService, "showMessage").mockReturnValue(undefined as any);
@@ -173,9 +171,7 @@ describe("protectedSessionLogin / logout ws handler", () => {
 
         await dispatch({ type: "protectedSessionLogin" });
 
-        expect(froca.loadInitialTree).toHaveBeenCalled();
-        expect(froca.reloadNotes).toHaveBeenCalledWith(Object.keys(note));
-        expect(triggerEvent).toHaveBeenCalledWith("frocaReloaded", {});
+        expect(reloadFroca).toHaveBeenCalledTimes(1);
         expect(triggerEvent).toHaveBeenCalledWith("protectedSessionStarted", {});
         expect(triggerCommand).toHaveBeenCalledWith("closeProtectedSessionPasswordDialog");
         expect(showMessage).toHaveBeenCalled();
@@ -185,8 +181,6 @@ describe("protectedSessionLogin / logout ws handler", () => {
     });
 
     it("handles login when no deferred is pending", async () => {
-        froca.loadInitialTree = vi.fn(async () => ({}) as any);
-        froca.reloadNotes = vi.fn(async () => {});
         vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined as any);
         vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined as any);
         const showMessage = vi.spyOn(toastService, "showMessage").mockReturnValue(undefined as any);
@@ -205,12 +199,12 @@ describe("protectedSessionLogin / logout ws handler", () => {
     });
 
     it("ignores unrelated message types", async () => {
-        froca.loadInitialTree = vi.fn(async () => ({}) as any);
+        reloadFroca.mockClear();
         const reload = vi.spyOn(utils, "reloadFrontendApp").mockReturnValue(undefined as any);
 
         await dispatch({ type: "somethingElse" });
 
-        expect(froca.loadInitialTree).not.toHaveBeenCalled();
+        expect(reloadFroca).not.toHaveBeenCalled();
         expect(reload).not.toHaveBeenCalled();
     });
 });

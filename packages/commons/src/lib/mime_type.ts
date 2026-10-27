@@ -10,6 +10,12 @@ export const MIME_TYPE_AUTO = "text-x-trilium-auto";
  */
 export const MIME_TYPE_TRILIUM_LOG = "text/x-trilium-log";
 
+/**
+ * The MIME type of a Trilium search query, as entered in a saved search. Highlighted only in
+ * CodeMirror, by the same highlighter as the search field.
+ */
+export const MIME_TYPE_TRILIUM_SEARCH = "text/x-trilium-search";
+
 export interface MimeTypeDefinition {
     default?: boolean;
     title: string;
@@ -52,9 +58,9 @@ const MIME_TYPES_DICT_RAW = [
 
     // Keep sorted alphabetically.
     { title: "ABAP (SAP)", mime: "text/x-abap", mdLanguageCode: "abap" },
-    { title: "APL", mime: "text/apl" },
-    { title: "ASN.1", mime: "text/x-ttcn-asn" },
-    { title: "ASP.NET", mime: "application/x-aspx" },
+    { title: "APL", mime: "text/apl", aliases: ["apl"] },
+    { title: "ASN.1", mime: "text/x-ttcn-asn", aliases: ["asn.1"] },
+    { title: "ASP.NET", mime: "application/x-aspx", aliases: ["aspx", "asp.net"] },
     { title: "Asterisk", mime: "text/x-asterisk" },
     { title: "Batch file (DOS)", mime: "application/x-bat", mdLanguageCode: "dos", aliases: ["bat", "batch"], icon: "bx bx-terminal" },
     { title: "Brainfuck", mime: "text/x-brainfuck", mdLanguageCode: "brainfuck" },
@@ -62,60 +68,60 @@ const MIME_TYPES_DICT_RAW = [
     { title: "C#", mime: "text/x-csharp", mdLanguageCode: "csharp", default: true },
     { title: "C++", mime: "text/x-c++src", mdLanguageCode: "cpp", default: true, icon: "bx bxl-c-plus-plus" },
     { title: "Clojure", mime: "text/x-clojure", mdLanguageCode: "clojure" },
-    { title: "ClojureScript", mime: "text/x-clojurescript" },
+    { title: "ClojureScript", mime: "text/x-clojurescript", aliases: ["clojurescript", "cljs"] },
     { title: "Closure Stylesheets (GSS)", mime: "text/x-gss" },
     { title: "CMake", mime: "text/x-cmake", mdLanguageCode: "cmake" },
-    { title: "Cobol", mime: "text/x-cobol" },
+    { title: "Cobol", mime: "text/x-cobol", aliases: ["cobol"] },
     { title: "CoffeeScript", mime: "text/coffeescript", mdLanguageCode: "coffeescript", icon: "bx bx-coffee" },
     { title: "Common Lisp", mime: "text/x-common-lisp", mdLanguageCode: "lisp" },
-    { title: "CQL", mime: "text/x-cassandra" },
+    { title: "CQL", mime: "text/x-cassandra", aliases: ["cql"] },
     { title: "Crystal", mime: "text/x-crystal", mdLanguageCode: "crystal" },
     { title: "CSS", mime: "text/css", mdLanguageCode: "css", default: true, icon: "bx bxs-file-css" },
-    { title: "Cypher", mime: "application/x-cypher-query" },
-    { title: "Cython", mime: "text/x-cython" },
+    { title: "Cypher", mime: "application/x-cypher-query", aliases: ["cypher"] },
+    { title: "Cython", mime: "text/x-cython", aliases: ["cython", "pyrex"] },
     { title: "D", mime: "text/x-d", mdLanguageCode: "d" },
     { title: "Dart", mime: "application/dart", mdLanguageCode: "dart" },
     { title: "diff", mime: "text/x-diff", mdLanguageCode: "diff" },
     { title: "Django", mime: "text/x-django", mdLanguageCode: "django", icon: "bx bxl-django" },
-    { title: "Dockerfile", mime: "text/x-dockerfile", mdLanguageCode: "dockerfile", icon: "bx bxl-docker" },
-    { title: "DTD", mime: "application/xml-dtd", icon: "bx bx-code" },
-    { title: "Dylan", mime: "text/x-dylan" },
+    { title: "Dockerfile", mime: "text/x-dockerfile", mdLanguageCode: "dockerfile", default: true, icon: "bx bxl-docker" },
+    { title: "DTD", mime: "application/xml-dtd", aliases: ["dtd"], icon: "bx bx-code" },
+    { title: "Dylan", mime: "text/x-dylan", aliases: ["dylan"] },
     { title: "EBNF", mime: "text/x-ebnf", mdLanguageCode: "ebnf" },
-    { title: "ECL", mime: "text/x-ecl" },
-    { title: "edn", mime: "application/edn" },
-    { title: "Eiffel", mime: "text/x-eiffel" },
+    { title: "ECL", mime: "text/x-ecl", aliases: ["ecl"] },
+    { title: "edn", mime: "application/edn", aliases: ["edn"] },
+    { title: "Eiffel", mime: "text/x-eiffel", aliases: ["eiffel"] },
     { title: "Elixir", mime: "text/x-elixir", mdLanguageCode: "elixir" },
     { title: "Elm", mime: "text/x-elm", mdLanguageCode: "elm" },
-    { title: "Embedded Javascript", mime: "application/x-ejs" },
+    { title: "Embedded Javascript", mime: "application/x-ejs", aliases: ["ejs"] },
     { title: "Embedded Ruby", mime: "application/x-erb", mdLanguageCode: "erb" },
     { title: "Erlang", mime: "text/x-erlang", mdLanguageCode: "erlang" },
     { title: "Esper", mime: "text/x-esper" },
     { title: "F#", mime: "text/x-fsharp", mdLanguageCode: "fsharp" },
-    { title: "Factor", mime: "text/x-factor" },
+    { title: "Factor", mime: "text/x-factor", aliases: ["factor"] },
     { title: "FCL", mime: "text/x-fcl" },
-    { title: "Forth", mime: "text/x-forth" },
+    { title: "Forth", mime: "text/x-forth", aliases: ["forth"] },
     { title: "Fortran", mime: "text/x-fortran", mdLanguageCode: "fortran" },
-    { title: "Gas", mime: "text/x-gas" },
-    { title: "GDScript (Godot)", mime: "text/x-gdscript" },
+    { title: "Gas", mime: "text/x-gas", aliases: ["gas", "unix-assembly"] },
+    { title: "GDScript (Godot)", mime: "text/x-gdscript", aliases: ["gdscript"] },
     { title: "Gherkin", mime: "text/x-feature", mdLanguageCode: "gherkin" },
     { title: "GitHub Flavored Markdown", mime: "text/x-gfm", mdLanguageCode: "markdown", icon: "bx bxl-markdown" },
     { title: "Go", mime: "text/x-go", mdLanguageCode: "go", default: true, icon: "bx bxl-go-lang" },
-    { title: "Groovy", mime: "text/x-groovy", mdLanguageCode: "groovy", default: true },
+    { title: "Groovy", mime: "text/x-groovy", mdLanguageCode: "groovy" },
     { title: "HAML", mime: "text/x-haml", mdLanguageCode: "haml" },
-    { title: "Haskell (Literate)", mime: "text/x-literate-haskell" },
-    { title: "Haskell", mime: "text/x-haskell", mdLanguageCode: "haskell", default: true },
+    { title: "Haskell (Literate)", mime: "text/x-literate-haskell", aliases: ["literate-haskell", "lhaskell", "lhs"] },
+    { title: "Haskell", mime: "text/x-haskell", mdLanguageCode: "haskell" },
     { title: "Haxe", mime: "text/x-haxe", mdLanguageCode: "haxe" },
     { title: "HTML", mime: "text/html", mdLanguageCode: "html", default: true, icon: "bx bxl-html5" },
-    { title: "HTTP", mime: "message/http", mdLanguageCode: "http", default: true },
-    { title: "HXML", mime: "text/x-hxml" },
-    { title: "IDL", mime: "text/x-idl" },
-    { title: "Java Server Pages", mime: "application/x-jsp", mdLanguageCode: "java", icon: "bx bxl-java" },
+    { title: "HTTP", mime: "message/http", mdLanguageCode: "http" },
+    { title: "HXML", mime: "text/x-hxml", aliases: ["hxml"] },
+    { title: "IDL", mime: "text/x-idl", aliases: ["idl"] },
+    { title: "Java Server Pages", mime: "application/x-jsp", mdLanguageCode: "java", aliases: ["jsp", "java-server-pages"], icon: "bx bxl-java" },
     { title: "Java", mime: "text/x-java", mdLanguageCode: "java", aliases: ["java"], default: true, icon: "bx bxl-java" },
     { title: "JavaScript", mime: "text/javascript", mdLanguageCode: "javascript", aliases: ["js"], default: true, icon: "bx bxl-javascript" },
     { title: "JavaScript (Trilium backend)", mime: "application/javascript;env=backend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
     { title: "JavaScript (Trilium frontend)", mime: "application/javascript;env=frontend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
-    { title: "Jinja2", mime: "text/jinja2" },
-    { title: "JSON-LD", mime: "application/ld+json", mdLanguageCode: "json", icon: "bx bxs-file-json" },
+    { title: "Jinja2", mime: "text/jinja2", aliases: ["jinja", "html+jinja"] },
+    { title: "JSON-LD", mime: "application/ld+json", mdLanguageCode: "json", aliases: ["jsonld"], icon: "bx bxs-file-json" },
     { title: "JSON", mime: "application/json", mdLanguageCode: "json", aliases: ["json", "jsonc"], default: true, icon: "bx bxs-file-json" },
     { title: "JSX", mime: "text/jsx", mdLanguageCode: "jsx", aliases: ["javascriptreact"], default: true },
     { title: "Julia", mime: "text/x-julia", mdLanguageCode: "julia" },
@@ -128,15 +134,15 @@ const MIME_TYPES_DICT_RAW = [
     { title: "MariaDB SQL", mime: "text/x-mariadb", mdLanguageCode: "sql" },
     { title: "Markdown", mime: "text/x-markdown", mdLanguageCode: "markdown", default: true, icon: "bx bxl-markdown" },
     { title: "Mathematica", mime: "text/x-mathematica", mdLanguageCode: "mathematica" },
-    { title: "mbox", mime: "application/mbox" },
+    { title: "mbox", mime: "application/mbox", aliases: ["mbox", "email", "eml"] },
     { title: "MIPS Assembler", mime: "text/x-asm-mips", mdLanguageCode: "mips" },
-    { title: "mIRC", mime: "text/mirc" },
-    { title: "Modelica", mime: "text/x-modelica" },
-    { title: "MS SQL", mime: "text/x-mssql", mdLanguageCode: "sql", icon: "bx bx-data" },
-    { title: "mscgen", mime: "text/x-mscgen" },
+    { title: "mIRC", mime: "text/mirc", aliases: ["mirc", "mrc"] },
+    { title: "Modelica", mime: "text/x-modelica", aliases: ["modelica"] },
+    { title: "MS SQL", mime: "text/x-mssql", mdLanguageCode: "sql", aliases: ["tsql", "t-sql"], icon: "bx bx-data" },
+    { title: "mscgen", mime: "text/x-mscgen", aliases: ["mscgen"] },
     { title: "msgenny", mime: "text/x-msgenny" },
-    { title: "MUMPS", mime: "text/x-mumps" },
-    { title: "MySQL", mime: "text/x-mysql", mdLanguageCode: "sql", icon: "bx bx-data" },
+    { title: "MUMPS", mime: "text/x-mumps", aliases: ["mumps"] },
+    { title: "MySQL", mime: "text/x-mysql", mdLanguageCode: "sql", aliases: ["mysql"], icon: "bx bx-data" },
     { title: "Nginx", mime: "text/x-nginx-conf", mdLanguageCode: "nginx" },
     { title: "Nim", mime: "text/x-nim", mdLanguageCode: "nim" },
     { title: "Nix", mime: "text/x-nix", mdLanguageCode: "nix" },
@@ -144,74 +150,75 @@ const MIME_TYPES_DICT_RAW = [
     { title: "NTriples", mime: "application/n-triples" },
     { title: "Objective-C", mime: "text/x-objectivec", mdLanguageCode: "objectivec", aliases: ["objective-c", "objc"] },
     { title: "OCaml", mime: "text/x-ocaml", mdLanguageCode: "ocaml" },
-    { title: "Octave", mime: "text/x-octave" },
-    { title: "Oz", mime: "text/x-oz" },
+    { title: "Octave", mime: "text/x-octave", aliases: ["octave", "matlab"] },
+    { title: "Oz", mime: "text/x-oz", aliases: ["oz"] },
     { title: "Pascal", mime: "text/x-pascal", mdLanguageCode: "delphi" },
-    { title: "PEG.js", mime: "text/x-pegjs" },
-    { title: "Perl", mime: "text/x-perl", aliases: ["perl"], default: true },
+    { title: "PEG.js", mime: "text/x-pegjs", aliases: ["peg.js"] },
+    { title: "Perl", mime: "text/x-perl", aliases: ["perl"] },
     { title: "PGP", mime: "application/pgp" },
     { title: "PHP", mime: "text/x-php", aliases: ["php"], default: true, icon: "bx bxl-php" },
-    { title: "Pig", mime: "text/x-pig" },
-    { title: "PLSQL", mime: "text/x-plsql", mdLanguageCode: "sql" },
+    { title: "Pig", mime: "text/x-pig", aliases: ["piglatin"] },
+    { title: "PLSQL", mime: "text/x-plsql", mdLanguageCode: "sql", aliases: ["plsql"] },
     { title: "PostgreSQL", mime: "text/x-pgsql", mdLanguageCode: "pgsql", icon: "bx bxl-postgresql" },
-    { title: "PowerShell", mime: "application/x-powershell", mdLanguageCode: "powershell", icon: "bx bxs-terminal" },
+    { title: "PowerShell", mime: "application/x-powershell", mdLanguageCode: "powershell", default: true, icon: "bx bxs-terminal" },
     { title: "Properties files", mime: "text/x-properties", mdLanguageCode: "properties" },
     { title: "ProtoBuf", mime: "text/x-protobuf", mdLanguageCode: "protobuf" },
-    { title: "Pug", mime: "text/x-pug" },
+    { title: "Pug", mime: "text/x-pug", aliases: ["pug"] },
     { title: "Puppet", mime: "text/x-puppet", mdLanguageCode: "puppet" },
     { title: "Python", mime: "text/x-python", mdLanguageCode: "python", aliases: ["py"], default: true, icon: "bx bxl-python" },
     { title: "Q", mime: "text/x-q", mdLanguageCode: "q" },
     { title: "R", mime: "text/x-rsrc", mdLanguageCode: "r" },
-    { title: "reStructuredText", mime: "text/x-rst" },
+    { title: "reStructuredText", mime: "text/x-rst", aliases: ["restructuredtext", "rst"] },
     { title: "RPM Changes", mime: "text/x-rpm-changes" },
-    { title: "RPM Spec", mime: "text/x-rpm-spec" },
+    { title: "RPM Spec", mime: "text/x-rpm-spec", aliases: ["rpm-spec", "specfile"] },
     { title: "Ruby", mime: "text/x-ruby", mdLanguageCode: "ruby", default: true },
-    { title: "Rust", mime: "text/x-rustsrc", mdLanguageCode: "rust" },
+    { title: "Rust", mime: "text/x-rustsrc", mdLanguageCode: "rust", default: true },
     { title: "SAS", mime: "text/x-sas", mdLanguageCode: "sas" },
-    { title: "Sass", mime: "text/x-sass", icon: "bx bxl-sass" },
-    { title: "Scala", mime: "text/x-scala" },
-    { title: "Scheme", mime: "text/x-scheme" },
+    { title: "Sass", mime: "text/x-sass", aliases: ["sass"], icon: "bx bxl-sass" },
+    { title: "Scala", mime: "text/x-scala", aliases: ["scala"] },
+    { title: "Scheme", mime: "text/x-scheme", aliases: ["scheme"] },
     { title: "SCSS", mime: "text/x-scss", mdLanguageCode: "scss" },
     { title: "Shell (bash)", mime: "text/x-sh", mdLanguageCode: "sh", aliases: ["bash", "shell", "shellscript", "zsh"], default: true, icon: "bx bx-terminal" },
-    { title: "Sieve", mime: "application/sieve" },
-    { title: "Slim", mime: "text/x-slim" },
+    { title: "Sieve", mime: "application/sieve", aliases: ["sieve"] },
+    { title: "Slim", mime: "text/x-slim", aliases: ["slim"] },
     { title: "Smalltalk", mime: "text/x-stsrc", mdLanguageCode: "smalltalk" },
-    { title: "Smarty", mime: "text/x-smarty" },
+    { title: "Smarty", mime: "text/x-smarty", aliases: ["smarty"] },
     { title: "SML", mime: "text/x-sml", mdLanguageCode: "sml" },
     { title: "Solr", mime: "text/x-solr" },
-    { title: "Soy", mime: "text/x-soy" },
-    { title: "SPARQL", mime: "application/sparql-query" },
-    { title: "Spreadsheet", mime: "text/x-spreadsheet" },
+    { title: "Soy", mime: "text/x-soy", aliases: ["soy", "closure-templates"] },
+    { title: "SPARQL", mime: "application/sparql-query", aliases: ["sparql"] },
+    { title: "Spreadsheet", mime: "text/x-spreadsheet", aliases: ["excel", "formula"] },
     { title: "SQL", mime: "text/x-sql", mdLanguageCode: "sql", aliases: ["sql"], default: true, icon: "bx bx-data" },
     { title: "SQLite (Trilium)", mime: "text/x-sqlite;schema=trilium", mdLanguageCode: "sql", default: true, icon: "bx bx-data" },
     { title: "SQLite", mime: "text/x-sqlite", mdLanguageCode: "sql", icon: "bx bx-data" },
-    { title: "Squirrel", mime: "text/x-squirrel" },
-    { title: "sTeX", mime: "text/x-stex" },
+    { title: "Squirrel", mime: "text/x-squirrel", aliases: ["squirrel"] },
+    { title: "sTeX", mime: "text/x-stex", aliases: ["tex"] },
     { title: "Stylus", mime: "text/x-styl", mdLanguageCode: "stylus" },
     { title: "Swift", mime: "text/x-swift", aliases: ["swift"], default: true },
-    { title: "SystemVerilog", mime: "text/x-systemverilog" },
+    { title: "SystemVerilog", mime: "text/x-systemverilog", aliases: ["systemverilog"] },
     { title: "Tcl", mime: "text/x-tcl", mdLanguageCode: "tcl" },
     { title: "Terraform (HCL)", mime: "text/x-hcl", mdLanguageCode: "terraform", aliases: ["hcl"] },
-    { title: "Textile", mime: "text/x-textile" },
+    { title: "Textile", mime: "text/x-textile", aliases: ["textile"] },
     { title: "TiddlyWiki ", mime: "text/x-tiddlywiki" },
     { title: "Tiki wiki", mime: "text/tiki" },
     { title: "TOML", mime: "text/x-toml", mdLanguageCode: "ini", aliases: ["toml"], icon: "bx bx-bracket" },
     { title: "Tornado", mime: "text/x-tornado" },
     { title: "Trilium Log", mime: "text/x-trilium-log", icon: "bx bx-list-ul" },
-    { title: "troff", mime: "text/troff" },
+    { title: "Trilium Search Query", mime: "text/x-trilium-search", icon: "bx bx-search" },
+    { title: "troff", mime: "text/troff", aliases: ["roff", "troff", "groff", "nroff", "manpage"] },
     { title: "TTCN_CFG", mime: "text/x-ttcn-cfg" },
-    { title: "TTCN", mime: "text/x-ttcn" },
-    { title: "Turtle", mime: "text/turtle" },
+    { title: "TTCN", mime: "text/x-ttcn", aliases: ["ttcn", "ttcn3"] },
+    { title: "Turtle", mime: "text/turtle", aliases: ["turtle"] },
     { title: "Twig", mime: "text/x-twig", mdLanguageCode: "twig" },
-    { title: "TypeScript-JSX", mime: "text/typescript-jsx", aliases: ["tsx", "typescriptreact"] },
-    { title: "TypeScript", mime: "application/typescript", mdLanguageCode: "typescript", aliases: ["ts"], icon: "bx bxl-typescript" },
+    { title: "TypeScript-JSX", mime: "text/typescript-jsx", aliases: ["tsx", "typescriptreact"], default: true },
+    { title: "TypeScript", mime: "application/typescript", mdLanguageCode: "typescript", aliases: ["ts"], default: true, icon: "bx bxl-typescript" },
     { title: "VB.NET", mime: "text/x-vb", mdLanguageCode: "vbnet", aliases: ["vb"] },
     { title: "VBScript", mime: "text/vbscript", mdLanguageCode: "vbscript" },
-    { title: "Velocity", mime: "text/velocity" },
+    { title: "Velocity", mime: "text/velocity", aliases: ["velocity", "vtl"] },
     { title: "Verilog", mime: "text/x-verilog", mdLanguageCode: "verilog" },
     { title: "VHDL", mime: "text/x-vhdl", mdLanguageCode: "vhdl" },
-    { title: "Vue.js Component", mime: "text/x-vue" },
-    { title: "Web IDL", mime: "text/x-webidl" },
+    { title: "Vue.js Component", mime: "text/x-vue", aliases: ["vue"] },
+    { title: "Web IDL", mime: "text/x-webidl", aliases: ["webidl"] },
     { title: "XML", mime: "text/xml", mdLanguageCode: "xml", default: true, icon: "bx bx-code-alt" },
     { title: "XQuery", mime: "application/xquery", mdLanguageCode: "xquery" },
     { title: "xu", mime: "text/x-xu" },
@@ -264,6 +271,7 @@ export function shouldSyntaxHighlight(code: string) {
 }
 
 let byMarkdownNameMappings: Record<string, MimeTypeDefinition> | null = null;
+let byCKEditorLanguageMappings: Record<string, string> | null = null;
 
 export type MermaidMimeType = "text/vnd.mermaid" | "text/mermaid";
 export type SupportedMimeTypes = typeof MIME_TYPES_DICT_RAW[number]["mime"] | MermaidMimeType;
@@ -292,6 +300,34 @@ export function getMimeTypeFromMarkdownName(mdLanguageCode: string) {
     }
 
     return byMarkdownNameMappings[mdLanguageCode];
+}
+
+/**
+ * The Markdown fence name of a CKEditor code block language that
+ * {@link getMimeTypeFromMarkdownName} resolves back to the same entry, so the language survives an
+ * export and a re-import. The last segment of the language comes first (`toml` for `text-x-toml`),
+ * then the entry's `mdLanguageCode` and `aliases` (`cpp` for `text-x-c-src`).
+ *
+ * @param ckEditorLanguage a MIME type normalized with {@link normalizeMimeTypeForCKEditor}.
+ * @returns the fence name, or `undefined` for an unknown language or one without such a name.
+ */
+export function getMarkdownNameFromCKEditorLanguage(ckEditorLanguage: string) {
+    if (!byCKEditorLanguageMappings) {
+        byCKEditorLanguageMappings = {};
+        for (const mimeType of MIME_TYPES_DICT) {
+            const language = normalizeMimeTypeForCKEditor(mimeType.mime);
+            const names = [
+                language.split("-").at(-1), mimeType.mdLanguageCode, ...(mimeType.aliases ?? [])
+            ];
+            const name = names.find((name) =>
+                name && getMimeTypeFromMarkdownName(name) === mimeType);
+            if (name) {
+                byCKEditorLanguageMappings[language] = name;
+            }
+        }
+    }
+
+    return byCKEditorLanguageMappings[ckEditorLanguage];
 }
 
 /**

@@ -1,14 +1,17 @@
 import "./other.css";
 
 import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { useMemo, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import search from "../../../services/search";
+import { NO_SEARCH_ENGINE, SEARCH_ENGINE_PRESETS } from "../../../services/search_engine";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
-import { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import FormDropdownList from "../../react/FormDropdownList";
+import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import OptionsPageHeader from "./components/OptionsPageHeader";
@@ -19,6 +22,7 @@ export default function OtherSettings() {
         <>
             <OptionsPageHeader />
             <SearchSettings />
+            <SearchEngineSettings />
             <NoteErasureTimeout />
             <AttachmentErasureTimeout />
             <RevisionSettings />
@@ -52,6 +56,96 @@ function SearchSettings() {
             </OptionCardSection>
         </Card>
     );
+}
+
+function SearchEngineSettings() {
+    const [ name, setName ] = useTriliumOption("customSearchEngineName");
+    const [ url, setUrl ] = useTriliumOption("customSearchEngineUrl");
+    const [ customChosen, setCustomChosen ] = useState(false);
+    const choice = customChosen ? CUSTOM_SEARCH_ENGINE : getSearchEngineChoice(url);
+
+    const choices = useMemo(() => [
+        { value: NO_SEARCH_ENGINE, title: t("search_engine.none"), icon: "bx bx-block" },
+        ...SEARCH_ENGINE_PRESETS.map(({ url, nameKey, icon }, index) => ({
+            value: url, title: t(nameKey), icon, dividerBefore: index === 0
+        })),
+        {
+            value: CUSTOM_SEARCH_ENGINE, title: t("search_engine.custom"),
+            icon: "bx bx-edit-alt", dividerBefore: true
+        }
+    ], []);
+
+    function choose(value: string) {
+        if (value === CUSTOM_SEARCH_ENGINE) {
+            setCustomChosen(true);
+            if (url === NO_SEARCH_ENGINE) {
+                setName("");
+                setUrl("");
+            }
+            return;
+        }
+
+        setCustomChosen(false);
+        const preset = SEARCH_ENGINE_PRESETS.find((preset) => preset.url === value);
+        setName(preset ? t(preset.nameKey) : "");
+        setUrl(value);
+    }
+
+    return (
+        <Card
+            heading={t("search_engine.title")}
+            description={t("search_engine.custom_search_engine_info")}
+        >
+            <OptionCardSection
+                name="search-engine"
+                label={t("search_engine.engine_label")}
+                subSectionsVisible={choice === CUSTOM_SEARCH_ENGINE}
+                subSections={[
+                    <OptionCardSection
+                        key="name"
+                        className="search-engine-name"
+                        name="custom-name"
+                        label={t("search_engine.custom_name_label")}
+                    >
+                        <FormTextBox
+                            currentValue={name} onBlur={setName}
+                            placeholder={t("search_engine.custom_name_placeholder")}
+                        />
+                    </OptionCardSection>,
+                    <OptionCardSection
+                        key="url"
+                        name="custom-url"
+                        label={t("search_engine.custom_url_label")}
+                        description={t("search_engine.custom_url_description")}
+                        stacked
+                    >
+                        <FormTextBox
+                            type="url"
+                            currentValue={url} onBlur={setUrl}
+                            placeholder={t("search_engine.custom_url_placeholder")}
+                        />
+                    </OptionCardSection>
+                ]}
+            >
+                <FormDropdownList
+                    className="search-engine-picker"
+                    values={choices} keyProperty="value" titleProperty="title"
+                    iconProperty="icon" dividerBeforeProperty="dividerBefore"
+                    currentValue={choice} onChange={choose}
+                />
+            </OptionCardSection>
+        </Card>
+    );
+}
+
+const CUSTOM_SEARCH_ENGINE = "custom";
+
+/** The dropdown entry for a stored URL. An empty one is DuckDuckGo, as in the context menu. */
+export function getSearchEngineChoice(url: string) {
+    if (url === NO_SEARCH_ENGINE) return NO_SEARCH_ENGINE;
+    if (!url) return SEARCH_ENGINE_PRESETS[0].url;
+    const isPreset = SEARCH_ENGINE_PRESETS.some((preset) => preset.url === url);
+    return isPreset ? url : CUSTOM_SEARCH_ENGINE;
 }
 
 function NoteErasureTimeout() {

@@ -10,7 +10,7 @@ import { t } from "../../services/i18n";
 import type LoadResults from "../../services/load_results";
 import searchService from "../../services/search";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useNoteContext, useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
 import SearchStringEditor from "../search/SearchStringEditor";
 
 /** How long to wait after a change before re-running the active filter. */
@@ -60,6 +60,9 @@ export function useCollectionFilter(note: FNote, {
     collectionNoteIds: string[];
 }): CollectionFilter {
     const [ query, setQuery ] = useState(persistedQuery ?? "");
+    // The collection shows archived notes only with `#includeArchived`, so the search skips the
+    // rest instead of reading the content of notes that could never be drawn.
+    const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     const [ matches, setMatches ] = useState<FilterMatches>(NO_MATCHES);
     const [ error, setError ] = useState<string | null>(null);
     // Set before anything is drawn, so a collection opened onto a stored query waits for its
@@ -82,7 +85,7 @@ export function useCollectionFilter(note: FNote, {
         const seq = ++runSeqRef.current;
         let response;
         try {
-            response = await searchService.searchInSubtree(activeQuery, note.noteId);
+            response = await searchService.searchInSubtree(activeQuery, note.noteId, includeArchived);
         } catch (e) {
             console.error("Failed to run the collection filter:", e);
             if (seq === runSeqRef.current) {
@@ -138,7 +141,7 @@ export function useCollectionFilter(note: FNote, {
             return;
         }
         run(query);
-    }, [ note.noteId, query ]);
+    }, [ note.noteId, query, includeArchived ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const collection = collectionSetRef.current;
@@ -273,14 +276,19 @@ export function CollectionFilterInput({ filter, placeholder }: {
     );
 }
 
-/** Whether any changed note, attribute or branch belongs to the collection's subtree. */
+/**
+ * Whether any changed note, attribute or branch belongs to the collection's subtree. A content save
+ * does not count: an editor saves about once a second while the user types, and each re-run is a
+ * full search on the server.
+ */
 function touchesCollection(
     loadResults: LoadResults, collectionNoteIds: Set<string>, collectionNoteId: string
 ) {
     const inCollection = (noteId: string | null | undefined) =>
         !!noteId && (noteId === collectionNoteId || collectionNoteIds.has(noteId));
 
-    return loadResults.getNoteIds().some(inCollection)
+    return loadResults.getNoteIds().some(noteId =>
+        inCollection(noteId) && !loadResults.isNoteContentReloaded(noteId))
         || loadResults.getAttributeRows().some(attr => inCollection(attr.noteId))
         || loadResults.getBranchRows().some(branch =>
             inCollection(branch.noteId) || inCollection(branch.parentNoteId));

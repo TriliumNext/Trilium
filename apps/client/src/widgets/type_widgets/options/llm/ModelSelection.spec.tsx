@@ -109,6 +109,23 @@ describe("ModelSelection", () => {
         expect(onChange).toHaveBeenCalledWith([fresh, gone]);
     });
 
+    it("re-seeds the recommended models when the listing carries none of the stored selection", async () => {
+        // A subscription catalog that moved on wholesale (Claude Code after a model generation):
+        // every stored id is gone, and keeping them would leave the chat picker on models the
+        // provider refuses while the new ones sit unticked.
+        const stored: LlmModelInfo[] = [
+            { id: "old-a", name: "Old A" },
+            { id: "old-b", name: "Old B" }
+        ];
+        const onChange = vi.fn();
+
+        await renderSelection({
+            query: { provider: "claude-agent" }, selected: stored, onChange, autoSelectDefaults: false
+        });
+        expect(onChange).toHaveBeenCalledOnce();
+        expect(onChange).toHaveBeenCalledWith([MODELS[0], MODELS[2]]);
+    });
+
     it("leaves an empty selection untouched when auto-select is off", async () => {
         // A provider deliberately emptied to "hide all" — reopening its editor
         // must not silently re-populate it (see shouldSeedDefaultModels).

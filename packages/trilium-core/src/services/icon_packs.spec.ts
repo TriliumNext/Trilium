@@ -360,9 +360,11 @@ describe("Listing icon packs", () => {
             const iconPacks = getIconPacks();
             expect(iconPacks.map(p => [ p.prefix, p.builtin, !!p.internal ])).toStrictEqual([
                 [ "bx", true, false ],
-                [ "cke", true, true ]
+                [ "cke", true, true ],
+                [ "tn-brand", true, true ]
             ]);
             expect(iconPacks[1].manifest.icons["cke-table-merge-cell"]).toBeDefined();
+            expect(iconPacks[2].manifest.icons["tn-brand-openai"]).toBeDefined();
             expect(searchNotes).not.toHaveBeenCalled();
         } finally {
             becca.loaded = wasLoaded;
@@ -382,7 +384,7 @@ describe("Listing icon packs", () => {
         becca.loaded = true;
         try {
             const iconPacks = getIconPacks();
-            expect(iconPacks.map(p => p.prefix)).toStrictEqual([ "bx", "cke" ]);
+            expect(iconPacks.map(p => p.prefix)).toStrictEqual([ "bx", "cke", "tn-brand" ]);
             expect(iconPacks[1].builtin).toBe(true);
         } finally {
             becca.loaded = wasLoaded;
@@ -401,7 +403,7 @@ describe("Listing icon packs", () => {
             expect(listedPrefixes()).toStrictEqual([ "bx" ]);
 
             getEnv.mockImplementation((key) => (key === "TRILIUM_ENV" ? "dev" : undefined));
-            expect(listedPrefixes()).toStrictEqual([ "bx", "cke" ]);
+            expect(listedPrefixes()).toStrictEqual([ "bx", "cke", "tn-brand" ]);
         } finally {
             becca.loaded = wasLoaded;
         }

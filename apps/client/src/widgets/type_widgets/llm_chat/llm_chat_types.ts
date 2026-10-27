@@ -2,6 +2,7 @@ import {
     isToolErrorResult,
     type LlmCitation,
     type LlmErrorDetails,
+    type LlmPermissionMode,
     type LlmReasoningEffort,
     type LlmUsage
 } from "@triliumnext/commons";
@@ -19,6 +20,8 @@ export interface ToolCall {
     inputStreaming?: string;
     result?: string;
     isError?: boolean;
+    /** `pending` while the call waits for the user to allow it, `declined` once they denied it. */
+    approval?: "pending" | "declined";
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */
@@ -116,10 +119,20 @@ export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]
  */
 /**
  * Whether a tool call failed: flagged so by the provider, or answered with the `{ error }` a note tool
- * returns. The result covers chats saved while a provider did not pass the flag on.
+ * returns. The result covers chats saved while a provider did not pass the flag on. A call the user
+ * denied never ran, so it did not fail.
  */
 export function isFailedToolCall(toolCall: ToolCall): boolean {
-    return !!toolCall.isError || isToolErrorResult(toolCall.result);
+    return toolCall.approval !== "declined"
+        && (!!toolCall.isError || isToolErrorResult(toolCall.result));
+}
+
+/** The `llm.tools.*` key that names a tool call: `set_attribute` in add mode reads as "Add attribute". */
+export function toolCallLabelKey(toolCall: ToolCall): string {
+    const name = toolCall.toolName === "set_attribute" && toolCall.input.mode === "add"
+        ? "add_attribute"
+        : toolCall.toolName;
+    return `llm.tools.${name}`;
 }
 
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
@@ -202,4 +215,8 @@ export interface LlmChatContent {
     enableExtendedThinking?: boolean;
     /** The effort chosen for a model with levels; absent means the model's default. */
     reasoningEffort?: LlmReasoningEffort;
+    /** The tools the user allowed for this chat, whose calls run without asking. */
+    allowedTools?: string[];
+    /** Which tool calls of the chat wait for the user; absent means the mode picked last. */
+    permissionMode?: LlmPermissionMode;
 }

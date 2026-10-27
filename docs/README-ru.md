@@ -22,8 +22,9 @@ LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
 | [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
-Trilium Notes – это приложение для заметок с иерархической структурой,
-ориентированное на создание больших персональных баз знаний.
+Trilium Notes – это бесплатное кроссплатформенное приложение с открытым исходным
+кодом для заметок с иерархической структурой, ориентированное на создание
+больших персональных баз знаний.
 
 Ищете "Trillium Notes"? Каноническое написание названия проекта — "Trilium
 Notes", с одной буквой `l`.
@@ -33,9 +34,9 @@ Notes", с одной буквой `l`.
 ## ⏬ Загрузка
 - [Последний релиз](https://github.com/TriliumNext/Trilium/releases/latest) –
   стабильная версия, подойдёт для большинства пользователей.
-- [Ночной билд](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  нестабильная разрабатываемая версия, ежедневно получает новые функции и
-  исправления.
+- [Ночной сборка](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  нестабильная разрабатываемая версия, ежедневно обновляемая с добавлением новых
+  функций и исправлений.
 
 ## 📚 Документация
 
@@ -59,8 +60,8 @@ Notes", с одной буквой `l`.
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Основные идеи и
   возможности](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Шаблоны Персональный Базы
-  Знаний](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Шаблоны персональной базы
+  знаний](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Возможности
 
@@ -102,9 +103,10 @@ Notes", с одной буквой `l`.
 * Рисование и скетчинг диаграм, при помощи [Excalidraw](https://excalidraw.com/)
   (тип заметки "холст")
 * [Карты
-  связей](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [карты заметок](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  для визуализации заметок и их связей
+  отношений](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  and [карты
+  заметок/ссылок](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  для визуализации заметок и их отношений
 * Интеллект-карты на основе [Mind Elixir](https://docs.mind-elixir.com/)
 * [Карты](https://docs.triliumnotes.org/user-guide/collections/geomap) с метками
   для мест и треками GPX
@@ -115,9 +117,11 @@ Notes", с одной буквой `l`.
 * Хорошо масштабируется, как по удобству использования, так и по
   производительности до 100000 заметок
 * Оптимизированный [мобильный
-  фронтенд](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+  клиент](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) для
   смартфонов и планшетов
-* [Темная тема](https://docs.triliumnotes.org/user-guide/concepts/themes)
+* Встроенная [тёмная
+  тема](https://docs.triliumnotes.org/user-guide/concepts/themes), поддержка
+  пользовательских тем
 * Импорт и экпорт
   [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   и данных в
@@ -162,7 +166,7 @@ TriliumNext/Trilium](#-installation) как обычно, и он будет и�
 Приглашаем вас присоединиться к нашим официальным обсуждениям. Мы будем рады
 узнать о ваших предложениях по улучшению, идеях или проблемах!
 
-- [Матрица](https://matrix.to/#/#triliumnext:matrix.org) (Для оперативной
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Для оперативной
   коммуникации.)
   - Комната `General` в Matrix также подключена к
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
@@ -171,7 +175,7 @@ TriliumNext/Trilium](#-installation) как обычно, и он будет и�
 - [Github Issues](https://github.com/TriliumNext/Trilium/issues) (Для сообщений
   об ошибках и запросов на добавление новых функций.)
 
-## 🏗 Сборки
+## 🏗 Установка
 
 ### Windows / macOS
 
@@ -366,6 +370,10 @@ Trilium не существовал бы без технологий, лежащ
   редактор.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - редактор кода с
   поддержкой огромного количества языков.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - отображает диаграммы
+  заметок Mermaid; его парсеры служат моделью для подсветки синтаксиса.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - основа подсветки синтаксиса Mermaid.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - бесконечная белая
   доска, используемая в заметках типа "Холст".
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - обеспечивает
@@ -375,7 +383,7 @@ Trilium не существовал бы без технологий, лежащ
 * [Tabulator](https://github.com/olifolkerd/tabulator) - интерактивные таблицы,
   используемые в коллекциях.
 * [FancyTree](https://github.com/mar10/fancytree) - многофункциональная
-  библиотека деревьев, не имеющая себе равных.
+  библиотека дерева, не имеющая себе равных.
 
 ## 🤝 Поддержка
 

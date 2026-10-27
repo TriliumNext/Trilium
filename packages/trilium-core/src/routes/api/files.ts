@@ -8,6 +8,7 @@ import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
 import noteService from "../../services/notes.js";
 import { convertOfficeToHtml } from "../../services/office_preview.js";
+import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
@@ -140,6 +141,9 @@ function isTrimmed(req: Request): boolean {
     return req.query.trim === "1";
 }
 
+/** The most a `bytes=N-` request for media is answered with in standalone. */
+const STANDALONE_OPEN_RANGE_LENGTH = 8 * 1024 * 1024;
+
 function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res: Response) {
     if (noteOrAttachment.isProtected && !protected_session.isProtectedSessionAvailable()) {
         return res.status(401).send("Protected session not available");
@@ -150,7 +154,10 @@ function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res
         fileName: noteOrAttachment.getFileName(),
         mimeType: noteOrAttachment.mime,
         // blobId is a content hash, so it is a stable ETag that changes only when the content does.
-        etag: noteOrAttachment.blobId
+        etag: noteOrAttachment.blobId,
+        // In standalone every response is buffered whole on the page and, in the mobile shells,
+        // copied through a native bridge, so the rest of a large video cannot go out at once.
+        maxOpenRangeLength: getPlatform().isStandalone ? STANDALONE_OPEN_RANGE_LENGTH : undefined
     });
 }
 

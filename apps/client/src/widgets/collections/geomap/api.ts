@@ -1,6 +1,6 @@
-import { AttributeRow } from "@triliumnext/commons";
+import { AttributeRow, type NoteType } from "@triliumnext/commons";
 
-import FNote, { type NoteType } from "../../../entities/fnote";
+import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";

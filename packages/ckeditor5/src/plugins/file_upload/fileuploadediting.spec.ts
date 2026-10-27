@@ -20,7 +20,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import ContentEmbed from "../content_embed/content_embed.js";
 import FileUploadEditing, {
     isHtmlIncluded,
@@ -606,17 +605,16 @@ describe("FileUploadEditing with embeds", () => {
     it("completes an embed placeholder with the attachment it uploaded", async () => {
         const loadEmbeddedAttachment = vi.fn();
         const focusContentEmbed = vi.fn();
-        installGlobMock({
-            getComponentByEl: () => ({
-                getEmbedBoxSize: () => "small",
-                loadEmbeddedAttachment,
-                focusContentEmbed
-            })
-        });
         const editor = await createTestEditor([
             Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema,
             ContentEmbed, FileUploadEditing
-        ]);
+        ], {
+            attachmentUpload: { getEmbedBoxSize: () => "small" },
+            contentEmbed: {
+                loadAttachment: loadEmbeddedAttachment,
+                focusAttachment: focusContentEmbed
+            }
+        });
         const controls = installUploadAdapter(editor);
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
@@ -637,16 +635,15 @@ describe("FileUploadEditing with embeds", () => {
 
     it("asks the host to focus the embed of a focus upload, before it renders", async () => {
         const calls: string[] = [];
-        installGlobMock({
-            getComponentByEl: () => ({
-                loadEmbeddedAttachment: (id: string) => calls.push(`load ${id}`),
-                focusContentEmbed: (id: string) => calls.push(`focus ${id}`)
-            })
-        });
         const editor = await createTestEditor([
             Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema,
             ContentEmbed, FileUploadEditing
-        ]);
+        ], {
+            contentEmbed: {
+                loadAttachment: (id: string) => calls.push(`load ${id}`),
+                focusAttachment: (id: string) => calls.push(`focus ${id}`)
+            }
+        });
         const controls = installUploadAdapter(editor);
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 

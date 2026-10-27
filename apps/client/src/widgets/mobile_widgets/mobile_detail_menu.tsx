@@ -8,14 +8,14 @@ import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import server from "../../services/server";
 import { useLanguageSwitcher } from "../dialogs/content_languages";
-import { NoteContextMenu } from "../layout/NoteActions";
+import { CommandItem, NoteContextMenu } from "../layout/NoteActions";
 import NoteActionsCustom from "../layout/NoteActionsCustom";
 import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
-import { getLocaleName, NoteInfoContent, SimilarNotesList } from "../layout/StatusBar";
+import { getLocaleName, NoteInfoContent, SimilarNotesList, useAttributeCount } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import type { DropdownHandle } from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
-import { useNoteContext, useNoteProperty } from "../react/hooks";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListItem } from "../react/FormList";
+import { useAttachments, useNoteContext, useNoteProperty } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
 import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
@@ -29,10 +29,10 @@ export default function MobileDetailMenu() {
     const isMainContext = noteContext?.isMainContext();
     const [ backlinksModalShown, setBacklinksModalShown ] = useState(false);
     const [ notePathsModalShown, setNotePathsModalShown ] = useState(false);
-    const [ noteInfoModalShown, setNoteInfoModalShown ] = useState(false);
     const [ similarNotesModalShown, setSimilarNotesModalShown ] = useState(false);
     const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
     const backlinksCount = useBacklinkCount(note, viewScope?.viewMode === "default");
+    const isInOptionsOrHelp = !!note && (note.noteId.startsWith("_options") || note.noteId.startsWith("_help"));
 
     function closePane() {
         // Wait first for the context menu to be dismissed, otherwise the backdrop stays on.
@@ -47,6 +47,21 @@ export default function MobileDetailMenu() {
                 <NoteContextMenu
                     dropdownRef={dropdownRef}
                     note={note} noteContext={noteContext}
+                    leadingViewActions={subContexts.length < 2 ? [ {
+                        title: t("mobile_detail_menu.create_new_split_short"),
+                        uiIcon: "bx bx-dock-right",
+                        handler: (_item: unknown, e: MouseEvent | KeyboardEvent) => {
+                            // We have to manually manage the hide because otherwise the old note context gets activated.
+                            e.stopPropagation();
+                            dropdownRef.current?.hide();
+                            parentComponent.triggerCommand("openNewNoteSplit", { ntxId });
+                        }
+                    } ] : []}
+                    trailingViewActions={[ {
+                        title: t("mobile_detail_menu.insert_child_note_short"),
+                        uiIcon: "bx bx-plus",
+                        handler: () => void (noteContext?.notePath && note_create.createNote(noteContext.notePath))
+                    } ]}
                     itemsAtStart={<>
                         <div className="form-list-row">
                             <div className="form-list-col">
@@ -63,42 +78,32 @@ export default function MobileDetailMenu() {
                                     disabled={(sortedNotePaths?.length ?? 0) <= 1}
                                 >{t("status_bar.note_paths", { count: sortedNotePaths?.length })}</FormListItem>
                             </div>
+                            <AttachmentsAndAttributes note={note} disabled={isInOptionsOrHelp} />
                         </div>
                         <FormDropdownDivider />
 
                         {noteContext && ntxId && <NoteActionsCustom note={note} noteContext={noteContext} ntxId={ntxId} />}
-                        <FormListItem
-                            onClick={() => noteContext?.notePath && note_create.createNote(noteContext.notePath)}
-                            icon="bx bx-plus"
-                        >{t("mobile_detail_menu.insert_child_note")}</FormListItem>
-                        {subContexts.length < 2 && <>
-                            <FormDropdownDivider />
-                            <FormListItem
-                                onClick={(e) => {
-                                    // We have to manually manage the hide because otherwise the old note context gets activated.
-                                    e.stopPropagation();
-                                    dropdownRef.current?.hide();
-                                    parentComponent.triggerCommand("openNewNoteSplit", { ntxId });
-                                }}
-                                icon="bx bx-dock-right"
-                            >{t("create_pane_button.create_new_split")}</FormListItem>
-                        </>}
                         {!isMainContext && <>
+                            <FormListItem icon="bx bx-x" onClick={closePane}>{t("close_pane_button.close_this_pane")}</FormListItem>
                             <FormDropdownDivider />
-                            <FormListItem
-                                icon="bx bx-x"
-                                onClick={closePane}
-                            >{t("close_pane_button.close_this_pane")}</FormListItem>
                         </>}
-                        <FormDropdownDivider />
                     </>}
-                    itemsNearNoteSettings={<>
+                    noteSettingsItems={<>
                         {note.type === "text" && <ContentLanguageSelector note={note} />}
                         {note.type === "code" && <CodeLanguageSelector note={note} />}
-                        <FormListItem icon="bx bx-info-circle" onClick={() => setNoteInfoModalShown(true)}>{t("note_info_widget.title")}</FormListItem>
-                        <FormListItem icon="bx bx-bar-chart" onClick={() => setSimilarNotesModalShown(true)}>{t("similar_notes.title")}</FormListItem>
-                        <FormDropdownDivider />
                     </>}
+                    itemsNearNoteSettings={
+                        <FormDropdownSubmenu icon="bx bx-info-circle" title={t("note_info_widget.title")}>
+                            <FormListCustomItem>
+                                {/* Calculating the size or selecting a value keeps the menu open; the
+                                    similar notes link closes it through `dropdownRef`. */}
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <NoteInfoContent note={note} noteType={note.type} dropdownRef={dropdownRef}
+                                        setSimilarNotesShown={setSimilarNotesModalShown} />
+                                </div>
+                            </FormListCustomItem>
+                        </FormDropdownSubmenu>
+                    }
                 />
             ) : (
                 <ActionButton
@@ -112,11 +117,30 @@ export default function MobileDetailMenu() {
                 <>
                     <BacklinksModal note={note} modalShown={backlinksModalShown} setModalShown={setBacklinksModalShown} />
                     <NotePathsModal note={note} modalShown={notePathsModalShown} notePath={noteContext?.notePath} sortedNotePaths={sortedNotePaths} setModalShown={setNotePathsModalShown} />
-                    <NoteInfoModal note={note}  modalShown={noteInfoModalShown} setModalShown={setNoteInfoModalShown} />
                     <SimilarNotesModal note={note} modalShown={similarNotesModalShown} setModalShown={setSimilarNotesModalShown} />
                 </>
             ), document.body)}
         </div>
+    );
+}
+
+/** The cells that open the attachments and the attributes, counted as in the status bar. */
+function AttachmentsAndAttributes({ note, disabled }: { note: FNote, disabled: boolean }) {
+    const attachmentCount = useAttachments(note).length;
+    const attributeCount = useAttributeCount(note);
+
+    return (
+        <>
+            <div className="form-list-col">
+                <CommandItem command="showAttachments" icon="bx bx-paperclip" disabled={disabled}
+                    text={t("status_bar.attachments", { count: attachmentCount })} />
+            </div>
+            <div className="form-list-col">
+                <CommandItem command="showNoteAttributes" icon="bx bx-list-check"
+                    disabled={disabled || note.isContentWritable === false}
+                    text={t("status_bar.attributes", { count: attributeCount })} />
+            </div>
+        </>
     );
 }
 
@@ -195,20 +219,6 @@ function NotePathsModal({ note, modalShown, notePath, sortedNotePaths, setModalS
                     currentNotePath={notePath}
                 />
             )}
-        </Modal>
-    );
-}
-
-function NoteInfoModal({ note, modalShown, setModalShown }: { note: FNote | null | undefined } & WithModal) {
-    return (
-        <Modal
-            className="note-info-modal"
-            size="md"
-            title={t("note_info_widget.title")}
-            show={modalShown}
-            onHidden={() => setModalShown(false)}
-        >
-            {note && <NoteInfoContent note={note} noteType={note.type} />}
         </Modal>
     );
 }

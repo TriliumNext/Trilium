@@ -1,6 +1,8 @@
 import "./index.css";
 
 import type { Map as MapLibreGLMap } from "maplibre-gl";
+import { createPortal } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -13,6 +15,7 @@ import toast from "../../../services/toast";
 import { fileAccept } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
+import { FormListItem } from "../../react/FormList";
 import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";
@@ -29,7 +32,7 @@ import ImageRulers from "./ImageRulers";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
 import type { GeoSearchResult } from "./geocoding";
 import Map, { type CameraLimits, DEFAULT_ZOOM, GeoMouseEvent } from "./map";
-import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
+import { DEFAULT_MAP_LAYER_NAME, isTileUrl, MAP_LAYERS, MapLayer } from "./map_layer";
 import MapToolbar from "./MapToolbar";
 import Markers, { DEFAULT_MARKER_COLOR, FitToNotes } from "./Markers";
 import PlaceMarker from "./PlaceMarker";
@@ -133,6 +136,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenN
     const image = imageMap.status === "image" ? imageMap : undefined;
     const space = image?.space ?? geoSpace;
     const isGeo = space.kind === "geo";
+    const [ isEditingProperties, setIsEditingProperties ] = useState(false);
+
+    // The note actions menu offers the properties dialog, which lives here rather than in the menu.
+    useTriliumEvent("showCollectionProperties", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId && !isReadOnly) {
+            setIsEditingProperties(true);
+        }
+    });
     const viewKey = isGeo ? "view" : "imageView";
     const savedView = viewConfig?.[viewKey];
     const layerData = useLayerData(note, image);
@@ -425,7 +436,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenN
             {/* Nothing of its own at the end: locking is the read-only badge's, and adding a note
                 lives on the map itself (see EditToolbar), where it survives the map going
                 fullscreen without this bar. */}
-            <CollectionProperties note={note} />
+            <CollectionProperties
+                note={note}
+                optionsChildren={!isReadOnly && (
+                    <FormListItem icon="bx bx-cog" onClick={() => setIsEditingProperties(true)}>
+                        {t("geo-map.properties")}
+                    </FormListItem>
+                )}
+            />
             {imageMap.status === "error" && <NoItems
                 icon="bx bx-image-alt"
                 text={t(imageMap.reason === "svg" ? "geo-map.image-svg-unsupported" : "geo-map.image-unavailable")}
@@ -515,9 +533,24 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenN
                 <ShapeNames />
                 <FitToNotes notes={notes} enabled={!savedView} bounds={image?.space.bounds} />
             </Map></MapSpaceContext.Provider>}
+            {isEditingProperties && createPortal(
+                <Suspense fallback={null}>
+                    <GeoMapProperties
+                        note={note}
+                        image={imageMap.status === "image"
+                            ? { status: "image", size: imageMap.space.size }
+                            : imageMap}
+                        onClose={() => setIsEditingProperties(false)}
+                    />
+                </Suspense>,
+                document.body
+            )}
         </div>
     );
 }
+
+/** Loaded when the properties dialog is first opened. */
+const GeoMapProperties = lazy(() => import("./GeoMapProperties"));
 
 /**
  * Rounds a coordinate to six decimals, the precision a place is named and stored at (see
@@ -669,7 +702,7 @@ function useLayerData(note: FNote, image: { url: string; space: ImageSpace } | u
         }
 
         // Custom layers.
-        if (layerName?.startsWith("http")) {
+        if (isTileUrl(layerName)) {
             return {
                 name: "Custom",
                 type: "raster",

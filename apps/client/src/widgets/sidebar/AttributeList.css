@@ -3,6 +3,14 @@
     flex-direction: column;
 }
 
+/* The card takes the focus when it is pressed, which is how the copy and paste keys reach the panel
+   (see AttributeList.tsx) — a way in rather than a place to arrive at, so it is not drawn as focused:
+   the rows picked out are what says where those keys will land. */
+.attribute-list-panel:focus,
+.attribute-list-panel:focus-visible {
+    outline: none;
+}
+
 .attribute-list-panel ul.attribute-rows {
     margin: 0;
     padding-inline-start: 0;
@@ -22,12 +30,31 @@
        value are cut off instead, and the popup the row opens has them in full. */
     white-space: nowrap;
     overflow: hidden;
+    /* A row is pressed rather than read from, and a press that draws a range would otherwise take
+       the text between the two rows along with them. The popup has the attribute in full to copy
+       from, and the attributes editor is the surface its text is read off. */
+    user-select: none;
 }
 
 .attribute-list-panel .attribute-row:hover,
 .attribute-list-panel .attribute-row.active,
 .attribute-list-panel .attribute-row.editing {
     background-color: var(--hover-item-background-color);
+}
+
+.attribute-list-panel .attribute-row.selected,
+.attribute-list-panel .attribute-row.selected:hover {
+    background-color: var(--selection-background-color);
+}
+
+.attribute-list-panel .attribute-row.selected:has(+ .attribute-row.selected) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+}
+
+.attribute-list-panel .attribute-row.selected + .attribute-row.selected {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
 }
 
 /* While its value is edited (or the attribute created), the row lets the editor standing over it
@@ -37,6 +64,124 @@
     overflow: visible;
     z-index: 10;
 }
+
+/*
+ * The checkbox a row is picked out by, standing in the slot the kind icon holds rather than in a
+ * column of its own: the pane is narrow, and a column would take from the names what it took for
+ * itself. Only the row being pointed at shows one — until rows are being picked out, when every row
+ * shows its own, the way a list of mail turns over once one of it is picked.
+ */
+.attribute-list-panel .attribute-kind-check {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.attribute-list-panel.selecting .attribute-kind-check {
+    display: flex;
+}
+
+.attribute-list-panel .attribute-kind-check .tn-checkbox {
+    --box-size: 13px;
+    --box-label-gap: 0px;
+
+    display: block;
+    width: var(--box-size);
+    height: var(--box-size);
+    margin: 0;
+    cursor: pointer;
+}
+
+/* The kind icon and its badge give way to the checkbox, hidden rather than removed so the slot keeps
+   its width. */
+.attribute-list-panel.selecting .attribute-kind:has(.attribute-kind-check) > .tn-icon {
+    visibility: hidden;
+}
+
+.attribute-list-panel.selecting .attribute-kind:has(.attribute-kind-check)::after {
+    display: none;
+}
+
+/* A touch screen keeps `:hover` on the last row tapped. */
+@media (hover: hover) {
+    .attribute-list-panel .attribute-row:hover .attribute-kind-check {
+        display: flex;
+    }
+
+    .attribute-list-panel .attribute-row:hover .attribute-kind:has(.attribute-kind-check) > .tn-icon {
+        visibility: hidden;
+    }
+
+    .attribute-list-panel .attribute-row:hover .attribute-kind:has(.attribute-kind-check)::after {
+        display: none;
+    }
+}
+
+/* A fixed height, so that a selection starting or ending does not move the cards below. Sticky so that
+   it stays in view on a phone, where the whole sheet scrolls. */
+.attribute-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 34px;
+    padding-inline: 4px;
+    border-bottom: 1px solid var(--main-border-color);
+    background-color: var(--main-background-color);
+    --icon-button-size: 26px;
+
+    .form-checkbox {
+        padding-inline-start: 4px;
+
+        label {
+            margin: 0;
+            color: var(--muted-text-color);
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+    }
+
+    .attribute-toolbar-read-only {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-inline: 4px;
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+
+    .attribute-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-inline-start: auto;
+    }
+}
+
+/* The toolbar continues the pane's header, so the header's rule moves below the toolbar. */
+#right-pane:has(> .right-pane-tab-body:not(.hidden-ext) > .attribute-toolbar) > .right-pane-header {
+    border-bottom: 0;
+}
+
+/* The card titles are uppercase and letter-spaced; the count is not. */
+.attribute-run-count {
+    margin-inline-start: 6px;
+    padding: 0.1em 0.5em;
+    border-radius: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.7rem;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+}
+
 
 /* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
    what carries the split, the rule only marks where it falls. */
@@ -68,10 +213,10 @@
 
 /* Set against the row's trailing edge rather than trailing the name, so the values line up in a
    column of their own: name reads from the one edge, value from the other, and the gap between them
-   says how much room is left rather than being dead space after every short value. Where the card
-   asks for it — the two lists of plain attributes, owned and inherited (see AttributeList.tsx);
-   the definitions' summaries keep prose order. */
-.attribute-list-panel.align-values-end .attribute-value {
+   says how much room is left rather than being dead space after every short value. Where the run of
+   rows asks for it — the two runs of plain attributes, the note's own and the inherited ones (see
+   AttributeList.tsx); the definitions' summaries keep prose order. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value {
     text-align: end;
 }
 
@@ -81,9 +226,15 @@
 }
 
 /* A label's value is edited in place, so the preview itself is a click target of its own: a text
-   cursor over it says as much, where the row around it — which opens the popup — points. */
-.attribute-list-panel .attribute-value.editable {
+   cursor over it says as much, where the row around it — which opens the popup — points. Not while
+   rows are being picked out: the whole row picks then, its value and its links along with it, so
+   nothing on it should offer what it will not do. */
+.attribute-list-panel:not(.selecting) .attribute-value.editable {
     cursor: text;
+}
+
+.attribute-list-panel.selecting .attribute-row :is(a, .attribute-value) {
+    cursor: pointer;
 }
 
 /* A flag's press toggles rather than types (see startValueEdit), and the pointer says so. */
@@ -127,8 +278,8 @@
     width: fit-content;
 }
 
-/* Being a box rather than text, the chip follows the card's alignment by margin instead. */
-.attribute-list-panel.align-values-end .attribute-value > .label-color-chip {
+/* Being a box rather than text, the chip follows the run's alignment by margin instead. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value > .label-color-chip {
     margin-inline-start: auto;
 }
 
@@ -183,8 +334,9 @@
 }
 
 /* Not while editing: the actions — later in the DOM — would paint over the very overlay that
-   replaces them. */
-.attribute-list-panel .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
+   replaces them. Nor while rows are being picked out: a row's own actions are about the one row,
+   which is not what is being done then, and the toolbar carries what is. */
+.attribute-list-panel:not(.selecting) .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
     display: flex;
 }
 

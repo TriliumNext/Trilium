@@ -42,11 +42,11 @@ describe("consumeBookmark", () => {
                 `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel"><p><a id="in-tab"></a>target</p></div></section>` +
             `</div>`
         );
-        applyTabs(container, { placeholder: "" });
+        applyTabs(container, { placeholder: "", scrollLabels: { start: "", end: "" } });
 
         consumeBookmark(container, { bookmark: "in-tab" });
 
-        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
+        expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
     });
 
     it("leaves the bookmark unconsumed when the content container is not rendered yet", () => {

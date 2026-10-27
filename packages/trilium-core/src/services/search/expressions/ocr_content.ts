@@ -25,7 +25,7 @@ export default class OCRContentExpression extends Expression {
 
     execute(inputNoteSet: NoteSet, executionContext: object, searchContext: SearchContext): NoteSet {
         const resultNoteSet = new NoteSet();
-        const matchingNoteIds = this.findNoteIdsWithMatchingOCR();
+        const matchingNoteIds = this.findNoteIdsWithMatchingOCR(inputNoteSet);
 
         for (const noteId of matchingNoteIds) {
             const note = becca.notes[noteId];
@@ -45,24 +45,24 @@ export default class OCRContentExpression extends Expression {
     }
 
     /**
-     * Find all noteIds that have OCR text matching all tokens.
+     * Find the noteIds of `inputNoteSet` that have OCR text matching all tokens.
      * Checks both the note's own blob and its attachment blobs.
      */
-    private findNoteIdsWithMatchingOCR(): Set<string> {
+    private findNoteIdsWithMatchingOCR(inputNoteSet: NoteSet): Set<string> {
         if (this.tokens.length === 0) return new Set();
 
         const matchingNoteIds = new Set<string>();
 
-        this.collectUnprotectedMatches(matchingNoteIds);
-        this.collectProtectedMatches(matchingNoteIds);
+        this.collectUnprotectedMatches(inputNoteSet, matchingNoteIds);
+        this.collectProtectedMatches(inputNoteSet, matchingNoteIds);
 
         return matchingNoteIds;
     }
 
     /** The stored text is the readable text, so all tokens must appear in it. */
-    private collectUnprotectedMatches(matchingNoteIds: Set<string>) {
+    private collectUnprotectedMatches(inputNoteSet: NoteSet, matchingNoteIds: Set<string>) {
         const likeConditions = this.tokens.map(() => `b.textRepresentation LIKE ?`).join(' AND ');
-        const params = this.tokens.map(token => `%${token}%`);
+        const params = [ ...this.tokens.map(token => `%${token}%`), inputNoteSet.toSqlParam() ];
         const sql = getSql();
 
         // Notes whose own blob matches.
@@ -74,6 +74,7 @@ export default class OCRContentExpression extends Expression {
               AND n.isDeleted = 0
               AND n.isProtected = 0
               AND ${likeConditions}
+              AND n.noteId IN (SELECT value FROM json_each(?))
         `, params);
 
         // Notes that own an attachment whose blob matches.
@@ -85,6 +86,7 @@ export default class OCRContentExpression extends Expression {
               AND a.isDeleted = 0
               AND a.isProtected = 0
               AND ${likeConditions}
+              AND a.ownerId IN (SELECT value FROM json_each(?))
         `, params);
 
         for (const noteId of [...noteIds, ...attachmentOwnerIds]) {
@@ -99,7 +101,7 @@ export default class OCRContentExpression extends Expression {
      * rather than the file itself, so this stays far smaller than the note-content search that
      * already works this way.
      */
-    private collectProtectedMatches(matchingNoteIds: Set<string>) {
+    private collectProtectedMatches(inputNoteSet: NoteSet, matchingNoteIds: Set<string>) {
         if (!protectedSessionService.isProtectedSessionAvailable()) {
             return;
         }
@@ -112,18 +114,21 @@ export default class OCRContentExpression extends Expression {
                 JOIN blobs b ON n.blobId = b.blobId
                 WHERE b.textRepresentation IS NOT NULL
                   AND n.isDeleted = 0
-                  AND n.isProtected = 1`,
+                  AND n.isProtected = 1
+                  AND n.noteId IN (SELECT value FROM json_each(?))`,
             /*sql*/`
                 SELECT a.ownerId AS noteId, b.textRepresentation AS textRepresentation
                 FROM attachments a
                 JOIN blobs b ON a.blobId = b.blobId
                 WHERE b.textRepresentation IS NOT NULL
                   AND a.isDeleted = 0
-                  AND a.isProtected = 1`
+                  AND a.isProtected = 1
+                  AND a.ownerId IN (SELECT value FROM json_each(?))`
         ];
+        const params = [ inputNoteSet.toSqlParam() ];
 
         for (const query of queries) {
-            for (const row of sql.iterateRows<{ noteId: string; textRepresentation: string }>(query)) {
+            for (const row of sql.iterateRows<{ noteId: string; textRepresentation: string }>(query, params)) {
                 if (matchingNoteIds.has(row.noteId)) {
                     continue;
                 }

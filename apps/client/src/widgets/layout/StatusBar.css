@@ -1,3 +1,7 @@
+:where(:root) {
+    --status-bar-cursor-position-color: var(--muted-text-color);
+}
+
 .status-bar {
     contain: none;
 
@@ -45,6 +49,20 @@
             .status-bar-dropdown-button {
                 &:after {
                     content: unset;
+                }
+            }
+
+            .cursor-position {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 0 0.5em;
+                color: var(--status-bar-cursor-position-color);
+                white-space: nowrap;
+
+                .value {
+                    font-weight: 600;
+                    font-variant-numeric: tabular-nums;
                 }
             }
         }

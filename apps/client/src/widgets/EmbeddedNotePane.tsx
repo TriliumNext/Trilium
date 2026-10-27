@@ -403,8 +403,7 @@ function EmbeddedNotePanel({ note, panelClassName, bodyClassName, closeText, max
     const paneRef = useRef<HTMLDivElement>(null);
     // Applies the note's color class, so the panel does not inherit the color of the host's split.
     const colorClass = useNoteColorClass(note);
-    // The text editor resolves its host component from the DOM. Without this, it resolves the widget
-    // that contains the host view, which does not implement calls such as `loadReferenceLinkTitle`.
+    // `appContext.getComponentByEl()` otherwise resolves the widget that contains the host view.
     useLegacyComponentElement(paneRef);
     useFollowLinksWithin(paneRef, onFollowLink);
     const maximized = !!maximize?.maximized;

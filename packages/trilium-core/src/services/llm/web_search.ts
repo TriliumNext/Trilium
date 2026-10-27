@@ -31,14 +31,19 @@ export interface WebSearchSource {
 
 const MAX_RESULTS = 8;
 const SEARCH_TIMEOUT_MS = 30_000;
+/** The longest query DeepSeek's Search API accepts. */
+const DEEPSEEK_MAX_QUERY_CHARS = 128;
 
 /**
  * The `web_search` tool for `setup`. Its result has the `sources` the chat lists under the tool's
  * line and the `searchProvider` whose mark the line shows, and a failure is returned as
  * `{ error, instruction }`: the chat shows `error` on the tool's line, and `instruction` directs the
  * model to `read_web_page` and, for a {@link SearchSetupError}, to tell the user about it.
+ *
+ * With `builtIn`, the tool is a model provider's own search, whose result has no `searchProvider`,
+ * so the chat shows the magnifier on its line.
  */
-export function createWebSearchTool(setup: WebSearchSetup) {
+export function createWebSearchTool(setup: WebSearchSetup, { builtIn = false } = {}) {
     return tool({
         description: "Search the web for current information. Returns the title, URL and a short excerpt of each matching page. "
             + "The excerpts rarely hold specific facts such as numbers, dates or versions, so before answering a factual "
@@ -50,7 +55,7 @@ export function createWebSearchTool(setup: WebSearchSetup) {
             try {
                 return {
                     query,
-                    searchProvider: { type: setup.provider, name: setup.name ?? setup.provider },
+                    ...(!builtIn && { searchProvider: { type: setup.provider, name: setup.name ?? setup.provider } }),
                     sources: await searchWeb(setup, query, options.abortSignal)
                 };
             } catch (e) {
@@ -120,6 +125,14 @@ export async function searchWeb(setup: WebSearchSetup, query: string, signal?: A
                 body: JSON.stringify({ query, max_results: MAX_RESULTS })
             }, signal) as { results?: unknown[] };
             return toSources(payload.results, "snippet");
+        }
+        case "deepseek": {
+            const payload = await requestJson(`${setup.baseURL ?? "https://api.deepseek.com/v1"}/tools/search`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${setup.apiKey}` },
+                body: JSON.stringify({ query: query.slice(0, DEEPSEEK_MAX_QUERY_CHARS), count: MAX_RESULTS })
+            }, signal, describeDeepSeekFailure) as { results?: unknown[] };
+            return toSources(payload.results, "summary");
         }
         case "searxng": {
             if (!setup.baseURL) {
@@ -279,6 +292,20 @@ function describeSearxngFailure(status: number, hasApiKey: boolean): string | un
     }
     if (status === 429) {
         return "The SearXNG instance's limiter blocked the request (HTTP 429); turn off `server.limiter` in its settings.yml, or add Trilium's address to the limiter's `pass_ip` list.";
+    }
+    return undefined;
+}
+
+/**
+ * The cause of a DeepSeek error status: 402 for an account without balance, and 404 from an
+ * endpoint without the Search API, such as a gateway set as the provider's base URL.
+ */
+function describeDeepSeekFailure(status: number): string | undefined {
+    if (status === 402) {
+        return "The DeepSeek account has no balance left (HTTP 402); top it up on the DeepSeek platform.";
+    }
+    if (status === 404) {
+        return "The DeepSeek provider's endpoint has no Search API (HTTP 404). Search needs DeepSeek's own endpoint, https://api.deepseek.com, or a search provider chosen in the chat's Tools menu.";
     }
     return undefined;
 }

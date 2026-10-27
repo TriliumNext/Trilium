@@ -12,7 +12,7 @@ import Component from "./component.js";
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {
         const noteContext = appContext.tabManager.getActiveContext();
-        if (noteContext?.viewScope) {
+        if (noteContext?.viewScope && noteContext.note?.isContentWritable !== false) {
             noteContext.viewScope.readOnlyTemporarilyDisabled = true;
             appContext.triggerEvent("readOnlyTemporarilyDisabled", { noteContext });
         }

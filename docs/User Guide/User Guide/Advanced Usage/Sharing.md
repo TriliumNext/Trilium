@@ -34,13 +34,13 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
     <tbody>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Text.md">Text</a></th>
-            <td><ul><li>Table of contents.</li><li>A link next to each heading, shown while the pointer is over the heading. Clicking it shows the address of the section in the address bar of the browser and copies it, to share a link to the section.</li><li>Syntax highlight of code blocks, in the language selected for each block and in the colors of the VS Code light or dark theme, following the page's mode. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li><li>Drawing canvases, shown as pictures at their own size.</li><li>Mermaid diagrams in code blocks, drawn in the page's light or dark mode and redrawn when the visitor switches it.</li></ul></td>
+            <td><ul><li>Table of contents, keeping the inline formatting of the headings, such as code or bold text.</li><li>A link next to each heading, shown while the pointer is over the heading. Clicking it shows the address of the section in the address bar of the browser and copies it, to share a link to the section.</li><li>Syntax highlight of code blocks, in the language selected for each block and in the colors of the VS Code light or dark theme, following the page's mode. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>A button in the top right corner of each code block, shown while the pointer is over the block, that copies its code. Pages opened over plain HTTP do not have it, since browsers allow copying to the clipboard only on secure (HTTPS) pages.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li><li>Drawing canvases, shown as pictures at their own size.</li><li>Mermaid diagrams in code blocks, drawn in the page's light or dark mode and redrawn when the visitor switches it.</li></ul></td>
             <td>&nbsp;</td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Code.md">Code</a></th>
-            <td><ul><li>Basic support (displaying the contents of the note in a monospace font).</li></ul></td>
-            <td><ul><li>No syntax highlight.</li></ul></td>
+            <td><ul><li>Syntax highlight, in the language of the note and in the colors of the VS Code light or dark theme, following the page's mode. A language not enabled in&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>&nbsp;→ <em>Code Notes</em> is not highlighted. The lines are numbered unless <em>Line numbers</em> is turned off in the same section.</li></ul></td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a></th>
@@ -102,7 +102,6 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 
 While the sharing feature is powerful, it has some limitations:
 
-*   **Code Notes**: No syntax highlighting.
 *   **Static Note Tree**
 *   **Protected Notes**: Cannot be shared.
 *   **Include Notes**: Not supported.
@@ -132,7 +131,7 @@ The tab bar keeps the notes a visitor opened during their browser session, so th
 
 ## Viewing and managing shared notes
 
-You can view a list of all shared notes by clicking on "Show Shared Notes Subtree" in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. This allows you to manage and navigate through all the notes you have made public.
+You can view a list of all shared notes by clicking on _Advanced_ → _Shared notes_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. This allows you to manage and navigate through all the notes you have made public.
 
 ## Letting guests edit
 

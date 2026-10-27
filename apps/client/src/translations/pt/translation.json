@@ -43,8 +43,6 @@
     "help_on_links": "Ajuda sobre ligações",
     "note": "Nota",
     "search_note": "pesquisar nota pelo nome",
-    "link_title_mirrors": "o título da ligação reflete o título atual da nota",
-    "link_title_arbitrary": "o título da ligação pode ser alterado livremente",
     "link_title": "Titulo da ligação",
     "button_add_link": "Adicionar ligação"
   },
@@ -60,11 +58,11 @@
   },
   "bulk_actions": {
     "bulk_actions": "Ações em massa",
-    "affected_notes": "Notas Afetadas",
     "include_descendants": "Incluir notas filhas das notas selecionadas",
-    "available_actions": "Ações disponíveis",
     "chosen_actions": "Ações selecionadas",
-    "execute_bulk_actions": "Executar ações em massa",
+    "execute_bulk_actions_one": "Executar ações em massa",
+    "execute_bulk_actions_many": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "As ações em massa foram concluídas com sucesso.",
     "none_yet": "Nenhuma até agora... adicione uma ação a clicar numa das disponíveis acima.",
     "labels": "Etiquetas",
@@ -195,11 +193,6 @@
   "include_note": {
     "dialog_title": "Incluir nota",
     "label_note": "Nota",
-    "placeholder_search": "pesquisar nota pelo nome",
-    "box_size_prompt": "Dimensão da caixa da nota incluída:",
-    "box_size_small": "pequeno (~ 10 linhas)",
-    "box_size_medium": "médio (~ 30 linhas)",
-    "box_size_full": "completo (a caixa exibe o texto completo)",
     "button_include": "Incluir nota"
   },
   "info": {
@@ -227,10 +220,7 @@
     "move_success_message": "As notas selecionadas foram movidas para "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Alterar onde criar a nova nota:",
-    "search_placeholder": "pesquisar caminho pelo nome (valor predefinido se não for preenchido)",
     "modal_title": "Escolher tipo de nota",
-    "modal_body": "Escolha o tipo/modelo da nova nota:",
     "templates": "Modelos"
   },
   "password_not_set": {
@@ -413,21 +403,13 @@
     "remove_this_search_action": "Remover esta ação de pesquisa"
   },
   "execute_script": {
-    "execute_script": "Executar script",
-    "help_text": "Pode executar scripts simples nas notas correspondentes.",
-    "example_1": "Por exemplo para anexar uma cadeia ao título de uma nota, use este pequeno script:",
-    "example_2": "Um exemplo mais complexo seria apagar todos os atributos das notas correspondentes:"
+    "execute_script": "Executar script"
   },
   "add_label": {
     "add_label": "Adicionar etiqueta",
     "label_name_placeholder": "nome da etiqueta",
     "label_name_title": "Caracteres alfanuméricos, underscore e vírgula são permitidos.",
-    "to_value": "para o valor",
-    "new_value_placeholder": "novo valor",
-    "help_text": "Em todas as notas correspondentes:",
-    "help_text_item1": "criar a etiqueta indicada se a nota ainda não tiver uma",
-    "help_text_item2": "ou altere o valor da etiqueta existente",
-    "help_text_note": "Também pode chamar este método sem valor, neste caso a etiqueta será atribuída à nota sem valor."
+    "new_value_placeholder": "novo valor"
   },
   "delete_label": {
     "delete_label": "Apagar etiqueta",
@@ -436,9 +418,7 @@
   },
   "rename_label": {
     "rename_label": "Renomear etiqueta",
-    "rename_label_from": "Renomear etiqueta de",
     "old_name_placeholder": "nome antigo",
-    "to": "Para",
     "new_name_placeholder": "novo nome",
     "name_title": "Caracteres alfanuméricos, underscore e vírgula são permitidos."
   },
@@ -446,49 +426,26 @@
     "update_label_value": "Atualizar valor da etiqueta",
     "label_name_placeholder": "nome da etiqueta",
     "label_name_title": "Caracteres alfanuméricos, underscore e vírgula são permitidos.",
-    "to_value": "para o valor",
-    "new_value_placeholder": "novo valor",
-    "help_text": "Em todas as notas correspondentes, altera o valor da etiqueta existente.",
-    "help_text_note": "Também pode chamar este método sem um valor, neste caso a etiqueta será à nota sem um valor."
+    "new_value_placeholder": "novo valor"
   },
   "delete_note": {
-    "delete_note": "Apagar nota",
-    "delete_matched_notes": "Apagar notas correspondentes",
-    "delete_matched_notes_description": "Isto irá apagar as notas correspondentes.",
-    "undelete_notes_instruction": "Depois de apagar, é possível desapagá-las através da janela de Alterações Recentes.",
-    "erase_notes_instruction": "Para apagar notas permanentemente, pode fazê-lo depois de apagar em Opções -> Outros e clicar no botão \"Apagar notas apagadas agora\"."
+    "delete_note": "Apagar nota"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Apagar revisões da nota",
-    "all_past_note_revisions": "Todas as revisões anteriores das notas correspondentes serão apagadas. A nota em si será perservada. Ou seja, o histórico da nota será removido."
+    "delete_note_revisions": "Apagar revisões da nota"
   },
   "move_note": {
     "move_note": "Mover nota",
-    "to": "para",
-    "target_parent_note": "nota pai destino",
-    "on_all_matched_notes": "Em todas as notas correspondentes",
-    "move_note_new_parent": "move a nota para o novo pai se a nota tem apenas um pai (ou seja, a antiga ramificação é removida e uma nova ramificação é criada para o novo pai)",
-    "clone_note_new_parent": "clona a nota para o novo pai se a nota tem vários clones / ramificações (não é claro qual ramificação deve ser removida)",
-    "nothing_will_happen": "nada acontecerá se a nota não puder ser movida para a nota de destino (por exemplo, criaria um ciclo de árvore)"
+    "target_parent_note": "nota pai destino"
   },
   "rename_note": {
-    "rename_note": "Renomear nota",
-    "rename_note_title_to": "Renomear título da nota para",
-    "new_note_title": "novo título da nota",
-    "click_help_icon": "Clique no ícone de ajuda a direita para ver todas as opções",
-    "evaluated_as_js_string": "O valor digitado é avaliado como cadeia JavaScript e, portanto, pode ser enriquecido com conteúdo dinâmico através da variável injetada <code>note</code> (nota a ser renomeada). Exemplos:",
-    "example_note": "<code>Nota</code> - todas as notas correspondentes serão renomeadas para 'Nota'",
-    "example_new_title": "<code>NOVO: ${note.title}</code> - o título das notas correspondentes receberá o prefixo 'NOVO: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - notas correspondentes receberão um prefixo com o mês-dia da data de criação da nota",
-    "api_docs": "Veja da documentação da API para <a href='https://zadam.github.io/trilium/backend_api/Note.html'>nota</a> e as suas <a href='https://day.js.org/docs/en/display/format'>propriedades dateCreatedObj / utcDateCreatedObj</a> para pormenores."
+    "rename_note": "Renomear nota"
   },
   "add_relation": {
     "add_relation": "Adicionar relação",
     "relation_name": "nome da relação",
     "allowed_characters": "Caracteres alfanuméricos, underscore e vírgula são permitidos.",
-    "to": "para",
-    "target_note": "nota destino",
-    "create_relation_on_all_matched_notes": "Crie a relação informada em todas as notas correspondentes."
+    "target_note": "nota destino"
   },
   "delete_relation": {
     "delete_relation": "Apagar relação",
@@ -497,20 +454,14 @@
   },
   "rename_relation": {
     "rename_relation": "Renomar relação",
-    "rename_relation_from": "Renomear relação de",
     "old_name": "nome antigo",
-    "to": "Para",
     "new_name": "novo nome",
     "allowed_characters": "Caracteres alfanuméricos, underscore e vírgula são permitidos."
   },
   "update_relation_target": {
-    "update_relation": "Atualizar relação",
     "relation_name": "nome da relação",
     "allowed_characters": "Caracteres alfanuméricos, underscore e vírgula são permitidos.",
-    "to": "para",
     "target_note": "nota destino",
-    "on_all_matched_notes": "Em todas as notas correspondentes",
-    "change_target_note": "alterar nota destino da relação existente",
     "update_relation_target": "Atualizar destino da relação"
   },
   "attachments_actions": {
@@ -616,7 +567,6 @@
     "in_progress": "Sincronização com o servidor em andamento."
   },
   "left_pane_toggle": {
-    "show_panel": "Exibir painel",
     "hide_panel": "Esconder painel"
   },
   "move_pane_button": {
@@ -635,7 +585,6 @@
     "import_files": "Importar ficheiros",
     "export_note": "Exportar nota",
     "delete_note": "Apagar nota",
-    "print_note": "Imprimir nota",
     "save_revision": "Gravar revisão",
     "convert_into_attachment_failed": "A conversão da nota '{{title}}' falhou.",
     "convert_into_attachment_successful": "A nota '{{title}}' foi convertida para anexo.",
@@ -673,7 +622,6 @@
     "create_child_note_title": "Criar nota filha e adicione neste mapa de relação"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Inserir nota filha",
     "delete_this_note": "Apagar esta nota",
     "error_cannot_get_branch_id": "Não foi possível obter o branchId para o notePath '{{notePath}} '",
     "error_unrecognized_command": "Comando não reconhecido {{command}}",
@@ -780,18 +728,8 @@
   },
   "search_definition": {
     "add_search_option": "Adicionar opção de pesquisa:",
-    "search_string": "pesquisar cadeia",
-    "search_script": "pesquisa de script",
-    "ancestor": "ancestral",
-    "fast_search": "pesquisa rápida",
-    "fast_search_description": "A opção de pesquisa rápida desativa a pesquisa de texto completo do conteúdo de nota, o que pode acelerar a pesquisa em grandes bases de dados.",
-    "include_archived": "incluir arquivados",
     "include_archived_notes_description": "As notas arquivadas são por padrão excluídas dos resultados da pesquisa, com esta opção elas serão incluídas.",
-    "order_by": "ordenar por",
-    "limit": "limite",
     "limit_description": "Limitar quantidade de resultados",
-    "debug": "depurar",
-    "debug_description": "A depuração irá imprimir informações adicionais no console para ajudar na depuração de consultas complexas",
     "action": "ação",
     "search_button": "Pesquisar",
     "search_execute": "Pesquisar & Executar ações",
@@ -833,8 +771,7 @@
     "include_archived_notes": "Incluir notas arquivadas"
   },
   "limit": {
-    "limit": "Limite",
-    "take_first_x_results": "Escolher apenas os X primeiros resultados."
+    "limit": "Limite"
   },
   "order_by": {
     "order_by": "Ordenar por",
@@ -1396,7 +1333,6 @@
     "hide-archived-notes": "Ocultar notas arquivadas",
     "automatically-collapse-notes": "Recolher notas automaticamente",
     "automatically-collapse-notes-title": "As notas serão recolhidas após um tempo de inatividade para simplificar a árvore.",
-    "save-changes": "Gravar e aplicar alterações",
     "auto-collapsing-notes-after-inactivity": "A recolher notas automaticamente após inatividade...",
     "saved-search-note-refreshed": "A nota de pesquisa gravada foi atualizada.",
     "hoist-this-note-workspace": "Fixar esta nota (workspace)",

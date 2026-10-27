@@ -9,6 +9,8 @@
 import type { CKEditorError, CKTextEditor, FileUploadData } from "@triliumnext/ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FAttachment from "../../../entities/fattachment";
+import froca from "../../../services/froca";
 import type LoadResults from "../../../services/load_results";
 
 const showError = vi.hoisted(() => vi.fn());
@@ -30,11 +32,21 @@ vi.mock("../../../services/dialog", () => ({ default: { info: showInfoDialog } }
 // Imported by EditableText for editor types and content styles; irrelevant (and heavy) here.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
+const showsAttachmentSave =
+    vi.hoisted(() => vi.fn((_root: HTMLElement, _attachment: object) => false));
+vi.mock("./utils", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./utils")>(),
+    showsAttachmentSave
+}));
+
 const {
     applyPendingAttachmentChanges,
+    getAddLinkOpts,
     getBlockData,
+    isCaretInFocus,
     notifyAttachmentChanges,
     onNotificationInfo,
+    parseLinkHref,
     onNotificationWarning,
     reportEditorError,
     revealLinkTargetWhenReady,
@@ -229,8 +241,10 @@ describe("notifyAttachmentChanges", () => {
     type Row = { attachmentId?: string; isDeleted?: boolean };
 
     const updateAttachmentLinks = vi.fn();
+    const root = document.createElement("div");
     const editor = {
-        plugins: { get: () => ({ updateAttachmentLinks }) }
+        plugins: { get: () => ({ updateAttachmentLinks }) },
+        editing: { view: { getDomRoot: () => root } }
     } as unknown as CKTextEditor;
 
     function loadResultsOf(rows: Row[], isContentReloaded = false) {
@@ -265,6 +279,29 @@ describe("notifyAttachmentChanges", () => {
             { attachmentId: "renamed", isDeleted: false },
             { attachmentId: "deleted", isDeleted: true }
         ]);
+    });
+
+    it("leaves out the saves that every embed of the attachment shows by itself", () => {
+        const drawing = { attachmentId: "drawing" } as FAttachment;
+        const renamed = { attachmentId: "renamed" } as FAttachment;
+        froca.attachments.drawing = drawing;
+        froca.attachments.renamed = renamed;
+        showsAttachmentSave.mockImplementation((_root, attachment) => attachment === drawing);
+
+        notify(loadResultsOf([
+            { attachmentId: "drawing" },
+            { attachmentId: "renamed" },
+            { attachmentId: "drawing", isDeleted: true }
+        ]), { current: undefined });
+
+        expect(showsAttachmentSave).toHaveBeenCalledWith(root, drawing);
+        expect(updateAttachmentLinks).toHaveBeenCalledExactlyOnceWith([
+            { attachmentId: "renamed", isDeleted: false },
+            { attachmentId: "drawing", isDeleted: true }
+        ]);
+        showsAttachmentSave.mockReset().mockReturnValue(false);
+        delete froca.attachments.drawing;
+        delete froca.attachments.renamed;
     });
 
     it("leaves the links alone when no attachment changed", () => {
@@ -370,5 +407,102 @@ describe("revealLinkTargetWhenReady", () => {
         await ready;
         await Promise.resolve();
         expect(reveal).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("isCaretInFocus", () => {
+    it("holds while focus stays in the editable element with the selection, not once a menu takes it", () => {
+        const editable = document.createElement("div");
+        editable.contentEditable = "true";
+        editable.innerHTML = "<p>First paragraph</p>";
+        const menu = document.createElement("div");
+        menu.tabIndex = -1;
+        document.body.append(editable, menu);
+        const paragraph = editable.querySelector("p");
+        expect(paragraph).toBeTruthy();
+
+        editable.focus();
+        window.getSelection()?.collapse(paragraph, 0);
+        expect(isCaretInFocus(document.activeElement, window.getSelection())).toBe(true);
+
+        // The selection stays in the editor while the menu holds focus.
+        menu.focus();
+        expect(window.getSelection()?.focusNode).toBe(paragraph);
+        expect(isCaretInFocus(document.activeElement, window.getSelection())).toBe(false);
+
+        editable.remove();
+        menu.remove();
+    });
+
+    it("does not hold for the fake selection of a selected widget, which sits at the top of the viewport", () => {
+        const editable = document.createElement("div");
+        editable.contentEditable = "true";
+        editable.innerHTML = "<figure class=\"image ck-widget ck-widget_selected\"></figure>"
+            + "<div class=\"ck-fake-selection-container\" style=\"position: fixed; top: 0\"> </div>";
+        document.body.append(editable);
+        const container = editable.querySelector(".ck-fake-selection-container");
+        expect(container?.firstChild).toBeTruthy();
+
+        editable.focus();
+        window.getSelection()?.selectAllChildren(container as Node);
+        expect(isCaretInFocus(document.activeElement, window.getSelection())).toBe(false);
+
+        editable.remove();
+    });
+});
+
+describe("parseLinkHref", () => {
+    it("reads a note link with its anchor, keeping its other parameters, or an address", () => {
+        expect(parseLinkHref("#root/abc?bookmark=part")).toStrictEqual({
+            currentLink: { notePath: "root/abc" }, currentBookmark: "part"
+        });
+        expect(parseLinkHref("#root/abc?viewMode=attachments&attachmentId=x")).toStrictEqual({
+            currentLink: { notePath: "root/abc?viewMode=attachments&attachmentId=x" },
+            currentBookmark: undefined
+        });
+        expect(parseLinkHref("https://example.com/#top")).toStrictEqual({
+            currentLink: { externalLink: "https://example.com/#top" }, currentBookmark: undefined
+        });
+    });
+});
+
+describe("getAddLinkOpts", () => {
+    function createApi(currentLink: { href: string; text: string } | null) {
+        return {
+            hasSelection: vi.fn(() => true),
+            getSelectedText: vi.fn(() => "chosen words"),
+            getCurrentLink: vi.fn(() => currentLink),
+            addLink: vi.fn(),
+            updateLink: vi.fn(),
+            addLinkToEditor: vi.fn(),
+            addHtmlToEditor: vi.fn(),
+            addContentEmbed: vi.fn(),
+            addImage: vi.fn(async () => {})
+        };
+    }
+    const ready = async () => {};
+
+    it("edits the link at the caret, rewriting it on save", async () => {
+        const api = createApi({ href: "#root/abc?bookmark=part", text: "See there" });
+        const opts = getAddLinkOpts(api, ready);
+        expect(opts).toMatchObject({
+            text: "See there", hasSelection: false, currentTitle: "See there",
+            currentLink: { notePath: "root/abc" }, currentBookmark: "part"
+        });
+
+        await opts.addLink("root/def", "Elsewhere");
+        expect(api.updateLink).toHaveBeenCalledExactlyOnceWith("root/def", "Elsewhere", undefined);
+        expect(api.addLink).not.toHaveBeenCalled();
+    });
+
+    it("adds a link from the selection outside one", async () => {
+        const api = createApi(null);
+        const opts = getAddLinkOpts(api, ready);
+        expect(opts).toMatchObject({ text: "chosen words", hasSelection: true });
+        expect(opts.currentLink).toBeUndefined();
+
+        await opts.addLink("https://example.com", "Example", true);
+        expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
+        expect(api.updateLink).not.toHaveBeenCalled();
     });
 });

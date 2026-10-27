@@ -10,3 +10,9 @@
     height: 150px;
     font-family: var(--monospace-font-family);
 }
+
+/* A name is a word or two. Not said of the URL below it, which is stacked and uses its whole line. */
+.search-engine-name input {
+    width: auto;
+    max-width: 100%;
+}

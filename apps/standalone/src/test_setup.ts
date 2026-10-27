@@ -10,6 +10,7 @@ import { beforeAll } from "vitest";
 import StandaloneBackupService from "./lightweight/backup_provider.js";
 import BrowserExecutionContext from "./lightweight/cls_provider.js";
 import BrowserCryptoProvider from "./lightweight/crypto_provider.js";
+import StandaloneInAppHelpProvider from "./lightweight/in_app_help_provider.js";
 import StandalonePlatformProvider from "./lightweight/platform_provider.js";
 import { registerShareProvider } from "./lightweight/share_provider.js";
 import BrowserSqlProvider from "./lightweight/sql_provider.js";
@@ -66,25 +67,6 @@ WebAssembly.instantiateStreaming = (async (source, importObject) => {
 }) as typeof WebAssembly.instantiateStreaming;
 
 // =============================================================================
-// happy-dom HTMLParser spec compliance patch
-// =============================================================================
-// Per HTML5 parsing spec, a single U+000A LINE FEED immediately after a <pre>,
-// <listing>, or <textarea> start tag must be ignored ("newlines at the start
-// of pre blocks are ignored as an authoring convenience"). Real browsers and
-// domino (which turnish uses in Node) both implement this; happy-dom does not.
-// Patch at the DOMParser boundary since turnish prefers DOMParser when it's
-// available — patching via module-level HTMLParser import hits a different
-// happy-dom copy than the vitest env loaded.
-const LEADING_LF_IN_PRE_RE = /(<(?:pre|listing|textarea)\b[^>]*>)(\r\n|\r|\n)/gi;
-const originalParseFromString = DOMParser.prototype.parseFromString;
-DOMParser.prototype.parseFromString = function (source: string, type: DOMParserSupportedType) {
-    const patched = typeof source === "string"
-        ? source.replace(LEADING_LF_IN_PRE_RE, "$1")
-        : source;
-    return originalParseFromString.call(this, patched, type);
-};
-
-// =============================================================================
 // Core initialization for standalone-flavored tests
 // =============================================================================
 // Mirror what apps/server/spec/setup.ts does: load the pre-seeded integration
@@ -125,6 +107,9 @@ beforeAll(async () => {
             });
         },
         platform: new StandalonePlatformProvider(""),
+        // Mirrors production (local-server-worker): registers the _help virtual note
+        // provider so the virtual help subtree exists in this environment's becca too.
+        inAppHelp: new StandaloneInAppHelpProvider(),
         backup: new StandaloneBackupService(options),
         image: standaloneImageProvider,
         schema: schemaSql,

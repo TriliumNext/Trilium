@@ -34,52 +34,6 @@
         z-index: 1210;
     }
 
-    .cm-editor .cm-tooltip.cm-tooltip-hover {
-        --search-lint-tooltip-background: var(--tooltip-background-color, transparent);
-
-        max-width: 500px;
-        border: 0;
-        border-radius: var(--tooltip-border-radius, 5px);
-        background:
-            linear-gradient(
-                var(--search-lint-tooltip-background),
-                var(--search-lint-tooltip-background)
-            ),
-            var(--main-background-color);
-        color: var(--tooltip-foreground-color, var(--main-text-color));
-        box-shadow: var(--tooltip-box-shadow, 0 5px 10px rgba(0, 0, 0, 0.2));
-        font-size: var(--tooltip-font-size, 0.9em);
-        overflow: hidden;
-    }
-
-    .cm-editor .cm-diagnostic {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5em;
-        margin: 0;
-        padding: var(--tooltip-padding, 4px 8px);
-        padding-inline-start: 10px;
-        border: 0;
-        border-inline-start: 3px solid transparent;
-    }
-
-    .cm-editor .cm-diagnostic-error {
-        border-inline-start-color: var(--admonition-caution-accent-color);
-    }
-
-    .cm-editor .cm-diagnosticAction {
-        margin: 0;
-        padding: 2px 8px;
-        border-radius: 4px;
-        background: color-mix(in srgb, currentColor 15%, transparent);
-        color: inherit;
-
-        &:hover {
-            background: color-mix(in srgb, currentColor 25%, transparent);
-        }
-    }
-
     .cm-placeholder {
         /* The hint names several keys, and the field is one line tall. */
         max-width: 100%;

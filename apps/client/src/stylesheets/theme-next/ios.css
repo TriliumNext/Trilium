@@ -1,0 +1,422 @@
+/*
+ * iOS: the glass surfaces of iOS 26, drawn with the `--glass-*` tokens. The components define what
+ * these variables control and their default values; this file sets them for iOS, and holds the
+ * rules that only iOS has.
+ */
+
+body.mobile.ios {
+    --dropdown-backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
+    --mobile-sheet-margin: 8px;
+    --mobile-sheet-radius: 28px;
+    --grouped-card-radius: 22px;
+    --mobile-screen-corner-radius: calc(var(--mobile-sheet-radius) + var(--mobile-sheet-margin));
+    --mobile-sheet-corner-radius: calc(var(--mobile-screen-corner-radius) - var(--mobile-sheet-margin));
+
+    /* The screen corner radii of iPhones, by their portrait size in points, from Apple's device specs. */
+    @media (device-width: 375px) and (device-height: 812px), (device-width: 414px) and (device-height: 896px) {
+        --mobile-screen-corner-radius: 39px;
+    }
+
+    @media (device-width: 390px) and (device-height: 844px) {
+        --mobile-screen-corner-radius: 47px;
+    }
+
+    @media (device-width: 428px) and (device-height: 926px) {
+        --mobile-screen-corner-radius: 53px;
+    }
+
+    @media (device-width: 393px) and (device-height: 852px), (device-width: 430px) and (device-height: 932px) {
+        --mobile-screen-corner-radius: 55px;
+    }
+
+    @media (device-width: 402px) and (device-height: 874px), (device-width: 440px) and (device-height: 956px) {
+        --mobile-screen-corner-radius: 62px;
+    }
+
+    --mobile-toolbar-border: 0px;
+    --mobile-toolbar-gap: 10px;
+    --mobile-toolbar-radius: calc(var(--mobile-toolbar-height) / 2);
+    --mobile-toolbar-pill-radius: 999px;
+    --mobile-toolbar-pill-press-scale: 1.12;
+    --mobile-toolbar-item-gap: 14px;
+    --mobile-toolbar-items-inset: 8px;
+
+    --keyboard-panel-rise: 0px;
+    --keyboard-panel-margin: var(--mobile-sheet-margin);
+
+    .classic-toolbar-island {
+        background: var(--glass-background);
+        backdrop-filter: var(--dropdown-backdrop-filter);
+        box-shadow: var(--glass-shadow);
+    }
+
+    .dropdown-menu {
+        --mobile-menu-group-radius: 12px;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper {
+        background: var(--grouped-background-color);
+    }
+
+    .mobile-note-navigator {
+        --navigator-group-radius: var(--grouped-card-radius);
+        --navigator-group-spacing: 22px;
+        --navigator-group-background: var(--grouped-card-background-color);
+        --navigator-separator-color: var(--main-border-color);
+        /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
+        --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
+        background: var(--grouped-background-color);
+
+        .mobile-navigator-toolbar {
+            background: transparent;
+        }
+
+        .mobile-navigator-children-label {
+            padding-block-end: 8px;
+            font-size: 0.95em;
+            letter-spacing: normal;
+            text-transform: none;
+            opacity: 1;
+        }
+
+        .mobile-navigator-row {
+            min-height: 52px;
+        }
+
+        .mobile-navigator-row-chevron {
+            opacity: 0.35;
+        }
+    }
+
+    .modal.options-dialog {
+        --modal-background-color: var(--grouped-background-color);
+
+        .modal-header {
+            background-color: color-mix(in srgb, var(--grouped-card-background-color) 60%, var(--grouped-background-color));
+        }
+
+        .tn-card {
+            --card-border-radius: var(--grouped-card-radius);
+            --card-padding-inline: 16px;
+            --card-section-gap: 0px;
+            --card-background-color: var(--grouped-card-background-color);
+        }
+
+        .tn-card-heading,
+        .tn-card-description {
+            padding-inline: var(--card-padding-inline);
+        }
+
+        .tn-card-heading {
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: normal;
+            text-transform: none;
+            color: var(--muted-text-color);
+        }
+
+        .tn-card-body .tn-card-section {
+            position: relative;
+
+            &.tn-card-section-nested {
+                background-color: var(--card-background-color);
+            }
+
+            &.font-option.disabled {
+                opacity: 1;
+
+                > * {
+                    opacity: 0.5;
+                }
+            }
+
+            &:not(:last-of-type)::before {
+                content: "";
+                position: absolute;
+                inset-block-end: 0;
+                inset-inline: var(--card-padding-inline) 0;
+                height: 1px;
+                background: var(--main-border-color);
+            }
+        }
+
+        .options-mobile-nav .dropdown-menu {
+            --mobile-menu-group-radius: var(--grouped-card-radius);
+            --card-background-color: var(--grouped-card-background-color);
+            --menu-background-color: transparent;
+
+            .dropdown-item {
+                position: relative;
+                border-bottom: 0 !important;
+
+                /* Starts under the name: the item's padding, the 1.4em icon and its 4px margin. */
+                &:not(:last-of-type)::after {
+                    content: "";
+                    position: absolute;
+                    inset-block-end: 0;
+                    inset-inline: calc(var(--dropdown-menu-padding-horizontal) + 1.4em + 4px) 0;
+                    height: 1px;
+                    background: var(--main-border-color);
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 991px) {
+    body.mobile.ios {
+        --mobile-bottom-offset: max(
+            12px,
+            calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)) - 8px)
+        );
+        --mobile-bottom-bar-height: calc(var(--launcher-pane-horiz-size) + var(--mobile-bottom-offset));
+        --mobile-backdrop-color: transparent;
+        --mobile-modal-backdrop-color: rgb(0 0 0 / 25%);
+        /* Must equal the height of `.title-row` in style.css. */
+        --mobile-title-row-height: 50px;
+
+        /* Safari tints its bars from the page's background and from `theme-color`, which
+           `#initThemeColor()` in root_container.ts copies from `#background-color-tracker`. */
+        &:has(#mobile-sidebar-wrapper.show) {
+            background-color: var(--grouped-background-color);
+
+            #root-widget {
+                background-color: var(--grouped-background-color);
+            }
+
+            #background-color-tracker {
+                color: var(--grouped-background-color) !important;
+            }
+        }
+
+        :is(
+            .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu,
+            .dropdown-menu.mobile-bottom-menu
+        ).show {
+            --menu-background-color: var(--glass-background);
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-radius);
+            --mobile-menu-corner-radius: calc(var(--mobile-sheet-radius) - var(--menu-padding-size));
+            --mobile-menu-bottom-corner-radius: calc(var(--mobile-sheet-bottom-radius) - var(--menu-padding-size));
+            border: 0;
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
+            box-shadow: var(--glass-shadow);
+
+            .tn-menu-scroll {
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:first-child,
+                > .form-list-row:first-child > .form-list-col:first-child > .dropdown-item {
+                    border-start-start-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:last-child,
+                > .form-list-row:first-child > .form-list-col:last-child > .dropdown-item {
+                    border-start-end-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:first-child > .dropdown-item {
+                    border-end-start-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:last-child > .dropdown-item {
+                    border-end-end-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+            }
+        }
+
+        :is(
+            .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu,
+            .dropdown-menu.mobile-bottom-menu:not(.keyboard-panel)
+        ).show {
+            margin: 0 var(--mobile-sheet-margin) var(--mobile-sheet-margin);
+            max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom) - var(--mobile-sheet-margin));
+        }
+
+        :is(#context-menu-container, .dropdown-menu).mobile-bottom-menu.show {
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
+            padding-bottom: var(--menu-padding-size) !important;
+        }
+
+        #mobile-bottom-bar {
+            position: relative;
+            z-index: 999;
+            height: var(--mobile-bottom-bar-height);
+            margin-top: calc(-1 * var(--mobile-bottom-bar-height));
+            padding-inline: 16px;
+            border-top: 0;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        #mobile-bottom-bar > #launcher-pane {
+            pointer-events: auto;
+            border: 0;
+            border-radius: calc(var(--launcher-pane-horiz-size) / 2);
+            background: var(--glass-background) !important;
+            backdrop-filter: var(--dropdown-backdrop-filter);
+            box-shadow: var(--glass-shadow);
+
+            .launcher-button {
+                border-radius: 50%;
+            }
+        }
+
+        .mobile-navigator-scroll {
+            padding-bottom: calc(var(--mobile-bottom-bar-height) + var(--navigator-group-spacing));
+        }
+
+        &:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
+            --mobile-toolbar-clearance: calc(
+                var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--mobile-bottom-bar-height)
+            );
+
+            .note-split > .scrolling-container:not(:has(~ .classic-toolbar-outer-container.visible)) {
+                padding-bottom: var(--mobile-bottom-bar-height);
+                scroll-padding-bottom: var(--mobile-bottom-bar-height);
+            }
+
+            .classic-toolbar-island {
+                bottom: calc(var(--tn-layout-overhang, 0px) + var(--mobile-bottom-bar-height));
+            }
+        }
+
+        .note-split:not(.options) > .title-row {
+            position: relative;
+            z-index: 999;
+            isolation: isolate;
+            margin-bottom: calc(-1 * var(--mobile-title-row-height));
+            padding-inline: 8px;
+            border-bottom: 0;
+
+            &::before {
+                content: "";
+                position: absolute;
+                inset: 0 0 -16px;
+                z-index: -1;
+                background: linear-gradient(var(--main-background-color) 55%, transparent);
+                pointer-events: none;
+            }
+
+            .icon-action:not(.note-icon) {
+                border-radius: 50%;
+                background: var(--glass-background);
+                backdrop-filter: var(--dropdown-backdrop-filter);
+                box-shadow: var(--glass-shadow);
+                transition: scale 250ms cubic-bezier(0.3, 1.6, 0.5, 1);
+
+                &:active {
+                    scale: 0.92;
+                }
+            }
+        }
+
+        .note-split:not(.options) > .title-row + .scrolling-container {
+            padding-top: var(--mobile-title-row-height);
+            scroll-padding-top: var(--mobile-title-row-height);
+        }
+
+        .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
+            border: 0;
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;
+        }
+
+        /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
+           rounded corners. */
+        .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
+            bottom: var(--mobile-sheet-margin);
+            width: calc(100% - 2 * var(--mobile-sheet-margin));
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
+            background: var(--glass-background);
+            backdrop-filter: var(--dropdown-backdrop-filter);
+            box-shadow: var(--glass-shadow);
+
+            > .modal-content {
+                border-radius: inherit;
+                background: transparent !important;
+                box-shadow: none;
+            }
+
+            .modal-footer {
+                padding-bottom: 16px;
+                background: transparent;
+            }
+        }
+
+        /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
+        .modal .modal-header {
+            --modal-header-trailing-width: 52px;
+            padding-block: 12px !important;
+
+            &:has(> .modal-title:nth-last-child(3)) {
+                --modal-header-trailing-width: 104px;
+            }
+
+            &:has(> .modal-title:nth-last-child(4)) {
+                --modal-header-trailing-width: 156px;
+            }
+
+            .modal-title,
+            .tn-master-detail-title {
+                color: var(--main-text-color);
+                font-weight: 600;
+                text-align: center;
+            }
+
+            .modal-title {
+                display: -webkit-box;
+                padding-inline-start: var(--modal-header-trailing-width);
+                overflow: hidden;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+            }
+
+            .tn-master-detail-icon {
+                display: none;
+            }
+
+            /* The close button follows the master-detail header; the back button, 44px with an 8px
+               gap, takes its width. */
+            .tn-master-detail-header {
+                padding-inline-start: 52px;
+
+                &:has(> button.icon-action) {
+                    padding-inline-start: 0;
+                }
+
+                > button.icon-action {
+                    --icon-button-size: 44px;
+                    --icon-button-icon-ratio: 0.55;
+                    --icon-button-color: var(--main-text-color);
+                    --icon-button-hover-color: var(--main-text-color);
+                    --icon-button-hover-background: var(--glass-background);
+                    flex-shrink: 0;
+                    margin-inline-end: 4px;
+                    border-radius: 50%;
+                    background: var(--glass-background);
+                    backdrop-filter: var(--dropdown-backdrop-filter);
+                    box-shadow: var(--glass-edge);
+                }
+            }
+
+            :is(.btn-close, .help-button, .custom-title-bar-button) {
+                --modal-control-button-size: 44px;
+                flex-shrink: 0;
+                margin-block: 0;
+                margin-inline-end: 0;
+                font-size: 22px;
+                backdrop-filter: var(--dropdown-backdrop-filter);
+                box-shadow: var(--glass-edge);
+
+                &,
+                &:hover {
+                    background: var(--glass-background);
+                    color: var(--main-text-color);
+                }
+            }
+        }
+    }
+}

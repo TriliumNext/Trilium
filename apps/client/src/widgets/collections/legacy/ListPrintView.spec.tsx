@@ -56,4 +56,31 @@ describe("ListPrintView", () => {
         await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
         expect(container.querySelector("#note-list-print-render .late")?.textContent).toBe("Script output");
     });
+
+    it("prints the notes a saved search matched, without what hangs under them", async () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "search-print", title: "Search", type: "search" },
+            { id: "search-hit", title: "Hit", children: [ { id: "search-hit-child", title: "Child" } ] },
+            { id: "search-hit-2", title: "Hit 2" }
+        ] });
+        const search = froca.getNoteFromCache("search-print");
+        if (!search) throw new Error("expected the search note");
+
+        h.getRenderedContent.mockImplementation(async () => ({ $renderedContent: [ document.createElement("div") ] }));
+
+        const onReady = vi.fn();
+        const container = renderInto(
+            <ListPrintView
+                note={search} notePath="root/search-print" noteIds={[ "search-hit", "search-hit-2" ]}
+                highlightedTokens={null} viewConfig={undefined} saveConfig={() => {}}
+                media="print" onReady={onReady}
+            />
+        );
+
+        await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
+        expect(h.getRenderedContent).toHaveBeenCalledTimes(2);
+        expect(container.querySelector("#note-search-hit")).not.toBeNull();
+        expect(container.querySelector("#note-search-hit-2")).not.toBeNull();
+        expect(container.querySelector("#note-search-hit-child")).toBeNull();
+    });
 });

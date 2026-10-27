@@ -206,3 +206,9 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
         margin-bottom: .9em;
     }
 }
+
+/* A toolbar placed outside the editor leaves the `.ck-reset_all` that colors its buttons, and iOS
+   Safari draws an uncolored button in the system blue. */
+:where(.classic-toolbar-widget) .ck.ck-button {
+    color: var(--ck-color-text);
+}

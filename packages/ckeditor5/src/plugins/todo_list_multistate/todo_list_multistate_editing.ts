@@ -106,6 +106,21 @@ export default class TodoListMultistateEditing extends Plugin {
 
         editor.commands.add("setTaskState", new SetTaskStateCommand(editor));
 
+        // Upstream's handler restores the selection it found, which turns the default selection of
+        // an editor that never had the focus into a real one, on an image at the start of the note.
+        this.listenTo(editor.editing.view.document, "todoCheckboxChange", (evt, data: { target: ViewElement }) => {
+            if (editor.model.document.selection.hasOwnRange) {
+                return;
+            }
+            const { mapper, view } = editor.editing;
+            const block = mapper.toModelPosition(view.createPositionAfter(data.target)).parent;
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(block, "end"));
+                editor.execute("checkTodoList");
+            });
+            evt.stop();
+        }, { priority: "high" });
+
         editor.keystrokes.set(STATE_CYCLE_SHORTCUT, (_data, cancel) => {
             const command = editor.commands.get("setTaskState");
             if (!command?.isEnabled) {

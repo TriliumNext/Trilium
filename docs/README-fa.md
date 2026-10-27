@@ -22,230 +22,241 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+Trilium Notes یک برنامهٔ آزاد و متن‌باز و چندسکویی برای یادداشت‌برداری
+سلسله‌مراتبی است که بر ساخت پایگاه‌های دانش شخصی بزرگ تمرکز دارد.
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+به‌دنبال «Trillium Notes» می‌گردید؟ نگارش درست نام پروژه «Trilium Notes» است، با
+یک `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ دانلود
-- [آخرین انتشار]{‍‏1} – نسخه پایدار، برای بیشتر کاربران ‎ پیشنهاد می‌شود.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+## ⏬ دریافت
+- [آخرین انتشار](https://github.com/TriliumNext/Trilium/releases/latest) – نسخهٔ
+  پایدار، برای بیشتر کاربران پیشنهاد می‌شود.
+- [نسخهٔ شبانه](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  نسخهٔ توسعهٔ ناپایدار که هر روز با تازه‌ترین قابلیت‌ها و اصلاحات به‌روزرسانی
+  می‌شود.
 
-## 📚 کتابچه راهنما
+## 📚 مستندات
 
-**Visit our comprehensive documentation at
-[docs.triliumnotes.org](https://docs.triliumnotes.org/)**
+**مستندات کامل ما را در [docs.triliumnotes.org](https://docs.triliumnotes.org/)
+ببینید**
 
-مستندات ما در چندین قالب مختلف در دسترس است:
-- مستندات آنلاین: می‌توانید نسخهٔ کامل مستندات را در
-  ‎[docs.triliumnotes.org](https://docs.triliumnotes.org/)‎ مرور کنید
-- ** In-App Help **: Press `F1 ` در Trilium برای دسترسی به همان اسناد به طور
-  مستقیم در برنامه
-- ** GitHub **: از طریق [راهنمای کاربر] در این مخزن حرکت کنید
+مستندات ما در چند قالب مختلف در دسترس است:
+- **مستندات آنلاین**: مستندات کامل را در
+  [docs.triliumnotes.org](https://docs.triliumnotes.org/) مرور کنید
+- **راهنمای درون‌برنامه‌ای**: کلید `F1` را در Trilium بزنید تا همان مستندات
+  مستقیماً در برنامه در دسترستان باشد
+- **گیت‌هاب**: [راهنمای کاربر](./User%20Guide/User%20Guide/) را در همین مخزن
+  ببینید
 
-### لینک‌های سریع
-- راهنمای شروع کار
-- دستورالعمل‌های نصب
-- راه‌اندازی داکر
-- ارتقای TriliumNext
-- مفاهیم و ویژگی‌های پایه
-- الگوهای پایگاه دانشی شخصی
+### پیوندهای سریع
+- [راهنمای شروع کار](https://docs.triliumnotes.org/)
+- [دستورالعمل‌های نصب](https://docs.triliumnotes.org/user-guide/setup)
+- [راه‌اندازی
+  Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [ارتقای TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [مفاهیم و قابلیت‌های
+  پایه](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [الگوهای پایگاه دانش
+  شخصی](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 ویژگی‌ها
+## 🎁 قابلیت‌ها
 
-* یادداشت‌ها می‌توانند در یک درخت با عمق دلخواه سازمان‌دهی شوند. یک یادداشت
-  می‌تواند در چندین نقطهٔ مختلف از درخت قرار گیرد.
-* ویرایشگر یادداشت غنی WYSIWYG از جمله جداول، تصاویر و [math] [1] با علامت گذاری
-  [autoformat] [2]
-* پشتیبانی از ویرایش [یادداشت با کد منبع][۱]، از جمله نحو برجسته
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
-  hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* محیط کاربری به زبان‌های انگیلیسی، آلمانی، اسپانیایی، فرانسوی، رومانیایی، و
-  چینی (ساده‌شده و سنتی)
-* Direct [OpenID and TOTP
-  integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
-  more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
-* Strong [note
-  encryption](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-  with per-note granularity
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
-  location pins and GPX tracks
-* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
-  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
-* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
-  automation
-* Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
-  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
-  smartphones and tablets
-* Built-in [dark
-  theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
-  user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
-  and [Markdown import &
-  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
-  easy saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* یادداشت‌ها را می‌توان در درختی با عمق دلخواه چید. هر یادداشت می‌تواند در چند
+  جای درخت هم‌زمان قرار گیرد (ببینید
+  [کلون‌کردن](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* ویرایشگر بصری (WYSIWYG) غنی برای یادداشت‌ها با جدول، تصویر و [فرمول
+  ریاضی](https://docs.triliumnotes.org/user-guide/note-types/text) همراه با
+  [قالب‌بندی
+  خودکار](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+  مارک‌داون
+* پشتیبانی از ویرایش [یادداشت‌های حاوی کد
+  منبع](https://docs.triliumnotes.org/user-guide/note-types/code)، همراه با
+  برجسته‌سازی نحوی
+* [جابه‌جایی سریع و آسان بین
+  یادداشت‌ها](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)،
+  جست‌وجوی تمام‌متن و [بالابردن
+  یادداشت](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* [نسخه‌بندی](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+  یکپارچه برای یادداشت‌ها
+* [ویژگی‌های](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  یادداشت که برای سازمان‌دهی، جست‌وجو و
+  [اسکریپت‌نویسی](https://docs.triliumnotes.org/user-guide/scripts) پیشرفته
+  به‌کار می‌روند
+* رابط کاربری به زبان‌های انگلیسی، آلمانی، اسپانیایی، فرانسوی، رومانیایی و چینی
+  (ساده و سنتی)
+* [یکپارچه‌سازی مستقیم با OpenID و
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) برای ورود
+  امن‌تر
+* [همگام‌سازی](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  با سرور همگام‌سازی خودمیزبان
+  * [سرویس‌های شخص
+    ثالثی](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+    برای میزبانی سرور همگام‌سازی هم وجود دارند
+* [اشتراک‌گذاری](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (انتشار) یادداشت‌ها در اینترنت عمومی
+* [رمزگذاری قوی
+  یادداشت](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+  با دقت در سطح هر یادداشت
+* رسم نمودار مبتنی بر [Excalidraw](https://excalidraw.com/) (نوع یادداشت «بوم»)
+* [نقشهٔ
+  روابط](https://docs.triliumnotes.org/user-guide/note-types/relation-map) و
+  [نقشهٔ
+  یادداشت/پیوند](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  برای تجسم یادداشت‌ها و ارتباط‌شان
+* نقشهٔ ذهنی، مبتنی بر [Mind Elixir](https://docs.mind-elixir.com/)
+* [نقشهٔ جغرافیایی](https://docs.triliumnotes.org/user-guide/collections/geomap)
+  با نشانگرهای مکانی و مسیرهای GPX
+* [اسکریپت‌نویسی](https://docs.triliumnotes.org/user-guide/scripts) - ببینید
+  [نمونه‌های
+  پیشرفته](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [رابط برنامه‌نویسی
+  REST](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) برای
+  خودکارسازی
+* کارایی و سرعت خوب حتی با بیش از 100,000 یادداشت
+* [نمای موبایل](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+  بهینه‌شده برای لمس، مخصوص گوشی و تبلت
+* [پوستهٔ تیرهٔ](https://docs.triliumnotes.org/user-guide/concepts/themes) داخلی
+  و پشتیبانی از پوسته‌های کاربر
+* درون‌ریزی و برون‌بری از
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
+  و
+  [مارک‌داون](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [برش‌دهندهٔ وب](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
+  برای ذخیرهٔ آسان محتوای وب
+* رابط کاربری قابل‌سفارشی‌سازی (دکمه‌های نوار کناری، ابزارک‌های کاربرساخته و…)
+* [متریک‌ها](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)،
+  همراه با داشبورد Grafana.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ برای دیدن منابع و انجمن‌های شخص ثالث دیگر دربارهٔ TriliumNext این‌ها را هم
+ببینید:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- [awesome-trilium](https://github.com/Nriver/awesome-trilium) برای پوسته‌ها،
+  اسکریپت‌ها، افزونه‌های شخص ثالث و بیشتر.
+- [TriliumRocks!](https://trilium.rocks/) برای آموزش‌ها، راهنماها و موارد بیشتر.
 
-## ❓Why TriliumNext?
+## ❓چرا TriliumNext؟
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+توسعه‌دهندهٔ اصلی Trilium (به نام [Zadam](https://github.com/zadam)) با بزرگواری
+مخزن Trilium را به پروژهٔ جامعه‌محوری سپرد که اکنون در
+https://github.com/TriliumNext قرار دارد.
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️آیا از Zadam/Trilium مهاجرت می‌کنید؟
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+برای مهاجرت از یک نمونهٔ zadam/Trilium به TriliumNext/Trilium نیازی به مرحلهٔ
+خاصی نیست. کافی است [TriliumNext/Trilium را مانند همیشه نصب
+کنید](#-installation) تا از پایگاه‌دادهٔ فعلی شما استفاده کند.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+نسخه‌های تا
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) با آخرین
+نسخهٔ zadam/trilium یعنی
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7) سازگارند.
+نسخه‌های بعدی TriliumNext/Trilium شمارهٔ نسخهٔ همگام‌سازی‌شان بالاتر رفته و
+مهاجرت مستقیم دیگر ممکن نیست.
 
-## 💬 Discuss with us
+## 💬 با ما گفت‌وگو کنید
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+خوشحال می‌شویم به گفت‌وگوهای رسمی ما بپیوندید! دوست داریم بدانیم چه قابلیت،
+پیشنهاد یا مشکلی دارید:
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
-    [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (برای گفت‌وگوی هم‌زمان)
+  - اتاق `General` در Matrix به
+    [XMPP](xmpp:discuss@trilium.thisgreat.party?join) هم پل زده شده است
+- [بحث‌های گیت‌هاب](https://github.com/TriliumNext/Trilium/discussions) (برای
+  گفت‌وگوی غیرهم‌زمان)
+- [مسائل گیت‌هاب](https://github.com/TriliumNext/Trilium/issues) (برای گزارش
+  اشکال و درخواست قابلیت)
 
-## 🏗 Installation
+## 🏗 نصب
 
-### Windows / MacOS
+### ویندوز / مک‌اواس
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+نسخهٔ دودویی متناسب با سیستم‌عامل خود را از [صفحهٔ آخرین
+انتشار](https://github.com/TriliumNext/Trilium/releases/latest) دریافت کنید،
+بستهٔ فشرده را باز کنید و فایل اجرایی `trilium` را اجرا کنید.
 
-### Linux
+### لینوکس
 
-If your distribution is listed in the table below, use your distribution's
-package.
+اگر توزیع شما در جدول زیر فهرست شده، از بستهٔ همان توزیع استفاده کنید.
 
 [![Packaging
 status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+همچنین می‌توانید نسخهٔ دودویی متناسب با سیستم‌عامل خود را از [صفحهٔ آخرین
+انتشار](https://github.com/TriliumNext/Trilium/releases/latest) دریافت کنید،
+بستهٔ فشرده را باز کنید و فایل اجرایی `trilium` را اجرا کنید.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+TriliumNext به‌صورت Flatpak هم ارائه می‌شود، هرچند هنوز روی Flathub منتشر نشده
+است.
 
-### Browser (any OS)
+### مرورگر (هر سیستم‌عاملی)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+اگر نصب سرور دارید (پایین‌تر ببینید)، می‌توانید مستقیماً به رابط وب دسترسی داشته
+باشید (که تقریباً یکسان با برنامهٔ رایانه است).
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+در حال حاضر فقط آخرین نسخه‌های Chrome و Firefox پشتیبانی (و آزمایش) می‌شوند.
 
-### Mobile
+### موبایل
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+برای استفاده از TriliumNext روی موبایل می‌توانید از مرورگر موبایل خود برای
+دسترسی به رابط موبایل یک نصب سرور استفاده کنید (پایین‌تر ببینید).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+برای اطلاعات بیشتر دربارهٔ پشتیبانی از برنامهٔ موبایل، ایشوی
+https://github.com/TriliumNext/Trilium/issues/4962 را ببینید.
 
 #### TriliumDroid
 
-If you prefer a native Android app, you can use
-[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+اگر برنامهٔ بومی اندروید می‌خواهید، می‌توانید از
+[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
+استفاده کنید. اشکالات و قابلیت‌های ازقلم‌افتاده را در [مخزن
+آن‌ها](https://github.com/FliegendeWurst/TriliumDroid) گزارش دهید. نکته: بهتر
+است هنگام استفاده از TriliumDroid، به‌روزرسانی خودکار نصب سرور خود را غیرفعال
+کنید (پایین‌تر ببینید)، زیرا شمارهٔ نسخهٔ همگام‌سازی Trilium و TriliumDroid باید
+یکسان باشد.
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+اگر می‌خواهید یک برنامهٔ بومی اندروید تمام‌عیار داشته باشید، [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium) را ببینید. این برنامه یک
+نمونهٔ کامل Trilium را روی گوشی شما اجرا می‌کند، از کارکرد کاملاً آفلاین
+پشتیبانی می‌کند و امکان همگام‌سازی با سرورتان را می‌دهد.
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+اگر برنامهٔ بومی iOS می‌خواهید، می‌توانید از
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) استفاده کنید؛
+کارخواهی متن‌باز برای سرور خودمیزبان Trilium یا TriliumNext شما. با آن می‌توانید
+درخت یادداشت‌هایتان را مرور و سازمان‌دهی کنید، در سرور جست‌وجو کنید، همهٔ انواع
+یادداشت (متن، کد، نقشهٔ ذهنی، صفحه‌گستر، نقشهٔ جغرافیایی، بوم و…) را بخوانید و
+ویرایش کنید، و به‌صورت آفلاین هم به یادداشت‌ها دسترسی و آن‌ها را ویرایش کنید.
+اگر می‌خواهید مشارکت کنید، [مخزن آن](https://github.com/StephenArg/Trinote) را
+ببینید و برای بازخورد یا پیشنهاد، به
+[دیسکورد](https://discord.com/invite/ghjJG56EUS) آن‌ها سر بزنید.
 
-### Server
+### سرور
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+برای نصب TriliumNext روی سرور خودتان (از جمله از طریق Docker در
+[Dockerhub](https://hub.docker.com/r/triliumnext/trilium))، [مستندات نصب
+سرور](https://docs.triliumnotes.org/user-guide/setup/server) را دنبال کنید.
 
 
-## 💻 Contribute
+## 💻 مشارکت کنید
 
-### Translations
+### ترجمه
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+اگر به زبان مادری خود مسلط هستید، با سری‌زدن به [صفحهٔ
+Weblate](https://hosted.weblate.org/engage/trilium/) ما به ترجمه کمک کنید.
 
-Here's the language coverage we have so far:
+این هم پوشش زبانی فعلی ما:
 
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### کد
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+مخزن را دریافت کنید، وابستگی‌ها را با `pnpm` نصب کنید و سپس سرور را اجرا کنید
+(در http://localhost:8080 در دسترس خواهد بود):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -253,10 +264,10 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### مستندات
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+مخزن را دریافت کنید، وابستگی‌ها را با `pnpm` نصب کنید و سپس محیط لازم برای
+ویرایش مستندات را اجرا کنید:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -264,20 +275,20 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Alternatively, if you have Nix installed:
+یا اگر Nix نصب دارید:
 ```shell
-# Run directly
+# اجرای مستقیم
 nix run .#edit-docs
 
-# Or install to your profile
+# یا نصب در پروفایل شما
 nix profile install .#edit-docs
 trilium-edit-docs
 ```
 
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### ساخت فایل اجرایی
+مخزن را دریافت کنید، وابستگی‌ها را با `pnpm` نصب کنید و سپس برنامهٔ رایانهٔ
+ویندوز را بسازید:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -285,17 +296,18 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+برای جزئیات بیشتر، [مستندات
+توسعه](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide)
+را ببینید.
 
-### Developer Documentation
+### مستندات توسعه‌دهندگان
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+لطفاً [راهنمای
+مستندات](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
+را برای جزئیات ببینید. اگر پرسش بیشتری دارید، از طریق پیوندهای بخش «با ما
+گفت‌وگو کنید» در بالا با ما در ارتباط باشید.
 
-## 💖 Sponsors
+## 💖 حامیان
 
 <table>
   <tr>
@@ -323,60 +335,62 @@ described in the "Discuss with us" section above.
   </tr>
 </table>
 
-## 👏 Shoutouts
+## 👏 تقدیر و تشکر
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+* [zadam](https://github.com/zadam) برای مفهوم اولیه و پیاده‌سازی برنامه.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) برای طراحی نماد برنامه.
+* [nriver](https://github.com/nriver) برای کارش روی بین‌المللی‌سازی.
+* [Thomas Frei](https://github.com/thfrei) برای کار اولیه‌اش روی بوم (Canvas).
+* [antoniotejada](https://github.com/nriver) برای ابزارک اولیهٔ برجسته‌سازی
+  نحوی.
+* [Tabler Icons](https://tabler.io/icons) برای نمادهای سینی سیستم.
+*   نمادهای برنامه در پنجرهٔ درون‌برد از این‌جاها هستند:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) برای
+        OneNote، Google Keep، Evernote.
+    *   [Font Awesome](https://fontawesome.com/) برای Notion، Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) برای Anytype.
+*  نمادهای ارائه‌دهندگان LLM از [Lobe Icons](https://lobehub.com/icons) هستند.
 
-Trilium would not be possible without the technologies behind it:
+Trilium بدون فناوری‌های پشت آن ممکن نبود:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - ویرایشگر بصری پشت
+  یادداشت‌های متنی.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - ویرایشگر کد با
+  پشتیبانی از تعداد زیادی زبان.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - نمودارهای یادداشت‌های
+  Mermaid را رندر می‌کند؛ تجزیه‌گرهای آن الگویی برای برجسته‌سازی نحو آن‌ها
+  هستند.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - پایهٔ برجسته‌سازی نحو Mermaid.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - تختهٔ سفید بی‌نهایت
+  استفاده‌شده در یادداشت‌های بوم.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - ارائه‌دهندهٔ
+  قابلیت نقشهٔ ذهنی.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - برای رندر نقشه‌های جغرافیایی.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - برای جدول تعاملی
+  استفاده‌شده در مجموعه‌ها.
+* [FancyTree](https://github.com/mar10/fancytree) - کتابخانهٔ درخت غنی از
+  قابلیت، بدون رقیب واقعی.
 
-## 🤝 Support
+## 🤝 حمایت
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium با [صدها ساعت
+کار](https://github.com/TriliumNext/Trilium/graphs/commit-activity) ساخته و
+نگهداری می‌شود. حمایت شما آن را متن‌باز نگه می‌دارد، قابلیت‌ها را بهبود می‌بخشد
+و هزینه‌هایی مثل میزبانی را پوشش می‌دهد.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+برای حمایت از توسعه‌دهندهٔ اصلی برنامه
+([eliandoran](https://github.com/eliandoran)) می‌توانید از این راه‌ها استفاده
+کنید:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 مجوز
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+حق نشر 2017-2025 zadam، Elian Doran و دیگر مشارکت‌کنندگان
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+این برنامه نرم‌افزاری آزاد است: می‌توانید آن را طبق شرایط مجوز عمومی Affero GNU
+که توسط بنیاد نرم‌افزار آزاد منتشر شده، بازتوزیع و/یا تغییر دهید؛ چه نسخهٔ 3
+مجوز و چه (به‌انتخاب خودتان) هر نسخهٔ بعدی آن.

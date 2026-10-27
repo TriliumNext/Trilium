@@ -13,6 +13,7 @@ const {
 const { MAX_ZOOM, MIN_ZOOM } = await import("./drawing_view");
 const { FITTED_MENU_STYLES } = await import("./CanvasDrawing");
 const { DRAWING_DARK_FILTER, IMAGE_DARK_FILTER } = await import("./persistence");
+const { HISTORY_ICON_PATHS, isInteracting } = await import("./drawing_history");
 
 /** The classes of Trilium that `CanvasDrawing.css` selects. Every other class is Excalidraw's. */
 const TRILIUM_CLASSES = new Set([
@@ -162,12 +163,59 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(unpatched).toEqual([]);
     });
 
+    it("draws the scene and the new element in the layout effects of the Trilium patch", () => {
+        // What `StaticCanvas` and `NewElementCanvas` render right after the effect that draws them.
+        const markers = [
+            /classList\.add\("excalidraw__canvas", ?"static"\)/,
+            /className: ?"excalidraw__canvas",\s*style:/
+        ];
+        const unpatched = [ productionDir, developmentDir ].flatMap((dir) => {
+            const source = readBundle(dir, [ ".js" ]);
+            const layoutEffects = new Set([ ...source.matchAll(/useLayoutEffect as ([\w$]+)/g) ]
+                .map((match) => match[1]));
+            return markers.filter((marker) => {
+                const at = source.search(marker);
+                const start = Math.max(
+                    source.lastIndexOf("(()=>{", at), source.lastIndexOf("(() => {", at));
+                const hook = source.slice(Math.max(start - 64, 0), start).match(/[\w$]+$/)?.[0];
+                return at < 0 || !hook || !layoutEffects.has(hook);
+            }).map((marker) => `${dir}: ${marker.source}`);
+        });
+        expect(unpatched).toEqual([]);
+    });
+
     it("pans and zooms with the wheel through `translateCanvas()`, which the patch limits", () => {
         const source = readBundle(developmentDir, [ ".js" ]);
         const handleWheel = source.split("__publicField(this, \"handleWheel\"")[1]
             ?.split("__publicField(this, ")[0] ?? "";
         expect(handleWheel.match(/this\.translateCanvas\(/g)).toHaveLength(3);
         expect(handleWheel).not.toContain("this.setState(");
+    });
+
+    it("lets the undo history of the note replace Excalidraw's undo and redo", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+
+        // `registerAction()` replaces the action of the name, which the keys and the buttons run.
+        expect(source).toContain(
+            "registerAction:(action)=>{this.actionManager.registerAction(action);}");
+        expect(source).toContain("registerAction(action){this.actions[action.name]=action;}");
+        for (const name of HISTORY_ACTIONS) {
+            const create = `create${name[0].toUpperCase()}${name.slice(1)}Action`;
+            expect(source).toContain(
+                `this.actionManager.registerAction(${create}(this.history,this.store));`);
+            expect(source).toContain(`renderAction("${name}")`);
+            expect(source).toContain(`d:"${HISTORY_ICON_PATHS[name].replace(/\s+/g, "")}"`);
+        }
+        // The store ends a change before `onChange`, which records it.
+        expect(source).toContain("this.store.commit(elementsMap,this.state);"
+            + "if(!this.state.isLoading){this.props.onChange?.(elements,this.state,this.files);");
+
+        // `isInteracting()` holds a change back at least while Excalidraw's undo would wait.
+        const guard = source
+            .match(/varexecuteHistoryAction=\(app,appState,updater\)=>\{if\((.*?)\)\{/)?.[1];
+        const flags = [ ...guard?.matchAll(/!appState\.(\w+)/g) ?? [] ].map((match) => match[1]);
+        expect(flags).toHaveLength(6);
+        expect(flags.filter((flag) => !isInteracting({ [flag]: true } as never))).toEqual([]);
     });
 
     it("takes the wheel on its container, after `useNoteScrollingWheel()` on the drawing", () => {

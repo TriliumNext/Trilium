@@ -15,6 +15,8 @@ Standard Markdown links are supported.
 
 Trilium internal links (that mirror a note's title and display its icon) are embedded as HTML in order to preserve the information on import.
 
+<a class="reference-link" href="../../../Note%20Types/Text/Anchors.md">Anchors</a> are kept as HTML as well, so links to an anchor still lead to it after the note is imported again.
+
 ## Math equations
 
 Both inline and display equations are supported, using the `$` and `$$` syntaxes.

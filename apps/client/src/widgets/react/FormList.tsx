@@ -7,15 +7,17 @@ import clsx from "clsx";
 import { ComponentChildren, createPortal, type CSSProperties, RefObject } from "preact";
 import { useContext, useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
+import type { MenuHeaderActions } from "../../menus/context_menu";
 import { t } from "../../services/i18n";
 import { getActionSync } from "../../services/keyboard_actions";
 import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../../services/utils";
+import ActionButton from "./ActionButton";
+import FormTextBox from "./FormTextBox";
 import FormToggle from "./FormToggle";
-import HelpTooltipButton from "./HelpTooltipButton";
 import { useStaticTooltip, useSyncedRef, useUniqueName } from "./hooks";
 import Icon, { SvgIcon } from "./Icon";
 import { MasterDetailHeader } from "./master_detail";
-import { isRightToLeft, MenuContext, type MenuContextValue, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu } from "./menu_context";
+import { isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu } from "./menu_context";
 import { placeFloating } from "./Popup";
 import { joinElements } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";
@@ -156,6 +158,10 @@ export interface FormListItemOpts {
     selected?: boolean;
     container?: boolean;
     onClick?: (e: MouseEvent) => void;
+    /** Runs on a middle click on the row, which leaves the menu open. */
+    onMiddleClick?: (e: MouseEvent) => void;
+    /** Runs on a right-click on the row, which a menu ignores otherwise. */
+    onContextMenu?: (e: MouseEvent) => void;
     description?: string;
     className?: string;
     rtl?: boolean;
@@ -175,6 +181,8 @@ export interface FormListItemOpts {
     keyboardShortcut?: KeyboardActionNames;
     /** A shortcut shown as it is written, for a row with no action of its own. */
     shortcut?: string;
+    /** Text at the end of the row, where a shortcut would go. */
+    trailingText?: string;
     /** An icon at the end of the row, where a shortcut would go. */
     trailingIcon?: string;
 }
@@ -187,12 +195,17 @@ const EMPTY_ICON = "bx bx-empty";
 const TEXT_ENTRY = "input:not([type='checkbox'], [type='radio']), textarea, select, [contenteditable='true']";
 
 const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
-    placement: handleRightToLeftPlacement("right"),
-    fallbackPlacements: [ handleRightToLeftPlacement("right"), handleRightToLeftPlacement("left") ],
+    placement: menuItemTooltipSide,
+    fallbackPlacements: [],
     animation: false
 };
 
-export function FormListItem({ className, icon, iconSvg, iconClassName, value, title, active, disabled, checked, checkable, container, onClick, selected, rtl, description, itemRef: externalItemRef, keyboardShortcut, shortcut, trailingIcon, closeOnSelect, ...contentProps }: FormListItemOpts) {
+export function FormListItem({
+    className, icon, iconSvg, iconClassName, value, title, active, disabled, checked, checkable,
+    container, onClick, onMiddleClick, onContextMenu, selected, rtl, description,
+    itemRef: externalItemRef, keyboardShortcut, shortcut, trailingText, trailingIcon, closeOnSelect,
+    ...contentProps
+}: FormListItemOpts) {
     const itemRef = useSyncedRef<HTMLLIElement>(externalItemRef, null);
     // Inside a `Menu` the row is one of its items; elsewhere, as in a dropdown, it stands alone.
     const menu = useContext(MenuContext);
@@ -219,11 +232,12 @@ export function FormListItem({ className, icon, iconSvg, iconClassName, value, t
         run(new MouseEvent("click", { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey }));
     }
 
-    function onPointed(e: { currentTarget: HTMLLIElement }) {
+    function onPointed() {
         if (!menu || isMobile()) return;
+        // Before `menu.setActive()`: closing a submenu can activate the row that opened it.
+        menu.hoverSubmenu(level);
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, undefined, e.currentTarget);
     }
 
     const hasOwnIcon = !!iconSvg || (!!icon && icon !== EMPTY_ICON);
@@ -253,24 +267,27 @@ export function FormListItem({ className, icon, iconSvg, iconClassName, value, t
             tabIndex={menu ? undefined : container ? -1 : 0}
             // While the keys drive the menu, a row entered by a pointer at rest, as when the menu
             // appears under it, keeps the keys' row. See `pointerMoved`.
-            onPointerEnter={menu ? (e) => {
-                if (!menu.keyboardDriven) onPointed(e);
+            onPointerEnter={menu ? () => {
+                if (!menu.keyboardDriven) onPointed();
             } : undefined}
             // The keys can move the active row from under a pointer at rest, whose `:hover` would
             // then mark a second row. The next move of the pointer makes its row the active one.
             onPointerMove={menu ? (e) => {
-                if (!isActive && pointerMoved(e)) onPointed(e);
+                if (!isActive && pointerMoved(e)) onPointed();
             } : undefined}
             // A press keeps focus where it was, as in a native menu: a text editor keeps the
             // selection a command such as a spelling fix acts on, and a field beside a dropdown
             // stays in focus. A field inside the row takes focus as it would anywhere.
             onMouseDown={(e) => {
                 if (e.button === 0 && !(e.target instanceof Element && e.target.closest(TEXT_ENTRY))) e.preventDefault();
+                preventMiddlePress(e, onMiddleClick);
             }}
             // The row runs on the release, so a press can still be taken back by moving off.
             onClick={(e) => {
                 if (!disabled) run(e);
             }}
+            onAuxClick={middleClickHandler(onMiddleClick, disabled)}
+            onContextMenu={onContextMenu}
             dir={rtl ? "rtl" : undefined}
         >
             {/* One classless span holds the row, as the rows of a menu are laid out. */}
@@ -289,19 +306,74 @@ export function FormListItem({ className, icon, iconSvg, iconClassName, value, t
                     <FormListContent description={description} disabled={disabled} {...contentProps} />
                 )}
                 <FormListShortcut keyboardShortcut={keyboardShortcut} shortcut={shortcut} />
+                {trailingText && <span className="menu-trailing-text">{trailingText}</span>}
                 {trailingIcon && <span className={clsx(trailingIcon, "tn-icon", "menu-trailing-icon")} />}
             </span>
         </li>
     );
 }
 
+/** Bootstrap's default `--bs-tooltip-max-width`, for a tooltip whose inner carries no cap of its own. */
+const TOOLTIP_MAX_WIDTH = 200;
+const TOOLTIP_OFFSET = 6;
+/** The narrowest a tooltip is squeezed to. Below it the text is unreadable, so it is let to overflow. */
+const MIN_TOOLTIP_WIDTH = 160;
+
+/**
+ * Puts a row's tooltip on the reading-direction end of the menu, or on the other side when the
+ * viewport has no room there for a tooltip at its widest. The room is measured against that widest
+ * tooltip rather than this one, so every row of a menu gets the same side whatever its text. A
+ * window too narrow for either side gets the roomier one, with the tooltip wrapped to fit it.
+ *
+ * Bootstrap calls this with the tip first and the row it stands beside second, `this` being the
+ * `Tooltip`.
+ */
+export function menuItemTooltipSide(tip?: HTMLElement, row?: Element): "left" | "right" {
+    const preferred = handleRightToLeftPlacement("right");
+    if (!tip || !row) return preferred;
+
+    // A tooltip shown before may have been narrowed to the room it had then.
+    tip.style.maxWidth = "";
+
+    const { left, right } = row.getBoundingClientRect();
+    const roomOn = (side: "left" | "right") => side === "right"
+        ? window.innerWidth - right - TOOLTIP_OFFSET
+        : left - TOOLTIP_OFFSET;
+    const needed = tooltipWidth(tip) + TOOLTIP_OFFSET;
+    const other = preferred === "right" ? "left" : "right";
+    const room = roomOn(preferred);
+    const side = room >= needed || roomOn(other) <= room ? preferred : other;
+    const roomOnSide = roomOn(side);
+
+    // Neither side may hold a tooltip at its widest, as a menu row on a narrow window leaves little
+    // room either way: it wraps into what its side has rather than being cut by the window.
+    if (roomOnSide < needed) {
+        tip.style.maxWidth = `${Math.max(roomOnSide, MIN_TOOLTIP_WIDTH)}px`;
+    }
+
+    return side;
+}
+
+/**
+ * The widest the tooltip can be: the cap its inner carries, which `tooltip.css` sets well above
+ * Bootstrap's, on `.tooltip-inner`.
+ */
+function tooltipWidth(tip: HTMLElement) {
+    const inner = tip.querySelector(".tooltip-inner");
+    const cap = inner ? parseFloat(getComputedStyle(inner).maxWidth) : NaN;
+    if (!Number.isNaN(cap)) return cap;
+
+    const bootstrapCap = parseFloat(getComputedStyle(tip).getPropertyValue("--bs-tooltip-max-width"));
+    return Number.isNaN(bootstrapCap) ? TOOLTIP_MAX_WIDTH : bootstrapCap;
+}
+
 export function FormListToggleableItem({
-    title, currentValue, onChange, disabled, helpPage, helpTooltip, ...props
+    title, currentValue, onChange, disabled, helpPage, helpTooltip, className, ...props
 }: Omit<FormListItemOpts, "onClick" | "children"> & {
     title: string;
     currentValue: boolean;
     helpPage?: string;
-    /** What the setting does, shown on hover. Unlike {@link helpPage}, it opens nothing. */
+    /** What the setting does, shown beside the menu while the row is hovered. */
     helpTooltip?: string;
     onChange(newValue: boolean): void | Promise<void>;
 }) {
@@ -310,6 +382,8 @@ export function FormListToggleableItem({
     return (
         <FormListItem
             {...props}
+            className={clsx("tn-menu-toggle", className)}
+            title={helpTooltip}
             disabled={disabled}
             onClick={async (e) => {
                 if ((e.target as HTMLElement | null)?.classList.contains("contextual-help")) {
@@ -335,7 +409,6 @@ export function FormListToggleableItem({
                             onClick={() => openInAppHelpFromUrl(helpPage)}
                         />
                     )}
-                    {helpTooltip && <HelpTooltipButton description={helpTooltip} />}
                     <span class="switch-spacer" />
                 </>}
             />
@@ -359,17 +432,45 @@ function FormListContent({ children, badges, description, disabled, disabledTool
 interface FormListHeaderOpts {
     /** Usually a heading, but anything a group can be introduced by: a summary, a row of marks. */
     text: ComponentChildren;
-    /** Optional element rendered right-aligned in the header (e.g. an edit action). */
-    action?: ComponentChildren;
+    /** Icon buttons at the end of the heading, which keep it as tall as a heading without them. */
+    actions?: MenuHeaderActions;
 }
 
-export function FormListHeader({ text, action }: FormListHeaderOpts) {
+/** The most actions a heading shows, as `MenuHeaderActions` allows. A script can pass more. */
+const MAX_HEADER_ACTIONS = 3;
+
+export function FormListHeader({ text, actions = [] }: FormListHeaderOpts) {
+    const menu = useContext(MenuContext);
+    const level = useContext(MenuLevelContext);
+    const shownActions = actions.slice(0, MAX_HEADER_ACTIONS);
+    const hasActions = shownActions.length > 0;
+
     // Its heading speaks for the row, which a menu does not count among its items.
     return (
         <li role="none">
-            <h6 className={clsx("dropdown-header", action && "dropdown-header-with-action")}>
+            <h6 className={clsx("dropdown-header", hasActions && "tn-menu-header-with-actions")}>
                 <span>{text}</span>
-                {action}
+                {hasActions && (
+                    <span
+                        className="tn-menu-header-actions"
+                        // As over a row, the pointer closes the submenu open at this level.
+                        onPointerMove={(e) => {
+                            if (menu && pointerMoved(e)) menu.hoverSubmenu(level);
+                        }}
+                        // A press keeps focus where it was, as on a row.
+                        onMouseDown={(e) => e.preventDefault()}
+                    >
+                        {shownActions.map(({ icon, caption, callback }, index) => (
+                            <ActionButton
+                                key={index} icon={icon} text={caption} titlePosition="top"
+                                onClick={(e) => {
+                                    menu?.close();
+                                    callback(e);
+                                }}
+                            />
+                        ))}
+                    </span>
+                )}
             </h6>
         </li>
     );
@@ -386,6 +487,8 @@ export interface FormDropdownSubmenuProps {
     iconSvg?: string;
     title: ComponentChildren;
     children: ComponentChildren;
+    /** A line under the title, as {@link FormListItem} shows one. */
+    description?: string;
     /** Called when the row is clicked, or run from the keyboard, on the desktop. */
     onDropdownToggleClicked?: (e: MouseEvent) => void;
     /**
@@ -394,10 +497,21 @@ export interface FormDropdownSubmenuProps {
      * whether {@link onDropdownToggleClicked} is set.
      */
     split?: boolean;
+    /** Whether running {@link onDropdownToggleClicked} closes the menu, as `FormListItem` does. */
+    closeOnSelect?: boolean;
+    /** Runs on a middle click on the row, which leaves the menu open. Not for a {@link tile}. */
+    onMiddleClick?: (e: MouseEvent) => void;
+    /** Runs on a right-click on the row, which a menu ignores otherwise. Not for a {@link tile}. */
+    onContextMenu?: (e: MouseEvent) => void;
     disabled?: boolean;
     className?: string;
     /** Inside a menu, whether typing while the submenu is open filters it. See `MenuCommandItem.filterable`. */
     filterable?: boolean;
+    /**
+     * Draws the row as a tile of a `MenuTile` strip, which only opens the submenu: a tile has no
+     * room for the arrow of a split row.
+     */
+    tile?: boolean;
 }
 
 /**
@@ -411,7 +525,11 @@ export function FormDropdownSubmenu(props: FormDropdownSubmenuProps) {
     return <MenuSubmenu {...props} menu={menu} />;
 }
 
-function MenuSubmenu({ menu, icon, iconSvg, title, children, onDropdownToggleClicked, split = !!onDropdownToggleClicked, disabled, className, filterable }: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
+function MenuSubmenu({
+    menu, icon, iconSvg, title, description, children, onDropdownToggleClicked,
+    split = !!onDropdownToggleClicked, closeOnSelect, onMiddleClick, onContextMenu, disabled,
+    className, filterable, tile
+}: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
     const openSubmenu = menu.open[level];
@@ -421,16 +539,75 @@ function MenuSubmenu({ menu, icon, iconSvg, title, children, onDropdownToggleCli
     // A phone's page that closes keeps being drawn until it has slid out.
     const pageSlide = useSlide(open);
 
+    function run(e: MouseEvent) {
+        onDropdownToggleClicked?.(e);
+        if (closeOnSelect) menu.close();
+    }
+
     /** Runs the row's own action for the keys, with the modifiers of the key that ran it. */
     function select(e: MouseEvent | KeyboardEvent) {
-        onDropdownToggleClicked?.(new MouseEvent("click", { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey }));
+        const { ctrlKey, shiftKey, altKey, metaKey } = e;
+        run(new MouseEvent("click", { ctrlKey, shiftKey, altKey, metaKey }));
     }
 
     function onPointed(e: { currentTarget: HTMLLIElement }) {
         if (isMobile()) return;
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, disabled ? undefined : id, e.currentTarget);
+        menu.hoverSubmenu(level, disabled ? undefined : id, e.currentTarget);
+    }
+
+    const layer = isMobile()
+        // A phone has no room beside the menu, so a submenu replaces it as a page of its own.
+        ? (open || pageSlide.from !== undefined) && menu.layerHost && createPortal((
+            <SubmenuPage
+                rowId={id} level={level + 1} title={title} slide={pageSlide} filter={filter}
+            >
+                {children}
+            </SubmenuPage>
+        ), menu.layerHost)
+        : open && openSubmenu && menu.layerHost && createPortal((
+            <SubmenuLayer level={level + 1} submenu={openSubmenu} filter={filter}>
+                {children}
+            </SubmenuLayer>
+        ), menu.layerHost);
+
+    if (tile) {
+        return (
+            <button
+                id={id} type="button"
+                ref={(element) => {
+                    menu.registerRow(id, element
+                        ? { level, element, custom: false, disabled: !!disabled, hasSubmenu: true, inline: true, filterable, select: () => {} }
+                        : undefined);
+                }}
+                className={clsx("tn-menu-action", open && "submenu-open", isActive && "tn-menu-active", className)}
+                role="menuitem" aria-haspopup="menu" aria-expanded={open}
+                disabled={disabled} tabIndex={-1}
+                // As over a row, the pointer closes another submenu at this level, but the tile
+                // opens its own only on a press.
+                onPointerMove={(e) => {
+                    if (!pointerMoved(e)) return;
+                    menu.hoverSubmenu(level, open ? id : undefined, e.currentTarget);
+                    if (!disabled && !isActive) menu.setActive(level, id);
+                }}
+                // As any row: the press keeps focus where it was, and the release acts.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                    // The dropdown's `closeOnClickInside` would close the whole menu.
+                    e.stopPropagation();
+                    menu.setActive(level, id);
+                    menu.openSubmenu(level, id, e.currentTarget, true);
+                }}
+            >
+                <span className="tn-menu-action-icon" aria-hidden="true">
+                    {iconSvg ? <SvgIcon svg={iconSvg} /> : <Icon icon={icon} />}
+                </span>
+                <span id={titleId(id)} className="tn-menu-action-title">{title}</span>
+                <span className="tn-menu-action-more bx bx-chevron-right" aria-hidden="true" />
+                {layer}
+            </button>
+        );
     }
 
     return (
@@ -458,19 +635,27 @@ function MenuSubmenu({ menu, icon, iconSvg, title, children, onDropdownToggleCli
             // As any row: the press keeps focus where it was, and the release acts.
             onMouseDown={(e) => {
                 if (e.button === 0) e.preventDefault();
+                preventMiddlePress(e, onMiddleClick);
             }}
             onClick={(e) => {
                 // The dropdown's `closeOnClickInside` would close the whole menu.
                 e.stopPropagation();
                 if (disabled) return;
                 menu.openSubmenu(level, id, e.currentTarget, true);
-                if (!isMobile()) onDropdownToggleClicked?.(e);
+                if (!isMobile()) run(e);
             }}
+            onAuxClick={middleClickHandler(onMiddleClick, disabled)}
+            onContextMenu={onContextMenu}
         >
             <span className="dropdown-toggle">
                 {iconSvg ? <SvgIcon svg={iconSvg} /> : <Icon icon={icon} />}
                 <span className="tn-menu-gap" />
-                <span id={titleId(id)}>{title}</span>
+                {description ? (
+                    <div>
+                        <span id={titleId(id)}>{title}</span>
+                        <div className="description">{description}</div>
+                    </div>
+                ) : <span id={titleId(id)}>{title}</span>}
             </span>
             {split && !isMobile() && (
                 <span
@@ -483,37 +668,26 @@ function MenuSubmenu({ menu, icon, iconSvg, title, children, onDropdownToggleCli
                     }}
                 />
             )}
-            {isMobile()
-                // A phone has no room beside the menu, so a submenu replaces it as a page of its own.
-                ? (open || pageSlide.from !== undefined) && menu.layerHost && createPortal((
-                    <SubmenuPage rowId={id} level={level + 1} title={title} slide={pageSlide}>
-                        <MenuFilterContext.Provider value={filter}>{children}</MenuFilterContext.Provider>
-                    </SubmenuPage>
-                ), menu.layerHost)
-                : open && openSubmenu && menu.layerHost && createPortal((
-                    <SubmenuLayer level={level + 1} submenu={openSubmenu} pinned={!!filter?.text}>
-                        <MenuFilterContext.Provider value={filter}>{children}</MenuFilterContext.Provider>
-                    </SubmenuLayer>
-                ), menu.layerHost)}
+            {layer}
         </li>
     );
 }
 
 /**
  * A submenu opened on the desktop, placed beside the row it opened from rather than nested in it,
- * so a scrolling menu neither clips it nor scrolls it away. While {@link pinned}, as while it is
- * filtered, it keeps the top it had when pinned, relative to its row, and only its height follows
- * its content.
+ * so a scrolling menu neither clips it nor scrolls it away. While its {@link filter} has text, the
+ * layer keeps its top position relative to its row, and only its height changes with the matches.
  */
-function SubmenuLayer({ level, submenu, pinned, children }: {
+function SubmenuLayer({ level, submenu, filter, children }: {
     level: number,
     submenu: OpenSubmenu,
-    pinned?: boolean,
+    filter: MenuFilter | undefined,
     children: ComponentChildren
 }) {
     const layerRef = useRef<HTMLDivElement>(null);
-    const { dropStart: dropStartLevels, setDropStart } = useMenu();
+    const { dropStart: dropStartLevels, setDropStart, submenuShown, hoverSubmenu } = useMenu();
     const dropStart = !!dropStartLevels[level - 1];
+    const pinned = !!filter?.text;
     /** How far below its row's top the layer stands while pinned. */
     const pinnedOffset = useRef<number | undefined>(undefined);
 
@@ -571,9 +745,15 @@ function SubmenuLayer({ level, submenu, pinned, children }: {
                 <div
                     ref={layerRef} role="menu" aria-labelledby={titleId(submenu.anchor.id)}
                     className={clsx("dropdown-menu show tn-menu", submenu.immediate && "tn-menu-immediate")}
+                    // The fade starts once the opening delay is over.
+                    onAnimationStart={(e) => {
+                        if (e.target === e.currentTarget) submenuShown(submenu);
+                    }}
+                    // Over the layer, the pointer keeps it open as over its row, whatever rows it
+                    // crossed on the way.
+                    onPointerEnter={() => hoverSubmenu(level - 1, submenu.id, submenu.anchor)}
                 >
-                    {/* Like the top level, so the blur on the layer's `::before` stays behind its rows. */}
-                    <menu className="tn-menu-scroll" role="none">{children}</menu>
+                    <MenuList filter={filter}>{children}</MenuList>
                 </div>
             </div>
         </MenuLevelContext.Provider>
@@ -584,12 +764,13 @@ function SubmenuLayer({ level, submenu, pinned, children }: {
  * A submenu opened on a phone: a page that takes the menu's place, headed by the submenu's title and
  * a way back. The level it covers stays mounted, as the row that owns this page stands in it.
  */
-function SubmenuPage({ rowId, level, title, slide, children }: {
+function SubmenuPage({ rowId, level, title, slide, filter, children }: {
     rowId: string,
     level: number,
     title: ComponentChildren,
     /** The slide of whether the page is open: from closed as it arrives, from open as it leaves. */
     slide: Slide<boolean>,
+    filter: MenuFilter | undefined,
     children: ComponentChildren
 }) {
     const menu = useMenu();
@@ -615,9 +796,84 @@ function SubmenuPage({ rowId, level, title, slide, children }: {
                 >
                     <MasterDetailHeader inPage onBack={back} backTitle={t("menu.back")} pageTitle={title} listTitle={title} />
                 </div>
-                <menu className="tn-menu-scroll" role="none">{children}</menu>
+                <MenuList filter={filter}>{children}</MenuList>
             </div>
         </MenuLevelContext.Provider>
+    );
+}
+
+/**
+ * One level of a menu: its rows in a scrolling list and, for a level with a {@link filter}, the
+ * filter input above that list. The input stays in place while the rows scroll.
+ */
+export function MenuList({ filter, bottomUp, children }: {
+    filter: MenuFilter | undefined,
+    /** Puts the filter input below the list, for a menu that opens above its anchor. */
+    bottomUp?: boolean,
+    children: ComponentChildren
+}) {
+    // The rows scroll here and not in the frame, so the theme's `::before` blur stays behind
+    // them. `role="none"` exposes the rows as the menu's own items.
+    const list = <menu className="tn-menu-scroll" role="none">{children}</menu>;
+    return (
+        <MenuFilterContext.Provider value={filter}>
+            {/* One box, so a phone's submenu page hides and slides the input with the rows. */}
+            {filter ? (
+                <div className="tn-menu-filterable">
+                    {!bottomUp && <MenuFilterInput filter={filter} />}
+                    {list}
+                    {bottomUp && <MenuFilterInput filter={filter} />}
+                </div>
+            ) : list}
+        </MenuFilterContext.Provider>
+    );
+}
+
+/**
+ * The filter input above a filterable level's rows. The input handles the editing keys; the menu
+ * handles Up, Down, Enter, Escape and Tab, so a match can be picked while focus is in the input.
+ */
+function MenuFilterInput({ filter }: { filter: MenuFilter }) {
+    const menu = useMenu();
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    // An input unmounted while focused, as when the pointer closes its submenu, returns focus to
+    // the menu and not to the page.
+    useLayoutEffect(() => () => {
+        if (document.activeElement !== inputRef.current) return;
+        menu.layerHost?.focus({ preventScroll: true });
+    }, [ menu.layerHost ]);
+
+    return (
+        <div className="tn-menu-filter">
+            {/* A press anywhere in the box, the clear button's included, keeps focus in the input,
+                and a click in it does not close the dropdown. */}
+            <div
+                className="tn-menu-filter-box tn-input-field"
+                onMouseDown={(e) => {
+                    if (e.target === inputRef.current) return;
+                    e.preventDefault();
+                    inputRef.current?.focus({ preventScroll: true });
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <FormTextBox
+                    inputRef={inputRef} className="tn-menu-filter-input"
+                    data-level={filter.level + 1} currentValue={filter.text}
+                    autoComplete="off" spellcheck={false}
+                    placeholder={t("menu.filter_placeholder")} aria-label={t("menu.filter")}
+                    onChange={(text) => menu.setFilter(text
+                        ? { rowId: filter.rowId, level: filter.level, text }
+                        : undefined)}
+                />
+                {filter.text
+                    ? <ActionButton
+                        className="tn-menu-filter-clear" icon="bx bx-x" text={t("menu.clear_filter")}
+                        onClick={() => menu.setFilter(undefined)}
+                    />
+                    : <span className="bx bx-search" aria-hidden="true" />}
+            </div>
+        </div>
     );
 }
 
@@ -667,6 +923,25 @@ function actsOnClick(target: EventTarget | null, row: HTMLElement) {
     const acting = target instanceof Element ? target.closest(ACTING_ELEMENTS) : null;
     return !!acting && row.contains(acting) && acting !== row
         && acting.getAttribute("aria-disabled") !== "true" && !acting.matches(":disabled");
+}
+
+/**
+ * Cancels a middle press on a row with `onMiddleClick`. The press starts autoscrolling, and pastes
+ * on Linux.
+ */
+function preventMiddlePress(e: MouseEvent, onMiddleClick: ((e: MouseEvent) => void) | undefined) {
+    if (e.button === 1 && onMiddleClick) e.preventDefault();
+}
+
+/** An `auxclick` handler running `onMiddleClick`, which browsers fire for the right button too. */
+function middleClickHandler(
+    onMiddleClick: ((e: MouseEvent) => void) | undefined,
+    disabled?: boolean
+) {
+    if (!onMiddleClick) return undefined;
+    return (e: MouseEvent) => {
+        if (e.button === 1 && !disabled) onMiddleClick(e);
+    };
 }
 
 /**

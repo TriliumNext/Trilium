@@ -14,7 +14,6 @@
 }
 
 .canvas-drawing {
-    height: var(--include-note-height, 20em);
     background-color: var(--canvas-drawing-background-color);
 
     /* Resets the typography inherited from the text note. */
@@ -131,39 +130,17 @@
     }
 }
 
-.include-note {
-    /* The corners of the embed box that the drawing touches. */
-    --_canvas-drawing-top-radius: 0;
-    --_canvas-drawing-bottom-radius: var(--_include-note-bottom-border-radius, 8px);
-
-    &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
-        --_canvas-drawing-top-radius: var(--_include-note-top-border-radius, 8px);
-    }
-
-    &:has(> figcaption) {
-        --_canvas-drawing-bottom-radius: 0;
-    }
-
-    &[data-box-size="small"] .canvas-drawing {
-        height: var(--include-note-height, 10em);
-    }
-
-    &[data-box-size="full"] .canvas-drawing {
-        height: 50em;
-    }
-}
-
 /* Excalidraw hides its overflow, so its rounded container clips what it draws. */
 .include-note-content:not(:fullscreen) .canvas-drawing {
     &, .excalidraw-container, .canvas-drawing-view {
-        border-radius: var(--_canvas-drawing-top-radius) var(--_canvas-drawing-top-radius)
-                       var(--_canvas-drawing-bottom-radius) var(--_canvas-drawing-bottom-radius);
+        border-radius: var(--_include-note-content-top-radius)
+                       var(--_include-note-content-top-radius)
+                       var(--_include-note-content-bottom-radius)
+                       var(--_include-note-content-bottom-radius);
     }
 }
 
 .include-note-content:fullscreen .canvas-drawing {
-    height: 100%;
-
     /* Below the toolbar, clear of the "Exit fullscreen" button of the embed. */
     .Island.App-menu__left {
         top: calc(var(--lg-button-size) + 1rem);

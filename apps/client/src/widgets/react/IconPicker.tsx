@@ -175,7 +175,7 @@ function IconPickerDropdownButton({
             // picker's own stylesheet reach through it.
             className={clsx("note-icon-widget", className)}
             buttonClassName={`note-icon tn-focusable-button ${icon}`}
-            title={title}
+            title={disabled ? undefined : title}
             disabled={disabled}
             dropdownRef={dropdownRef}
             autoClose="outside"

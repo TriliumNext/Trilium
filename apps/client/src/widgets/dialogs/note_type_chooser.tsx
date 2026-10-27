@@ -1,3 +1,5 @@
+import "./note_type_chooser.css";
+
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
@@ -6,7 +8,7 @@ import { t } from "../../services/i18n";
 import type { Suggestion } from "../../services/note_autocomplete";
 import type { NotePresetId } from "../../services/note_presets";
 import note_types from "../../services/note_types";
-import FormGroup from "../react/FormGroup";
+import { Card, CardSection, OptionCardSection } from "../react/Card";
 import { useTriliumEvent } from "../react/hooks";
 import Menu from "../react/Menu";
 import Modal from "../react/Modal";
@@ -86,7 +88,6 @@ export default function NoteTypeChooserDialogComponent() {
             className="note-type-chooser-dialog"
             size="md"
             zIndex={1100} // note type chooser needs to be higher than other dialogs from which it is triggered, e.g. "add link"
-            scrollable
             // Bootstrap focuses the dialog itself once shown, which the menu takes back.
             onShown={() => {
                 if (!userMovedFocus.current) menuRef.current?.focus({ preventScroll: true });
@@ -100,21 +101,27 @@ export default function NoteTypeChooserDialogComponent() {
         >
             {/* The menu stands in here too; `onUserGesture` leaves its presses and keys to it. */}
             <div onPointerDown={onUserGesture} onKeyDown={onUserGesture}>
-                <FormGroup name="parent-note" label={t("note_type_chooser.change_path_prompt")}>
-                    <NoteAutocomplete
-                        onChange={setParentNote}
-                        placeholder={t("note_type_chooser.search_placeholder")}
-                        opts={{
-                            allowCreatingNotes: false,
-                            hideGoToSelectedNoteButton: true,
-                            allowJumpToSearchNotes: false,
-                        }}
-                    />
-                </FormGroup>
+                <Card>
+                    <OptionCardSection
+                        className="note-type-chooser-location"
+                        name="location"
+                        label={t("note_type_chooser.location")}
+                    >
+                        <NoteAutocomplete
+                            onChange={setParentNote}
+                            placeholder={t("note_type_chooser.location_placeholder")}
+                            opts={{
+                                allowCreatingNotes: false,
+                                hideGoToSelectedNoteButton: true,
+                                allowJumpToSearchNotes: false,
+                            }}
+                        />
+                    </OptionCardSection>
 
-                <FormGroup name="note-type" label={t("note_type_chooser.modal_body")}>
-                    <div className="note-type-chooser-list" ref={setListHost} />
-                </FormGroup>
+                    <CardSection className="note-type-chooser-types" noPadding>
+                        <div className="note-type-chooser-list" ref={setListHost} />
+                    </CardSection>
+                </Card>
             </div>
 
             {shown && listHost && noteTypes && (

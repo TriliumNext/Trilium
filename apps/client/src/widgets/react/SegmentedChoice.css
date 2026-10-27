@@ -27,3 +27,14 @@
        single word inside a button. */
     margin-inline-start: 6px;
 }
+
+.tn-segmented-choice .tn-segmented-choice-with-glyph {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tn-segmented-choice .tn-segmented-choice-glyph svg {
+    display: block;
+    width: 24px;
+    height: 18px;
+}

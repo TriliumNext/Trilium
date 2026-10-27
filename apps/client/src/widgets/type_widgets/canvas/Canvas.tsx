@@ -14,6 +14,7 @@ import options from "../../../services/options";
 import "./Canvas.css";
 import { NonDeleted, NonDeletedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import { goToLinkExt } from "../../../services/link";
+import { CanvasNoteMenu } from "./CanvasDrawingMenu";
 import useCanvasPersistence from "./persistence";
 import useCanvasNoteDrop from "./useCanvasNoteDrop";
 import { LANGUAGE_MAPPINGS } from "./i18n";
@@ -37,7 +38,9 @@ export default function Canvas({ note, noteContext }: TypeWidgetProps) {
             isReadOnly={isReadOnly}
             colorScheme={colorScheme}
             persistence={persistence}
-        />
+        >
+            <CanvasNoteMenu />
+        </CanvasEditor>
     );
 }
 

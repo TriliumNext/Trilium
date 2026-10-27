@@ -22,6 +22,7 @@
     --dropdown-border-color: #ccc;
     --dropdown-shadow-opacity: 0.2;
     --dropdown-item-icon-destructive-color: #de4027;
+    --form-error-text-color: #b3261e;
     --contextual-help-icon-color: #004382;
 
     --accented-background-color: #f5f5f5;
@@ -108,6 +109,13 @@
     --menu-item-group-header-color: #00000061;
     --menu-section-background-color: #00000006;
 
+    --glass-background: #ffffffa6;
+    --glass-edge-color: #0000001f;
+    --glass-highlight-color: #ffffffcc;
+
+    --grouped-background-color: #f2f2f7;
+    --grouped-card-background-color: white;
+
     --modal-backdrop-color: #7c7c7c;
     --modal-shadow-color: #00000033;
     --modal-border-color: #797979;
@@ -184,6 +192,7 @@
 
     --right-pane-heading-color: gray;
     --right-pane-peek-background: #ffffffea;
+    --left-pane-peek-background: #f2f2f2ea;
 
     --peek-pane-backdrop-color: #0000000a;
     --peek-pane-shadow-color: #0000003a;
@@ -217,6 +226,8 @@
     --badge-office-preview-background-color: #566d87;
     --badge-share-background-color: #6b6b6b;
     --badge-snippet-background-color: #6b6b6b;
+    --badge-template-background-color: #ece0c0;
+    --badge-template-text-color: #5a4a26;
     --badge-clipped-note-background-color: #2284c0;
     --badge-doc-url-background-color: #2e7d5e;
     --badge-execute-background-color: #7b47af;
@@ -274,6 +285,8 @@
     --log-query-line-background-color: #edbe670b;
     --log-query-verb-color: #ce4f7f;
     --log-sql-color: #df5815;
+    --log-search-verb-color: #3f9189;
+    --log-search-count-color: #00000077;
     --log-error-color: #b32017;
     --log-error-line-background-color: #ff000017;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
@@ -304,6 +317,8 @@
     --calendar-day-hover-color: var(--hover-item-text-color);
     --calendar-day-hover-background: var(--active-item-background-color);
     --calendar-day-highlight-background: #80808024;
+    --calendar-day-selected-background: var(--menu-text-color);
+    --calendar-day-selected-color: var(--menu-background-color-no-backdrop);
 
     --timeline-bullet-color: #a5a5a5;
     --timeline-bullet-hover-color: black;

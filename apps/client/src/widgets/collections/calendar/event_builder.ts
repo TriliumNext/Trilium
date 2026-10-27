@@ -11,9 +11,13 @@ import toastService from "../../../services/toast";
 import {
     type PromotedAttributeSetting, resolvePromotedAttributes, visiblePromotedAttributeNames
 } from "../promoted_attributes";
+import { occurrencesPerWeek, ROUTINE_OCCURRENCES_PER_WEEK } from "./recurrence";
 import {
     drawnEventLabels, formatDateToLocalISO, getCustomisableLabel, getMonthsInDateRange
 } from "./utils";
+
+/** The views that summarize many days, where `#calendar:hideRoutineEvents` applies. */
+const SUMMARY_VIEW_TYPES = [ "dayGridMonth", "multiMonthYear", "listMonth" ];
 
 interface Event {
     startDate: string,
@@ -147,6 +151,7 @@ export async function buildEvent(note: FNote, {
     // looking for a time, so an `UNTIL=…T235959` — which the recurrence editor writes for an end
     // date (see recurrence.ts) — makes it take the event for a timed one whatever its DTSTART says.
     const allDay = !startTime;
+    const isRoutine = !allDay && occurrencesPerWeek(recurrence) >= ROUTINE_OCCURRENCES_PER_WEEK;
 
     // When the event happens is the same whatever the note is called, so it is worked out once for
     // all the titles rather than inside the loop, which used to append the time to the dates again
@@ -184,6 +189,13 @@ export async function buildEvent(note: FNote, {
             promotedAttributes: displayedAttributesData,
             className: clsx({archived: isArchived}, colorClass)
         };
+        // An event's own `display` takes precedence over the `eventDisplay: "none"` that the
+        // summary views get from `#calendar:hideRoutineEvents`, so only routine events hide. A
+        // routine event must not carry the key at all: FullCalendar reads `undefined` as the
+        // string "undefined", which also takes precedence.
+        if (!isRoutine) {
+            eventData.display = "auto";
+        }
         if (endDate) {
             eventData.end = endDate;
         }
@@ -217,6 +229,16 @@ export async function buildEvent(note: FNote, {
         events.push(eventData);
     }
     return events;
+}
+
+/**
+ * Returns the calendar's `eventDisplay` for `viewType`: `"none"` in a summary view under
+ * `#calendar:hideRoutineEvents`, which reaches only routine events, since `buildEvent()` gives
+ * every other event a `display` of its own. FullCalendar reads `eventDisplay` from the calendar's
+ * options only, not from a view's, so the calendar sets it again whenever its view changes.
+ */
+export function routineEventDisplay(hideRoutineEvents: boolean, viewType: string) {
+    return hideRoutineEvents && SUMMARY_VIEW_TYPES.includes(viewType) ? "none" : "auto";
 }
 
 /**

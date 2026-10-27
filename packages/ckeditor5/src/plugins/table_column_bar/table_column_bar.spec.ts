@@ -25,7 +25,7 @@ import {
 } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
-import { cellAt, modelTable } from "../../../test/table-kit.js";
+import { cellAt, modelTable, selectCells } from "../../../test/table-kit.js";
 import type { CellSpec } from "../../../test/table-kit.js";
 import { REFERENCE_WIDTH_PROPERTY } from "../table_scroll.js";
 import TableColumnBar, { findSnapPoint, getCenteredGrowth } from "./table_column_bar.js";
@@ -214,12 +214,82 @@ describe("TableColumnBar", () => {
             expect(withToolbar.ui.viewportOffset.bottom ?? 0).toBe(initialOffset ?? 0);
         });
 
+        it("sits above the element of `tableColumnBar.bottomObstacle`, wherever it floats", async () => {
+            const card = document.createElement("div");
+            card.style.cssText = "position: fixed; bottom: 6px; left: 6px; right: 6px; height: 44px";
+            document.body.appendChild(card);
+            let obstacle: HTMLElement | null = card;
+            const floating = await createTestEditor(PLUGINS, {
+                tableColumnBar: { bottomObstacle: () => obstacle }
+            });
+
+            await showBar(floating, modelTable([["a[]", "b"]]));
+            expectNear(barRectOf(floating).bottom, card.getBoundingClientRect().top);
+
+            // Without one, the bar goes back to the bottom of the viewport.
+            obstacle = null;
+            window.dispatchEvent(new Event("resize"));
+            await expect.poll(() => Math.abs(barRectOf(floating).bottom - document.documentElement.clientHeight))
+                .toBeLessThan(1.5);
+            card.remove();
+        });
+
+        it("corrects for `position: fixed` placing it off the measured viewport", async () => {
+            const card = document.createElement("div");
+            card.style.cssText = "position: fixed; bottom: 6px; left: 6px; right: 6px; height: 44px";
+            document.body.appendChild(card);
+            const shifted = await createTestEditor(PLUGINS, {
+                tableColumnBar: { bottomObstacle: () => card }
+            });
+            // iOS places fixed elements against the layout viewport while the keyboard scrolls
+            // the visual viewport, which a transformed container reproduces.
+            const container = barView(shifted).element?.parentElement;
+            expect(container).toBeInstanceOf(HTMLElement);
+            container?.style.setProperty("transform", "translate(-30px, -40px)");
+
+            try {
+                await showBar(shifted, modelTable([["a[]", "b"]], 'tableWidth="80%"'));
+                expectNear(barRectOf(shifted).bottom, card.getBoundingClientRect().top);
+                expectAligned(shifted);
+
+                const { x, y } = press(dividers(shifted)[0]);
+                moveTo(x + 50, y);
+                await expect.poll(() => isEdgeShown(shifted)).toBe(true);
+                expectNear(edgeRectOf(shifted).left + 1, endEdgeOf(shifted, 0));
+                release();
+            } finally {
+                container?.style.removeProperty("transform");
+                card.remove();
+            }
+        });
+
         it("works with an editor without a toolbar and with a detached one", async () => {
             const balloon = await createTestEditorOf(BalloonEditor, PLUGINS);
             const decoupled = await createTestEditorOf(DecoupledEditor, PLUGINS);
             for (const other of [balloon, decoupled]) {
                 await showBar(other, modelTable([["a[]", "b"]]));
                 expectNear(barRectOf(other).bottom, document.documentElement.clientHeight);
+            }
+        });
+
+        it("leaves room after the end of a scrolling table while touch is in use", async () => {
+            const rtl = await createTestEditor(PLUGINS, { language: { content: "ar" } });
+            setEditableWidth(rtl, 400);
+            for (const each of [editor, rtl]) {
+                await showBar(each, modelTable([["a", "b[]"]], 'tableWidth="200%"'));
+                scrollToEnd(each);
+                await frames();
+                expectNear(roomAfterTable(each), 64);
+
+                // The last divider takes a press across its whole width.
+                const divider = dividers(each)[1];
+                const { x, y } = centerOf(divider);
+                expect(document.elementFromPoint(x + 10 * directionOf(each), y)).toBe(divider);
+            }
+
+            touch("mouse");
+            for (const each of [editor, rtl]) {
+                await expect.poll(() => roomAfterTable(each)).toBeLessThan(1);
             }
         });
     });
@@ -322,9 +392,41 @@ describe("TableColumnBar", () => {
             expect(getTableColumnsWidths(table)).toEqual([]);
         });
 
+        it("resizes only the columns of the cells at the selection", async () => {
+            const rows = [["a", "b[]", "c"], ["d", "e", "f"]];
+            await showBar(editor, modelTable(rows, 'tableWidth="80%"'));
+            const table = firstTable(editor);
+            expect(resizableColumns(editor)).toEqual([1]);
+
+            // Another divider lets a press through to the segments, and ignores one sent to it.
+            const { x, y } = centerOf(dividers(editor)[0]);
+            const pressed = document.elementFromPoint(x, y);
+            expect(pressed?.classList.contains("ck-table-column-bar__segment")).toBe(true);
+            const resizable = centerOf(dividers(editor)[1]);
+            expect(document.elementFromPoint(resizable.x, resizable.y)).toBe(dividers(editor)[1]);
+            press(dividers(editor)[0]);
+            moveTo(x + 40, y);
+            release();
+            expect(getTableColumnsWidths(table)).toEqual([]);
+
+            press(segments(editor)[0]);
+            release();
+            await expect.poll(() => resizableColumns(editor)).toEqual([0]);
+
+            selectCells(editor, [0, 1], [1, 2]);
+            await expect.poll(() => resizableColumns(editor)).toEqual([1, 2]);
+
+            editor.model.change((writer) => writer.setSelection(table, "on"));
+            await expect.poll(() => resizableColumns(editor)).toEqual([]);
+
+            const merged = [[{ contents: "a[]", colspan: 2 }, "b"], ["c", "d", "e"]];
+            await showBar(editor, modelTable(merged));
+            await expect.poll(() => resizableColumns(editor)).toEqual([0, 1]);
+        });
+
         it("keeps pixels for a table sized in pixels", async () => {
             const widths = ["100px", "200px"];
-            await showBar(editor, resizedTable([["a[]", "b"]], widths, 'tableWidth="300px"'));
+            await showBar(editor, resizedTable([["a", "b[]"]], widths, 'tableWidth="300px"'));
             const table = firstTable(editor);
             const edge = endEdgeOf(editor, 1);
 
@@ -361,7 +463,7 @@ describe("TableColumnBar", () => {
             });
             const referenced = await createTestEditor(PLUGINS);
             setEditableWidth(referenced, 400);
-            await showBar(referenced, modelTable([["a[]", "b"]], 'tableWidth="25%"'));
+            await showBar(referenced, modelTable([["a", "b[]"]], 'tableWidth="25%"'));
             const edge = endEdgeOf(referenced, 1);
 
             const { x, y } = press(dividers(referenced)[1]);
@@ -487,10 +589,29 @@ describe("TableColumnBar", () => {
             expect(columnWidths(editor)[0]).toBeLessThan(grown);
         });
 
+        it("keeps a scrolled table still while the last divider moves into the room", async () => {
+            await showBar(editor, modelTable([["a", "b[]"]], 'tableWidth="200%"'));
+            const figure = domFigure(editor);
+            scrollToEnd(editor);
+            await frames();
+            const scrolled = figure.scrollLeft;
+            const edge = endEdgeOf(editor, 1);
+
+            const { x, y } = press(dividers(editor)[1]);
+            moveTo(x + 16, y);
+            await frames();
+            await frames();
+            expect(figure.scrollLeft).toBe(scrolled);
+            expectNear(endEdgeOf(editor, 1), edge + 16);
+            release();
+        });
+
         it("evens out the two columns beside a divider on a double tap", async () => {
             const widths = ["100px", "200px", "100px"];
             await showBar(editor, resizedTable([["a[]", "b", "c"]], widths, 'tableWidth="400px"'));
             const table = firstTable(editor);
+            selectCells(editor, [0, 0], [0, 2]);
+            await expect.poll(() => resizableColumns(editor)).toEqual([0, 1, 2]);
 
             tapDivider(editor, 0);
             tapDivider(editor, 1);
@@ -532,12 +653,15 @@ describe("TableColumnBar", () => {
             tapDivider(editor, 0);
             const afterDrag = getTableColumnsWidths(first);
 
-            tapDivider(editor, 1);
+            // Each section starts long after the last tap of the one before.
+            now.mockReturnValue(2000);
+            tapDivider(editor, 0);
             press(segments(editor)[0]);
             release();
-            tapDivider(editor, 1);
+            tapDivider(editor, 0);
             const afterPress = getTableColumnsWidths(first);
 
+            now.mockReturnValue(3000);
             tapDivider(editor, 0);
             editor.model.change((writer) => writer.setSelection(second.getNodeByPath([0, 0]), 0));
             await frames();
@@ -598,10 +722,13 @@ function touch(pointerType = "touch") {
     document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType }));
 }
 
-function press(element: Element, init: PointerEventInit = {}) {
+function centerOf(element: Element) {
     const rect = element.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+function press(element: Element, init: PointerEventInit = {}) {
+    const { x, y } = centerOf(element);
     element.dispatchEvent(new PointerEvent("pointerdown", {
         bubbles: true,
         cancelable: true,
@@ -642,6 +769,12 @@ function segments(editor: Editor) {
 
 function dividers(editor: Editor) {
     return [...barView(editor).track.querySelectorAll<HTMLElement>(".ck-table-column-bar__divider")];
+}
+
+function resizableColumns(editor: Editor) {
+    return dividers(editor)
+        .filter((divider) => divider.classList.contains("ck-table-column-bar__divider_resizable"))
+        .map((divider) => Number(divider.dataset.column));
 }
 
 function edgeElementOf(editor: Editor) {
@@ -708,6 +841,31 @@ function domFigure(editor: Editor) {
 
 function domCells(editor: Editor) {
     return [...domFigure(editor).querySelectorAll<HTMLElement>("tr:first-child > td")];
+}
+
+/** 1 when the inline end of a row is on the right, -1 when it is on the left. */
+function directionOf(editor: Editor) {
+    return editor.locale.contentLanguageDirection === "rtl" ? -1 : 1;
+}
+
+function scrollToEnd(editor: Editor) {
+    const figure = domFigure(editor);
+    figure.scrollLeft = figure.scrollWidth * directionOf(editor);
+}
+
+/** The distance from the inline end of the table to the inline end of its visible part. */
+function roomAfterTable(editor: Editor) {
+    const figure = domFigure(editor);
+    const table = figure.querySelector(":scope > table");
+    if (!table) {
+        throw new Error("The figure has no table.");
+    }
+
+    const left = figure.getBoundingClientRect().left + figure.clientLeft;
+    const tableRect = table.getBoundingClientRect();
+    return directionOf(editor) > 0
+        ? left + figure.clientWidth - tableRect.right
+        : tableRect.left - left;
 }
 
 function columnWidths(editor: Editor) {

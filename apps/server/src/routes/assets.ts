@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type serveStatic from "serve-static";
 
+import { getHelpAssetDir } from "../in_app_help_provider.js";
 import { assetUrlFragment } from "../services/asset_path.js";
 import auth from "../services/auth.js";
 import port from "../services/port.js";
@@ -65,8 +66,10 @@ async function register(app: express.Application) {
             cacheDir: path.join(clientDir, "../..", ".cache", `vite-${port}`)
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
-            if (req.url.startsWith("/images/") || req.url.startsWith("/doc_notes/")) {
-                // Images and doc notes are served as static assets from the server.
+            if (req.url.startsWith("/images/") || req.url.startsWith("/help/")) {
+                // Images and the in-app help's assets are served as static assets from the server.
+                // Anything not listed here is handed to Vite, which answers unknown paths with
+                // index.html — a 200 that looks fine until you read the body.
                 next();
                 return;
             }
@@ -112,7 +115,10 @@ async function register(app: express.Application) {
     }
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
-    app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
+    // Images and attachments of the in-app help. They are not committed under the server's assets
+    // — the User Guide owns them — so in a source checkout they are served straight out of docs/,
+    // while a packaged build copies them in (see scripts/build.ts).
+    app.use(`/${assetUrlFragment}/help`, persistentCacheStatic(getHelpAssetDir()));
     // `vX` is a version-independent alias so custom themes and scripts can reference built-in assets
     // without naming a version they would have to bump on every upgrade. It serves the same files as
     // the versioned routes above, but without `maxAge`: the URL no longer changes between releases,

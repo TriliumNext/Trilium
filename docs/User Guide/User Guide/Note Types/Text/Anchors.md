@@ -39,7 +39,7 @@ Clicking on a reference link pointing to a anchor will automatically scroll to t
 
 1.  Create an anchor in the target note using the same process as described above.
 2.  Click on the anchor to reveal the anchor's floating toolbar.
-3.  Click on the _Copy anchor reference link_ button.
+3.  Click on the <span class="tn-icon cke cke-trilium-copy"></span> _Copy anchor reference link_ button.
 4.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 > [!NOTE]

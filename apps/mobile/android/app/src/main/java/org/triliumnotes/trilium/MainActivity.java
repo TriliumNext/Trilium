@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -20,13 +21,16 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Streaming HTTP proxy for the sync worker (see TriliumWebViewClient).
-        getBridge().setWebViewClient(new TriliumWebViewClient(getBridge()));
+        // Local API requests answered by the page's SQLite worker (see TriliumRequestBridge),
+        // and the streaming HTTP proxy for the sync worker (see TriliumWebViewClient).
+        TriliumRequestBridge requestBridge = TriliumRequestBridge.install(getBridge());
+        getBridge().setWebViewClient(new TriliumWebViewClient(getBridge(), requestBridge));
         // Binary write channel for downloads and backups (see TriliumFileSink).
         TriliumFileSink.install(getBridge());
         enableEdgeToEdge();
         forwardInsetsToWebView();
         applySystemBarsAppearance();
+        handleBackInPage();
     }
 
     @Override
@@ -52,22 +56,23 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Injects system bar insets into the WebView as CSS custom properties,
+     * Injects system bar and display cutout insets into the WebView as CSS custom properties,
      * since Android's WebView doesn't populate env(safe-area-inset-*).
      * Also handles IME (keyboard) insets to shrink the viewport instead of scrolling.
      */
     private void forwardInsetsToWebView() {
         View decorView = getWindow().getDecorView();
         ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets safeArea = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             boolean isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
             float density = getResources().getDisplayMetrics().density;
 
-            int top = Math.round(systemBars.top / density);
-            int bottom = Math.round(systemBars.bottom / density);
-            int left = Math.round(systemBars.left / density);
-            int right = Math.round(systemBars.right / density);
+            int top = Math.round(safeArea.top / density);
+            int bottom = Math.round(safeArea.bottom / density);
+            int left = Math.round(safeArea.left / density);
+            int right = Math.round(safeArea.right / density);
             int keyboardHeight = Math.round(ime.bottom / density);
 
             String js = "document.documentElement.style.setProperty('--safe-area-inset-top', '" + top + "px');"
@@ -87,6 +92,26 @@ public class MainActivity extends BridgeActivity {
             }
 
             return insets;
+        });
+    }
+
+    /**
+     * Hands the system back gesture and button to the page, which closes the menu or dialog on top
+     * or steps back toward the note tree; when it has nothing to go back from, the app goes to the
+     * background, as at the root of any Android app.
+     */
+    private void handleBackInPage() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                getBridge().getWebView().evaluateJavascript(
+                        "window.__triliumHandleBack ? window.__triliumHandleBack() : false",
+                        (handled) -> {
+                            if (!"true".equals(handled)) {
+                                moveTaskToBack(true);
+                            }
+                        });
+            }
         });
     }
 

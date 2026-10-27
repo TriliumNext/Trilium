@@ -75,10 +75,14 @@ export function distributeColumns(editor: Editor, table: ModelElement, columns: 
 }
 
 /**
- * The columns covered by `cells`, including every column a merged cell spans.
- * `TableUtils.getColumnIndexes()` only reports the column each cell starts in.
+ * The columns covered by `cells`, including every column a merged cell spans, or an empty range
+ * (`first > last`) when no cell of `table` is among them. `TableUtils.getColumnIndexes()` only
+ * reports the column each cell starts in.
  */
-function getSpannedColumns(table: ModelElement, cells: readonly ModelElement[]): IndexRange {
+export function getSpannedColumns(
+    table: ModelElement,
+    cells: readonly ModelElement[]
+): IndexRange {
     const selected = new Set(cells);
     let first = Infinity;
     let last = -1;

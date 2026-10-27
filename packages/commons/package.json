@@ -1,11 +1,11 @@
 {
   "name": "@triliumnext/commons",
-  "version": "0.106.0",
+  "version": "0.106.1",
   "description": "Shared library between the clients (e.g. browser, Electron) and the server, mostly for type definitions and utility methods.",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Trilium Notes Team",
     "email": "contact@eliandoran.me",
@@ -18,12 +18,12 @@
     "dayjs": "1.11.23",
     "exceljs": "4.4.0",
     "jszip": "3.10.2",
-    "marked": "18.1.0",
+    "marked": "18.1.1",
     "marked-footnote": "1.4.0",
-    "numfmt": "3.2.6"
+    "numfmt": "4.1.1"
   },
   "devDependencies": {
-    "happy-dom": "20.14.6",
+    "happy-dom": "21.0.4",
     "preact": "11.0.1"
   }
 }

@@ -2,12 +2,15 @@ import { Command, type Editor, type ModelElement, type ModelWriter } from "ckedi
 
 import { BLOCK_ID, type BlockReferenceTarget, generateBlockId } from "../block_reference/block_reference_editing.js";
 import {
+    getSelectedChildren, getSibling, moveSelectedChildren, moveToSibling, type SiblingTarget
+} from "../containers/container_content.js";
+import {
     ALIGNMENT_ATTRIBUTE, DEFAULT_TAB_ALIGNMENT, ELEMENTS, parseTabAlignment, type TabAlignment
 } from "./constants.js";
 
 /**
  * Inserts a tabs block with two numbered tabs at the selection and selects the first tab's title,
- * so typing replaces it.
+ * so typing replaces it. Selected content moves into the first tab's panel.
  */
 export class InsertTabsCommand extends Command {
 
@@ -19,21 +22,26 @@ export class InsertTabsCommand extends Command {
 
     public override execute(): void {
         const model = this.editor.model;
+        const selection = model.document.selection;
 
         model.change(writer => {
+            const content = selection.isCollapsed ? null : model.getSelectedContent(selection);
             const tabs = writer.createElement(ELEMENTS.tabs);
             const firstTab = createTab(writer, getDefaultTitle(this.editor, 0));
             writer.append(firstTab, tabs);
             writer.append(createTab(writer, getDefaultTitle(this.editor, 1)), tabs);
             model.insertObject(tabs, null, null, { setSelection: "on" });
+            if (content) {
+                model.insertContent(content, writer.createRangeIn(getPanel(firstTab)));
+            }
             selectTitle(writer, firstTab);
         });
     }
 }
 
 /**
- * Adds a tab after the one holding the selection, numbered by its position, and selects its
- * title. With the whole block selected, the tab goes at the end.
+ * Adds a tab after or before the one holding the selection, numbered by its position, and selects
+ * its title. With the whole block selected, the tab goes at the end or at the start.
  */
 export class InsertTabCommand extends Command {
 
@@ -41,24 +49,23 @@ export class InsertTabCommand extends Command {
         this.isEnabled = !!getSelectedTabs(this.editor);
     }
 
-    public override execute(): void {
+    public override execute({ position = "after" }: { position?: "before" | "after" } = {}): void {
         const editor = this.editor;
+        const model = editor.model;
         const tabs = getSelectedTabs(editor);
         /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tabs) {
             return;
         }
         const currentTab = getSelectedTab(editor);
-        // A tabs block holds only elements, so the offset after a tab is its index plus one.
-        const index = currentTab ? editor.model.createPositionAfter(currentTab).offset : tabs.childCount;
+        // A tabs block holds only elements, so the offset of the new tab is its index.
+        const at = currentTab
+            ? model.createPositionAt(currentTab, position)
+            : model.createPositionAt(tabs, position === "after" ? "end" : 0);
 
-        editor.model.change(writer => {
-            const tab = createTab(writer, getDefaultTitle(editor, index));
-            if (currentTab) {
-                writer.insert(tab, currentTab, "after");
-            } else {
-                writer.insert(tab, tabs, "end");
-            }
+        model.change(writer => {
+            const tab = createTab(writer, getDefaultTitle(editor, at.offset));
+            writer.insert(tab, at);
             selectTitle(writer, tab);
         });
     }
@@ -99,41 +106,60 @@ export class RemoveTabCommand extends Command {
     }
 }
 
-/** Swaps the tab holding the selection with its left or right neighbor. */
+/**
+ * Moves the blocks of the current tab's panel that the selection touches to the panel of another
+ * tab, which then shows. Content moved toward the first tab goes to the end of the target panel,
+ * and content moved toward the last tab goes to its start, so it keeps its place in the reading
+ * order.
+ */
+export class MoveToTabCommand extends Command {
+
+    public override refresh(): void {
+        this.isEnabled = !!getSelectedTabContent(this.editor);
+    }
+
+    public override execute({ target }: { target: SiblingTarget }): void {
+        const content = getSelectedTabContent(this.editor);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
+        if (!content) {
+            return;
+        }
+        const tab = getSibling(content.parent.parent as ModelElement, target);
+        if (tab) {
+            moveSelectedChildren(this.editor, content, getPanel(tab));
+        }
+    }
+}
+
+/**
+ * Moves the tab holding the selection to the place of another tab. A command made with a
+ * `target`, such as `moveTabLeft`, is disabled when there is no such tab; one made without takes
+ * the target in `execute()`.
+ */
 export class MoveTabCommand extends Command {
 
-    private readonly direction: "left" | "right";
+    private readonly target: SiblingTarget | undefined;
 
-    public constructor(editor: Editor, direction: "left" | "right") {
+    public constructor(editor: Editor, target?: SiblingTarget) {
         super(editor);
-        this.direction = direction;
+        this.target = target;
     }
 
     public override refresh(): void {
         const tab = getSelectedTab(this.editor);
-        this.isEnabled = !!this.getNeighbor(tab);
+        this.isEnabled = !!tab && (!this.target || !!getSibling(tab, this.target));
     }
 
-    public override execute(): void {
-        const editor = this.editor;
-        const tab = getSelectedTab(editor);
-        const neighbor = this.getNeighbor(tab);
+    public override execute({ target = this.target }: { target?: SiblingTarget } = {}): void {
+        const tab = getSelectedTab(this.editor);
         /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
-        if (!tab || !neighbor) {
+        if (!tab) {
             return;
         }
-
-        editor.model.change(writer => {
-            const target = this.direction === "left"
-                ? writer.createPositionBefore(neighbor)
-                : writer.createPositionAfter(neighbor);
-            writer.move(writer.createRangeOn(tab), target);
-        });
-    }
-
-    private getNeighbor(tab: ModelElement | null) {
-        const neighbor = this.direction === "left" ? tab?.previousSibling : tab?.nextSibling;
-        return neighbor?.is("element", ELEMENTS.tab) ? neighbor : null;
+        const sibling = target && getSibling(tab, target);
+        if (sibling) {
+            this.editor.model.change(writer => moveToSibling(writer, tab, sibling));
+        }
     }
 }
 
@@ -237,9 +263,24 @@ export function getSelectedTabs(editor: Editor): ModelElement | null {
     return (position?.findAncestor(ELEMENTS.tabs) as ModelElement | null) ?? null;
 }
 
+/**
+ * Returns the panel that holds a non-collapsed selection, with the first and last of its blocks
+ * that the selection touches, or `null` for a selection in a title.
+ */
+function getSelectedTabContent(editor: Editor) {
+    const content = getSelectedChildren(editor, ELEMENTS.tabPanel);
+    const tab = editor.model.document.selection.getFirstPosition()?.findAncestor(ELEMENTS.tab);
+    return content && content.parent.parent === tab ? content : null;
+}
+
 /** Returns the title of `tab`, which the post-fixer keeps as its first child. */
 function getTitle(tab: ModelElement): ModelElement {
     return tab.getChild(0) as ModelElement;
+}
+
+/** Returns the panel of `tab`, which the post-fixer keeps as its second child. */
+function getPanel(tab: ModelElement): ModelElement {
+    return tab.getChild(1) as ModelElement;
 }
 
 /** Returns "Tab N" for the tab at the zero-based `index`. */

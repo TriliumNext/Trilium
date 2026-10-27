@@ -4,7 +4,7 @@ import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import {
-    CollectionPropertiesDialog, INCLUDE_ARCHIVED_PROPERTY
+    CollectionPropertiesDialog, IncludedNotesCard
 } from "../../note_bars/CollectionProperties";
 import { bookPropertiesConfig } from "../../note_bars/collection-properties-config";
 import { Card } from "../../react/Card";
@@ -50,16 +50,18 @@ export default function CalendarProperties({
     return (
         <CollectionPropertiesDialog
             className="calendar-properties-dialog"
-            title={t("calendar_view.properties")}
+            title={t("calendar_view.properties-title")}
             show
             stackable
             onHidden={onClose}
         >
             <Card className="calendar-properties-general" heading={t("calendar_view.general")}>
-                {GENERAL_PROPERTIES.map((property, index) => (
+                {bookPropertiesConfig.calendar.properties.map((property, index) => (
                     <ViewPropertySection key={index} note={note} property={property} />
                 ))}
             </Card>
+
+            <IncludedNotesCard note={note} />
 
             <PromotedAttributesCard
                 heading={t("calendar_view.event_attributes")}
@@ -87,7 +89,3 @@ export default function CalendarProperties({
     );
 }
 
-/** What the settings dropdown offers for a calendar, which the General card repeats. */
-const GENERAL_PROPERTIES = [
-    ...bookPropertiesConfig.calendar.properties, INCLUDE_ARCHIVED_PROPERTY
-];

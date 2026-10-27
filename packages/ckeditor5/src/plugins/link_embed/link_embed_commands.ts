@@ -1,5 +1,5 @@
 import { isHttpUrl } from '@triliumnext/commons';
-import { Command, findAttributeRange, ModelLiveRange } from 'ckeditor5';
+import { Command, type Editor, findAttributeRange, ModelLiveRange } from 'ckeditor5';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
@@ -75,10 +75,7 @@ export class InsertLinkEmbedCommand extends Command {
             return;
         }
 
-        const editorEl = editor.editing.view.getDomRoot();
-        const component = glob.getComponentByEl<EditorComponent>(editorEl);
-
-        const metadata = await component.fetchLinkMetadata(url);
+        const metadata = await getLinkEmbedHost(editor).fetchMetadata(url);
 
         editor.model.change((writer) => {
             editor.model.insertContent(writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
@@ -219,13 +216,10 @@ export class ChangeLinkDisplayCommand extends Command {
         // The link already is one.
         if (targetMode === 'plain') return;
 
-        const editorEl = editor.editing.view.getDomRoot();
-        const component = glob.getComponentByEl<EditorComponent>(editorEl);
-
         // The linked text is tracked as a live range: the metadata fetch reads the page server-side
         // and can take seconds, and edits made meanwhile must not shift what gets replaced.
         const liveRange = ModelLiveRange.fromRange(findAttributeRange(position, 'linkHref', href, model));
-        const metadata = await component.fetchLinkMetadata(href);
+        const metadata = await getLinkEmbedHost(editor).fetchMetadata(href);
         const range = liveRange.toRange();
         liveRange.detach();
 
@@ -266,11 +260,9 @@ export class ChangeLinkDisplayCommand extends Command {
         return embedType === 'opengraph' ? 'card' : 'embed';
     }
 
-    /** Delegates to the client service to avoid duplicating URL detection logic. */
+    /** Delegates to the host to avoid duplicating URL detection logic. */
     private _detectEmbedType(url: string): string {
-        const editorEl = this.editor.editing.view.getDomRoot();
-        const component = glob.getComponentByEl<EditorComponent>(editorEl);
-        return component.detectEmbedType(url);
+        return getLinkEmbedHost(this.editor).detectEmbedType(url);
     }
 }
 
@@ -363,4 +355,44 @@ function getSelectedLinkWidget(editor: any) {
         return selected;
     }
     return null;
+}
+
+/**
+ * The link preview services of the `linkEmbed` config entry. A service the host leaves out falls
+ * back to a placeholder: metadata that is unresolved, the `opengraph` type, and a preview that
+ * shows the title or the URL as text.
+ */
+export function getLinkEmbedHost(editor: Editor): LinkEmbedHost {
+    return { ...FALLBACK_HOST, ...editor.config.get('linkEmbed') };
+}
+
+/** The services the host provides for link previews, through the `linkEmbed` config entry. */
+export interface LinkEmbedHost {
+    /**
+     * Reads a page's preview metadata. Never rejects: any failure (network error, HTTP error,
+     * unparseable page) resolves as `{ unresolved: true }` with hostname-derived placeholders, so
+     * callers branch on `unresolved` instead of catching.
+     */
+    fetchMetadata(url: string): Promise<LinkEmbedMetadata>;
+    /** The kind of preview `url` supports: `opengraph` for a card, anything else for a player. */
+    detectEmbedType(url: string): string;
+    renderEmbed(container: HTMLElement, metadata: LinkEmbedMetadata, editable?: boolean): void;
+    renderMention(container: HTMLElement, metadata: Pick<LinkEmbedMetadata, 'url' | 'title' | 'favicon'>, editable?: boolean): void;
+}
+
+const FALLBACK_HOST: LinkEmbedHost = {
+    fetchMetadata: async (url) => ({ url, embedType: 'opengraph', unresolved: true }),
+    detectEmbedType: () => 'opengraph',
+    renderEmbed: renderAsText,
+    renderMention: renderAsText
+};
+
+function renderAsText(container: HTMLElement, { url, title }: Pick<LinkEmbedMetadata, 'url' | 'title'>) {
+    container.textContent = title || url;
+}
+
+declare module 'ckeditor5' {
+    interface EditorConfig {
+        linkEmbed?: Partial<LinkEmbedHost>;
+    }
 }

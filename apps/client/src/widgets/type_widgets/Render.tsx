@@ -14,7 +14,7 @@ import { FormListItem } from "../react/FormList";
 import { useEffectiveReadOnly, useNoteRelation, useTriliumEvent } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
+import { disposeReactWidget, ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import RenderErrorCard from "../react/RenderErrorCard";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
@@ -55,16 +55,30 @@ export default function Render(props: TypeWidgetProps) {
 
 function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
+    const renderController = useRef<AbortController | null>(null);
     const [ error, setError ] = useState<{ error: unknown; noteId?: string } | null>(null);
     const parentComponent = useContext(ParentComponent);
 
     function refresh() {
-        if (!contentRef) return;
+        if (!contentRef.current) return;
+        renderController.current?.abort();
+        const controller = new AbortController();
+        renderController.current = controller;
         setError(null);
-        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }), parentComponent ?? undefined);
+        void render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }), {
+            parentComponent: parentComponent ?? undefined,
+            signal: controller.signal
+        });
     }
 
-    useEffect(refresh, [ note ]);
+    useEffect(() => {
+        refresh();
+        const container = contentRef.current;
+        return () => {
+            renderController.current?.abort();
+            if (container) disposeReactWidget(container);
+        };
+    }, [ note ]);
 
     // Keyboard shortcut.
     useTriliumEvent("renderActiveNote", ({ ntxId: eventNtxId }) => {

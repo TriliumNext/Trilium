@@ -16,6 +16,8 @@ export interface ExecOpts {
     cookieJar?: CookieJar;
     auth?: {
         password?: string;
+        /** Sent as `trilium-totp` when the server has two-factor authentication enabled. */
+        totpToken?: string;
     };
     timeout: number;
     body?: string | {};

@@ -85,6 +85,11 @@ runs:
           echo "TRILIUM_ANDROID_VERSION_NAME=nightly-$(date -u +%Y%m%d)"
         } >> "$GITHUB_ENV"
 
+    - name: Run Android unit tests
+      shell: bash
+      working-directory: apps/mobile/android
+      run: ./gradlew testDebugUnitTest createDebugUnitTestCoverageReport --no-daemon
+
     - name: Assemble APK
       shell: bash
       working-directory: apps/mobile/android

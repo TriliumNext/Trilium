@@ -388,6 +388,8 @@ export interface SearchResultDetails {
     highlightedParentPathTitle?: string;
     contentSnippet?: string;
     highlightedContentSnippet?: string;
+    /** Whether the note body continues beyond the returned snippet. */
+    contentSnippetTruncated?: boolean;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
     /**
@@ -855,6 +857,18 @@ export interface UserFont {
     blobId: string;
 }
 
+/** A CSS note carrying `#appTheme`, as `/api/options/user-themes` lists it. */
+export interface UserTheme {
+    /** The value of the `theme` option that selects this theme. */
+    val: string;
+    title: string;
+    noteId: string;
+    /** The icon class of the note. */
+    icon: string;
+    /** The built-in theme loaded under the custom one, from `#appThemeBase`. */
+    appThemeBase?: "next" | "next-light" | "next-dark";
+}
+
 export interface TemplatesResponse {
     /** The IDs of the user-defined templates, i.e. the notes labelled with `#template`. */
     templateNoteIds: string[];
@@ -984,6 +998,8 @@ export interface OCRProcessResponse {
         extractedAt: string;
         language?: string;
         pageCount?: number;
+        /** Pages whose OCR threw, for a document whose other pages still produced a result. */
+        failedPageCount?: number;
         processingType?: string;
     };
     /** The minimum confidence threshold that was applied (0-1 scale). */

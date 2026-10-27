@@ -1,7 +1,9 @@
 import { createDeepSeek, type DeepSeekLanguageModelChatOptions, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
 import type { LlmAttachmentKind, LlmReasoningEffort } from "@triliumnext/commons";
+import type { ToolSet } from "ai";
 
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
+import { createReadWebPageTool, createWebSearchTool } from "../web_search.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
 import { llmFetch } from "./fetch.js";
 
@@ -75,6 +77,15 @@ export class DeepSeekProvider extends BaseProvider {
             ? { thinking: { type: "disabled" } }
             : { thinking: { type: "enabled" }, reasoningEffort: effort };
         return { deepseek: options };
+    }
+
+    /**
+     * DeepSeek's Chat Completions API has no server-side search, so built-in search calls its
+     * Search API with the provider's key, through the same tools a search provider gets.
+     */
+    protected override addWebSearchTool(tools: ToolSet): void {
+        tools.web_search = createWebSearchTool({ provider: "deepseek", apiKey: this.apiKey, baseURL: this.baseURL }, { builtIn: true });
+        tools.read_web_page = createReadWebPageTool();
     }
 
     /** DeepSeek reads no PDFs, and images only on its vision models (`deepseek-v4-flash-vision-exp`). */

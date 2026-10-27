@@ -45,6 +45,8 @@ android {
             // ever conflicting with a nightly or stable install.
             applicationIdSuffix ".debug"
             manifestPlaceholders = [appName: "Trilium Debug"]
+            // createDebugUnitTestCoverageReport writes the JaCoCo report CI uploads to Codecov.
+            enableUnitTestCoverage true
         }
         release {
             minifyEnabled false
@@ -71,6 +73,8 @@ dependencies {
     implementation "androidx.webkit:webkit:$androidxWebkitVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
+    // android.jar's org.json is a stub that throws in JVM unit tests; this is the real library.
+    testImplementation "org.json:json:20250517"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

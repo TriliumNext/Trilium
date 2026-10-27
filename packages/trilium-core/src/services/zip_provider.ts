@@ -1,9 +1,9 @@
 /**
- * A zip to read: either its raw bytes, or — server/desktop only — a filesystem path the provider opens
- * and reads *in place* (no full-buffer copy, no ~2 GiB `fs.readFile` ceiling). The browser/WASM provider
- * only supports the byte form.
+ * A zip to read: its raw bytes, a filesystem path (server/desktop only) or a `Blob` (browser/WASM
+ * only). A path or a `Blob` is read in place, one byte range at a time, so the archive is never held
+ * in memory whole.
  */
-export type ZipSource = Uint8Array | { path: string };
+export type ZipSource = Uint8Array | { path: string } | { blob: Blob };
 
 export interface ZipEntry {
     fileName: string;

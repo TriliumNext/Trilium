@@ -4,9 +4,10 @@ import appContext, { type CommandNames } from "../components/app_context.js";
 import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import { t } from "../services/i18n.js";
-import options from "../services/options.js";
+import { getSearchEngine } from "../services/search_engine.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
+import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
 import { splitMenuItem } from "./context_menu_utils.js";
 import { buildTableContextMenuSections, hasTableCellSelection } from "./table_context_menu.js";
@@ -83,8 +84,9 @@ export function setupContextMenu() {
         // earlier one standing.
         const selection = window.getSelection();
         const selectionText = selection?.toString() ?? "";
-        const isOnSelection = !!selection && !!selectionText.trim()
-            && isPointInSelection(selection, event.clientX, event.clientY);
+        const isOnSelection = !!selection && (isOnSelectedCodeLine(selection, element, isEditable)
+            || (!!selectionText.trim()
+                && isPointInSelection(selection, event.clientX, event.clientY)));
 
         // A table cell in the text editor is claimed even at a bare caret, for the table section.
         const isOnEditableTableCell = isEditable && !!element?.closest("td, th");
@@ -138,6 +140,9 @@ export async function buildNoteContextMenuItems(
     const hasCellSelection = tableSections !== null && await hasTableCellSelection(target.element);
     const blockReferenceItems = target.isEditable
         ? await buildBlockReferenceMenuItems(target.element, host.paste)
+        : null;
+    const codeEditorItems = target.isEditable
+        ? await buildCodeEditorContextMenuItems(target.element)
         : null;
     const hasText = !hasCellSelection && target.selectionText.trim().length > 0;
     const hasClipboardContent = hasText || hasCellSelection;
@@ -250,36 +255,30 @@ export async function buildNoteContextMenuItems(
             ...tableSections.delete, { kind: "separator" }, tableSections.select);
     }
 
+    if (codeEditorItems) {
+        items.push({ kind: "separator" }, ...codeEditorItems);
+    }
+
     if (hasText) {
         const { selectionText } = target;
         const shortenedSelection = selectionText.length > 15
             ? `${selectionText.slice(0, 13)}…`
             : selectionText;
 
-        const customSearchEngineName = options.get("customSearchEngineName");
-        const customSearchEngineUrl = options.get("customSearchEngineUrl") as string;
-        let searchEngineName;
-        let searchEngineUrl;
-        if (customSearchEngineName && customSearchEngineUrl) {
-            searchEngineName = customSearchEngineName;
-            searchEngineUrl = customSearchEngineUrl;
-        } else {
-            searchEngineName = "DuckDuckGo";
-            searchEngineUrl = "https://duckduckgo.com/?q={keyword}";
-        }
-
-        const searchUrl = searchEngineUrl.replace("{keyword}", encodeURIComponent(selectionText));
-
         items.push({ kind: "separator" });
 
-        items.push({
-            title: t("electron_context_menu.search_online", {
-                term: utils.escapeHtml(shortenedSelection),
-                searchEngine: utils.escapeHtml(searchEngineName)
-            }),
-            uiIcon: "bx bx-search-alt",
-            handler: () => host.openExternal(searchUrl)
-        });
+        const searchEngine = getSearchEngine();
+        if (searchEngine) {
+            const searchUrl = searchEngine.url.replace("{keyword}", encodeURIComponent(selectionText));
+            items.push({
+                title: t("electron_context_menu.search_online", {
+                    term: utils.escapeHtml(shortenedSelection),
+                    searchEngine: utils.escapeHtml(searchEngine.name)
+                }),
+                uiIcon: searchEngine.icon,
+                handler: () => host.openExternal(searchUrl)
+            });
+        }
 
         items.push({
             title: t("electron_context_menu.search_in_trilium", { term: utils.escapeHtml(shortenedSelection) }),
@@ -322,6 +321,19 @@ async function showBrowserContextMenu(x: number, y: number, target: ContextMenuT
     if (!items.length) return;
 
     contextMenu.show({ x, y, items, selectMenuItemHandler: () => {} });
+}
+
+/**
+ * Whether `element` is on a line of an editable code editor that `selection` touches. The whole
+ * line counts, so that the text tools are reachable for a selection of blank lines or spaces.
+ */
+function isOnSelectedCodeLine(
+    selection: Selection,
+    element: HTMLElement | null,
+    isEditable: boolean
+) {
+    const line = isEditable ? element?.closest(".cm-line") : null;
+    return !!line && !selection.isCollapsed && selection.containsNode(line, true);
 }
 
 /** Whether the point (`x`, `y`), in viewport coordinates, lands on what `selection` highlights. */

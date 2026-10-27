@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import FAttribute from "../../../entities/fattribute";
 import type FNote from "../../../entities/fnote";
@@ -160,6 +160,106 @@ describe("buildRowDefinitions", () => {
             relations: { assignee: "gonemissing12" },
             relationTitles: { assignee: "" }
         });
+    });
+
+    it("carries each note's creation and modification dates as ISO strings, nested rows included", async () => {
+        const parent = buildNote({
+            title: "Collection",
+            children: [
+                { title: "Task", children: [ { title: "Subtask" } ] },
+                { title: "Unknown to the server" }
+            ]
+        });
+        const [ task, unknown ] = await Promise.all(parent.getChildBranches().map((branch) => branch.getNote()));
+        const subtask = await task?.getChildBranches()[0]?.getNote();
+        if (!task || !subtask || !unknown) throw new Error("expected the child notes to be built");
+
+        const post = vi.spyOn(server, "post").mockResolvedValue({
+            [task.noteId]: {
+                utcDateCreated: "2026-01-05 09:30:00.000Z",
+                utcDateModified: "2026-03-01 12:00:00.000Z"
+            },
+            [subtask.noteId]: {
+                utcDateCreated: "2026-02-10 08:00:00.000Z",
+                utcDateModified: "2026-02-11 08:00:00.000Z"
+            }
+        });
+
+        const { definitions } = await buildRowDefinitions(parent, [], false);
+
+        // The whole tree in one request rather than one per level.
+        expect(post.mock.calls.filter(([ url ]) => url === "notes/metadata")).toHaveLength(1);
+        expect(definitions).toMatchObject([
+            {
+                title: "Task",
+                dateCreated: "2026-01-05T09:30:00.000Z",
+                dateModified: "2026-03-01T12:00:00.000Z",
+                _children: [ {
+                    title: "Subtask",
+                    dateCreated: "2026-02-10T08:00:00.000Z",
+                    dateModified: "2026-02-11T08:00:00.000Z"
+                } ]
+            },
+            { title: "Unknown to the server", dateCreated: undefined, dateModified: undefined }
+        ]);
+        post.mockRestore();
+    });
+
+    it("loads the notes it is missing one level at a time, not one note at a time", async () => {
+        const parent = buildNote({
+            title: "Collection",
+            children: [ "A", "B", "C" ].map((title) => ({
+                title,
+                children: [ 1, 2 ].map((n) => ({ title: `${title}${n}`, children: [ { title: `${title}${n}.x` } ] }))
+            }))
+        });
+        // Everything below the direct children is known only by its branch, as after `GET /api/tree`.
+        const unloaded = new Map<string, FNote>();
+        const childrenOf = (note: FNote) => froca.getNotesFromCache(note.children);
+        for (const child of childrenOf(parent)) {
+            for (const grandchild of childrenOf(child)) {
+                for (const note of [ grandchild, ...childrenOf(grandchild) ]) {
+                    unloaded.set(note.noteId, note);
+                    delete froca.notes[note.noteId];
+                }
+            }
+        }
+        const post = vi.spyOn(server, "post").mockImplementation((async (url: string, data: { noteIds: string[] }) => {
+            if (url !== "tree/load") return {};
+            for (const noteId of data.noteIds) {
+                const note = unloaded.get(noteId);
+                if (note) froca.notes[noteId] = note;
+            }
+            return { notes: [], branches: [], attributes: [] };
+        }) as unknown as typeof server.post);
+
+        const { definitions } = await buildRowDefinitions(parent, [], false);
+
+        expect(post.mock.calls.filter(([ url ]) => url === "tree/load").map(([ , data ]) => (data as { noteIds: string[] }).noteIds.length))
+            .toEqual([ 6, 6 ]);
+        expect(definitions[2]._children?.[1]._children?.[0]).toMatchObject({ title: "C2.x" });
+        post.mockRestore();
+    });
+
+    it("leaves out the hidden subtree, as the note tree does under root", async () => {
+        const parent = buildNote({
+            title: "Root",
+            children: [
+                { title: "Task" },
+                { id: "_hidden", title: "Hidden Notes", children: [ { title: "Help" } ] }
+            ]
+        });
+        const hiddenChild = froca.getNoteFromCache("_hidden")?.children[0];
+        if (!hiddenChild) throw new Error("expected the hidden subtree to be built");
+        delete froca.notes[hiddenChild];
+        const post = vi.spyOn(server, "post").mockResolvedValue({});
+
+        const { definitions, hasSubtree } = await buildRowDefinitions(parent, [], false);
+
+        expect(definitions.map((def) => def.title)).toEqual([ "Task" ]);
+        expect(hasSubtree).toBe(false);
+        expect(post.mock.calls.filter(([ url ]) => url === "tree/load")).toHaveLength(0);
+        post.mockRestore();
     });
 });
 

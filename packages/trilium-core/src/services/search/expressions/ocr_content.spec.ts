@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
@@ -253,6 +253,49 @@ describe("OCRContentExpression (real DB)", () => {
 
             expect(result.hasNote(openly)).toBe(true);
             expect(result.hasNote(encrypted)).toBe(true);
+        });
+
+        it("reads only the notes of the input set", () => {
+            const inSet = [
+                createNoteWithOcrText("scopedmarker own"),
+                createNoteWithOcrAttachment("scopedmarker attachment"),
+                createProtectedNoteWithOcrText("scopedmarker protected own"),
+                createProtectedNoteWithOcrAttachment("scopedmarker protected attachment")
+            ];
+            const outOfSet = [
+                createNoteWithOcrText("scopedmarker own"),
+                createNoteWithOcrAttachment("scopedmarker attachment"),
+                createProtectedNoteWithOcrText("scopedmarker protected own"),
+                createProtectedNoteWithOcrAttachment("scopedmarker protected attachment")
+            ];
+
+            const sql = getSql();
+            const getColumn = sql.getColumn.bind(sql);
+            const iterateRows = sql.iterateRows.bind(sql);
+            const readNoteIds = new Set<string>();
+            vi.spyOn(sql, "getColumn").mockImplementation((query, params) => {
+                const column = getColumn<string>(query, params);
+                for (const noteId of column) {
+                    readNoteIds.add(noteId);
+                }
+                return column as never;
+            });
+            vi.spyOn(sql, "iterateRows").mockImplementation(function* (query, params) {
+                for (const row of iterateRows<{ noteId: string }>(query, params)) {
+                    readNoteIds.add(row.noteId);
+                    yield row as never;
+                }
+            });
+
+            const result = execute(new OCRContentExpression([ "scopedmarker" ]), new NoteSet(inSet));
+            vi.restoreAllMocks();
+
+            const inSetIds = inSet.map((note) => note.noteId).sort();
+            expect(noteIds(result)).toEqual(inSetIds);
+            expect([ ...readNoteIds ].sort()).toEqual(inSetIds);
+            for (const note of outOfSet) {
+                expect(readNoteIds.has(note.noteId)).toBe(false);
+            }
         });
 
         it("cannot match a protected note once the session is closed", () => {

@@ -20,14 +20,13 @@ The CKEditor ecosystem is quite extensible, in the sense that custom plugins can
 Trilium makes use of such features:
 
 *   The math feature is added by a version of [isaul32/ckeditor5-math: Math feature for CKEditor 5.](https://github.com/isaul32/ckeditor5-math) modified by us to fit our needs.
-*   We also make use of modified upstream plugins such as [ckeditor/ckeditor5-mermaid](https://github.com/ckeditor/ckeditor5-mermaid) to allow inline Mermaid code.
 *   [mlewand/ckeditor5-keyboard-marker: Plugin adds support for the keyboard input element (`<kbd>`) to CKEditor 5.](https://github.com/mlewand/ckeditor5-keyboard-marker)
 *   A modified version of [ThomasAitken/ckeditor5-footnotes: Footnotes plugin for CKEditor5](https://github.com/ThomasAitken/ckeditor5-footnotes) to allow footnotes.
 
 Apart from that, Trilium also has its own set of specific plugins such as:
 
 *   <a class="reference-link" href="../../Note%20Types/Text/Cut%20to%20subnote.md">Cut to subnote</a>
-*   <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>
+*   <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>, which also shows drawing canvases and [Mermaid diagrams](../../Note%20Types/Text/Insert%20buttons.md) in place.
 *   Mentions, for linking pages.
 *   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a>
 *   [Reference links](../../Note%20Types/Text/Links.md)

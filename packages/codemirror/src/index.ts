@@ -1,19 +1,35 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
-import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
+import {
+    Compartment, countColumn, EditorSelection, EditorState, Prec, StateEffect, Transaction,
+    type Extension
+} from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
-import { autocompletion, type CompletionSource } from "@codemirror/autocomplete";
-import { vim } from "@replit/codemirror-vim";
+import { autocompletion, completionStatus, type CompletionSource } from "@codemirror/autocomplete";
+import { CodeMirror as VimEditor, vim } from "@replit/codemirror-vim";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import byMimeType, { MIME_ALIASES } from "./syntax_highlighting.js";
 import smartIndentWithTab from "./extensions/custom_tab.js";
 import type { ThemeDefinition } from "./color_themes.js";
 import { createSearchHighlighter, SearchHighlighter, searchMatchHighlightTheme } from "./find_replace.js";
-import { buildTypeCompletion, type ScriptApiContext } from "./type_completion/index.js";
+import { isHostedCompletionShown } from "./extensions/hosted_completion.js";
+import type SharedHistory from "./shared_history.js";
+import {
+    buildTypeCompletion, type ScriptApiContext, type TypeCompleter
+} from "./type_completion/index.js";
 
 export { default as ColorThemes, type ThemeDefinition, type ThemeVariant, getThemeById } from "./color_themes.js";
-export { isScriptMime, type ScriptApiContext, SCRIPT_MIME_BACKEND, SCRIPT_MIME_FRONTEND } from "./type_completion/index.js";
+export {
+    default as SharedHistory, type HostHistory, type HostHistoryStep
+} from "./shared_history.js";
+export {
+    hasSelectedText, runLineOperation, runTextTransform, type TextToolTarget
+} from "./text_tools.js";
+export {
+    isScriptMime, type ScriptApiContext, SCRIPT_MIME_BACKEND, SCRIPT_MIME_FRONTEND,
+    type TypeCompletionEntry
+} from "./type_completion/index.js";
 export { triliumLogHighlighter } from "./extensions/trilium_log_highlighter.js";
 
 // Custom keymap to prevent Ctrl+Enter from inserting a newline
@@ -37,7 +53,7 @@ const lintTooltipTheme = EditorView.baseTheme({
         maxWidth: "min(40em, 90vw)"
     },
     ".cm-diagnostic": {
-        whiteSpace: "normal",
+        whiteSpace: "pre-wrap",
         overflowWrap: "anywhere"
     }
 });
@@ -62,6 +78,8 @@ export interface EditorConfig {
     parent: HTMLElement;
     placeholder?: string;
     lineWrapping?: boolean;
+    /** Whether to show the line numbers in the gutter. Defaults to true. */
+    lineNumbers?: boolean;
     vimKeybindings?: boolean;
     readOnly?: boolean;
     /** Disables some of the nice-to-have features (bracket matching, syntax highlighting, indentation markers) in order to improve performance. */
@@ -80,6 +98,18 @@ export interface EditorConfig {
     onContentChanged?: ContentChangedListener;
 }
 
+/** An end of the document, where the cursor enters or leaves the editor. */
+export type DocumentEdge = "start" | "end";
+
+/** Where the cursor is, with the line and the column both counted from 1. */
+export interface CursorPosition {
+    line: number;
+    /** The column as displayed, with a tab as wide as the tab size. */
+    column: number;
+    /** The number of selected characters, all ranges of the selection together. */
+    selectionLength: number;
+}
+
 function buildIndentUnit(indentSize: number, useTabs: boolean) {
     return useTabs ? "\t" : " ".repeat(indentSize);
 }
@@ -89,19 +119,27 @@ export default class CodeMirror extends EditorView {
     private config: EditorConfig;
     private languageCompartment: Compartment;
     private historyCompartment: Compartment;
+    private editabilityCompartment: Compartment;
     private themeCompartment: Compartment;
     private lineWrappingCompartment: Compartment;
+    private lineNumbersCompartment: Compartment;
+    private hasLineNumbers: boolean;
     private keyboardSuggestionsCompartment: Compartment;
     private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
     private typeCompletionCompartment: Compartment;
     private completionSourceCompartment: Compartment;
     private searchPlugin?: SearchHighlighter | null;
+    private sharedHistory: SharedHistory | null = null;
     private namedCompartments = new Map<string, Compartment>();
     /** Named completion sources aggregated into the editor's single autocompletion. */
     private completionSources = new Map<string, CompletionSource>();
+    /** The language service's completions for the current MIME type, or null where it has none. */
+    private typeCompleter: TypeCompleter | null = null;
     /** Monotonic token guarding against out-of-order async type-completion updates. */
     private typeCompletionToken = 0;
+    /** The latest type-completion build, which a request for the same MIME type and context joins. */
+    private typeCompletionBuild: { key: string; done: Promise<void> } | null = null;
     /** Current MIME type, retained so the type completion can be rebuilt when only the api context changes. */
     private currentMime: string | null = null;
     /** Per-note context tuning the script `api` surface (e.g. custom-request-handler members). */
@@ -110,8 +148,10 @@ export default class CodeMirror extends EditorView {
     constructor(config: EditorConfig) {
         const languageCompartment = new Compartment();
         const historyCompartment = new Compartment();
+        const editabilityCompartment = new Compartment();
         const themeCompartment = new Compartment();
         const lineWrappingCompartment = new Compartment();
+        const lineNumbersCompartment = new Compartment();
         const keyboardSuggestionsCompartment = new Compartment();
         const indentUnitCompartment = new Compartment();
         const searchHighlightCompartment = new Compartment();
@@ -136,7 +176,9 @@ export default class CodeMirror extends EditorView {
             typeCompletionCompartment.of([]),
             completionSourceCompartment.of([]),
             highlightActiveLine(),
-            lineNumbers(),
+            lineNumbersCompartment.of(
+                config.lineNumbers === false ? hiddenLineNumbersTheme : lineNumbers()
+            ),
             themeCompartment.of([
                 syntaxHighlighting(defaultHighlightStyle, { fallback: true })
             ]),
@@ -163,19 +205,11 @@ export default class CodeMirror extends EditorView {
             ];
         }
 
-        extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
-
-        if (!config.readOnly) {
-            // Logic specific to editable notes
-            if (config.placeholder) {
-                extensions.push(placeholder(config.placeholder));
-            }
-
-            extensions.push(historyCompartment.of(history()));
-        } else {
-            // Logic specific to read-only notes
-            extensions.push(EditorState.readOnly.of(true));
-        }
+        extensions.push(
+            EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)),
+            editabilityCompartment.of(buildEditability(!!config.readOnly, config.placeholder)),
+            historyCompartment.of(config.readOnly ? [] : history())
+        );
 
         super({
             parent: config.parent,
@@ -189,8 +223,11 @@ export default class CodeMirror extends EditorView {
         this.config = config;
         this.languageCompartment = languageCompartment;
         this.historyCompartment = historyCompartment;
+        this.editabilityCompartment = editabilityCompartment;
         this.themeCompartment = themeCompartment;
         this.lineWrappingCompartment = lineWrappingCompartment;
+        this.lineNumbersCompartment = lineNumbersCompartment;
+        this.hasLineNumbers = config.lineNumbers !== false;
         this.keyboardSuggestionsCompartment = keyboardSuggestionsCompartment;
         this.indentUnitCompartment = indentUnitCompartment;
         this.searchHighlightCompartment = searchHighlightCompartment;
@@ -199,10 +236,47 @@ export default class CodeMirror extends EditorView {
     }
 
     #onDocumentUpdated(v: ViewUpdate) {
+        for (const tr of v.transactions) {
+            this.sharedHistory?.record(tr);
+        }
         if (v.docChanged) {
             this.config.onContentChanged?.();
         }
         for (const listener of this.#updateListeners) listener(v);
+    }
+
+    /**
+     * Keeps the undo history in `history`, which the editor shares with its host, such as the text
+     * note that embeds it. With `null`, the editor keeps a history of its own.
+     */
+    setSharedHistory(history: SharedHistory | null) {
+        if (history === this.sharedHistory) return;
+
+        this.sharedHistory?.detach(this);
+        this.sharedHistory = history;
+        history?.attach(this);
+        this.dispatch({
+            effects: [ this.historyCompartment.reconfigure(this.buildHistory(this.state.readOnly)) ]
+        });
+    }
+
+    /** Undoes or redoes in the shared history. Returns `false` when the editor has none. */
+    runSharedHistory(name: "undo" | "redo") {
+        if (!this.sharedHistory) return false;
+
+        this.sharedHistory.host[name]();
+        return true;
+    }
+
+    override destroy() {
+        this.sharedHistory?.detach(this);
+        this.sharedHistory = null;
+        super.destroy();
+    }
+
+    private buildHistory(isReadOnly: boolean): Extension {
+        if (this.sharedHistory) return sharedHistoryKeys(this);
+        return isReadOnly ? [] : history();
     }
 
     #updateListeners: Array<(v: ViewUpdate) => void> = [];
@@ -216,6 +290,53 @@ export default class CodeMirror extends EditorView {
         return () => {
             const i = this.#updateListeners.indexOf(listener);
             if (i >= 0) this.#updateListeners.splice(i, 1);
+        };
+    }
+
+    /**
+     * Calls `listener` with the cursor position now and each time it changes. Returns an
+     * unsubscribe function.
+     */
+    addCursorPositionListener(listener: (position: CursorPosition) => void): () => void {
+        let { doc, selection, tabSize } = this.state;
+        let position = this.getCursorPosition();
+        listener(position);
+
+        return this.addUpdateListener(() => {
+            const { state } = this;
+            // Counting the column is linear in the line, so updates such as scrolling skip it.
+            if (state.doc === doc && state.selection === selection && state.tabSize === tabSize) {
+                return;
+            }
+            ({ doc, selection, tabSize } = state);
+
+            const next = this.getCursorPosition();
+            if (next.line === position.line && next.column === position.column
+                && next.selectionLength === position.selectionLength) {
+                return;
+            }
+            position = next;
+            listener(position);
+        });
+    }
+
+    /**
+     * The position of the main cursor, which is the end of the main selection that moves, and the
+     * length of the selection.
+     */
+    getCursorPosition(): CursorPosition {
+        const { doc, selection, tabSize } = this.state;
+        const { head } = selection.main;
+        const line = doc.lineAt(head);
+        let selectionLength = 0;
+        for (const range of selection.ranges) {
+            selectionLength += range.to - range.from;
+        }
+
+        return {
+            line: line.number,
+            column: countColumn(line.text, tabSize, head - line.from) + 1,
+            selectionLength
         };
     }
 
@@ -235,12 +356,22 @@ export default class CodeMirror extends EditorView {
     }
 
     setText(content: string) {
+        this.replaceText(content, false);
+    }
+
+    /** Replaces the content with content loaded from elsewhere, outside the undo history. */
+    loadText(content: string) {
+        this.replaceText(content, true);
+    }
+
+    private replaceText(content: string, isLoad: boolean) {
         const transaction = this.state.update({
             changes: {
                 from: 0,
                 to: this.state.doc.length,
                 insert: content || "",
-            }
+            },
+            annotations: Transaction.addToHistory.of(!isLoad)
         });
         // Dispatching a full-document replacement maps the viewport onto the whole new document.
         // A visible editor's next measure shrinks it back, but an editor inside a display:none
@@ -256,16 +387,51 @@ export default class CodeMirror extends EditorView {
         }
     }
 
+    /** Applies `theme`, at once if an editor has loaded it before. */
     async setTheme(theme: ThemeDefinition) {
-        const extension = await theme.load();
+        let extension = loadedThemes.get(theme);
+        if (!extension) {
+            extension = await theme.load();
+            loadedThemes.set(theme, extension);
+        }
         this.dispatch({
             effects: [ this.themeCompartment.reconfigure([ extension ]) ]
+        });
+    }
+
+    /**
+     * Makes the editor read-only or editable without replacing its view. An editable editor starts
+     * a new undo history.
+     */
+    setReadOnly(isReadOnly: boolean) {
+        if (isReadOnly === this.state.readOnly) return;
+
+        this.dispatch({
+            effects: [
+                this.editabilityCompartment.reconfigure(
+                    buildEditability(isReadOnly, this.config.placeholder)
+                ),
+                this.historyCompartment.reconfigure(this.buildHistory(isReadOnly))
+            ]
         });
     }
 
     setLineWrapping(wrapping: boolean) {
         this.dispatch({
             effects: [ this.lineWrappingCompartment.reconfigure(wrapping ? EditorView.lineWrapping : []) ]
+        });
+    }
+
+    setLineNumbers(isShown: boolean) {
+        if (isShown === this.hasLineNumbers) return;
+
+        this.hasLineNumbers = isShown;
+        this.dispatch({
+            effects: [
+                this.lineNumbersCompartment.reconfigure(
+                    isShown ? lineNumbers() : hiddenLineNumbersTheme
+                )
+            ]
         });
     }
 
@@ -300,7 +466,7 @@ export default class CodeMirror extends EditorView {
      * Clears the history of undo/redo. Generally useful when changing to a new document.
      */
     clearHistory() {
-        if (this.config.readOnly) {
+        if (this.state.readOnly || this.sharedHistory) {
             return;
         }
 
@@ -319,6 +485,56 @@ export default class CodeMirror extends EditorView {
         });
     }
 
+    /** Focuses the editor with the cursor at the start or the end of the document. */
+    focusAt(edge: DocumentEdge) {
+        const position = edge === "start" ? 0 : this.state.doc.length;
+        this.dispatch({ selection: EditorSelection.cursor(position), scrollIntoView: true });
+        this.focus();
+    }
+
+    /**
+     * The edge of the document that the arrow key of `event`, pressed without modifiers, moves
+     * the cursor past, or `null` for any other key, while the cursor stays in the document and
+     * while the completion list is open.
+     */
+    getEdgeLeftBy(event: KeyboardEvent): DocumentEdge | null {
+        const { ranges, main } = this.state.selection;
+        const hasModifier = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
+        if (event.target !== this.contentDOM || hasModifier || event.isComposing
+            || ranges.length > 1 || !main.empty || completionStatus(this.state) === "active"
+            || isHostedCompletionShown(this)) {
+            return null;
+        }
+
+        const length = this.state.doc.length;
+        switch (event.key) {
+            case "ArrowLeft":
+                return main.head === 0 ? "start" : null;
+            case "ArrowRight":
+                return main.head === length ? "end" : null;
+            // The line boundary is the start or end of the visual line, wrapped lines included.
+            case "ArrowUp":
+                return this.moveToLineBoundary(main, false).head === 0 ? "start" : null;
+            case "ArrowDown":
+                return this.moveToLineBoundary(main, true).head === length ? "end" : null;
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Drops the line-wrap side (`assoc`) of the cursor before the caret leaves the editor. On a
+     * focus change, CodeMirror moves the DOM selection to that side, which focuses the editor
+     * again.
+     */
+    prepareToLeave() {
+        const { main } = this.state.selection;
+        if (!main.empty || !main.assoc) return;
+
+        const cursor = EditorSelection.cursor(main.head);
+        this.dispatch({ selection: this.state.selection.replaceRange(cursor) });
+    }
+
     /**
      * Inserts a blank line at the very top of the document and places the cursor on it — the code-note
      * analog of the Notion-like behavior when pressing Enter in the note title. If the first line is
@@ -327,7 +543,7 @@ export default class CodeMirror extends EditorView {
      * CodeMirror's `readOnly` facet does not block programmatic transactions.
      */
     insertBlankLineAtTop() {
-        if (this.config.readOnly) {
+        if (this.state.readOnly) {
             return;
         }
         const firstLineEmpty = this.state.doc.line(1).length === 0;
@@ -339,7 +555,13 @@ export default class CodeMirror extends EditorView {
         });
     }
 
-    async performFind(searchTerm: string, matchCase: boolean, wholeWord: boolean) {
+    /**
+     * Highlights the matches of `searchTerm`. While `isActivating`, the match nearest the cursor
+     * becomes the active one and scrolls into view.
+     */
+    async performFind(
+        searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true
+    ) {
         const plugin = createSearchHighlighter();
         this.dispatch({
             effects: this.searchHighlightCompartment.reconfigure(plugin)
@@ -348,7 +570,7 @@ export default class CodeMirror extends EditorView {
         // Wait for the plugin to activate in the next render cycle
         await new Promise(requestAnimationFrame);
         const instance = this.plugin(plugin);
-        instance?.searchFor(searchTerm, matchCase, wholeWord);
+        instance?.searchFor(searchTerm, matchCase, wholeWord, isActivating);
         this.searchPlugin = instance;
 
         /* v8 ignore next 4 -- the plugin was just installed via the compartment above and the
@@ -370,6 +592,16 @@ export default class CodeMirror extends EditorView {
 
     async replaceAll(replaceText: string) {
         this.searchPlugin?.replaceAll(replaceText);
+    }
+
+    /** Leaves no match of the search active, keeping every match highlighted. */
+    clearActiveMatch() {
+        this.searchPlugin?.clearActiveMatch();
+    }
+
+    /** The matches of the search, in document order. */
+    getSearchMatches() {
+        return this.searchPlugin?.matchRanges ?? [];
     }
 
     cleanSearch() {
@@ -438,19 +670,49 @@ export default class CodeMirror extends EditorView {
     /**
      * Enables the TypeScript language service (full completion, hover docs and
      * diagnostics) for backend/frontend script notes, and clears it otherwise.
-     * Guarded by a token so a slow async build for a previous MIME type can't
-     * overwrite a newer one.
+     * A request for the MIME type and context of the latest build joins that build,
+     * since a code note's effects request the same one several times on mount.
      */
-    async #updateTypeCompletion(mime: string) {
+    #updateTypeCompletion(mime: string) {
+        const key = typeCompletionKey(mime, this.scriptApiContext);
+        if (this.typeCompletionBuild?.key === key) {
+            return this.typeCompletionBuild.done;
+        }
+
+        const done = this.#buildTypeCompletion(mime);
+        const build = { key, done };
+        this.typeCompletionBuild = build;
+        // A failed build is not reused, so the next request tries again.
+        done.catch(() => {
+            if (this.typeCompletionBuild === build) this.typeCompletionBuild = null;
+        });
+        return done;
+    }
+
+    /** Guarded by a token so a slow build for a previous MIME type can't overwrite a newer one. */
+    async #buildTypeCompletion(mime: string) {
         const token = ++this.typeCompletionToken;
-        const { extensions, source } = await buildTypeCompletion(mime, this.scriptApiContext);
+        const { extensions, complete } = await buildTypeCompletion(mime, this.scriptApiContext);
         if (token !== this.typeCompletionToken) {
             return; // a newer setMimeType call superseded this one
         }
         this.dispatch({
             effects: this.typeCompletionCompartment.reconfigure(extensions)
         });
-        this.setCompletionSource("typescript", source);
+        this.typeCompleter = complete;
+    }
+
+    /** Whether the MIME type has a TypeScript language service for `getTypeCompletions()`. */
+    hasTypeCompletions() {
+        return this.typeCompleter !== null;
+    }
+
+    /**
+     * The language service's completions at the caret, best first, or null where it offers none
+     * or the MIME type has no language service.
+     */
+    async getTypeCompletions() {
+        return await this.typeCompleter?.(this.state.selection.main.head) ?? null;
     }
 
     /**
@@ -477,6 +739,52 @@ export default class CodeMirror extends EditorView {
     }
 }
 
+// Vim's `u` and `Ctrl-R` run these commands, which use the shared history of an editor first.
+for (const name of [ "undo", "redo" ] as const) {
+    const run = VimEditor.commands[name];
+    VimEditor.commands[name] = (cm) => {
+        if (!(cm.cm6 instanceof CodeMirror && cm.cm6.runSharedHistory(name))) {
+            run(cm);
+        }
+    };
+}
+
+const HISTORY_INPUT_TYPES: Record<string, "undo" | "redo" | undefined> = {
+    historyUndo: "undo",
+    historyRedo: "redo"
+};
+
+/** The undo and redo keys and input events of `view`, which run its shared history. */
+function sharedHistoryKeys(view: CodeMirror): Extension {
+    const undo = () => view.runSharedHistory("undo");
+    const redo = () => view.runSharedHistory("redo");
+    return [
+        Prec.high(keymap.of([
+            { key: "Mod-z", run: undo, stopPropagation: true },
+            { key: "Mod-y", run: redo, stopPropagation: true },
+            { key: "Mod-Shift-z", run: redo, stopPropagation: true }
+        ])),
+        EditorView.domEventHandlers({
+            beforeinput(event) {
+                const name = HISTORY_INPUT_TYPES[event.inputType];
+                if (!name) return false;
+
+                event.preventDefault();
+                return view.runSharedHistory(name);
+            }
+        })
+    ];
+}
+
+/** Identifies a type-completion build by its MIME type and the context flags that are set. */
+function typeCompletionKey(mime: string, context: ScriptApiContext) {
+    const flags = Object.entries(context)
+        .filter(([ , value ]) => value)
+        .map(([ name ]) => name)
+        .sort();
+    return [ mime, ...flags ].join(" ");
+}
+
 /**
  * Returns the body-level element CodeMirror renders tooltips into, outside `.cm-editor`, whose
  * `overflow: hidden` clips an absolutely positioned tooltip (Safari, iOS).
@@ -492,3 +800,38 @@ function getTooltipHost() {
     document.body.appendChild(host);
     return host;
 }
+
+/** The read-only facet with a hidden caret, or the placeholder of an editable editor. */
+function buildEditability(isReadOnly: boolean, placeholderText: string | undefined): Extension {
+    if (isReadOnly) return [ EditorState.readOnly.of(true), hiddenCaretTheme ];
+    return placeholderText ? placeholder(placeholderText) : [];
+}
+
+/**
+ * Hides the caret, and the block cursor that Vim draws in its place. `Prec.highest` outranks the
+ * `.cm-content` rule of the color theme.
+ */
+const hiddenCaretTheme = Prec.highest(EditorView.theme({
+    ".cm-content": {
+        caretColor: "transparent"
+    },
+    ".cm-vimCursorLayer": {
+        display: "none"
+    }
+}));
+
+/** The extension of each theme that an editor has loaded. */
+const loadedThemes = new WeakMap<ThemeDefinition, Extension>();
+
+/**
+ * Merges the gutter, which still holds the fold markers, into the code area while the line
+ * numbers are off, and keeps the markers off the edge of the editor. `Prec.highest` outranks the
+ * `.cm-gutters` rule of the color theme.
+ */
+const hiddenLineNumbersTheme = Prec.highest(EditorView.theme({
+    ".cm-gutters": {
+        border: "none",
+        paddingInlineStart: "8px",
+        backgroundColor: "transparent"
+    }
+}));

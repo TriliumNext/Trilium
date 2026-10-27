@@ -11,6 +11,7 @@ import server from "../../services/server";
 import SpacedUpdate from "../../services/spaced_update";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { ExtendedAdmonition } from "../react/Admonition";
+import { CardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import HelpRemoveButtons from "../react/HelpRemoveButtons";
@@ -47,7 +48,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeName: "searchString",
         attributeType: "label",
         icon: "bx bx-text",
-        label: t("search_definition.search_string"),
+        label: t("search_string.title_column"),
         component: SearchStringOption
     },
     {
@@ -55,7 +56,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeType: "relation",
         defaultValue: "root",
         icon: "bx bx-code",
-        label: t("search_definition.search_script"),
+        label: t("search_script.title"),
         component: SearchScriptOption
     },
     {
@@ -63,7 +64,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeType: "relation",
         defaultValue: "root",
         icon: "bx bx-filter-alt",
-        label: t("search_definition.ancestor"),
+        label: t("ancestor.label"),
         component: AncestorOption,
         additionalAttributesToDelete: [ { type: "label", name: "ancestorDepth" } ]
     },
@@ -71,15 +72,15 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeName: "fastSearch",
         attributeType: "label",
         icon: "bx bx-run",
-        label: t("search_definition.fast_search"),
-        tooltip: t("search_definition.fast_search_description"),
+        label: t("fast_search.fast_search"),
+        tooltip: t("fast_search.description"),
         component: FastSearchOption
     },
     {
         attributeName: "includeArchivedNotes",
         attributeType: "label",
         icon: "bx bx-archive",
-        label: t("search_definition.include_archived"),
+        label: t("include_archived_notes.include_archived_notes"),
         tooltip: t("search_definition.include_archived_notes_description"),
         component: IncludeArchivedNotesOption
     },
@@ -88,7 +89,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeType: "label",
         defaultValue: "relevancy",
         icon: "bx bx-arrow-from-top",
-        label: t("search_definition.order_by"),
+        label: t("order_by.order_by"),
         component: OrderByOption,
         additionalAttributesToDelete: [ { type: "label", name: "orderDirection" } ]
     },
@@ -97,7 +98,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeType: "label",
         defaultValue: "10",
         icon: "bx bx-stop",
-        label: t("search_definition.limit"),
+        label: t("limit.limit"),
         tooltip: t("search_definition.limit_description"),
         component: LimitOption
     },
@@ -105,31 +106,37 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         attributeName: "debug",
         attributeType: "label",
         icon: "bx bx-bug",
-        label: t("search_definition.debug"),
-        tooltip: t("search_definition.debug_description"),
+        label: t("debug.debug"),
+        tooltip: t("debug.debug_info"),
         component: DebugOption
     }
 ];
 
-function SearchOption({ note, className, title, titleIcon, children, help, attributeName, attributeType, additionalAttributesToDelete }: {
+function SearchOption({ note, className, title, titleIcon, children, description, help, attributeName, attributeType, additionalAttributesToDelete }: {
     note: FNote;
     className?: string;
     title: string,
     titleIcon?: string,
     children?: ComponentChildren,
+    /** Shown in place of `children` for an option that configures nothing. */
+    description?: ComponentChildren,
     help?: ComponentChildren,
     attributeName: string,
     attributeType: AttributeType,
     additionalAttributesToDelete?: { type: "label" | "relation", name: string }[]
 }) {
     return (
-        <tr className={clsx(attributeName, className)}>
-            <td className="title-column">
-                {titleIcon && <><Icon icon={titleIcon} />{" "}</>}
+        <CardSection className={clsx("search-option", attributeName, className)}>
+            <span className="search-option-label">
+                {titleIcon && <Icon icon={titleIcon} />}
                 {title}
-            </td>
-            <td>{children}</td>
+            </span>
+            <div className="search-option-fields">
+                {description && <span className="search-option-description">{description}</span>}
+                {children}
+            </div>
             <HelpRemoveButtons
+                className="search-option-actions"
                 help={help}
                 removeText={t("abstract_search_option.remove_this_search_option")}
                 onRemove={() => {
@@ -141,7 +148,7 @@ function SearchOption({ note, className, title, titleIcon, children, help, attri
                     }
                 }}
             />
-        </tr>
+        </CardSection>
     );
 }
 
@@ -191,6 +198,7 @@ function SearchStringOption({ note, refreshResults, flushRef, error, ...restProp
 
     return <>
         <SearchOption
+            titleIcon="bx bx-text"
             title={t("search_string.title_column")}
             className={clsx({ "has-error": !!error })}
             help={<>
@@ -224,17 +232,15 @@ function SearchStringOption({ note, refreshResults, flushRef, error, ...restProp
             />
         </SearchOption>
         {error?.message && (
-            <tr>
-                <td colspan={3}>
-                    <ExtendedAdmonition
-                        type="caution"
-                        icon="bx bx-error-circle"
-                        title={t("search_string.error_title")}
-                    >
-                        {error.message}
-                    </ExtendedAdmonition>
-                </td>
-            </tr>
+            <CardSection className="search-definition-error">
+                <ExtendedAdmonition
+                    type="caution"
+                    icon="bx bx-error-circle"
+                    title={t("search_string.error_title")}
+                >
+                    {error.message}
+                </ExtendedAdmonition>
+            </CardSection>
         )}
     </>;
 }
@@ -243,6 +249,7 @@ function SearchScriptOption({ note, ...restProps }: SearchOptionProps) {
     const [ searchScript, setSearchScript ] = useNoteRelation(note, "searchScript");
 
     return <SearchOption
+        titleIcon="bx bx-code"
         title={t("search_script.title")}
         help={<>
             <p>{t("search_script.description1")}</p>
@@ -268,7 +275,7 @@ function AncestorOption({ note, ...restProps}: SearchOptionProps) {
     const options = useMemo(() => {
         const options: { value: string | undefined; label: string }[] = [
             { value: "", label: t("ancestor.depth_doesnt_matter") },
-            { value: "eq1", label: `${t("ancestor.depth_eq", { count: 1 })} (${t("ancestor.direct_children")})` }
+            { value: "eq1", label: t("ancestor.direct_children") }
         ];
 
         for (let i=2; i<=9; i++) options.push({ value: `eq${  i}`, label: t("ancestor.depth_eq", { count: i }) });
@@ -279,31 +286,30 @@ function AncestorOption({ note, ...restProps}: SearchOptionProps) {
     }, []);
 
     return <SearchOption
+        titleIcon="bx bx-filter-alt"
         title={t("ancestor.label")}
         note={note} {...restProps}
     >
-        <div style={{display: "flex", alignItems: "center"}}>
-            <NoteAutocomplete
-                noteId={ancestor !== "root" ? ancestor ?? undefined : undefined}
-                noteIdChanged={noteId => setAncestor(noteId ?? "root")}
-                placeholder={t("ancestor.placeholder")}
-            />
+        <NoteAutocomplete
+            noteId={ancestor !== "root" ? ancestor ?? undefined : undefined}
+            noteIdChanged={noteId => setAncestor(noteId ?? "root")}
+            placeholder={t("ancestor.placeholder")}
+        />
 
-            <div style="margin-inline-start: 10px; margin-inline-end: 10px">{t("ancestor.depth_label")}:</div>
-            <FormSelect
-                values={options}
-                keyProperty="value" titleProperty="label"
-                currentValue={depth ?? ""} onChange={(value) => setDepth(value ? value : null)}
-                style={{ flexShrink: 3 }}
-            />
-        </div>
+        <span className="search-option-field-label">{t("ancestor.depth_label")}</span>
+        <FormSelect
+            className="w-auto"
+            values={options}
+            keyProperty="value" titleProperty="label"
+            currentValue={depth ?? ""} onChange={(value) => setDepth(value ? value : null)}
+        />
     </SearchOption>;
 }
 
 function FastSearchOption({ ...restProps }: SearchOptionProps) {
     return <SearchOption
         titleIcon="bx bx-run" title={t("fast_search.fast_search")}
-        help={t("fast_search.description")}
+        description={t("fast_search.description")}
         {...restProps}
     />;
 }
@@ -311,10 +317,7 @@ function FastSearchOption({ ...restProps }: SearchOptionProps) {
 function DebugOption({ ...restProps }: SearchOptionProps) {
     return <SearchOption
         titleIcon="bx bx-bug" title={t("debug.debug")}
-        help={<>
-            <p>{t("debug.debug_info")}</p>
-            {t("debug.access_info")}
-        </>}
+        description={<>{t("debug.debug_info")} {t("debug.access_info")}</>}
         {...restProps}
     />;
 }
@@ -375,12 +378,12 @@ function LimitOption({ note, defaultValue, ...restProps }: SearchOptionProps) {
     return <SearchOption
         titleIcon="bx bx-stop"
         title={t("limit.limit")}
-        help={t("limit.take_first_x_results")}
         note={note} {...restProps}
     >
         <FormTextBox
             type="number" min="1" step="1"
             currentValue={limit ?? defaultValue} onChange={setLimit}
         />
+        <span className="search-option-field-label">{t("limit.max_results")}</span>
     </SearchOption>;
 }

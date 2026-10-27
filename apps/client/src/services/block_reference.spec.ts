@@ -1,19 +1,21 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
+import type FNote from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem } from "../menus/context_menu.js";
 import {
-    buildBlockReferenceMenuItems, consumeBlockReference, copyBlockReference, copyBlockShareLink,
-    copyTabReference, getClipboardBlockReference, highlightBlockReference, openBlockHandleMenu,
-    revealHighlightedBlocks
+    buildBlockReferenceMenuItems, buildReferenceConfig, consumeBlockReference, copyBlockReference,
+    copyBlockShareLink, copyTabReference, getClipboardBlockReference, highlightBlockReference,
+    openBlockHandleMenu, revealHighlightedBlocks
 } from "./block_reference.js";
 import type { ViewScope } from "./link.js";
 
 const {
     showError, showMessage, showMenu, copyHtmlWithToast, copyTextWithToast, getTextEditorContaining,
-    getNote
+    getNote, getNoteShareLink
 } = vi.hoisted(() => ({
+    getNoteShareLink: vi.fn(),
     showError: vi.fn(),
     showMessage: vi.fn(),
     showMenu: vi.fn(),
@@ -35,14 +37,14 @@ vi.mock("./content_renderer.js", () => ({
     getEmbedBoxSize: () => "medium"
 }));
 
+vi.mock("./share_link.js", () => ({ getNoteShareLink }));
+
 const scrollBy = vi.fn();
-const getComponentByEl = vi.fn();
 
 beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     Element.prototype.scrollBy = scrollBy;
-    glob.getComponentByEl = getComponentByEl;
 });
 
 afterEach(() => {
@@ -270,6 +272,86 @@ describe("openBlockHandleMenu", () => {
     });
 });
 
+describe("buildReferenceConfig", () => {
+    const note = { noteId: "n1", title: "Note" } as FNote;
+    const tabHtml = "<div class=\"trilium-tabs\"><section class=\"trilium-tab\" "
+        + "data-trilium-block-id=\"t1\"><p class=\"trilium-tab-title\">Linux</p></section></div>"
+        + "<p data-trilium-block-id=\"s1\">Start</p>";
+
+    function buildSource(notePath?: string) {
+        const root = buildContainer(tabHtml);
+        const editor = buildEditor(root, { startId: "s1", endId: "s1", count: 1 });
+        vi.mocked(editor.execute).mockImplementation(((name: string) => name === "assignTabReference"
+            ? { startId: "t1", endId: "t1", count: 1 }
+            : { startId: "s1", endId: "s1", count: 1 }) as never);
+        const save = vi.fn();
+        const config = buildReferenceConfig({
+            getEditor: () => editor,
+            getNote: () => note,
+            getNotePath: () => notePath,
+            save
+        });
+        return { config, editor, save };
+    }
+
+    it("copies references to the blocks and the tab of the note, then saves it", async () => {
+        const { config, save } = buildSource("root/p1/n1");
+
+        config.blockReference?.copyReference?.();
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        config.tabs?.copyReference?.();
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+
+        expect(copyHtmlWithToast).toHaveBeenNthCalledWith(1,
+            "<a class=\"reference-link\" href=\"#root/p1/n1?block=s1\">Note - Start</a>",
+            "#root/p1/n1?block=s1");
+        expect(copyHtmlWithToast).toHaveBeenNthCalledWith(2,
+            "<a class=\"reference-link\" href=\"#root/p1/n1?block=t1\">Note - Linux</a>",
+            "#root/p1/n1?block=t1");
+        expect(copyHtmlWithToast.mock.invocationCallOrder[0])
+            .toBeLessThan(save.mock.invocationCallOrder[0]);
+    });
+
+    it("opens the block handle menu, which copies a reference or the public link", async () => {
+        const { config, save } = buildSource();
+        const event = new MouseEvent("contextmenu");
+        getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
+
+        config.blockReference?.openHandleMenu?.(event, 1);
+        const items = showMenu.mock.calls[0][0].items as MenuItem<CommandNames>[];
+        runItem(items[0]);
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        runItem(items[1]);
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+
+        expect(getNoteShareLink).toHaveBeenCalledWith(note);
+        expect(copyHtmlWithToast).toHaveBeenCalledWith(expect.anything(), "#root/n1?block=s1");
+        expect(copyTextWithToast).toHaveBeenCalledWith(
+            "https://notes.example.com/share/page?block=s1");
+
+        getNoteShareLink.mockReturnValue(null);
+        config.blockReference?.openHandleMenu?.(event, 1);
+        expect(showMenu.mock.calls[1][0].items).toHaveLength(1);
+    });
+
+    it("copies nothing before the editor or the note is there", async () => {
+        const save = vi.fn();
+        const config = buildReferenceConfig({
+            getEditor: () => null,
+            getNote: () => note,
+            getNotePath: () => undefined,
+            save
+        });
+
+        config.blockReference?.copyReference?.();
+        config.tabs?.copyReference?.();
+        await vi.runAllTimersAsync();
+
+        expect(copyHtmlWithToast).not.toHaveBeenCalled();
+        expect(save).not.toHaveBeenCalled();
+    });
+});
+
 describe("getClipboardBlockReference", () => {
     it("reads the first link to blocks in the HTML, else the text, as a reference link", () => {
         const html = "<p><a href=\"https://example.com\">web</a><a href=\"#root/note0\">note</a>"
@@ -302,47 +384,48 @@ describe("buildBlockReferenceMenuItems", () => {
     const element = document.createElement("p");
     const href = "#root/parent1/note1?block=s1:e1";
 
-    it("copies a reference to the selected blocks through the host of the editor", async () => {
-        const copyReference = vi.fn(async () => {});
-        const { editor, root } = buildMenuEditor({ count: 3 });
+    it("copies a reference to the selected blocks through the editor config", async () => {
+        const copyReference = vi.fn();
+        const { editor } = buildMenuEditor({
+            count: 3, hosts: { blockReference: { copyReference } }
+        });
         getTextEditorContaining.mockResolvedValue(editor);
-        getComponentByEl.mockReturnValue({ copyBlockReference: copyReference });
 
         const items = await buildBlockReferenceMenuItems(element);
         runItem(items?.copy);
 
         expect(getTextEditorContaining).toHaveBeenCalledWith(element);
-        expect(getComponentByEl).toHaveBeenCalledWith(root);
         expect(items?.copy).toMatchObject({ title: "block_reference.copy:3" });
         expect(copyReference).toHaveBeenCalledTimes(1);
         expect(items?.paste).toEqual([]);
     });
 
-    it("copies a link to the tab holding the selection through the host of the editor", async () => {
-        const copyTabReference = vi.fn();
-        const { editor } = buildMenuEditor();
+    it("copies a link to the tab holding the selection through the editor config", async () => {
+        const copyReference = vi.fn();
+        const { editor } = buildMenuEditor({ hosts: { tabs: { copyReference } } });
         getTextEditorContaining.mockResolvedValue(editor);
-        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn(), copyTabReference });
 
         const items = await buildBlockReferenceMenuItems(element);
         runItem(items?.copyTab);
 
         expect(items?.copyTab).toMatchObject({ title: "block_reference.copy_tab" });
-        expect(copyTabReference).toHaveBeenCalledTimes(1);
+        expect(copyReference).toHaveBeenCalledTimes(1);
 
-        getTextEditorContaining.mockResolvedValue(buildMenuEditor({ isInTab: false }).editor);
+        getTextEditorContaining.mockResolvedValue(buildMenuEditor({
+            isInTab: false, hosts: { tabs: { copyReference } }
+        }).editor);
         expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
-        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn() });
-        getTextEditorContaining.mockResolvedValue(editor);
+        getTextEditorContaining.mockResolvedValue(buildMenuEditor().editor);
         expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
     });
 
     it("offers no copy row where no reference can be made or the host cannot copy", async () => {
-        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn() });
-        getTextEditorContaining.mockResolvedValue(buildMenuEditor({ canReference: false }).editor);
+        const hosts = { blockReference: { copyReference: vi.fn() } };
+        getTextEditorContaining.mockResolvedValue(buildMenuEditor({
+            canReference: false, hosts
+        }).editor);
         expect((await buildBlockReferenceMenuItems(element))?.copy).toBeNull();
 
-        getComponentByEl.mockReturnValue({});
         getTextEditorContaining.mockResolvedValue(buildMenuEditor().editor);
         expect((await buildBlockReferenceMenuItems(element))?.copy).toBeNull();
     });
@@ -431,9 +514,9 @@ describe("buildBlockReferenceMenuItems", () => {
 });
 
 function buildMenuEditor({
-    count = 2, canReference = true, canEmbed = true, hasPlugin = true, isInTab = true
+    count = 2, canReference = true, canEmbed = true, hasPlugin = true, isInTab = true,
+    hosts = {} as Pick<EditorConfig, "blockReference" | "tabs">
 } = {}) {
-    const root = document.createElement("div");
     const pasteTarget = { paste: vi.fn(), release: vi.fn() };
     const commands: Record<string, { isEnabled: boolean; value?: number }> = {
         assignBlockReference: { isEnabled: canReference, value: count },
@@ -443,11 +526,11 @@ function buildMenuEditor({
     const editor = {
         plugins: { has: (name: string) => hasPlugin && name === "BlockReference" },
         commands: { get: (name: string) => commands[name] },
-        editing: { view: { getDomRoot: () => root } },
+        config: { get: (name: "blockReference" | "tabs") => hosts[name] },
         capturePasteTarget: vi.fn(() => pasteTarget)
     };
 
-    return { editor: editor as typeof editor & CKTextEditor, root, pasteTarget };
+    return { editor: editor as typeof editor & CKTextEditor, pasteTarget };
 }
 
 function runItem(item: MenuItem<CommandNames> | null | undefined) {

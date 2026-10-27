@@ -12,10 +12,11 @@ import options from "../../../services/options";
 import { renderInto } from "../../../test/render";
 import { ParentComponent } from "../../react/react_utils";
 import TranscriptView, {
-    formatOffset, groupIntoTurns, type TranscriptTurn
+    formatOffset, groupIntoTurns, levelToMeter, TranscriptRecordingLevels, type TranscriptTurn
 } from "./TranscriptView";
 
-const h = vi.hoisted(() => ({ post: vi.fn(), put: vi.fn() }));
+const h = vi.hoisted(() => ({ post: vi.fn(), put: vi.fn(), copyTextWithToast: vi.fn() }));
+vi.mock("../../../services/clipboard_ext", () => ({ copyTextWithToast: h.copyTextWithToast }));
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 // keyboard_actions asks the server for its shortcuts at import.
 vi.mock("../../../services/server", () => ({
@@ -111,6 +112,14 @@ describe("transcript helpers", () => {
         expect(turns.map(paragraphTexts)).toEqual([
             [ "First point, continued. Short pause.", "Second point." ]
         ]);
+    });
+
+    it("spreads 60 dB below full scale up to 10 dB below it over a level meter", () => {
+        expect(levelToMeter(0)).toBe(0);
+        expect(levelToMeter(10 ** (-60 / 20))).toBeCloseTo(0);
+        expect(levelToMeter(10 ** (-35 / 20))).toBeCloseTo(0.5);
+        expect(levelToMeter(10 ** (-10 / 20))).toBeCloseTo(1);
+        expect(levelToMeter(1)).toBe(1);
     });
 
     it("formats offsets as m:ss, with hours once there are any", () => {
@@ -305,6 +314,7 @@ describe("TranscriptView", () => {
             transcription: {
                 getState: async () => ({ status: "recording", noteId: "meeting", pendingSources: [] }),
                 onStateChanged: () => () => {},
+                onLevel: () => () => {},
                 renameSpeaker
             }
         } as unknown as typeof window.electronApi;
@@ -427,7 +437,8 @@ describe("TranscriptView", () => {
                 onStateChanged: (callback: typeof onStateChanged) => {
                     onStateChanged = callback;
                     return () => {};
-                }
+                },
+                onLevel: () => () => {}
             }
         } as unknown as typeof window.electronApi;
         const getBlob = vi.fn()
@@ -465,7 +476,72 @@ describe("TranscriptView", () => {
         window.electronApi = undefined;
     });
 
-    it("follows new turns for a reader at the end, not for one who scrolled up", async () => {
+    it("shows each source's level while its meeting records, apart from the turns", async () => {
+        let onStateChanged: (state: TranscriptionState) => void = () => {};
+        let onLevel: (source: TranscriptSource, level: number) => void = () => {};
+        const unsubscribeLevels = vi.fn();
+        const recording: TranscriptionState = {
+            status: "recording", noteId: "meeting", pendingSources: []
+        };
+        const report = (state: Partial<TranscriptionState>) =>
+            act(() => onStateChanged({ ...recording, ...state }));
+        window.electronApi = {
+            transcription: {
+                getState: async () => recording,
+                onStateChanged: (callback: typeof onStateChanged) => {
+                    onStateChanged = callback;
+                    return () => {};
+                },
+                onLevel: (callback: typeof onLevel) => {
+                    onLevel = callback;
+                    return unsubscribeLevels;
+                }
+            }
+        } as unknown as typeof window.electronApi;
+        const attachment = {
+            attachmentId: "transcript1", ownerId: "meeting",
+            getBlob: async () => ({ content: transcript([]) })
+        };
+        const view = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <TranscriptView attachment={attachment as unknown as FAttachment} />
+            </ParentComponent.Provider>
+        );
+        const container = renderInto(
+            <TranscriptRecordingLevels attachment={attachment as unknown as FAttachment} />
+        );
+        const meter = (source: string) => container.querySelector<HTMLElement>(
+            `.transcript-level[data-source="${source}"]`);
+        const fill = (source: string) =>
+            Number(meter(source)?.style.getPropertyValue("--level"));
+
+        await vi.waitFor(() => expect(meter("microphone")).not.toBeNull());
+        await vi.waitFor(() => expect(view.textContent).toContain("transcript.empty"));
+        expect(view.querySelector(".transcript-level, .transcript-options")).toBeNull();
+        expect(meter("microphone")?.textContent).toContain("transcript.speaker_me");
+        expect(meter("system")?.textContent).toContain("transcript.speaker_others");
+        act(() => onLevel("microphone", 10 ** (-35 / 20)));
+        expect(fill("microphone")).toBeCloseTo(0.5);
+        expect(fill("system")).toBe(0);
+        expect(meter("microphone")?.getAttribute("aria-valuenow")).toBe("0.5");
+
+        await report({ sourceIssues: { system: "no_audio" } });
+        expect(meter("system")?.classList.contains("has-issue")).toBe(true);
+        expect(meter("system")?.textContent).toContain("transcript.no_audio");
+        expect(meter("microphone")?.classList.contains("has-issue")).toBe(false);
+        expect(meter("microphone")?.querySelector(".transcript-level-warning")).toBeNull();
+        await report({ sourceIssues: { microphone: "silent", system: "not_captured" } });
+        expect(meter("microphone")?.textContent).toContain("transcript.silent");
+        expect(meter("system")?.textContent).toContain("transcript.not_captured");
+        expect(meter("system")?.textContent).not.toContain("transcript.no_audio");
+
+        await report({ noteId: "other" });
+        expect(meter("microphone")).toBeNull();
+        expect(unsubscribeLevels).toHaveBeenCalledOnce();
+        window.electronApi = undefined;
+    });
+
+    it("follows new turns for a reader at the end, and marks when more is above or below", async () => {
         const utterance = (index: number): TranscriptUtterance =>
             ({ source: "microphone", offsetMs: index * 60_000, text: `Line ${index}` });
         // Each reload adds a turn, alternating sources so that none merge.
@@ -505,16 +581,31 @@ describe("TranscriptView", () => {
                 expect(scroller.querySelectorAll(".transcript-turn")).toHaveLength(count));
         };
 
-        await addTurn();
-        await addTurn();
-        expect(scroller.scrollTop).toBe(150);
+        const scrollTo = (top: number) => act(() => {
+            scroller.scrollTop = top;
+            scroller.dispatchEvent(new Event("scroll"));
+        });
 
-        scroller.scrollTop = 0;
+        await addTurn();
+        await addTurn();
+        const edges = () => [ "more-above", "more-below" ]
+            .filter((name) => scroller.classList.contains(name));
+        expect(scroller.scrollTop).toBe(150);
+        expect(edges()).toEqual([ "more-above" ]);
+
+        scrollTo(0);
+        expect(edges()).toEqual([ "more-below" ]);
         await addTurn();
         expect(scroller.scrollTop).toBe(0);
+        expect(edges()).toEqual([ "more-below" ]);
+
+        scrollTo(50);
+        expect(edges()).toEqual([ "more-above", "more-below" ]);
+        scrollTo(100);
+        expect(edges()).toEqual([ "more-above" ]);
     });
 
-    it("hides filler words and stutters while the option is on, and saves the switch", async () => {
+    it("hides filler words and stutters while the option is on, else grays them out", async () => {
         options.set("transcriptCleanupEnabled", "true");
         const content = transcript([
             { source: "system", offsetMs: 0, text: "Uh the the data is old." },
@@ -527,17 +618,57 @@ describe("TranscriptView", () => {
                 <TranscriptView attachment={attachment as unknown as FAttachment} />
             </ParentComponent.Provider>
         );
-        const spans = () => [ ...container.querySelectorAll(".transcript-turn p span") ]
+        const spans = () => [ ...container.querySelectorAll(".transcript-turn p > span") ]
+            .map((span) => span.textContent);
+        const disfluencies = () => [ ...container.querySelectorAll(".transcript-disfluency") ]
             .map((span) => span.textContent);
         await vi.waitFor(() => expect(spans()).toHaveLength(2));
         expect(spans()).toEqual([ "The data is old.", " I know, I know." ]);
+        expect(disfluencies()).toEqual([]);
 
-        const toggle = container.querySelector<HTMLInputElement>(".transcript-options .switch-toggle");
-        expect(toggle?.checked).toBe(true);
+        const toggle = container.querySelector<HTMLButtonElement>(
+            ".transcript-options button.transcript-cleanup");
+        expect(toggle?.classList.contains("bx-eraser")).toBe(true);
+        expect(toggle?.classList.contains("active")).toBe(true);
+        expect(toggle?.getAttribute("aria-pressed")).toBe("true");
+        expect(container.querySelector(".transcript-options .switch-toggle")).toBeNull();
         await act(async () => {
-            toggle?.dispatchEvent(new Event("input", { bubbles: true }));
+            toggle?.click();
         });
         expect(h.put).toHaveBeenCalledWith("options", { transcriptCleanupEnabled: "false" });
+        expect(toggle?.getAttribute("aria-pressed")).toBe("false");
+        expect(disfluencies()).toEqual([ "Uh", "the", "Uh." ]);
         expect(spans()).toEqual([ "Uh the the data is old.", " Uh.", " I know, I know." ]);
+    });
+
+    it("copies the transcript as shown, one named and timed turn after another", async () => {
+        options.set("transcriptCleanupEnabled", "true");
+        const content = transcript([
+            { source: "microphone", offsetMs: 5000, durationMs: 1000, text: "Uh hello." },
+            { source: "microphone", offsetMs: 6000, durationMs: 1000, text: "Can you hear me?" },
+            { source: "microphone", offsetMs: 30_000, text: "Um." },
+            { source: "microphone", offsetMs: 40_000, text: "Still there?" },
+            { source: "system", offsetMs: 70_000, speaker: 1, text: "Yes, I can." }
+        ], STARTED_AT, { "system:1": "Olivier" });
+        const attachment = { attachmentId: "transcript1", getBlob: async () => ({ content }) };
+        const container = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <TranscriptView attachment={attachment as unknown as FAttachment} />
+            </ParentComponent.Provider>
+        );
+        const copy = () => container.querySelector<HTMLButtonElement>(
+            ".transcript-options .transcript-copy");
+        await vi.waitFor(() => expect(copy()).not.toBeNull());
+
+        act(() => copy()?.click());
+        expect(h.copyTextWithToast).toHaveBeenCalledExactlyOnceWith([
+            "transcript.speaker_me (14:30)",
+            "Hello. Can you hear me?",
+            "",
+            "Still there?",
+            "",
+            "Olivier (14:31)",
+            "Yes, I can."
+        ].join("\n"));
     });
 });

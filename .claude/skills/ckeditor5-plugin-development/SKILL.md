@@ -1,22 +1,6 @@
 ---
 name: ckeditor5-plugin-development
-description: >-
-  Write, extend, and review CKEditor 5 plugins in the Trilium (TriliumNext
-  Notes) monorepo — the rich-text-note editor under packages/ckeditor5, whose
-  plugins live in src/plugins/.
-  Use when building or
-  reviewing a Trilium CKEditor 5 feature/plugin, or when working with the
-  editing engine (model, view, schema, conversion/upcast-downcast), commands,
-  the UI library (buttons, dropdowns, dialogs, balloons, toolbars), widgets
-  (block/inline, toWidget, nested editables), keystrokes, localization (t()),
-  registering a plugin into plugins.ts / the editor classes / toolbar.ts, persisting a
-  `data-trilium-*` attribute through the model→view→data→markdown→share pipeline, or
-  adding a new plugin folder under src/plugins/, or upgrading `ckeditor5` to a
-  new major version (Renovate's major-ckeditor-monorepo branch, broken editor
-  styling after a bump, `--ck-*` variables that stopped applying). Covers the
-  architecture, idiomatic patterns, Trilium packaging/registration, code-style
-  conventions, a review checklist, and ck_css.mjs, which compares CKEditor's
-  stylesheets between two versions under Trilium's own CSS.
+description: Use when writing, extending or reviewing a CKEditor 5 plugin in the Trilium monorepo (`packages/ckeditor5`, plugins in `src/plugins/`), or when working with the editing engine (model, view, schema, conversion/upcast-downcast), commands, the UI library (buttons, dropdowns, dialogs, balloons, toolbars), widgets (block/inline, toWidget, nested editables), keystrokes, localization (t()), registering a plugin into plugins.ts / the editor classes / toolbar.ts, persisting a `data-trilium-*` attribute through the model→view→data→markdown→share pipeline, adding a plugin folder, or upgrading `ckeditor5` to a new major version (Renovate's major-ckeditor-monorepo branch, broken styling after a bump, `--ck-*` variables). Covers architecture, idiomatic patterns, packaging/registration, code style, a review checklist and ck_css.mjs, which compares stylesheets between two versions under Trilium's own CSS.
 ---
 
 # CKEditor 5 plugin development (Trilium monorepo)

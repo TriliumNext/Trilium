@@ -16,11 +16,12 @@
  */
 
 import { LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmReasoningEffort, type LlmStreamChunk } from "@triliumnext/commons";
+import type { ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
 import type { LlmProviderConfig, ModelInfo } from "@triliumnext/core/src/services/llm/types.js";
 import path from "path";
 
 import dataDirs from "../../data_dir.js";
-import { AcpAgentProvider, type AcpLaunchSpec, type AcpModel, type AcpNewSessionParams, type AcpPermissionOutcome, type AcpPermissionRequest, type AcpSessionModelState, type AcpToolCallUpdate, type BuiltInToolDisplay, denyPermission, describeError, nearestEffort, NOTE_TOOLS_MCP_SERVER_NAME, sortEfforts } from "./acp_agent.js";
+import { AcpAgentProvider, type AcpLaunchSpec, type AcpModel, type AcpNewSessionParams, type AcpPermissionOutcome, type AcpPermissionRequest, type AcpSessionModelState, type AcpToolCallUpdate, type AnnouncedMcpCalls, answerNoteToolCalls, type BuiltInToolDisplay, denyPermission, describeError, nearestEffort, NOTE_TOOLS_MCP_SERVER_NAME, sortEfforts } from "./acp_agent.js";
 import type { AcpClient } from "./acp_client.js";
 import { getAcpHookEndpointUrl } from "./acp_mcp_endpoint.js";
 import { buildHookCommand, resolveCurlPath } from "./acp_hook.js";
@@ -144,12 +145,20 @@ export class CodexAgentProvider extends AcpAgentProvider {
         return buildCodexModelList(remote);
     }
 
+    /**
+     * Codex lists MCP tools to the model only inside its `exec` tool, so the system prompt names
+     * them there. Without it, the model finds them only by searching `ALL_TOOLS` first.
+     */
+    protected noteToolsHint(): string {
+        return `Trilium's note tools (search_notes, get_note, get_note_content, create_note and the rest) are inside your exec tool, as tools.mcp__${NOTE_TOOLS_MCP_SERVER_NAME}__<tool name>. Call them there directly, for example: const note = await tools.mcp__${NOTE_TOOLS_MCP_SERVER_NAME}__get_note_content({ noteId: "abc123" }); text(note). Do not search ALL_TOOLS for them first.`;
+    }
+
     protected decidePermission(
         request: AcpPermissionRequest,
-        _config?: LlmProviderConfig,
-        mcpServerOf?: (toolCallId: string | undefined) => string | undefined
-    ): AcpPermissionOutcome {
-        return decideCodexPermission(request, this.logLabel, mcpServerOf);
+        config?: LlmProviderConfig,
+        mcpCalls?: AnnouncedMcpCalls
+    ): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
+        return decideCodexPermission(request, this.logLabel, { mcpCalls, toolApprovals: config?.toolApprovals });
     }
 
     /** The adapter reports each MCP server's startup as a tool call of its own, `mcp_startup.<server>`. */
@@ -285,30 +294,39 @@ export class CodexAgentProvider extends AcpAgentProvider {
 }
 
 /**
- * Approve once a call to Trilium's note tools; deny everything else.
+ * Ask the user about a call to Trilium's note tools through the turn's `toolApprovals`; deny
+ * everything else.
  *
  * Codex asks before running an MCP tool that is not marked read-only, and the
  * adapter forwards that as a permission request marked
  * `_meta.is_mcp_tool_approval`. The request carries only the id of the tool
- * call, which the adapter announced just before with its server in `rawInput`,
- * so the server is looked up with `mcpServerOf`. When several calls to one
- * server wait at once, the adapter cannot tell which one is asking and names
- * the server in `toolCall.rawInput.serverName` instead. Codex fills in both,
- * not the model.
+ * call, which the adapter announced just before with its server, tool and
+ * arguments in `rawInput`, so the call is looked up in `mcpCalls`. When several
+ * calls to one server wait at once, the adapter cannot tell which one is asking
+ * and names the server in `toolCall.rawInput.serverName` instead; the request is
+ * then allowed only when the user allows every note-tool call that waits. Codex
+ * fills in both, not the model.
  */
 export function decideCodexPermission(
     request: AcpPermissionRequest,
     logLabel: string,
-    mcpServerOf?: (toolCallId: string | undefined) => string | undefined
-): AcpPermissionOutcome {
+    { mcpCalls, toolApprovals }: { mcpCalls?: AnnouncedMcpCalls; toolApprovals?: ToolApprovals } = {}
+): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
     const toolCall = request.toolCall;
-    const standaloneServer = (toolCall?.rawInput as { serverName?: unknown } | undefined)?.serverName;
-    const server = mcpServerOf?.(toolCall?.toolCallId) ?? standaloneServer;
-    const allowOnce = request.options?.find(o => o.kind === "allow_once");
-    if (request._meta?.is_mcp_tool_approval === true && server === NOTE_TOOLS_MCP_SERVER_NAME && allowOnce) {
-        return { outcome: { outcome: "selected", optionId: allowOnce.optionId } };
+    if (request._meta?.is_mcp_tool_approval !== true) {
+        return denyPermission(request, logLabel);
     }
-    return denyPermission(request, logLabel);
+    const announced = mcpCalls?.callOf(request.sessionId, toolCall?.toolCallId);
+    if (announced) {
+        return announced.server === NOTE_TOOLS_MCP_SERVER_NAME
+            ? answerNoteToolCalls(request, logLabel, [ announced ], toolApprovals)
+            : denyPermission(request, logLabel);
+    }
+    const standaloneServer = (toolCall?.rawInput as { serverName?: unknown } | undefined)?.serverName;
+    if (standaloneServer !== NOTE_TOOLS_MCP_SERVER_NAME) {
+        return denyPermission(request, logLabel);
+    }
+    return answerNoteToolCalls(request, logLabel, mcpCalls?.pendingOn(request.sessionId, NOTE_TOOLS_MCP_SERVER_NAME) ?? [], toolApprovals);
 }
 
 /**

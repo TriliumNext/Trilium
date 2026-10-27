@@ -19,15 +19,19 @@ export default function NoteTitleWidget(props: {className?: string}) {
     const newTitle = useRef("");
 
     const [ isReadOnly, setReadOnly ] = useState<boolean>(false);
+    const [ isLocked, setLocked ] = useState<boolean>(false);
     const [ navigationTitle, setNavigationTitle ] = useState<string | null>(null);
 
     // Manage read-only
     useEffect(() => {
+        const isLocked = !!note?.isProtected
+            && !protected_session_holder.isProtectedSessionAvailable();
         const isReadOnly = note === null
             || note === undefined
-            || (note.isProtected && !protected_session_holder.isProtectedSessionAvailable())
+            || isLocked
             || note.isMetadataReadOnly
             || viewScope?.viewMode !== "default";
+        setLocked(isLocked);
         setReadOnly(isReadOnly);
     }, [ note, note?.noteId, note?.isProtected, viewScope?.viewMode ]);
 
@@ -94,9 +98,15 @@ export default function NoteTitleWidget(props: {className?: string}) {
             {note && <FormTextBox
                 inputRef={textBoxRef}
                 autocomplete="off"
-                currentValue={(!isReadOnly ? title : navigationTitle) ?? ""}
+                currentValue={isLocked
+                    ? t("protected_session.locked_note_title")
+                    : (!isReadOnly ? title : navigationTitle) ?? ""}
                 placeholder={t("note_title.placeholder")}
-                className={`note-title ${isProtected ? "protected" : ""}`}
+                className={clsx(
+                    "note-title",
+                    isProtected && "protected",
+                    isLocked && "protected-title"
+                )}
                 tabIndex={100}
                 readOnly={isReadOnly}
                 onChange={(newValue) => {

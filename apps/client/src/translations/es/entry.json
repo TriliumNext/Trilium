@@ -66,7 +66,6 @@
         "sync-from-desktop-unreachable-description": "Para sincronizar, la otra aplicación de escritorio debe conectarse a esta a través de la red. Por seguridad, esta aplicación de escritorio solo acepta conexiones de este equipo, por lo que la otra aplicación aún no puede conectarse a ella. Permita el acceso de red a continuación: Trilium se reiniciará para aplicar el cambio.",
         "sync-from-desktop-allow-access": "Permitir acceso de red y reiniciar",
         "advanced-options": "Opciones avanzadas",
-        "sync-failed": "Error al sincronizar: {{- message}}",
         "sync-failed-title": "Error de sincronización",
         "sync-failed-description": "No se pudo completar la sincronización inicial. Puede reintentarlo o volver atrás para comprobar la dirección del servidor y las credenciales.",
         "sync-failed-admonition-title": "El último intento de sincronización falló",
@@ -160,6 +159,10 @@
         "restore-stage-swapping": "Colocándola en su sitio",
         "restore-stage-migrating": "Abriendo la base de datos",
         "restore-do-not-close": "No cierre esta ventana.",
-        "backup-saved-to": "La copia de seguridad se ha guardado en {{- location}}. Haga clic en «Finalizar» para volver a la aplicación."
+        "backup-saved-to": "La copia de seguridad se ha guardado en {{- location}}. Haga clic en «Finalizar» para volver a la aplicación.",
+        "sync-from-server-failed": "Error al sincronizar",
+        "server-totp-token": "Contraseña de un solo uso o código de recuperación (opcional)",
+        "totp-required": "Este servidor requiere una contraseña de un solo uso o un código de recuperación.",
+        "wrong-totp": "Contraseña de un solo uso o código de recuperación incorrectos. Inténtelo de nuevo."
     }
 }

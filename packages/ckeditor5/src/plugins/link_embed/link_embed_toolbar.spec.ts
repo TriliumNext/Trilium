@@ -2,7 +2,6 @@ import { ClassicEditor, ContextualBalloon, Essentials, Link, Paragraph, WidgetTo
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import LinkEmbed, { CHANGE_LINK_DISPLAY_COMMAND, LINK_DISPLAY_MODES } from "./link_embed.js";
 import LinkEmbedTitleFormView from "./link_embed_title_form.js";
 import LinkEmbedToolbar from "./link_embed_toolbar.js";
@@ -77,23 +76,6 @@ describe("LinkEmbedToolbar", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        installGlobMock({
-            getComponentByEl: () => ({
-                renderLinkEmbed: vi.fn(),
-                renderLinkMention: vi.fn(),
-                fetchLinkMetadata: async () => ({
-                    url: "https://example.com",
-                    embedType: "opengraph",
-                    title: "Example",
-                    description: "",
-                    favicon: "",
-                    siteName: "",
-                    image: ""
-                }),
-                detectEmbedType: () => "opengraph"
-            })
-        });
-
         editor = await createTestEditor([Essentials, Paragraph, Link, LinkEmbed, LinkEmbedToolbar]);
     });
 

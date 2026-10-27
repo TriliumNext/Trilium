@@ -373,6 +373,10 @@ Trilium ne serait pas possible sans les technologies qui le sous-tendent :
   les notes de texte.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - éditeur de code
   prenant en charge un grand nombre de langages.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - le tableau blanc
   infini utilisé dans les notes Canvas.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - fournit la

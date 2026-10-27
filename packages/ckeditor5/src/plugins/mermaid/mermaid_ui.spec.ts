@@ -1,257 +1,89 @@
-import { ClassicEditor, Paragraph, _getModelData as getModelData, _setModelData as setModelData } from 'ckeditor5';
+import { NEW_MERMAID_CONTENT } from "@triliumnext/commons";
+import {
+    ButtonView,
+    ClassicEditor,
+    DropdownView,
+    Essentials,
+    type ListItemView,
+    Paragraph,
+    _setModelData as setModelData,
+    SplitButtonView,
+    Widget
+} from "ckeditor5";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import './mermaid.js';
-import Mermaid from './mermaid.js';
-import MermaidUI from './mermaid_ui.js';
-import { afterEach, beforeEach, describe, it, vi } from 'vitest';
-import { expect } from 'vitest';
+import { createTestEditor } from "../../../test/editor-kit.js";
+import ContentEmbed from "../content_embed/content_embed.js";
+import Mermaid from "./mermaid.js";
 
-/* global document */
+const SAMPLES = [
+    { name: "Flowchart", content: "graph LR; A --> B" },
+    { name: "Pie", content: "pie title Pets" }
+];
 
-describe( 'MermaidUI', () => {
-	it( 'should be named', () => {
-		expect( MermaidUI.pluginName ).to.equal( 'MermaidUI' );
-	} );
+describe("MermaidUI", () => {
+    let editor: ClassicEditor;
 
-	describe( 'init()', () => {
-		let domElement, editor;
+    beforeEach(async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, Widget, ContentEmbed, Mermaid ], {
+            contentEmbed: { inlineLanguages: [ "mermaid" ] },
+            mermaid: { samples: SAMPLES }
+        });
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+    });
 
-		beforeEach( async () => {
-			domElement = document.createElement( 'div' );
-			document.body.appendChild( domElement );
+    function createDropdown() {
+        const dropdown = editor.ui.componentFactory.create("mermaid");
+        if (!(dropdown instanceof DropdownView)) throw new Error("Expected a dropdown.");
+        dropdown.render();
+        return dropdown;
+    }
 
-			editor = await ClassicEditor.create( domElement, {
-				licenseKey: "GPL",
-				plugins: [
-					Mermaid
-				]
-			} );
-		} );
+    function getSampleButtons(dropdown: DropdownView) {
+        dropdown.isOpen = true;
+        return Array.from(dropdown.listView?.items ?? [])
+            .map((item) => (item as ListItemView).children.first)
+            .filter((button): button is ButtonView => button instanceof ButtonView);
+    }
 
-		afterEach( () => {
-			domElement.remove();
-			return editor.destroy();
-		} );
+    function getInsertedDiagram() {
+        const embed = editor.model.document.selection.getSelectedElement();
+        expect(embed?.getAttribute("language")).toBe("mermaid");
+        return embed?.getAttribute("source");
+    }
 
-		it( 'should register the UI item', () => {
-			expect( editor.ui.componentFactory.has( 'mermaid' ) ).to.equal( true );
-		} );
+    it("inserts a new diagram from the main action, and a template from the list", () => {
+        const dropdown = createDropdown();
+        const button = dropdown.buttonView;
+        expect(button).toBeInstanceOf(SplitButtonView);
+        expect(button.label).toBe("Mermaid diagram");
 
-		it( 'has the base properties', () => {
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
+        button.fire("execute");
+        expect(getInsertedDiagram()).toBe(NEW_MERMAID_CONTENT);
 
-			expect( dropdown.buttonView ).to.have.property( 'label', 'Mermaid diagram' );
-			expect( dropdown.buttonView ).to.have.property( 'icon' );
-			expect( dropdown.buttonView ).to.have.property( 'tooltip', true );
-		} );
+        const samples = getSampleButtons(dropdown);
+        expect(samples.map(({ label }) => label)).toEqual([ "Flowchart", "Pie" ]);
+        samples[1]?.fire("execute");
+        expect(getInsertedDiagram()).toBe("pie title Pets");
+    });
 
-		describe( 'UI components', () => {
-			for ( const buttonName of [
-				'mermaidPreview',
-				'mermaidSourceView',
-				'mermaidSplitView',
-				'mermaidInfo'
-			] ) {
-				it( `should register the ${ buttonName } button`, () => {
-					expect( editor.ui.componentFactory.has( buttonName ) ).to.equal( true );
-				} );
+    it("is disabled while a diagram cannot be inserted", () => {
+        const dropdown = createDropdown();
+        expect(dropdown.isEnabled).toBe(true);
 
-				it( `should add the base properties for ${ buttonName } button`, () => {
-					const button = editor.ui.componentFactory.create( buttonName );
+        editor.enableReadOnlyMode("spec");
+        expect(dropdown.isEnabled).toBe(false);
+        expect(dropdown.buttonView.isEnabled).toBe(false);
+    });
 
-					expect( button ).to.have.property( 'label' );
-					expect( button ).to.have.property( 'icon' );
-					expect( button ).to.have.property( 'tooltip', true );
-				} );
-			}
-		} );
+    it("lists no templates without any, and stays enabled without the embed command", async () => {
+        const bare = await createTestEditor([ Essentials, Paragraph, Mermaid ]);
+        const dropdown = bare.ui.componentFactory.create("mermaid");
+        if (!(dropdown instanceof DropdownView)) throw new Error("Expected a dropdown.");
+        dropdown.render();
+        dropdown.isOpen = true;
 
-		it( 'should set focus inside textarea of a newly created mermaid', () => {
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
-
-			dropdown.buttonView.fire( 'execute' );
-
-			expect( document.activeElement.tagName ).to.equal( 'TEXTAREA' );
-		} );
-
-		it( 'should insert exactly one diagram on the main action (no double insert)', () => {
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
-
-			dropdown.buttonView.fire( 'execute' );
-
-			const data = getModelData( editor.model, { withoutSelection: true } );
-			expect( ( data.match( /<mermaid/g ) || [] ).length ).to.equal( 1 );
-		} );
-
-		it( 'should not crash if the button is fired inside model.change()', () => {
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
-
-			setModelData( editor.model, '[]' );
-
-			editor.model.change( () => {
-				dropdown.buttonView.fire( 'execute' );
-			} );
-			// As the conversion is to be executed after the model.change(), we don't have access to the fully prepared view and
-			// despite that, we should still successfully add mermaid widget to the editor, not requiring the selection change
-			// to the inside of the nonexisting textarea element.
-		} );
-	} );
-
-	describe( 'diagram templates', () => {
-		let domElement, editor;
-
-		const SAMPLES = [
-			{ name: 'Flowchart', content: 'graph LR; A --> B' },
-			{ name: 'Pie', content: 'pie title Pets' }
-		];
-
-		beforeEach( async () => {
-			domElement = document.createElement( 'div' );
-			document.body.appendChild( domElement );
-
-			editor = await ClassicEditor.create( domElement, {
-				licenseKey: "GPL",
-				plugins: [
-					Mermaid,
-					Paragraph
-				],
-				mermaid: {
-					config: {},
-					samples: SAMPLES
-				}
-			} );
-		} );
-
-		afterEach( () => {
-			domElement.remove();
-			return editor.destroy();
-		} );
-
-		it( 'lists the configured templates in the dropdown', () => {
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
-			dropdown.render();
-			document.body.appendChild( dropdown.element );
-			dropdown.isOpen = true;
-
-			const labels = [ ...dropdown.listView.items ].map( item => item.children.first.label );
-			expect( labels ).to.deep.equal( [ 'Flowchart', 'Pie' ] );
-
-			dropdown.element.remove();
-		} );
-
-		it( 'inserts a diagram pre-filled with the picked template source', () => {
-			setModelData( editor.model, '<paragraph>[foo]</paragraph>' );
-
-			const dropdown = editor.ui.componentFactory.create( 'mermaid' );
-			dropdown.render();
-			document.body.appendChild( dropdown.element );
-			dropdown.isOpen = true;
-
-			dropdown.listView.items.first.children.first.fire( 'execute' );
-
-			expect( getModelData( editor.model, { withoutSelection: true } ) ).to.equal(
-				'<mermaid displayMode="split" source="graph LR; A --> B"></mermaid>'
-			);
-
-			dropdown.element.remove();
-		} );
-	} );
-} );
-
-
-describe( 'MermaidUI without its commands', () => {
-	let domElement: HTMLDivElement;
-
-	beforeEach( () => {
-		domElement = document.createElement( 'div' );
-		document.body.appendChild( domElement );
-	} );
-
-	afterEach( () => {
-		domElement.remove();
-	} );
-
-	it( 'refuses to initialise without the insert command', async () => {
-		// MermaidUI alone: MermaidEditing never registered insertMermaid, and the
-		// insert button is built during init(), so the whole editor fails to start.
-		await expect( ClassicEditor.create( domElement, {
-			licenseKey: 'GPL',
-			plugins: [ Paragraph, MermaidUI ]
-		} ) ).rejects.toThrow( 'Missing command.' );
-	} );
-
-	it( 'refuses to build a toolbar button whose command is missing', async () => {
-		const editor = await ClassicEditor.create( domElement, {
-			licenseKey: 'GPL',
-			plugins: [ Paragraph, Mermaid ]
-		} );
-		const ui = editor.plugins.get( MermaidUI ) as unknown as {
-			_createToolbarButton( editor: ClassicEditor, name: string, label: string, icon: string ): void;
-		};
-
-		// Toolbar buttons resolve their command lazily, inside the factory callback.
-		ui._createToolbarButton( editor, 'mermaidNoSuch', 'No such', '<svg></svg>' );
-
-		expect( () => editor.ui.componentFactory.create( 'mermaidNoSuch' ) ).to.throw( 'Missing command.' );
-
-		await editor.destroy();
-	} );
-} );
-
-describe( 'MermaidUI buttons', () => {
-	let domElement: HTMLDivElement, editor: ClassicEditor;
-
-	beforeEach( async () => {
-		domElement = document.createElement( 'div' );
-		document.body.appendChild( domElement );
-
-		editor = await ClassicEditor.create( domElement, {
-			licenseKey: 'GPL',
-			plugins: [ Paragraph, Mermaid ]
-		} );
-	} );
-
-	afterEach( () => {
-		domElement.remove();
-		return editor.destroy();
-	} );
-
-	it( 'opens the help through the configured callback, and does nothing without one', () => {
-		const open = vi.spyOn( window, 'open' ).mockReturnValue( null );
-		const button = editor.ui.componentFactory.create( 'mermaidInfo' );
-
-		button.fire( 'execute' );
-		expect( open ).not.toHaveBeenCalled();
-		open.mockRestore();
-
-		const openHelp = vi.fn();
-		editor.config.set( 'mermaid.openHelp', openHelp );
-		button.fire( 'execute' );
-		expect( openHelp ).toHaveBeenCalledOnce();
-	} );
-
-	it( 'runs the matching command and returns focus when a toolbar button executes', () => {
-		setModelData( editor.model, '[<mermaid displayMode="split" source="foo"></mermaid>]' );
-
-		const execute = vi.spyOn( editor, 'execute' );
-		const focus = vi.spyOn( editor.editing.view, 'focus' );
-		const scroll = vi.spyOn( editor.editing.view, 'scrollToTheSelection' );
-
-		editor.ui.componentFactory.create( 'mermaidPreview' ).fire( 'execute' );
-
-		expect( execute ).toHaveBeenCalledWith( 'mermaidPreviewCommand' );
-		expect( scroll ).toHaveBeenCalled();
-		expect( focus ).toHaveBeenCalled();
-	} );
-
-	it( 'tracks its command through isOn and isEnabled', () => {
-		setModelData( editor.model, '[<mermaid displayMode="preview" source="foo"></mermaid>]' );
-
-		const button = editor.ui.componentFactory.create( 'mermaidPreview' ) as unknown as {
-			isOn: boolean; isEnabled: boolean;
-		};
-
-		expect( button.isOn ).to.equal( true );
-		expect( button.isEnabled ).to.equal( true );
-	} );
-} );
+        expect(dropdown.listView?.items.length).toBe(0);
+        expect(dropdown.isEnabled).toBe(true);
+    });
+});

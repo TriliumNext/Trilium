@@ -58,14 +58,14 @@
     "help_on_links": "Aide sur les liens",
     "note": "Note",
     "search_note": "rechercher une note par son nom",
-    "link_title_mirrors": "le titre du lien reflète le titre actuel de la note",
-    "link_title_arbitrary": "le titre du lien peut être modifié arbitrairement",
     "link_title": "Titre du lien",
     "button_add_link": "Ajouter un lien",
     "anchor": "Ancre (optionnel)",
     "anchor_none": "Aucune (lien vers la note)",
     "edit_link": "Modifier le lien",
-    "button_edit_link": "Enregistrer le lien"
+    "button_edit_link": "Enregistrer le lien",
+    "fix_link": "Corriger le lien",
+    "button_fix_link": "Corriger le lien"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifier le préfixe de branche",
@@ -82,17 +82,21 @@
   },
   "bulk_actions": {
     "bulk_actions": "Actions groupées",
-    "affected_notes": "Notes concernées",
     "include_descendants": "Inclure les descendants des notes sélectionnées",
-    "available_actions": "Actions disponibles",
     "chosen_actions": "Actions choisies",
-    "execute_bulk_actions": "Exécuter des Actions groupées",
+    "execute_bulk_actions_one": "Exécuter des Actions groupées",
+    "execute_bulk_actions_many": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Les actions groupées ont été exécutées avec succès.",
     "none_yet": "Aucune pour l'instant... ajoutez une action en cliquant sur l'une des actions disponibles ci-dessus.",
     "labels": "Labels",
     "relations": "Relations",
     "notes": "Notes",
-    "other": "Autre"
+    "other": "Autre",
+    "selected_notes": "Notes sélectionnées",
+    "remove_from_selection": "Retirer de la sélection",
+    "remove_action": "Retirer cette action",
+    "add_action": "Ajouter une action"
   },
   "clone_to": {
     "clone_notes_to": "Cloner les notes dans...",
@@ -112,7 +116,10 @@
     "ok": "OK",
     "are_you_sure_remove_note": "Voulez-vous vraiment supprimer la note « {{title}} » de la carte des relations ? ",
     "if_you_dont_check": "La note elle-même est conservée ; seule sa place ici est enlevée.",
-    "also_delete_note": "Supprimer également la note"
+    "also_delete_note": "Supprimer également la note",
+    "delete_note_keeps_note_one": "Cette note a {{count}} autre clone, cette note sera donc conservée.",
+    "delete_note_keeps_note_many": "Cette note a {{count}} autres clones, cette note sera donc conservée.",
+    "delete_note_keeps_note_other": "Cette note a {{count}} autres clones, cette note sera donc conservée."
   },
   "delete_notes": {
     "close": "Fermer",
@@ -151,7 +158,13 @@
     "format_opml_description": "format extérieur avec contenu HTML",
     "format_share_name": "HTML pour internet",
     "format_share_description": "statique pouvant être publié avec le thème des notes partagées",
-    "recommended": "Recommandé"
+    "recommended": "Recommandé",
+    "format": "Format",
+    "format_html_name": "HTML",
+    "result_subtree_html": "Une archive ZIP où les notes de texte sont enregistrées en HTML. Le code, les images et les autres fichiers conservent leur format d'origine.",
+    "result_single_html": "Un fichier HTML unique. Les images et pièces jointes y sont intégrées.",
+    "export_in_progress_with_total": "{{progressCount}} notes exportées sur {{totalCount}}",
+    "preparing_export": "Préparation de l'exportation…"
   },
   "help": {
     "noteNavigation": "Navigation dans les notes",
@@ -247,13 +260,7 @@
   "include_note": {
     "dialog_title": "Inclure une note",
     "label_note": "Note",
-    "placeholder_search": "rechercher une note par son nom",
-    "box_size_prompt": "Taille de la boîte de la note incluse :",
-    "box_size_small": "petit (~ 10 lignes)",
-    "box_size_medium": "moyen (~ 30 lignes)",
-    "box_size_full": "complet (la boîte affiche le texte complet)",
-    "button_include": "Inclure une note",
-    "box_size_expandable": "déployable (replié par défaut)"
+    "button_include": "Inclure une note"
   },
   "info": {
     "modalTitle": "Message d'information",
@@ -281,10 +288,7 @@
   },
   "note_type_chooser": {
     "modal_title": "Choisissez le type de note",
-    "modal_body": "Choisissez le type de note/le modèle de la nouvelle note :",
-    "templates": "Modèles",
-    "change_path_prompt": "Modifier l’emplacement de création de la nouvelle note :",
-    "search_placeholder": "Rechercher le chemin par nom (par défaut si vide)"
+    "templates": "Modèles"
   },
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
@@ -469,21 +473,13 @@
     "remove_this_search_action": "Supprimer cette action dans la recherche"
   },
   "execute_script": {
-    "execute_script": "Exécuter le script",
-    "help_text": "Vous pouvez exécuter des scripts simples sur les notes correspondantes.",
-    "example_1": "Par exemple pour ajouter une chaîne de caractères au titre d'une note, utilisez ce petit script :",
-    "example_2": "Un exemple plus complexe serait de supprimer tous les attributs de la note correspondante :"
+    "execute_script": "Exécuter le script"
   },
   "add_label": {
     "add_label": "Ajouter un label",
     "label_name_placeholder": "nom du label",
     "label_name_title": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points.",
-    "to_value": "modifié par",
-    "new_value_placeholder": "nouvelle valeur",
-    "help_text": "Pour toutes les notes correspondantes :",
-    "help_text_item1": "créer un label donné si la note ne le possède pas encore",
-    "help_text_item2": "ou modifier la valeur du label existant",
-    "help_text_note": "Vous pouvez également appeler cette méthode sans valeur : dans ce cas le label sera attribué sans valeur à la note."
+    "new_value_placeholder": "nouvelle valeur"
   },
   "delete_label": {
     "delete_label": "Supprimer le label",
@@ -492,9 +488,7 @@
   },
   "rename_label": {
     "rename_label": "Renommer le label",
-    "rename_label_from": "Renommer le label de",
     "old_name_placeholder": "ancien nom",
-    "to": "En",
     "new_name_placeholder": "nouveau nom",
     "name_title": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points."
   },
@@ -502,49 +496,26 @@
     "update_label_value": "Mettre à jour la valeur du label",
     "label_name_placeholder": "nom du label",
     "label_name_title": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points.",
-    "to_value": "modifié par",
-    "new_value_placeholder": "nouvelle valeur",
-    "help_text": "Pour toutes les notes correspondantes, modifier la valeur du label.",
-    "help_text_note": "Vous pouvez également appeler cette méthode sans valeur, dans ce cas le label sera attribué à la note sans valeur."
+    "new_value_placeholder": "nouvelle valeur"
   },
   "delete_note": {
-    "delete_note": "Supprimer la note",
-    "delete_matched_notes": "Supprimer les notes correspondantes",
-    "delete_matched_notes_description": "Cela supprimera les notes correspondantes.",
-    "undelete_notes_instruction": "Après la suppression, il est possible de les restaurer à partir de la boîte de dialogue Modifications récentes.",
-    "erase_notes_instruction": "Pour effacer définitivement les notes, après leur suppression, allez dans Paramètres → Autres et cliquez sur le bouton \"Effacer immédiatement les notes supprimées\"."
+    "delete_note": "Supprimer la note"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Supprimer les versions de notes",
-    "all_past_note_revisions": "Toutes les versions de notes antérieures des notes correspondantes seront supprimées. La note elle-même sera entièrement préservée. En d’autres termes, l’historique de la note sera supprimé."
+    "delete_note_revisions": "Supprimer les versions de notes"
   },
   "move_note": {
     "move_note": "Déplacer la note",
-    "to": "vers",
-    "target_parent_note": "note parent cible",
-    "on_all_matched_notes": "Pour toutes les notes correspondantes",
-    "move_note_new_parent": "déplacer la note vers le nouveau parent si la note n'a qu'un seul parent (c.-à-d. l'ancienne branche est supprimée et une nouvelle branche est créée dans le nouveau parent)",
-    "clone_note_new_parent": "cloner la note vers le nouveau parent si la note a plusieurs clones/branches (il n'est pas clair quelle branche doit être supprimée)",
-    "nothing_will_happen": "rien ne se passera si la note ne peut pas être déplacée vers la note cible (cela créerait une boucle dans l'arborescence)"
+    "target_parent_note": "note parent cible"
   },
   "rename_note": {
-    "rename_note": "Renommer la note",
-    "rename_note_title_to": "Renommer le titre de la note en",
-    "new_note_title": "nouveau titre de note",
-    "click_help_icon": "Cliquez sur l'icône d'aide à droite pour voir toutes les options",
-    "evaluated_as_js_string": "La valeur donnée est évaluée comme une chaîne JavaScript et peut ainsi être enrichie de contenu dynamique via la variable <code>note</code> injectée (la note étant renommée). Exemples :",
-    "example_note": "<code>Note</code> - toutes les notes correspondantes sont renommées « Note »",
-    "example_new_title": "<code>NOUVEAU : ${note.title}</code> : les titres des notes correspondantes sont préfixés par \"NOUVEAU : \"",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')} : ${note.title}</code> : les notes correspondantes sont précédées du mois et de la date de création de la note",
-    "api_docs": "Consultez la documentation de l'API pour la <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a> et ses <a href='https://day.js.org/docs/en/display/format'>propriétés dateCreatedObj / utcDateCreatedObj</a> pour plus de détails."
+    "rename_note": "Renommer la note"
   },
   "add_relation": {
     "add_relation": "Ajouter une relation",
     "relation_name": "nom de la relation",
     "allowed_characters": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points.",
-    "to": "vers",
-    "target_note": "note cible",
-    "create_relation_on_all_matched_notes": "Pour toutes les notes correspondantes, créer une relation donnée."
+    "target_note": "note cible"
   },
   "delete_relation": {
     "delete_relation": "Supprimer la relation",
@@ -553,20 +524,14 @@
   },
   "rename_relation": {
     "rename_relation": "Renommer la relation",
-    "rename_relation_from": "Renommer la relation de",
     "old_name": "ancien nom",
-    "to": "En",
     "new_name": "nouveau nom",
     "allowed_characters": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points."
   },
   "update_relation_target": {
-    "update_relation": "Mettre à jour la relation",
     "relation_name": "nom de la relation",
     "allowed_characters": "Les caractères autorisés sont : caractères alphanumériques, les tirets bas et les deux-points.",
-    "to": "vers",
     "target_note": "note cible",
-    "on_all_matched_notes": "Pour toutes les notes correspondantes",
-    "change_target_note": "ou changer la note cible de la relation existante",
     "update_relation_target": "Mettre à jour la cible de la relation"
   },
   "attachments_actions": {
@@ -675,7 +640,6 @@
     "in_progress": "La synchronisation avec le serveur est en cours."
   },
   "left_pane_toggle": {
-    "show_panel": "Afficher le panneau",
     "hide_panel": "Masquer le panneau"
   },
   "move_pane_button": {
@@ -694,7 +658,6 @@
     "import_files": "Importer des fichiers",
     "export_note": "Exporter la note",
     "delete_note": "Supprimer la note",
-    "print_note": "Imprimer la note...",
     "save_revision": "Enregistrer une révision",
     "convert_into_attachment_failed": "La conversion de la note '{{title}}' a échoué.",
     "convert_into_attachment_successful": "La note '{{title}}' a été convertie en pièce jointe.",
@@ -741,7 +704,6 @@
     "create_child_note_title": "Créer une note enfant et l'ajouter à la carte"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Insérer une note enfant",
     "delete_this_note": "Supprimer cette note",
     "error_cannot_get_branch_id": "Impossible d'obtenir branchId pour notePath '{{notePath}}'",
     "error_unrecognized_command": "Commande non reconnue {{command}}",
@@ -860,18 +822,8 @@
   },
   "search_definition": {
     "add_search_option": "Ajouter une option de recherche :",
-    "search_string": "chaîne de caractères à rechercher",
-    "search_script": "script de recherche",
-    "ancestor": "ancêtre",
-    "fast_search": "recherche rapide",
-    "fast_search_description": "L'option de recherche rapide désactive la recherche dans le texte intégral du contenu des notes, ce qui peut accélérer la recherche dans les grandes bases de données.",
-    "include_archived": "inclure les archivées",
     "include_archived_notes_description": "Par défaut, les notes archivées sont exclues des résultats de recherche : avec cette option, elles seront incluses.",
-    "order_by": "trier par",
-    "limit": "limite",
     "limit_description": "Limiter le nombre de résultats",
-    "debug": "debug",
-    "debug_description": "Debug imprimera des informations supplémentaires dans la console pour faciliter le débogage des requêtes complexes",
     "action": "action",
     "search_button": "Recherche",
     "search_execute": "Rechercher et exécuter des actions",
@@ -914,8 +866,7 @@
     "include_archived_notes": "Inclure les notes archivées"
   },
   "limit": {
-    "limit": "Limite",
-    "take_first_x_results": "Ne prendre que les X premiers résultats spécifiés."
+    "limit": "Limite"
   },
   "order_by": {
     "order_by": "Trier par",
@@ -1558,7 +1509,6 @@
     "hide-archived-notes": "Masquer les notes archivées",
     "automatically-collapse-notes": "Réduire automatiquement les notes",
     "automatically-collapse-notes-title": "Les notes seront réduites après une période d'inactivité pour désencombrer l'arborescence.",
-    "save-changes": "Enregistrer et appliquer les modifications",
     "auto-collapsing-notes-after-inactivity": "Réduction automatique des notes après inactivité...",
     "saved-search-note-refreshed": "Note de recherche enregistrée actualisée.",
     "hoist-this-note-workspace": "Focus cette note (espace de travail)",
@@ -2569,7 +2519,6 @@
     "processing_complete": "Traitement OCR terminé.",
     "processing_failed": "Échec du démarrage du traitement OCR",
     "text_filtered_low_confidence": "Texte détecté par l’OCR avec un niveau de confiance de {{confidence}} %, mais ignoré car votre seuil minimum est de {{threshold}} %.",
-    "image_based_pdf_not_supported": "Ce PDF semble être basé sur des images (document scanné). L’extraction de texte depuis les PDF image n’est pas encore prise en charge.",
     "open_media_settings": "Ouvrir les paramètres",
     "view_extracted_text": "Afficher le texte extrait (OCR)"
   },
@@ -2777,5 +2726,11 @@
     "description_long": "Zippez votre dossier de coffre Obsidian, puis sélectionnez le fichier .zip généré ici.",
     "choose_file": "Coffre Obsidian (.zip)",
     "import": "Import"
+  },
+  "resources_options": {
+    "space_used": "Espace utilisé",
+    "partially_downloaded": "{{downloaded}} de {{size}} téléchargé",
+    "delete": "Supprimer",
+    "no_resources": "Rien n'a encore été téléchargé."
   }
 }

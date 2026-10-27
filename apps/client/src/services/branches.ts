@@ -145,10 +145,6 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
         taskId: utils.randomString(10)
     }, componentId);
 
-    if (eraseNotes) {
-        utils.reloadFrontendApp("erasing notes requires reload");
-    }
-
     return true;
 }
 
@@ -196,7 +192,7 @@ async function activateNeighbouringNotePath(branchIdsToDelete: string[], deleteA
 /**
  * Finds the child of `parentNoteId` closest to `noteId` that is still there once the given branches
  * are deleted: the next sibling, else the previous one. Archived siblings are skipped, since the
- * tree can be set to hide them.
+ * tree can be set to hide them, and so is `_hidden`, which the tree hides under root.
  */
 function findSurvivingSibling(
     parentNoteId: string,
@@ -222,6 +218,7 @@ function findSurvivingSibling(
     const survives = (branch: FBranch) =>
         !branchIdsToDelete.includes(branch.branchId)
         && !(deleteAllClones && deletedNoteIds.has(branch.noteId))
+        && branch.noteId !== "_hidden"
         && !froca.getNoteFromCache(branch.noteId)?.isArchived;
 
     const candidates = [
@@ -385,6 +382,15 @@ async function cloneNoteAfter(noteId: string, afterBranchId: string) {
     }
 }
 
+// beware that the first arg is noteId and the second is branchId!
+async function cloneNoteBefore(noteId: string, beforeBranchId: string) {
+    const resp = await server.put<Response>(`notes/${noteId}/clone-before/${beforeBranchId}`);
+
+    if (!resp.success) {
+        toastService.showError(resp.message);
+    }
+}
+
 export default {
     moveBeforeBranch,
     moveAfterBranch,
@@ -392,6 +398,7 @@ export default {
     deleteNotes,
     moveNodeUpInHierarchy,
     cloneNoteAfter,
+    cloneNoteBefore,
     cloneNoteToBranch,
     cloneNoteToParentNote
 };

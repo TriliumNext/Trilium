@@ -5,7 +5,7 @@ import {
     getAttachedFileMime, getContentRendererGroup, getDrawingPictureTitle,
     getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
     MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
-    NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+    MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
 } from "./notes.js";
 import { NoteType } from "./rows.js";
 
@@ -121,9 +121,9 @@ describe("getNoteIcon", () => {
     it("draws a web clipping by its clip type, behind its own icon", () => {
         const clipped = (clipType: string) => (name: string) => name === "clipType" ? clipType : null;
 
-        expect([ "clippings", "page", "note", "tabs" ].map((clipType) =>
+        expect([ "clippings", "page", "note", "tabs", "share" ].map((clipType) =>
             getNoteIcon(buildArgs({ getLabelValue: clipped(clipType) }))))
-            .toEqual([ "bx bx-paperclip", "bx bx-globe", "bx bx-bookmark", "bx bx-window-alt" ]);
+            .toEqual([ "bx bx-paperclip", "bx bx-globe", "bx bx-bookmark", "bx bx-window-alt", "bx bx-share" ]);
         expect(getNoteIcon(buildArgs({ getLabelValue: clipped("page"), isFolder: () => true })))
             .toBe("bx bx-globe");
         expect(getNoteIcon(buildArgs({ getLabelValue: clipped("page"), iconClass: "bx bx-star" })))
@@ -316,6 +316,7 @@ describe("getMimeIcon", () => {
         expect(getMimeIcon("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe("bx bx-spreadsheet");
         expect(getMimeIcon("text/csv")).toBe("bx bx-spreadsheet");
         expect(getMimeIcon(CANVAS_ATTACHMENT_MIME)).toBe(NOTE_TYPE_ICONS.canvas);
+        expect(getMimeIcon(MERMAID_ATTACHMENT_MIME)).toBe(NOTE_TYPE_ICONS.mermaid);
         expect(getMimeIcon("text/plain")).toBe("bx bx-file");
     });
 
@@ -358,6 +359,7 @@ describe("getNoteContentType", () => {
             [ "file", "application/json", false ],
             [ "file", "application/pdf", false ],
             [ "file", CANVAS_ATTACHMENT_MIME, false ],
+            [ "file", MERMAID_ATTACHMENT_MIME, false ],
             [ "file", "audio/mpeg", false ],
             [ "file", "video/mp4", false ],
             [ "file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", false ],
@@ -376,6 +378,7 @@ describe("getNoteContentType", () => {
             [ "code", undefined ],
             [ "pdf", "file" ],
             [ "canvasDrawing", "file" ],
+            [ "mermaidDiagram", "file" ],
             [ "audio", "file" ],
             [ "video", "file" ],
             [ "office", undefined ],

@@ -194,6 +194,8 @@ import { showMessage } from "trilium:api";
 
 In JSX, use `import { method } from "trilium:api"`. In JavaScript (Trilium frontend), use the `api` global.
 
+The API reference at the end of this sheet lists every member of `api` and of the objects it returns (`FNote`, `FBranch`, the widget base classes), with exact signatures. The sections below cover what a signature cannot say.
+
 ### Script context
 - `startNote` - note where the script execution started (the entry point of the script bundle). All module notes loaded by the same execution share one `startNote`; `log()` messages are grouped under it.
 - `currentNote` - note containing the source code currently executing. Equal to `startNote` except inside child module notes. NOT the note open in the UI — that is `getActiveContextNote()`.
@@ -208,42 +210,12 @@ Concrete examples:
 | Render note "Stats" with `~renderNote` → JSX note "StatsComponent" | "StatsComponent" | "StatsComponent" (or module note) | "Stats" (the render note) |
 | `api.runOnFrontend()` called from a backend script | the backend execution's `currentNote` | same | the backend's `originEntity` if it was a note, else `null` |
 
-### Navigation & tabs
-- `activateNote(notePath)` - navigate to a note
-- `activateNewNote(notePath)` - navigate and wait for sync
-- `openTabWithNote(notePath, activate?)` - open in new tab
-- `openSplitWithNote(notePath, activate?)` - open in new split
-- `getActiveContextNote()` - get currently active note
-- `getActiveContextNotePath()` - get path of active note
-- `setHoistedNoteId(noteId)` - hoist/unhoist note
-
-### Note access & search
-- `getNote(noteId)` - get note by ID
-- `getNotes(noteIds)` - bulk fetch notes
-- `searchForNotes(searchString)` - search with full query syntax
-- `searchForNote(searchString)` - search returning first result
-
 ### Note creation
 - `createNote(parentNotePath, opts?)` - create a note under `parentNotePath` (a noteId or path) **entirely on the frontend — no backend scripting required.** `opts` accepts `{ title, content, type, mime, templateNoteId, isProtected, activate, focus, target, attributes }` and returns `{ note, branch }` from the cache. The new note is activated with its title focused by default; pass `{ activate: false }` to create it silently. **Prefer this over `runOnBackend(() => api.createTextNote(...))`** — the backend variant needs backend scripting, which is off by default.
 
 ```jsx
 const { note } = await createNote(parentNoteId, { title: "New task", type: "text" });
 ```
-
-### Calendar/date notes
-- `getTodayNote()` - get/create today's note
-- `getDayNote(date)` / `getWeekNote(date)` / `getMonthNote(month)` / `getYearNote(year)`
-
-### Editor access
-- `getActiveContextTextEditor()` - get CKEditor instance
-- `getActiveContextCodeEditor()` - get CodeMirror instance
-- `addTextToActiveContextEditor(text)` - insert text into active editor
-
-### Dialogs & notifications
-- `showMessage(msg)` - info toast
-- `showError(msg)` - error toast
-- `showConfirmDialog(msg)` - confirm dialog (returns boolean)
-- `showPromptDialog(msg)` - prompt dialog (returns user input)
 
 ### Backend integration
 
@@ -277,37 +249,6 @@ const data = await runAsyncOnBackendWithManualTransactionHandling(async (url) =>
     return await response.json();
 }, [url]);
 ```
-
-### UI interaction
-- `triggerCommand(name, data)` - trigger a command
-- `bindGlobalShortcut(shortcut, handler, namespace?)` - add keyboard shortcut
-
-### Utilities
-- `formatDateISO(date)` - format as YYYY-MM-DD
-- `randomString(length)` - generate random string
-- `dayjs` - day.js library
-- `log(message)` - log to script log pane
-
-## FNote object
-
-Available via `getNote()`, `getActiveContextNote()`, `useNoteContext()`, etc.
-
-### Properties
-- `note.noteId`, `note.title`, `note.type`, `note.mime`
-- `note.isProtected`, `note.isArchived`
-
-### Content
-- `note.getContent()` - get note content
-- `note.getJsonContent()` - parse content as JSON
-
-### Hierarchy
-- `note.getParentNotes()` / `note.getChildNotes()`
-- `note.hasChildren()`, `note.getSubtreeNoteIds()`
-
-### Attributes
-- `note.getAttributes(type?, name?)` - all attributes (including inherited)
-- `note.getOwnedAttributes(type?, name?)` - only owned attributes
-- `note.hasAttribute(type, name)` - check for attribute
 
 ## Electron API (desktop only)
 

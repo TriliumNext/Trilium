@@ -6,7 +6,7 @@ import { applyCustomFontsFromOptions, hasCustomFontContentChanged } from "../../
 import { applyFontsFromOptions } from "../../services/font.js";
 import options from "../../services/options.js";
 import { applyThemeFromOptions, onEffectiveThemeStyleChange, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
-import utils, { isIOS, isMobile } from "../../services/utils.js";
+import utils, { isIOS, isMobile, isMobileApp } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer from "./flex_container.js";
 
@@ -57,15 +57,20 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.#setShadows();
         this.#setBackdropEffects();
         this.#setMonospaceLigatures();
+        this.#setStickyTableHeaders();
         updateThemeCapabilities();
         this.#setLocaleAndDirection(options.get("locale"));
         // The fonts stylesheet went out with the page; the files the user's own fonts are stored in
         // are fetched here, once froca can be asked which notes hold them.
         void applyCustomFontsFromOptions();
         this.#setExperimentalFeatures();
-        this.#initPWATopbarColor();
+        this.#initThemeColor();
 
-        return super.render();
+        const $widget = super.render();
+        if (isMobile() && (!isIOS() || isMobileApp())) {
+            this.#trackLayoutInsets();
+        }
+        return $widget;
     }
 
     entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
@@ -98,6 +103,10 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
             this.#setMonospaceLigatures();
         }
 
+        if (loadResults.isOptionReloaded("textNoteStickyTableHeadersEnabled")) {
+            this.#setStickyTableHeaders();
+        }
+
         if (loadResults.isOptionReloaded("maxContentWidth")
             || loadResults.isOptionReloaded("centerContent")) {
 
@@ -117,13 +126,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     #onMobileResize() {
-        // The virtual keyboard never changes the window width, so a width change means the device was
-        // rotated (or the window resized) and the stored height no longer describes this orientation.
-        // Keeping it would make the shorter landscape window look like an open keyboard (#10835).
-        if (window.innerWidth !== this.baselineWindowWidth) {
-            this.baselineWindowWidth = window.innerWidth;
-            this.baselineWindowHeight = window.innerHeight;
-        }
+        this.#syncBaseline();
 
         const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
         const windowHeight = Math.max(window.innerHeight, this.baselineWindowHeight); // inner height changes when keyboard is opened, we need to compare with the original height to detect it.
@@ -132,6 +135,45 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         const isKeyboardOpened = windowHeight - viewportHeight > 150;
 
         this.$widget.toggleClass("virtual-keyboard-opened", isKeyboardOpened);
+        // Kept once the keyboard closes, for a menu that takes its place (see `useKeyboardPanel`).
+        if (isKeyboardOpened) {
+            const keyboardHeight = Math.round(windowHeight - viewportHeight);
+            document.body.style.setProperty("--tn-keyboard-height", `${keyboardHeight}px`);
+        }
+    }
+
+    #syncBaseline() {
+        // The virtual keyboard never changes the window width, so a width change means the device was
+        // rotated (or the window resized) and the stored height no longer describes this orientation.
+        // Keeping it would make the shorter landscape window look like an open keyboard (#10835).
+        if (window.innerWidth !== this.baselineWindowWidth) {
+            this.baselineWindowWidth = window.innerWidth;
+            this.baselineWindowHeight = window.innerHeight;
+        }
+    }
+
+    /**
+     * The layout shrinks for the keyboard on Android (`interactive-widget=resizes-content`, or
+     * `adjustResize` in the app) and in the iOS app (`Keyboard.resize: "native"`), where it follows
+     * `innerHeight` only some time later. Mobile Safari keeps the layout, and
+     * `usePositioningOniOS` lifts the toolbar there instead. `--tn-layout-shrink` is how much shorter
+     * than the window the layout is, and `--tn-layout-overhang` how far it reaches below the visible
+     * bottom, so `mobile_editor_toolbar.css` places the toolbar and its menus for the layout as it
+     * stands.
+     */
+    #trackLayoutInsets() {
+        const root = this.$widget[0];
+        const style = document.body.style;
+        const update = () => {
+            this.#syncBaseline();
+            const height = root.getBoundingClientRect().height;
+            const windowHeight = Math.max(window.innerHeight, this.baselineWindowHeight);
+            style.setProperty("--tn-layout-shrink", `${Math.max(0, Math.round(windowHeight - height))}px`);
+            style.setProperty("--tn-layout-overhang", `${Math.max(0, Math.round(height - window.innerHeight))}px`);
+        };
+        update();
+        new ResizeObserver(update).observe(root);
+        window.visualViewport?.addEventListener("resize", update);
     }
 
     #setMaxContentWidth() {
@@ -153,7 +195,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     #setBackdropEffects() {
-        const enabled = options.is("backdropEffectsEnabled") && !isMobile();
+        const enabled = options.is("backdropEffectsEnabled") && (!isMobile() || isIOS());
         document.body.classList.toggle("backdrop-effects-disabled", !enabled);
     }
 
@@ -165,6 +207,11 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     #setMonospaceLigatures() {
         const enabled = options.is("monospaceLigaturesEnabled");
         document.body.classList.toggle("monospace-ligatures-disabled", !enabled);
+    }
+
+    #setStickyTableHeaders() {
+        const enabled = options.is("textNoteStickyTableHeadersEnabled");
+        document.body.classList.toggle("sticky-table-headers-disabled", !enabled);
     }
 
     #setExperimentalFeatures() {
@@ -185,8 +232,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         }
     }
 
-    #initPWATopbarColor() {
-        if (!utils.isPWA()) return;
+    #initThemeColor() {
         const tracker = $("#background-color-tracker");
 
         if (tracker.length) {

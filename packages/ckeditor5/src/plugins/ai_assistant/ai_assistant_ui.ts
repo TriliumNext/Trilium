@@ -18,6 +18,7 @@ import {
 } from "ckeditor5";
 
 import { extractDelimiters, renderEquation } from "../math/utils.js";
+import { openListAsMenu, type ToolbarGroupMenuItem } from "../toolbar_group_menu.js";
 import type { AiCompletionUsage, AiConversationTurn, AiDiffResult, AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, AiReviewView, AiSurroundings } from "./ai_assistant_config.js";
 import AiAssistantEditing, { AI_TARGET_MARKER } from "./ai_assistant_editing.js";
 import AiAssistantFormView from "./ai_assistant_form.js";
@@ -173,6 +174,7 @@ export default class AiAssistantUI extends Plugin {
         this._menuFooter = editor.config.get("aiAssistant")?.menuFooter ?? [];
 
         editor.ui.componentFactory.add("aiAssistant", (locale) => this._createToolbarComponent(locale));
+        editor.ui.componentFactory.add("aiAssistantMenu", (locale) => this._createMenuComponent(locale));
 
         editor.keystrokes.set(AI_ASSISTANT_KEYSTROKE, (_data, cancel) => {
             const command = editor.commands.get("aiAssistant");
@@ -245,6 +247,88 @@ export default class AiAssistantUI extends Plugin {
         for (const invalidate of this._invalidateMenu) {
             invalidate();
         }
+    }
+
+    /**
+     * The entry of a phone's toolbar: one button that opens the menu of the split button's arrow,
+     * which is too small to tap, as the host's menu of `ToolbarGroupMenu`. "Ask AI…" heads it.
+     * With no quick actions configured it is the plain button, as `aiAssistant` is.
+     */
+    private _createMenuComponent(locale: Locale): ButtonView | DropdownView {
+        if (!this._quickActions.length) {
+            return this._createAssistantButton(locale);
+        }
+
+        const command = this.editor.commands.get("aiAssistant");
+        const dropdownView = createDropdown(locale);
+        dropdownView.buttonView.set({ label: locale.t("AI assistant"), icon: aiIcon, tooltip: true });
+        /* v8 ignore next -- AiAssistantEditing always registers the command (it is required by this plugin) */
+        if (command) {
+            dropdownView.bind("isEnabled").to(command, "isEnabled", this, "isStreaming", isAvailable);
+        }
+        openListAsMenu(dropdownView, { describe: (run) => this._describeMenu(run) });
+        return dropdownView;
+    }
+
+    /**
+     * The menu of {@link _createMenuComponent}, laid out as `_createQuickActionsDropdown` lays out
+     * its own. Its enablement is read as it opens, as the menu lives only while it is open.
+     */
+    private _describeMenu(run: (action: () => void) => () => void): ToolbarGroupMenuItem[] {
+        const editor = this.editor;
+        const canRun = (action: AiQuickAction) => action.requiresContent === false || this.hasContext;
+        const describeFooter = (footer: AiQuickActionFooter): ToolbarGroupMenuItem => ({
+            kind: "entry",
+            label: footer.label,
+            iconClass: footer.iconClass,
+            isEnabled: true,
+            run: !footer.children && footer.run ? run(footer.run) : undefined,
+            children: footer.children?.flatMap((child): ToolbarGroupMenuItem[] => (child.heading
+                ? [{ kind: "heading", label: child.heading }, describeFooter(child)]
+                : [describeFooter(child)]))
+        });
+
+        const items: ToolbarGroupMenuItem[] = [{
+            kind: "entry",
+            label: editor.t("Ask AI…"),
+            iconClass: editor.config.get("aiAssistant")?.askIconClass,
+            isEnabled: true,
+            run: run(() => editor.execute("aiAssistant"))
+        }, { kind: "separator" }];
+
+        for (const [index, group] of this._quickActions.entries()) {
+            const actions: ToolbarGroupMenuItem[] = group.actions.map((action) => ({
+                kind: "entry",
+                label: action.label,
+                iconClass: action.iconClass,
+                isEnabled: canRun(action),
+                run: run(() => this.runQuickAction(action))
+            }));
+            if (group.submenu) {
+                if (group.footer) {
+                    actions.push({ kind: "separator" }, describeFooter(group.footer));
+                }
+                items.push({
+                    kind: "entry",
+                    label: group.label,
+                    iconClass: group.iconClass,
+                    isEnabled: !!group.footer || group.actions.some(canRun),
+                    children: actions
+                });
+            } else {
+                items.push(...actions);
+            }
+
+            const next = this._quickActions[index + 1];
+            if (next && !(group.submenu && next.submenu)) {
+                items.push({ kind: "separator" });
+            }
+        }
+
+        if (this._menuFooter.length) {
+            items.push({ kind: "separator" }, ...this._menuFooter.map(describeFooter));
+        }
+        return items;
     }
 
     private _createAssistantButton(locale: Locale): ButtonView {
@@ -850,31 +934,30 @@ export default class AiAssistantUI extends Plugin {
     }
 
     /**
-     * Turns the `language-mermaid` code blocks of a finished response into rendered diagrams, so
-     * the review shows what committing it will show. The response is Markdown rendered to note
-     * HTML, in which a diagram is a code block — the editor only makes one a diagram when the
-     * content is upcast into the model, which the assistant deliberately postpones until commit.
-     *
-     * Soft-coupled to the Mermaid feature by name: a build without it — or one whose host supplies
-     * no diagram library — leaves the source standing, which is also all a commit could produce
-     * there, rather than emptying the block in favour of a diagram that will never arrive.
+     * Turns the code blocks of a finished response in an inline embed language, such as
+     * `language-mermaid`, into what they render, so the review shows what committing it will
+     * show. The response is Markdown rendered to note HTML; the editor only makes such a block an
+     * embed when the content is upcast into the model, which the assistant postpones until commit.
+     * Without `contentEmbed.renderInlinePreview`, the blocks stay as source.
      */
     private _renderPreviewDiagrams(preview: HTMLElement): void {
-        const editor = this.editor;
-        if (!editor.plugins.has("MermaidEditing") || !editor.config.get("mermaid")?.lazyLoad) {
+        const config = this.editor.config.get("contentEmbed");
+        const render = config?.renderInlinePreview;
+        if (!render) {
             return;
         }
 
-        const mermaid = editor.plugins.get("MermaidEditing");
-        // The `<pre>` is replaced along with the `<code>` it holds: a diagram left inside one is
-        // framed as a code block in the preview and nowhere else.
-        for (const pre of preview.querySelectorAll("pre:has(> code.language-mermaid)")) {
-            /* v8 ignore next -- defensive fallback: textContent on an element is always a string */
-            const source = pre.textContent ?? "";
-            const diagram = preview.ownerDocument.createElement("div");
-            diagram.className = "ck-ai-assistant-form__diagram";
-            pre.replaceWith(diagram);
-            void mermaid.renderMermaid(diagram, source);
+        for (const language of config.inlineLanguages ?? []) {
+            // The `<pre>` is replaced along with its `<code>`: a diagram left inside one is framed
+            // as a code block.
+            for (const pre of preview.querySelectorAll(`pre:has(> code.language-${language})`)) {
+                /* v8 ignore next -- defensive fallback: textContent on an element is always a string */
+                const source = pre.textContent ?? "";
+                const diagram = preview.ownerDocument.createElement("div");
+                diagram.className = "ck-ai-assistant-form__diagram";
+                pre.replaceWith(diagram);
+                render(language, source, diagram);
+            }
         }
     }
 

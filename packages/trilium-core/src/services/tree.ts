@@ -1,6 +1,6 @@
 "use strict";
 
-import { parseSortCriteria } from "@triliumnext/commons";
+import { parseSortCriteria, type SortCriterion } from "@triliumnext/commons";
 
 import { getLog } from "./log.js";
 import { compareSortValues } from "./utils/sort_values.js";
@@ -24,6 +24,16 @@ function validateParentChild(parentNoteId: string, childNoteId: string, branchId
     if (parentNoteId === "none") {
         // this shouldn't happen
         return { branch: null, success: false, message: `Cannot move anything into 'none' parent.` };
+    }
+
+    // Virtual notes (e.g. the in-app help) exist only in becca — a persisted branch
+    // referencing them would dangle after upgrades and on other sync instances.
+    if (becca.getNote(childNoteId)?.isVirtual) {
+        return { branch: null, success: false, message: `Note '${childNoteId}' is a virtual note and cannot be cloned or moved.` };
+    }
+
+    if (becca.getNote(parentNoteId)?.isVirtual) {
+        return { branch: null, success: false, message: `Note '${parentNoteId}' is a virtual note and cannot receive children.` };
     }
 
     const existingBranch = becca.getBranchFromChildAndParent(childNoteId, parentNoteId);
@@ -82,7 +92,8 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
 
 /**
  * Sorts the children of `parentNoteId` by the levels of `sortBy`; `reverse` is the direction of a
- * level without its own, of the folders grouping and of ties, never of `#top` and `#bottom`.
+ * level without its own, of the `#sortFoldersFirst` grouping and of ties, never of a `first`/`last`
+ * grouping level or of the `#top` and `#bottom` levels {@link withPinningLevels} adds.
  */
 function sortNotes(
     parentNoteId: string,
@@ -92,7 +103,7 @@ function sortNotes(
     sortNatural = false,
     _sortLocale?: string | null
 ) {
-    const criteria = parseSortCriteria(sortBy);
+    const levels = withPinningLevels(parseSortCriteria(sortBy), foldersFirst, reverse);
 
     // sortLocale can not be empty string or null value, default value must be set to undefined.
     const sortLocale = _sortLocale || undefined;
@@ -106,18 +117,20 @@ function sortNotes(
 
         const notes = note.getChildNotes();
 
-        function fetchValue(note: BNote, key: string): string | null {
-            let rawValue: string | null;
+        function fetchValue(note: BNote, key: string, isLabel = true): string | null {
+            let rawValue: string | null = null;
 
-            if (key === "title") {
+            if (isLabel) {
+                rawValue = note.getLabelValue(key);
+            } else if (key === "title") {
                 const branch = note.getParentBranches()
                     .find((branch) => branch.parentNoteId === parentNoteId);
                 const prefix = branch?.prefix;
                 rawValue = prefix ? `${prefix} - ${note.title}` : note.title;
-            } else {
-                rawValue = key === "dateCreated" || key === "dateModified"
-                    ? note[key] ?? null
-                    : note.getLabelValue(key);
+            } else if (key === "dateCreated" || key === "dateModified") {
+                rawValue = note[key] ?? null;
+            } else if (key === "folders") {
+                rawValue = note.hasChildren() ? "" : null;
             }
 
             return typeof rawValue === "string" ? rawValue.toLowerCase() : rawValue;
@@ -137,51 +150,35 @@ function sortNotes(
         // A child without the label sorts after every child that has it, whichever direction the
         // level runs in, so only the values both children have follow `descending`. Two children
         // without it tie, leaving the next level to decide.
-        function compareLevel(a: BNote, b: BNote, key: string, descending: boolean) {
+        function compareLevel(a: BNote, b: BNote, level: SortCriterion, descending: boolean) {
             return compareSortValues(
-                fetchValue(a, key),
-                fetchValue(b, key),
+                fetchValue(a, level.key, level.isLabel),
+                fetchValue(b, level.key, level.isLabel),
                 descending ? compareReversed : compare
             );
         }
 
+        // Orders by whether each child has the label (or a value of the property), ignoring the
+        // value and `reverse`.
+        function compareGroup(a: BNote, b: BNote, { key, isLabel, group }: SortCriterion) {
+            const hasA = fetchValue(a, key, isLabel) !== null;
+            if (hasA === (fetchValue(b, key, isLabel) !== null)) {
+                return 0;
+            }
+            return (hasA ? -1 : 1) * (group === "last" ? -1 : 1);
+        }
+
         notes.sort((a, b) => {
-            const topA = fetchValue(a, "top");
-            const topB = fetchValue(b, "top");
-
-            if (topA !== topB) {
-                if (topA === null) return 1;
-                if (topB === null) return -1;
-                return compare(topA, topB);
-            }
-
-            const bottomA = fetchValue(a, "bottom");
-            const bottomB = fetchValue(b, "bottom");
-
-            if (bottomA !== bottomB) {
-                if (bottomA === null) return -1;
-                if (bottomB === null) return 1;
-                return compare(bottomB, bottomA);
-            }
-
-            if (foldersFirst) {
-                const aHasChildren = a.hasChildren();
-                const bHasChildren = b.hasChildren();
-
-                // Folders group first ascending and last descending.
-                if (aHasChildren !== bHasChildren) {
-                    return (aHasChildren ? -1 : 1) * (reverse ? -1 : 1);
-                }
-            }
-
-            for (const { key, descending } of criteria) {
-                const result = compareLevel(a, b, key, descending ?? reverse);
+            for (const level of levels) {
+                const result = level.group
+                    ? compareGroup(a, b, level)
+                    : compareLevel(a, b, level, level.descending ?? reverse);
                 if (result !== 0) {
                     return result;
                 }
             }
 
-            return compareLevel(a, b, "title", reverse);
+            return compareLevel(a, b, { key: "title", isLabel: false }, reverse);
         });
 
         let position = 10;
@@ -211,6 +208,38 @@ function sortNotes(
             entityChangesService.putNoteReorderingEntityChange(parentNoteId);
         }
     });
+}
+
+/**
+ * Puts `#top asc` before `criteria` unless they name `#top`, then `#bottom last, #bottom desc`
+ * unless they name `#bottom`. Unless they name `folders`, `#sortFoldersFirst` adds `folders first`
+ * (`folders last` when `reverse`) right after the last `#top` or `#bottom` level.
+ */
+function withPinningLevels(criteria: SortCriterion[], foldersFirst: boolean, reverse: boolean) {
+    const names = (key: string, isLabel: boolean) =>
+        criteria.some((level) => level.isLabel === isLabel && level.key === key);
+
+    const levels: SortCriterion[] = [];
+    if (!names("top", true)) {
+        levels.push({ key: "top", isLabel: true, descending: false });
+    }
+    if (!names("bottom", true)) {
+        levels.push(
+            { key: "bottom", isLabel: true, group: "last" },
+            { key: "bottom", isLabel: true, descending: true }
+        );
+    }
+    levels.push(...criteria);
+
+    if (foldersFirst && !names("folders", false)) {
+        const lastPinning = levels.findLastIndex(
+            ({ key, isLabel }) => isLabel && (key === "top" || key === "bottom")
+        );
+        levels.splice(lastPinning + 1, 0, {
+            key: "folders", isLabel: false, group: reverse ? "last" : "first"
+        });
+    }
+    return levels;
 }
 
 function sortNotesIfNeeded(parentNoteId: string) {

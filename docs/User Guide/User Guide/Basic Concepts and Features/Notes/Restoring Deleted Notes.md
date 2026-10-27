@@ -1,5 +1,5 @@
 # Restoring Deleted Notes
-Deleted notes are listed in the _Deleted Notes_ dialog (<a class="reference-link" href="../UI%20Elements/Global%20menu.md">Global menu</a> → _Show Deleted Notes_) and can be restored by pressing the _undelete_ link.
+Deleted notes are listed in the _Deleted Notes_ dialog (<a class="reference-link" href="../UI%20Elements/Global%20menu.md">Global menu</a> → _Deleted notes_) and can be restored by pressing the _undelete_ link.
 
 If a note has child notes, they will be restored along with it. Should the original location no longer exist (e.g. the parent has been deleted), the note will be restored into the default location for new notes (<a class="reference-link" href="Note%20Inbox.md">Note Inbox</a>).
 

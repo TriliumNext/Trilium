@@ -32,12 +32,13 @@ import resourcesRoute from "./api/resources.js";
 import senderRoute from "./api/sender.js";
 import setupRestoreRoute from "./api/setup_restore.js";
 import shareEditApiRoute from "./api/share_edit.js";
+import shareTargetRoute from "./api/share_target.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -168,6 +169,10 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
+
+    // The OS share sheet posts this form, so it carries no CSRF token; `rejectOtherPages` refuses
+    // the same form when another page posts it.
+    asyncRoute(PST, "/share-target", [auth.checkApiAuth, shareTargetRoute.rejectOtherPages, shareTargetMiddlewareWithErrorHandling], shareTargetRoute.handleShare, null);
 
     // POST rather than GET: the URL would otherwise sit in the query string of every access-log
     // line (Trilium's own, and any reverse proxy in front of it), and a pasted URL can carry a

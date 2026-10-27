@@ -99,7 +99,7 @@
         <% } %>
         <div id="right-pane-body">
         <div id="main">
-            <div id="content" class="<%= contentClasses %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
+            <div id="content" class="<%= contentClasses %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>" data-tab-previous-label="<%= t("share_theme.previous-tabs") %>" data-tab-next-label="<%= t("share_theme.next-tabs") %>" data-copy-code-label="<%= t("share_theme.copy-code") %>">
                 <%- snippets["content:start"] %>
                 <% if (showTitle && noteHeader) { %>
                     <header id="note-header">

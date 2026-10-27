@@ -1,3 +1,5 @@
+import "./Icon.css";
+
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
 import { useRef } from "preact/hooks";

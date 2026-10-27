@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateTemplate } from "./safe_template.js";
+import { evaluateTemplate, findTemplateIssues } from "./safe_template.js";
 
 /**
  * A stand-in for the note-like objects passed into template evaluation. Only the
@@ -187,5 +187,77 @@ describe("safe_template - rejected expressions", () => {
                 note: fakeNote()
             })
         ).toThrow(/is not a supported expression/);
+    });
+
+    it("rejects an unclosed method call padded with whitespace in linear time", () => {
+        const expression = `A.A(${"\t".repeat(100_000)}x`;
+        const start = performance.now();
+        expect(() => evaluateTemplate(`\${${expression}}`, { A: {} })).toThrow(
+            /is not a supported expression/
+        );
+        expect(findTemplateIssues(`\${${expression}}`, { A: "text" })).toMatchObject([
+            { kind: "unsupported" }
+        ]);
+        expect(performance.now() - start).toBeLessThan(1000);
+    });
+});
+
+describe("safe_template - findTemplateIssues", () => {
+    const variables = { note: "note" } as const;
+
+    it("accepts what evaluateTemplate accepts", () => {
+        expect(findTemplateIssues("NEW: ${note.title}", variables)).toStrictEqual([]);
+        expect(findTemplateIssues("${note.dateCreatedObj.format('MM-DD')} ${note.getLabelValue(\"x\")}", variables))
+            .toStrictEqual([]);
+        expect(findTemplateIssues("plain text, no expression", variables)).toStrictEqual([]);
+    });
+
+    it("reports each refused expression with its offsets", () => {
+        const template = "a ${missing.title} b ${note.constructor} c ${note.toString()} d ${1 + 1}";
+        const issues = findTemplateIssues(template, variables);
+
+        expect(issues.map(({ kind, name }) => ({ kind, name }))).toStrictEqual([
+            { kind: "unknownVariable", name: "missing" },
+            { kind: "propertyNotAllowed", name: "constructor" },
+            { kind: "methodNotAllowed", name: "toString" },
+            { kind: "unsupported", name: undefined }
+        ]);
+        for (const issue of issues) {
+            expect(template.slice(issue.from, issue.to)).toMatch(/^\$\{.*\}$/);
+        }
+    });
+
+    it("reports a method called on a value that does not have it", () => {
+        const template = "${note.title.format('YYYY')} ${note.format('YYYY')} ${note.dateCreatedObj.getLabelValue('x')}";
+        expect(findTemplateIssues(template, variables).map(({ kind, name }) => ({ kind, name }))).toStrictEqual([
+            { kind: "methodNotOnValue", name: "format" },
+            { kind: "methodNotOnValue", name: "format" },
+            { kind: "methodNotOnValue", name: "getLabelValue" }
+        ]);
+        expect(findTemplateIssues("${now.format('YYYY')} ${now.title.format('YYYY')}", { now: "date" })).toStrictEqual([]);
+    });
+
+    it("reports a ${ that is never closed, which evaluateTemplate leaves as text", () => {
+        const issues = findTemplateIssues("NEW: ${note.title", variables);
+        expect(issues).toStrictEqual([ { kind: "unclosed", from: 5, to: 17, name: undefined } ]);
+    });
+
+    it("agrees with evaluateTemplate on every case", () => {
+        const note = fakeNote({ format: undefined, dateCreatedObj: { format: (fmt: string) => fmt } });
+        for (const template of [
+            "${note.title}", "${note.nope}", "${note.eval('x')}", "${note['title']}", "${other}", "${constructor}",
+            "${note.dateCreatedObj.format('YYYY')}", "${note.title.format('YYYY')}", "${note.format('YYYY')}",
+            "${note.dateCreatedObj.getLabelValue('x')}", "${note.dateCreatedObj.title.format('YYYY')}"
+        ]) {
+            const throws = (() => {
+                try {
+                    evaluateTemplate(template, { note });
+                    return false;
+                } catch {
+                    return true;
+                }
+            })();
+            expect(findTemplateIssues(template, variables).length > 0).toBe(throws);
+        }
     });
 });

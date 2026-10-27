@@ -10,8 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["DOM", "ES2023"],
     "types": [
-      "vite/client",
-      "jquery"
+      "vite/client"
     ]
   },
   "include": [

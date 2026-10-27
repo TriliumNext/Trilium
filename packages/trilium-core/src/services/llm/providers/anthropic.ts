@@ -1,6 +1,6 @@
 import { type AnthropicProvider as AnthropicSDKProvider,createAnthropic } from "@ai-sdk/anthropic";
 import type { LlmMessage } from "@triliumnext/commons";
-import { type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type ToolSet } from "ai";
+import { type ModelMessage, streamText, type SystemModelMessage, type ToolSet } from "ai";
 
 import type { LlmProviderConfig, ModelInfo, StreamResult } from "../types.js";
 import { BaseProvider, buildModelMessage, type RemoteModel, TELEMETRY_OFF } from "./base_provider.js";
@@ -24,13 +24,15 @@ const BROWSER_ACCESS_HEADER = { "anthropic-dangerous-direct-browser-access": "tr
 const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
 
 /**
- * Models that support adaptive extended thinking. Opus 4.7 / 4.8 and Sonnet 5
- * reject the manual `{ type: "enabled", budgetTokens }` form with a 400 and
- * accept adaptive only; Opus 4.6 and Sonnet 4.6 accept both but prefer adaptive.
- * Everything else (older Opus/Sonnet, Haiku 4.5) only supports the manual budget
+ * Models that support adaptive extended thinking. Opus 4.7 / 4.8 and the whole
+ * Claude 5 generation (Opus, Sonnet, Haiku, Fable, Mythos 5+) reject the manual
+ * `{ type: "enabled", budgetTokens }` form with a 400 and accept adaptive only;
+ * Opus 4.6 and Sonnet 4.6 accept both but prefer adaptive. Everything else
+ * (older Opus/Sonnet, Haiku 4.5, Mythos Preview) only supports the manual budget
  * form.
  */
-const ADAPTIVE_THINKING_MODELS = /^claude-(?:opus-4-[678]|sonnet-(?:4-6|5))/;
+const ADAPTIVE_THINKING_MODELS =
+    /^claude-(?:opus-4-[678]|sonnet-4-6|(?:opus|sonnet|haiku|mythos)-[5-9]|fable-)/;
 
 export class AnthropicProvider extends BaseProvider {
     name = "anthropic";
@@ -158,12 +160,7 @@ export class AnthropicProvider extends BaseProvider {
             }
         };
 
-        const tools = this.buildTools(config);
-        if (Object.keys(tools).length > 0) {
-            streamOptions.tools = tools;
-            streamOptions.stopWhen = stepCountIs(5);
-            streamOptions.toolChoice = "auto";
-        }
+        this.addTools(streamOptions, config, 5);
 
         return streamText(streamOptions);
     }
@@ -178,10 +175,16 @@ export class AnthropicProvider extends BaseProvider {
 const ANTHROPIC_MODEL = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$/;
 
 /**
+ * Claude families priced at the premium tier (2.5× Opus per token). They are
+ * never recommended; the user ticks them.
+ */
+const UNRECOMMENDED_FAMILIES = new Set(["fable", "mythos"]);
+
+/**
  * Recommend the newest version within each Claude family (Opus, Sonnet, Haiku,
- * Fable, and any future one) — one model per family, so today's Opus 4.8,
- * Sonnet 5, Haiku 4.5 and Fable 5. Older revisions and dated snapshots stay in
- * the picker, unchecked.
+ * and any future one) — one model per family, so today's Opus 4.8, Sonnet 5 and
+ * Haiku 4.5. Older revisions and dated snapshots stay in the picker, unchecked,
+ * as do the {@link UNRECOMMENDED_FAMILIES}.
  *
  * Exported because the Claude Code subscription provider serves the same
  * `claude-*` catalog and must apply the same rule, without inheriting from
@@ -191,7 +194,7 @@ export function anthropicRecommendedIds(models: ModelInfo[]): Set<string> {
     const byFamily = new Map<string, { id: string; version: number }[]>();
     for (const model of models) {
         const parsed = parseAnthropicModel(model.id);
-        if (!parsed) {
+        if (!parsed || UNRECOMMENDED_FAMILIES.has(parsed.family)) {
             continue;
         }
         const members = byFamily.get(parsed.family) ?? [];

@@ -67,7 +67,23 @@ export function getAvailableLocales(): Locale[] {
     if (!window.glob.isDev) return LOCALES;
 
     const englishNames = new Intl.DisplayNames([ "en" ], { type: "language" });
-    return LOCALES.map((locale) => ({ ...locale, name: withEnglishName(locale, englishNames) }));
+    return LOCALES.map((locale) => {
+        const englishName = getEnglishAnnotation(locale, englishNames);
+        return { ...locale, name: englishName ? `${locale.name} (${englishName})` : locale.name };
+    });
+}
+
+/**
+ * The English name a development build shows after the native name of `locale`, or `null` in
+ * production and where the English name would repeat the native one.
+ *
+ * @param englishNames a formatter to reuse, for a caller naming a whole list of locales at once.
+ */
+export function getEnglishAnnotation(locale: Locale, englishNames?: Intl.DisplayNames) {
+    if (!window.glob.isDev) return null;
+
+    const englishName = getEnglishName(locale.id, englishNames);
+    return englishName && englishName !== locale.name ? englishName : null;
 }
 
 /**
@@ -83,12 +99,4 @@ export function getLocaleById(localeId: string | null | undefined) {
 
 export const t = i18next.t;
 export const getCurrentLanguage = () => i18next.language;
-
-/** `Deutsch (German)`, or the native name alone where an English equivalent would add nothing. */
-function withEnglishName(locale: Locale, englishNames: Intl.DisplayNames): string {
-    const englishName = getEnglishName(locale.id, englishNames);
-    return englishName && englishName !== locale.name
-        ? `${locale.name} (${englishName})`
-        : locale.name;
-}
 

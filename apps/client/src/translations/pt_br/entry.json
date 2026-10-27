@@ -66,7 +66,6 @@
         "sync-from-desktop-unreachable-description": "Para sincronizar, o outro desktop precisa se conectar a este pela rede. Por segurança, este aplicativo de desktop só aceita conexões deste computador, então o outro desktop ainda não pode alcançá-lo. Permita o acesso à rede abaixo — o Trilium reiniciará para aplicá-lo.",
         "sync-from-desktop-allow-access": "Permitir acesso à rede e reiniciar",
         "advanced-options": "Opções avançadas",
-        "sync-failed": "Falha ao sincronizar: {{- message}}",
         "sync-failed-title": "Falha na sincronização",
         "sync-failed-description": "A sincronização inicial não pôde ser concluída. Você pode tentar novamente ou voltar para verificar o endereço do servidor e as credenciais.",
         "sync-failed-admonition-title": "A última tentativa de sincronização falhou",

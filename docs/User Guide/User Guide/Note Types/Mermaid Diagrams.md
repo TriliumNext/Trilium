@@ -28,6 +28,8 @@ It's possible to switch between the two layouts at any time by pressing the <sp
 
 *   The source code of the diagram (in Mermaid format) is displayed on the left or bottom side of the note (depending on the layout).
     *   Changing the diagram code will refresh automatically the diagram.
+    *   The front matter (the block between `---` lines at the start of the diagram, which holds its title and configuration) is highlighted as YAML, and so are the node properties of flowcharts and Kanban boards (such as `@{ shape: tool }`). Configuration directives (`%%{init: …}%%`) are highlighted apart from comments, and so are the accessibility title and description (`accTitle:` and `accDescr:`).
+    *   <kbd>Ctrl</kbd>+<kbd>/</kbd> (Mac: <kbd>⌘</kbd>+<kbd>/</kbd>) comments out the current or selected lines with `%%`, or with `#` in the front matter. Pressing it again on commented lines removes the comment marker.
 *   The preview of the diagram is displayed at the right or top side of the note (depending on the layout):
     *   There are dedicated buttons at the bottom-right of the preview to control the zoom in, zoom out or fit the diagram.
     *   The preview can be moved around by holding the left mouse button and dragging.
@@ -52,3 +54,7 @@ It's possible to switch between the two layouts at any time by pressing the <sp
 If there is an error in the source code, the error will be displayed in an information pane.
 
 During the state of an error, the diagram will no longer be rendered and the previously working diagram will remain in the preview section.
+
+## Diagrams in a text note
+
+To show a diagram inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert one with the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> _Mermaid diagram_ button of the <span class="tn-icon cke cke-plus"></span> _Insert_ menu. It has the same views, zoom and error display as a Mermaid note, and its source stays in the text note as a code block. See _Mermaid diagram_ in <a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a>.

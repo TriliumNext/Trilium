@@ -20,17 +20,17 @@ Saving the note to the database is backend's responsibility, so we immediately p
 
 ## Script execution
 
-So we have a script which will add the button to the toolbar. But how can we execute it? One possibility is to click on "play" icon (marked by red circle). The problem with this is that this UI change is time bound by Trilium runtime so when we restart Trilium, button won't be there.
+So we have a script which will add the button to the toolbar. But how can we execute it? One possibility is to click on the <span class="tn-icon bx bx-play"></span> _Execute script_ button. The problem with this is that this UI change is time bound by Trilium runtime so when we restart Trilium, button won't be there.
 
 We need to execute it every time Trilium starts up, but we probably don't want to have to manually click on play button on every start up.
 
-The solution is marked by red circle at the bottom - this note has [label](Advanced%20Usage/Attributes.md) `#run=frontendStartup` - this is one of the "system" labels which Trilium understands. As you might guess, this will cause all such labeled script notes to be executed once Trilium frontend starts up.
+The solution is to give the note the [label](Advanced%20Usage/Attributes.md) `#run=frontendStartup` - this is one of the "system" labels which Trilium understands. As you might guess, this will cause all such labeled script notes to be executed once Trilium frontend starts up.
 
 (`#run=frontendStartup` does not work for [Mobile frontend](Installation%20%26%20Setup/Mobile%20Frontend.md) - if you want to have scripts running there, give the script `#run=mobileStartup` label).
 
 ### Execute button
 
-Runnable code notes (frontend or backend) and saved SQL consoles can optionally have a dedicated execute button alongside a description.
+Runnable code notes (frontend or backend) and saved SQL consoles can optionally have a dedicated <span class="tn-icon bx bx-play"></span> execute button alongside a description.
 
 To do so, apply the following [labels](Advanced%20Usage/Attributes/Labels.md):
 
@@ -41,7 +41,7 @@ To do so, apply the following [labels](Advanced%20Usage/Attributes/Labels.md):
 
 Starting with Trilium v0.104.0, frontend scripts, backend scripts and render notes benefit from an autocomplete system.
 
-The autocomplete triggers automatically when typing <kbd>.</kbd> or manually by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>.
+The autocomplete opens automatically while typing a name or after a <kbd>.</kbd>, or manually by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>. Its list looks and works like the <kbd>/</kbd> list of a text note: each entry has an icon for its kind (function, property, class…), <kbd>Enter</kbd> or <kbd>Tab</kbd> inserts the highlighted one and <kbd>Esc</kbd> closes it.
 
 In addition to that, the editor will also display syntax errors and warnings such as unreachable code.
 

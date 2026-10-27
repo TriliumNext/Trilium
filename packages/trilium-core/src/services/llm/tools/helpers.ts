@@ -3,6 +3,7 @@
  */
 
 import type BAttachment from "../../../becca/entities/battachment.js";
+import type BAttribute from "../../../becca/entities/battribute.js";
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import blobService from "../../../services/blob.js";
@@ -31,27 +32,48 @@ const SVG_SOURCE_RE = /^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:(?:<!--(?:(?!-->)[\s\S])*
 /** Note IDs that must not be deleted, moved, or cloned by the LLM. */
 export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lbRoot", "_globalNoteMap"]);
 
-/** Host-provided reader for doc-note HTML. See {@link registerDocNoteHtmlReader}. */
-let docNoteHtmlReader: ((note: BNote) => string | null) | null = null;
+/** Label that hides a note from the LLM tools, and its subtree too when the label is inheritable. */
+export const EXCLUDE_FROM_LLM_LABEL = "excludeFromLlm";
 
-/**
- * Register the host's reader for in-app help pages.
- *
- * `doc` notes (the User Guide) keep no content in the database — their HTML
- * ships as static files, which the server reads off disk. The browser-hosted
- * build has no synchronous way to do that, so hosts that can supply it register
- * a reader here and the rest simply report the content as unavailable.
- */
-export function registerDocNoteHtmlReader(reader: (note: BNote) => string | null) {
-    docNoteHtmlReader = reader;
+/** Whether the LLM must not see a note: it owns or inherits a truthy {@link EXCLUDE_FROM_LLM_LABEL}. */
+export function isExcludedFromLlm(note: BNote) {
+    return note.isLabelTruthy(EXCLUDE_FROM_LLM_LABEL);
 }
 
-/**
- * Resolve the HTML of a `doc` note via the registered reader, or null when no
- * reader is registered or it cannot resolve the page.
- */
-export function getDocNoteHtml(note: BNote): string | null {
-    return docNoteHtmlReader?.(note) ?? null;
+/** Returns the note, or `null` when it is missing or excluded, so the LLM cannot tell the two apart. */
+export function getLlmNote(noteId: string): BNote | null {
+    const note = becca.getNote(noteId);
+    return note && !isExcludedFromLlm(note) ? note : null;
+}
+
+/** Returns the note's children that the LLM can see. */
+export function getLlmChildNotes(note: BNote) {
+    return note.getChildNotes().filter((child) => !isExcludedFromLlm(child));
+}
+
+/** Returns the note's parents that the LLM can see. */
+export function getLlmParentNotes(note: BNote) {
+    return note.getParentNotes().filter((parent) => !isExcludedFromLlm(parent));
+}
+
+/** Whether the LLM can see an attribute: its owner and, for a relation, its target are not excluded. */
+export function isAttributeVisibleToLlm(attribute: BAttribute) {
+    const owner = becca.getNote(attribute.noteId);
+    if (!owner || isExcludedFromLlm(owner)) {
+        return false;
+    }
+    const target = attribute.type === "relation" ? becca.getNote(attribute.value) : null;
+    return !target || !isExcludedFromLlm(target);
+}
+
+/** Returns the attachment, or `null` when it is missing or its owning note (or the revision's note) is excluded. */
+export function getLlmAttachment(attachmentId: string): BAttachment | null {
+    const attachment = becca.getAttachment(attachmentId);
+    if (!attachment) {
+        return null;
+    }
+    const owner = becca.getNote(attachment.ownerId) ?? becca.getRevision(attachment.ownerId)?.getNote();
+    return owner && !isExcludedFromLlm(owner) ? attachment : null;
 }
 
 /**
@@ -70,10 +92,9 @@ export function flag(value: boolean | undefined): true | undefined {
  */
 export function getNoteContentForLlm(note: BNote) {
     if (note.type === "doc") {
-        // Doc notes (in-app help / User Guide pages) store no content in the
-        // database — their HTML lives on disk and is fetched by the client.
-        const html = getDocNoteHtml(note);
-        return html ? markdownExport.toMarkdown(html) : "[doc content not available]";
+        // Doc notes hold no content of their own: the client renders an explanatory page picked
+        // by their `docName` label, out of its own translation catalog.
+        return "[doc content not available]";
     }
 
     const content = note.getContent();
@@ -267,12 +288,12 @@ function truncated<T>(items: T[], limit: number) {
  *   {@link TOOL_LIMITS} for the `get_note` tool.
  */
 export function getNoteMeta(note: BNote, limits: NoteMetaLimits) {
-    const allChildNotes = note.getChildNotes().map((ch) => ({
+    const allChildNotes = getLlmChildNotes(note).map((ch) => ({
         noteId: ch.noteId,
         title: ch.getTitleOrProtected()
     }));
 
-    const allAttributes = note.getAttributes().map((attr) => ({
+    const allAttributes = note.getAttributes().filter(isAttributeVisibleToLlm).map((attr) => ({
         attributeId: attr.attributeId,
         type: attr.type,
         name: attr.name,
@@ -297,7 +318,7 @@ export function getNoteMeta(note: BNote, limits: NoteMetaLimits) {
         mime: note.mime,
         dateCreated: note.dateCreated,
         dateModified: note.dateModified,
-        parentNoteIds: note.getParentNotes().map((p) => p.noteId),
+        parentNoteIds: getLlmParentNotes(note).map((p) => p.noteId),
         childNotes: truncated(allChildNotes, limits.childNotes),
         attributes: truncated(allAttributes, limits.attributes),
         contentPreview: getContentPreview(note),

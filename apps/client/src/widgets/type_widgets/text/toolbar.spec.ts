@@ -80,6 +80,20 @@ describe("the Insert group", () => {
     });
 });
 
+describe("the attach menu", () => {
+    it("replaces the image and file uploads on every toolbar, with the camera only on a phone", () => {
+        const classic = buildClassicToolbar(false, true);
+        const floating = buildFloatingToolbar(true);
+        for (const items of [ classic.toolbar.items, floating.blockToolbar ]) {
+            expect(items).toContain("attachMenu");
+            expect(items).not.toContain("imageUpload");
+            expect(items).not.toContain("fileUpload");
+        }
+        expect("attachMenu" in classic || "attachMenu" in floating).toBe(false);
+        expect(buildMobileToolbar(true).attachMenu).toStrictEqual({ camera: true });
+    });
+});
+
 describe("buildClassicToolbar", () => {
     it("reflects the multiline flag via shouldNotGroupWhenFull", () => {
         expect(buildClassicToolbar(false, true).toolbar.shouldNotGroupWhenFull).toBe(false);
@@ -94,7 +108,7 @@ describe("buildClassicToolbar", () => {
 describe("the AI assistant's entries", () => {
     it("are dropped from every toolbar when the assistant is unavailable", () => {
         expect(buildClassicToolbar(false, false).toolbar.items).not.toContain("aiAssistant");
-        expect(buildMobileToolbar(false).toolbar.items).not.toContain("aiAssistant");
+        expect(buildMobileToolbar(false).toolbar.items).not.toContain("aiAssistantMenu");
 
         const floating = buildFloatingToolbar(false);
         expect(floating.toolbar.items).not.toContain("aiAssistant");
@@ -134,14 +148,131 @@ describe("group labels", () => {
 });
 
 describe("buildMobileToolbar", () => {
-    it("flattens nested toolbar groups into a single flat item list", () => {
-        const mobile = buildMobileToolbar(true);
+    it("nests only the insert menu, which holds the least used insertions and the wrapping blocks", () => {
+        const { toolbar, textFormattingToolbar } = buildMobileToolbar(true);
+        const groups = (toolbar.items as unknown[]).filter((item) => typeof item !== "string");
+        expect(groups).toStrictEqual([ {
+            label: "text-editor.toolbar-groups.insert",
+            icon: "plus",
+            asMenu: { layout: "tiles" },
+            items: [
+                "addImage", "insertTableMenu", "todoList",
+                "|",
+                "codeBlock", "blockQuote", "admonition",
+                "|",
+                "collapsible", "tabs", "multicolumnLayout",
+                "|",
+                "horizontalLine", "pageBreak", "footnote",
+                "|",
+                "math", "drawingCanvas", "mermaid",
+                "|",
+                "bookmark", "linkEmbed", "contentEmbed",
+                "|",
+                "specialCharacters", "emoji", "insertIcon",
+                "|",
+                "dateTime", "insertTemplate", "markdownImport"
+            ]
+        } ]);
+        expect((textFormattingToolbar as unknown[]).every((item) => typeof item === "string")).toBe(true);
+        expect(toolbar.items.slice(10)).toStrictEqual([
+            "|",
+            "outdent", "indent", "moveBlockUp", "moveBlockDown",
+            "|",
+            "aiAssistantMenu"
+        ]);
+    });
 
-        // Items nested inside group objects (text-formatting, alignment, ...) are hoisted up.
-        expect(mobile.toolbar.items).toContain("underline");
-        expect(mobile.toolbar.items).toContain("alignment:left");
-        // No nested group objects survive the flattening.
-        expect(mobile.toolbar.items.some((item) => typeof item === "object")).toBe(false);
+    it("keeps text formatting on a row of its own, opened from the main row", () => {
+        const { toolbar, textFormattingToolbar } = buildMobileToolbar(true);
+        // What a phone shows without scrolling: the blocks, text formatting, links and attachments.
+        expect(toolbar.items.slice(0, 10).map(itemName)).toStrictEqual([
+            "undo", "redo", "contextToolbar", "|", "blockType", "text-editor.toolbar-groups.insert", "textFormatting",
+            "|", "addLink", "attachMenu"
+        ]);
+        expect(textFormattingToolbar).toStrictEqual([
+            "bold", "italic", "underline", "strikethrough", "code",
+            "|",
+            "addLink",
+            "|",
+            "superscript", "subscript", "kbd",
+            "|",
+            "fontSizeMenu", "colorMenu",
+            "|",
+            "removeFormat", "formatPainter",
+            "|",
+            "alignment:left", "alignment:center", "alignment:right", "alignment:justify",
+            "|",
+            // Acts on the selection, which brings this row up.
+            "cuttonote"
+        ]);
+        // A link is made at the caret from the main row and from a selection here.
+        expect(collectItems({ items: toolbar.items }).filter((item) => textFormattingToolbar.includes(item)))
+            .toStrictEqual([ "addLink" ]);
+        // Turned into from the block type menu instead.
+        for (const item of [ "bulletedList", "numberedList", "todoList", "codeBlock", "blockQuote", "admonition" ]) {
+            expect(toolbar.items).not.toContain(item);
+        }
+    });
+
+    it("leads the list's own toolbar with the indentation and the moves, then the list properties", () => {
+        expect(buildMobileToolbar(true).listToolbar).toStrictEqual([
+            "outdent", "indent", "moveBlockUp", "moveBlockDown",
+            "|",
+            "listTypeMenu", "listStartAt", "listReversed"
+        ]);
+    });
+
+    it("opens table sizes as tiles from the insert menu instead of the size grid", () => {
+        const items = buildMobileToolbar(true).toolbar.items;
+        expect(items).not.toContain("insertTableMenu");
+        expect(collectItems({ items })).toContain("insertTableMenu");
+        expect(collectItems({ items })).not.toContain("insertTable");
+        expect(buildClassicToolbar(false, true).toolbar.items).toContain("insertTable");
+    });
+
+    it("opens with undo, redo and the toolbar of the widget at the selection, set apart by a separator", () => {
+        const items = buildMobileToolbar(true).toolbar.items;
+        expect(items.slice(0, 4)).toStrictEqual([ "undo", "redo", "contextToolbar", "|" ]);
+        expect(items.filter((item) => item === "undo" || item === "redo")).toHaveLength(2);
+    });
+
+    it("offers every item of the classic toolbar", () => {
+        // Variants of an item that suit a touch screen.
+        const MOBILE_VARIANTS: Record<string, string> = {
+            insertTable: "insertTableMenu",
+            link: "addLink",
+            internallink: "addLink",
+            heading: "blockType",
+            bulletedList: "blockType",
+            numberedList: "blockType",
+            todoList: "blockType",
+            fontSize: "fontSizeMenu",
+            fontColor: "colorMenu",
+            fontBackgroundColor: "colorMenu",
+            aiAssistant: "aiAssistantMenu"
+        };
+        // Alt+Up and Alt+Down move blocks on a keyboard, and the insert menu repeats the image upload
+        // and the to-do list, where a reader might look for them.
+        const MOBILE_ONLY = [ "moveBlockUp", "moveBlockDown", "contextToolbar", "addImage", "todoList" ];
+        for (const aiAssistant of [ true, false ]) {
+            const classicItems = collectItems({ items: buildClassicToolbar(false, aiAssistant).toolbar.items })
+                .map((item) => MOBILE_VARIANTS[item] ?? item);
+            const { toolbar, textFormattingToolbar } = buildMobileToolbar(aiAssistant);
+            const mobileItems = collectItems({ items: [ ...toolbar.items, ...textFormattingToolbar ] })
+                .filter((item) => item !== "textFormatting" && !MOBILE_ONLY.includes(item));
+            expect([ ...new Set(mobileItems) ].toSorted()).toStrictEqual([ ...new Set(classicItems) ].toSorted());
+        }
+    });
+
+    it("neither starts nor ends on a separator, nor doubles one, on either row", () => {
+        for (const aiAssistant of [ true, false ]) {
+            const { toolbar, textFormattingToolbar } = buildMobileToolbar(aiAssistant);
+            for (const items of [ toolbar.items, textFormattingToolbar ]) {
+                expect(items[0]).not.toBe("|");
+                expect(items.at(-1)).not.toBe("|");
+                expect(items.some((item, index) => item === "|" && items[index + 1] === "|")).toBe(false);
+            }
+        }
     });
 });
 
@@ -161,8 +292,7 @@ describe("a shared page's editor", () => {
         const locked = items(buildToolbarConfig(false, true));
         for (const item of [
             "aiAssistant", "linkEmbed", "internallink", "contentEmbed", "insertIcon",
-            "drawingCanvas", "insertTemplate", "markdownImport", "cuttonote", "imageUpload",
-            "fileUpload"
+            "drawingCanvas", "insertTemplate", "markdownImport", "cuttonote", "attachMenu"
         ]) {
             expect(locked).not.toContain(item);
         }
@@ -171,7 +301,7 @@ describe("a shared page's editor", () => {
 
         setShareEdit({ attachments: true });
         const uploading = items(buildToolbarConfig(false, true));
-        expect(uploading).toEqual(expect.arrayContaining([ "imageUpload", "fileUpload" ]));
+        expect(uploading).toContain("attachMenu");
         expect(uploading).not.toContain("aiAssistant");
     });
 
@@ -206,10 +336,10 @@ describe("buildToolbarConfig dispatch", () => {
         vi.clearAllMocks();
     });
 
-    it("returns the flattened mobile toolbar on a mobile device", () => {
+    it("returns the mobile toolbar on a mobile device", () => {
         setDevice("mobile");
         const config = buildToolbarConfig(true, true);
-        expect(config.toolbar.items.every((item) => typeof item === "string")).toBe(true);
+        expect("textFormattingToolbar" in config).toBe(true);
     });
 
     it("returns the multiline classic toolbar when on desktop and the option is enabled", () => {
@@ -259,3 +389,16 @@ describe("usesClassicToolbar", () => {
         })).toBe(false);
     });
 });
+
+/** The name of a toolbar item, or the label of a group. */
+function itemName(item: unknown) {
+    return typeof item === "object" && item !== null && "label" in item ? item.label : item;
+}
+
+/** The item names of a toolbar configuration, its groups included, without separators. */
+function collectItems(config: ToolbarConfig): string[] {
+    if (typeof config === "object") {
+        return config.items.flatMap(collectItems);
+    }
+    return config === "|" ? [] : [ config ];
+}

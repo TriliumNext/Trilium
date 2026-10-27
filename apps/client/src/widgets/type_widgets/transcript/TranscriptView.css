@@ -5,13 +5,43 @@
     padding: 0.5rem 1rem 1rem;
     user-select: text;
 
+    --transcript-fade-top: 0px;
+    --transcript-fade-bottom: 0px;
+
+    &.more-above {
+        --transcript-fade-top: 2.5rem;
+    }
+
+    &.more-below {
+        --transcript-fade-bottom: 2.5rem;
+    }
+
+    &.more-above,
+    &.more-below {
+        mask-image: linear-gradient(
+            to bottom,
+            transparent,
+            #000 var(--transcript-fade-top),
+            #000 calc(100% - var(--transcript-fade-bottom)),
+            transparent
+        );
+    }
+
     .transcript-options {
         display: flex;
+        align-items: center;
         justify-content: flex-end;
+        gap: 0.5rem;
         max-width: var(--preferred-max-content-width, 900px);
         margin-bottom: 0.5rem;
         color: var(--muted-text-color);
         font-size: 0.9em;
+
+        .transcript-cleanup.active {
+            --icon-button-color: var(--link-color);
+            --icon-button-hover-color: var(--link-color);
+            color: var(--link-color);
+        }
     }
 
     .transcript-turn {
@@ -76,6 +106,10 @@
         margin-top: 0.5rem;
     }
 
+    .transcript-disfluency {
+        color: var(--muted-text-color);
+    }
+
     .transcript-speaking {
         user-select: none;
         display: flex;
@@ -107,9 +141,60 @@
     }
 }
 
+.transcript-levels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+    user-select: none;
+}
+
+.transcript-level {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    .transcript-level-bar {
+        position: relative;
+        width: 4rem;
+        height: 0.35rem;
+        border-radius: 0.2rem;
+        background: color-mix(in srgb, var(--main-text-color) 15%, transparent);
+        overflow: hidden;
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: 0;
+            width: calc(var(--level, 0) * 100%);
+            background: var(--main-text-color);
+            transition: width 120ms linear;
+        }
+    }
+
+    &.has-issue {
+        color: var(--danger-color, #dc3545);
+
+        .transcript-level-bar {
+            background: var(--danger-color, #dc3545);
+
+            &::after {
+                display: none;
+            }
+        }
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .transcript .transcript-speaking .bx,
     .transcript .transcript-new {
         animation: none;
+    }
+
+    .transcript-level .transcript-level-bar::after {
+        transition: none;
     }
 }

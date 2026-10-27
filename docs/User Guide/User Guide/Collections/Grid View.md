@@ -12,7 +12,7 @@ Each tile contains:
 Depending on the type of note:
 
 *   For <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes, the text can be slightly scrollable via the mouse wheel to reveal more context.
-*   For <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes, syntax highlighting is applied.
+*   For <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes, syntax highlighting is applied, with line numbers as in the editor.
 *   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, a preview is made available for audio, video and PDF notes.
 *   If the note does not have a content, a list of its child notes will be displayed instead.
 

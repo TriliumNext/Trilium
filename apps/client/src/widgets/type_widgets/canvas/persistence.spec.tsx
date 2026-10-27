@@ -10,17 +10,22 @@
  * still-empty initializing scene as a change worth saving. Only subsequent loads (note
  * switches on an already-initialized instance) may use `updateScene`.
  */
-import { exportToSvg } from "@excalidraw/excalidraw";
+import { exportToSvg, restoreElements } from "@excalidraw/excalidraw";
 import { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from "@excalidraw/excalidraw/types";
+import type { HostHistoryStep } from "@triliumnext/codemirror";
 import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../../components/component";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
+import LoadResults from "../../../services/load_results";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
+import { ParentComponent } from "../../react/react_utils";
+import type { EmbedHostHistory } from "../text/embed_history";
 import useCanvasPersistence, {
     saveDrawingPicture, useCanvasDrawingPersistence
 } from "./persistence";
@@ -29,6 +34,8 @@ interface FakeElement {
     id: string;
     type: string;
     version: number;
+    text?: string;
+    isDeleted?: boolean;
 }
 
 interface PlacedElement {
@@ -43,6 +50,12 @@ vi.mock("@excalidraw/excalidraw", () => ({
     // Mirrors the real behavior closely enough for change tracking: the version of a scene
     // is derived from its elements, and an empty scene is always version 0.
     getSceneVersion: (elements: FakeElement[]) => elements.reduce((sum, el) => sum + (el.version ?? 0), 0),
+    // As Excalidraw restores a loaded scene: it deletes a text element without text, which bumps
+    // its version.
+    restoreElements: (elements: FakeElement[]) => elements.map((element) =>
+        element.type === "text" && !element.text && !element.isDeleted
+            ? { ...element, isDeleted: true, version: element.version + 1 }
+            : element),
     exportToSvg: vi.fn(async () => ({ outerHTML: "<svg/>" })),
     getCommonBounds: (elements: PlacedElement[]) => [
         Math.min(...elements.map(({ x }) => x)),
@@ -50,7 +63,9 @@ vi.mock("@excalidraw/excalidraw", () => ({
         Math.max(...elements.map(({ x, width }) => x + width)),
         Math.max(...elements.map(({ y, height }) => y + height))
     ],
-    CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY", NEVER: "NEVER", EVENTUALLY: "EVENTUALLY" }
+    CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY", NEVER: "NEVER", EVENTUALLY: "EVENTUALLY" },
+    newElementWith: (element: FakeElement, updates: object) =>
+        ({ ...element, ...updates, version: element.version + 1 })
 }));
 
 vi.stubGlobal("logError", vi.fn());
@@ -184,6 +199,35 @@ describe("useCanvasPersistence content loading (#10279)", () => {
         expect(saved.elements.map((el) => el.id)).toEqual([ "a1", "a2" ]);
     });
 
+    it("saves nothing for the content as Excalidraw restores it", async () => {
+        const note = buildNote({
+            title: "Canvas",
+            type: "canvas",
+            content: JSON.stringify({
+                type: "excalidraw", version: 2, files: {}, appState: {},
+                elements: [
+                    { id: "a1", type: "rectangle", version: 10 },
+                    { id: "t1", type: "text", version: 2, text: "" }
+                ]
+            })
+        });
+        note.getAttachmentsByRole = async () => [];
+        let sceneElements: FakeElement[] = [];
+        const { api } = buildApi(() => sceneElements);
+        const apiRef = { current: api } as RefObject<ExcalidrawImperativeAPI | null>;
+
+        await mount(note, apiRef);
+        const initialData = await resolvedInitialData();
+        // Excalidraw restores what `initialData` holds once more as it shows it.
+        sceneElements =
+            restoreElements(initialData?.elements ?? [], null) as unknown as FakeElement[];
+        props?.onChange?.([], {} as never, {} as never);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1500);
+        });
+        expect(puts).toEqual([]);
+    });
+
     it("loads a subsequent note via updateScene once initialData is consumed", async () => {
         const { note: noteA } = buildCanvasNote([ "a1" ]);
         const { note: noteB } = buildCanvasNote([ "b1" ]);
@@ -233,6 +277,7 @@ describe("useCanvasDrawingPersistence", () => {
     let sceneFiles: Record<string, unknown>;
     let appState: Record<string, unknown>;
     let updateScene: ReturnType<typeof vi.fn>;
+    let parent: Component;
 
     function DrawingProbe({ attachment, editor, apiRef, options }: {
         attachment: FAttachment;
@@ -249,6 +294,7 @@ describe("useCanvasDrawingPersistence", () => {
         sceneElements = [];
         sceneFiles = { f1: IMAGE, f2: UNUSED_IMAGE };
         updateScene = vi.fn();
+        parent = new Component();
         appState = {
             scrollX: 1, scrollY: 2, zoom: { value: 1 }, gridModeEnabled: false,
             viewBackgroundColor: "transparent", theme: "light"
@@ -284,19 +330,25 @@ describe("useCanvasDrawingPersistence", () => {
     ) {
         const api = {
             getSceneElements: () => sceneElements,
+            getSceneElementsIncludingDeleted: () => sceneElements,
             getAppState: () => appState,
             getFiles: () => sceneFiles,
-            updateScene
+            updateScene,
+            addFiles: vi.fn(),
+            history: { clear: vi.fn() },
+            registerAction: vi.fn()
         } as unknown as ExcalidrawImperativeAPI;
         const apiRef = { current: api } as RefObject<ExcalidrawImperativeAPI | null>;
         await act(async () => {
             render(
-                <DrawingProbe
-                    attachment={attachment}
-                    editor={editor}
-                    apiRef={apiRef}
-                    options={options}
-                />,
+                <ParentComponent.Provider value={parent}>
+                    <DrawingProbe
+                        attachment={attachment}
+                        editor={editor}
+                        apiRef={apiRef}
+                        options={options}
+                    />
+                </ParentComponent.Provider>,
                 container
             );
         });
@@ -305,6 +357,23 @@ describe("useCanvasDrawingPersistence", () => {
 
     function change() {
         drawingProps?.onChange?.([], appState as never, {});
+    }
+
+    /** Reports a save of the attachment `a1` made elsewhere, and waits until it shows. */
+    async function reportSave(row: object = { attachmentId: "a1" }) {
+        const loadResults = new LoadResults([]);
+        loadResults.addAttachmentRow(row as never, "otherComponent");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+    }
+
+    /** Has the mocked Excalidraw show the elements that `updateScene()` replaces. */
+    function showUpdatedElements() {
+        updateScene.mockImplementation((data: { elements?: FakeElement[] }) => {
+            if (data.elements) sceneElements = data.elements;
+        });
     }
 
     it("loads the drawing with its images, over the note unless it has a background", async () => {
@@ -379,6 +448,256 @@ describe("useCanvasDrawingPersistence", () => {
 
         act(() => render(null, container));
         expect(editor.release).toHaveBeenCalledOnce();
+    });
+
+    it("saves nothing for the content as Excalidraw restores it, only the edits", async () => {
+        // A text element placed with nothing typed into it yet, as another view saved it.
+        const saved = [
+            { id: "r1", type: "rectangle", version: 3 },
+            { id: "t1", type: "text", version: 2, text: "" }
+        ];
+        const { attachment } = buildAttachment({ elements: saved });
+        const editor = buildEditor();
+        const initialData = await mount(attachment, editor);
+
+        // Excalidraw restores what `initialData` holds once more as it shows it.
+        change();
+        sceneElements =
+            restoreElements(initialData.elements ?? [], null) as unknown as FakeElement[];
+        change();
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+        expect(initialData.elements).toMatchObject([ { id: "r1" }, { id: "t1", isDeleted: true } ]);
+
+        sceneElements = [ { ...saved[0], version: 4 }, sceneElements[1] ];
+        change();
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+    });
+
+    it("keeps its changes on the undo stack of the note, also once Excalidraw is gone", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, x: 0 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        const steps: HostHistoryStep[] = [];
+        const host: EmbedHostHistory = {
+            push: (step) => {
+                steps.push(step);
+                return { isLatest: () => true };
+            },
+            undo: vi.fn(),
+            redo: vi.fn(),
+            isEnabled: () => false,
+            subscribe: () => () => {}
+        };
+        const editor = { ...buildEditor(), history: { host, write: vi.fn() } };
+        const root = document.createElement("div");
+        await mount(attachment, editor, { rootRef: { current: root } });
+
+        change();
+        sceneElements = loaded;
+        change();
+        root.dispatchEvent(new Event("pointerdown"));
+        const moved = { ...loaded[0], x: 10, version: 4 };
+        sceneElements = [ moved ];
+        change();
+        expect(steps).toHaveLength(1);
+
+        act(() => render(null, container));
+        editor.scheduleSave.mockClear();
+        // Saved elsewhere since Excalidraw went away.
+        const added = { id: "e1", type: "ellipse", version: 1 };
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: [ moved, added ] }) });
+        expect(steps[0].undo()).toBe(true);
+        await vi.waitFor(() => expect(editor.scheduleSave).toHaveBeenCalledOnce());
+        const [ getContent ] = editor.scheduleSave.mock.calls[0];
+        expect(JSON.parse(getContent()).elements)
+            .toMatchObject([ { id: "r1", x: 0 }, { id: "e1" } ]);
+    });
+
+    it("shows a save made elsewhere in place, which it neither saves nor undoes", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        const steps: HostHistoryStep[] = [];
+        const host: EmbedHostHistory = {
+            push: (step) => {
+                steps.push(step);
+                return { isLatest: () => true };
+            },
+            undo: vi.fn(),
+            redo: vi.fn(),
+            isEnabled: () => false,
+            subscribe: () => () => {}
+        };
+        const editor = { ...buildEditor(), history: { host, write: vi.fn() } };
+        showUpdatedElements();
+        await mount(attachment, editor, { rootRef: { current: document.createElement("div") } });
+        change();
+        sceneElements = loaded;
+        change();
+
+        const saved = [
+            { ...loaded[0], version: 4, versionNonce: 2 },
+            { id: "e1", type: "ellipse", version: 1, versionNonce: 3 }
+        ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({
+            elements: saved, appState: { viewBackgroundColor: "#ffc9c9", zoom: { value: 3 } }
+        }) });
+        await reportSave();
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            elements: saved,
+            appState: { viewBackgroundColor: "#ffc9c9", gridModeEnabled: false },
+            captureUpdate: "NEVER"
+        });
+        appState = { ...appState, viewBackgroundColor: "#ffc9c9" };
+        change();
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+        expect(steps).toEqual([]);
+
+        // The scene that shows already stays, through a deletion too, and so do the changes that
+        // wait for a save here.
+        updateScene.mockClear();
+        await reportSave();
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: [] }) });
+        await reportSave({ attachmentId: "a1", isDeleted: true });
+        editor.getUnsavedContent.mockReturnValue(JSON.stringify({ elements: loaded }));
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+    });
+
+    it("shows a save made elsewhere once it shows, as in a tab in the background", async () => {
+        const resizeCallbacks: (() => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: () => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+        try {
+            const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+            const { attachment, getBlob } = buildAttachment({ elements: loaded });
+            const root = container.appendChild(document.createElement("div"));
+            showUpdatedElements();
+            await mount(attachment, buildEditor(), { rootRef: { current: root } });
+            change();
+            sceneElements = loaded;
+            change();
+
+            container.style.display = "none";
+            const saved = [ { ...loaded[0], version: 4, versionNonce: 2 } ];
+            getBlob.mockResolvedValue({ content: JSON.stringify({ elements: saved }) });
+            await reportSave();
+            expect(getBlob).toHaveBeenCalledTimes(2);
+            expect(updateScene).not.toHaveBeenCalled();
+
+            container.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback();
+                await new Promise((resolve) => setTimeout(resolve));
+            });
+            expect(updateScene).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+                elements: saved
+            }));
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+        }
+    });
+
+    it("keeps the text that the user types, and shows a save made meanwhile after", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        showUpdatedElements();
+        await mount(attachment, buildEditor());
+        change();
+        sceneElements = loaded;
+        change();
+
+        // Its own save of a text element with nothing typed into it yet.
+        const text = { id: "t1", type: "text", version: 1, versionNonce: 5, text: "" };
+        sceneElements = [ ...loaded, text ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: sceneElements }) });
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+
+        appState = { ...appState, editingTextElement: text };
+        const saved = [ { ...loaded[0], version: 4, versionNonce: 2 } ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: saved }) });
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+
+        appState = { ...appState, editingTextElement: null };
+        await act(async () => {
+            change();
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            elements: saved
+        }));
+    });
+
+    it("waits for an action that the user starts while the images of a save load", async () => {
+        const owner = buildNote({ title: "Owner" });
+        owner.getAttachmentsByRole = vi.fn(async () => [
+            { attachmentId: "img9", title: "f9.png" }
+        ]) as never;
+        let loadImage = () => {};
+        const isImageLoaded = new Promise<void>((resolve) => {
+            loadImage = resolve;
+        });
+        vi.stubGlobal("fetch", vi.fn(async () => {
+            await isImageLoaded;
+            return { ok: true, blob: async () => new Blob([ "ABC" ], { type: "image/png" }) };
+        }));
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        const drawing = { ...attachment, ownerId: owner.noteId } as unknown as FAttachment;
+        sceneFiles = {};
+        showUpdatedElements();
+        await mount(drawing, buildEditor());
+        change();
+        sceneElements = loaded;
+        change();
+
+        const image = { id: "i9", type: "image", version: 1, versionNonce: 2, fileId: "f9.png" };
+        const saved = [ loaded[0], image ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: saved }) });
+        await reportSave();
+        appState = { ...appState, editingTextElement: { id: "t1" } };
+        await act(async () => {
+            loadImage();
+            // `FileReader` reads the image over several turns.
+            for (let turn = 0; turn < 5; turn++) {
+                await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+        });
+        expect(updateScene).not.toHaveBeenCalled();
+
+        appState = { ...appState, editingTextElement: null };
+        await act(async () => {
+            change();
+        });
+        await vi.waitFor(() => expect(updateScene).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ elements: saved })));
+    });
+
+    it("shows a save that lands while the drawing loads once Excalidraw shows it", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        showUpdatedElements();
+        await mount(attachment, undefined);
+
+        const saved = [ { ...loaded[0], version: 4, versionNonce: 2 } ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: saved }) });
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+
+        sceneElements = loaded;
+        await act(async () => {
+            change();
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            elements: saved
+        }));
     });
 
     it("loads the images it refers to from its note and saves them by reference", async () => {

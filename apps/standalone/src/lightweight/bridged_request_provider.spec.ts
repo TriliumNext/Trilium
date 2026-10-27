@@ -74,13 +74,14 @@ describe("BridgedRequestProvider.exec", () => {
         const promise = provider.exec({
             method: "POST",
             url: "http://x",
-            auth: { password: "pw" },
+            auth: { password: "pw", totpToken: "123456" },
             body: { a: 1 },
             paging: { pageCount: 2, pageIndex: 0, requestId: "r" }
         } as ExecOpts);
 
         const posted = lastPosted();
         expect(posted.request.headers["trilium-cred"]).toBe(btoa("dummy:pw"));
+        expect(posted.request.headers["trilium-totp"]).toBe("123456");
         expect(posted.request.headers["Content-Type"]).toBe("text/plain");
         expect(posted.request.body).toBe(JSON.stringify({ a: 1 }));
 

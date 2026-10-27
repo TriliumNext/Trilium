@@ -5,13 +5,21 @@
 @import url(./note-panels.css);
 @import url(./notes/text.css);
 @import url(./notes/canvas.css);
-@import url(./notes/collections/table.css);
 @import url(./menus.css);
+@import url(./ios.css);
 
 @font-face {
     font-family: "Inter";
     src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations");
     font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url(../../fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2) format("woff2-variations");
+    font-weight: 100 800;
     font-style: normal;
     font-display: swap;
 }
@@ -40,7 +48,7 @@
     --detail-font-family: var(--main-font-family);
     --detail-font-size: normal;
 
-    --monospace-font-family: JetBrainsLight, monospace;
+    --monospace-font-family: "JetBrains Mono", monospace;
     --monospace-font-size: normal;
 
     --left-pane-item-selected-shadow-size: 2px;
@@ -140,10 +148,26 @@ body {
     user-select: text;
 }
 
+:root {
+    --glass-edge:
+        inset 0 0 0 1px var(--glass-edge-color),
+        inset 0 1px 0 var(--glass-highlight-color);
+    --glass-shadow:
+        var(--glass-edge),
+        0 8px 24px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity) * 0.75));
+}
+
 body.backdrop-effects-disabled {
     /* Backdrop effects are disabled, replace the menu background color with the
      * no-backdrop fallback color */
     --menu-background-color: var(--menu-background-color-no-backdrop);
+    --glass-background: var(--menu-background-color-no-backdrop);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    body {
+        --glass-background: var(--menu-background-color-no-backdrop);
+    }
 }
 
 /*

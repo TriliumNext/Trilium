@@ -1,8 +1,7 @@
 import { ClassicEditor, Essentials, Paragraph, Plugin, toWidget, Widget, WidgetToolbarRepository, _setModelData as setModelData } from "ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import LinkEmbed from "../link_embed/link_embed.js";
 import ContentEmbed, {
     CONVERT_EMBED_TO_LINK_COMMAND,
@@ -82,11 +81,6 @@ describe("ContentEmbedToolbar", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        const loadEmbeddedNote = vi.fn();
-        installGlobMock({
-            getComponentByEl: () => ({ loadEmbeddedNote })
-        });
-
         editor = await createTestEditor([Essentials, Paragraph, Widget, ContentEmbed, ContentEmbedBoxSizeDropdown, ContentEmbedToolbar]);
     });
 
@@ -102,13 +96,17 @@ describe("ContentEmbedToolbar", () => {
         expect(requires).toContain(ContentEmbedTools);
     });
 
-    it("offers the Editable toggle, the content's tools, then the embed's own items", () => {
+    it("offers Editable, the display modes, the content's tools, then the embed's items", () => {
         const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
             _toolbarDefinitions: Map<string, { itemsConfig: string[] }>;
         };
 
         expect(repository._toolbarDefinitions.get("contentEmbed")?.itemsConfig).toEqual([
             TOGGLE_EDITABLE_COMMAND_NAME,
+            "contentEmbedDisplayModeSeparator",
+            "contentEmbedDisplayMode:source",
+            "contentEmbedDisplayMode:split",
+            "contentEmbedDisplayMode:preview",
             CONTENT_EMBED_TOOLS,
             "contentEmbedBoxSizeDropdown",
             TOGGLE_TITLE_COMMAND_NAME,
@@ -179,11 +177,6 @@ describe("isContentEmbedWidget — widget without a class attribute", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        const loadEmbeddedNote = vi.fn();
-        installGlobMock({
-            getComponentByEl: () => ({ loadEmbeddedNote })
-        });
-
         editor = await createTestEditor([Essentials, Paragraph, Widget, ContentEmbed, ContentEmbedBoxSizeDropdown, ContentEmbedToolbar, SectionNoClassWidget]);
     });
 
@@ -212,25 +205,6 @@ describe("isContentEmbedWidget — real non-include-note widgets", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        const loadEmbeddedNote = vi.fn();
-        installGlobMock({
-            getComponentByEl: () => ({
-                loadEmbeddedNote,
-                renderLinkEmbed: vi.fn(),
-                renderLinkMention: vi.fn(),
-                fetchLinkMetadata: async () => ({
-                    url: "https://example.com",
-                    embedType: "opengraph",
-                    title: "Example",
-                    description: "",
-                    favicon: "",
-                    siteName: "",
-                    image: ""
-                }),
-                detectEmbedType: () => "opengraph"
-            })
-        });
-
         editor = await createTestEditor([Essentials, Paragraph, Widget, ContentEmbed, ContentEmbedBoxSizeDropdown, ContentEmbedToolbar, LinkEmbed]);
     });
 

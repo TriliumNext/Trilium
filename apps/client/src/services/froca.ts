@@ -10,6 +10,7 @@ import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import FNote, { type FNoteRow } from "../entities/fnote.js";
 import type { Bundle } from "./bundle.js";
 import type { Froca, FrocaSource, NoteMapFilters, SavedAttachment, SubtreeResponse } from "./froca-interface.js";
+import noteAttributeCache from "./note_attribute_cache.js";
 import server from "./server.js";
 import { isPreAuthScreen, reuseAcrossHotReloads } from "./utils.js";
 
@@ -62,6 +63,19 @@ class FrocaImpl implements Froca {
         // clear the cache only directly before adding new content which is important for e.g., switching to protected session
         this.#clear();
         this.addResp(resp);
+    }
+
+    /**
+     * Replaces everything froca holds with the backend's current state: the initial tree, then
+     * the notes froca held outside it, which open tabs and widgets can still refer to. Run it
+     * through `reloadFroca()` in ws.ts, which keeps entity changes from applying meanwhile.
+     */
+    async reloadAll() {
+        const allNoteIds = Object.keys(this.notes);
+
+        await this.loadInitialTree();
+        await this.reloadNotes(allNoteIds);
+        noteAttributeCache.invalidate();
     }
 
     #clear() {
@@ -407,8 +421,8 @@ class FrocaImpl implements Froca {
         return this.source.searchNoteIds(query, ancestorNoteId);
     }
 
-    searchInSubtree(query: string, ancestorNoteId: string) {
-        return this.source.searchInSubtree(query, ancestorNoteId);
+    searchInSubtree(query: string, ancestorNoteId: string, includeArchived: boolean) {
+        return this.source.searchInSubtree(query, ancestorNoteId, includeArchived);
     }
 
     lintSearch(searchString: string) {
@@ -476,9 +490,11 @@ const SERVER_SOURCE: FrocaSource = {
         const { default: search } = await import("./search.js");
         return await search.searchForNoteIds(query);
     },
-    searchInSubtree: (query, ancestorNoteId) => server.get<SearchWithTokensResponse>(
-        `search?searchString=${encodeURIComponent(query)}`
-        + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`),
+    searchInSubtree: (query, ancestorNoteId, includeArchived) =>
+        server.get<SearchWithTokensResponse>(
+            `search?searchString=${encodeURIComponent(query)}`
+            + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`
+            + `&includeArchivedNotes=${includeArchived}`),
     lintSearch: (searchString) => server.post<SearchLintResponse>("search/lint", { searchString }),
     getAttributeNames: (type, query) =>
         server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(query)}`),

@@ -2,8 +2,14 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { EventData } from "../../components/app_context";
+import type Component from "../../components/component";
 import options from "../../services/options";
-import { isWithinPeek, PaneModeController, persistedPaneVisible, reducePaneMode, usePaneMode, usePeekDismiss } from "./peek_pane";
+import {
+    isWithinPeek, PaneModeController, persistedPaneVisible, reducePaneMode, usePaneMode,
+    usePeekDismiss, watchPeekDismiss
+} from "./peek_pane";
+import { ParentComponent } from "./react_utils";
 
 describe("reducePaneMode", () => {
     it("opens as peek from closed and closes otherwise", () => {
@@ -18,12 +24,14 @@ describe("reducePaneMode", () => {
         expect(reducePaneMode("docked", "toggleDocked")).toBe("closed");
     });
 
-    it("docks, and both close and dismiss reach closed, unconditionally", () => {
+    it("docks and closes unconditionally, and dismisses a peek only", () => {
         for (const prev of ["closed", "peek", "docked"] as const) {
             expect(reducePaneMode(prev, "dock")).toBe("docked");
             expect(reducePaneMode(prev, "close")).toBe("closed");
-            expect(reducePaneMode(prev, "dismiss")).toBe("closed");
         }
+        expect(reducePaneMode("peek", "dismiss")).toBe("closed");
+        expect(reducePaneMode("docked", "dismiss")).toBe("docked");
+        expect(reducePaneMode("closed", "dismiss")).toBe("closed");
     });
 });
 
@@ -37,7 +45,7 @@ describe("usePaneMode", () => {
         const host = document.createElement("div");
         document.body.appendChild(host);
         function Harness() {
-            controller = usePaneMode("rightPaneVisible");
+            controller = usePaneMode("rightPaneVisible", "right");
             return null;
         }
         act(() => render(<Harness />, host));
@@ -80,7 +88,7 @@ describe("usePaneMode", () => {
         const host = document.createElement("div");
         document.body.appendChild(host);
         function Harness() {
-            controller = usePaneMode("rightPaneVisible");
+            controller = usePaneMode("rightPaneVisible", "right");
             return null;
         }
         act(() => render(<Harness />, host));
@@ -109,6 +117,56 @@ describe("usePaneMode", () => {
         act(() => render(null, host));
         isOption.mockRestore();
         save.mockRestore();
+    });
+
+    it("announces its mode, and gives its peek up to another pane's", () => {
+        type Handler = (data: EventData<"paneModeChanged">) => void;
+        const handlers = new Set<Handler>();
+        const parent = {
+            registerHandler: (_name: string, handler: Handler) => handlers.add(handler),
+            removeHandler: (_name: string, handler: Handler) => handlers.delete(handler),
+            triggerEvent: vi.fn()
+        } as unknown as Component;
+        const announce = (data: EventData<"paneModeChanged">) => act(() => {
+            for (const handler of handlers) {
+                handler(data);
+            }
+        });
+
+        let controller: PaneModeController | undefined;
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        function Harness() {
+            controller = usePaneMode("rightPaneVisible", "right");
+            return null;
+        }
+        act(() => render(
+            <ParentComponent.Provider value={parent}><Harness /></ParentComponent.Provider>,
+            host
+        ));
+
+        act(() => controller?.togglePeek());
+        expect(parent.triggerEvent).toHaveBeenCalledWith(
+            "paneModeChanged", { pane: "right", mode: "peek" }
+        );
+
+        // Its own peek, and the other pane closing or docking, leave it open.
+        announce({ pane: "right", mode: "peek" });
+        announce({ pane: "left", mode: "closed" });
+        announce({ pane: "left", mode: "docked" });
+        expect(controller?.mode).toBe("peek");
+
+        // Another pane's peek dismisses it, softly.
+        announce({ pane: "left", mode: "peek" });
+        expect(controller?.mode).toBe("closed");
+        expect(controller?.mounted).toBe(true);
+
+        // A docked pane stays.
+        act(() => controller?.dock());
+        announce({ pane: "left", mode: "peek" });
+        expect(controller?.mode).toBe("docked");
+
+        act(() => render(null, host));
     });
 });
 
@@ -225,6 +283,32 @@ describe("usePeekDismiss", () => {
         expect(onDismiss).not.toHaveBeenCalled();
 
         unmount();
+    });
+
+    it("stops listening once the watch is stopped, for callers outside Preact", () => {
+        const onDismiss = vi.fn();
+        const stop = watchPeekDismiss(onDismiss, { keepOpenSelector: "#right-pane" });
+
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+
+        stop();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it("marks the body while any peek is open, including two that overlap", () => {
+        const stopLeft = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#left-pane" });
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        // The next peek starts before the previous one is dismissed.
+        const stopRight = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#right-pane" });
+        stopLeft();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        stopRight();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(false);
     });
 
     it("hands the focus back to what opened the peek, where it was told what that is", () => {

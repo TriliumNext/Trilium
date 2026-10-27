@@ -26,13 +26,18 @@ const SVG_MIME = "image/svg+xml";
 export interface ToolCallView {
     /** Shown on the summary line before the note link, such as the title a rename replaced. */
     lead?: ComponentChildren;
+    /** Shown on the summary line after the note link, such as the title a rename would give. */
+    trail?: ComponentChildren;
     summary?: string;
     body?: ComponentChildren;
 }
 
-/** The view of a successful call to a tool that has one, or `null` to show the bare line. */
+/**
+ * The view of a successful or pending call to a tool that has one, or `null` to show the bare
+ * line.
+ */
 export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
-    if (isFailedToolCall(toolCall)) return null;
+    if (isFailedToolCall(toolCall) || toolCall.approval === "declined") return null;
 
     // What a writing tool writes is in its input, so it shows before the result arrives.
     if (toolCall.toolName === "create_note") {
@@ -60,6 +65,21 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         return attribute ? { lead: <AttributePill {...attribute} /> } : null;
     }
 
+    if (toolCall.toolName === "rename_note" && !toolCall.result) {
+        // Before the rename, the note link still shows the title the rename replaces.
+        const { newTitle } = toolCall.input;
+        return typeof newTitle === "string"
+            ? { trail: <span className="llm-chat-tool-call-new-title">{newTitle}</span> }
+            : null;
+    }
+
+    if (toolCall.toolName === "delete_attribute" && !toolCall.result) {
+        const { noteId, attributeId } = toolCall.input;
+        return typeof noteId === "string" && typeof attributeId === "string"
+            ? { lead: <OwnedAttributePill noteId={noteId} attributeId={attributeId} deleted /> }
+            : null;
+    }
+
     if (!toolCall.result) return null;
 
     switch (toolCall.toolName) {
@@ -82,16 +102,14 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         case "search_notes": {
             const result = parseSearchNotesResult(toolCall.result);
             if (!result) return null;
-            const { ancestorNoteId, limit } = toolCall.input;
+            const { limit } = toolCall.input;
             const search: NoteSearch = {
                 ...result,
-                // Searching under the root is the same as not narrowing the search at all.
-                ancestorNoteId: typeof ancestorNoteId === "string" && ancestorNoteId !== "root" ? ancestorNoteId : undefined,
                 limit: typeof limit === "number" ? limit : result.results.length
             };
             return {
                 summary: t("llm_chat.search_notes_count", { count: result.totalResults }),
-                body: search.results.length > 0 || search.ancestorNoteId ? <NoteSearchResults {...search} /> : undefined
+                body: search.results.length > 0 ? <NoteSearchResults {...search} /> : undefined
             };
         }
         case "search_help": {
@@ -234,24 +252,14 @@ interface SearchNotesResult {
 
 /** A `search_notes` result with the input that shaped it. */
 interface NoteSearch extends SearchNotesResult {
-    ancestorNoteId?: string;
     limit: number;
     /** The results are User Guide pages, which open as contextual help. */
     isHelp?: boolean;
 }
 
-function NoteSearchResults({ totalResults, results, ancestorNoteId, limit, isHelp }: NoteSearch) {
+function NoteSearchResults({ totalResults, results, limit, isHelp }: NoteSearch) {
     return (
         <div className="llm-chat-note-results">
-            {ancestorNoteId && (
-                <div className="llm-chat-note-results-scope">
-                    <span className="bx bx-subdirectory-right" />
-                    <Trans
-                        i18nKey="llm_chat.search_notes_scope"
-                        components={{ Note: <NewNoteLink notePath={ancestorNoteId} showNoteIcon /> } as any}
-                    />
-                </div>
-            )}
             {results.length > 0 && (
                 <ul>
                     {results.map(({ noteId, parentTitle, contentPreview }) => (
@@ -562,6 +570,22 @@ function AttributePill({ type, name, value, deleted }: NoteMetaAttribute & { del
         );
     }
     return <span className={className}>#{name}{value && `=${formatValue(value)}`}</span>;
+}
+
+/**
+ * The pill of an attribute of `noteId` as froca holds it, for a call whose input names the attribute
+ * only by its ID. Nothing shows when the note does not own the attribute.
+ */
+function OwnedAttributePill({ noteId, attributeId, deleted }: {
+    noteId: string;
+    attributeId: string;
+    deleted?: boolean;
+}) {
+    const note = useNote(noteId);
+    const attribute = note?.getOwnedAttributes().find(attr => attr.attributeId === attributeId);
+    if (!attribute) return null;
+    const { type, name, value } = attribute;
+    return <AttributePill type={type} name={name} value={value} deleted={deleted} />;
 }
 
 function parseAttributeList(result: string): NoteMetaAttribute[] | null {

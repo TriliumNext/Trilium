@@ -3,13 +3,14 @@ import type BNote from "../../../becca/entities/bnote.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getBlobMock = vi.hoisted(() => vi.fn());
+const getNoteMock = vi.hoisted(() => vi.fn());
 
-// getContentPreview / getNoteContentForLlm consult becca.getBlob (SQL-backed);
-// partial-mock core so it returns deterministic blobs while markdown
+// getContentPreview / getNoteContentForLlm consult becca.getBlob (SQL-backed) and getNoteMeta checks owners through becca.getNote;
+// partial-mock core so both return deterministic stubs while markdown
 // import/export services keep their real implementations.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, getBlob: getBlobMock } };
+    return { default: { ...actual.default, getBlob: getBlobMock, getNote: getNoteMock } };
 });
 
 import blobService from "../../blob.js";
@@ -20,11 +21,9 @@ import {
     flag,
     getAttachmentContentPreview,
     getContentPreview,
-    getDocNoteHtml,
     getNoteContentForLlm,
     getNoteMeta,
     getSvgImageError,
-    registerDocNoteHtmlReader,
     setNoteContentFromLlm
 } from "./helpers.js";
 
@@ -133,26 +132,14 @@ describe("getNoteContentForLlm", () => {
 });
 
 describe("doc notes", () => {
-    beforeEach(() => registerDocNoteHtmlReader(() => null));
-
-    it("resolves a doc note's HTML through the registered reader", () => {
-        registerDocNoteHtmlReader(note => (note.getLabelValue("docName") ? "<h2>Cloning</h2>" : null));
-        expect(getDocNoteHtml(docNoteStub("User Guide/Cloning Notes"))).toBe("<h2>Cloning</h2>");
-        expect(getDocNoteHtml(docNoteStub(null))).toBeNull();
-    });
-
-    it("getNoteContentForLlm converts the reader's HTML to Markdown", () => {
-        registerDocNoteHtmlReader(() => "<h2>Cloning</h2><p>Place a note in two locations.</p>");
-        const content = getNoteContentForLlm(docNoteStub("User Guide/Cloning Notes"));
-        expect(content).toContain("## Cloning");
-        expect(content).toContain("Place a note in two locations.");
-    });
-
-    it("degrades gracefully when no reader is registered — as in the browser build", () => {
+    // Their page is picked by the `docName` label out of the client's translation catalog, so
+    // there is nothing here for the backend to read.
+    it("report no content, whichever page they name", () => {
         getBlobMock.mockReturnValue(null);
-        const note = docNoteStub("User Guide/Cloning Notes");
-        expect(getNoteContentForLlm(note)).toBe("[doc content not available]");
-        expect(getContentPreview(note)).toBeNull();
+        for (const note of [ docNoteStub("launchbar_intro"), docNoteStub(null) ]) {
+            expect(getNoteContentForLlm(note)).toBe("[doc content not available]");
+            expect(getContentPreview(note)).toBeNull();
+        }
     });
 });
 
@@ -267,7 +254,10 @@ describe("getNoteMeta", () => {
 
     it("builds metadata with truncated children/attributes/attachments and total counts", () => {
         getBlobMock.mockReturnValue({ contentLength: 5 });
+        const visible = { isLabelTruthy: () => false };
+        getNoteMock.mockReturnValue(visible);
         const children = Array.from({ length: 3 }, (_, i) => ({
+            ...visible,
             noteId: `c${i}`,
             getTitleOrProtected: () => `Child ${i}`
         }));
@@ -283,7 +273,7 @@ describe("getNoteMeta", () => {
             isProtected: true,
             getContent: () => "body",
             getChildNotes: () => children,
-            getParentNotes: () => [{ noteId: "root" }],
+            getParentNotes: () => [{ ...visible, noteId: "root" }],
             getAttributes: () => attrs,
             getAttachments: () => attachments
         });

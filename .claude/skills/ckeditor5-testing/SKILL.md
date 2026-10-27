@@ -212,22 +212,21 @@ button.fire( 'execute' );
 expect( spy ).toHaveBeenCalledWith( 'insertMermaid' );
 ```
 
-## Stubbing the Trilium glue (`glob` / clipboard / jQuery `$`)
+## Stubbing the host and browser globals
 
-Many in-aggregate plugins reference a global `glob` (the Trilium bridge typed in
-`src/augmentation.ts`), some hit `navigator.clipboard`, and some converters call jQuery `$(...)`.
-Use the globals kit (`test/globals-test-kit.ts`): `installGlobMock({…})` and `mockClipboard({…})`
-install the stub **and register their own teardown** (run by the global `afterEach` in
-`test/setup.ts`), and `$` is a global passthrough from `setup.ts` — so specs **don't** hand-roll
-`globalThis.glob` or delete anything. (Browser mode shares one page, so a leaked global would bleed
-into later specs.) See `references/patterns.md` for the recipe.
+The plugins take everything they need from Trilium through editor config entries
+(`referenceLink`, `contentEmbed`, `linkEmbed`, …), so a spec passes mocks to
+`createTestEditor( plugins, { … } )` and swaps one later with `editor.config.set()`. A browser
+global a spec must swap gets its restore queued with `registerTestCleanup()` from
+`test/globals-test-kit.ts`, run by the global `afterEach` in `test/setup.ts`. (Browser mode shares
+one page, so a global left swapped bleeds into later specs.) See `references/patterns.md`.
 
 ## Reference map
 
 | File | Use it for |
 |------|-----------|
 | `references/test-utilities.md` | Testing against a real `ClassicEditor` (lifecycle, `licenseKey: 'GPL'`), and the `_setModelData`/`_getModelData`/`_getViewData` helpers from `'ckeditor5'` + the `[]`/`{}` selection syntax. |
-| `references/patterns.md` | Idiomatic recipes per concern (schema, conversion round-trips, commands, UI, keystrokes, events, async), all against a real editor; the `glob`/clipboard/jQuery-`$` stubbing recipe (via the globals kit's `installGlobMock`/`mockClipboard`); testing `onEditorError()` listeners without Vitest flagging the dispatched `error` event; measuring real CSS (`?url` vs `?inline` vs `?raw`, transitions, focus); note on the 100% coverage gate for browser-mode packages. |
+| `references/patterns.md` | Idiomatic recipes per concern (schema, conversion round-trips, commands, UI, keystrokes, events, async), all against a real editor; the host config entries and `registerTestCleanup()` for browser globals; testing `onEditorError()` listeners without Vitest flagging the dispatched `error` event; measuring real CSS (`?url` vs `?inline` vs `?raw`, transitions, focus); note on the 100% coverage gate for browser-mode packages. |
 | `references/running-and-config.md` | The WebdriverIO `vitest.config.ts` shape, `pnpm --filter` commands, the debug command, `pnpm test:parallel`/`test:sequential` (ckeditor5 + math sequential), coverage thresholds, and troubleshooting a session that never starts (a missing Playwright browser build, the worktree dep-optimizer hang, orphaned headless Chromium). |
 | `references/test-conventions.md` | Trilium test **conventions & gotchas**: real-browser event timing, real-editor teardown, the both-assertion-styles note, unreachable code vs. the 100% gate, and the pointer to `writing-unit-tests`. |
 

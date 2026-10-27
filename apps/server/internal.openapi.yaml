@@ -8,7 +8,7 @@ info:
     **Important:** This API is primarily intended for internal use by the Trilium client.
     For external integrations, please use the [ETAPI (External Trilium API)](https://github.com/TriliumNext/Trilium/blob/main/docs/User%20Guide/User%20Guide/Advanced%20Usage/ETAPI%20(REST%20API).md#etapi-rest-api) instead.
     
-    ## Authentication
+    ## Signing in
     
     Most endpoints require session-based authentication. You can authenticate using:
     - **Password login**: POST to `/api/login` with password
@@ -28,7 +28,7 @@ info:
         email: contact@eliandoran.me
         url: https://triliumnotes.org
   license:
-      name: GNU Affero General Public License v3.0 only
+      name: GNU Affero General Public License v3.0 or later
       url: https://www.gnu.org/licenses/agpl-3.0.en.html
     
 servers:
@@ -38,53 +38,72 @@ servers:
     description: Your Trilium server
 
 tags:
-  - name: Authentication
+  - name: Sessions
     description: Login, logout, and session management
+    x-icon: bx bx-log-in
   - name: Notes
     description: Core note operations
+    x-icon: bx bx-note
   - name: Tree
     description: Note tree structure and branches
+    x-icon: bx bx-sitemap
   - name: Attributes
     description: Note attributes and metadata
+    x-icon: bx bx-purchase-tag
   - name: Attachments
     description: File attachments
+    x-icon: bx bx-paperclip
   - name: Revisions
     description: Note revision history
+    x-icon: bx bx-history
   - name: Search
     description: Search and discovery
+    x-icon: bx bx-search
   - name: Import/Export
     description: Import and export operations
+    x-icon: bx bx-transfer
   - name: Sync
     description: Synchronization between instances
+    x-icon: bx bx-sync
   - name: Scripting
     description: Script execution and automation
+    x-icon: bx bx-code-alt
   - name: Configuration
     description: System options and settings
+    x-icon: bx bx-cog
   - name: Database
     description: Database operations
+    x-icon: bx bx-data
   - name: LLM
     description: AI/LLM integration
+    x-icon: bx bx-bot
   - name: Security
     description: Security features (2FA, tokens)
+    x-icon: bx bx-shield-quarter
   - name: Special Notes
     description: Special note types (calendar, inbox)
+    x-icon: bx bx-star
   - name: Visualization
     description: Maps and visualizations
+    x-icon: bx bx-map-alt
   - name: External
     description: External integrations (clipper, sender)
+    x-icon: bx bx-globe
   - name: Utilities
     description: Miscellaneous utilities
+    x-icon: bx bx-wrench
 
 security:
   - sessionAuth: []
   - tokenAuth: []
 
 paths:
-  # Authentication endpoints
+  # Session endpoints
   /api/login:
     post:
-      tags: [Authentication]
+      tags: [Sessions]
       summary: Login with password
+      description: Responds with 401 when the password is wrong or, with two-factor authentication enabled, the TOTP token is missing or wrong.
       operationId: login
       security: []
       requestBody:
@@ -110,11 +129,11 @@ paths:
                 type: string
                 example: trilium.sid=s%3A...
         '401':
-          description: Invalid credentials or TOTP token
+          description: Invalid credentials
           
   /api/login/token:
     post:
-      tags: [Authentication]
+      tags: [Sessions]
       summary: Generate API token
       operationId: generateToken
       security: []
@@ -146,7 +165,7 @@ paths:
                     
   /api/login/sync:
     post:
-      tags: [Authentication, Sync]
+      tags: [Sessions, Sync]
       summary: Sync login using document secret
       operationId: loginSync
       security: []
@@ -181,7 +200,7 @@ paths:
                     
   /api/login/protected:
     post:
-      tags: [Authentication, Security]
+      tags: [Sessions, Security]
       summary: Enter protected session
       operationId: enterProtectedSession
       requestBody:
@@ -203,7 +222,7 @@ paths:
           
   /api/logout/protected:
     post:
-      tags: [Authentication, Security]
+      tags: [Sessions, Security]
       summary: Exit protected session
       operationId: exitProtectedSession
       responses:
@@ -212,7 +231,7 @@ paths:
           
   /api/login/protected/touch:
     post:
-      tags: [Authentication, Security]
+      tags: [Sessions, Security]
       summary: Keep protected session alive
       operationId: touchProtectedSession
       responses:
@@ -222,7 +241,7 @@ paths:
   # OAuth endpoints
   /api/oauth/status:
     get:
-      tags: [Authentication]
+      tags: [Sessions]
       summary: Get OAuth status
       operationId: getOAuthStatus
       responses:
@@ -244,7 +263,7 @@ paths:
                       
   /api/oauth/validate:
     get:
-      tags: [Authentication]
+      tags: [Sessions]
       summary: Validate OAuth configuration
       operationId: validateOAuth
       responses:
@@ -1130,7 +1149,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Branch'
-                
+
+  /api/notes/{noteId}/clone-before/{beforeBranchId}:
+    put:
+      tags: [Tree, Notes]
+      summary: Clone note before branch
+      operationId: cloneBeforeBranch
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: beforeBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Note cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+
   /api/notes/{noteId}/toggle-in-parent/{parentNoteId}/{present}:
     put:
       tags: [Tree, Notes]
@@ -1639,7 +1678,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Complete attachment information
+          description: Attachment information
           content:
             application/json:
               schema:
@@ -1679,7 +1718,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Attachment saved to temporary directory
+          description: Attachment saved
           content:
             application/json:
               schema:
@@ -2895,6 +2934,7 @@ paths:
     get:
       tags: [Database]
       summary: Download an anonymized database file
+      description: Only files inside the anonymized database directory can be downloaded; any other path is refused with 403.
       operationId: downloadAnonymizedDatabase
       parameters:
         - name: filePath
@@ -2913,7 +2953,7 @@ paths:
         '400':
           description: Missing filePath
         '403':
-          description: Path outside the anonymized database directory
+          description: Path not allowed
         '404':
           description: File not found
 
@@ -4160,10 +4200,11 @@ paths:
     get:
       tags: [Security]
       summary: Get the stored TOTP secret
+      description: Returns `null` when no secret is set.
       operationId: getTotpSecret
       responses:
         '200':
-          description: The stored TOTP secret, or `null` if none is set.
+          description: TOTP secret
           content:
             application/json:
               schema:
@@ -4234,12 +4275,11 @@ paths:
     get:
       tags: [Security]
       summary: Get used TOTP recovery codes
+      description: Returns an empty array if no recovery codes are set, otherwise an object listing each code's status.
       operationId: getUsedTotpRecoveryCodes
       responses:
         '200':
-          description: >-
-            Used recovery codes status. Returns an empty array if no recovery codes are set, otherwise
-            an object listing each code's status.
+          description: Recovery code status
           content:
             application/json:
               schema:
@@ -4507,6 +4547,39 @@ paths:
                       type: string
                       format: date-time
                       
+  /api/recent-changes/{ancestorNoteId}/note-ids:
+    get:
+      tags: [Utilities]
+      summary: Get recently changed note IDs
+      description: |
+        Returns the IDs of the most recently modified live notes under the ancestor, newest first.
+        Under `root`, notes found only in the hidden subtree are left out.
+      operationId: getRecentlyChangedNoteIds
+      parameters:
+        - name: ancestorNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          description: The maximum number of note IDs to return.
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Note IDs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Missing or non-positive limit
+
   /api/other/icon-usage:
     get:
       tags: [Utilities]
@@ -4561,7 +4634,7 @@ paths:
                   type: string
       responses:
         '200':
-          description: The input text rendered as Markdown
+          description: Rendered Markdown
           content:
             text/plain:
               schema:

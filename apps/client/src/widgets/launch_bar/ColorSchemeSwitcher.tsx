@@ -1,15 +1,11 @@
 import "./ColorSchemeSwitcher.css";
 
-import { ColorScheme, getNextColorSchemeTheme, resolveColorScheme } from "../../services/color_scheme";
+import {
+    COLOR_SCHEME_ICONS, ColorScheme, getNextColorSchemeTheme, resolveColorScheme
+} from "../../services/color_scheme";
 import { t } from "../../services/i18n";
 import { useTriliumOption } from "../react/hooks";
 import { LaunchBarActionButton, LauncherNoteProps } from "./launch_bar_widgets";
-
-const SCHEME_ICONS: Record<ColorScheme, string> = {
-    system: "bx bx-brightness-half",
-    light: "bx bx-sun",
-    dark: "bx bx-moon"
-};
 
 export default function ColorSchemeSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ theme, setTheme ] = useTriliumOption("theme");
@@ -30,7 +26,7 @@ export default function ColorSchemeSwitcher({ launcherNote }: LauncherNoteProps)
         <LaunchBarActionButton
             launcherNote={launcherNote}
             className={`color-scheme-switcher${isCustom ? " unsupported" : ""}`}
-            icon={SCHEME_ICONS[scheme]}
+            icon={COLOR_SCHEME_ICONS[scheme]}
             text={tooltip}
             tooltipHtml
             tooltipClass="color-scheme-switcher-tooltip"

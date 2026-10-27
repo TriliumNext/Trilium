@@ -378,6 +378,58 @@ body[dir=rtl] .tn-card-option::after {
             background-color: color-mix(in srgb, var(--card-background-color) calc(100% / (var(--tn-card-section-nesting-level) + 1)) , transparent);
         }
     }
+
+    .tn-card-section.tn-card-adders {
+        display: flex;
+        gap: var(--card-section-gap);
+        border: none;
+        padding: 0;
+        background: transparent;
+    }
+
+    .tn-card-adders > button.tn-card-adder.btn {
+        display: flex;
+        flex: 1 1 0;
+        justify-content: center;
+        align-items: center;
+        gap: .3em;
+        min-width: 0;
+        box-shadow: none;
+        border: 1px solid var(--card-border-color, var(--main-border-color));
+        border-radius: 0;
+        padding: var(--card-padding-block) var(--card-padding-inline);
+        background: var(--card-background-color);
+        color: var(--muted-text-color);
+        font: inherit;
+        letter-spacing: normal;
+        text-transform: none;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--card-background-hover-color);
+            color: var(--main-text-color);
+        }
+
+        &:active {
+            background-color: var(--card-background-hover-color);
+        }
+    }
+
+    .tn-card-adders:first-of-type > button.tn-card-adder:first-child {
+        border-start-start-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:first-of-type > button.tn-card-adder:last-child {
+        border-start-end-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:last-of-type > button.tn-card-adder:first-child {
+        border-end-start-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:last-of-type > button.tn-card-adder:last-child {
+        border-end-end-radius: var(--card-border-radius);
+    }
 }
 
 /* A card the filter did not ask for by name is left with what matched and what accompanies it:

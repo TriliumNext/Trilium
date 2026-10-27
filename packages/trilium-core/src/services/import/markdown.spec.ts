@@ -1,4 +1,7 @@
-import { trimIndentation } from "@triliumnext/commons";
+import {
+    getMarkdownNameFromCKEditorLanguage, MIME_TYPES_DICT, normalizeMimeTypeForCKEditor,
+    trimIndentation
+} from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import markdownExportService from "../export/markdown.js";
@@ -24,6 +27,23 @@ describe("markdown", () => {
             `, "title");
             expect(result).toBe(trimIndentation`\
                 <pre><code class="${output}">Hi</code></pre>`);
+        }
+    });
+
+    it("round-trips the language of every named code block through the Markdown exporter", () => {
+        const languages = MIME_TYPES_DICT
+            .map((mimeType) => normalizeMimeTypeForCKEditor(mimeType.mime))
+            .filter((language) => getMarkdownNameFromCKEditorLanguage(language) !== undefined);
+        expect(languages).toEqual(expect.arrayContaining([
+            "text-plain", "text-x-csrc", "text-x-c-src", "text-typescript-jsx", "text-x-scala",
+            "text-jinja2", "text-x-mysql", "text-x-spreadsheet"
+        ]));
+
+        for (const language of languages) {
+            const original = `<pre><code class="language-${language}">Hi</code></pre>`;
+            const markdown = markdownExportService.toMarkdown(original);
+            expect(markdownService.renderToHtml(markdown, "Title"), language)
+                .toStrictEqual(original);
         }
     });
 

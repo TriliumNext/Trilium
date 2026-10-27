@@ -1,0 +1,68 @@
+# Quadrant
+
+quadrantChart
+
+==>
+
+QuadrantDiagram(DiagramName)
+
+# Title
+
+quadrantChart
+title Reach and engagement of campaigns
+
+==>
+
+QuadrantDiagram(DiagramName,Keyword,Text)
+
+# Axes
+
+quadrantChart
+x-axis Low Reach --> High Reach
+y-axis Low Engagement --> High Engagement
+
+==>
+
+QuadrantDiagram(DiagramName,Keyword,Text,Keyword,Text)
+
+# Quadrant Labels
+
+quadrantChart
+quadrant-1 We should expand
+quadrant-2 Need to promote
+
+==>
+
+QuadrantDiagram(DiagramName,Keyword,Text,Keyword,Text)
+
+# Data Point
+
+quadrantChart
+Campaign A: [0.3, 0.6]
+
+==>
+
+QuadrantDiagram(DiagramName,Point(Label,Number,Number))
+
+# Full Diagram
+
+quadrantChart
+title Reach and engagement of campaigns
+x-axis Low Reach --> High Reach
+y-axis Low Engagement --> High Engagement
+quadrant-1 We should expand
+Campaign A: [0.3, 0.6]
+Campaign B: [0.45, 0.23]
+
+==>
+
+QuadrantDiagram(DiagramName,Keyword,Text,Keyword,Text,Keyword,Text,Keyword,Text,Point(Label,Number,Number),Point(Label,Number,Number))
+
+# LineComment
+
+quadrantChart
+%% this is a comment
+
+==>
+
+QuadrantDiagram(DiagramName,LineComment)

@@ -1,4 +1,4 @@
-import type { ComponentChild } from "preact";
+import { type ComponentChild, render } from "preact";
 import type { MindElixirInstance } from "mind-elixir";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -258,6 +258,22 @@ describe("MapToolbar", () => {
 
         expect(mind.move).not.toHaveBeenCalled();
         expect(buttons(container)[FULLSCREEN].className).toContain("bx-fullscreen");
+    });
+});
+
+describe("map listeners", () => {
+    it("stop listening to the map's bus after the map is destroyed", () => {
+        const mind = buildMind();
+        const { bus } = mind;
+        const removeListener = vi.spyOn(bus, "removeListener");
+        const container = renderBar(<><MapToolbar mind={mind} /><DirectionToolbar mind={mind} /></>);
+
+        // `MindElixirInstance.destroy()` clears `bus` before the overlay drawn over the map unmounts.
+        (mind as { bus?: unknown }).bus = undefined;
+        expect(() => act(() => render(null, container))).not.toThrow();
+
+        expect(removeListener).toHaveBeenCalledWith("scale", expect.any(Function));
+        expect(removeListener).toHaveBeenCalledWith("linkDiv", expect.any(Function));
     });
 });
 

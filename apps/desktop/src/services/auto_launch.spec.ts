@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
     rmSync: vi.fn(),
+    execFile: vi.fn(),
     log: { info: vi.fn(), error: vi.fn() }
 }));
 
@@ -39,6 +40,10 @@ vi.mock("fs", () => ({
         writeFileSync: (...a: unknown[]) => state.writeFileSync(...a),
         rmSync: (...a: unknown[]) => state.rmSync(...a)
     }
+}));
+
+vi.mock("child_process", () => ({
+    execFile: (...a: unknown[]) => state.execFile(...a)
 }));
 
 vi.mock("os", () => ({ default: { homedir: () => "/home/user" } }));
@@ -82,6 +87,7 @@ beforeEach(() => {
     delete process.env.APPIMAGE;
     delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.FLATPAK_ID;
 });
 
 afterEach(() => {
@@ -90,6 +96,7 @@ afterEach(() => {
     delete process.env.APPIMAGE;
     delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.FLATPAK_ID;
 });
 
 describe("auto_launch", () => {
@@ -202,6 +209,43 @@ describe("auto_launch", () => {
 
         expect(state.rmSync).toHaveBeenCalledWith(DESKTOP_FILE, { force: true });
         expect(state.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it("asks the Background portal for autostart inside a Flatpak, without writing a file", () => {
+        setPlatform("linux");
+        process.env.FLATPAK_ID = "org.triliumnotes.Trilium";
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+        state.hideOnAutoStart = true;
+        applyLaunchOnStartup();
+        state.launchOnStartup = false;
+        applyLaunchOnStartup();
+
+        const portalOptions = state.execFile.mock.calls.map(([ command, args ]) => {
+            expect(command).toBe("gdbus");
+            expect(args).toContain("org.freedesktop.portal.Background.RequestBackground");
+            return (args as string[]).at(-1);
+        });
+        expect(portalOptions).toEqual([
+            "{'autostart': <true>, 'commandline': <['trilium']>}",
+            `{'autostart': <true>, 'commandline': <['trilium', '${START_HIDDEN_FLAG}']>}`,
+            "{'autostart': <false>, 'commandline': <['trilium']>}"
+        ]);
+        expect(state.writeFileSync).not.toHaveBeenCalled();
+        expect(state.rmSync).not.toHaveBeenCalled();
+    });
+
+    it("logs a failed Background portal call", () => {
+        setPlatform("linux");
+        process.env.FLATPAK_ID = "org.triliumnotes.Trilium";
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+        const callback = state.execFile.mock.calls[0]?.[2] as (error: Error | null) => void;
+        callback(new Error("no portal"));
+
+        expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("no portal"));
     });
 
     it("logs and does not throw when applying fails", () => {

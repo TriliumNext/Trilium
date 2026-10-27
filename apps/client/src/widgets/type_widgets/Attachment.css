@@ -1,3 +1,10 @@
+:where(:root) {
+    --attachment-list-drop-overlay-background:
+        color-mix(in srgb, var(--main-background-color), transparent 10%);
+    --attachment-list-drop-overlay-border-color: var(--main-text-color);
+    --attachment-list-drop-overlay-color: var(--muted-text-color);
+}
+
 /* #region Attachment list */
 .attachment-list {
     padding-inline-start: 15px;
@@ -165,7 +172,29 @@
 .attachment-list .attachment-list-container {
     display: flex;
     flex-direction: column;
+    position: relative;
     height: 100%;
+}
+
+.attachment-list .attachment-list-drop-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border: 2px dashed var(--attachment-list-drop-overlay-border-color);
+    border-radius: var(--card-border-radius, 8px);
+    background: var(--attachment-list-drop-overlay-background);
+    color: var(--attachment-list-drop-overlay-color);
+    font-size: 1.2em;
+    pointer-events: none;
+
+    .tn-icon {
+        font-size: 3em;
+    }
 }
 
 .attachment-list .attachment-list-body {

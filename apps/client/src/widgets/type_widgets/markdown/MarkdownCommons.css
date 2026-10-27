@@ -1,4 +1,4 @@
-.note-detail-markdown .markdown-preview,
+:is(.note-detail-markdown, .markdown-embed-content) .markdown-preview,
 .note-detail-readonly-text-content.llm-chat-markdown {
 
     table {

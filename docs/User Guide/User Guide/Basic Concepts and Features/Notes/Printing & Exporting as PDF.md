@@ -14,7 +14,7 @@ Printing and exporting as PDF are not perfect. Due to technical limitations, and
 
 On the desktop application of Trilium it is possible to export a note as PDF. To print a note:
 
-*   Press the menu button in the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print note_.
+*   Press the menu button in the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print/export to PDF…_.
 *   Alternatively, printing can be triggered from a [keyboard shortcut](../Keyboard%20Shortcuts.md) (unassigned by default) or through the [command palette](../Navigation/Jump%20to%20%26%20command%20palette.md).
 
 This will trigger the print preview screen next.
@@ -46,7 +46,7 @@ If the note cannot be rendered with the current options, or stops making progres
 
 This feature allows printing of notes. It works on both the desktop client, but also on the web.
 
-To print a note, click the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
+To print a note, click the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print/export to PDF…_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
 On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
 
@@ -96,9 +96,7 @@ It's possible to trigger both printing and export as PDF from the keyboard by go
 Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> are supported when printing, in which case the _Print_ and _Export as PDF_ options will be disabled.
 
 *   For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, font, background and table colors are printed in the shades of light themes, whatever the current theme (see <a class="reference-link" href="../../Note%20Types/Text/General%20formatting.md">General formatting</a>).
-*   For <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes:
-    *   Line numbers are not printed.
-    *   Syntax highlighting is enabled, however a default theme (Visual Studio) is enforced.
+*   <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes are printed with syntax highlighting, in the _Light theme_ of <a class="reference-link" href="../UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Appearance_, whatever the current theme. The lines are numbered unless _Code Notes_ → _Editor_ → _Line numbers_ is turned off.
 *   A <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> is printed as it is displayed, without running its script again, once its `~renderNote` relation is set.
 *   For <a class="reference-link" href="../../Collections.md">Collections</a>, the following are supported:
     *   <a class="reference-link" href="../../Collections/List%20View.md">List View</a>, allowing to print multiple notes at once while preserving hierarchy (similar to a book).
@@ -108,6 +106,7 @@ Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> 
         *   Tables that are too complex (especially if they have multiple columns) might not fit properly, however tables with a large number of rows are supported thanks to pagination.
         *   Consider printing in landscape mode, or using `#printLandscape` if exporting to PDF.
     *   The rest of the collections are not supported, but we plan to add support for all the collection types at some point.
+*   A <a class="reference-link" href="../Navigation/Search.md">saved search</a> prints its results as a list, in either the _Search preview_ or the _List_ view.
 *   Using <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for printing is no longer supported, instead a custom `printCss` relation needs to be used (see below).
 
 ## Customizing the print CSS

@@ -42,6 +42,10 @@ flags:
     paths:
       - apps/desktop/src/
     carryforward: true
+  mobile:
+    paths:
+      - apps/mobile/android/app/src/main/java/
+    carryforward: true
   commons:
     paths:
       - packages/commons/src/
@@ -71,6 +75,11 @@ flags:
       - apps/web-clipper/entrypoints/
       - apps/web-clipper/utils.ts
     carryforward: true
+
+ignore:
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/MainActivity.java
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/TriliumRequestBridge.java
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/TriliumWebViewClient.java
 
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"

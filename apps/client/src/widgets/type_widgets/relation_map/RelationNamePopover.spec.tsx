@@ -71,7 +71,7 @@ describe("RelationNamePopover", () => {
 
         expect(input.value).toBe("author");
         expect(document.activeElement).toBe(input);
-        expect(document.querySelector(".relation-name-heading")?.textContent).toBe("relation_map.rename_relation");
+        expect(document.querySelector(".relation-name-heading")?.textContent).toBe("relation_map.rename_relation_heading");
     });
 });
 

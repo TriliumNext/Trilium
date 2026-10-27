@@ -9,7 +9,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import TriliumMentionUI from "./mention/trilium_mention_ui.js";
 import MentionCustomization from "./mention_customization.js";
 import ReferenceLink from "./referencelink.js";
@@ -18,14 +17,6 @@ describe("MentionCustomization", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        installGlobMock({
-            getComponentByEl: () => ({
-                loadReferenceLinkTitle: vi.fn(async () => {})
-            }),
-            getReferenceLinkTitle: vi.fn(async () => "Some title"),
-            getReferenceLinkTitleSync: () => "Some title"
-        });
-
         editor = await createTestEditor([
             Essentials,
             Paragraph,
@@ -33,7 +24,12 @@ describe("MentionCustomization", () => {
             TriliumMentionUI,
             ReferenceLink,
             MentionCustomization
-        ]);
+        ], {
+            referenceLink: {
+                getTitle: vi.fn(async () => "Some title"),
+                getTitleSync: () => "Some title"
+            }
+        });
     });
 
     it("loads the plugin, requires the mention editing/UI pair and overrides the mention command", () => {
@@ -69,7 +65,7 @@ describe("MentionCustomization", () => {
         });
 
         // The referenceLink command inserts the reference element only after
-        // glob.getReferenceLinkTitle resolves.
+        // referenceLink.getTitle resolves.
         await Promise.resolve();
         await Promise.resolve();
 
@@ -101,7 +97,7 @@ describe("MentionCustomization", () => {
         });
 
         // The referenceLink command inserts the reference element only after
-        // glob.getReferenceLinkTitle resolves.
+        // referenceLink.getTitle resolves.
         await Promise.resolve();
         await Promise.resolve();
 

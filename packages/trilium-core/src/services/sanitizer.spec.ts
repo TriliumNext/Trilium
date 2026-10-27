@@ -58,6 +58,10 @@ describe("sanitize", () => {
 
         const dirty = `<figure class="include-note" style="--include-note-height:calc(100vh);--other:1em" data-note-id="abc"></figure>`;
         expect(sanitizeHtml(dirty)).toBe(`<figure class="include-note" data-note-id="abc"></figure>`);
+
+        // An embed that keeps its source in the note is saved as a code block.
+        const inline = `<pre style="--include-note-width:30em;--include-note-height:12.5em" data-box-size="medium"><code class="language-mermaid">graph TD;</code></pre>`;
+        expect(sanitizeHtml(inline)).toBe(inline);
     });
 
     it("keeps the hidden-border style on table header cells", () => {

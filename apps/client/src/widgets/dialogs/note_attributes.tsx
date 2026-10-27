@@ -26,13 +26,12 @@ export default function NoteAttributesDialog() {
             className="note-attributes-modal"
             // Named as the menu entry that summons it names it; a page of its own is named by the
             // attribute on it instead.
-            title={t("note_actions.note_attributes")}
+            title={t("note_actions.note_attributes_title")}
             backTitle={t("attribute_list_panel.back")}
             size="md"
             show={shown}
             onHidden={() => setShown(false)}
             scrollable
-            isFullPageOnMobile
         >
             <AttributeList />
         </MasterDetailModal>

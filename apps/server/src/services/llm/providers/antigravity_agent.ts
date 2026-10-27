@@ -15,17 +15,18 @@
  *     them out of that folder (see `antigravity_hook.ts`);
  *   - every tool that writes, runs a command or reaches the network asks
  *     permission first, and {@link decideAntigravityPermission} approves only
- *     Trilium's note tools.
+ *     Trilium's note tools, after asking the user about each call.
  */
 
 import type { LlmReasoningEffort } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
+import type { ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
 import type { LlmProviderConfig, ModelInfo } from "@triliumnext/core/src/services/llm/types.js";
 import { existsSync } from "fs";
 import path from "path";
 
 import dataDirs from "../../data_dir.js";
-import { AcpAgentProvider, type AcpLaunchSpec, type AcpNewSessionParams, type AcpPermissionOutcome, type AcpPermissionRequest, type AcpSessionModelState, type AcpToolCallUpdate, type BuiltInToolDisplay, denyPermission, describeError, nearestEffort, NOTE_TOOLS_MCP_SERVER_NAME, sortEfforts } from "./acp_agent.js";
+import { AcpAgentProvider, type AcpLaunchSpec, type AcpNewSessionParams, type AcpPermissionOutcome, type AcpPermissionRequest, type AcpSessionModelState, type AcpToolCallUpdate, type BuiltInToolDisplay, askNoteToolPermission, denyPermission, describeError, nearestEffort, NOTE_TOOLS_MCP_SERVER_NAME, sortEfforts } from "./acp_agent.js";
 import type { AcpClient } from "./acp_client.js";
 import { getAcpHookEndpointUrl } from "./acp_mcp_endpoint.js";
 import { resolveAntigravityBinaryPath } from "./antigravity_binary.js";
@@ -145,7 +146,7 @@ export class AntigravityAgentProvider extends AcpAgentProvider {
         if (webSearch && isUrlRead(request.toolCall)) {
             return decideAntigravityUrlRead(request, this.logLabel);
         }
-        return decideAntigravityPermission(request, this.logLabel, { webSearch });
+        return decideAntigravityPermission(request, this.logLabel, { webSearch, toolApprovals: config?.toolApprovals });
     }
 
     /** Answer the file-access hook for one tool call, logging each denial. */
@@ -205,8 +206,8 @@ export class AntigravityAgentProvider extends AcpAgentProvider {
 }
 
 /**
- * Approve Trilium's own note tools, and the web search in a chat that allows
- * it; deny everything else.
+ * Ask the user about a call to Trilium's own note tools through the turn's `toolApprovals`, approve
+ * the web search in a chat that allows it, and deny everything else.
  *
  * The server asks before every MCP tool call, including those of the note-tools
  * server Trilium hands it. It marks those requests in `toolCall._meta` — the
@@ -222,14 +223,17 @@ export class AntigravityAgentProvider extends AcpAgentProvider {
 export function decideAntigravityPermission(
     request: AcpPermissionRequest,
     logLabel: string,
-    { webSearch = false }: { webSearch?: boolean } = {}
-): AcpPermissionOutcome {
+    { webSearch = false, toolApprovals }: { webSearch?: boolean; toolApprovals?: ToolApprovals } = {}
+): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
     const toolCall = request.toolCall;
     const meta = toolCall?._meta;
     const mcp = meta?.mcp as { server?: unknown } | undefined;
     const isNoteTool = meta?.is_mcp_tool_call === true && mcp?.server === NOTE_TOOLS_MCP_SERVER_NAME;
+    if (isNoteTool) {
+        return askNoteToolPermission(request, logLabel, toolApprovals);
+    }
     const allowOnce = request.options?.find(o => o.kind === "allow_once");
-    if ((isNoteTool || (webSearch && isWebSearch(toolCall))) && allowOnce) {
+    if (webSearch && isWebSearch(toolCall) && allowOnce) {
         return { outcome: { outcome: "selected", optionId: allowOnce.optionId } };
     }
     return denyPermission(request, logLabel);

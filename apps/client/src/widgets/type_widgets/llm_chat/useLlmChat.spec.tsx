@@ -12,8 +12,14 @@ vi.mock("../../../services/llm_chat.js", () => ({
 const optionsGetJsonMock = vi.hoisted(() => vi.fn());
 /** The `llmWebSearchProvider` option, unset unless a test picks a search provider. */
 const webSearchProvider = vi.hoisted(() => ({ id: undefined as string | undefined }));
+/** The `llmPermissionMode` option, and every write to it. */
+const permissionModeOption = vi.hoisted(() => ({ value: "", save: vi.fn(async (_name: string, _value: unknown) => {}) }));
 vi.mock("../../../services/options.js", () => ({
-    default: { getJson: optionsGetJsonMock, get: () => webSearchProvider.id }
+    default: {
+        getJson: optionsGetJsonMock,
+        get: (name: string) => (name === "llmPermissionMode" ? permissionModeOption.value : webSearchProvider.id),
+        save: permissionModeOption.save
+    }
 }));
 
 // useTriliumEvent subscribes to the app-wide event bus; stub it so the hook
@@ -445,5 +451,292 @@ describe("useLlmChat", () => {
         });
         expect(api().isStreaming).toBe(false);
         expect(api().streamingStatus).toBeNull();
+    });
+
+    it("holds a tool call for the user's answer, sends that answer once, and keeps a denial in the reply", async () => {
+        type Answer = (approved: boolean) => Promise<void>;
+        let callbacks: {
+            onToolApprovalRequest: (request: { toolCallId: string; toolName: string; toolInput: Record<string, unknown> }, answer: Answer) => void;
+            onToolResult: (toolCallId: string, toolName: string, result: string, isError?: boolean) => void;
+        } | undefined;
+        let finish: () => void = () => undefined;
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, cb) => {
+            callbacks = cb;
+            await new Promise<void>(resolve => { finish = resolve; });
+            cb.onDone();
+        });
+        const answers = { c1: vi.fn<Answer>(async () => {}), c2: vi.fn<Answer>(async () => {}) };
+        await mountChat();
+        await act(async () => {
+            api().setInput("tidy up");
+        });
+        await act(async () => {
+            void api().handleSubmit(new Event("submit"));
+        });
+
+        // A request can arrive before the `tool_use` of its call, so it brings the call along.
+        await act(async () => {
+            callbacks?.onToolApprovalRequest({ toolCallId: "c1", toolName: "delete_note", toolInput: { noteId: "a" } }, answers.c1);
+            callbacks?.onToolApprovalRequest({ toolCallId: "c2", toolName: "delete_note", toolInput: { noteId: "b" } }, answers.c2);
+        });
+        expect(api().streamingBlocks).toMatchObject([
+            { type: "tool_call", toolCall: { id: "c1", input: { noteId: "a" }, approval: "pending" } },
+            { type: "tool_call", toolCall: { id: "c2", approval: "pending" } }
+        ]);
+
+        await act(async () => {
+            api().answerToolCall("c1", false);
+            api().answerToolCall("c1", true);
+            callbacks?.onToolResult("c1", "delete_note", JSON.stringify({ error: "declined" }), true);
+        });
+        expect(answers.c1).toHaveBeenCalledExactlyOnceWith(false, undefined);
+        expect(api().streamingBlocks[0]).toMatchObject({ toolCall: { id: "c1", approval: "declined" } });
+
+        // Stopped while waiting: the call that was never answered is no longer waiting.
+        await act(async () => {
+            finish();
+        });
+        expect(api().messages.at(-1)?.content).toMatchObject([
+            { toolCall: { id: "c1", approval: "declined" } },
+            { toolCall: { id: "c2", approval: undefined, result: "[Stopped]" } }
+        ]);
+        api().answerToolCall("c2", true);
+        expect(answers.c2).not.toHaveBeenCalled();
+    });
+
+    it("keeps a tool call waiting until the turn receives its answer, so a failed answer can be sent again", async () => {
+        type Answer = (approved: boolean, scope?: "chat") => Promise<void>;
+        let callbacks: {
+            onToolApprovalRequest: (request: { toolCallId: string; toolName: string; toolInput: Record<string, unknown> }, answer: Answer) => void;
+        } | undefined;
+        let finish: () => void = () => undefined;
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, cb) => {
+            callbacks = cb;
+            await new Promise<void>(resolve => { finish = resolve; });
+            cb.onDone();
+        });
+        let failSend: (error: Error) => void = () => undefined;
+        const answers = {
+            c1: vi.fn<Answer>()
+                .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => { failSend = reject; }))
+                .mockResolvedValue(undefined),
+            c2: vi.fn<Answer>(async () => {})
+        };
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        await mountChat();
+        await act(async () => {
+            api().setInput("rename them");
+        });
+        await act(async () => {
+            void api().handleSubmit(new Event("submit"));
+        });
+        await act(async () => {
+            callbacks?.onToolApprovalRequest({ toolCallId: "c1", toolName: "rename_note", toolInput: {} }, answers.c1);
+            callbacks?.onToolApprovalRequest({ toolCallId: "c2", toolName: "rename_note", toolInput: {} }, answers.c2);
+        });
+
+        // While the answer is on its way, the call still waits and a second click sends nothing.
+        await act(async () => {
+            api().answerToolCall("c1", true, "chat");
+            api().answerToolCall("c1", true, "chat");
+        });
+        expect(answers.c1).toHaveBeenCalledOnce();
+        expect(api().streamingBlocks).toMatchObject([
+            { toolCall: { id: "c1", approval: "pending" } },
+            { toolCall: { id: "c2", approval: "pending" } }
+        ]);
+
+        await act(async () => {
+            failSend(new Error("offline"));
+        });
+        expect(api().streamingBlocks).toMatchObject([
+            { toolCall: { id: "c1", approval: "pending" } },
+            { toolCall: { id: "c2", approval: "pending" } }
+        ]);
+        expect(api().allowedTools).toEqual([]);
+
+        await act(async () => {
+            api().answerToolCall("c1", true, "chat");
+        });
+        expect(answers.c1).toHaveBeenCalledTimes(2);
+        expect(answers.c2).not.toHaveBeenCalled();
+        expect(api().streamingBlocks).toMatchObject([
+            { toolCall: { id: "c1", approval: undefined } },
+            { toolCall: { id: "c2", approval: undefined } }
+        ]);
+        expect(api().allowedTools).toEqual([ "rename_note" ]);
+
+        await act(async () => {
+            finish();
+        });
+        consoleError.mockRestore();
+    });
+
+    it("keeps the answers on their way when the reply ends before they arrive", async () => {
+        type Answer = (approved: boolean, scope?: "chat") => Promise<void>;
+        let callbacks: {
+            onToolApprovalRequest: (request: { toolCallId: string; toolName: string; toolInput: Record<string, unknown> }, answer: Answer) => void;
+            onToolResult: (toolCallId: string, toolName: string, result: string, isError?: boolean) => void;
+        } | undefined;
+        let finish: () => void = () => undefined;
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, cb) => {
+            callbacks = cb;
+            await new Promise<void>(resolve => { finish = resolve; });
+            cb.onDone();
+        });
+        const delivered: (() => void)[] = [];
+        const answer = vi.fn<Answer>(() => new Promise<void>(resolve => { delivered.push(resolve); }));
+        await mountChat();
+        await act(async () => {
+            api().setInput("tidy up");
+        });
+        await act(async () => {
+            void api().handleSubmit(new Event("submit"));
+        });
+        await act(async () => {
+            callbacks?.onToolApprovalRequest({ toolCallId: "c1", toolName: "delete_note", toolInput: {} }, answer);
+            callbacks?.onToolApprovalRequest({ toolCallId: "c2", toolName: "rename_note", toolInput: {} }, answer);
+        });
+
+        await act(async () => {
+            api().answerToolCall("c1", false);
+            api().answerToolCall("c2", true, "chat");
+            callbacks?.onToolResult("c1", "delete_note", JSON.stringify({ error: "declined" }), true);
+            callbacks?.onToolResult("c2", "rename_note", "renamed");
+            finish();
+        });
+        await act(async () => {
+            for (const resolve of delivered) resolve();
+        });
+
+        expect(api().allowedTools).toEqual([ "rename_note" ]);
+        expect(api().messages.at(-1)?.content).toMatchObject([
+            { toolCall: { id: "c1", approval: "declined" } },
+            { toolCall: { id: "c2", approval: undefined, result: "renamed" } }
+        ]);
+    });
+
+    it("allows a tool for the chat: releases its waiting calls, sends and saves the list, and revokes it", async () => {
+        type Answer = (approved: boolean, scope?: "chat") => Promise<void>;
+        let callbacks: {
+            onToolApprovalRequest: (request: { toolCallId: string; toolName: string; toolInput: Record<string, unknown> }, answer: Answer) => void;
+        } | undefined;
+        let finish: () => void = () => undefined;
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, cb) => {
+            callbacks = cb;
+            await new Promise<void>(resolve => { finish = resolve; });
+            cb.onDone();
+        });
+        const answers = { c1: vi.fn<Answer>(async () => {}), c2: vi.fn<Answer>(async () => {}), c3: vi.fn<Answer>(async () => {}) };
+        const send = async (text: string) => {
+            await act(async () => {
+                api().setInput(text);
+            });
+            await act(async () => {
+                void api().handleSubmit(new Event("submit"));
+            });
+        };
+        await mountChat();
+        await send("rename them");
+        await act(async () => {
+            callbacks?.onToolApprovalRequest({ toolCallId: "c1", toolName: "rename_note", toolInput: {} }, answers.c1);
+            callbacks?.onToolApprovalRequest({ toolCallId: "c2", toolName: "rename_note", toolInput: {} }, answers.c2);
+            callbacks?.onToolApprovalRequest({ toolCallId: "c3", toolName: "delete_note", toolInput: {} }, answers.c3);
+        });
+
+        await act(async () => {
+            api().answerToolCall("c1", true, "chat");
+        });
+        // The turn approves the other calls of the tool itself, so only the first answer is sent.
+        expect(answers.c1).toHaveBeenCalledExactlyOnceWith(true, "chat");
+        expect(answers.c2).not.toHaveBeenCalled();
+        expect(api().streamingBlocks).toMatchObject([
+            { toolCall: { id: "c1", approval: undefined } },
+            { toolCall: { id: "c2", approval: undefined } },
+            { toolCall: { id: "c3", approval: "pending" } }
+        ]);
+        expect(api().allowedTools).toEqual([ "rename_note" ]);
+        expect(api().getContent().allowedTools).toEqual([ "rename_note" ]);
+
+        await act(async () => {
+            finish();
+        });
+        await send("again");
+        expect(streamChatCompletionMock.mock.calls.at(-1)?.[1]).toMatchObject({ allowedTools: [ "rename_note" ] });
+        await act(async () => {
+            finish();
+        });
+
+        await act(async () => {
+            api().revokeAllowedTool("rename_note");
+        });
+        expect(api().allowedTools).toEqual([]);
+        expect(api().getContent().allowedTools).toBeUndefined();
+
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [], allowedTools: [ "get_note", 3 as unknown as string ] });
+        });
+        expect(api().allowedTools).toEqual([ "get_note" ]);
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [] });
+        });
+        expect(api().allowedTools).toEqual([]);
+
+        // A chat emptied for a new one, as the sidebar's "New chat" does, keeps none of the old chat's grants.
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [], allowedTools: [ "get_note" ], permissionMode: "dont_ask" });
+        });
+        permissionModeOption.value = "always_ask";
+        await act(async () => {
+            api().clearMessages();
+        });
+        expect(api().allowedTools).toEqual([]);
+        expect(api().getContent().allowedTools).toBeUndefined();
+        expect(api().getContent().permissionMode).toBe("always_ask");
+    });
+    it("keeps the chat's permission mode, sends it with each turn and saves it, and remembers the last one picked", async () => {
+        permissionModeOption.value = "always_ask";
+        await mountChat();
+        const sentOptions = async () => {
+            streamChatCompletionMock.mockClear();
+            await act(async () => {
+                api().setInput("hi");
+            });
+            await act(async () => {
+                await api().handleSubmit(new Event("submit"));
+            });
+            return streamChatCompletionMock.mock.calls[0][1];
+        };
+
+        // A new chat starts in the mode picked last, in any chat.
+        expect(api().permissionMode).toBe("always_ask");
+        expect((await sentOptions()).permissionMode).toBe("always_ask");
+
+        await act(async () => {
+            api().setPermissionMode("dont_ask");
+        });
+        expect(api().getContent()).toMatchObject({ permissionMode: "dont_ask" });
+        expect((await sentOptions()).permissionMode).toBe("dont_ask");
+        expect(permissionModeOption.save).toHaveBeenCalledExactlyOnceWith("llmPermissionMode", "dont_ask");
+
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [], permissionMode: "always_ask" });
+        });
+        expect(api().permissionMode).toBe("always_ask");
+        // Opening a chat does not change the remembered mode.
+        expect(permissionModeOption.save).toHaveBeenCalledOnce();
+
+        // A chat saved before the modes, or with a mode this version does not know, starts in the
+        // remembered mode; with none remembered, in "ask_before_changes".
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [], permissionMode: "yolo" as "dont_ask" });
+        });
+        expect(api().permissionMode).toBe("always_ask");
+        permissionModeOption.value = "";
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [] });
+        });
+        expect(api().permissionMode).toBe("ask_before_changes");
+        permissionModeOption.save.mockClear();
     });
 });

@@ -58,10 +58,8 @@
     "help_on_links": "Hulp bij links",
     "note": "Notitie",
     "search_note": "zoek notitie op naam",
-    "link_title_mirrors": "De titel van de link komt overeen met de huidige titel van de notitie",
     "link_title": "Link titel",
     "button_add_link": "Link toevoegen",
-    "link_title_arbitrary": "de titel van de link kan naar believen worden gewijzigd",
     "anchor": "Anker (optioneel)",
     "anchor_none": "Geen (koppeling naar notitie)",
     "edit_link": "Wijzig link",
@@ -82,10 +80,9 @@
   },
   "bulk_actions": {
     "bulk_actions": "Bulk acties",
-    "affected_notes": "Beïnvloede notities",
-    "available_actions": "Beschikbare acties",
     "chosen_actions": "Gekozen acties",
-    "execute_bulk_actions": "Bulk acties uitvoeren",
+    "execute_bulk_actions_one": "Bulk acties uitvoeren",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Bulk acties zijn succesvol uitgevoerd.",
     "none_yet": "Nog niks... voeg een actie toe door op een van de beschikbare bovenstaande opties te klikken.",
     "labels": "Labels",
@@ -374,14 +371,8 @@
     "import": "Importeren"
   },
   "include_note": {
-    "placeholder_search": "zoek een notitie op naam",
-    "box_size_small": "kort (~ 10 regels)",
-    "box_size_medium": "gemiddeld (~ 30 regels)",
-    "box_size_full": "volledig (in het vak wordt de volledige tekst weergegeven)",
-    "box_size_expandable": "uitklapbaar (standaard ingeklapt)",
     "dialog_title": "Notitie bijvoegen",
     "label_note": "Notitie",
-    "box_size_prompt": "Box grootte van bijgevoegde notitie:",
     "button_include": "Bijgevoegde notitie"
   },
   "info": {
@@ -434,10 +425,7 @@
     "target_parent_note": "Doel oudernotitie"
   },
   "note_type_chooser": {
-    "change_path_prompt": "Pas aan waar de nieuwe notitie moet worden aangemaakt:",
-    "search_placeholder": "zoek pad op naam (standaard als dit veld leeg is)",
     "modal_title": "Kies notitietype",
-    "modal_body": "Kies het notitietype / de sjabloon voor de nieuwe notitie:",
     "templates": "Sjablonen"
   },
   "password_not_set": {

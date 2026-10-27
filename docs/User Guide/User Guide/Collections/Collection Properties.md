@@ -9,4 +9,4 @@ The collection properties has:
 *   A settings button with:
     *   Settings for the current view, for example hiding the weekends in a calendar.
     *   Generic settings for the collection, such as [hiding the child notes](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Hiding%20the%20subtree.md) or showing [archived notes](../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md).
-*   Specific interactions for the current view, for example month selector and view switcher for the calendar.
+*   Specific interactions for the current view, for example the expand and collapse buttons in the list view, or the month selector and view switcher for the calendar.

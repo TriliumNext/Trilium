@@ -6,6 +6,7 @@ import { Ref } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { CommandListenerData } from "../../../components/app_context";
+import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { consumeSearchTerms } from "../../../services/search_jump";
@@ -16,7 +17,7 @@ import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import ApiLog from "./ApiLog";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
-import { useSnippetSlashCommands } from "./snippets";
+import { type CompletionTarget, useEditorCompletions } from "./editor_completions";
 
 export interface EditableCodeProps extends TypeWidgetProps {
     // if true, the update will be debounced to prevent excessive updates. Especially useful if the editor is linked to a live preview.
@@ -35,8 +36,17 @@ export interface EditableCodeProps extends TypeWidgetProps {
     allowKeyboardSuggestions?: boolean;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
+export function ReadOnlyCode({
+    note, viewScope, ntxId, noteContext, isVisible, editorRef
+}: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
+    const [ editor, setEditor ] = useState<VanillaCodeMirror | null>(null);
+    const combinedEditorRef = useCallback((view: VanillaCodeMirror | null) => {
+        setEditor(view);
+        if (typeof editorRef === "function") editorRef(view);
+        else if (editorRef) editorRef.current = view;
+    }, [ editorRef ]);
+    usePublishedEditor(noteContext, note, isVisible, editor);
     const blob = useNoteBlob(note);
     // Read reactively so switching the language from the dropdown re-highlights live, rather than
     // only after the note is reloaded (unlike the editable view, read-only has no edits to trigger it).
@@ -64,7 +74,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }:
         <>
             <CodeEditor
                 ntxId={ntxId}
-                editorRef={editorRef}
+                editorRef={combinedEditorRef}
                 className="note-detail-readonly-code-content"
                 content={content}
                 mime={mime ?? "text/plain"}
@@ -94,16 +104,21 @@ function formatViewSource(note: FNote, content: string) {
     return content;
 }
 
-export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, editorRef: externalEditorRef, ...editorProps }: EditableCodeProps) {
+export function EditableCode({
+    note, ntxId, noteContext, isVisible, debounceUpdate, parentComponent, updateInterval,
+    noteType = "code", onContentChanged, dataSaved, placeholder, editorRef: externalEditorRef,
+    ...editorProps
+}: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
-    const [ editorView, setEditorView ] = useState<VanillaCodeMirror | null>(null);
+    const [ editor, setEditor ] = useState<VanillaCodeMirror | null>(null);
     const combinedEditorRef = useCallback((view: VanillaCodeMirror | null) => {
         editorRef.current = view;
-        setEditorView(view);
+        setEditor(view);
         if (typeof externalEditorRef === "function") externalEditorRef(view);
         else if (externalEditorRef) externalEditorRef.current = view;
     }, [externalEditorRef]);
+    usePublishedEditor(noteContext, note, isVisible, editor);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
     const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
@@ -148,24 +163,13 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
 
     useKeyboardShortcuts("code-detail", containerRef, parentComponent, ntxId);
 
-    // Code snippets (#snippet notes with a matching MIME) as `/snippet:<name>` slash commands.
-    // Disabled for Markdown notes, whose editor provides its own combined slash-command menu. On
-    // script notes the snippet source co-exists with the TypeScript language service's source via
-    // the editor's shared completion-source registry.
-    useSnippetSlashCommands(
-        editorView,
-        (candidate) => candidate.type === "code" && (candidate.mime === note.mime || candidate.mime === "text/plain"),
-        note.mime,
-        !note.isMarkdown(),
-        note.noteId
-    );
-
     return (
         <>
             <CodeEditor
                 ntxId={ntxId}
                 editorRef={combinedEditorRef} containerRef={containerRef}
                 mime={mime ?? "text/plain"}
+                completions={{ note, getNotePath: () => noteContext?.notePath }}
                 customRequestHandler={customRequestHandler != null}
                 className="note-detail-code-editor"
                 placeholder={placeholder ?? t("editable_code.placeholder")}
@@ -190,11 +194,23 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     );
 }
 
-export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, allowKeyboardSuggestions, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId">) {
+export interface CodeEditorProps
+    extends Omit<CodeMirrorProps, "getSnippets">, Pick<TypeWidgetProps, "ntxId"> {
+    /** The content that the `/` list completes, or `undefined` for no list. */
+    completions?: CompletionTarget;
+}
+
+export function CodeEditor({
+    ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized,
+    lineWrapping, lineNumbers, allowKeyboardSuggestions, completions, ...editorProps
+}: CodeEditorProps) {
     const codeEditorRef = useRef<VanillaCodeMirror>(null);
+    const [ view, setView ] = useState<VanillaCodeMirror | null>(null);
     const containerRef = useSyncedRef(externalContainerRef);
     const initialized = useRef($.Deferred());
+    const getSnippets = useEditorCompletions(view, mime, completions);
     const [ codeLineWrapEnabled ] = useTriliumOptionBool("codeLineWrapEnabled");
+    const [ codeLineNumbersEnabled ] = useTriliumOptionBool("codeLineNumbersEnabled");
     const [ codeNoteTheme ] = useTriliumOption("codeNoteTheme");
     const [ codeNoteTabWidth ] = useTriliumOption("codeNoteTabWidth");
     const [ codeNoteIndentWithTabs ] = useTriliumOptionBool("codeNoteIndentWithTabs");
@@ -207,14 +223,10 @@ export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRe
         ? (colorScheme === "dark" ? darkTheme : lightTheme)
         : codeNoteTheme;
 
-    // React to theme changes.
+    // React to theme changes. `onInitialized` applies it too, for an editor `CodeMirror` creates
+    // after this effect has run.
     useEffect(() => {
-        if (codeEditorRef.current && effectiveTheme.startsWith(DEFAULT_PREFIX)) {
-            const theme = getThemeById(effectiveTheme.substring(DEFAULT_PREFIX.length));
-            if (theme) {
-                codeEditorRef.current.setTheme(theme);
-            }
-        }
+        if (codeEditorRef.current) applyTheme(codeEditorRef.current, effectiveTheme);
     }, [ codeEditorRef, effectiveTheme ]);
 
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
@@ -254,9 +266,11 @@ export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRe
     return <CodeMirror
         {...editorProps}
         mime={mime}
+        getSnippets={getSnippets}
         editorRef={codeEditorRef}
         containerRef={containerRef}
         lineWrapping={lineWrapping ?? codeLineWrapEnabled}
+        lineNumbers={lineNumbers ?? codeLineNumbersEnabled}
         allowKeyboardSuggestions={allowKeyboardSuggestions ?? mime === "text/plain"}
         indentSize={editorProps.indentSize ?? (parseInt(codeNoteTabWidth) || 4)}
         useTabs={editorProps.useTabs ?? codeNoteIndentWithTabs}
@@ -266,11 +280,44 @@ export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRe
                 else if (externalContainerRef) externalContainerRef.current = containerRef.current;
             }
             if (codeEditorRef.current) {
+                applyTheme(codeEditorRef.current, effectiveTheme);
                 if (typeof externalEditorRef === "function") externalEditorRef(codeEditorRef.current);
                 else if (externalEditorRef) externalEditorRef.current = codeEditorRef.current;
             }
+            setView(codeEditorRef.current);
             initialized.current.resolve();
             onInitialized?.();
         }}
     />;
+}
+
+/**
+ * Publishes `editor` as the `codeEditor` context data while the type widget is displayed for the
+ * note of `noteContext`. A note switch clears the context data, and a displayed widget publishes
+ * it again. A hidden widget clears it, unless another widget has published its editor since.
+ */
+function usePublishedEditor(
+    noteContext: NoteContext | undefined,
+    note: FNote,
+    isVisible: boolean | undefined,
+    editor: VanillaCodeMirror | null
+) {
+    useEffect(() => {
+        if (!noteContext || !editor || !isVisible || noteContext.noteId !== note.noteId) return;
+        noteContext.setContextData("codeEditor", editor);
+        return () => {
+            if (noteContext.getContextData("codeEditor") === editor) {
+                noteContext.clearContextData("codeEditor");
+            }
+        };
+    }, [ noteContext, note.noteId, isVisible, editor ]);
+}
+
+/** Applies a `default:`-prefixed code note theme, the only kind the editor knows how to load. */
+function applyTheme(editor: VanillaCodeMirror, effectiveTheme: string | undefined) {
+    if (!effectiveTheme?.startsWith(DEFAULT_PREFIX)) return;
+    const theme = getThemeById(effectiveTheme.substring(DEFAULT_PREFIX.length));
+    if (theme) {
+        void editor.setTheme(theme);
+    }
 }

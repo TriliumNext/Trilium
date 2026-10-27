@@ -6,12 +6,17 @@ import { JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { CellComponent, ColumnComponent, ColumnDefinition, EmptyCallback, FormatterParams, RowComponent, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
 
+import appContext from "../../../components/app_context.js";
 import froca from "../../../services/froca.js";
+import { t } from "../../../services/i18n.js";
+import { goToLinkExt } from "../../../services/link.js";
+import { isCtrlKey } from "../../../services/utils.js";
 import { safeUrlHref } from "../../../utils/url.js";
 import { applyLinkScheme, asLabelValues, formatLabelDate, LabelValueChips } from "../../attribute_widgets/label_value_display.jsx";
 import LabelValueInput from "../../attribute_widgets/label_value_input.jsx";
 import MultiValueInput from "../../attribute_widgets/multi_value_input.jsx";
 import RelationValuesInput, { RelationValueChips } from "../../attribute_widgets/relation_values_input.jsx";
+import Button from "../../react/Button.jsx";
 import { useGrowsUpwards } from "../../react/grows_upwards.js";
 import Icon from "../../react/Icon.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
@@ -19,6 +24,11 @@ import { renderReactWidget } from "../../react/react_utils.jsx";
 import type { TableData } from "./rows.js";
 
 type ColumnType = LabelType | "relation";
+
+/** Sets a column's digits at equal widths, so that its numbers and dates line up row to row. */
+const NUMERIC_CELL_CLASS = "table-numeric-cell";
+/** Moves the header's sort arrow to the left, so that a right-aligned title ends where its cells do. */
+const RIGHT_ALIGNED_COLUMN_CLASS = "table-right-aligned-column";
 
 export interface AttributeDefinitionInformation {
     name: string;
@@ -47,10 +57,10 @@ const labelTypeMappings: Record<ColumnType, Partial<ColumnDefinition>> = {
         editor: wrapEditor(SelectEditor)
     },
     boolean: {
-        // The same chip a set of flags wears, one chip for the one value, so a column of flags
-        // reads the same whether each note holds one or several. Toggling stays Tabulator's own.
+        // A checkbox, as the promoted field shows the flag. `editor: undefined` overrides the input
+        // editor `buildColumnDefinitions` gives every column; the box sets the cell itself.
         formatter: wrapFormatter(FlagFormatter),
-        editor: "tickCross",
+        editor: undefined,
         // Values arrive as strings ("true"/"false") from stored labels but as real booleans
         // once toggled via the editor; the boolean sorter normalizes both, whereas the default
         // string sorter treats boolean `false` as empty and orders it inconsistently.
@@ -58,21 +68,27 @@ const labelTypeMappings: Record<ColumnType, Partial<ColumnDefinition>> = {
     },
     date: {
         editor: "date",
+        cssClass: NUMERIC_CELL_CLASS,
         // Values are stored as ISO ("YYYY-MM-DD"), which Tabulator would otherwise render as-is.
         formatter: (cell) => formatLabelDate(cell.getValue(), false)
     },
     datetime: {
         editor: "datetime",
+        cssClass: NUMERIC_CELL_CLASS,
         formatter: (cell) => formatLabelDate(cell.getValue(), true)
     },
     number: {
         editor: "number",
+        cssClass: `${NUMERIC_CELL_CLASS} ${RIGHT_ALIGNED_COLUMN_CLASS}`,
+        hozAlign: "right",
+        headerHozAlign: "right",
         sorter: "number"
     },
     time: {
         // No `format` param, so the editor stays on the stored "HH:mm" and needs no luxon — the same
         // value, through the same native field, as the promoted attribute of this type.
-        editor: "time"
+        editor: "time",
+        cssClass: NUMERIC_CELL_CLASS
     },
     url: {
         formatter: "link",
@@ -120,6 +136,17 @@ function relationTitle(row: RowComponent, column: ColumnComponent): string {
     return relationTitles?.[name] ?? "";
 }
 
+/**
+ * A column showing one of the note's own dates. The rows hold the dates as ISO strings, so the
+ * string sorter orders them by time.
+ */
+const noteDateColumn: Partial<ColumnDefinition> = {
+    formatter: (cell) => formatLabelDate(cell.getValue(), true),
+    sorter: "string",
+    cssClass: NUMERIC_CELL_CLASS,
+    visible: false
+};
+
 interface BuildColumnArgs {
     info: AttributeDefinitionInformation[];
     movableRows: boolean;
@@ -145,29 +172,36 @@ export function buildColumnDefinitions({ info, movableRows, existingColumnData, 
             title: "#",
             headerSort: false,
             hozAlign: "center",
+            headerHozAlign: "center",
             resizable: false,
             frozen: true,
+            cssClass: "table-row-number",
             rowHandle: movableRows,
             width: calculateIndexColumnWidth(rowNumberHint, movableRows),
             formatter: (cell) => rowNumberFormatter(cell, movableRows)
         },
         {
             field: "noteId",
-            title: "Note ID",
+            title: t("table_view.column-note-id"),
             formatter: wrapFormatter(({ cell }) => <code>{cell.getValue()}</code>),
             visible: false
         },
         {
             field: "title",
-            title: "Title",
+            title: t("table_view.column-title"),
             editor: "input",
-            formatter: wrapFormatter(({ cell }) => {
-                const { noteId, iconClass, colorClass } = cell.getRow().getData();
-                return <span className={`reference-link ${colorClass}`} data-href={`#root/${noteId}`}>
-                    <Icon icon={iconClass} />{" "}{cell.getValue()}
-                </span>;
-            }),
+            formatter: wrapFormatter(TitleFormatter),
             width: 400
+        },
+        {
+            field: "dateCreated",
+            title: t("table_view.column-date-created"),
+            ...noteDateColumn
+        },
+        {
+            field: "dateModified",
+            title: t("table_view.column-date-modified"),
+            ...noteDateColumn
         }
     ];
 
@@ -333,6 +367,60 @@ function wrapEditor(Component: (opts: EditorOpts) => JSX.Element): ((
         const elWithParams = <Component cell={cell} success={success} cancel={cancel} editorParams={editorParams} />;
         return renderReactWidget(null, elWithParams)[0];
     };
+}
+
+/**
+ * A click on the title belongs to the cell's editor, which renames the note; the note opens from
+ * the button beside it instead. A read-only cell has no editor, so a click on its title opens the
+ * note. Ctrl, Shift and middle clicks follow the link as they do anywhere else.
+ */
+function TitleFormatter({ cell }: FormatterOpts) {
+    const { noteId, iconClass, colorClass } = cell.getRow().getData();
+    const href = `#root/${noteId}`;
+    const openNote = () => appContext.triggerCommand("openInPopup", { noteIdOrPath: noteId });
+
+    return (
+        <span className="table-title">
+            <span
+                className={`reference-link ${colorClass}`}
+                data-href={href}
+                onMouseDown={(e) => {
+                    // The press would focus the cell, and Tabulator opens the editor on focus.
+                    if (isCtrlKey(e) || e.shiftKey || e.button === 1) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
+                onClick={(e) => {
+                    if (isCtrlKey(e) || e.shiftKey) {
+                        e.stopPropagation();
+                        goToLinkExt(e, href);
+                    } else if (!e.currentTarget.closest(".tabulator-cell")?.classList.contains("tabulator-editable")) {
+                        openNote();
+                    }
+                }}
+                onAuxClick={(e) => {
+                    if (e.button === 1) {
+                        goToLinkExt(e, href);
+                    }
+                }}
+            >
+                <Icon icon={iconClass} />{" "}{cell.getValue()}
+            </span>
+            <span className="table-open-note">
+                <Button
+                    text={t("table_view.open-note")}
+                    icon="bx-expand-alt"
+                    kind="lowProfile"
+                    size="micro"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openNote();
+                    }}
+                />
+            </span>
+        </span>
+    );
 }
 
 function NoteFormatter({ cell }: FormatterOpts) {
@@ -548,15 +636,31 @@ function ColorFormatter({ cell }: FormatterOpts) {
     return <LabelValueChips values={[ color ]} labelType="color" />;
 }
 
-/** A flag cell as the chip a set of flags shows, with an unset cell holding no chip at all. */
+/** A flag cell as a checkbox, unticked for a note without the label. */
 function FlagFormatter({ cell }: FormatterOpts) {
     const value = cell.getValue();
-    // A stored label arrives as the text "true"/"false", but one just toggled through the tickCross
-    // editor is a real boolean; the chip reads the stored spelling of either.
-    const flag = typeof value === "boolean" ? String(value) : value;
-    if (typeof flag !== "string" || !flag) return <span />;
+    // A stored label arrives as the text "true"/"false", but one just set from the box is a real
+    // boolean. A note without the label reads as false, as the promoted checkbox shows it unticked.
+    const isSet = value === true || value === "true";
+    const definition = cell.getColumn().getDefinition();
+    const isEditable = definition.editable !== false;
 
-    return <LabelValueChips values={[ flag ]} labelType="boolean" />;
+    // `cell.setValue()` fires `cellEdited`, which saves the label as an edit from an editor would.
+    return (
+        <label className={clsx("tn-checkbox table-flag-checkbox", !isEditable && "read-only")}>
+            <input
+                type="checkbox"
+                checked={isSet}
+                tabIndex={isEditable ? 0 : -1}
+                aria-label={definition.title}
+                aria-readonly={!isEditable}
+                onClick={(e) => {
+                    if (!isEditable) e.preventDefault();
+                }}
+                onChange={(e) => cell.setValue(e.currentTarget.checked)}
+            />
+        </label>
+    );
 }
 
 /**

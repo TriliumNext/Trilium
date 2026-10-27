@@ -106,7 +106,7 @@ function getEditActionGroups(attachment: FAttachment): AttachmentAction[][] {
         [
             // A link preview's pictures are left out: the server already sized them.
             ...(attachment.role === "image" ? [ {
-                title: t("compress-image"),
+                title: t("compress-image-menu"),
                 icon: "bx bx-collapse-alt",
                 run: () => void showImageCompressionDialog({
                     type: "attachment",
@@ -188,7 +188,7 @@ async function uploadNewRevision(attachment: FAttachment, file: File) {
 
 async function renameAttachment(attachment: FAttachment) {
     const title = await dialog.prompt({
-        title: t("attachments_actions.rename_attachment"),
+        title: t("attachments_actions.rename_attachment_title"),
         message: t("attachments_actions.enter_new_name"),
         defaultValue: attachment.title
     });

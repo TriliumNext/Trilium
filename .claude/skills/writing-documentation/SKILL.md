@@ -1,15 +1,16 @@
 ---
 name: writing-documentation
-description: Use whenever a change is user-facing — a new feature, a moved or removed button, a label, a shortcut, an option, a default, a note type, a collection view, a dialog, an import format — or when asked to write, fix, restructure or audit Trilium's documentation ("document this", "update the User Guide", "add a page for X", "is X documented?", "which page describes X?", "the docs still say…", "rename/move this page", "add a screenshot", "which icon do I use?"). Covers the three docs trees (`docs/User Guide`, `docs/Developer Guide`, `docs/Release Notes`) and the generated in-app help they feed, the `!!!meta.json` note metadata (noteId, shareAlias, iconClass, attachments), the house style of the User Guide (register, page templates, reference-link pills, `<kbd>`, admonitions, figures, the `bx`/`cke` icon spans), and `docs.mjs`, which finds and shows pages, scaffolds a page with correct metadata, registers images, renames/moves/deletes pages, maps a code diff to the pages it affects, audits the trees, and regenerates the help HTML headless — so `!!!meta.json` and `apps/server/src/assets/doc_notes` never have to be read or hand-edited. A user-facing change is not finished until the User Guide describes it, in the same commit.
+description: Use whenever a change is user-facing — a new feature, a moved or removed button, a label, a shortcut, an option, a default, a note type, a collection view, an import format — or when asked to write, fix, restructure or audit Trilium's documentation ("document this", "update the User Guide", "add a page for X", "is X documented?", "which page describes X?", "the docs still say…", "rename/move this page", "add a screenshot", "which icon do I use?"). Covers the docs trees (`docs/User Guide`, `docs/Developer Guide`, `docs/Release Notes`) and the generated in-app help, `!!!meta.json` (noteId, shareAlias, iconClass, attachments), the User Guide house style (register, templates, reference pills, `<kbd>`, admonitions, figures, `bx`/`cke`/`tn-brand` icon spans), and `docs.mjs` (find/show/scaffold pages, register images, rename/move/delete, map a diff to affected pages, audit, regenerate the in-app help). A user-facing change is not finished until the User Guide describes it, in the same commit.
 ---
 
 # Writing Trilium's documentation
 
 Trilium's User Guide is a tree of Trilium notes, exported to Markdown under `docs/User Guide/` and
 described by `docs/User Guide/!!!meta.json`. From that Markdown the repo generates the **in-app help**
-(`apps/server/src/assets/doc_notes/en/User Guide/**/*.html` + a minified help meta, and
-`apps/standalone/src/assets/help_meta.json`) and the public site (docs.triliumnotes.org). The Markdown
-is the source; everything under `doc_notes` and `help_meta.json` is generated and never hand-edited.
+(`apps/server/src/assets/help/help_meta.json`, the tree, and `help_content.json`, each page's HTML)
+and the public site (docs.triliumnotes.org). The Markdown is the source; both help files are
+generated and never hand-edited. The help pages are virtual notes built from them at startup, not
+notes in the database.
 
 Every mechanical step is [docs.mjs](docs.mjs):
 
@@ -23,7 +24,7 @@ node $D new Collections "Timeline" --icon bx-time-five --after Dashboard   # sca
 node $D image timeline shot.png          # register a screenshot; prints the <figure> to paste
 node $D icons quote --pack cke           # icon classes for a toolbar button / app control
 node $D rename timeline "Timeline view"  # retitle; move <page> <parent>; delete <page>
-node $D sync                             # regenerate Markdown, help HTML and help metas headless
+node $D sync                             # regenerate Markdown and both help artifacts headless
 node $D check                            # meta ↔ disk, links, images, icons, aliases, code refs, style
 ```
 
@@ -41,11 +42,11 @@ The workflow, every time:
    for the names the diff cannot know. **Read every hit** — a page describing a control that moved,
    a label that changed or a default that flipped is wrong until edited.
 2. Edit the Markdown (below), or `new` a page for a feature no page covers.
-3. `node $D sync` — normalizes your Markdown the way the editor would and regenerates the help HTML
-   and both help metas. Review `git diff -- docs` (what the round trip did to your text) and
-   `git diff --stat -- apps/server/src/assets/doc_notes`.
+3. `node $D sync` — normalizes your Markdown the way the editor would and regenerates both help
+   artifacts. Review `git diff -- docs` (what the round trip did to your text) and
+   `git diff --word-diff -- apps/server/src/assets/help/help_content.json`.
 4. `node $D check` — must report 0 errors (a handful are pre-existing, listed at the end).
-5. Commit the code, the Markdown, `!!!meta.json`, the `doc_notes` HTML and `help_meta.json` together.
+5. Commit the code, the Markdown, `!!!meta.json`, `help_meta.json` and `help_content.json` together.
 
 Two traps `CLAUDE.md` names still apply: verify **where a control actually mounts** by grepping the
 component, not by inference; and a widened **capability gate** (a note type added to a list a widget
@@ -95,13 +96,12 @@ paste into the parent page. Then write the body, `image` the screenshots, `sync`
 
 - **Alias** defaults to the kebab-case title; pass `--alias` to shorten (`setup`, `docker`, `mfa`,
   `and` for `&`). The public URL is the chain of ancestor aliases, so it only has to be unique among
-  siblings; a page without one has no URL and is dropped from the standalone help. Once published, an
+  siblings; a page without one has no public URL and no `docUrl` in the in-app help. Once published, an
   alias is an external link (README ×41, website, web clipper, about dialog) — `show` lists who uses it.
 - **Icon**: the feature's own icon — a note type's `NOTE_TYPE_ICONS` entry, a collection's template
   icon in `hidden_subtree_templates.ts`, otherwise `icons <query>`. Boxicons (`bx bx-…`) only for
   `iconClass`.
-- **Title characters**: letters, digits, space, `_ - ( ) & . , \``. The in-app help refuses anything
-  else (`doc_renderer.ts`), and `new` refuses too. `/`, `:` and `"` are dropped from the file name.
+- **Title characters**: `/ \ : * ? " < > |` are dropped from the file name.
 - **Wire it into the app** when the page documents a surface with a help affordance: `<HelpButton
   helpPage="<noteId>">` (settings panes, dialogs), `helpPageId` on a `Modal`, or the maps in
   `apps/client/src/services/in_app_help.ts` (`byNoteType`, `byBookType`, sidebar sections). The app
@@ -154,6 +154,10 @@ skeletons per page kind are [references/page-templates.md](references/page-templ
    `apps/client/src/fonts/text-editor-icons.woff2` and
    `packages/trilium-core/src/services/icon_pack_text_editor.json`. `icons` and `check` both flag
    a Trilium SVG the font lacks. A Trilium SVG `src/icons/foo.svg` becomes `cke-trilium-foo`.
+   An AI provider or an import source is shown by its mark,
+   `<span class="tn-icon tn-brand tn-brand-<name>"></span>`, before its name. The `tn-brand` pack
+   is built from `apps/icon-pack-builder/brand-icons/<name>.svg` the same way: a new SVG there
+   needs `start tn-brand`, committing `brand-icons.woff2` and `icon_pack_brands.json`.
 9. Callouts: `> [!NOTE]` context/history · `> [!TIP]` a better way · `> [!IMPORTANT]` beta status,
    requirement, third-party disclaimer · `> [!WARNING]` data/security risk or a version-gated break.
 10. Version facts: "Since v0.104.0, …", "Starting with v0.104.0, …", "Versions prior to v0.103.0 …".

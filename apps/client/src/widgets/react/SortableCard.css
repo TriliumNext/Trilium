@@ -114,62 +114,6 @@
         }
     }
 
-    /* Transparent: each button paints itself, and the gaps show the card through. */
-    .tn-sortable-adders {
-        display: flex;
-        gap: var(--card-section-gap);
-        border: none;
-        padding: 0;
-        background: transparent;
-    }
-
-    /* Painted as a segment rather than a button, all of one width, undoing what Bootstrap and the
-          theme give a button. */
-    button.tn-sortable-adder.btn {
-        display: flex;
-        flex: 1 1 0;
-        justify-content: center;
-        align-items: center;
-        gap: 0.3em;
-        min-width: 0;
-        box-shadow: none;
-        border: 1px solid var(--card-border-color, var(--main-border-color));
-        border-radius: 0;
-        padding: var(--card-padding-block) var(--card-padding-inline);
-        background: var(--card-background-color);
-        color: var(--muted-text-color);
-        font: inherit;
-        letter-spacing: normal;
-        text-transform: none;
-        cursor: pointer;
-
-        &:hover {
-            background-color: var(--card-background-hover-color);
-            color: var(--main-text-color);
-        }
-
-        &:active {
-            background-color: var(--card-background-hover-color);
-        }
-    }
-
-    /* The row is transparent, so its buttons carry the card's corners. */
-    .tn-sortable-adders:first-of-type button.tn-sortable-adder:first-child {
-        border-start-start-radius: var(--card-border-radius);
-    }
-
-    .tn-sortable-adders:first-of-type button.tn-sortable-adder:last-child {
-        border-start-end-radius: var(--card-border-radius);
-    }
-
-    .tn-sortable-adders:last-of-type button.tn-sortable-adder:first-child {
-        border-end-start-radius: var(--card-border-radius);
-    }
-
-    .tn-sortable-adders:last-of-type button.tn-sortable-adder:last-child {
-        border-end-end-radius: var(--card-border-radius);
-    }
-
     .tn-sortable-appearing {
         animation: tn-sortable-appear 400ms ease-out;
     }

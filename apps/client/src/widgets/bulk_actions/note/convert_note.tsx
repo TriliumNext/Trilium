@@ -27,13 +27,12 @@ function ConvertNoteBulkActionComponent({ bulkAction, actionDef }: { bulkAction:
     return (
         <BulkAction
             bulkAction={bulkAction}
-            label={t("convert_note.convert_note_to")}
-            helpText={<p>{t("convert_note.help_text")}</p>}
         >
             <FormSelect
                 values={conversionOptions}
                 keyProperty="value"
                 titleProperty="title"
+                required
                 currentValue={conversion}
                 onChange={onChange}
             />
@@ -64,5 +63,11 @@ export default class ConvertNoteBulkAction extends AbstractBulkAction {
 
     static get actionTitle() {
         return t("convert_note.convert_note");
+    }
+    static get actionIcon() {
+        return "bx bx-note bulk-action-marker-convert";
+    }
+    static get actionDescription() {
+        return t("convert_note.description");
     }
 }

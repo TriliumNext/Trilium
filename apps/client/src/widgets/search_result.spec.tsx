@@ -9,10 +9,9 @@ import type FNote from "../entities/fnote";
 const shownNote = vi.hoisted(() => ({
     current: null as FNote | null,
     notify: () => {},
+    listeners: new Set<() => void>(),
     parentComponent: null as import("../components/component").default | null
 }));
-const shownTab = vi.hoisted(() => ({ activeMainNtxId: "ntx1" as string | null }));
-const tabContext = vi.hoisted(() => ({ ntxId: "ntx1", getMainContext() { return tabContext; } }));
 vi.mock("./react/hooks", async (importOriginal) => {
     const { useEffect, useState } = await import("preact/hooks");
     return {
@@ -20,13 +19,22 @@ vi.mock("./react/hooks", async (importOriginal) => {
         useNoteContext: () => {
             const [ note, setNote ] = useState(shownNote.current);
             useEffect(() => {
-                shownNote.notify = () => setNote(shownNote.current);
+                // Several components call this; notify them all, so the top-level widget re-renders too.
+                const listener = () => setNote(shownNote.current);
+                shownNote.listeners.add(listener);
+                shownNote.notify = () => {
+                    for (const notify of shownNote.listeners) {
+                        notify();
+                    }
+                };
+                return () => {
+                    shownNote.listeners.delete(listener);
+                };
             }, []);
             return {
                 note,
                 notePath: note?.noteId,
                 ntxId: "ntx1",
-                noteContext: tabContext,
                 parentComponent: shownNote.parentComponent
             };
         }
@@ -42,17 +50,28 @@ import { buildNote } from "../test/easy-froca";
 import { ParentComponent } from "./react/react_utils";
 import SearchResult from "./search_result";
 
-const realTabManager = appContext.tabManager;
 let container: HTMLElement;
 let parent: Component;
+let realIntersectionObserver: typeof IntersectionObserver;
+
+/** Renders the list on observation, as a visible widget would after its 10 ms observe delay. */
+class ImmediateIntersectionObserver {
+    observe = () => this.callback(
+        [ { isIntersecting: true } as IntersectionObserverEntry ],
+        this as unknown as IntersectionObserver
+    );
+    unobserve = () => {};
+    disconnect = () => {};
+
+    constructor(private readonly callback: IntersectionObserverCallback) {}
+}
 
 beforeEach(() => {
-    shownTab.activeMainNtxId = "ntx1";
-    // Client tests run without app start-up, which is what creates the tab manager.
-    appContext.tabManager = {
-        getActiveMainContext: () =>
-            (shownTab.activeMainNtxId ? { ntxId: shownTab.activeMainNtxId } : null)
-    } as never;
+    shownNote.listeners.clear();
+    // Collection views read their saved config from attachments, which these fixtures do not have.
+    vi.spyOn(froca, "getAttachmentsForNote").mockResolvedValue([]);
+    realIntersectionObserver = window.IntersectionObserver;
+    window.IntersectionObserver = ImmediateIntersectionObserver as unknown as typeof IntersectionObserver;
     window.glob.TRILIUM_SAFE_MODE = false;
     parent = new Component();
     shownNote.parentComponent = parent;
@@ -62,7 +81,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    appContext.tabManager = realTabManager;
+    window.IntersectionObserver = realIntersectionObserver;
     render(null, container);
     container.remove();
 });
@@ -74,15 +93,16 @@ describe("SearchResult", () => {
             id: "searchNote",
             title: "Search",
             type: "search",
+            "#viewType": "searchPreview",
             children: [
                 { id: "resultA", title: "A" },
                 { id: "resultB", title: "B" }
             ]
         });
         searchNote.searchResultsLoaded = true;
-        // `useNoteViewType()` reads the shown note, so only a note in list view reaches the card list;
-        // a note in the default grid view mounts `SearchNoteList`, which fetches no details.
-        const resultNote = buildNote({ id: "listNote", title: "List", "#viewType": "list" });
+        // `useNoteViewType()` reads the shown note. The search preview applies only to search notes,
+        // so another note type falls back to its default view and fetches no result details.
+        const resultNote = buildNote({ id: "previewNote", title: "Preview", "#viewType": "searchPreview" });
 
         shownNote.current = searchNote;
         await mount();
@@ -93,7 +113,7 @@ describe("SearchResult", () => {
             shownNote.current = resultNote;
             shownNote.notify();
         });
-        expect(post).not.toHaveBeenCalledWith("search-note/listNote/result-details", expect.anything());
+        expect(post).not.toHaveBeenCalledWith("search-note/previewNote/result-details", expect.anything());
         expect(container.querySelector(".search-results-list")).toBeNull();
     });
 
@@ -119,7 +139,7 @@ describe("SearchResult", () => {
     });
 
     it("shows the results of a saved search loaded elsewhere, such as by expanding it in the tree", async () => {
-        const savedSearch = buildNote({ id: "treeSearch", title: "Tree search", type: "search", "#searchString": "#book" });
+        const savedSearch = buildNote({ id: "treeSearch", title: "Tree search", type: "search", "#searchString": "#book", "#viewType": "searchPreview" });
         const result = buildNote({ id: "treeResult", title: "Result" });
         vi.spyOn(server, "get").mockResolvedValue({ searchResultNoteIds: [ result.noteId ], highlightedTokens: [], error: null });
         vi.spyOn(appContext, "triggerEvent").mockImplementation(async (name, data) => parent.handleEvent(name, data));
@@ -150,7 +170,7 @@ describe("SearchResult", () => {
 });
 
 describe("running a saved search when it is shown", () => {
-    it("runs a search shown in the active tab and shows progress until it answers", async () => {
+    it("runs a shown search and shows progress until it answers", async () => {
         const savedSearch = searchNote("autoSearch", "#book");
         const result = buildNote({ id: "autoResult", title: "Auto result" });
         let answer: (value: unknown) => void = () => {};
@@ -219,22 +239,6 @@ describe("running a saved search when it is shown", () => {
         expect(container.querySelector("button")).not.toBeNull();
     });
 
-    it("waits for a background tab to be shown before running its saved search", async () => {
-        const savedSearch = searchNote("backgroundSearch", "#book");
-        const loadSearchNote = vi.spyOn(froca, "loadSearchNote").mockResolvedValue(undefined);
-        shownTab.activeMainNtxId = "otherTab";
-
-        shownNote.current = savedSearch;
-        await mount();
-        expect(loadSearchNote).not.toHaveBeenCalled();
-
-        await settle(() => {
-            shownTab.activeMainNtxId = "ntx1";
-            void parent.handleEvent("activeNoteChanged", { ntxId: "ntx1" });
-        });
-        expect(loadSearchNote).toHaveBeenCalledExactlyOnceWith("backgroundSearch");
-    });
-
     it("leaves the search to \"Search now\" in safe mode and after a failed request", async () => {
         const safeSearch = searchNote("safeSearch", "#book");
         const loadSearchNote = vi.spyOn(froca, "loadSearchNote")
@@ -271,7 +275,7 @@ describe("running a saved search when it is shown", () => {
 });
 
 function searchNote(id: string, searchString: string) {
-    return buildNote({ id, title: id, type: "search", "#searchString": searchString });
+    return buildNote({ id, title: id, type: "search", "#searchString": searchString, "#viewType": "searchPreview" });
 }
 
 async function mount() {
@@ -288,11 +292,15 @@ function clickSearchNow() {
 
 async function settle(change: () => void) {
     await act(change);
+    // The list observes its widget after 10 ms; wait for that before flushing the layers it mounts.
+    await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    });
     // Each pass flushes the effects of the re-render the previous one scheduled (`useNoteIds`
-    // loading, `refresh()` updating the state, the details fetch).
-    for (let pass = 0; pass < 3; pass++) {
+    // loading, `refresh()` updating the state, the details fetch, the lazily loaded view).
+    for (let pass = 0; pass < 8; pass++) {
         await act(async () => {
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            await new Promise((resolve) => setTimeout(resolve, 10));
         });
     }
 }

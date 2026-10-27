@@ -1,4 +1,4 @@
-import { Dispatch, StateUpdater, useMemo, useRef, useState } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import { LaunchBarDropdownButton, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 import { Dayjs, dayjs } from "@triliumnext/commons";
@@ -15,7 +15,7 @@ import date_notes from "../../services/date_notes";
 import search from "../../services/search";
 import server from "../../services/server";
 
-const MONTHS = [
+export const MONTHS = [
     t("calendar.january"),
     t("calendar.february"),
     t("calendar.march"),
@@ -113,7 +113,7 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
 
 interface CalendarHeaderProps {
     date: Dayjs;
-    setDate: Dispatch<StateUpdater<Dayjs | undefined>>;
+    setDate(date: Dayjs): void;
 }
 
 function CalendarHeader(props: CalendarHeaderProps) {
@@ -167,7 +167,7 @@ function CalendarYearSelector({ date, setDate }: CalendarHeaderProps) {
     )
 }
 
-function AdjustDateButton({ date, setDate, unit, direction }: CalendarHeaderProps & {
+export function AdjustDateButton({ date, setDate, unit, direction }: CalendarHeaderProps & {
     direction: "prev" | "next",
     unit: "month" | "year"
 }) {

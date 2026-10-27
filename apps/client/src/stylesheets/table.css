@@ -1,32 +1,39 @@
 .tabulator {
     --table-background-color: var(--main-background-color);
+    --table-tint-color: var(--main-text-color);
+    --table-radius: 6px;
 
-    --col-header-background-color: var(--main-background-color);
-    --col-header-hover-background-color: var(--accented-background-color);
-    --col-header-text-color: var(--main-text-color);
+    --col-header-background-color: var(--table-background-color);
+    --col-header-hover-background-color: color-mix(in srgb, var(--table-tint-color) 6%, var(--table-background-color));
+    --col-header-text-color: var(--muted-text-color);
+    --col-header-font-size: 0.9em;
+    --col-header-font-weight: 500;
     --col-header-arrow-active-color: var(--main-text-color);
-    --col-header-arrow-inactive-color: var(--more-accented-background-color);
-    --col-header-separator-border: none;
-    --col-header-bottom-border: 2px solid var(--main-border-color);
+    --col-header-arrow-inactive-color: color-mix(in srgb, var(--table-tint-color) 25%, transparent);
+    --col-header-bottom-border: 1px solid var(--main-border-color);
 
-    --row-background-color: var(--main-background-color);
-    --row-alternate-background-color: var(--main-background-color);
-    --row-moving-background-color: var(--accented-background-color);
+    --row-background-color: var(--table-background-color);
+    --row-placeholder-background-color: color-mix(in srgb, var(--table-tint-color) 4%, var(--table-background-color));
+    --row-moving-background-color: color-mix(in srgb, var(--table-tint-color) 6%, var(--table-background-color));
+    --row-moving-shadow: 0 4px 12px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
     --row-text-color: var(--main-text-color);
-    --row-delimiter-color: var(--more-accented-background-color);
+    --row-delimiter-color: color-mix(in srgb, var(--table-tint-color) 9%, transparent);
+    --row-number-text-color: var(--muted-text-color);
 
     --cell-horiz-padding-size: 8px;
     --cell-vert-padding-size: 8px;
 
-    --cell-editable-hover-outline-color: var(--main-border-color);
-    --cell-read-only-text-color: var(--muted-text-color);
+    --cell-editing-ring-color: var(--input-focus-outline-color, color-mix(in srgb, var(--table-tint-color) 40%, transparent));
+    --cell-editing-ring-width: 2px;
+    --cell-editing-background-color: var(--input-focus-background, var(--table-background-color));
+    --cell-editing-text-color: var(--input-text-color, var(--main-text-color));
 
-    --cell-editing-border-color: var(--main-border-color);
-    --cell-editing-border-width: 2px;
-    --cell-editing-background-color: var(
-        --ck-color-table-focused-cell-background, hsla(212, 90%, 80%, .3)
-    );
-    --cell-editing-text-color: initial;
+    --range-background-color: var(--selection-background-color);
+    --range-border-color: color-mix(in srgb, var(--selection-background-color) 60%, var(--table-tint-color));
+    --range-header-background-color: color-mix(in srgb, var(--table-tint-color) 8%, var(--table-background-color));
+
+    --field-background-color: color-mix(in srgb, var(--table-tint-color) 6%, transparent);
+    --field-hover-background-color: color-mix(in srgb, var(--table-tint-color) 10%, transparent);
 
     background: unset;
     border: unset;
@@ -42,93 +49,106 @@
     border-bottom: var(--col-header-bottom-border);
     background: var(--col-header-background-color);
     color: var(--col-header-text-color);
-    font-weight: normal;
+    font-size: var(--col-header-font-size);
+    font-weight: var(--col-header-font-weight);
+
+    .tabulator-col {
+        background: var(--col-header-background-color);
+        border-inline-end: none;
+        transition: background-color 100ms linear;
+    }
 
     .tabulator-col.tabulator-range-highlight {
-        background: inherit;
-        color: inherit;
-        font-weight: bold;
+        background: var(--range-header-background-color);
+        color: var(--main-text-color);
+    }
+
+    .tabulator-col.tabulator-range-selected {
+        background: var(--range-background-color);
+        color: var(--main-text-color);
     }
 
     .tabulator-col-content {
         padding: 0 !important;
 
         .tabulator-col-title-holder {
-            padding: 8px 4px;
+            padding: var(--cell-vert-padding-size) var(--cell-horiz-padding-size);
         }
 
-        &:has(.tabulator-header-filter) {
-            .tabulator-col-title-holder {
-                padding: 4px;
-                padding-bottom: 0;
-            }
+        &:has(.tabulator-header-filter) .tabulator-col-title-holder {
+            padding-bottom: 4px;
         }
 
         .tabulator-header-filter {
-            background: var(--main-background-color);
-            padding: 2px 1px;
+            margin: 0;
+            padding: 0 4px 6px;
 
             input {
-                background: var(--main-background-color);
+                width: 100%;
+                padding: 2px 6px;
+                border: 0;
+                border-radius: var(--table-radius);
+                outline: 2px solid transparent;
+                background: var(--field-background-color);
                 color: var(--main-text-color);
-                border: 1px solid var(--button-border-color);
-                border-radius: 3px;
-                outline: none;
-                padding: 2px;
+                font-weight: normal;
+                transition: background-color 100ms linear, outline-color 100ms linear;
+
+                &:hover {
+                    background: var(--field-hover-background-color);
+                }
+
+                &:focus {
+                    outline-color: var(--cell-editing-ring-color);
+                    background: var(--cell-editing-background-color);
+                }
             }
         }
     }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
-    background-color: var(--col-header-hover-background-color);
-  }
-}
-
 .tabulator div.tabulator-header .tabulator-col.tabulator-moving {
     border: none;
     background: var(--col-header-hover-background-color);
+    box-shadow: var(--row-moving-shadow);
 }
 
 .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
     border-bottom-color: var(--col-header-arrow-active-color);
     border-top-color: var(--col-header-arrow-active-color);
+    transition: opacity 100ms linear;
 }
 
 .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="none"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
     border-bottom-color: var(--col-header-arrow-inactive-color);
 }
 
-.tabulator div.tabulator-header .tabulator-frozen.tabulator-frozen-left {
-    margin-inline-start: var(--cell-editing-border-width);
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable.table-right-aligned-column {
+    .tabulator-col-title {
+        padding-right: 0;
+        padding-left: 25px;
+    }
+
+    .tabulator-col-sorter {
+        right: auto;
+        left: 4px;
+    }
 }
 
-.tabulator div.tabulator-header .tabulator-col,
-.tabulator div.tabulator-header .tabulator-frozen.tabulator-frozen-left {
-    background: var(--col-header-background-color);
-    border-inline-end: var(--col-header-separator-border);
-}
+@media (hover: hover) and (pointer: fine) {
+    .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+        background-color: var(--col-header-hover-background-color);
+    }
 
-/* Table body */
-
-.tabulator-tableholder {
-    padding-top: 10px;
+    .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="none"]:not(:hover) .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
+        opacity: 0;
+    }
 }
 
 /* Rows */
 
-.tabulator-row .tabulator-cell {
-    padding: var(--cell-vert-padding-size) var(--cell-horiz-padding-size);
-}
-
-.tabulator-row .tabulator-cell input:not([type="color"]) {
-    padding-inline-start: var(--cell-horiz-padding-size) !important;
-    padding-inline-end: var(--cell-horiz-padding-size) !important;
-}
-
 .tabulator-row {
-    background: transparent;
+    background: var(--row-background-color);
     border-top: none;
     border-bottom: 1px solid var(--row-delimiter-color);
     color: var(--row-text-color);
@@ -136,46 +156,82 @@
     &:last-of-type {
         border-bottom: none;
     }
+}
 
-    &.tabulator-range-highlight > .tabulator-cell.tabulator-frozen {
-        font-weight: bold;
+.tabulator-row.tabulator-row-odd,
+.tabulator-row.tabulator-row-even {
+    background-color: var(--row-background-color);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .tabulator .tabulator-row.tabulator-selectable:hover {
+        background-color: var(--row-background-color);
+        cursor: default;
     }
 }
 
-.tabulator-row.tabulator-row-odd {
-    background: var(--row-background-color);
-}
-
-.tabulator-row.tabulator-row-even {
-    background: var(--row-alternate-background-color);
+.tabulator .tabulator-row.tabulator-selected {
+    background-color: var(--range-header-background-color);
 }
 
 .tabulator-row.tabulator-moving {
     border-color: transparent;
     background-color: var(--row-moving-background-color);
+    box-shadow: var(--row-moving-shadow);
 }
 
-/* Cell */
-
-.tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-    margin-inline-end: var(--cell-editing-border-width);
+.tabulator .tabulator-row.tabulator-row-placeholder {
+    background: var(--row-placeholder-background-color);
 }
+
+/* Cells */
 
 .tabulator-row .tabulator-cell {
+    padding: var(--cell-vert-padding-size) var(--cell-horiz-padding-size);
     border-inline-end-color: transparent;
 }
 
+.tabulator-row .tabulator-cell input:not([type="color"]) {
+    padding-inline-start: var(--cell-horiz-padding-size) !important;
+    padding-inline-end: var(--cell-horiz-padding-size) !important;
+}
+
+.tabulator div.tabulator-header .tabulator-frozen.tabulator-frozen-left,
 .tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-    border-inline-end-color: var(--main-border-color);
+    border-inline-end: 1px solid var(--row-delimiter-color);
 }
 
-.tabulator-row .tabulator-cell:not(.tabulator-editable) {
-    color: var(--cell-read-only-text-color);
+.tabulator-row .tabulator-cell.table-row-number {
+    color: var(--row-number-text-color);
+    font-variant-numeric: tabular-nums;
 }
 
-.tabulator:not(.tabulator-editing) .tabulator-row .tabulator-cell.tabulator-editable:hover {
-    outline: 2px solid var(--cell-editable-hover-outline-color);
-    outline-offset: -1px;
+.tabulator-row.tabulator-range-highlight > .tabulator-cell.tabulator-frozen {
+    background: var(--range-header-background-color);
+    color: var(--main-text-color);
+}
+
+.tabulator .tabulator-row .tabulator-cell.tabulator-range-selected:not(.tabulator-range-only-cell-selected):not(.tabulator-range-row-header) {
+    background-color: var(--range-background-color);
+}
+
+.tabulator .tabulator-tableholder .tabulator-range-overlay {
+    .tabulator-range {
+        border-color: var(--range-border-color);
+    }
+
+    .tabulator-range-cell-active {
+        border-color: var(--range-border-color);
+        border-radius: 2px;
+    }
+}
+
+.tabulator .tabulator-range-fill-handle {
+    background-color: var(--range-border-color);
+}
+
+.tabulator:not(.tabulator-editing) .tabulator-row .tabulator-cell.tabulator-editable {
+    cursor: pointer;
 }
 
 .tabulator-row .tabulator-cell.tabulator-editing {
@@ -183,8 +239,9 @@
 }
 
 .tabulator-row:not(.tabulator-moving) .tabulator-cell.tabulator-editing {
-    outline: calc(var(--cell-editing-border-width) - 1px) solid var(--cell-editing-border-color);
-    border-color: var(--cell-editing-border-color);
+    outline: var(--cell-editing-ring-width) solid var(--cell-editing-ring-color);
+    outline-offset: calc(-1 * var(--cell-editing-ring-width));
+    border-radius: var(--table-radius);
     background: var(--cell-editing-background-color);
 }
 
@@ -194,7 +251,7 @@
 
 .tabulator .tree-collapse,
 .tabulator .tree-expand {
-    color: var(--row-text-color);
+    color: var(--muted-text-color);
 }
 
 /* Align items without children/expander to the ones with. */
@@ -222,7 +279,7 @@
 
 .tabulator-popup-container {
     min-width: 10em;
-    border-radius: var(--bs-border-radius);
+    border-radius: var(--dropdown-border-radius, var(--bs-border-radius));
 }
 
 .tabulator-menu .tabulator-menu-item {
@@ -232,27 +289,55 @@
 }
 
 /* Footer */
+
 :root .tabulator .tabulator-footer {
     background: transparent;
-    color: var(--main-text-color);
+    color: var(--muted-text-color);
     border-top: 1px solid var(--main-border-color);
     padding: 10px 0;
+    font-weight: normal;
+
+    .tabulator-paginator {
+        color: inherit;
+    }
+
+    .tabulator-page-counter {
+        font-variant-numeric: tabular-nums;
+    }
 
     .tabulator-page {
-        background: var(--button-background-color);
-        color: var(--button-text-color);
-        border: 1px solid var(--button-border-color);
-        border-radius: var(--button-border-radius);
+        margin: 0 1px;
+        padding: 2px 8px;
+        border: 0;
+        border-radius: var(--table-radius);
+        background: transparent;
+        color: var(--main-text-color);
+        font-variant-numeric: tabular-nums;
+        transition: background-color 100ms linear;
 
-        &:hover {
-            border-color: var(--hover-item-border-color);
-            color: var(--button-text-color);
+        &.active {
+            background: var(--field-hover-background-color);
+            color: var(--main-text-color);
+            font-weight: 600;
+        }
+
+        &:disabled {
+            opacity: 0.4;
         }
     }
 
-    select {
-        background: var(--button-background-color);
-        color: var(--input-text-color);
-        border: 1px solid var(--button-border-color);
+    select.tabulator-page-size {
+        padding: 2px 6px;
+        border: 0;
+        border-radius: var(--table-radius);
+        background-color: var(--field-background-color);
+        color: var(--main-text-color);
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    :root .tabulator .tabulator-footer .tabulator-page:not(:disabled):hover {
+        background: var(--field-hover-background-color);
+        color: var(--main-text-color);
     }
 }

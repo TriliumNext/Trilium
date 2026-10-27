@@ -44,6 +44,16 @@ span.fancytree-node.fancytree-hide {
     color: var(--custom-color, inherit);
 }
 
+.tree-wrapper.dense {
+    .fancytree-node {
+        height: calc(1lh + 6px);
+    }
+
+    .tn-icon.tree-item-button {
+        font-size: 1em;
+    }
+}
+
 .fancytree-node:not(.fancytree-loading) .fancytree-expander {
     background: none;
     height: auto;
@@ -159,6 +169,11 @@ ul.fancytree-container {
 /* Protected note icon badge */
 span.fancytree-node.protected > span.fancytree-custom-icon {
     filter: drop-shadow(2px 2px 2px var(--main-text-color));
+}
+
+.fancytree-title .protected-title {
+    font-style: italic;
+    opacity: .75;
 }
 
 /* Note indicator icons (clone, shared) - real DOM elements for tooltip support */

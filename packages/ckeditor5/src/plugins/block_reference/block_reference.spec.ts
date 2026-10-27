@@ -6,7 +6,6 @@ import {
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import BlockDragHandle from "../block_drag_handle.js";
 import Multicolumn from "../multicolumn/multicolumn.js";
 import BlockReference from "./block_reference.js";
@@ -305,9 +304,10 @@ describe("BlockReference", () => {
 
     describe("block handle menu", () => {
         it("asks the host to open the menu for the selected blocks", async () => {
-            const openBlockHandleMenu = vi.fn();
-            installGlobMock({ getComponentByEl: () => ({ openBlockHandleMenu }) });
-            const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ]);
+            const openHandleMenu = vi.fn();
+            const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
+                blockReference: { openHandleMenu }
+            });
             setModelData(editor.model, "<paragraph>[one</paragraph><paragraph>two]</paragraph>");
             const handle = getHandle(editor.plugins.get(BlockDragHandle).buttonView?.element);
 
@@ -321,25 +321,36 @@ describe("BlockReference", () => {
             expect(rightDown.defaultPrevented).toBe(true);
             expect(leftDown.defaultPrevented).toBe(false);
             expect(contextMenu.defaultPrevented).toBe(true);
-            expect(openBlockHandleMenu).toHaveBeenCalledWith(contextMenu, 2);
+            expect(openHandleMenu).toHaveBeenCalledWith(contextMenu, 2);
 
             editor.enableReadOnlyMode("spec");
             handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
-            expect(openBlockHandleMenu).toHaveBeenCalledTimes(1);
+            expect(openHandleMenu).toHaveBeenCalledTimes(1);
         });
 
         it("uses the button of the block toolbar in the floating toolbar editor", async () => {
-            const openBlockHandleMenu = vi.fn();
-            installGlobMock({ getComponentByEl: () => ({ openBlockHandleMenu }) });
+            const openHandleMenu = vi.fn();
             const editor = await createTestEditorOf(BalloonEditor, [ ...PLUGINS, BlockToolbar ], {
-                blockToolbar: [ "heading" ]
+                blockToolbar: [ "heading" ],
+                blockReference: { openHandleMenu }
             });
             setModelData(editor.model, "<paragraph>[]one</paragraph>");
 
             getHandle(editor.plugins.get(BlockToolbar).buttonView.element)
                 .dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
 
-            expect(openBlockHandleMenu).toHaveBeenCalledWith(expect.any(MouseEvent), 1);
+            expect(openHandleMenu).toHaveBeenCalledWith(expect.any(MouseEvent), 1);
+        });
+
+        it("keeps the browser menu away without a host for the menu", async () => {
+            const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ]);
+            setModelData(editor.model, "<paragraph>[one]</paragraph>");
+            const handle = getHandle(editor.plugins.get(BlockDragHandle).buttonView?.element);
+
+            const contextMenu = new MouseEvent("contextmenu", { cancelable: true });
+            handle.dispatchEvent(contextMenu);
+
+            expect(contextMenu.defaultPrevented).toBe(true);
         });
 
         it("does nothing in an editor without a block handle", async () => {

@@ -1,6 +1,6 @@
 import "./AttributeEditor.css";
 
-import type { AttributeEditor as CKEditorAttributeEditor, ModelElement, ModelNode, ModelPosition, MentionHostedFeed } from "@triliumnext/ckeditor5";
+import type { AttributeEditor as CKEditorAttributeEditor, EditorConfig, ModelElement, ModelNode, ModelPosition, MentionHostedFeed } from "@triliumnext/ckeditor5";
 import { AttributeType } from "@triliumnext/commons";
 import clsx from "clsx";
 import { createPortal, RefObject } from "preact";
@@ -10,6 +10,7 @@ import type { CommandData, FilteredCommandNames } from "../../components/app_con
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
+import { getPreprocessedData } from "../../services/attribute_clipboard";
 import attribute_parser, { Attribute } from "../../services/attribute_parser";
 import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
@@ -21,7 +22,7 @@ import { isIMEComposing } from "../../services/shortcuts";
 import { escapeQuotes, getErrorMessage } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import CKEditor, { CKEditorApi } from "../react/CKEditor";
-import { useLegacyImperativeHandlers, useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import { useLegacyWidget, useTriliumEvent } from "../react/hooks";
 import { createAutocompleteMentionList, createNoteMentionList } from "../type_widgets/text/mention_list_view";
 import AttributeDetailWidget, { AttributeNameSuggestion, fetchAttributeNames } from "./attribute_detail";
 
@@ -200,17 +201,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
         }
     });
 
-    // Interaction with CKEditor.
-    useLegacyImperativeHandlers(useMemo(() => ({
-        loadReferenceLinkTitle: async ($el: JQuery<HTMLElement>, href: string) => {
-            const { noteId } = link.parseNavigationStateFromUrl(href);
-            const note = noteId ? await froca.getNote(noteId, true) : null;
-            const title = note ? note.title : "[missing]";
-
-            $el.text(title);
-        }
-    }), []));
-
     // Keyboard shortcuts
     useTriliumEvent("addNewLabel", ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;
@@ -253,13 +243,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                         tabIndex={200}
                         editor={editorClass}
                         currentValue={currentValue}
-                        config={{
-                            toolbar: { items: [] },
-                            placeholder: t("attribute_editor.placeholder"),
-                            mention: { feeds: [], hostedFeeds: hostedMentions },
-                            licenseKey: "GPL",
-                            language: "en"
-                        }}
+                        config={buildAttributeEditorConfig(hostedMentions)}
                         onChange={(currentValue) => {
                             currentValueRef.current = currentValue ?? "";
 
@@ -379,6 +363,29 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
     );
 }
 
+/** The config of the attribute editor, which completes what is typed from `hostedMentions`. */
+export function buildAttributeEditorConfig(hostedMentions: MentionHostedFeed[]): EditorConfig {
+    return {
+        toolbar: { items: [] },
+        placeholder: t("attribute_editor.placeholder"),
+        mention: { feeds: [], hostedFeeds: hostedMentions },
+        referenceLink: {
+            getTitle: link.getReferenceLinkTitle,
+            getTitleSync: link.getReferenceLinkTitleSync,
+            renderTitle: renderReferenceTitle
+        },
+        licenseKey: "GPL",
+        language: "en"
+    };
+}
+
+/** Fills `element` with the title of the note a relation's reference link points to. */
+async function renderReferenceTitle(element: HTMLElement, href: string) {
+    const { noteId } = link.parseNavigationStateFromUrl(href);
+    const note = noteId ? await froca.getNote(noteId, true) : null;
+    element.textContent = note ? note.title : "[missing]";
+}
+
 /**
  * Completes the name typed after `marker` as the attributes panel's name box completes it, from the
  * same names drawn the same way, and inserts the name picked behind the marker.
@@ -412,15 +419,6 @@ function attributeNameMention(marker: "#" | "~", type: "label" | "relation"): Me
             toMention: (name) => ({ id: `${marker}${name}` })
         })
     };
-}
-
-/** The attributes as plain text: reference links back down to their note path, entities resolved. */
-export function getPreprocessedData(currentValue: string) {
-    const str = currentValue
-        .replace(/<a[^>]+href="(#[A-Za-z0-9_/]*)"[^>]*>[^<]*<\/a>/g, "$1")
-        .replace(/&nbsp;/g, " "); // otherwise .text() below outputs non-breaking space in unicode
-
-    return $("<div>").html(str).text();
 }
 
 /**

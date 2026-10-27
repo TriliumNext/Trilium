@@ -1,11 +1,10 @@
 import {
-    ClassicEditor, DropdownView, Essentials, LinkEditing, Paragraph, Widget,
+    ClassicEditor, DropdownButtonView, DropdownView, Essentials, LinkEditing, Paragraph, Widget,
     _setModelData as setModelData
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import ReferenceLink from "../referencelink.js";
 import ContentEmbed from "./content_embed.js";
 import ContentEmbedBoxSizeDropdown from "./content_embed_box_size_dropdown.js";
@@ -32,6 +31,7 @@ interface Tool {
     group?: string;
     keystroke?: string;
     children?: Tool[];
+    opensMenu?: boolean;
     class?: string;
 }
 
@@ -56,14 +56,10 @@ describe("ContentEmbedTools", () => {
     beforeEach(async () => {
         provider = createProvider([ SELECTION, RECTANGLE ]);
         getContentEmbedTools = vi.fn(() => provider);
-        installGlobMock({
-            getComponentByEl: () => ({ loadEmbeddedNote: vi.fn(), getContentEmbedTools })
-        });
-
         editor = await createTestEditor([
             Essentials, Paragraph, Widget, LinkEditing, ReferenceLink, ContentEmbed,
             ContentEmbedBoxSizeDropdown, ContentEmbedTools
-        ]);
+        ], { contentEmbed: { getTools: getContentEmbedTools } });
     });
 
     afterEach(() => {
@@ -153,6 +149,21 @@ describe("ContentEmbedTools", () => {
         expect(getButtons(tools)[2]?.element?.classList.contains("undo")).toBe(true);
     });
 
+    it("separates the tools from the Editable toggle and the display modes before them", () => {
+        const tools = createView();
+        provider = { ...provider, hasEditableFlag: true };
+        selectEmbed();
+        expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
+
+        provider = { ...provider, hasEditableFlag: false, hasDisplayModes: true };
+        editor.ui.update();
+        expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
+
+        provider = { ...provider, hasDisplayModes: false };
+        editor.ui.update();
+        expect(getItems(tools)).toEqual([ "1", "2" ]);
+    });
+
     it("shows the children of a tool in a menu, without taking the focus", () => {
         const tools = createView();
         selectEmbed();
@@ -235,18 +246,40 @@ describe("ContentEmbedTools", () => {
         expect(provider.execute).toHaveBeenCalledWith("help");
     });
 
+    it("has the content open its own menu below a button with the arrow of a dropdown", () => {
+        const tools = createView();
+        selectEmbed();
+        provider.change([
+            { id: "language", label: "Language", text: "JavaScript", opensMenu: true, group: "a" },
+            { id: "width", label: "Width", text: "Spaces: 4", opensMenu: true, isOn: true, group: "a" }
+        ]);
+        const [ language, width ] = getButtons(tools);
+        expect(language).toBeInstanceOf(DropdownButtonView);
+        expect(getItems(tools)).toEqual([ "JavaScript", "Spaces: 4" ]);
+        expect(getButtonStates(tools)).toEqual([
+            [ "JavaScript", true, undefined, "Language", "Language", false, false, true ],
+            [ "Spaces: 4", true, undefined, "Width", "Width", false, true, true ]
+        ]);
+        expect(language?.element?.parentElement?.className).toBe("ck ck-dropdown");
+        expect(language?.element?.classList.contains("ck-dropdown__button")).toBe(true);
+        expect(width?.element?.getAttribute("aria-expanded")).toBe("true");
+
+        const mousedown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        language?.element?.dispatchEvent(mousedown);
+        language?.element?.click();
+        expect(mousedown.defaultPrevented).toBe(true);
+        expect(provider.openMenu).toHaveBeenCalledExactlyOnceWith("language", language?.element);
+        expect(provider.execute).not.toHaveBeenCalled();
+    });
+
     it("shows no tools for content without any, or for a host that offers none", () => {
         const tools = createView();
         getContentEmbedTools.mockReturnValue(null);
         selectEmbed();
         expect(tools.isVisible).toBe(false);
 
-        installGlobMock({ getComponentByEl: () => ({ loadEmbeddedNote: vi.fn() }) });
+        editor.config.set("contentEmbed", { getTools: undefined });
         selectEmbed();
-        expect(tools.isVisible).toBe(false);
-
-        installGlobMock({ getComponentByEl: () => undefined });
-        editor.ui.update();
         expect(tools.isVisible).toBe(false);
     });
 
@@ -355,6 +388,7 @@ function createProvider(initialTools: Tool[], hiddenToolbarItems?: string[]) {
         hiddenToolbarItems,
         getTools: () => tools,
         execute: vi.fn(),
+        openMenu: vi.fn(),
         subscribe: vi.fn((callback: () => void) => {
             listener = callback;
             return unsubscribe;

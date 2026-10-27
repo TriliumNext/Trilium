@@ -45,12 +45,8 @@ export default class CutToNotePlugin extends Plugin {
 				tooltip: true
 			} );
 
-			// Callback executed once the image is clicked.
 			view.on('execute', () => {
-				const editorEl = this.editor.editing.view.getDomRoot();
-				const component = glob.getComponentByEl(editorEl);
-
-				component.triggerCommand('cutIntoNote');
+				this.editor.config.get('cutToNote')?.cut();
 			});
 
 			return view;
@@ -185,14 +181,17 @@ export default class CutToNotePlugin extends Plugin {
 		model.deleteContent(model.document.selection);
 		this.editor.execute("paragraph");
 
-		const component = this.getComponent();
-
-		await component.triggerCommand('saveNoteDetailNow');
+		await this.editor.config.get('cutToNote')?.saveNow();
 	}
+}
 
-	getComponent() {
-		const editorEl = this.editor.editing.view.getDomRoot();
-
-		return glob.getComponentByEl( editorEl );
+declare module 'ckeditor5' {
+	interface EditorConfig {
+		cutToNote?: {
+			/** Moves the selection into a new child note of the note the editor holds. */
+			cut(): void;
+			/** Saves the note now, once the selection is removed, rather than after the usual delay. */
+			saveNow(): Promise<void>;
+		};
 	}
 }

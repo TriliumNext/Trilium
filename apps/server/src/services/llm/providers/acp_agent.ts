@@ -24,6 +24,7 @@ import { getLog } from "@triliumnext/core";
 import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
 import { buildSystemPrompt } from "@triliumnext/core/src/services/llm/system_prompt.js";
+import type { ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "@triliumnext/core/src/services/llm/types.js";
 import { encodeBase64 } from "@triliumnext/core/src/services/utils/binary.js";
 import fs from "fs";
@@ -33,7 +34,7 @@ import dataDirs from "../../data_dir.js";
 import { AcpClient, AcpError } from "./acp_client.js";
 import { AcpClientPool, type AcpLease, type AcpPoolConnection } from "./acp_client_pool.js";
 import { getAcpMcpEndpointUrl } from "./acp_mcp_endpoint.js";
-import { buildHistoryReplay, hashTranscript } from "./transcript.js";
+import { buildHistoryReplay, buildTitlePrompt, cleanTitle, hashTranscript, MAX_TITLES_PER_SESSION } from "./transcript.js";
 
 /** How an ACP provider starts its agent subprocess. */
 export interface AcpLaunchSpec {
@@ -139,13 +140,6 @@ const PROMPT_TIMEOUT_MS = 15 * 60_000;
 
 /** Session mappings kept per chat note; bounded to avoid unbounded growth. */
 const MAX_TRACKED_SESSIONS = 200;
-
-/**
- * Titles one session answers before it is replaced. Titles share a session to
- * skip `session/new` (~2.5 s on Antigravity, which also keeps every session on
- * disk); the cap bounds the history each title prompt carries.
- */
-export const MAX_TITLES_PER_SESSION = 20;
 
 /** The name the loopback MCP server is registered under in `session/new`. */
 export const NOTE_TOOLS_MCP_SERVER_NAME = "trilium";
@@ -264,15 +258,23 @@ export abstract class AcpAgentProvider implements LlmProvider {
      * Permission policy. The default denies every request; a subclass whose
      * agent asks before running Trilium's own note tools approves those.
      * `config` is the chat turn's configuration, and absent outside a chat
-     * turn (the model probe, the title). `mcpServerOf` names the MCP server of
-     * a tool call the agent announced before asking about it.
+     * turn (the model probe, the title). `mcpCalls` holds the MCP tool calls the
+     * agent announced before asking about them.
      */
     protected decidePermission(
         request: AcpPermissionRequest,
         _config?: LlmProviderConfig,
-        _mcpServerOf?: (toolCallId: string | undefined) => string | undefined
+        _mcpCalls?: AnnouncedMcpCalls
     ): AcpPermissionOutcome | Promise<AcpPermissionOutcome> {
         return denyPermission(request, this.logLabel);
+    }
+
+    /**
+     * A line the system prompt of a chat with note access gains, for how this agent reaches
+     * Trilium's note tools. None by default.
+     */
+    protected noteToolsHint(): string | undefined {
+        return undefined;
     }
 
     /**
@@ -558,7 +560,13 @@ export abstract class AcpAgentProvider implements LlmProvider {
             const hasAttachments = Array.isArray(lastMessage.content) && lastMessage.content.some(p => p.type !== "text");
             const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments) : null;
             const prefix = [
-                isFreshSession ? wrapSystemInstructions(composeSystemPrompt(messages, { ...config, enableNoteTools: noteToolsEnabled })) : null,
+                isFreshSession
+                    ? wrapSystemInstructions(composeSystemPrompt(
+                        messages,
+                        { ...config, enableNoteTools: noteToolsEnabled },
+                        noteToolsEnabled ? this.noteToolsHint() : undefined
+                    ))
+                    : null,
                 (isFreshSession && history.length > 0) ? buildHistoryReplay(history) : null,
                 noteHint
             ].filter((s): s is string => Boolean(s)).join("\n\n");
@@ -684,17 +692,12 @@ export abstract class AcpAgentProvider implements LlmProvider {
                 "session/prompt",
                 {
                     sessionId,
-                    prompt: [{
-                        type: "text",
-                        text: `Generate a short title (at most 5 words) summarizing the chat message below. It is a new request: earlier messages in this conversation do not apply. Reply with only the title, no quotes or punctuation around it:
-
-${firstMessage.substring(0, 500)}`
-                    }]
+                    prompt: [{ type: "text", text: buildTitlePrompt(firstMessage) }]
                 },
                 SESSION_TIMEOUT_MS
             );
             answered = true;
-            return title.trim().replace(/^["']|["']$/g, "").substring(0, 100);
+            return cleanTitle(title);
         } catch (error) {
             getLog().error(`${this.logLabel} title generation failed: ${this.describeFailure(error)}`);
             return "";
@@ -779,21 +782,21 @@ ${firstMessage.substring(0, 500)}`
         } = {}
     ): Promise<AcpClient> {
         const launch = await this.launchSpec();
-        const mcpServers = new McpToolCallServers();
+        const mcpCalls = new AnnouncedMcpCalls();
         const client = (launch.worker ? AcpClient.startWorker : AcpClient.start)(launch.binary, {
             cwd: this.agentCwd(),
             shell: launch.shell,
             args: launch.args,
             env: launch.env,
             onNotification: (method, params) => {
-                mcpServers.observe(method, params);
+                mcpCalls.observe(method, params);
                 onNotification(method, params);
             },
             onAgentRequest: (method, params) => this.handleAgentRequest(
                 method,
                 params,
                 options.turnConfig?.((params as { sessionId?: string } | undefined)?.sessionId),
-                toolCallId => mcpServers.serverOf(toolCallId)
+                mcpCalls
             ),
             onExit: options.onExit
         });
@@ -827,10 +830,10 @@ ${firstMessage.substring(0, 500)}`
         method: string,
         params: unknown,
         config: LlmProviderConfig | undefined,
-        mcpServerOf: (toolCallId: string | undefined) => string | undefined
+        mcpCalls: AnnouncedMcpCalls
     ): unknown {
         if (method === "session/request_permission") {
-            return this.decidePermission(params as AcpPermissionRequest, config, mcpServerOf);
+            return this.decidePermission(params as AcpPermissionRequest, config, mcpCalls);
         }
         throw new Error(`Trilium does not support "${method}".`);
     }
@@ -872,6 +875,59 @@ ${firstMessage.substring(0, 500)}`
         }
         return state;
     }
+}
+
+/**
+ * Answer a permission request for a call to Trilium's note tools, which the request itself names,
+ * with the user's decision through the turn's `toolApprovals` (see {@link answerNoteToolCalls}).
+ */
+export function askNoteToolPermission(
+    request: AcpPermissionRequest,
+    logLabel: string,
+    toolApprovals: ToolApprovals | undefined
+): Promise<AcpPermissionOutcome> {
+    const toolCall = request.toolCall;
+    const tool = toolCall ? mcpToolCall(toolCall)?.tool : undefined;
+    const calls = toolCall?.toolCallId && tool
+        ? [ { toolCallId: toolCall.toolCallId, server: NOTE_TOOLS_MCP_SERVER_NAME, tool, input: mcpArguments(toolCall.rawInput) } ]
+        : [];
+    return answerNoteToolCalls(request, logLabel, calls, toolApprovals);
+}
+
+/**
+ * Answer a permission request about calls to Trilium's note tools with the user's decision through
+ * the turn's `toolApprovals`. The request is allowed once only when every call in `calls` is
+ * approved: an agent that cannot tell which of several waiting calls asks names none, and allowing
+ * it must not run a call the user declined. Each call is asked about once. A declined request is
+ * rejected once, so the agent asks again about the tool's next call. Without approvals (outside a
+ * chat turn) the request is allowed, as the API providers run tools unasked there.
+ */
+export async function answerNoteToolCalls(
+    request: AcpPermissionRequest,
+    logLabel: string,
+    calls: AnnouncedMcpCall[],
+    toolApprovals: ToolApprovals | undefined
+): Promise<AcpPermissionOutcome> {
+    const allowOnce = request.options?.find(o => o.kind === "allow_once");
+    if (!allowOnce || (toolApprovals && calls.length === 0)) {
+        return denyPermission(request, logLabel);
+    }
+
+    const decisions = toolApprovals
+        ? await Promise.all(calls.map(call => call.decision ??= toolApprovals.request({
+            toolCallId: call.toolCallId,
+            toolName: call.tool,
+            toolInput: call.input
+        })))
+        : [];
+    if (decisions.every(Boolean)) {
+        return { outcome: { outcome: "selected", optionId: allowOnce.optionId } };
+    }
+    getLog().info(`${logLabel}: the user declined the call to "${calls.map(call => call.tool).join("\", \"")}".`);
+    const rejectOnce = request.options?.find(o => o.kind === "reject_once");
+    return rejectOnce
+        ? { outcome: { outcome: "selected", optionId: rejectOnce.optionId } }
+        : { outcome: { outcome: "cancelled" } };
 }
 
 /**
@@ -1109,11 +1165,12 @@ async function buildMcpServersConfig(noteToolsEnabled: boolean): Promise<AcpMcpS
  * system-prompt parameter, so it is delivered as a `<system_instructions>`
  * block leading the first prompt of each session.
  */
-function composeSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig): string {
+function composeSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig, agentHint?: string): string {
     // buildSystemPrompt only returns undefined in its own documented-unreachable
     // no-parts case (the markdown hints are always appended).
     /* v8 ignore next */
-    return buildSystemPrompt(messages, config) ?? "";
+    const systemPrompt = buildSystemPrompt(messages, config) ?? "";
+    return agentHint ? `${systemPrompt}\n\n${agentHint}` : systemPrompt;
 }
 
 /** Wrap the Trilium system prompt for delivery inside the first user prompt. */
@@ -1134,7 +1191,7 @@ function wrapSystemInstructions(systemPrompt: string): string | null {
  * (`<server>_<tool>`, `mcp.<server>.<tool>`) matches none of the tool labels the
  * chat has.
  */
-function mcpToolCall(update: AcpToolCallUpdate): { server?: string; tool?: string } | undefined {
+function mcpToolCall(update: { _meta?: unknown; rawInput?: unknown }): { server?: string; tool?: string } | undefined {
     const meta = update._meta as { is_mcp_tool_call?: unknown; mcp?: { server?: unknown; tool?: unknown } } | undefined;
     if (meta?.is_mcp_tool_call !== true) {
         return undefined;
@@ -1144,35 +1201,78 @@ function mcpToolCall(update: AcpToolCallUpdate): { server?: string; tool?: strin
     return { server: pick(meta.mcp?.server, input?.server), tool: pick(meta.mcp?.tool, input?.tool) };
 }
 
+/** An MCP tool call an agent announced and has not finished. */
+export interface AnnouncedMcpCall {
+    toolCallId: string;
+    server: string;
+    tool: string;
+    input: Record<string, unknown>;
+    /** The user's decision, once asked, so a call is asked about once. */
+    decision?: Promise<boolean>;
+}
+
 /**
- * The MCP server of each tool call an agent announced and has not finished,
- * by call id. `codex-acp` asks permission for an MCP call with only its id, so
- * the permission policy looks the server up here.
+ * The tool calls an agent announced and has not finished, by session and call id. `codex-acp` asks
+ * permission for an MCP call with only its id, so the permission policy looks the call up here. One
+ * agent process serves the sessions of several chats, so every lookup is confined to one session.
  */
-class McpToolCallServers {
-    private readonly byToolCallId = new Map<string, string>();
+export class AnnouncedMcpCalls {
+    private readonly bySession = new Map<string, {
+        calls: Map<string, AnnouncedMcpCall>;
+        updates: Map<string, AcpToolCallUpdate>;
+    }>();
 
     observe(method: string, params: unknown): void {
-        const update = method === "session/update" ? (params as AcpSessionUpdate | undefined)?.update : undefined;
-        if (!update?.toolCallId) {
+        const { sessionId, update } = method === "session/update" ? (params as Partial<AcpSessionUpdate> | undefined) ?? {} : {};
+        if (!sessionId || !update?.toolCallId) {
             return;
         }
         if (update.sessionUpdate === "tool_call") {
-            const server = mcpToolCall(update)?.server;
-            if (server) {
-                this.byToolCallId.set(update.toolCallId, server);
+            let session = this.bySession.get(sessionId);
+            if (!session) {
+                session = { calls: new Map(), updates: new Map() };
+                this.bySession.set(sessionId, session);
+            }
+            session.updates.set(update.toolCallId, update);
+            const { server, tool } = mcpToolCall(update) ?? {};
+            if (server && tool) {
+                session.calls.set(update.toolCallId, { toolCallId: update.toolCallId, server, tool, input: mcpArguments(update.rawInput) });
             }
         } else if (update.sessionUpdate === "tool_call_update" && (update.status === "completed" || update.status === "failed")) {
-            this.byToolCallId.delete(update.toolCallId);
+            const session = this.bySession.get(sessionId);
+            session?.calls.delete(update.toolCallId);
+            session?.updates.delete(update.toolCallId);
+            if (session?.updates.size === 0) {
+                this.bySession.delete(sessionId);
+            }
         }
     }
 
-    serverOf(toolCallId: string | undefined): string | undefined {
-        return toolCallId ? this.byToolCallId.get(toolCallId) : undefined;
+    /** The announcement of an unfinished tool call of `sessionId`, including one with no MCP marking. */
+    announcementOf(sessionId: string | undefined, toolCallId: string | undefined): AcpToolCallUpdate | undefined {
+        return sessionId && toolCallId ? this.bySession.get(sessionId)?.updates.get(toolCallId) : undefined;
+    }
+
+    callOf(sessionId: string | undefined, toolCallId: string | undefined): AnnouncedMcpCall | undefined {
+        return sessionId && toolCallId ? this.bySession.get(sessionId)?.calls.get(toolCallId) : undefined;
+    }
+
+    /** The calls of `sessionId` to `server` that have not finished. */
+    pendingOn(sessionId: string | undefined, server: string): AnnouncedMcpCall[] {
+        const calls = sessionId ? this.bySession.get(sessionId)?.calls.values() : undefined;
+        return calls ? [ ...calls ].filter(call => call.server === server) : [];
     }
 }
 
-/** An MCP call's arguments, which `agy_acp_server` and `codex-acp` report wrapped as `{ arguments: … }`. */
+/**
+ * The arguments of an MCP tool call, as an object. `agy_acp_server` and `codex-acp` report them
+ * wrapped as `{ arguments: … }`.
+ */
+export function mcpArguments(rawInput: unknown): Record<string, unknown> {
+    const args = unwrapMcpArguments(rawInput);
+    return typeof args === "object" && args !== null ? args as Record<string, unknown> : {};
+}
+
 function unwrapMcpArguments(rawInput: unknown): unknown {
     const wrapped = rawInput as { arguments?: unknown } | undefined;
     return wrapped && typeof wrapped.arguments === "object" && wrapped.arguments !== null ? wrapped.arguments : rawInput ?? {};

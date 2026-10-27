@@ -60,8 +60,10 @@ scripts/translation/.language*.json
 # Capacitor regenerates this on every `cap sync` and produces different
 # output on Windows vs macOS, causing constant churn — keep it local.
 apps/mobile/ios/App/CapApp-SPM/Package.swift
-# Ignore local Claude Code settings, but keep shared project skills.
+# Ignore local Claude Code settings, but keep shared project settings and skills.
 .claude/*
+!.claude/settings.json
+!.claude/hooks/
 !.claude/skills/
 .pnpm-store
 apps/edit-docs/output.zip

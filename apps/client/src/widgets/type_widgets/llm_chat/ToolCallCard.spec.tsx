@@ -16,7 +16,7 @@ vi.mock("react-i18next", () => ({
 const mocks = vi.hoisted(() => ({
     triggerEvent: vi.fn(),
     openInAppHelpFromUrl: vi.fn(),
-    notes: {} as Record<string, { type: string; mime: string }>
+    notes: {} as Record<string, { type: string; mime: string; getOwnedAttributes?: () => object[] }>
 }));
 vi.mock("../../../components/app_context.js", () => ({ default: { triggerEvent: mocks.triggerEvent } }));
 vi.mock("../../../services/utils.js", async (importOriginal) => ({
@@ -38,7 +38,7 @@ vi.mock("../../react/NoteLink.js", () => ({
         <a className="note-link-stub" href="#" onClick={onClick}>{notePath}</a>
 }));
 
-import ToolCallCard from "./ToolCallCard.js";
+import ToolCallCard, { ToolApprovalContext } from "./ToolCallCard.js";
 import type { ToolCall } from "./llm_chat_types.js";
 
 let host: HTMLElement | undefined;
@@ -53,10 +53,15 @@ afterEach(() => {
     }
 });
 
-function renderCard(toolCalls: ToolCall[]) {
+function renderCard(toolCalls: ToolCall[], answer?: (toolCallId: string, approved: boolean) => void) {
     host = document.body.appendChild(document.createElement("div"));
     const target = host;
-    act(() => render(<ToolCallCard toolCalls={toolCalls} />, target));
+    act(() => render(
+        <ToolApprovalContext.Provider value={answer}>
+            <ToolCallCard toolCalls={toolCalls} />
+        </ToolApprovalContext.Provider>,
+        target
+    ));
     return target;
 }
 
@@ -143,34 +148,37 @@ describe("ToolCallCard", () => {
             { note: "a", parent: "Space", preview: "Launch The Saturn V rocket" },
             { note: "b", parent: null, preview: null }
         ]);
-        expect(line?.querySelector(".llm-chat-note-results-scope")).toBeNull();
         expect(line?.querySelector(".llm-chat-note-results-more")?.textContent)
             .toBe("llm_chat.search_notes_limited{\"count\":42,\"limit\":2}");
     });
 
-    it("names the subtree a search was confined to, even when it found nothing there", () => {
+    it("names the subtree a search is confined to on its line, before and after it runs", () => {
+        const search = (id: string, ancestorNoteId: string, result?: object): ToolCall => ({
+            id, toolName: "search_notes", input: { query: id, ancestorNoteId }, result: result && JSON.stringify(result)
+        });
+        const other = (id: string): ToolCall => ({ id, toolName: "get_note", input: { noteId: "x" }, result: "{}" });
         const target = renderCard([
-            {
-                id: "1",
-                toolName: "search_notes",
-                input: { query: "a", ancestorNoteId: "scope" },
-                result: JSON.stringify({ totalResults: 12, results: [ { noteId: "a" } ] })
-            },
-            {
-                id: "2",
-                toolName: "search_notes",
-                input: { query: "b", ancestorNoteId: "scope" },
-                result: JSON.stringify({ totalResults: 0, results: [] })
-            }
+            search("a", "scope", { totalResults: 12, results: [ { noteId: "a" } ] }),
+            other("1"),
+            search("b", "scope", { totalResults: 0, results: [] }),
+            other("2"),
+            search("c", "scope"),
+            other("3"),
+            search("d", "root", { totalResults: 0, results: [] })
         ]);
-        const lines = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
-        expect(lines.map(line => line instanceof HTMLDetailsElement)).toEqual([ true ]);
-        const groupedLines = [ ...(lines[0]?.querySelectorAll(".expandable-section-body > .llm-chat-tool-call") ?? []) ];
-        expect(groupedLines.map(line => line instanceof HTMLDetailsElement)).toEqual([ true, true ]);
-        expect(groupedLines.map(line => line.querySelector(".llm-chat-note-results-scope .note-link-stub")?.textContent))
-            .toEqual([ "scope", "scope" ]);
-        expect(groupedLines[0]?.querySelector(".llm-chat-note-results-more")?.textContent)
+        const [ found, , empty, , waiting, , everywhere ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        for (const line of [ found, empty, waiting ]) {
+            const scope = line?.querySelector(".llm-chat-tool-call-scope");
+            expect(scope?.textContent?.startsWith("llm.tools.search_in_subtree")).toBe(true);
+            expect(scope?.querySelector(".note-link-stub")?.textContent).toBe("scope");
+        }
+        expect(found?.querySelector(".llm-chat-tool-call-scope .llm-chat-tool-call-detail")?.textContent).toBe("a");
+        expect(found?.querySelector(".llm-chat-note-results-more")?.textContent)
             .toBe("llm_chat.search_notes_limited{\"count\":12,\"limit\":1}");
+        expect(empty instanceof HTMLDetailsElement).toBe(false);
+        expect(everywhere?.querySelector(".llm-chat-tool-call-scope")).toBeNull();
+        expect(everywhere?.querySelector(".llm-chat-tool-call-detail")?.textContent).toBe("d");
     });
 
     it("keeps a search that found nothing, or returned something unexpected, to a plain line", () => {
@@ -508,6 +516,40 @@ describe("ToolCallCard", () => {
         expect(older?.querySelector(".llm-chat-tool-call-old-title")).toBeNull();
     });
 
+    it("names the title of the note a create_note call would create in its parent, before the call runs", () => {
+        const target = renderCard([ { id: "1", toolName: "create_note", input: { parentNoteId: "p", title: "Draft", type: "text", content: "" } } ]);
+        const ref = target.querySelector(".llm-chat-tool-call-note-ref");
+        expect(ref?.textContent).toBe("llm.tools.note_in_parentDraftp");
+        expect(ref?.querySelector(".llm-chat-tool-call-created-title")?.textContent).toBe("Draft");
+    });
+
+    it("names the attribute a delete_attribute call would delete, from the note, before the call runs", () => {
+        mocks.notes = {
+            n: {
+                type: "text", mime: "text/html",
+                getOwnedAttributes: () => [ { attributeId: "a1", type: "label", name: "iconClass", value: "bx bx-rocket" } ]
+            }
+        };
+        const call = (id: string, attributeId: string): ToolCall => ({ id, toolName: "delete_attribute", input: { noteId: "n", attributeId } });
+        const target = renderCard([ call("1", "a1"), { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" }, call("3", "gone") ]);
+        const [ known, , unknown ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        const pill = known?.querySelector(".llm-chat-attribute");
+        expect(pill?.textContent).toBe("#iconClass=\"bx bx-rocket\"");
+        expect(pill?.classList.contains("llm-chat-attribute-deleted")).toBe(true);
+        expect(unknown?.querySelector(".llm-chat-attribute")).toBeNull();
+        expect(unknown?.querySelector(".note-link-stub")?.textContent).toBe("n");
+        mocks.notes = {};
+    });
+
+    it("names the title a rename would give, after the note link, before the call runs", () => {
+        const target = renderCard([ { id: "1", toolName: "rename_note", input: { noteId: "n", newTitle: "New" } } ]);
+        const newTitle = target.querySelector(".llm-chat-tool-call-new-title");
+        expect(newTitle?.textContent).toBe("New");
+        expect(newTitle?.previousElementSibling?.querySelector(".note-link-stub")?.textContent).toBe("n");
+        expect(target.querySelector(".llm-chat-tool-call-old-title")).toBeNull();
+    });
+
     it("says where a move took a note from and to", () => {
         const move = (id: string, result: object): ToolCall => ({
             id, toolName: "move_note", input: { noteId: "n", newParentNoteId: "to" }, result: JSON.stringify(result)
@@ -591,6 +633,21 @@ describe("ToolCallCard", () => {
         expect(deleted?.querySelector(".llm-chat-attribute")?.classList.contains("llm-chat-attribute-deleted")).toBe(true);
 
         expect(pills(disabled)).toEqual([ "#disabled:run=frontendStartup" ]);
+    });
+
+    it("names a set_attribute call in add mode Add attribute, grouped apart from setting one", () => {
+        const target = renderCard([
+            { id: "1", toolName: "set_attribute", input: { noteId: "n", type: "label", name: "tag", value: "MCP", mode: "add" } },
+            { id: "2", toolName: "set_attribute", input: { noteId: "n", type: "label", name: "tag", value: "AI", mode: "add" } },
+            { id: "3", toolName: "set_attribute", input: { noteId: "n", type: "label", name: "year", value: "1954" } }
+        ]);
+        const lines = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const name = (line: Element | undefined) => line?.querySelector(".llm-chat-tool-call-name")?.textContent;
+
+        expect(lines).toHaveLength(2);
+        expect(name(lines[0])).toBe("add_attribute");
+        expect(lines[0]?.querySelector(".llm-chat-tool-call-count")?.textContent).toBe("×2");
+        expect(name(lines[1])).toBe("set_attribute");
     });
 
     it("shows the icons an icon search found, and how many it left out", () => {
@@ -732,7 +789,7 @@ describe("ToolCallCard", () => {
 
         const single = icon(renderCard([ viaTavily("1") ]).querySelector(".llm-chat-tool-call"));
         expect(single?.getAttribute("title")).toBe("llm_chat.searched_with{\"name\":\"Tavily\"}");
-        expect(single?.querySelector(".masked-icon")).not.toBeNull();
+        expect(single?.querySelector(".tn-brand-tavily")).not.toBeNull();
 
         // A search that found nothing is a line with nothing to expand, marked the same way.
         const nothingFound: ToolCall = { ...viaTavily("0"), result: JSON.stringify({ query: "trilium", searchProvider: { type: "tavily", name: "Tavily" }, sources: [] }) };
@@ -769,5 +826,73 @@ describe("ToolCallCard", () => {
         expect(link?.getAttribute("href")).toBe("https://triliumnotes.org");
         expect(link?.getAttribute("target")).toBe("_blank");
         expect(line?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("The page describes Trilium.");
+    });
+
+    describe("approval", () => {
+        const PENDING: ToolCall = { id: "c1", toolName: "rename_note", input: { noteId: "a", newTitle: "B" }, approval: "pending" };
+        const buttons = (target: HTMLElement) =>
+            [ ...target.querySelectorAll<HTMLButtonElement>(".llm-chat-tool-approval button") ];
+
+        it("shows a waiting call with nothing to preview as its line, and answers it from the buttons below", async () => {
+            const answer = vi.fn();
+            const target = renderCard([ PENDING ], answer);
+
+            const line = target.querySelector(".llm-chat-tool-call-pending > .llm-chat-tool-call");
+            expect(line?.classList.contains("expandable-line")).toBe(true);
+            expect(line?.querySelector("pre")).toBeNull();
+            expect(line?.querySelector(".llm-chat-tool-call-approval-badge")).toBeNull();
+            expect(line?.querySelector(".bxs-hand")).not.toBeNull();
+
+            const [ deny, allow, more ] = buttons(target);
+            expect([ deny?.textContent?.trim(), allow?.textContent?.trim() ]).toEqual([ "llm_chat.tool_approval_deny", "llm_chat.tool_approval_allow" ]);
+            act(() => allow?.click());
+            expect(answer).toHaveBeenCalledExactlyOnceWith("c1", true);
+            act(() => deny?.click());
+            expect(answer).toHaveBeenLastCalledWith("c1", false);
+
+            // The menu of the Allow button allows the tool for the rest of the chat.
+            act(() => {
+                more?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+                more?.click();
+            });
+            const row = await vi.waitFor(() => {
+                const found = document.querySelector<HTMLElement>(".tn-popup.tn-menu li.dropdown-item");
+                if (!found) throw new Error("expected the menu to open");
+                return found;
+            });
+            expect(row.textContent).toBe("llm_chat.tool_approval_allow_for_chat{\"tool\":\"rename_note\"}");
+            act(() => row.click());
+            expect(answer).toHaveBeenLastCalledWith("c1", true, "chat");
+        });
+
+        it("opens a waiting writing call on what it would write", () => {
+            const target = renderCard([ {
+                id: "c1", toolName: "create_note", input: { parentNoteId: "p", title: "T", type: "code", mime: "text/plain", content: "hello" }, approval: "pending"
+            } ], vi.fn());
+            expect(target.querySelector(".code-block-stub")?.textContent).toBe("hello");
+            expect(target.querySelector<HTMLDetailsElement>("details.llm-chat-tool-call")?.open).toBe(true);
+            expect(buttons(target)).toHaveLength(3);
+        });
+
+        it("keeps a waiting call out of the group of its tool, and offers no buttons outside the streaming reply", () => {
+            const done = (id: string): ToolCall => ({ ...PENDING, id, approval: undefined, result: "{}" });
+            const target = renderCard([ done("c0"), done("c1"), PENDING, { ...PENDING, id: "c2", approval: undefined } ]);
+            const lines = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+            expect(lines.map(line => line.classList.contains("llm-chat-tool-call-group"))).toEqual([ true, false, false ]);
+            expect(lines[1]?.classList.contains("llm-chat-tool-call-pending")).toBe(true);
+            expect(target.querySelector(".llm-chat-tool-call-group .llm-chat-tool-call-pending")).toBeNull();
+            expect(target.querySelector(".llm-chat-tool-approval")).toBeNull();
+        });
+
+        it("marks a denied call as denied rather than failed", () => {
+            const target = renderCard([ {
+                ...PENDING, approval: "declined", result: JSON.stringify({ error: "The user declined this tool call." }), isError: true
+            } ]);
+            const line = target.querySelector(".llm-chat-tool-call");
+            expect(line?.classList.contains("llm-chat-tool-call-error")).toBe(false);
+            expect(line?.querySelector(".llm-chat-tool-call-approval-badge")?.textContent).toBe("llm_chat.tool_approval_declined");
+            expect(target.querySelector(".llm-chat-tool-call-error-badge, .llm-chat-tool-call-error-message")).toBeNull();
+            expect(target.querySelector(".bx-block")).not.toBeNull();
+        });
     });
 });

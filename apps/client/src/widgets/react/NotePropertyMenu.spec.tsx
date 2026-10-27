@@ -59,7 +59,7 @@ describe("A collection property's explanation", () => {
         expect(element.querySelector(".help-tooltip-button")).toBeNull();
     });
 
-    it("stands on a checkbox too, whose label is the switch's own", async () => {
+    it("is the tooltip of a checkbox's whole row, with no help icon", async () => {
         const element = await draw({
             type: "checkbox",
             label: "Inbox column",
@@ -68,8 +68,11 @@ describe("A collection property's explanation", () => {
             bindToLabel: "board:showInbox"
         });
 
-        expect(element.textContent).toContain("Inbox column");
-        expect(element.querySelector(".help-tooltip-button")).not.toBeNull();
+        const row = element.querySelector("li.dropdown-item");
+        expect(row?.textContent).toContain("Inbox column");
+        expect(row?.getAttribute("title") ?? row?.getAttribute("data-bs-original-title"))
+            .toBe("Shows the notes with no column yet.");
+        expect(element.querySelector(".help-tooltip-button")).toBeNull();
     });
 });
 
@@ -144,5 +147,35 @@ describe("ViewPropertySection", () => {
         select.value = "00:30:00";
         act(() => { select.dispatchEvent(new Event("change", { bubbles: true })); });
         expect(setLabel).toHaveBeenCalledWith(note.noteId, "calendar:slotDuration", "00:30:00");
+    });
+
+    it("writes a number once the box commits, and removes the label when the box is emptied", () => {
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
+        const note = buildNote({ title: "Map", "#maxNestingDepth": "2" }) as unknown as FNote;
+        const element = draw(note, [
+            { type: "number", label: "Maximum nesting depth", bindToLabel: "maxNestingDepth" }
+        ]);
+        const input = element.querySelector<HTMLInputElement>("input");
+        if (!input) throw new Error("The number property has no box.");
+        expect(input.value).toBe("2");
+
+        const type = (value: string) => act(() => {
+            input.value = value;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        const commit = () => act(() => { input.dispatchEvent(new Event("change")); });
+
+        type("1");
+        type("12");
+        expect(setLabel).not.toHaveBeenCalled();
+        commit();
+        expect(setLabel).toHaveBeenCalledExactlyOnceWith(note.noteId, "maxNestingDepth", "12");
+
+        type("");
+        commit();
+        expect(input.value).toBe("");
+        expect(removeLabel).toHaveBeenCalledExactlyOnceWith(note, "maxNestingDepth");
+        expect(setLabel).toHaveBeenCalledTimes(1);
     });
 });

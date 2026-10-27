@@ -1,0 +1,146 @@
+{
+  "icons": {
+    "tn-brand-anthropic": {
+      "glyph": "",
+      "terms": [
+        "anthropic"
+      ]
+    },
+    "tn-brand-antigravity": {
+      "glyph": "",
+      "terms": [
+        "antigravity"
+      ]
+    },
+    "tn-brand-anytype": {
+      "glyph": "",
+      "terms": [
+        "anytype"
+      ]
+    },
+    "tn-brand-brave": {
+      "glyph": "",
+      "terms": [
+        "brave"
+      ]
+    },
+    "tn-brand-claude": {
+      "glyph": "",
+      "terms": [
+        "claude"
+      ]
+    },
+    "tn-brand-codex": {
+      "glyph": "",
+      "terms": [
+        "codex"
+      ]
+    },
+    "tn-brand-deepseek": {
+      "glyph": "",
+      "terms": [
+        "deepseek"
+      ]
+    },
+    "tn-brand-evernote": {
+      "glyph": "",
+      "terms": [
+        "evernote"
+      ]
+    },
+    "tn-brand-exa": {
+      "glyph": "",
+      "terms": [
+        "exa"
+      ]
+    },
+    "tn-brand-gemini": {
+      "glyph": "",
+      "terms": [
+        "gemini"
+      ]
+    },
+    "tn-brand-github-copilot": {
+      "glyph": "",
+      "terms": [
+        "github-copilot"
+      ]
+    },
+    "tn-brand-google-keep": {
+      "glyph": "",
+      "terms": [
+        "google-keep"
+      ]
+    },
+    "tn-brand-lmstudio": {
+      "glyph": "",
+      "terms": [
+        "lmstudio"
+      ]
+    },
+    "tn-brand-notion": {
+      "glyph": "",
+      "terms": [
+        "notion"
+      ]
+    },
+    "tn-brand-obsidian": {
+      "glyph": "",
+      "terms": [
+        "obsidian"
+      ]
+    },
+    "tn-brand-ollama": {
+      "glyph": "",
+      "terms": [
+        "ollama"
+      ]
+    },
+    "tn-brand-onenote": {
+      "glyph": "",
+      "terms": [
+        "onenote"
+      ]
+    },
+    "tn-brand-openai": {
+      "glyph": "",
+      "terms": [
+        "openai"
+      ]
+    },
+    "tn-brand-openrouter": {
+      "glyph": "",
+      "terms": [
+        "openrouter"
+      ]
+    },
+    "tn-brand-perplexity": {
+      "glyph": "",
+      "terms": [
+        "perplexity"
+      ]
+    },
+    "tn-brand-searxng": {
+      "glyph": "",
+      "terms": [
+        "searxng"
+      ]
+    },
+    "tn-brand-serper": {
+      "glyph": "",
+      "terms": [
+        "serper"
+      ]
+    },
+    "tn-brand-tavily": {
+      "glyph": "",
+      "terms": [
+        "tavily"
+      ]
+    }
+  },
+  "metrics": {
+    "ascent": 0.85,
+    "descent": 0.15
+  }
+}

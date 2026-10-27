@@ -1,13 +1,5 @@
 import type { FileStream, ZipArchive, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
-import { strToU8, unzip, zipSync } from "fflate";
-
-/** The browser/WASM build has no filesystem, so a `path` source is unsupported here — only raw bytes. */
-function requireBuffer(source: ZipSource): Uint8Array {
-    if (!(source instanceof Uint8Array)) {
-        throw new Error("Path-based zip reading is not supported in the browser; uploads arrive as bytes.");
-    }
-    return source;
-}
+import { inflateSync, strToU8, zipSync } from "fflate";
 
 type ZipOutput = {
     send?: (body: unknown) => unknown;
@@ -63,12 +55,30 @@ class BrowserZipArchive implements ZipArchive {
 
 export default class BrowserZipProvider implements ZipProvider {
     async detectFilenameEncoding(source: ZipSource): Promise<string> {
-        const buffer = requireBuffer(source);
-        const rawSamples = collectRawFilenameSamples(buffer);
+        const entries = await readCentralDirectory(toByteSource(source));
+        const rawSamples = collectRawFilenameSamples(entries);
         if (rawSamples.length === 0) {
             return "utf-8";
         }
         return detectEncodingFromBytes(rawSamples);
+    }
+
+    /**
+     * Reads one entry at a time: the central directory first, then each entry's bytes by offset when
+     * `readContent()` asks for them. A `Blob` source is therefore never loaded whole.
+     */
+    async readZipFile(
+        source: ZipSource,
+        processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
+        filenameEncoding?: string
+    ): Promise<void> {
+        const byteSource = toByteSource(source);
+        for (const record of await readCentralDirectory(byteSource)) {
+            await processEntry(
+                { fileName: decodeZipFileName(record, filenameEncoding) },
+                () => readEntryContent(byteSource, record)
+            );
+        }
     }
 
     createZipArchive(): ZipArchive {
@@ -78,131 +88,89 @@ export default class BrowserZipProvider implements ZipProvider {
     createFileStream(_filePath: string): FileStream {
         throw new Error("File stream creation is not supported in the browser.");
     }
-
-    readZipFile(
-        source: ZipSource,
-        processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
-        filenameEncoding?: string
-    ): Promise<void> {
-        const buffer = requireBuffer(source);
-        return new Promise<void>((res, rej) => {
-            // Read inside the executor so a malformed archive rejects rather than throwing
-            // synchronously, matching how an unzip() failure surfaces.
-            const fileNames = readCentralDirectory(buffer);
-
-            unzip(buffer, async (err, files) => {
-                if (err) { rej(err); return; }
-
-                try {
-                    for (const [fileName, data] of Object.entries(files)) {
-                        await processEntry(
-                            { fileName: decodeZipFileName(fileName, fileNames.get(fileName), filenameEncoding) },
-                            () => Promise.resolve(data)
-                        );
-                    }
-                    res();
-                } catch (e) {
-                    rej(e);
-                }
-            });
-        });
-    }
 }
 
-/** What an entry's name actually is on disk, as opposed to what fflate made of it. */
-interface FileNameInfo {
+/** Random access to the archive's bytes, whether they are in memory or behind a `Blob`. */
+interface ByteSource {
+    size: number;
+    read(offset: number, length: number): Promise<Uint8Array>;
+}
+
+/** The browser/WASM build has no filesystem, so a `path` source is unsupported here. */
+function toByteSource(source: ZipSource): ByteSource {
+    if (source instanceof Uint8Array) {
+        return {
+            size: source.byteLength,
+            read: (offset, length) => Promise.resolve(source.subarray(offset, offset + length))
+        };
+    }
+    if ("blob" in source) {
+        const { blob } = source;
+        return {
+            size: blob.size,
+            read: async (offset, length) => new Uint8Array(await blob.slice(offset, offset + length).arrayBuffer())
+        };
+    }
+    throw new Error("Path-based zip reading is not supported in the browser; uploads arrive as bytes or a Blob.");
+}
+
+/** One central directory record: everything needed to find, name and inflate an entry. */
+interface CentralDirectoryRecord {
     /** The name exactly as stored, undecoded. */
-    rawBytes: Uint8Array;
+    rawName: Uint8Array;
     /** Whether the language encoding flag (general purpose bit 11) is set, i.e. the archive declares UTF-8. */
     isUtf8Flagged: boolean;
+    isEncrypted: boolean;
+    compressionMethod: number;
+    compressedSize: number;
+    uncompressedSize: number;
+    localHeaderOffset: number;
 }
 
-/**
- * Collects the raw name bytes of every entry whose encoding is genuinely unknown: the archive did not
- * flag it as UTF-8 and it does not decode as UTF-8 either.
- *
- * A flagged entry is excluded even when its bytes look unusual. Its encoding is already declared, so it
- * needs no rescuing — and sampling it would let one such name drag every *other* name in the archive
- * through the wrong decoder.
- */
-function collectRawFilenameSamples(buffer: Uint8Array): Uint8Array[] {
-    const utf8 = new TextDecoder("utf-8", { fatal: true });
-    const samples: Uint8Array[] = [];
-
-    for (const { rawBytes, isUtf8Flagged } of readCentralDirectory(buffer).values()) {
-        if (isUtf8Flagged) {
-            continue;
-        }
-        try {
-            utf8.decode(rawBytes);
-        } catch {
-            samples.push(rawBytes);
-        }
-    }
-
-    return samples;
-}
-
-/**
- * Resolves an entry's name from what fflate decoded plus what the archive actually recorded.
- *
- * fflate hands names back already decoded, choosing UTF-8 or Latin-1 by the language encoding flag —
- * which it never exposes. A flagged name is therefore already correct and is passed through untouched;
- * re-deriving bytes from it would truncate every character above U+00FF (a curly apostrophe in a note
- * title becoming a control character, and the entry then matching nothing in `!!!meta.json`).
- *
- * Only an unflagged name is ambiguous — many real-world archives write UTF-8, or a legacy codepage,
- * without setting the flag — so those are re-decoded from their raw bytes with the detected encoding.
- */
-function decodeZipFileName(name: string, info: FileNameInfo | undefined, encoding?: string): string {
-    // A name missing from the central directory (a duplicate entry, say) keeps fflate's reading.
-    if (!info || info.isUtf8Flagged) {
-        return name;
-    }
-
-    try {
-        return new TextDecoder(encoding || "utf-8", { fatal: true }).decode(info.rawBytes);
-    } catch {
-        if (encoding && encoding !== "utf-8") {
-            // Encoding detection was wrong for this entry, try UTF-8
-            try {
-                return new TextDecoder("utf-8", { fatal: true }).decode(info.rawBytes);
-            } catch {
-                return name;
-            }
-        }
-        return name;
-    }
-}
-
+const LOCAL_HEADER_SIGNATURE = 0x04034b50;
 const CENTRAL_HEADER_SIGNATURE = 0x02014b50;
+/** The optional record that closes a central directory and is counted in its size. */
+const DIGITAL_SIGNATURE_SIGNATURE = 0x05054b50;
 const END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
+const ZIP64_END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06064b50;
+const ZIP64_LOCATOR_SIGNATURE = 0x07064b50;
+const LOCAL_HEADER_LENGTH = 30;
 const CENTRAL_HEADER_LENGTH = 46;
 const END_OF_CENTRAL_DIRECTORY_LENGTH = 22;
+const ZIP64_LOCATOR_LENGTH = 20;
+const ZIP64_END_OF_CENTRAL_DIRECTORY_LENGTH = 56;
+/** The longest comment the end-of-central-directory record can carry after itself. */
+const MAX_COMMENT_LENGTH = 0xffff;
+const ZIP64_EXTRA_FIELD_ID = 0x0001;
+/** A 32-bit size or offset that holds this value is in the entry's ZIP64 extra field instead. */
+const ZIP64_SATURATED = 0xffffffff;
+/** General purpose bit 0: the entry is encrypted. */
+const ENCRYPTED_FLAG = 0x1;
 /** General purpose bit 11: the file name and comment are UTF-8. */
 const UTF8_FLAG = 0x800;
+const METHOD_STORED = 0;
+const METHOD_DEFLATED = 8;
 
 /**
- * Reads the archive's central directory for the two facts fflate discards — each entry's raw name bytes
- * and its language encoding flag — keyed by the string fflate produces for that entry, which is the only
- * handle the callers have on it.
- *
- * This also replaces what used to be a second full `unzip()` pass done purely to sample file names: the
- * central directory carries them verbatim, so no entry has to be inflated to read one.
+ * Reads the end-of-central-directory record (and its ZIP64 counterpart, for an archive past 4 GiB or
+ * 65535 entries), then the central directory it points to.
  */
-function readCentralDirectory(buffer: Uint8Array): Map<string, FileNameInfo> {
-    const entries = new Map<string, FileNameInfo>();
-    if (buffer.byteLength < END_OF_CENTRAL_DIRECTORY_LENGTH) {
+async function readCentralDirectory(source: ByteSource): Promise<CentralDirectoryRecord[]> {
+    if (source.size < END_OF_CENTRAL_DIRECTORY_LENGTH) {
         throw new Error("Truncated ZIP: no end-of-central-directory record.");
     }
 
-    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    // The ZIP64 locator sits right before the end record, so the tail covers it at any comment length.
+    const tailStart = Math.max(
+        0,
+        source.size - ZIP64_LOCATOR_LENGTH - END_OF_CENTRAL_DIRECTORY_LENGTH - MAX_COMMENT_LENGTH
+    );
+    const tail = await source.read(tailStart, source.size - tailStart);
+    const tailView = viewOf(tail);
 
-    // The end-of-central-directory record is last, but a trailing comment of up to 64 KiB may follow it.
     let eocd = -1;
-    const earliest = Math.max(0, buffer.byteLength - END_OF_CENTRAL_DIRECTORY_LENGTH - 0xffff);
-    for (let i = buffer.byteLength - END_OF_CENTRAL_DIRECTORY_LENGTH; i >= earliest; i--) {
-        if (view.getUint32(i, true) === END_OF_CENTRAL_DIRECTORY_SIGNATURE) {
+    for (let i = tail.byteLength - END_OF_CENTRAL_DIRECTORY_LENGTH; i >= 0; i--) {
+        if (tailView.getUint32(i, true) === END_OF_CENTRAL_DIRECTORY_SIGNATURE) {
             eocd = i;
             break;
         }
@@ -211,47 +179,172 @@ function readCentralDirectory(buffer: Uint8Array): Map<string, FileNameInfo> {
         throw new Error("Truncated ZIP: no end-of-central-directory record.");
     }
 
-    // Walk the directory by header rather than by the recorded entry count, which saturates at 65535
-    // (and is then only recoverable from a ZIP64 record). A ZIP64 offset saturates to 0xFFFFFFFF, which
-    // lands past `end` and simply yields no entries — every name then keeps fflate's own decoding.
-    let offset = view.getUint32(eocd + 16, true);
-    const end = Math.min(buffer.byteLength, offset + view.getUint32(eocd + 12, true));
+    let directorySize = tailView.getUint32(eocd + 12, true);
+    let directoryOffset = tailView.getUint32(eocd + 16, true);
 
-    while (offset + CENTRAL_HEADER_LENGTH <= end && view.getUint32(offset, true) === CENTRAL_HEADER_SIGNATURE) {
-        const isUtf8Flagged = !!(view.getUint16(offset + 8, true) & UTF8_FLAG);
+    const locator = eocd - ZIP64_LOCATOR_LENGTH;
+    if (locator >= 0 && tailView.getUint32(locator, true) === ZIP64_LOCATOR_SIGNATURE) {
+        const zip64Offset = readUint64(tailView, locator + 8);
+        const zip64 = viewOf(await source.read(zip64Offset, ZIP64_END_OF_CENTRAL_DIRECTORY_LENGTH));
+        if (zip64.byteLength < ZIP64_END_OF_CENTRAL_DIRECTORY_LENGTH
+            || zip64.getUint32(0, true) !== ZIP64_END_OF_CENTRAL_DIRECTORY_SIGNATURE) {
+            throw new Error("Corrupt ZIP: the ZIP64 end-of-central-directory record is missing.");
+        }
+        directorySize = readUint64(zip64, 40);
+        directoryOffset = readUint64(zip64, 48);
+    }
+
+    if (directoryOffset + directorySize > source.size) {
+        throw new Error("Corrupt ZIP: the central directory lies past the end of the file.");
+    }
+
+    const directory = await source.read(directoryOffset, directorySize);
+    const view = viewOf(directory);
+    const records: CentralDirectoryRecord[] = [];
+
+    // Walked by header rather than by the recorded entry count, which saturates at 65535.
+    let offset = 0;
+    while (offset + CENTRAL_HEADER_LENGTH <= directory.byteLength
+        && view.getUint32(offset, true) === CENTRAL_HEADER_SIGNATURE) {
+        const flags = view.getUint16(offset + 8, true);
         const nameLength = view.getUint16(offset + 28, true);
         const extraLength = view.getUint16(offset + 30, true);
         const commentLength = view.getUint16(offset + 32, true);
         const nameStart = offset + CENTRAL_HEADER_LENGTH;
-
-        if (nameStart + nameLength > end) {
-            break;
+        const extraStart = nameStart + nameLength;
+        if (extraStart + extraLength > directory.byteLength) {
+            throw new Error("Corrupt ZIP: a central directory record runs past the directory.");
         }
 
-        const rawBytes = buffer.subarray(nameStart, nameStart + nameLength);
-        entries.set(decodeAsFflateDoes(rawBytes, isUtf8Flagged), { rawBytes, isUtf8Flagged });
+        const record: CentralDirectoryRecord = {
+            rawName: directory.subarray(nameStart, extraStart),
+            isUtf8Flagged: !!(flags & UTF8_FLAG),
+            isEncrypted: !!(flags & ENCRYPTED_FLAG),
+            compressionMethod: view.getUint16(offset + 10, true),
+            compressedSize: view.getUint32(offset + 20, true),
+            uncompressedSize: view.getUint32(offset + 24, true),
+            localHeaderOffset: view.getUint32(offset + 42, true)
+        };
+        applyZip64Extra(record, view, extraStart, extraLength);
+        records.push(record);
 
-        offset = nameStart + nameLength + extraLength + commentLength;
+        offset = extraStart + extraLength + commentLength;
     }
 
-    return entries;
+    // The entries are imported from this list, so a directory that stops early must not pass as complete.
+    if (offset < directory.byteLength
+        && (offset + 4 > directory.byteLength || view.getUint32(offset, true) !== DIGITAL_SIGNATURE_SIGNATURE)) {
+        throw new Error("Corrupt ZIP: the central directory ends in an unreadable record.");
+    }
+
+    return records;
 }
 
 /**
- * Reproduces the string fflate hands back for an entry, so a central directory record can be matched to
- * it: UTF-8 when the archive flags the name as such, otherwise one character per byte.
- *
- * The Latin-1 branch cannot use `TextDecoder`, whose "latin1"/"iso-8859-1" labels are aliases of
- * windows-1252 and so map 0x80-0x9F to different code points than the plain byte-to-char widening
- * fflate performs.
+ * Replaces the saturated 32-bit fields with the 64-bit values from the ZIP64 extra field, which
+ * carries only the saturated ones, in the order uncompressed size, compressed size, local header offset.
  */
-function decodeAsFflateDoes(rawBytes: Uint8Array, isUtf8Flagged: boolean): string {
-    if (isUtf8Flagged) {
-        return new TextDecoder("utf-8").decode(rawBytes);
+function applyZip64Extra(record: CentralDirectoryRecord, view: DataView, start: number, length: number) {
+    const end = start + length;
+    for (let offset = start; offset + 4 <= end;) {
+        const id = view.getUint16(offset, true);
+        const size = view.getUint16(offset + 2, true);
+        let field = offset + 4;
+        if (id === ZIP64_EXTRA_FIELD_ID) {
+            for (const key of ["uncompressedSize", "compressedSize", "localHeaderOffset"] as const) {
+                if (record[key] === ZIP64_SATURATED && field + 8 <= offset + 4 + size) {
+                    record[key] = readUint64(view, field);
+                    field += 8;
+                }
+            }
+            return;
+        }
+        offset += 4 + size;
+    }
+}
+
+/** Reads an entry's bytes through its local header, which can carry a different extra field length. */
+async function readEntryContent(source: ByteSource, record: CentralDirectoryRecord): Promise<Uint8Array> {
+    if (record.isEncrypted) {
+        throw new Error("Encrypted ZIP entries are not supported.");
+    }
+
+    const header = viewOf(await source.read(record.localHeaderOffset, LOCAL_HEADER_LENGTH));
+    if (header.byteLength < LOCAL_HEADER_LENGTH || header.getUint32(0, true) !== LOCAL_HEADER_SIGNATURE) {
+        throw new Error("Corrupt ZIP: an entry's local header is missing.");
+    }
+    const dataStart = record.localHeaderOffset + LOCAL_HEADER_LENGTH
+        + header.getUint16(26, true) + header.getUint16(28, true);
+    const data = await source.read(dataStart, record.compressedSize);
+    if (data.byteLength < record.compressedSize) {
+        throw new Error("Truncated ZIP: an entry's data runs past the end of the file.");
+    }
+
+    switch (record.compressionMethod) {
+        case METHOD_STORED:
+            return data;
+        case METHOD_DEFLATED:
+            return inflateSync(data, { out: new Uint8Array(record.uncompressedSize) });
+        default:
+            throw new Error(`Unsupported ZIP compression method ${record.compressionMethod}.`);
+    }
+}
+
+function viewOf(bytes: Uint8Array): DataView {
+    return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+/** ZIP64 values fit in a double for any archive a browser can hold. */
+function readUint64(view: DataView, offset: number): number {
+    return Number(view.getBigUint64(offset, true));
+}
+
+/**
+ * Collects the raw name bytes of every entry whose encoding is genuinely unknown: the archive did not
+ * flag it as UTF-8 and it does not decode as UTF-8 either.
+ *
+ * A flagged entry is excluded even when its bytes look unusual. Its encoding is already declared, so it
+ * needs no rescuing, and sampling it would let one such name drag every other name in the archive
+ * through the wrong decoder.
+ */
+function collectRawFilenameSamples(records: CentralDirectoryRecord[]): Uint8Array[] {
+    const utf8 = new TextDecoder("utf-8", { fatal: true });
+    const samples: Uint8Array[] = [];
+
+    for (const { rawName, isUtf8Flagged } of records) {
+        if (isUtf8Flagged) {
+            continue;
+        }
+        try {
+            utf8.decode(rawName);
+        } catch {
+            samples.push(rawName);
+        }
+    }
+
+    return samples;
+}
+
+/**
+ * Decodes an entry's name. A UTF-8-flagged name is decoded as UTF-8. An unflagged name is ambiguous,
+ * since many archivers write UTF-8 or a legacy codepage without setting the flag, so it is decoded with
+ * the detected encoding, then UTF-8, and failing both one character per byte.
+ */
+function decodeZipFileName(record: CentralDirectoryRecord, encoding?: string): string {
+    if (record.isUtf8Flagged) {
+        return new TextDecoder("utf-8").decode(record.rawName);
+    }
+
+    for (const label of encoding && encoding !== "utf-8" ? [encoding, "utf-8"] : ["utf-8"]) {
+        try {
+            return new TextDecoder(label, { fatal: true }).decode(record.rawName);
+        } catch {
+            // An unknown label or bytes invalid in it: try the next one.
+        }
     }
 
     let name = "";
-    for (const byte of rawBytes) {
+    for (const byte of record.rawName) {
         name += String.fromCharCode(byte);
     }
     return name;

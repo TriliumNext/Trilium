@@ -63,6 +63,12 @@ declare global {
             getPlatform?: () => string;
         };
 
+        /**
+         * Called by the Android app's `MainActivity` on the system back gesture or button; `false`
+         * leaves the app to go to the background. See `services/system_back.ts`.
+         */
+        __triliumHandleBack?: () => boolean;
+
         electronApi?: ElectronApi;
         /** Present only in the standalone build, where the stack runs in this browser. */
         standaloneApi?: StandaloneApi;

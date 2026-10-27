@@ -36,12 +36,6 @@
  * SEARCH PAGE
  */
 
- /* Button bar */
- .search-definition-widget .search-setting-table .search-actions-container {
-    justify-content: flex-end;
-    gap: 8px;
- }
-
 .search-result-widget-content .note-path .path-bracket {
     display: inline;
 }

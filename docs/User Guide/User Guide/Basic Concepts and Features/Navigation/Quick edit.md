@@ -15,7 +15,8 @@ This feature is also well integrated with <a class="reference-link" href="../..
 *   The title and the note and the icon are editable, just like a normal tab.
 *   The note's actions and its menu are shown in the header of the popup, as in the title row of a tab.
     *   When other notes link to the note, a button with a link icon lists the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">Backlinks</a>. Pressing one opens that note in the popup.
-    *   The menu items that only work in a tab are not shown: _Search in note_, _Note map_, _Full width_ and _Convert into attachment_.
+    *   The menu items that only work in a tab are not shown: _Note map_, _Full width_ and _Convert into attachment_.
+    *   _Find_ in the menu, or <kbd>Ctrl</kbd>+<kbd>F</kbd> on the desktop application, opens the <a class="reference-link" href="Search%20in%20note.md">Search in note</a> bar at the bottom of the popup. It searches the note in the popup, not the note in the tab behind it.
     *   A help page opened from the popup, such as through the help button of the note type, opens in a second popup on top of it. Closing that popup returns to the note being edited.
 *   The <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> are also displayed.
     *   This integrates well with <a class="reference-link" href="../../Collections.md">Collections</a> where there are predefined attributes such as the _Start date_ and _End date_, allowing for easy editing.
@@ -43,3 +44,7 @@ The Quick edit feature has a unique behavior for <a class="reference-link" href
 *   If the note is read-only due to performance reasons (auto read-only), then the note is made editable for quick editing.
 *   If the note has been manually set to read-only, then the note is read-only to prevent accidental change.
     *   In this case, the note can still be edited by on-screen instructions.
+
+## Mobile support
+
+On a phone, the popup uses the full width of the screen and the note's content keeps the same side margin as a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note. The <a class="reference-link" href="../../Note%20Types/Text/Formatting%20toolbar.md">Formatting toolbar</a> of a text note sits at the foot of the dialog, below the note; its dropdowns open upwards so the keyboard does not cover them.

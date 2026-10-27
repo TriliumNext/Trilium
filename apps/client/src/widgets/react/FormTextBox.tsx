@@ -7,9 +7,11 @@ export interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElem
     onChange?(newValue: string, validity: ValidityState): void;
     onBlur?(newValue: string): void;
     inputRef?: RefObject<HTMLInputElement | null>;
+    /** Keeps an emptied number box empty, rather than putting `min` in it. */
+    allowEmpty?: boolean;
 }
 
-export default function FormTextBox({ inputRef, className, type, currentValue, onChange, onBlur, autoFocus, ...rest}: FormTextBoxProps) {
+export default function FormTextBox({ inputRef, className, type, currentValue, onChange, onBlur, autoFocus, allowEmpty, ...rest}: FormTextBoxProps) {
     const innerRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -20,6 +22,7 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
 
     function applyLimits(value: string) {
         if (type === "number") {
+            if (allowEmpty && !value.trim()) return "";
             const { min, max } = rest;
             const currentValueNum = parseInt(value, 10);
             if (!Number.isFinite(currentValueNum)) {

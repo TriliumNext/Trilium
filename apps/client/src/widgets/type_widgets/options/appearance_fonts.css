@@ -58,6 +58,26 @@ body.desktop .modal.font-picker-modal {
     }
 }
 
+body.mobile .modal.font-picker-modal {
+    .modal-dialog {
+        height: 85vh;
+    }
+
+    .modal-content {
+        flex: 1 1 0;
+        min-height: 0;
+    }
+
+    .modal-content-with-sidebar > .modal-main {
+        flex: 0 0 auto;
+    }
+
+    .modal-content-with-sidebar > .modal-sidebar {
+        flex: 1 1 0;
+        height: auto;
+    }
+}
+
 .modal.font-picker-modal {
     /* Keep the sidebar background within the rounded corners. */
     .modal-content {

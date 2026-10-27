@@ -16,6 +16,7 @@ import contextMenu from "../../../menus/context_menu";
 import dialog from "../../../services/dialog";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import ws from "../../../services/ws";
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
 import attributes from "../../../services/attributes";
@@ -2845,7 +2846,7 @@ describe("Board column rename", () => {
             .map(element => element.textContent);
         expect(named).toEqual([ "Text", "Markdown", "Canvas", "Spreadsheet" ]);
         expect(templates?.querySelectorAll(".tn-sortable-grip").length).toBe(4);
-        expect(templates?.querySelectorAll(".tn-sortable-adder").length).toBe(2);
+        expect(templates?.querySelectorAll(".tn-card-adder").length).toBe(2);
 
         // And the attributes the cards show, which the same dialog arranges.
         expect(dialog?.querySelector(".promoted-attributes-card")).toBeTruthy();
@@ -3876,7 +3877,7 @@ describe("Board filtering", () => {
         // The matches arrive in score order; the board must keep branch order regardless.
         const note = await setup({ matched: [ "filtered3", "filtered1" ] });
 
-        expect(searchInSubtree).toHaveBeenCalledWith("#urgent", note.noteId);
+        expect(searchInSubtree).toHaveBeenCalledWith("#urgent", note.noteId, false);
         expect(cardTitles(0)).toEqual([ "First", "Third" ]);
         expect(cardTitles(1)).toEqual([]);
         expect(container.querySelectorAll(".board-column")).toHaveLength(2);
@@ -4532,6 +4533,109 @@ describe("Switchable board grouping", () => {
         expect(saved.at(-1)).not.toHaveProperty("columns");
         expect(columnTitles(mountPoint)).toEqual([ "Low", "High" ]);
         expect(columnIcons(mountPoint)).toEqual([ "bx bx-down-arrow", DEFAULT_COLUMN_ICON ]);
+    });
+
+    /**
+     * `adoptLegacyColumns()` reads a config with `columns` and no `*ViewColumns` key as one written
+     * before the grouping could be switched. Deleting the last keyed list must not leave that shape.
+     */
+    it("keeps the default grouping's columns off a deleted grouping it was opened on", async () => {
+        delete noteAttributeCache.attributes["deleteBoard"];
+        const note = buildNote({
+            id: "deleteBoard",
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            "#board:groupBy": "priority",
+            "#label:priority(inheritable)": "promoted,alias=Priority,single,select,options=High;Low",
+            children: [
+                { title: "First", "#status": "To Do", "#priority": "High" },
+                { title: "Second", "#status": "Done", "#priority": "Low" }
+            ]
+        });
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        // Every refresh asks the api this, which is where the test takes hold of it.
+        let api: BoardApi | undefined;
+        const hasStoredSince = BoardApi.prototype.hasStoredSince;
+        vi.spyOn(BoardApi.prototype, "hasStoredSince").mockImplementation(
+            function (this: BoardApi, config) {
+                api = this;
+                return hasStoredSince.call(this, config);
+            });
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+        const host = new Component();
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={host}>
+                    <Harness
+                        note={note}
+                        noteIds={[ ...note.getChildNoteIds() ]}
+                        initialConfig={CONFIG}
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+        await act(async () => { await flush(); });
+        expect(columnTitles(mountPoint)).toEqual([ "High", "Low" ]);
+        setLabel.mockClear();
+
+        // What `PromotedAttributesCard` deletes: the definition and every card's value. The
+        // deletion reaches froca once `ws.waitForMaxKnownEntityChangeId()` is awaited, or only
+        // after the request has returned where nothing waits for it.
+        const deleted = Object.values(froca.attributes).filter(attribute =>
+            attribute.name === "label:priority" || attribute.name === "priority");
+        let deletionArrived = false;
+        async function applyDeletion() {
+            if (deletionArrived) {
+                return;
+            }
+            deletionArrived = true;
+            for (const attribute of deleted) {
+                delete froca.attributes[attribute.attributeId];
+                for (const owner of [ note, ...note.getChildNoteIds().map(id => froca.notes[id]) ]) {
+                    owner.attributes = owner.attributes
+                        .filter(attributeId => attributeId !== attribute.attributeId);
+                    noteAttributeCache.attributes[owner.noteId] = noteAttributeCache
+                        .attributes[owner.noteId]?.filter(cached => cached !== attribute) ?? [];
+                }
+            }
+            const results = new LoadResults(deleted.map(attribute => ({
+                entityName: "attributes",
+                entityId: attribute.attributeId,
+                entity: {
+                    attributeId: attribute.attributeId, noteId: attribute.noteId, type: "label",
+                    name: attribute.name, isDeleted: true
+                }
+            }) as never));
+            for (const attribute of deleted) {
+                results.addAttribute(attribute.attributeId, "other");
+            }
+            await host.handleEvent("entitiesReloaded", { loadResults: results });
+        }
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockImplementation(applyDeletion);
+
+        await act(async () => {
+            await api?.deleteGrouping("priority", async () => {});
+            await flush();
+        });
+        await act(async () => {
+            await applyDeletion();
+            await flush();
+        });
+        await act(async () => { await flush(); });
+        await act(async () => { await flush(); });
+
+        expect(api).toBeDefined();
+        expect(saved.at(-1)?.priorityViewColumns ?? []).toEqual([]);
+        expect(saved.at(-1)?.columns).toEqual(CONFIG.columns);
+        expect(setLabel).not.toHaveBeenCalledWith(
+            "deleteBoard", "label:priority", expect.anything(), expect.anything());
+        vi.restoreAllMocks();
     });
 });
 

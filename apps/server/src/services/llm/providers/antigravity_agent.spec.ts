@@ -104,6 +104,7 @@ vi.mock("./acp_client.js", () => ({ AcpClient: FakeAcpClient, AcpError: FakeAcpE
 
 const { createUpdateCollector, resetAcpAgentStateForTests } = await import("./acp_agent.js");
 const { AntigravityAgentProvider, buildAntigravityEnv, buildAntigravityModelList, decideAntigravityPermission } = await import("./antigravity_agent.js");
+const { ToolApprovals } = await import("@triliumnext/core/src/services/llm/tool_approval.js");
 const { parseBuildLabel } = await vi.importActual<typeof import("./antigravity_binary.js")>("./antigravity_binary.js");
 
 /** The reply chunks of a turn, without the status that precedes a cold start (see {@link collectAll}). */
@@ -162,8 +163,8 @@ async function decideDuringTurn(config: Record<string, unknown>, requests: Recor
 
 describe("decideAntigravityPermission", () => {
     // Shapes captured from agy_acp_server 1.1.1.
-    it("approves once a call to Trilium's note-tools MCP server", () => {
-        expect(decideAntigravityPermission({
+    it("approves once a call to Trilium's note-tools MCP server", async () => {
+        expect(await decideAntigravityPermission({
             toolCall: {
                 toolCallId: "fa53",
                 kind: "other",
@@ -175,7 +176,7 @@ describe("decideAntigravityPermission", () => {
         }, "test")).toEqual({ outcome: { outcome: "selected", optionId: "allow" } });
     });
 
-    it("denies built-in tools, other MCP servers, and calls that only name Trilium in model-controlled fields", () => {
+    it("denies built-in tools, other MCP servers, and calls that only name Trilium in model-controlled fields", async () => {
         const denied = { outcome: { outcome: "selected", optionId: "deny" } };
         // A shell command, as the server asks for it.
         expect(decideAntigravityPermission({
@@ -193,7 +194,7 @@ describe("decideAntigravityPermission", () => {
             options: PERMISSION_OPTIONS
         }, "test")).toEqual(denied);
         // A note-tool call with no one-shot allow on offer is not approved permanently.
-        expect(decideAntigravityPermission({
+        expect(await decideAntigravityPermission({
             toolCall: { kind: "other", _meta: { mcp: { server: "trilium" }, is_mcp_tool_call: true } },
             options: [PERMISSION_OPTIONS[0], PERMISSION_OPTIONS[2]]
         }, "test")).toEqual(denied);
@@ -270,6 +271,38 @@ describe("AntigravityAgentProvider", () => {
         // turn owns gets no chat's settings.
         expect(FakeAcpClient.current?.onAgentRequest?.("session/request_permission", { sessionId: "sess-1", ...request }))
             .toEqual({ outcome: { outcome: "selected", optionId: "deny" } });
+    });
+
+    it("asks the turn's approvals about a note-tool call, and rejects only that call when the user declines", async () => {
+        const request = {
+            toolCall: {
+                toolCallId: "fa53",
+                kind: "other",
+                title: "trilium_rename_note",
+                rawInput: { arguments: { noteId: "n", newTitle: "New" } },
+                _meta: { mcp: { tool: "rename_note", server: "trilium" }, is_mcp_tool_call: true }
+            },
+            options: [ ...PERMISSION_OPTIONS, { optionId: "deny_always", name: "Deny Always", kind: "reject_always" } ]
+        };
+        const approvalsAnswering = (approved: boolean) => {
+            const approvals = new ToolApprovals();
+            approvals.onRequest = (asked) => {
+                requests.push(asked);
+                queueMicrotask(() => approvals.answer(asked.toolCallId, approved));
+            };
+            return approvals;
+        };
+        const requests: unknown[] = [];
+
+        expect(await decideDuringTurn({ enableNoteTools: true, toolApprovals: approvalsAnswering(true) }, [request]))
+            .toEqual([{ outcome: { outcome: "selected", optionId: "allow" } }]);
+        // A declined call is rejected once: "reject always" would stop the agent asking about the tool again.
+        expect(await decideDuringTurn({ enableNoteTools: true, toolApprovals: approvalsAnswering(false) }, [request]))
+            .toEqual([{ outcome: { outcome: "selected", optionId: "deny" } }]);
+        expect(requests).toEqual([
+            { toolCallId: "fa53", toolName: "rename_note", toolInput: { noteId: "n", newTitle: "New" } },
+            { toolCallId: "fa53", toolName: "rename_note", toolInput: { noteId: "n", newTitle: "New" } }
+        ]);
     });
 
     it("lets the agent read a public web page only when the chat allows web access", async () => {

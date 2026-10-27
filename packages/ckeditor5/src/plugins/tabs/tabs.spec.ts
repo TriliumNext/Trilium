@@ -6,7 +6,9 @@ import {
     Essentials,
     FindAndReplaceEditing,
     type ModelElement,
-    Paragraph
+    Paragraph,
+    type ViewElement,
+    type ViewNode
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -46,7 +48,7 @@ describe("Tabs", () => {
 
     function activeTitles() {
         const root = editor.editing.view.getDomRoot();
-        return [...root?.querySelectorAll(".trilium-tab--active > .trilium-tab-title") ?? []]
+        return [...root?.querySelectorAll(".trilium-tab-title--active") ?? []]
             .map(title => title.textContent);
     }
 
@@ -96,6 +98,36 @@ describe("Tabs", () => {
             "<tabs>" +
                 "<tab><tabTitle>[Tab 1]</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
                 "<tab><tabTitle>Tab 2</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+            "</tabs>"
+        );
+    });
+
+    it("moves selected content into the first tab and selects its title", () => {
+        const secondTab = "<tab><tabTitle>Tab 2</tabTitle>" +
+            "<tabPanel><paragraph></paragraph></tabPanel></tab>";
+        setModelData(editor.model, "<paragraph>Keep [moved] text</paragraph>");
+
+        editor.execute("tabs");
+
+        expect(getModelData(editor.model)).toBe(
+            "<paragraph>Keep </paragraph>" +
+            "<tabs>" +
+                "<tab><tabTitle>[Tab 1]</tabTitle>" +
+                    "<tabPanel><paragraph>moved</paragraph></tabPanel></tab>" +
+                secondTab +
+            "</tabs>" +
+            "<paragraph> text</paragraph>"
+        );
+
+        setModelData(editor.model, "[<paragraph>One</paragraph><paragraph>Two</paragraph>]");
+
+        editor.execute("tabs");
+
+        expect(getModelData(editor.model)).toBe(
+            "<tabs>" +
+                "<tab><tabTitle>[Tab 1]</tabTitle>" +
+                    "<tabPanel><paragraph>One</paragraph><paragraph>Two</paragraph></tabPanel></tab>" +
+                secondTab +
             "</tabs>"
         );
     });
@@ -269,6 +301,90 @@ describe("Tabs", () => {
         editor.execute("removeTab");
         editor.execute("removeTab");
         expect(model()).toBe("<paragraph></paragraph>");
+    });
+
+    it("keeps the titles in the title bar in tab order, and each panel in its section", () => {
+        editor.setData(TWO_TABS);
+        const root = editor.editing.view.getDomRoot();
+        const barTitles = () =>
+            [...root?.querySelectorAll(".trilium-tabs-bar .trilium-tab-title") ?? []]
+                .map(title => title.textContent);
+        const windows = tabsElement().getChild(0) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windows.getChild(0) as ModelElement, 0));
+
+        editor.execute("insertTab");
+        editor.model.change(writer => editor.model.insertContent(writer.createText("macOS")));
+        expect(barTitles()).toEqual(["Windows", "macOS", "Linux"]);
+
+        editor.execute("moveTabRight");
+        expect(barTitles()).toEqual(["Windows", "Linux", "macOS"]);
+        editor.execute("undo");
+        expect(barTitles()).toEqual(["Windows", "macOS", "Linux"]);
+        editor.execute("removeTab");
+        expect(barTitles()).toEqual(["Windows", "Linux"]);
+
+        const linux = tabsElement().getChild(1) as ModelElement;
+        editor.model.change(writer => writer.remove(linux.getChild(0) as ModelElement));
+        expect(barTitles()).toEqual(["Windows", ""]);
+        editor.execute("undo");
+        expect(barTitles()).toEqual(["Windows", "Linux"]);
+
+        const sections = [...root?.querySelectorAll("section.trilium-tab") ?? []];
+        const panels = [...root?.querySelectorAll(".trilium-tab-panel") ?? []];
+        expect(sections.map(section => [...section.children].map(child => child.id)))
+            .toEqual(panels.map(panel => [panel.id]));
+        expect(editor.getData()).toBe(TWO_TABS);
+    });
+
+    it("maps positions in the title bar and the sections to the model and back", () => {
+        editor.setData(TWO_TABS);
+        const { mapper, view } = editor.editing;
+        const model = editor.model;
+        const tabs = tabsElement();
+        const [windows, linux] = tabs.getChildren() as IterableIterator<ModelElement>;
+        const tabsView = mapper.toViewElement(tabs) as ViewElement;
+        const section = mapper.toViewElement(linux) as ViewElement;
+        const windowsTitle = mapper.toViewElement(windows.getChild(0) as ModelElement);
+        const viewport = windowsTitle?.parent as ViewElement;
+        const toModelPath = (parent: ViewNode, offset: number) =>
+            mapper.toModelPosition(view.createPositionAt(parent, offset)).path;
+
+        const linuxTitle = mapper.toViewElement(linux.getChild(0) as ModelElement) as ViewElement;
+        expect(toModelPath(linuxTitle.getChild(0) as ViewNode, 2)).toEqual([0, 1, 0, 2]);
+        expect(toModelPath(section, 0)).toEqual([0, 1, 1]);
+        expect(toModelPath(section, 1)).toEqual([0, 1, 2]);
+        expect(toModelPath(viewport, 1)).toEqual([0, 1]);
+        expect(toModelPath(tabsView, tabsView.getChildIndex(section))).toEqual([0, 1]);
+        expect(toModelPath(tabsView, tabsView.childCount)).toEqual([0, 2]);
+
+        const toView = (parent: ModelElement, offset: number) => {
+            const position = mapper.toViewPosition(model.createPositionAt(parent, offset));
+            return [position.parent, position.offset];
+        };
+        expect(toView(linux, 0)).toEqual([viewport, 1]);
+        expect(toView(linux, 1)).toEqual([section, 0]);
+        expect(toView(tabs, 1)).toEqual([tabsView, tabsView.getChildIndex(section)]);
+        expect(toView(tabs, 2)).toEqual([tabsView, tabsView.getChildIndex(section) + 1]);
+    });
+
+    it("keeps a press on a scroll button from selecting the tabs block", () => {
+        editor.setData(TWO_TABS);
+        const windows = tabsElement().getChild(0) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windows.getChild(0) as ModelElement, 0));
+        const caret = getModelData(editor.model);
+        const root = editor.editing.view.getDomRoot();
+        const press = (target: Element | null | undefined) => {
+            expect(target).toBeTruthy();
+            target?.dispatchEvent(new PointerEvent("pointerdown", {
+                bubbles: true, cancelable: true, isPrimary: true
+            }));
+        };
+
+        press(root?.querySelector(".scrollable-bar-edge--end > .scrollable-bar-button"));
+        expect(getModelData(editor.model)).toBe(caret);
+
+        press(root?.querySelector(".scrollable-bar-viewport"));
+        expect(editor.model.document.selection.getSelectedElement()).toBe(tabsElement());
     });
 
     it("moves the caret from a title into its panel on Enter", () => {

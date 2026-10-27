@@ -5,6 +5,7 @@ import { BackupService, getContext, type ImageProvider, initializeCore } from "@
 
 import type { IconPackData } from "./provider";
 import boxicons3 from "./providers/boxicons3";
+import brands from "./providers/brands";
 import ckeditor from "./providers/ckeditor";
 import mdi from "./providers/mdi";
 import phosphor from "./providers/phosphor";
@@ -75,7 +76,8 @@ async function main() {
         "ph-fill": () => phosphor("fill")
     };
     const builtinIconPacks: Record<string, BuiltinIconPack> = {
-        cke: { build: ckeditor, manifestFileName: "icon_pack_text_editor.json" }
+        "cke": { build: ckeditor, manifestFileName: "icon_pack_text_editor.json" },
+        "tn-brand": { build: brands, manifestFileName: "icon_pack_brands.json" }
     };
 
     // Prefixes given on the command line (`pnpm start cke`) build only those packs.

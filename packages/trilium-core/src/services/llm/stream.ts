@@ -5,7 +5,8 @@
 import { isToolErrorResult, type LlmErrorDetails, type LlmStreamChunk } from "@triliumnext/commons";
 import { APICallError, type LanguageModelUsage } from "ai";
 
-import type { ModelPricing, StreamResult } from "./types.js";
+import { TOOL_CALL_DECLINED_REASON } from "./tool_approval.js";
+import type { ModelPricing, StreamResult, TurnReport, TurnSteps } from "./types.js";
 
 // Cache pricing assumes Anthropic's 5-min ephemeral rates (writes 1.25× input, reads 0.1× input).
 // OpenAI/Gemini bill caches differently but the gap is small compared to the current behaviour
@@ -50,6 +51,8 @@ export interface StreamOptions {
     provider?: string;
     /** Model pricing for cost calculation (from provider) */
     pricing?: ModelPricing;
+    /** Reads the finished turn's steps; what it reports wins over `model` and the cost from `pricing`. */
+    describeTurn?: (steps: TurnSteps) => Promise<TurnReport>;
 }
 
 /** Longest response body forwarded to the client; error bodies are normally tiny JSON payloads. */
@@ -176,6 +179,16 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     break;
                 }
 
+                case "tool-output-denied":
+                    yield {
+                        type: "tool_result",
+                        toolCallId: part.toolCallId,
+                        toolName: part.toolName,
+                        result: JSON.stringify({ error: TOOL_CALL_DECLINED_REASON }),
+                        isError: true
+                    };
+                    break;
+
                 case "source":
                     // Citation from web search (only URL sources have url property)
                     if (part.sourceType === "url") {
@@ -214,7 +227,8 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
         }
 
         if (usage && typeof usage.inputTokens === "number" && typeof usage.outputTokens === "number") {
-            const cost = calculateCost(usage, options.pricing);
+            const report = await reportTurn(result, options);
+            const cost = report?.cost ?? calculateCost(usage, options.pricing);
             yield {
                 type: "usage",
                 usage: {
@@ -222,7 +236,7 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     completionTokens: usage.outputTokens,
                     totalTokens: usage.inputTokens + usage.outputTokens,
                     cost,
-                    model: options.model,
+                    model: report?.model ?? options.model,
                     provider: options.provider
                 }
             };
@@ -233,5 +247,17 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
         if (!errorEmitted) {
             yield errorChunk(error);
         }
+    }
+}
+
+/** The provider's report on the finished turn. A report that fails leaves the request's own model and price. */
+async function reportTurn(result: StreamResult, { describeTurn }: StreamOptions): Promise<TurnReport | undefined> {
+    if (!describeTurn) {
+        return undefined;
+    }
+    try {
+        return await describeTurn(await result.steps);
+    } catch {
+        return undefined;
     }
 }

@@ -36,17 +36,22 @@ async function renderAttribute(attribute: FAttribute, renderIsInheritable: boole
     return $attr;
 }
 
+/** A value as the lexer reads it back: bare where it can be, quoted with whichever quote it spares. */
 export function formatValue(val: string) {
     if (/^[\p{L}\p{N}\-_,.]+$/u.test(val)) {
         return val;
-    } else if (!val.includes('"')) {
-        return `"${val}"`;
+    }
+
+    // The lexer reads a backslash as an escape inside quotes too.
+    const escaped = val.replace(/\\/g, "\\\\");
+    if (!val.includes('"')) {
+        return `"${escaped}"`;
     } else if (!val.includes("'")) {
-        return `'${val}'`;
+        return `'${escaped}'`;
     } else if (!val.includes("`")) {
-        return `\`${val}\``;
+        return `\`${escaped}\``;
     } else {
-        return `"${val.replace(/"/g, '\\"')}"`;
+        return `"${escaped.replace(/"/g, '\\"')}"`;
     }
 }
 

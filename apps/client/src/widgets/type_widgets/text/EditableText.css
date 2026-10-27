@@ -20,7 +20,8 @@ body.mobile .note-detail-editable-text {
     cursor: text !important;
 }
 
-.note-detail-editable-text *:not(figure, .include-note, hr, .excalidraw *):first-child {
+.note-detail-editable-text
+    *:not(figure, .include-note, hr, .excalidraw *, .cm-editor *):first-child {
     margin-top: 0 !important;
 }
 

@@ -42,6 +42,7 @@ vi.mock("./providers/anthropic.js", () => ({ AnthropicProvider: makeProviderMock
 vi.mock("./providers/openai.js", () => ({ OpenAiProvider: makeProviderMock("openai") }));
 vi.mock("./providers/google.js", () => ({ GoogleProvider: makeProviderMock("google") }));
 vi.mock("./providers/deepseek.js", () => ({ DeepSeekProvider: makeProviderMock("deepseek") }));
+vi.mock("./providers/openrouter.js", () => ({ OpenRouterProvider: makeProviderMock("openrouter") }));
 vi.mock("./providers/local.js", () => ({ LocalProvider: makeProviderMock("local") }));
 
 import {
@@ -112,6 +113,7 @@ describe("llm/index provider registry", () => {
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
                 { id: "g", name: "G", provider: "google", apiKey: "kg" },
                 { id: "d", name: "D", provider: "deepseek", apiKey: "kd" },
+                { id: "or", name: "OR", provider: "openrouter", apiKey: "kor" },
                 { id: "c", name: "C", provider: "claude-agent", apiKey: "" },
                 { id: "l", name: "L", provider: "ollama", apiKey: "", baseURL: "http://ollama.lan:11434" },
                 { id: "lm", name: "LM", provider: "lmstudio", apiKey: "", baseURL: "http://box:1234/v1" },
@@ -124,6 +126,7 @@ describe("llm/index provider registry", () => {
             // Its own class rather than the shared self-hosted one, despite speaking
             // the same protocol — that is what gives its models a price.
             expect(await constructorArgs("d")).toEqual(["kd", undefined]);
+            expect(await constructorArgs("or")).toEqual(["kor", undefined]);
             // The subscription provider takes no constructor args — auth is Claude Code's.
             expect(await constructorArgs("c")).toEqual([]);
             // The three self-hosted cards share one class, which receives the card

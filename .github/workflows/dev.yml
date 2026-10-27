@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - main
+      - stable
       - standalone
       - "release/*"
   pull_request:
     branches:
       - main
+      - stable
       - standalone
       - "release/*"
 
@@ -418,8 +420,8 @@ jobs:
         id: test-standalone
         if: env.AFFECTED == 'true'
         # Runs the same trilium-core spec set as the server suite, but in
-        # happy-dom + sql.js WASM via BrowserSqlProvider (see
-        # apps/standalone/src/test_setup.ts). Catches differences
+        # a Web Worker-shaped environment + sql.js WASM via BrowserSqlProvider
+        # (see apps/standalone/src/test_setup.ts). Catches differences
         # between the Node-side and browser-side runtimes.
         run: pnpm run --filter=standalone test --coverage
 

@@ -29,7 +29,7 @@ The first step is to export the data from Anytype:
 In Trilium Notes:
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _Anytype_.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-anytype"></span> _Anytype_.
 3.  Upload the ZIP.
 
 > [!NOTE]

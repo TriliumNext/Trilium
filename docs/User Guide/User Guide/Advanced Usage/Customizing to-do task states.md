@@ -1,5 +1,5 @@
 # Customizing to-do task states
-Trilium features customizable to-do list task states. To customize them, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Related settings_ → _Custom checkbox states for to-do lists_. Alternatively, right-click a checkbox in an editable text note and click the pencil icon.
+Trilium features customizable to-do list task states. To customize them, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Related settings_ → _Custom checkbox states for to-do lists_. Alternatively, right-click a checkbox in an editable text note and click the pencil icon; on the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the pencil icon is in the row of the _List ›_ button of a to-do list.
 
 > [!WARNING]
 > Changes take effect only after restarting the application.

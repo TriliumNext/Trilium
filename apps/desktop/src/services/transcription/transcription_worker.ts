@@ -65,7 +65,8 @@ async function start({ noteId, models, recordingDirectory }: StartRequest) {
         sinks,
         taps,
         log,
-        onPendingChanged: (sources) => post({ type: "pending", sources })
+        onPendingChanged: (sources) => post({ type: "pending", sources }),
+        onLevel: (source, level) => post({ type: "level", source, level })
     });
     await newSession.start();
     session = newSession;

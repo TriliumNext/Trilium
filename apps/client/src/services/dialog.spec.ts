@@ -268,16 +268,39 @@ describe("dialog service", () => {
             expect(backdrop.style.zIndex).toBe("2009");
         });
 
-        it("leaves a dialog that already declares a layer above what is open where it is", async () => {
+        /**
+         * The confirmation asked from inside the Options dialog: it declares 2000, above the 1055
+         * the Options dialog stands on, so it is not lifted. Its backdrop still has to come up
+         * with it, or Bootstrap's 1050 leaves the dim under the Options dialog and the settings
+         * stand undimmed beside the question.
+         */
+        it("keeps a dialog declaring a layer above what is open there, and dims what is open", async () => {
             const open = document.createElement("div");
             open.className = "modal show";
             open.style.zIndex = "1055";
             document.body.appendChild(open);
 
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop";
+            document.body.appendChild(backdrop);
+
             const $dialog = makeDialog().appendTo(document.body);
             await openDialog($dialog, false, undefined, 2000);
 
             expect($dialog[0].style.zIndex).toBe("2000");
+            expect(backdrop.style.zIndex).toBe("1999");
+        });
+
+        it("leaves the backdrop on Bootstrap's layer when nothing else is open", async () => {
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop";
+            document.body.appendChild(backdrop);
+
+            const $dialog = makeDialog().appendTo(document.body);
+            await openDialog($dialog, false, undefined, 2000);
+
+            expect($dialog[0].style.zIndex).toBe("2000");
+            expect(backdrop.style.zIndex).toBe("");
         });
 
         it("treats popups without a numeric z-index as layer 0 and excludes the dialog itself from the scan", async () => {

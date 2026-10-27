@@ -13,11 +13,20 @@ Now, to the parent note "2022 Books" you can assign label `#titleTemplate="[Auth
 
 And all children of "2022 Books" will be created with initial title "\[Author name\]: \[Book title\], \[Publication year\]". There's no artificial intelligence here, the idea is to just prompt you to manually fill in the pieces of information into the note title by yourself.
 
+## Titles set by a template
+
+A template can name the notes created from it, wherever they are created. To do so, add a `#template:titleTemplate` label to the template note, for example `#template:titleTemplate="Meeting ${now.format('YYYY-MM-DD')}"` on a _Meeting_ template.
+
+*   It applies both when the template is picked explicitly and when it comes from a parent's `~child:template`. See <a class="reference-link" href="Templates.md">Templates</a>.
+*   It takes precedence over the parent's `#titleTemplate`. A title typed in by the user always wins.
+*   It can be inherited from the template's ancestors in the tree (for example, a folder holding several templates), in which case a label owned by the template itself takes precedence. A note created from a template and later marked as a template does not keep that template's title.
+*   Its value is evaluated the same way as `#titleTemplate`, with `parentNote` being the parent of the new note.
+
 ## Dynamic value
 
 The value of `#titleTemplate` is evaluated at the point of note's creation as a JavaScript string, which means it can be enriched with the help of JS string interpolation with dynamic data.
 
-Second variable injected is `parentNote` which gives access to the parent [`FNote`](../Scripting/Script%20API/Frontend%20API/FNote.dat).
+Second variable injected is `parentNote` which gives access to the parent [`FNote`](../Scripting/Script%20API/Frontend%20API.md).
 
 See also <a class="reference-link" href="Templates.md">Templates</a> which provides similar capabilities, including default note's content.
 

@@ -20,6 +20,7 @@ function getAutocomplete(req: Request): AutocompleteResult[] {
     const query = (req.query.query || "").trim();
     const fastSearch = String(req.query.fastSearch).toLowerCase() !== "false";
     const limit = parseLimit(req.query.limit);
+    const filter = parseFilter(req.query.filter);
 
     const activeNoteId = req.query.activeNoteId || "none";
 
@@ -27,10 +28,13 @@ function getAutocomplete(req: Request): AutocompleteResult[] {
 
     const timestampStarted = Date.now();
 
-    if (query.length === 0 && typeof activeNoteId === "string") {
+    if (query.length === 0 && filter) {
+        // The recent notes would mostly not match, so the filter's own matches are listed instead.
+        results = searchService.searchNotesForAutocomplete(filter, fastSearch, limit);
+    } else if (query.length === 0 && typeof activeNoteId === "string") {
         results = getRecentNotes(activeNoteId, limit);
     } else {
-        results = searchService.searchNotesForAutocomplete(query, fastSearch, limit);
+        results = searchService.searchNotesForAutocomplete(query, fastSearch, limit, filter);
     }
 
     const msTaken = Date.now() - timestampStarted;
@@ -104,6 +108,20 @@ function parseLimit(limit: unknown): number | undefined {
         throw new ValidationError("Invalid limit.");
     }
     return parsed;
+}
+
+/**
+ * The `filter` query parameter: a search query every suggestion must also match, such as
+ * `note.type = image`. Left out or blank, nothing is filtered.
+ */
+function parseFilter(filter: unknown): string | undefined {
+    if (filter === undefined) {
+        return undefined;
+    }
+    if (typeof filter !== "string") {
+        throw new ValidationError("Invalid filter data type.");
+    }
+    return filter.trim() || undefined;
 }
 
 export default {

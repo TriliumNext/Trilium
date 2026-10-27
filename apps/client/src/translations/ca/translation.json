@@ -5,7 +5,6 @@
     "edit_link": "Edita l'enllaç",
     "help_on_links": "Ajuda sobre els links",
     "search_note": "Cerca una nota pel seu nom",
-    "link_title_arbitrary": "El títol de l'enllaç es pot canviar arbitràriament",
     "link_title": "Títol de l'enllaç",
     "anchor": "Àncora (opcional)",
     "anchor_none": "Cap (enllaç a la nota)",
@@ -29,11 +28,11 @@
     "notes": "Notes",
     "other": "Altres",
     "bulk_actions": "Accions en bloc",
-    "affected_notes": "Notes afectades",
     "include_descendants": "Inclou els descendents de les notes seleccionades",
-    "available_actions": "Accions disponibles",
     "chosen_actions": "Accions escollides",
-    "execute_bulk_actions": "Executa accions en bloc",
+    "execute_bulk_actions_one": "Executa accions en bloc",
+    "execute_bulk_actions_many": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Les accions en bloc s'han executat amb èxit.",
     "none_yet": "Cap encara.... afegeix una acció clicant una de les disponibles a dalt."
   },
@@ -116,21 +115,6 @@
     "textarea": "Text multi linia",
     "date_time": "Data i hora",
     "precision_title": "Quants dígits han d'estar disponibles per a coma flotant a la interfície de configuració."
-  },
-  "rename_label": {
-    "to": "Per"
-  },
-  "move_note": {
-    "to": "a"
-  },
-  "add_relation": {
-    "to": "a"
-  },
-  "rename_relation": {
-    "to": "Per"
-  },
-  "update_relation_target": {
-    "to": "a"
   },
   "attachments_actions": {
     "download": "Descarrega"

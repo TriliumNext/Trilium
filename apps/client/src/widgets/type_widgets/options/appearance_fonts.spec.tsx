@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     electron: true,
+    mobile: false,
     stored: {} as Record<string, string | boolean>,
     userFonts: [] as { noteId: string; title: string; blobId: string }[],
     systemFonts: [] as { family: string; monospace: boolean }[],
@@ -17,7 +18,8 @@ const mocks = vi.hoisted(() => ({
 // Only the desktop app can be asked what fonts the device has.
 vi.mock("../../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils")>()),
-    isElectron: () => mocks.electron
+    isElectron: () => mocks.electron,
+    isMobile: () => mocks.mobile
 }));
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
@@ -58,6 +60,7 @@ let host: HTMLElement;
 
 beforeEach(() => {
     mocks.electron = true;
+    mocks.mobile = false;
     mocks.stored = {};
     mocks.userFonts = [];
     mocks.systemFonts = [];
@@ -379,6 +382,15 @@ describe("the font settings", () => {
         // to look at when that setting is turned off and on.
         expect(sample?.textContent).toContain("=>");
         expect(sample?.textContent).toContain("<=");
+    });
+
+    it("leaves the preview out on mobile, where the font list needs the room", async () => {
+        mocks.mobile = true;
+        await openPicker();
+
+        expect(document.querySelector(".font-picker-modal .font-size-control")).not.toBeNull();
+        expect(listedFonts()).toEqual(expect.arrayContaining(GENERIC_LABELS));
+        expect(document.querySelector(".font-picker-modal .font-preview")).toBeNull();
     });
 
     it("leaves ligatures alone, since they come from the theme's own font", () => {

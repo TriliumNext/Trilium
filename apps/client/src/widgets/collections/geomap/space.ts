@@ -306,6 +306,11 @@ export function parseImageExtent(value: string | null | undefined): ImageExtent 
     return { topLeft, bottomRight };
 }
 
+/** `extent` as a `#map:imageBounds` value, the form {@link parseImageExtent} reads. */
+export function formatImageExtent({ topLeft, bottomRight }: ImageExtent) {
+    return `${topLeft[0]},${topLeft[1]} ${bottomRight[0]},${bottomRight[1]}`;
+}
+
 /** `x,y` as an image label stores it, or `null` if unreadable. */
 function parsePair(value: string | null | undefined): [number, number] | null {
     if (!value) return null;

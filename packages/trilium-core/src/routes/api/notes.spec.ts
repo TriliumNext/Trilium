@@ -1,9 +1,12 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import { getSql } from "../../services/sql/index";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import ws from "../../services/ws";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -618,6 +621,19 @@ describe("Notes API (core)", () => {
             expect(note.body.type).toBe("code");
             expect(note.body.mime).toBe("text/x-python");
         });
+
+        it("rejects a type outside the note type set and leaves the note unchanged", async () => {
+            const { noteId } = await createTextNote(api, { title: "Bad type" });
+            for (const type of ["EVILTYPE", "html", undefined, 42]) {
+                const res = await api.put(`/api/notes/${noteId}/type`, {
+                    body: { type, mime: "application/x-anything" }
+                });
+                expect(res.status).toBe(400);
+            }
+
+            expect(becca.getNoteOrThrow(noteId).type).toBe("text");
+            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/html");
+        });
     });
 
     describe("structural operations", () => {
@@ -743,6 +759,29 @@ describe("Notes API (core)", () => {
             );
             expect(res.status).toBe(200);
             expect(res.body.noteIdsToBeDeleted).toEqual([]);
+        });
+    });
+
+    describe("read-only virtual notes", () => {
+        beforeAll(() => {
+            registerVirtualNoteProvider({
+            namespace: "_vapi",
+            parentNoteId: "_hidden",
+            getSubtree: () => [{ id: "_vapiPage", title: "Page", type: "text" }],
+            getContent: () => "<p>shipped</p>"
+        });
+        getContext().init(() => load());
+        });
+
+        afterAll(() => {
+            unregisterVirtualNoteProvider("_vapi");
+            getContext().init(() => load());
+        });
+
+        it("refuses content and revision writes as a client error", async () => {
+            expect((await api.put("/api/notes/_vapiPage/data", { body: { content: "<p>edited</p>" } })).status).toBe(400);
+            expect((await api.post("/api/notes/_vapiPage/revision")).status).toBe(400);
+            expect(becca.getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
         });
     });
 });

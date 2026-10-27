@@ -3,9 +3,10 @@ import type { WidgetsByParent } from "../services/bundle.js";
 import options from "../services/options.js";
 import utils from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.jsx";
-import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
+import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.jsx";
-import CloseZenModeButton from "../widgets/close_zen_button.jsx";
+import ShowAllNotesButton from "../widgets/buttons/show_all_notes_button.jsx";
+import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
@@ -72,6 +73,7 @@ export default class DesktopLayout {
                     .optChild(launcherPaneIsHorizontal, <LeftPaneToggle isHorizontalLayout={true} />)
                     .child(<TabHistoryNavigationButtons />)
                     .child(new TabRowWidget().class("full-width"))
+                    .child(<LeaveFullScreenButton />)
                     .child(<RightPaneToggle />)
                     .css("height", "40px")
                     .css("background-color", "var(--launcher-pane-background-color)")
@@ -83,9 +85,11 @@ export default class DesktopLayout {
                     .css("flex-grow", "1")
                     .id("horizontal-main-container")
                     .optChild(!launcherPaneIsHorizontal, launcherPane)
+                    .child(<LeftPanePeekButton />)
                     .child(
-                        new LeftPaneContainer()
+                        new LeftPaneContainer(launcherPaneIsHorizontal)
                             .optChild(!launcherPaneIsHorizontal, <QuickSearch />)
+                            .child(<ShowAllNotesButton />)
                             .child(appContext.noteTreeWidget)
                             .child(...this.customWidgets.get("left-pane"))
                     )
@@ -98,6 +102,7 @@ export default class DesktopLayout {
                                     .class("tab-row-container")
                                     .child(<TabHistoryNavigationButtons />)
                                     .child(new TabRowWidget())
+                                    .child(<LeaveFullScreenButton />)
                                     .child(<RightPaneToggle />)
                                     .css("height", "40px")
                                     .css("align-items", "center")

@@ -62,10 +62,12 @@ import AdmonitionToolbar from "./plugins/admonition/admonition_toolbar.js";
 import ContentEmbedBoxSizeDropdown
     from "./plugins/content_embed/content_embed_box_size_dropdown.js";
 import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.js";
+import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
 import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
 import CollapsibleListItems from "./plugins/collapsible_list_items.js";
+import ListItemAlignment from "./plugins/list_item_alignment.js";
 import TableIndent from "./plugins/table_indent.js";
 import TableContextMenu from "./plugins/table_context_menu.js";
 import TableMove from "./plugins/table_move/table_move.js";
@@ -76,7 +78,13 @@ import TableToolbarDropdowns from "./plugins/table_toolbar_dropdowns.js";
 import TriliumTableScroll from "./plugins/table_scroll.js";
 import TableStickyHeader from "./plugins/table_sticky_header.js";
 import TableColumnBar from "./plugins/table_column_bar/table_column_bar.js";
+import TableTouchSelection from "./plugins/table_touch_selection/table_touch_selection.js";
 import ToolbarGroupMenu from "./plugins/toolbar_group_menu.js";
+import MobileToolbarItems from "./plugins/mobile_toolbar_items.js";
+import TextFormattingToolbar from "./plugins/text_formatting_toolbar.js";
+import ContextToolbar from "./plugins/context_toolbar.js";
+import ImagePosition from "./plugins/image_position.js";
+import ColorMenu from "./plugins/color_menu.js";
 import BlockDragHandle from "./plugins/block_drag_handle.js";
 
 /**
@@ -110,9 +118,11 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     AdmonitionToolbar,
     ContentEmbedBoxSizeDropdown,
     ContentEmbedToolbar,
+    ContentEmbedCaret,
     LinkEmbedToolbar,
     TodoListMultistate,
     CollapsibleListItems,
+    ListItemAlignment,
     TableIndent,
     TableContextMenu,
     TableMove,
@@ -123,7 +133,13 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TriliumTableScroll,
     TableStickyHeader,
     TableColumnBar,
+    TableTouchSelection,
     ToolbarGroupMenu,
+    MobileToolbarItems,
+    TextFormattingToolbar,
+    ContextToolbar,
+    ImagePosition,
+    ColorMenu,
     CopyAnchorLinkButton,
     CopyLinkUrlButton,
     ImageActions,

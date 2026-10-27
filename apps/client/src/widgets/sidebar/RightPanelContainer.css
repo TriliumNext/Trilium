@@ -1,8 +1,4 @@
 :where(:root) {
-    --peek-pane-backdrop-color: #0000000d;
-    --peek-pane-shadow-depth: 42px;
-    --peek-pane-shadow-color: #0000002b;
-
     --right-pane-peek-border-radius: 8px 0 0 8px;
     --right-pane-peek-background: #ffffffe7;
     --right-pane-peek-backdrop-filter: blur(12px) saturate(1.5);
@@ -13,11 +9,12 @@
 }
 
 /* Reserve a fixed-width gutter on the viewport's right edge for the peek button, which is
-   absolutely positioned within it (see RightPanePeekButton.css). Split sizes the panes
+   absolutely positioned within it (see PeekPaneButton.css). Split sizes the panes
    inside the padded content box, so they never sit under the button, and the button stays put
    regardless of whether the right pane is open. */
 #vertical-main-container {
     --right-pane-peek-button-width: 12px;
+    --peek-pane-button-width: var(--right-pane-peek-button-width);
     /* +4px leaves a small gap between the right pane (and #center-pane) and the peek button. */
     --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 4px);
     position: relative;
@@ -28,68 +25,18 @@ body.layout-horizontal #vertical-main-container {
     --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 2px);
 }
 
-/* Persistent host wrapping the spacer + #right-pane (see RightPanelContainer.tsx), so #right-pane
-   never reparents between modes. A flex row: docked it fills with the pane (spacer hidden); peek
-   it lays out [spacer | gutter | pane]. */
-#right-pane-host {
-    display: flex;
-    flex-direction: row;
+body.layout-vertical .right-pane-peek-button {
+    border-bottom: 1px solid var(--status-bar-border-color);
 }
 
-/* A soft-dismissed peek keeps its content mounted (so re-peeking is instant and stateful); this
-   takes it out of layout/paint without unmounting it. Applied whenever the pane isn't shown. */
-#right-pane-host.hidden {
-    display: none;
+/* The button follows the translucency of the rightmost split. */
+body.desktop.background-effects #center-pane:has(.note-split.last-visible.bgfx) ~ .right-pane-peek-button {
+    --peek-button-expand-background-color: var(--center-pane-background-color-bgfx, var(--main-background-color));
 }
 
-/* Docked: #right-pane fills the host (which Split sizes against #center-pane). */
-#right-pane-host:not(.peek) > #right-pane {
-    flex: 1 1 0;
-    min-width: 0;
-}
-
-/* When closing the peek, the host goes in-flow a frame before Split.destroy (run in an effect)
-   removes its resize gutter. Keep any gutter inside a non-peek host out of the flow so that
-   lingering 5px gutter can't briefly widen the host and reflow the content. */
-#right-pane-host:not(.peek) > .gutter {
-    display: none;
-}
-
-/* Peek: float the host above the content as an absolute layer, so the content never reflows. */
 #right-pane-host.peek {
-    position: absolute;
-    inset-block: 0;
     inset-inline-start: 0;
     inset-inline-end: var(--right-pane-peek-button-gutter);
-    z-index: 15;
-    animation: right-pane-peek-in 200ms ease-out;
-    background: var(--peek-pane-backdrop-color);
-}
-
-@keyframes right-pane-peek-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Peek: Split sizes the spacer and the pane via inline widths, so flex must not override them. */
-#right-pane-host.peek > .right-pane-peek-spacer,
-#right-pane-host.peek > #right-pane {
-    flex: 0 0 auto;
-}
-
-#right-pane-host.peek > #right-pane {
-    box-shadow: calc(-1 * var(--peek-pane-shadow-depth)) 0 var(--peek-pane-shadow-depth) calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color) ;
-}
-
-/* The spacer is the left Split target and, in peek mode, the faint click-to-dismiss backdrop
-   over the content (it also shields the PDF iframe during a resize drag). Hidden when docked. */
-.right-pane-peek-spacer {
-    display: none;
-}
-
-#right-pane-host.peek > .right-pane-peek-spacer {
-    display: block;
-    min-width: 0;
 }
 
 #right-pane {
@@ -142,6 +89,7 @@ body.layout-horizontal #vertical-main-container {
             /* The flexible share is given up before the buttons are: they stay whole and pressable
                at any pane width. */
             min-width: max-content;
+            padding-inline-end: 5px;
         }
     }
 
@@ -312,8 +260,12 @@ body.layout-horizontal #vertical-main-container {
        nothing to put there (`max-content`), and what is handed back is offered again to the cards
        still short. So the sections with a row or two in them are shown whole and the long one takes
        everything left over — instead of each section being cropped a little for the sake of a
-       section that had room to spare. */
-    @supports (max-height: max-content) {
+       section that had room to spare.
+
+       Firefox parses `max-height: max-content` but does not cap a box's height with it, which would
+       leave every card at an equal share. `-moz-orient` is a Firefox-only property, so Firefox takes
+       the content-height fallback above instead. */
+    @supports (max-height: max-content) and (not (-moz-orient: inline)) {
         .right-pane-tab-body:has(> .card:not(.collapsed) ~ .card:not(.collapsed)) > .card:not(.collapsed):not(.grow) {
             /* Offered from nothing rather than from its content: a card asking for its content up
                front leaves the pane over-subscribed, and nothing to hand back out. */

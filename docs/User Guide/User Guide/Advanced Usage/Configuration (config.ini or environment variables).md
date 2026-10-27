@@ -45,7 +45,7 @@ Additionally, shorter aliases are available for common configurations (see Alter
     | `TRILIUM_NETWORK_HTTPS` | boolean | false | Enable HTTPS |
     | `TRILIUM_NETWORK_CERTPATH` | string | "" | SSL certificate path |
     | `TRILIUM_NETWORK_KEYPATH` | string | "" | SSL key path |
-    | `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY` | boolean/string | false | Reverse proxy trust settings |
+    | `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY` | string | false | Addresses of the reverse proxy to trust, see [Trusted proxy](../Installation%20%26%20Setup/Server%20Installation/2.%20Reverse%20proxy/Trusted%20proxy.md) |
     | `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | "" | CORS allowed origins |
     | `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | "" | CORS allowed methods |
     | `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | "" | CORS allowed headers |

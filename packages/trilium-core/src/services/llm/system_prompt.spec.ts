@@ -39,6 +39,20 @@ describe("buildSystemPrompt", () => {
         expect(prompt).not.toContain("do not have access to web search");
     });
 
+    it("tells a model with tools that a declined call is the user's decision, not an error to work around", () => {
+        for (const config of [ { enableNoteTools: true }, { enableWebSearch: true } ]) {
+            const prompt = buildSystemPrompt([], config) ?? "";
+            expect(prompt).toContain("declines a tool call");
+            expect(prompt).toContain("through another tool or the file system");
+        }
+        expect(buildSystemPrompt([], {})).not.toContain("declines a tool call");
+    });
+
+    it("tells a model with note tools to read a linked note by the ID in its link", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true })).toContain("#root/<noteId>");
+        expect(buildSystemPrompt([], { enableWebSearch: true })).not.toContain("#root/<noteId>");
+    });
+
     it("emits the context-note-only notice when a context note is set but note tools are off", () => {
         const prompt = buildSystemPrompt([], { contextNoteId: "ctx" }) ?? "";
         expect(prompt).toContain("cannot search or access other notes");

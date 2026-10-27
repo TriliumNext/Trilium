@@ -77,6 +77,21 @@ export function getEditorElement(editor: Editor): HTMLDivElement {
 }
 
 /**
+ * Press `key` with `modifiers` in the editing root of `editor`, and return whether a listener
+ * prevented its default action. CKEditor's own key handlers read `keyCode`, which stays 0 here, so
+ * only listeners that read `key` act on the press.
+ */
+export function pressKey(editor: Editor, key: string, modifiers: KeyboardEventInit = {}): boolean {
+    const root = editor.editing.view.getDomRoot();
+    if (!root) {
+        throw new Error("The editor has no editing root.");
+    }
+    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...modifiers });
+    root.dispatchEvent(event);
+    return event.defaultPrevented;
+}
+
+/**
  * Destroy every editor created via {@link createTestEditor} and remove its host element.
  * Called from the global `afterEach` in `setup.ts`; safe to call when nothing is tracked.
  */

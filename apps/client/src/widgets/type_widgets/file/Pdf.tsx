@@ -327,8 +327,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         }, window.location.origin);
     });
 
-    useTriliumEvent("findInText", () => {
-        if (!noteContext.isActive()) return;
+    useTriliumEvent("findInText", ({ ntxId }) => {
+        if (!noteContext.isCommandTarget(ntxId)) return;
         iframeRef.current?.contentWindow?.postMessage({
             type: "trilium-find"
         }, window.location.origin);

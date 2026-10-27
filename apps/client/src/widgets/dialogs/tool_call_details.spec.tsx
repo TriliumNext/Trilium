@@ -8,7 +8,7 @@ import { ParentComponent } from "../react/react_utils";
 import ToolCallDetailsDialog from "./tool_call_details";
 
 vi.mock("../../services/i18n", () => ({
-    t: (key: string, options?: { defaultValue?: string }) => (key.startsWith("llm.tools.") ? options?.defaultValue ?? key : key)
+    t: (key: string) => (key.startsWith("llm.tools.") ? key.slice("llm.tools.".length) : key)
 }));
 vi.mock("../../services/syntax_highlight", () => ({
     applySingleBlockSyntaxHighlight: vi.fn(),
@@ -51,6 +51,13 @@ describe("ToolCallDetailsDialog", () => {
         document.body.innerHTML = "";
         await open({ id: "2", toolName: "web_search", input: { query: "rocket" }, result: "Sunny", isError: true });
         expect(sections()[1]).toEqual({ heading: "llm_chat.error", code: "Sunny", empty: undefined });
+    });
+
+    it("names a set_attribute call in add mode Add attribute, beside the tool it called", async () => {
+        await open({ id: "1", toolName: "set_attribute", input: { noteId: "a", type: "label", name: "tag", value: "AI", mode: "add" } });
+        const title = document.querySelector(".tool-call-details-dialog .modal-title");
+        expect(title?.firstChild?.textContent).toBe("add_attribute");
+        expect(title?.querySelector("code")?.textContent).toBe("set_attribute");
     });
 
     it("shows the partial input of a call still streaming as it is, and says it has no result yet", async () => {

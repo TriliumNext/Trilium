@@ -182,15 +182,19 @@ const STANDARD_MODAL_LAYER = 1055;
 const SELF_MANAGED_POPUP_SELECTOR = ".popup-editor-dialog, .tree-popup-editor-dialog";
 
 /**
- * Raises a dialog above every modal already open, and returns the z-index it was given.
+ * Raises a dialog above every modal already open, and returns the layer its backdrop must sit
+ * just under.
  *
- * Two cases need this. A quick-edit or tree popup stacked on a modal sits at 1100, above the
+ * Two cases need the lift. A quick-edit or tree popup stacked on a modal sits at 1100, above the
  * standard 1055, so a dialog opened from it renders behind. Two dialogs that declare the same
  * layer tie, and DOM order decides, which is not the dialog just opened.
  *
  * The z-index is rewritten on every open so a lift does not outlive it, and `declaredZIndex`
- * (`Modal`'s `zIndex` prop) is what an unlifted dialog falls back to. The caller matches the
- * backdrop to the result. Returns `null` when no lift is needed.
+ * (`Modal`'s `zIndex` prop) is what an unlifted dialog falls back to. A dialog that declares a
+ * layer above everything open keeps it, but its backdrop is raised with it all the same: Bootstrap
+ * puts the backdrop at 1050, under a modal at 1055, so a confirmation at 2000 asked from the
+ * Options dialog would leave the settings undimmed beside it. Returns `null` when the backdrop can
+ * stay on Bootstrap's own layer, which is when nothing else is open under the dialog.
  */
 function raiseAboveWhatIsOpen(dialogEl: HTMLElement, declaredZIndex?: number): number | null {
     const others = Array.from(document.querySelectorAll<HTMLElement>(".modal.show"))
@@ -205,7 +209,7 @@ function raiseAboveWhatIsOpen(dialogEl: HTMLElement, declaredZIndex?: number): n
 
     if (!isCovered || dialogEl.matches(SELF_MANAGED_POPUP_SELECTOR)) {
         dialogEl.style.zIndex = declaredZIndex ? String(declaredZIndex) : "";
-        return null;
+        return declaredZIndex && others.length > 0 ? declaredZIndex : null;
     }
 
     // A dialog declaring a layer above everything open keeps it: the lift only raises.

@@ -11,12 +11,19 @@ import type { ViewScope } from "../../../services/link";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
+import { ButtonGroup } from "../../react/Button";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
+import { HtmlFindTarget } from "../../find_in_html";
+import ScrollableLabel from "../../react/ScrollableLabel";
 import {
-    type ContentEmbedEvent, getContentEmbedTools, showContentEmbedFullscreen,
-    useIsContentEmbedEditable, watchContentEmbedTools
+    DISPLAY_MODE_OPTIONS, type DisplayMode, resolveDisplayMode
+} from "../helpers/split_editor_mode";
+import {
+    type ContentEmbedEvent, getContentEmbedTools, registerEmbedFindTarget,
+    showContentEmbedFullscreen, useContentEmbedFindReveal, useIsContentEmbedEditable,
+    watchContentEmbedTools
 } from "./content_embed_tools";
 import { findTextEditorAround } from "./editable_embed";
 
@@ -29,13 +36,16 @@ export interface ContentEmbedAction {
 
 export interface ContentEmbedProps {
     boxSize?: string;
-    /** The link to the embedded note or attachment, shown as the title. */
-    title: HTMLElement;
+    /**
+     * The link to the embedded note or attachment, shown as the title. Content kept in the note
+     * itself has none, and no title row.
+     */
+    title?: HTMLElement;
     /** The rendered note or attachment. */
     content: HTMLElement;
     contentType: string;
     /** The note opened by the buttons in the title row. */
-    notePath: string;
+    notePath?: string;
     viewScope?: ViewScope;
     /** Whether the embed shows only some blocks of its note, from a block reference. */
     isExcerpt?: boolean;
@@ -67,9 +77,15 @@ export default function ContentEmbed({
     useFullscreenEvents(contentRef);
     useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
+    const [ isRevealed, setIsRevealed ] = useContentEmbedFindReveal(contentRef);
+    const isOpen = isExpanded || isRevealed;
     const focusContentAfterRender = useFocusAfterRender(contentRef);
-    const isExpandable = boxSize === "expandable";
+    const isExpandable = boxSize === "expandable" && !!title && !!notePath;
     const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
+    const toggleExpanded = () => {
+        setIsExpanded(!isOpen);
+        setIsRevealed(false);
+    };
 
     useLayoutEffect(() => {
         contentRef.current?.append(content);
@@ -78,6 +94,12 @@ export default function ContentEmbed({
             content.remove();
         };
     }, [ content ]);
+
+    // While an editor in the content is open, the target of the editor searches instead.
+    useEffect(() => {
+        if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return;
+        return registerEmbedFindTarget(content, new HtmlFindTarget(content));
+    }, [ content, contentType ]);
 
     useLayoutEffect(() => {
         // The box mounts after an upload, by which time the focus can have left the editor.
@@ -89,19 +111,24 @@ export default function ContentEmbed({
 
     return (
         <>
-            <div
+            {title && notePath && <div
                 className="include-note-title-row"
+                onClick={(e) => {
+                    if (isExpandable && isTogglingClick(e)) {
+                        toggleExpanded();
+                    }
+                }}
                 onContextMenu={(e) => openMenuOnRightClick(e, notePath, viewScope)}
             >
                 {isExpandable && (
                     <ActionButton
-                        className={clsx("include-note-toggle", isExpanded && "expanded")}
+                        className={clsx("include-note-toggle", isOpen && "expanded")}
                         icon="bx bx-chevron-right"
                         text=""
-                        aria-expanded={isExpanded}
+                        aria-expanded={isOpen}
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsExpanded(!isExpanded);
+                            toggleExpanded();
                         }}
                     />
                 )}
@@ -110,6 +137,9 @@ export default function ContentEmbed({
                 <div className="note-badges include-note-badges">
                     {isExcerpt && <ExcerptBadge />}
                 </div>
+                {(!isExpandable || isOpen) && (
+                    <DisplayModeButtons contentRef={contentRef} content={content} />
+                )}
                 <ContentEmbedActionButton
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
@@ -137,7 +167,7 @@ export default function ContentEmbed({
                     />
                 )}
                 <MoreActionsButton notePath={notePath} viewScope={viewScope} />
-            </div>
+            </div>}
             <div
                 ref={bodyRef}
                 className={clsx("include-note-body", isContentActive && "active")}
@@ -145,7 +175,7 @@ export default function ContentEmbed({
                 <div
                     ref={contentRef}
                     className={`include-note-content type-${contentType}`}
-                    hidden={isExpandable && !isExpanded}
+                    hidden={isExpandable && !isOpen}
                     tabIndex={-1}
                 >
                     {hasFullscreen && (
@@ -314,6 +344,87 @@ function useHasEditableMode(contentRef: RefObject<HTMLElement | null>, content: 
 }
 
 /**
+ * Switches what content with display modes shows, as the display mode buttons of a note do. In a
+ * text editor, the mode is saved with the embed.
+ */
+function DisplayModeButtons({ contentRef, content }: {
+    contentRef: RefObject<HTMLDivElement | null>;
+    content: HTMLElement;
+}) {
+    const shownMode = useShownDisplayMode(contentRef, content);
+    if (!shownMode) return null;
+
+    return (
+        <ButtonGroup size="sm" className="include-note-display-modes">
+            {DISPLAY_MODE_OPTIONS.map(({ value, icon, titleKey }) => (
+                <ActionButton
+                    key={value}
+                    icon={icon}
+                    text={t(titleKey)}
+                    active={value === shownMode}
+                    aria-pressed={value === shownMode}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setEmbedDisplayMode(contentRef.current, value);
+                    }}
+                />
+            ))}
+        </ButtonGroup>
+    );
+}
+
+/**
+ * The display mode that the content in `contentRef` shows, for content that has display modes,
+ * otherwise `null`. Checked again for new `content`, which can declare them before it is in the
+ * box.
+ */
+function useShownDisplayMode(contentRef: RefObject<HTMLElement | null>, content: HTMLElement) {
+    const [ shownMode, setShownMode ] = useState<DisplayMode | null>(null);
+
+    useEffect(() => {
+        const box = contentRef.current;
+        const embed = box?.closest<HTMLElement>(".include-note");
+        if (!box || !embed) return;
+
+        const update = () => {
+            const tools = getContentEmbedTools(box);
+            const isEditing = !!tools?.hasEditableFlag && embed.dataset.editable === "true";
+            setShownMode(tools?.hasDisplayModes
+                ? resolveDisplayMode(embed.dataset.displayMode, !isEditing)
+                : null);
+        };
+        update();
+        const observer = new MutationObserver(update);
+        observer.observe(embed, {
+            attributes: true, attributeFilter: [ "data-display-mode", "data-editable" ]
+        });
+        const stopWatching = watchContentEmbedTools(box, update);
+        return () => {
+            observer.disconnect();
+            stopWatching();
+        };
+    }, [ contentRef, content ]);
+
+    return shownMode;
+}
+
+/**
+ * Shows `mode` in the content of the embed around `box`. A text editor that holds the embed saves
+ * the mode; outside an editor, the mode lasts until the embed is drawn again.
+ */
+function setEmbedDisplayMode(box: HTMLElement | null, mode: DisplayMode) {
+    const editor = findTextEditorAround(box);
+    if (!editor) {
+        box?.closest<HTMLElement>(".include-note")?.setAttribute("data-display-mode", mode);
+        return;
+    }
+
+    if (box && editor.plugins.get("ContentEmbed").selectEmbedAt(box)) {
+        editor.execute("contentEmbedDisplayMode", { value: mode });
+    }
+}
+
+/**
  * Returns a function that focuses the element in `ref` once the render it schedules is committed,
  * so that a state change made with it, such as one that shows the element, applies first.
  */
@@ -332,6 +443,9 @@ function useFocusAfterRender(ref: RefObject<HTMLElement | null>) {
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
     + ":is(button, input, select, textarea):not(:disabled)";
 
+/** The content types whose rendered content "Search in note" searches. */
+const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
+
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that
  * point in `content`, which is focusable itself.
@@ -341,6 +455,7 @@ function getFocusTargetAt(content: HTMLElement, x: number, y: number) {
     return hit?.closest<HTMLElement>(FOCUSABLE_SELECTOR) ?? content;
 }
 
+/** The title on a single line, which scrolls sideways when it does not fit. */
 function ContentEmbedTitle({ title }: { title: HTMLElement }) {
     const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -348,7 +463,11 @@ function ContentEmbedTitle({ title }: { title: HTMLElement }) {
         titleRef.current?.replaceChildren(title);
     }, [ title ]);
 
-    return <h4 ref={titleRef} className="include-note-title" />;
+    return (
+        <ScrollableLabel className="include-note-title-label">
+            <h4 ref={titleRef} className="include-note-title" />
+        </ScrollableLabel>
+    );
 }
 
 function ContentEmbedActionButton({ className, action }: {
@@ -457,6 +576,15 @@ function useFullscreenEvents(contentRef: RefObject<HTMLElement | null>) {
             observer?.disconnect();
         };
     }, [ contentRef ]);
+}
+
+/**
+ * Whether a click on the title row expands or collapses the embed: one outside its buttons and
+ * link, in content that no text editor holds. In an editor, the click selects the embed.
+ */
+function isTogglingClick(e: MouseEvent) {
+    return e.target instanceof Element && !e.target.closest("a, button")
+        && e.currentTarget instanceof HTMLElement && !findTextEditorAround(e.currentTarget);
 }
 
 /**

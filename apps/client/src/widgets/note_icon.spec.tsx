@@ -12,13 +12,22 @@ vi.mock("bootstrap", () => ({
     Tooltip: class {}
 }));
 
+// i18next is not initialized under test, where t() answers with nothing; echoing the key back keeps
+// the assertions about whether there is a tooltip at all.
+vi.mock("i18next", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("i18next")>()),
+    t: (key: string) => key
+}));
+
 const noteContext = vi.hoisted(() => ({
     initialNote: undefined as FNote | undefined,
     setNote: undefined as ((note: FNote) => void) | undefined
 }));
 const tooltipStub = vi.hoisted(() => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() }));
+const tooltipConfig = vi.hoisted(() => ({ current: undefined as { title?: unknown } | undefined }));
 const iconPickerProps = vi.hoisted(() => ({
     current: undefined as undefined | {
+        disabled?: boolean;
         onSelect(icon: string): void;
         onReset?: () => void;
     }
@@ -33,7 +42,10 @@ vi.mock("./react/hooks", async (importOriginal) => ({
     },
     useNoteLabel: () => [ undefined ],
     useStaticTooltip: () => {},
-    useTooltip: () => tooltipStub
+    useTooltip: (_ref: unknown, config: { title?: unknown }) => {
+        tooltipConfig.current = config;
+        return tooltipStub;
+    }
 }));
 
 vi.mock("../services/server", () => ({
@@ -97,6 +109,17 @@ describe("NoteIcon", () => {
         renderInto(<NoteIcon />);
         iconPickerProps.current?.onSelect("bx-moon");
         expect(attributes.setLabel).toHaveBeenLastCalledWith("note-b", "workspaceIconClass", "bx-moon");
+    });
+
+    it("offers no tooltip to change the icon of a note whose icon cannot be changed", () => {
+        noteContext.initialNote = buildNote("note-a");
+        renderInto(<NoteIcon />);
+        expect(tooltipConfig.current?.title).toBe("note_icon.change_note_icon");
+
+        noteContext.initialNote = { ...buildNote("_help_page"), isMetadataReadOnly: true } as FNote;
+        renderInto(<NoteIcon />);
+        expect(iconPickerProps.current?.disabled).toBe(true);
+        expect(tooltipConfig.current?.title).toBe("");
     });
 
     it("stays in the legacy widget tree when the active note changes", () => {

@@ -1,0 +1,75 @@
+// C4 diagram grammar for Mermaid: https://mermaid.js.org/syntax/c4.html
+@top C4Diagram {
+  DiagramName statement*
+}
+
+@skip { spaces | newlines | LineComment }
+
+statement {
+  titleStatement |
+  Element
+}
+
+titleStatement { Title TitleText }
+
+TitleText { titleTextTerm }
+
+Element {
+  FunctionName ArgumentList Body?
+}
+
+ArgumentList {
+  "(" (argument ("," argument)*)? ")"
+}
+
+argument {
+  String |
+  KeyValue |
+  Value
+}
+
+KeyValue {
+  Key "=" argumentValue
+}
+
+argumentValue {
+  String |
+  Value
+}
+
+Body {
+  "{" statement* "}"
+}
+
+FunctionName { identifier }
+Value { identifier }
+Key { identifier | dollarKey }
+
+Title { @specialize<identifier, "title"> }
+
+DiagramName {
+  @specialize<identifier, "C4Context"> |
+  @specialize<identifier, "C4Container"> |
+  @specialize<identifier, "C4Component"> |
+  @specialize<identifier, "C4Dynamic"> |
+  @specialize<identifier, "C4Deployment">
+}
+
+@external tokens titleTextToken from "./tokens.js" { titleTextTerm }
+
+@tokens {
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
+  dollarKey { "$" $[A-Za-z_] $[A-Za-z0-9_]* }
+  String { '"' ![\n"]* '"' }
+  "("
+  ")"
+  "{"
+  "}"
+  ","
+  "="
+}
+
+@external propSource c4Highlighting from "./highlight.js"

@@ -15,7 +15,7 @@
  * standing in for a slow blob fetch (remote server / PWA).
  */
 import { deferred } from "@triliumnext/commons";
-import { render } from "preact";
+import { render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -37,15 +37,17 @@ vi.stubGlobal("logInfo", vi.fn());
 let currentSpacedUpdate: SpacedUpdate<SavedData | undefined> | undefined;
 
 /** Stand-in for EditableText: `editor.content` plays the role of the live CKEditor document. */
-function FakeEditor({ note, noteContext, editor }: {
+function FakeEditor({ note, noteContext, editor, shownRef }: {
     note: FNote;
     noteContext: NoteContext | null;
     editor: { content: string };
+    shownRef?: RefObject<Element | null>;
 }) {
     currentSpacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
         noteType: "text",
+        shownRef,
         getData: () => ({ content: editor.content }),
         onContentChange(newContent) {
             editor.content = newContent;
@@ -61,7 +63,7 @@ function getSpacedUpdate(): SpacedUpdate<SavedData | undefined> {
     return currentSpacedUpdate;
 }
 
-function setupEditorHarness({ withParent = false } = {}) {
+function setupEditorHarness({ withParent = false, withShownRef = false } = {}) {
     const noteA = buildNote({ title: "Note A", type: "text", content: "AAA" });
     const noteB = buildNote({ title: "Note B", type: "text", content: "BBB" });
 
@@ -88,10 +90,15 @@ function setupEditorHarness({ withParent = false } = {}) {
 
     const parent = withParent ? new Component() : null;
     const noteContext = withParent ? new NoteContext("test-ntx") : null;
+    const shownRef = withShownRef ? { current: container } : undefined;
 
     async function show(note: FNote) {
         await act(async () => {
-            const editorEl = <FakeEditor note={note} noteContext={noteContext} editor={editor} />;
+            const editorEl = (
+                <FakeEditor
+                    note={note} noteContext={noteContext} editor={editor} shownRef={shownRef}
+                />
+            );
             render(
                 parent ? <ParentComponent.Provider value={parent}>{editorEl}</ParentComponent.Provider> : editorEl,
                 container
@@ -211,30 +218,59 @@ describe("note switch save race (#9614)", () => {
         cleanupContainer = harness.container;
         const { noteA, editor, parent, show } = harness;
         await show(noteA);
-        const savedElsewhere = async (content: string) => {
-            noteA.getBlob = async () => new FBlob({
-                blobId: `blob-${content}`,
-                content,
-                contentLength: content.length,
-                dateModified: "",
-                utcDateModified: ""
-            });
-            const loadResults = new LoadResults([]);
-            loadResults.addNoteContent(noteA.noteId, "another-editor");
-            await act(async () => {
-                await parent?.handleEvent("entitiesReloaded", { loadResults });
-            });
-            await vi.advanceTimersByTimeAsync(20);
-        };
 
         editor.content = "AAA typed here";
         getSpacedUpdate().scheduleUpdate();
-        await savedElsewhere("AAA typed elsewhere");
+        await reportSave(parent, noteA, "another-editor", "AAA typed elsewhere");
         expect(editor.content).toBe("AAA typed here");
 
         await vi.advanceTimersByTimeAsync(1500);
-        await savedElsewhere("AAA typed elsewhere again");
+        await reportSave(parent, noteA, "another-editor", "AAA typed elsewhere again");
         expect(editor.content).toBe("AAA typed elsewhere again");
+    });
+
+    it("drops a save made elsewhere while hidden once a later save here replaces it", async () => {
+        const resizeCallbacks: (() => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: () => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+        const harness = setupEditorHarness({ withParent: true, withShownRef: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, parent, container, putsTo, show } = harness;
+        const showContainer = async () => {
+            container.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback();
+            });
+        };
+
+        try {
+            await show(noteA);
+            editor.content = "AAA typed here";
+            getSpacedUpdate().scheduleUpdate();
+            container.style.display = "none";
+            await reportSave(parent, noteA, "another-editor", "AAA typed elsewhere");
+            await vi.advanceTimersByTimeAsync(1500);
+            expect(putsTo(noteA)).toContainEqual({
+                url: `notes/${noteA.noteId}/data`, content: "AAA typed here"
+            });
+            await reportSave(parent, noteA, parent?.componentId ?? "");
+            await showContainer();
+            expect(editor.content).toBe("AAA typed here");
+
+            container.style.display = "none";
+            await reportSave(parent, noteA, "another-editor", "AAA typed elsewhere again");
+            expect(editor.content).toBe("AAA typed here");
+            await showContainer();
+            expect(editor.content).toBe("AAA typed elsewhere again");
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+        }
     });
 
     it("awaits async event handlers registered by React components (the contract NoteContext.setNote relies on)", async () => {
@@ -320,6 +356,27 @@ describe("editing some blocks of a note", () => {
         cleanup();
     });
 });
+
+/** Reports a save of `note` by `componentId`, which reads back as `content` when it is given. */
+async function reportSave(
+    parent: Component | null, note: FNote, componentId: string, content?: string
+) {
+    if (content !== undefined) {
+        note.getBlob = async () => new FBlob({
+            blobId: `blob-${content}`,
+            content,
+            contentLength: content.length,
+            dateModified: "",
+            utcDateModified: ""
+        });
+    }
+    const loadResults = new LoadResults([]);
+    loadResults.addNoteContent(note.noteId, componentId);
+    await act(async () => {
+        await parent?.handleEvent("entitiesReloaded", { loadResults });
+    });
+    await vi.advanceTimersByTimeAsync(20);
+}
 
 /** Renders an editor of the blocks of `note` that `block` points at. */
 async function showBlockEditor(note: FNote, block: string) {

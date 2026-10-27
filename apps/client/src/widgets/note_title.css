@@ -34,6 +34,11 @@ div.note-title-widget {
     text-shadow: 4px 4px 4px var(--muted-text-color);
 }
 
+.note-title-widget input.note-title.protected-title {
+    font-style: italic;
+    opacity: .5;
+}
+
 body.mobile .note-title-widget input.note-title {
     --note-title-padding-inline: 0;
 }

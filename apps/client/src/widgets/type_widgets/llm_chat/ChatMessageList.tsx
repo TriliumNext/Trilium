@@ -8,6 +8,7 @@ import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import ChatMessage from "./ChatMessage.js";
 import type { ContentBlock, StoredMessage } from "./llm_chat_types.js";
+import { ToolApprovalContext } from "./ToolCallCard.js";
 import type { UseLlmChatReturn } from "./useLlmChat.js";
 
 /** How long a streaming reply goes without changing before the list says it is still working. */
@@ -72,13 +73,15 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                     </div>
                 )}
                 {isStreaming && streamingMessage && (
-                    <ChatMessage
-                        message={streamingMessage}
-                        isStreaming
-                        streamStatus={isStreamIdle && !showsOwnProgress(chat.streamingBlocks)
-                            ? t("llm_chat.stream_status.still_working")
-                            : undefined}
-                    />
+                    <ToolApprovalContext.Provider value={chat.answerToolCall}>
+                        <ChatMessage
+                            message={streamingMessage}
+                            isStreaming
+                            streamStatus={isStreamIdle && !showsOwnProgress(chat.streamingBlocks)
+                                ? t("llm_chat.stream_status.still_working")
+                                : undefined}
+                        />
+                    </ToolApprovalContext.Provider>
                 )}
                 <div ref={chat.messagesEndRef} className="chat-messages-end" aria-hidden="true" />
                 <div ref={chat.bottomSpacerRef} className="chat-bottom-spacer" aria-hidden="true" />

@@ -70,14 +70,12 @@ describe("SearchHighlighter", () => {
         expect(search.currentFound).toBe(2);
     });
 
-    it("leaves no active match when every occurrence is before the cursor", () => {
-        // Searching with the caret past the last hit finds matches but activates none, so
-        // "find next" starts from the top rather than jumping backwards.
+    it("activates the first match when every occurrence is before the cursor", () => {
         const search = highlighterFor("foo foo", 7);
         search.searchFor("foo", false, false);
 
         expect(search.totalFound).toBe(2);
-        expect(search.currentFound).toBe(0);
+        expect(search.currentFound).toBe(1);
     });
 
     it("exposes the match set through the plugin's decoration accessor", () => {
@@ -87,7 +85,31 @@ describe("SearchHighlighter", () => {
         expect(SearchHighlighter.deco(search)).toBe(search.matches);
     });
 
+    it("leaves every match inactive when asked not to activate one", () => {
+        const search = highlighterFor("foo\nfoo\nfoo", 4);
+        search.searchFor("foo", false, false, false);
+
+        expect(search.totalFound).toBe(3);
+        expect(search.currentFound).toBe(0);
+        expect(search.activeMatch).toBeUndefined();
+        expect(search.matchRanges).toEqual([
+            { from: 0, to: 3 }, { from: 4, to: 7 }, { from: 8, to: 11 }
+        ]);
+    });
+
     describe("navigation", () => {
+        it("clears the active match and keeps the others", () => {
+            const search = highlighterFor("foo foo foo");
+            search.searchFor("foo", false, false);
+            search.scrollToMatch(1);
+
+            search.clearActiveMatch();
+
+            expect(search.currentFound).toBe(0);
+            expect(search.activeMatch).toBeUndefined();
+            expect(decorationCount(search)).toBe(3);
+        });
+
         it("moves the active match and ignores an out-of-range index", () => {
             const search = highlighterFor("foo foo foo");
             search.searchFor("foo", false, false);

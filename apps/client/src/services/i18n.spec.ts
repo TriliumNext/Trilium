@@ -23,7 +23,10 @@ vi.mock("i18next-http-backend", () => {
     return { default: FakeBackend };
 });
 
-const { getAvailableLocales, getCurrentLanguage, getLocaleById, initLocale, translationsInitializedPromise } = await import("./i18n");
+const {
+    getAvailableLocales, getCurrentLanguage, getEnglishAnnotation, getLocaleById, initLocale,
+    translationsInitializedPromise
+} = await import("./i18n");
 
 /** Resolve a dotted i18next key against a parsed catalog. */
 function resolveKey(translations: unknown, key: string): unknown {
@@ -353,6 +356,18 @@ describe("i18n", () => {
             getAvailableLocales();
 
             expect(LOCALES.map((l) => l.name)).toEqual(before);
+        });
+
+        it("gives the English name apart from the native one, in a development build only", () => {
+            const annotationOf = (id: string) => {
+                const locale = getLocaleById(id);
+                return locale ? getEnglishAnnotation(locale) : undefined;
+            };
+            expect(annotationOf("de")).toBeNull();
+
+            setDevBuild(true);
+            expect(annotationOf("de")).toBe("German");
+            expect(annotationOf("en")).toBeNull();
         });
     });
 

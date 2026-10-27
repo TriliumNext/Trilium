@@ -122,6 +122,14 @@ describe("getCkLocale", () => {
         expect(dictionary).not.toHaveProperty("Admonition");
     });
 
+    it("renames a string to CKEditor's own translation of the replacement", async () => {
+        const { translations } = await getCkLocale("de", { englishMessages: ENGLISH_MESSAGES, translate: (key) => key });
+
+        if (!Array.isArray(translations)) throw new Error("expected an array of translations");
+        const dictionary = (translations[2] as Record<string, { dictionary: Record<string, string> }>).de.dictionary;
+        expect(dictionary["Insert code block"]).toBe("Codeblock");
+    });
+
     // End-to-end over a real editor: `AdmonitionUI` localizes with plain `editor.t("Admonition")`,
     // knowing nothing about translation keys or the host, and the only thing that makes it Romanian
     // is the dictionary configured here.

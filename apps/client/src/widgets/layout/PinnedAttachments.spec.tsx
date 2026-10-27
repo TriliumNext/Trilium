@@ -8,7 +8,9 @@ import PinnedAttachments from "./PinnedAttachments";
 
 vi.mock("../type_widgets/transcript/TranscriptView", () => ({
     default: ({ attachment }: { attachment: FAttachment }) =>
-        <div className="transcript-stub">{attachment.attachmentId}</div>
+        <div className="transcript-stub">{attachment.attachmentId}</div>,
+    TranscriptRecordingLevels: ({ attachment }: { attachment: FAttachment }) =>
+        <span className="levels-stub">{attachment.attachmentId}</span>
 }));
 
 function attachment(attachmentId: string, role: string, title: string) {
@@ -38,9 +40,24 @@ describe("PinnedAttachments", () => {
         const sections = container.querySelectorAll(".pinned-attachment");
         expect(sections).toHaveLength(1);
         const [ section ] = sections;
+        expect(section.classList.contains("collapsible-card")).toBe(true);
         expect(section.textContent).toContain("Transcript");
         expect(section.querySelector("[aria-expanded]")?.getAttribute("aria-expanded")).toBe("true");
         expect(section.querySelector(".transcript-stub")?.textContent).toBe("transcript1");
+    });
+
+    it("shows a transcript's level meters in its header, also while collapsed", async () => {
+        const container = await renderWith([
+            attachment("transcript1", "transcript", "Transcript")
+        ]);
+        const levels = () => container.querySelector(".collapsible-header .levels-stub");
+        const title = container.querySelector<HTMLButtonElement>(".collapsible-title");
+
+        expect(levels()?.textContent).toBe("transcript1");
+        expect(container.querySelector(".collapsible-body .levels-stub")).toBeNull();
+        act(() => title?.click());
+        expect(title?.getAttribute("aria-expanded")).toBe("false");
+        expect(levels()).not.toBeNull();
     });
 
     it("renders nothing for a note without one", async () => {

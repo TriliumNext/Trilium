@@ -15,7 +15,7 @@ import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
 import { isDesktop } from "../../../services/utils";
 import {
-    useColorScheme, useEffectiveReadOnly, useElementSize, useTriliumEvent
+    useColorScheme, useEffectiveReadOnly, useElementSize, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
 import { useContentEmbedEvent } from "../text/content_embed_tools";
@@ -125,6 +125,7 @@ function LiveDrawing({
     const frameRef = useRef(0);
     const persistence = useCanvasDrawingPersistence(attachment, editor, apiRef, colorScheme, {
         initialView: viewRef.current,
+        rootRef,
         onSceneShown: () => {
             isShownRef.current = true;
             frameRef.current = requestAnimationFrame(onDrawn);
@@ -178,8 +179,8 @@ interface DrawingPictureProps {
 
 /**
  * The drawing as a picture, at the view of `viewRef`, else at the saved view, else fit in the box.
- * It renders again when the drawing saves, and centers the drawing once fullscreen changes its
- * size, as Excalidraw does.
+ * It renders again after each save, once `rootRef` is shown, and centers the drawing once
+ * fullscreen changes its size, as Excalidraw does.
  */
 function DrawingPicture({
     attachment, editor, colorScheme, rootRef, viewRef, onDrawn
@@ -190,11 +191,12 @@ function DrawingPicture({
     const [ recenterings, setRecenterings ] = useState(0);
     const renderedKeyRef = useRef<string | null>(null);
     const size = useElementSize(layerRef);
+    const whenShown = useWhenShown(rootRef);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const rows = loadResults.getAttachmentRows();
         if (rows.some((row) => row.attachmentId === attachment.attachmentId)) {
-            setRevision((count) => count + 1);
+            whenShown(() => setRevision((count) => count + 1));
         }
     });
 
@@ -365,43 +367,20 @@ interface CanvasDrawingDetailProps {
     /** The note that owns the attachment. */
     note: FNote;
     noteContext?: NoteContext;
-    /** Counts the changes to the drawing saved elsewhere, each of which loads it again. */
-    revision?: number;
 }
 
 /**
  * A canvas drawing saved in an attachment, edited in the full detail of the attachment. It is
  * read-only while its note is.
  */
-export function CanvasDrawingDetail({
-    attachment, note, noteContext, revision
-}: CanvasDrawingDetailProps) {
-    // Outlives the drawing loaded again for each revision, which starts from its unsaved changes.
+export function CanvasDrawingDetail({ attachment, note, noteContext }: CanvasDrawingDetailProps) {
+    const apiRef = useRef<ExcalidrawImperativeAPI>(null);
+    const colorScheme = useColorScheme();
     const attachmentEditor = useAttachmentEditor(note, noteContext);
     const editor = useMemo(
         () => bindAttachmentEditor(attachmentEditor, attachment),
         [ attachmentEditor, attachment ]
     );
-
-    return (
-        <DetailDrawing
-            key={revision}
-            attachment={attachment}
-            note={note}
-            noteContext={noteContext}
-            editor={editor}
-        />
-    );
-}
-
-interface DetailDrawingProps extends Omit<CanvasDrawingDetailProps, "revision"> {
-    editor: ContentEditor;
-}
-
-/** The drawing of `CanvasDrawingDetail`, saved by `editor`. */
-function DetailDrawing({ attachment, note, noteContext, editor }: DetailDrawingProps) {
-    const apiRef = useRef<ExcalidrawImperativeAPI>(null);
-    const colorScheme = useColorScheme();
     const isNoteReadOnly = useEffectiveReadOnly(note, noteContext);
     const canEdit = editor.canEdit() && !isNoteReadOnly
         && !options.is("databaseReadonly");

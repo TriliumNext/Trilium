@@ -343,6 +343,26 @@ describe("geo map MapToolbar", () => {
         expect(map.addControl).not.toHaveBeenCalled();
     });
 
+    it("keeps the locate button off the Linux desktop app only", () => {
+        // isElectron() looks for `window.electronApi`, isLinux() for the server-reported platform.
+        const host = window as unknown as { glob?: { platform?: string }; electronApi?: object };
+        const hasLocate = () => buttons(renderToolbar(fakeMap()))
+            .some((button) => button.classList.contains("bx-current-location"));
+        try {
+            host.glob = { platform: "linux" };
+            expect(hasLocate()).toBe(true);
+
+            host.electronApi = {};
+            expect(hasLocate()).toBe(false);
+
+            host.glob = { platform: "win32" };
+            expect(hasLocate()).toBe(true);
+        } finally {
+            delete host.glob;
+            delete host.electronApi;
+        }
+    });
+
     it("zooms the map in either direction", () => {
         const map = fakeMap();
         const container = renderToolbar(map);

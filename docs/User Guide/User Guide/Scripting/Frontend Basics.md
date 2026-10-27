@@ -41,7 +41,7 @@ For more information, see <a class="reference-link" href="Frontend%20Basics/Cus
 
 ## Script API
 
-The front-end API of Trilium is available to all scripts running in the front-end context as global variable `api`. For a reference of the API, see <a class="reference-link" href="Script%20API/Frontend%20API">Frontend API</a>.
+The front-end API of Trilium is available to all scripts running in the front-end context as global variable `api`. For a reference of the API, see <a class="reference-link" href="Script%20API/Frontend%20API.md">Frontend API</a>.
 
 ### Tutorial
 

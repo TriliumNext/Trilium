@@ -50,8 +50,6 @@
     "search_note": "hledat poznámku podle názvu",
     "link_title": "Název odkazu",
     "button_add_link": "Přidat odkaz",
-    "link_title_mirrors": "titulek odkazu odráží momentální titulek poznámky",
-    "link_title_arbitrary": "titulek odkazu může být změněn libovolně",
     "edit_link": "Upravit odkaz",
     "anchor": "Kotva (volitelné)",
     "button_edit_link": "Uložit odkaz"
@@ -70,12 +68,12 @@
   },
   "bulk_actions": {
     "bulk_actions": "Hromadné akce",
-    "affected_notes": "Ovlivněné poznámky",
     "notes": "Poznámky",
     "include_descendants": "Zahrnout potomky vybraných poznámek",
-    "available_actions": "Dostupné akce",
     "chosen_actions": "Vybrané akce",
-    "execute_bulk_actions": "Vykonat hromadné akce",
+    "execute_bulk_actions_one": "Vykonat hromadné akce",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Hromadné akce byly úspěšně provedeny.",
     "labels": "Štítky",
     "relations": "Relace",
@@ -228,11 +226,6 @@
   "include_note": {
     "dialog_title": "Zahrnout poznámku",
     "label_note": "Poznámka",
-    "placeholder_search": "Hledat poznámku podle jejího názvu",
-    "box_size_prompt": "Velikost pole zahrnuté poznámky:",
-    "box_size_small": "Malý (~ 10 řádků)",
-    "box_size_medium": "Střední (~ 30 řádků)",
-    "box_size_full": "Úplný (pole zobrazuje kompletní text)",
     "button_include": "Zahrnout poznámku"
   },
   "info": {
@@ -260,10 +253,7 @@
     "move_success_message": "Vybrané poznámky byly přesunuty do "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Změnit, kam se má nová poznámka vytvořit:",
-    "search_placeholder": "Hledat cestu podle názvu (výchozí, pokud je prázdná)",
     "modal_title": "Vybrat typ poznámky",
-    "modal_body": "Vybrat typ poznámky / šablonu nové poznámky:",
     "templates": "Šablony"
   },
   "password_not_set": {
@@ -447,21 +437,13 @@
     "remove_this_search_action": "Odebrat tuto akci hledání"
   },
   "execute_script": {
-    "execute_script": "Spustit skript",
-    "help_text": "Můžete spustit jednoduché skripty na vybraných poznámkách.",
-    "example_1": "Například pro připojení řetězce k názvu poznámky použijte tento malý skript:",
-    "example_2": "Složitější příklad by bylo smazání všech atributů vybraných poznámek:"
+    "execute_script": "Spustit skript"
   },
   "add_label": {
     "add_label": "Přidat štítek",
     "label_name_placeholder": "Název štítku",
     "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to_value": "k hodnotě",
-    "new_value_placeholder": "nová hodnota",
-    "help_text": "Na všech odpovídajících poznámkách:",
-    "help_text_item1": "vytvořit daný štítek, pokud jej poznámka ještě nemá",
-    "help_text_item2": "nebo změnit hodnotu existujícího štítku",
-    "help_text_note": "Můžete také zavolat tuto metodu bez hodnoty, v takovém případě bude štítek přiřazen k poznámce bez hodnoty."
+    "new_value_placeholder": "nová hodnota"
   },
   "delete_label": {
     "delete_label": "Smazat štítek",
@@ -470,9 +452,7 @@
   },
   "rename_label": {
     "rename_label": "Přejmenovat štítek",
-    "rename_label_from": "Přejmenovat štítek z",
     "old_name_placeholder": "starý název",
-    "to": "Na",
     "new_name_placeholder": "nový název",
     "name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
   },
@@ -480,49 +460,26 @@
     "update_label_value": "Aktualizovat hodnotu štítku",
     "label_name_placeholder": "název štítku",
     "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to_value": "na hodnotu",
-    "new_value_placeholder": "nová hodnota",
-    "help_text": "U všech nalezených poznámek změňte hodnotu existujícího štítku.",
-    "help_text_note": "Tuto metodu můžete také zavolat bez hodnoty, v takovém případě bude štítek přiřazen k poznámce bez hodnoty."
+    "new_value_placeholder": "nová hodnota"
   },
   "delete_note": {
-    "delete_note": "Smazat poznámku",
-    "delete_matched_notes": "Smazat nalezené poznámky",
-    "delete_matched_notes_description": "Tímto se smažou nalezené poznámky.",
-    "undelete_notes_instruction": "Po smazání je lze obnovit z dialogu Recent Changes.",
-    "erase_notes_instruction": "Pro trvalé vymazání poznámek můžete po smazání přejít do Option -> Other a kliknout na tlačítko \"Vymazat smazané poznámky nyní\"."
+    "delete_note": "Smazat poznámku"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Smazat revize poznámek",
-    "all_past_note_revisions": "Všechny minulé revize nalezených poznámek budou smazány. Poznámka samotná zůstane plně zachována. Jinými slovy, historie poznámky bude odstraněna."
+    "delete_note_revisions": "Smazat revize poznámek"
   },
   "move_note": {
     "move_note": "Přesunout poznámku",
-    "to": "do",
-    "target_parent_note": "cílové nadřazené poznámky",
-    "on_all_matched_notes": "Na všech odpovídajících poznámkách",
-    "move_note_new_parent": "přesunout poznámku do nové nadřazené složky, pokud má poznámka pouze jednu nadřazenou složku (tj. stará větev je odstraněna a je vytvořena nová větev vedoucí do nové nadřazené složky)",
-    "clone_note_new_parent": "klonovat poznámku do novéhé nadřazené složky, pokud má poznámka více klonů/větví (není jasné, kterou větev by mělo odstranit)",
-    "nothing_will_happen": "nic se nestane, pokud nelze poznámku přesunout do cílové poznámky (tj. to by vytvořilo cyklus ve stromu)"
+    "target_parent_note": "cílové nadřazené poznámky"
   },
   "rename_note": {
-    "rename_note": "Přejmenovat poznámku",
-    "rename_note_title_to": "Přejmenovat název poznámky na",
-    "new_note_title": "nový název poznámky",
-    "click_help_icon": "Klikněte na ikonu nápovědy vpravo a zobrazte všechny možnosti",
-    "evaluated_as_js_string": "Zadaná hodnota je vyhodnocena jako JavaScript řetězec a může být tak obohacena o dynamický obsah pomocí vložené proměnné <code>note</code> (poznámka bude přejmenována). Příklady:",
-    "example_note": "<code>Poznámka</code> - všechny odpovídající poznámky jsou přejmenovány na 'Poznámka'",
-    "example_new_title": "<code>NOVÝ: ${note.title}</code> - názvy odpovídajících poznámek mají předponu 'NOVÝ: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - před názvem nalezených poznámek je uvedeno datum a měsíc jejich vytvoření",
-    "api_docs": "Podrobnosti najdete v dokumentaci k API v <a href='https://zadam.github.io/trilium/backend_api/Note.html'>poznámce</a> a u jejích vlastností <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a>."
+    "rename_note": "Přejmenovat poznámku"
   },
   "add_relation": {
     "add_relation": "Přidat vazbu",
     "relation_name": "název vazby",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to": "do",
-    "target_note": "cílová poznámka",
-    "create_relation_on_all_matched_notes": "U všech shodných not vytvoř dannou vazbu."
+    "target_note": "cílová poznámka"
   },
   "delete_relation": {
     "delete_relation": "Smazat vazbu",
@@ -531,20 +488,14 @@
   },
   "rename_relation": {
     "rename_relation": "Přejmenovat vazbu",
-    "rename_relation_from": "Přejmenovat vazbu z",
     "old_name": "starý název",
-    "to": "Na",
     "new_name": "nový název",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
   },
   "update_relation_target": {
-    "update_relation": "Aktualizovat vazbu",
     "relation_name": "název vazby",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to": "do",
     "target_note": "cílová poznámka",
-    "on_all_matched_notes": "Na všech odpovídajících poznámkách",
-    "change_target_note": "změnit cílovou poznámku existující vazby",
     "update_relation_target": "Aktualizovat cílovou vazbu"
   },
   "attachments_actions": {
@@ -651,7 +602,6 @@
     "in_progress": "Probíhá synchronizace se serverem."
   },
   "left_pane_toggle": {
-    "show_panel": "Zobrazit panel",
     "hide_panel": "Skrýt panel"
   },
   "move_pane_button": {
@@ -672,7 +622,6 @@
     "import_files": "Importovat soubory",
     "export_note": "Exportovat poznámku",
     "delete_note": "Smazat poznámku",
-    "print_note": "Vytisknout poznámku",
     "view_revisions": "Revize poznámky...",
     "save_revision": "Uložit revizi",
     "advanced": "Pokročilé",
@@ -709,7 +658,6 @@
     "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Vložit dceřinou poznámku",
     "delete_this_note": "Smazat tuto poznámku",
     "note_revisions": "Revize poznámky",
     "error_cannot_get_branch_id": "Nelze získat branchId pro cestu k poznámce '{{notePath}}'",
@@ -818,18 +766,8 @@
   },
   "search_definition": {
     "add_search_option": "Přidat možnost hledání:",
-    "search_string": "vyhledávací řetězec",
-    "search_script": "skript pro hledání",
-    "ancestor": "předek",
-    "fast_search": "rychlé hledání",
-    "fast_search_description": "Možnost rychlého hledání vypne úplné textové prohledávání obsahu poznámek, což může urychlit hledání ve velkých databázích.",
-    "include_archived": "zahrnout archivované",
     "include_archived_notes_description": "Archivované poznámky jsou ve výchozím nastavení vyloučeny z výsledků hledání, s touto možností budou zahrnuty.",
-    "order_by": "seřadit podle",
-    "limit": "limit",
     "limit_description": "Omezit počet výsledků",
-    "debug": "ladění",
-    "debug_description": "Ladění vypíše do konzole další ladicí informace, které pomohou při ladění složitých dotazů",
     "action": "akce",
     "option": "možnost",
     "search_button": "Hledání",
@@ -872,8 +810,7 @@
     "include_archived_notes": "Zahrnout archivované poznámky"
   },
   "limit": {
-    "limit": "Limit",
-    "take_first_x_results": "Zobrazí pouze prvních X zadaných výsledků."
+    "limit": "Limit"
   },
   "order_by": {
     "order_by": "Seřadit podle",
@@ -1535,7 +1472,6 @@
     "hide-archived-notes": "Skrýt archivované poznámky",
     "automatically-collapse-notes": "Automaticky sbalovat poznámky",
     "automatically-collapse-notes-title": "Poznámky budou po období nečinnosti sbaleny, aby se strom nepřehltil.",
-    "save-changes": "Uložit a použít změny",
     "auto-collapsing-notes-after-inactivity": "Automatické sbalování poznámek po nečinnosti...",
     "saved-search-note-refreshed": "Uložené vyhledávání poznámky bylo obnoveno.",
     "hoist-this-note-workspace": "Vyvýšit tuto poznámku (pracovní plocha)",

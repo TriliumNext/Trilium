@@ -11,7 +11,7 @@ import SearchContext from "../../../services/search/search_context.js";
 import TaskContext from "../../../services/task_context.js";
 import { z } from "zod";
 
-import { applyTextEdits, getContentPreview, getNoteContentForLlm, getNoteMeta, getSvgImageError, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
+import { applyTextEdits, getContentPreview, getLlmNote, getLlmParentNotes, getNoteContentForLlm, getNoteMeta, getSvgImageError, isExcludedFromLlm, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 export const noteTools = defineTools({
@@ -40,12 +40,12 @@ export const noteTools = defineTools({
                 includeArchivedNotes,
                 ancestorNoteId
             });
-            const results = searchService.findResultsWithQuery(query, searchContext);
+            const results = searchService.findResultsWithQuery(query, searchContext)
+                .filter((sr) => becca.notes[sr.noteId] && !isExcludedFromLlm(becca.notes[sr.noteId]));
 
             const notes = results.slice(0, limit).map(sr => {
                 const note = becca.notes[sr.noteId];
-                if (!note) return null;
-                const parentNote = note.getParentNotes()[0];
+                const parentNote = getLlmParentNotes(note).at(0);
                 return {
                     noteId: note.noteId,
                     title: note.getTitleOrProtected(),
@@ -53,7 +53,7 @@ export const noteTools = defineTools({
                     parentTitle: parentNote?.getTitleOrProtected() ?? null,
                     contentPreview: getContentPreview(note)
                 };
-            }).filter(Boolean);
+            });
 
             return {
                 totalResults: results.length,
@@ -68,7 +68,7 @@ export const noteTools = defineTools({
             noteId: z.string().describe("The ID of the note to retrieve")
         }),
         execute: ({ noteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -83,7 +83,7 @@ export const noteTools = defineTools({
             noteId: z.string().describe("The ID of the note to read")
         }),
         execute: ({ noteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -114,7 +114,7 @@ export const noteTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, content, type, mime }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -166,8 +166,9 @@ export const noteTools = defineTools({
             content: z.string().describe("The content to append (Markdown for text notes, plain text for code notes)")
         }),
         mutates: true,
+        additive: true,
         execute: ({ noteId, content }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -230,7 +231,7 @@ export const noteTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, edits }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -299,6 +300,7 @@ export const noteTools = defineTools({
             mime: z.string().optional().describe("MIME type, REQUIRED for code notes (e.g. 'application/javascript;env=backend', 'text/jsx'). Ignored for other types.")
         }),
         mutates: true,
+        additive: true,
         execute: ({ parentNoteId, title, content, type, mime }) => {
             if (type === "code" && !mime) {
                 return { error: "mime is required when creating code notes" };
@@ -311,7 +313,7 @@ export const noteTools = defineTools({
                 }
             }
 
-            const parentNote = becca.getNote(parentNoteId);
+            const parentNote = getLlmNote(parentNoteId);
             if (!parentNote) {
                 return { error: "Parent note not found" };
             }
@@ -353,7 +355,7 @@ export const noteTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, newTitle }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -390,12 +392,15 @@ export const noteTools = defineTools({
                 return { error: "Cannot delete system notes" };
             }
 
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
             if (note.isProtected) {
                 return { error: "Note is protected and cannot be deleted" };
+            }
+            if (note.getSubtree().notes.some(isExcludedFromLlm)) {
+                return { error: "Note contains notes excluded from the assistant and cannot be deleted" };
             }
 
             const title = note.getTitleOrProtected();

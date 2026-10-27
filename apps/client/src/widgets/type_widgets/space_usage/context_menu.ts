@@ -84,7 +84,7 @@ export async function openSpaceUsageContextMenu(
             handler: () => onShowDetails(notePath)
         },
         {
-            title: t("compress-images"),
+            title: t("compress-images-menu"),
             uiIcon: "bx bx-image",
             handler: () => {
                 // An image note *is* one image, so the dialog is told its type and offers only the

@@ -1,13 +1,13 @@
 import { FilterLabelsByType } from "@triliumnext/commons";
 import { Fragment, VNode } from "preact";
-import { useContext } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 
 import Component from "../../components/component";
 import FNote from "../../entities/fnote";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import { OptionCardSection } from "./Card";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "./FormList";
-import FormSelect from "./FormSelect";
+import FormSelect, { FormSelectWithGroups } from "./FormSelect";
 import FormToggle from "./FormToggle";
 import HelpTooltipButton from "./HelpTooltipButton";
 import FormTextBox from "./FormTextBox";
@@ -88,6 +88,8 @@ export interface ComboBoxProperty {
      */
     defaultValue?: string;
     options: (ComboBoxItem | Separator | ComboBoxGroup)[];
+    /** When provided, the property is only rendered if this returns true for the current note. */
+    isVisible?: (note: FNote) => boolean;
 }
 
 export interface SubmenuProperty {
@@ -155,15 +157,19 @@ export function ViewProperty({ note, property }: { note: FNote, property: BookPr
 
 /**
  * A property as a row of a settings card, for a dialog that offers what the collection's settings
- * dropdown does. Covers switches, option groups and the submenus holding them; buttons and the
- * other kinds that only make sense in a menu render nothing.
+ * dropdown does. Covers switches, numbers, option groups, comboboxes and the submenus holding them;
+ * buttons and the other kinds that only make sense in a menu render nothing.
  */
 export function ViewPropertySection({ note, property }: { note: FNote, property: BookProperty }) {
     switch (property.type) {
         case "checkbox":
             return <CheckBoxPropertySection note={note} property={property} />;
+        case "number":
+            return <NumberPropertySection note={note} property={property} />;
         case "option-group":
             return <OptionGroupPropertySection note={note} property={property} />;
+        case "combobox":
+            return <ComboBoxPropertySection note={note} property={property} />;
         case "submenu":
             return (
                 <OptionCardSection
@@ -259,8 +265,7 @@ function SplitButtonPropertyView({ note, property }: { note: FNote, property: Sp
 }
 
 function NumberPropertyView({ note, property }: { note: FNote, property: NumberProperty }) {
-    //@ts-expect-error Interop with text box which takes in string values even for numbers.
-    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
+    const [ draft, setDraft, commit ] = useNumberLabelDraft(note, property.bindToLabel);
     const disabled = property.disabled?.(note);
 
     return (
@@ -272,7 +277,8 @@ function NumberPropertyView({ note, property }: { note: FNote, property: NumberP
             <PropertyLabel property={property} />
             <FormTextBox
                 type="number"
-                currentValue={value ?? ""} onChange={setValue}
+                allowEmpty
+                currentValue={draft} onChange={setDraft} onBlur={commit}
                 style={{ width: `${property.width ?? 100}px` }}
                 min={property.min ?? 0}
                 disabled={disabled}
@@ -371,4 +377,70 @@ function OptionGroupPropertySection({ note, property }: {
             />
         </OptionCardSection>
     );
+}
+
+function NumberPropertySection({ note, property }: { note: FNote, property: NumberProperty & PropertyHelp }) {
+    const [ draft, setDraft, commit ] = useNumberLabelDraft(note, property.bindToLabel);
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormTextBox
+                type="number"
+                allowEmpty
+                currentValue={draft}
+                onChange={setDraft}
+                onBlur={commit}
+                min={property.min ?? 0}
+                disabled={property.disabled?.(note)}
+            />
+        </OptionCardSection>
+    );
+}
+
+/** A combobox as a select, its groups as option groups; a separator has nothing to show there. */
+function ComboBoxPropertySection({ note, property }: {
+    note: FNote, property: ComboBoxProperty & PropertyHelp
+}) {
+    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
+    const values = property.options.filter(
+        (option): option is ComboBoxItem | ComboBoxGroup => !("type" in option));
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormSelectWithGroups<ComboBoxItem>
+                values={values}
+                keyProperty="value"
+                titleProperty="label"
+                currentValue={value ?? property.defaultValue ?? undefined}
+                onChange={setValue}
+            />
+        </OptionCardSection>
+    );
+}
+
+/**
+ * A number label edited in a box: the typed value is held as a draft, written once the box commits
+ * (on leaving it, or on a spinner step), and an emptied box removes the label.
+ */
+function useNumberLabelDraft(note: FNote, labelName: NumberProperty["bindToLabel"]) {
+    //@ts-expect-error Interop with text box which takes in string values even for numbers.
+    const [ value, setValue ] = useNoteLabel(note, labelName);
+    const [ draft, setDraft ] = useState(value ?? "");
+
+    useEffect(() => setDraft(value ?? ""), [ value ]);
+
+    function commit(newValue: string) {
+        const next = newValue.trim() || null;
+        if (next !== (value ?? null)) {
+            setValue(next);
+        }
+    }
+
+    return [ draft, setDraft, commit ] as const;
 }

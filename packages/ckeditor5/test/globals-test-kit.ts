@@ -1,7 +1,6 @@
 /**
- * Helpers for the Trilium global stubs that several specs install on `globalThis` (the `glob`
- * bridge). Each installer registers its own teardown, run after every test by the global
- * `afterEach` in `setup.ts`, so specs no longer need to delete/restore these themselves.
+ * Per-test teardowns for stubs that specs install on `globalThis`, run after every test by the
+ * global `afterEach` in `setup.ts`, so specs need not restore them themselves.
  *
  * Lives outside `src/`, so it is excluded from both the production build and the 100% coverage
  * gate (see editor-kit.ts).
@@ -20,18 +19,4 @@ export async function runTestCleanups(): Promise<void> {
     for (const cleanup of pending) {
         await cleanup();
     }
-}
-
-/**
- * Install a mock Trilium `glob` on `globalThis` for the current test. Pass only the members the
- * spec needs (each typically a `vi.fn()`); the cast to the global `glob` type lives here so specs
- * don't repeat it. Returns the same object for convenient assertion access. Removed automatically
- * after the test.
- */
-export function installGlobMock<T extends object>(glob: T): T {
-    (globalThis as unknown as { glob: T }).glob = glob;
-    registerTestCleanup(() => {
-        delete (globalThis as { glob?: unknown }).glob;
-    });
-    return glob;
 }

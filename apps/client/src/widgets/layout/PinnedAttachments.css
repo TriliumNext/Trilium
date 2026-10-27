@@ -1,7 +1,8 @@
-.pinned-attachment {
+.collapsible.pinned-attachment {
+    margin-bottom: 1rem;
+
     .transcript {
         height: auto;
         max-height: 40vh;
-        padding-inline: 0;
     }
 }

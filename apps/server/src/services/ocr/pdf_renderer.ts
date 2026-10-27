@@ -142,7 +142,7 @@ function readWasm(): ArrayBuffer {
     const productionPath = path.join(RESOURCE_DIR, "pdfium.wasm");
     const bytes = fs.existsSync(productionPath)
         ? fs.readFileSync(productionPath)
-        : fs.readFileSync(require.resolve("@hyzyla/pdfium/dist/pdfium.wasm"));
+        : fs.readFileSync(require.resolve("@hyzyla/pdfium/pdfium.wasm"));
     // Copied into an ArrayBuffer of its own, because readFileSync can return a view into a pooled
     // buffer and PDFium compiles the whole buffer it is given.
     return new Uint8Array(bytes).buffer;

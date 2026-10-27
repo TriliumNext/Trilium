@@ -69,13 +69,15 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
         };
     }, Object.values(events ?? {}));
 
-    // Change in data. replaceData rather than setData: it renders in position instead of
-    // resetting the scroll (see resetScroll in Tabulator's RowManager).
-    useEffect(() => { tabulatorRef.current?.replaceData(data); }, [ data ]);
+    // Columns before data: `setColumns()` resets the scroll at once, while `replaceData()` renders
+    // in position a microtask later, so set the other way round it renders at the old offset.
     useEffect(() => {
         if (!columns) return;
         tabulatorRef.current?.setColumns(columns);
     }, [ columns ]);
+    // Change in data. replaceData rather than setData: it renders in position instead of
+    // resetting the scroll (see resetScroll in Tabulator's RowManager).
+    useEffect(() => { tabulatorRef.current?.replaceData(data); }, [ data ]);
 
     return (
         <div ref={containerRef} className={className} />

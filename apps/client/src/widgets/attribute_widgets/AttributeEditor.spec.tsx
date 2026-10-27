@@ -1,19 +1,8 @@
 import type { ModelPosition } from "@triliumnext/ckeditor5";
 import { describe, expect, it } from "vitest";
 
-import { getClickIndex, getPreprocessedData } from "./AttributeEditor";
-
-describe("getPreprocessedData", () => {
-    it("reduces a reference link back to the note path it stands for, and resolves the entities around it", () => {
-        expect(getPreprocessedData(
-            "<p>#author=Elian&nbsp;~parent=<a class=\"reference-link\" href=\"#root/abc123\">Some note</a>&nbsp;</p>"
-        )).toBe("#author=Elian ~parent=#root/abc123 ");
-
-        // A link to anywhere else is not a note path, so it is left to the text extraction below it.
-        expect(getPreprocessedData("<a href=\"https://example.com\">Example</a>")).toBe("Example");
-        expect(getPreprocessedData("#a&amp;b")).toBe("#a&b");
-    });
-});
+import link from "../../services/link";
+import { buildAttributeEditorConfig, getClickIndex } from "./AttributeEditor";
 
 describe("getClickIndex", () => {
     it("measures every sibling before the pressed one as the text it stands for", () => {
@@ -34,5 +23,15 @@ describe("getClickIndex", () => {
         expect(getClickIndex({ offset: 4, textNode: text } as unknown as ModelPosition)).toBe(4);
         // A press where there is no text node at all still resolves to a position.
         expect(getClickIndex({ offset: 7, textNode: null } as unknown as ModelPosition)).toBe(7);
+    });
+});
+
+describe("buildAttributeEditorConfig", () => {
+    it("titles the notes picked as relation targets", () => {
+        const referenceLink = buildAttributeEditorConfig([]).referenceLink;
+
+        expect(referenceLink?.getTitle).toBe(link.getReferenceLinkTitle);
+        expect(referenceLink?.getTitleSync).toBe(link.getReferenceLinkTitleSync);
+        expect(referenceLink?.renderTitle).toBeTypeOf("function");
     });
 });

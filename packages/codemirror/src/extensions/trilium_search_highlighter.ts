@@ -183,7 +183,7 @@ const NEGATION_MARK = Decoration.mark({ class: "cm-search-negation" });
  * The fallbacks below are what the legacy themes — which don't define those variables — render
  * with, so they are mid-tones that hold up on a light and a dark background alike.
  */
-const searchHighlightTheme = EditorView.baseTheme({
+export const searchHighlightTheme = EditorView.baseTheme({
     ".cm-search-label": { color: "var(--search-label-color, #539bf5)" },
     ".cm-search-relation": { color: "var(--search-relation-color, #8957e5)" },
     ".cm-search-negation": { color: "var(--search-negation-color, #e5534b)" },
@@ -212,22 +212,30 @@ export const triliumSearchHighlighter: Extension = [ searchHighlightField, searc
 
 function buildSearchDecorations(state: EditorState): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
-    const text = state.doc.toString();
+    decorateSearchQuery(builder, state.doc.toString());
+    return builder.finish();
+}
 
+/**
+ * Adds the marks of the search query `text`, which starts at `offset` in the document, to
+ * `builder`. The marks need {@link searchHighlightTheme} for their colors.
+ */
+export function decorateSearchQuery(
+    builder: RangeSetBuilder<Decoration>, text: string, offset = 0
+) {
     for (const token of tokenizeSearchQuery(text)) {
-        const negation = token.from + 1;
+        const from = offset + token.from;
+        const to = offset + token.to;
 
-        if (ATTRIBUTE_KINDS.has(token.kind) && text[negation] === "!") {
-            builder.add(token.from, negation, MARKS[token.kind]);
-            builder.add(negation, negation + 1, NEGATION_MARK);
-            builder.add(negation + 1, token.to, MARKS[token.kind]);
+        if (ATTRIBUTE_KINDS.has(token.kind) && text[token.from + 1] === "!") {
+            builder.add(from, from + 1, MARKS[token.kind]);
+            builder.add(from + 1, from + 2, NEGATION_MARK);
+            builder.add(from + 2, to, MARKS[token.kind]);
             continue;
         }
 
-        builder.add(token.from, token.to, MARKS[token.kind]);
+        builder.add(from, to, MARKS[token.kind]);
     }
-
-    return builder.finish();
 }
 
 /** The tokens spelled with a marker, which is the only place a `!` can negate. */

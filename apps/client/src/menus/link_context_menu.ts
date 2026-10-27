@@ -9,6 +9,8 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
 import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
+import { DISPLAY_MODE_OPTIONS } from "../widgets/type_widgets/helpers/split_editor_mode.js";
+import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools.js";
 import { getClosestNtxId } from "../widgets/widget_utils.js";
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
@@ -56,6 +58,27 @@ async function openContextMenu(
         items: [ ...getItems(e), ...ownItems ],
         selectMenuItemHandler: ({ command }) => handleLinkContextMenuItem(command, e, notePath, viewScope, hoistedNoteId),
         ...(editor ? keepEditorFocused(editor) : {})
+    });
+}
+
+/**
+ * Opens the menu of the embed at `e` with its own commands only, for an embed that shows no note or
+ * attachment, such as one that keeps its source in the note.
+ */
+async function openEmbedContextMenu(e: LinkMenuOrigin) {
+    const request = ++lastMenuRequest;
+    const editor = await getEditingTextEditor(getTarget(e));
+    const embed = editor && getMenuEmbed(e, editor);
+    if (!editor || !embed || request !== lastMenuRequest) {
+        return;
+    }
+
+    contextMenu.show({
+        x: e.pageX,
+        y: e.pageY,
+        items: getEmbedItems(embed),
+        selectMenuItemHandler: () => {},
+        ...keepEditorFocused(editor)
     });
 }
 
@@ -273,12 +296,13 @@ function getMenuEmbed(e: LinkMenuOrigin, editor: CKTextEditor): MenuEmbed | null
 }
 
 /**
- * The commands that the toolbar of an embed offers, with what each shows checked. Editable is
- * offered only for content that has an editable mode.
+ * The commands that the toolbar of an embed offers, with what each shows checked, and the items
+ * that its content adds after Editable. Editable is offered only for content that has an editable
+ * mode.
  */
 function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const { editor, state } = embed;
-    const sizeItems = editor.plugins.get("ContentEmbed").getBoxSizes()
+    const sizeItems = editor.plugins.get("ContentEmbed").getBoxSizes(embed.element)
         .map(({ value, label }): MenuItem<CommandNames> => ({
             title: escapeHtml(label),
             trailingIcon: value === state.boxSize ? CHECK_ICON : undefined,
@@ -290,9 +314,22 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         checked: state.isEditable,
         handler: () => runEmbedCommand(embed, "toggleContentEmbedEditable")
     } ] : [];
+    const contentItems = getContentEmbedTools(embed.element)?.getMenuItems?.() ?? [];
+    const displayModeItems = state.displayMode
+        ? DISPLAY_MODE_OPTIONS.map(({ value, icon, titleKey }): MenuItem<CommandNames> => ({
+            title: t(titleKey),
+            uiIcon: icon,
+            checked: value === state.displayMode,
+            handler: () => runEmbedCommand(embed, "contentEmbedDisplayMode", { value })
+        }))
+        : [];
 
     return [
         ...editableItems,
+        ...contentItems,
+        ...(contentItems.length ? [ { kind: "separator" } as const ] : []),
+        ...displayModeItems,
+        ...(displayModeItems.length ? [ { kind: "separator" } as const ] : []),
         submenuItem({
             title: t("link_context_menu.include_size"),
             uiIcon: "bx bx-expand-vertical"
@@ -429,6 +466,8 @@ export default {
     getQuickEditItem,
     getOpenNoteItem,
     handleLinkContextMenuItem,
+    keepEditorFocused,
     openContextMenu,
+    openEmbedContextMenu,
     setShareLinkResolver
 };

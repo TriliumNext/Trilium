@@ -12,6 +12,10 @@
     scrollbar-width: none;
 }
 
+.scrollable-label[data-pressed] {
+    user-select: none;
+}
+
 .scrollable-label::-webkit-scrollbar {
     display: none;
 }

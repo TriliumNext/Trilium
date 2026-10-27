@@ -6,14 +6,15 @@ import Component from "../../components/component";
 import FAttachment from "../../entities/fattachment";
 import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
+import options from "../../services/options";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
-const { getRenderedContent, drawingMounts, drawingProps } = vi.hoisted(() => ({
+const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
     getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
     drawingMounts: vi.fn(),
-    drawingProps: vi.fn()
+    uploadFiles: vi.fn(async () => {})
 }));
 
 // Nothing initialises i18next in a unit test, and an uninitialised one answers every lookup with an
@@ -35,8 +36,7 @@ vi.mock("../../services/content_renderer", () => ({
 }));
 // Counts the mounts of the drawing editor, which loads a change saved elsewhere in place.
 vi.mock("./canvas/CanvasDrawing", () => ({
-    CanvasDrawingDetail: (props: { revision?: number }) => {
-        drawingProps(props);
+    CanvasDrawingDetail: () => {
         useEffect(() => drawingMounts(), []);
         return <div className="drawing-detail-stub" />;
     }
@@ -46,6 +46,7 @@ vi.mock("./canvas/CanvasDrawing", () => ({
 vi.mock("../react/Dropdown", () => ({ default: () => <div class="dropdown-stub" /> }));
 vi.mock("../react/NoteLink", () => ({ default: () => <span class="note-link-stub" /> }));
 vi.mock("../dialogs/image_compression/image_compression_dialog", () => ({ showImageCompressionDialog: vi.fn() }));
+vi.mock("../../services/import", () => ({ default: { uploadFiles } }));
 
 const { AttachmentDetail, AttachmentList } = await import("./Attachment");
 
@@ -94,7 +95,7 @@ describe("AttachmentList", () => {
         expect(drawingBlob).not.toHaveBeenCalled();
     });
 
-    it("shows a transcript as its conversation, not through the content renderer", async () => {
+    it("files a transcript with the app's own, shown as its conversation", async () => {
         const content = JSON.stringify({
             version: 1,
             startedAt: "2026-10-13T14:30:00.000Z",
@@ -108,8 +109,13 @@ describe("AttachmentList", () => {
         getRenderedContent.mockClear();
         const container = await mount([ transcript ] as FAttachment[]);
 
+        expect(cards(container)).toHaveLength(0);
+        const disclosure = container.querySelector<HTMLButtonElement>(".attachment-system-group .collapsible-title");
+        expect(disclosure).not.toBeNull();
+        disclosure?.click();
+
         await vi.waitFor(() =>
-            expect(container.querySelector(".attachment-transcript .transcript-turn")).not.toBeNull());
+            expect(container.querySelector(".attachment-system-group .attachment-transcript .transcript-turn")).not.toBeNull());
         expect(container.querySelector(".attachment-transcript")?.textContent).toContain("Yes.");
         expect(getRenderedContent).not.toHaveBeenCalled();
     });
@@ -123,12 +129,61 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".no-items")?.textContent).toBe("attachment_list.no_attachments");
         expect(container.querySelector(".no-items-small, .beside-folded-away")).toBeNull();
     });
+
+    it("uploads files dropped from outside the app as attachments of the note", async () => {
+        vi.spyOn(options, "is").mockReturnValue(true);
+        uploadFiles.mockClear();
+        const container = await mount([ role("image") ]);
+        const list = container.querySelector(".attachment-list-container");
+        const card = cards(container)[0];
+        expect(list).not.toBeNull();
+        expect(card).toBeDefined();
+        if (!list) return;
+
+        expect(drag(card, "dragenter", [ "Files" ]).defaultPrevented).toBe(true);
+        expect(dropOverlay(container)?.textContent).toBe("attachment_list.drop_files");
+
+        // Moving from the card to the list around it keeps the overlay.
+        drag(list, "dragenter", [ "Files" ]);
+        drag(card, "dragleave", [ "Files" ]);
+        expect(dropOverlay(container)).not.toBeNull();
+        expect(drag(list, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+
+        const file = new File([ "x" ], "notes.txt");
+        expect(drag(list, "drop", [ "Files" ], [ file ]).defaultPrevented).toBe(true);
+        expect(uploadFiles).toHaveBeenCalledExactlyOnceWith(
+            "attachments", "note1", [ file ], { shrinkImages: true });
+        expect(dropOverlay(container)).toBeNull();
+    });
+
+    it("ignores a drag that carries no files or that started in the page", async () => {
+        uploadFiles.mockClear();
+        const container = await mount([ role("image") ]);
+        const card = cards(container)[0];
+        expect(card).toBeDefined();
+
+        // Notes dragged from the tree.
+        expect(drag(card, "dragenter", [ "text/plain" ]).defaultPrevented).toBe(false);
+        expect(dropOverlay(container)).toBeNull();
+
+        // An image dragged out of a card also carries files.
+        drag(card, "dragstart", [ "Files" ]);
+        expect(drag(card, "dragenter", [ "Files" ]).defaultPrevented).toBe(false);
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(false);
+        expect(dropOverlay(container)).toBeNull();
+        drag(card, "drop", [ "Files" ], [ new File([ "x" ], "image.png") ]);
+        expect(uploadFiles).not.toHaveBeenCalled();
+
+        // Either a drop or a `dragend` ends the drag from the page.
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+        drag(card, "dragstart", [ "Files" ]);
+        drag(card, "dragend", [ "Files" ]);
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+    });
 });
 
 describe("AttachmentDetail", () => {
-    it("edits a canvas drawing, loading again only what another component saved", async () => {
-        const getRevision = () =>
-            (drawingProps.mock.lastCall?.[0] as { revision?: number }).revision;
+    it("edits a canvas drawing in an editor that stays mounted through every save", async () => {
         const drawing = { ...role("file"), mime: CANVAS_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(drawing);
         getRenderedContent.mockClear();
@@ -149,16 +204,12 @@ describe("AttachmentDetail", () => {
         expect(container.querySelector(".attachment-canvas-drawing .drawing-detail-stub")).not.toBeNull();
         expect(getRenderedContent).not.toHaveBeenCalled();
 
-        // Its own save, and a change to another attachment, keep the editor as it is.
+        // The drawing shows a save made elsewhere in place.
         await reloadAttachment(component, drawing.attachmentId, component.componentId);
+        await reloadAttachment(component, drawing.attachmentId, "otherComponent");
         await reloadAttachment(component, "otherAttachment", "otherComponent");
         expect(drawingMounts).toHaveBeenCalledOnce();
-        expect(getRevision()).toBe(0);
-
-        // The detail stays mounted, so that its unsaved changes carry over to the drawing.
-        await reloadAttachment(component, drawing.attachmentId, "otherComponent");
-        await vi.waitFor(() => expect(getRevision()).toBe(1));
-        expect(drawingMounts).toHaveBeenCalledOnce();
+        expect(getRenderedContent).not.toHaveBeenCalled();
     });
 });
 
@@ -206,4 +257,18 @@ async function mount(attachments: FAttachment[]) {
 
 function cards(container: HTMLElement) {
     return container.querySelectorAll(".attachment-detail-widget");
+}
+
+function dropOverlay(container: HTMLElement) {
+    return container.querySelector(".attachment-list-drop-overlay");
+}
+
+/** Fires a drag event at `target` whose data has the given `types` and `files`. */
+function drag(target: Element, type: string, types: string[], files: File[] = []) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: { types, files, dropEffect: "none" } });
+    act(() => {
+        target.dispatchEvent(event);
+    });
+    return event;
 }

@@ -122,19 +122,16 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
     --note-split-bottom-border-radius: var(--center-pane-border-radius);
 }
 
-/* Matches when the left pane is collapsed */
-#horizontal-main-container.left-pane-hidden {
-    --note-split-top-border-radius: 0;
-}
-
 /* Matches when a status bar panel is open */
 #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
     --note-split-bottom-border-radius: 0;
 }
 
-/* Add a border to the vertical launch bar if collapsed. */
-body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.vertical {
-    border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
+/* Draws the launch bar's border in the gap between the peek button and the peeked tree. The
+   offset is physical, since the button is mirrored in RTL. */
+body.layout-vertical #horizontal-main-container > .left-pane-peek-button.peek-pane-button-action-collapse {
+    box-shadow: 2px 0 var(--left-pane-collapsed-border-color),
+        2px 0 var(--launcher-pane-vert-background-color);
 }
 
 /*
@@ -473,54 +470,10 @@ body .calendar-dropdown-widget .calendar-body a:hover {
     text-decoration: unset;
 }
 
-/*
- * Bookmarks folder popup
- */
-
-div.bookmark-folder-widget {
-    min-width: auto;
-    max-width: 40vw;
-    padding: 0;
-    font-size: 1.1em;
-}
-
-div.bookmark-folder-widget .children-notes {
-    margin: 0;
-}
-
-/* Item */
-div.bookmark-folder-widget span.note-link {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
+body .calendar-dropdown-widget .calendar-body a.calendar-date-active {
     border-radius: 6px;
-    padding: 6px 25px;
-}
-
-/* Item: the parent note */
-div.bookmark-folder-widget .parent-note .note-link {
-    padding: 6px 8px;
-    font-weight: bold;
-}
-
-div.bookmark-folder-widget .note-link:hover {
-    background: var(--hover-item-background-color);
-}
-
-div.bookmark-folder-widget .note-link a {
-    padding-inline-start: 8px;
-    color: var(--menu-text-color);
-    cursor: default;
-}
-
-div.bookmark-folder-widget .note-link:hover a {
-    color: var(--hover-item-text-color);
-}
-
-/* The item's icon */
-div.bookmark-folder-widget .note-link .tn-icon {
-    color: var(--menu-item-icon-color);
-    font-size: 1.2em;
+    background: var(--calendar-day-selected-background);
+    color: var(--calendar-day-selected-color) !important;
 }
 
 /*
@@ -575,6 +528,11 @@ div.bookmark-folder-widget .note-link .tn-icon {
 :is(#left-pane, .tree-popup-sidebar) div.tree {
     padding: 3px 6px 40px 6px;
     animation: fade-in 200ms ease-in;
+}
+
+#left-pane .tree.scroll-edge-fade {
+    --scroll-fade-top: 18px;
+    padding-top: 10px;
 }
 
 :is(#left-pane, .tree-popup-sidebar) span.fancytree-node {
@@ -661,24 +619,13 @@ div.bookmark-folder-widget .note-link .tn-icon {
     content: "\eb4a";
     font-family: "boxicons";
     transform: translateX(25%);
+    color: var(--quick-search-result-highlight-color);
     background: var(--left-pane-background-color);
     border-radius: 50%;
 }
 
 body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon:after {
     transform: translateX(-25%);
-}
-
-@media (max-width: 991px) {
-    body.mobile #mobile-sidebar-container {
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    body.mobile #mobile-sidebar-wrapper {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-        border-inline-end: 1px solid var(--subtle-border-color);
-    }
 }
 
 :is(#left-pane, .tree-popup-sidebar) .fancytree-expander,
@@ -848,25 +795,6 @@ body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected
     color: var(--menu-item-icon-color);
     opacity: var(--menu-item-disabled-opacity);
     transition: color 200ms ease-out;
-}
-
-/*
- * Tree settings popup
- */
-
-:is(#left-pane, .tree-popup-sidebar) .tree-settings-popup {
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    border: 1px solid var(--dropdown-border-color);
-    padding: 25px;
-    background: var(--menu-background-color);
-    backdrop-filter: blur(10px) saturate(6);
-    color: var(--menu-text-color);
-}
-
-:is(#left-pane, .tree-popup-sidebar) .tree-settings-popup h4 {
-    margin-bottom: 0.75em;
-    font-size: 1.5em;
-    line-height: 1;
 }
 
 /*
@@ -1237,19 +1165,28 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 #center-pane .note-split {
     padding-top: 2px;
     background-color: var(--note-split-background-color, var(--main-background-color));
-    transition: border-color 150ms ease-out;
-    border: 2px solid transparent;
 }
 
 /* Mobile has no #center-pane: its splits stack inside #detail-container instead. */
-body.mobile #detail-container .note-split {
-    transition: border-color 150ms ease-out;
-    border: 2px solid transparent;
+:is(#center-pane, body.mobile #detail-container) .note-split {
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid transparent;
+        border-radius: inherit;
+        pointer-events: none;
+        transition: border-color 150ms ease-out;
+        /* Above CodeMirror's gutters and panels (up to 300), below dropdowns (1000). */
+        z-index: 500;
+    }
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active,
-body.mobile #detail-container > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active {
+#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after,
+body.mobile #detail-container > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
 }
 

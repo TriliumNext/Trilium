@@ -6,6 +6,7 @@ import {
     DatabaseBackup,
     ExistingBackupsResponse
 } from "@triliumnext/commons";
+import { createPortal } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isBackupDownloadSupported } from "../../../services/backup_download";
@@ -451,11 +452,14 @@ export function BackupOptions() {
                 </OptionCardSection>
             </Card>
 
-            <BackupPasswordModal
-                show={passwordModalShown}
-                onHidden={() => setPasswordModalShown(false)}
-                onSave={storePassword}
-            />
+            {createPortal(
+                <BackupPasswordModal
+                    show={passwordModalShown}
+                    onHidden={() => setPasswordModalShown(false)}
+                    onSave={storePassword}
+                />,
+                document.body
+            )}
         </>
     );
 }

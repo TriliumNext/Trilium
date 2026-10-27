@@ -38,6 +38,9 @@ export default function setupToC() {
         });
     }
 
+    const tocPane = document.getElementById("toc-pane");
+    let activeIndex = -1;
+
     // Marks the entry of the last section scrolled under the top bar, whose height `title_row.ts`
     // gives, or the first entry above every section.
     const changeLinkState = () => {
@@ -47,17 +50,36 @@ export default function setupToC() {
         while (--index > 0 && sections[index].getBoundingClientRect().top > limit) {
             // Walk back to the last section scrolled past.
         }
+        if (index === activeIndex) return;
+        activeIndex = index;
 
         for (const links of linkLists) {
             for (const [ linkIndex, link ] of links.entries()) {
                 link.classList.toggle("active", linkIndex === index);
             }
         }
+
+        const activeLink = tocPane?.querySelectorAll("a")[index];
+        if (tocPane && activeLink) {
+            keepInView(tocPane, activeLink);
+        }
     };
 
     changeLinkState();
     // The note scrolls in its own container on a wide screen, and the page on a narrow one.
     document.addEventListener("scroll", changeLinkState, { capture: true, passive: true });
+}
+
+/**
+ * Scrolls `pane` to put `entry` in its middle when the entry is not entirely visible. Only the pane
+ * scrolls: `scrollIntoView()` would also move the page, which is scrolling already.
+ */
+function keepInView(pane: HTMLElement, entry: HTMLElement) {
+    const paneRect = pane.getBoundingClientRect();
+    const entryRect = entry.getBoundingClientRect();
+    if (entryRect.top >= paneRect.top && entryRect.bottom <= paneRect.bottom) return;
+
+    pane.scrollTop += entryRect.top - paneRect.top - (pane.clientHeight - entryRect.height) / 2;
 }
 
 /** How long a heading link shows its check mark after copying, in milliseconds. */

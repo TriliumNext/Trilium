@@ -3,9 +3,15 @@ import type { ServerResponse } from "node:http";
 import { join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Node loads these without a bundler, so neither imports another source file.
+import { getThemeById } from "@triliumnext/codemirror/src/color_themes.js";
+import {
+    buildCodePreviewCss, readPreviewTheme
+} from "@triliumnext/codemirror/src/preview_theme.js";
 import type { ShareThemeManifest } from "@triliumnext/commons";
 import {
-    resolveShareThemeGroups, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES
+    resolveShareThemeGroups, SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES,
+    SHARE_HOSTED_VIEW_TYPES
 } from "@triliumnext/commons/src/lib/share_hosting.js";
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
@@ -407,20 +413,32 @@ async function emitShareTheme(
 
 /**
  * Serves `virtual:code-themes.css`: the VS Code highlighting themes code notes also use, one per
- * share theme mode. `:where()` keeps the block rules as weak as a stock highlight.js theme's, so
- * the share theme's own `.ck-content code` colors still win inside text notes.
+ * share theme mode, for the highlight.js code blocks of text notes and for the code notes that
+ * `renderCodePreview()` renders. `:where()` keeps the block rules as weak as a stock highlight.js
+ * theme's, so the share theme's own `.ck-content code` colors still win inside text notes.
  */
 function codeThemesPlugin(): Plugin {
     return {
         name: "share-theme-code-themes",
         resolveId: (id) => (id === CODE_THEMES_ID ? `\0${CODE_THEMES_ID}` : null),
         // The development server asks for `?direct` when `scripts.css` imports the themes.
-        load: (id) => (id.split("?")[0] === `\0${CODE_THEMES_ID}`
-            ? [
+        load: async (id) => {
+            if (id.split("?")[0] !== `\0${CODE_THEMES_ID}`) return null;
+
+            const codePreviewCss = await Promise.all(SHARE_CODE_PREVIEW_THEMES.map(
+                async ({ id: themeId, key, scope }) => {
+                    const definition = getThemeById(themeId);
+                    if (!definition) throw new Error(`Unknown code note theme "${themeId}".`);
+                    const theme = readPreviewTheme(themeId, await definition.load());
+                    return buildCodePreviewCss({ theme, key }, scope);
+                }
+            ));
+            return [
                 buildVsCodeThemeCss(VS_CODE_LIGHT, ":where(html.theme-light)"),
-                buildVsCodeThemeCss(VS_CODE_DARK, ":where(html.theme-dark)")
-            ].join("\n")
-            : null)
+                buildVsCodeThemeCss(VS_CODE_DARK, ":where(html.theme-dark)"),
+                ...codePreviewCss
+            ].join("\n");
+        }
     };
 }
 

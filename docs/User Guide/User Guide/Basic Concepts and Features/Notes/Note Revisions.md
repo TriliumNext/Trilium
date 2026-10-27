@@ -3,7 +3,7 @@
 
 Trilium supports seamless versioning of notes by storing snapshots ("revisions") of notes at regular intervals.
 
-To display the revisions, press the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Note revisions…_
+To display the revisions, press the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Note revisions…_ (<span class="tn-icon bx bx-history"></span>).
 
 ## Interaction
 
@@ -14,16 +14,16 @@ To display the revisions, press the <a class="reference-link" href="../UI%20Ele
     *   The revisions are grouped by the date the revision was taken.
     *   This list does not contain the _current state_ of the note, so it is possible to have notes with no revisions/snapshots saved.
 *   The icon of a revision indicates the _source_ of that revision (e.g. a <span class="tn-icon bx bx-save"></span> icon for a manually saved revision).
-*   Pressing the \[…\] on the top-right of the dialog displays multiple options, including:
-    *   Saving a new revision now.
+*   Pressing the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> button on the top-right of the dialog displays multiple options, including:
+    *   <span class="tn-icon bx bx-save"></span> Saving a new revision now.
     *   Checking the interval and limit for this note (see below).
-    *   Deleting all the revisions of this note.
+    *   <span class="tn-icon bx bx-trash"></span> Deleting all the revisions of this note.
 *   For supported notes (text, code), changes are highlighted. This behavior can be toggled via the _Highlight changes_ at the top of the dialog.
     *   The highlighted changes are relative to the **current state of the note**, not to the revision prior to this one.
 *   For any given revision, the buttons on the top-right allow operating on it:
-    *   Deleting the revision.
-    *   Downloading the revision locally.
-    *   Restoring the revision, which replaces the current content of the note with the one from the revision. Another revision is saved containing the current content of the note.
+    *   <span class="tn-icon bx bx-trash"></span> Deleting the revision.
+    *   <span class="tn-icon bx bx-download"></span> Downloading the revision locally.
+    *   <span class="tn-icon bx bx-history"></span> Restoring the revision, which replaces the current content of the note with the one from the revision. Another revision is saved containing the current content of the note.
 
 ## Named revisions
 
@@ -32,11 +32,11 @@ Named revisions are a new feature of Trilium v0.103.0 which allows adding a shor
 In the list of note revisions:
 
 *   The name of the revision is displayed underneath the time of the revision in the sidebar, as well as at the top of the dialog where it is displayed in full.
-*   Clicking on the edit button near the name of the revision allows it to be changed.
+*   Clicking on the <span class="tn-icon bx bx-edit-alt"></span> edit button near the name of the revision allows it to be changed.
 
 To create a named revision, either:
 
-*   Go to the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, select _Save named revision…_, enter the name of revision and confirm.
+*   Go to the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, select _Note revisions…_ → _Save named revision…_ (<span class="tn-icon bx bx-purchase-tag"></span>), enter the name of revision and confirm.
 *   Use the corresponding [keyboard shortcut](../Keyboard%20Shortcuts.md) or the <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a> command with the same name.
 *   Save a revision normally, and adjust the name afterwards from the note revision list.
 
@@ -46,15 +46,15 @@ Revisions are saved:
 
 *   Automatically at a fixed interval. This behavior can be configured (see below).
 *   Manually, by:
-    *   Going to the press the [note context menu](../UI%20Elements/Note%20menu.md) and select _Save revision._
+    *   Going to the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and selecting _Note revisions…_ → _Save revision_ (<span class="tn-icon bx bx-save"></span>).
     *   Using the _Force Save Revision_ [keyboard shortcut](../Keyboard%20Shortcuts.md).
-    *   In the _Revisions_ dialog, pressing the \[…\] button in the top-right and selecting _Save a revision now_.
+    *   In the _Note Revisions_ dialog, pressing the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> button in the top-right and selecting _Save a revision now_.
 
 Additionally, revisions can also come from somewhere else, and this is indicated via the icon of the revision:
 
-*   Generated externally, by <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>.
-*   A modification created by <a class="reference-link" href="../../AI.md">AI</a>.
-*   A revision is restored, causing the existing note content to be saved as a revision to prevent potential data loss.
+*   <span class="tn-icon bx bx-code-alt"></span> Generated externally, by <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>.
+*   <span class="tn-icon bx bx-bot"></span> A modification created by <a class="reference-link" href="../../AI.md">AI</a>.
+*   <span class="tn-icon bx bx-history"></span> A revision is restored, causing the existing note content to be saved as a revision to prevent potential data loss.
 
 #### Snapshot interval
 
@@ -68,4 +68,4 @@ The limit on the number of note snapshots can be configured in the Options → O
 
 The note limit will not take effect immediately; it will only apply when the note is modified.
 
-You can click the _Erase excess revision snapshots now_ button to apply the changes immediately.
+You can click the _Erase now_ button under _Erase excess revision snapshots_ to apply the changes immediately.

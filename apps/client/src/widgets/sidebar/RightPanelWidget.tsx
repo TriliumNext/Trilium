@@ -28,7 +28,7 @@ export const ExpandWidgetRequests = createContext<ExpandWidgetRequest | null>(nu
 
 interface RightPanelWidgetProps {
     id: string;
-    title: string;
+    title: ComponentChildren;
     children: ComponentChildren;
     buttons?: ComponentChildren;
     containerRef?: RefObject<HTMLDivElement | null>;

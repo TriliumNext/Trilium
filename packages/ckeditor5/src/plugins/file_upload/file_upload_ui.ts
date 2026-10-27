@@ -56,17 +56,9 @@ export default class FileUploadUI extends Plugin {
                 dropdownView.bind("isEnabled").to(command);
             }
 
-            const buttons: FileDialogListItemButtonView[] = [];
-
             // Embedding, the default, goes wherever the "Include note" button can insert an embed.
             const embedCommand = editor.commands.get("insertContentEmbed");
             if (embedCommand) {
-                const embedButton = this.createListButton(
-                    locale, t("Attach and embed file"), bxShapeSquare, { asEmbed: true }
-                );
-                embedButton.bind("isEnabled").to(embedCommand);
-                buttons.push(embedButton);
-
                 this.attachOnDone(actionView, { asEmbed: true });
                 actionView.bind("isEnabled").to(
                     dropdownView, "isEnabled", embedCommand, "isEnabled",
@@ -77,8 +69,7 @@ export default class FileUploadUI extends Plugin {
                 actionView.bind("isEnabled").to(dropdownView);
             }
 
-            buttons.push(this.createListButton(locale, t("Attach file as a link"), bxLink, {}));
-
+            const buttons = this.createListButtons(locale);
             const listView = dropdownView.listView = new ListView(locale);
             for (const button of buttons) {
                 const listItem = new ListItemView(locale);
@@ -108,6 +99,28 @@ export default class FileUploadUI extends Plugin {
 
             return button;
         });
+    }
+
+    /**
+     * The rows of the `fileUpload` list, each picking files: "Attach and embed file" in an editor
+     * with embeds, then "Attach file as a link". Each row is enabled while its command is.
+     */
+    createListButtons(locale: Locale) {
+        const editor = this.editor;
+        const t = editor.t;
+        const buttons: FileDialogListItemButtonView[] = [];
+
+        const embedCommand = editor.commands.get("insertContentEmbed");
+        if (embedCommand) {
+            const embedButton = this.createListButton(
+                locale, t("Attach and embed file"), bxShapeSquare, { asEmbed: true }
+            );
+            embedButton.bind("isEnabled").to(embedCommand);
+            buttons.push(embedButton);
+        }
+        buttons.push(this.createListButton(locale, t("Attach file as a link"), bxLink, {}));
+
+        return buttons;
     }
 
     private createListButton(

@@ -67,13 +67,13 @@ export default class InsertDateTimePlugin extends Plugin {
 }
 
 /**
- * Inserts the current date and time, formatted by the host through `formatDateTime()`, in place of
+ * Inserts the current date and time, formatted by the `formatDateTime` config entry, in place of
  * the selection. The text takes the selection's attributes, so it stays bold inside bold text.
  */
 class InsertDateTimeCommand extends Command {
 
     /**
-     * @param options.format a Day.js format string; without one, the host applies the user's
+     * @param options.format a Day.js format string; without one, `formatDateTime` applies the user's
      * `customDateTimeFormat`.
      */
     execute({ format }: { format?: string } = {}) {
@@ -131,6 +131,18 @@ function createFormatItems(editor: Editor): ListDropdownItemDefinition[] {
 }
 
 function formatNow(editor: Editor, format?: string) {
-    const editorEl = editor.editing.view.getDomRoot();
-    return glob.getComponentByEl<EditorComponent>(editorEl).formatDateTime(new Date(), format);
+    const formatDateTime = editor.config.get('formatDateTime');
+    const now = new Date();
+    return formatDateTime ? formatDateTime(now, format) : now.toLocaleString();
+}
+
+declare module 'ckeditor5' {
+    interface EditorConfig {
+        /**
+         * Formats `date` for insertion in the Day.js `format`, or in the user's
+         * `customDateTimeFormat` when none is given. Without it, the date is inserted in the
+         * browser's locale format and the presets render the same.
+         */
+        formatDateTime?(date: Date, format?: string): string;
+    }
 }

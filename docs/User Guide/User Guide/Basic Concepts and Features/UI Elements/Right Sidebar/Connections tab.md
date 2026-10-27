@@ -10,12 +10,12 @@ The connections tab groups together all the information about the current note a
 
 The note map displays a graph which shows the relation between the current notes and other notes on the hierarchy. There are two types of visualizations, which can be selected from the top-right part of the section:
 
-*   The _Link map_, which displays the [relations](../../../Advanced%20Usage/Attributes/Relations.md) between notes.
-*   The _Tree map_, which displays the hierarchical structure.
+*   The _Link map_ (<span class="tn-icon bx bx-network-chart"></span>), which displays the [relations](../../../Advanced%20Usage/Attributes/Relations.md) between notes.
+*   The _Tree map_ (<span class="tn-icon bx bx-sitemap"></span>), which displays the hierarchical structure.
 
 The sidebar will remember which visualization is selected, as a global option. Note that note maps also have a `#mapType` which describes which visualization to use, but the sidebar deliberately ignores that to keep consistency when switching between notes.
 
-The map can also be expanded by pressing the button in the top-right of the section. When expanded, the map is displayed in a separate dialog. Alternatively, all other sections can be collapsed, which will make the note map taller and the sidebar can be dragged to make for more lateral space.
+The map can also be expanded by pressing the <span class="tn-icon bx bx-expand-alt"></span> button in the top-right of the section. When expanded, the map is displayed in a separate dialog. Alternatively, all other sections can be collapsed, which will make the note map taller and the sidebar can be dragged to make for more lateral space.
 
 The note map view inside the sidebar is deliberately more compact in order to fit the space: the link map would also show notes that don't have a link to the current note from the hierarchy (creating a cloud of dots) but this is only shown while the map is expanded. Similarly, the link strength and pin configuration buttons are not displayed here.
 
@@ -28,7 +28,7 @@ See also:
 
 The note paths section displays the locations in which the current note is [cloned](../../Notes/Cloning%20Notes.md). Each segment of the note path is clickable, in order to navigate to that note or clone. The root note is shown as its icon, the same as in the <a class="reference-link" href="../Breadcrumb.md">Breadcrumb</a>; hovering it shows its title.
 
-A new clone can be created from the top-right button.
+A new clone can be created from the <span class="tn-icon bx bx-duplicate"></span> button at the top-right.
 
 ## Backlinks
 

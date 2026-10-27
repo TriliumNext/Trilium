@@ -32,6 +32,7 @@ interface Entry {
     icon?: string;
     hint?: string;
     startsGroup?: boolean;
+    unavailable?: string;
 }
 
 const ENTRIES: Entry[] = [
@@ -119,6 +120,24 @@ describe("FormDropdownList", () => {
         expect(items[1].className).not.toContain("active");
         // Without a property to read it from, no item starts a group of its own.
         expect(document.querySelectorAll(".dropdown-divider")).toHaveLength(0);
+    });
+
+    it("shows an item with a reason against it as disabled, and reports no press on it", () => {
+        const onChange = vi.fn();
+        renderOpened(
+            <FormDropdownList
+                values={[ ENTRIES[0], { ...ENTRIES[1], unavailable: "Not here" } ]}
+                keyProperty="value"
+                titleProperty="title"
+                disabledProperty="unavailable"
+                currentValue="text"
+                onChange={onChange}
+            />);
+
+        const items = [ ...document.querySelectorAll<HTMLElement>(".dropdown-item") ];
+        expect(items.map((item) => item.classList.contains("disabled"))).toEqual([ false, true ]);
+        act(() => items[1].click());
+        expect(onChange).not.toHaveBeenCalled();
     });
 
     /** The menu only renders its items once Bootstrap reports it open, which nothing does here. */

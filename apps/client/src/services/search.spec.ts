@@ -40,10 +40,11 @@ describe("search service", () => {
         const get = vi.fn(async () => response);
         server.get = get as typeof server.get;
 
-        const result = await searchService.searchInSubtree("#done & task", "board1");
+        const result = await searchService.searchInSubtree("#done & task", "board1", false);
 
         expect(get).toHaveBeenCalledWith(
-            `search?searchString=${encodeURIComponent("#done & task")}&ancestorNoteId=board1&includeTokens=true`);
+            `search?searchString=${encodeURIComponent("#done & task")}&ancestorNoteId=board1`
+            + "&includeTokens=true&includeArchivedNotes=false");
         expect(result).toBe(response);
     });
 

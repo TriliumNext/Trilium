@@ -650,6 +650,20 @@ describe("NoteAutocomplete's suggestion list", () => {
         expect(fullTextRow()).toBeUndefined();
     });
 
+    it("asks for the notes its filter matches, the content search included", async () => {
+        const input = await mount({ filter: "note.type = image" });
+        await type(input, "al");
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith(
+            "al", expect.objectContaining({ filter: "note.type = image" }));
+
+        const row = fullTextRow();
+        if (!row) throw new Error("no full-text search row rendered");
+        await act(async () => { row.click(); });
+        await settle();
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith(
+            "al", expect.objectContaining({ filter: "note.type = image", fastSearch: false }));
+    });
+
     it("searches the content from its row, saying so until the results come", async () => {
         let finish: (rows: Suggestion[]) => void = () => {};
         const onChange = vi.fn();

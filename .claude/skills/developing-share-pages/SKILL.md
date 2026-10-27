@@ -1,6 +1,7 @@
 ---
 name: developing-share-pages
-description: Use when working on Trilium's share functionality — shared pages under `/share/`, the static HTML (share-theme) export, the share theme package (`packages/share-theme`: EJS templates, page model, browser scripts and CSS), core's share renderer (`packages/trilium-core/src/share/content_renderer.ts`, `handlers.ts`, shaca), the per-platform share providers, `~shareTemplate` custom templates, `~shareHtml` snippets, or any `#share*` label. Covers where each piece runs (server, desktop, standalone worker, visitor's browser), the render pipeline from note to page, the page model and its template variables, what custom templates are promised, CSS ordering, how to test each layer (both core runners, happy-dom, node:vm), and the traps already hit on this code.
+description: >-
+  Use when working on Trilium's share functionality — shared pages under `/share/`, the static HTML (share-theme) export, the share theme package (`packages/share-theme`: EJS templates, page model, browser scripts and CSS), core's share renderer (`packages/trilium-core/src/share/content_renderer.ts`, `handlers.ts`, shaca), the per-platform share providers, `~shareTemplate` custom templates, `~shareHtml` snippets, or any `#share*` label. Covers where each piece runs (server, desktop, standalone worker, visitor's browser), the render pipeline from note to page, the page model and its template variables, what custom templates are promised, CSS ordering, how to test each layer (both core runners, happy-dom, node:vm), and the traps already hit on this code.
 ---
 
 # Developing shared pages

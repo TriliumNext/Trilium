@@ -1314,70 +1314,70 @@
         "trilium-admonition"
       ]
     },
-    "cke-trilium-collapsible": {
+    "cke-trilium-block-type": {
       "glyph": "",
+      "terms": [
+        "trilium-block-type"
+      ]
+    },
+    "cke-trilium-collapsible": {
+      "glyph": "",
       "terms": [
         "trilium-collapsible"
       ]
     },
     "cke-trilium-copy": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-copy"
       ]
     },
     "cke-trilium-date-time": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-date-time"
       ]
     },
     "cke-trilium-download": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-download"
       ]
     },
     "cke-trilium-fileupload": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-fileupload"
       ]
     },
     "cke-trilium-insert-footnote": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-insert-footnote"
       ]
     },
     "cke-trilium-kbd": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-kbd"
       ]
     },
     "cke-trilium-link-preview": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-link-preview"
       ]
     },
     "cke-trilium-markdown-mark": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-markdown-mark"
       ]
     },
     "cke-trilium-math": {
-      "glyph": "",
-      "terms": [
-        "trilium-math"
-      ]
-    },
-    "cke-trilium-mermaid-info": {
       "glyph": "",
       "terms": [
-        "trilium-mermaid-info"
+        "trilium-math"
       ]
     },
     "cke-trilium-mermaid-insert": {
@@ -1386,68 +1386,50 @@
         "trilium-mermaid-insert"
       ]
     },
-    "cke-trilium-mermaid-preview-mode": {
-      "glyph": "",
-      "terms": [
-        "trilium-mermaid-preview-mode"
-      ]
-    },
-    "cke-trilium-mermaid-source-mode": {
-      "glyph": "",
-      "terms": [
-        "trilium-mermaid-source-mode"
-      ]
-    },
-    "cke-trilium-mermaid-split-mode": {
-      "glyph": "",
-      "terms": [
-        "trilium-mermaid-split-mode"
-      ]
-    },
     "cke-trilium-multicolumn": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-multicolumn"
       ]
     },
     "cke-trilium-note": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-note"
       ]
     },
     "cke-trilium-scissors": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-scissors"
       ]
     },
     "cke-trilium-tabs-bottom": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-tabs-bottom"
       ]
     },
     "cke-trilium-tabs": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-tabs"
       ]
     },
     "cke-trilium": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium"
       ]
     },
     "cke-trilium-ai": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-ai"
       ]
     },
     "cke-trilium-template": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-template"
       ]

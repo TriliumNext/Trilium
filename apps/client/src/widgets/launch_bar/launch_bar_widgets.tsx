@@ -27,10 +27,18 @@ export interface LauncherNoteProps {
     launcherNote: FNote;
 }
 
-/** Builds the default right-click handler that shows the launch-bar icon context menu (with the "Remove from launch bar" entry). Used by widgets that render a raw element rather than going through {@link LaunchBarActionButton} / {@link LaunchBarDropdownButton}. */
-export function launcherContextMenuHandler(launcherNote: FNote | null | undefined) {
+/**
+ * Builds the default right-click handler that shows the launch-bar icon context menu (with the
+ * "Remove from launch bar" entry). Used by widgets that render a raw element rather than going
+ * through {@link LaunchBarActionButton} / {@link LaunchBarDropdownButton}. `parentNoteId` is the
+ * launch bar section that shows the button, see `ShowLauncherContextMenuOptions`.
+ */
+export function launcherContextMenuHandler(
+    launcherNote: FNote | null | undefined,
+    parentNoteId?: string
+) {
     if (!launcherNote) return undefined;
-    return (e: MouseEvent) => showLauncherContextMenu(launcherNote, e);
+    return (e: MouseEvent) => showLauncherContextMenu(launcherNote, e, { parentNoteId });
 }
 
 export function LaunchBarActionButton({ className, launcherNote, onContextMenu, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition"> & { launcherNote?: FNote }) {
@@ -47,9 +55,16 @@ export function LaunchBarActionButton({ className, launcherNote, onContextMenu, 
     );
 }
 
-export function LaunchBarDropdownButton({ children, icon, launcherNote, buttonProps, panel, ...props }: Pick<DropdownProps, "title" | "children" | "onShown" | "autoClose" | "dropdownRef" | "buttonProps"> & {
+export function LaunchBarDropdownButton({
+    children, icon, launcherNote, parentNoteId, buttonProps, panel, ...props
+}: Pick<
+    DropdownProps, "title" | "children" | "onShown" | "autoClose" | "dropdownRef" | "buttonProps"
+        | "filterable" | "keepOrder"
+> & {
     icon: string,
     launcherNote?: FNote,
+    /** The launch bar section that shows the button. See `ShowLauncherContextMenuOptions`. */
+    parentNoteId?: string,
     /** Opens a {@link DropdownPanel} rather than a menu, for content other than `FormList` rows. */
     panel?: boolean
 }) {
@@ -57,7 +72,7 @@ export function LaunchBarDropdownButton({ children, icon, launcherNote, buttonPr
     const titlePosition = getTitlePosition(isHorizontalLayout);
 
     const resolvedButtonProps = launcherNote && !buttonProps?.onContextMenu
-        ? { ...buttonProps, onContextMenu: launcherContextMenuHandler(launcherNote) }
+        ? { ...buttonProps, onContextMenu: launcherContextMenuHandler(launcherNote, parentNoteId) }
         : buttonProps;
     const Component = panel ? DropdownPanel : Dropdown;
 
@@ -88,6 +103,12 @@ export function useLauncherIconAndTitle(note: FNote) {
         icon: note.getIcon(),
         title: title ?? ""
     };
+}
+
+/** The side of a launcher its tooltips and popups open on. */
+export function useLaunchBarTitlePosition() {
+    const { isHorizontalLayout } = useContext(LaunchBarContext);
+    return getTitlePosition(isHorizontalLayout);
 }
 
 function getTitlePosition(isHorizontalLayout: boolean) {

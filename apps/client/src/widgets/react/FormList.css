@@ -9,19 +9,6 @@
         flex-shrink: 0;
     }
 
-    .tn-svg-icon {
-        display: inline-flex;
-
-        & > svg {
-            width: 1em;
-            height: 1em;
-        }
-
-        & > svg *:not([fill]) {
-            fill: currentColor;
-        }
-    }
-
     & > span > div:has(> .switch-widget) {
         flex-grow: 1;
     }
@@ -45,6 +32,12 @@
     }
 }
 
+/* Ends the switch where a submenu row's arrow ends (see `.dropdown-submenu .dropdown-toggle::after`
+   in theme-next/menus.css), rather than at the padding kept for that arrow. */
+.dropdown-item.tn-menu-toggle {
+    --menu-item-end-padding: 10px;
+}
+
 .form-list-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -55,14 +48,28 @@
     }
 }
 
-.dropdown-header.dropdown-header-with-action {
+.dropdown-header.tn-menu-header-with-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5em;
+    gap: 1em;
 
-    /* Shrink the whole icon-action box (not just the glyph) to the 26px used by
-       the right-panel card-header-buttons — .icon-action derives its width,
-       height and font-size from this variable. */
-    --icon-button-size: 26px;
+    > .tn-menu-header-actions {
+        --icon-button-size: 22px;
+        --icon-button-color: var(--menu-item-icon-color);
+
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-inline: auto -4px;
+        /* The buttons overflow the line evenly, so the heading keeps its height. */
+        height: 0;
+        letter-spacing: normal;
+
+        .icon-action {
+            padding: 0;
+            width: var(--icon-button-size);
+            height: var(--icon-button-size);
+            font-size: calc(var(--icon-button-size) * 0.65);
+        }
+    }
 }

@@ -59,18 +59,6 @@
     font-style: italic;
 }
 
-.llm-chat-note-results-scope {
-    display: flex;
-    align-items: baseline;
-    gap: 0.3rem;
-    padding: 0.2rem 0.5rem;
-    font-size: 0.78rem;
-
-    > .bx {
-        align-self: center;
-    }
-}
-
 /* The notes of a `get_subtree` call, one indent and guide line per level. */
 .llm-chat-subtree {
     max-height: 300px;

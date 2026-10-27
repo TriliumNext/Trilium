@@ -74,13 +74,14 @@ describe("resolveWebSearch", () => {
 
     it("uses the model's built-in search by default, where the model has one", () => {
         expect(resolve("anthropic")).toEqual({ choice: "builtin", enableWebSearch: true, webSearchProviderId: undefined });
-        expect(resolve("deepseek")).toMatchObject({ choice: "builtin", enableWebSearch: false, builtInUnavailableKey: "llm_chat.web_search_builtin_unsupported" });
+        expect(resolve("deepseek")).toEqual({ choice: "builtin", enableWebSearch: true, webSearchProviderId: undefined });
+        expect(resolve("ollama")).toMatchObject({ choice: "builtin", enableWebSearch: false, builtInUnavailableKey: "llm_chat.web_search_builtin_unsupported" });
         // Gemini can't combine its own search with note tools.
         expect(resolve("google", { enableNoteTools: true })).toMatchObject({ enableWebSearch: false, builtInUnavailableKey: "llm_chat.web_search_unavailable_gemini" });
     });
 
     it("searches through the chosen search provider, falling back to built-in once it is gone", () => {
-        expect(resolve("deepseek", { searchProviderId: "s1" })).toEqual({ choice: "s1", enableWebSearch: true, webSearchProviderId: "s1", builtInUnavailableKey: "llm_chat.web_search_builtin_unsupported" });
+        expect(resolve("ollama", { searchProviderId: "s1" })).toEqual({ choice: "s1", enableWebSearch: true, webSearchProviderId: "s1", builtInUnavailableKey: "llm_chat.web_search_builtin_unsupported" });
         expect(resolve("google", { searchProviderId: "s1", enableNoteTools: true })).toMatchObject({ enableWebSearch: true, webSearchProviderId: "s1" });
         expect(resolve("anthropic", { searchProviderId: "deleted" })).toMatchObject({ choice: "builtin", enableWebSearch: true, webSearchProviderId: undefined });
     });

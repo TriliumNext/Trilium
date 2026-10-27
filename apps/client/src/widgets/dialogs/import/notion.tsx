@@ -6,7 +6,6 @@ import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/notion.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 import useProviderImport from "./useProviderImport.js";
 
@@ -57,7 +56,7 @@ const provider: ImportProvider = {
     id: "notion",
     helpPage: "Y5mKeJ6dsCld",
     name: t("notion_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-notion",
     description: t("notion_import.description"),
     Panel: NotionPanel
 };

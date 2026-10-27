@@ -1,41 +1,100 @@
-.search-setting-table {
-    margin-top: 0;
-    margin-bottom: 7px;
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 10px;
+.search-definition-widget {
+    --search-title-column: 12em;
+    --bulk-action-title-column: var(--search-title-column);
 
-    .admonition {
-        margin-top: 0.25em;
-        margin-bottom: 1em;
-        text-wrap: wrap;
+    .search-definition-add {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .search-option {
+        display: grid;
+        grid-template-columns: var(--search-title-column) minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 12px;
+        row-gap: 4px;
+
+        > .search-option-label {
+            grid-column: 1;
+            min-width: 0;
+        }
+
+        > .search-option-fields {
+            grid-column: 2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        > .search-option-actions {
+            grid-column: 3;
+        }
+    }
+
+    .search-option-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .search-option-fields > * {
+        min-width: 0;
+    }
+
+    .search-option-description {
+        color: var(--muted-text-color);
+    }
+
+    .search-option-fields :is(.form-control, .form-select, .input-group-text) {
+        padding-block: 0.25rem;
+    }
+
+    .search-option.orderBy .search-option-fields {
+        flex-wrap: nowrap;
+    }
+
+    .search-option.orderBy .form-select:first-of-type {
+        flex: 1 1 auto;
+    }
+
+    .search-option.orderBy .form-select:last-of-type {
+        flex: 0 0 auto;
+    }
+
+    .search-option-fields > :is(.search-string, .input-group) {
+        flex: 1 1 16rem;
+    }
+
+    .search-option-field-label {
+        white-space: nowrap;
+    }
+
+    .search-option.limit .form-control {
+        flex: 0 0 6em;
+    }
+
+    .search-definition-error .admonition {
+        margin: 0;
+    }
+
+    /* The add menu stands at the start of the row, the search button at its end. */
+    .search-definition-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
     }
 }
 
-.search-setting-table div {
-    white-space: nowrap;
-}
-
-.search-setting-table .title-column {
-    /* minimal width so that table remains static sized and most space remains for middle column with settings */
-    width: 50px;
-    white-space: nowrap;
-}
-
-.search-setting-table .button-column {
-    /* minimal width so that table remains static sized and most space remains for middle column with settings */
-    width: 50px;
-    white-space: nowrap;
-    text-align: end;
-    vertical-align: middle;
-}
-
-.search-setting-table .button-column .dropdown {
-    display: inline-block !important;
-}
-
-.search-setting-table .button-column > * {
-    vertical-align: middle;
+.search-definition-widget input:user-invalid {
+    border: 3px solid red;
 }
 
 .attribute-list hr {
@@ -47,131 +106,32 @@
     margin-bottom: 0;
 }
 
-.search-definition-widget input:invalid {
-    border: 3px solid red;
-}
-
-.add-search-option button {
-    margin: 3px;
-}
-
-.action-add-menu .dropdown-header {
-    background-color: var(--accented-background-color);
-}
-
-.search-actions-container {
-    display: flex;
-    justify-content: space-evenly;
-}
-
 body.mobile .search-definition-widget {
     contain: none;
 }
 
+@container (width < 560px) {
+    .search-definition-widget .search-option {
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        > .search-option-label {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        > .search-option-actions {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        > .search-option-fields {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+    }
+}
+
 @media (max-width: 720px) {
-
-    .search-setting-table {
-        display: block;
-        font-size: 0.9em;
-    }
-
-    .search-setting-table tr {
-        padding: 0.5em 0;
-        border-bottom: 1px solid var(--main-border-color);
-    }
-
-    .search-setting-table tr,
-    .search-setting-table td {
-        display: block;
-    }
-
-    .search-setting-table tbody {
-        display: block;
-        padding: 0 1em;
-    }
-
-    .search-setting-table tbody:first-of-type {
-        display: block;
-        overflow: auto;
-    }
-
-    .search-setting-table .add-search-option {
-        display: flex;
-    }
-
-    .search-setting-table .add-search-option button {
-        font-size: 0.75em;
-    }
-
-    .search-options tr,
-    .action-options tr {
-        display: flex;
-        align-items: center;
-    }
-
-    .action-options tr > td > div {
-        flex-wrap: wrap;
-        gap: 0.5em 0;
-    }
-
-    .action-options input {
-        max-width: 75vw;
-    }
-
-    .search-setting-table .title-column {
-        width: unset;
-        margin-right: 0.5em;
-        min-width: 30%;
-        flex-shrink: 0;
-    }
-
-    .search-setting-table .button-column {
-        flex-grow: 1;
-        justify-content: end;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-
-    .search-setting-table .button-column .bx-help-circle {
-        display: none;
-    }
-
-    .search-setting-table tr.orderBy td:nth-of-type(2) {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        gap: 0.5em;
-    }
-
-    .search-setting-table tr.searchString {
-        td:nth-of-type(2) {
-            flex-grow: 1;
-        }
-
-        .button-column {
-            flex-grow: 0;
-            flex-shrink: 0;
-            width: 64px;
-        }
-
-        &.has-error {
-            border-bottom: 0;
-        }
-    }
-
-    .search-setting-table tr.ancestor > td > div {
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-
-    .search-actions tr {
-        border-bottom: 0;
-    }
-
-    .search-actions-container {
-        align-items: center;
-        justify-content: center !important;
-    }
 
     .search-result-widget,
     .note-list.list-view,

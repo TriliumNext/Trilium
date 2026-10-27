@@ -599,10 +599,10 @@ describe("timeLimit (default export)", () => {
         expect(utils.timeLimit(42 as any, 1000)).toBe(42);
     });
 
-    it("resolves when the promise settles before the limit (timer sees it as resolved)", async () => {
+    it("resolves when the promise settles before the limit", async () => {
         const result = utils.timeLimit(Promise.resolve("done"), 1000);
         await expect(result).resolves.toBe("done");
-        // Advance past the limit so the timeout callback runs and observes `resolved === true`.
+        // Advancing past the limit checks that the timeout does not turn the result into a rejection.
         await vi.advanceTimersByTimeAsync(1000);
         await expect(result).resolves.toBe("done");
     });
@@ -612,6 +612,14 @@ describe("timeLimit (default export)", () => {
         const limited = utils.timeLimit(never, 50, "too slow");
         const assertion = expect(limited).rejects.toThrow("too slow");
         await vi.advanceTimersByTimeAsync(60);
+        await assertion;
+    });
+
+    it("forwards a rejection immediately instead of waiting for the limit", async () => {
+        const failing = Promise.reject(new Error("boom"));
+        const limited = utils.timeLimit(failing, 30000);
+        const assertion = expect(limited).rejects.toThrow("boom");
+        await vi.advanceTimersByTimeAsync(0);
         await assertion;
     });
 

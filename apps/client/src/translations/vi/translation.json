@@ -31,27 +31,34 @@
     "note": "Ghi chú",
     "edit_link": "Sửa liên kết",
     "search_note": "Tìm kiếm ghi chú theo tên",
-    "link_title_mirrors": "Tiêu đề liên kết phản chiếu tiêu đề hiện tại của ghi chú",
-    "link_title_arbitrary": "Tiêu đề liên kết có thể thay đổi tùy ý",
     "anchor": "Neo (tùy chọn)",
     "anchor_none": "Không (liên kết đến ghi chú)",
     "button_edit_link": "Lưu liên kết",
     "fix_link": "Sửa link",
-    "button_fix_link": "Sửa link"
+    "button_fix_link": "Sửa link",
+    "web_link": "Liên kết web",
+    "url": "URL",
+    "mirror_title": "Phản chiếu tiêu đề của ghi chú",
+    "mirror_title_description": "Liên kết hiển thị tiêu đề hiện tại của ghi chú và thay đổi khi ghi chú được đổi tên."
   },
   "bulk_actions": {
     "other": "Khác",
     "bulk_actions": "Hành động hàng loạt",
-    "affected_notes": "Các ghi chú bị ảnh hưởng",
     "include_descendants": "Bao gồm các ghi chú con của ghi chú được chọn",
-    "available_actions": "Hành động khả dụng",
     "chosen_actions": "Hành động đã chọn",
-    "execute_bulk_actions": "Thực thi hành động hàng loạt",
+    "execute_bulk_actions_other": "Áp dụng cho {{count}} ghi chú",
     "bulk_actions_executed": "Các hành động hàng loạt đã được thực thi thành công.",
-    "none_yet": "Chưa có hành động nào... thêm hành động bằng cách nhấp vào một trong các hành động khả dụng ở trên.",
+    "none_yet": "Chưa có hành động nào. Sử dụng Thêm hành động bên dưới để chọn.",
     "labels": "Nhãn",
     "relations": "Quan hệ",
-    "notes": "Ghi chú"
+    "notes": "Ghi chú",
+    "selected_notes": "Các ghi chú đã chọn",
+    "remove_from_selection": "Loại khỏi lựa chọn",
+    "affected_note_count_other": "Các thao tác áp dụng cho {{count}} ghi chú.",
+    "add_action": "Thêm thao tác",
+    "remove_action": "Xóa thao tác này",
+    "no_actions_to_execute": "Hãy thêm một thao tác trước.",
+    "no_notes_to_execute_on": "Không có ghi chú nào trong số các ghi chú đã chọn còn tồn tại."
   },
   "branch_prefix": {
     "save": "Lưu",
@@ -336,9 +343,9 @@
     "run_on_instance": "Định nghĩa phiên bản Trilium nào sẽ chạy kịch bản này. Mặc định cho tất cả các phiên bản.",
     "run_at_hour": "Nên chạy vào giờ nào. Nên được sử dụng cùng với <code>#run=hourly</code>. Có thể được định nghĩa nhiều lần để chạy nhiều lần trong ngày.",
     "disable_inclusion": "Các kịch bản có nhãn này sẽ không được bao gồm trong việc thực thi kịch bản cha.",
-    "sorted": "Giữ các ghi chú con được sắp xếp theo tiêu đề theo thứ tự bảng chữ cái. Một giá trị sẽ sắp xếp theo các tiêu chí khác thay thế: các cấp độ được phân tách bằng dấu phẩy của <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> hoặc tên nhãn, mỗi cấp độ có thể tùy chọn theo sau bởi <code>asc</code> hoặc <code>desc</code>, ví dụ: <code>priority desc, dueDate</code>.",
-    "sort_direction": "Hướng mà <code>#sorted</code> sắp xếp các ghi chú con: <code>desc</code> cho giảm dần, bất kỳ giá trị nào khác cho tăng dần. Một cấp độ theo sau bởi <code>asc</code> hoặc <code>desc</code> của riêng nó sẽ bỏ qua hướng này. Bị bỏ qua trừ khi <code>#sorted</code> được thiết lập.",
-    "sort_folders_first": "Các thư mục (ghi chú có ghi chú con) nên được sắp xếp ở trên cùng.",
+    "sorted": "Giữ các ghi chú con được sắp xếp theo tiêu đề theo thứ tự alphabet. Một Giá trị sẽ sắp xếp theo các tiêu chí khác thay thế: các cấp độ phân cách bằng dấu phẩy, mỗi cấp là một nhãn được viết dưới dạng  <code>#name</code> hoặc một trong các giá trị  <code>title</code>, <code>dateCreated</code> và  <code>dateModified</code>, tùy chọn theo sau bởi <code>asc</code> hoặc <code>desc</code><code>, ví dụ <code>#priority desc, title</code>. Một nhãn hoặc <code>folders</code> theo sau bởi <code>first</code> hoặc <code>last</code><code> sẽ nhóm các ghi chú có nó, ví dụ <code>#archived last, folders first, title</code>. Một tên đơn lẻ không có <code>#</code> sẽ sắp xếp theo thuộc tính đó, hoặc theo nhãn của tên đó.",
+    "sort_direction": "Hướng mà <code>#sorted</code> sắp xếp các ghi chú con: <code>desc</code> cho giảm dần, bất kỳ giá trị nào khác cho tăng dần. Một cấp độ theo sau bởi <code>asc</code> ,<code>desc</code>,\n<code>first</code> hoặc<code>last</code> của riêng nó sẽ bỏ qua hướng này. Bị bỏ qua trừ khi <code>#sorted</code> được thiết lập.",
+    "sort_folders_first": "Các thư mục (ghi chú có ghi chú con) nên được sắp xếp ở trên cùng. Bị bỏ qua khi <code>#sorted</code> tự sắp xếp <code>folders</code> </code>, chẳng hạn như trong <code>folders last</code>.",
     "top": "Giữ ghi chú đã cho ở trên cùng trong ghi chú cha của nó (chỉ áp dụng cho các ghi chú cha được sắp xếp).",
     "hide_promoted_attributes": "Ẩn các thuộc tính nổi bật trên ghi chú này.",
     "read_only": "Trình biên tập đang ở chế độ chỉ đọc. Chỉ hoạt động đối với ghi chú văn bản và mã nguồn.",
@@ -564,37 +571,29 @@
     "map_shape": "Hình dạng mà ghi chú được vẽ trên bản đồ hình ảnh, cùng định dạng với <code>geoShape</code> nhưng có các điểm <code>x,y</code>, ví dụ <code>circle:400,300 50</code>.",
     "map_image_bounds": "Tọa độ của góc trên bên trái và góc dưới bên phải của bản đồ hình ảnh, dưới dạng <code>x,y x,y</code>, ví dụ <code>-512,-512 512,512</code>. Vị trí trên bản đồ được đọc và ghi bằng các tọa độ này thay vì pixel của hình ảnh.",
     "map_image": "Ghi chú hình ảnh để vẽ bản đồ địa lý lên thay vì bản đồ thế giới. Các điểm đánh dấu và hình dạng sau đó được đặt bằng <code>mapPosition</code> và <code>mapShape</code>.",
-    "meeting_recording": "Đánh dấu ghi chú được tạo bởi nút \"Transcribe meeting\" trong thanh khởi chạy, chứa bản ghi chú của cuộc họp."
+    "meeting_recording": "Đánh dấu ghi chú được tạo bởi nút \"Transcribe meeting\" trong thanh khởi chạy, chứa bản ghi chú của cuộc họp.",
+    "exclude_from_llm": "Ẩn ghi chú này khỏi trò chuyện AI và server MCP. Đặt nhãn có thể kế thừa để ẩn luôn các ghi chú bên dưới nó.",
+    "template_title_template": "Đặt trên một ghi chú mẫu: tiêu đề mặc định của các ghi chú được tạo từ mẫu, được sử dụng thay cho <code>#titleTemplate</code> của ghi chú cha. Được đánh giá tương tự <code>#titleTemplate</code>, với các biến <code>now</code> và <code>parentNote</code> được chèn vào, ví dụ: <code>Cuộc họp ${now.format('YYYY-MM-DD')}</code>.",
+    "calendar_hide_routine_events": "Ẩn các sự kiện theo giờ lặp lại {{days}} ngày trở lên mỗi tuần khỏi các chế độ xem Tháng, Năm và Danh sách. Áp dụng dù giá trị của nó là gì."
   },
   "rename_note": {
     "rename_note": "Đổi tên ghi chú",
-    "rename_note_title_to": "Đổi tiêu đề ghi chú thành",
-    "new_note_title": "Tiêu đề ghi chú mới",
-    "click_help_icon": "Nhấp vào biểu tượng trợ giúp ở bên phải để xem tất cả các tùy chọn",
-    "evaluated_as_js_string": "Giá trị được cung cấp được đánh giá dưới dạng chuỗi JavaScript và do đó có thể được làm phong phú với nội dung động thông qua biến <code>note</code> được chèn vào (ghi chú đang được đổi tên). Ví dụ:",
-    "example_note": "<code>Note</code> - tất cả các ghi chú khớp được đổi tên thành 'Note'",
-    "example_new_title": "<code>NEW: ${note.title}</code> - tiêu đề các ghi chú khớp được thêm tiền tố 'NEW: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - Các ghi chú khớp được thêm tiền tố là ngày-tháng tạo của ghi chú",
-    "api_docs": "Xem tài liệu API cho <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a> và các thuộc tính <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj của nó</a> để biết chi tiết."
+    "description": "Đặt tiêu đề cho mỗi ghi chú. Các biểu thức nằm giữa ${ and } sẽ được điền cho từng ghi chú, chẳng hạn như ${note.title} cho tiêu đề hiện tại của nó.",
+    "placeholder": "VD: NEW: ${note.title}"
   },
   "add_label": {
     "add_label": "Thêm nhãn",
     "label_name_placeholder": "Tên nhãn",
-    "help_text_item2": "Hoặc thay đổi giá trị của nhãn có sẵn",
     "new_value_placeholder": "Giá trị mới",
     "label_name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
-    "to_value": "Thành giá trị",
-    "help_text": "Trên tất cả các ghi chú khớp:",
-    "help_text_item1": "Tạo nhãn đã cho nếu ghi chú chưa có nhãn đó",
-    "help_text_note": "Bạn cũng có thể gọi phương thức này mà không cần giá trị, trong trường hợp đó nhãn sẽ được gán cho ghi chú mà không có giá trị."
+    "description": "Thêm nhãn vào mỗi ghi chú, với giá trị được chỉ định hoặc không có. Nhãn sẽ được thêm ngay cả khi ghi chú đã có nhãn đó, khiến ghi chú có hai nhãn trùng nhau."
   },
   "rename_label": {
     "rename_label": "Đặt lại tên nhãn",
-    "rename_label_from": "Đổi tên nhãn từ",
     "old_name_placeholder": "Tên cũ",
-    "to": "Thành",
     "new_name_placeholder": "Tên mới",
-    "name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép."
+    "name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
+    "description": "Đổi tên nhãn trên mỗi ghi chú có nhãn đó trực tiếp, giữ nguyên giá trị."
   },
   "call_to_action": {
     "dismiss": "Bỏ qua",
@@ -613,12 +612,11 @@
     "failed_rendering": "Lỗi hiển thị tùy chọn tìm kiếm: {{dto}} với lỗi: {{error}} {{stack}}"
   },
   "add_relation": {
-    "to": "Tới",
     "add_relation": "Thêm quan hệ",
     "relation_name": "Tên quan hệ",
     "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
     "target_note": "Ghi chú đích",
-    "create_relation_on_all_matched_notes": "Trên tất cả các ghi chú khớp, tạo quan hệ đã cho."
+    "description": "Thêm một quan hệ từ mỗi ghi chú đến ghi chú đích. Quan hệ vẫn được thêm ngay cả khi ghi chú đã có một quan hệ cùng tên."
   },
   "abstract_bulk_action": {
     "remove_this_search_action": "Xoá hành động tìm kiếm này"
@@ -733,14 +731,21 @@
   "include_note": {
     "dialog_title": "Bao gồm ghi chú",
     "label_note": "Ghi chú",
-    "placeholder_search": "Tìm kiếm ghi chú theo tên",
-    "box_size_prompt": "Kích thước hộp của ghi chú được bao gồm:",
-    "box_size_small": "Nhỏ (~ 10 dòng)",
-    "box_size_medium": "Trung bình (~ 30 dòng)",
-    "box_size_full": "Đầy đủ (hộp hiển thị toàn bộ văn bản)",
-    "box_size_expandable": "Có thể mở rộng (thu gọn theo mặc định)",
     "button_include": "Bao gồm ghi chú",
-    "box_size_tiny": "Siêu nhỏ (một hàng duy nhất có tiêu đề và các hành động)"
+    "box_size": "Kích thước hộp",
+    "size_tiny": "Rất nhỏ",
+    "size_tiny_description": "Một hàng duy nhất chứa tiêu đề và các hành động.",
+    "size_small": "Nhỏ",
+    "size_small_description": "Một hộp khoảng 10 dòng.",
+    "size_medium": "Trung bình",
+    "size_medium_description": "Một hộp khoảng 30 dòng.",
+    "size_full": "Toàn bộ",
+    "size_full_description": "Toàn bộ nội dung.",
+    "size_expandable": "Có thể mở rộng",
+    "size_expandable_description": "Chỉ tiêu đề, cho đến khi được mở rộng.",
+    "inserted_as_image": "Ghi chú này được chèn dưới dạng hình ảnh.",
+    "size_hint": "Kích thước có thể thay đổi sau.",
+    "image_size_hint": "Hình ảnh có thể thay đổi kích thước sau."
   },
   "jump_to_note": {
     "search_placeholder": "Tìm kiếm ghi chú theo tên hoặc nhập > để tìm lệnh..."
@@ -800,11 +805,10 @@
     "tabs": "Thêm các tab có tiêu đề (hiển thị từng khung nội dung)"
   },
   "note_type_chooser": {
-    "change_path_prompt": "Thay đổi nơi tạo ghi chú mới:",
-    "search_placeholder": "Tìm kiếm đường dẫn theo tên (mặc định nếu để trống)",
     "modal_title": "Chọn loại ghi chú",
-    "modal_body": "Chọn loại ghi chú / bản mẫu của ghi chú mới:",
-    "templates": "Bản mẫu"
+    "templates": "Bản mẫu",
+    "location": "Vị trí",
+    "location_placeholder": "Vị trí mặc định nếu để trống"
   },
   "password_not_set": {
     "title": "Mật khẩu chưa được thiết lập",
@@ -924,10 +928,6 @@
   },
   "attribute_list_panel": {
     "no_attributes": "Không có thuộc tính nào",
-    "owned_other": "{{count}} Thuộc tính của ghi chú",
-    "inherited_other": "{{count}} Thuộc tính kế thừa",
-    "definitions_other": "{{count}} Định nghĩa",
-    "internal_other": "{{count}} Thuộc tính hệ thống nội bộ",
     "back": "Quay lại các thuộc tính",
     "inheritable": "Có thể kế thừa: áp dụng cho ghi chú này và toàn bộ cây con của nó",
     "delete": "Xóa thuộc tính này",
@@ -944,7 +944,23 @@
     "system_hint": "Hệ thống: tên này có ý nghĩa tích hợp sẵn",
     "add_attribute": "Thêm thuộc tính",
     "creation_kind_label": "Nhãn: nhấn vào đây, hoặc gõ ~, để chuyển thành quan hệ",
-    "creation_kind_relation": "Quan hệ: nhấn vào đây, hoặc gõ #, để chuyển thành nhãn"
+    "creation_kind_relation": "Quan hệ: nhấn vào đây, hoặc gõ #, để chuyển thành nhãn",
+    "section_owned": "Thuộc tính của ghi chú",
+    "section_inherited": "Thuộc tính kế thừa",
+    "section_definitions": "Định nghĩa",
+    "section_internal": "Nội bộ",
+    "copy_other": "Sao chép thuộc tính {{count}}",
+    "paste_other": "Dán thuộc tính {{count}}",
+    "selected_other": "Đã chọn {{count}}",
+    "copied_other": "Đã sao chép thuộc tính {{count}}",
+    "pasted_other": "Đã dán thuộc tính {{count}}",
+    "nothing_to_paste": "Bộ nhớ tạm không chứa thuộc tính nào.",
+    "paste_failed": "Không thể đọc bộ nhớ tạm dưới dạng thuộc tính: {{- message}}",
+    "delete_selection_other": "Xóa thuộc tính {{count}}",
+    "delete_selection_confirm": "Xóa các thuộc tính {{count}} đã chọn?",
+    "clear_clipboard": "Xóa bộ nhớ tạm",
+    "to_copy_other": "Các thuộc tính {{count}} để sao chép",
+    "select_all": "Chọn tất cả"
   },
   "attribute_names": {
     "system": "Hệ thống",
@@ -952,81 +968,67 @@
   },
   "execute_script": {
     "execute_script": "Thực thi tập lệnh",
-    "help_text": "Bạn có thể thực thi các tập lệnh đơn giản trên các ghi chú khớp.",
-    "example_1": "Ví dụ, để nối thêm một chuỗi vào tiêu đề ghi chú, hãy sử dụng tập lệnh nhỏ này:",
-    "example_2": "Một ví dụ phức tạp hơn là xóa tất cả thuộc tính của ghi chú khớp:"
+    "description": "Chạy script backend trên mỗi ghi chú, đọc và thay đổi ghi chú thông qua biến ghi chú. Ghi chú sẽ được lưu sau đó."
   },
   "delete_label": {
     "delete_label": "Xóa nhãn",
     "label_name_placeholder": "Tên nhãn",
-    "label_name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép."
+    "label_name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
+    "description": "Xóa nhãn khỏi mỗi ghi chú có nhãn đó trực tiếp."
   },
   "update_label_value": {
     "update_label_value": "Cập nhật giá trị nhãn",
     "label_name_placeholder": "Tên nhãn",
     "label_name_title": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
-    "to_value": "Thành giá trị",
     "new_value_placeholder": "Giá trị mới",
-    "help_text": "Trên tất cả các ghi chú khớp, thay đổi giá trị của nhãn hiện có.",
-    "help_text_note": "Bạn cũng có thể gọi phương thức này mà không cần giá trị, trong trường hợp đó nhãn sẽ được gán cho ghi chú mà không có giá trị."
+    "description": "Đặt giá trị của nhãn trên mỗi ghi chú có nhãn đó trực tiếp. Các nhãn kế thừa sẽ không bị thay đổi."
   },
   "delete_note": {
     "delete_note": "Xóa ghi chú",
-    "delete_matched_notes": "Xóa các ghi chú khớp",
-    "delete_matched_notes_description": "Thao tác này sẽ xóa các ghi chú khớp.",
-    "undelete_notes_instruction": "Sau khi xóa, bạn có thể khôi phục chúng từ hộp thoại Thay đổi gần đây.",
-    "erase_notes_instruction": "Để xóa vĩnh viễn các ghi chú, sau khi xóa bạn có thể vào Tùy chọn -> Khác và nhấp vào nút \"Xóa vĩnh viễn các ghi chú đã xóa bây giờ\"."
+    "description": "Xóa mỗi ghi chú, bao gồm các bản sao và các ghi chú con không được nhân bản ở nơi khác. Các ghi chú đã xóa có thể được khôi phục từ Thay đổi gần đây cho đến khi bị xóa vĩnh viễn."
   },
   "save_revision": {
     "save_revision": "Lưu phiên bản lịch sử",
     "revision_name_placeholder": "Tên phiên bản lịch sử (tùy chọn)",
-    "help": "Một phiên bản lịch sử có tên sẽ được lưu cho mỗi ghi chú khớp, ghi lại nội dung ghi chú và tiêu đề ghi chú hiện tại của nó."
+    "description": "Lưu một phiên bản lịch sử của mỗi ghi chú, với tên tùy chọn. Các ghi chú được bảo vệ sẽ bị bỏ qua trừ khi phiên làm việc được bảo vệ đang hoạt động."
   },
   "delete_revisions": {
     "delete_note_revisions": "Xóa các phiên bản lịch sử ghi chú",
-    "all_past_note_revisions": "Tất cả các phiên bản lịch sử ghi chú trước đây của các ghi chú khớp sẽ bị xóa. Bản thân ghi chú sẽ được bảo toàn hoàn toàn. Nói cách khác, lịch sử ghi chú sẽ bị xóa bỏ."
+    "description": "Xóa vĩnh viễn tất cả các phiên bản lịch sử của mỗi ghi chú. Bản thân các ghi chú sẽ được giữ lại."
   },
   "move_note": {
     "move_note": "Di chuyển ghi chú",
-    "to": "Tới",
     "target_parent_note": "Ghi chú cha đích",
-    "on_all_matched_notes": "Trên tất cả các ghi chú khớp",
-    "move_note_new_parent": "Di chuyển ghi chú sang ghi chú cha mới nếu ghi chú chỉ có một cha (tức là nhánh cũ bị xóa và nhánh mới vào ghi chú cha mới được tạo)",
-    "clone_note_new_parent": "Nhân bản ghi chú sang ghi chú cha mới nếu ghi chú có nhiều bản sao/nhánh (không rõ nhánh nào nên bị xóa)",
-    "nothing_will_happen": "Sẽ không có gì xảy ra nếu ghi chú không thể di chuyển đến ghi chú đích (tức là điều này sẽ tạo ra một chu trình cây)"
+    "description": "Di chuyển mỗi ghi chú đến dưới ghi chú đích. Một ghi chú có nhiều ghi chú cha sẽ được nhân bản đến đó, còn ghi chú không thể di chuyển đến đó, chẳng hạn như ghi chú cha của ghi chú đích, sẽ giữ nguyên vị trí."
   },
   "convert_note": {
     "convert_note": "Chuyển đổi",
-    "convert_note_to": "Chuyển đổi ghi chú",
     "choose_conversion": "(Chọn một chuyển đổi)",
     "conversion_htmlToMarkdown": "Ghi chú văn bản → Ghi chú Markdown (mất dữ liệu)",
     "conversion_markdownToHtml": "Ghi chú Markdown → Ghi chú văn bản",
-    "help_text": "Chuyển đổi chỉ được áp dụng cho các ghi chú khớp với loại nguồn; các ghi chú khác được giữ nguyên. Một phiên bản lịch sử của mỗi ghi chú được chuyển đổi sẽ được lưu trước đó.",
     "warning": "Một số định dạng có thể bị mất khi chuyển đổi các ghi chú và bạn có thể cần phải sửa lại một vài thứ sau đó. Một phiên bản lịch sử của mỗi ghi chú được chuyển đổi sẽ được lưu trước đó để bạn có thể khôi phục. Bạn có muốn tiếp tục không?",
-    "warning_risky": "Bạn đang chuyển đổi giữa hai định dạng không có tính năng giống hệt nhau, vì vậy một số định dạng có thể bị mất và một số thành phần không được hỗ trợ có thể bị bỏ qua.<br><br>Bạn có hoàn toàn chấp nhận rủi ro này và muốn tiếp tục chuyển đổi không?<br><br>Một phiên bản lịch sử của mỗi ghi chú được chuyển đổi sẽ được lưu trước đó, vì vậy bạn có thể hoàn tác về định dạng ban đầu."
+    "warning_risky": "Bạn đang chuyển đổi giữa hai định dạng không có tính năng giống hệt nhau, vì vậy một số định dạng có thể bị mất và một số thành phần không được hỗ trợ có thể bị bỏ qua.<br><br>Bạn có hoàn toàn chấp nhận rủi ro này và muốn tiếp tục chuyển đổi không?<br><br>Một phiên bản lịch sử của mỗi ghi chú được chuyển đổi sẽ được lưu trước đó, vì vậy bạn có thể hoàn tác về định dạng ban đầu.",
+    "description": "Chuyển đổi các ghi chú văn bản sang Markdown, hoặc các ghi chú Markdown sang văn bản, sau khi lưu một phiên bản lịch sử của từng ghi chú. Các ghi chú thuộc loại khác sẽ không bị thay đổi."
   },
   "delete_relation": {
     "delete_relation": "Xóa quan hệ",
     "relation_name": "Tên quan hệ",
-    "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép."
+    "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
+    "description": "Xóa quan hệ khỏi từng ghi chú sở hữu trực tiếp quan hệ đó."
   },
   "rename_relation": {
     "rename_relation": "Đổi tên quan hệ",
-    "rename_relation_from": "Đổi tên quan hệ từ",
     "old_name": "Tên cũ",
-    "to": "Thành",
     "new_name": "Tên mới",
-    "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép."
+    "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
+    "description": "Đổi tên quan hệ trên từng ghi chú sở hữu trực tiếp quan hệ đó, giữ nguyên đích của nó."
   },
   "update_relation_target": {
-    "update_relation": "Cập nhật quan hệ",
     "relation_name": "Tên quan hệ",
     "allowed_characters": "Các ký tự chữ số, dấu gạch dưới và dấu hai chấm là các ký tự được cho phép.",
-    "to": "Tới",
     "target_note": "Ghi chú đích",
-    "on_all_matched_notes": "Trên tất cả các ghi chú khớp",
-    "change_target_note": "Thay đổi ghi chú đích của quan hệ hiện có",
-    "update_relation_target": "Cập nhật đích quan hệ"
+    "update_relation_target": "Cập nhật đích quan hệ",
+    "description": "Trỏ quan hệ trên từng ghi chú sở hữu trực tiếp quan hệ đó đến ghi chú đích."
   },
   "attachments_actions": {
     "open_externally": "Mở bằng ứng dụng ngoài",
@@ -1047,7 +1049,8 @@
     "delete_success": "Tệp đính kèm '{{title}}' đã bị xóa.",
     "convert_confirm": "Bạn có chắc chắn muốn chuyển đổi tệp đính kèm '{{title}}' thành một ghi chú riêng biệt không?",
     "convert_success": "Tệp đính kèm '{{title}}' đã được chuyển đổi thành ghi chú.",
-    "enter_new_name": "Vui lòng nhập tên mới của tệp đính kèm"
+    "enter_new_name": "Vui lòng nhập tên mới của tệp đính kèm",
+    "rename_attachment_title": "Đổi tên tệp đính kèm"
   },
   "calendar": {
     "mon": "Thứ 2",
@@ -1174,7 +1177,8 @@
     "toggle-zen-mode": "Chế độ Zen",
     "new-version-available": "Có bản cập nhật mới",
     "download-update": "Tải phiên bản {{latestVersion}}",
-    "search_notes": "Tìm kiếm các ghi chú"
+    "search_notes": "Tìm kiếm các ghi chú",
+    "theme": "Giao diện"
   },
   "zen_mode": {
     "button_exit": "Thoát chế độ Zen"
@@ -1188,8 +1192,9 @@
     "in_progress": "Đang tiến hành đồng bộ với máy chủ."
   },
   "left_pane_toggle": {
-    "show_panel": "Hiển thị bảng điều khiển",
-    "hide_panel": "Ẩn bảng điều khiển"
+    "hide_panel": "Ẩn bảng điều khiển",
+    "toggle": "Bật/tắt ngăn cây ghi chú",
+    "peek_panel": "Xem nhanh bảng cây ghi chú"
   },
   "move_pane_button": {
     "move_left": "Di chuyển sang trái",
@@ -1215,7 +1220,6 @@
     "import_files": "Nhập tệp",
     "export_note": "Xuất ghi chú",
     "delete_note": "Xóa ghi chú",
-    "print_note": "In ghi chú...",
     "print_or_export_to_pdf": "In/xuất sang PDF...",
     "view_revisions": "Các phiên bản lịch sử ghi chú...",
     "save_revision": "Lưu phiên bản lịch sử",
@@ -1234,7 +1238,11 @@
     "export_as_image": "Xuất dưới dạng hình ảnh",
     "export_as_image_png": "PNG (raster)",
     "export_as_image_svg": "SVG (vector)",
-    "note_map": "Sơ đồ ghi chú"
+    "note_map": "Sơ đồ ghi chú",
+    "note_attributes_title": "Các thuộc tính của ghi chú",
+    "note_attachments_short": "Tệp đính kèm",
+    "search_in_note_short": "Tìm kiếm",
+    "note_settings": "Cài đặt ghi chú"
   },
   "onclick_button": {
     "no_click_handler": "Widget nút '{{componentId}}' chưa được định nghĩa trình xử lý nhấp chuột"
@@ -1291,13 +1299,14 @@
     "no_backlinks": "Không có ghi chú nào liên kết đến ghi chú này."
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Chèn ghi chú con",
     "delete_this_note": "Xóa ghi chú này",
     "note_revisions": "Các phiên bản lịch sử ghi chú",
     "error_cannot_get_branch_id": "Không thể lấy branchId cho notePath '{{notePath}}'",
     "error_unrecognized_command": "Lệnh không xác định {{command}}",
     "backlinks": "Liên kết ngược",
-    "content_language_switcher": "Ngôn ngữ nội dung: {{language}}"
+    "content_language_switcher": "Ngôn ngữ nội dung: {{language}}",
+    "insert_child_note_short": "Ghi chú con",
+    "create_new_split_short": "Khung tách mới"
   },
   "note_icon": {
     "change_note_icon": "Thay đổi biểu tượng ghi chú",
@@ -1341,7 +1350,9 @@
     "open_all_in_tabs": "Mở tất cả",
     "open_all_in_tabs_tooltip": "Mở tất cả kết quả trong các tab mới",
     "open_all_confirm_other": "Thao tác này sẽ mở {{count}} ghi chú trong các tab mới. Tiếp tục?",
-    "open_all_limit_exceeded": "Quá nhiều ghi chú để mở cùng lúc ({{count}}). Tối đa là {{max}}, hãy thu hẹp kết quả trước."
+    "open_all_limit_exceeded": "Quá nhiều ghi chú để mở cùng lúc ({{count}}). Tối đa là {{max}}, hãy thu hẹp kết quả trước.",
+    "search-preview": "Xem trước kết quả tìm kiếm",
+    "included_notes": "Các ghi chú được bao gồm"
   },
   "edited_notes": {
     "no_edited_notes_found": "Chưa có ghi chú nào được chỉnh sửa trong ngày này..."
@@ -1428,18 +1439,8 @@
   },
   "search_definition": {
     "add_search_option": "Thêm tùy chọn tìm kiếm:",
-    "search_string": "Chuỗi tìm kiếm",
-    "search_script": "Mã kịch bản tìm kiếm",
-    "ancestor": "Tổ tiên",
-    "fast_search": "Tìm kiếm nhanh",
-    "fast_search_description": "Tùy chọn tìm kiếm nhanh vô hiệu hóa tìm kiếm toàn bộ nội dung ghi chú, có thể tăng tốc độ tìm kiếm trong các cơ sở dữ liệu lớn.",
-    "include_archived": "Bao gồm đã lưu trữ",
     "include_archived_notes_description": "Các ghi chú đã lưu trữ mặc định bị loại khỏi kết quả tìm kiếm, với tùy chọn này chúng sẽ được bao gồm.",
-    "order_by": "Sắp xếp theo",
-    "limit": "Giới hạn",
     "limit_description": "Giới hạn số lượng kết quả",
-    "debug": "Gỡ lỗi",
-    "debug_description": "Gỡ lỗi sẽ in thêm thông tin gỡ lỗi vào console để hỗ trợ gỡ lỗi các truy vấn phức tạp",
     "action": "Hành động",
     "option": "Tùy chọn",
     "search_button": "Tìm kiếm",
@@ -1495,7 +1496,7 @@
   },
   "limit": {
     "limit": "Giới hạn",
-    "take_first_x_results": "Chỉ lấy X kết quả đầu tiên được chỉ định."
+    "max_results": "Số kết quả tối đa"
   },
   "order_by": {
     "order_by": "Sắp xếp theo",
@@ -1725,7 +1726,8 @@
       "paste_notes": "Dán các ghi chú đã sao chép hoặc cắt",
       "cancel_adding_note": "Hủy thêm ghi chú",
       "close_note_pane": "Đóng bảng ghi chú"
-    }
+    },
+    "rename_relation_heading": "Đổi tên quan hệ"
   },
   "render": {
     "setup_title": "Hiển thị HTML tùy chỉnh hoặc Preact JSX bên trong ghi chú này",
@@ -1953,14 +1955,25 @@
   "code-editor-options": {
     "title": "Trình soạn thảo",
     "tab_width": "Chiều rộng tab",
-    "tab_width_unit": "Khoảng trắng"
+    "tab_width_unit": "Khoảng trắng",
+    "line_numbers": "Số dòng"
   },
   "code_mime_types": {
     "title": "Các loại MIME khả dụng trong menu thả xuống",
     "tooltip_syntax_highlighting": "Tô sáng cú pháp",
     "tooltip_code_block_syntax": "Khối mã trong ghi chú văn bản",
     "tooltip_code_note_syntax": "Ghi chú mã",
-    "trilium_log": "Nhật ký Trilium"
+    "trilium_log": "Nhật ký Trilium",
+    "description": "Các ngôn ngữ được gợi ý khi bạn chọn ngôn ngữ cho một ghi chú mã hoặc một khối mã.",
+    "sort_alphabetically": "Sắp xếp theo thứ tự bảng chữ cái",
+    "badge_code_blocks": "Các khối mã",
+    "badge_code_notes": "Ghi chú mã",
+    "remove": "Xóa khỏi danh sách",
+    "badge_code_blocks_tooltip": "Tô sáng cú pháp khả dụng cho các khối mã trong ghi chú văn bản",
+    "badge_code_notes_tooltip": "Tô sáng cú pháp khả dụng cho các ghi chú mã",
+    "add_title": "Thêm một ngôn ngữ",
+    "add_another_other": "Thêm một ngôn ngữ khác (hiện có {{count}})",
+    "trilium_search_query": "Truy vấn tìm kiếm Trilium"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Phím tắt Vim",
@@ -2617,7 +2630,6 @@
     "tool_call_no_result": "Chưa có kết quả.",
     "search_notes_count_other": "({{count}} Ghi chú)",
     "search_notes_limited_other": "Tổng số {{count}} kết quả, giới hạn ở {{limit}}",
-    "search_notes_scope": "Đã tìm kiếm trong <Note/>",
     "child_notes_count_other": "({{count}} Ghi chú con)",
     "child_count_other": "{{count}} Ghi chú con",
     "search_help_count_other": "({{count}} Trang)",
@@ -2637,7 +2649,21 @@
     "manage_search_providers": "Quản lý nhà cung cấp tìm kiếm…",
     "web_search_builtin_unsupported": "Mô hình này không có tính năng tìm kiếm web tích hợp. Thay vào đó, hãy chọn một nhà cung cấp tìm kiếm.",
     "web_search_provider_unsupported": "Nhà cung cấp của mô hình này thực hiện tìm kiếm web bằng các công cụ riêng của họ.",
-    "searched_with": "Đã tìm kiếm bằng {{name}}"
+    "searched_with": "Đã tìm kiếm bằng {{name}}",
+    "tool_approval_prompt": "Cho phép gọi công cụ này?",
+    "tool_approval_allow": "Cho phép",
+    "tool_approval_deny": "Từ chối",
+    "tool_approval_declined": "Đã bị từ chối",
+    "tool_approval_allow_for_chat": "Luôn cho phép {{tool}} trong cuộc trò chuyện này",
+    "allowed_tools": "Đã được cho phép trong cuộc trò chuyện này",
+    "allowed_tools_count_other": "Công cụ {{count}}",
+    "permissions": "Quyền",
+    "permission_mode_always_ask": "Luôn hỏi",
+    "permission_mode_always_ask_description": "Hỏi trước mỗi hành động, kể cả đọc",
+    "permission_mode_ask_before_changes": "Hỏi trước khi thay đổi",
+    "permission_mode_ask_before_changes_description": "Chỉ hỏi trước khi thay đổi các ghi chú của bạn",
+    "permission_mode_dont_ask": "Không hỏi",
+    "permission_mode_dont_ask_description": "Chạy tất cả độc lập, bao gồm cả các thay đổi"
   },
   "spellcheck": {
     "title": "Kiểm tra chính tả",
@@ -2756,7 +2782,6 @@
     "automatically-collapse-notes-title": "Các ghi chú sẽ được thu gọn sau một khoảng thời gian không hoạt động để giảm sự lộn xộn của cây.",
     "follow-active-note": "Theo dõi ghi chú đang hoạt động",
     "follow-active-note-title": "Cuộn cây và mở rộng các nút cha để hiển thị ghi chú đang hoạt động. Khi tắt, cây sẽ giữ nguyên vị trí và chỉ cập nhật vùng nổi bật nền.",
-    "save-changes": "Lưu & áp dụng thay đổi",
     "auto-collapsing-notes-after-inactivity": "Đang tự động thu gọn ghi chú sau khi không hoạt động...",
     "saved-search-note-refreshed": "Đã làm mới ghi chú tìm kiếm đã lưu.",
     "hoist-this-note-workspace": "Đặt ghi chú này làm gốc (không gian làm việc)",
@@ -2772,7 +2797,8 @@
     "subtree-hidden-tooltip_other": "{{count}} Ghi chú con bị ẩn khỏi cây",
     "subtree-hidden-moved-title": "Đã thêm vào {{title}}",
     "subtree-hidden-moved-description-collection": "Bộ sưu tập này ẩn các ghi chú con trong cây.",
-    "subtree-hidden-moved-description-other": "Các ghi chú con bị ẩn trong cây đối với ghi chú này."
+    "subtree-hidden-moved-description-other": "Các ghi chú con bị ẩn trong cây đối với ghi chú này.",
+    "show-all-notes": "Hiển thị tất cả ghi chú"
   },
   "mobile_note_navigator": {
     "back": "Lên một cấp",
@@ -2817,7 +2843,9 @@
     "result_count_other": "{{count}} Kết quả",
     "page_size": "Mỗi trang",
     "snippet_unavailable": "Không có bản xem trước.",
-    "searching": "Đang tìm kiếm..."
+    "searching": "Đang tìm kiếm...",
+    "show_more": "Hiển thị thêm",
+    "show_less": "Hiển thị ít hơn"
   },
   "sql_result": {
     "not_executed": "Truy vấn chưa được thực thi.",
@@ -2842,7 +2870,8 @@
     "reopen_last_tab": "Mở lại tab vừa đóng",
     "move_tab_to_new_window": "Chuyển tab này sang cửa sổ mới",
     "copy_tab_to_new_window": "Sao chép tab này sang cửa sổ mới",
-    "new_tab": "Tab mới"
+    "new_tab": "Tab mới",
+    "leave_full_screen": "Thoát toàn màn hình"
   },
   "toc": {
     "table_of_contents": "Mục lục",
@@ -2992,7 +3021,12 @@
     "convert_embed_to_link": "Chuyển thành liên kết",
     "show_title": "Hiển thị tiêu đề",
     "show_caption": "Hiển thị chú thích",
-    "convert_link_to_note_excerpt": "Chuyển đổi liên kết thành trích dẫn ghi chú"
+    "convert_link_to_note_excerpt": "Chuyển đổi liên kết thành trích dẫn ghi chú",
+    "line_numbers": "Số dòng",
+    "line_numbers_auto": "Tự động",
+    "line_numbers_on": "Bật",
+    "line_numbers_off": "Tắt",
+    "line_numbers_auto_description": "Theo cài đặt toàn cục"
   },
   "note_autocomplete": {
     "recent": {
@@ -3078,7 +3112,38 @@
     "location-denied": "Quyền truy cập vị trí bị từ chối. Cho phép trong trình duyệt hoặc cài đặt hệ thống của bạn để hiển thị vị trí trên map.",
     "location-unavailable": "Không thể xác định vị trí của bạn ngay lúc này.",
     "image-unavailable": "Không thể tải hình ảnh của sơ đồ này. Hãy kiểm tra xem ghi chú mà quan hệ map:image trỏ đến có phải là hình ảnh hay không.",
-    "image-svg-unsupported": "Hình ảnh SVG không thể được sử dụng làm sơ đồ. Hãy chuyển đổi hình ảnh sang PNG, JPEG hoặc WebP."
+    "image-svg-unsupported": "Hình ảnh SVG không thể được sử dụng làm sơ đồ. Hãy chuyển đổi hình ảnh sang PNG, JPEG hoặc WebP.",
+    "properties": "Thuộc tính bản đồ địa lý...",
+    "properties-title": "Thuộc tính bản đồ địa lý",
+    "general": "Chung",
+    "image-note": "Ghi chú hình ảnh",
+    "image-note-description": "Hình ảnh PNG, JPEG, WebP hoặc GIF. Không thể sử dụng hình ảnh SVG.",
+    "image-note-placeholder": "Tìm kiếm ghi chú hình ảnh",
+    "image-too-large": "Hình ảnh này có kích thước {{width}} × {{height}} pixel. Một số thiết bị không thể hiển thị hình ảnh lớn hơn {{limit}} pixel trên cạnh dài; các điểm đánh dấu và hình dạng vẫn xuất hiện ở đó, nhưng hình ảnh thì không.",
+    "coordinates": "Toạ độ",
+    "coordinates-description": "Cách đo vị trí trên hình ảnh: theo pixel từ góc trên cùng bên trái, hoặc theo hệ toạ độ riêng của bạn, chẳng hạn như toạ độ sử dụng trong trò chơi điện tử.",
+    "coordinates-pixels": "Pixel của hình ảnh",
+    "coordinates-custom": "Tùy chỉnh",
+    "coordinates-inherited": "Hai góc này đến từ ghi chú cha hoặc mẫu, vì vậy chúng chỉ có thể bị xóa ở đó.",
+    "top-left-corner": "Góc trên cùng bên trái",
+    "bottom-right-corner": "Góc dưới cùng bên phải",
+    "coordinates-invalid": "Hai góc phải khác nhau cả về x và y, do đó thay đổi này không được lưu.",
+    "dark-image": "Hình ảnh tối",
+    "dark-image-description": "Vẽ tiêu đề marker bằng màu sáng để có thể đọc được trên nền hình ảnh tối.",
+    "background": "Nền",
+    "background-type": "Loại",
+    "background-map": "Vector & Raster",
+    "background-image": "Hình ảnh tùy chỉnh",
+    "background-map-description": "Bản đồ thế giới theo phong cách vector hoặc raster.",
+    "background-image-description": "Hình ảnh của riêng bạn, chẳng hạn như sơ đồ mặt bằng hoặc bản đồ giả tưởng, với các marker và hình dạng được đặt trên đó.",
+    "background-image-inherited": "Hình ảnh của bản đồ này đến từ ghi chú cha hoặc mẫu, do đó chỉ có thể tắt ở đó.",
+    "background-tiles": "Bộ tile tùy chỉnh",
+    "background-tiles-description": "Bản đồ thế giới được vẽ từ các tile raster của server do bạn chọn.",
+    "tiles-url": "URL tile",
+    "tiles-url-description": "Địa chỉ của một tile, với {z}, {x} và {y} là nơi đặt cấp độ thu phóng và vị trí của tile. Một server có tile độ phân giải cao có thể được chỉ định {r}, nơi nó mong đợi @2x.",
+    "tiles-url-invalid": "URL tile bắt đầu bằng http:// hoặc https:// và chứa {z}, {x} và {y}, do đó thay đổi này không được lưu.",
+    "dark-tiles": "Bộ tile tối",
+    "dark-tiles-description": "Vẽ tiêu đề marker bằng màu sáng để có thể đọc được trên các tile tối."
   },
   "geo-map-context": {
     "delete-note": "Xóa ghi chú",
@@ -3243,11 +3308,9 @@
     "compress_resize_help": "Giảm kích thước các hình ảnh lớn hơn kích thước đã chọn. Các hình ảnh đã phù hợp sẽ không bị thay đổi.",
     "compress_max_dimensions": "Giảm kích thước hình ảnh xuống",
     "compress_jpeg_handling": "Hình ảnh JPEG",
-    "compress_jpeg_handling_help": "Giữ nguyên ảnh sẽ bảo toàn chất lượng hiện tại. Nén sẽ lưu lại ảnh ở chất lượng thấp hơn để giảm kích thước, thao tác này không thể hoàn tác.",
     "compress_jpeg_keep": "Giữ nguyên",
     "compress_jpeg_compress": "Nén",
     "compress_png_handling": "Ảnh PNG",
-    "compress_png_handling_help": "Giữ nguyên sẽ bảo toàn ảnh chính xác. Tối ưu hóa sẽ giảm số lượng màu, điều này thường không đáng chú ý trong ảnh chụp màn hình và sơ đồ. Chuyển đổi sang JPEG sẽ tiết kiệm dung lượng nhất, nhưng không thể áp dụng cho các ảnh có độ trong suốt, những ảnh này sẽ được tối ưu hóa thay thế.",
     "compress_png_keep": "Giữ nguyên",
     "compress_png_optimize": "Tối ưu hóa",
     "compress_png_jpeg": "Chuyển đổi sang JPEG",
@@ -3263,7 +3326,12 @@
     "compress_result_none": "Không có ảnh nào để nén.",
     "compress_result_stopped": "Đã dừng sau {{done}} trong số {{total}} ảnh, giảm kích thước của chúng từ {{before}} xuống {{after}}.",
     "compress_result_stopped_no_gain": "Đã dừng sau {{done}} trong số {{total}} ảnh, không ảnh nào có thể được giảm kích thước thêm.",
-    "compress_result_stopped_none": "Đã dừng trước khi xử lý bất kỳ ảnh nào."
+    "compress_result_stopped_none": "Đã dừng trước khi xử lý bất kỳ ảnh nào.",
+    "compress_jpeg_keep_description": "Giữ nguyên chất lượng hiện tại.",
+    "compress_jpeg_compress_description": "Lưu lại hình ảnh với chất lượng thấp hơn để giảm kích thước. Thao tác này không thể hoàn tác.",
+    "compress_png_keep_description": "Giữ nguyên hình ảnh chính xác.",
+    "compress_png_optimize_description": "Giảm số lượng màu, điều này thường không đáng chú ý trong ảnh chụp màn hình và sơ đồ.",
+    "compress_png_jpeg_description": "Tiết kiệm dung lượng nhất. Các hình ảnh có độ trong suốt sẽ được tối ưu hóa thay thế."
   },
   "display_mode": {
     "preview": "Xem trước",
@@ -3298,7 +3366,9 @@
     "add-column-to-the-right": "Thêm cột bên phải",
     "edit-column": "Chỉnh sửa cột",
     "delete_column_confirmation": "Bạn có chắc chắn muốn xóa cột này không? Thuộc tính tương ứng sẽ bị xóa khỏi tất cả các ghi chú.",
-    "delete-column": "Xóa cột"
+    "delete-column": "Xóa cột",
+    "properties": "Thuộc tính bảng...",
+    "properties-title": "Thuộc tính bảng"
   },
   "table_context_menu": {
     "sort": "Sắp xếp",
@@ -3500,7 +3570,8 @@
     "general": "Chung",
     "event_attributes": "Thuộc tính sự kiện",
     "event_attributes_hint": "Chọn các thuộc tính hiển thị trên sự kiện và thứ tự của chúng. Các thuộc tính mới sẽ bị ẩn cho đến khi bạn bật chúng.",
-    "event_attributes_overridden": "Lịch này có nhãn calendar:displayedAttributes, do đó các sự kiện sẽ hiển thị các thuộc tính được liệt kê ở đó thay vì các thuộc tính được chọn ở đây."
+    "event_attributes_overridden": "Lịch này có nhãn calendar:displayedAttributes, do đó các sự kiện sẽ hiển thị các thuộc tính được liệt kê ở đó thay vì các thuộc tính được chọn ở đây.",
+    "properties-title": "Thuộc tính lịch"
   },
   "content_renderer": {
     "open_externally": "Mở bằng ứng dụng ngoài",
@@ -3574,7 +3645,16 @@
     "clipped_note_details": "Ghi chú này được lấy từ một trang web. Nhấp để xem mô tả, tác giả và ngày tháng của trang.",
     "clipped_note_author": "Tác giả",
     "clipped_note_published": "Ngày xuất bản",
-    "clipped_note_modified": "Ngày cập nhật"
+    "clipped_note_modified": "Ngày cập nhật",
+    "read_only_locked": "Chỉ đọc",
+    "read_only_locked_description": "Ghi chú này do Trilium cung cấp và không thể chỉnh sửa.",
+    "template": "Mẫu",
+    "template_description": "Ghi chú này là một mẫu. Các ghi chú được tạo từ nó sẽ kế thừa các thuộc tính của nó, do đó việc thay đổi chúng ở đây sẽ thay đổi tất cả các ghi chú đó.",
+    "template_scope_global": "Có sẵn ở mọi nơi",
+    "template_scope_workspace": "Chỉ bên trong không gian làm việc của nó",
+    "template_scope_workspace_unavailable": "Mẫu không nằm trong không gian làm việc.",
+    "workspace_template": "Mẫu không gian làm việc",
+    "template_properties": "Thuộc tính mẫu..."
   },
   "status_bar": {
     "attachments_other": "{{count}} Tệp đính kèm",
@@ -3599,7 +3679,13 @@
     "tab_width_reindent_header": "Thụt lề lại nội dung thành",
     "tab_width_style_header": "Thụt lề bằng",
     "tab_width_style_spaces": "Dấu cách",
-    "tab_width_style_tabs": "Tab"
+    "tab_width_style_tabs": "Tab",
+    "cursor_line": "Dòng: <Value />",
+    "cursor_column": "Cột: <Value />",
+    "cursor_selection": "Đã chọn: <Value />",
+    "cursor_line_title": "Dòng hiện tại",
+    "cursor_column_title": "Cột hiện tại",
+    "cursor_selection_title": "Độ dài đoạn chọn tính theo ký tự"
   },
   "right_pane": {
     "backlinks": "Liên kết ngược",
@@ -3701,7 +3787,11 @@
     "sample_wardley": "Bản đồ Wardley",
     "sample_cynefin": "Cynefin",
     "sample_swimlane": "Phân làn",
-    "sample_railroad": "Đường ray"
+    "sample_railroad": "Đường ray",
+    "syntax_help": "Trợ giúp cú pháp Mermaid",
+    "sample_event_modeling": "Mô hình hóa sự kiện",
+    "sample_use_case": "Trường hợp sử dụng",
+    "sample_agentflow": "Agentflow"
   },
   "mind-map": {
     "summary": "Tóm tắt",
@@ -3800,7 +3890,8 @@
       "read_web_page": "Đọc trang web",
       "note_moved_from": "<Note/> Từ <From/> đến <To/>",
       "note_moved": "<Note/> Đến <To/>",
-      "attachment_in_note": "<Title/> Trong <Note/>"
+      "attachment_in_note": "<Title/> Trong <Note/>",
+      "search_in_subtree": "<Query/> Trong <Subtree/>"
     },
     "enabled": "Tính năng AI",
     "enabled_description": "Thêm thanh bên trò chuyện AI và các ghi chú trò chuyện LLM, sử dụng các nhà cung cấp được cấu hình bên dưới.",
@@ -3885,7 +3976,9 @@
     "fullscreen": "Toàn màn hình",
     "more_actions": "Hành động khác",
     "exit_fullscreen": "Thoát toàn màn hình",
-    "open_in_new_tab": "Mở trong tab mới"
+    "open_in_new_tab": "Mở trong tab mới",
+    "beta": "Beta",
+    "close": "Đóng"
   },
   "text-editor": {
     "ck": {
@@ -3988,7 +4081,6 @@
       "insert-below": "Chèn bên dưới",
       "insert-date-time-0": "Chèn ngày/giờ: %0",
       "insert-footnote-0": "Chèn chú thích cuối trang %0",
-      "insert-mermaid-source-code": "Chèn mã nguồn Mermaid",
       "insert-paragraph-after-code-block": "Chèn đoạn văn sau khối mã",
       "insert-paragraph-before-code-block": "Chèn đoạn văn trước khối mã",
       "insert-text-snippet": "Chèn đoạn văn bản",
@@ -4004,8 +4096,6 @@
       "math-editor-unavailable": "Trình chỉnh sửa toán học không khả dụng",
       "medium": "Trung bình",
       "mermaid-diagram-0": "Sơ đồ Mermaid: %0",
-      "mermaid-toolbar": "Thanh công cụ Mermaid",
-      "mermaid-widget": "Widget Mermaid",
       "missing-definition": "(Thiếu định nghĩa)",
       "new-footnote": "Chú thích mới",
       "no-anchors-available": "Không có neo nào khả dụng.",
@@ -4015,7 +4105,6 @@
       "outdent": "Giảm thụt đầu dòng",
       "plain-link": "Liên kết thường",
       "quote-a-passage-from-another-source": "Trích dẫn một đoạn từ nguồn khác.",
-      "read-more-about-mermaid-diagram-syntax": "Đọc thêm về cú pháp sơ đồ Mermaid",
       "remove-anchor": "Xóa neo",
       "result": "Kết quả",
       "right-click-or-press-0-to-change-state": "Nhấp chuột phải hoặc nhấn %0 để thay đổi trạng thái.",
@@ -4089,7 +4178,6 @@
       "insert-titled-tabs-that-show-one-panel-at-a-time": "Chèn các tab có tiêu đề, mỗi tab hiển thị một bảng.",
       "multicolumn-layout": "Bố cục nhiều cột",
       "multicolumn-layout-toolbar": "Thanh công cụ bố cục nhiều cột",
-      "multiple-column-layout": "Bố cục nhiều cột",
       "0-columns": "%0 Cột",
       "column-layout": "Bố cục cột",
       "0-columns-layout": "Bố cục %0 cột",
@@ -4101,7 +4189,41 @@
       "type-the-content-of-the-third-column": "Nhập nội dung của cột thứ ba",
       "type-the-content-of-the-fourth-column": "Nhập nội dung của cột thứ tư",
       "table-columns": "Cột bảng",
-      "column-0-width-1": "Chiều rộng cột %0: %1%"
+      "column-0-width-1": "Chiều rộng cột %0: %1%",
+      "box-size-0": "Kích thước hộp: %0",
+      "keystrokes-that-can-be-used-in-a-multicolumn-layout": "Các phím tắt có thể sử dụng trong bố cục nhiều cột",
+      "move-the-selected-content-to-the-column-on-the-left": "Di chuyển nội dung được chọn sang cột bên trái",
+      "move-the-selected-content-to-the-column-on-the-right": "Di chuyển nội dung được chọn sang cột bên phải",
+      "move-the-selected-content-to-the-first-column": "Di chuyển nội dung được chọn sang cột đầu tiên",
+      "move-the-selected-content-to-the-last-column": "Di chuyển nội dung được chọn sang cột cuối cùng",
+      "move-the-column-to-the-left": "Di chuyển cột sang trái",
+      "move-the-column-to-the-right": "Di chuyển cột sang phải",
+      "make-the-column-the-first-one": "Đặt cột làm cột đầu tiên",
+      "make-the-column-the-last-one": "Đặt cột làm cột cuối cùng",
+      "add-a-column-after-the-current-one": "Thêm cột sau cột hiện tại",
+      "add-a-column-before-the-current-one": "Thêm cột trước cột hiện tại",
+      "keystrokes-that-can-be-used-in-a-tabs-block": "Các phím tắt có thể sử dụng trong khối tab",
+      "move-the-selected-content-to-the-tab-on-the-left": "Di chuyển nội dung được chọn sang tab bên trái",
+      "move-the-selected-content-to-the-tab-on-the-right": "Di chuyển nội dung được chọn sang tab bên phải",
+      "move-the-selected-content-to-the-first-tab": "Di chuyển nội dung được chọn sang tab đầu tiên",
+      "move-the-selected-content-to-the-last-tab": "Di chuyển nội dung được chọn sang tab cuối cùng",
+      "move-the-tab-to-the-left": "Di chuyển tab sang trái",
+      "move-the-tab-to-the-right": "Di chuyển tab sang phải",
+      "make-the-tab-the-first-one": "Đặt tab làm tab đầu tiên",
+      "make-the-tab-the-last-one": "Đặt tab làm tab cuối cùng",
+      "add-a-tab-after-the-current-one": "Thêm tab sau tab hiện tại",
+      "add-a-tab-before-the-current-one": "Thêm tab trước tab hiện tại",
+      "scroll-to-the-previous-tabs": "Cuộn đến các tab trước",
+      "scroll-to-the-next-tabs": "Cuộn đến các tab tiếp theo",
+      "text-formatting": "Định dạng văn bản",
+      "block-type": "Loại khối",
+      "apply-formatting": "Áp dụng định dạng",
+      "camera": "Máy ảnh",
+      "move-up": "Di chuyển lên",
+      "move-down": "Di chuyển xuống",
+      "image-position": "Vị trí hình ảnh",
+      "list": "Danh sách",
+      "list-type": "Kiểu danh sách"
     },
     "toolbar-groups": {
       "insert": "Insert",
@@ -4123,6 +4245,10 @@
     },
     "colors": {
       "pink": "Hồng"
+    },
+    "color-menu": {
+      "text-color": "Màu chữ",
+      "background-color": "Màu nền"
     }
   },
   "sorting": {
@@ -4263,7 +4389,11 @@
   },
   "content_language": {
     "title": "Ngôn ngữ nội dung",
-    "description": "Chọn một hoặc nhiều ngôn ngữ cần hiển thị trong phần chọn ngôn ngữ ở mục Thuộc tính cơ bản của ghi chú văn bản chỉ đọc hoặc có thể chỉnh sửa. Điều này sẽ cho phép các tính năng như kiểm tra chính tả, hỗ trợ viết từ phải sang trái, dấu ngoặc trích dẫn và trích xuất văn bản (OCR)."
+    "description": "Chọn một hoặc nhiều ngôn ngữ cần hiển thị trong phần chọn ngôn ngữ ở mục Thuộc tính cơ bản của ghi chú văn bản chỉ đọc hoặc có thể chỉnh sửa. Điều này sẽ cho phép các tính năng như kiểm tra chính tả, hỗ trợ viết từ phải sang trái, dấu ngoặc trích dẫn và trích xuất văn bản (OCR).",
+    "add_title": "Thêm một ngôn ngữ",
+    "add_first_other": "Thêm một ngôn ngữ (hiện có {{count}})",
+    "add_another_other": "Thêm một ngôn ngữ khác (hiện có {{count}})",
+    "remove": "Xóa khỏi danh sách"
   },
   "switch_layout_button": {
     "title_vertical": "Di chuyển bảng chỉnh sửa xuống dưới",
@@ -4320,7 +4450,9 @@
     "auto_link_previews_enabled": "Tự động tạo bản xem trước liên kết",
     "auto_link_previews_description": "Tự động chuyển một liên kết được phát hiện thành bản xem trước hiển thị tiêu đề, mô tả và hình ảnh của trang web. Việc chèn bản xem trước từ thanh công cụ luôn hoạt động, bất kể cài đặt này.",
     "html_support_enabled": "Giữ lại các thẻ HTML không được hỗ trợ",
-    "html_support_description": "Giữ lại các thẻ HTML mà trình soạn thảo không có tính năng riêng, được liệt kê dưới Tùy chọn → Khác → Thẻ nhập HTML. Chúng xuất hiện dưới dạng các khối không thể chỉnh sửa trực tiếp, và một thẻ không được nhận dạng có thể hoàn toàn không hiển thị trong khi chỉnh sửa. Nếu tắt tùy chọn này, các thẻ như vậy sẽ bị loại khỏi ghi chú khi lần đầu tiên ghi chú được chỉnh sửa và lưu; việc nhập không bị ảnh hưởng trong cả hai trường hợp."
+    "html_support_description": "Giữ lại các thẻ HTML mà trình soạn thảo không có tính năng riêng, được liệt kê dưới Tùy chọn → Khác → Thẻ nhập HTML. Chúng xuất hiện dưới dạng các khối không thể chỉnh sửa trực tiếp, và một thẻ không được nhận dạng có thể hoàn toàn không hiển thị trong khi chỉnh sửa. Nếu tắt tùy chọn này, các thẻ như vậy sẽ bị loại khỏi ghi chú khi lần đầu tiên ghi chú được chỉnh sửa và lưu; việc nhập không bị ảnh hưởng trong cả hai trường hợp.",
+    "sticky_table_headers_enabled": "Sử dụng hàng tiêu đề cố định cho bảng",
+    "sticky_table_headers_description": "Giữ các hàng tiêu đề của bảng ở phía trên ghi chú khi cuộn qua phần còn lại của bảng."
   },
   "book_properties_config": {
     "board-inbox-column": "Hiện cột hộp thư đến",
@@ -4336,7 +4468,10 @@
     "show-scale": "Hiển thị tỷ lệ",
     "show-labels": "Hiển thị tên điểm đánh dấu",
     "cluster-markers": "Nhóm các điểm đánh dấu gần nhau",
-    "presentation-theme": "Giao diện"
+    "presentation-theme": "Giao diện",
+    "max-nesting-depth-description": "Số cấp độ con của bộ sưu tập được hiển thị: 0 chỉ hiển thị các con trực tiếp, 1 hiển thị thêm con của chúng, và cứ thế. Để trống để hiển thị mọi cấp độ.",
+    "hide-routine-events": "Ẩn các sự kiện thường xuyên",
+    "hide-routine-events-help": "Ẩn các sự kiện theo lịch lặp lại từ {{days}} ngày trở lên mỗi tuần khỏi các chế độ xem Tháng, Năm và Danh sách. Các chế độ xem Ngày và Tuần vẫn hiển thị chúng."
   },
   "presentation_view": {
     "edit-slide": "Chỉnh sửa slide này",
@@ -4356,9 +4491,10 @@
     "processing_complete": "Xử lý OCR hoàn tất.",
     "processing_failed": "Không thể bắt đầu xử lý OCR",
     "text_filtered_low_confidence": "OCR đã phát hiện văn bản với {{confidence}}% cđộ tin cậy, nhưng đã bị loại bỏ vì ngưỡng tối thiểu của bạn là {{threshold}}%.",
-    "image_based_pdf_not_supported": "PDF này dường như dựa trên hình ảnh (quét). Trích xuất văn bản từ PDF dựa trên hình ảnh hiện chưa được hỗ trợ.",
     "open_media_settings": "Mở Cài đặt",
-    "view_extracted_text": "Xem văn bản trích xuất (OCR)"
+    "view_extracted_text": "Xem văn bản trích xuất (OCR)",
+    "no_text_recognized": "OCR không tìm thấy văn bản để nhận dạng.",
+    "pages_failed_other": "OCR thất bại trên {{count}} trang, do đó văn bản của chúng bị thiếu. Nhật ký có chứa lý do."
   },
   "command_palette": {
     "tree-action-name": "Cây: {{name}}",
@@ -4517,11 +4653,176 @@
     "note_title": "Họp {{date}}",
     "starting": "Đang bắt đầu phiên âm…",
     "stop": "Dừng phiên âm",
-    "stopping": "Đang hoàn tất bản ghi chép…"
+    "stopping": "Đang hoàn tất bản ghi chép…",
+    "title_keeping_recordings": "{{title}} (Giữ lại âm thanh để khắc phục sự cố)",
+    "stop_with_issue": "Dừng chuyển đổi văn bản (một số âm thanh không được chuyển đổi)",
+    "not_captured_microphone": "Không thể thu âm từ micro của bạn, do đó những gì bạn nói không được chuyển đổi thành văn bản. Hãy kiểm tra xem micro đã được kết nối và Trilium được phép sử dụng nó chưa, sau đó bắt đầu chuyển đổi lại.",
+    "not_captured_system": "Không thể thu âm cuộc họp, do đó những gì người khác nói không được chuyển đổi thành văn bản. Nếu hệ thống của bạn yêu cầu quyền ghi màn hình hoặc âm thanh của nó, hãy cấp quyền cho Trilium, sau đó bắt đầu chuyển đổi lại.",
+    "no_audio_microphone": "Không có âm thanh nào từ micro của bạn trong 10 giây, do đó những gì bạn nói không được chuyển đổi thành văn bản. Hãy dừng chuyển đổi và bắt đầu lại.",
+    "no_audio_system": "Không có âm thanh nào từ cuộc họp trong 10 giây, do đó những gì người khác nói không được chuyển đổi thành văn bản. Hãy dừng chuyển đổi và bắt đầu lại.",
+    "silent_microphone": "Chỉ có tiếng im lặng từ micro của bạn trong 15 giây. Hãy kiểm tra xem micro có bị tắt tiếng không và có phải là micro mặc định của hệ thống bạn không.",
+    "silent_system": "Chỉ có tiếng im lặng từ cuộc họp trong một phút. Nếu người khác đang nói, hãy kiểm tra xem cuộc họp có được phát qua loa hoặc tai nghe mặc định của hệ thống bạn không.",
+    "consent": "Hãy cho tất cả mọi người trong cuộc họp biết rằng cuộc họp đang được chuyển đổi thành văn bản và xin sự đồng ý của họ.",
+    "consent_keeping_recordings": "Hãy cho tất cả mọi người trong cuộc họp biết rằng cuộc họp đang được chuyển đổi thành văn bản và âm thanh được lưu lại, và xin sự đồng ý của họ."
   },
   "transcript": {
     "speaker_me": "Tôi",
     "speaker_others": "Khác",
-    "speaker_name": "Tên người nói"
+    "speaker_name": "Tên người nói",
+    "speaker_numbered": "Người nói {{number}}",
+    "empty": "Chưa có nội dung nào được chuyển văn bản.",
+    "unreadable": "Không thể đọc bản chuyển văn bản này.",
+    "speaking": "Đang nói…",
+    "offset": "{{offset}} Vào bản chuyển văn bản",
+    "cleanup": "Ẩn các từ đệm",
+    "not_captured": "Không thu được",
+    "no_audio": "Không có âm thanh",
+    "silent": "Chỉ có tiếng im lặng",
+    "copy": "Sao chép bản chuyển đổi"
+  },
+  "note_chips": {
+    "more": "+{{count}} Thêm nữa"
+  },
+  "doc_notes": {
+    "hidden": "<p>Cây ẩn được sử dụng để ghi lại các dữ liệu cấp ứng dụng, thường được ẩn khỏi góc nhìn của người dùng.</p><p>Hãy chắc chắn bạn biết mình đang làm gì. Những thay đổi không chính xác trong cây con này có thể khiến ứng dụng bị lỗi.</p>",
+    "launchbar_command_launcher": "<p>Phím tắt cho thao tác khởi chạy này có thể được cấu hình trong Tùy chọn -&gt; Phím tắt.</p>",
+    "launchbar_history_navigation": "<p>Nút Quay lại và Tiếp theo cho phép bạn di chuyển trong lịch sử điều hướng.</p><p>Các mục khởi chạy này chỉ hoạt động trong bản dựng desktop và sẽ bị bỏ qua trong phiên bản server, nơi bạn có thể sử dụng các nút điều hướng trình duyệt gốc thay thế.</p>",
+    "launchbar_quick_search": "<p>Thanh tìm kiếm nhanh <a href=\"#root/_help_Ms1nauBra7gq\" target=\"_blank\">quick search bar</a> chỉ được hiển thị trên bố cục ngang, vì nó đã hiển thị mặc định trên bố cục dọc.</p><p>Để biết thêm thông tin, xem <a href=\"#root/_help_x0JgW8UqGXvq\" target=\"_blank\">Bố cục dọc và ngang</a>.</p>",
+    "launchbar_script_launcher": "<p>Mục khởi chạy script có thể thực thi một script (ghi chú mã) được kết nối qua quan hệ <code>~script</code>.</p><ol><li><code>script</code> - quan hệ đến ghi chú script cần được thực thi khi kích hoạt mục khởi chạy</li><li><code>keyboardShortcut</code> - tùy chọn, nhấn phím tắt sẽ kích hoạt mục khởi chạy</li></ol><h4>Script mẫu</h4><pre>{{sample}}</pre>",
+    "launchbar_spacer": "<p>Spacer cho phép bạn nhóm các mục khởi chạy về mặt thị giác. Bạn có thể cấu hình nó trong các thuộc tính nổi bật:</p><ul><li><code>baseSize</code> - định nghĩa kích thước theo pixel (nếu có đủ không gian)</li><li><code>growthFactor</code> - đặt thành 0 nếu bạn muốn spacer có <code>baseSize</code> cố định, với giá trị dương nó sẽ mở rộng.</li></ul>",
+    "launchbar_widget_launcher": "<p>Vui lòng định nghĩa ghi chú widget đích trong các thuộc tính nổi bật. Widget sẽ được sử dụng để hiển thị biểu tượng thanh khởi chạy.</p><h4>Ví dụ widget thanh khởi chạy</h4><pre>{{sample}}</pre>",
+    "share": "<p>Tại đây bạn có thể tìm thấy tất cả các ghi chú được chia sẻ.</p>",
+    "system_state": "<p>Đây là trạng thái tác vụ tích hợp sẵn và không thể chỉnh sửa hoặc xóa.</p><p>Chỉ có thể thay đổi vị trí của nó, điều này xác định thứ tự của nó trong thanh công cụ hộp kiểm và chu kỳ phím.</p>",
+    "launchbar_intro": "<p>Chào mừng bạn đến với phần cấu hình thanh khởi chạy (Launchbar).</p><p>Tại đây, bạn có thể thực hiện các thao tác sau:</p><ul><li>Kéo các trình khởi chạy khả dụng vào danh sách hiển thị (để đưa chúng vào thanh khởi chạy)</li><li>Kéo các trình khởi chạy đang hiển thị sang danh sách khả dụng (để ẩn chúng khỏi thanh khởi chạy)</li><li>Sắp xếp lại thứ tự các mục trong danh sách bằng cách kéo thả</li><li>Tạo trình khởi chạy mới bằng cách nhấp chuột phải vào thư mục \"Trình khởi chạy hiển thị\"</li><li>Khôi phục về thiết lập mặc định bằng cách chọn \"reset\" trong menu ngữ cảnh.</li></ul>",
+    "launchbar_note_launcher": "<p>Bạn có thể định nghĩa các thuộc tính sau:</p><ol><li><code>target</code> - ghi chú sẽ được mở khi kích hoạt mục khởi chạy</li><li><code>hoistedNote</code> - tùy chọn, sẽ thay đổi ghi chú được đặt làm gốc trước khi mở ghi chú đích</li><li><code>keyboardShortcut</code> - tùy chọn, nhấn phím tắt sẽ mở ghi chú</li></ol><p>Thanh khởi chạy hiển thị tiêu đề / biểu tượng từ mục khởi chạy, vốn không nhất thiết phải phản chiếu tiêu đề / biểu tượng của ghi chú đích.</p>",
+    "task_state": "<p>Ghi chú này định nghĩa một trạng thái công việc cần làm. Biểu tượng của ghi chú được hiển thị bên trong ô chọn để đại diện cho trạng thái này, và tiêu đề ghi chú đóng vai trò là tên hiển thị của nó.</p><p>Trạng thái được cấu hình thông qua các thuộc tính nổi bật sau:</p><ul><li><code>Định danh</code> — bắt buộc. Tên nội bộ được lưu trữ dưới dạng siêu dữ liệu trong đánh dấu của ghi chú. Chỉ cho phép các chữ cái, chữ số, <code>-</code> và <code>_</code>.<p class=\"admonition warning\">Thêm tiền tố cho định danh của các trạng thái công việc tùy chỉnh của bạn bằng dấu gạch dưới <code>_</code> hoặc dấu gạch ngang <code>-</code> để tránh xung đột với các trạng thái công việc có thể được giới thiệu trong các phiên bản tương lai của Trilium.</p>Ví dụ: <code>_postponed</code>, <code>_awaiting-feedback</code>, <code>_validated</code>.</li><li><code>Ký hiệu Markdown</code> — ký tự đơn được sử dụng để đại diện cho trạng thái khi xuất sang Markdown; ví dụ, <code>/</code> tạo ra <code>- [/]</code>.</li><li><code>Tính là đã hoàn thành</code> — khi bật, công việc ở trạng thái này được xử lý như đã hoàn thành.</li><li><code>Màu sắc</code> — màu ô chọn cho trạng thái này.</li><li><code>Ẩn khỏi thanh công cụ</code> — khi bật, trạng thái này bị loại khỏi danh sách trạng thái và chu kỳ bàn phím. Các ghi chú đang sử dụng nó vẫn tiếp tục hiển thị chính xác.</li></ul><p class=\"admonition warning\">Các thay đổi có hiệu lực sau khi ứng dụng được tải lại.</p>",
+    "task_states": "<p>Ghi chú này chứa các trạng thái công việc khả dụng cho ô chọn cần làm trong trình chỉnh sửa văn bản. Mỗi ghi chú con đại diện cho một trạng thái đơn lẻ.</p><p>Các trạng thái có thể được thêm, sửa đổi, sắp xếp lại hoặc xóa bỏ. Để thêm trạng thái mới, hãy tạo một ghi chú con và cấu hình các thuộc tính nổi bật của nó.</p><p class=\"admonition warning\">Các thay đổi có hiệu lực sau khi ứng dụng được tải lại.</p>",
+    "user_hidden": "<p>Ghi chú này đóng vai trò là cây con dành riêng cho dữ liệu được tạo bởi các script của người dùng, những script vốn không nên tự do tạo dữ liệu trong cây con bị ẩn.</p>"
+  },
+  "template_field": {
+    "preview": "Xem trước: {{result}}",
+    "error_unclosed": "Biểu thức ${ này không bao giờ được đóng, nên nó sẽ được giữ trong tiêu đề dưới dạng văn bản.",
+    "error_unsupported": "Chỉ các thuộc tính như note.title, hoặc các phương thức như note.getLabelValue('name'), mới có thể đặt giữa ${ and }.",
+    "error_unknown_variable": "Không có biến nào có tên “{{name}}”.",
+    "error_property_not_allowed": "Thuộc tính “{{name}}” không thể được sử dụng trong mẫu.",
+    "error_method_not_allowed": "Phương thức “{{name}}” không thể được sử dụng trong mẫu.",
+    "error_method_not_on_value": "Giá trị trước “{{name}}” không có phương thức này.",
+    "variable_note": "Ghi chú đang được đổi tên",
+    "member_title": "Tiêu đề của ghi chú",
+    "member_note_id": "ID của ghi chú",
+    "member_type": "Loại của ghi chú, chẳng hạn như văn bản hoặc mã nguồn",
+    "member_mime": "Loại MIME của ghi chú",
+    "member_date_created_obj": "Ngày tạo, dùng với format('…')",
+    "member_utc_date_created_obj": "Ngày tạo theo múi giờ UTC, dùng với format('…')",
+    "member_date_created": "Thời điểm ghi chú được tạo, theo giờ địa phương",
+    "member_date_modified": "Thời điểm ghi chú được sửa đổi lần cuối, theo giờ địa phương",
+    "member_utc_date_created": "Thời điểm ghi chú được tạo, theo múi giờ UTC",
+    "member_utc_date_modified": "Thời điểm ghi chú được sửa đổi lần cuối, theo múi giờ UTC",
+    "member_is_protected": "Ghi chú có được bảo vệ hay không",
+    "member_get_label_value": "Giá trị của nhãn có tên được chỉ định",
+    "member_get_relation_value": "ID của ghi chú mà quan hệ có tên được chỉ định trỏ tới",
+    "member_format": "Ngày theo định dạng được chỉ định, chẳng hạn như YYYY-MM-DD"
+  },
+  "compress-images-menu": "Nén hình ảnh...",
+  "compress-image-menu": "Nén hình ảnh...",
+  "resource_download": {
+    "title": "Cần tải xuống",
+    "intro": "Trilium cần tải xuống các tệp sau trước khi có thể tiếp tục. Chúng được lưu trên thiết bị này và không được đồng bộ hóa, do đó mỗi thiết bị của bạn sẽ tải xuống chúng riêng biệt.",
+    "partially_downloaded": "Đã tải xuống",
+    "total": "Kích thước tải xuống",
+    "free_space": "Dung lượng trống trên ổ đĩa: {{size}}",
+    "not_enough_space": "Việc tải xuống cần {{size}}, nhưng trên thiết bị này chỉ còn {{free}} trống. Hãy giải phóng một ít dung lượng, sau đó đóng cửa sổ này và thử lại.",
+    "progress": "{{received}} Trên {{total}}",
+    "current_file": "Đang tải xuống {{file}}…",
+    "download": "Tải xuống",
+    "retry": "Thử lại",
+    "cancel": "Huỷ",
+    "not_enough_space_title": "Không đủ dung lượng trống",
+    "failed_title": "Tải xuống thất bại",
+    "license": "Giấy phép {{license}}",
+    "verify": "Xác minh",
+    "unverified": "{{size}} Đã có trên thiết bị này, đã được kiểm tra thay vì tải xuống",
+    "credits": "Bởi <Author>{{author}}</Author>, từ {{sources}}"
+  },
+  "transcription_options": {
+    "recognition_title": "Nhận dạng giọng nói",
+    "european_languages": "Các ngôn ngữ châu Âu",
+    "european_languages_description": "Nhận dạng 25 ngôn ngữ châu Âu, xác định ngôn ngữ đang được nói. Mô hình sẽ được tải xuống vào lần đầu tiên bạn ghi âm bằng nó.",
+    "model_standard": "Tiêu chuẩn",
+    "model_high_accuracy": "Độ chính xác cao",
+    "identify_speakers": "Nhận dạng người nói",
+    "identify_speakers_description": "Phân biệt các người tham gia khác và gắn nhãn cho những gì mỗi người nói; những gì bạn nói vào micro luôn thuộc về bạn. Giọng nói chỉ được so sánh trong quá trình ghi âm: không có thông tin nào về giọng nói được lưu trữ và không ai được nhận dạng từ cuộc họp này sang cuộc họp khác. Tắt tính năng này nếu nó nhầm lẫn giọng nói. Tính năng này sẽ áp dụng từ lần ghi âm tiếp theo.",
+    "troubleshooting_title": "Khắc phục sự cố",
+    "keep_recordings": "Giữ lại bản ghi để khắc phục sự cố",
+    "keep_recordings_description": "Giữ lại âm thanh của tất cả mọi người trong cuộc họp, cùng với các cài đặt đã sử dụng và bản ghi chú như lúc được tạo ra, để có thể báo cáo và tái hiện các vấn đề về bản ghi. Dung lượng khoảng 230 MB cho mỗi giờ họp và không bao giờ bị xóa tự động.",
+    "saved_in": "Đã lưu vào",
+    "enabled": "Chuyển văn bản cuộc họp",
+    "enabled_description": "Thêm nút Chuyển văn bản cuộc họp vào thanh khởi chạy, giúp chuyển văn bản những gì bạn nói vào micro và những gì các người tham gia khác nói qua loa của bạn. Nhận dạng giọng nói chạy hoàn toàn trên thiết bị này, nên không có âm thanh nào rời khỏi thiết bị.",
+    "related_resources": "Tài nguyên đã tải xuống",
+    "related_resources_description": "Xem các mô hình nhận dạng giọng nói đã tải xuống thiết bị này và xóa những mô hình không còn cần thiết.",
+    "model_standard_description": "Parakeet TDT 0.6B v3 của NVIDIA, đã lượng tử hóa để chạy tốt trên hầu hết các máy tính.",
+    "model_high_accuracy_description": "Parakeet TDT 0.6B v3 của NVIDIA ở độ chính xác đầy đủ. Mô hình này ít mắc lỗi hơn nhưng cần thêm khoảng 1,6 GB bộ nhớ trong khi ghi âm.",
+    "model_size": "Tải xuống {{size}}",
+    "keep_recordings_warning": "Trước khi bật tính năng này, hãy yêu cầu tất cả mọi người trong cuộc họp đồng ý bị ghi âm. Tại Đức, Pháp và một số bang của Mỹ, việc ghi âm cuộc trò chuyện mà không có sự đồng ý của tất cả mọi người là hành vi phạm tội hình sự, và khi mọi người tham gia từ các địa điểm khác nhau, luật nghiêm ngặt nhất trong số đó sẽ được áp dụng. Âm thanh được lưu trữ không mã hóa, kể cả đối với các ghi chú được bảo vệ.",
+    "unsupported": "Chuyển văn bản cuộc họp không khả dụng trên máy tính này: không thể tải bộ động cơ nhận dạng giọng nói."
+  },
+  "resources_options": {
+    "list_title": "Tài nguyên",
+    "list_description": "Các tệp lớn mà các tính năng tải xuống khi lần đầu tiên cần đến, chẳng hạn như các mô hình nhận dạng giọng nói. Chúng được lưu trữ trên thiết bị này và không được đồng bộ hóa, do đó mỗi thiết bị sẽ tải xuống bản sao của riêng mình.",
+    "installed": "Đã cài đặt",
+    "partially_downloaded": "Đã tải xuống {{downloaded}} trên {{size}}",
+    "space_used": "Dung lượng đã dùng",
+    "no_resources": "Chưa có gì được tải xuống.",
+    "delete": "Xoá",
+    "delete_confirmation": "Xóa {{title}}? Nó sẽ được tải xuống lại vào lần tiếp theo một tính năng cần đến.",
+    "open_folder": "Mở thư mục",
+    "outdated": "Phiên bản cũ hơn",
+    "outdated_description": "Tệp của phiên bản trước của tài nguyên này mà phiên bản hiện tại không sử dụng.",
+    "unregistered": "Không được sử dụng",
+    "unregistered_description": "Tài nguyên đã tải xuống không được sử dụng bởi bất kỳ tính năng nào của ứng dụng này.",
+    "unknown": "Không xác định",
+    "unknown_description": "Chưa được tải xuống bởi Trilium.",
+    "delete_foreign_confirmation": "Xóa {{name}}? Không tính năng nào của ứng dụng này sử dụng nó.",
+    "unverified": "Chưa được kiểm tra"
+  },
+  "template_properties": {
+    "title": "Thuộc tính mẫu",
+    "title_template": "Tiêu đề mặc định của các ghi chú được tạo",
+    "title_template_description": "Có thể đọc thời gian tạo (now) và ghi chú mà nó được tạo bên dưới (parentNote).",
+    "title_template_placeholder": "Cuộc họp ${now.format('YYYY-MM-DD')}",
+    "new_notes": "Các ghi chú mới",
+    "default_parent": "Vị trí mặc định của các ghi chú được tạo",
+    "default_parent_description": "Nơi chúng được đặt khi không chọn vị trí nào khác, chẳng hạn như khi được tạo thông qua tự động hoàn thành bằng @ trong ghi chú văn bản.",
+    "default_parent_placeholder": "Nơi chúng được tạo"
+  },
+  "hide_keyboard_button": {
+    "title": "Ẩn bàn phím",
+    "close_menu": "Đóng menu"
+  },
+  "code_editor_context_menu": {
+    "transform": "Biến đổi",
+    "sort_ascending": "Sắp xếp tăng dần",
+    "sort_descending": "Sắp xếp giảm dần",
+    "shuffle_lines": "Xáo trộn các dòng",
+    "reverse_lines": "Đảo ngược thứ tự dòng",
+    "deduplicate_lines": "Xóa các dòng trùng lặp",
+    "trim_leading": "Xóa khoảng trắng đầu dòng",
+    "trim_leading_tooltip": "Xóa khoảng trắng ở đầu mỗi dòng",
+    "trim_trailing": "Xóa khoảng trắng cuối dòng",
+    "trim_trailing_tooltip": "Xóa khoảng trắng ở cuối mỗi dòng",
+    "trim_both": "Xóa khoảng trắng hai đầu dòng",
+    "trim_both_tooltip": "Xóa khoảng trắng ở đầu và cuối mỗi dòng",
+    "remove_blank_lines": "Xóa các dòng trống",
+    "to_uppercase": "Chuyển thành chữ hoa",
+    "to_lowercase": "Chuyển thành chữ thường",
+    "to_sentence_case": "Chuyển thành chữ hoa đầu câu",
+    "to_title_case": "Chuyển thành chữ hoa mỗi từ",
+    "remove_diacritics": "Xóa dấu"
+  },
+  "date_picker": {
+    "today": "Hôm nay",
+    "tomorrow": "Ngày mai",
+    "next-week": "Tuần sau",
+    "clear": "Xóa"
   }
 }

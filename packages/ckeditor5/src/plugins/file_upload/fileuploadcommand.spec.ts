@@ -14,7 +14,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import ContentEmbed from "../content_embed/content_embed.js";
 import { isUploadAsLink } from "../uploadimage.js";
 import FileUploadCommand, { isFocusUpload, isQuietUpload } from "./fileuploadcommand.js";
@@ -149,7 +148,7 @@ describe("FileUploadCommand", () => {
     it("inserts an embed placeholder per file, in the size the host gives its type and size", () => {
         const getEmbedBoxSize = vi.fn((mime: string, _size: number) =>
             (mime === "image/png" || mime === "application/vnd.excalidraw+json" ? "medium" : "tiny"));
-        installGlobMock({ getComponentByEl: () => ({ getEmbedBoxSize }) });
+        editor.config.set("attachmentUpload", { getEmbedBoxSize });
         setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
 
         editor.execute("fileUpload", {
@@ -178,7 +177,6 @@ describe("FileUploadCommand", () => {
     });
 
     it("sizes the embeds medium for a host that names no size", () => {
-        installGlobMock({ getComponentByEl: () => ({}) });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         editor.execute("fileUpload", {
@@ -192,7 +190,7 @@ describe("FileUploadCommand", () => {
 
     it("gives the embeds the box size, hidden title and editing the caller asks for", () => {
         const getEmbedBoxSize = vi.fn(() => "tiny");
-        installGlobMock({ getComponentByEl: () => ({ getEmbedBoxSize }) });
+        editor.config.set("attachmentUpload", { getEmbedBoxSize });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         editor.execute("fileUpload", {
@@ -213,7 +211,6 @@ describe("FileUploadCommand", () => {
     });
 
     it("places an embed that takes the focus as an image, keeping the text and the cursor", () => {
-        installGlobMock({ getComponentByEl: () => ({}) });
         const insert = (data: string, focusEmbed: boolean) => {
             setModelData(editor.model, data);
             editor.execute("fileUpload", {
@@ -250,7 +247,6 @@ describe("FileUploadCommand", () => {
     });
 
     it("marks the loaders of a quiet upload and of a focus upload, and only those", () => {
-        installGlobMock({ getComponentByEl: () => ({}) });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
         const createLoaderSpy = vi.spyOn(editor.plugins.get(FileRepository), "createLoader");
 
@@ -264,7 +260,6 @@ describe("FileUploadCommand", () => {
     });
 
     it("marks the loader of every file to upload as a link, for an embed too", () => {
-        installGlobMock({ getComponentByEl: () => ({}) });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
         const createLoaderSpy = vi.spyOn(editor.plugins.get(FileRepository), "createLoader");
 

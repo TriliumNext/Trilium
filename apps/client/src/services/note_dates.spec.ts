@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getCreationDate, loadCreationDates } from "./note_dates";
+import { getCreationDate, loadCreationDates, loadNoteDates } from "./note_dates";
 import server from "./server";
 
 /** Names notes uniquely per test: the cache is module-level and is never emptied. */
@@ -83,5 +83,51 @@ describe("loadCreationDates", () => {
         const sizes = vi.mocked(server.post).mock.calls
             .map(([ , data ]) => (data as { noteIds: string[] }).noteIds.length);
         expect(sizes).toEqual([ 1000, 1000, 500 ]);
+    });
+});
+
+describe("loadNoteDates", () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("asks every time, since a modification date changes with each edit", async () => {
+        const [ edited, missing ] = noteIds(2);
+        const post = vi.spyOn(server, "post").mockResolvedValue({
+            [edited]: {
+                utcDateCreated: "2026-01-05 09:30:00.000Z",
+                utcDateModified: "2026-03-01 12:00:00.000Z"
+            }
+        });
+
+        const dates = await loadNoteDates([ edited, missing ]);
+        expect(dates.get(edited)).toEqual({
+            created: Date.parse("2026-01-05 09:30:00.000Z"),
+            modified: Date.parse("2026-03-01 12:00:00.000Z")
+        });
+        expect(dates.get(missing)).toBeUndefined();
+
+        await loadNoteDates([ edited ]);
+        expect(post).toHaveBeenCalledTimes(2);
+    });
+
+    it("keeps the creation dates it reads for getCreationDate()", async () => {
+        const [ note ] = noteIds(1);
+        vi.spyOn(server, "post").mockResolvedValue({
+            [note]: { utcDateCreated: "2026-01-05 09:30:00.000Z" }
+        });
+
+        await loadNoteDates([ note ]);
+
+        expect(getCreationDate(note)).toBe(Date.parse("2026-01-05 09:30:00.000Z"));
+        expect(await loadCreationDates([ note ])).toBe(false);
+    });
+
+    it("splits a large set into batches", async () => {
+        respondWith({});
+
+        await loadNoteDates(noteIds(1500));
+
+        expect(server.post).toHaveBeenCalledTimes(2);
     });
 });

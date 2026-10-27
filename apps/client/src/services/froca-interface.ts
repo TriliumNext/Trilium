@@ -49,8 +49,13 @@ export interface FrocaSource {
     getBlob(entityType: string, entityId: string): Promise<FBlobRow>;
     /** The ids of the notes below `ancestorNoteId` that match the search `query`. */
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
-    /** The notes below `ancestorNoteId` that match `query`, with the tokens to highlight and its error. */
-    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    /**
+     * The notes below `ancestorNoteId` that match `query`, with the tokens to highlight and its
+     * error. Archived notes are searched only when `includeArchived` is set.
+     */
+    searchInSubtree(
+        query: string, ancestorNoteId: string, includeArchived: boolean
+    ): Promise<SearchWithTokensResponse>;
     /** What is wrong with the search string, read without running it. */
     lintSearch(searchString: string): Promise<SearchLintResponse>;
     /** The names of the attributes of `type` that contain `query`, to complete one with. */
@@ -84,7 +89,9 @@ export interface Froca {
 
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
-    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    searchInSubtree(
+        query: string, ancestorNoteId: string, includeArchived: boolean
+    ): Promise<SearchWithTokensResponse>;
     lintSearch(searchString: string): Promise<SearchLintResponse>;
     getAttributeNames(type: "label" | "relation", query: string): Promise<string[]>;
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;

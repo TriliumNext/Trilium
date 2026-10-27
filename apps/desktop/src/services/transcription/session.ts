@@ -53,6 +53,8 @@ export interface RecordingSessionOptions {
      * still being spoken or because it waits to be transcribed, every time that list changes.
      */
     onPendingChanged?: (sources: TranscriptSource[]) => void;
+    /** Called with the RMS of every chunk as it arrives, from 0 to 1. */
+    onLevel?: (source: TranscriptSource, level: number) => void;
     now?: () => number;
 }
 
@@ -87,7 +89,8 @@ export class RecordingSession {
             try {
                 const pipeline = this.pipelineFor(source, samples);
                 this.tap(source, samples, pipeline.firstSampleOffsetMs);
-                pipeline.accept(samples);
+                const level = pipeline.accept(samples);
+                this.options.onLevel?.(source, level);
                 this.updatePending();
             } catch (e) {
                 this.log.error(`Transcription: ${source} failed: ${(e as Error)?.message ?? e}`);
@@ -228,7 +231,10 @@ export class RecordingSession {
     }
 }
 
-/** Segments one source and logs its peak level every 5 s, to spot a silent source. */
+/**
+ * Segments one source, measures each chunk's RMS and logs the source's peak level every 5 s, to
+ * spot a silent source.
+ */
 class SourcePipeline {
     private peak = 0;
     private peakSampleCount = 0;
@@ -242,9 +248,11 @@ class SourcePipeline {
         private readonly log: Logger
     ) {}
 
+    /** Segments `samples` and returns their RMS. */
     accept(samples: Float32Array) {
-        this.trackPeak(samples);
+        const level = this.measure(samples);
         this.emit(this.segmenter.accept(samples));
+        return level;
     }
 
     flush() {
@@ -262,9 +270,11 @@ class SourcePipeline {
         }
     }
 
-    private trackPeak(samples: Float32Array) {
+    private measure(samples: Float32Array) {
+        let sumOfSquares = 0;
         for (const sample of samples) {
             this.peak = Math.max(this.peak, Math.abs(sample));
+            sumOfSquares += sample * sample;
         }
         this.peakSampleCount += samples.length;
         if (this.peakSampleCount >= 5 * SAMPLE_RATE) {
@@ -272,6 +282,7 @@ class SourcePipeline {
             this.peak = 0;
             this.peakSampleCount = 0;
         }
+        return samples.length ? Math.sqrt(sumOfSquares / samples.length) : 0;
     }
 }
 

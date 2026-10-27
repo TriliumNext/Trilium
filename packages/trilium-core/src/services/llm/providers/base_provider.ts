@@ -12,6 +12,7 @@ import { attachmentPlaceholder, resolveAttachmentPart } from "../attachment_cont
 import { llmFetch } from "./fetch.js";
 import { buildNoteHint } from "../note_hint.js";
 import { buildSystemPrompt as composeSystemPrompt } from "../system_prompt.js";
+import { TOOL_CALL_DECLINED_REASON } from "../tool_approval.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 import { createReadWebPageTool, createWebSearchTool } from "../web_search.js";
@@ -47,7 +48,7 @@ export const TELEMETRY_OFF = { isEnabled: false } as const;
 
 /**
  * A model as reported by a provider's models endpoint. Only what the listing
- * APIs actually return — pricing is never part of it.
+ * APIs actually return.
  */
 export interface RemoteModel {
     id: string;
@@ -55,6 +56,8 @@ export interface RemoteModel {
     name?: string;
     /** Context window in tokens, when the API provides one (e.g. Google's `inputTokenLimit`). */
     contextWindow?: number;
+    /** Price, when the API provides one (OpenRouter's `pricing`). The vendor APIs don't. */
+    pricing?: ModelPricing;
 }
 
 /**
@@ -141,22 +144,11 @@ export function buildModelMessage(m: LlmMessage, accepts: AttachmentFilter = () 
 }
 
 /**
- * A hard-coded model definition that always carries pricing. Used only by the
- * Claude Agent (subscription) provider, whose fixed catalog and zero pricing
- * come from the CLI rather than the metered LiteLLM price table.
+ * One provider's slice of the committed price table, keyed by model id. The Claude
+ * Agent provider reads the `anthropic` slice for context windows.
  */
-type CuratedModel = ModelInfo & { pricing: ModelPricing };
-
-/**
- * Split a curated model array into the `{ models, pricing }` pair the subscription
- * provider needs (the model list plus an id → pricing lookup).
- */
-export function buildModelList(baseModels: CuratedModel[]): {
-    models: ModelInfo[];
-    pricing: Record<string, ModelPricing>;
-} {
-    const pricing = Object.fromEntries(baseModels.map(m => [m.id, m.pricing]));
-    return { models: baseModels, pricing };
+export function getProviderPrices(provider: string): ProviderPrices {
+    return MODEL_PRICES[provider] ?? {};
 }
 
 /**
@@ -165,13 +157,10 @@ export function buildModelList(baseModels: CuratedModel[]): {
  *
  * The remote list is the source of truth for *availability* and *display name*:
  * base entries absent from it are dropped, remote models unknown to the base
- * list are included with whatever metadata the endpoint reported (no pricing).
+ * list are included with whatever metadata the endpoint reported.
  * The base list supplies pricing and context window (and, offline, a fallback
  * name) for the models it knows; the endpoint's display name always wins when
  * present.
- *
- * Shared by {@link BaseProvider.listModels} and the Claude Agent provider, which
- * merges the CLI's catalog rather than an HTTP endpoint's but needs the same rules.
  *
  * Ordering: base-known models first (in base order), then unknown remote models
  * alphabetically. An existing default keeps its flag; otherwise the first merged
@@ -190,7 +179,8 @@ export function mergeModelLists(curated: ModelInfo[], remote: RemoteModel[]): Mo
                 // The endpoint is authoritative for display names (e.g. Anthropic's
                 // `display_name`); the base name is only an offline fallback.
                 name: remoteModel?.name ?? m.name,
-                contextWindow: m.contextWindow ?? remoteModel?.contextWindow
+                contextWindow: m.contextWindow ?? remoteModel?.contextWindow,
+                pricing: m.pricing ?? remoteModel?.pricing
             };
         });
 
@@ -201,7 +191,8 @@ export function mergeModelLists(curated: ModelInfo[], remote: RemoteModel[]): Mo
         .map<ModelInfo>(m => ({
             id: m.id,
             name: m.name ?? m.id,
-            contextWindow: m.contextWindow
+            contextWindow: m.contextWindow,
+            ...(m.pricing && { pricing: m.pricing })
         }));
 
     const merged = [...known, ...unknown];
@@ -323,8 +314,11 @@ export abstract class BaseProvider implements LlmProvider {
      * separately via the `system` option of `streamText` (see `buildSystemMessage`),
      * which is resilient against prompt injection.
      */
-    protected buildMessages(chatMessages: LlmMessage[], modelId: string): ModelMessage[] {
-        return chatMessages.map(m => buildModelMessage(m, kind => this.acceptsAttachment(kind, modelId)));
+    protected buildMessages(chatMessages: LlmMessage[], modelId: string, attachmentKinds?: LlmAttachmentKind[]): ModelMessage[] {
+        const accepts: AttachmentFilter = attachmentKinds
+            ? kind => attachmentKinds.includes(kind)
+            : kind => this.acceptsAttachment(kind, modelId);
+        return chatMessages.map(m => buildModelMessage(m, accepts));
     }
 
     /**
@@ -418,7 +412,7 @@ export abstract class BaseProvider implements LlmProvider {
         const systemPrompt = this.buildSystemPrompt(messages, config);
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
         const modelId = config.model || this.defaultModel;
-        const coreMessages = this.buildMessages(chatMessages, modelId);
+        const coreMessages = this.buildMessages(chatMessages, modelId, config.attachmentKinds);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(modelId),
@@ -440,14 +434,46 @@ export abstract class BaseProvider implements LlmProvider {
             streamOptions.providerOptions = providerOptions;
         }
 
-        const tools = this.buildTools(config);
-        if (Object.keys(tools).length > 0) {
-            streamOptions.tools = tools;
-            streamOptions.stopWhen = stepCountIs(15);
-            streamOptions.toolChoice = "auto";
-        }
+        this.addTools(streamOptions, config, 15);
 
         return streamText(streamOptions);
+    }
+
+    /**
+     * Give a turn the tools of {@link buildTools}, letting it run up to `maxSteps` steps.
+     * With `config.toolApprovals`, every call the model makes waits for the user to answer it.
+     */
+    protected addTools(
+        streamOptions: Parameters<typeof streamText>[0],
+        config: LlmProviderConfig,
+        maxSteps: number
+    ): void {
+        const tools = this.buildTools(config);
+        if (Object.keys(tools).length === 0) {
+            return;
+        }
+
+        streamOptions.tools = tools;
+        streamOptions.stopWhen = stepCountIs(maxSteps);
+        streamOptions.toolChoice = "auto";
+
+        const approvals = config.toolApprovals;
+        if (approvals) {
+            streamOptions.toolApproval = async ({ toolCall }) => {
+                // A tool the provider runs itself (such as Anthropic's web search) cannot be held.
+                if (toolCall.providerExecuted) {
+                    return "not-applicable";
+                }
+                const approved = await approvals.request({
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    toolInput: toolCall.input as Record<string, unknown>
+                });
+                return approved
+                    ? "approved"
+                    : { type: "denied", reason: TOOL_CALL_DECLINED_REASON };
+            };
+        }
     }
 
     /** Provider-specific `providerOptions` for a chat turn, such as a reasoning effort. */
@@ -460,7 +486,7 @@ export abstract class BaseProvider implements LlmProvider {
      * can inject a table without a real JSON file.
      */
     protected getProviderPrices(): ProviderPrices {
-        return MODEL_PRICES[this.name] ?? {};
+        return getProviderPrices(this.name);
     }
 
     /**

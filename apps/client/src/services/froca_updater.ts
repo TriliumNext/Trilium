@@ -1,4 +1,4 @@
-import type { OptionNames } from "@triliumnext/commons";
+import type { AttachmentRow, OptionNames } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
@@ -11,9 +11,9 @@ import { invalidateNoteImages } from "./image_urls.js";
 import LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
 import options from "./options.js";
-import utils from "./utils.js";
 
-async function processEntityChanges(entityChanges: EntityChange[]) {
+async function processEntityChanges(changes: EntityChange[]) {
+    const entityChanges = changes.map(asDeletionIfErased);
     const loadResults = new LoadResults(entityChanges);
 
     for (const ec of entityChanges) {
@@ -58,8 +58,7 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
     const missingNoteIds: string[] = [];
 
     for (const { entityName, entity } of entityChanges) {
-        if (!entity) {
-            // if erased
+        if (!entity || entity.isDeleted) {
             continue;
         }
 
@@ -101,11 +100,6 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
 
     loadResults.addNote(ec.entityId, ec.componentId);
 
-    if (ec.isErased && ec.entityId in froca.notes) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     if (ec.isErased || ec.entity?.isDeleted) {
         delete froca.notes[ec.entityId];
     } else {
@@ -131,11 +125,6 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
 }
 
 async function processBranchChange(loadResults: LoadResults, ec: EntityChange) {
-    if (ec.isErased && ec.entityId in froca.branches) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     let branch = froca.branches[ec.entityId];
 
     if (ec.isErased || ec.entity?.isDeleted) {
@@ -232,11 +221,6 @@ function processNoteReordering(loadResults: LoadResults, ec: EntityChange) {
 function processAttributeChange(loadResults: LoadResults, ec: EntityChange) {
     let attribute = froca.attributes[ec.entityId];
 
-    if (ec.isErased && ec.entityId in froca.attributes) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     if (ec.isErased || ec.entity?.isDeleted) {
         if (attribute) {
             const sourceNote = froca.notes[attribute.noteId];
@@ -286,11 +270,6 @@ function processAttributeChange(loadResults: LoadResults, ec: EntityChange) {
 }
 
 function processAttachment(loadResults: LoadResults, ec: EntityChange) {
-    if (ec.isErased && ec.entityId in froca.attachments) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     const attachment = froca.attachments[ec.entityId];
     const attachmentEntity = ec.entity as FAttachmentRow;
 
@@ -325,6 +304,53 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
     }
 
     loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
+}
+
+/**
+ * Turns the erasure of an entity froca holds into a deletion of froca's copy of its row. An erase
+ * carries no row, and `LoadResults` and the widgets reading it need one to know what was removed.
+ */
+function asDeletionIfErased(ec: EntityChange): EntityChange {
+    if (!ec.isErased) {
+        return ec;
+    }
+
+    const row = getFrocaRow(ec);
+    return row ? { ...ec, entity: { ...row, isDeleted: true } } : ec;
+}
+
+function getFrocaRow({ entityName, entityId }: EntityChange) {
+    if (entityName === "notes") {
+        const note = froca.notes[entityId];
+        return note && {
+            noteId: note.noteId, title: note.title, isProtected: note.isProtected,
+            type: note.type, mime: note.mime, blobId: note.blobId
+        } satisfies FNoteRow;
+    } else if (entityName === "branches") {
+        const branch = froca.branches[entityId];
+        return branch && {
+            branchId: branch.branchId, noteId: branch.noteId, parentNoteId: branch.parentNoteId,
+            notePosition: branch.notePosition, prefix: branch.prefix,
+            isExpanded: branch.isExpanded, fromSearchNote: branch.fromSearchNote
+        } satisfies FBranchRow;
+    } else if (entityName === "attributes") {
+        const attribute = froca.attributes[entityId];
+        return attribute && {
+            attributeId: attribute.attributeId, noteId: attribute.noteId, type: attribute.type,
+            name: attribute.name, value: attribute.value, position: attribute.position,
+            isInheritable: attribute.isInheritable
+        } satisfies FAttributeRow;
+    } else if (entityName === "attachments") {
+        const attachment = froca.attachments[entityId];
+        return attachment && {
+            attachmentId: attachment.attachmentId, ownerId: attachment.ownerId,
+            role: attachment.role, mime: attachment.mime, title: attachment.title,
+            utcDateModified: attachment.utcDateModified,
+            utcDateScheduledForErasureSince: attachment.utcDateScheduledForErasureSince,
+            contentLength: attachment.contentLength
+        } satisfies AttachmentRow;
+    }
+    return undefined;
 }
 
 /**

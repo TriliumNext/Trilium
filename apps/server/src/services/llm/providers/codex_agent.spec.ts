@@ -114,7 +114,8 @@ class FakeAcpClient {
 
 vi.mock("./acp_client.js", () => ({ AcpClient: FakeAcpClient, AcpError: FakeAcpError }));
 
-const { resetAcpAgentStateForTests } = await import("./acp_agent.js");
+const { AnnouncedMcpCalls, resetAcpAgentStateForTests } = await import("./acp_agent.js");
+const { ToolApprovals } = await import("@triliumnext/core/src/services/llm/tool_approval.js");
 const { buildCodexModelList, CitationStripper, CodexAgentProvider, decideCodexPermission, resetCodexCatalogForTests } = await import("./codex_agent.js");
 
 /** Part of the catalog codex-acp 1.13.1 reports on session/new for a ChatGPT account. */
@@ -310,6 +311,20 @@ const ALLOWED = { outcome: { outcome: "selected", optionId: "allow_once" } };
 const DENIED = { outcome: { outcome: "selected", optionId: "cancel" } };
 
 describe("CodexAgentProvider note tools", () => {
+    it("tells the model where its note tools are inside `exec`, only in a chat with note access", async () => {
+        const firstPrompt = async (config: Record<string, unknown>) => {
+            resetAcpAgentStateForTests();
+            await collect(new CodexAgentProvider().chatChunks([{ role: "user", content: "hi" }], config));
+            const prompt = FakeAcpClient.current?.requests.find(r => r.method === "session/prompt")?.params as { prompt?: { text?: string }[] } | undefined;
+            return prompt?.prompt?.map(block => block.text ?? "").join("") ?? "";
+        };
+
+        const withTools = await firstPrompt({ enableNoteTools: true });
+        expect(withTools).toContain("tools.mcp__trilium__get_note_content");
+        expect(withTools.indexOf("tools.mcp__trilium__")).toBeLessThan(withTools.indexOf("</system_instructions>"));
+        expect(await firstPrompt({})).not.toContain("tools.mcp__trilium__");
+    });
+
     it("runs Trilium's note tools, shown by their name and result, and denies calls to any other MCP server", async () => {
         const answers: unknown[] = [];
         FakeAcpClient.onPrompt = async client => {
@@ -341,14 +356,88 @@ describe("CodexAgentProvider note tools", () => {
         ]);
     });
 
-    it("approves a call the adapter could not match to its announcement by the server it names", () => {
+    it("asks the turn's approvals about each note-tool call, and allows a request naming only the server when every waiting call is allowed", async () => {
+        const requests: { toolCallId: string; toolName: string; toolInput: Record<string, unknown> }[] = [];
+        const toolApprovals = new ToolApprovals();
+        // The user allows everything but the deletion.
+        toolApprovals.onRequest = (asked) => {
+            requests.push(asked);
+            queueMicrotask(() => toolApprovals.answer(asked.toolCallId, asked.toolName !== "delete_note"));
+        };
+        const answers: unknown[] = [];
+        const standalone = mcpApproval("elicitation:sess-1:trilium:1", { title: "MCP tool call approval", rawInput: { serverName: "trilium", description: "Allow?" } });
+        FakeAcpClient.onPrompt = async client => {
+            const update = (u: Record<string, unknown>) => client.onNotification?.("session/update", { sessionId: "sess-1", update: u });
+            const ask = async (request: unknown) => answers.push(await client.onAgentRequest?.("session/request_permission", request));
+            const finish = (toolCallId: string) => update({ sessionUpdate: "tool_call_update", toolCallId, status: "completed", rawOutput: "done" });
+
+            update(mcpToolCall("exec-1", "trilium", "get_note", { noteId: "a" }));
+            await ask(mcpApproval("exec-1"));
+            update(mcpToolCall("exec-2", "trilium", "delete_note", { noteId: "b" }));
+            await ask(mcpApproval("exec-2"));
+            finish("exec-1");
+            finish("exec-2");
+
+            // Two calls wait at once, and the adapter cannot tell which one asks.
+            update(mcpToolCall("exec-3", "trilium", "get_note", { noteId: "c" }));
+            update(mcpToolCall("exec-4", "trilium", "rename_note", { noteId: "c", newTitle: "C" }));
+            await ask(standalone);
+            await ask(standalone);
+            finish("exec-3");
+            finish("exec-4");
+
+            update(mcpToolCall("exec-5", "trilium", "get_note", { noteId: "d" }));
+            update(mcpToolCall("exec-6", "trilium", "delete_note", { noteId: "d" }));
+            await ask(standalone);
+        };
+
+        await collect(new CodexAgentProvider().chatChunks([{ role: "user", content: "hi" }], { enableNoteTools: true, toolApprovals }));
+
+        expect(answers).toEqual([ ALLOWED, DENIED, ALLOWED, ALLOWED, DENIED ]);
+        // Each call is asked about once, by the name and arguments it was announced with.
+        expect(requests).toEqual([
+            { toolCallId: "exec-1", toolName: "get_note", toolInput: { noteId: "a" } },
+            { toolCallId: "exec-2", toolName: "delete_note", toolInput: { noteId: "b" } },
+            { toolCallId: "exec-3", toolName: "get_note", toolInput: { noteId: "c" } },
+            { toolCallId: "exec-4", toolName: "rename_note", toolInput: { noteId: "c", newTitle: "C" } },
+            { toolCallId: "exec-5", toolName: "get_note", toolInput: { noteId: "d" } },
+            { toolCallId: "exec-6", toolName: "delete_note", toolInput: { noteId: "d" } }
+        ]);
+    });
+
+    it("asks only about the calls of the session that sends the request", async () => {
+        const mcpCalls = new AnnouncedMcpCalls();
+        const announce = (sessionId: string, toolCallId: string, tool: string) =>
+            mcpCalls.observe("session/update", { sessionId, update: mcpToolCall(toolCallId, "trilium", tool, {}) });
+        announce("sess-1", "exec-1", "get_note");
+        announce("sess-1", "exec-2", "get_note");
+        announce("sess-2", "exec-3", "delete_note");
+        // The same call id in another session is another call.
+        announce("sess-2", "exec-1", "delete_note");
+        const asked: string[] = [];
+        const toolApprovals = new ToolApprovals();
+        toolApprovals.onRequest = (request) => {
+            asked.push(`${request.toolCallId}:${request.toolName}`);
+            queueMicrotask(() => toolApprovals.answer(request.toolCallId, true));
+        };
+
+        const standalone = mcpApproval("elicitation:sess-1:trilium:1", { title: "MCP tool call approval", rawInput: { serverName: "trilium" } });
+        expect(await decideCodexPermission(standalone, "test", { mcpCalls, toolApprovals })).toEqual(ALLOWED);
+        expect(asked).toEqual([ "exec-1:get_note", "exec-2:get_note" ]);
+
+        const fromSecond = { ...mcpApproval("exec-1"), sessionId: "sess-2" };
+        expect(await decideCodexPermission(fromSecond, "test", { mcpCalls, toolApprovals })).toEqual(ALLOWED);
+        expect(asked).toEqual([ "exec-1:get_note", "exec-2:get_note", "exec-1:delete_note" ]);
+    });
+
+    it("outside a chat turn, approves a call the adapter could not match to its announcement by the server it names", async () => {
         const standalone = (serverName: string) => ({
             ...mcpApproval("elicitation:sess-1:trilium:1", { title: "MCP tool call approval", rawInput: { serverName, description: "Allow?" } })
         });
-        expect(decideCodexPermission(standalone("trilium"), "test")).toEqual(ALLOWED);
+        expect(await decideCodexPermission(standalone("trilium"), "test")).toEqual(ALLOWED);
         expect(decideCodexPermission(standalone("codex_apps"), "test")).toEqual(DENIED);
         // No one-shot allow on offer: nothing is approved permanently.
-        expect(decideCodexPermission({ ...standalone("trilium"), options: MCP_APPROVAL_OPTIONS.slice(1) }, "test")).toEqual(DENIED);
+        expect(await decideCodexPermission({ ...standalone("trilium"), options: MCP_APPROVAL_OPTIONS.slice(1) }, "test")).toEqual(DENIED);
     });
 });
 

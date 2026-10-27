@@ -3,7 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createFieldEditor, type FieldEditor, type FieldEditorConfig } from "../field_editor.js";
-import { hostedCompletion, type HostedCompletionList, type HostedCompletionState } from "./hosted_completion.js";
+import { hostedCompletion, type HostedCompletionConfig, type HostedCompletionList, type HostedCompletionState } from "./hosted_completion.js";
 
 let editor: FieldEditor | undefined;
 
@@ -270,6 +270,32 @@ describe("hostedCompletion", () => {
         expect(list.show).not.toHaveBeenCalled();
     });
 
+    it("opens on a caret move only where the host allows it, and keeps an open list while the caret stays on its match", async () => {
+        // Any word before the caret, as a code editor matches identifiers.
+        const word = (before: string, explicit: boolean, state: EditorState): TestMatch | null => {
+            const found = /\w+$/.exec(before)?.[0];
+            return found ? { from: before.length - found.length, query: found, explicit, at: state.selection.main.head } : null;
+        };
+
+        const { list, shown } = build({ doc: "return x" }, word, { opensOnCaretMove: false });
+        editor?.dispatch({ selection: EditorSelection.cursor(6) });
+        await settle();
+        expect(list.show).not.toHaveBeenCalled();
+
+        type("s");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("returns"));
+        editor?.dispatch({ selection: EditorSelection.cursor(5) });
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("retur"));
+        editor?.dispatch({ selection: EditorSelection.cursor(9) });
+        await vi.waitFor(() => expect(list.hide).toHaveBeenCalled());
+        await settle();
+        expect(shown()?.match.query).toBe("retur");
+
+        editor?.destroy();
+        const byDefault = build({ doc: "return x" }, word);
+        await vi.waitFor(() => expect(byDefault.shown()?.match.query).toBe("x"));
+    });
+
     it("closes as the editor loses the focus, and takes the list down with it", async () => {
         const { list, shown } = build();
 
@@ -329,7 +355,11 @@ describe("hostedCompletion", () => {
     });
 });
 
-function build(config: Partial<FieldEditorConfig> = {}, matchAt: typeof match = match) {
+function build(
+    config: Partial<FieldEditorConfig> = {},
+    matchAt: typeof match = match,
+    options: Partial<HostedCompletionConfig<TestMatch>> = {}
+) {
     let element: HTMLElement | null = null;
     let state: HostedCompletionState<TestMatch> | undefined;
     let placed: unknown;
@@ -354,7 +384,7 @@ function build(config: Partial<FieldEditorConfig> = {}, matchAt: typeof match = 
     editor = createFieldEditor({
         parent,
         ...config,
-        extensions: [ hostedCompletion({ match: matchAt, list: () => list }) ]
+        extensions: [ hostedCompletion({ ...options, match: matchAt, list: () => list }) ]
     });
     editor.focus();
     editor.dispatch({ selection: EditorSelection.cursor(editor.state.doc.length) });

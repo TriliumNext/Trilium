@@ -1,6 +1,6 @@
 import type { TranscriptionState } from "@triliumnext/commons";
 import path from "path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CaptureWindowOptions } from "./capture";
 import type { WorkerListeners } from "./worker_client";
@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
     appListeners: new Map<string, (...args: unknown[]) => unknown>(),
     quit: vi.fn(),
     broadcast: [] as TranscriptionState[],
+    levels: [] as [ string, number ][],
     notes: new Set<string>([ "meeting" ]),
     isProtected: false,
     isProtectedSessionAvailable: false,
@@ -42,9 +43,11 @@ vi.mock("electron", () => ({
     BrowserWindow: {
         getAllWindows: () => [ 1, 2 ].map(() => ({
             webContents: {
-                send: (channel: string, state: TranscriptionState) => {
+                send: (channel: string, ...args: unknown[]) => {
                     if (channel === "transcription-state") {
-                        h.broadcast.push(state);
+                        h.broadcast.push(args[0] as TranscriptionState);
+                    } else if (channel === "transcription-level") {
+                        h.levels.push(args as [ string, number ]);
                     }
                 }
             }
@@ -142,6 +145,7 @@ beforeEach(() => {
     h.isProtected = false;
     h.isProtectedSessionAvailable = false;
     h.broadcast.length = 0;
+    h.levels.length = 0;
     h.keepRecordings = false;
     h.transcriptionModel = null;
     h.speakersEnabled = true;
@@ -153,6 +157,10 @@ beforeEach(() => {
     h.capture.start.mockResolvedValue([ "microphone", "system" ]);
     h.worker.stop.mockResolvedValue(undefined);
     h.capture.stop.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 describe("transcription IPC", () => {
@@ -237,6 +245,106 @@ describe("transcription IPC", () => {
         const stopping = h.broadcast.find((state) => state.status === "stopping");
         expect(stopping?.pendingSources).toEqual([ "system" ]);
         expect(h.broadcast.at(-1)).toEqual(IDLE);
+    });
+
+    it("passes each source's level on to every window", async () => {
+        const invoke = await loadService();
+        await invoke("transcription-start", "meeting");
+        h.listeners?.onLevel("system", 0.125);
+        expect(h.levels).toEqual([ [ "system", 0.125 ], [ "system", 0.125 ] ]);
+    });
+
+    it("flags a source no audio has come from for 10 s, until it comes again", async () => {
+        const invoke = await loadService();
+        vi.useFakeTimers();
+        await invoke("transcription-start", "meeting");
+        const recording = {
+            status: "recording", noteId: "meeting", pendingSources: [], startedAt: STARTED_AT
+        };
+        const tick = async () => {
+            await vi.advanceTimersByTimeAsync(1000);
+            h.listeners?.onLevel("system", 0.1);
+        };
+
+        for (let second = 1; second < 10; second++) {
+            await tick();
+        }
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        await tick();
+        expect(h.broadcast.at(-1))
+            .toEqual({ ...recording, sourceIssues: { microphone: "no_audio" } });
+        expect(await invoke("transcription-get-state")).toEqual(h.broadcast.at(-1));
+        expect(h.log.error).toHaveBeenCalledExactlyOnceWith(
+            "Transcription: no audio from the microphone for 10 s.");
+        const flagged = h.broadcast.length;
+        await tick();
+        expect(h.broadcast).toHaveLength(flagged);
+
+        h.listeners?.onLevel("microphone", 0);
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        expect(h.log.info).toHaveBeenCalledWith("Transcription: audio from the microphone again.");
+
+        await invoke("transcription-stop");
+        const stopped = h.broadcast.length;
+        await vi.advanceTimersByTimeAsync(20_000);
+        expect(h.broadcast).toHaveLength(stopped);
+        vi.useRealTimers();
+    });
+
+    it("flags a source that could not be captured from the start, and never as stalled", async () => {
+        const invoke = await loadService();
+        vi.useFakeTimers();
+        h.capture.start.mockResolvedValue([ "microphone" ]);
+        await invoke("transcription-start", "meeting");
+        const recording = {
+            status: "recording", noteId: "meeting", pendingSources: [], startedAt: STARTED_AT,
+            sourceIssues: { system: "not_captured" }
+        };
+
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        for (let second = 1; second <= 12; second++) {
+            await vi.advanceTimersByTimeAsync(1000);
+            h.listeners?.onLevel("microphone", 0.1);
+        }
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        await invoke("transcription-stop");
+        expect(h.broadcast.at(-1)).toEqual(IDLE);
+    });
+
+    it("flags a source that delivers only silence, the microphone sooner, until it sounds", async () => {
+        const invoke = await loadService();
+        vi.useFakeTimers();
+        await invoke("transcription-start", "meeting");
+        const recording = {
+            status: "recording", noteId: "meeting", pendingSources: [], startedAt: STARTED_AT
+        };
+        const runFor = async (seconds: number) => {
+            for (let second = 0; second < seconds; second++) {
+                await vi.advanceTimersByTimeAsync(1000);
+                h.listeners?.onLevel("microphone", 0);
+                h.listeners?.onLevel("system", 0);
+            }
+        };
+
+        await runFor(14);
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        await runFor(1);
+        expect(h.broadcast.at(-1)).toEqual({ ...recording, sourceIssues: { microphone: "silent" } });
+        expect(h.log.error).toHaveBeenCalledExactlyOnceWith(
+            "Transcription: only silence from the microphone for 15 s.");
+
+        h.listeners?.onLevel("microphone", 0.01);
+        expect(h.broadcast.at(-1)).toEqual(recording);
+        expect(h.log.info).toHaveBeenCalledWith("Transcription: audio from the microphone again.");
+
+        await runFor(45);
+        expect(h.broadcast.at(-1)).toEqual({
+            ...recording, sourceIssues: { microphone: "silent", system: "silent" }
+        });
+        expect(h.log.error).toHaveBeenCalledWith(
+            "Transcription: only silence from the system for 60 s.");
+        await invoke("transcription-stop");
+        vi.useRealTimers();
     });
 
     it("says once that a locked protected session holds back the transcript, and saves it on unlocking", async () => {

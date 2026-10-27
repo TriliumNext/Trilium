@@ -4,7 +4,6 @@ import toastService from "./toast.js";
 import type { ToastOptionsWithRequiredId } from "./toast.js";
 import ws from "./ws.js";
 import appContext from "../components/app_context.js";
-import froca from "./froca.js";
 import utils from "./utils.js";
 import options from "./options.js";
 import { t } from "./i18n.js";
@@ -50,15 +49,6 @@ function enterProtectedSession() {
     return dfd.promise();
 }
 
-async function reloadData() {
-    const allNoteIds = Object.keys(froca.notes);
-
-    await froca.loadInitialTree();
-
-    // make sure that all notes used in the application are loaded, including the ones not shown in the tree
-    await froca.reloadNotes(allNoteIds);
-}
-
 async function setupProtectedSession(password: string) {
     const response = await server.post<Response>("login/protected", { password: password });
 
@@ -72,9 +62,7 @@ async function setupProtectedSession(password: string) {
 
 ws.subscribeToMessages(async (message) => {
     if (message.type === "protectedSessionLogin") {
-        await reloadData();
-
-        await appContext.triggerEvent("frocaReloaded", {});
+        await ws.reloadFroca();
 
         appContext.triggerEvent("protectedSessionStarted", {});
 

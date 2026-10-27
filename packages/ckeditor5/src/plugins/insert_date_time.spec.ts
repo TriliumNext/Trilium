@@ -5,7 +5,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import InsertDateTimePlugin, { COMMAND_NAME, DATE_TIME_PRESETS } from "./insert_date_time.js";
 
 describe("InsertDateTimePlugin", () => {
@@ -14,11 +13,9 @@ describe("InsertDateTimePlugin", () => {
 
     beforeEach(async () => {
         formatDateTime = vi.fn((_date: Date, format?: string) => (format ? `<${format}>` : "2026-09-25 10:30"));
-        installGlobMock({
-            getComponentByEl: () => ({ formatDateTime })
+        editor = await createTestEditor([Essentials, Paragraph, Bold, HorizontalLine, InsertDateTimePlugin], {
+            formatDateTime
         });
-
-        editor = await createTestEditor([Essentials, Paragraph, Bold, HorizontalLine, InsertDateTimePlugin]);
     });
 
     it("loads the plugin and registers the command and toolbar button", () => {
@@ -27,7 +24,7 @@ describe("InsertDateTimePlugin", () => {
         expect(editor.ui.componentFactory.has("dateTime")).toBe(true);
     });
 
-    it("inserts the date formatted by the host at the caret", () => {
+    it("inserts the date formatted by formatDateTime at the caret", () => {
         _setModelData(editor.model, "<paragraph>Due: []</paragraph>");
         editor.execute(COMMAND_NAME);
 
@@ -59,12 +56,27 @@ describe("InsertDateTimePlugin", () => {
         expect(_getModelData(editor.model)).toBe("<paragraph>[yesterday]</paragraph>");
     });
 
-    it("passes a chosen format to the host", () => {
+    it("passes a chosen format to formatDateTime", () => {
         _setModelData(editor.model, "<paragraph>[]</paragraph>");
         editor.execute(COMMAND_NAME, { format: "HH:mm" });
 
         expect(formatDateTime).toHaveBeenCalledWith(expect.any(Date), "HH:mm");
         expect(_getModelData(editor.model)).toBe("<paragraph><HH:mm>[]</paragraph>");
+    });
+
+    it("inserts the date in the browser's locale format without formatDateTime", async () => {
+        const plainEditor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ]);
+        vi.useFakeTimers({ now: new Date(2026, 8, 25, 10, 30), toFake: [ "Date" ] });
+
+        try {
+            _setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
+            plainEditor.execute(COMMAND_NAME, { format: "HH:mm" });
+
+            const expected = new Date(2026, 8, 25, 10, 30).toLocaleString();
+            expect(_getModelData(plainEditor.model)).toBe(`<paragraph>${expected}[]</paragraph>`);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     describe("split button", () => {

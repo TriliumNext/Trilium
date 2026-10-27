@@ -8,6 +8,7 @@ export declare module "express-serve-static-core" {
 
             authorization?: string;
             "trilium-cred"?: string;
+            "trilium-totp"?: string;
             "x-csrf-token"?: string;
 
             "trilium-component-id"?: string;

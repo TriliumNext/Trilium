@@ -1,7 +1,13 @@
 import { type DropdownView, type Locale, toUnit, View, type ViewCollection } from "ckeditor5";
 
+import type { IndexRange } from "../table_move/table_move_groups.js";
+
+const SEGMENT_CLASS = "ck-table-column-bar__segment";
 const DIVIDER_CLASS = "ck-table-column-bar__divider";
 const ACTIVE_DIVIDER_CLASS = "ck-table-column-bar__divider_active";
+export const RESIZABLE_DIVIDER_CLASS = "ck-table-column-bar__divider_resizable";
+/** The elements of the bar that start a gesture. */
+export const HANDLE_SELECTOR = `.${SEGMENT_CLASS}, .${RESIZABLE_DIVIDER_CLASS}`;
 
 /** The place of the edge line in the viewport, in pixels. */
 export interface EdgeBox {
@@ -22,7 +28,7 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
     declare width: number;
     declare menuLeft: number;
 
-    /** The visible part of the table, where the gestures start. */
+    /** The visible part of the table's horizontal scroller, where the gestures start. */
     readonly track = createElement("ck-table-column-bar__track");
     readonly menus: ViewCollection<DropdownView>;
     /** The segments and dividers, positioned from the left edge of the table. */
@@ -72,8 +78,8 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
     }
 
     /**
-     * Shows the part of the table from `left` to `left + width` of the bar. `offset` is the
-     * position of the table's left edge in that part.
+     * Shows the columns from `left` to `left + width` of the bar. `offset` is the position of the
+     * table's left edge in that part.
      */
     setTrack(left: number, width: number, offset: number) {
         this.track.style.left = `${left}px`;
@@ -83,13 +89,14 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
 
     /**
      * Draws a segment between each two of `edges`, in pixels from the table's left edge, and a
-     * divider labeled from `labels` at the end of each segment.
+     * divider labeled from `labels` at the end of each segment. Only the dividers of the
+     * `resizable` columns take a drag.
      */
-    setColumns(edges: readonly number[], labels: readonly string[]) {
+    setColumns(edges: readonly number[], labels: readonly string[], resizable: IndexRange) {
         if (this.strip.childElementCount !== labels.length * 2) {
             this.strip.replaceChildren();
             for (const column of labels.keys()) {
-                const segment = createElement("ck-table-column-bar__segment");
+                const segment = createElement(SEGMENT_CLASS);
                 const divider = createElement(DIVIDER_CLASS);
                 segment.dataset.column = String(column);
                 divider.dataset.column = String(column);
@@ -108,6 +115,8 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
             segment.style.width = `${Math.abs(end - start)}px`;
             divider.style.left = `${end}px`;
             divider.setAttribute("aria-label", label);
+            const isResizable = column >= resizable.first && column <= resizable.last;
+            divider.classList.toggle(RESIZABLE_DIVIDER_CLASS, isResizable);
         }
     }
 

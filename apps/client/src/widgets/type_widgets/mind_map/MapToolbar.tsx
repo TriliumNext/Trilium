@@ -150,8 +150,10 @@ function useMapScale(mind: MindElixirInstance) {
         // The map may have been moved between being built and being listened to.
         setScale(mind.scaleVal);
 
-        mind.bus.addListener("scale", setScale);
-        return () => mind.bus.removeListener("scale", setScale);
+        const { bus } = mind;
+        bus.addListener("scale", setScale);
+        // `MindElixirInstance.destroy()` clears `bus` before this cleanup runs.
+        return () => bus.removeListener("scale", setScale);
     }, [ mind ]);
 
     return scale;
@@ -187,8 +189,10 @@ function useMapState<T>(mind: MindElixirInstance, read: (mind: MindElixirInstanc
         const report = () => setValue(() => readRef.current(mind));
 
         report();
-        mind.bus.addListener("linkDiv", report);
-        return () => mind.bus.removeListener("linkDiv", report);
+        const { bus } = mind;
+        bus.addListener("linkDiv", report);
+        // `MindElixirInstance.destroy()` clears `bus` before this cleanup runs.
+        return () => bus.removeListener("linkDiv", report);
     }, [ mind ]);
 
     return value;

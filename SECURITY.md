@@ -87,7 +87,7 @@ An LLM provider's base URL is not note content, and the same rule cannot apply t
 
 Reports that reduce to "an authenticated user can point the LLM base URL at a host on the local network, and the server connects to it" are therefore out of scope, including the reachability and port information that connecting necessarily reveals.
 
-What stays refused is what no model server is ever served on: link-local (`169.254.0.0/16`, which is where a cloud instance answers with its own credentials) and carrier-grade NAT (`100.64.0.0/10`, likewise). Redirects are not followed on these requests at all, since the hop would carry the configured API key to whoever the endpoint named. Defects in **those** guards are in scope, as is any path that reaches them without authentication.
+Carrier-grade NAT (`100.64.0.0/10`) is permitted on the same terms, because a Tailscale tailnet assigns its nodes addresses there. What stays refused is what no model server is ever served on: link-local (`169.254.0.0/16`, which is where a cloud instance answers with its own credentials) and the metadata endpoints inside the permitted ranges (`100.100.100.200` in carrier-grade NAT, `fd00:ec2::254` in unique-local). Redirects are not followed on these requests at all, since the hop would carry the configured API key to whoever the endpoint named. Defects in **those** guards are in scope, as is any path that reaches them without authentication.
 
 #### Denial of Service via Resource Exhaustion
 Creating extremely large notes or performing many operations is expected user behavior in a note-taking application.

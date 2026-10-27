@@ -186,7 +186,7 @@ describe("Tree", () => {
                 {title: "d", "#priority": "1", "#area": "work"},
                 {title: "e", "#priority": "1", "#area": "home"}
             ],
-            "#sorted": "priority desc, area, title desc"
+            "#sorted": "#priority desc, #area, title desc"
         });
         getContext().init(() => {
             tree.sortNotesIfNeeded(note.noteId);
@@ -205,7 +205,7 @@ describe("Tree", () => {
                 {title: "top", "#top": ""},
                 {title: "bottom", "#bottom": ""}
             ],
-            "#sorted": "priority asc, area",
+            "#sorted": "#priority asc, #area",
             "#sortDirection": "desc"
         });
         getContext().init(() => {
@@ -269,7 +269,7 @@ describe("Tree", () => {
             ["desc", ["m", "a", "unlabelled", "also"]]
         ] as const) {
             const note = buildNote({
-                children, "#sorted": "order, area", "#sortDirection": direction
+                children, "#sorted": "#order, #area", "#sortDirection": direction
             });
             getContext().init(() => {
                 tree.sortNotesIfNeeded(note.noteId);
@@ -286,7 +286,7 @@ describe("Tree", () => {
                 {title: "one", "#priority": "1", "#due": "2026-01-15"},
                 {title: "nine", "#priority": "9", "#due": "2026-01-15"}
             ],
-            "#sorted": "due, priority desc"
+            "#sorted": "#due, #priority desc"
         });
         getContext().init(() => {
             tree.sortNotesIfNeeded(note.noteId);
@@ -295,6 +295,160 @@ describe("Tree", () => {
         // and two, ten. #sortNatural is what orders a level's numbers by their value.
         const orderedTitles = note.children.map((child) => child.title);
         expect(orderedTitles).toStrictEqual(["nine", "one", "two", "ten"]);
+    });
+
+    it("groups the children that have a label, whatever its value or the direction", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "b", "#archived": ""},
+            {title: "c"},
+            {title: "d", "#archived": "false"},
+            {title: "a", "#archived": "", "#pinned": ""},
+            {title: "e", "#pinned": "yes"}
+        ];
+        for (const [sorted, direction, expected] of [
+            ["#archived last", "asc", ["c", "e", "a", "b", "d"]],
+            ["#archived last", "desc", ["e", "c", "d", "b", "a"]],
+            ["#pinned first, #archived last", "asc", ["e", "a", "c", "b", "d"]]
+        ] as const) {
+            const note = buildNote({children, "#sorted": sorted, "#sortDirection": direction});
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("sorts by a label for `#name` and by a property for a bare name", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "b", "#title": "1", "#area": "x"},
+            {title: "a", "#title": "2", "#area": "y"}
+        ];
+        for (const [sorted, expected] of [
+            ["#title", ["b", "a"]],
+            ["title desc", ["b", "a"]],
+            ["#title desc", ["a", "b"]],
+            // A bare word that names no property ties every child, so the title decides.
+            ["area desc", ["a", "b"]]
+        ] as const) {
+            const note = buildNote({children, "#sorted": sorted});
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("keeps #top and #bottom outside a grouping level unless #sorted names them", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "archived bottom", "#bottom": "", "#archived": ""},
+            {title: "archived top", "#top": "", "#archived": ""},
+            {title: "a", "#archived": ""},
+            {title: "bottom", "#bottom": ""},
+            {title: "b"},
+            {title: "top", "#top": ""}
+        ];
+        for (const [sorted, expected] of [
+            ["#archived last", [
+                "top", "archived top", "b", "a", "bottom", "archived bottom"
+            ]],
+            // A #bottom left unnamed still applies before every level.
+            ["#archived last, #top first", [
+                "top", "b", "archived top", "a", "bottom", "archived bottom"
+            ]],
+            ["#archived last, #top first, #bottom last, title", [
+                "top", "b", "bottom", "archived top", "a", "archived bottom"
+            ]]
+        ] as const) {
+            const note = buildNote({children, "#sorted": sorted});
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("orders #top and #bottom by their values where #sorted names them", () => {
+        const note = buildNote({
+            children: [
+                {title: "top1", "#top": "1"},
+                {title: "top2", "#top": "2"},
+                {title: "a"},
+                {title: "bottom1", "#bottom": "1"},
+                {title: "bottom2", "#bottom": "2"}
+            ],
+            "#sorted": "#top desc, #bottom last, #bottom, title"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["top2", "top1", "a", "bottom1", "bottom2"]);
+    });
+
+    it("groups folders right after #top and #bottom, wherever #sorted puts them", () => {
+        const note = buildNote({
+            children: [
+                {title: "archived folder", "#archived": "", children: [{title: "1.1"}]},
+                {title: "archived", "#archived": ""},
+                {title: "folder", children: [{title: "2.1"}]},
+                {title: "leaf"},
+                {title: "bottom", "#bottom": ""},
+                {title: "top", "#top": ""}
+            ],
+            "#sorted": "#archived last, #top first, #bottom last, title",
+            "#sortFoldersFirst": ""
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual([
+            "top", "folder", "leaf", "bottom", "archived folder", "archived"
+        ]);
+    });
+
+    it("groups folders with `folders first` or `folders last`, overriding #sortFoldersFirst", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "b"},
+            {title: "p2", children: [{title: "2.1"}]},
+            {title: "a"},
+            {title: "p1", children: [{title: "1.1"}]}
+        ];
+        for (const [sorted, direction, expected] of [
+            ["folders first, title", "desc", ["p2", "p1", "b", "a"]],
+            // A bare `folders` puts the notes without children last, as any level does.
+            ["folders, title", "desc", ["p2", "p1", "b", "a"]],
+            ["folders last, title", "asc", ["a", "b", "p1", "p2"]]
+        ] as const) {
+            const note = buildNote({
+                children, "#sorted": sorted, "#sortDirection": direction, "#sortFoldersFirst": ""
+            });
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("places a folders level where #sorted writes it", () => {
+        const note = buildNote({
+            children: [
+                {title: "archived folder", "#archived": "", children: [{title: "1.1"}]},
+                {title: "archived", "#archived": ""},
+                {title: "folder", children: [{title: "2.1"}]},
+                {title: "leaf"},
+                {title: "bottom folder", "#bottom": "", children: [{title: "3.1"}]},
+                {title: "top", "#top": ""}
+            ],
+            "#sorted": "#archived last, #top first, #bottom last, folders first, title"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual([
+            "top", "folder", "leaf", "bottom folder", "archived folder", "archived"
+        ]);
     });
 
     it("orders the same children the same way whatever order they start in", () => {

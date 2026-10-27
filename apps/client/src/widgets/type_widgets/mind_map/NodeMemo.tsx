@@ -6,6 +6,7 @@ import type { NodeObj, Topic } from "mind-elixir";
 import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
+import link from "../../../services/link";
 import { escapeHtml } from "../../../services/utils";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor";
 import { useTriliumOption } from "../../react/hooks";
@@ -112,11 +113,15 @@ export default function NodeMemo({ selectionKey, memo, readOnly, onCommit }: {
  * dictionary has to be fetched, which is done for the field by the wrapper that raises the editor
  * (see the `uiLanguage` it is handed).
  */
-function buildMemoEditorConfig(): EditorConfig {
+export function buildMemoEditorConfig(): EditorConfig {
     return {
         extraPlugins: MEMO_PLUGINS,
         toolbar: { items: MEMO_TOOLBAR_ITEMS },
         placeholder: t("mind-map.memo-placeholder"),
+        referenceLink: {
+            getTitle: link.getReferenceLinkTitle,
+            getTitleSync: link.getReferenceLinkTitleSync
+        },
         licenseKey: "GPL"
     };
 }

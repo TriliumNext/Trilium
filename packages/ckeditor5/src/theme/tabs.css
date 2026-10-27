@@ -1,3 +1,7 @@
+:where(:root) {
+    --tabs-focus-border-color: var(--link-color, var(--ck-color-focus-border));
+}
+
 /* Saved HTML without a marked tab, such as a preview or a printout, reads as a sequence of titled
    sections. */
 @media screen {
@@ -9,56 +13,38 @@
         --_tabs-border-radius: 8px;
         --_tabs-active-title-color: var(--main-text-color, currentColor);
         --_tabs-title-color: color-mix(in srgb, var(--_tabs-active-title-color), transparent 50%);
+        --scrollable-bar-button-color: var(--_tabs-title-color);
 
         display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
-        gap: 0 var(--_tabs-delimiter-width);
+        flex-direction: column;
         margin: 1em 0;
         border-radius: var(--_tabs-border-radius);
 
-        & > .trilium-tab {
-            display: contents;
+        & > .trilium-tabs-bar > .scrollable-bar-viewport {
+            align-items: flex-end;
+            gap: 0 var(--_tabs-delimiter-width);
         }
 
-        & > .trilium-tab > .trilium-tab-title {
-            order: 0;
+        & > .trilium-tabs-bar > .scrollable-bar-viewport > .trilium-tab-title {
+            flex: none;
+            box-sizing: border-box;
             min-width: 4em;
-            max-width: 100%;
+            max-width: var(--tabs-title-max-width, 30cqi);
             margin: 0 0 var(--_tabs-delimiter-width);
             padding: 6px 1rem;
             border-radius: var(--_tabs-border-radius) var(--_tabs-border-radius) 0 0;
             background: var(--_tabs-inactive-background);
+            overflow: hidden;
             color: var(--_tabs-title-color);
             font-weight: 500;
+            white-space: nowrap;
             cursor: pointer;
-            transition: color 200ms ease-out, background-color 200ms ease-out;
 
             &:hover {
                 color: var(--_tabs-active-title-color);
             }
-        }
 
-        & > .trilium-tab > .trilium-tab-panel {
-            display: none;
-            order: 1;
-            flex: 1 0 100%;
-            min-width: 0;
-            padding: .75rem 1rem;
-            border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
-            background: var(--_tabs-background);
-
-            & > :first-child {
-                margin-top: 0;
-            }
-
-            & > :last-child {
-                margin-bottom: 0;
-            }
-        }
-
-        & > .trilium-tab.trilium-tab--active {
-            & > .trilium-tab-title {
+            &.trilium-tab-title--active {
                 margin-bottom: 0;
                 padding-bottom: calc(6px + var(--_tabs-delimiter-width));
                 background: var(--_tabs-background);
@@ -66,41 +52,117 @@
                 cursor: text;
             }
 
-            & > .trilium-tab-panel {
-                display: block;
+            body.mobile & {
+                max-width: var(--tabs-title-max-width, 45cqi);
             }
         }
 
-        &[data-trilium-tab-alignment="bottom"] {
-            align-items: flex-start;
+        & > .trilium-tab {
+            display: contents;
+        }
 
-            & > .trilium-tab > .trilium-tab-title {
+        & > .trilium-tab > .trilium-tab-panel {
+            display: none;
+            min-width: 0;
+            padding: .75rem 1rem;
+            border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
+            background: var(--_tabs-background);
+        }
+
+        & > .trilium-tab.trilium-tab--active > .trilium-tab-panel {
+            display: block;
+        }
+
+        &:has(> .trilium-tabs-bar.scrollable-bar--overflowing) > .trilium-tab > .trilium-tab-panel {
+            border-radius: var(--_tabs-border-radius);
+        }
+
+        &[data-trilium-tab-alignment="bottom"] {
+            & > .trilium-tabs-bar {
                 order: 1;
-                margin: var(--_tabs-delimiter-width) 0 0;
-                border-radius: 0 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
+            }
+
+            & > .trilium-tabs-bar > .scrollable-bar-viewport {
+                align-items: flex-start;
+
+                & > .trilium-tab-title {
+                    margin: var(--_tabs-delimiter-width) 0 0;
+                    border-radius: 0 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
+                }
+
+                & > .trilium-tab-title.trilium-tab-title--active {
+                    margin-top: 0;
+                    padding-top: calc(6px + var(--_tabs-delimiter-width));
+                    padding-bottom: 6px;
+                }
             }
 
             & > .trilium-tab > .trilium-tab-panel {
-                order: 0;
                 border-radius: var(--_tabs-border-radius);
                 border-bottom-left-radius: 0;
             }
 
-            & > .trilium-tab.trilium-tab--active > .trilium-tab-title {
-                margin-top: 0;
-                padding-top: calc(6px + var(--_tabs-delimiter-width));
-                padding-bottom: 6px;
+            &:has(> .trilium-tabs-bar.scrollable-bar--overflowing)
+                > .trilium-tab > .trilium-tab-panel {
+                border-bottom-left-radius: var(--_tabs-border-radius);
             }
+        }
+    }
 
-            /* The editor's widget UI elements stay at the end of the title row. */
-            & > :not(.trilium-tab) {
-                order: 1;
-            }
+    /* Only the active panel is shown. Kept out of the `:has()` block: under a `:has()`, a selector
+       ending without a class or tag makes Chromium restyle whole subtrees. */
+    :is(.ck-editor__editable, .ck-content) .trilium-tabs > .trilium-tab.trilium-tab--active
+        > .trilium-tab-panel {
+        & > :first-child {
+            margin-top: 0;
+        }
+
+        & > :last-child {
+            margin-bottom: 0;
         }
     }
 }
 
-.ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-title {
+@media print {
+    .trilium-tabs:has(> .trilium-tabs-bar) {
+        display: flex;
+        flex-direction: column;
+
+        & > .trilium-tabs-bar,
+        & > .trilium-tabs-bar > .scrollable-bar-viewport,
+        & > .trilium-tab {
+            display: contents;
+        }
+
+        & > .trilium-tabs-bar > .scrollable-bar-edge {
+            display: none;
+        }
+
+        /* `applyTabs()` sets `--trilium-tab-index` on each title and panel. */
+        & > .trilium-tabs-bar > .scrollable-bar-viewport > .trilium-tab-title {
+            order: calc(var(--trilium-tab-index) * 2);
+        }
+
+        & > .trilium-tab > .trilium-tab-panel {
+            order: calc(var(--trilium-tab-index) * 2 + 1);
+        }
+    }
+}
+
+.ck-editor__editable .trilium-tabs:has(.ck-editor__nested-editable_focused) {
+    &:not(:has(.trilium-tabs .ck-editor__nested-editable_focused)) {
+        outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
+    }
+}
+
+.ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-panel {
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        border-color: transparent;
+        box-shadow: none;
+    }
+}
+
+.ck-editor__editable .trilium-tab-title {
     /* CKEditor positions the placeholder absolutely, so it does not size the title. */
     &.ck-placeholder::after {
         content: attr(data-placeholder);
@@ -112,7 +174,7 @@
     }
 }
 
-.ck-content:not(.ck-editor__editable) .trilium-tabs > .trilium-tab > .trilium-tab-title {
+.ck-content:not(.ck-editor__editable) .trilium-tabs-bar .trilium-tab-title {
     &:focus-visible {
         outline: 2px solid var(--input-focus-outline-color, var(--ck-color-focus-border, currentColor));
         outline-offset: -2px;

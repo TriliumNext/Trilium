@@ -101,6 +101,7 @@ const enum KeyboardActionNamesEnum {
     openDevTools,
     findInText,
     toggleLeftPane,
+    peekLeftPane,
     toggleFullscreen,
     zoomOut,
     zoomIn,

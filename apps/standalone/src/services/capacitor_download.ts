@@ -3,9 +3,8 @@ import type { StandaloneSaveResult } from "@triliumnext/commons";
 /**
  * Saving a download inside the Capacitor shell, which has no download manager of its own: the
  * WebView drops a response that says `Content-Disposition: attachment`, silently. The page does
- * the whole job instead — fetch (still routed to the worker by the service worker on Android and
- * by the iOS interceptors on `capacitor://`), write to the app's storage, hand the file to the
- * system share sheet.
+ * the whole job instead — fetch (still routed to the worker by the shell's native request bridge),
+ * write to the app's storage, hand the file to the system share sheet.
  *
  * A database backup takes the same last step through {@link saveChunksToDevice}, reading its bytes
  * straight off the local worker rather than out of a response.
@@ -497,7 +496,7 @@ function take(parts: Uint8Array[], size: number): Uint8Array {
  * overflows the call stack. The crypto provider's `encodeBase64` is not reachable from here: it
  * lives in the worker, and this runs on the page.
  */
-function toBase64(bytes: Uint8Array): string {
+export function toBase64(bytes: Uint8Array): string {
     const native = (bytes as Uint8Array & { toBase64?: () => string }).toBase64;
     if (typeof native === "function") {
         return native.call(bytes);

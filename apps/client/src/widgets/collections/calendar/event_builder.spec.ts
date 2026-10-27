@@ -6,7 +6,7 @@ import themePlugin from "fullcalendar/themes/forma";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
-import { buildEvent, buildEvents, buildOccurrenceTitle } from "./event_builder.js";
+import { buildEvent, buildEvents, buildOccurrenceTitle, routineEventDisplay } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
 import { serializeRecurrence } from "./recurrence.js";
 import { isValidDuration, parseDurationSeconds } from "./utils.js";
@@ -590,6 +590,55 @@ describe("Recurrence", () => {
                 "2026-11-29 21:00"
             ]);
         });
+    });
+});
+
+describe("Routine events", () => {
+    it("hides timed events on 4+ days a week from the month view only, and only when asked", async () => {
+        const noteIds = buildNotes([
+            { title: "Sleep", "#startDate": "2026-10-01", "#startTime": "23:00", "#endTime": "07:00", "#recurrence": "RRULE:FREQ=DAILY" },
+            { title: "Work", "#startDate": "2026-10-01", "#startTime": "09:00", "#endTime": "17:00", "#recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR" },
+            { title: "Gym", "#startDate": "2026-10-01", "#startTime": "18:00", "#recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR" },
+            { title: "Medication", "#startDate": "2026-10-01", "#recurrence": "RRULE:FREQ=DAILY" },
+            { title: "Dentist", "#startDate": "2026-10-14", "#startTime": "10:00" }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        // The titles drawn right now, counting a chip mounted and then taken away again as gone.
+        const drawn = new Map<string, number>();
+        const shown = () => [ ...drawn ].filter(([ , count ]) => count > 0).map(([ title ]) => title).sort();
+        let hideRoutineEvents = true;
+        const element = document.createElement("div");
+        document.body.append(element);
+        // Wired as `CalendarView` wires it.
+        const calendar: Calendar = new Calendar(element, {
+            plugins: [ themePlugin, dayGridPlugin, rrulePlugin ],
+            initialView: "dayGridMonth",
+            initialDate: "2026-10-12",
+            events,
+            eventDisplay: routineEventDisplay(hideRoutineEvents, "dayGridMonth"),
+            datesSet: ({ view }) =>
+                calendar.setOption("eventDisplay", routineEventDisplay(hideRoutineEvents, view.type)),
+            eventDidMount: ({ event }) => drawn.set(event.title, (drawn.get(event.title) ?? 0) + 1),
+            eventWillUnmount: ({ event }) => drawn.set(event.title, (drawn.get(event.title) ?? 0) - 1)
+        });
+        try {
+            calendar.render();
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication" ]);
+
+            calendar.changeView("dayGridWeek");
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication", "Sleep", "Work" ]);
+
+            calendar.changeView("dayGridMonth");
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication" ]);
+
+            hideRoutineEvents = false;
+            calendar.setOption("eventDisplay", routineEventDisplay(hideRoutineEvents, "dayGridMonth"));
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication", "Sleep", "Work" ]);
+        } finally {
+            calendar.destroy();
+            element.remove();
+        }
     });
 });
 

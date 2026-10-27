@@ -13,7 +13,18 @@ describe("Markdown export", () => {
             "language-application-javascript-env-backend": "javascript",
             "language-text-x-asm-mips": "mips",
             "language-text-jsx": "jsx",
-            "language-text-html": "html"
+            "language-text-html": "html",
+            "language-text-plain": "plaintext",
+            "language-text-x-csrc": "c",
+            "language-text-x-c-src": "cpp",
+            "language-text-x-rustsrc": "rust",
+            "language-text-typescript-jsx": "tsx",
+            "language-text-x-toml": "toml",
+            "language-text-x-scala": "scala",
+            "language-text-jinja2": "jinja",
+            "language-text-x-literate-haskell": "literate-haskell",
+            "language-text-x-mysql": "mysql",
+            "language-text-x-mssql": "tsql"
         };
 
         for (const [ input, output ] of Object.entries(conversionTable)) {
@@ -120,9 +131,8 @@ describe("Markdown export", () => {
         expect(exported).toContain('<a href="https://e.com/?a=1&amp;b=2">A &amp; B &lt;x&gt;</a>');
 
         // The section wrapper and its data attributes survive so the preview re-imports losslessly.
-        // The escaping of `<`/`>` inside data-title is left to turndown's serializer, which differs by
-        // environment (server/node uses domino and escapes them; standalone/happy-dom uses the browser
-        // serializer and leaves them raw). It is not asserted because both forms decode to the same value.
+        // The escaping of `<`/`>` inside data-title is left to Turnish's serializer and is not asserted,
+        // since the escaped and raw forms decode to the same value.
         expect(exported).toContain('<section class="link-embed" data-url="https://e.com/?a=1&amp;b=2" data-embed-type="opengraph"');
     });
 
@@ -775,6 +785,19 @@ describe("Markdown export", () => {
         const expected = trimIndentation`\
             *   \\<note\\> is note.`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("keeps bookmarks as HTML anchors, so links to them still resolve after an import", () => {
+        const html = `<h3><a id="schema-note"></a><code>Note</code></h3>`
+            + `<p>See <a href="#schema-note">the note</a>.<a id="end"></a></p>`
+            + `<p><a id="say-&quot;hi&quot;"></a>Quoted</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+            ### <a id="schema-note"></a>\`Note\`
+
+            See [the note](#schema-note).<a id="end"></a>
+
+            <a id="say-&quot;hi&quot;"></a>Quoted`);
     });
 
     it("drops the block ids of a text note, which Markdown has no syntax for", () => {

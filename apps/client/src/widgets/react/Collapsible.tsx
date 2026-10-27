@@ -11,6 +11,10 @@ interface CollapsibleProps extends Pick<HTMLAttributes<HTMLDivElement>, "classNa
     title: string;
     children: ComponentChildren;
     initiallyExpanded?: boolean;
+    /** Shown beside the title, also while collapsed; not part of the button that toggles. */
+    headerActions?: ComponentChildren;
+    /** Draws the expanded body on a card of its own, apart from what surrounds it. */
+    card?: boolean;
 }
 
 export default function Collapsible({ initiallyExpanded, ...restProps }: CollapsibleProps) {
@@ -18,7 +22,9 @@ export default function Collapsible({ initiallyExpanded, ...restProps }: Collaps
     return <ExternallyControlledCollapsible {...restProps} expanded={expanded} setExpanded={setExpanded} />;
 }
 
-export function ExternallyControlledCollapsible({ title, children, className, expanded, setExpanded }: Omit<CollapsibleProps, "initiallyExpanded"> & {
+export function ExternallyControlledCollapsible({
+    title, children, className, expanded, setExpanded, headerActions, card
+}: Omit<CollapsibleProps, "initiallyExpanded"> & {
     expanded: boolean | undefined;
     setExpanded: (expanded: boolean) => void
 }) {
@@ -51,23 +57,33 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
         }
     }, [expanded, transitionEnabled]);
 
+    const titleButton = (
+        <button
+            className="collapsible-title tn-low-profile"
+            onClick={(e) => {
+                e.preventDefault();
+                setExpanded(!expanded);
+            }}
+            aria-expanded={expanded}
+            aria-controls={contentId}
+        >
+            <Icon className="arrow" icon="bx bx-chevron-right" />&nbsp;
+            {title}
+        </button>
+    );
+
     return (
         <div className={clsx("collapsible", className, {
             expanded,
-            "with-transition": transitionEnabled
+            "with-transition": transitionEnabled,
+            "collapsible-card": card
         })}>
-            <button
-                className="collapsible-title tn-low-profile"
-                onClick={(e) => {
-                    e.preventDefault();
-                    setExpanded(!expanded);
-                }}
-                aria-expanded={expanded}
-                aria-controls={contentId}
-            >
-                <Icon className="arrow" icon="bx bx-chevron-right" />&nbsp;
-                {title}
-            </button>
+            {headerActions ? (
+                <div className="collapsible-header">
+                    {titleButton}
+                    <div className="collapsible-header-actions">{headerActions}</div>
+                </div>
+            ) : titleButton}
 
             <div
                 id={contentId}

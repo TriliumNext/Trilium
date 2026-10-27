@@ -17,7 +17,7 @@ vi.mock("../../services/keyboard_actions", () => ({
     getActionSync: () => ({ effectiveShortcuts: [ "CommandOrControl+Q" ] })
 }));
 
-import FormList, { focusListItem, FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, FormListToggleableItem } from "./FormList";
+import FormList, { focusListItem, FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, FormListToggleableItem, menuItemTooltipSide } from "./FormList";
 
 describe("FormDropdownDivider", () => {
     it("draws a separator among the rows, whose click closes no menu", () => {
@@ -46,6 +46,21 @@ describe("FormListHeader", () => {
         expect(row?.getAttribute("role")).toBe("none");
         expect(row?.querySelector("h6.dropdown-header")?.textContent).toBe("<b>Doing</b>");
     });
+
+    it("runs its actions outside a menu too", () => {
+        const host = document.createElement("div");
+        const callback = vi.fn();
+        render((
+            <menu role="none">
+                <FormListHeader text="Fonts" actions={[ { icon: "bx bx-cog", caption: "Options", callback } ]} />
+            </menu>
+        ), host);
+        const button = host.querySelector<HTMLButtonElement>("h6 > .tn-menu-header-actions > button");
+        if (!button) throw new Error("expected the action's button");
+
+        button.click();
+        expect(callback).toHaveBeenCalledWith(expect.any(MouseEvent));
+    });
 });
 
 describe("FormListItem", () => {
@@ -68,27 +83,29 @@ describe("FormListItem", () => {
         expect(span?.textContent).toBe("Copynew");
     });
 
-    it("ends its row with a shortcut, then a trailing icon, leaving its own icon standing", () => {
+    it("ends its row with a shortcut, a trailing text, then a trailing icon, leaving its own icon standing", () => {
         const host = document.createElement("div");
         render((
             <menu role="none">
-                <FormListItem icon="bx bx-sort" shortcut="Ctrl+S" trailingIcon="bx bx-check">By title</FormListItem>
+                <FormListItem icon="bx bx-sort" shortcut="Ctrl+S" trailingText="Sorting" trailingIcon="bx bx-check">By title</FormListItem>
             </menu>
         ), host);
         const span = host.querySelector("li.dropdown-item > span");
 
         expect([ ...span?.children ?? [] ].map((child) => `${child.tagName.toLowerCase()}.${child.className}`)).toEqual([
-            "span.bx bx-sort tn-icon", "span.tn-menu-gap", "kbd.", "span.bx bx-check tn-icon menu-trailing-icon"
+            "span.bx bx-sort tn-icon", "span.tn-menu-gap", "kbd.", "span.menu-trailing-text",
+            "span.bx bx-check tn-icon menu-trailing-icon"
         ]);
-        expect(span?.textContent).toBe("By titleCtrl+S");
+        expect(span?.textContent).toBe("By titleCtrl+SSorting");
     });
 
-    it("shows no shortcuts on a phone, which has no keyboard to press them on", () => {
+    it("shows no shortcuts on a phone, which has no keyboard to press them on, but keeps a trailing text", () => {
         const host = document.createElement("div");
         const rows = () => render((
             <menu role="none">
                 <FormListItem shortcut="Ctrl+S">Save</FormListItem>
                 <FormListItem keyboardShortcut="copyNotesToClipboard">Copy</FormListItem>
+                <FormListItem trailingText="Work">Plan</FormListItem>
             </menu>
         ), host);
         rows();
@@ -100,7 +117,7 @@ describe("FormListItem", () => {
             rows();
             expect(host.querySelector("kbd")).toBeNull();
             expect(host.querySelector(".keyboard-shortcut")).toBeNull();
-            expect(host.textContent).toBe("SaveCopy");
+            expect(host.textContent).toBe("SaveCopyPlanWork");
         } finally {
             layout.onMobile = false;
         }
@@ -234,6 +251,16 @@ describe("FormListToggleableItem", () => {
         if (!row) throw new Error("expected the row");
         return { row, pageHeard };
     }
+
+    it("marks its row as a switch row, alongside a class it is given", () => {
+        const container = mount(
+            <menu role="none">
+                <FormListToggleableItem title="Shared" currentValue={false} onChange={() => {}} className="share-row" />
+            </menu>
+        );
+        const row = container.querySelector<HTMLElement>("li.dropdown-item");
+        expect([ row?.classList.contains("tn-menu-toggle"), row?.classList.contains("share-row") ]).toEqual([ true, true ]);
+    });
 
     it("flips its value once per click, ignoring clicks while the change is still running", async () => {
         let finish = () => {};
@@ -401,3 +428,74 @@ function press(el: Element, key: string) {
     el.dispatchEvent(event);
     return event;
 }
+
+describe("menuItemTooltipSide", () => {
+    /** A row spanning `left`–`right`, and a tooltip laid out at `width` but capped by its inner. */
+    function sideFor(left: number, right: number, width: number) {
+        const row = document.createElement("li");
+        row.getBoundingClientRect = () => ({ left, right } as DOMRect);
+        const tip = document.createElement("div");
+        tip.style.width = `${width}px`;
+        const inner = document.createElement("div");
+        inner.className = "tooltip-inner";
+        inner.style.maxWidth = "500px";
+        tip.append(inner);
+        // Attached, as Bootstrap shows it, so the inner's computed cap can be read.
+        document.body.append(tip);
+        try {
+            return menuItemTooltipSide(tip, row);
+        } finally {
+            tip.remove();
+        }
+    }
+
+    it("keeps every row of a menu on one side, whatever its tooltip's width", () => {
+        const { innerWidth } = window;
+        window.innerWidth = 1000;
+        try {
+            window.glob.isRtl = false;
+            // Room for a tooltip at its widest on the right.
+            expect([ 100, 400 ].map((width) => sideFor(100, 480, width))).toStrictEqual([ "right", "right" ]);
+            // Not enough of it: both go left, the narrow one included.
+            expect([ 100, 400 ].map((width) => sideFor(400, 780, width))).toStrictEqual([ "left", "left" ]);
+
+            window.glob.isRtl = true;
+            expect(sideFor(700, 990, 100)).toBe("left");
+            expect(sideFor(300, 600, 100)).toBe("right");
+        } finally {
+            window.glob.isRtl = false;
+            window.innerWidth = innerWidth;
+        }
+    });
+
+    it("wraps a tooltip into the room its side has when the window is too narrow for it", () => {
+        const { innerWidth } = window;
+        window.innerWidth = 700;
+        try {
+            const row = document.createElement("li");
+            row.getBoundingClientRect = () => ({ left: 300, right: 500 } as DOMRect);
+            const tip = document.createElement("div");
+            const inner = document.createElement("div");
+            inner.className = "tooltip-inner";
+            inner.style.maxWidth = "500px";
+            tip.append(inner);
+            document.body.append(tip);
+
+            try {
+                // 194px to the right against 294 to the left: the roomier side, narrowed to fit it.
+                expect(menuItemTooltipSide(tip, row)).toBe("left");
+                expect(tip.style.maxWidth).toBe("294px");
+
+                // A later show with room to spare is not held to the width of the one before.
+                window.innerWidth = 1000;
+                row.getBoundingClientRect = () => ({ left: 0, right: 200 } as DOMRect);
+                expect(menuItemTooltipSide(tip, row)).toBe("right");
+                expect(tip.style.maxWidth).toBe("");
+            } finally {
+                tip.remove();
+            }
+        } finally {
+            window.innerWidth = innerWidth;
+        }
+    });
+});

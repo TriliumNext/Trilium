@@ -1,17 +1,24 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { useNoteContext } from "./react/hooks";
+import options from "../services/options";
+import { useIsNoteReadOnly, useNoteContext } from "./react/hooks";
 
 export default function ScrollPadding() {
-    const { note, parentComponent, ntxId, viewScope } = useNoteContext();
+    const { note, noteContext, parentComponent, ntxId, viewScope } = useNoteContext();
     const ref = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState<number>(10);
+    // There is nothing to place the caret at the end of when the note can't be edited. The check is
+    // asynchronous, answering `undefined` until it settles; a read-only database is reported as not
+    // read-only (there is no editing to switch to), so it has to be ruled out separately.
+    const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
     const isEnabled = ["text", "code"].includes(note?.type ?? "")
         && viewScope?.viewMode === "default"
         && note?.isContentAvailable()
         && !note?.isTriliumSqlite()
         && !note?.isMarkdown()
-        && !note?.isIconPack();
+        && !note?.isIconPack()
+        && isReadOnly === false
+        && !options.is("databaseReadonly");
 
     const refreshHeight = () => {
         if (!ref.current) return;

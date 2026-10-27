@@ -7,11 +7,10 @@ import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeAll, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import ReferenceLink from "../referencelink.js";
 import InlineIcon from "./inline_icon.js";
 import InlineIconEditing from "./inline_icon_editing.js";
-import InlineIconUI from "./inline_icon_ui.js";
+import InlineIconUI, { type IconPickerRequest } from "./inline_icon_ui.js";
 
 describe("InlineIcon", () => {
     let editor: ClassicEditor;
@@ -101,13 +100,9 @@ describe("a reference link pasted from a rendered page", () => {
     // the clipboard. A reference takes no children, so the icon is dropped rather than split out
     // beside the link.
     it("loses the icon the renderer drew inside it, leaving the link alone", async () => {
-        installGlobMock({
-            getComponentByEl: () => ({ loadReferenceLinkTitle: () => Promise.resolve() }),
-            getReferenceLinkTitleSync: () => "Some note",
-            getReferenceLinkTitle: async () => "Some note"
+        const editor = await createTestEditor([ Paragraph, Link, ReferenceLink, InlineIcon ], {
+            referenceLink: { getTitle: async () => "Some note", getTitleSync: () => "Some note" }
         });
-
-        const editor = await createTestEditor([ Paragraph, Link, ReferenceLink, InlineIcon ]);
 
         editor.setData(`<p>See <a class="reference-link" href="#root/abc">`
             + `<span><span class="tn-icon bx bx-file"></span>Some note</span></a> for more.</p>`);
@@ -208,9 +203,8 @@ describe("the balloon InlineIcon picks in", () => {
     beforeEach(async () => {
         release = vi.fn();
         showIconPicker = vi.fn(() => release);
-        installGlobMock({ getComponentByEl: () => ({ showIconPicker }) });
 
-        editor = await createTestEditor([ Paragraph, InlineIcon ]);
+        editor = await createTestEditor([ Paragraph, InlineIcon ], { inlineIcon: { showPicker: showIconPicker } });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
     });
 
@@ -281,6 +275,15 @@ describe("the balloon InlineIcon picks in", () => {
         expect(editor.plugins.get(ContextualBalloon).visibleView).toBeNull();
     });
 
+    it("takes the balloon back down without the inlineIcon config entry", async () => {
+        const plainEditor = await createTestEditor([ Paragraph, InlineIcon ]);
+        setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
+
+        pressInsertIcon(plainEditor);
+
+        expect(plainEditor.plugins.get(ContextualBalloon).visibleView).toBeNull();
+    });
+
     it("lets go of the picker when a click lands outside the balloon", () => {
         pressInsertIcon(editor);
 
@@ -344,10 +347,8 @@ describe("where the balloon holding the picker ends up", () => {
         document.head.appendChild(link);
     }));
 
-    beforeEach(() => installPaintingHost());
-
     it("places itself again once the host has painted, so the arrow finds the caret", async () => {
-        const editor = await createTestEditor([ Paragraph, InlineIcon ]);
+        const editor = await createTestEditor([ Paragraph, InlineIcon ], PAINTING_HOST);
         getEditorElement(editor).style.cssText = "width: 300px; margin: 200px 0 0 20px;";
         setModelData(editor.model, "<paragraph>Hello[] there</paragraph>");
 
@@ -415,19 +416,17 @@ function escapeKeyDown() {
 const PAINTED_PICKER_WIDTH = 260;
 
 /** A host that renders something the picker's size into the element the editor passes it. */
-function installPaintingHost() {
-    installGlobMock({
-        getComponentByEl: () => ({
-            showIconPicker({ container }: { container: HTMLElement }) {
-                const painted = document.createElement("div");
-                painted.style.cssText = `width: ${PAINTED_PICKER_WIDTH}px; height: 400px;`;
-                container.appendChild(painted);
+const PAINTING_HOST = {
+    inlineIcon: {
+        showPicker({ container }: IconPickerRequest) {
+            const painted = document.createElement("div");
+            painted.style.cssText = `width: ${PAINTED_PICKER_WIDTH}px; height: 400px;`;
+            container.appendChild(painted);
 
-                return () => painted.remove();
-            }
-        })
-    });
-}
+            return () => painted.remove();
+        }
+    }
+};
 
 function balloonRect(balloon: ContextualBalloon) {
     const element = balloon.view.element;

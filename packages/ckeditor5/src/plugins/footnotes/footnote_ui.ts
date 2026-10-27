@@ -44,10 +44,11 @@ export default class FootnoteUI extends Plugin {
 
             // The list is rebuilt every time the dropdown opens, because which footnotes exist —
             // and therefore which items the list should offer — changes as the document is edited.
+            // Its rows stay once it closes, as `ToolbarGroupMenu` opens and closes the dropdown
+            // to read them.
             dropdownView.on("change:isOpen", (_evt, _propertyName, isOpen) => {
-                dropdownView.listView?.items.clear();
-
                 if (isOpen) {
+                    dropdownView.listView?.items.clear();
                     addListToDropdown(dropdownView, this.getDropdownItemsDefinitions());
                     return;
                 }

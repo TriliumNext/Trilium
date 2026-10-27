@@ -21,6 +21,7 @@ import BRevision from "./brevision.js";
 import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
+import { getVirtualNoteContent, isVirtualNoteContentWritable, setVirtualNoteContent } from "../../services/virtual_notes.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -94,13 +95,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
     private __ancestorCache!: BNote[] | null;
 
     // following attributes are filled during searching in the database
-    /** size of the content in bytes */
     contentSize!: number | null;
-    /** size of the note content, attachment contents in bytes */
     contentAndAttachmentsSize!: number | null;
-    /** size of the note content, attachment contents and revision contents in bytes */
     contentAndAttachmentsAndRevisionsSize!: number | null;
-    /** number of note revisions for this note */
     revisionCount!: number | null;
 
     constructor(row?: Partial<NoteRow>) {
@@ -180,16 +177,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.parentBranches;
     }
 
-    /**
-     * Returns <i>strong</i> (as opposed to <i>weak</i>) parent branches. See isWeak for details.
-     */
     getStrongParentBranches() {
         return this.getParentBranches().filter((branch) => !branch.isWeak);
     }
 
-    /**
-     * @deprecated use getParentBranches() instead
-     */
     getBranches() {
         return this.parentBranches;
     }
@@ -219,12 +210,14 @@ class BNote extends AbstractBeccaEntity<BNote> {
      * - but to the user note content and title changes are one and the same - single dateModified (so all changes must go through Note and content is not a separate entity)
      */
     getContent() {
+        if (this.isVirtual) {
+            // Virtual notes have no blob row; content (if any) comes from their provider.
+            return getVirtualNoteContent(this.noteId);
+        }
+
         return this._getContent();
     }
 
-    /**
-     * @throws Error in case of invalid JSON
-     */
     getJsonContent(): any | null {
         const content = this.getContent();
 
@@ -235,7 +228,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return JSON.parse(content);
     }
 
-    /** @returns valid object or null if the content cannot be parsed as JSON */
     getJsonContentSafely() {
         try {
             return this.getJsonContent();
@@ -245,9 +237,19 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     setContent(content: Uint8Array | string, opts: ContentOpts = {}) {
+        if (this.isVirtual) {
+            setVirtualNoteContent(this.noteId, content);
+            return;
+        }
+
         this._setContent(content, opts);
 
         eventService.emit(eventService.NOTE_CONTENT_CHANGE, { entity: this });
+    }
+
+    /** Whether the content can be saved: always for a persisted note, per provider for a virtual one. */
+    isContentWritable() {
+        return !this.isVirtual || isVirtualNoteContentWritable(this.noteId);
     }
 
     setJsonContent(content: {}) {
@@ -270,17 +272,14 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.utcDateModified === null ? null : dayjs.utc(this.utcDateModified);
     }
 
-    /** @returns true if this note is the root of the note tree. Root note has "root" noteId */
     isRoot() {
         return this.noteId === "root";
     }
 
-    /** @returns true if this note is of application/json content type */
     isJson() {
         return this.mime === "application/json";
     }
 
-    /** @returns true if this note is JavaScript (code or attachment) */
     isJavaScript() {
         return (
             (this.type === "code" || this.type === "file" || this.type === "launcher") &&
@@ -292,32 +291,26 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return (this.type === "code" && this.mime === "text/jsx");
     }
 
-    /** @returns true if this note is HTML */
     isHtml() {
         return ["code", "file", "render"].includes(this.type) && this.mime === "text/html";
     }
 
-    /** @returns true if this note is a Markdown code note */
     isMarkdown() {
         return this.type === "code" && isMarkdownMime(this.mime);
     }
 
-    /** @returns true if this note is an image */
     isImage() {
         return this.type === "image" || (this.type === "file" && this.mime?.startsWith("image/"));
     }
 
-    /** @deprecated use hasStringContent() instead */
     isStringNote() {
         return this.hasStringContent();
     }
 
-    /** @returns true if the note has string content (not binary) */
     override hasStringContent() {
         return isStringNote(this.type, this.mime);
     }
 
-    /** @returns JS script environment - either "frontend" or "backend" */
     getScriptEnv() {
         if (this.isHtml() || (this.isJavaScript() && this.mime.endsWith("env=frontend")) || this.isJsx()) {
             return "frontend";
@@ -334,11 +327,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return null;
     }
 
-    /**
-     * Executes this note as a script. The note must be of type "Code: JS backend".
-     *
-     * @returns the return value of the executed script
-     */
     executeScript() {
         // Lazy require to avoid circular dependency (script.ts imports BNote as a type).
         // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -346,14 +334,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return scriptService.executeNote(this, { originEntity: this });
     }
 
-    /**
-     * Beware that the method must not create a copy of the array, but actually returns its internal array
-     * (for performance reasons)
-     *
-     * @param type - (optional) attribute type to filter
-     * @param name - (optional) attribute name to filter
-     * @returns all note's attributes, including inherited ones
-     */
     getAttributes(type?: string, name?: string): BAttribute[] {
         this.__validateTypeName(type, name);
         this.__ensureAttributeCacheIsAvailable();
@@ -407,7 +387,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
                             ...templateNote
                                 .__getAttributes(newPath)
                                 // template attr is used as a marker for templates, but it's not meant to be inherited
-                                .filter((attr) => !(attr.type === "label" && (attr.name === "template" || attr.name === "workspacetemplate")))
+                                .filter((attr) => !(attr.type === "label" && (attr.name === "template" || attr.name === "workspaceTemplate")))
                         );
                     }
                 }
@@ -480,19 +460,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return relation ? relation.targetNote : null;
     }
 
-    /**
-     * @param name - label name
-     * @param value - label value
-     * @returns true if label exists (including inherited)
-     */
     hasLabel(name: string, value?: string): boolean {
         return this.hasAttribute(LABEL, name, value);
     }
 
-    /**
-     * @param name - label name
-     * @returns true if label exists (including inherited) and does not have "false" value.
-     */
     isLabelTruthy(name: string): boolean {
         const label = this.getLabel(name);
 
@@ -503,198 +474,96 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return label && label.value !== "false";
     }
 
-    /**
-     * @param name - label name
-     * @param value - label value
-     * @returns true if label exists (excluding inherited)
-     */
     hasOwnedLabel(name: string, value?: string): boolean {
         return this.hasOwnedAttribute(LABEL, name, value);
     }
 
-    /**
-     * @param name - relation name
-     * @param value - relation value
-     * @returns true if relation exists (including inherited)
-     */
     hasRelation(name: string, value?: string): boolean {
         return this.hasAttribute(RELATION, name, value);
     }
 
-    /**
-     * @param name - relation name
-     * @param value - relation value
-     * @returns true if relation exists (excluding inherited)
-     */
     hasOwnedRelation(name: string, value?: string): boolean {
         return this.hasOwnedAttribute(RELATION, name, value);
     }
 
-    /**
-     * @param name - label name
-     * @returns label if it exists, null otherwise
-     */
     getLabel(name: string): BAttribute | null {
         return this.getAttribute(LABEL, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label if it exists, null otherwise
-     */
     getOwnedLabel(name: string): BAttribute | null {
         return this.getOwnedAttribute(LABEL, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation if it exists, null otherwise
-     */
     getRelation(name: string): BAttribute | null {
         return this.getAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation if it exists, null otherwise
-     */
     getOwnedRelation(name: string): BAttribute | null {
         return this.getOwnedAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label value if label exists, null otherwise
-     */
     getLabelValue(name: string): string | null {
         return this.getAttributeValue(LABEL, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label value if label exists, null otherwise
-     */
     getOwnedLabelValue(name: string): string | null {
         return this.getOwnedAttributeValue(LABEL, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation value if relation exists, null otherwise
-     */
     getRelationValue(name: string): string | null {
         return this.getAttributeValue(RELATION, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation value if relation exists, null otherwise
-     */
     getOwnedRelationValue(name: string): string | null {
         return this.getOwnedAttributeValue(RELATION, name);
     }
 
-    /**
-     * @param attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @param value - attribute value
-     * @returns true if note has an attribute with given type and name (excluding inherited)
-     */
     hasOwnedAttribute(type: string, name: string, value?: string): boolean {
         return !!this.getOwnedAttribute(type, name, value);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute of the given type and name. If there are more such attributes, first is returned.
-     *          Returns null if there's no such attribute belonging to this note.
-     */
     getAttribute(type: string, name: string): BAttribute | null {
         const attributes = this.getAttributes();
 
         return attributes.find((attr) => attr.name === name && attr.type === type) || null;
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute value of given type and name or null if no such attribute exists.
-     */
     getAttributeValue(type: string, name: string): string | null {
         const attr = this.getAttribute(type, name);
 
         return attr ? attr.value : null;
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute value of given type and name or null if no such attribute exists.
-     */
     getOwnedAttributeValue(type: string, name: string): string | null {
         const attr = this.getOwnedAttribute(type, name);
 
         return attr ? attr.value : null;
     }
 
-    /**
-     * @param name - label name to filter
-     * @returns all note's labels (attributes with type label), including inherited ones
-     */
     getLabels(name?: string): BAttribute[] {
         return this.getAttributes(LABEL, name);
     }
 
-    /**
-     * @param name - label name to filter
-     * @returns all note's label values, including inherited ones
-     */
     getLabelValues(name: string): string[] {
         return this.getLabels(name).map((l) => l.value);
     }
 
-    /**
-     * @param name - label name to filter
-     * @returns all note's labels (attributes with type label), excluding inherited ones
-     */
     getOwnedLabels(name: string): BAttribute[] {
         return this.getOwnedAttributes(LABEL, name);
     }
 
-    /**
-     * @param name - label name to filter
-     * @returns all note's label values, excluding inherited ones
-     */
     getOwnedLabelValues(name: string): string[] {
         return this.getOwnedAttributes(LABEL, name).map((l) => l.value);
     }
 
-    /**
-     * @param name - relation name to filter
-     * @returns all note's relations (attributes with type relation), including inherited ones
-     */
     getRelations(name?: string): BAttribute[] {
         return this.getAttributes(RELATION, name);
     }
 
-    /**
-     * @param name - relation name to filter
-     * @returns all note's relations (attributes with type relation), excluding inherited ones
-     */
     getOwnedRelations(name?: string | null): BAttribute[] {
         return this.getOwnedAttributes(RELATION, name);
     }
 
-    /**
-     * Beware that the method must not create a copy of the array, but actually returns its internal array
-     * (for performance reasons)
-     *
-     * @param type - (optional) attribute type to filter
-     * @param name - (optional) attribute name to filter
-     * @param value - (optional) attribute value to filter
-     * @returns note's "owned" attributes - excluding inherited ones
-     */
     getOwnedAttributes(type: string | null = null, name: string | null = null, value: string | null = null) {
         this.__validateTypeName(type, name);
 
@@ -710,11 +579,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.ownedAttributes;
     }
 
-    /**
-     * @returns attribute belonging to this specific note (excludes inherited attributes)
-     *
-     * This method can be significantly faster than the getAttribute()
-     */
     getOwnedAttribute(type: string, name: string, value: string | null = null) {
         const attrs = this.getOwnedAttributes(type, name, value);
 
@@ -786,13 +650,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         });
     }
 
-    /**
-     * This is used for:
-     * - fast searching
-     * - note similarity evaluation
-     *
-     * @returns - returns flattened textual representation of note, prefixes and attributes
-     */
     getFlatText() {
         if (!this.__flatTextCache) {
             this.__flatTextCache = `${this.noteId} ${this.type} ${this.mime} `;
@@ -996,12 +853,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
         };
     }
 
-    /** @returns includes the subtree root note as well */
     getSubtreeNoteIds({ includeArchived = true, includeHidden = false, resolveSearch = false } = {}) {
         return this.getSubtree({ includeArchived, includeHidden, resolveSearch }).notes.map((note) => note.noteId);
     }
 
-    /** @deprecated use getSubtreeNoteIds() instead */
     getDescendantNoteIds() {
         return this.getSubtreeNoteIds();
     }
@@ -1101,8 +956,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.targetRelations;
     }
 
-    /** @returns returns only notes which are templated, does not include their subtrees
-     *           in effect returns notes which are influenced by note's non-inheritable attributes */
     getInheritingNotes(): BNote[] {
         const arr: BNote[] = [this];
 
@@ -1178,11 +1031,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.getAttachments().filter((attachment) => attachment.title === title)[0];
     }
 
-    /**
-     * Gives all possible note paths leading to this note. Paths containing search note are ignored (could form cycles)
-     *
-     * @returns array of notePaths (each represented by array of noteIds constituting the particular note path)
-     */
     getAllNotePaths(): string[][] {
         if (this.noteId === "root") {
             return [["root"]];
@@ -1217,29 +1065,16 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return notePaths;
     }
 
-    /**
-     * Returns a note path considered to be the "best"
-     *
-     * @return array of noteIds constituting the particular note path
-     */
     getBestNotePath(hoistedNoteId: string = "root"): string[] {
         return this.getSortedNotePathRecords(hoistedNoteId)[0]?.notePath;
     }
 
-    /**
-     * Returns a note path considered to be the "best"
-     *
-     * @return serialized note path (e.g. 'root/a1h315/js725h')
-     */
     getBestNotePathString(hoistedNoteId: string = "root"): string {
         const notePath = this.getBestNotePath(hoistedNoteId);
 
         return notePath?.join("/");
     }
 
-    /**
-     * @return boolean - true if there's no non-hidden path, note is not cloned to the visible tree
-     */
     isHiddenCompletely() {
         if (this.noteId === "root") {
             return false;
@@ -1258,22 +1093,12 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return true;
     }
 
-    /**
-     * @returns true if ancestorNoteId occurs in at least one of the note's paths
-     */
     isDescendantOfNote(ancestorNoteId: string): boolean {
         const notePaths = this.getAllNotePaths();
 
         return notePaths.some((path) => path.includes(ancestorNoteId));
     }
 
-    /**
-     * Update's given attribute's value or creates it if it doesn't exist
-     *
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @param value - attribute value (optional)
-     */
     setAttribute(type: AttributeType, name: string, value?: string) {
         const attributes = this.getOwnedAttributes();
         const attr = attributes.find((attr) => attr.type === type && attr.name === name);
@@ -1295,13 +1120,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
     }
 
-    /**
-     * Removes given attribute name-value pair if it exists.
-     *
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @param value - attribute value (optional)
-     */
     removeAttribute(type: string, name: string, value?: string) {
         const attributes = this.getOwnedAttributes();
 
@@ -1312,14 +1130,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
     }
 
-    /**
-     * Adds a new attribute to this note. The attribute is saved and returned.
-     * See addLabel, addRelation for more specific methods.
-     *
-     * @param type - attribute type (label / relation)
-     * @param name - name of the attribute, not including the leading ~/#
-     * @param value - value of the attribute - text for labels, target note ID for relations; optional.
-     */
     addAttribute(type: AttributeType, name: string, value: string = "", isInheritable: boolean = false, position: number | null = null): BAttribute {
         return new BAttribute({
             noteId: this.noteId,
@@ -1331,34 +1141,14 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }).save();
     }
 
-    /**
-     * Adds a new label to this note. The label attribute is saved and returned.
-     *
-     * @param name - name of the label, not including the leading #
-     * @param value - text value of the label; optional
-     */
     addLabel(name: string, value: string = "", isInheritable: boolean = false): BAttribute {
         return this.addAttribute(LABEL, name, value, isInheritable);
     }
 
-    /**
-     * Adds a new relation to this note. The relation attribute is saved and
-     * returned.
-     *
-     * @param name - name of the relation, not including the leading ~
-     */
     addRelation(name: string, targetNoteId: string, isInheritable: boolean = false): BAttribute {
         return this.addAttribute(RELATION, name, targetNoteId, isInheritable);
     }
 
-    /**
-     * Based on enabled, the attribute is either set or removed.
-     *
-     * @param type - attribute type ('relation', 'label' etc.)
-     * @param enabled - toggle On or Off
-     * @param name - attribute name
-     * @param value - attribute value (optional)
-     */
     toggleAttribute(type: AttributeType, enabled: boolean, name: string, value?: string) {
         if (enabled) {
             this.setAttribute(type, name, value);
@@ -1367,64 +1157,26 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
     }
 
-    /**
-     * Based on enabled, label is either set or removed.
-     *
-     * @param enabled - toggle On or Off
-     * @param name - label name
-     * @param value - label value (optional)
-     */
     toggleLabel(enabled: boolean, name: string, value?: string) {
         return this.toggleAttribute(LABEL, enabled, name, value);
     }
 
-    /**
-     * Based on enabled, relation is either set or removed.
-     *
-     * @param enabled - toggle On or Off
-     * @param name - relation name
-     * @param value - relation value (noteId)
-     */
     toggleRelation(enabled: boolean, name: string, value?: string) {
         return this.toggleAttribute(RELATION, enabled, name, value);
     }
 
-    /**
-     * Update's given label's value or creates it if it doesn't exist
-     *
-     * @param name - label name
-     * @param value label value
-     */
     setLabel(name: string, value?: string) {
         return this.setAttribute(LABEL, name, value);
     }
 
-    /**
-     * Update's given relation's value or creates it if it doesn't exist
-     *
-     * @param name - relation name
-     * @param value - relation value (noteId)
-     */
     setRelation(name: string, value?: string) {
         return this.setAttribute(RELATION, name, value);
     }
 
-    /**
-     * Remove label name-value pair, if it exists.
-     *
-     * @param name - label name
-     * @param value - label value
-     */
     removeLabel(name: string, value?: string) {
         return this.removeAttribute(LABEL, name, value);
     }
 
-    /**
-     * Remove the relation name-value pair, if it exists.
-     *
-     * @param name - relation name
-     * @param value - relation value (noteId)
-     */
     removeRelation(name: string, value?: string) {
         return this.removeAttribute(RELATION, name, value);
     }
@@ -1474,21 +1226,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return true;
     }
 
-    /**
-     * Some notes are eligible for conversion into an attachment of its parent, note must have these properties:
-     * - it has exactly one target relation
-     * - it has a relation from its parent note
-     * - it has no children
-     * - it has no clones
-     * - the parent is of type text
-     * - both notes are either unprotected or user is in protected session
-     *
-     * Currently, works only for image notes.
-     *
-     * In the future, this functionality might get more generic and some of the requirements relaxed.
-     *
-     * @returns null if note is not eligible for conversion
-     */
     convertToParentAttachment(opts: ConvertOpts = { autoConversion: false }): BAttachment | null {
         if (!this.isEligibleForConversionToAttachment(opts)) {
             return null;
@@ -1525,11 +1262,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return attachment;
     }
 
-    /**
-     * (Soft) delete a note and all its descendants.
-     *
-     * @param deleteId - optional delete identified
-     */
     deleteNote(deleteId: string | null = null, taskContext: TaskContext<"deleteNotes"> | null = null) {
         if (this.isDeleted) {
             return;
@@ -1696,10 +1428,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
             : parseInt(optionService.getOption("revisionSnapshotNumberLimit"));
     }
 
-    /**
-     * @param matchBy - choose by which property we detect if to update an existing attachment.
-     *                      Supported values are either 'attachmentId' (default) or 'title'
-     */
     saveAttachment({ attachmentId, role, mime, title, content, position }: Omit<AttachmentRow, "ownerId">, matchBy: "attachmentId" | "title" | undefined = "attachmentId") {
         if (!["attachmentId", "title"].includes(matchBy)) {
             throw new Error(`Unsupported value '${matchBy}' for matchBy param, has to be either 'attachmentId' or 'title'.`);
@@ -1867,11 +1595,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.noteId;
     }
 
-    /**
-     * Return an attribute by it's attributeId.  Requires the attribute cache to be available.
-     * @param attributeId - the id of the attribute owned by this note
-     * @returns - the BAttribute with the given id or undefined if not found.
-     */
     getAttributeById(attributeId : string): BAttribute | undefined {
         this.__ensureAttributeCacheIsAvailable();
 
@@ -1883,11 +1606,6 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.__attributeCache.find((attr) => attr.attributeId === attributeId);
     }
 
-    /**
-     * Sets an attribute's value by it's attributeId.
-     * @param attributeId - the id of the attribute owned by this note
-     * @param value - the new value to replace
-     */
     setAttributeValueById(attributeId : string, value? : string) {
         const attributes = this.getOwnedAttributes();
         const attr = attributes.find((attr) => attr.attributeId === attributeId);

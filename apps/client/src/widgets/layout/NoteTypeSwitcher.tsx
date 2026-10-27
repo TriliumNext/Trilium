@@ -22,7 +22,7 @@ import {
 } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
-import { CodeMimeTypesList } from "../type_widgets/options/code_mime_types_list";
+import { CodeMimeTypesCard } from "../type_widgets/options/code_mime_types_card";
 import { onWheelHorizontalScroll } from "../widget_utils";
 
 /** The note types offered as a pill of their own, each a single click away. */
@@ -264,14 +264,15 @@ export function codeLanguageItems({ currentMimeType, mimeTypes, changeNoteType, 
 
 export function useMimeTypes() {
     const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
+    const [ isSortedAlphabetically ] = useTriliumOption("codeNotesMimeTypesSortAlphabetically");
     return useMemo(() => {
         mime_types.loadMimeTypes();
-        const allMimeTypes = mime_types.getMimeTypes();
         return {
-            enabledMimeTypes: allMimeTypes.filter(mimeType => mimeType?.enabled),
-            allMimeTypes
+            enabledMimeTypes: mime_types.getEnabledMimeTypes(),
+            allMimeTypes: mime_types.getMimeTypes()
         };
-    }, [ codeNotesMimeTypes ]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ codeNotesMimeTypes, isSortedAlphabetically ]);
 }
 
 export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
@@ -280,9 +281,9 @@ export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown
             className="code-mime-types-modal"
             title={t("code_mime_types.title")}
             show={modalShown} onHidden={() => setModalShown(false)}
-            size="xl" scrollable
+            size="md" scrollable
         >
-            <CodeMimeTypesList />
+            <CodeMimeTypesCard />
         </Modal>
     );
 }

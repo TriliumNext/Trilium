@@ -1,0 +1,57 @@
+// Follows the Langium grammar of Mermaid's event modeling diagram (`@mermaid-js/parser`). Mermaid
+// 12.2.0 rejects its `title`, `accTitle` and `accDescr`, so they are left out.
+@top EventModelingDiagram { DiagramName statement* }
+
+statement { Entity | Frame | Data | Note | Gwt }
+
+Entity { kw<"entity"> QualifiedName }
+
+Frame {
+  (kw<"tf"> | kw<"timeframe"> | kw<"rf"> | kw<"resetframe">) FrameId EntityType QualifiedName
+  SourceFrame* DataReference? DataType? InlineData?
+}
+
+SourceFrame { "->>" FrameId }
+
+DataReference { "[[" Name "]]" }
+
+Data { kw<"data"> Name DataType? DataBlock }
+
+Note { kw<"note"> FrameId DataType? DataBlock }
+
+Gwt {
+  kw<"gwt"> FrameId kw<"given"> GwtStatement+ (kw<"when"> GwtStatement+)?
+  kw<"then"> GwtStatement+
+}
+
+GwtStatement { EntityType Name }
+
+QualifiedName { Name ("." Name)* }
+
+DataType { "`" type<"json" | "jsobj" | "figma" | "salt" | "uri" | "md" | "html" | "text"> "`" }
+
+EntityType {
+  type<"rmo" | "readmodel" | "ui" | "cmd" | "command" | "evt" | "event" | "pcr" | "processor">
+}
+
+Name { identifier }
+
+DiagramName { @specialize<identifier, "eventmodeling"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+type<terms> { @specialize[@name=Type]<identifier, terms> }
+
+@skip { space | LineComment }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { $[a-zA-Z_] $[a-zA-Z0-9_]* }
+  FrameId { @digit @digit? @digit? }
+  InlineData { "{" ![\n]* "}" | '"' ![\n]* '"' | "'" ![\n]* "'" }
+  DataBlock { "{" $[ \t\r]* "\n" (![}\n] ![\n]* "\n" | "\n")* "}" }
+  LineComment { "%%" ![\n]* }
+  "->>" "[[" "]]" "`" "."
+}
+
+@external propSource eventModelingHighlighting from "./highlight.js"

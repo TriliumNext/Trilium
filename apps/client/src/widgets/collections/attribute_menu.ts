@@ -4,6 +4,7 @@ import { menuName } from "../../menus/context_menu_utils";
 import { t } from "../../services/i18n";
 import { clearLabelOnNotes, setLabelOnNotes, shared } from "../../services/note_set";
 import { promotedAttributeIcon } from "../attribute_widgets/attribute_types";
+import DatePicker from "../react/DatePicker";
 import type { PromotedAttribute } from "./promoted_attributes";
 
 /** Marks the value an item holds, at the trailing edge as the other menus place it. */
@@ -30,14 +31,15 @@ export interface AttributeMenuOptions {
  * Builds the section a collection's item menu uses to set the values shown on an item, so a flag or
  * a state changes without opening the note.
  *
- * Lists the attributes the items draw, in the order they are drawn, and only the two types a menu
- * can hold: `boolean`, which the entry marks and toggles, and `select`, whose options open in a
- * submenu. The other types need a field to type into and stay in the attribute editor. An
- * attribute the items define in different ways is left out, since one item's options might not
- * apply to another.
+ * Lists the attributes the items draw, in the order they are drawn, and only the types a menu can
+ * hold: `boolean`, which the entry marks and toggles, `select`, whose options open in a submenu,
+ * and `date`, whose submenu holds a date picker. The other types need a field to type into and
+ * stay in the attribute editor. An attribute the items define in different ways is left out,
+ * since one item's options might not apply to another.
  *
  * Returns an empty array when no attribute qualifies, so a caller can spread the result without
- * checking for an empty section.
+ * checking for an empty section. The section opens with a heading, which draws its own line, so a
+ * caller puts no separator directly above it.
  */
 export function buildAttributeMenuItems<T>({
     notes, attributes, title
@@ -54,6 +56,10 @@ export function buildAttributeMenuItems<T>({
         // A select without options is skipped: its submenu would hold "Not set" alone.
         if (attribute.labelType === "select" && attribute.selectOptions?.length) {
             return [ buildSelectItem<T>(notes, attribute, attribute.selectOptions) ];
+        }
+
+        if (attribute.labelType === "date") {
+            return [ buildDateItem<T>(notes, attribute) ];
         }
 
         return [];
@@ -111,11 +117,39 @@ function buildSelectItem<T>(
                 trailingIcon: current.agreed && !current.value ? CHECK : undefined,
                 handler: () => { void clearLabelOnNotes(notes, attribute.name); }
             },
+            { kind: "separator" },
             ...options.map<MenuItem<T>>((option) => ({
                 title: menuName(option),
                 trailingIcon: current.agreed && current.value === option ? CHECK : undefined,
                 handler: () => { void setLabelOnNotes(notes, attribute.name, option); }
             }))
+        ]
+    };
+}
+
+/**
+ * A `date`, with Not set and then a {@link DatePicker} in a submenu. The picker marks the date the
+ * items hold, and nothing where they disagree.
+ */
+function buildDateItem<T>(notes: FNote[], attribute: PromotedAttribute): MenuCommandItem<T> {
+    const current = shared(notes, (note) => note.getLabelValue(attribute.name));
+
+    return {
+        ...attributeEntry<T>(attribute),
+        items: [
+            {
+                title: menuName(t("attribute_menu.not-set")),
+                trailingIcon: current.agreed && !current.value ? CHECK : undefined,
+                handler: () => { void clearLabelOnNotes(notes, attribute.name); }
+            },
+            { kind: "separator" },
+            {
+                kind: "custom",
+                componentFn: () => DatePicker({
+                    value: current.agreed ? current.value || undefined : undefined,
+                    onChange: (date) => { void setLabelOnNotes(notes, attribute.name, date); }
+                })
+            }
         ]
     };
 }

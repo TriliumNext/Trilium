@@ -2,12 +2,14 @@ import "./Modal.css";
 
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
-import { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "preact/hooks";
+import { ComponentChildren, createPortal, CSSProperties, RefObject } from "preact";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { openDialog } from "../../services/dialog";
 import { t } from "../../services/i18n";
+import { RENDER_SCOPE_CLASS } from "../../services/render_css_scope";
+import { onSystemBack } from "../../services/system_back";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { useSyncedRef } from "./hooks";
 import { suspendModalFocusTraps } from "./modal_focustrap";
@@ -20,7 +22,7 @@ interface CustomTitleBarButton {
 }
 
 export interface ModalProps {
-    className: string;
+    className?: string;
     title?: string | ComponentChildren;
     customTitleBarButtons?: (CustomTitleBarButton | null)[];
     size: "xl" | "lg" | "md" | "sm";
@@ -107,7 +109,7 @@ export interface ModalProps {
     ariaLabel?: string;
 }
 
-export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {
+export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal | undefined>(undefined);
     const elementToFocus = useRef<Element | null | undefined>(undefined);
@@ -182,6 +184,14 @@ export default function Modal({ children, className, size, title, customTitleBar
     useEffect(() => {
         if (!show || !modalRef.current) return;
         return suspendModalFocusTraps(modalRef.current);
+    }, [ show ]);
+
+    useEffect(() => {
+        if (!show) return;
+        return onSystemBack(() => {
+            modalInstanceRef.current?.hide();
+            return true;
+        });
     }, [ show ]);
 
     useEffect(() => {
@@ -269,9 +279,12 @@ export default function Modal({ children, className, size, title, customTitleBar
         return style;
     }, [maxWidth, minWidth]);
 
+    const [ dialogElement, setDialogElement ] = useState<HTMLDivElement | null>(null);
+    const isTall = useIsTallerThanHalfScreen(dialogElement);
+
     return (
         <div className={renderedClassName.current} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
-            {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar})} style={documentStyle} role="document">
+            {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar, "modal-dialog-tall": isTall})} style={documentStyle} role="document" ref={setDialogElement}>
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
                     {sidebar && <div className="modal-sidebar">
                         {title && !hideSidebarHeader && <div className="modal-sidebar-header">
@@ -324,6 +337,46 @@ export default function Modal({ children, className, size, title, customTitleBar
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+}
+
+/** Mounts a script modal beside Bootstrap's body-level backdrop while retaining its source context. */
+export function ScriptModal(props: ModalProps) {
+    const [ origin, setOrigin ] = useState<HTMLTemplateElement | null>(null);
+    const ntxId = origin?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id");
+    const isRenderNote = !!origin?.closest(`.note-detail-render-content, .${RENDER_SCOPE_CLASS}`);
+
+    return <>
+        <template ref={setOrigin} />
+        {origin && createPortal(
+            <div className={clsx("script-modal-host", isRenderNote && RENDER_SCOPE_CLASS)} data-ntx-id={ntxId}>
+                <Modal {...props} />
+            </div>,
+            document.body
+        )}
+    </>;
+}
+
+/**
+ * Whether the dialog takes up more than half the screen. iOS shows such a dialog as an opaque sheet
+ * attached to the screen's edges, and a shorter one as a floating glass sheet. A tall dialog turns
+ * short again only below 45%, since the wider tall sheet can rewrap its content a little shorter.
+ */
+function useIsTallerThanHalfScreen(dialog: HTMLElement | null) {
+    const [ isTall, setIsTall ] = useState(false);
+
+    useEffect(() => {
+        if (!dialog) return;
+        const update = () => setIsTall((wasTall) => dialog.offsetHeight > window.innerHeight * (wasTall ? 0.45 : 0.5));
+        const observer = new ResizeObserver(update);
+        observer.observe(dialog);
+        window.addEventListener("resize", update);
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", update);
+        };
+    }, [ dialog ]);
+
+    return isTall;
 }
 
 /** The classes a host asked for, as `classList` takes them. */

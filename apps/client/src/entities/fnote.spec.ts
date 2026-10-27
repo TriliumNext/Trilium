@@ -1,3 +1,4 @@
+import type { NoteType } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import froca from "../services/froca.js";
@@ -10,7 +11,7 @@ import FAttachment from "./fattachment.js";
 import FAttribute from "./fattribute.js";
 import FBlob from "./fblob.js";
 import FBranch from "./fbranch.js";
-import FNote, { type FNoteRow, type NoteType } from "./fnote.js";
+import FNote, { type FNoteRow } from "./fnote.js";
 
 vi.mock("../services/search.js", () => ({
     default: {
@@ -194,6 +195,31 @@ describe("FNote branches & children", () => {
         expect(child.getParentNotes().map((n) => n.noteId)).toContain(parent.noteId);
     });
 
+    it("leaves the share root, the bookmarks and saved searches out of the real parents", () => {
+        const first = buildNote({ title: "First", children: [ { id: "cloned", title: "Cloned" } ] });
+        const cloned = froca.notes["cloned"];
+        if (!cloned) throw new Error("expected the cloned note");
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId ]);
+
+        const second = buildNote({ title: "Second" });
+        const parents = [
+            buildNote({ id: "_share", title: "Share" }),
+            buildNote({ id: "_lbBookmarks", title: "Bookmarks" }),
+            buildNote({ title: "Saved search", type: "search" }),
+            second
+        ];
+        for (const parent of parents) {
+            const branchId = `${parent.noteId}_cloned`;
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId: "cloned", parentNoteId: parent.noteId, notePosition: 0, fromSearchNote: false
+            });
+            parent.addChild("cloned", branchId, false);
+            cloned.addParent(parent.noteId, branchId, false);
+        }
+
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId, second.noteId ]);
+    });
+
     it("getChildNotes / getSubtreeNoteIds / getSubtreeNotes traverse the tree and skip archived", async () => {
         const root = buildNote({
             title: "root",
@@ -217,6 +243,26 @@ describe("FNote branches & children", () => {
 
         const subtreeNotes = await root.getSubtreeNotes();
         expect(subtreeNotes.map((n) => n.noteId).sort()).toEqual(["branchA", "leafA"]);
+    });
+
+    it("getSubtreeNoteIds stops at maxDepth, a negative one meaning no limit", async () => {
+        const root = buildNote({
+            title: "root",
+            children: [{
+                id: "depth0",
+                title: "depth0",
+                children: [{
+                    id: "depth1",
+                    title: "depth1",
+                    children: [{ id: "depth2", title: "depth2" }]
+                }]
+            }]
+        });
+
+        expect(await root.getSubtreeNoteIds(false, 0)).toEqual(["depth0"]);
+        expect(await root.getSubtreeNoteIds(false, 1)).toEqual(["depth0", "depth1"]);
+        expect(await root.getSubtreeNoteIds(false, -1)).toEqual(["depth0", "depth1", "depth2"]);
+        expect(await root.getSubtreeNoteIds()).toEqual(["depth0", "depth1", "depth2"]);
     });
 
     it("getChildNoteIdsWithArchiveFiltering returns children directly for hidden/search/includeArchived", async () => {
@@ -369,7 +415,7 @@ describe("FNote attributes & inheritance", () => {
 
     it("__getCachedAttributes inherits from parents and templates, and breaks cycles", () => {
         // fresh notes that are NOT pre-cached by easy-froca for the parent/template relationship
-        const template = buildNote({ id: "tmplNote", title: "template", "#fromTemplate(inheritable)": "yes", "#template": "marker" });
+        const template = buildNote({ id: "tmplNote", title: "template", "#fromTemplate(inheritable)": "yes", "#template": "marker", "#workspaceTemplate": "" });
         const parent = buildNote({ id: "parentInh", title: "parent", "#fromParent(inheritable)": "p" });
         const instance = buildNote({ id: "instanceNote", title: "instance", "~template": "tmplNote" });
         // wire parent
@@ -392,8 +438,10 @@ describe("FNote attributes & inheritance", () => {
         const names = instance.getAttributes().map((a) => a.name);
         expect(names).toContain("fromParent");
         expect(names).toContain("fromTemplate");
-        // the "template" marker label must not be inherited
-        expect(instance.getAttributes("label").some((a) => a.name === "template")).toBe(false);
+        // the marker labels must not be inherited
+        const labelNames = instance.getAttributes("label").map((a) => a.name);
+        expect(labelNames).not.toContain("template");
+        expect(labelNames).not.toContain("workspaceTemplate");
     });
 
     it("__getCachedAttributes ignores a template relation pointing at the note itself", () => {
@@ -1177,6 +1225,16 @@ describe("FNote system-note predicates", () => {
         expect(note.isJavaScript()).toBe(false);
         expect(note.isTriliumSqlite()).toBe(false);
         expect(note.getScriptEnv()).toBeNull();
+    });
+
+    it("title stays a string when a note row arrives without a title", () => {
+        const note = makeNote({ title: "Real title" });
+
+        // The same skeleton row as above; `NoteTreeWidget.getTitleHtml()` passes the title to
+        // `escapeHtml()`, which calls `.replace()` on it.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(note.title).toBe("");
     });
 
     it("getScriptEnv returns frontend / backend / null", () => {

@@ -5,22 +5,22 @@ Organization is an important aspect of managing a knowledge base. When developin
 
 As such, the first step is to create a new note to gather all the themes.
 
-![](Creating%20a%20custom%20theme_5_Creating%20a%20custom%20theme_im.png)
+![](Creating%20a%20custom%20theme_5_Creating%20a%20custom%20theme_im.jpg)
 
 ## Step 2. Create the theme
 
 <table>
     <tbody>
         <tr>
-            <td><img src="Creating a custom theme_3_Creating a custom theme_im.png"></td>
+            <td><img src="Creating a custom theme_3_Creating a custom theme_im.jpg"></td>
             <td>Themes are code notes with a special attribute. Start by creating a new code note.</td>
         </tr>
         <tr>
-            <td><img src="Creating a custom theme_1_Creating a custom theme_im.png"></td>
+            <td><img src="Creating a custom theme_1_Creating a custom theme_im.jpg"></td>
             <td>Then change the note type to a CSS code.</td>
         </tr>
         <tr>
-            <td><img src="Creating a custom theme_Creating a custom theme_im.png"></td>
+            <td><img src="Creating a custom theme_Creating a custom theme_im.jpg"></td>
             <td>In the attributes of the note (the&nbsp;<span class="tn-icon bx bx-list-check"></span> button in the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>), define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
         </tr>
     </tbody>
@@ -42,11 +42,11 @@ To alter the different variables of the theme:
 
 Refresh the application (Ctrl+Shift+R is a good way to do so) and go to settings. You should see the newly created theme:
 
-![](Creating%20a%20custom%20theme_2_Creating%20a%20custom%20theme_im.png)
+![](Creating%20a%20custom%20theme_2_Creating%20a%20custom%20theme_im.jpg)
 
 Afterwards the application will refresh itself with the new theme:
 
-![](Creating%20a%20custom%20theme_4_Creating%20a%20custom%20theme_im.png)
+![](Creating%20a%20custom%20theme_4_Creating%20a%20custom%20theme_im.jpg)
 
 Do note that the theme will be based off of the legacy theme. To override that and base the theme on the Modern theme, see <a class="reference-link" href="Customize%20the%20Next%20theme.md">Customize the Next theme</a>.
 

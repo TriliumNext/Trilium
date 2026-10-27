@@ -13,8 +13,10 @@ export function CustomNoteLauncher(props: {
     getTargetNoteId: (launcherNote: FNote) => string | null | Promise<string | null>;
     getHoistedNoteId?: (launcherNote: FNote) => string | null;
     keyboardShortcut?: string;
+    /** The launch bar section that shows the button. See `ShowLauncherContextMenuOptions`. */
+    parentNoteId?: string;
 }) {
-    const { launcherNote, getTargetNoteId, getHoistedNoteId } = props;
+    const { launcherNote, getTargetNoteId, getHoistedNoteId, parentNoteId } = props;
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
 
     const launch = useCallback(async (evt: MouseEvent | KeyboardEvent) => {
@@ -39,6 +41,7 @@ export function CustomNoteLauncher(props: {
                 const hoistedNoteId = getHoistedNoteId?.(launcherNote) ?? null;
                 const linkItems = targetNoteId ? link_context_menu.getItems(evt) : [];
                 await showLauncherContextMenu<CommandNames>(launcherNote, evt, {
+                    parentNoteId,
                     extraItems: linkItems,
                     onCommand: (command) => {
                         if (command && targetNoteId) {

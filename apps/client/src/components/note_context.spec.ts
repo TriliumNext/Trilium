@@ -75,6 +75,19 @@ describe("NoteContext read-only capability", () => {
         if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
         expect(await noteContext.isReadOnly()).toBe(false);
     });
+
+    it("keeps a note whose content cannot be saved read-only, even once editing is enabled", async () => {
+        const note = buildNote({ title: "Help page", type: "text" });
+        note.isContentWritable = false;
+        noteContext.noteId = note.noteId;
+        expect(await noteContext.isReadOnly()).toBe(true);
+
+        noteContext.resetViewScope();
+        const viewScope = noteContext.viewScope;
+        expect(viewScope).toBeTruthy();
+        if (viewScope) viewScope.readOnlyTemporarilyDisabled = true;
+        expect(await noteContext.isReadOnly()).toBe(true);
+    });
 });
 
 describe("NoteContext view scope", () => {
@@ -91,5 +104,31 @@ describe("NoteContext view scope", () => {
         // What `revealBlockReference()` does once it has scrolled to the block.
         if (noteContext.viewScope) noteContext.viewScope.block = undefined;
         expect(viewScope).toEqual({ block: "a" });
+    });
+
+    it("stays on the open note when it is navigated to again", async () => {
+        buildNote({
+            id: "root", title: "root", children: [ { id: "reopened", title: "Reopened" } ]
+        });
+        const noteContext = new NoteContext();
+        const navigate = (viewScope?: ViewScope) => noteContext.setNote("root/reopened", {
+            viewScope, skipRecentNotes: true, triggerSwitchEvent: false
+        });
+
+        await navigate();
+        expect(await noteContext.isReadOnly()).toBe(false);
+        const shownScope = noteContext.viewScope;
+        expect(shownScope).toEqual({ viewMode: "default", isReadOnly: false });
+        // What the "Edit" button of a read-only note and `consumeBookmark()` write into the scope.
+        if (shownScope) {
+            shownScope.readOnlyTemporarilyDisabled = true;
+            shownScope.bookmark = undefined;
+        }
+
+        await navigate();
+        expect(noteContext.viewScope).toBe(shownScope);
+
+        await navigate({ bookmark: "intro" });
+        expect(noteContext.viewScope).toEqual({ viewMode: "default", bookmark: "intro" });
     });
 });

@@ -1,4 +1,13 @@
 .mobile-note-navigator {
+    --navigator-group-inset: 16px;
+    --navigator-group-radius: 6px;
+    --navigator-group-spacing: 16px;
+    --navigator-group-background: var(--card-background-color);
+    --navigator-row-padding: 16px;
+    --navigator-separator-color: var(--menu-item-delimiter-color);
+    --navigator-separator-inset: 0px;
+    --navigator-pressed-background: color-mix(in srgb, var(--main-text-color) 10%, transparent);
+    --navigator-active-indicator-color: var(--main-text-color);
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -22,6 +31,55 @@
     --badge-radius: 12px;
     --color: var(--input-background-color);
     color: var(--main-text-color);
+}
+
+.mobile-navigator-workspaces {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-inline: var(--navigator-group-inset);
+}
+
+.mobile-navigator-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 16px 8px 12px;
+    border: 0;
+    border-radius: var(--navigator-group-radius);
+    background: var(--navigator-group-background);
+    color: var(--main-text-color);
+    font: inherit;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active {
+        background-image: linear-gradient(var(--navigator-pressed-background), var(--navigator-pressed-background));
+    }
+}
+
+.mobile-navigator-workspace-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 2.2em;
+
+    .has-color & {
+        background: var(--color);
+    }
+}
+
+.mobile-navigator-workspace-title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9em;
 }
 
 .mobile-navigator-hoisted-badge .text {
@@ -90,7 +148,8 @@
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     overscroll-behavior: contain;
-    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(var(--navigator-group-spacing) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    mask-image: linear-gradient(to bottom, transparent, #000 var(--navigator-group-spacing));
 }
 
 .mobile-navigator-scroll.is-pending .mobile-navigator-body {
@@ -108,12 +167,18 @@
     pointer-events: none;
 }
 
+.mobile-navigator-current-tile,
+.mobile-navigator-list {
+    margin-inline: var(--navigator-group-inset);
+    border-radius: var(--navigator-group-radius);
+    background: var(--navigator-group-background);
+}
+
 .mobile-navigator-current-tile {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--main-border-color);
+    padding: 14px var(--navigator-row-padding);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -129,7 +194,7 @@
 }
 
 .mobile-navigator-children-label {
-    padding: 14px 16px 6px;
+    padding: var(--navigator-group-spacing) var(--navigator-group-inset) 6px;
     font-size: 0.75em;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -150,8 +215,26 @@
     font-size: 1.3em;
 }
 
-.mobile-navigator-current-title {
+.mobile-navigator-title-group {
+    display: flex;
     flex: 1 1 auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mobile-navigator-indicator {
+    flex: 0 0 auto;
+    color: var(--muted-text-color, var(--main-text-color));
+    opacity: 0.8;
+
+    &.clone-indicator {
+        opacity: 0.5;
+    }
+}
+
+.mobile-navigator-current-title {
+    flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -220,7 +303,7 @@
 
 /* Collapse the whole preview (and its flex gap) when the rendered content is empty,
    so pure folders don't show a blank row beneath the title. */
-.mobile-navigator-current-tile:has(.note-book-content-ready:empty) .mobile-navigator-current-preview {
+.mobile-navigator-current-tile:has(.mobile-navigator-preview-slot:not([hidden]) > .note-book-content-ready:empty) .mobile-navigator-current-preview {
     display: none;
 }
 
@@ -237,35 +320,54 @@
 .mobile-navigator-list {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.mobile-navigator-current-tile + .mobile-navigator-list {
+    margin-block-start: var(--navigator-group-spacing);
 }
 
 .mobile-navigator-row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
     min-height: 48px;
-    padding: 10px 14px;
+    padding: 10px var(--navigator-row-padding);
     color: var(--main-text-color);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 
-    &:not(:last-of-type) {
-        border-bottom: 1px solid var(--main-border-color);
+    &:not(:last-of-type)::after {
+        content: "";
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline: var(--navigator-separator-inset) 0;
+        height: 1px;
+        background: var(--navigator-separator-color);
     }
 }
 
 .mobile-navigator-row:active {
-    background: var(--hover-item-background-color);
+    background: var(--navigator-pressed-background);
 }
 
-.mobile-navigator-row.is-active {
-    border-inline-start: 3px solid var(--main-text-color);
-    padding-inline-start: 11px;
+.mobile-navigator-row.is-active::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--navigator-active-indicator-color);
 }
 
 .mobile-navigator-row.is-archived {
     opacity: 0.55;
+}
+
+.mobile-navigator-row.is-spotlighted .mobile-navigator-row-title {
+    font-style: italic;
 }
 
 /* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
@@ -281,23 +383,13 @@
     cursor: progress;
 }
 
-.mobile-navigator-preloader {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    pointer-events: none;
-    visibility: hidden;
-}
-
 .mobile-navigator-row-icon {
     flex: 0 0 auto;
     font-size: 1.2em;
 }
 
 .mobile-navigator-row-title {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -308,6 +400,12 @@
     flex: 0 0 auto;
     font-size: 1.4em;
     opacity: 0.5;
+}
+
+.mobile-navigator-row-count {
+    flex: 0 0 auto;
+    color: var(--muted-text-color, var(--main-text-color));
+    font-variant-numeric: tabular-nums;
 }
 
 .mobile-navigator-row-hidden-badge {

@@ -28,8 +28,6 @@
     "help_on_links": "Segítség a linkekhez",
     "note": "Jegyzet",
     "search_note": "név szerinti jegyzetkeresés",
-    "link_title_mirrors": "A link cím tükrözi a jegyzet aktuális címét",
-    "link_title_arbitrary": "link cím önkényesen módosítható",
     "link_title": "Link cím",
     "button_add_link": "Link hozzáadása"
   },
@@ -41,7 +39,6 @@
   },
   "bulk_actions": {
     "bulk_actions": "Tömeges akciók",
-    "affected_notes": "Érintett jegyzetek",
     "labels": "Címkék",
     "relations": "Kapcsolatok",
     "notes": "Jegyzetek"

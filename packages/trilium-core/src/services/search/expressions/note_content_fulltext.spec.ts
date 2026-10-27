@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
@@ -120,6 +120,43 @@ describe("fuzzy fallback for note body content (A4)", () => {
         exp.execute(new NoteSet([note]), {}, searchContext);
 
         expect(searchContext.contentMatches.get(note.noteId)?.tier).toBe("fuzzy");
+    });
+});
+
+describe("content read from the database", () => {
+    beforeEach(() => {
+        becca.reset();
+        new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
+        new BBranch({ branchId: "none_root", noteId: "root", parentNoteId: "none", notePosition: 10 });
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("reads only the notes of the input set", () => {
+        const [ inSet, outOfSet ] = [ "inside", "outside" ].map((title) => getContext().init(() =>
+            noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content: `<p>scoped marker ${title}</p>`,
+                type: "text"
+            }).note));
+
+        const sql = getSql();
+        const iterateRows = sql.iterateRows.bind(sql);
+        const readNoteIds = new Set<string>();
+        vi.spyOn(sql, "iterateRows").mockImplementation(function* (query, params) {
+            for (const row of iterateRows<{ noteId: string }>(query, params)) {
+                readNoteIds.add(row.noteId);
+                yield row as never;
+            }
+        });
+
+        const exp = new NoteContentFulltextExp("*=*", { tokens: [ "scoped marker" ] });
+        const result = exp.execute(new NoteSet([ inSet ]), {}, new SearchContext());
+
+        expect(result.notes.map((note) => note.noteId)).toEqual([ inSet.noteId ]);
+        expect([ ...readNoteIds ]).toEqual([ inSet.noteId ]);
+        expect(readNoteIds.has(outOfSet.noteId)).toBe(false);
     });
 });
 

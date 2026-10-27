@@ -79,7 +79,7 @@ describe("MulticolumnUI", () => {
             const button = dropdown.buttonView;
             expect(button).toBeInstanceOf(SplitButtonView);
             expect([button.label, button.icon, button.tooltip])
-                .toEqual(["Multiple column layout", multicolumnIcon, true]);
+                .toEqual(["Columns", multicolumnIcon, true]);
             expect(dropdown.isEnabled).toBe(true);
             const focus = vi.spyOn(editor.editing.view, "focus");
 
@@ -137,7 +137,7 @@ describe("MulticolumnUI", () => {
 
             setModelData(menuEditor.model, "<paragraph>[]</paragraph>");
             const entry = openEntry();
-            expect(entry.label).toBe("Multiple column layout");
+            expect(entry.label).toBe("Columns");
             expect(entry.children?.map(child => entryOf(child).label))
                 .toEqual(["2 columns", "3 columns", "4 columns"]);
 

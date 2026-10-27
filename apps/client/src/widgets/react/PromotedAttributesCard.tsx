@@ -68,6 +68,13 @@ export interface PromotedAttributesCardProps {
     omitDrawn?: boolean;
     /** Called with the whole list after every change, for the caller to store. */
     onChange: (attributes: PromotedAttribute[]) => void;
+    /**
+     * Runs the deletion of a definition and its values, for a caller that keeps settings of its own
+     * for the attribute and must update them in the same write, such as the columns a board stores
+     * for a grouping. Without it, the card runs the deletion itself.
+     */
+    runDeletion?: (
+        deletion: () => Promise<void>, type: "label" | "relation", name: string) => Promise<void>;
 }
 
 /**
@@ -79,7 +86,7 @@ export interface PromotedAttributesCardProps {
  */
 export default function PromotedAttributesCard({
     heading, instruction, note, settings, drawnByCollection, itemNotes, unarrangedHidden, omitDrawn,
-    onChange
+    onChange, runDeletion
 }: PromotedAttributesCardProps) {
     const resolve = (stored: PromotedAttributeSetting[] | undefined) => resolvePromotedAttributes(
         note, stored, drawnByCollection, itemNotes, { unarrangedHidden })
@@ -235,9 +242,12 @@ export default function PromotedAttributesCard({
      */
     const erase = useCallback(async (definitionName: string) => {
         const [ type, name ] = extractAttributeDefinitionTypeAndName(definitionName);
-        await deleteAttributeInSubtree(note.noteId, type, name);
-        await removeOwnedAttributesByNameOrType(note, "label", definitionName);
-    }, [ note ]);
+        const deletion = async () => {
+            await deleteAttributeInSubtree(note.noteId, type, name);
+            await removeOwnedAttributesByNameOrType(note, "label", definitionName);
+        };
+        await (runDeletion ? runDeletion(deletion, type, name) : deletion());
+    }, [ note, runDeletion ]);
 
     /** Deletes the definition the editor was opened on. */
     const removeEdited = useCallback(async () => {

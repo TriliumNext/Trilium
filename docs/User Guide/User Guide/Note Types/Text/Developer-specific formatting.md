@@ -3,7 +3,7 @@
 
 Inline code formats text using a monospace font to indicate technical content in a sentence such as code, paths, etc.
 
-![](2_Developer-specific%20formatting_image.png)
+![](Developer-specific%20formatting_image.png)
 
 Example of inline code being used to illustrate file system paths as well as shell commands (`git` in this case).
 
@@ -17,7 +17,7 @@ To insert an inline code:
 
 Code blocks display a snippet of code as a dedicated block:
 
-![](1_Developer-specific%20formatting_image.png)
+![](1_Developer-specific%20formatting_image.jpg)
 
 A code block with JavaScript syntax highlight enabled.
 
@@ -29,7 +29,7 @@ See the dedicated documentation for more information: [Code blocks](Developer-s
 
 This allows marking a portion of text as a shortcut key.
 
-![](Developer-specific%20formatting_image.png)
+![](Developer-specific%20formatting_image.jpg)
 
 To apply this style, press the <span class="tn-icon cke cke-trilium-kbd"></span> button in <span class="tn-icon bx bx-text"></span> group from the [Formatting toolbar](Formatting%20toolbar.md). On the floating toolbar, the buttons appear when selecting a text.
 

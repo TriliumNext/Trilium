@@ -1,6 +1,9 @@
-import { ButtonView, Command, Plugin } from 'ckeditor5';
+import {
+    ButtonView, Command, findAttributeRange, IconPencil, LinkUI, ModelLiveRange, Plugin
+} from 'ckeditor5';
+import type { Editor, ModelRange } from 'ckeditor5';
 import internalLinkIcon from '../icons/trilium.svg?raw';
-import ReferenceLink from './referencelink';
+import ReferenceLink, { getReferenceTitle, referenceAttributes } from './referencelink';
 
 export const COMMAND_NAME = 'insertInternalLink';
 
@@ -39,6 +42,33 @@ export default class InternalLinkPlugin extends Plugin {
 			return view;
 		});
 	}
+
+    /** Replaces the `editLink` button of `LinkUI`, which opens the link form in the balloon. */
+    afterInit() {
+        const editor = this.editor;
+        const t = editor.t;
+        const command = editor.commands.get(COMMAND_NAME);
+        if (!editor.plugins.has(LinkUI) || !command) {
+            return;
+        }
+
+        // `_hideUI()` is private, and the only way to close the toolbar together with its listeners.
+        const linkUI = editor.plugins.get(LinkUI) as unknown as { _hideUI(updateFocus?: boolean): void };
+        editor.ui.componentFactory.add('editLink', locale => {
+            const button = new ButtonView(locale);
+            button.set({
+                label: t('Edit link'),
+                icon: IconPencil,
+                tooltip: true
+            });
+            button.bind('isEnabled').to(command, 'isEnabled');
+            this.listenTo(button, 'execute', () => {
+                linkUI._hideUI(false);
+                editor.execute(COMMAND_NAME);
+            });
+            return button;
+        });
+    }
 }
 
 class InsertInternalLinkCommand extends Command {
@@ -52,10 +82,97 @@ class InsertInternalLinkCommand extends Command {
     }
 
     execute() {
-        const editor = this.editor;
-        const editorEl = editor.editing.view.getDomRoot();
-        const component = glob.getComponentByEl(editorEl);
+        this.editor.config.get('internalLink')?.openDialog();
+    }
+}
 
-        component.triggerCommand('addLinkToText');
+/** The address and the whole text of the link around the selection, or `null` outside one. */
+export function getLinkAtSelection(editor: Editor): { href: string; text: string } | null {
+    const found = findLinkAtSelection(editor);
+    if (!found) {
+        return null;
+    }
+
+    let text = '';
+    for (const item of found.range.getItems()) {
+        if (item.is('$textProxy')) {
+            text += item.data;
+        }
+    }
+    return { href: found.href, text };
+}
+
+/**
+ * Replaces the link around the selection with `text` linking to `href`, keeping the formatting of
+ * its start, or with a reference to the note at `href` when `text` is `null`. A reference replaces
+ * the link once `getReferenceTitle()` resolves, in one undo step with the removal, and
+ * takes the caret along only if the user has not moved it in the meantime.
+ */
+export async function replaceLinkAtSelection(editor: Editor, href: string, text: string | null) {
+    const found = findLinkAtSelection(editor);
+    if (!found) {
+        return;
+    }
+
+    const model = editor.model;
+    if (text === null) {
+        const range = ModelLiveRange.fromRange(found.range);
+        const selection = model.document.selection;
+        let selectionMoved = false;
+        const onSelectionChange = (_event: unknown, data: { directChange: boolean }) => {
+            selectionMoved = data.directChange || selectionMoved;
+        };
+        selection.on('change:range', onSelectionChange);
+        try {
+            const title = await getReferenceTitle(editor, href);
+            if (range.root.rootName === '$graveyard') {
+                return;
+            }
+            model.change((writer) => {
+                const attributes = referenceAttributes(href, title);
+                const reference = writer.createElement('reference', attributes);
+                const start = range.start;
+                writer.remove(range);
+                writer.insert(reference, start);
+                if (!selectionMoved) {
+                    writer.setSelection(reference, 'after');
+                }
+            });
+        } finally {
+            selection.off('change:range', onSelectionChange);
+            range.detach();
+        }
+        return;
+    }
+
+    model.change((writer) => {
+        // A link ends where its attribute does, so its range starts at the boundary of a node.
+        const start = found.range.start;
+        const attributes = new Map(start.nodeAfter?.getAttributes());
+        writer.remove(found.range);
+        attributes.set('linkHref', href);
+        writer.insertText(text, attributes, start);
+        writer.setSelection(start.getShiftedBy(text.length));
+    });
+}
+
+function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange } | null {
+    const model = editor.model;
+    const selection = model.document.selection;
+    const href = selection.getAttribute('linkHref');
+    const position = selection.getFirstPosition();
+    if (typeof href !== 'string' || !position) {
+        return null;
+    }
+
+    return { href, range: findAttributeRange(position, 'linkHref', href, model) };
+}
+
+declare module 'ckeditor5' {
+    interface EditorConfig {
+        internalLink?: {
+            /** Opens the dialog that adds a link to a note at the selection, or edits the link there. */
+            openDialog(): void;
+        };
     }
 }

@@ -1,12 +1,4 @@
-.note-detail-markdown {
-    .note-detail-code-editor {
-        margin-top: 0 !important;
-
-        .cm-editor .cm-scroller {
-            padding-block: 0.25em;
-        }
-    }
-
+:is(.note-detail-markdown, .markdown-embed-content) {
     .markdown-preview {
         box-sizing: border-box;
         height: 100%;

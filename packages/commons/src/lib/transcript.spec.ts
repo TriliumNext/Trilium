@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     cleanUtteranceText, getSpeakerKey, getTranscriptionModel, getTranscriptionResources,
-    MAX_SPEAKER_NAME_LENGTH, parseTranscript, setSpeakerName,
+    markDisfluencies, MAX_SPEAKER_NAME_LENGTH, parseTranscript, setSpeakerName,
     type Transcript
 } from "./transcript.js";
 
@@ -71,6 +71,20 @@ describe("transcript", () => {
         ]) {
             expect(cleanUtteranceText(meant)).toBe(meant);
         }
+    });
+
+    it("marks the words the cleanup removes, keeping every word as it was said", () => {
+        const marked = (text: string) => markDisfluencies(text)
+            .map(({ text, isDisfluency }) => isDisfluency ? `[${text}]` : text)
+            .join(" ");
+        expect(marked("Uh the data is a bit old.")).toBe("[Uh] the data is a bit old.");
+        expect(marked("a good point, uh, because uh.")).toBe("a good point, [uh,] because [uh.]");
+        expect(marked("we have the uh the memory")).toBe("we have [the] [uh] the memory");
+        expect(marked("that was on the on the board")).toBe("that was [on] [the] on the board");
+        expect(marked("Because it's d as you can see")).toBe("Because it's [d] as you can see");
+        expect(marked("I know, I know.")).toBe("I know, I know.");
+        expect(marked("Uh.")).toBe("[Uh.]");
+        expect(markDisfluencies("  ")).toEqual([]);
     });
 
     it("matches words through the punctuation around them, in time linear in their length", () => {

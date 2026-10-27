@@ -59,6 +59,13 @@
     max-width: min(600px, calc(100vw - 10px));
 }
 
+/* `NARROW_LAYOUT` in services/utils.ts. */
+@media (max-width: 991px) {
+    body.mobile .note-autocomplete-menu.note-mention-menu {
+        width: calc(100vw - 10px);
+    }
+}
+
 .note-autocomplete-menu .dropdown-item {
     /* Outranks Bootstrap's `nowrap`, so a long note path wraps within the list's width. */
     white-space: normal;
@@ -128,6 +135,30 @@
             direction: ltr;
             unicode-bidi: isolate;
         }
+    }
+
+    body.mobile & {
+        > span:not([class]) {
+            align-items: center;
+        }
+
+        .note-suggestion-header {
+            flex-direction: column-reverse;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .note-suggestion-path {
+            flex: none;
+            min-width: 0;
+            text-align: start;
+            font-size: 0.75em;
+            line-height: 1.3;
+        }
+    }
+
+    body.mobile:not([dir=rtl]) & .note-suggestion-path {
+        text-align: left;
     }
 
     .note-suggestion-description {

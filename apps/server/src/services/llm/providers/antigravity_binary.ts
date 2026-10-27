@@ -20,7 +20,7 @@ import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { promisify } from "util";
 
-import { cachedProbe, findOnPath } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -92,5 +92,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error(`Google's Antigravity ACP server (agy_acp_server) was not found. Put the folder it was unpacked into on PATH, or set the TRILIUM_ANTIGRAVITY_ACP_PATH environment variable to the executable. ${SETUP_HINT}`);
+    throw new Error(await describeFlatpakSandbox("Google Antigravity ACP server") ?? `Google's Antigravity ACP server (agy_acp_server) was not found. Put the folder it was unpacked into on PATH, or set the TRILIUM_ANTIGRAVITY_ACP_PATH environment variable to the executable. ${SETUP_HINT}`);
 }

@@ -85,6 +85,14 @@ describe("dispatchMessage", () => {
         await ws.dispatchMessage({ type: "reload-frontend", reason: "x" } as WebSocketMessage);
         expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("reload"));
 
+        const { default: froca } = await import("./froca.js");
+        const reloadAllSpy = vi.spyOn(froca, "reloadAll").mockImplementation(async () => {});
+        utilsCtrl.reloadFrontendApp.mockClear();
+        await ws.dispatchMessage({ type: "reload-froca", reason: "consistency checks" } as WebSocketMessage);
+        expect(reloadAllSpy).toHaveBeenCalledTimes(1);
+        expect(appCtx.triggerEvent).toHaveBeenCalledWith("frocaReloaded", {});
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
+
         await ws.dispatchMessage({ type: "sync-hash-check-failed", sectors: ["blobs/9"] } as any);
         expect(toast.showErrorTitleAndMessage).toHaveBeenCalledTimes(1);
 
@@ -189,7 +197,7 @@ describe("frontend-update / executeFrontendUpdate", () => {
         (window as any).glob.isDev = false;
 
         await ws.dispatchMessage({ type: "frontend-update", data: { entityChanges: [{ id: 101, entityName: "notes", entityId: "nA" }] } } as any);
-        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalled();
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("boom"));
     });
 
     it("shows a toast instead of reloading when debug mode is enabled", async () => {
@@ -224,6 +232,63 @@ describe("frontend-update / executeFrontendUpdate", () => {
         // first consumer (held) processed q1; the second consumer drained q2+q3;
         // the third consumer found nothing left -> only 2 real processing calls
         expect(frocaUpdater.processEntityChanges).toHaveBeenCalledTimes(2);
+    });
+
+    it("runs a froca rebuild and entity changes one after the other, in either order", async () => {
+        const ws = await loadWs();
+        const { default: froca } = await import("./froca.js");
+        const settle = () => new Promise((res) => setTimeout(res, 0));
+        const update = (id: number) => ws.dispatchMessage({
+            type: "frontend-update", data: { entityChanges: [{ id, entityName: "notes", entityId: `r${id}` }] }
+        } as any);
+        const rebuild = () => ws.dispatchMessage({ type: "reload-froca", reason: "test" } as WebSocketMessage);
+
+        let finishRebuild = () => {};
+        const reloadAll = vi.spyOn(froca, "reloadAll")
+            .mockImplementationOnce(() => new Promise<void>((res) => { finishRebuild = res; }))
+            .mockResolvedValue(undefined);
+        const firstRebuild = rebuild();
+        await settle();
+        const updateDuringRebuild = update(301);
+        await settle();
+        expect(frocaUpdater.processEntityChanges).not.toHaveBeenCalled();
+        finishRebuild();
+        await Promise.all([ firstRebuild, updateDuringRebuild ]);
+        expect(frocaUpdater.processEntityChanges).toHaveBeenCalledTimes(1);
+
+        let finishUpdate = () => {};
+        frocaUpdater.processEntityChanges
+            .mockImplementationOnce(() => new Promise<void>((res) => { finishUpdate = res; }));
+        const heldUpdate = update(302);
+        await settle();
+        const rebuildDuringUpdate = rebuild();
+        await settle();
+        expect(reloadAll).toHaveBeenCalledTimes(1);
+        finishUpdate();
+        await Promise.all([ heldUpdate, rebuildDuringUpdate ]);
+        expect(reloadAll).toHaveBeenCalledTimes(2);
+    });
+
+    it("falls back to a full reload when a rebuild fails, and still applies the changes queued behind it", async () => {
+        const ws = await loadWs();
+        const { default: froca } = await import("./froca.js");
+        let failRebuild = (_error: Error) => {};
+        vi.spyOn(froca, "reloadAll")
+            .mockImplementationOnce(() => new Promise<void>((_res, rej) => { failRebuild = rej; }));
+
+        const failingRebuild = ws.dispatchMessage({ type: "reload-froca", reason: "test" } as WebSocketMessage);
+        await new Promise((res) => setTimeout(res, 0));
+        const queuedUpdate = ws.dispatchMessage({
+            type: "frontend-update", data: { entityChanges: [{ id: 401, entityName: "notes", entityId: "f1" }] }
+        } as any);
+        failRebuild(new Error("tree request failed"));
+
+        await expect(queuedUpdate).resolves.toBeUndefined();
+        expect(frocaUpdater.processEntityChanges).toHaveBeenCalledWith([
+            expect.objectContaining({ id: 401 })
+        ]);
+        await failingRebuild;
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("tree request failed"));
     });
 });
 

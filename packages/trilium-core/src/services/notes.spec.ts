@@ -209,6 +209,20 @@ describe("notes service (real DB)", () => {
             }
         });
 
+        it("refuses a forced noteId that belongs to an existing note", () => {
+            const { note } = createNote("root", { title: "spec-existing", content: "<p>keep</p>" });
+
+            expect(() => createNote("root", { noteId: note.noteId, title: "spec-overwrite", content: "x" }))
+                .toThrow(ValidationError);
+            expect(becca.getNoteOrThrow(note.noteId).title).toBe("spec-existing");
+            expect(getContext().init(() => note.getContent())).toBe("<p>keep</p>");
+            expect(note.getParentNotes().map((parent) => parent.noteId)).toStrictEqual([ "root" ]);
+
+            expect(() => createNote("root", { noteId: "root", title: "spec-root" })).toThrow(/already exists/);
+            expect(becca.getNoteOrThrow("root").title).not.toBe("spec-root");
+            expect(becca.getBranch("root_root")).toBeNull();
+        });
+
         it("inherits the template's mime and adds a template relation when creating from a template", () => {
             const template = createNote("root", { title: "spec-template", content: "<p>tmpl</p>" });
             // Give the template a non-default mime so we can verify inheritance.
@@ -350,6 +364,39 @@ describe("notes service (real DB)", () => {
             expect(note.type).toBe("code");
             expect(note.mime).toBe("text/x-python");
             expect(note.getContent()).toBe("print('hi')");
+        });
+
+        it("titles a note from its template's #template:titleTemplate before the parent's #titleTemplate", () => {
+            const templates = createNote("root", {
+                attributes: [
+                    { type: "label", name: "template:titleTemplate", value: "Folder ${parentNote.title}", isInheritable: true }
+                ]
+            });
+            const meeting = createNote(templates.note.noteId, {
+                attributes: [{ type: "label", name: "template:titleTemplate", value: "Meeting ${parentNote.title}" }]
+            });
+            const book = createNote(templates.note.noteId);
+            const plain = createNote("root");
+            const parent = createNote("root", {
+                title: "Q4",
+                attributes: [
+                    { type: "label", name: "titleTemplate", value: "Child of ${parentNote.title}" },
+                    { type: "relation", name: "child:template", value: meeting.note.noteId }
+                ]
+            });
+            const untitled = (templateNoteId?: string, title?: string) => createNote(parent.note.noteId, {
+                title, templateNoteId
+            }).note;
+
+            expect(untitled(undefined).title).toBe("Meeting Q4");
+            expect(untitled(book.note.noteId).title).toBe("Folder Q4");
+            expect(untitled(plain.note.noteId).title).toBe("Child of Q4");
+            expect(untitled(meeting.note.noteId, "Typed").title).toBe("Typed");
+
+            // A note created from Meeting and marked #template does not take Meeting's title along.
+            const instance = untitled(meeting.note.noteId);
+            getContext().init(() => instance.setLabel("template"));
+            expect(untitled(instance.noteId).title).toBe("Child of Q4");
         });
     });
 

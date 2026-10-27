@@ -73,9 +73,15 @@ export function parseSecuritySettings(raw: string): SecuritySettings {
  * operating system, and the browser build asks the browser.
  */
 export interface SecurityToggleApi {
-    /** Requests backend script execution be turned on or off. */
+    /**
+     * Requests backend script execution be turned on or off.
+     * @param enabled `true` to allow backend scripts to run, `false` to block them.
+     */
     setBackendScriptingEnabled(enabled: boolean): Promise<boolean>;
 
-    /** Requests the SQL console be turned on or off. */
+    /**
+     * Requests the SQL console be turned on or off.
+     * @param enabled `true` to enable the SQL console, `false` to disable it.
+     */
     setSqlConsoleEnabled(enabled: boolean): Promise<boolean>;
 }

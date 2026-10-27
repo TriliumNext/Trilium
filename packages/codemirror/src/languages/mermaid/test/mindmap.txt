@@ -1,0 +1,290 @@
+# Mindmap
+
+mindmap
+
+==>
+
+MindmapDiagram(DiagramName)
+
+# LineText1
+
+mindmap
+root
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1))
+
+# LineText2
+
+mindmap
+root
+ A
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2))
+
+# LineText3
+
+mindmap
+root
+ A
+  B
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText3))
+
+# LineText4
+
+mindmap
+root
+ A
+  B
+   C
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText3),Line(LineText4))
+
+# LineText5
+
+mindmap
+root
+ A
+  B
+   C
+    D
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText3),Line(LineText4),Line(LineText5))
+
+# Square
+
+mindmap
+id[I am a square]
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# RoundedSquare
+
+mindmap
+id(I am a rounded square)
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# Circle
+
+mindmap
+id((I am a circle))
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# Bang
+
+mindmap
+id))I am a bang((
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# Cloud
+
+mindmap
+id)I am a cloud(
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# Hexagon
+
+mindmap
+id{{I am a hexagon}}
+
+==>
+
+MindmapDiagram(DiagramName,Line(NodeId(LineText1),ShapedText(LineText1)))
+
+# IconLine
+
+mindmap
+Root
+ A
+ ::icon(fa fa-book)
+ B(B)
+ ::icon(mdi mdi-skull-outline)
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(IconLine(Icon,LineText2)),Line(NodeId(LineText2),ShapedText(LineText2)),Line(IconLine(Icon,LineText2)))
+
+# ClassLine
+
+mindmap
+Root
+ A[A]
+ :::urgent large
+ B(B)
+ C
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(NodeId(LineText2),ShapedText(LineText2)),Line(ClassLine(LineText2)),Line(NodeId(LineText2),ShapedText(LineText2)),Line(LineText2))
+
+# Shape at the start of a line
+
+mindmap
+  (root)
+
+==>
+
+MindmapDiagram(DiagramName,Line(ShapedText(LineText1)))
+
+# Tab indentation
+
+mindmap
+	root
+		child
+	  	grandchild
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText2))
+
+# Root on the diagram line (unsupported, parses as empty lines)
+
+mindmap root
+
+==>
+
+MindmapDiagram(DiagramName,Line,Line,Line,Line)
+
+# Lines starting with a hash
+
+mindmap
+  # x
+#x
+
+==>
+
+MindmapDiagram(DiagramName,Line,Line,Line)
+
+# Comment lines
+
+mindmap
+  root
+    %% a comment
+    child
+%% at column 0
+    other
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),LineComment,Line(LineText2),LineComment,Line(LineText2))
+
+# Directive below the root
+
+mindmap
+  root
+    %%{init: {"theme": "dark"}}%%
+    child
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Directive,Line(LineText2))
+
+# Multi-line directive
+
+mindmap
+  root
+  %%{
+    init: {"theme": "dark"}
+  }%%
+    child
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Directive,Line(LineText2))
+
+# Percent signs inside a node's text
+
+mindmap
+  root %% not a comment
+    child[50%% done]
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(NodeId(LineText2),ShapedText(LineText2)))
+
+# Comment after a shape
+
+mindmap
+  root
+    child[x] %% a comment
+    other[y] %%{init: {"theme": "dark"}}%%
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(NodeId(LineText2),ShapedText(LineText2)),LineComment,Line(NodeId(LineText2),ShapedText(LineText2)),LineComment)
+
+# Comment after a line starting with a hash
+
+mindmap
+  root
+#x
+    %% a comment
+    child
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line,LineComment,Line(LineText2))
+
+# Levels follow the nesting, not the indentation width
+
+mindmap
+  root
+    a
+        b
+    c
+      d
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText3),Line(LineText2),Line(LineText3))
+
+# Levels past the fifth start over
+
+mindmap
+root
+ A
+  B
+   C
+    D
+     E
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(LineText3),Line(LineText4),Line(LineText5),Line(LineText1))
+
+# Icon and class lines are not nodes
+
+mindmap
+root
+    a
+        ::icon(x)
+        :::big
+          b
+
+==>
+
+MindmapDiagram(DiagramName,Line(LineText1),Line(LineText2),Line(IconLine(Icon,LineText3)),Line(ClassLine(LineText3)),Line(LineText3))

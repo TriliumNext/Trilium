@@ -55,6 +55,39 @@ pnpm exec tsx scripts/flatpak/generate-sources.mts ../org.triliumnotes.Trilium
 commit. The pinned commit must be **pushed** — Flathub clones `TriliumNext/Trilium` at
 that SHA.
 
+To build and run the Flathub recipe locally, without touching the packaging repo:
+
+```sh
+pnpm desktop:flathub-build   # scripts/flatpak/build-local.mts
+pnpm desktop:flathub-start
+```
+
+`build-local.mts` renders the same manifest into `apps/desktop/out/flathub/` with two
+changes, and installs it through `org.flatpak.Builder` for the user:
+
+- **The git source becomes a `type: dir` source over the working tree**, so uncommitted
+  changes are built and nothing needs committing or pushing. `skip` matches exact relative
+  paths, not patterns, so the script lists every path `git ls-files -z --others --ignored
+  --directory` reports (~200: each `node_modules`, `dist`, …). `.git` stays in: the
+  manifest's `chore:update-build-info --from-commit` reads `git log`. That is also why a
+  **linked worktree is refused** — its `.git` file points outside the sandbox.
+- **The app ID becomes `org.triliumnotes.Trilium.Test`**, with its own launcher ("Trilium
+  Notes (Test)"), `~/.var/app` data and portal autostart entry. An earlier version
+  installed a `local` branch of the release's ID instead; that shadowed a system-wide
+  release's launcher and let a dev run rewrite the release's autostart entry. The build
+  commands install the desktop file, metainfo and icons under the release's name, and the
+  manifest's `rename-desktop-file`/`rename-appdata-file`/`rename-icon` rename them and the
+  IDs inside them.
+
+`generated-sources.json` is regenerated only when the working tree's lockfile changes.
+Without `flatpak-node-generator` on PATH, the generator runs on the Builder's Python from
+`~/.cache/flatpak-builder-tools`, moved to the CI pin when it differs, raising aiohttp
+3.10's 8190-byte header limit, which GitHub's release responses exceed. The script drops
+`SOURCE_DATE_EPOCH` (a Nix shell's 1980 would date the export older than the installed
+commit) and passes `--delete-build-dirs`: a failed build otherwise leaves a ~5 GB copy
+of the repo under `.flatpak-builder/build/`, which `pnpm scripts:test` then also collects.
+A full build takes about ten minutes.
+
 ## Settled decisions and why (do not relitigate without new facts)
 
 - **From source, not repackaged.** The AppImage-extract fallback (Zettlr-style) exists
@@ -251,5 +284,3 @@ build adjudicates it).
    + rounded corners), `<branding>` colors (leaf-green `#cfe8c0` light / `#254d18` dark;
    compare peers via `flathub.org/api/v2/appstream/<id>` → `.branding`), metainfo
    description refresh, and the `--no-playwright-browsers` flag worth filing upstream.
-   License stays `AGPL-3.0-only` until the repo reconciles package.json with the README's
-   v3+ grant.

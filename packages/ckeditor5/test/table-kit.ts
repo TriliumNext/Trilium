@@ -66,3 +66,17 @@ function cellMarkup(cell: CellSpec): string {
         (spec.rowspan ? ` rowspan="${spec.rowspan}"` : "");
     return `<tableCell${attributes}><paragraph>${spec.contents}</paragraph></tableCell>`;
 }
+
+/** Scrolls `figure` sideways to `left` and waits for its `scroll` event. */
+export async function scrollFigure(figure: HTMLElement, left: number) {
+    const scrolled = new Promise((resolve) => {
+        figure.addEventListener("scroll", resolve, { once: true });
+    });
+    figure.scrollLeft = left;
+    await scrolled;
+}
+
+/** The `scroll_fade.css` classes of `element`. */
+export function fadeClasses(element: Element) {
+    return [ ...element.classList ].filter((name) => name.startsWith("scroll-fade"));
+}

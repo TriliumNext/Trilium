@@ -21,6 +21,7 @@ There are also a few predefined columns:
     *   This simply counts the note and is affected by sorting.
 *   <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>, representing the unique ID used internally by Trilium
 *   The title of the note.
+*   _Created_ and _Modified_, the date and time the note was created and last modified. These columns are hidden by default and can't be edited; show them from the column context menu and click their header to sort by them.
 
 ## Interaction
 
@@ -70,25 +71,38 @@ There are multiple menus:
     *   Inserting a new child note for the selected row.
     *   Deleting the row.
 
+### Opening notes
+
+Hovering over a row shows an _Open_ button at the end of its title, which opens the note in quick edit. On a touch screen, the button is always visible.
+
+Clicking the title itself renames the note instead (see below). To open the note elsewhere:
+
+*   <kbd>Ctrl</kbd>+click or middle click the title to open the note in a new tab.
+*   <kbd>Shift</kbd>+click the title to open it in a new window.
+*   Right click the row to open the note in a new tab, split or window, or in quick edit.
+
 ### Editing data
 
 Simply click on a cell within a row to change its value. The change will not only reflect in the table, but also as an attribute of the corresponding note.
 
 *   The editing will respect the type of the promoted attribute, by presenting a normal text box, a number selector or a date selector for example.
-*   It also possible to change the title of a note.
+*   A boolean column shows a checkbox, which is checked or unchecked with a single click. A note without the label shows an unchecked box.
+*   It also possible to change the title of a note by clicking it.
 *   Editing relations is also possible
     *   Simply click on a relation and it will become editable. Enter the text to look for a note and click on it.
     *   To remove a relation, remove the title of the note from the text box and click outside the cell.
 
 ### Editing columns
 
-It is possible to edit a column by right clicking it and selecting _Edit column._ This will basically change the label/relation definition at the collection level.
+It is possible to edit a column by right clicking it and selecting _Edit column…_ This will basically change the label/relation definition at the collection level.
+
+Turn on _Multiple values_ to let each note hold several values in that column. The cell then shows them as chips (see [Multiple values](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) in Promoted Attributes). The same toggle is available when adding a column.
 
 If the _Name_ field of a column is changed, this will trigger a batch operation in which the corresponding label/relation will be renamed in all the children.
 
 ### Read-only tables
 
-On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) table, the cells can't be edited and the rows can't be dragged. The _New row_ and _New column_ buttons are hidden, and the context menus offer only what leaves the notes as they are: sorting and hiding columns, and opening the notes. Columns can still be resized and reordered, but the layout isn't saved.
+On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) table, the cells can't be edited and the rows can't be dragged. Clicking a note's title opens it in quick edit, so there's no _Open_ button. The _New row_ and _New column_ buttons are hidden, and the context menus offer only what leaves the notes as they are: sorting and hiding columns, and opening the notes. Columns can still be resized and reordered, but the layout isn't saved. The _Table properties_ dialog isn't available.
 
 ## Working with the data
 
@@ -97,7 +111,7 @@ On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md
 By default, the order of the notes matches the order in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. However, it is possible to sort the data by the values of a column:
 
 *   To do so, simply click on a column.
-*   To switch between ascending or descending sort, simply click again on the same column. The arrow next to the column will indicate the direction of the sort.
+*   To switch between ascending or descending sort, simply click again on the same column. The arrow next to the column will indicate the direction of the sort. On a column that isn't sorted, the arrow appears only while hovering over its header.
 *   To disable sorting and fall back to the original order, right click any column on the header and select _Clear sorting._
 
 ### Reordering and hiding columns
@@ -123,13 +137,11 @@ If the child notes of the collection also have their own child notes, then they 
 
 Next to the title of each element there will be a button to expand or collapse. By default, all items are expanded.
 
-Since nesting is not always desirable, it is possible to limit the nesting to a certain number of levels or even disable it completely. To do so, either:
+Since nesting is not always desirable, it is possible to limit the nesting to a certain number of levels or even disable it completely. To do so, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Table properties_ and set _Maximum nesting depth_ (under the _Included notes_ section), or set the `#maxNestingDepth` [label](../Advanced%20Usage/Attributes/Labels.md) of the collection:
 
-*   Go to <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and look for the _Max nesting depth_ section.
-    *   To disable nesting, type 0 and press Enter.
-    *   To limit to a certain depth, type in the desired number (e.g. 2 to only display children and sub-children).
-    *   To re-enable unlimited nesting, remove the number and press Enter.
-*   Manually set `maxNestingDepth` to the desired value.
+*   `0` disables nesting, showing only the children of the collection.
+*   `1` also shows their children, `2` the level below that, and so on.
+*   Removing the label shows every level again.
 
 Limitations:
 
@@ -137,7 +149,7 @@ Limitations:
 
 ## Limitations
 
-*   There is no support to filter the rows by a certain criteria. Consider using the table view in search for that use case.
+*   There is no support to filter the rows by a certain criteria. Consider using the table view in search for that use case; for example, `note.dateCreated >= TODAY-7` lists the notes created in the last week.
 
 ## Use in search
 

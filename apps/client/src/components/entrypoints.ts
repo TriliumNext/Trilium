@@ -90,6 +90,8 @@ export default class Entrypoints extends Component {
         const api = window.electronApi?.window;
         if (api) {
             api.setFullScreen(!api.isFullScreen());
+        } else if (document.fullscreenElement) {
+            document.exitFullscreen();
         } else {
             document.documentElement.requestFullscreen();
         }

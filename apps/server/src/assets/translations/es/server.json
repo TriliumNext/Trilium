@@ -216,7 +216,10 @@
     "desktop-title": "Escritorio",
     "security-title": "Seguridad",
     "database-title": "Base de datos",
-    "space-usage-title": "Uso de espacio"
+    "space-usage-title": "Uso de espacio",
+    "record-meeting-title": "Transcribir reunión",
+    "transcription-title": "Transcripción",
+    "resources-title": "Recursos descargados"
   },
   "notes": {
     "new-note": "Nueva nota",
@@ -288,7 +291,9 @@
     "page-navigation": "Páginas anterior y siguiente",
     "hidden-subpages_one": "{{count}} subpágina que está oculta en el árbol",
     "hidden-subpages_many": "{{count}} subpáginas que están ocultas en el árbol",
-    "hidden-subpages_other": "{{count}} subpáginas que están ocultas en el árbol"
+    "hidden-subpages_other": "{{count}} subpáginas que están ocultas en el árbol",
+    "previous-tabs": "Desplazarse a las pestañas anteriores",
+    "next-tabs": "Desplazarse a las pestañas siguientes"
   },
   "keyboard_action_names": {
     "jump-to-note": "Saltar a...",
@@ -563,5 +568,38 @@
     "detail": "Primero se le ofrecerá una copia de seguridad de su base de conocimientos actual. No se elimina nada hasta que elija crear una nueva base de conocimientos, restaurar una copia de seguridad o sincronizar desde otro dispositivo.\n\nNo continúe si se lo ha pedido un script o una nota desconocida.",
     "cancel": "Cancelar",
     "confirm": "Reiniciar y empezar de nuevo"
+  },
+  "transcription": {
+    "already-recording": "Ya se está transcribiendo una reunión.",
+    "note-not-found": "La nota de la reunión ya no existe.",
+    "start-failed": "No se ha podido iniciar la transcripción: {{- message}}",
+    "stopped-unexpectedly": "La transcripción se ha detenido de forma inesperada. Se conserva lo transcrito hasta ese momento.",
+    "save-locked": "No se puede guardar la transcripción mientras la sesión protegida está bloqueada. La transcripción la conserva y la guarda cuando entre en la sesión protegida, siempre que Trilium siga abierto.",
+    "save-failed": "No se ha podido guardar la transcripción: {{- message}} La transcripción la conserva y lo vuelve a intentar con la frase siguiente.",
+    "capture-lost": "La transcripción se ha detenido porque ya no se podía capturar el audio. Se conserva lo transcrito hasta ese momento.",
+    "attachment-title": "Transcripción",
+    "model-not-downloaded": "El modelo de reconocimiento de voz todavía no se ha descargado. Inicie una grabación desde el lanzador para descargarlo.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, alta precisión",
+    "recognizer-description": "Un modelo de reconocimiento de voz de NVIDIA que admite 25 idiomas europeos. El reconocimiento se ejecuta por completo en este dispositivo, de modo que sus grabaciones no salen de él.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Se usa para detectar el habla en el audio, de modo que solo se transcriben las partes con habla.",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "Se usa para distinguir a los interlocutores, de modo que pueda ver quién dijo qué en la transcripción."
+  },
+  "resources": {
+    "unknown": "No hay ningún recurso llamado {{id}}.",
+    "http-error": "La descarga de {{name}} ha fallado con el estado HTTP {{status}}.",
+    "size-mismatch": "{{name}} no tiene el tamaño esperado.",
+    "hash-mismatch": "{{name}} no coincide con su suma de comprobación esperada, así que se ha descartado.",
+    "delete-while-downloading": "Se está descargando {{- title}}. Cancele la descarga antes de eliminarlo.",
+    "not-foreign": "{{- name}} no es una entrada no utilizada de la carpeta de recursos.",
+    "stalled": "La descarga de {{name}} se ha detenido: no ha llegado nada durante {{seconds}} segundos. Compruebe la conexión e inténtelo de nuevo."
+  },
+  "share_target": {
+    "default-title": "Contenido compartido",
+    "nothing-to-share": "Nada que compartir: no se ha recibido texto, enlace ni archivos.",
+    "rejected": "Uso compartido rechazado: {{- reason}}",
+    "other-page": "Solo el menú de compartir del sistema puede enviar contenido a esta dirección."
   }
 }

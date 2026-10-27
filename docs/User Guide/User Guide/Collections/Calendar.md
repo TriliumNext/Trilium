@@ -94,10 +94,11 @@ In the <a class="reference-link" href="Collection%20Properties.md">Collection P
 
 *   Hide weekends from the week view.
 *   Display week numbers on the calendar.
+*   Hide routine events from the month, year and list views (see [Hiding routine events](#hiding-routine-events)).
 *   Set the slot duration (the length of each time row in day/week view).
 *   Set the slot label interval (how often time labels appear on the axis in day/week view).
 
-The same settings, together with whether archived notes are shown, are also listed under _General_ in the <span class="tn-icon bx bx-cog"></span> _Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it). The time slots are listed there whichever view the calendar is in.
+The same settings are also listed under _General_ in the <span class="tn-icon bx bx-cog"></span> _Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it). The time slots are listed there whichever view the calendar is in. Its _Included notes_ section sets whether archived notes are shown and how deep the calendar looks for events (see [Limiting the depth](#limiting-the-depth)).
 
 ### Event templates
 
@@ -121,6 +122,8 @@ Events can show the values of their attributes below their title, in the month v
 
 The dates, times and recurrence of the events are not listed, as the calendar always shows them itself.
 
+To change an attribute's value without opening the event, right-click the event (or long-press it on a phone) and use the _Attributes_ section of its context menu. It lists the shown attributes of the “checkbox”, “select” and “date” types, and works as on a [Kanban Board](Kanban%20Board.md).
+
 If an event has a `#calendar:displayedAttributes` label, including one inherited from the calendar, the attributes listed in that label are shown instead.
 
 ## Configuring the calendar using attributes
@@ -142,6 +145,10 @@ The following attributes can be added to the Collection type:
         <tr>
             <td><code>#calendar:weekNumbers</code></td>
             <td>When present (regardless of value), it will show the number of the week on the calendar.</td>
+        </tr>
+        <tr>
+            <td><code>#calendar:hideRoutineEvents</code></td>
+            <td>When present (regardless of value), it will hide routine events from the month, year and list views. See <a href="#hiding-routine-events">Hiding routine events</a>.</td>
         </tr>
         <tr>
             <td><code>#calendar:initialDate</code></td>
@@ -212,6 +219,10 @@ This will result in:
 
 When not used in a Journal, the calendar is recursive. That is, it will look for events not just in its child notes but also in the children of these child notes.
 
+### Limiting the depth
+
+To limit how deep the calendar looks for events, set _Maximum nesting depth_ under _Included notes_ in the <span class="tn-icon bx bx-cog"></span>_Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it), or the `#maxNestingDepth` label: `0` shows only the child notes, `1` adds their children, and so on. Without a value, events are looked for at every level. The setting doesn't apply in a Journal.
+
 ## Recurrence
 
 The built in calendar view also supports repeating tasks (e.g. every week, every month as well as more complex recurrency rules).
@@ -242,6 +253,23 @@ Also note that the recurrence label can be made promoted as with the start and e
 
 > [!WARNING]
 > If the recurrence string is not valid, a toast will be shown with the note ID and title of the note with the erroneous recurrence message. This note will not be added to the calendar
+
+### Hiding routine events
+
+Events that repeat on most days of the week, such as sleep or working hours, fill every cell of the month view. To hide them from the views that show many days at once, check _Hide routine events_ in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> (or set `#calendar:hideRoutineEvents`).
+
+An event counts as routine when it has a start time and repeats on 4 or more days a week on average, for example:
+
+| Event | Days a week | Hidden from the month, year and list views |
+| --- | --- | --- |
+| Every day from 23:00 to 07:00 | 7 | Yes |
+| Monday to Friday from 09:00 to 17:00 | 5 | Yes |
+| Every other day at 07:00 | 3.5 | No |
+| Monday, Wednesday and Friday at 18:00 | 3 | No |
+| Every day, without a start time | 7 | No, as it lasts the whole day |
+| Every month or every year | — | No |
+
+The day and week views always show routine events. To show them everywhere again, uncheck the option.
 
 ## Customizing the slot duration and label interval
 

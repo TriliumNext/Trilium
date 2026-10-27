@@ -18,6 +18,7 @@ import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
 import appContext, { type EventData, type EventListener } from "./app_context.js";
 import Component from "./component.js";
+import type { HistoryEntry } from "./tab_manager.js";
 
 export interface SetNoteOpts {
     triggerSwitchEvent?: unknown;
@@ -26,6 +27,8 @@ export interface SetNoteOpts {
     keepActiveDialog?: boolean;
     /** If true, the note is not added to the recent notes, as for an included note being edited. */
     skipRecentNotes?: boolean;
+    /** The `switchToHistoryEntry()` call that shows the note. Pinned tabs pass it on. */
+    historyEntry?: HistoryEntry;
 }
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
@@ -58,6 +61,9 @@ const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
     "presentation",
     "table"
 ];
+
+/** View scope keys that hold the context's own state rather than what a navigation asks for. */
+const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
 export interface NoteContextDataMap {
     toc: HeadingContext;
@@ -101,6 +107,8 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the code editor of the note, so the status bar can show the cursor position. */
+    codeEditor: CodeMirror;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,
      * so the note detail can show a loading state instead of the previous note's content. */
     contentLoad: {
@@ -186,8 +194,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return;
         }
 
-        const isSameView = utils.areObjectsEqual(this.viewScope, viewScope);
-        if (this.notePath === resolvedNotePath && isSameView) {
+        if (this.notePath === resolvedNotePath && isSameViewScope(this.viewScope, viewScope)) {
             return this;
         }
 
@@ -197,7 +204,8 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return appContext.tabManager.openContextWithNote(resolvedNotePath, {
                 activate: true,
                 viewScope,
-                hoistedNoteId: this.hoistedNoteId
+                hoistedNoteId: this.hoistedNoteId,
+                historyEntry: opts.historyEntry
             });
         }
 
@@ -398,7 +406,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
     /** @returns {Promise<boolean>} */
     async isReadOnly() {
-        if (this?.viewScope?.readOnlyTemporarilyDisabled) {
+        if (this?.viewScope?.readOnlyTemporarilyDisabled && this.note?.isContentWritable !== false) {
             return false;
         }
 
@@ -416,7 +424,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        if (options.is("databaseReadonly")) {
+        if (options.is("databaseReadonly") || !this.note.isContentWritable) {
             return true;
         }
 
@@ -466,15 +474,25 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             const noteRow = loadResults.getEntityRow("notes", this.noteId);
 
             if (noteRow.isDeleted) {
-                this.noteId = null;
-                this.notePath = null;
-
-                this.triggerEvent("noteSwitched", {
-                    noteContext: this,
-                    notePath: this.notePath
-                });
+                this.clearRemovedNote();
             }
         }
+    }
+
+    frocaReloadedEvent() {
+        if (this.noteId && !(this.noteId in froca.notes)) {
+            this.clearRemovedNote();
+        }
+    }
+
+    private clearRemovedNote() {
+        this.noteId = null;
+        this.notePath = null;
+
+        this.triggerEvent("noteSwitched", {
+            noteContext: this,
+            notePath: this.notePath
+        });
     }
 
     hasNoteList() {
@@ -682,6 +700,20 @@ export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | J
     } else {
         appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
+}
+
+/**
+ * Whether navigating with `requested` shows what `current` already shows. Ignores the
+ * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
+ */
+function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
+    return utils.areObjectsEqual(
+        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
+}
+
+function getNavigationTarget(viewScope: ViewScope) {
+    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
+        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }
 
 export default NoteContext;

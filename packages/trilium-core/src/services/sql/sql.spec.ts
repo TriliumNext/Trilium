@@ -5,8 +5,8 @@ import { getLog } from "../log.js";
 import { getSql } from "./index.js";
 import { SqlService, type SqlServiceParams } from "./sql.js";
 
-// happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
-const isBrowserRuntime = typeof window !== "undefined";
+// Standalone runs core in a Web Worker, whose scope has `self`; the Node server suite has none.
+const isBrowserRuntime = typeof self !== "undefined";
 
 let tableCounter = 0;
 

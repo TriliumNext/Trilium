@@ -34,6 +34,7 @@ import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js"
 import type { ItemPickerDialogOptions } from "../widgets/dialogs/item_picker.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
+import type { PaneId, PaneMode } from "../widgets/react/peek_pane.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
 import type { ToolCall } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import Component from "./component.js";
@@ -167,8 +168,6 @@ export type CommandMappings = {
     showPromptDialog: PromptDialogOptions;
     /** Opens the dialog that lets guests of the note's shared page edit it. */
     showShareEditDialog: { note: FNote };
-    /** Saves what the text editor still holds, now; `EditableText` answers it. */
-    saveNoteDetailNow: CommandData;
     showItemPickerDialog: ItemPickerDialogOptions;
     showNotePickerDialog: NotePickerDialogOptions;
     showInfoDialog: InfoProps;
@@ -390,6 +389,7 @@ export type CommandMappings = {
     insertDateTimeToText: CommandData;
     pasteMarkdownIntoText: CommandData;
     cutIntoNote: CommandData;
+    saveNoteDetailNow: CommandData;
     addIncludeNoteToText: CommandData;
     editReadOnlyNote: CommandData;
     toggleRibbonTabClassicEditor: CommandData;
@@ -432,6 +432,7 @@ export type CommandMappings = {
     openDevTools: CommandData;
     findInText: CommandData & { searchTerms?: string[] };
     toggleLeftPane: CommandData;
+    peekLeftPane: CommandData;
     toggleFullscreen: CommandData;
     zoomOut: CommandData;
     zoomIn: CommandData;
@@ -477,6 +478,11 @@ type EventMappings = {
     frocaReloaded: {};
     setLeftPaneVisibility: {
         leftPaneVisible: boolean | null;
+    }
+    /** Raised by a side pane after it is closed, peeked or docked. See `peek_pane.ts`. */
+    paneModeChanged: {
+        pane: PaneId;
+        mode: PaneMode;
     }
     protectedSessionStarted: {};
     notesReloaded: {
@@ -576,6 +582,8 @@ type EventMappings = {
     };
     /** Opens the properties dialog of a board or calendar, which only the view itself can show. */
     showCollectionProperties: { ntxId: string | null | undefined; };
+    /** Opens the properties dialog of a template note. */
+    showTemplateProperties: { noteId: string; };
     tabReorder: {
         ntxIdsInOrder: string[];
     };
@@ -811,7 +819,7 @@ function registerWindowHandlers(appContext: AppContext) {
         const { notePath, ntxId, viewScope, searchString } = linkService.parseNavigationStateFromUrl(window.location.href);
 
         if (notePath || ntxId) {
-            appContext.tabManager.switchToNoteContext(ntxId, notePath, viewScope);
+            appContext.tabManager.switchToHistoryEntry(ntxId, notePath, viewScope);
         } else if (searchString) {
             appContext.triggerCommand("searchNotes", { searchString });
         }

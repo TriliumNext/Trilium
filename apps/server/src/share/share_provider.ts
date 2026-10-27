@@ -1,12 +1,12 @@
 import { initShare } from "@triliumnext/core/src/share/index.js";
-import { readFileSync } from "fs";
+import { readFileSync, statSync } from "fs";
 import { join } from "path";
 
 import { isScriptingEnabled } from "../services/scripting_guard.js";
 import { getResourceDir } from "../services/utils.js";
 import sql, { isShareDbReady } from "./sql.js";
 
-const templateCache: Map<string, string> = new Map();
+const templateCache = new Map<string, { template: string; modified: number }>();
 let registered = false;
 
 /**
@@ -28,23 +28,21 @@ export function registerShareProvider() {
     registered = true;
 }
 
-/** Reads a template of the share theme, from disk on every call in development so edits show at once. */
+/**
+ * Reads a template of the share theme once. In development it reads the file again once its
+ * modification time changes, so edits show at once.
+ */
 function readTemplate(name: string) {
     const path = getDefaultTemplatePath(name);
-    if (process.env.NODE_ENV === "development") {
-        return readFileSync(path, "utf-8");
+    const modified = process.env.NODE_ENV === "development" ? statSync(path).mtimeMs : 0;
+    const cached = templateCache.get(path);
+    if (cached?.modified === modified) {
+        return cached.template;
     }
 
-    const cachedTemplate = templateCache.get(path);
-
-    if (cachedTemplate) {
-        return cachedTemplate;
-    }
-
-    const templateString = readFileSync(path, "utf-8");
-    templateCache.set(path, templateString);
-
-    return templateString;
+    const template = readFileSync(path, "utf-8");
+    templateCache.set(path, { template, modified });
+    return template;
 }
 
 function getDefaultTemplatePath(template: string) {

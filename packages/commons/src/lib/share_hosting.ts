@@ -18,6 +18,15 @@ export const SHARE_HOSTED_NOTE_TYPES: readonly string[] = [
 ];
 
 /**
+ * The CodeMirror themes of the code notes on a shared page, one per share theme mode. `key` is
+ * the prefix of the class names of the tokens, `scope` the selector the CSS of the theme is under.
+ */
+export const SHARE_CODE_PREVIEW_THEMES: readonly { id: string; key: string; scope: string }[] = [
+    { id: "vs-code-light", key: "l", scope: ":where(html.theme-light)" },
+    { id: "vs-code-dark", key: "d", scope: ":where(html.theme-dark)" }
+];
+
+/**
  * Returns `names` and every group they require in `requires`, directly or through the groups
  * they require, each once.
  */

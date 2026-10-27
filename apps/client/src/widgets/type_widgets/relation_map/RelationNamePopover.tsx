@@ -59,7 +59,7 @@ export default function RelationNamePopover({ anchor, defaultValue, onAnswer }: 
         >
             <div className="relation-name-header">
                 <span className="relation-name-heading">
-                    {isRename ? t("relation_map.rename_relation") : t("relation_map.new_relation")}
+                    {isRename ? t("relation_map.rename_relation_heading") : t("relation_map.new_relation")}
                 </span>
                 <ActionButton icon="bx bx-x" text={t("modal.close")} onClick={cancel} />
             </div>

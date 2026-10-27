@@ -38,7 +38,6 @@
         "sync-from-desktop-warning": "Pastikan kedua perangkat berada di jaringan yang sama.",
         "sync-from-desktop-waiting": "Menunggu koneksi...",
         "advanced-options": "Opsi lanjutan",
-        "sync-failed": "Sinkronisasi gagal: {{- message}}",
         "server-host": "Alamat server Trilium",
         "server-host-placeholder": "https://<hostname>:<port>",
         "server-password": "Kata sandi",

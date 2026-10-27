@@ -1,31 +1,47 @@
-import options from "./options.js";
 import Split from "@triliumnext/split.js";
+
+import type { PaneMode } from "../widgets/react/peek_pane.js";
+import options from "./options.js";
 
 export const DEFAULT_GUTTER_SIZE = 5;
 
 let leftPaneWidth: number;
-let reservedPx: number;
 let layoutOrientation: string;
 let leftInstance: ReturnType<typeof Split> | null;
+let leftRafId: number | undefined;
 
 const noteSplitMap = new Map<string[], ReturnType<typeof Split> | undefined>(); // key: a group of ntxIds, value: the corresponding Split instance
 const noteSplitRafMap = new Map<string[], number>();
 let splitNoteContainer: HTMLElement | undefined;
 
-function setupLeftPaneResizer(leftPaneVisible: boolean) {
+/**
+ * Sizes the left pane for its mode. Docked, a Split sizes `#left-pane-host` against `#rest-pane`;
+ * peeking, the host covers `#rest-pane` and a Split sizes `#left-pane` against the host's spacer.
+ * Both share the `leftPaneWidth` option, a percentage of `#horizontal-main-container`.
+ */
+function setupLeftPaneResizer(mode: PaneMode) {
+    if (leftRafId !== undefined) {
+        cancelAnimationFrame(leftRafId);
+        leftRafId = undefined;
+    }
     if (leftInstance) {
         leftInstance.destroy();
         leftInstance = null;
     }
 
-    $("#left-pane").toggle(leftPaneVisible);
-
     layoutOrientation = layoutOrientation ?? options.get("layoutOrientation");
-    reservedPx = reservedPx ?? (layoutOrientation === "vertical" ? ($("#launcher-pane").outerWidth() || 0) : 0);
+    // `.left-pane-peek-button` follows `#launcher-pane` in the vertical layout, and is not
+    // displayed while the pane is docked.
+    const reservedPx = layoutOrientation === "vertical"
+        ? ($("#launcher-pane").outerWidth() || 0)
+            + ($(".left-pane-peek-button").get(0)?.offsetWidth ?? 0)
+        : 0;
     // Window resizing causes `window.innerWidth` to change, so `reservedWidth` needs to be recalculated each time.
     const reservedWidth = reservedPx / window.innerWidth * 100;
-    if (!leftPaneVisible) {
+    if (mode !== "docked") {
         $("#rest-pane").css("width", layoutOrientation === "vertical" ? `${100 - reservedWidth}%` : "100%");
+    }
+    if (mode === "closed") {
         return;
     }
 
@@ -34,25 +50,30 @@ function setupLeftPaneResizer(leftPaneVisible: boolean) {
         leftPaneWidth = 5;
     }
 
-    const restPaneWidth = 100 - leftPaneWidth - reservedWidth;
-    /* v8 ignore next -- redundant guard: a falsy leftPaneVisible already returned above */
-    if (leftPaneVisible) {
-        // Delayed initialization ensures that all DOM elements are fully rendered and part of the layout,
-        // preventing Split.js from retrieving incorrect dimensions due to #left-pane not being rendered yet,
-        // which would cause the minSize setting to have no effect.
-        requestAnimationFrame(() => {
-            leftInstance = Split(["#left-pane", "#rest-pane"], {
-                sizes: [leftPaneWidth, restPaneWidth],
-                gutterSize: DEFAULT_GUTTER_SIZE,
-                minSize: [150, 300],
-                rtl: glob.isRtl,
-                onDragEnd: (sizes) => {
-                    leftPaneWidth = Math.round(sizes[0]);
-                    options.save("leftPaneWidth", Math.round(sizes[0]));
-                }
-            });
+    const isDocked = mode === "docked";
+    const elements = isDocked
+        ? [ "#left-pane-host", "#rest-pane" ]
+        : [ "#left-pane", "#left-pane-host > .peek-pane-spacer" ];
+    // The peeking host starts after the launcher pane, so the pane takes a larger share of it.
+    const scale = isDocked ? 1 : 100 / (100 - reservedWidth);
+    const size = leftPaneWidth * scale;
+    const otherWidth = isDocked ? 100 - size - reservedWidth : 100 - size;
+
+    // Deferred a frame so that Split.js measures #left-pane once it is laid out; otherwise
+    // `minSize` has no effect.
+    leftRafId = requestAnimationFrame(() => {
+        leftRafId = undefined;
+        leftInstance = Split(elements, {
+            sizes: [ size, otherWidth ],
+            gutterSize: DEFAULT_GUTTER_SIZE,
+            minSize: [ 150, 300 ],
+            rtl: glob.isRtl,
+            onDragEnd: (sizes) => {
+                leftPaneWidth = Math.round(sizes[0] / scale);
+                options.save("leftPaneWidth", leftPaneWidth);
+            }
         });
-    }
+    });
 }
 
 function findKeyByNtxId(ntxId: string): string[] | undefined {

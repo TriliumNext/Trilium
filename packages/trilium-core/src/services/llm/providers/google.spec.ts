@@ -3,11 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createGoogleMock = vi.fn();
 const googleSearchMock = vi.fn(() => ({ kind: "google_search" }));
+const googleModelMock = vi.fn();
 
 vi.mock("@ai-sdk/google", () => ({
     createGoogleGenerativeAI: (opts: unknown) => {
         createGoogleMock(opts);
-        const fn: any = () => ({});
+        const fn: any = (modelId: string) => {
+            googleModelMock(modelId);
+            return {};
+        };
         fn.tools = { googleSearch: googleSearchMock };
         return fn;
     }
@@ -107,6 +111,15 @@ describe("GoogleProvider message building", () => {
         // This override builds its own options, so it has to carry the base's
         // telemetry opt-out with them — see TELEMETRY_OFF in base_provider.ts.
         expect(opts.telemetry).toEqual({ isEnabled: false });
+    });
+
+    it("chat() falls back to a Gemini 3 model when none is configured", () => {
+        googleModelMock.mockClear();
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hello" }], {});
+
+        // The 2.5 models are no longer open to new Gemini API keys.
+        expect(googleModelMock).toHaveBeenCalledWith("gemini-3.8-flash");
     });
 
     it("chat() with extended thinking also guards against system messages in `messages`", () => {
@@ -223,7 +236,7 @@ describe("GoogleProvider model listing", () => {
     it("keeps generateContent-capable chat models, stripping the models/ prefix", async () => {
         fetchMock.mockResolvedValue(okJson({
             models: [
-                { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", inputTokenLimit: 1048576, supportedGenerationMethods: ["generateContent"] },
+                { name: "models/gemini-3.8-flash", displayName: "Gemini 3.8 Flash", inputTokenLimit: 1048576, supportedGenerationMethods: ["generateContent"] },
                 { name: "models/gemini-3-pro", displayName: "Gemini 3 Pro", inputTokenLimit: 2097152, supportedGenerationMethods: ["generateContent"] },
                 { name: "models/text-embedding-004", supportedGenerationMethods: ["embedContent"] },
                 { name: "models/imagen-3.0-generate-002", supportedGenerationMethods: ["generateContent"] }
@@ -236,10 +249,10 @@ describe("GoogleProvider model listing", () => {
             "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000",
             expect.objectContaining({ headers: { "x-goog-api-key": "g-key" } })
         );
-        expect(models.map((m) => m.id)).toEqual(["gemini-2.5-flash", "gemini-3-pro"]);
+        expect(models.map((m) => m.id)).toEqual(["gemini-3.8-flash", "gemini-3-pro"]);
         // Curated entry keeps its metadata; the unknown one takes the API's
         // display name and token limit.
-        expect(models[0]).toMatchObject({ name: "Gemini 2.5 Flash", isDefault: true });
+        expect(models[0]).toMatchObject({ name: "Gemini 3.8 Flash", isDefault: true });
         expect(models[1]).toMatchObject({ name: "Gemini 3 Pro", contextWindow: 2097152 });
     });
 

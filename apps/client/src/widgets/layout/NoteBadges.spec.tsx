@@ -2,16 +2,23 @@ import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import FNote from "../../entities/fnote";
+import attributes from "../../services/attributes";
+import froca from "../../services/froca";
 import { ViewScope } from "../../services/link";
 
 // The badge reads the note being shown and the view it is shown in, neither of which a rendered
 // widget brings with it.
-const shownNote = vi.hoisted(() => ({ current: null as FNote | null, viewScope: undefined as ViewScope | undefined }));
+const shownNote = vi.hoisted(() => ({
+    current: null as FNote | null,
+    viewScope: undefined as ViewScope | undefined,
+    parentComponent: { triggerEvent: vi.fn() }
+}));
 vi.mock("../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../react/hooks")>()),
     useNoteContext: () => ({
         note: shownNote.current,
-        viewScope: shownNote.viewScope
+        viewScope: shownNote.viewScope,
+        parentComponent: shownNote.parentComponent
     })
 }));
 
@@ -22,16 +29,28 @@ vi.mock("../../services/i18n", () => ({
 }));
 
 import appContext from "../../components/app_context";
-import froca from "../../services/froca";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import {
-    ClippedNoteBadge, ExecuteBadge, OfficePreviewBadge, toggleShareEdit,
-    useShareEditState
+    ClippedNoteBadge, ExecuteBadge, OfficePreviewBadge, ReadOnlyBadge, TemplateBadge,
+    toggleShareEdit, useShareEditState
 } from "./NoteBadges";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+describe("ReadOnlyBadge", () => {
+    it("says a note that cannot be saved is read-only, without offering to edit it", () => {
+        const note = buildNote({ title: "Help page", type: "text" });
+        note.isContentWritable = false;
+        shownNote.current = note;
+        shownNote.viewScope = { viewMode: "default" };
+
+        const badge = renderInto(<ReadOnlyBadge />).querySelector(".read-only-badge");
+        expect(badge).toBeTruthy();
+        expect(badge?.textContent).toBe("breadcrumb_badges.read_only_locked");
+    });
+});
 
 describe("OfficePreviewBadge", () => {
     it("marks a file note that the office preview renders", () => {
@@ -74,6 +93,88 @@ describe("ExecuteBadge", () => {
     function renderBadge(labels: Record<`#${string}`, string>) {
         shownNote.current = buildNote({ title: "Script", type: "code", mime: "application/javascript;env=frontend", ...labels });
         return renderInto(<ExecuteBadge />).querySelector(".execute-badge .text");
+    }
+});
+
+describe("TemplateBadge", () => {
+    it("marks a template or a workspace template, and no other note", () => {
+        for (const [ label, text ] of [
+            [ "#template", "breadcrumb_badges.template" ],
+            [ "#workspaceTemplate", "breadcrumb_badges.workspace_template" ]
+        ] as const) {
+            const badge = renderBadge({ [label]: "" });
+            expect(badge?.textContent).toBe(text);
+            expect(badge?.querySelector(".bx-copy-alt")).not.toBeNull();
+        }
+
+        expect(renderBadge({})).toBeNull();
+        expect(renderBadge({ "#template": "false" })).toBeNull();
+    });
+
+    it("switches a template inside a workspace to the workspace only, adding the new label first", async () => {
+        const setBoolean = vi.spyOn(attributes, "setBooleanWithInheritance").mockResolvedValue();
+        shownNote.current = buildInWorkspace({ "#template": "" });
+
+        const [ global, workspace ] = await openScopes();
+        expect(global.getAttribute("aria-checked")).toBe("true");
+        expect(workspace.getAttribute("aria-checked")).toBe("false");
+
+        act(() => workspace.click());
+        await vi.waitFor(() => expect(setBoolean).toHaveBeenCalledTimes(2));
+        expect(setBoolean.mock.calls.map(([ , name, value ]) => [ name, value ])).toEqual([
+            [ "workspaceTemplate", true ], [ "template", false ]
+        ]);
+        setBoolean.mockRestore();
+    });
+
+    it("disables the workspace scope outside a workspace, still letting a workspace template go global", async () => {
+        for (const label of [ "#template", "#workspaceTemplate" ] as const) {
+            shownNote.current = buildNote({ title: "Meeting", [label]: "" });
+
+            const [ global, workspace ] = await openScopes();
+            expect(global.getAttribute("aria-checked")).toBe(String(label === "#template"));
+            expect(global.classList.contains("disabled")).toBe(false);
+            expect(workspace.classList.contains("disabled")).toBe(true);
+            document.body.replaceChildren();
+        }
+    });
+
+    it("opens the template's properties dialog", async () => {
+        shownNote.current = buildNote({ title: "Meeting", "#template": "" });
+        await openScopes();
+
+        const properties = [ ...document.querySelectorAll<HTMLElement>(".tn-popup .dropdown-item") ]
+            .find((row) => row.textContent?.includes("breadcrumb_badges.template_properties"));
+        expect(properties).toBeDefined();
+        act(() => properties?.click());
+        expect(shownNote.parentComponent.triggerEvent)
+            .toHaveBeenCalledWith("showTemplateProperties", { noteId: shownNote.current.noteId });
+        document.body.replaceChildren();
+    });
+
+    function renderBadge(labels: Record<`#${string}`, string>) {
+        shownNote.current = buildNote({ title: "Meeting", ...labels });
+        return renderInto(<TemplateBadge />).querySelector(".template-badge");
+    }
+
+    function buildInWorkspace(labels: Record<`#${string}`, string>) {
+        const templateId = `tmpl${Math.random().toString(36).slice(2, 10)}`;
+        buildNote({ title: "Project", "#workspace": "", children: [ { id: templateId, title: "Meeting", ...labels } ] });
+        return froca.notes[templateId];
+    }
+
+    async function openScopes() {
+        const toggle = renderInto(<TemplateBadge />).querySelector<HTMLButtonElement>(".dropdown-template-badge button");
+        expect(toggle).not.toBeNull();
+        act(() => {
+            toggle?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            toggle?.click();
+        });
+        return await vi.waitFor(() => {
+            const rows = [ ...document.querySelectorAll<HTMLElement>(".tn-popup .dropdown-item[aria-checked]") ];
+            if (rows.length !== 2) throw new Error("expected the two scopes to be listed");
+            return rows;
+        });
     }
 });
 

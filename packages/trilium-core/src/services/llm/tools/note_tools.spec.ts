@@ -402,14 +402,14 @@ describe("note_tools — write tools return post-write content", () => {
 
             findResultsMock.mockReturnValue([
                 { noteId: "sa" },
-                { noteId: "stale" } // not in becca → filtered out within the limit
+                { noteId: "stale" } // not in becca → filtered out before counting
             ]);
 
             const result = getTool("search_notes").execute({ query: "alpha", limit: 5 }) as {
                 totalResults: number;
                 results: any[];
             };
-            expect(result.totalResults).toBe(2);
+            expect(result.totalResults).toBe(1);
             expect(result.results).toHaveLength(1); // stale id dropped
             expect(result.results[0]).toMatchObject({ noteId: "sa", title: "Alpha", parentTitle: "Search parent" });
         });

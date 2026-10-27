@@ -1,3 +1,5 @@
+import type { StandaloneApi } from "@triliumnext/commons";
+
 import { t } from "./i18n.js";
 import { getSetupAuthToken } from "./setup_auth.js";
 import utils, { isShare, isShareEditing } from "./utils.js";
@@ -105,19 +107,14 @@ async function remove<T>(url: string, componentId?: string) {
 }
 
 async function upload(url: string, fileToUpload: File, componentId?: string, method = "PUT") {
-    const formData = new FormData();
-    formData.append("upload", fileToUpload);
-
-    const doUpload = async () => $.ajax({
-        url: window.glob.baseApiUrl + url,
+    const doUpload = async () => uploadForm(url, {
+        method,
         headers: await getHeaders(componentId ? {
             "trilium-component-id": componentId
         } : undefined),
-        data: formData,
-        type: method,
-        timeout: 60 * 60 * 1000,
-        contentType: false, // NEEDED, DON'T REMOVE THIS
-        processData: false // NEEDED, DON'T REMOVE THIS
+        fields: {},
+        file: fileToUpload,
+        timeoutMs: UPLOAD_TIMEOUT
     });
 
     try {
@@ -131,6 +128,107 @@ async function upload(url: string, fileToUpload: File, componentId?: string, met
         }
         throw e;
     }
+}
+
+export interface UploadFormOptions {
+    method: string;
+    headers: Headers;
+    fields: Record<string, string>;
+    /** Sent as the form's `upload` field. */
+    file: File;
+    timeoutMs: number;
+    /** Passed to jQuery, which otherwise picks a parser from the response's content type. */
+    dataType?: "json";
+}
+
+/** What `uploadForm()` rejects with on an error status: the fields of a jqXHR that callers read. */
+export interface UploadFormError {
+    status: number;
+    responseText: string;
+}
+
+const UPLOAD_TIMEOUT = 60 * 60 * 1000;
+
+/**
+ * Sends a multipart form carrying one file and resolves with the parsed response. The standalone
+ * leader tab hands the `File` to its worker through `standaloneApi.localUpload`, so the page never
+ * reads it and an import can read a zip one entry at a time; everywhere else it goes out as an XHR.
+ * Rejects with an {@link UploadFormError} on an error status.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the parsed body of whatever the route answers, as `$.ajax` gives it
+async function uploadForm(url: string, options: UploadFormOptions): Promise<any> {
+    const headers: Record<string, string> = {};
+    for (const [ name, value ] of Object.entries(options.headers)) {
+        if (value) {
+            headers[name] = value;
+        }
+    }
+
+    const localUpload = getLocalUpload();
+    if (localUpload) {
+        return await localUploadForm(localUpload, url, headers, options);
+    }
+
+    const formData = new FormData();
+    formData.append("upload", options.file);
+    for (const [ name, value ] of Object.entries(options.fields)) {
+        formData.append(name, value);
+    }
+
+    return await $.ajax({
+        url: window.glob.baseApiUrl + url,
+        headers,
+        data: formData,
+        type: options.method,
+        dataType: options.dataType,
+        timeout: options.timeoutMs,
+        contentType: false, // NEEDED, DON'T REMOVE THIS
+        processData: false // NEEDED, DON'T REMOVE THIS
+    });
+}
+
+/** The standalone leader tab's in-page upload to its worker, or `undefined` elsewhere. */
+function getLocalUpload() {
+    return USE_LOCAL_FETCH ? window.standaloneApi?.localUpload : undefined;
+}
+
+async function localUploadForm(
+    localUpload: NonNullable<StandaloneApi["localUpload"]>,
+    url: string,
+    headers: Record<string, string>,
+    options: UploadFormOptions
+): Promise<unknown> {
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    const expiry = new Promise<never>((_, rej) => {
+        timeoutHandle = setTimeout(
+            () => rej(new Error(`Timed out after ${options.timeoutMs}ms: ${options.method} ${url}`)),
+            options.timeoutMs
+        );
+    });
+
+    let resp: globalThis.Response;
+    try {
+        resp = await Promise.race([
+            localUpload(window.glob.baseApiUrl + url, {
+                method: options.method,
+                headers,
+                fields: options.fields,
+                file: options.file
+            }),
+            expiry
+        ]);
+    } finally {
+        clearTimeout(timeoutHandle);
+    }
+
+    const responseText = await resp.text();
+    if (!resp.ok) {
+        throw { status: resp.status, responseText } satisfies UploadFormError;
+    }
+    if ((resp.headers.get("content-type") ?? "").includes("json")) {
+        return responseText ? JSON.parse(responseText) : null;
+    }
+    return responseText;
 }
 
 let maxKnownEntityChangeId = 0;
@@ -473,7 +571,9 @@ export default {
     patch,
     remove,
     upload,
+    uploadForm,
     // don't remove, used from CKEditor image upload!
     getHeaders,
+    getLocalUpload,
     getMaxKnownEntityChangeId: () => maxKnownEntityChangeId
 };

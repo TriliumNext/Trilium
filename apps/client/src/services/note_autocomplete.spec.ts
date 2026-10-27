@@ -76,6 +76,10 @@ describe("getNoteSuggestions", () => {
         // A limit is passed on for the server to stop at; left out, none is sent.
         await getNoteSuggestions("a", { limit: 10 });
         expect(server.get).toHaveBeenLastCalledWith("autocomplete?query=a&activeNoteId=activeNote&fastSearch=true&limit=10");
+        // So is a filter, encoded as the search query it is.
+        await getNoteSuggestions("a", { filter: "note.type = image" });
+        expect(server.get).toHaveBeenLastCalledWith("autocomplete?query=a&activeNoteId=activeNote"
+            + "&fastSearch=true&filter=note.type%20%3D%20image");
         expect(getInboxTarget).not.toHaveBeenCalled();
     });
 

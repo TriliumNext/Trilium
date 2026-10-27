@@ -149,8 +149,7 @@ export default class FileUploadEditing extends Plugin {
 				// Before `attachmentId` is set: setting it makes the host render the embed.
 				const isEmbed = fileElement.is( 'element', 'contentEmbed' );
 				if ( attachmentId && isEmbed && isFocusUpload( loader ) ) {
-					glob.getComponentByEl<EditorComponent>( editor.editing.view.getDomRoot() )
-						.focusContentEmbed?.( attachmentId );
+					editor.config.get( 'contentEmbed' )?.focusAttachment?.( attachmentId );
 				}
 
 				model.enqueueChange( { isUndoable: false }, writer => {

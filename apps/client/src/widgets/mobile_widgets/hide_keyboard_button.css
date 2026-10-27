@@ -1,0 +1,66 @@
+:root {
+    --hide-keyboard-button-size: 38px;
+}
+
+body.mobile :is(.hide-keyboard-button, .hide-keyboard-action) {
+    display: none;
+
+    .icon-action {
+        --icon-button-size: var(--hide-keyboard-button-size);
+        width: var(--hide-keyboard-button-size);
+        height: var(--hide-keyboard-button-size);
+        --icon-button-icon-ratio: 0.6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        &::after {
+            content: "\ea4a"; /* bx-chevron-down, from boxicons.css */
+            margin-top: -0.65em;
+            margin-bottom: -0.3em;
+            font-family: boxicons;
+            font-size: calc(var(--icon-button-size) * 0.4);
+            font-weight: normal;
+            line-height: 1;
+        }
+    }
+}
+
+body.mobile .hide-keyboard-action.closes-menu .icon-action::after {
+    content: none;
+}
+
+body.mobile .virtual-keyboard-opened :is(.hide-keyboard-button, .hide-keyboard-action),
+body.mobile.keyboard-panel-open .hide-keyboard-action {
+    display: flex;
+}
+
+body.mobile .hide-keyboard-button {
+    contain: none;
+    position: fixed;
+    bottom: 0;
+    right: var(--safe-area-inset-right, env(safe-area-inset-right));
+    margin-inline-end: var(--mobile-toolbar-gap);
+    margin-bottom: var(--mobile-toolbar-gap);
+    /* Above every dialog (2000, plus 10 per stacked one in `dialog.ts`) and menu,
+       below tooltips (9999). */
+    z-index: 5000;
+    transform: translateY(var(--tn-keyboard-gap, 0px));
+
+    .icon-action {
+        border: 1px solid var(--main-border-color);
+        border-radius: 6px;
+        background-color: var(--main-background-color);
+    }
+}
+
+body.mobile[dir="rtl"] .hide-keyboard-button {
+    right: auto;
+    left: var(--safe-area-inset-left, env(safe-area-inset-left));
+}
+
+body.mobile:has(.classic-toolbar-outer-container.active) .hide-keyboard-button,
+body.mobile:not(:has(:focus)) .hide-keyboard-button {
+    display: none;
+}

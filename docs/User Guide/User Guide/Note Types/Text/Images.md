@@ -8,11 +8,12 @@ An image can be uploaded in the form of note's [attachment](../../Basic%20Concep
 To add an image to the note:
 
 *   Simply drag it from file explorer onto the note editor inside Trilium and the image will be uploaded.
-*   Alternatively, from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> look for the _Insert image_ icon.
+*   Alternatively, in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, press the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button and select _Image_.
+*   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same menu also offers _Camera_, which takes a photo and inserts it.
 *   You can also copy and paste an image from web (see section below).
 
 > [!TIP]
-> To link a picture instead of displaying it, attach it with _Attach file as a link_, from the arrow beside the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>.
+> To link a picture instead of displaying it, attach it with _Attach file as a link_, from the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>.
 
 ## Clipboard & automatic download of images
 
@@ -28,18 +29,17 @@ The automatic download of images is enabled by default and can be toggled from 
 ## Configuring the images
 
 Clicking on an image will reveal a popup with multiple options:  
-![](4_Images_image.png)
+![](Images_image.png)
 
 ### Alignment
 
-The first set of options configure the alignment are, in order:
+The first button of the popup, _Image position_, shows the icon of the image's current position. It opens a menu that groups the positions by how text runs around the image:
 
 | Icon | Option | Preview | Description |
 | --- | --- | --- | --- |
-| <span class="tn-icon cke cke-object-inline"></span> | Inline | ![](Images_image.png) | As the name suggests, the name can be put inside a paragraph and moved around similarly as if it was a block of text. Use drag & drop or cut-paste to move it around. |
-| <span class="tn-icon cke cke-object-center"></span> | Centered image | ![](1_Images_image.png) | The image will be displayed as a block and centered, not allowing text in either the left or right of it. |
-| <span class="tn-icon cke cke-object-inline-right"></span> | Wrap text | ![](3_Images_image.png) | The image will be displayed to the left or the right of the text. |
-| <span class="tn-icon cke cke-object-left"></span> | Block align | ![](2_Images_image.png) | Similarly to _Centered image_, the image will be displayed as a block and aligned either to the left or to the right, but not allowing text to flow on either of its sides. |
+| <span class="tn-icon cke cke-object-inline"></span> | _In line_ | ![](Images_image.jpg) | The image sits inside a paragraph, like a large character, and moves with the text around it. Use drag & drop or cut-paste to move it around. |
+| <span class="tn-icon cke cke-object-center"></span> | _Break text_ → _Align left_, _Align center_ or _Align right_ | ![](1_Images_image.jpg) ![](2_Images_image.jpg) | The image is displayed on a line of its own, at the left, in the center or at the right; text continues above and below it but not beside it. |
+| <span class="tn-icon cke cke-object-inline-right"></span> | _Wrap text_ → _Align left_ or _Align right_ | ![](3_Images_image.jpg) | The image is displayed at the left or the right, and the text flows beside it. |
 
 ### Drawing over an image
 

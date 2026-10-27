@@ -166,17 +166,18 @@ export default abstract class FileBasedLogService extends LogService {
         let millisSinceMidnight = Date.now() - this.todaysMidnight.getTime();
         millisSinceMidnight = this.checkDateAndRotate(millisSinceMidnight);
 
-        const entry = `${this.formatTime(millisSinceMidnight)} ${str}${this.eol}`;
-        this.writeEntry(entry);
-        this.echoToConsole(str);
+        const timestamp = this.formatTime(millisSinceMidnight);
+        this.writeEntry(`${timestamp} ${str}${this.eol}`);
+        this.echoToConsole(str, timestamp);
     }
 
     /**
      * Mirrors an entry to stdout, which is how `docker logs`/journalctl surface server activity.
      * Overridable so a runtime that captures stdout through a costly channel can opt out while
-     * still writing the entry to the log file.
+     * still writing the entry to the log file. The `timestamp` is the one written to the file;
+     * stdout omits it because log collectors stamp lines themselves.
      */
-    protected echoToConsole(str: string): void {
+    protected echoToConsole(str: string, _timestamp: string): void {
         console.log(str);
     }
 

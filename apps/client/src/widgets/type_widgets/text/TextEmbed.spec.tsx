@@ -1,3 +1,4 @@
+import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { render } from "preact";
 import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -11,10 +12,12 @@ import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { buildNote } from "../../../test/easy-froca";
+import { TextEditorFindTarget } from "../../find_in_text";
+import MergedFind from "../../merged_find";
 import { useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import type { TypeWidgetProps } from "../type_widget";
-import { getContentEmbedTools } from "./content_embed_tools";
+import { getContentEmbedTools, getEmbedFindTarget } from "./content_embed_tools";
 import { NestedEmbedContext } from "./editable_embed";
 import TextEmbed from "./TextEmbed";
 
@@ -72,6 +75,30 @@ afterEach(() => {
 });
 
 describe("TextEmbed", () => {
+    it("lets the find search its text editor once the editor is ready", async () => {
+        const { figure } = await mount(buildTextNote("ready"), buildEditor(), { isEditable: true });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        const { parentComponent, ntxId } = editorProps.mock.calls[0][0] as TypeWidgetProps;
+        const root = figure.querySelector<HTMLElement>(".ck-editor__editable");
+        const modelDocument = { on: vi.fn(), off: vi.fn() };
+        const editor = {
+            editing: { view: { getDomRoot: () => root } },
+            model: { document: modelDocument }
+        } as unknown as CKTextEditor;
+
+        act(() => {
+            parentComponent?.handleEvent("textEditorRefreshed", { ntxId: "_other", editor });
+        });
+        expect(getEmbedFindTarget(figure)).toBeNull();
+        act(() => {
+            parentComponent?.handleEvent("textEditorRefreshed", { ntxId, editor });
+        });
+        const target = getEmbedFindTarget(figure);
+        expect(target instanceof MergedFind && target.host instanceof TextEditorFindTarget
+            && target.host.editor).toBe(editor);
+        expect(modelDocument.on).toHaveBeenCalledWith("change:data", expect.any(Function));
+    });
+
     it("uses the floating toolbar inside an editor that has one", async () => {
         const { figure } = await mount(buildTextNote("floating"), buildEditor(), { isEditable: true });
         await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
@@ -233,6 +260,55 @@ describe("TextEmbed", () => {
         await settle();
         expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
             .toBe("<div><p>Newer</p></div>");
+    });
+
+    it("shows the newest content once shown, when hidden reads land out of order", async () => {
+        const note = buildTextNote("hidden");
+        const { figure } = await mount(note, buildEditor());
+        await settle();
+        const host = figure.parentElement;
+        if (!host) throw new Error("Expected the host editor.");
+        const resizeCallbacks: (() => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: () => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+
+        try {
+            host.style.display = "none";
+            let slowRead = () => {};
+            note.getBlob = () => new Promise((resolve) => {
+                slowRead = () => resolve(buildBlob("<p>Older</p>"));
+            });
+            await act(async () => {
+                await reloadNoteContent(note);
+            });
+            note.getBlob = async () => buildBlob("<p>Newer</p>");
+            await act(async () => {
+                await reloadNoteContent(note);
+            });
+            await settle();
+            await act(async () => {
+                slowRead();
+            });
+            await settle();
+            expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+                .toBe("<div><p>hidden</p></div>");
+
+            host.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback();
+            });
+            await settle();
+            expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+                .toBe("<div><p>Newer</p></div>");
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+        }
     });
 
     it("shows a save that landed before it listened for saves", async () => {

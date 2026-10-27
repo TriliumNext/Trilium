@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getAttachmentMock, getBlobMock } = vi.hoisted(() => ({
+const { getAttachmentMock, getBlobMock, getNoteMock } = vi.hoisted(() => ({
     getAttachmentMock: vi.fn(),
-    getBlobMock: vi.fn()
+    getBlobMock: vi.fn(),
+    getNoteMock: vi.fn()
 }));
 
-// Attachment + blob lookups go through SQL in the real becca; partial-mock core
-// so these two return deterministic stubs while the rest of core is untouched.
+// Partial-mock core so `getAttachment`, `getBlob` and the owner lookup `getNote` return stubs while the rest of core is untouched.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, getAttachment: getAttachmentMock, getBlob: getBlobMock } };
+    return { default: { ...actual.default, getAttachment: getAttachmentMock, getBlob: getBlobMock, getNote: getNoteMock } };
 });
 
 import blobService from "../../blob.js";
@@ -46,6 +46,7 @@ function stubAttachment(overrides: Record<string, unknown>) {
 describe("attachment_tools", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        getNoteMock.mockReturnValue({ isLabelTruthy: () => false });
     });
 
     describe("get_attachment", () => {

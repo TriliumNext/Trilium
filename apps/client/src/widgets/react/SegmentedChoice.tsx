@@ -1,6 +1,7 @@
 import "./SegmentedChoice.css";
 
 import clsx from "clsx";
+import type { ComponentChildren } from "preact";
 
 import { isMobile } from "../../services/utils";
 import SimpleBadge from "./Badge";
@@ -15,6 +16,11 @@ export interface SegmentedChoiceOption<T extends string> {
     icon?: string;
     /** What the option is called, for an option that shows as an icon alone. */
     title?: string;
+    /**
+     * A drawing shown above the label, for options told apart by a picture that no icon of the icon
+     * font has, such as the box sizes of an include.
+     */
+    glyph?: ComponentChildren;
     /**
      * How much the option holds, shown as a badge after its name.
      *
@@ -62,7 +68,7 @@ export default function SegmentedChoice<T extends string>({ options, currentValu
 
     return (
         <ButtonGroup size="sm" className={clsx("tn-segmented-choice", className)}>
-            {options.map(({ value, label, icon, title, count }) => (
+            {options.map(({ value, label, icon, title, glyph, count }) => (
                 <Button
                     key={value}
                     // Name and count share one inline box, rather than being two children of the
@@ -70,22 +76,34 @@ export default function SegmentedChoice<T extends string>({ options, currentValu
                     // out against the row's centre line instead of against the text, and lands a
                     // pixel above it. Inside a line box it aligns to the text itself, in the text's
                     // own units.
-                    text={count !== undefined ? (
+                    text={withGlyph(glyph, count !== undefined ? (
                         <span class="tn-segmented-choice-label">
                             {label}
                             <SimpleBadge className="tn-segmented-choice-count" title={count} />
                         </span>
-                    ) : (label ?? "")}
+                    ) : (label ?? ""))}
                     icon={icon}
                     title={title}
                     size="small"
                     disabled={disabled}
-                    className={clsx(currentValue === value && "active")}
+                    aria-pressed={currentValue === value}
+                    className={clsx(currentValue === value && "active", {
+                        "tn-segmented-choice-with-glyph": glyph
+                    })}
                     onClick={() => onChange(value)}
                 />
             ))}
         </ButtonGroup>
     );
+}
+
+/** The label of a segment, under its glyph if it has one. */
+function withGlyph(glyph: ComponentChildren, label: ComponentChildren) {
+    if (!glyph) return label;
+    return <>
+        <span className="tn-segmented-choice-glyph" aria-hidden="true">{glyph}</span>
+        <span className="tn-segmented-choice-glyph-label">{label}</span>
+    </>;
 }
 
 /**

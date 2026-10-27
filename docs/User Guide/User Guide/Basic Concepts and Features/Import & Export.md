@@ -66,3 +66,10 @@ You can easily move the notes onto the root using the tree's <a class="referenc
 
 > [!TIP]
 > Instead of exporting full ZIPs (including the root note), consider using [backups](../Installation%20%26%20Setup/Backup.md) instead. Backups always contain the entire structure, as well as additional information a ZIP export does not have: maintains note IDs, contains the options/tokens and handle <a class="reference-link" href="Notes/Protected%20Notes.md">Protected Notes</a> better.
+
+## Exporting the User Guide
+
+The in-app User Guide can be exported like any other note: right click one of its pages or chapters in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_, or use <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Export note_.
+
+*   Exporting a chapter with _This note & all descendants_ writes the pictures and files of each page as its attachments. Importing that archive creates an ordinary copy that you can edit, with its pictures and the links between its pages working.
+*   Exporting a single page with _Only this note_ embeds its pictures in the exported file.

@@ -3,7 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { PassThrough } from "stream";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 const infoLogMock = vi.hoisted(() => vi.fn());
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: infoLogMock, error: vi.fn() }) }));
@@ -14,18 +14,12 @@ class FakeProc extends EventEmitter {
     stdin = new PassThrough();
     stdout = new PassThrough();
     stderr = new PassThrough();
-    killed = false;
     pid = 4242;
     written: string[] = [];
 
     constructor() {
         super();
         this.stdin.on("data", (chunk: Buffer) => this.written.push(chunk.toString()));
-    }
-
-    kill() {
-        this.killed = true;
-        this.emit("exit", 0, null);
     }
 
     /** Simulate the agent writing a line to stdout. */
@@ -37,7 +31,7 @@ class FakeProc extends EventEmitter {
 const spawnMock = vi.hoisted(() => vi.fn());
 vi.mock("child_process", () => ({ spawn: spawnMock }));
 
-const { AcpClient, AcpError } = await import("./acp_client.js");
+const { AcpClient, AcpError, killLiveAgents } = await import("./acp_client.js");
 
 function lastWritten(proc: FakeProc): Record<string, unknown> {
     return JSON.parse(proc.written[proc.written.length - 1]);
@@ -51,15 +45,18 @@ function stubPlatform(platform: NodeJS.Platform) {
 
 describe("AcpClient", () => {
     let proc: FakeProc;
+    let killSpy: MockInstance<typeof process.kill>;
 
     beforeEach(() => {
         proc = new FakeProc();
         spawnMock.mockReset();
         spawnMock.mockReturnValue(proc);
         infoLogMock.mockReset();
+        killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
     });
 
     afterEach(() => {
+        killSpy.mockRestore();
         vi.useRealTimers();
         if (originalPlatform) {
             Object.defineProperty(process, "platform", originalPlatform);
@@ -76,6 +73,16 @@ describe("AcpClient", () => {
 
         AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp" });
         expect(spawnMock).toHaveBeenLastCalledWith("/opt/agy/agy_acp_server.par", [], expect.anything());
+    });
+
+    it("starts the agent in its own process group except on Windows", () => {
+        stubPlatform("linux");
+        AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp" });
+        expect(spawnMock).toHaveBeenLastCalledWith(expect.anything(), [], expect.objectContaining({ detached: true }));
+
+        stubPlatform("win32");
+        AcpClient.start("C:\\agy\\agy_acp_server.exe", { cwd: "C:\\tmp" });
+        expect(spawnMock).toHaveBeenLastCalledWith(expect.anything(), [], expect.objectContaining({ detached: false }));
     });
 
     it("layers extra environment variables over the process environment", () => {
@@ -267,21 +274,49 @@ describe("AcpClient", () => {
         // An agent that exits on end of input is never signalled.
         proc.emit("exit", 0, null);
         vi.advanceTimersByTime(60_000);
-        expect(proc.killed).toBe(false);
+        expect(killSpy).not.toHaveBeenCalled();
 
         // A request after disposal fails with the disposal error, not a crash.
         await expect(client.request("initialize", {})).rejects.toThrow(/disposed/);
     });
 
-    it("kills an agent that is still running after the grace period", () => {
+    it("kills the process group of an agent that is still running after the grace period", () => {
         stubPlatform("linux");
         vi.useFakeTimers();
         const client = AcpClient.start("/bin/copilot", { cwd: "/tmp" });
         client.dispose();
         vi.advanceTimersByTime(4_999);
-        expect(proc.killed).toBe(false);
+        expect(killSpy).not.toHaveBeenCalled();
         vi.advanceTimersByTime(1);
-        expect(proc.killed).toBe(true);
+        expect(killSpy).toHaveBeenCalledExactlyOnceWith(-4242, "SIGKILL");
+    });
+
+    it("tolerates a process group that is already gone", () => {
+        stubPlatform("linux");
+        vi.useFakeTimers();
+        killSpy.mockImplementation(() => {
+            throw Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
+        });
+        AcpClient.start("/bin/copilot", { cwd: "/tmp" }).dispose();
+        expect(() => vi.advanceTimersByTime(5_000)).not.toThrow();
+        expect(killSpy).toHaveBeenCalledWith(-4242, "SIGKILL");
+    });
+
+    it("kills every agent still running when the server exits", () => {
+        stubPlatform("linux");
+        const exited = new FakeProc();
+        exited.pid = 1001;
+        const running = new FakeProc();
+        running.pid = 1002;
+        spawnMock.mockReturnValueOnce(exited).mockReturnValueOnce(running);
+        AcpClient.start("/bin/copilot", { cwd: "/tmp" });
+        AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp" });
+        exited.emit("exit", 0, null);
+
+        expect(process.listeners("exit")).toContain(killLiveAgents);
+        killLiveAgents();
+        expect(killSpy).toHaveBeenCalledWith(-1002, "SIGKILL");
+        expect(killSpy).not.toHaveBeenCalledWith(-1001, "SIGKILL");
     });
 
     it("kills the agent's whole process tree on Windows, where it runs in a child of the spawned process", () => {
@@ -291,19 +326,21 @@ describe("AcpClient", () => {
         client.dispose();
         vi.advanceTimersByTime(5_000);
         expect(spawnMock).toHaveBeenLastCalledWith("taskkill", [ "/pid", "4242", "/T", "/F" ], expect.objectContaining({ windowsHide: true }));
-        expect(proc.killed).toBe(false);
+        expect(killSpy).not.toHaveBeenCalled();
     });
 
     it("rejects in-flight requests on dispose and ignores a second dispose", async () => {
+        stubPlatform("linux");
+        vi.useFakeTimers();
         const client = AcpClient.start("/bin/copilot", { cwd: "/tmp" });
         const promise = client.request("session/prompt", {});
 
         client.dispose();
         await expect(promise).rejects.toThrow("The ACP client was disposed.");
 
-        proc.killed = false;
         client.dispose();
-        expect(proc.killed).toBe(false);
+        vi.advanceTimersByTime(5_000);
+        expect(killSpy).toHaveBeenCalledOnce();
     });
 
     it("ignores lines that are not JSON objects", async () => {

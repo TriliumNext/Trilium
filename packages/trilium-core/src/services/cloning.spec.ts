@@ -306,4 +306,76 @@ describe("cloning service (real DB)", () => {
             expect(typeof res.message).toBe("string");
         });
     });
+
+    describe("cloneNoteBefore", () => {
+        /** The notes under the parent, in the order of their stored positions. */
+        function childOrder(parentNoteId: string) {
+            return getSql().getColumn<string>(/*sql*/`
+                SELECT noteId FROM branches
+                WHERE parentNoteId = ? AND isDeleted = 0
+                ORDER BY notePosition`, [ parentNoteId ]);
+        }
+
+        function branchIdOf({ branch }: { branch: BBranch }) {
+            if (!branch.branchId) {
+                throw new Error("The created branch has no ID.");
+            }
+            return branch.branchId;
+        }
+
+        it("clones the note right before the reference branch", () => {
+            const parent = createNote("root");
+            const first = createNote(parent.note.noteId);
+            const second = createNote(parent.note.noteId);
+            const source = createNote("root");
+
+            const res = getContext().init(() =>
+                cloningService.cloneNoteBefore(source.note.noteId, branchIdOf(second))
+            );
+
+            expect(res.success).toBe(true);
+            const branchId = "branchId" in res ? res.branchId : undefined;
+            expect(becca.getBranch(branchId ?? "")?.parentNoteId).toBe(parent.note.noteId);
+            expect(childOrder(parent.note.noteId))
+                .toEqual([ first.note.noteId, source.note.noteId, second.note.noteId ]);
+        });
+
+        it("keeps the order of several notes cloned before the same branch", () => {
+            const parent = createNote("root");
+            const reference = createNote(parent.note.noteId);
+            const a = createNote("root");
+            const b = createNote("root");
+
+            getContext().init(() => {
+                cloningService.cloneNoteBefore(a.note.noteId, branchIdOf(reference));
+                cloningService.cloneNoteBefore(b.note.noteId, branchIdOf(reference));
+            });
+
+            expect(childOrder(parent.note.noteId))
+                .toEqual([ a.note.noteId, b.note.noteId, reference.note.noteId ]);
+            // becca agrees with the database, which the next clone or move relies on.
+            const beccaOrder = becca.getNoteOrThrow(parent.note.noteId).getChildBranches()
+                .sort((x, y) => x.notePosition - y.notePosition)
+                .map((branch) => branch.noteId);
+            expect(beccaOrder).toEqual(childOrder(parent.note.noteId));
+        });
+
+        it("refuses what cloning after refuses", () => {
+            const source = createNote("root");
+            const parent = createNote("root");
+            const existing = createNote(parent.note.noteId);
+
+            expect(cloningService.cloneNoteBefore("root", branchIdOf(existing))).toMatchObject({
+                success: false,
+                message: "Cloning the note 'root' is forbidden."
+            });
+            expect(cloningService.cloneNoteBefore(source.note.noteId, "missing123")).toMatchObject({
+                success: false,
+                message: "Branch 'missing123' does not exist."
+            });
+            // Already under the parent, which validateParentChild() rejects.
+            const res = cloningService.cloneNoteBefore(existing.note.noteId, branchIdOf(existing));
+            expect(res.success).toBe(false);
+        });
+    });
 });

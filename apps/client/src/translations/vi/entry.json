@@ -67,7 +67,6 @@
         "sync-from-desktop-unreachable-description": "Để đồng bộ hóa, máy desktop khác phải kết nối đến máy này qua mạng. Vì lý do bảo mật, ứng dụng desktop này chỉ chấp nhận kết nối từ máy tính này, do đó máy desktop khác chưa thể truy cập được. Cho phép truy cập mạng bên dưới — Trilium sẽ khởi động lại để áp dụng.",
         "sync-from-desktop-allow-access": "Cho phép truy cập mạng & khởi động lại",
         "advanced-options": "Tùy chọn nâng cao",
-        "sync-failed": "Đồng bộ hóa thất bại: {{- message}}",
         "sync-failed-title": "Đồng bộ hóa thất bại",
         "sync-failed-description": "Không thể hoàn tất quá trình đồng bộ hóa ban đầu. Bạn có thể thử lại hoặc quay lại để kiểm tra địa chỉ server và thông tin xác thực.",
         "sync-failed-admonition-title": "Lần thử đồng bộ hóa cuối cùng đã thất bại",
@@ -160,6 +159,10 @@
         "backup-saved-to": "Tệp sao lưu đã được lưu vào {{- location}}. Nhấn \"Hoàn tất\" để quay lại ứng dụng.",
         "backup-name-description": "Đặt tên cho bản sao lưu này để bạn dễ nhận ra sau này, hoặc giữ lại tên được gợi ý.",
         "backup-password": "Mật khẩu (không bắt buộc)",
-        "backup-name": "Tên bản sao lưu"
+        "backup-name": "Tên bản sao lưu",
+        "sync-from-server-failed": "Sync lỗi",
+        "server-totp-token": "Mã mật khẩu một lần hoặc mã khôi phục (không bắt buộc)",
+        "totp-required": "Máy chủ này yêu cầu mã mật khẩu một lần hoặc mã khôi phục.",
+        "wrong-totp": "Mã mật khẩu một lần hoặc mã khôi phục không đúng. Vui lòng thử lại."
     }
 }

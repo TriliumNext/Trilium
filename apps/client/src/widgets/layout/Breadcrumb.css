@@ -113,3 +113,23 @@
         height: 23px;
     }
 }
+
+.breadcrumb-child-list {
+    max-width: 500px;
+
+    .dropdown-item > span > :last-child {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .protected-title {
+        font-style: italic;
+    }
+
+    .protected-icon {
+        --menu-item-icon-color: var(--quick-search-result-highlight-color);
+        margin-inline-start: 6px;
+    }
+}

@@ -1,3 +1,6 @@
+import { AttributeEditor, EmbedHistory } from "@triliumnext/ckeditor5";
+import VanillaCodeMirror from "@triliumnext/codemirror";
+import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,24 +10,33 @@ import type { SaveState } from "../../../components/note_context";
 import FAttachment from "../../../entities/fattachment";
 import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
+import contextMenu from "../../../menus/context_menu";
+import attributes from "../../../services/attributes";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
+import search from "../../../services/search";
+import {
+    buildCodeViewTextEditor, getEmbedMenuItems, runEmbedMenuItem, summarizeMenuItem
+} from "../../../test/content_embed";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import { getContentEmbedTools } from "../text/content_embed_tools";
+import { CodeMirrorFindTarget } from "../../find_in_code";
+import { NoteSaves } from "../text/attachment_saves";
+import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
+import EmbedHistories from "../text/embed_history";
 import CodeEmbed from "./CodeEmbed";
 
-const renderCodePreview = vi.hoisted(() => vi.fn(async (content: string, _mime: string) => {
-    const pre = document.createElement("pre");
-    pre.textContent = content;
-    return pre;
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string, values?: Record<string, unknown>) =>
+        values ? `${key} ${Object.values(values).join(" ")}` : key
 }));
-vi.mock("../../../services/content_renderer", () => ({ renderCodePreview }));
 
-// `CodeEditor` reads the theme as a string.
+// `CodeEditor` reads the theme as a string, and the line numbers set to Auto from the option.
 options.set("codeNoteTheme", "");
+options.set("codeLineNumbersEnabled", "true");
 
 const parent = new Component();
 const figures: HTMLElement[] = [];
@@ -36,24 +48,37 @@ afterEach(() => {
         figure.remove();
     }
     figures.length = 0;
+    vi.restoreAllMocks();
 });
 
 describe("CodeEmbed", () => {
-    it("shows the preview, and offers the Editable toggle only where it can edit", async () => {
+    it("shows the content read-only, and offers the Editable toggle only where it can edit", async () => {
         const note = buildCodeNote("print(1)");
-        const preview = buildPreview("print(1)");
-        const { figure } = await mount(note, buildEditor(), { preview });
-        expect(figure.querySelector(".editable-embed-preview")?.firstChild).toBe(preview);
-        expect(getContentEmbedTools(figure)?.hasEditableFlag).toBe(true);
+        const { figure } = await mount(note, buildEditor());
+        const view = await findView(figure, true);
+        expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "print(1)", true ]);
+        const tools = getContentEmbedTools(figure);
+        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon ]).toEqual([ true, moveVerticalIcon ]);
+        expect(moveVerticalIcon).toContain("<svg");
 
-        const { figure: locked } = await mount(note, buildEditor({ canEdit: () => false }));
-        expect(getContentEmbedTools(locked)).toBeNull();
+        const { figure: locked } = await mount(note, buildEditor({ canEdit: () => false }), {
+            isEditable: true
+        });
+        expect((await findView(locked, true)).state.readOnly).toBe(true);
+        expectBoxSizeIconAlone(locked);
 
         const readOnly = buildNote({
             title: "Fixed", type: "code", mime: "text/x-python", content: "", "#readOnly": ""
         });
         const { figure: fixed } = await mount(readOnly, buildEditor());
-        expect(getContentEmbedTools(fixed)).toBeNull();
+        expectBoxSizeIconAlone(fixed);
+
+        // Without an editor, as in a read-only text note.
+        const { figure: shown } = await mount(note, undefined, { isEditable: true });
+        const shownView = await findView(shown, true);
+        expect([ shownView.state.doc.toString(), shownView.state.readOnly ])
+            .toEqual([ "print(1)", true ]);
+        expectBoxSizeIconAlone(shown);
     });
 
     it("edits with CodeMirror while the toggle is on, and saves only the changes", async () => {
@@ -61,8 +86,8 @@ describe("CodeEmbed", () => {
         const { figure } = await mount(buildCodeNote("print(1)"), editor, { isEditable: true });
 
         const view = await findView(figure);
-        expect(view.state.doc.toString()).toBe("print(1)");
-        expect(figure.querySelector(".editable-embed-preview")).toBeNull();
+        expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "print(1)", false ]);
+        expect(figure.querySelector(".code-embed-editor.read-only")).toBeNull();
         expect(editor.scheduleSave).not.toHaveBeenCalled();
 
         act(() => view.dispatch({ changes: { from: 0, insert: "# " } }));
@@ -71,22 +96,424 @@ describe("CodeEmbed", () => {
         expect(getContent()).toBe("# print(1)");
     });
 
-    it("releases the editor and previews the edited content once the toggle goes off", async () => {
-        const editor = buildEditor();
-        const { figure } = await mount(buildCodeNote("a"), editor, { isEditable: true });
+    it("lists the snippets of its language after a slash while the toggle is on", async () => {
+        const snippet = buildNote({
+            title: "Greeting", type: "code", mime: "text/x-python", content: "print('hi')"
+        });
+        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ snippet ]);
+        const { figure } = await mount(buildCodeNote(""), buildEditor(), { isEditable: true });
         const view = await findView(figure);
-        act(() => view.dispatch({ changes: { from: 1, insert: "b" } }));
+        expect(searchForNotes).toHaveBeenCalledWith("#snippet");
+
+        view.focus();
+        const rows = () => [
+            ...document.querySelectorAll(".note-autocomplete-menu [role=option]")
+        ];
+        // Typed again until the snippets have loaded, as a list opens only where it has entries.
+        await vi.waitFor(() => {
+            act(() => view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: "/" },
+                selection: { anchor: 1 }
+            }));
+            expect(rows().map((row) => row.textContent))
+                .toEqual([ expect.stringContaining("Greeting") ]);
+        });
+        view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "Enter", bubbles: true, cancelable: true
+        }));
+        await vi.waitFor(() => expect(view.state.doc.toString()).toBe("print('hi')"));
+    });
+
+    it("lets the find search the editor, and replace only while it edits", async () => {
+        const { figure } = await mount(buildCodeNote("print(1)\nprint(2)"), buildEditor(), {
+            isEditable: true
+        });
+        const view = await findView(figure);
+        const target = getEmbedFindTarget(figure);
+        if (!(target instanceof CodeMirrorFindTarget)) throw new Error("Expected a code target.");
+        const onContentChange = vi.fn();
+        const stopWatching = target.watchContent(onContentChange);
+
+        expect(await target.find("print", { matchCase: false, wholeWord: false })).toBe(2);
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
+        act(() => target.highlight(1));
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(1);
+        act(() => target.highlight(null));
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
+        expect(target.getFirstMatchBelow(-Infinity)).toBe(0);
+        expect(target.getFirstMatchBelow(Infinity)).toBeNull();
+        expect(onContentChange).not.toHaveBeenCalled();
+
+        expect(await target.replace(1, "log")).toBe(1);
+        expect(view.state.doc.toString()).toBe("print(1)\nlog(2)");
+        expect(onContentChange).toHaveBeenCalledOnce();
+        expect(target.close(0)).toBe(true);
+        expect([ view.state.selection.main.from, view.state.selection.main.to ]).toEqual([ 0, 5 ]);
+        stopWatching();
+        act(() => view.dispatch({ changes: { from: 0, insert: "#" } }));
+        expect(onContentChange).toHaveBeenCalledOnce();
 
         await act(async () => {
             delete figure.dataset.editable;
             await Promise.resolve();
         });
+        expect(await findView(figure, true)).toBe(view);
+        expect(getEmbedFindTarget(figure)).toBe(target);
+        expect(await target.find("print", { matchCase: false, wholeWord: false })).toBe(1);
+        expect(target.canReplace()).toBe(false);
+        expect(await target.replace(0, "log")).toBe(1);
+        expect(await target.replaceAll("log")).toBe(1);
+        expect(view.state.doc.toString()).toBe("#print(1)\nlog(2)");
+    });
 
-        expect(editor.release).toHaveBeenCalledOnce();
-        await vi.waitFor(() => {
-            expect(figure.querySelector(".editable-embed-preview")?.textContent).toBe("ab");
+    it("keeps its edits on the text note's undo stack, read-only and remounted too", async () => {
+        const element = document.createElement("div");
+        document.body.append(element);
+        const textEditor = await AttributeEditor.create(element, {
+            licenseKey: "GPL", extraPlugins: [ EmbedHistory ]
         });
-        expect(figure.querySelector(".cm-editor")).toBeNull();
+        const histories = new EmbedHistories(() => textEditor);
+        const note = buildCodeNote("x");
+        const editor = buildSavingEditor(note, histories);
+        const { figure } = await mount(note, editor, { isEditable: true });
+        let view = await findView(figure);
+        const outside = vi.fn();
+        figure.addEventListener("keydown", outside);
+
+        // Content saved elsewhere loads outside the undo stack.
+        note.getBlob = async () => buildBlob("a");
+        const noteSaved = new LoadResults([]);
+        noteSaved.addNoteContent(note.noteId, "any-component");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: noteSaved });
+        });
+        await vi.waitFor(() => expect(view.state.doc.toString()).toBe("a"));
+        expect(textEditor.commands.get("undo")?.isEnabled).toBe(false);
+
+        act(() => view.dispatch({ changes: { from: 1, insert: "b" }, userEvent: "input.type" }));
+        act(() => textEditor.execute("undo"));
+        expect([ view.state.doc.toString(), editor.getUnsavedContent() ]).toEqual([ "a", "a" ]);
+        act(() => textEditor.execute("redo"));
+        expect([ view.state.doc.toString(), editor.getUnsavedContent() ]).toEqual([ "ab", "ab" ]);
+
+        // The undo keys of the embed undo the note, while read-only as well.
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        view = await findView(figure, true);
+        act(() => pressKey(view.contentDOM, "z"));
+        expect(view.state.doc.toString()).toBe("a");
+        expect(outside).not.toHaveBeenCalled();
+
+        // The next step applies to a remounted editor.
+        const box = figure.querySelector(".include-note-content");
+        if (box) act(() => render(null, box));
+        figure.remove();
+        const { figure: remounted } = await mount(note, editor, {
+            isEditable: true, content: editor.getUnsavedContent()
+        });
+        view = await findView(remounted);
+        act(() => pressKey(view.contentDOM, "y"));
+        expect([ view.state.doc.toString(), editor.getUnsavedContent() ]).toEqual([ "ab", "ab" ]);
+
+        await textEditor.destroy();
+        element.remove();
+    });
+
+    it("switches the same CodeMirror to editing and back, and releases the edits", async () => {
+        const note = buildCodeNote("a");
+        const editor = buildSavingEditor(note);
+        const { figure } = await mount(note, editor);
+        const view = await findView(figure, true);
+
+        await act(async () => {
+            figure.dataset.editable = "true";
+            await Promise.resolve();
+        });
+        expect(await findView(figure)).toBe(view);
+        expect(view.state.readOnly).toBe(false);
+        act(() => view.dispatch({ changes: { from: 1, insert: "b" } }));
+        expect(editor.getUnsavedContent()).toBe("ab");
+
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        expect(editor.getUnsavedContent()).toBe("ab");
+        expect(await findView(figure, true)).toBe(view);
+        expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "ab", true ]);
+        expect(figure.querySelectorAll(".cm-editor")).toHaveLength(1);
+    });
+
+    it("offers the language and tab width menus of a note on the toolbar of its embed", async () => {
+        options.set("codeNoteTabWidth", "4");
+        options.set("codeNoteIndentWithTabs", "false");
+        options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python" ]));
+        vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        let unsavedContent: string | undefined;
+        const editor = buildEditor({
+            getUnsavedContent: () => unsavedContent,
+            scheduleSave: vi.fn((getContent: () => string) => {
+                unsavedContent = getContent();
+            })
+        });
+        const { figure } = await mount(buildCodeNote("if a:\n    b"), editor);
+        const tools = getContentEmbedTools(figure);
+        expect(tools?.hasEditableFlag).toBe(true);
+        expect(tools?.getTools().map(({ id, label, text, opensMenu }) => ({
+            id, label, text, opensMenu
+        }))).toEqual([
+            {
+                id: "codeLanguage", label: "status_bar.code_note_switcher", text: "Python",
+                opensMenu: true
+            },
+            {
+                id: "tabWidth", label: "status_bar.tab_width_title",
+                text: "status_bar.tab_width_spaces_short 4", opensMenu: true
+            }
+        ]);
+
+        const reindentTo = (title: string) => selectMenuItem(figure, "tabWidth", title, true);
+        const getLastSave = () => vi.mocked(editor.scheduleSave).mock.lastCall?.[0]();
+
+        // The content, which is saved, and which the read-only editor shows.
+        const readOnlyView = await findView(figure, true);
+        await reindentTo("status_bar.tab_width_style_tabs");
+        expect(getLastSave()).toBe("if a:\n\tb");
+        await vi.waitFor(() => expect(readOnlyView.state.doc.toString()).toBe("if a:\n\tb"));
+
+        // The editor while it is open, then the content again once it closes.
+        await act(async () => {
+            figure.dataset.editable = "true";
+            await Promise.resolve();
+        });
+        const view = await findView(figure);
+        act(() => view.dispatch({ changes: { from: 0, insert: "# " } }));
+        await reindentTo("status_bar.tab_width_spaces 8");
+        expect(view.state.doc.toString()).toBe("# if a:\n        b");
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await reindentTo("status_bar.tab_width_spaces 2");
+        expect(getLastSave()).toBe("# if a:\n    b");
+        const closedView = await findView(figure, true);
+        await vi.waitFor(() => expect(closedView.state.doc.toString()).toBe("# if a:\n    b"));
+    });
+
+    it("re-indents another embed's unsaved changes as a step of the note's undo", async () => {
+        options.set("codeNoteTabWidth", "4");
+        options.set("codeNoteIndentWithTabs", "false");
+        options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python" ]));
+        vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        const element = document.createElement("div");
+        document.body.append(element);
+        const textEditor = await AttributeEditor.create(element, {
+            licenseKey: "GPL", extraPlugins: [ EmbedHistory ]
+        });
+        const note = buildCodeNote("if a:\n    b");
+        const editor = buildSavingEditor(note, new EmbedHistories(() => textEditor));
+        const { figure: editing } = await mount(note, editor, { isEditable: true });
+        const { figure: previewing } = await mount(note, editor);
+        const view = await findView(editing);
+        act(() => view.dispatch({ changes: { from: 0, insert: "# " } }));
+
+        await selectMenuItem(previewing, "tabWidth", "status_bar.tab_width_style_tabs", true);
+        expect(editor.getUnsavedContent()).toBe("# if a:\n\tb");
+        act(() => textEditor.execute("undo"));
+        expect(editor.getUnsavedContent()).toBe("# if a:\n    b");
+
+        await textEditor.destroy();
+        element.remove();
+    });
+
+    it("keeps the language and indentation of a file in its embed, set from its toolbar", async () => {
+        options.set("codeNoteTabWidth", "4");
+        options.set("codeNoteIndentWithTabs", "false");
+        options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-sh" ]));
+        vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        const setMimeType = vi.spyOn(VanillaCodeMirror.prototype, "setMimeType");
+        const editor = buildEditor();
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const { figure } = await mount(buildAttachment("script.py"), editor, {
+            content: "if a:\n  b",
+            mime: "text/x-python",
+            codeLanguage: "text/x-sh",
+            embedAttributes: { "data-code-language": "text/x-sh", "data-code-tab-width": "2" },
+            container: editable
+        });
+        const tools = getContentEmbedTools(figure);
+        expect(tools?.hasEditableFlag).toBe(true);
+        expect(tools?.getTools().map((tool) => tool.text))
+            .toEqual([ "Shell (bash)", "status_bar.tab_width_spaces_short 2" ]);
+        await findView(figure, true);
+        expect(setMimeType).toHaveBeenLastCalledWith("text/x-sh");
+
+        const select = (id: string, title: string, isReindent = false) =>
+            selectMenuItem(figure, id, title, isReindent);
+
+        // The language of the file's name is its default, which the embed then leaves out.
+        await select("codeLanguage", "Python");
+        expect(textEditor.execute)
+            .toHaveBeenLastCalledWith("setContentEmbedCodeView", { language: null });
+        await vi.waitFor(() => expect(setMimeType).toHaveBeenLastCalledWith("text/x-python"));
+        await select("codeLanguage", "Plain text");
+        expect(figure.getAttribute("data-code-language")).toBe("text/plain");
+        await vi.waitFor(() => expect(setMimeType).toHaveBeenLastCalledWith("text/plain"));
+
+        // The indentation, which a re-indent sets with the content, as one change.
+        await select("tabWidth", "status_bar.tab_width_style_tabs");
+        await select("tabWidth", "status_bar.tab_width_spaces 4", true);
+        expect(vi.mocked(editor.scheduleSave).mock.lastCall?.[0]()).toBe("if a:\n    b");
+        expect(textEditor.execute.mock.calls.slice(-2).map(([ , codeView ]) => codeView))
+            .toEqual([
+                { tabWidth: undefined, indentWithTabs: true },
+                { tabWidth: 4, indentWithTabs: false }
+            ]);
+        expect([ "data-code-tab-width", "data-code-indent-with-tabs" ]
+            .map((name) => figure.getAttribute(name))).toEqual([ "4", "false" ]);
+
+        // CodeMirror follows the indentation of the embed.
+        figure.setAttribute("data-code-tab-width", "2");
+        figure.setAttribute("data-code-indent-with-tabs", "true");
+        await act(async () => {
+            figure.dataset.editable = "true";
+            await Promise.resolve();
+        });
+        const view = await findView(figure);
+        const { indentUnit } = await import("@codemirror/language");
+        expect([ view.state.tabSize, view.state.facet(indentUnit) ]).toEqual([ 2, "\t" ]);
+
+        // Nothing changes without the text editor of the embed.
+        textEditor.execute.mockClear();
+        textEditor.selectEmbedAt.mockReturnValue(false);
+        await select("tabWidth", "status_bar.tab_width_spaces 8");
+        expect(textEditor.execute).not.toHaveBeenCalled();
+    });
+
+    it("offers the line wrapping and line numbers of a note in the menu of its embed", async () => {
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName")
+            .mockResolvedValue(undefined as never);
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const note = buildNote({
+            title: "Script", type: "code", mime: "text/x-python", content: "a",
+            "#wrapLines": "false"
+        });
+        const { figure } = await mount(note, buildEditor(), {
+            hasCodeLineNumbers: false,
+            embedAttributes: { "data-code-line-numbers": "false" },
+            container: editable
+        });
+        expect(getEmbedMenuItems(figure).map(summarizeMenuItem)).toEqual([
+            {
+                title: "note_actions.word_wrap",
+                items: [
+                    { title: "note_actions.word_wrap_auto", checked: false },
+                    { title: "note_actions.word_wrap_on", checked: false },
+                    { title: "note_actions.word_wrap_off", checked: true }
+                ]
+            },
+            {
+                title: "link_context_menu.line_numbers",
+                items: [
+                    { title: "link_context_menu.line_numbers_auto", checked: false },
+                    { title: "link_context_menu.line_numbers_on", checked: false },
+                    { title: "link_context_menu.line_numbers_off", checked: true }
+                ]
+            }
+        ]);
+        const view = await findView(figure, true);
+        expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(false);
+        expect(figure.querySelector(".cm-lineNumbers")).toBeNull();
+
+        // The line wrapping is the `#wrapLines` label of the note.
+        await runEmbedMenuItem(figure, 0, 0);
+        expect(removeLabel).toHaveBeenCalledWith(note, "wrapLines");
+        await runEmbedMenuItem(figure, 0, 1);
+        expect(setLabel).toHaveBeenCalledWith(note.noteId, "wrapLines", "true");
+        expect(textEditor.execute).not.toHaveBeenCalled();
+
+        // The line numbers are kept in the embed, as the note has no label for them.
+        await runEmbedMenuItem(figure, 1, 0);
+        expect(textEditor.execute)
+            .toHaveBeenLastCalledWith("setContentEmbedCodeView", { lineNumbers: null });
+        await vi.waitFor(() => {
+            expect(summarizeMenuItem(getEmbedMenuItems(figure)[1])).toMatchObject({
+                items: [ { checked: true }, { checked: false }, { checked: false } ]
+            });
+        });
+        await vi.waitFor(() => expect(figure.querySelector(".cm-lineNumbers")).not.toBeNull());
+        await runEmbedMenuItem(figure, 1, 1);
+        expect(figure.getAttribute("data-code-line-numbers")).toBe("true");
+    });
+
+    it("keeps the line wrapping and the line numbers of a file in its embed", async () => {
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const { figure } = await mount(buildAttachment("script.py"), buildEditor(), {
+            content: "a",
+            mime: "text/x-python",
+            isCodeWrapped: true,
+            embedAttributes: { "data-code-wrap-lines": "true" },
+            container: editable
+        });
+        expect(getEmbedMenuItems(figure).map(summarizeMenuItem)).toMatchObject([
+            {
+                items: [
+                    { checked: false },
+                    { checked: true },
+                    { checked: false }
+                ]
+            },
+            { items: [ { checked: true }, { checked: false }, { checked: false } ] }
+        ]);
+        const view = await findView(figure, true);
+        expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(true);
+        expect(figure.querySelector(".cm-lineNumbers")).not.toBeNull();
+
+        await runEmbedMenuItem(figure, 0, 2);
+        expect(textEditor.execute)
+            .toHaveBeenLastCalledWith("setContentEmbedCodeView", { wrapLines: false });
+        await runEmbedMenuItem(figure, 1, 2);
+        expect(textEditor.execute)
+            .toHaveBeenLastCalledWith("setContentEmbedCodeView", { lineNumbers: false });
+        expect([ "data-code-wrap-lines", "data-code-line-numbers" ]
+            .map((name) => figure.getAttribute(name))).toEqual([ "false", "false" ]);
+        await vi.waitFor(() => {
+            expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(false);
+            expect(figure.querySelector(".cm-lineNumbers")).toBeNull();
+        });
+
+        // The editor follows the embed as well.
+        await runEmbedMenuItem(figure, 0, 1);
+        await act(async () => {
+            figure.dataset.editable = "true";
+            await Promise.resolve();
+        });
+        const editingView = await findView(figure);
+        expect(editingView.contentDOM.classList.contains("cm-lineWrapping")).toBe(true);
+        expect(figure.querySelector(".cm-lineNumbers")).toBeNull();
+        await runEmbedMenuItem(figure, 1, 1);
+        await vi.waitFor(() => expect(figure.querySelector(".cm-lineNumbers")).not.toBeNull());
+    });
+
+    it("numbers the lines of an embed set to Auto as the global option does", async () => {
+        options.set("codeLineNumbersEnabled", "false");
+        try {
+            const { figure } = await mount(buildCodeNote("a"), buildEditor());
+            await findView(figure, true);
+            expect(figure.querySelector(".cm-lineNumbers")).toBeNull();
+
+            const { figure: numbered } = await mount(buildCodeNote("a"), buildEditor(), {
+                hasCodeLineNumbers: true,
+                embedAttributes: { "data-code-line-numbers": "true" }
+            });
+            await findView(numbered, true);
+            expect(numbered.querySelector(".cm-lineNumbers")).not.toBeNull();
+        } finally {
+            options.set("codeLineNumbersEnabled", "true");
+        }
     });
 
     it("highlights an attachment with the MIME type it is given", async () => {
@@ -101,6 +528,7 @@ describe("CodeEmbed", () => {
             utcDateScheduledForErasureSince: "",
             contentLength: 0
         } as never);
+        const setMimeType = vi.spyOn(VanillaCodeMirror.prototype, "setMimeType");
         const { figure } = await mount(attachment, buildEditor(), {
             content: "a",
             mime: "text/x-python",
@@ -113,8 +541,36 @@ describe("CodeEmbed", () => {
             delete figure.dataset.editable;
             await Promise.resolve();
         });
+        const readOnlyView = await findView(figure, true);
+        expect(readOnlyView.state.doc.toString()).toBe("ab");
+        expect(new Set(setMimeType.mock.calls.map(([ mime ]) => mime)))
+            .toEqual(new Set([ "text/x-python" ]));
+    });
+
+    it("wraps the lines while read-only as the `#wrapLines` label of its note changes", async () => {
+        const note = buildNote({
+            title: "Script", type: "code", mime: "text/x-python", content: "a", "#wrapLines": "true"
+        });
+        const { figure } = await mount(note, buildEditor());
+        const view = await findView(figure, true);
+        expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(true);
+
+        const [ label ] = note.getOwnedLabels("wrapLines");
+        label.value = "false";
+        const labelChanged = new LoadResults([ {
+            entityName: "attributes", entityId: label.attributeId, hash: "", isSynced: true,
+            isErased: false, entity: {
+                attributeId: label.attributeId, noteId: note.noteId, type: "label",
+                name: "wrapLines", value: "false", isDeleted: false
+            }
+        } as never ]);
+        labelChanged.addAttribute(label.attributeId, "other");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: labelChanged });
+        });
+
         await vi.waitFor(() => {
-            expect(renderCodePreview).toHaveBeenLastCalledWith("ab", "text/x-python");
+            expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(false);
         });
     });
 
@@ -132,6 +588,15 @@ describe("CodeEmbed", () => {
             await parent.handleEvent("entitiesReloaded", { loadResults: noteSaved });
         });
         await vi.waitFor(() => expect(view.state.doc.toString()).toBe("two"));
+
+        // An embed without an editor, which shows the note read-only.
+        const { figure: shown } = await mount(note, undefined);
+        const shownView = await findView(shown, true);
+        note.getBlob = async () => buildBlob("three");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: noteSaved });
+        });
+        await vi.waitFor(() => expect(shownView.state.doc.toString()).toBe("three"));
 
         const attachment = buildAttachment("script.py");
         const { figure: attachmentFigure } = await mount(attachment, buildEditor(), {
@@ -174,6 +639,54 @@ describe("CodeEmbed", () => {
             await new Promise((resolve) => setTimeout(resolve, 50));
         });
         expect(view.state.doc.toString()).toBe("new");
+    });
+
+    it("shows the latest content once shown, when hidden fetches land out of order", async () => {
+        const container = document.body.appendChild(document.createElement("div"));
+        const attachment = buildAttachment("script.py");
+        const { figure } = await mount(attachment, buildEditor(), {
+            content: "a",
+            isEditable: true,
+            container
+        });
+        const view = await findView(figure);
+        const resizeCallbacks: ((entries: unknown[]) => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: (entries: unknown[]) => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+
+        try {
+            container.style.display = "none";
+            const resolvers: ((blob: FBlob) => void)[] = [];
+            attachment.getBlob = () => new Promise((resolve) => resolvers.push(resolve));
+            const saved = new LoadResults([]);
+            saved.addAttachmentRow({ attachmentId: attachment.attachmentId } as never, "any");
+            await act(async () => {
+                await parent.handleEvent("entitiesReloaded", { loadResults: saved });
+                await parent.handleEvent("entitiesReloaded", { loadResults: saved });
+            });
+            await act(async () => {
+                resolvers[1](buildBlob("new"));
+            });
+            await act(async () => {
+                resolvers[0](buildBlob("old"));
+            });
+            expect(view.state.doc.toString()).toBe("a");
+
+            container.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback([]);
+            });
+            await vi.waitFor(() => expect(view.state.doc.toString()).toBe("new"));
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+            container.remove();
+        }
     });
 
     it("shows how the saving goes in the title row of its embed while it edits", async () => {
@@ -231,14 +744,20 @@ describe("CodeEmbed", () => {
 interface MountOptions {
     content?: string;
     mime?: string;
-    preview?: HTMLElement;
+    codeLanguage?: string;
+    isCodeWrapped?: boolean;
+    hasCodeLineNumbers?: boolean;
     isEditable?: boolean;
+    /** Attributes of the embed, such as `data-code-language`. */
+    embedAttributes?: Record<string, string>;
+    /** The element the embed goes in, such as the editable root of a text editor. */
+    container?: HTMLElement;
 }
 
 /** Renders `CodeEmbed` in the markup of an embed, as the host does. */
 async function mount(
     entity: FNote | FAttachment,
-    editor: ContentEditor,
+    editor: ContentEditor | undefined,
     options: MountOptions = {}
 ) {
     const content = options.content ?? "";
@@ -246,6 +765,9 @@ async function mount(
     figure.className = "include-note";
     if (options.isEditable) {
         figure.dataset.editable = "true";
+    }
+    for (const [ name, value ] of Object.entries(options.embedAttributes ?? {})) {
+        figure.setAttribute(name, value);
     }
     const wrapper = document.createElement("div");
     wrapper.className = "include-note-wrapper";
@@ -258,7 +780,7 @@ async function mount(
     box.className = "include-note-content";
     wrapper.append(titleRow, box);
     figure.append(wrapper);
-    document.body.append(figure);
+    (options.container ?? document.body).append(figure);
     figures.push(figure);
 
     await act(async () => {
@@ -269,7 +791,9 @@ async function mount(
                     editor={editor}
                     content={options.content ?? (await entity.getBlob())?.content ?? content}
                     mime={options.mime ?? entity.mime}
-                    preview={options.preview ?? buildPreview(content)}
+                    codeLanguage={options.codeLanguage}
+                    isCodeWrapped={options.isCodeWrapped}
+                    hasCodeLineNumbers={options.hasCodeLineNumbers}
                 />
             </ParentComponent.Provider>,
             box
@@ -292,18 +816,52 @@ function buildEditor(overrides: Partial<ContentEditor> = {}): ContentEditor {
     };
 }
 
-function buildPreview(content: string) {
-    const pre = document.createElement("pre");
-    pre.textContent = content;
-    return pre;
+/** An editor of `note` over real `NoteSaves`, which the embeds given it share as a host's do. */
+function buildSavingEditor(note: FNote, histories?: EmbedHistories): ContentEditor {
+    const saves = new NoteSaves(() => {}, undefined);
+    return {
+        canEdit: () => true,
+        getUnsavedContent: () => saves.getUnsavedContent(note.noteId),
+        scheduleSave: (getContent, onSaved) => saves.scheduleSave(note, getContent, onSaved),
+        release: () => saves.release(note.noteId),
+        history: histories?.get(note.noteId, (text) => saves.scheduleSave(note, () => text))
+    };
 }
 
-/** The CodeMirror view in `figure`, once the editor module has loaded. */
-async function findView(figure: HTMLElement) {
+/** Presses Ctrl and `key` in `target`. */
+function pressKey(target: HTMLElement, key: string) {
+    target.dispatchEvent(new KeyboardEvent("keydown", {
+        key, ctrlKey: true, bubbles: true, cancelable: true
+    }));
+}
+
+/**
+ * Runs the item `title` of the toolbar menu `id` of `figure`, from the "Re-indent" part of the
+ * menu when `isReindent`. `contextMenu.show` must be mocked.
+ */
+async function selectMenuItem(figure: HTMLElement, id: string, title: string, isReindent = false) {
+    getContentEmbedTools(figure)?.openMenu?.(id, document.createElement("button"));
+    const items = vi.mocked(contextMenu.show).mock.lastCall?.[0].items ?? [];
+    const item = (isReindent ? items.slice(-7) : items)
+        .find((candidate) => "title" in candidate && candidate.title === title);
+    if (!item || "kind" in item) throw new Error(`No item titled ${title}.`);
+    await act(async () => item.handler?.(item, new MouseEvent("click")));
+}
+
+/** Asserts that the toolbar of the embed `figure` shows the box size as an icon, and no tools. */
+function expectBoxSizeIconAlone(figure: HTMLElement) {
+    const tools = getContentEmbedTools(figure);
+    expect([ tools?.hasEditableFlag, tools?.boxSizeIcon ]).toEqual([ false, moveVerticalIcon ]);
+    expect([ tools?.getTools(), tools?.getMenuItems?.() ]).toEqual([ [], [] ]);
+}
+
+/** The editing or the read-only CodeMirror view in `figure`, once the editor module has loaded. */
+async function findView(figure: HTMLElement, isReadOnly = false) {
     const { EditorView } = await import("@codemirror/view");
+    const selector = isReadOnly ? ".read-only" : ":not(.read-only)";
     let view: InstanceType<typeof EditorView> | null = null;
     await vi.waitFor(() => {
-        const dom = figure.querySelector(".cm-editor");
+        const dom = figure.querySelector(`pre.code-embed-editor${selector} > .cm-editor`);
         view = dom instanceof HTMLElement ? EditorView.findFromDOM(dom) : null;
         expect(view).not.toBeNull();
     }, { timeout: 5000 });

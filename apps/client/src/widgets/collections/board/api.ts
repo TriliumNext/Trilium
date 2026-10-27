@@ -160,6 +160,8 @@ export default class BoardApi {
     /** The config as the board last handed it over, against which a fresh one is recognised. */
     private viewConfigSource: BoardViewData | undefined;
     private viewConfig: BoardViewData;
+    /** `viewConfig` as last taken from the board, before the api stored a config of its own. */
+    private drawnConfig: BoardViewData;
 
     constructor(
         private byColumn: ColumnMap | undefined,
@@ -182,6 +184,7 @@ export default class BoardApi {
     ) {
         this.viewConfigSource = viewConfig;
         this.viewConfig = viewConfig ?? {};
+        this.drawnConfig = this.viewConfig;
         this.groupBy = statusAttribute;
         this.isRelationMode = statusAttribute.startsWith("~");
 
@@ -226,6 +229,7 @@ export default class BoardApi {
         if (viewConfig !== this.viewConfigSource) {
             this.viewConfigSource = viewConfig;
             this.viewConfig = viewConfig ?? {};
+            this.drawnConfig = this.viewConfig;
         }
         this.saveConfig = saveConfig;
         this.setBranchIdToEdit = setBranchIdToEdit;
@@ -583,6 +587,7 @@ export default class BoardApi {
         if (renamed?.config) {
             this.viewConfig = renamed.config;
             this.viewConfigSource = renamed.config;
+            this.drawnConfig = renamed.config;
         }
     }
 
@@ -1021,6 +1026,42 @@ export default class BoardApi {
      */
     async setPromotedAttributes(attributes: PromotedAttribute[]) {
         this.storeConfig({ promotedAttributes: storedPromotedAttributes(attributes) });
+    }
+
+    /**
+     * Whether the api stored a config after the board drew `config`.
+     *
+     * A refresh resolves its columns from the config of the render that started it. Once this
+     * returns `true`, those columns can be ones the api has since removed, so the refresh must not
+     * write them.
+     */
+    hasStoredSince(config: BoardViewData | undefined) {
+        return config !== this.viewConfigSource || this.viewConfig !== this.drawnConfig;
+    }
+
+    /**
+     * Runs `deletion`, which deletes the attribute a grouping is made from, then empties the columns
+     * stored for that grouping so that `syncColumnsToDefinition()` cannot write them back into a
+     * new definition. The empty list keeps the grouping's key, without which
+     * `adoptLegacyColumns()` reads the default grouping's `columns` as this grouping's.
+     *
+     * Counted in `pending.inFlight` while `deletion` runs. A refresh that resolves later still
+     * holds the old config, and `hasStoredSince()` keeps it from writing.
+     */
+    async deleteGrouping(groupBy: string, deletion: () => Promise<void>) {
+        this.pending.inFlight++;
+
+        try {
+            await deletion();
+            // A board that still reads the deleted definition fills an empty list from its options.
+            await ws.waitForMaxKnownEntityChangeId();
+            if (readColumns(this.viewConfig, groupBy)) {
+                this.viewConfig = writeColumns(this.viewConfig, groupBy, []);
+                this.saveConfig(this.viewConfig);
+            }
+        } finally {
+            this.pending.inFlight--;
+        }
     }
 
     /** Sets what the board offers. An empty set would leave nothing to make a card from. */

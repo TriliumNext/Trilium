@@ -8,7 +8,28 @@ import { routes } from "@triliumnext/core";
 export interface UploadedFile {
     originalname: string;
     mimetype: string;
-    buffer: Uint8Array;
+    /** Unset for a {@link LocalUploadBody} file on a route that reads uploads in place. */
+    buffer?: Uint8Array;
+    /** The file the page posted, for a {@link LocalUploadBody}. */
+    blob?: Blob;
+}
+
+/**
+ * A multipart upload the page posts as its fields and the picked `File` itself. Structured cloning
+ * passes the `File` by reference, so no bytes are read until a route asks for them.
+ */
+export interface LocalUploadBody {
+    type: "upload";
+    fields: Record<string, string>;
+    file?: File;
+}
+
+export interface RouteOptions {
+    /**
+     * Whether the route reads an upload from `UploadedFile.blob` itself, as the import routes do.
+     * Every other route gets the upload's bytes in `buffer`.
+     */
+    readsUploadsInPlace?: boolean;
 }
 
 export interface BrowserRequest {
@@ -35,6 +56,7 @@ interface Route {
     pattern: RegExp;
     paramNames: string[];
     handler: RouteHandler;
+    options: RouteOptions;
 }
 
 /**
@@ -138,13 +160,14 @@ export class BrowserRouter {
     /**
      * Register a route handler.
      */
-    register(method: string, path: string, handler: RouteHandler): void {
+    register(method: string, path: string, handler: RouteHandler, options: RouteOptions = {}): void {
         const { pattern, paramNames } = pathToRegex(path);
         this.routes.push({
             method: method.toUpperCase(),
             pattern,
             paramNames,
-            handler
+            handler,
+            options
         });
     }
 
@@ -183,7 +206,16 @@ export class BrowserRouter {
         // Parse body based on content-type
         let parsedBody = body;
         let uploadedFile: UploadedFile | undefined;
-        if (body instanceof ArrayBuffer && headers) {
+        if (isLocalUploadBody(body)) {
+            parsedBody = body.fields;
+            if (body.file) {
+                uploadedFile = {
+                    originalname: body.file.name,
+                    mimetype: body.file.type || 'application/octet-stream',
+                    blob: body.file
+                };
+            }
+        } else if (body instanceof ArrayBuffer && headers) {
             const contentType = headers['content-type'] || headers['Content-Type'] || '';
             if (contentType.includes('application/json')) {
                 try {
@@ -231,6 +263,10 @@ export class BrowserRouter {
             const params: Record<string, string> = {};
             for (let i = 0; i < route.paramNames.length; i++) {
                 params[route.paramNames[i]] = decodeURIComponent(match[i + 1]);
+            }
+
+            if (uploadedFile?.blob && !uploadedFile.buffer && !route.options.readsUploadsInPlace) {
+                uploadedFile.buffer = new Uint8Array(await uploadedFile.blob.arrayBuffer());
             }
 
             const request: BrowserRequest = {
@@ -338,4 +374,8 @@ export class BrowserRouter {
  */
 export function createRouter(): BrowserRouter {
     return new BrowserRouter();
+}
+
+function isLocalUploadBody(body: unknown): body is LocalUploadBody {
+    return typeof body === "object" && body !== null && (body as LocalUploadBody).type === "upload";
 }

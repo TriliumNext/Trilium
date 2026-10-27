@@ -2,7 +2,7 @@
  * The app's floating layers: popup roots that render into `document.body` rather than inside
  * whatever raised them — resize gutters, Bootstrap dropdowns, tooltips, modals and their backdrop,
  * popovers, CKEditor balloons, Flatpickr calendars, the attribute detail popup, the context menu,
- * and the `FormAutocomplete` dropdown.
+ * the `FormAutocomplete` dropdown, and `Popup`s such as the tree settings.
  *
  * A surface that closes on an outside press — the peeked right pane, an anchored popover — cannot
  * tell "outside" by DOM containment alone. A dropdown opened from within it lives in the body, so
@@ -16,7 +16,7 @@
  */
 export const FLOATING_LAYER_SELECTOR = ".gutter, .dropdown-menu, .tooltip, .modal, .modal-backdrop, .popover, "
     + ".ck-balloon-panel, .ck-body, .flatpickr-calendar, .attr-detail, #context-menu-container, "
-    + ".form-autocomplete-dropdown";
+    + ".form-autocomplete-dropdown, .tn-popup";
 
 /** Whether a press landed in one of the app's floating layers. See {@link FLOATING_LAYER_SELECTOR}. */
 export function isWithinFloatingLayer(target: EventTarget | null): boolean {

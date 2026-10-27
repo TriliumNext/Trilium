@@ -1,5 +1,6 @@
 import {
-    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
+    getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO, MULTICOLUMN_COLUMN_CLASS,
+    MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
 import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
@@ -82,7 +83,6 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
                 if (isMulticolumnLayout(node) || isMulticolumnColumn(node)) {
                     return blankMulticolumnReplacement(node);
                 }
-
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
                 return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
             },
@@ -96,6 +96,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("tabPanel", buildTabPanelFilter());
         instance.addRule("multicolumn", buildMulticolumnFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
+        instance.addRule("bookmark", buildBookmarkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("linkPreview", buildLinkPreviewFilter());
         instance.addRule("inlineIcon", buildInlineIconFilter());
@@ -164,15 +165,13 @@ function rewriteLanguageTag(source: string) {
     }
 
     switch (source) {
-        case "text-x-trilium-auto":
+        case MIME_TYPE_AUTO:
             return "";
         case "application-javascript-env-frontend":
         case "application-javascript-env-backend":
             return "javascript";
-        case "text-x-nginx-conf":
-            return "nginx";
         default:
-            return source.split("-").at(-1);
+            return getMarkdownNameFromCKEditorLanguage(source) ?? source.split("-").at(-1);
     }
 }
 
@@ -301,6 +300,21 @@ function buildInlineLinkFilter(): Rule {
             let title = cleanAttribute(node.getAttribute('title'));
             if (title) title = ` "${title.replace(/"/g, '\\"')}"`;
             return `[${content}](${href}${title})`;
+        }
+    };
+}
+
+/**
+ * Keeps a bookmark, an `<a>` with an `id` and no `href`, as HTML: Markdown has no syntax for it,
+ * and links to `#<id>` find it only by that `id`.
+ */
+function buildBookmarkFilter(): Rule {
+    return {
+        filter(node) {
+            return node.nodeName === "A" && node.hasAttribute("id") && !node.hasAttribute("href");
+        },
+        replacement(content, node) {
+            return `<a id="${escapeHtml((node as HTMLElement).id)}"></a>${content}`;
         }
     };
 }

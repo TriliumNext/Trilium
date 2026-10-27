@@ -11,7 +11,7 @@ import { ExtendedAdmonition } from "../../react/Admonition";
 import { Badge } from "../../react/Badge";
 import { useEffectiveReadOnly, useNoteBlob, useNoteLabel, useTriliumOption } from "../../react/hooks";
 import { EditableCode, EditableCodeProps, ReadOnlyCode } from "../code/Code";
-import { resolveDisplayMode } from "./split_editor_mode";
+import { type DisplayMode, resolveDisplayMode } from "./split_editor_mode";
 
 export interface SplitEditorProps extends EditableCodeProps {
     className?: string;
@@ -46,17 +46,11 @@ export interface SplitEditorProps extends EditableCodeProps {
  * - Horizontal or vertical orientation for the editor/preview split, adjustable via the switch split orientation button floating button.
  */
 export default function SplitEditor({ note, noteContext, error, previewStale, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, forceReadOnly, editorContent, extraContent, ...editorProps }: SplitEditorProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
     const splitEditorOrientation = useSplitOrientation(forceOrientation);
     const [ displayMode ] = useNoteLabel(note, "displayMode");
     const readOnly = useEffectiveReadOnly(note, noteContext) || Boolean(forceReadOnly);
     const mode = resolveDisplayMode(displayMode, readOnly);
-
-    // Lazy-mount each pane on first need, then keep it mounted so subsequent switches stay instant.
-    const editorMounted = useRef(mode !== "preview");
-    const previewMounted = useRef(mode !== "source");
-    if (mode !== "preview") editorMounted.current = true;
-    if (mode !== "source") previewMounted.current = true;
+    const { editorMounted, previewMounted } = useMountedPanes(mode);
 
     // The editor only feeds content to the preview when it's an `EditableCode`. `ReadOnlyCode`
     // doesn't expose `onContentChanged`, and in preview-only mode the editor isn't mounted at all —
@@ -71,8 +65,8 @@ export default function SplitEditor({ note, noteContext, error, previewStale, sp
         }
     }, [ fallbackBlob, editorPropagatesContent ]);
 
-    const editor = editorMounted.current && (
-        <div className="note-detail-split-editor-col">
+    const editor = (
+        <>
             {editorBefore}
             <div className="note-detail-split-editor">
                 {editorContent ?? (readOnly
@@ -86,10 +80,55 @@ export default function SplitEditor({ note, noteContext, error, previewStale, sp
                     />)}
             </div>
             {extraContent}
-        </div>
+        </>
     );
 
-    const preview = previewMounted.current && <PreviewContainer
+    return (
+        <SplitLayout
+            className={`note-detail-printable ${className ?? ""}`}
+            mode={mode}
+            orientation={splitEditorOrientation}
+            splitOptions={splitOptions}
+            editor={editor}
+            isEditorMounted={editorMounted.current}
+            isPreviewMounted={previewMounted.current}
+            error={error}
+            previewStale={previewStale}
+            previewContent={previewContent}
+            previewButtons={previewButtons}
+        />
+    );
+}
+
+export interface SplitLayoutProps {
+    className?: string;
+    mode: DisplayMode;
+    orientation: "horizontal" | "vertical";
+    splitOptions?: Split.Options;
+    /** The content of the editor pane. */
+    editor: ComponentChildren;
+    /** Whether each pane is mounted, see {@link useMountedPanes}. */
+    isEditorMounted: boolean;
+    isPreviewMounted: boolean;
+    error?: string | null;
+    /** When the preview still shows a previous successful render despite the current {@link error}. */
+    previewStale?: boolean;
+    previewContent: ComponentChildren;
+    previewButtons?: ComponentChildren;
+}
+
+/**
+ * The editor and preview panes of a split editor, laid out for `mode`, and the render error over
+ * the preview. The panes stay mounted across modes, which only toggle a CSS class.
+ */
+export function SplitLayout({ className, mode, orientation, splitOptions, editor, isEditorMounted, isPreviewMounted, error, previewStale, previewContent, previewButtons }: SplitLayoutProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const editorCol = isEditorMounted && (
+        <div className="note-detail-split-editor-col">{editor}</div>
+    );
+
+    const previewCol = isPreviewMounted && <PreviewContainer
         error={error}
         previewStale={previewStale}
         previewContent={previewContent}
@@ -103,25 +142,37 @@ export default function SplitEditor({ note, noteContext, error, previewStale, sp
         const splitInstance = Split(elements, {
             rtl: glob.isRtl,
             sizes: [ 50, 50 ],
-            direction: splitEditorOrientation,
+            direction: orientation,
             gutterSize: DEFAULT_GUTTER_SIZE,
             ...splitOptions
         });
 
         return () => splitInstance.destroy();
-    }, [ splitEditorOrientation, mode ]);
+    }, [ orientation, mode ]);
 
     const layoutClass = mode === "source" ? "split-source-only"
         : mode === "preview" ? "split-read-only"
-            : `split-${splitEditorOrientation}`;
+            : `split-${orientation}`;
 
     return (
-        <div ref={containerRef} className={`note-detail-split note-detail-printable ${layoutClass} ${className ?? ""}`}>
-            {splitEditorOrientation === "horizontal"
-                ? <>{editor}{preview}</>
-                : <>{preview}{editor}</>}
+        <div ref={containerRef} className={`note-detail-split ${layoutClass} ${className ?? ""}`}>
+            {orientation === "horizontal"
+                ? <>{editorCol}{previewCol}</>
+                : <>{previewCol}{editorCol}</>}
         </div>
     );
+}
+
+/**
+ * Which panes of a split editor are mounted: each from the first `mode` that shows it, so that
+ * switching back stays instant.
+ */
+export function useMountedPanes(mode: DisplayMode) {
+    const editorMounted = useRef(mode !== "preview");
+    const previewMounted = useRef(mode !== "source");
+    if (mode !== "preview") editorMounted.current = true;
+    if (mode !== "source") previewMounted.current = true;
+    return { editorMounted, previewMounted };
 }
 
 function PreviewContainer({ error, previewStale, previewContent, previewButtons }: {

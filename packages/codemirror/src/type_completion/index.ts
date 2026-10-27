@@ -1,15 +1,15 @@
-import type { CompletionSource } from "@codemirror/autocomplete";
-import type { Extension } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import type { EditorState, Extension } from "@codemirror/state";
+import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import type { VirtualTypeScriptEnvironment } from "@typescript/vfs";
 
 /**
  * Full IntelliSense for backend/frontend script notes.
  *
- * Runs the real TypeScript language service (via `@typescript/vfs` +
- * `@valtown/codemirror-ts`) over the script source, fed with a curated
- * declaration of Trilium's `api` global. This replaces the ESLint-based
- * linting for these two MIME types with type-aware completion, hover docs
- * and diagnostics from a single source.
+ * Runs the real TypeScript language service (via `@typescript/vfs` and the
+ * extensions in `./codemirror-ts`, vendored from `@valtown/codemirror-ts`)
+ * over the script source, fed with a curated declaration of Trilium's `api`
+ * global. This replaces the ESLint-based linting for these two MIME types with
+ * type-aware completion, hover docs and diagnostics from a single source.
  *
  * Everything here is dynamically imported so the TypeScript compiler (a large
  * dependency) is only pulled into a lazy chunk when a script note is opened —
@@ -41,6 +41,11 @@ export interface ScriptApiContext {
      * when this is true.
      */
     customRequestHandler?: boolean;
+    /**
+     * Whether the script is a bulk action's "Execute script", which the server runs once per note
+     * with that note in scope as `note`. Declares `note` as a backend note.
+     */
+    bulkActionNote?: boolean;
 }
 
 /**
@@ -65,10 +70,11 @@ const API_GLOBALS_PATH = "/trilium-api.d.ts";
 const API_TYPES_PATH = "/trilium-script-api.ts";
 const JQUERY_DTS_PATH = "/jquery-globals.d.ts";
 const GLOB_DTS_PATH = "/trilium-glob.d.ts";
+const BACKEND_GLOBALS_DTS_PATH = "/backend-globals.d.ts";
 const TRILIUM_MODULES_DTS_PATH = "/trilium-modules.d.ts";
 
 /** The virtual source-file path used for a given script MIME type. */
-function scriptPath(mime: string): string {
+export function scriptPath(mime: string): string {
     return mime === SCRIPT_MIME_JSX ? JSX_SCRIPT_PATH : SCRIPT_PATH;
 }
 
@@ -82,7 +88,7 @@ const COMPILER_OPTIONS = {
     // missing type annotations.
     noImplicitAny: false,
     // Surface dead code (e.g. statements after a `return`) as a TS7027 "Unreachable
-    // code detected." diagnostic, which `@valtown/codemirror-ts` renders as a
+    // code detected." diagnostic, which `tsCategoryToSeverity()` renders as a
     // *warning* marker rather than an error — the one warning-severity diagnostic
     // the script linter emits.
     allowUnreachableCode: false,
@@ -94,7 +100,7 @@ const COMPILER_OPTIONS = {
 /** Cached lib.*.d.ts map; built once (see `createEnv`) and cloned per editor. */
 let cachedLibFilesMap: Map<string, string> | null = null;
 
-async function createEnv(mime: string, context: ScriptApiContext = {}) {
+export async function createEnv(mime: string, context: ScriptApiContext = {}) {
     const tsModule = await import("typescript");
     /* v8 ignore next -- typescript ships as CJS, so the interop namespace always carries
        `default`; the fallback only covers a future ESM-native build. */
@@ -131,7 +137,13 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
         // in the lazy chunk and isn't gated by package `exports`.
         const apiTypes = (await import("../../../commons/src/lib/script_api.ts?raw")).default;
         fsMap.set(API_TYPES_PATH, apiTypes);
-        fsMap.set(API_GLOBALS_PATH, `import type { FrontendApi } from "./trilium-script-api";\ndeclare global {\n    // eslint-disable-next-line no-var\n    var api: FrontendApi;\n}\n`);
+        // The api's library types are empty interfaces in commons, which has no jQuery or Preact
+        // types; here, where those load, they extend the real ones.
+        const preactAugmentation = mime === SCRIPT_MIME_JSX
+            ? `    type TriliumPreact = typeof import("trilium:preact");\n    interface ScriptPreact extends TriliumPreact {}\n`
+            : "";
+        fsMap.set(API_GLOBALS_PATH, `import type { FrontendApi } from "./trilium-script-api";\ndeclare global {\n    // eslint-disable-next-line no-var\n    var api: FrontendApi;\n}\n`
+            + `declare module "./trilium-script-api" {\n    interface ScriptJQuery extends JQuery<HTMLElement> {}\n${preactAugmentation}}\n`);
         rootFiles.push(API_TYPES_PATH);
 
         // Frontend scripts run in the browser with jQuery available as `$` / `jQuery`;
@@ -148,7 +160,8 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
         rootFiles.push(GLOB_DTS_PATH);
     } else {
         // Backend `api` types come from the same shared public surface in commons
-        // (single source of truth, drift-guarded). No jQuery/DOM server-side.
+        // (single source of truth, drift-guarded). No jQuery or DOM: backend scripts run in Node
+        // and in a Web Worker, whose shared globals ./backend_globals declares.
         const apiTypes = (await import("../../../commons/src/lib/script_api.ts?raw")).default;
         fsMap.set(API_TYPES_PATH, apiTypes);
         // `req`/`res`/`pathParams` only exist at runtime for custom request handlers,
@@ -156,8 +169,13 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
         const apiType = context.customRequestHandler
             ? "BackendApi"
             : `Omit<BackendApi, ${CUSTOM_REQUEST_HANDLER_MEMBERS.map((m) => `"${m}"`).join(" | ")}>`;
-        fsMap.set(API_GLOBALS_PATH, `import type { BackendApi } from "./trilium-script-api";\ndeclare global {\n    // eslint-disable-next-line no-var\n    var api: ${apiType};\n}\n`);
+        const noteGlobal = context.bulkActionNote ? "    var note: ScriptBNote;\n" : "";
+        fsMap.set(API_GLOBALS_PATH, `import type { BackendApi, ScriptBNote } from "./trilium-script-api";\ndeclare global {\n    // eslint-disable-next-line no-var\n    var api: ${apiType};\n${noteGlobal}}\n`);
         rootFiles.push(API_TYPES_PATH);
+
+        const { backendGlobals } = await import("./backend_globals.js");
+        fsMap.set(BACKEND_GLOBALS_DTS_PATH, backendGlobals);
+        rootFiles.push(BACKEND_GLOBALS_DTS_PATH);
     }
 
     if (mime === SCRIPT_MIME_JSX) {
@@ -175,7 +193,7 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
     const compilerOptions = {
         ...COMPILER_OPTIONS,
         target: ts.ScriptTarget.ES2020,
-        lib: ["es2020", "dom"],
+        lib: isFrontendMime(mime) ? [ "es2020", "dom" ] : [ "es2020" ],
         // The runtime uses the classic `h` transform, but we only type-check (never
         // emit), so the automatic runtime is cleaner: it pulls `JSX.IntrinsicElements`
         // from `preact/jsx-runtime`, giving real element/attribute typing without a
@@ -192,43 +210,82 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
 export interface TypeCompletion {
     /** Editor extensions wiring the TypeScript environment (sync, lint, hover). */
     extensions: Extension[];
-    /** Autocompletion source for the editor's shared `autocompletion()`, or null. */
-    source: CompletionSource | null;
+    /** Looks up the completions at a position, or null for a MIME type with no language service. */
+    complete: TypeCompleter | null;
+}
+
+/** The completions at `pos`, best first, or null where the language service offers none there. */
+export type TypeCompleter = (pos: number) => Promise<TypeCompletionEntry[] | null>;
+
+/** A completion the TypeScript language service offers. */
+export interface TypeCompletionEntry {
+    label: string;
+    /** The kind of symbol, as CodeMirror names it (`function`, `property`, …). */
+    type?: string;
 }
 
 /**
  * Wires the TypeScript language service into the editor for the given script
- * MIME type. The completion `source` is returned separately (rather than as its
- * own `autocompletion()` extension) so it can be merged with other sources —
- * e.g. snippet slash-commands — into the editor's single autocompletion.
+ * MIME type. The completions are returned as a `complete` function rather than an
+ * extension, so the host can list them alongside its own entries, such as snippets.
  *
- * Returns empty extensions and a null source for non-script MIME types.
+ * Returns empty extensions and a null `complete` for non-script MIME types.
  *
  * `context` tunes the offered `api` surface per note (e.g. exposing
  * `req`/`res`/`pathParams` only for custom request handlers).
  */
 export async function buildTypeCompletion(mime: string, context: ScriptApiContext = {}): Promise<TypeCompletion> {
     if (!isScriptMime(mime)) {
-        return { extensions: [], source: null };
+        return { extensions: [], complete: null };
     }
 
     const env = await createEnv(mime, context);
-    const { tsFacet, tsSync, tsAutocomplete, tsLinter, tsHover } = await import("@valtown/codemirror-ts");
+    const [ { getAutocompletion }, { tsLinter }, { tsHover } ] = await Promise.all([
+        import("./codemirror-ts/autocomplete.js"),
+        import("./codemirror-ts/lint.js"),
+        import("./codemirror-ts/hover.js")
+    ]);
     // `tsLinter` only underlines diagnostics inline; `lintGutter` adds the
     // error/warning markers in the gutter (as the old ESLint integration did).
     const { lintGutter } = await import("@codemirror/lint");
+    const path = scriptPath(mime);
 
     return {
         extensions: [
-            tsFacet.of({ env, path: scriptPath(mime) }),
-            tsSync(),
-            tsLinter({ diagnosticCodesToIgnore: ignoredDiagnosticCodes(mime) }),
-            tsHover({ renderTooltip: renderHoverTooltip }),
+            tsSync(env, path),
+            tsLinter({ env, path, diagnosticCodesToIgnore: ignoredDiagnosticCodes(mime) }),
+            tsHover({ env, path, renderTooltip: renderHoverTooltip }),
             lintGutter(),
             hoverTheme
         ],
-        source: tsAutocomplete()
+        async complete(pos) {
+            const options = await getAutocompletion({ env, path, pos });
+            if (!options) return null;
+
+            return options
+                .sort((a, b) => b.boost - a.boost)
+                .map(({ label, type }) => ({ label, type }));
+        }
     };
+}
+
+/**
+ * Writes the editor's document into the script at `path`: when the plugin joins an editor, at its
+ * creation or through a reconfiguration, and on every change after that.
+ */
+export function tsSync(env: VirtualTypeScriptEnvironment, path: string) {
+    // An empty script reads as missing to `@typescript/vfs` (see `createEnv()`).
+    const sync = (state: EditorState) => env.updateFile(path, state.doc.toString() || " ");
+
+    return ViewPlugin.fromClass(class {
+        constructor(view: EditorView) {
+            sync(view.state);
+        }
+
+        update(update: ViewUpdate) {
+            if (update.docChanged) sync(update.state);
+        }
+    });
 }
 
 /** Separates the JSDoc body/tags from the signature in the hover tooltip. */
@@ -256,7 +313,7 @@ interface DisplayPart {
 }
 
 /**
- * Hover tooltip renderer that — unlike `@valtown/codemirror-ts`'s default, which
+ * Hover tooltip renderer that — unlike `defaultRenderer` in `./codemirror-ts/hover`, which
  * shows only the signature — also renders the JSDoc body and tags (`@param`,
  * `@returns`, `@example`, …). The doc text comes straight from the shared API
  * surface's `/** … *​/` comments.
@@ -328,8 +385,8 @@ function ignoredDiagnosticCodes(mime: string): number[] {
 /**
  * Returns the TypeScript diagnostic codes the script-note language service
  * surfaces for `code` under the given script MIME type, using the exact compiler
- * options and ignore list the editor uses. Mirrors `@valtown/codemirror-ts`'s
- * `getLints` (syntactic + semantic, minus the ignored codes), so tests reflect
+ * options and ignore list the editor uses. Mirrors `getLints()` in
+ * `./codemirror-ts/lint` (syntactic + semantic, minus the ignored codes), so tests reflect
  * what the user actually sees. Intended for tests asserting which diagnostics
  * are (and aren't) surfaced.
  */
@@ -348,9 +405,22 @@ export async function getScriptDiagnosticCodes(mime: string, code: string, conte
 }
 
 /**
+ * Returns the diagnostics the editor's `tsLinter` shows for `code` under the given
+ * script MIME type, as CodeMirror diagnostics. Intended for tests asserting how a
+ * diagnostic reads.
+ */
+export async function getScriptLints(mime: string, code: string, context: ScriptApiContext = {}) {
+    const env = await createEnv(mime, context);
+    const path = scriptPath(mime);
+    env.updateFile(path, code.length ? code : " ");
+    const { getLints } = await import("./codemirror-ts/lint.js");
+    return getLints({ env, path, diagnosticCodesToIgnore: ignoredDiagnosticCodes(mime) });
+}
+
+/**
  * Returns the completion entry names the language service offers at `offset` in
  * `code` for the given script MIME type — the same `getCompletionsAtPosition`
- * call that backs the editor's `tsAutocomplete()` source. Intended for tests
+ * call that `getAutocompletion()` makes for the editor's completion list. Intended for tests
  * asserting which completions (api members, JSX elements/attributes, …) are
  * surfaced.
  */

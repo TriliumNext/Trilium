@@ -118,7 +118,19 @@ export interface LlmChatConfig {
     contextNoteId?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
+    /** The tools the user allowed for the whole chat, whose calls run without asking. */
+    allowedTools?: string[];
+    /** Which tool calls wait for the user. Absent means `"always_ask"`. */
+    permissionMode?: LlmPermissionMode;
 }
+
+/**
+ * Which tool calls of a chat wait for the user: all of them, only those that change notes, or none.
+ * A tool the chat allowed (`allowedTools`) runs without asking in every mode.
+ */
+export const LLM_PERMISSION_MODES = [ "always_ask", "ask_before_changes", "dont_ask" ] as const;
+
+export type LlmPermissionMode = (typeof LLM_PERMISSION_MODES)[number];
 
 /**
  * Pricing per million tokens for a model.
@@ -249,6 +261,26 @@ export function isToolErrorResult(result: unknown): boolean {
     return typeof value === "object" && value !== null && !Array.isArray(value) && "error" in value;
 }
 
+/** A tool call that waits for the user to allow or deny it. */
+export interface LlmToolApprovalRequest {
+    toolCallId: string;
+    toolName: string;
+    toolInput: Record<string, unknown>;
+}
+
+/** The user's answer to a {@link LlmToolApprovalRequest}, posted to `/api/llm-chat/tool-approval`. */
+export interface LlmToolApprovalAnswer {
+    /** The id the client gave the turn when it started it. */
+    streamId: string;
+    toolCallId: string;
+    approved: boolean;
+    /**
+     * `"chat"` allows the call's tool for the rest of the chat: its other calls in the turn run
+     * without asking. Ignored for a denial.
+     */
+    scope?: "chat";
+}
+
 /**
  * Stream chunk types for real-time SSE updates.
  * Defines the protocol between server and client.
@@ -260,6 +292,7 @@ export type LlmStreamChunk =
     | { type: "tool_input_start"; toolCallId: string; toolName: string }
     | { type: "tool_input_delta"; toolCallId: string; delta: string }
     | { type: "tool_use"; toolCallId: string; toolName: string; toolInput: Record<string, unknown> }
+    | ({ type: "tool_approval_request" } & LlmToolApprovalRequest)
     | { type: "tool_result"; toolCallId: string; toolName: string; result: string; isError?: boolean }
     | { type: "citation"; citation: LlmCitation }
     | { type: "usage"; usage: LlmUsage }

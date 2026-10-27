@@ -28,26 +28,29 @@ import NoteContext from "../../../components/note_context";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import ReadOnlyText from "./ReadOnlyText";
+import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
-const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote } = vi.hoisted(() => {
+const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed } = vi.hoisted(() => {
     const stop = vi.fn();
     return {
         watchContentEmbeds: vi.fn(() => stop),
         stopWatchingEmbeds: stop,
-        loadEmbeddedNote: vi.fn(async () => {})
+        loadEmbeddedNote: vi.fn(async () => {}),
+        loadInlineEmbed: vi.fn(async () => {})
     };
 });
 vi.mock("./utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("./utils")>(),
     watchContentEmbeds,
-    loadEmbeddedNote
+    loadEmbeddedNote,
+    loadInlineEmbed
 }));
 
-const applyStickyTableHeaders = vi.hoisted(() => vi.fn());
+const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
+const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
     applyStickyTableHeaders
 }));
@@ -172,6 +175,40 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         await harness.fireContentChange("ReactWrappedWidget-remote");
 
         expect(harness.contentLoadStates).not.toContain("loading");
+    });
+
+    it("shows a change saved elsewhere once its tab shows, having loaded it at once", async () => {
+        const resizeCallbacks: (() => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: () => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+        try {
+            const harness = setupHarness({ isVisible: true });
+            cleanupContainer = harness.container;
+            await harness.mount();
+            harness.contentLoadStates.length = 0;
+
+            // A tab in the background, hidden as `SplitNoteContainer` hides one.
+            harness.container.style.display = "none";
+            harness.getBlobSpy.mockResolvedValue({ content: "<p>changed</p>" } as never);
+            await harness.fireContentChange("ReactWrappedWidget-remote");
+            expect(harness.getBlobSpy).toHaveBeenCalledTimes(2);
+            expect(harness.container.textContent).toContain("hello");
+
+            harness.container.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback();
+            });
+            expect(harness.container.textContent).toContain("changed");
+            expect(harness.contentLoadStates).toEqual([ "loaded" ]);
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+        }
     });
 
     it("catches up on skipped own-component changes when displayed again, but only then", async () => {
@@ -441,6 +478,106 @@ describe("ReadOnlyText embedded notes", () => {
     });
 });
 
+describe("ReadOnlyText Mermaid diagrams", () => {
+    const html = `<pre data-box-size="small" data-display-mode="source" data-hide-title="true"`
+        + ` data-trilium-block-id="b1" data-code-wrap-lines="true" data-code-line-numbers="false"`
+        + ` style="--include-note-height:12em;">`
+        + `<code class="language-mermaid">graph TD;</code></pre>`
+        + `<pre><code class="language-mermaid" data-trilium-display-mode="split"`
+        + ` data-trilium-block-id="b2">graph LR;</code></pre>`
+        + `<pre><code class="language-javascript">let a;</code></pre>`;
+
+    afterEach(() => {
+        vi.stubGlobal("glob", { ...glob, device: "desktop" });
+    });
+
+    async function mountContent(isChanging?: boolean) {
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={html} isChanging={isChanging} />, container));
+        return {
+            container,
+            async unmount() {
+                await act(async () => render(null, container));
+                container.remove();
+            }
+        };
+    }
+
+    it("shows each diagram in the embed box of the editor, read-only", async () => {
+        loadInlineEmbed.mockClear();
+        const { container, unmount } = await mountContent();
+
+        expect(loadInlineEmbed).toHaveBeenCalledTimes(2);
+        const embeds = loadInlineEmbed.mock.calls.map((call: unknown[]) => {
+            const [ source, $el, boxSize, options ] = call as [
+                { language: string; getSource(): string; isReadOnly(): boolean },
+                JQuery<HTMLElement>, string, object
+            ];
+            const figure = $el[0];
+            return {
+                language: source.language,
+                source: source.getSource(),
+                isReadOnly: source.isReadOnly(),
+                boxSize,
+                options,
+                isInPage: figure.isConnected && figure.matches("figure.include-note"),
+                data: { ...figure.dataset },
+                height: figure.style.getPropertyValue("--include-note-height")
+            };
+        });
+        expect(embeds).toEqual([
+            {
+                language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "small",
+                options: { isFocused: false }, isInPage: true,
+                data: {
+                    boxSize: "small", displayMode: "source", hideTitle: "true",
+                    triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false"
+                },
+                height: "12em"
+            },
+            {
+                language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "medium",
+                options: { isFocused: false }, isInPage: true,
+                data: { boxSize: "medium", hideTitle: "true", triliumBlockId: "b2" },
+                height: ""
+            }
+        ]);
+        expect(container.querySelector("code.language-javascript")).not.toBeNull();
+        expect(container.querySelector(".rendered-mermaid-diagram")).toBeNull();
+        await unmount();
+    });
+
+    it("draws the diagrams in place while the content changes, and when printing", async () => {
+        loadInlineEmbed.mockClear();
+        const changing = await mountContent(true);
+        expect(changing.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await changing.unmount();
+
+        vi.stubGlobal("glob", { ...glob, device: "print" });
+        const printed = await mountContent();
+        expect(printed.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await printed.unmount();
+        expect(loadInlineEmbed).not.toHaveBeenCalled();
+    });
+});
+
+describe("ReadOnlyText lists", () => {
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<ul><li><p style=\"text-align:right;\">a</p></li><li>b</li></ul>"
+        }) as never;
+
+        await harness.mount();
+
+        expect([ ...harness.container.querySelectorAll("li") ].map((item) => item.className))
+            .toEqual([ "trilium-list-item-aligned-right", "" ]);
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+    });
+});
+
 describe("ReadOnlyText tables", () => {
     it("sizes its tables for scrolling and keeps their header rows in view", async () => {
         const harness = setupHarness({ isVisible: true });
@@ -454,6 +591,39 @@ describe("ReadOnlyText tables", () => {
         expect(figure?.style.getPropertyValue("--table-width"))
             .toBe("calc(var(--table-reference-width, 100%) * 150 / 100)");
         expect(applyStickyTableHeaders).toHaveBeenCalledWith(figure?.parentElement);
+
+        disposeStickyTableHeaders.mockClear();
+        await act(async () => render(null, harness.container));
+        expect(disposeStickyTableHeaders).toHaveBeenCalledTimes(1);
+        harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText tabs", () => {
+    it("shows each tab title with text as a scrollable label", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<div class=\"trilium-tabs\"><section class=\"trilium-tab\">"
+                + "<p class=\"trilium-tab-title\">First <b>tab</b></p>"
+                + "<div class=\"trilium-tab-panel\"><p>One</p></div></section>"
+                + "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">&nbsp;</p>"
+                + "<div class=\"trilium-tab-panel\"><p>Two</p></div></section>"
+                + "</div>"
+        }) as never;
+
+        await harness.mount();
+
+        const titles = harness.container.querySelectorAll<HTMLElement>(".trilium-tab-title");
+        const [ first, second ] = titles;
+        const label = first.querySelector(":scope > .scrollable-label");
+        expect(label?.innerHTML).toBe("<span>First <b>tab</b></span>");
+        expect(second.childNodes.length).toBe(0);
+
+        second.click();
+        label?.querySelector("b")?.click();
+        expect(first.classList.contains("trilium-tab-title--active")).toBe(true);
+        expect(second.classList.contains("trilium-tab-title--active")).toBe(false);
+
         await act(async () => render(null, harness.container));
         harness.container.remove();
     });

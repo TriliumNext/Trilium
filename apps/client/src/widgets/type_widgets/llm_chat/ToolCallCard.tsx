@@ -1,17 +1,31 @@
 import "./ToolCallCard.css";
 
+import type { LlmToolApprovalAnswer } from "@triliumnext/commons";
+import { createContext } from "preact";
+import { useContext } from "preact/hooks";
 import { Trans } from "react-i18next";
 
 import appContext from "../../../components/app_context.js";
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
-import MaskedIcon from "../../react/MaskedIcon.js";
+import Button, { SplitButton } from "../../react/Button.js";
+import { FormListItem } from "../../react/FormList.js";
+import Icon from "../../react/Icon.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
-import { providerIconUrl } from "../options/llm/provider_icons.js";
+import { providerIcon } from "../options/llm/provider_icons.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
-import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
+import { isFailedToolCall, type ToolCall, toolCallLabelKey } from "./llm_chat_types.js";
 import { ExternalLink, getToolCallView, type ToolCallView } from "./ToolCallViews.js";
+
+/**
+ * Allows or denies a tool call of the running turn that waits for the user, or allows its tool for
+ * the rest of the chat. Provided only around the reply that streams, since a saved reply has nothing
+ * left to answer.
+ */
+export const ToolApprovalContext = createContext<
+    ((toolCallId: string, approved: boolean, scope?: LlmToolApprovalAnswer["scope"]) => void) | undefined
+>(undefined);
 
 interface ToolCallContext {
     /** The primary note the tool operates on or created. */
@@ -22,6 +36,10 @@ interface ToolCallContext {
     move?: { toNoteId: string; fromNoteId: string | null };
     /** The title of a note `delete_note` deleted, shown in place of a link to a note that is gone. */
     deletedTitle?: string;
+    /** The title of the note `create_note` would create, in place of a link to a note not yet there. */
+    createdTitle?: string;
+    /** The subtree `search_notes` is confined to, unless it searches the whole tree. */
+    scopeNoteId?: string;
     /** Plain-text detail (e.g. skill name, search query) when no note ref is available. */
     detailText: string | null;
 }
@@ -65,6 +83,10 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
         if (createdNoteId) {
             return { noteId: createdNoteId, parentNoteId, detailText: null };
         }
+        const { title } = input;
+        if (toolCall.toolName === "create_note" && !toolCall.result && typeof title === "string") {
+            return { noteId: parentNoteId, parentNoteId: null, createdTitle: title, detailText: null };
+        }
     }
 
     const noteId = (input?.noteId as string) || parentNoteId || parseResultField(toolCall, "noteId");
@@ -79,7 +101,11 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
 
     const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined
         ?? readWebSearchAction(toolCall);
-    return { noteId: null, parentNoteId: null, detailText: detailText || null };
+    const { ancestorNoteId } = input;
+    // Searching under the root is the same as not narrowing the search at all.
+    const scopeNoteId = toolCall.toolName === "search_notes" && typeof ancestorNoteId === "string"
+        && ancestorNoteId !== "root" ? ancestorNoteId : undefined;
+    return { noteId: null, parentNoteId: null, scopeNoteId, detailText: detailText || null };
 }
 
 /**
@@ -112,6 +138,8 @@ function toolNameIcon(toolName: string): string {
 }
 
 function toolCallIcon(toolCall: ToolCall) {
+    if (toolCall.approval === "pending") return "bx bxs-hand";
+    if (toolCall.approval === "declined") return "bx bx-block";
     if (isFailedToolCall(toolCall)) return "bx bx-error-circle";
     if (!toolCall.result) return "bx bx-loader-alt bx-spin";
     const searchProvider = readSearchProvider(toolCall);
@@ -138,7 +166,7 @@ function readSearchProvider(toolCall: ToolCall): { type: string; name: string } 
 function SearchProviderIcon({ type, name }: { type: string; name: string }) {
     return (
         <span className="llm-chat-tool-call-provider" title={t("llm_chat.searched_with", { name })}>
-            <MaskedIcon url={providerIconUrl(type)} />
+            <Icon icon={providerIcon(type)} />
         </span>
     );
 }
@@ -159,40 +187,71 @@ function getErrorMessage(result: string): string {
 /** Build the label content for a tool call section. */
 function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallView | null }) {
     const context = getToolCallContext(toolCall);
-    const { noteId: refNoteId, parentNoteId: refParentId, move, deletedTitle, detailText } = context;
+    const {
+        noteId: refNoteId, parentNoteId: refParentId, move, deletedTitle, createdTitle, scopeNoteId,
+        detailText
+    } = context;
     const hasError = isFailedToolCall(toolCall);
+    const detail = detailText && (
+        <span className="llm-chat-tool-call-detail">
+            {toolCall.toolName === "read_web_page" && /^https?:\/\//i.test(detailText)
+                ? <ExternalLink url={detailText}>{detailText}</ExternalLink>
+                : detailText}
+        </span>
+    );
 
     return (
         <>
-            <span className="llm-chat-tool-call-name">{t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}</span>
-            {detailText && (
-                <span className="llm-chat-tool-call-detail">
-                    {toolCall.toolName === "read_web_page" && /^https?:\/\//i.test(detailText)
-                        ? <ExternalLink url={detailText}>{detailText}</ExternalLink>
-                        : detailText}
+            <span className="llm-chat-tool-call-name">{t(toolCallLabelKey(toolCall), { defaultValue: toolCall.toolName })}</span>
+            {scopeNoteId && detail ? (
+                <span className="llm-chat-tool-call-scope">
+                    <Trans
+                        i18nKey="llm.tools.search_in_subtree"
+                        components={{
+                            Query: detail,
+                            Subtree: <NewNoteLink notePath={scopeNoteId} showNoteIcon noPreview />
+                        } as any}
+                    />
                 </span>
-            )}
+            ) : detail}
             {view?.lead}
             {deletedTitle && <span className="llm-chat-tool-call-deleted-title">{deletedTitle}</span>}
             {refNoteId && (
                 <span className="llm-chat-tool-call-note-ref">
-                    <NoteRef noteId={refNoteId} parentNoteId={refParentId} move={move} />
+                    <NoteRef noteId={refNoteId} parentNoteId={refParentId} move={move} createdTitle={createdTitle} />
                 </span>
             )}
+            {view?.trail}
             {view?.summary && <span className="llm-chat-tool-call-result-count">{view.summary}</span>}
+            {toolCall.approval === "declined" && (
+                <span className="llm-chat-tool-call-approval-badge">
+                    {t("llm_chat.tool_approval_declined")}
+                </span>
+            )}
             {hasError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>
     );
 }
 
-/** The notes a call worked on: the note alone, the note in its parent, or where a move took it. */
-function NoteRef({ noteId, parentNoteId, move }: {
+/**
+ * The notes a call worked on: the note alone, the note in its parent (named by its title while
+ * `create_note` waits to create it), or where a move took it.
+ */
+function NoteRef({ noteId, parentNoteId, move, createdTitle }: {
     noteId: string;
     parentNoteId: string | null;
     move?: ToolCallContext["move"];
+    createdTitle?: string;
 }) {
     const link = (notePath: string) => <NewNoteLink notePath={notePath} showNoteIcon noPreview />;
 
+    if (createdTitle !== undefined) {
+        const components = {
+            Note: <span className="llm-chat-tool-call-created-title">{createdTitle}</span>,
+            Parent: link(noteId)
+        };
+        return <Trans i18nKey="llm.tools.note_in_parent" components={components as any} />;
+    }
     if (move) {
         const components = move.fromNoteId
             ? { Note: link(noteId), From: link(move.fromNoteId), To: link(move.toNoteId) }
@@ -212,10 +271,27 @@ function NoteRef({ noteId, parentNoteId, move }: {
  * streams, the diff of an `edit_note_content` call, why the call failed, or the view
  * `getToolCallView()` builds for the tools that have one. The raw input and
  * result are in the dialog the debug button opens.
+ *
+ * A call that waits for the user is open, showing what it would do when it has a view,
+ * with the buttons that allow or deny it below.
  */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
+    const section = <ToolCallDisclosure toolCall={toolCall} />;
+    if (toolCall.approval !== "pending") {
+        return section;
+    }
+    return (
+        <div className="llm-chat-tool-call-pending">
+            {section}
+            <ToolApprovalBar toolCall={toolCall} />
+        </div>
+    );
+}
+
+function ToolCallDisclosure({ toolCall }: { toolCall: ToolCall }) {
     const hasError = isFailedToolCall(toolCall);
     const isStreamingInput = toolCall.inputStreaming !== undefined;
+    const isPending = toolCall.approval === "pending";
 
     // The partial JSON of a streaming input does not parse, so the diff waits for the whole input.
     const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
@@ -229,6 +305,8 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
     const icon = toolCallIcon(toolCall);
     const label = <ToolCallLabel toolCall={toolCall} view={view} />;
     const debugButton = <ToolCallDebugButton toolCall={toolCall} />;
+    const open = isPending
+        || (noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined);
 
     if (!isStreamingInput && !noteContentEdits && !errorMessage && !view?.body) {
         return (
@@ -249,7 +327,7 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
             actions={debugButton}
             variant="line"
             className={className}
-            open={noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined}
+            open={open}
         >
             {isStreamingInput && <pre className="llm-chat-tool-call-streaming">{toolCall.inputStreaming}</pre>}
             {noteContentEdits && (
@@ -290,7 +368,7 @@ function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
         : searchProvider && toolCalls.every(tc => readSearchProvider(tc)?.type === searchProvider.type)
             ? <SearchProviderIcon {...searchProvider} />
             : toolNameIcon(first.toolName);
-    const friendlyName = t(`llm.tools.${first.toolName}`, { defaultValue: first.toolName });
+    const friendlyName = t(toolCallLabelKey(first), { defaultValue: first.toolName });
     const label = (
         <>
             <span className="llm-chat-tool-call-name">{friendlyName}</span>
@@ -300,7 +378,12 @@ function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
     );
 
     return (
-        <ExpandableSection variant="line" icon={icon} label={label} className="llm-chat-tool-call llm-chat-tool-call-group">
+        <ExpandableSection
+            variant="line"
+            icon={icon}
+            label={label}
+            className="llm-chat-tool-call llm-chat-tool-call-group"
+        >
             {toolCalls.map((tc, idx) => (
                 <ToolCallSection key={tc.id ?? idx} toolCall={tc} />
             ))}
@@ -308,14 +391,19 @@ function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
     );
 }
 
-/** Group consecutive tool calls that share the same tool name. Singletons pass through unchanged. */
-function groupByToolName(toolCalls: ToolCall[]): Array<ToolCall | ToolCall[]> {
+/**
+ * Group consecutive tool calls that share the same label. Singletons pass through unchanged, and
+ * a call that waits for approval stays out of any group.
+ */
+function groupByLabel(toolCalls: ToolCall[]): Array<ToolCall | ToolCall[]> {
     const groups: Array<ToolCall | ToolCall[]> = [];
     for (const tc of toolCalls) {
         const last = groups[groups.length - 1];
-        if (Array.isArray(last) && last[0].toolName === tc.toolName) {
+        if (tc.approval === "pending" || (last && !Array.isArray(last) && last.approval === "pending")) {
+            groups.push(tc);
+        } else if (Array.isArray(last) && toolCallLabelKey(last[0]) === toolCallLabelKey(tc)) {
             last.push(tc);
-        } else if (last && !Array.isArray(last) && last.toolName === tc.toolName) {
+        } else if (last && !Array.isArray(last) && toolCallLabelKey(last) === toolCallLabelKey(tc)) {
             groups[groups.length - 1] = [last, tc];
         } else {
             groups.push(tc);
@@ -326,7 +414,7 @@ function groupByToolName(toolCalls: ToolCall[]): Array<ToolCall | ToolCall[]> {
 
 /** One or more sequential tool calls, each a disclosure line like a thought. */
 export default function ToolCallCard({ toolCalls }: { toolCalls: ToolCall[] }) {
-    const groups = groupByToolName(toolCalls);
+    const groups = groupByLabel(toolCalls);
     return (
         <div className="llm-chat-tool-calls">
             {groups.map((group, idx) => (
@@ -334,6 +422,41 @@ export default function ToolCallCard({ toolCalls }: { toolCalls: ToolCall[] }) {
                     ? <ToolCallGroupSection key={idx} toolCalls={group} />
                     : <ToolCallSection key={group.id ?? idx} toolCall={group} />
             ))}
+        </div>
+    );
+}
+
+/** Asks the user whether a waiting tool call can run. */
+function ToolApprovalBar({ toolCall }: { toolCall: ToolCall }) {
+    const answer = useContext(ToolApprovalContext);
+    if (!answer) {
+        return null;
+    }
+    const { id: toolCallId, toolName } = toolCall;
+    const tool = t(`llm.tools.${toolName}`, { defaultValue: toolName });
+
+    return (
+        <div
+            className="llm-chat-tool-approval"
+            role="group"
+            aria-label={t("llm_chat.tool_approval_prompt")}
+        >
+            <Button
+                size="small"
+                text={t("llm_chat.tool_approval_deny")}
+                onClick={() => answer(toolCallId, false)}
+            />
+            <SplitButton
+                size="small"
+                kind="primary"
+                icon="bx bx-check"
+                text={t("llm_chat.tool_approval_allow")}
+                onClick={() => answer(toolCallId, true)}
+            >
+                <FormListItem icon="bx bx-check-double" onClick={() => answer(toolCallId, true, "chat")}>
+                    {t("llm_chat.tool_approval_allow_for_chat", { tool })}
+                </FormListItem>
+            </SplitButton>
         </div>
     );
 }

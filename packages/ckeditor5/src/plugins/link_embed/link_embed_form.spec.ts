@@ -2,7 +2,6 @@ import { BlockQuote, ClassicEditor, ContextualBalloon, Essentials, Link, Paragra
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import LinkEmbed, { LINK_EMBED_COMMAND } from "./link_embed.js";
 import LinkEmbedFormView from "./link_embed_form.js";
 
@@ -18,23 +17,20 @@ const META = {
 
 describe("LinkEmbedFormView", () => {
     let editor: ClassicEditor;
-    let fetchLinkMetadata: ReturnType<typeof vi.fn>;
+    let fetchMetadata: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        fetchLinkMetadata = vi.fn(async (url: string) => ({ ...META, url }));
+        fetchMetadata = vi.fn(async (url: string) => ({ ...META, url }));
 
-        installGlobMock({
-            getComponentByEl: () => ({
-                triggerCommand: vi.fn(),
-                renderLinkEmbed: vi.fn(),
-                renderLinkMention: vi.fn(),
-                fetchLinkMetadata,
+        editor = await createTestEditor([Essentials, Paragraph, BlockQuote, Link, Undo, LinkEmbed], {
+            linkEmbed: {
+                renderEmbed: vi.fn(),
+                renderMention: vi.fn(),
+                fetchMetadata,
                 // YouTube-like URLs are embeddable; everything else is not.
                 detectEmbedType: (url: string) => (url.includes("youtube") ? "youtube" : "opengraph")
-            })
+            }
         });
-
-        editor = await createTestEditor([Essentials, Paragraph, BlockQuote, Link, Undo, LinkEmbed]);
         setModelData(editor.model, "<paragraph>[]</paragraph>");
     });
 
@@ -170,7 +166,7 @@ describe("LinkEmbedFormView", () => {
         form.fire("submit");
         await vi.waitFor(() => expect(isInBalloon(form)).toBe(false));
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith("https://example.com/article");
+        expect(fetchMetadata).toHaveBeenCalledWith("https://example.com/article");
         expect(editor.getData()).toContain('data-url="https://example.com/article"');
 
         // Reopening starts blank rather than showing the last URL.
@@ -186,7 +182,7 @@ describe("LinkEmbedFormView", () => {
         form.fire("submit");
         await vi.waitFor(() => expect(isInBalloon(form)).toBe(false));
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith("https://example.com/article");
+        expect(fetchMetadata).toHaveBeenCalledWith("https://example.com/article");
     });
 
     it("does nothing when submitted with an empty URL", () => {
@@ -194,7 +190,7 @@ describe("LinkEmbedFormView", () => {
 
         form.fire("submit");
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(isInBalloon(form)).toBe(true);
     });
 
@@ -204,13 +200,13 @@ describe("LinkEmbedFormView", () => {
 
         form.fire("submit");
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(isInBalloon(form)).toBe(true);
     });
 
     it("disables the form while the metadata is being fetched, so it cannot be submitted twice", async () => {
         let resolveFetch: ((metadata: unknown) => void) | undefined;
-        fetchLinkMetadata.mockImplementation(() => new Promise((resolve) => {
+        fetchMetadata.mockImplementation(() => new Promise((resolve) => {
             resolveFetch = resolve;
         }));
 
@@ -224,7 +220,7 @@ describe("LinkEmbedFormView", () => {
 
         // A second Enter while the first fetch is in flight must not fetch again.
         form.fire("submit");
-        expect(fetchLinkMetadata).toHaveBeenCalledTimes(1);
+        expect(fetchMetadata).toHaveBeenCalledTimes(1);
 
         resolveFetch?.({ ...META, url: "https://example.com/article" });
         await vi.waitFor(() => expect(isInBalloon(form)).toBe(false));
@@ -243,7 +239,7 @@ describe("LinkEmbedFormView", () => {
         form.keystrokes.press({ keyCode: 27, preventDefault: () => {}, stopPropagation: () => {} } as unknown as KeyboardEvent);
 
         expect(isInBalloon(form)).toBe(false);
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(editor.getData()).toBe(before);
     });
 
@@ -271,7 +267,7 @@ describe("LinkEmbedFormView", () => {
         document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
 
         expect(isInBalloon(form)).toBe(false);
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
     });
 
     it("does not stack a second form when the button is clicked twice", () => {

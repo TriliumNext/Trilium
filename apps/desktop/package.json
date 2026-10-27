@@ -1,10 +1,10 @@
 {
   "name": "@triliumnext/desktop",
-  "version": "0.106.0",
+  "version": "0.106.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "private": true,
   "main": "src/main.ts",
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Trilium Notes Team",
     "email": "contact@eliandoran.me",
@@ -20,7 +20,9 @@
     "electron-forge:make-flatpak": "pnpm build && DEBUG=* electron-forge make dist --targets=@electron-forge/maker-flatpak",
     "electron-forge:package": "pnpm build && electron-forge package dist",
     "electron-forge:test-packaged": "pnpm electron-forge:package && tsx scripts/test-packaged.ts",
-    "electron-forge:start":"pnpm build && electron-forge start dist",
+    "electron-forge:start": "pnpm build && electron-forge start dist",
+    "flathub:build": "tsx ../../scripts/flatpak/build-local.mts",
+    "flathub:start": "flatpak run org.triliumnotes.Trilium.Test",
     "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e TRILIUM_ELECTRON_DATA_DIR=data-e2e-electron-8082 ELECTRON_IS_DEV=0 playwright test",
     "generate-setup-banners": "tsx electron-forge/setup-icon/generate/generate.mts",
     "generate-dmg-background": "tsx electron-forge/dmg-background/generate.mts",
@@ -53,7 +55,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
     "@types/pngjs": "6.0.5",
-    "electron": "44.7.0",
+    "electron": "45.0.0",
     "gifenc": "1.0.3",
     "node-mocks-http": "1.18.1",
     "pngjs": "7.0.0"

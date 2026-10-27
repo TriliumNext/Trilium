@@ -36,16 +36,15 @@
   },
   "bulk_actions": {
     "bulk_actions": "Massatoiminnot",
-    "available_actions": "Saatavilla olevat toiminnot",
     "chosen_actions": "Valitut toiminnot",
-    "execute_bulk_actions": "Toteuta massatoiminnot",
+    "execute_bulk_actions_one": "Toteuta massatoiminnot",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Massatoiminnot on toteutettu onnistuneesti.",
     "none_yet": "Ei vielä... lisää toiminto klikkaamalla jotiain yllä saatavilla olevaa yltä.",
     "labels": "Merkit",
     "relations": "Suhteet",
     "notes": "Muistiot",
-    "other": "Muut",
-    "affected_notes": "Vaikuttaa muistioihin"
+    "other": "Muut"
   },
   "clone_to": {
     "clone_notes_to": "Kopioi muistiot...",
@@ -125,9 +124,6 @@
   "include_note": {
     "dialog_title": "Sisällytä muistio",
     "label_note": "Muistio",
-    "placeholder_search": "etsi muistiota sen nimellä",
-    "box_size_small": "pieni (~ 10 riviä)",
-    "box_size_medium": "keskisuuri (~ 30 riviä)",
     "button_include": "Sisällytä muistio"
   },
   "info": {

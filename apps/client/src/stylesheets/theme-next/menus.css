@@ -166,6 +166,10 @@ html body .dropdown-item[disabled] {
     margin-inline-start: 16px;
 }
 
+.dropdown-item span.menu-trailing-text {
+    color: var(--menu-item-keyboard-shortcut-color) !important;
+}
+
 .dropdown-divider,
 .excalidraw .context-menu hr {
     position: relative;
@@ -233,6 +237,10 @@ body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
+.dropdown-divider:has(+ li > .dropdown-header) {
+    display: none;
+}
+
 /* Static menus (used as a list, such as on the note revisions dialog) */
 body.desktop .dropdown-menu.static {
     box-shadow: unset;
@@ -252,7 +260,7 @@ body.mobile #context-menu-cover {
     transition: background-color 150ms ease-in;
 
     &.show {
-        background: rgba(0, 0, 0, 0.32);
+        background: var(--mobile-backdrop-color);
 
         /* A tablet's menus open beside what opened them, undimmed; the cover only takes the tap
            that closes them. */
@@ -262,7 +270,7 @@ body.mobile #context-menu-cover {
     }
 
     &.global-menu-cover {
-        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-horiz-size, var(--launcher-pane-size)));
 
         @media (min-width: 992px) {
             bottom: 0;
@@ -295,6 +303,7 @@ body.mobile .dropdown-menu.note-autocomplete-menu {
     body.mobile .tn-dropdown-portal.global-menu .dropdown-menu {
         border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
     }
+
 }
 
 /* Beside its toggle in a tablet's wider mobile layout, wide enough for its rows to be tapped. */
@@ -310,6 +319,7 @@ body.mobile .dropdown-menu.note-autocomplete-menu {
 }
 
 body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
+    --mobile-menu-group-radius: 6px;
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;
     --hover-item-background-color: var(--card-background-color);
@@ -335,21 +345,25 @@ body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
     .dropdown-divider + .dropdown-item,
     .dropdown-custom-item:first-of-type,
     .dropdown-divider + .dropdown-custom-item {
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
+        border-top-left-radius: var(--mobile-menu-group-radius);
+        border-top-right-radius: var(--mobile-menu-group-radius);
     }
 
     .dropdown-item:last-of-type,
     .dropdown-item:has(+ .dropdown-divider),
     .dropdown-custom-item:last-of-type,
     .dropdown-custom-item:has(+ .dropdown-divider) {
-        border-bottom-left-radius: 6px;
-        border-bottom-right-radius: 6px;
+        border-bottom-left-radius: var(--mobile-menu-group-radius);
+        border-bottom-right-radius: var(--mobile-menu-group-radius);
         border-bottom: 0 !important;
     }
 
     .dropdown-divider {
         visibility: hidden;
+    }
+
+    h6::before {
+        inset-inline: 0;
     }
 
     .dropdown-custom-item:has(.note-color-picker) {

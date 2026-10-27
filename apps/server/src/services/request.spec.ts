@@ -208,7 +208,7 @@ describe("NodeRequestProvider.exec", () => {
                 method: "POST",
                 body: { a: 1 },
                 cookieJar,
-                auth: { password: "secret" },
+                auth: { password: "secret", totpToken: "123456" },
                 paging: { pageCount: 3, pageIndex: 1, requestId: "req-1" }
             })
         );
@@ -219,6 +219,7 @@ describe("NodeRequestProvider.exec", () => {
         expect(sent.headers["Cookie"]).toBe("sid=1");
         // auth header is base64 of dummy:secret
         expect(sent.headers["trilium-cred"]).toBe(Buffer.from("dummy:secret").toString("base64"));
+        expect(sent.headers["trilium-totp"]).toBe("123456");
         // body object serialized
         expect(state.requests[0].endPayload).toBe(JSON.stringify({ a: 1 }));
         // response set-cookie stored back into the jar

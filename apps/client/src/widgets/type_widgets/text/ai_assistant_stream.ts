@@ -75,7 +75,7 @@ export default function buildAiAssistantStream(getNoteLocation?: AiNoteLocationP
                 onError: (error) => reject(new Error(error)),
                 onDone: () => resolve(reported)
             }, signal).then(
-                // A stream that ends without a "done" event (connection dropped) still settles.
+                // Settles even when the stream returns without calling `onDone` or `onError`.
                 () => resolve(reported),
                 reject
             );

@@ -77,7 +77,8 @@
     "note-panels": "Bảng ghi chú",
     "show-note-map": "Hiển thị bản đồ ghi chú ở khung bên phải",
     "focus-collection-properties": "Chuyển trọng tâm sang bộ chọn kiểu xem của bộ sưu tập",
-    "focus-formatting-toolbar": "Chuyển trọng tâm giữa thanh công cụ định dạng cố định và trình soạn thảo"
+    "focus-formatting-toolbar": "Chuyển trọng tâm giữa thanh công cụ định dạng cố định và trình soạn thảo",
+    "peek-left-pane": "Xem trước cây ghi chú dưới dạng bảng tạm thời nổi trên nội dung"
   },
   "login": {
     "password": "Mật khẩu",
@@ -207,7 +208,8 @@
     "show-note-map": "Hiển thị sơ đồ ghi chú",
     "show-note-info": "Hiển thị thông tin ghi chú",
     "show-note-paths": "Hiển thị đường dẫn ghi chú",
-    "toggle-similar-notes": "Bật/tắt các ghi chú tương tự"
+    "toggle-similar-notes": "Bật/tắt các ghi chú tương tự",
+    "peek-left-pane": "Bảng xem trước cây ghi chú"
   },
   "password": {
     "incorrect": "Mật khẩu bạn nhập không chính xác."
@@ -330,7 +332,9 @@
     "inbox-title": "Hộp thư đến",
     "tab-switcher-title": "Chuyển đổi tab",
     "sidebar-chat-title": "Trò chuyện AI",
-    "record-meeting-title": "Chuyển văn bản cuộc họp"
+    "record-meeting-title": "Chuyển văn bản cuộc họp",
+    "transcription-title": "Chuyển văn bản",
+    "resources-title": "Tài nguyên đã tải xuống"
   },
   "notes": {
     "new-note": "Ghi chú mới",
@@ -454,7 +458,10 @@
     "heading-link": "Liên kết đến phần này",
     "previous": "Trước",
     "next": "Tiếp theo",
-    "page-navigation": "Trang trước và trang sau"
+    "page-navigation": "Trang trước và trang sau",
+    "previous-tabs": "Cuộn đến các tab trước",
+    "next-tabs": "Cuộn đến các tab tiếp theo",
+    "copy-code": "Sao chép mã"
   },
   "hidden_subtree_templates": {
     "calendar": "Lịch",
@@ -567,6 +574,29 @@
     "save-locked": "Không thể lưu bản ghi khi phiên được bảo vệ đang bị khóa. Việc chuyển thành văn bản sẽ giữ lại nội dung và lưu nó khi bạn nhập vào phiên được bảo vệ, miễn là Trilium vẫn đang mở.",
     "save-failed": "Không thể lưu bản ghi: {{- message}} Việc chuyển thành văn bản sẽ giữ lại nội dung và thử lại với câu tiếp theo.",
     "capture-lost": "Việc chuyển thành văn bản đã dừng lại vì không thể thu âm thanh nữa. Nội dung đã được chuyển trước đó sẽ được giữ lại.",
-    "attachment-title": "Bản ghi"
+    "attachment-title": "Bản ghi",
+    "model-not-downloaded": "Mô hình nhận dạng giọng nói chưa được tải xuống. Hãy bắt đầu ghi âm từ thanh khởi chạy để tải xuống.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, độ chính xác cao",
+    "recognizer-description": "Mô hình nhận dạng giọng nói của NVIDIA hỗ trợ 25 ngôn ngữ châu Âu. Quá trình nhận dạng chạy hoàn toàn trên thiết bị này, nên bản ghi âm của bạn sẽ không bao giờ rời khỏi thiết bị.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Được sử dụng để phát hiện giọng nói trong âm thanh, để chỉ các phần có giọng nói được chuyển văn bản.",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "Được sử dụng để phân biệt người nói, để bạn có thể xem ai đã nói gì trong bản chuyển văn bản."
+  },
+  "resources": {
+    "unknown": "Không có tài nguyên nào có tên {{id}}.",
+    "http-error": "Tải xuống {{name}} thất bại với mã trạng thái HTTP {{status}}.",
+    "size-mismatch": "{{name}} Không có kích thước như mong đợi.",
+    "hash-mismatch": "{{name}} Không khớp với mã kiểm tra mong đợi, nên đã bị loại bỏ.",
+    "delete-while-downloading": "{{- title}} Đang được tải xuống. Hãy hủy tải xuống trước khi xóa nó.",
+    "not-foreign": "{{- name}} Không phải là mục chưa được sử dụng trong thư mục tài nguyên.",
+    "stalled": "Tải xuống {{name}} đã dừng: không có dữ liệu nào trong {{seconds}} giây. Hãy kiểm tra kết nối của bạn, sau đó thử lại."
+  },
+  "share_target": {
+    "default-title": "Nội dung được chia sẻ",
+    "nothing-to-share": "Không có gì để chia sẻ: không nhận được văn bản, liên kết hoặc tệp nào.",
+    "rejected": "Chia sẻ bị từ chối: {{- reason}}",
+    "other-page": "Chỉ menu chia sẻ của hệ thống mới có thể gửi nội dung đến địa chỉ này."
   }
 }

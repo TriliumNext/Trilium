@@ -11,7 +11,7 @@ The assistant is only available once at least one provider is configured in <a 
 
 To access the AI assistant:
 
-*   Look for the <span class="tn-icon cke cke-trilium-ai"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. Press the button itself to enter the _Ask AI_ mode or press the arrow key next to it to access the quick commands and the model selection.
+*   Look for the <span class="tn-icon cke cke-trilium-ai"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. Press the button itself to enter the _Ask AI_ mode or press the arrow key next to it to access the quick commands and the model selection. On a phone, the button has no arrow: tapping it opens the same menu at the bottom of the screen, with _Ask AI…_ at its top, and a group such as _Translate_ opens as a page of its own.
 *   Look for _AI assistant_ or any of the _AI_\-prefixed quick commands in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 *   Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
 *   Select a text and choose the _AI assistant_ option in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a>.
@@ -40,19 +40,19 @@ Actions that need something to work on are greyed out when there is nothing to w
 
 ## Asking for something specific
 
-Choosing _Ask AI…_ opens a prompt where you can describe the change in your own words, for example: "make this less formal", "add a row for 2024", "write an intro paragraph for this section". Press <kbd>Enter</kbd> or the send button to run it.
+Choosing _Ask AI…_ (<span class="tn-icon bx bx-message-square-dots"></span>) opens a prompt where you can describe the change in your own words, for example: "make this less formal", "add a row for 2024", "write an intro paragraph for this section". Press <kbd>Enter</kbd> or the <span class="tn-icon cke cke-arrow-up"></span> send button to run it.
 
 Once a response arrives you can keep going in the same prompt, and the assistant treats it as a conversation rather than as a fresh request: after _Translate this to German_, asking for _make it shorter_ shortens the German, not the original.
 
 ## Reviewing the result
 
-The response streams in as it is generated, and can be interrupted at any point by pressing the _Stop_ button; whatever arrived before that stays usable.
+The response streams in as it is generated, and can be interrupted at any point by pressing the _Stop_ (<span class="tn-icon cke cke-stop"></span>) button; whatever arrived before that stays usable.
 
 Nothing is written into the note until you say so. The review offers:
 
 *   _Result_, which displays the response as it will be inserted.
 *   _Changes_, which displays an inline diff against the original, with insertions and deletions marked. When the model rewrote the passage rather than editing it, the review opens on _Result_ instead: a diff of two texts with little in common is harder to read than the answer itself.
-*   _Try again_, to re-run the same instruction.
+*   _Try again_ (<span class="tn-icon cke cke-refresh"></span>), to re-run the same instruction.
 *   _Replace_, which substitutes the original passage
 *   _Insert below_, which keeps the original and adds the response after it.
 

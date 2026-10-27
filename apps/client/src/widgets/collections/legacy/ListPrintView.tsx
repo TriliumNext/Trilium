@@ -24,6 +24,9 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
 
     useLayoutEffect(() => {
         const noteIdsSet = new Set<string>();
+        // A saved search prints the notes it matched, not what hangs under them: a matching folder
+        // would otherwise bring its whole subtree, and a result repeated once it is also a child.
+        const printsChildren = note.type !== "search";
 
         froca.getNotes(noteIds).then(async (notes) => {
             const noteIdsWithChildren = await note.getSubtreeNoteIds(true);
@@ -59,7 +62,7 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                     onProgressChanged(notesWithContent.length / noteIdsWithChildren.length);
                 }
 
-                if (note.hasChildren()) {
+                if (printsChildren && note.hasChildren()) {
                     const filteredChildNotes = await filterChildNotes(note);
                     for (const childNote of filteredChildNotes) {
                         await processNote(childNote, depth + 1);

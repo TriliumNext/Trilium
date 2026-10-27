@@ -1,6 +1,7 @@
-import { Plugin, Enter, Delete, enableViewPlaceholder, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
+import { Plugin, Enter, Delete, enableViewPlaceholder, type ModelPosition, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
 import { renderShortcut } from "../../shortcut.js";
+import FindReveal from "../find_reveal.js";
 import BlockDragHandle from "./block_drag_handle.js";
 import CollapsibleCommand from "./collapsible_command.js";
 import { OPEN_ATTRIBUTE, TRANSIENT_OPEN_ATTRIBUTE } from "./constants.js";
@@ -76,7 +77,7 @@ export default class CollapsibleEditing extends Plugin {
     }
 
     public static get requires() {
-        return [Enter, Delete] as const;
+        return [ Enter, Delete, FindReveal ] as const;
     }
 
     private keydownListeners: Array<{ root: HTMLElement, handler: (e: KeyboardEvent) => void }> = [];
@@ -1187,28 +1188,24 @@ export default class CollapsibleEditing extends Plugin {
      * Follow the find-and-replace highlight: when it lands inside a collapsed
      * block, open that block (and any collapsed ancestors) just enough to show
      * the match; re-collapse the moment the highlight leaves. Purely editing-view
-     * state — see {@link findRevealed}. No-op when the editor has no find plugin.
+     * state — see {@link findRevealed}.
      */
     private registerFindReveal() {
-        if (!this.editor.plugins.has("FindAndReplaceEditing")) return;
-        const findEditing: any = this.editor.plugins.get("FindAndReplaceEditing");
-        const state = findEditing?.state;
-        /* v8 ignore next -- FindAndReplaceEditing always exposes a state with an observable on flag */
-        if (!state?.on) return;
-        this.listenTo(state, "change:highlightedResult", (_evt: any, _name: any, highlighted: any) => {
-            this.syncFindReveal(highlighted);
+        const findReveal = this.editor.plugins.get(FindReveal);
+        this.listenTo(findReveal, "change:position", (_evt, _name, position) => {
+            this.syncFindReveal(position);
         });
     }
 
     /**
-     * Reconcile {@link findRevealed} with the block(s) the current highlight sits
-     * in. Ancestors newly holding the highlight get revealed; blocks that no
-     * longer hold it are re-collapsed. A `null` highlight (search cleared/closed)
+     * Reconcile {@link findRevealed} with the block(s) that hold `position`, the
+     * match the find shows. Ancestors newly holding it get revealed; blocks that no
+     * longer hold it are re-collapsed. A `null` position (search cleared/closed)
      * collapses everything.
      */
-    private syncFindReveal(highlighted: any) {
+    private syncFindReveal(position: ModelPosition | null) {
         const wanted = new Set<any>();
-        for (let node = highlighted?.marker?.getStart?.()?.parent; node; node = node.parent) {
+        for (let node: any = position?.parent; node; node = node.parent) {
             // A persisted-open block is already visible — nothing transient to do.
             if (node.is?.("element", "details") && !this.isDetailsOpen(node)) {
                 wanted.add(node);

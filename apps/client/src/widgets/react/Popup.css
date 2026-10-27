@@ -13,12 +13,132 @@ body .tn-popup {
     visibility: hidden;
 }
 
+/* `translate` and `scale` rather than `transform`, which the mobile sheet rules in style.css reset
+   with `!important`. */
+:root .tn-popup[data-reveal] {
+    --tn-reveal-x: 0px;
+    --tn-reveal-y: 0px;
+    --tn-reveal-origin-x: center;
+    --tn-reveal-origin-y: center;
+    transform-origin: var(--tn-reveal-origin-x) var(--tn-reveal-origin-y);
+    animation: tn-popup-reveal 120ms cubic-bezier(0.2, 0, 0, 1);
+
+    &[data-reveal^="bottom"] {
+        --tn-reveal-y: -4px;
+        --tn-reveal-origin-y: top;
+    }
+
+    &[data-reveal^="top"] {
+        --tn-reveal-y: 4px;
+        --tn-reveal-origin-y: bottom;
+    }
+
+    &[data-reveal^="right"] {
+        --tn-reveal-x: -4px;
+        --tn-reveal-origin-x: left;
+    }
+
+    &[data-reveal^="left"] {
+        --tn-reveal-x: 4px;
+        --tn-reveal-origin-x: right;
+    }
+
+    &:is([data-reveal="bottom-start"], [data-reveal="top-start"]) {
+        --tn-reveal-origin-x: left;
+    }
+
+    &:is([data-reveal="bottom-end"], [data-reveal="top-end"]) {
+        --tn-reveal-origin-x: right;
+    }
+
+    &:is([data-reveal="right-start"], [data-reveal="left-start"]) {
+        --tn-reveal-origin-y: top;
+    }
+
+    &:is([data-reveal="right-end"], [data-reveal="left-end"]) {
+        --tn-reveal-origin-y: bottom;
+    }
+
+    &[data-reveal="stylesheet"] {
+        animation: tn-popup-rise 160ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    &.mobile-bottom-menu[data-reveal="stylesheet"] {
+        animation: tn-popup-sheet 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* The copy `playClosing()` leaves in Popup.tsx. */
+    &[data-closing] {
+        pointer-events: none;
+        animation: tn-popup-conceal 90ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    &[data-reveal="stylesheet"][data-closing] {
+        animation: tn-popup-sink 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    &.mobile-bottom-menu[data-reveal="stylesheet"][data-closing] {
+        animation: tn-popup-sheet-out 160ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+}
+
+/* Floating UI lines a start or end alignment up with the other edge in a right-to-left page. */
+body[dir=rtl] .tn-popup[data-reveal]:is([data-reveal="bottom-start"], [data-reveal="top-start"]) {
+    --tn-reveal-origin-x: right;
+}
+
+body[dir=rtl] .tn-popup[data-reveal]:is([data-reveal="bottom-end"], [data-reveal="top-end"]) {
+    --tn-reveal-origin-x: left;
+}
+
+@keyframes tn-popup-reveal {
+    from {
+        opacity: 0;
+        translate: var(--tn-reveal-x) var(--tn-reveal-y);
+        scale: 0.96;
+    }
+}
+
+@keyframes tn-popup-rise {
+    from {
+        opacity: 0;
+        translate: 0 16px;
+    }
+}
+
+@keyframes tn-popup-sheet {
+    from {
+        translate: 0 100%;
+    }
+}
+
+@keyframes tn-popup-conceal {
+    to {
+        opacity: 0;
+        translate: var(--tn-reveal-x) var(--tn-reveal-y);
+        scale: 0.96;
+    }
+}
+
+@keyframes tn-popup-sink {
+    to {
+        opacity: 0;
+        translate: 0 16px;
+    }
+}
+
+@keyframes tn-popup-sheet-out {
+    to {
+        translate: 0 100%;
+    }
+}
+
 /*
  * A menu's or a scrollable panel's frame does not scroll, so the blur the theme puts on its
  * `::before` covers it whatever its content scrolls to. The content scrolls inside, in the height
  * `placeFloating()` caps the frame to.
  */
-.dropdown-menu:has(> :is(.tn-menu-scroll, .tn-panel-scroll)) {
+.dropdown-menu:has(> :is(.tn-menu-scroll, .tn-menu-filterable, .tn-panel-scroll)) {
     display: flex;
     flex-direction: column;
 }

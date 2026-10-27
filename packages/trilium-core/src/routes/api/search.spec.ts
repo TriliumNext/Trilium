@@ -44,6 +44,17 @@ describe("Search API (core)", () => {
         expect(res.body).toContain(createdNoteId);
     });
 
+    it("describes a full search on one line for the request log", async () => {
+        const token = "ZzLoggedSearchQwerty";
+        await createTextNote(api, { title: `${token} one` });
+        await createTextNote(api, { title: `${token} two` });
+
+        const res = await api.get("/api/search", {
+            query: { searchString: `  note.title *=*\n   ${token} ` }
+        });
+        expect(res.locals?.logSummary).toBe(`Search: note.title *=* ${token}  (returned 2 items)`);
+    });
+
     it("restricts a full search to the given ancestor's subtree", async () => {
         const token = "ZzScopedSearchQwerty";
         const board = await createTextNote(api, { title: "Board" });
@@ -60,6 +71,26 @@ describe("Search API (core)", () => {
         const unscoped = await api.get<string[]>("/api/search", { query: { searchString: token } });
         expect(unscoped.body).toContain(inside.noteId);
         expect(unscoped.body).toContain(outside.noteId);
+    });
+
+    it("leaves archived notes out of a full search only when asked to", async () => {
+        const token = "ZzArchivedSearchQwerty";
+        const board = await createTextNote(api, { title: "Board" });
+        const live = await createTextNote(api, { parentNoteId: board.noteId, title: `${token} live` });
+        const archived = await createTextNote(api, { parentNoteId: board.noteId, title: `${token} archived` });
+        await api.post(`/api/notes/${archived.noteId}/attributes`, {
+            body: { type: "label", name: "archived", value: "" }
+        });
+
+        const search = (includeArchivedNotes?: string) => api.get<string[]>("/api/search", {
+            query: { searchString: token, ancestorNoteId: board.noteId, includeArchivedNotes }
+        });
+
+        expect((await search()).body).toEqual(expect.arrayContaining([ live.noteId, archived.noteId ]));
+        expect((await search("true")).body).toEqual(expect.arrayContaining([ live.noteId, archived.noteId ]));
+        const withoutArchived = await search("false");
+        expect(withoutArchived.body).toContain(live.noteId);
+        expect(withoutArchived.body).not.toContain(archived.noteId);
     });
 
     it("returns note ids with token infos and the error when includeTokens is set", async () => {

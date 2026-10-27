@@ -27,6 +27,8 @@ describe("BlockDragHandle", () => {
         const buttonView = editor.plugins.get(BlockDragHandle).buttonView;
         expect(buttonView?.isVisible).toBe(true);
         expect(button.getAttribute("draggable")).toBe("true");
+        expect(button.classList).toContain("block-drag-handle");
+        expect(getComputedStyle(button).cursor).toBe("grab");
         expect(isBesideBlock(editor, button, 1)).toBe(true);
 
         button.focus();
@@ -43,6 +45,11 @@ describe("BlockDragHandle", () => {
             + "<paragraph>cell</paragraph></tableCell></tableRow>"
             + "<caption>Cap[]tion</caption></table>");
         expect(buttonView?.isVisible).toBe(false);
+        const captionStart = new DragEvent("dragstart", {
+            bubbles: true, cancelable: true, dataTransfer: new DataTransfer()
+        });
+        button.dispatchEvent(captionStart);
+        expect(captionStart.defaultPrevented).toBe(true);
 
         getEditable(editor).blur();
         await expect.poll(() => buttonView?.isVisible).toBe(false);
@@ -169,6 +176,108 @@ describe("BlockDragHandle", () => {
         }
     });
 
+    it("drags the whole table from a selection of several cells", async () => {
+        const cell = (text: string) => `<tableCell><paragraph>${text}</paragraph></tableCell>`;
+        const tables = [
+            `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow></table>`,
+            // Some cells of one row.
+            `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}${cell("d")}</tableRow></table>`,
+            // Some cells of each row.
+            `<table><tableRow>${cell("a")}[${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}[${cell("d")}]</tableRow></table>`
+        ];
+        for (const table of tables) {
+            const { editor, button } = await createEditor(`${table}<paragraph>after</paragraph>`);
+            // The editors of the earlier cases stay on the page until the test ends.
+            editor.ui.view.element?.scrollIntoView();
+
+            drop(button, startDrag(button), {
+                clientX: getEditable(editor).getBoundingClientRect().left - 50,
+                clientY: getBlock(editor, 1).getBoundingClientRect().bottom - 2
+            });
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                `<paragraph>after</paragraph>${table.replace(/[[\]]/g, "")}`
+            );
+        }
+    });
+
+    it("tints the blocks that it drags while the pointer is over it", async () => {
+        const note = (content: string) => `<aside admonitionType="note">${content}</aside>`;
+        const cell = (text: string) => `<tableCell><paragraph>${text}</paragraph></tableCell>`;
+        const cases = [ {
+            modelData: "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>",
+            targets: [ "p:two" ]
+        }, {
+            modelData: `${note("<paragraph>on[e</paragraph>")}<paragraph>tw]o</paragraph>`,
+            targets: [ "aside:one", "p:two" ]
+        }, {
+            modelData: `<table><tableRow>${cell("a[]")}${cell("b")}</tableRow></table>`,
+            targets: [ "span:a" ]
+        }, {
+            modelData: `<table><tableRow>[${cell("a")}][${cell("b")}]</tableRow></table>`,
+            targets: [ "figure:ab" ]
+        }, {
+            modelData: `<table><tableRow>${cell("a")}[${cell("b")}]</tableRow>`
+                + `<tableRow>${cell("c")}[${cell("d")}]</tableRow></table>`,
+            targets: [ "figure:abcd" ]
+        }, {
+            modelData: `<paragraph>[a]</paragraph><table><tableRow>[${cell("b")}]</tableRow></table>`,
+            targets: [ "p:a", "figure:b" ]
+        }, {
+            modelData: `<table><tableRow>[${cell("a")}]</tableRow></table><paragraph>[b]</paragraph>`,
+            targets: [ "figure:a", "p:b" ]
+        } ];
+        for (const { modelData, targets } of cases) {
+            const { editor, button } = await createEditor(
+                `${modelData}<paragraph>after</paragraph>`
+            );
+            // The editors of the earlier cases stay on the page until the test ends.
+            editor.ui.view.element?.scrollIntoView();
+
+            button.dispatchEvent(new MouseEvent("mouseenter"));
+            expect(getTargets(editor)).toEqual(targets);
+            button.dispatchEvent(new MouseEvent("mouseleave"));
+            expect(getTargets(editor)).toEqual([]);
+        }
+    });
+
+    it("keeps the tint until the pointer leaves the handle or drags the blocks", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+        );
+        button.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(getComputedStyle(getBlock(editor, 1)).boxShadow).toContain("inset");
+        expect(editor.getData()).toBe("<p>one</p><p>two</p>");
+
+        setModelData(editor.model, "<paragraph>o[]ne</paragraph><paragraph>two</paragraph>");
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
+
+        editor.enableReadOnlyMode("spec");
+        expect(getTargets(editor)).toEqual([]);
+        editor.disableReadOnlyMode("spec");
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
+
+        endDrag(button, startDrag(button), "none");
+        expect(getTargets(editor)).toEqual([]);
+        expect(getComputedStyle(getBlock(editor, 0)).boxShadow).toBe("none");
+    });
+
+    it("tints the blocks when the editor gets focus while it renders", async () => {
+        const { editor, button } = await createEditor("<paragraph>on[]e</paragraph>");
+        const view = editor.editing.view;
+        getEditable(editor).blur();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(false);
+        await expect.poll(() => view.document.isFocused).toBe(false);
+        button.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(getTargets(editor)).toEqual([]);
+
+        // The renderer focuses the editable of a focused view document.
+        view.document.isFocused = true;
+        view.forceRender();
+        expect(getTargets(editor)).toEqual([ "p:one" ]);
+    });
+
     it("takes drops beside a narrow editor or far out in a wide margin", async () => {
         const layouts = [
             { width: "90px", margin: "0 100px", distance: 10 },
@@ -188,6 +297,32 @@ describe("BlockDragHandle", () => {
                 clientY: lastBlockRect.bottom - 2
             });
             expect(editor.getData()).toBe("<p>second</p><p>first</p>");
+        }
+    });
+
+    it("moves blocks dropped above or below the others to the start or end", async () => {
+        const cases = [ {
+            at: (editable: DOMRect, above: DOMRect) => ({
+                clientX: editable.left - 50, clientY: above.top + 10
+            }),
+            data: "<p>second</p><p>first</p><p>third</p>"
+        }, {
+            at: (editable: DOMRect, _above: DOMRect, below: DOMRect) => ({
+                clientX: editable.left + 20, clientY: below.bottom - 10
+            }),
+            data: "<p>first</p><p>third</p><p>second</p>"
+        } ];
+        for (const { at, data } of cases) {
+            const { editor, button } = await createEditor(
+                "<paragraph>first</paragraph><paragraph>sec[]ond</paragraph>"
+                + "<paragraph>third</paragraph>"
+            );
+            const { above, below } = placeInScrollingContainer(editor);
+            const editableRect = getEditable(editor).getBoundingClientRect();
+
+            const isAccepted = drop(button, startDrag(button), at(editableRect, above, below));
+            expect(isAccepted).toBe(true);
+            expect(editor.getData()).toBe(data);
         }
     });
 
@@ -212,6 +347,69 @@ describe("BlockDragHandle", () => {
             });
             expect(isAccepted).toBe(false);
         }
+        expect(editor.getData()).toBe("<p>first</p><p>second</p>");
+    });
+
+    it("ends a drag that no drop takes, with the blocks where they were", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
+            + "<paragraph>third</paragraph>"
+        );
+        const beside = (index: number) => ({
+            clientX: getEditable(editor).getBoundingClientRect().left - 50,
+            clientY: getBlock(editor, index).getBoundingClientRect().bottom - 2
+        });
+
+        // The second marker update is still pending when the drag ends.
+        const dataTransfer = startDrag(button);
+        expect(dragOver(dataTransfer, beside(1))).toBe(true);
+        expect(dragOver(dataTransfer, beside(2))).toBe(true);
+        endDrag(button, dataTransfer, "none");
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(editor.model.markers.has("drop-target")).toBe(false);
+        expect(editor.getData()).toBe("<p>first</p><p>second</p><p>third</p>");
+    });
+
+    it("moves the blocks into another editor that takes the drop", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
+        );
+        const other = await createTestEditor([ Essentials, Paragraph ]);
+        setModelData(other.model, "<paragraph>other</paragraph>");
+        const otherBlockRect = getBlock(other, 0).getBoundingClientRect();
+        const isAccepted = drop(button, startDrag(button), {
+            clientX: otherBlockRect.left + 5,
+            clientY: otherBlockRect.bottom - 2
+        });
+        expect(isAccepted).toBe(true);
+        expect(other.getData()).toContain("first");
+        expect(editor.getData()).toBe("<p>second</p>");
+    });
+
+    it("takes the drop marker away where releasing would not drop", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
+        );
+        const editableRect = getEditable(editor).getBoundingClientRect();
+        const buttonRect = button.getBoundingClientRect();
+        const beside = {
+            clientX: editableRect.left - 50,
+            clientY: getBlock(editor, 1).getBoundingClientRect().bottom - 2
+        };
+        const belowEditable = { ...beside, clientY: editableRect.bottom + 50 };
+        const overHandle = {
+            clientX: buttonRect.left + buttonRect.width / 2,
+            clientY: buttonRect.top + buttonRect.height / 2
+        };
+
+        const dataTransfer = startDrag(button);
+        for (const point of [ belowEditable, overHandle ]) {
+            expect(dragOver(dataTransfer, beside)).toBe(true);
+            expect(editor.model.markers.has("drop-target")).toBe(true);
+            expect(dragOver(dataTransfer, point)).toBe(false);
+            await expect.poll(() => editor.model.markers.has("drop-target")).toBe(false);
+        }
+        endDrag(button, dataTransfer, "none");
         expect(editor.getData()).toBe("<p>first</p><p>second</p>");
     });
 
@@ -302,6 +500,30 @@ async function createEditor(
     return { editor, button };
 }
 
+/**
+ * Moves the editor into a scrolling container, between an element above it and one below it, as
+ * a note's title and the space after its content surround it. Returns the two elements' rectangles.
+ */
+function placeInScrollingContainer(editor: ClassicEditor) {
+    const editorElement = editor.ui.view.element;
+    if (!editorElement) {
+        throw new Error("The editor is not rendered.");
+    }
+
+    const scrollable = document.createElement("div");
+    const above = document.createElement("div");
+    const below = document.createElement("div");
+    scrollable.style.setProperty("overflow-y", "auto");
+    above.style.setProperty("height", "40px");
+    below.style.setProperty("height", "40px");
+    editorElement.before(scrollable);
+    scrollable.append(above, editorElement, below);
+    scrollable.scrollIntoView();
+    onTestFinished(() => scrollable.remove());
+
+    return { above: above.getBoundingClientRect(), below: below.getBoundingClientRect() };
+}
+
 /** Whether `button` is left of the editable, level with the first line of the block at `index`. */
 function isBesideBlock(editor: ClassicEditor, button: HTMLElement, index: number) {
     const buttonRect = button.getBoundingClientRect();
@@ -336,8 +558,33 @@ function drop(
     const dragover = new DragEvent("dragover", dropInit);
     target.dispatchEvent(dragover);
     target.dispatchEvent(new DragEvent("drop", dropInit));
-    button.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer }));
+    endDrag(button, dataTransfer, dragover.defaultPrevented ? "move" : "none");
     return dragover.defaultPrevented;
+}
+
+/** Drags over `point`, on the element there. Returns whether the dragover was accepted. */
+function dragOver(dataTransfer: DataTransfer, point: { clientX: number; clientY: number }) {
+    const target = document.elementFromPoint(point.clientX, point.clientY) ?? document;
+    const dragover = new DragEvent("dragover", {
+        bubbles: true, cancelable: true, dataTransfer, ...point
+    });
+    target.dispatchEvent(dragover);
+    return dragover.defaultPrevented;
+}
+
+/** Ends the drag at `button`, with the drop effect that the browser reports for its end. */
+function endDrag(button: HTMLElement, dataTransfer: DataTransfer, dropEffect: "none" | "move") {
+    // A constructed `DataTransfer` ignores `dropEffect` writes.
+    Object.defineProperty(dataTransfer, "dropEffect", { value: dropEffect });
+    button.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer }));
+}
+
+/** The tag and text of each element tinted as a target of the handle. */
+function getTargets(editor: ClassicEditor) {
+    return Array.from(
+        getEditable(editor).querySelectorAll(".block-drag-handle-target"),
+        (element) => `${element.localName}:${element.textContent}`
+    );
 }
 
 function getEditable(editor: ClassicEditor) {

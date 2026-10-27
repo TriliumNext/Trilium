@@ -249,8 +249,8 @@ describe("link-embed getMetadata", () => {
         expect(result.siteName).toBe("Example");
         // Stored, not hotlinked; opaque, so re-encoded as JPEG. Named after the page it is a
         // picture of, which is what a second paste of the same URL reuses it by.
-        expect(stored("coverImage")?.fileName).toMatch(/^example\.com-page-[0-9a-f]{8}\.jpeg$/);
-        expect(result.image).toMatch(/^api\/attachments\/att\d+\/image\/example\.com-page-[0-9a-f]{8}\.jpeg$/);
+        expect(stored("coverImage")?.fileName).toMatch(/^example\.com-page-[0-9a-f]{8}\.jpg$/);
+        expect(result.image).toMatch(/^api\/attachments\/att\d+\/image\/example\.com-page-[0-9a-f]{8}\.jpg$/);
     });
 
     it("resolves a relative og:image against the page URL before downloading it", async () => {
@@ -306,7 +306,7 @@ describe("link-embed getMetadata", () => {
             serveImage({ payload: await makePng(1024, 512, 0x00ff00ff), contentType: "image/png" });
 
             const image = await imageOf();
-            expect(image?.fileName).toMatch(/\.jpeg$/);
+            expect(image?.fileName).toMatch(/\.jpg$/);
 
             const decoded = await Jimp.read(image?.buffer ?? Buffer.alloc(0));
             expect(decoded.bitmap.width).toBe(256);
@@ -831,7 +831,7 @@ describe("link-embed getMetadata", () => {
         // used either, and the thumbnail comes from the conventional hqdefault URL.
         expect(result.title).toBeUndefined();
         expect(result.description).toBeUndefined();
-        expect(stored("coverImage")?.fileName).toMatch(/\.jpeg$/);
+        expect(stored("coverImage")?.fileName).toMatch(/\.jpg$/);
     });
 
     it("ignores meta tags whose content is empty, falling back to the document title", async () => {

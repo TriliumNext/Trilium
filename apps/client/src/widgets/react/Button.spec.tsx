@@ -52,4 +52,39 @@ describe("SplitButton", () => {
         expect(calls).toEqual([ "search", "execute" ]);
         await vi.waitFor(() => expect(document.querySelector(".tn-popup.tn-menu")).toBeNull());
     });
+
+    it("takes the look of a primary or small button on both halves", () => {
+        render((
+            <SplitButton text="Allow" kind="primary" size="small">
+                <FormListItem onClick={() => {}}>Allow always</FormListItem>
+            </SplitButton>
+        ), host);
+        const halves = [ ...host.querySelectorAll<HTMLButtonElement>(".btn-group button") ];
+        expect(halves.map(button => [ button.classList.contains("btn-primary"), button.classList.contains("btn-sm") ]))
+            .toEqual([ [ true, true ], [ true, true ] ]);
+        expect(halves[0]?.classList.contains("btn-secondary")).toBe(false);
+    });
+
+    it("joins its halves, and takes a micro look on both", () => {
+        render((
+            <SplitButton text="Add" size="micro">
+                <FormListItem onClick={() => {}}>Add another</FormListItem>
+            </SplitButton>
+        ), host);
+
+        expect(host.querySelector(".btn-group")?.classList.contains("tn-split-button")).toBe(true);
+        expect([ ...host.querySelectorAll<HTMLButtonElement>(".btn-group button") ]
+            .every((button) => button.classList.contains("btn-micro"))).toBe(true);
+    });
+
+    it("shows the main action's shortcut on its half", () => {
+        render((
+            <SplitButton text="Search" keyboardShortcut="Enter">
+                <FormListItem onClick={() => {}}>Search and execute</FormListItem>
+            </SplitButton>
+        ), host);
+
+        const [ main ] = host.querySelectorAll(".btn-group button");
+        expect(main?.querySelector("kbd")).not.toBeNull();
+    });
 });

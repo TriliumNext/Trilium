@@ -1,0 +1,177 @@
+# Class
+
+classDiagram
+
+==>
+
+ClassDiagram(DiagramName)
+
+# ClassDiagram v2
+
+classDiagram-v2
+
+==>
+
+ClassDiagram(DiagramName)
+
+# Class Definition
+
+classDiagram
+class Animal
+
+==>
+
+ClassDiagram(DiagramName,ClassDef(Class,ClassName))
+
+# Member Line
+
+classDiagram
+Animal : +int age
+
+==>
+
+ClassDiagram(DiagramName,MemberLine(ClassName,Member))
+
+# Class Body
+
+classDiagram
+class Duck {
+  +String beakColor
+  +swim()
+}
+
+==>
+
+ClassDiagram(DiagramName,ClassDef(Class,ClassName,ClassBody(Member,Member)))
+
+# Class Body with Annotation
+
+classDiagram
+class Shape {
+  <<interface>>
+  +area()
+}
+
+==>
+
+ClassDiagram(DiagramName,ClassDef(Class,ClassName,ClassBody(Annotation,Member)))
+
+# Class Label
+
+classDiagram
+class Shape["Shape Label"]
+
+==>
+
+ClassDiagram(DiagramName,ClassDef(Class,ClassName,ClassLabel(String)))
+
+# Relation
+
+classDiagram
+Vehicle <|-- Car
+
+==>
+
+ClassDiagram(DiagramName,Relation(ClassName,RelationArrow,ClassName))
+
+# Relation with Label
+
+classDiagram
+Animal <|-- Duck : label
+
+==>
+
+ClassDiagram(DiagramName,Relation(ClassName,RelationArrow,ClassName,Label(LabelText)))
+
+# Relation with Cardinality
+
+classDiagram
+Customer "1" --> "*" Order : places
+
+==>
+
+ClassDiagram(DiagramName,Relation(ClassName,String,RelationArrow,String,ClassName,Label(LabelText)))
+
+# Composition and Aggregation
+
+classDiagram
+Class01 *-- Class02
+Class03 o-- Class04
+Class05 ..> Class06
+
+==>
+
+ClassDiagram(DiagramName,Relation(ClassName,RelationArrow,ClassName),Relation(ClassName,RelationArrow,ClassName),Relation(ClassName,RelationArrow,ClassName))
+
+# Annotation Statement
+
+classDiagram
+<<interface>> Shape
+
+==>
+
+ClassDiagram(DiagramName,AnnotationStatement(Annotation,ClassName))
+
+# Note
+
+classDiagram
+note "This is a note"
+
+==>
+
+ClassDiagram(DiagramName,Note(NoteKw,String))
+
+# Note For Class
+
+classDiagram
+note for Animal "This is a note"
+
+==>
+
+ClassDiagram(DiagramName,Note(NoteKw,For,ClassName,String))
+
+# Direction
+
+classDiagram
+direction RL
+
+==>
+
+ClassDiagram(DiagramName,Direction(DirectionKw,DirectionValue))
+
+# Line Comment
+
+classDiagram
+%% a comment
+class Animal
+
+==>
+
+ClassDiagram(DiagramName,LineComment,ClassDef(Class,ClassName))
+
+# All Features
+
+classDiagram
+  direction LR
+  class Animal {
+    +int age
+    +isMammal()
+  }
+  <<interface>> Animal
+  Animal <|-- Duck : label
+  note for Duck "quacks"
+
+==>
+
+ClassDiagram(DiagramName,Direction(DirectionKw,DirectionValue),ClassDef(Class,ClassName,ClassBody(Member,Member)),AnnotationStatement(Annotation,ClassName),Relation(ClassName,RelationArrow,ClassName,Label(LabelText)),Note(NoteKw,For,ClassName,String))
+
+# Comment in a class body
+
+classDiagram
+class A {
+  %% comment
+}
+
+==>
+
+ClassDiagram(DiagramName,ClassDef(Class,ClassName,ClassBody("{",LineComment,"}")))

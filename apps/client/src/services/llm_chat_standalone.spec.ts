@@ -34,6 +34,7 @@ function makeCallbacks(): Record<keyof StreamCallbacks, ReturnType<typeof vi.fn>
         onToolInputStart: vi.fn(),
         onToolInputDelta: vi.fn(),
         onToolUse: vi.fn(),
+        onToolApprovalRequest: vi.fn(),
         onToolResult: vi.fn(),
         onCitation: vi.fn(),
         onUsage: vi.fn(),
@@ -107,6 +108,20 @@ describe("streamChatCompletion in standalone", () => {
         expect(cb.onToolUse).toHaveBeenCalledWith("t1", "search", {});
         expect(cb.onChunk).toHaveBeenCalledWith("after");
         expect(cb.onToolUse.mock.invocationCallOrder[0]).toBeLessThan(cb.onChunk.mock.invocationCallOrder[0]);
+    });
+
+    it("answers a waiting tool call under the id the stream was started with", async () => {
+        const cb = makeCallbacks();
+        const streaming = streamChatCompletion(messages, config, cb);
+        await Promise.resolve();
+
+        broadcast(chunk({ type: "tool_approval_request", toolCallId: "c1", toolName: "delete_note", toolInput: {} }));
+        broadcast(end);
+        await streaming;
+
+        const answer = cb.onToolApprovalRequest.mock.calls[0]?.[1] as ((approved: boolean) => Promise<void>) | undefined;
+        await answer?.(true);
+        expect(posts.at(-1)).toEqual([ "llm-chat/tool-approval", { streamId: "stream1", toolCallId: "c1", approved: true } ]);
     });
 
     it("reports a failure to start the completion, and does not wait for a stream that never began", async () => {

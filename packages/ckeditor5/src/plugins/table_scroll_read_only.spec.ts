@@ -1,8 +1,10 @@
+import "@triliumnext/commons/src/lib/scroll_fade.css";
 import "../theme/table_scroll.css";
 
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
+import { fadeClasses, scrollFigure } from "../../test/table-kit.js";
 import { applyTableScroll } from "./table_scroll_read_only.js";
 
 const TABLE = "<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>";
@@ -112,6 +114,71 @@ describe("applyTableScroll", () => {
             .toBeCloseTo(figure.getBoundingClientRect().left, 0);
     });
 
+    it("fades the edges that a scrolling table continues past", async () => {
+        const container = renderContent(tableFigure("width:150%;"), 600);
+        const figure = firstFigure(container);
+        expect(fadeClasses(figure))
+            .toEqual([ "scroll-fade", "scroll-fade-horizontal", "scroll-fade-end" ]);
+        expect(getComputedStyle(figure).maskImage).toContain("linear-gradient");
+        await expect.poll(() => getComputedStyle(figure).getPropertyValue("--scroll-fade-end"))
+            .toBe("2.5%");
+
+        // A second pass over the same content keeps one watcher, which writes the classes once.
+        applyTableScroll(container);
+        let classChanges = 0;
+        new MutationObserver((records) => {
+            classChanges += records.length;
+        }).observe(figure, { attributeFilter: [ "class" ] });
+        await scrollFigure(figure, 300);
+        expect(classChanges).toBe(2);
+        expect(fadeClasses(figure))
+            .toEqual([ "scroll-fade", "scroll-fade-horizontal", "scroll-fade-start" ]);
+
+        container.innerHTML = tableFigure("width:50%;");
+        applyTableScroll(container);
+        expect(fadeClasses(firstFigure(container))).toEqual([]);
+    });
+
+    it("fades towards the left in right-to-left content", () => {
+        const container = renderContent(tableFigure("width:150%;"), 600, "rtl");
+        const figure = firstFigure(container);
+        expect(fadeClasses(figure)).toEqual([
+            "scroll-fade", "scroll-fade-horizontal", "scroll-fade-end", "scroll-fade-rtl"
+        ]);
+        expect(getComputedStyle(figure).getPropertyValue("--scroll-fade-direction"))
+            .toBe("to left");
+    });
+
+    it("stops fading once disposed, and fades again on a later pass", async () => {
+        const container = renderContent("", 600);
+        container.innerHTML = tableFigure("width:150%;");
+        const dispose = applyTableScroll(container);
+        const figure = firstFigure(container);
+        expect(fadeClasses(figure)).toContain("scroll-fade-end");
+
+        dispose();
+        dispose();
+        await scrollFigure(figure, 300);
+        expect(fadeClasses(figure)).not.toContain("scroll-fade-start");
+
+        applyTableScroll(container);
+        expect(fadeClasses(figure)).toContain("scroll-fade-start");
+    });
+
+    it("starts fading once detached content is attached", async () => {
+        const container = document.createElement("div");
+        container.className = "ck-content";
+        container.style.width = "600px";
+        container.innerHTML = tableFigure("width:150%;");
+        applyTableScroll(container);
+        const figure = firstFigure(container);
+        expect(fadeClasses(figure)).toEqual([]);
+
+        document.body.appendChild(container);
+        onTestFinished(() => container.remove());
+        await expect.poll(() => fadeClasses(figure)).toContain("scroll-fade-end");
+    });
+
     it("leaves the tables of an editor alone", () => {
         const container = renderContent(
             `<figure class="table ck-widget" style="width:150%;">${TABLE}</figure>`,
@@ -127,9 +194,10 @@ function tableFigure(style: string) {
 }
 
 /** Renders saved HTML the way the read-only view does and applies the pass. */
-function renderContent(html: string, width: number) {
+function renderContent(html: string, width: number, dir: "ltr" | "rtl" = "ltr") {
     const container = document.createElement("div");
     container.className = "ck-content";
+    container.dir = dir;
     container.style.width = `${width}px`;
     container.innerHTML = html;
     document.body.appendChild(container);

@@ -21,5 +21,19 @@
     "show-space-usage": "Åbn siden »Lagerpladsforbrug«",
     "show-help": "Åbn den indbyggede brugervejledning",
     "show-cheatsheet": "Vis en modal med almindelige tastaturhandlinger"
+  },
+  "login": {
+    "password": "Kodeord",
+    "remember-me": "Husk mig",
+    "incorrect-password": "Kodeordet er forkert. Prøv igen.",
+    "sso-wrong-account": "Den konto er ikke den, der er knyttet til denne Trilium-instans. Log ind med den knyttede konto.",
+    "sso-not-enrolled": "Single sign-on er ikke sat op endnu. Log ind med dit kodeord først, og knyt derefter din konto i indstillingerne."
+  },
+  "set_password": {
+    "heading": "Angiv kodeord",
+    "description": "Før du kan begynde at bruge Trilium fra webben, skal du først angive et kodeord. Du skal derefter bruge dette kodeord til at logge ind.",
+    "password": "Kodeord",
+    "password-confirmation": "Bekræft kodeord",
+    "button": "Angiv kodeord"
   }
 }

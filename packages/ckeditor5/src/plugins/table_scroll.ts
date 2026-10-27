@@ -1,11 +1,22 @@
 import {
-    type ModelElement, TableScrollEditing, type ViewDowncastWriter, type ViewElement
+    NO_SCROLL_FADE, SCROLL_FADE_CLASSES, type ScrollFadeState, type ScrollFadeWatch,
+    watchScrollFade
+} from "@triliumnext/commons";
+import {
+    type EditingView, type ModelElement, TableScrollEditing, type ViewDowncastWriter,
+    type ViewElement
 } from "ckeditor5";
+
+import { getTableFadeClasses } from "./table_scroll_read_only.js";
 
 /** The CSS property that sets the width a table takes as its full width. */
 export const REFERENCE_WIDTH_PROPERTY = "--table-reference-width";
 
+/** The width of the visible part of a scrolling table, which sizes its edge fades. */
+export const VIEWPORT_WIDTH_PROPERTY = "--table-viewport-width";
+
 const OVERFLOWING_CLASS = "ck-table-overflowing";
+const OVERFLOWING_SELECTOR = `figure.table.${OVERFLOWING_CLASS}`;
 
 /**
  * CKEditor's `TableScrollEditing`, which lets a table wider than the editable scroll sideways,
@@ -19,11 +30,17 @@ const OVERFLOWING_CLASS = "ck-table-overflowing";
  * The plugin keeps the upstream name, which `TableColumnResizeEditing` looks up to let a table grow
  * past the editable. Column resizing is off while a reference width applies, because the resizer
  * computes percentages of the editable's width.
+ *
+ * The edges that a scrolling table continues past fade through `scroll_fade.css`. The fade masks
+ * the `table` instead of the figure, so the widget outline and controls of the figure stay whole.
  */
 export default class TriliumTableScroll extends TableScrollEditing {
 
     /** The figures of the tables that scroll because their content is wider than the editable. */
     private readonly contentOverflowing = new WeakSet<ViewElement>();
+
+    /** The edge fades of the scrolling tables, by view `table`. */
+    private readonly fades = new Map<ViewElement, TableFade>();
 
     private readonly onContentLoad = () => this.updateContentOverflow();
 
@@ -34,7 +51,10 @@ export default class TriliumTableScroll extends TableScrollEditing {
         super.init();
 
         const { editor } = this;
-        this.listenTo(editor.editing.view, "render", () => this.updateContentOverflow());
+        this.listenTo(editor.editing.view, "render", () => {
+            this.updateContentOverflow();
+            this.updateFades();
+        });
         editor.once("ready", () => {
             // An image that loads after a render can make its table wider.
             this.loadTarget = editor.editing.view.getDomRoot();
@@ -48,6 +68,10 @@ export default class TriliumTableScroll extends TableScrollEditing {
 
     override destroy() {
         this.loadTarget?.removeEventListener("load", this.onContentLoad, true);
+        for (const { watch } of this.fades.values()) {
+            watch.disconnect();
+        }
+        this.fades.clear();
         super.destroy();
     }
 
@@ -163,12 +187,91 @@ export default class TriliumTableScroll extends TableScrollEditing {
         return table.left < container.left - 0.5 || table.right > container.right + 0.5;
     }
 
+    /**
+     * Starts the edge fade of each table that begins to scroll, and stops the others. The renderer
+     * can bind a DOM figure to a new view figure, so a fade belongs to a view `table` and its DOM
+     * figure together.
+     */
+    private updateFades() {
+        const view = this.editor.editing.view;
+        const figures = new Map<ViewElement, HTMLElement>();
+        for (const domRoot of view.domRoots.values()) {
+            for (const figure of domRoot.querySelectorAll<HTMLElement>(OVERFLOWING_SELECTOR)) {
+                const viewTable = getViewTable(view, figure);
+                if (viewTable) {
+                    figures.set(viewTable, figure);
+                }
+            }
+        }
+
+        const removed = [ ...this.fades ]
+            .filter(([ viewTable, { figure } ]) => figures.get(viewTable) !== figure);
+        const added = [ ...figures ]
+            .filter(([ viewTable, figure ]) => this.fades.get(viewTable)?.figure !== figure);
+        if (!removed.length && !added.length) {
+            return;
+        }
+
+        // One change block: the `setFade()` calls inside it render together, after the loops.
+        view.change(() => {
+            for (const [ viewTable, { watch } ] of removed) {
+                watch.disconnect();
+                this.fades.delete(viewTable);
+                this.setFade(viewTable, NO_SCROLL_FADE);
+            }
+            for (const [ viewTable, figure ] of added) {
+                const watch = watchScrollFade(figure, (state) => this.setFade(viewTable, state), {
+                    direction: "horizontal"
+                });
+                this.fades.set(viewTable, { figure, watch });
+            }
+        });
+    }
+
+    /** Puts the fade classes for `state` and the visible width on `viewTable`. */
+    private setFade(viewTable: ViewElement, state: ScrollFadeState) {
+        const view = this.editor.editing.view;
+        const classes = getTableFadeClasses(state);
+        view.change((writer) => {
+            writer.removeClass([ ...SCROLL_FADE_CLASSES ], viewTable);
+            writer.addClass(classes, viewTable);
+            if (classes.length) {
+                writer.setStyle(VIEWPORT_WIDTH_PROPERTY, `${state.clientSize}px`, viewTable);
+            } else {
+                writer.removeStyle(VIEWPORT_WIDTH_PROPERTY, viewTable);
+            }
+        });
+    }
+
 }
 
 interface ContentOverflowChange {
     table: ModelElement;
     viewFigure: ViewElement;
     isOverflowing: boolean;
+}
+
+interface TableFade {
+    /** The DOM figure that scrolls. */
+    figure: HTMLElement;
+    watch: ScrollFadeWatch;
+}
+
+/** The view `table` of the DOM `figure` of a table widget. */
+function getViewTable(view: EditingView, figure: HTMLElement) {
+    const viewFigure = view.domConverter.mapDomToView(figure);
+    /* v8 ignore next 3 -- defensive: a figure in an editable is always bound to a view element */
+    if (!viewFigure?.is("element")) {
+        return undefined;
+    }
+
+    for (const child of viewFigure.getChildren()) {
+        if (child.is("element", "table")) {
+            return child;
+        }
+    }
+    /* v8 ignore next -- defensive: the downcast always puts a table in the figure */
+    return undefined;
 }
 
 /**

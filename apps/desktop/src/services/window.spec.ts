@@ -528,6 +528,18 @@ describe("window service", () => {
             expect(opts.vibrancy).toBe("under-window");
         });
 
+        it("draws the window controls over the page on every platform", async () => {
+            for (const platform of [ "isLinux", "isWindows", "isMac" ] as const) {
+                state.isLinux = state.isWindows = state.isMac = false;
+                state[platform] = true;
+                await windowService.createSetupWindow();
+                const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+                expect(opts.titleBarStyle).toBe(platform === "isMac" ? "hiddenInset" : "hidden");
+                expect(opts.titleBarOverlay).toBe(true);
+                expect(opts.frame).toBeUndefined();
+            }
+        });
+
         it("names the window for what it is: getting started, or starting over", async () => {
             // Asserted as the resolved English rather than as the key, which also proves both
             // entries are really in the catalog the Electron main process reads.
@@ -865,10 +877,13 @@ describe("window service", () => {
             expect(extraWindowOptions?.webPreferences?.nodeIntegration).toBe(false);
         });
 
-        it("reload-all-windows reloads every window", () => {
+        it("reload-all-windows reloads every app window and leaves other pages alone", () => {
             const win = state.windows[state.windows.length - 1];
+            const capture = new FakeBrowserWindow();
+            capture.webContents.getURL.mockReturnValue("file:///tmp/trilium-transcription.html");
             fireOn("reload-all-windows", makeEvent());
             expect(win.reload).toHaveBeenCalled();
+            expect(capture.reload).not.toHaveBeenCalled();
         });
 
         it("restart-app relaunches and exits", () => {

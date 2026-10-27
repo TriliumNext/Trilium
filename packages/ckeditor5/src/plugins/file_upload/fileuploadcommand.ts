@@ -145,7 +145,6 @@ interface EmbedPlaceholderOptions {
 
 /** The box size the host gives an embed of `file`, `medium` when the host does not say. */
 function getEmbedBoxSize(editor: Editor, file: File) {
-    const component = glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
     const mime = getAttachedFileMime(file.name, file.type);
-    return component.getEmbedBoxSize?.(mime, file.size) ?? "medium";
+    return editor.config.get("attachmentUpload")?.getEmbedBoxSize?.(mime, file.size) ?? "medium";
 }

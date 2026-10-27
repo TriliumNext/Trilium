@@ -185,6 +185,8 @@ describe("ACP MCP endpoint", () => {
 
         expect(res.status).toBe(200);
         expect(res.body).toContain("trilium-notes-spec");
+        // Codex runs a tool marked read-only without asking, which would skip the chat's approvals.
+        expect(createMcpServerMock).toHaveBeenCalledWith({ toolHints: false });
 
         const mcpServer = mcpServers.at(-1);
         await vi.waitFor(() => {

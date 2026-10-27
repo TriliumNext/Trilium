@@ -63,11 +63,16 @@ describe("FetchRequestProvider.exec", () => {
         expect(result).toBeNull();
     });
 
-    it("adds a trilium-cred header when auth is provided", async () => {
+    it("adds a trilium-cred header when auth is provided, and trilium-totp only with a token", async () => {
         const spy = mockFetch({ status: 200, text: async () => "{}" });
         await provider.exec({ method: "GET", url: `${location.origin}/x`, auth: { password: "pw" } } as ExecOpts);
         const headers = lastInit(spy).headers as Record<string, string>;
         expect(headers["trilium-cred"]).toBe(btoa("dummy:pw"));
+        expect(headers).not.toHaveProperty("trilium-totp");
+
+        spy.mockClear();
+        await provider.exec({ method: "GET", url: `${location.origin}/x`, auth: { password: "pw", totpToken: "123456" } } as ExecOpts);
+        expect((lastInit(spy).headers as Record<string, string>)["trilium-totp"]).toBe("123456");
     });
 
     it("serializes object bodies as JSON and passes string bodies through", async () => {
@@ -108,7 +113,24 @@ describe("FetchRequestProvider.exec", () => {
             (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
         }));
         const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
-        const rejection = expect(promise).rejects.toThrow("timeout after 50ms");
+        const rejection = expect(promise).rejects.toThrow("timeout after 50ms waiting for the response headers");
+        await vi.advanceTimersByTimeAsync(50);
+        await rejection;
+    });
+
+    it("reports a timeout while reading the body with the status and when the headers arrived", async () => {
+        vi.useFakeTimers();
+        const abortErr = Object.assign(new Error("aborted"), { name: "AbortError" });
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => ({
+            status: 200,
+            text: () => new Promise<string>((_resolve, reject) => {
+                (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
+            })
+        }) as unknown as Response);
+        const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
+        const rejection = expect(promise).rejects.toThrow(
+            /timeout after 50ms while reading the response body \(status 200 received after 0ms\)$/
+        );
         await vi.advanceTimersByTimeAsync(50);
         await rejection;
     });

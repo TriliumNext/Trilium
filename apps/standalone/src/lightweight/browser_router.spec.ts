@@ -1,7 +1,7 @@
 import { getContext } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BrowserRouter, createRouter } from "./browser_router.js";
+import { BrowserRouter, createRouter, type UploadedFile } from "./browser_router.js";
 import { dbLock } from "./db_lock.js";
 
 const RAW_RESPONSE = Symbol.for("RAW_RESPONSE");
@@ -161,6 +161,34 @@ describe("BrowserRouter body parsing", () => {
         expect(req?.body).toEqual({ title: "hello" });
         expect(typeof req?.file?.originalname).toBe("string");
         expect(req?.file && Array.from(req.file.buffer)).toEqual([1, 2, 3]);
+    });
+
+    it("takes a posted File's fields, and reads its bytes only for a route that does not read it in place", async () => {
+        const file = new File([ new Uint8Array([ 4, 5, 6 ]) ], "notes.zip", { type: "application/zip" });
+        const arrayBuffer = vi.spyOn(file, "arrayBuffer");
+        const body = { type: "upload", fields: { taskId: "t1" }, file };
+
+        const router = new BrowserRouter();
+        let buffered: { body?: unknown; file?: UploadedFile } | undefined;
+        let inPlace: { body?: unknown; file?: UploadedFile } | undefined;
+        router.post("/upload", (r) => { buffered = r; return {}; });
+        router.register("POST", "/import", (r) => { inPlace = r; return {}; }, { readsUploadsInPlace: true });
+
+        await router.dispatch("POST", "http://localhost/import", body);
+        expect(inPlace?.body).toEqual({ taskId: "t1" });
+        expect(inPlace?.file).toEqual({ originalname: "notes.zip", mimetype: "application/zip", blob: file });
+        expect(arrayBuffer).not.toHaveBeenCalled();
+
+        await router.dispatch("POST", "http://localhost/upload", body);
+        expect(buffered?.file?.buffer && Array.from(buffered.file.buffer)).toEqual([ 4, 5, 6 ]);
+
+        const untyped = new File([ new Uint8Array([ 7 ]) ], "blob");
+        await router.dispatch("POST", "http://localhost/import", { type: "upload", fields: {}, file: untyped });
+        expect(inPlace?.file?.mimetype).toBe("application/octet-stream");
+
+        await router.dispatch("POST", "http://localhost/upload", { type: "upload", fields: { taskId: "t2" } });
+        expect(buffered?.body).toEqual({ taskId: "t2" });
+        expect(buffered?.file).toBeUndefined();
     });
 
     it("warns when multipart parsing fails", async () => {

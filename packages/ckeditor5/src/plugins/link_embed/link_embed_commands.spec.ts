@@ -3,22 +3,23 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
     changeCommand,
+    createLinkEmbedHost,
     createTestEditor,
     findElement,
-    installLinkEmbedComponentMock,
     LINK_EMBED_TEST_PLUGINS,
     META,
-    type LinkEmbedComponentMocks
+    type LinkEmbedHostMocks
 } from "../../../test/link-embed-kit.js";
 import { CHANGE_LINK_DISPLAY_COMMAND, CHANGE_LINK_PREVIEW_TITLE_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND } from "./link_embed_commands.js";
 
 describe("LinkEmbed commands", () => {
     let editor: ClassicEditor;
-    let fetchLinkMetadata: LinkEmbedComponentMocks["fetchLinkMetadata"];
+    let fetchMetadata: LinkEmbedHostMocks["fetchMetadata"];
 
     beforeEach(async () => {
-        ({ fetchLinkMetadata } = installLinkEmbedComponentMock());
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
+        const host = createLinkEmbedHost();
+        ({ fetchMetadata } = host);
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: host });
     });
 
     // -----------------------------------------------------------------------
@@ -33,7 +34,7 @@ describe("LinkEmbed commands", () => {
         // to a card later never has to go back to the network.
         await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
         const mention = findElement(editor, "linkMention");
         expect(mention?.getAttribute("url")).toBe(url);
         expect(mention?.getAttribute("description")).toBe(META.description);
@@ -43,7 +44,7 @@ describe("LinkEmbed commands", () => {
 
     it("forces the opengraph type for a card, and keeps the detected one for an embed", async () => {
         const url = "https://youtube.com/watch?v=abc12345678";
-        fetchLinkMetadata.mockResolvedValue({ ...META, url, embedType: "youtube" });
+        fetchMetadata.mockResolvedValue({ ...META, url, embedType: "youtube" });
 
         setModelData(editor.model, "<paragraph>[]</paragraph>");
         await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
@@ -61,7 +62,7 @@ describe("LinkEmbed commands", () => {
 
         await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain" });
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(findElement(editor, "linkMention")).toBeUndefined();
         expect(findElement(editor, "linkEmbed")).toBeUndefined();
         expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
@@ -169,7 +170,7 @@ describe("LinkEmbed commands", () => {
         // The linked text arrives as an insertion, not a linkHref attribute change, so
         // AutoLinkToMention must not have kicked in and fetched the preview straight back.
         await Promise.resolve();
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
 
         // A block preview converts the same way, gaining a wrapping paragraph.
         setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
@@ -326,7 +327,7 @@ describe("LinkEmbed commands", () => {
 
         await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" });
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
         const mention = findElement(editor, "linkMention");
         expect(mention?.getAttribute("url")).toBe(url);
         expect(mention?.getAttribute("title")).toBe(META.title);
@@ -340,7 +341,7 @@ describe("LinkEmbed commands", () => {
 
     it("converts a native link to the chosen block shape: card forces opengraph, embed keeps the detected type", async () => {
         const url = "https://youtube.com/watch?v=abc12345678";
-        fetchLinkMetadata.mockImplementation(async () => ({ ...META, url, embedType: "youtube" }));
+        fetchMetadata.mockImplementation(async () => ({ ...META, url, embedType: "youtube" }));
 
         setModelData(editor.model, `<paragraph><$text linkHref="${url}">watch [] this</$text></paragraph>`);
         await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
@@ -359,14 +360,14 @@ describe("LinkEmbed commands", () => {
 
         await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(editor.getData()).toBe(before);
     });
 
     it("does nothing when the linked text was deleted while the metadata was being fetched", async () => {
         const url = "https://example.com/";
         let resolveFetch: (meta: unknown) => void = () => {};
-        fetchLinkMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
         setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
 
         const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;
@@ -382,7 +383,7 @@ describe("LinkEmbed commands", () => {
     it("does not convert when the link was repointed at a different URL while the metadata was being fetched", async () => {
         const url = "https://example.com/";
         let resolveFetch: (meta: unknown) => void = () => {};
-        fetchLinkMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
         setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
 
         const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;
@@ -402,7 +403,7 @@ describe("LinkEmbed commands", () => {
     it("still converts when the linked text survives behind an inserted element and a repointed prefix", async () => {
         const url = "https://example.com/";
         let resolveFetch: (meta: unknown) => void = () => {};
-        fetchLinkMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
         setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
 
         const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;

@@ -30,6 +30,8 @@ export interface Request<P = Record<string, string | string[]>, Q = QueryString>
     body: any;
     headers: RequestHeaders;
     method: string;
+    /** The path and query string the route sees, such as `/custom/echo?x=1`. */
+    url: string;
     originalUrl: string;
     /** The parsed multipart upload — multer on the server, `BrowserRouter` in standalone. */
     file?: File;
@@ -57,4 +59,12 @@ export interface Response {
      */
     write(chunk: string): boolean;
     end(): unknown;
+    /** Express's `res.locals`. Standalone logs no requests, so its responses have none. */
+    locals?: ResponseLocals;
+}
+
+/** The values a shared route handler leaves in {@link Response.locals}. */
+export interface ResponseLocals {
+    /** A line that the server's request log writes after the request's own line. */
+    logSummary?: string;
 }

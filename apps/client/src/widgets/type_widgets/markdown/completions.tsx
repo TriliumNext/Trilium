@@ -11,7 +11,9 @@ import noteIcon from "@triliumnext/ckeditor5/src/icons/note.svg?raw";
 import tabsIcon from "@triliumnext/ckeditor5/src/icons/tabs.svg?raw";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { hostedCompletion, type HostedCompletionApply, type HostedCompletionState } from "@triliumnext/codemirror/src/extensions/hosted_completion";
+import type {
+    HostedCompletionApply
+} from "@triliumnext/codemirror/src/extensions/hosted_completion";
 import { isAnchorState, type TaskStateDef } from "@triliumnext/commons";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
@@ -19,101 +21,24 @@ import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
-import { useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import mime_types from "../../../services/mime_types";
-import { getTaskStateDefinitions } from "../../../services/task_states";
-import { type CommandEntry, CommandMentionList, createHostedList, filterCommandEntries, NoteMentionList } from "../../react/NoteAutocomplete";
-import { type CodeSnippet, SLASH_COMMAND_REGEX, useCodeSnippets } from "../code/snippets";
+import type { CompletionMatch, SlashCommand } from "../code/editor_completions";
+import { SLASH_COMMAND_REGEX } from "../code/snippets";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams";
-import type { TypeWidgetProps } from "../type_widget";
-import { uploadImageAndInsert } from "./editor_utils";
+import {
+    insertDateTime, showAddLinkDialog, showIncludeNoteDialog, uploadImageAndInsert
+} from "./editor_utils";
 
-/** A `/` command of the Markdown editor, listed as the text editor lists its own. */
-export interface SlashCommand extends CommandEntry {
-    /** Runs the command on the typed `/command`, which starts at `from` and ends at the caret, `to`. */
-    apply: HostedCompletionApply;
-}
-
-/** A `/command` or a note typed before the caret, from its `/`, its `@` or its `[[`. */
-export interface MarkdownCompletionMatch {
-    kind: "command" | "note";
-    from: number;
-    /** What follows the `/`, the `@` or the `[[`, which the list filters by, as the text editor's do. */
-    query: string;
-}
-
-/** What the commands are built from, read again each time the list looks them up. */
-export interface SlashCommandContext {
-    parentComponent: TypeWidgetProps["parentComponent"];
-    /** The note being edited, read when a command needs it, as switching notes reuses the editor. */
-    getNote(): FNote;
+/** What the Markdown commands are built from, read again each time the list looks them up. */
+export interface MarkdownCommandContext {
     editorView: VanillaCodeMirror;
+    /** The note that images upload to, read when the image arrives. */
+    getOwnerNote(): FNote | null;
     /** The user's task states, one `/todo:<state>` each where it has a Markdown marker. */
     taskStates: TaskStateDef[];
-    snippets: CodeSnippet[];
-}
-
-/**
- * Lists the `/` commands and the `@` notes typed at the start of a line or after whitespace, and
- * the notes typed after a Wikilink's `[[`, in the text editor's lists, through
- * `hostedCompletion()`. A note picked is linked as `[[noteId]]`,
- * and one created goes under the note at `getNotePath()`. The code-fence languages stay with
- * CodeMirror's own completion.
- */
-export function useMarkdownCompletions(
-    parentComponent: TypeWidgetProps["parentComponent"],
-    editorView: VanillaCodeMirror | null,
-    note: FNote,
-    getNotePath: () => string | null | undefined
-) {
-    // Held in refs so the lists read the current note and parent component without registering
-    // the extension again.
-    const noteRef = useRef(note);
-    const parentRef = useRef(parentComponent);
-    const getNotePathRef = useRef(getNotePath);
-    getNotePathRef.current = getNotePath;
-    // The user-configured todo task states (from the `_taskStates` subtree), loaded once.
-    const taskStatesRef = useRef<TaskStateDef[]>([]);
-    // Markdown snippets (#snippet code notes with a markdown MIME) plus generic plain-text snippets,
-    // inserted via `/snippet:<name>`. useCodeSnippets keeps the ref fresh so the list reads the latest.
-    const snippetsRef = useCodeSnippets(
-        (candidate) => candidate.isMarkdown() || (candidate.type === "code" && candidate.mime === "text/plain"),
-        "markdown"
-    );
-    useEffect(() => { noteRef.current = note; }, [note]);
-    useEffect(() => { parentRef.current = parentComponent; }, [parentComponent]);
-    useEffect(() => { void getTaskStateDefinitions().then((states) => { taskStatesRef.current = states; }); }, []);
-
-    useEffect(() => {
-        if (!editorView) return;
-
-        const commands = () => buildSlashCommands({
-            parentComponent: parentRef.current,
-            getNote: () => noteRef.current,
-            editorView,
-            taskStates: taskStatesRef.current,
-            snippets: snippetsRef.current.filter((snippet) => snippet.noteId !== noteRef.current.noteId)
-        });
-        // Bridges the codemirror package's own @codemirror/state identity, as for the sources below.
-        type CmMarkdownMatcher = Parameters<typeof hostedCompletion<MarkdownCompletionMatch>>[0]["match"];
-        editorView.setNamedExtension("markdownCompletions", hostedCompletion({
-            match: markdownCompletionAt as unknown as CmMarkdownMatcher,
-            list: () => createMarkdownCompletionList(commands, () => getNotePathRef.current())
-        }));
-        // CodeMirror allows one `override` config per editor, so sources go through
-        // `setCompletionSource` instead of each adding its own `autocompletion()`.
-        // Bridges the codemirror package's own @codemirror/autocomplete identity, as code/snippets.ts does.
-        type CmCompletionSource = Parameters<VanillaCodeMirror["setCompletionSource"]>[1];
-        editorView.setCompletionSource("markdownCodeFence", codeFenceCompletionSource as unknown as CmCompletionSource);
-
-        return () => {
-            editorView.setNamedExtension("markdownCompletions", []);
-            editorView.setCompletionSource("markdownCodeFence", null);
-        };
-    }, [editorView]);
 }
 
 /**
@@ -121,7 +46,9 @@ export function useMarkdownCompletions(
  * or the note typed after a `[[`, the marker nearest the caret where both stand; or `null` in a code
  * block or a code span, where any of them is part of the code.
  */
-export function markdownCompletionAt(before: string, _explicit: boolean, state: EditorState): MarkdownCompletionMatch | null {
+export function markdownCompletionAt(
+    before: string, _explicit: boolean, state: EditorState
+): CompletionMatch | null {
     const mention = NOTE_TYPED.exec(before);
     const wikilink = WIKILINK_TYPED.exec(before);
     // A `/` inside an open link is part of the title being typed.
@@ -147,16 +74,18 @@ const NOTE_TYPED = /(?:^|(?<=\s))@[^@]*$/;
 const WIKILINK_TYPED = /\[\[[^[\]]*$/;
 
 /**
- * The commands the `/` list offers, titled, described, found by the same words and drawn with the same
- * icons as the text editor's, where it has the command too. Each is found by the word typed after the
- * `/` as well, such as `todo:done`.
+ * The Markdown commands of the `/` list, titled, described, found by the same words and drawn
+ * with the same icons as the text editor's, where it has the command too. Each is found by the
+ * word typed after the `/` as well, such as `todo:done`.
  */
-export function buildSlashCommands({ parentComponent, getNote, editorView, taskStates, snippets }: SlashCommandContext): SlashCommand[] {
-    /** Removes the typed command, then runs one of the text editor's commands in its place. */
-    const runCommand = (name: Parameters<NonNullable<typeof parentComponent>["triggerCommand"]>[0]): HostedCompletionApply =>
+export function buildMarkdownCommands(
+    { editorView, getOwnerNote, taskStates }: MarkdownCommandContext
+): SlashCommand[] {
+    /** Removes the typed command, then runs `action` on the editor. */
+    const runAction = (action: (view: VanillaCodeMirror) => void): HostedCompletionApply =>
         (view, from, to) => {
             view.dispatch({ changes: { from, to } });
-            parentComponent?.triggerCommand(name);
+            action(editorView);
         };
 
     return [
@@ -165,12 +94,12 @@ export function buildSlashCommands({ parentComponent, getNote, editorView, taskS
             description: t("markdown_slash_commands.date"),
             aliases: [ "time", "now", "today", "timestamp" ],
             iconSvg: dateTimeIcon
-        }, runCommand("insertDateTimeToText")),
+        }, runAction(insertDateTime)),
         command("include", {
             title: t("markdown_slash_commands.titles.include"),
             description: t("markdown_slash_commands.include"),
             iconSvg: noteIcon
-        }, runCommand("addIncludeNoteToText")),
+        }, runAction(showIncludeNoteDialog)),
         command("image", {
             title: t("markdown_slash_commands.titles.image"),
             description: t("markdown_slash_commands.image"),
@@ -183,7 +112,8 @@ export function buildSlashCommands({ parentComponent, getNote, editorView, taskS
             input.accept = "image/*";
             input.addEventListener("change", () => {
                 const file = input.files?.[0];
-                if (file) uploadImageAndInsert(editorView, getNote(), file);
+                const note = getOwnerNote();
+                if (file && note) uploadImageAndInsert(editorView, note, file);
             });
             input.click();
         }),
@@ -192,7 +122,7 @@ export function buildSlashCommands({ parentComponent, getNote, editorView, taskS
             description: t("markdown_slash_commands.link"),
             aliases: [ "internal link", "trilium link", "reference link" ],
             iconSvg: internalLinkIcon
-        }, runCommand("addLinkToText")),
+        }, runAction(showAddLinkDialog)),
         command("math", {
             title: t("markdown_slash_commands.titles.math"),
             description: t("markdown_slash_commands.math"),
@@ -360,18 +290,7 @@ export function buildSlashCommands({ parentComponent, getNote, editorView, taskS
                     const insert = buildTaskItemInsert(state.markdownSymbol, precededByBullet);
                     view.dispatch({ changes: { from, to, insert } });
                 });
-            }),
-        ...snippets.map((snippet) => command(`snippet:${snippet.title}`, {
-            title: snippet.title,
-            description: snippet.description,
-            aliases: [ "snippet", "template" ],
-            icon: "bx bx-code-curly"
-        }, (view, from, to) => {
-            view.dispatch({
-                changes: { from, to, insert: snippet.content },
-                selection: { anchor: from + snippet.content.length }
-            });
-        }))
+            })
     ];
 }
 
@@ -395,45 +314,10 @@ function command(name: string, entry: Omit<SlashCommand, "id" | "apply">, apply:
 }
 
 /**
- * The `/` list or the `@` list, drawn as the text editor's: the first runs the command picked on the
- * typed `/command`, the second puts a link to the note picked or created in place of the `@` note.
- */
-function createMarkdownCompletionList(commands: () => SlashCommand[], getParentNotePath: () => string | null | undefined) {
-    return createHostedList<HostedCompletionState<MarkdownCompletionMatch>>((state, list) => {
-        const { kind, from, query } = state.match;
-        if (kind === "note") {
-            return (
-                <NoteMentionList
-                    key={`note:${from}`}
-                    {...list}
-                    query={query}
-                    allowCreatingNotes
-                    parentNotePath={getParentNotePath()}
-                    onPick={(notePath) => state.commit(typeof notePath === "string"
-                        ? linkTo(notePath)
-                        : notePath.then((path) => path ? linkTo(path) : undefined))}
-                />
-            );
-        }
-
-        return (
-            <CommandMentionList<SlashCommand>
-                key={`command:${from}`}
-                {...list}
-                query={query}
-                source={async (typed) => filterCommandEntries(commands(), typed)}
-                className="slash-command-menu"
-                onPick={(entry) => state.commit(entry.apply)}
-            />
-        );
-    });
-}
-
-/**
  * Puts the link to the note at `notePath` in place of the typed note. Where the caret is inside a
  * Wikilink already closed, the rest of the link up to its `]]` goes too.
  */
-function linkTo(notePath: string): HostedCompletionApply {
+export function linkToNote(notePath: string): HostedCompletionApply {
     return (view, from, to) => {
         const isWikilink = view.state.sliceDoc(from, from + 2) === "[[";
         const rest = isWikilink ? /^[^[\]\n]*\]\]/.exec(view.state.sliceDoc(to, view.state.doc.lineAt(to).to)) : null;

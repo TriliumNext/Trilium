@@ -290,6 +290,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) —— 文字筆記背後所採用的視覺化編輯器。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支援大量語言的程式碼編輯器。
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— 畫布筆記中使用的無限白板。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供心智圖功能。
 * [Leaflet](https://github.com/Leaflet/Leaflet) —— 用於渲染地理地圖。

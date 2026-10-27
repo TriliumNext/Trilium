@@ -49,9 +49,11 @@ If the link is not accessible to the Trilium server (or the network request fail
 > [!NOTE]
 > A URL is only auto-converted when the pasted text _is_ the URL. Links with a display name (e.g. [Trilium Notes website](https://triliumnotes.org)) are left as plain links.
 
-### 2\. By using the "Link preview" toolbar button
+### 2\. By using the "Link preview" toolbar button or slash command
 
-Click _Link preview_ in the formatting toolbar to open the _Link preview_ popup. Paste the URL and choose the type of preview.
+Click _Link preview_ (<span class="tn-icon cke cke-trilium-link-preview"></span>) in the formatting toolbar to open the _Link preview_ popup. Paste the URL and choose the type of preview.
+
+Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_), which opens the same popup at the cursor.
 
 ### 3\. By saving browser tabs from the Web Clipper
 

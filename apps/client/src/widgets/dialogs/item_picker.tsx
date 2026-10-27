@@ -1,5 +1,6 @@
 import "./item_picker.css";
 
+import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { useMemo, useRef, useState } from "preact/hooks";
 
@@ -8,7 +9,7 @@ import { t } from "../../services/i18n";
 import { Card } from "../react/Card";
 import { FilterProvider, filterRoleClass, useFilterMatch, useFilterState } from "../react/filter";
 import SettingsSearch from "../type_widgets/options/components/SettingsSearch";
-import { useDebouncedValue, useTriliumEvent } from "../react/hooks";
+import { useDebouncedValue, useStaticTooltip, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
@@ -19,6 +20,8 @@ export interface PickerItem {
     caption: string;
     /** An icon class, `bx` prefix included. */
     icon?: string;
+    /** HTML shown in a tooltip while the item is hovered. */
+    tooltip?: string;
 }
 
 /** A set of items under a heading. */
@@ -43,6 +46,20 @@ export interface ItemPickerDialogOptions {
 
 /** How long typing is debounced before the list is filtered. Matches the settings search. */
 const DEBOUNCE_MS = 150;
+
+/** One delegated tooltip for every item with a `tooltip`. */
+const ITEM_TOOLTIP: Partial<Tooltip.Options> = {
+    selector: ".item-picker-item[data-tooltip]",
+    title() {
+        return this.dataset.tooltip ?? "";
+    },
+    html: true,
+    placement: "right",
+    fallbackPlacements: [ "left", "right" ],
+    customClass: "tooltip-top",
+    animation: false,
+    trigger: "hover"
+};
 
 /**
  * Picks one item out of many, grouped and searchable, and closes on the pick.
@@ -102,16 +119,7 @@ export default function ItemPickerDialog() {
             <FilterProvider query={settled}>
                 {/* The empty state is laid over this, so it holds still as the list collapses. */}
                 <div className="item-picker-results">
-                    {/* Animated once with the dialog, not per item. */}
-                    <div className="item-picker-groups">
-                        {groups.map((group) => (
-                            <Card key={group.key} heading={group.groupHeader || undefined}>
-                                {group.items.map((item) => (
-                                    <PickerRow key={item.key} item={item} onPick={pick} />
-                                ))}
-                            </Card>
-                        ))}
-                    </div>
+                    <PickerGroups groups={groups} onPick={pick} />
 
                     <NoItems
                         className="item-picker-empty"
@@ -121,6 +129,33 @@ export default function ItemPickerDialog() {
                 </div>
             </FilterProvider>
         </Modal>
+    );
+}
+
+interface PickerGroupsProps {
+    groups: PickerItemGroup[];
+    onPick: (item: PickerItem) => void;
+}
+
+/**
+ * The groups of items. A component of its own so that the tooltip attaches when the dialog's body
+ * mounts.
+ */
+function PickerGroups({ groups, onPick }: PickerGroupsProps) {
+    const groupsRef = useRef<HTMLDivElement>(null);
+    useStaticTooltip(groupsRef, ITEM_TOOLTIP);
+
+    return (
+        // Animated once with the dialog, not per item.
+        <div className="item-picker-groups" ref={groupsRef}>
+            {groups.map((group) => (
+                <Card key={group.key} heading={group.groupHeader || undefined}>
+                    {group.items.map((item) => (
+                        <PickerRow key={item.key} item={item} onPick={onPick} />
+                    ))}
+                </Card>
+            ))}
+        </div>
     );
 }
 
@@ -136,6 +171,7 @@ function PickerRow({ item, onPick }: { item: PickerItem, onPick: (item: PickerIt
                 { "item-picker-folded": !matched })}
             tabIndex={matched ? 0 : -1}
             aria-hidden={!matched}
+            data-tooltip={item.tooltip}
             onClick={() => onPick(item)}
             onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {

@@ -400,7 +400,7 @@ describe("TemplateSelectionCard", () => {
     }
 
     function adders() {
-        return [ ...container.querySelectorAll<HTMLElement>(".tn-sortable-adder") ];
+        return [ ...container.querySelectorAll<HTMLElement>(".tn-card-adder") ];
     }
 
     async function add(label: string) {

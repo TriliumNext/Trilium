@@ -330,22 +330,20 @@ function TotpVerifyStep({ secret, secretUrl, code, setCode, codeRejected, codeRe
             <FormText>{t("multi_factor_authentication.totp_enroll_instructions")}</FormText>
 
             <h5 className="totp-enroll-step-title">{t("multi_factor_authentication.totp_enroll_step1_title")}</h5>
-            <div className="totp-enroll-grid">
-                {secretUrl && <TotpQrCode url={secretUrl} />}
+            {secretUrl && <TotpQrCode url={secretUrl} />}
 
-                <FormGroup
-                    className="totp-enroll-secret-group"
-                    name="totp-enroll-secret"
-                    label={t("multi_factor_authentication.totp_enroll_secret_label")}
-                >
-                    <FormTextBox
-                        className="totp-enroll-secret"
-                        currentValue={secret ?? ""}
-                        readOnly
-                        onFocus={(e) => e.currentTarget.select()}
-                    />
-                </FormGroup>
-            </div>
+            <FormGroup
+                className="totp-enroll-secret-group"
+                name="totp-enroll-secret"
+                label={t("multi_factor_authentication.totp_enroll_secret_label")}
+            >
+                <FormTextBox
+                    className="totp-enroll-secret"
+                    currentValue={secret ?? ""}
+                    readOnly
+                    onFocus={(e) => e.currentTarget.select()}
+                />
+            </FormGroup>
 
             <h5 className="totp-enroll-step-title">{t("multi_factor_authentication.totp_enroll_step2_title")}</h5>
             <FormGroup

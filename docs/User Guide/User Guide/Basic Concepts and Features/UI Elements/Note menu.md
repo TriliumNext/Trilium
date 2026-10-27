@@ -7,9 +7,11 @@ Every split has a note menu of its own, which acts on the note displayed in that
 
 ## Navigating the note
 
-*   <span class="tn-icon bx bx-search"></span> _Search in note_ opens the <a class="reference-link" href="../Navigation/Search%20in%20note.md">Search in note</a> bar, to find and replace text inside the current note. On the desktop application, the same bar opens with <kbd>Ctrl</kbd>+<kbd>F</kbd>.
+These entries are the row of icons at the top of the menu, each with a short title. Hovering one shows its full name and its keyboard shortcut. In Quick edit on a phone, where only _Find_ is left, it is listed as an ordinary entry instead.
+
+*   <span class="tn-icon bx bx-file-find"></span> _Find_ opens the <a class="reference-link" href="../Navigation/Search%20in%20note.md">Search in note</a> bar, to find and replace text inside the current note. On the desktop application, the same bar opens with <kbd>Ctrl</kbd>+<kbd>F</kbd>.
     *   It is available on <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>, <a class="reference-link" href="../../Note%20Types/Code.md">Code</a>, <a class="reference-link" href="../../Note%20Types/Mind%20Map.md">Mind Map</a> and <a class="reference-link" href="../../Note%20Types/Spreadsheets.md">Spreadsheets</a> notes, <a class="reference-link" href="../../Collections.md">Collections</a>, PDF files, and any note displayed as <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>.
-*   <span class="tn-icon bx bx-paperclip"></span> _Note attachments_ switches the note to the list of its <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>, where they can be uploaded, opened, downloaded, renamed or deleted.
+*   <span class="tn-icon bx bx-paperclip"></span> _Attachments_ switches the note to the list of its <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>, where they can be uploaded, opened, downloaded, renamed or deleted.
 *   <span class="tn-icon bx bxs-network-chart"></span> _Note map_ opens the <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a> of the <a class="reference-link" href="Right%20Sidebar.md">Right Sidebar</a>, which shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a> centered on the current note.
 
 ## Note properties
@@ -31,13 +33,13 @@ The two submenus in this section:
 *   <span class="tn-icon bx bx-edit-alt"></span> _Editable_ controls when the note opens as read-only (see <a class="reference-link" href="../Notes/Read-Only%20Notes.md">Read-Only Notes</a>):
     *   _Auto_ (the default): the note is editable, unless it is long enough to be opened as read-only automatically.
     *   _Read-only_: the note always opens as read-only, but can still be edited after pressing _Edit note_.
-    *   _Always Editable_: the note is always editable, regardless of its length.
+    *   _Always editable_: the note is always editable, regardless of its length.
 
 ## Importing, exporting and printing
 
 *   <span class="tn-icon bx bx-import"></span> _Import files_ opens the import dialog, which imports files as children of the current note. See <a class="reference-link" href="../Import%20%26%20Export.md">Import &amp; Export</a>. It is unavailable on <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
 *   <span class="tn-icon bx bx-export"></span> _Export note_ opens the export dialog with _Only this note_ selected; select _This note & all descendants_ there to export the whole subtree.
-*   <span class="tn-icon bx bx-printer"></span>_Print note…_ prints the note. On the desktop application this entry reads _Print/export to PDF…_ and can also save the note as a PDF file. See <a class="reference-link" href="../Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>, including which note types and collections can be printed.
+*   <span class="tn-icon bx bx-printer"></span>_Print/export to PDF…_ prints the note or saves it as a PDF file. See <a class="reference-link" href="../Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>, including which note types and collections can be printed.
 
 Some note types add their own export formats right below _Export note_:
 
@@ -48,9 +50,9 @@ Some note types add their own export formats right below _Export note_:
 
 These entries manage the <a class="reference-link" href="../Notes/Note%20Revisions.md">Note Revisions</a> of the note:
 
-*   <span class="tn-icon bx bx-history"></span>_Note revisions…_ opens the revisions dialog, where previous versions can be previewed, compared with the current one, downloaded or restored.
-*   <span class="tn-icon bx bx-save"></span>_Save revision_ saves a revision of the note right away, instead of waiting for the next automatic snapshot.
-*   <span class="tn-icon bx bx-purchase-tag"></span>_Save named revision…_ also saves a revision right away, but first asks for a short description of the changes, which is shown in the revisions dialog.
+*   <span class="tn-icon bx bx-history"></span>_Note revisions…_ opens the revisions dialog, where previous versions can be previewed, compared with the current one, downloaded or restored. The arrow beside it opens the entries that save a revision right away. On mobile, tapping it opens those entries, with _Note revisions…_ as the first one.
+    *   <span class="tn-icon bx bx-save"></span>_Save revision_ saves a revision of the note right away, instead of waiting for the next automatic snapshot.
+    *   <span class="tn-icon bx bx-purchase-tag"></span>_Save named revision…_ also saves a revision right away, but first asks for a short description of the changes, which is shown in the revisions dialog.
 
 ## Note-specific entries
 
@@ -64,6 +66,8 @@ The following entries only appear on some notes:
 *   <span class="tn-icon bx bx-extension"></span>_Re-render note_ appears on a <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a>, and runs its script again to refresh the output.
 *   <span class="tn-icon bx bx-cog"></span>_Board properties_ appears on a <a class="reference-link" href="../../Collections/Kanban%20Board.md">Kanban Board</a>, and configures its columns, card attributes and card templates.
 *   <span class="tn-icon bx bx-cog"></span>_Calendar properties_ appears on a <a class="reference-link" href="../../Collections/Calendar.md">Calendar</a> that creates events, and configures its event templates.
+*   <span class="tn-icon bx bx-cog"></span>_Geo map properties_ appears on a <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map</a>, and configures its map settings and the image of an [image map](../../Collections/Geo%20Map/Image%20maps.md).
+*   <span class="tn-icon bx bx-cog"></span>_Table properties_ appears on a <a class="reference-link" href="../../Collections/Table.md">Table</a>, and configures which notes it shows.
 
 ## Advanced
 
@@ -72,7 +76,7 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
 *   <span class="tn-icon bx bx-file-find"></span>_Open note externally_ (desktop application only) saves the note to a temporary file and opens it in the application that the operating system associates with it. Trilium watches the file, and offers to upload the modified version back into the note. It is unavailable on <a class="reference-link" href="../../Collections.md">Collections</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
 *   <span class="tn-icon bx bx-customize"></span>_Open note custom_ (desktop application only, Windows and Linux) works like _Open note externally_, but lets you pick the application to open the file with.
 *   <span class="tn-icon bx bx-code"></span>_Note source_ shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>, the content of the note exactly as it is stored.
-*   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown Note_ (on text notes) and _Convert to Text Note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">Converting between note types</a>.
+*   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown note_ (on text notes) and _Convert to text note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">Converting between note types</a>.
 *   <span class="tn-icon bx bx-collapse-alt"></span>_Compress images_ opens a dialog that reduces the size of the images in the note. It lists the images found and how much space they take, and offers to:
     
     *   Resize the images larger than a chosen size.
@@ -89,26 +93,26 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
 <span class="tn-icon bx bx-trash"></span>_Delete note_ opens the deletion dialog for the current note and its subtree. The dialog lists the notes that will be deleted and the relations that will be broken, and offers to:
 
 *   Also delete the other clones of the note, if it is cloned elsewhere. Otherwise, only the current placement is removed and the note stays in its other locations. See <a class="reference-link" href="../Notes/Cloning%20Notes.md">Cloning Notes</a>.
-*   _Erase permanently_ instead of the usual soft deletion. This cannot be undone and reloads the application.
+*   _Erase permanently_ instead of the usual soft deletion. This cannot be undone.
 
 Notes deleted without erasing can be brought back, see <a class="reference-link" href="../Notes/Restoring%20Deleted%20Notes.md">Restoring Deleted Notes</a>.
 
 ## Limitations
 
 *   The note menu is not available on launchers.
-*   On the notes of <a class="reference-link" href="Options.md">Options</a> and of the in-app help, most entries are grayed out, since these notes cannot be imported into, exported, deleted or have revisions.
+*   On the notes of <a class="reference-link" href="Options.md">Options</a> and of the in-app help, most entries are grayed out, since these notes cannot be imported into, deleted or have revisions. Of the two, only the in-app help can be exported, see <a class="reference-link" href="../Import%20%26%20Export.md">Import &amp; Export</a>.
 *   The [Note properties](#note-properties) section is only listed when the note itself is displayed, not its <a class="reference-link" href="../Notes/Attachments.md">Attachments</a> or its <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>.
-*   In <a class="reference-link" href="../Navigation/Quick%20edit.md">Quick edit</a>, _Search in note_, _Note map_, _Full width_ and _Convert into attachment_ are not listed.
+*   In <a class="reference-link" href="../Navigation/Quick%20edit.md">Quick edit</a>, _Note map_, _Full width_ and _Convert into attachment_ are not listed.
 
 ## Mobile support
 
 On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the note menu opens as a sheet from the bottom of the screen. Besides the entries above, it contains the items that the desktop layout places elsewhere:
 
-*   _Backlinks_ and _Note paths_, at the top, which open the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">Backlinks</a> and the other locations of the note.
+*   Two more icons in the row of icons at the very top of the sheet, which reads <span class="tn-icon bx bx-dock-right"></span> _New split_, _Note map_, _Find_ and <span class="tn-icon bx bx-plus"></span> _Child note_ from left to right: _New split_ opens a <a class="reference-link" href="Split%20View.md">Split View</a> while there is none in the tab, and _Child note_ creates a note under the current one.
+*   _Backlinks_ and _Note paths_, below the row of icons, which open the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">Backlinks</a> and the other locations of the note.
+*   <span class="tn-icon bx bx-paperclip"></span> _Attachments_ and <span class="tn-icon bx bx-list-check"></span> _Attributes_, under them, which open the attachments and the attributes of the note, each with the number the note has. Links made by the content of the note are not counted as attributes. _Attributes_ is unavailable where the note cannot be edited. On mobile, _Attachments_ is listed here instead of in the row of icons.
 *   The custom buttons of the note type (such as <span class="tn-icon bx bx-download"></span>_Download_ on a <a class="reference-link" href="../../Note%20Types/File.md">File</a>).
-*   _Insert child note_, which creates a note under the current one.
-*   _Create new split_ and _Close this pane_, to manage the <a class="reference-link" href="Split%20View.md">Split View</a>.
-*   _Note attributes_, which opens the attributes of the note.
-*   On <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, the content language (see <a class="reference-link" href="../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>); on <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, the language of the code.
-*   _Note info_ and <a class="reference-link" href="../Navigation/Similar%20Notes.md">Similar Notes</a>.
+*   _Close this pane_, on the second note of a <a class="reference-link" href="Split%20View.md">Split View</a>.
+*   <span class="tn-icon bx bx-slider-alt"></span> _Note settings_, below _Protect the note_, which opens _Shared_ and _Bookmark_, then _Note type_, _Template_ and _Full width_, on a page of their own, together with the language of the note: the content language on <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes (see <a class="reference-link" href="../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>), and the language of the code on <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes. The choices of _Editable_ are listed at the end of that page, under their own heading, instead of in a further submenu.
+*   <span class="tn-icon bx bx-info-circle"></span> _Note info_, below _Note settings_, which opens the dates, type, ID and size of the note on a page of its own, ending with _Show similar notes_ (see <a class="reference-link" href="../Navigation/Similar%20Notes.md">Similar Notes</a>).
 *   _Note map_ opens the map in a popup instead of the right sidebar.

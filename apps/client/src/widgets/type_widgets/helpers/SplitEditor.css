@@ -1,4 +1,6 @@
 .note-detail-split {
+    --gutter-color: var(--left-pane-background-color);
+
     display: flex;
     height: 100%;
 }
@@ -29,11 +31,6 @@
 
 .note-detail-split .note-detail-code-editor .cm-editor {
     margin: 0 !important;
-}
-
-body.desktop .note-detail-split .note-detail-code-editor {
-    border-radius: 6px;
-    margin-top: 1px;
 }
 
 /* Error card, anchored to the top so the dimmed last render stays visible behind it.
@@ -98,10 +95,6 @@ body.desktop .note-detail-split .note-detail-code-editor {
 /* Horizontal layout */
 
 .note-detail-split.split-horizontal:not(.split-read-only) {
-    &> .note-detail-split-preview-col {
-        border-inline-start: 1px solid var(--main-border-color);
-    }
-
     &> .note-detail-split-editor-col,
     &> .note-detail-split-preview-col {
         height: 100%;
@@ -122,10 +115,6 @@ body.desktop .note-detail-split .note-detail-code-editor {
     &> .note-detail-split-preview-col {
         width: 100%;
         height: 50%;
-    }
-
-    &> .note-detail-split-editor-col {
-        border-top: 1px solid var(--main-border-color);
     }
 
     &> .note-detail-split-preview-col {

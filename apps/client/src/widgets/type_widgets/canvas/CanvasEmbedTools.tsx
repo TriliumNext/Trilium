@@ -30,6 +30,7 @@ import {
     type ContentEmbedTool,
     type ContentEmbedToolbarItem,
     type ContentEmbedToolProvider,
+    needsFullscreenButton,
     showContentEmbedFullscreen
 } from "../text/content_embed_tools";
 import { getBoundedView, MAX_ZOOM, MIN_ZOOM } from "./drawing_view";
@@ -337,9 +338,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
      * for it.
      */
     private getFullscreenTools(): ContentEmbedTool[] {
-        const embed = this.rootRef.current?.closest<HTMLElement>(".include-note");
-        const { hideTitle, boxSize } = embed?.dataset ?? {};
-        if (hideTitle !== "true" || (boxSize !== "medium" && boxSize !== "full")) {
+        if (!needsFullscreenButton(this.rootRef.current?.closest<HTMLElement>(".include-note"))) {
             return [];
         }
 
@@ -390,7 +389,10 @@ export class CanvasTools implements ContentEmbedToolProvider {
         }
     }
 
-    /** Undo or redo, enabled while Excalidraw's own button is: Excalidraw keeps the history. */
+    /**
+     * Undo or redo, enabled while Excalidraw's button is. In a text note, the button undoes and
+     * redoes the changes of the note (`DrawingHistory`).
+     */
     private getHistoryTool(id: HistoryAction, icon: string): ContentEmbedTool {
         const button = this.getHistoryButton(id);
         return {

@@ -49,7 +49,7 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
 - [설치 방법](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
   설정](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [TriliumNext로 업그레이드](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [TriliumNext 업그레이드](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [기본 개념 및 기능](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [개인 지식 기반 활용
   패턴](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
@@ -58,7 +58,7 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
 
 * 노트를 원하는 깊이의 트리로 구성할 수 있으며 하나의 노트를 트리의 여러 위치에 배치할 수
   있음([복제](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning) 참고)
-* 표, 이미지, [수학](https://docs.triliumnotes.org/user-guide/note-types/text),
+* 표, 이미지, [수식](https://docs.triliumnotes.org/user-guide/note-types/text),
   Markdown [자동
   서식](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
   등을 지원하는 풍부한 WYSIWYG 노트 편집기
@@ -86,8 +86,8 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
   암호화](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
 * [Excalidraw](https://excalidraw.com/) 기반 다이어그램 스케치(‘캔버스’ 노트 유형)
 * 노트와 관계를 시각화하는 [관계
-  지도](https://docs.triliumnotes.org/user-guide/note-types/relation-map) 및 [노트/링크
-  지도](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  맵](https://docs.triliumnotes.org/user-guide/note-types/relation-map) 및 [노트/링크
+  맵](https://docs.triliumnotes.org/user-guide/note-types/note-map)
 * [Mind Elixir](https://docs.mind-elixir.com/) 기반 마인드맵
 * 위치 핀과 GPX 트랙을 지원하는 [지리
   지도](https://docs.triliumnotes.org/user-guide/collections/geomap)
@@ -135,7 +135,7 @@ TriliumNext/Trilium 버전에서는 동기화 버전이 올라가므로 직접 �
 
 공식 커뮤니티 대화에 자유롭게 참여해 주세요. 원하는 기능, 제안 또는 문제에 관한 의견을 기다립니다!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (동기식 토론용)
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org)(실시간 토론용)
   - `General` Matrix 방은 [XMPP](xmpp:discuss@trilium.thisgreat.party?join)와도 연동되어
     있습니다
 - [GitHub Discussions](https://github.com/TriliumNext/Trilium/discussions)(비동기
@@ -304,9 +304,8 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [antoniotejada](https://github.com/nriver)는 최초의 구문 강조 위젯을 만들었습니다.
 * [Tabler Icons](https://tabler.io/icons)는 시스템 트레이 아이콘을 제공합니다.
 *   가져오기 대화 상자에 사용된 애플리케이션 아이콘의 출처:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote. → OneNote, Google Keep, Evernote에는
-        [Material Design Icons](https://pictogrammers.com/library/mdi/)을 사용합니다.
+    *   OneNote, Google Keep, Evernote에는 [Material Design
+        Icons](https://pictogrammers.com/library/mdi/)을 사용합니다.
     *   Notion, Obsidian에는 [Font Awesome](https://fontawesome.com/)을 사용합니다.
     *   Anytype에는 [SVGicons.com](https://svgicons.com/icon/187676/anytype)을
         사용합니다.
@@ -317,6 +316,10 @@ Trilium은 다음 기반 기술이 있었기에 만들어질 수 있었습니다
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 텍스트 노트용 시각적 편집기입니다.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - 수많은 언어를 지원하는 코드
   편집기입니다.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - Mermaid 노트의 다이어그램을 렌더링합니다.
+  Mermaid의 파서는 해당 노트의 구문 강조를 구현하는 데 모델로 사용됩니다.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - Mermaid 구문 강조의 기반입니다.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas 노트에서 사용되는 무한
   화이트보드입니다.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - 마인드맵 기능을 제공합니다.

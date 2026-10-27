@@ -1,6 +1,22 @@
 {
   "about": {
-    "data_directory": "Direktorijum sa podacima:"
+    "data_directory": "Direktorijum sa podacima:",
+    "version_label": "Verzija:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "contributors_label": "Doprinosioci:",
+    "contributor_roles": {
+      "lead-dev": "glavni developer",
+      "original-dev": "originalni developer"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran je osnovao TriliumNext 2024. godine, a \"community fork\" je nastao nakon što se Zadam povukao iz projekta. Zadam je kasnije preneo originalni repozitorijum TriliumNext timu, čime je spojio oba projekta u jedan."
+    },
+    "contributor_full_list": "Pogledajte celu zajednicu",
+    "channel": {
+      "nightly": "Noćni"
+    },
+    "github_tooltip": "Prijavi probleme, predloži nove funkcionalnosti ili podrži na GitHub-u",
+    "license_tooltip": "Licenca"
   },
   "toast": {
     "critical-error": {
@@ -22,8 +38,6 @@
     "help_on_links": "Pomoć na linkovima",
     "note": "Beleška",
     "search_note": "potražite belešku po njenom imenu",
-    "link_title_mirrors": "naziv linka preslikava trenutan naziv beleške",
-    "link_title_arbitrary": "naziv linka se može proizvoljno menjati",
     "link_title": "Naziv linka",
     "button_add_link": "Dodaj link <kbd>enter</kbd>"
   },
@@ -36,11 +50,11 @@
   },
   "bulk_actions": {
     "bulk_actions": "Grupne akcije",
-    "affected_notes": "Pogođene beleške",
     "include_descendants": "Obuhvati potomke izabranih beleški",
-    "available_actions": "Dostupne akcije",
     "chosen_actions": "Izabrane akcije",
-    "execute_bulk_actions": "Izvrši grupne akcije",
+    "execute_bulk_actions_one": "Izvrši grupne akcije",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Grupne akcije su uspešno izvršene.",
     "none_yet": "Nijedna za sad... dodajte akciju tako što ćete pritisnuti na neku od dostupnih akcija iznad.",
     "labels": "Oznake",
@@ -168,11 +182,6 @@
   "include_note": {
     "dialog_title": "Uključi belešku",
     "label_note": "Beleška",
-    "placeholder_search": "pretraži belešku po njenom imenu",
-    "box_size_prompt": "Veličina kutije priložene beleške:",
-    "box_size_small": "mala (~ 10 redova)",
-    "box_size_medium": "srednja (~ 30 redova)",
-    "box_size_full": "puna (kutija prikazuje ceo tekst)",
     "button_include": "Uključi belešku"
   },
   "info": {
@@ -199,10 +208,7 @@
     "move_success_message": "Izabrane beleške su premeštene u "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Promenite gde će se napraviti nova beleška:",
-    "search_placeholder": "pretraži putanju po njenom imenu (podrazumevano ako je prazno)",
     "modal_title": "Izaberite tip beleške",
-    "modal_body": "Izaberite tip beleške / šablon za novu belešku:",
     "templates": "Šabloni"
   },
   "password_not_set": {
@@ -384,21 +390,13 @@
     "remove_this_search_action": "Ukloni ovu radnju pretrage"
   },
   "execute_script": {
-    "execute_script": "Izvrši skriptu",
-    "help_text": "Možete izvršiti jednostavne skripte na podudarnim beleškama.",
-    "example_1": "Na primer, da biste dodali string u naslov beleške, koristite ovu malu skriptu:",
-    "example_2": "Složeniji primer bi bio brisanje svih atributa podudarnih beleški:"
+    "execute_script": "Izvrši skriptu"
   },
   "add_label": {
     "add_label": "Dodaj oznaku",
     "label_name_placeholder": "ime oznake",
     "label_name_title": "Alfanumerički znakovi, donja crta i dvotačka su dozvoljeni znakovi.",
-    "to_value": "za vrednost",
-    "new_value_placeholder": "nova vrednost",
-    "help_text": "Na svim podudarnim beleškama:",
-    "help_text_item1": "dodajte datu oznaku ako beleška još uvek nema jednu",
-    "help_text_item2": "ili izmenite vrednost postojeće oznake",
-    "help_text_note": "Takođe možete pozvati ovu metodu bez vrednosti, u tom slučaju će oznaka biti dodeljena belešci bez vrednosti."
+    "new_value_placeholder": "nova vrednost"
   },
   "delete_label": {
     "delete_label": "Obriši oznaku",
@@ -407,9 +405,7 @@
   },
   "rename_label": {
     "rename_label": "Preimenuj oznaku",
-    "rename_label_from": "Preimenuj oznaku iz",
     "old_name_placeholder": "stari naziv",
-    "to": "U",
     "new_name_placeholder": "novi naziv",
     "name_title": "Alfanumerički znakovi, donja crtica i dvotačka su dozvoljeni znakovi."
   },
@@ -417,15 +413,9 @@
     "update_label_value": "Ažuriraj vrednost oznake",
     "label_name_placeholder": "ime oznake",
     "label_name_title": "Alfanumerički znakovi, donja crtica i dvotačka su dozvoljeni znakovi.",
-    "to_value": "u vrednost",
-    "new_value_placeholder": "nova vrednost",
-    "help_text": "Na svim podudarnim beleškama, promenite vrednost postojeće oznake.",
-    "help_text_note": "Takođe možete pozvati ovu metodu bez vrednosti, u tom slučaju će oznaka biti dodeljena belešci bez vrednosti."
+    "new_value_placeholder": "nova vrednost"
   },
   "delete_note": {
-    "delete_note": "Obriši belešku",
-    "delete_matched_notes": "Obriši podudarne beleške",
-    "delete_matched_notes_description": "Ovo će obrisati podudarne beleške.",
-    "undelete_notes_instruction": "Nakon brisanja, moguće ga je poništiti iz dijaloga Nedavne izmene."
+    "delete_note": "Obriši belešku"
   }
 }

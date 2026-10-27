@@ -180,12 +180,14 @@ function CustomColorCell(props: ColorCellProps) {
     }, [props.onSelect]);
 
     const onSelect = useCallback(() => {
-        if (pickedColor !== null) {
+        // A selected cell already holds the color. Reporting it again lets a menu close and
+        // unmount the input before its picker opens.
+        if (pickedColor !== null && !props.isSelected) {
             callbackRef.current?.(pickedColor);
         }
 
         colorInput.current?.click();
-    }, [pickedColor]);
+    }, [pickedColor, props.isSelected]);
 
     return <div style={`--foreground: ${getForegroundColor(props.color)};`}
         onClick={(e) => {

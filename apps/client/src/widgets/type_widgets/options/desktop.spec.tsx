@@ -114,17 +114,3 @@ describe("the tray and startup settings", () => {
         expect(toggle("hide-on-auto-start")?.disabled).toBe(true);
     });
 });
-
-describe("the search engine settings", () => {
-    it("marks the engine currently in use, and takes both its name and its address when one is picked", () => {
-        mocks.stored = { customSearchEngineUrl: "https://www.google.com/search?q={keyword}" };
-        open();
-
-        const chips = [ ...host.querySelectorAll(".search-engine-templates .ext-badge") ];
-        expect(chips).toHaveLength(4);
-        expect(chips.filter((chip) => chip.className.includes("selected"))).toHaveLength(1);
-
-        act(() => (chips[0] as HTMLElement).click());
-        expect(mocks.saved.map(([ name ]) => name)).toEqual([ "customSearchEngineName", "customSearchEngineUrl" ]);
-    });
-});

@@ -1,10 +1,11 @@
+import type { RefObject } from "preact";
 import { lazy } from "preact/compat";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent, useWhenShown } from "../../react/hooks";
 import {
     EditableEmbedContent, hasFixedToolbarAround, useEditableEmbed, useEmbedPreview
 } from "./editable_embed";
@@ -41,7 +42,7 @@ export default function TextEmbed({
         note,
         focusTarget: ".ck-editor__editable"
     });
-    const [ content, onEditorClose ] = useShownContent(note, initialContent);
+    const [ content, onEditorClose ] = useShownContent(note, initialContent, rootRef);
     const [ block, setBlock ] = useState(initialBlock);
     const onEditorBlockChange = useCallback((editorBlock: string) => {
         setBlock(editorBlock);
@@ -55,6 +56,7 @@ export default function TextEmbed({
             rootRef={rootRef}
             className="text-embed-content"
             isEditing={isEditing}
+            hasCaretNavigation
             preview={shownPreview}
         >
             <TextEmbedEditor
@@ -71,23 +73,37 @@ export default function TextEmbed({
 /**
  * The content of `note` to preview: the content of the editor of the embed as it closed, until its
  * last save lands, and otherwise the latest content that a save of the note stores. After a failed
- * save, the content of the editor stays until the next save of the note. Returns that content,
- * and the callback that takes the content of the closing editor and its save.
+ * save, the content of the editor stays until the next save of the note. A save shows once
+ * `rootRef` is shown. Returns that content, and the callback that takes the content of the closing
+ * editor and its save.
  */
-function useShownContent(note: FNote, initialContent: string) {
+function useShownContent(
+    note: FNote,
+    initialContent: string,
+    rootRef: RefObject<HTMLElement | null>
+) {
     const [ content, setContent ] = useState(initialContent);
     const requestIdRef = useRef(0);
     const closingSaveRef = useRef<Promise<boolean> | undefined>(undefined);
+    const whenShown = useWhenShown(rootRef);
 
     // Only the latest read applies, and none while the last save of the editor runs: an earlier
     // save that lands meanwhile stores older content.
-    const refresh = useCallback(async () => {
+    const refresh = useCallback(async (isSavedElsewhere = false) => {
         const requestId = ++requestIdRef.current;
         const blob = await note.getBlob();
-        if (blob && requestId === requestIdRef.current && !closingSaveRef.current) {
-            setContent(blob.content);
+        if (!blob || requestId !== requestIdRef.current) return;
+        const update = () => {
+            if (requestId === requestIdRef.current && !closingSaveRef.current) {
+                setContent(blob.content);
+            }
+        };
+        if (isSavedElsewhere) {
+            whenShown(update);
+        } else {
+            update();
         }
-    }, [ note ]);
+    }, [ note, whenShown ]);
 
     // Reads once on mount too, for a save that landed after the host read the content.
     useEffect(() => {
@@ -95,7 +111,7 @@ function useShownContent(note: FNote, initialContent: string) {
     }, [ refresh ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.isNoteContentReloaded(note.noteId)) {
-            void refresh();
+            void refresh(true);
         }
     });
 

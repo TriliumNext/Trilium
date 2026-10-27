@@ -122,6 +122,12 @@ export class AcpClient {
         });
     }
 
+    /**
+     * Run the agent as a subprocess. Outside Windows it leads its own process
+     * group, so a Ctrl+C in the server's terminal does not reach it: the server
+     * ends it through {@link dispose} or {@link killLiveAgents}, which kill the
+     * whole group, including the processes the agent started.
+     */
     static start(binary: string, options: AcpClientOptions): AcpClient {
         const proc = spawn(
             options.shell ? `"${binary}"` : binary,
@@ -129,10 +135,12 @@ export class AcpClient {
             {
                 cwd: options.cwd,
                 shell: options.shell ?? false,
+                detached: process.platform !== "win32",
                 stdio: ["pipe", "pipe", "pipe"],
                 env: options.env ? { ...process.env, ...options.env } : process.env
             }
         );
+        trackLiveAgent(proc);
         return new AcpClient({
             stdin: proc.stdin,
             stdout: proc.stdout,
@@ -217,8 +225,8 @@ export class AcpClient {
     /**
      * Reject anything still in flight and end the subprocess: close its stdin so
      * it can exit on its own, and kill it only if it is still running after
-     * {@link DISPOSE_GRACE_MS}. `agy_acp_server` writes a crash report to stderr
-     * when it is killed, and stderr goes to the log.
+     * {@link DISPOSE_GRACE_MS}. The kill is a SIGKILL, because an agent that is
+     * still running after the grace period might not act on a SIGTERM.
      */
     dispose(): void {
         if (this.disposed) {
@@ -312,17 +320,47 @@ export class AcpClient {
     }
 }
 
+/** Subprocess agents that have not exited yet, killed by {@link killLiveAgents} when the server exits. */
+const liveAgents = new Set<ChildProcessWithoutNullStreams>();
+
+function trackLiveAgent(proc: ChildProcessWithoutNullStreams): void {
+    if (!process.listeners("exit").includes(killLiveAgents)) {
+        process.on("exit", killLiveAgents);
+    }
+    liveAgents.add(proc);
+    proc.on("exit", () => liveAgents.delete(proc));
+}
+
+/**
+ * Kill every subprocess agent that is still running. The server's `exit`
+ * handler calls it, so an agent cannot outlive the server.
+ */
+export function killLiveAgents(): void {
+    for (const proc of liveAgents) {
+        killProcessTree(proc);
+    }
+}
+
 /**
  * End the agent and every process it started. On Windows `proc.kill()`
  * ends only the spawned process, while the agent can run in a child of it:
  * the PyInstaller build of `agy_acp_server` starts its server that way, and
  * a `.cmd` shim runs the CLI under `cmd.exe`. `taskkill /T` ends the tree.
+ * Elsewhere the agent leads its own process group, and the negative PID
+ * signals the whole group.
  */
 function killProcessTree(proc: ChildProcessWithoutNullStreams): void {
-    if (process.platform === "win32" && proc.pid !== undefined) {
+    if (proc.pid === undefined) {
+        return;
+    }
+    if (process.platform === "win32") {
         const taskkill = spawn("taskkill", [ "/pid", String(proc.pid), "/T", "/F" ], { stdio: "ignore", windowsHide: true });
         taskkill.on("error", err => getLog().error(`Failed to end the ACP agent's process tree: ${err.message}`));
         return;
     }
-    proc.kill();
+    try {
+        process.kill(-proc.pid, "SIGKILL");
+    } catch {
+        // ESRCH: the group exited between the check and the signal.
+    }
 }

@@ -1,5 +1,5 @@
 import { dayjs, formatLogMessage, type ToMarkdownResponse } from "@triliumnext/commons";
-import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote } from "@triliumnext/commons/src/lib/script_api.js";
+import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote, ScriptLinkOptions } from "@triliumnext/commons/src/lib/script_api.js";
 import DOMPurify from "dompurify";
 
 import appContext from "../components/app_context.js";
@@ -67,80 +67,26 @@ export interface Entity {
 type Func = ((...args: unknown[]) => unknown) | string;
 
 export interface Api {
-    /**
-     * Container of all the rendered script content
-     * */
     $container: JQuery<HTMLElement> | null;
 
-    /**
-     * Note where the script execution started — the entry point of the current script bundle
-     * (in C terms, the file containing `main()`). When a script is spread across multiple code
-     * notes (descendant code notes loaded as modules via `require()`), every note in the
-     * bundle shares the same `startNote`, while {@link currentNote} differs per note.
-     * Messages from `api.log()` are grouped under this note.
-     */
     startNote: FNote;
 
-    /**
-     * Note containing the source code that is currently executing (in C terms, `__FILE__`).
-     * Equal to {@link startNote} unless execution has moved into a descendant module note
-     * loaded via `require()`. Don't confuse this with the note open in the UI — use
-     * `api.getActiveContextNote()` for that.
-     */
     currentNote: FNote;
 
-    /**
-     * Entity whose event triggered this execution, or `null`.
-     *
-     * Most frontend scripts are started by the user or by the UI (startup scripts, widgets),
-     * so this is usually `null`. It is set to a note when:
-     * - the script runs through a `~renderNote` relation — then it's the note being rendered
-     *   (the one carrying the relation), not the script note;
-     * - a backend script calls `api.runOnFrontend()` — then it's the backend execution's
-     *   `originEntity`, provided that entity was a note.
-     */
     originEntity: unknown | null;
 
-    /**
-     * day.js library for date manipulation.
-     * See {@link https://day.js.org} for documentation
-     * @see https://day.js.org
-     */
     dayjs: typeof dayjs;
 
     RightPanelWidget: typeof RightPanelWidget;
     NoteContextAwareWidget: typeof NoteContextAwareWidget;
     BasicWidget: typeof BasicWidget;
 
-    /**
-     * Activates note in the tree and in the note detail.
-     *
-     * @param notePath (or noteId)
-     */
     activateNote(notePath: string): Promise<void>;
 
-    /**
-     * Activates newly created note. Compared to this.activateNote() also makes sure that frontend has been fully synced.
-     *
-     * @param notePath (or noteId)
-     */
     activateNewNote(notePath: string): Promise<void>;
 
-    /**
-     * Open a note in a new tab.
-     *
-     * @method
-     * @param notePath (or noteId)
-     * @param activate - set to true to activate the new tab, false to stay on the current tab
-     */
     openTabWithNote(notePath: string, activate: boolean): Promise<void>;
 
-    /**
-     * Open a note in a new split.
-     *
-     * @param notePath (or noteId)
-     * @param activate - set to true to activate the new split, false to stay on the current split
-     */
     openSplitWithNote(notePath: string, activate: boolean): Promise<void>;
 
     /**
@@ -157,382 +103,113 @@ export interface Api {
      */
     __runOnBackendInner(func: unknown, params: unknown[], transactional: boolean): unknown;
 
-    /**
-     * Executes given anonymous function on the backend.
-     * Internally this serializes the anonymous function into string and sends it to backend via AJAX.
-     * Please make sure that the supplied function is synchronous. Only sync functions will work correctly
-     * with transaction management. If you really know what you're doing, you can call api.runAsyncOnBackendWithManualTransactionHandling()
-     *
-     * @method
-     * @param func - (synchronous) function to be executed on the backend
-     * @param params - list of parameters to the anonymous function to be sent to backend
-     * @returns return value of the executed function on the backend
-     */
     runOnBackend(func: Func, params: unknown[]): unknown;
 
-    /**
-     * Executes given anonymous function on the backend.
-     * Internally this serializes the anonymous function into string and sends it to backend via AJAX.
-     * This function is meant for advanced needs where an async function is necessary.
-     * In this case, the automatic request-scoped transaction management is not applied,
-     * and you need to manually define transaction via api.transactional().
-     *
-     * If you have a synchronous function, please use api.runOnBackend().
-     *
-     * @method
-     * @param func - (synchronous) function to be executed on the backend
-     * @param params - list of parameters to the anonymous function to be sent to backend
-     * @returns return value of the executed function on the backend
-     */
     runAsyncOnBackendWithManualTransactionHandling(func: Func, params: unknown[]): unknown;
 
-    /**
-     * Whether backend script execution is enabled on the server (the
-     * `[Security] backendScriptingEnabled` config toggle). When it's disabled,
-     * `api.runOnBackend()` / `api.runAsyncOnBackendWithManualTransactionHandling()`
-     * reject with a "Backend script execution is disabled" error, so check this
-     * first to let a script degrade gracefully instead of throwing.
-     */
     isBackendScriptingEnabled(): boolean;
 
-    /**
-     * Whether the SQL console is enabled on the server (the
-     * `[Security] sqlConsoleEnabled` config toggle). When it's disabled, backend
-     * scripts that run raw SQL (`api.sql.*`) fail, so check this before invoking
-     * SQL-backed logic via `api.runOnBackend()`.
-     */
     isSqlConsoleEnabled(): boolean;
 
-    /**
-     * This is a powerful search method - you can search by attributes and their values, e.g.:
-     * "#dateModified =* MONTH AND #log". See full documentation for all options at: https://triliumnext.github.io/Docs/Wiki/search.html
-     */
     searchForNotes(searchString: string): Promise<FNote[]>;
 
-    /**
-     * This is a powerful search method - you can search by attributes and their values, e.g.:
-     * "#dateModified =* MONTH AND #log". See full documentation for all options at: https://triliumnext.github.io/Docs/Wiki/search.html
-     */
     searchForNote(searchString: string): Promise<FNote | null>;
 
-    /**
-     * Returns note by given noteId. If note is missing from the cache, it's loaded.
-     */
     getNote(noteId: string): Promise<FNote | null>;
 
-    /**
-     * Returns list of notes. If note is missing from the cache, it's loaded.
-     *
-     * This is often used to bulk-fill the cache with notes which would have to be picked one by one
-     * otherwise (by e.g. createLink())
-     *
-     * @param [silentNotFoundError] - don't report error if the note is not found
-     */
     getNotes(noteIds: string[], silentNotFoundError: boolean): Promise<FNote[]>;
 
-    /**
-     * Update frontend tree (note) cache from the backend.
-     */
     reloadNotes(noteIds: string[]): Promise<void>;
 
-    /**
-     * Creates a new note as a child of the given parent, entirely on the frontend — no backend
-     * scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). By default the
-     * new note is activated in the current tab with its title focused for editing; pass
-     * `{ activate: false }` to create it silently.
-     *
-     * @param parentNotePath note path (or noteId) of the parent under which to create the note
-     * @param opts creation options — e.g. `{ title, content, type, mime, activate }`
-     * @returns the created note and its branch, resolved from the frontend cache
-     */
     createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
-    /**
-     * Instance name identifies particular Trilium instance. It can be useful for scripts
-     * if some action needs to happen on only one specific instance.
-     */
     getInstanceName(): string | null;
 
-    /**
-     * @returns date in YYYY-MM-DD format
-     */
     formatDateISO: typeof utils.formatDateISO;
 
     parseDate: typeof utils.parseDate;
 
-    /**
-     * Show an info toast message to the user.
-     */
     showMessage: typeof toastService.showMessage;
 
-    /**
-     * Show an error toast message to the user.
-     */
     showError: typeof toastService.showError;
 
-    /**
-     * Show an info dialog to the user.
-     */
     showInfoDialog: typeof dialogService.info;
 
-    /**
-     * Show confirm dialog to the user.
-     * @returns promise resolving to true if the user confirmed
-     */
     showConfirmDialog: typeof dialogService.confirm;
 
-    /**
-     * Show prompt dialog to the user.
-     *
-     * @returns promise resolving to the answer provided by the user
-     */
     showPromptDialog: typeof dialogService.prompt;
     pickSingleItem: typeof dialogService.pickSingleItem;
 
-    /**
-     * Trigger command. This is a very low-level API which should be avoided if possible.
-     */
     triggerCommand: typeof appContext.triggerCommand;
 
-    /**
-     * Trigger event. This is a very low-level API which should be avoided if possible.
-     */
     triggerEvent: typeof appContext.triggerEvent;
 
-    /**
-     * Create a note link (jQuery object) for given note.
-     *
-     * @param {string} notePath (or noteId)
-     * @param {object} [params]
-     * @param {boolean} [params.showTooltip] - enable/disable tooltip on the link
-     * @param {boolean} [params.showNotePath] - show also whole note's path as part of the link
-     * @param {boolean} [params.showNoteIcon] - show also note icon before the title
-     * @param {string} [params.title] - custom link tile with note's title as default
-     * @param {string} [params.title=] - custom link tile with note's title as default
-     * @returns {jQuery} - jQuery element with the link (wrapped in <span>)
-     */
     createLink: typeof linkService.createLink;
 
-    /** @deprecated - use api.createLink() instead */
     createNoteLink: typeof linkService.createLink;
 
-    /**
-     * Adds given text to the editor cursor
-     *
-     * @param text - this must be clear text, HTML is not supported.
-     */
     addTextToActiveContextEditor(text: string): void;
 
-    /**
-     * @returns active note (loaded into center pane)
-     */
     getActiveContextNote(): FNote;
 
-    /**
-     * Obtains the currently active/focused split in the current tab.
-     *
-     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
-     */
     getActiveContext(): NoteContext;
 
-    /**
-     * Obtains the main context of the current tab. This is the left-most split.
-     *
-     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
-     */
     getActiveMainContext(): NoteContext;
 
-    /**
-     * @returns returns all note contexts (splits) in all tabs
-     */
     getNoteContexts(): NoteContext[];
 
-    /**
-     * @returns returns all main contexts representing tabs
-     */
     getMainNoteContexts(): NoteContext[];
 
-    /**
-     * See https://ckeditor.com/docs/ckeditor5/latest/api/module_core_editor_editor-Editor.html for documentation on the returned instance.
-     *
-     * @returns {Promise<BalloonEditor>} instance of CKEditor
-     */
     getActiveContextTextEditor(): Promise<unknown>;
 
-    /**
-     * See https://codemirror.net/doc/manual.html#api
-     *
-     * @method
-     * @returns instance of CodeMirror
-     */
     getActiveContextCodeEditor(): Promise<unknown>;
 
-    /**
-     * Get access to the widget handling note detail. Methods like `getWidgetType()` and `getTypeWidget()` to get to the
-     * implementation of actual widget type.
-     */
     getActiveNoteDetailWidget(): Promise<ReactWrappedWidget>;
-    /**
-     * @returns returns a note path of active note or null if there isn't active note
-     */
     getActiveContextNotePath(): string | null;
 
-    /**
-     * Returns component which owns the given DOM element (the nearest parent component in DOM tree)
-     *
-     * @method
-     * @param el DOM element
-     */
     getComponentByEl(el: HTMLElement): Component;
 
-    /**
-     * @param {object} $el - jquery object on which to set up the tooltip
-     */
     setupElementTooltip: typeof noteTooltipService.setupElementTooltip;
 
-    /**
-     * @param {boolean} protect - true to protect note, false to unprotect
-     */
     protectNote: typeof protectedSessionService.protectNote;
 
-    /**
-     * @param noteId
-     * @param protect - true to protect subtree, false to unprotect
-     */
     protectSubTree: typeof protectedSessionService.protectNote;
 
-    /**
-     * Returns date-note for today. If it doesn't exist, it is automatically created.
-     */
     getTodayNote: typeof dateNotesService.getTodayNote;
 
-    /**
-     * Returns day note for a given date. If it doesn't exist, it is automatically created.
-     *
-     * @param date - e.g. "2019-04-29"
-     */
     getDayNote: typeof dateNotesService.getDayNote;
 
-    /**
-     * Returns day note for the first date of the week of the given date. If it doesn't exist, it is automatically created.
-     *
-     * @param date - e.g. "2019-04-29"
-     */
     getWeekFirstDayNote: typeof dateNotesService.getWeekFirstDayNote;
 
-    /**
-     * Returns week note for given date. If such a note doesn't exist, it is automatically created.
-     *
-     * @param date in YYYY-MM-DD format
-     * @param rootNote - specify calendar root note, normally leave empty to use the default calendar
-     */
     getWeekNote: typeof dateNotesService.getWeekNote;
 
-    /**
-     * Returns month-note. If it doesn't exist, it is automatically created.
-     *
-     * @param month - e.g. "2019-04"
-     */
     getMonthNote: typeof dateNotesService.getMonthNote;
 
-    /**
-     * Returns quarter note for given date. If such a note doesn't exist, it is automatically created.
-     *
-     * @param date in YYYY-MM format
-     * @param rootNote - specify calendar root note, normally leave empty to use the default calendar
-     */
     getQuarterNote: typeof dateNotesService.getQuarterNote;
 
-    /**
-     * Returns year-note. If it doesn't exist, it is automatically created.
-     *
-     * @method
-     * @param {string} year - e.g. "2019"
-     * @returns {Promise<FNote>}
-     */
     getYearNote: typeof dateNotesService.getYearNote;
 
-    /**
-     * Hoist note in the current tab. See https://triliumnext.github.io/Docs/Wiki/note-hoisting.html
-     *
-     * @param {string} noteId - set hoisted note. 'root' will effectively unhoist
-     */
     setHoistedNoteId(noteId: string): void;
 
-    /**
-     * @param keyboardShortcut - e.g. "ctrl+shift+a"
-     * @param [namespace] specify namespace of the handler for the cases where call for bind may be repeated.
-     *                               If a handler with this ID exists, it's replaced by the new handler.
-     */
     bindGlobalShortcut: typeof shortcutService.bindGlobalShortcut;
 
-    /**
-     * Trilium runs in a backend and frontend process, when something is changed on the backend from a script,
-     * frontend will get asynchronously synchronized.
-     *
-     * This method returns a promise which resolves once all the backend -> frontend synchronization is finished.
-     * Typical use case is when a new note has been created, we should wait until it is synced into frontend and only then activate it.
-     */
     waitUntilSynced: typeof ws.waitForMaxKnownEntityChangeId;
 
-    /**
-     * This will refresh all currently opened notes which have included note specified in the parameter
-     *
-     * @param includedNoteId - noteId of the included note
-     */
     refreshIncludedNote(includedNoteId: string): void;
 
-    /**
-     * Return randomly generated string of given length. This random string generation is NOT cryptographically secure.
-     *
-     * @method
-     * @param length of the string
-     * @returns random string
-     */
     randomString: typeof utils.randomString;
 
-    /**
-     * @param size in bytes
-     * @return formatted string
-     */
     formatSize: typeof utils.formatSize;
 
-    /**
-     * @param size in bytes
-     * @return formatted string
-     * @deprecated - use api.formatSize()
-     */
     formatNoteSize: typeof utils.formatSize;
 
-    /**
-     * Converts the given HTML string to Markdown.
-     *
-     * Unlike the backend API, this runs on the server (the HTML→Markdown
-     * converter is backend-only), so it returns a promise.
-     *
-     * @param html - HTML content to convert
-     * @returns Markdown representation of the input HTML
-     */
     htmlToMarkdown(html: string): Promise<string>;
 
-    /**
-     * Converts the given Markdown string to HTML.
-     *
-     * Runs entirely in the browser; the promise is only needed because the
-     * Markdown renderer is loaded on demand.
-     *
-     * @param markdown - Markdown content to convert
-     * @returns HTML representation of the input Markdown
-     */
     markdownToHtml(markdown: string): Promise<string>;
 
     logMessages: Record<string, string[]>;
     logSpacedUpdates: Record<string, SpacedUpdate>;
 
-    /**
-     * Log given message to the log pane in UI.
-     * Accepts multiple arguments which are joined with spaces, similar to `console.log`.
-     */
     log(...args: unknown[]): void;
 
     preact: typeof preactAPI;
@@ -831,8 +508,17 @@ export default FrontendScriptApi as any as {
 // checks fail to compile — naming the offending member — if that public surface
 // claims an `api`/`FNote` member that has since been renamed or removed here.
 type _MissingApiMembers = Exclude<keyof PublicFrontendApi, keyof Api>;
+// The reverse check: a member added to `api` fails to compile until the public surface declares it,
+// so the editor's completions and the generated references list it. The exceptions are deprecated
+// or private, and left out of the public surface on purpose.
+type _UndeclaredApiMembers = Exclude<keyof Api, keyof PublicFrontendApi | "addButtonToToolbar" | "__runOnBackendInner">;
 type _MissingFNoteMembers = Exclude<keyof PublicScriptFNote, keyof FNote>;
+type _MissingLinkOptions = Exclude<keyof ScriptLinkOptions, keyof NonNullable<Parameters<typeof linkService.createLink>[1]>>;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _apiDriftGuard: [_MissingApiMembers] extends [never] ? true : _MissingApiMembers = true;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _undeclaredApiGuard: [_UndeclaredApiMembers] extends [never] ? true : _UndeclaredApiMembers = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _fnoteDriftGuard: [_MissingFNoteMembers] extends [never] ? true : _MissingFNoteMembers = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _linkOptionsDriftGuard: [_MissingLinkOptions] extends [never] ? true : _MissingLinkOptions = true;

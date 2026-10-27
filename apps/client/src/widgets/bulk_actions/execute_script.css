@@ -1,0 +1,34 @@
+.bulk-action-fields > .bulk-action-script {
+    > pre {
+        margin: 0;
+        padding: 0;
+    }
+
+    .cm-editor {
+        max-height: 12em;
+        background: transparent;
+        font-size: inherit;
+    }
+
+    .cm-scroller {
+        overflow: auto;
+        line-height: inherit;
+    }
+
+    .cm-content {
+        padding: 0;
+        caret-color: var(--input-text-color);
+    }
+
+    .cm-line {
+        padding: 0;
+    }
+
+    .cm-activeLine {
+        background: transparent;
+    }
+
+    .cm-gutters {
+        display: none;
+    }
+}

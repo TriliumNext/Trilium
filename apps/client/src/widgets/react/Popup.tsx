@@ -7,13 +7,15 @@ import {
 } from "preact";
 import { useCallback, useContext, useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
+import { onSystemBack } from "../../services/system_back";
+
 /**
  * A surface that stands beside something rather than in the page's flow: a dropdown's menu, and
  * anything else that pops up from a control or at a point. It knows nothing of what it holds; it
  * places itself, keeps inside the viewport, and says when it is dismissed.
  */
 export interface PopupProps extends Pick<HTMLAttributes<HTMLDivElement>, "id" | "className" | "role" | "style" | "tabIndex"
-        | "onClick" | "onPointerMove" | "onContextMenu" | "aria-labelledby"> {
+        | "onClick" | "onPointerMove" | "onPointerLeave" | "onContextMenu" | "aria-labelledby"> {
     /**
      * What it stands beside: an element, a point in the viewport such as where a right-click landed,
      * or a rect that is no element, such as a text editor's caret.
@@ -49,8 +51,17 @@ export interface PopupProps extends Pick<HTMLAttributes<HTMLDivElement>, "id" | 
      * the screen fullscreen, or else the page's body.
      */
     container?: HTMLElement;
-    /** Called once it is first placed and shown: a browser focuses nothing inside it before. */
-    onPlaced?(): void;
+    /**
+     * Animates it in once it is placed: from the side facing its anchor, or out of the bottom of the
+     * screen where the stylesheet places it (see Popup.css). For a menu or a panel, not for a list
+     * of suggestions that changes as the user types.
+     */
+    reveal?: boolean;
+    /**
+     * Called once it is first placed and shown: a browser focuses nothing inside it before. Gets
+     * the placement Floating UI chose, or `"stylesheet"` when {@link placedByStylesheet}.
+     */
+    onPlaced?(placement: Placement | "stylesheet"): void;
     /**
      * Called on a press outside it and its anchor, and on Escape. A press on the anchor is left to
      * the anchor, as a dropdown's toggle closes its own popup. A popup opened inside it counts as
@@ -70,7 +81,7 @@ export interface PopupProps extends Pick<HTMLAttributes<HTMLDivElement>, "id" | 
 /** How many pixels it keeps from the edges of the viewport. */
 const VIEWPORT_PADDING = 5;
 
-export default function Popup({ anchor, placement = "bottom-start", offset: gap = 0, capHeight = true, portalClassName, placedByStylesheet, backdropClassName, elementRef, container, onPlaced, onDismiss, escapeDismisses = true, keepOpenSelector, className, children, ...elementProps }: PopupProps) {
+export default function Popup({ anchor, placement = "bottom-start", offset: gap = 0, capHeight = true, portalClassName, placedByStylesheet, reveal, backdropClassName, elementRef, container, onPlaced, onDismiss, escapeDismisses = true, keepOpenSelector, className, children, ...elementProps }: PopupProps) {
     const popupRef = useRef<HTMLDivElement | null>(null);
     // Stable, so the element is handed on once rather than taken back and given again each render.
     const setElement = useCallback((element: HTMLDivElement | null) => {
@@ -82,10 +93,14 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
     placed.current = onPlaced;
     /** Whether it has said it is placed, which it says once, however often it is placed again. */
     const hasPlaced = useRef(false);
-    const reportPlaced = () => {
+    const reveals = useRef(reveal);
+    reveals.current = reveal;
+    /** Says it is placed, and names the side it reveals itself from, which CSS animates once. */
+    const reportPlaced = (side: Placement | "stylesheet") => {
         if (hasPlaced.current) return;
         hasPlaced.current = true;
-        placed.current?.();
+        if (reveals.current && popupRef.current) popupRef.current.dataset.reveal = side;
+        placed.current?.(side);
     };
     // A popup opened inside this one stands in the page's body too, so it registers here to
     // count as inside this one.
@@ -114,7 +129,7 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
         if (placedByStylesheet) {
             clearPlacement(popup);
             popup.style.visibility = "visible";
-            reportPlaced();
+            reportPlaced("stylesheet");
             return;
         }
         const reference = "x" in anchor ? pointAt(anchor.x, anchor.y) : anchor;
@@ -124,8 +139,8 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
         // Only a menu at a point moves over it. A rect, such as a caret, marks text the popup must not
         // cover, so the popup keeps to one side and its height is capped to the room there.
         const options = { placement, offset: gap, capHeight, shiftAcross: "x" in anchor };
-        const stopUpdating = autoUpdate(reference, popup, () => void placeFloating(popup, reference, options).then(() => {
-            if (!closed) reportPlaced();
+        const stopUpdating = autoUpdate(reference, popup, () => void placeFloating(popup, reference, options).then((side) => {
+            if (!closed) reportPlaced(side);
             // Resolved after the stylesheet took over, so what it wrote goes again.
             else if (stylesheetPlaces.current) clearPlacement(popup);
         }));
@@ -134,6 +149,15 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
             stopUpdating();
         };
     }, [ "x" in anchor ? undefined : anchor, anchorX, anchorY, placement, gap, capHeight, placedByStylesheet ]);
+
+    const inWrapper = useRef(!!portalClassName);
+    inWrapper.current = !!portalClassName;
+    useLayoutEffect(() => {
+        const popup = popupRef.current;
+        return () => {
+            if (popup) playClosing(popup, inWrapper.current);
+        };
+    }, []);
 
     const dismiss = useRef(onDismiss);
     dismiss.current = onDismiss;
@@ -169,6 +193,12 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
         };
     }, [ anchor ]);
 
+    useLayoutEffect(() => onSystemBack(() => {
+        if (!dismiss.current) return false;
+        dismiss.current("escape");
+        return true;
+    }), []);
+
     // Out of any ancestor that would clip it or, with a transform or a filter, place its fixed
     // position against itself. A browser showing an element fullscreen paints only that element.
     const popup = (
@@ -192,15 +222,24 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
 
 /**
  * Drops the click that follows a press dismissing a popup when it lands on something other than
- * `pressed`. A cover or backdrop is removed with the popup before a tap's click, so the click lands
- * on the element under it, such as an icon under the icon picker's menu.
+ * `pressed` or an element containing it. A cover or backdrop is removed with the popup before a
+ * tap's click, so the click lands on the element under it, such as an icon under the icon picker's
+ * menu. A tap that ends outside `pressed` clicks the element that contains both ends of the tap.
+ *
+ * WebKit on iOS takes a tap close to the one before it as a double tap, and replaces its click
+ * with one where the first tap landed, its `detail` the tap count. That click goes to `pressed`.
  */
 function swallowStrayClick(pressed: Node) {
     const onClick = (e: MouseEvent) => {
         stop();
-        if (e.target instanceof Node && pressed.contains(e.target)) return;
+        if (e.target instanceof Node && (pressed.contains(e.target) || e.target.contains(pressed))) {
+            return;
+        }
         e.preventDefault();
         e.stopPropagation();
+        if (e.detail > 1 && pressed.isConnected) {
+            pressed.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }));
+        }
     };
     // The next press removes the listener, so a press without a click, such as a scroll, cannot
     // drop a later click.
@@ -210,6 +249,48 @@ function swallowStrayClick(pressed: Node) {
     };
     window.addEventListener("click", onClick, true);
     window.addEventListener("pointerdown", stop, true);
+}
+
+/**
+ * Leaves an inert copy of `popup`, which is being removed, to play its closing animation (see
+ * Popup.css), and removes the copy once that ends. The popup itself goes at once, so focus and
+ * presses never wait on the animation. The copy keeps the wrapper the popup stands in, which CSS
+ * rules that place it are scoped under.
+ */
+function playClosing(popup: HTMLElement, inWrapper: boolean) {
+    if (popup.dataset.reveal === undefined || popup.style.visibility !== "visible") return;
+    const root = inWrapper ? popup.parentElement : popup;
+    const container = root?.parentElement;
+    if (!root || !container) return;
+
+    const copy = root.cloneNode(true) as HTMLElement;
+    const copiedPopup = inWrapper ? copy.querySelector<HTMLElement>(":scope > .tn-popup") : copy;
+    if (!copiedPopup) return;
+    copiedPopup.dataset.closing = "";
+    copiedPopup.setAttribute("inert", "");
+    copiedPopup.setAttribute("aria-hidden", "true");
+    for (const element of [ copy, ...copy.querySelectorAll("[id]") ]) {
+        element.removeAttribute("id");
+    }
+    // A copied frame or media element would load again.
+    for (const element of copy.querySelectorAll(":scope > .tn-dropdown-backdrop, iframe, video, audio")) {
+        element.remove();
+    }
+    container.append(copy);
+
+    const scrollers = (element: HTMLElement) => [ element, ...element.querySelectorAll<HTMLElement>(".tn-menu-scroll, .tn-panel-scroll") ];
+    const copiedScrollers = scrollers(copiedPopup);
+    for (const [ index, scroller ] of scrollers(popup).entries()) {
+        const copied = copiedScrollers.at(index);
+        if (copied) copied.scrollTop = scroller.scrollTop;
+    }
+
+    const animations = copiedPopup.getAnimations();
+    if (!animations.length) {
+        copy.remove();
+        return;
+    }
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => copy.remove());
 }
 
 /** Removes what `placeFloating()` wrote on `popup`, so the stylesheet places it. */

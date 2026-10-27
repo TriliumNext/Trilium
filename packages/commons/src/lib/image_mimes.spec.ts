@@ -38,9 +38,17 @@ describe("imageExtensionForMime", () => {
         expect(imageExtensionForMime("image/svg+xml")).toBe("svg");
     });
 
+    it("settles on one name for a JPEG, whichever of its two media types it arrived as", () => {
+        // The format is spelled two ways on each side, and a picture converted to it is named by
+        // its media type alone — the title it was uploaded under describes the format it used to
+        // be. Answering ".jpeg" for one spelling and ".jpg" for the other would make that renaming
+        // depend on which spelling happened to be stored.
+        expect(imageExtensionForMime("image/jpeg")).toBe("jpg");
+        expect(imageExtensionForMime("image/jpg")).toBe("jpg");
+    });
+
     it("takes the subtype where the subtype is the name", () => {
         expect(imageExtensionForMime("image/png")).toBe("png");
-        expect(imageExtensionForMime("image/jpeg")).toBe("jpeg");
         expect(imageExtensionForMime("image/webp")).toBe("webp");
         expect(imageExtensionForMime("image/avif")).toBe("avif");
         expect(imageExtensionForMime("image/bmp")).toBe("bmp");
@@ -66,6 +74,11 @@ describe("imageMimeForExtension", () => {
         // Two media types share ".ico"; the one a reader will recognise wins.
         expect(imageMimeForExtension("ico")).toBe("image/x-icon");
         expect(imageMimeForExtension("svg")).toBe("image/svg+xml");
+        // Both spellings of a JPEG resolve to the registered one. `image/jpg` is a thing clients
+        // send, not a thing to store — reaching it from a ".jpg" file is how it used to end up in
+        // the database, and from there in an export's file names.
+        expect(imageMimeForExtension("jpg")).toBe("image/jpeg");
+        expect(imageMimeForExtension("jpeg")).toBe("image/jpeg");
     });
 
     it("builds the media type from the extension otherwise", () => {

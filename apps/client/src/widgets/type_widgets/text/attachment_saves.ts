@@ -225,6 +225,34 @@ export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEdi
 }
 
 /**
+ * The writes that inline sources, such as Mermaid diagrams, hold back until their source stops
+ * changing. The text note saves them into its model first, since they are part of its content.
+ */
+export class InlineSourceSaves {
+    private readonly pending = new Set<() => void>();
+
+    /** @param scheduleUpdate schedules a save of the text note. */
+    constructor(private readonly scheduleUpdate: () => void) {}
+
+    /** Holds `write` until {@link flush}, or until the source writes it itself. */
+    add(write: () => void) {
+        this.pending.add(write);
+        this.scheduleUpdate();
+    }
+
+    delete(write: () => void) {
+        this.pending.delete(write);
+    }
+
+    /** Makes the held writes now. */
+    flush() {
+        for (const write of [ ...this.pending ]) {
+            write();
+        }
+    }
+}
+
+/**
  * Saves the changes that content shown outside a text note, such as a canvas drawing in the full
  * detail of its attachment, makes to the attachments of `note`.
  */

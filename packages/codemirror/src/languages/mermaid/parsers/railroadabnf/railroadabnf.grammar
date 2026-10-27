@@ -1,0 +1,41 @@
+// Follows the Langium grammar of Mermaid's ABNF railroad dialect (`@mermaid-js/parser`).
+@top RailroadAbnfDiagram { DiagramName Title* Rule* }
+
+Rule { RuleName "=" alternation ";" }
+
+alternation { concatenation ("/" concatenation)* }
+
+concatenation { element+ }
+
+element { Repeat? (String | NumVal | NonTerminal | Group | Optional) }
+
+Group { "(" alternation ")" }
+
+Optional { "[" alternation "]" }
+
+Title { kw<"title"> TitleText? }
+
+RuleName { identifier }
+
+NonTerminal { identifier }
+
+DiagramName { @specialize<identifier, "railroad-abnf-beta"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { @asciiLetter $[a-zA-Z0-9\-]* }
+  hex { $[0-9A-Fa-f]+ }
+  String { '"' !["\n]* '"' }
+  NumVal { "%" $[xXdDbB] hex ("-" hex | "." hex)* }
+  Repeat { @digit* "*" @digit* | @digit+ }
+  LineComment { "%%" ![\n]* }
+  "=" ";" "/" "(" ")" "[" "]"
+}
+
+@external propSource railroadAbnfHighlighting from "./highlight.js"

@@ -37,6 +37,11 @@ body[data-note-type="text"] .ck-content {
     text-align: justify;
 }
 
+.ck-content img {
+    max-width: 100%;
+    height: auto;
+}
+
 .ck-content figcaption {
     font-style: italic;
 }
@@ -185,6 +190,27 @@ body[data-note-type="text"] .ck-content {
     background-color: transparent;
     font-size: 0.9em;
     overflow-wrap: break-word;
+}
+/* #endregion */
+
+/* #region Keyboard shortcuts */
+/* Repeats `.ck-content kbd` from theme-next/dialogs.css with the light theme's colors. */
+.ck-content kbd {
+    display: inline-block;
+    margin: 0 1pt 1pt;
+    border: 0.75pt solid #999;
+    border-radius: 3pt;
+    padding: 0 4pt;
+    background: #f5f5f5;
+    box-shadow: 0 1pt 0 #999;
+    color: #3f3f3f;
+    font-family: var(--print-font-family);
+    font-size: 0.8em;
+    line-height: 1.4;
+    vertical-align: 1px;
+    white-space: nowrap;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
 }
 /* #endregion */
 

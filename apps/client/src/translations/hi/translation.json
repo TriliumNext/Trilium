@@ -67,8 +67,6 @@
     "add_link": "लिंक ऐड करें",
     "help_on_links": "लिंक्स पर मदद।",
     "search_note": "नोट को नाम से खोजें",
-    "link_title_mirrors": "लिंक टाइटल नोट के करंट टाइटल के हिसाब से बदलता है",
-    "link_title_arbitrary": "लिंक का टाइटल अपनी मर्ज़ी से बदला जा सकता है",
     "link_title": "लिंक टाइटल",
     "button_add_link": "लिंक जोड़ें",
     "anchor": "एंकर (वैकल्पिक)",
@@ -77,11 +75,10 @@
   "bulk_actions": {
     "other": "अन्य",
     "bulk_actions": "बल्क एक्शन्स",
-    "affected_notes": "प्रभावित नोट्स",
     "include_descendants": "चुने गए नोट्स के वंशजों को शामिल करें",
-    "available_actions": "उपलब्ध एक्शन्स",
     "chosen_actions": "चुने गए एक्शन्स",
-    "execute_bulk_actions": "बल्क एक्शन्स एक्ज़ीक्यूट करें",
+    "execute_bulk_actions_one": "बल्क एक्शन्स एक्ज़ीक्यूट करें",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "बल्क एक्शन्स सफलतापूर्वक एक्ज़ीक्यूट कर दिए गए हैं।",
     "none_yet": "अभी तक कोई नहीं... ऊपर दिए गए उपलब्ध एक्शन्स में से किसी एक पर क्लिक करके एक्शन जोड़ें।",
     "labels": "लेबल्स",
@@ -237,13 +234,7 @@
   "include_note": {
     "dialog_title": "नोट शामिल करें",
     "label_note": "नोट",
-    "placeholder_search": "नोट के नाम से सर्च करें",
-    "box_size_prompt": "शामिल किए गए नोट का बॉक्स साइज़:",
-    "box_size_small": "छोटा (~ 10 लाइनें)",
-    "box_size_medium": "मध्यम (~ 30 लाइनें)",
-    "box_size_full": "पूरी (बॉक्स में पूरा टेक्स्ट दिखेगा)",
-    "button_include": "नोट शामिल करें",
-    "box_size_expandable": "एक्सपेंडेबल (डिफ़ॉल्ट रूप से कोलाप्स्ड)"
+    "button_include": "नोट शामिल करें"
   },
   "info": {
     "modalTitle": "सूचना",
@@ -270,10 +261,7 @@
     "move_success_message": "चुने गए नोट्स को यहाँ ले जाया गया है: "
   },
   "note_type_chooser": {
-    "change_path_prompt": "बदलें कि नया नोट कहाँ बनाना है:",
-    "search_placeholder": "नाम के द्वारा पाथ सर्च करें (खाली होने पर डिफ़ॉल्ट)",
     "modal_title": "नोट टाइप चुनें",
-    "modal_body": "नए नोट का टाइप / टेम्पलेट चुनें:",
     "templates": "टेम्पलेट्स"
   },
   "password_not_set": {
@@ -459,21 +447,13 @@
     "remove_this_search_action": "इस सर्च एक्शन को हटाएं"
   },
   "execute_script": {
-    "execute_script": "स्क्रिप्ट चलाएं",
-    "help_text": "आप मैच होने वाले नोट्स पर साधारण स्क्रिप्ट चला सकते हैं।",
-    "example_1": "उदाहरण के लिए नोट के टाइटल में कुछ जोड़ने के लिए:",
-    "example_2": "सभी एट्रिब्यूट्स डिलीट करने का उदाहरण:"
+    "execute_script": "स्क्रिप्ट चलाएं"
   },
   "add_label": {
     "add_label": "लेबल जोड़ें",
     "label_name_placeholder": "लेबल का नाम",
     "label_name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
-    "to_value": "इस वैल्यू पर",
-    "new_value_placeholder": "नई वैल्यू",
-    "help_text": "मैच होने वाले सभी नोट्स पर:",
-    "help_text_item1": "अगर लेबल नहीं है, तो उसे बनाएं",
-    "help_text_item2": "या मौजूदा लेबल की वैल्यू बदलें",
-    "help_text_note": "आप इसे बिना वैल्यू के भी बुला सकते हैं, उस स्थिति में बिना वैल्यू वाला लेबल जोड़ा जाएगा।"
+    "new_value_placeholder": "नई वैल्यू"
   },
   "delete_label": {
     "delete_label": "लेबल डिलीट करें",
@@ -482,9 +462,7 @@
   },
   "rename_label": {
     "rename_label": "लेबल का नाम बदलें",
-    "rename_label_from": "लेबल का नाम इससे बदलें:",
     "old_name_placeholder": "पुराना नाम",
-    "to": "इसमें:",
     "new_name_placeholder": "नया नाम",
     "name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
   },
@@ -492,49 +470,26 @@
     "update_label_value": "लेबल वैल्यू अपडेट करें",
     "label_name_placeholder": "लेबल का नाम",
     "label_name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
-    "to_value": "इस वैल्यू पर",
-    "new_value_placeholder": "नई वैल्यू",
-    "help_text": "मैच होने वाले सभी नोट्स पर, मौजूदा लेबल की वैल्यू बदलें।",
-    "help_text_note": "आप इसे बिना वैल्यू के भी बुला सकते हैं।"
+    "new_value_placeholder": "नई वैल्यू"
   },
   "delete_note": {
-    "delete_note": "नोट डिलीट करें",
-    "delete_matched_notes": "मैच होने वाले नोट्स डिलीट करें",
-    "delete_matched_notes_description": "इससे मैच होने वाले नोट्स डिलीट हो जाएंगे।",
-    "undelete_notes_instruction": "डिलीट करने के बाद, आप उन्हें 'हाल के बदलाव' डायलॉग से वापस ला सकते हैं।",
-    "erase_notes_instruction": "नोट्स को हमेशा के लिए मिटाने के लिए, ऑप्शन -> अन्य पर जाकर 'डिलीट किए गए नोट्स अभी मिटाएं' बटन पर क्लिक करें।"
+    "delete_note": "नोट डिलीट करें"
   },
   "delete_revisions": {
-    "delete_note_revisions": "नोट रिविज़न डिलीट करें",
-    "all_past_note_revisions": "मैच होने वाले नोट्स के सभी पुराने रिविज़न डिलीट कर दिए जाएंगे। नोट सुरक्षित रहेगा, बस उसका इतिहास मिट जाएगा।"
+    "delete_note_revisions": "नोट रिविज़न डिलीट करें"
   },
   "move_note": {
     "move_note": "नोट ले जाएं",
-    "to": "इसमें:",
-    "target_parent_note": "टारगेट पेरेंट नोट",
-    "on_all_matched_notes": "मैच होने वाले सभी नोट्स पर",
-    "move_note_new_parent": "नोट को नए पेरेंट में ले जाएं अगर उसका केवल एक पेरेंट है (पुरानी ब्रांच हटा दी जाएगी)",
-    "clone_note_new_parent": "नोट को नए पेरेंट में क्लोन करें अगर उसकी कई ब्रांचेस हैं",
-    "nothing_will_happen": "अगर नोट को ले जाना मुमकिन नहीं है तो कुछ नहीं होगा (जैसे tree cycle बनने की स्थिति में)"
+    "target_parent_note": "टारगेट पेरेंट नोट"
   },
   "rename_note": {
-    "rename_note": "नोट का नाम बदलें",
-    "rename_note_title_to": "नोट का टाइटल इसमें बदलें:",
-    "new_note_title": "नया नोट टाइटल",
-    "click_help_icon": "सभी विकल्प देखने के लिए दाईं ओर के मदद आइकन पर क्लिक करें",
-    "evaluated_as_js_string": "वैल्यू को JavaScript स्ट्रिंग की तरह परखा जाता है और <code>note</code> वेरिएबल का उपयोग किया जा सकता है। उदाहरण:",
-    "example_note": "<code>Note</code> - सभी मैच होने वाले नोट्स का नाम 'Note' हो जाएगा",
-    "example_new_title": "<code>NEW: ${note.title}</code> - टाइटल के आगे 'NEW: ' जुड़ जाएगा",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - बनाने की तारीख का प्रीफ़िक्स जुड़ जाएगा",
-    "api_docs": "ज़्यादा जानकारी के लिए API डॉक्स देखें।"
+    "rename_note": "नोट का नाम बदलें"
   },
   "add_relation": {
     "add_relation": "रिलेशन जोड़ें",
     "relation_name": "रिलेशन का नाम",
     "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
-    "to": "इसमें:",
-    "target_note": "टारगेट नोट",
-    "create_relation_on_all_matched_notes": "मैच होने वाले सभी नोट्स पर दिया गया रिलेशन बनाएं।"
+    "target_note": "टारगेट नोट"
   },
   "delete_relation": {
     "delete_relation": "रिलेशन डिलीट करें",
@@ -543,20 +498,14 @@
   },
   "rename_relation": {
     "rename_relation": "रिलेशन का नाम बदलें",
-    "rename_relation_from": "रिलेशन का नाम इससे बदलें:",
     "old_name": "पुराना नाम",
-    "to": "इसमें:",
     "new_name": "नया नाम",
     "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
   },
   "update_relation_target": {
-    "update_relation": "रिलेशन अपडेट करें",
     "relation_name": "रिलेशन का नाम",
     "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
-    "to": "इसमें:",
     "target_note": "टारगेट नोट",
-    "on_all_matched_notes": "मैच होने वाले सभी नोट्स पर",
-    "change_target_note": "मौजूदा रिलेशन का टारगेट नोट बदलें",
     "update_relation_target": "रिलेशन टारगेट अपडेट करें"
   },
   "attachments_actions": {
@@ -663,7 +612,6 @@
     "in_progress": "सर्वर के साथ सिंक हो रहा है।"
   },
   "left_pane_toggle": {
-    "show_panel": "पैनल दिखाएं",
     "hide_panel": "पैनल छुपाएं"
   },
   "move_pane_button": {
@@ -683,7 +631,6 @@
     "import_files": "फ़ाइलें इम्पोर्ट करें",
     "export_note": "नोट एक्सपोर्ट करें",
     "delete_note": "नोट डिलीट करें",
-    "print_note": "नोट प्रिंट करें",
     "view_revisions": "नोट रिविज़न..।",
     "save_revision": "रिविज़न सेव करें",
     "advanced": "एडवांस्ड (Advanced)",
@@ -718,7 +665,6 @@
     "create_child_note_title": "सब-नोट बनाएं और मैप में जोड़ें"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "सब-नोट डालें",
     "delete_this_note": "यह नोट डिलीट करें",
     "note_revisions": "नोट रिविज़न",
     "error_cannot_get_branch_id": "notePath '{{notePath}}' के लिए branchId नहीं मिला",
@@ -833,18 +779,8 @@
   },
   "search_definition": {
     "add_search_option": "सर्च विकल्प जोड़ें:",
-    "search_string": "सर्च स्ट्रिंग",
-    "search_script": "सर्च स्क्रिप्ट",
-    "ancestor": "पूर्वज (Ancestor)",
-    "fast_search": "फ़ास्ट सर्च",
-    "fast_search_description": "फ़ास्ट सर्च नोट कंटेंट के पूरे टेक्स्ट की खोज को बंद कर देता है, जिससे बड़े डेटाबेस में सर्च आसान हो सकता है।",
-    "include_archived": "आर्काइव शामिल करें",
     "include_archived_notes_description": "आर्काइव किए गए नोट्स डिफ़ॉल्ट रूप से सर्च से बाहर होते हैं, इस विकल्प से वे शामिल हो जाएंगे।",
-    "order_by": "इसके अनुसार क्रम दें",
-    "limit": "सीमा (Limit)",
     "limit_description": "रिज़ल्ट्स की संख्या सीमित करें",
-    "debug": "डिबग (Debug)",
-    "debug_description": "डिबग करने पर कंसोल में अतिरिक्त जानकारी दिखेगी जो कठिन क्वेरीज़ को सुलझाने में मदद करेगी",
     "action": "एक्शन",
     "option": "विकल्प",
     "search_button": "खोजें",
@@ -887,8 +823,7 @@
     "include_archived_notes": "आर्काइव किए गए नोट्स शामिल करें"
   },
   "limit": {
-    "limit": "सीमा (Limit)",
-    "take_first_x_results": "केवल पहले X रिज़ल्ट्स लें।"
+    "limit": "सीमा (Limit)"
   },
   "order_by": {
     "order_by": "इसके अनुसार क्रम दें",
@@ -1657,7 +1592,6 @@
     "hide-archived-notes": "आर्काइव किए गए नोट्स छुपाएं",
     "automatically-collapse-notes": "नोट्स अपने-आप समेटें",
     "automatically-collapse-notes-title": "सक्रिय न होने पर ट्री को साफ़ रखने के लिए नोट्स अपने-आप समेट (collapse) दिए जाएंगे।",
-    "save-changes": "सेव करें और लागू करें",
     "auto-collapsing-notes-after-inactivity": "सक्रिय न होने पर नोट्स अपने-आप समेटे जा रहे हैं..।",
     "saved-search-note-refreshed": "सेव की गई खोज रीफ़्रेश हो गई।",
     "hoist-this-note-workspace": "इस नोट को मुख्य बनाएं (Hoist)",
@@ -2496,7 +2430,6 @@
     "processing_complete": "OCR प्रोसेसिंग पूरी हुई।",
     "processing_failed": "OCR प्रोसेसिंग शुरू करने में विफल",
     "text_filtered_low_confidence": "OCR ने {{confidence}}% कॉन्फिडेंस के साथ टेक्स्ट का पता लगाया, लेकिन इसे छोड़ दिया गया क्योंकि आपका न्यूनतम थ्रेशोल्ड {{threshold}}% है।",
-    "image_based_pdf_not_supported": "यह PDF इमेज-आधारित (स्कैन की गई) प्रतीत होती है। इमेज-आधारित पीडीएफ से टेक्स्ट निकालना अभी समर्थित नहीं है।",
     "open_media_settings": "सेटिंग्स खोलें",
     "view_extracted_text": "निकाला गया टेक्स्ट देखें (OCR)"
   },

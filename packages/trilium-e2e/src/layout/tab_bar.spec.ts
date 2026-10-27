@@ -120,7 +120,7 @@ test("Search works when dismissing a tab", async ({ page, context }) => {
     await app.goto();
 
     await app.goToNoteInNewTab("Table of contents");
-    await app.openAndClickNoteActionMenu("Search in note");
+    await app.openAndClickNoteActionMenu("Find");
     await expect(app.findAndReplaceWidget).toBeVisible();
     app.findAndReplaceWidget.locator(".find-widget-close-button").click();
 
@@ -128,7 +128,7 @@ test("Search works when dismissing a tab", async ({ page, context }) => {
     await app.goToNoteInNewTab("Sample mindmap");
 
     await (await app.getTab(0)).click();
-    await app.openAndClickNoteActionMenu("Search in note");
+    await app.openAndClickNoteActionMenu("Find");
     await expect(app.findAndReplaceWidget.first()).toBeVisible();
 });
 

@@ -3,6 +3,8 @@ import type { LlmProviderConfig } from "@triliumnext/core/src/services/llm/types
 import type { Request, Response } from "express";
 
 interface ChatRequest {
+    /** The id the client gave the turn, by which it answers the turn's tool calls. */
+    streamId: string;
     messages: LlmMessage[];
     config?: LlmProviderConfig;
 }
@@ -28,8 +30,12 @@ export const SSE_HEARTBEAT_FRAME = ":\n\n";
  * writes an SSE comment (`:\n\n`) that the client ignores.
  */
 async function streamChat(req: Request, res: Response) {
-    const { messages, config = {} } = req.body as ChatRequest;
+    const { streamId, messages, config = {} } = req.body as ChatRequest;
 
+    if (!streamId) {
+        res.status(400).json({ error: "streamId is required" });
+        return;
+    }
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         res.status(400).json({ error: "messages array is required" });
         return;
@@ -76,7 +82,7 @@ async function streamChat(req: Request, res: Response) {
         // the provider SDKs land in lazy chunks (the same convention as
         // getProviderModels in core's routes/api/llm.ts).
         const { runChat } = await import("@triliumnext/core/src/services/llm/chat.js");
-        for await (const chunk of runChat(messages, config, abortController.signal)) {
+        for await (const chunk of runChat(streamId, messages, config, abortController.signal)) {
             writeFrame(`data: ${JSON.stringify(chunk)}\n\n`);
             heartbeat.reset();
         }

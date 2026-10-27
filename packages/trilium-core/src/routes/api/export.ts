@@ -30,7 +30,7 @@ async function exportBranch(req: Request<{ branchId: string; type: string; forma
             if (format !== "html" && format !== "markdown") {
                 throw new ValidationError("Invalid export type.");
             }
-            singleExportService.exportSingleNote(taskContext, branch, format, res);
+            await singleExportService.exportSingleNote(taskContext, branch, format, res);
         } else if (format === "opml") {
             opmlExportService.exportToOpml(taskContext, branch, res);
         } else {

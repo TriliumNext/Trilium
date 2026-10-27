@@ -86,7 +86,7 @@ describe("the provider list", () => {
         for (const type of PROVIDER_TYPES) {
             expect(type.id, `${type.id} has an id`).toBeTruthy();
             expect(type.name, `${type.id} has a name`).toBeTruthy();
-            expect(type.iconUrl, `${type.id} has an icon`).toBeTruthy();
+            expect(type.icon, `${type.id} has an icon`).toBeTruthy();
         }
     });
 

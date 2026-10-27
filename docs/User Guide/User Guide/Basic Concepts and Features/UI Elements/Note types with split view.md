@@ -14,6 +14,8 @@ The split comes with three different display modes which can be toggled from the
 
 The display node is stored at note level.
 
+A Markdown note included in a text note, or a Markdown file embedded in one, has the same three display modes, switched from the title row and the toolbar of the include. See _Included Markdown_ in <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>.
+
 ## Relation to read-only notes
 
 If a note is marked as [read-only](../Notes/Read-Only%20Notes.md), the source view will not be editable. While in preview mode, marking a note as read-only has no effect since the preview itself is not editable.

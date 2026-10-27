@@ -43,13 +43,16 @@ export function slugify(message: string): string {
 /**
  * CKEditor's own strings that Trilium renames, mapping the upstream message id to the English
  * wording we show instead. Trilium calls CKEditor's bookmarks "anchors", so every string the
- * upstream `Bookmark` plugin renders is relabelled here.
+ * upstream `Bookmark` plugin renders is relabelled here, and the code block button is named after
+ * the block, as the block quote button is.
  *
  * This is the one case where a message id and its English text differ, which is why the pairs are
  * declared rather than discovered: the dictionary has to be keyed by the *upstream* id for CKEditor
  * to find it, while the text shown comes from our catalog entry for the replacement. Both halves of
  * a pair therefore live here, and the replacement needs its own English entry like any other
- * message — which is what makes the rename translatable per locale instead of English-only.
+ * message — which is what makes the rename translatable per locale instead of English-only. A
+ * replacement CKEditor translates itself (`Code block`) needs no entry: CKEditor's translation of it
+ * stands in.
  *
  * A plugin Trilium owns never belongs here: rename its message id at the call site instead.
  */
@@ -66,7 +69,8 @@ export const MESSAGE_OVERRIDES: Record<string, string> = {
     "Bookmark toolbar": "Anchor toolbar",
     "bookmark widget": "anchor widget",
     "No bookmarks available.": "No anchors available.",
-    "Scroll to bookmark": "Scroll to anchor"
+    "Scroll to bookmark": "Scroll to anchor",
+    "Insert code block": "Code block"
 };
 
 /**
@@ -76,10 +80,13 @@ export const MESSAGE_OVERRIDES: Record<string, string> = {
  *                        key to the English text — which is the message id plugins pass to the
  *                        editor's translation function.
  * @param translate resolves a full i18next key to the localized string.
+ * @param upstreamDictionary CKEditor's own dictionary for the locale, which translates a
+ *                           replacement our catalog has no entry for.
  */
 export function buildMessageDictionary(
     englishMessages: Record<string, string>,
-    translate: (key: string) => string
+    translate: (key: string) => string,
+    upstreamDictionary: Record<string, string | readonly string[]> = {}
 ): Record<string, string> {
     const dictionary: Record<string, string> = {};
 
@@ -97,7 +104,9 @@ export function buildMessageDictionary(
     // Unlike a translation, a rename applies even when the locale has no entry: the English
     // replacement is itself the point, so it stands in until a translator supplies the rest.
     for (const [ upstreamMessage, replacement ] of Object.entries(MESSAGE_OVERRIDES)) {
-        dictionary[upstreamMessage] = dictionary[replacement] ?? replacement;
+        const upstream = upstreamDictionary[replacement];
+        dictionary[upstreamMessage] = dictionary[replacement]
+            ?? (typeof upstream === "string" ? upstream : replacement);
     }
 
     return dictionary;

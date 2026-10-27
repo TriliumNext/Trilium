@@ -263,6 +263,11 @@
       "input": 0.3,
       "output": 2.5,
       "ctx": 1048576
+    },
+    "gemini-robotics-er-2-preview": {
+      "input": 1,
+      "output": 5,
+      "ctx": 131072
     }
   },
   "openai": {
@@ -391,7 +396,17 @@
       "output": 0.6,
       "ctx": 128000
     },
+    "gpt-4o-mini-search-preview-2025-03-11": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
     "gpt-4o-search-preview": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-search-preview-2025-03-11": {
       "input": 2.5,
       "output": 10,
       "ctx": 128000
@@ -525,6 +540,10 @@
       "input": 12.5,
       "output": 75
     },
+    "gpt-5.5-cyber-preview": {
+      "input": 12.5,
+      "output": 75
+    },
     "gpt-5.6": {
       "input": 4,
       "output": 20,
@@ -586,6 +605,11 @@
       "ctx": 128000
     },
     "gpt-audio-mini": {
+      "input": 0.6,
+      "output": 2.4,
+      "ctx": 128000
+    },
+    "gpt-audio-mini-2025-10-06": {
       "input": 0.6,
       "output": 2.4,
       "ctx": 128000

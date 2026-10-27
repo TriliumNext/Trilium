@@ -14,7 +14,6 @@ import {
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import tabsBottomIcon from "../../icons/tabs-bottom.svg?raw";
 import tabsIcon from "../../icons/tabs.svg?raw";
 import Tabs from "./tabs.js";
@@ -51,8 +50,7 @@ describe("TabsUI", () => {
     });
 
     it("copies a link to the tab holding the selection through the host", () => {
-        const copyTabReference = vi.fn();
-        installGlobMock({ getComponentByEl: () => ({ copyTabReference }) });
+        const copyReference = vi.fn();
         editor.setData("<p>x</p>");
         const button = editor.ui.componentFactory.create("copyTabLink") as ButtonView;
         expect(button.isEnabled).toBe(false);
@@ -61,8 +59,10 @@ describe("TabsUI", () => {
         expect(button.isEnabled).toBe(true);
         expect(button.label && button.icon && button.tooltip).toBeTruthy();
         button.fire("execute");
+        editor.config.set("tabs", { copyReference });
+        button.fire("execute");
 
-        expect(copyTabReference).toHaveBeenCalledTimes(1);
+        expect(copyReference).toHaveBeenCalledTimes(1);
     });
 
     it("aligns the tabs from a dropdown at the end of the toolbar", () => {

@@ -1,5 +1,5 @@
 import {
-    ALLOWED_NOTE_TYPES, CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle,
+    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle, isNoteType,
     type NoteType
 } from "@triliumnext/commons";
 import { basename, dirname } from "../utils/path.js";
@@ -1014,8 +1014,8 @@ function resolveNoteType(type: string | undefined): NoteType {
             return "book";
     }
 
-    if (type && (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)) {
-        return type as NoteType;
+    if (isNoteType(type)) {
+        return type;
     }
     return "text";
 

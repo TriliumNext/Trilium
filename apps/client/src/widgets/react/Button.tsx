@@ -1,7 +1,7 @@
 import "./Button.css";
 
 import type { Tooltip } from "bootstrap";
-import type { ComponentChildren, CSSProperties, MouseEventHandler, RefObject } from "preact";
+import type { ButtonHTMLAttributes, ComponentChildren, CSSProperties, MouseEventHandler, RefObject } from "preact";
 import { useMemo, useRef } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
@@ -16,7 +16,8 @@ import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
 
-export interface ButtonProps {
+export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement>,
+    "tabIndex" | "aria-pressed" | "aria-haspopup" | "aria-expanded"> {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement | null>;
@@ -40,6 +41,8 @@ export interface ButtonProps {
     title?: string;
     /** Why the button is off, shown on hover while `disabled`. Ignored otherwise. */
     disabledTooltip?: string;
+    /** Marks a toggle button as on or off for assistive technology. */
+    "aria-pressed"?: boolean;
 }
 
 function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, disabledTooltip, size, style, triggerCommand, ...restProps }: ButtonProps) {
@@ -130,24 +133,30 @@ export function ButtonGroup({ size, className, children }: { size?: "sm" | "lg";
 }
 
 /** A button with the related actions in a menu beside it. */
-export function SplitButton({ text, icon, children, ...restProps }: {
+export function SplitButton({ text, icon, kind = "secondary", size = "normal", keyboardShortcut, children, ...restProps }: {
     text: string;
     /** The icon's full class, as `"bx bx-search"`. */
     icon?: string;
+    kind?: "primary" | "secondary";
+    size?: "normal" | "small" | "micro";
     title?: string;
+    /** The keys that run the main action, shown after its label as a button shows them. */
+    keyboardShortcut?: string;
     /** Click handler for the main button component (not the split). */
     onClick?: () => void;
     /** The menu's rows: `FormListItem`s and the other `FormList` rows. */
     children: ComponentChildren;
 }) {
+    const look = `btn-${kind}${size === "small" ? " btn-sm" : size === "micro" ? " btn-micro" : ""}`;
+    const shortcutElements = !keyboardShortcut || cachedIsMobile ? null : renderShortcutKbds(keyboardShortcut);
     return (
-        <ButtonGroup>
-            <button type="button" class="btn btn-secondary" {...restProps}>
+        <ButtonGroup className="tn-split-button" size={size === "small" ? "sm" : undefined}>
+            <button type="button" class={`btn ${look}`} {...restProps}>
                 {icon && <Icon icon={icon} />}
-                {text}
+                {text} {shortcutElements}
             </button>
             <Dropdown
-                buttonClassName="btn-secondary dropdown-toggle-split"
+                buttonClassName={`${look} dropdown-toggle-split`}
                 buttonProps={{ "aria-label": t("split_button.more_actions") }}
                 noSelectButtonStyle
                 placement="bottom-end"

@@ -288,6 +288,12 @@ describe("SnippetListItemButtonView", () => {
         return button;
     }
 
+    it("is labeled with the title, for a menu that draws its rows from the labels", () => {
+        const button = render(DEF_FULL);
+        expect(button.label).toBe("Greeting");
+        expect((button.element as HTMLElement).querySelectorAll(".ck-button__label")).toHaveLength(1);
+    });
+
     it("renders the note icon (with its classes), title and description", () => {
         const button = render(DEF_FULL);
         const el = button.element as HTMLElement;

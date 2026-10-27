@@ -4,10 +4,18 @@
     --ck-table-column-bar-segment-color:
         var(--accented-background-color, var(--ck-color-base-hover));
     --ck-table-column-bar-divider-color: var(--main-border-color, var(--ck-color-base-border));
+    --ck-table-column-bar-handle-color: var(--muted-text-color, var(--ck-color-text));
     --ck-table-column-bar-active-color: var(--ck-color-focus-border);
 
     --ck-table-column-bar-height: 28px;
     --ck-table-column-bar-divider-hit-width: 24px;
+    --ck-table-column-bar-handle-width: 6px;
+    /* Must exceed `AUTO_SCROLL_EDGE` in viewport_geometry.ts. */
+    --ck-table-column-bar-end-gap: 64px;
+}
+
+.ck.ck-editor__editable.ck-table-column-bar-touch figure.table.ck-table-overflowing > table {
+    margin-inline-end: var(--ck-table-column-bar-end-gap);
 }
 
 /* Outranks the `.ck-reset_all` rules of the body collection. */
@@ -43,8 +51,10 @@
     .ck-table-column-bar__divider {
         position: absolute;
         inset-block: 0;
+        z-index: 1;
         width: var(--ck-table-column-bar-divider-hit-width);
         translate: -50%;
+        pointer-events: none;
 
         &::after {
             position: absolute;
@@ -54,6 +64,17 @@
             content: "";
             background: var(--ck-table-column-bar-divider-color);
             translate: -50%;
+        }
+
+        &.ck-table-column-bar__divider_resizable {
+            pointer-events: auto;
+
+            &::after {
+                inset-block: 4px;
+                border-radius: calc(var(--ck-table-column-bar-handle-width) / 2);
+                width: var(--ck-table-column-bar-handle-width);
+                background: var(--ck-table-column-bar-handle-color);
+            }
         }
 
         &.ck-table-column-bar__divider_active::after {

@@ -223,6 +223,11 @@ describe("NodejsZipProvider", () => {
         });
     });
 
+    it("rejects a Blob source, which only the browser provider reads", async () => {
+        await expect(provider.readZipFile({ blob: new Blob([]) }, async () => {}))
+            .rejects.toThrow("A Blob zip source is only readable in the browser.");
+    });
+
     describe("reading from a path (in place, no full-buffer load)", () => {
         const dir = mkdtempSync(join(tmpdir(), "trilium-zip-provider-spec-"));
         afterAll(() => rmSync(dir, { recursive: true, force: true }));

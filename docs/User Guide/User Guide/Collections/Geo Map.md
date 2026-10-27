@@ -19,18 +19,18 @@ Starting with v0.105.0, the geomap uses MapLibre GL which requires WebGL v1 supp
 
 If the map could not be drawn because WebGL could not be initialized, an error message will appear instead of the map (_This map can't be drawn because WebGL isn't available…_).
 
-The button that shows your location is offered only when Trilium is reached over HTTPS, in the desktop application or in the mobile application. Browsers refuse to share the location of a device with a page served over plain HTTP, so on such a server the button does not appear.
+The button that shows your location is offered only when Trilium is reached over HTTPS, in the desktop application or in the mobile application. Browsers refuse to share the location of a device with a page served over plain HTTP, so on such a server the button does not appear. The desktop application on Linux does not offer it either, because it has no way to find the location of the device there.
 
 ## Interaction
 
-*   At the top-left there is the search bar. It searches the notes already on the map, and it can also search for places online when you ask it to. While you move through the results of a search, a counter with previous and next buttons appears under it.
-*   At the bottom-center there is a central toolbar which provides editing features: adding new markers on the map and importing GPX tracks.
+*   At the top-left there is the search bar. It searches the notes already on the map, and it can also search for places online when you ask it to. While you move through the results of a search, a counter with previous (<span class="tn-icon bx bx-chevron-left"></span>) and next (<span class="tn-icon bx bx-chevron-right"></span>) buttons appears under it.
+*   At the bottom-center there is a central toolbar which provides editing features: adding new markers on the map (<span class="tn-icon bx bx-pin"></span>) and importing GPX tracks (<span class="tn-icon bx bx-trip"></span>).
 *   At the bottom-right there are the viewport items:
-    *   Zoom in/out
+    *   Zoom in/out (<span class="tn-icon bx bx-plus-circle"></span> / <span class="tn-icon bx bx-minus-circle"></span>)
         *   On mobile these are hidden, use pinch to zoom instead.
         *   On desktop, alternatively use the scroll wheel to adjust the zoom.
-    *   A button that shows your location on the map and follows it (see _Going to your location_ below).
-    *   Full screen button which focuses the entire map onto the screen, while still allowing for edits.
+    *   A <span class="tn-icon bx bx-current-location"></span> button that shows your location on the map and follows it (see _Going to your location_ below).
+    *   <span class="tn-icon bx bx-fullscreen"></span> Full screen button which focuses the entire map onto the screen, while still allowing for edits.
 *   At the top-center (on desktop, or left-center on mobile and in split views) there are the drawing tools such as paths, areas, rectangles and circles.
     *   When the map is read-only, the toolbar is not shown.
 
@@ -53,7 +53,7 @@ In practice this applies to maps whose markers were added externally, by a scrip
 
 ## Going to your location
 
-Press the _Show your location_ button at the bottom-right of the map, beside the zoom buttons. The first time, the browser or the operating system asks whether Trilium may know where the device is. In the desktop application the operating system's location settings decide.
+Press the _Show your location_ (<span class="tn-icon bx bx-current-location"></span>) button at the bottom-right of the map, beside the zoom buttons. The first time, the browser or the operating system asks whether Trilium may know where the device is. In the desktop application the operating system's location settings decide.
 
 The map then moves to where the device is and marks it with a blue dot. A lighter circle around the dot shows how accurate the position is: a phone with GPS gives a dot on the street, while a computer located through its network connection can give a circle that covers a neighbourhood. The map follows the dot as it moves, and the button stays pressed while it does.
 
@@ -125,20 +125,20 @@ Press the panel's close button, or the Escape key, to send the place away withou
 
 ### Stepping through the results
 
-Once you select a result, a counter appears under the search bar, with a previous and a next button. These buttons move through everything the search offered, in the order it was listed. You can therefore compare several results without opening the list again. Pressing the counter itself moves the map back to the current result, which is useful after you have moved the map away from it.
+Once you select a result, a counter appears under the search bar, with a previous (<span class="tn-icon bx bx-chevron-left"></span>) and a next (<span class="tn-icon bx bx-chevron-right"></span>) button. These buttons move through everything the search offered, in the order it was listed. You can therefore compare several results without opening the list again. Pressing the counter itself moves the map back to the current result, which is useful after you have moved the map away from it.
 
 ### The keyboard
 
 *   <kbd>Enter</kbd> runs the online search when its row is the one selected, and otherwise moves to the highlighted result. Pressed after a result has been taken, it brings the list back.
 *   <kbd>Escape</kbd> closes the result list, and closes the place panel.
 *   Returning to the search bar reopens the list it was showing.
-*   The **X** at the end of the bar empties it, which also takes a searched place, its pin and its panel off the map.
+*   The <span class="tn-icon bx bx-x"></span> button at the end of the bar empties it, which also takes a searched place, its pin and its panel off the map.
 
 ## Adding a marker using the map
 
-### Adding a new note using the plus button
+### Adding a new note using the _Add marker_ button
 
-1.  To create a marker, first navigate to the desired point on the map. Then press the _Add marker_ button at the center-bottom of the map.
+1.  To create a marker, first navigate to the desired point on the map. Then press the _Add marker_ (<span class="tn-icon bx bx-pin"></span>) button at the center-bottom of the map.
 2.  Once pressed, the map will enter in the insert mode, as illustrated by the notification. Additionally, a preview of the marker will be shown at the cursor position.
     
     Simply click the point on the map where to place the marker. To cancel, press either the  Escape key or press again the _Add marker_ button.
@@ -147,7 +147,7 @@ Once you select a result, a counter appears under the search bar, with a previou
 ### Adding a new note using the contextual menu
 
 1.  Right click anywhere on the map, where to place the newly created marker (and corresponding note).
-2.  Select _Add a marker at this location_.
+2.  Select _Add a marker at this location_ (<span class="tn-icon bx bx-pin"></span>).
 3.  Once clicked on a position on the map, the marker will show up on the map and a popup will show to the right with the title already selected to be changed.
 
 ### Adding an existing note from the note tree
@@ -195,8 +195,8 @@ On an image map, the position is stored in `#mapPosition` instead (see <a class
 
 Once a marker is set, it can be repositioned using one of the two ways:
 
-*   By right clicking the marker and selecting _Move to another location_.
-*   By clicking the marker to open the popup and selecting the _Move to another location_ button underneath the title bar.
+*   By right clicking the marker and selecting _Move to another location_ (<span class="tn-icon bx bx-move"></span>).
+*   By clicking the marker to open the popup and selecting the _Move to another location_ (<span class="tn-icon bx bx-move"></span>) button underneath the title bar.
 
 After clicking the button to move the marker, click at the desired position on the map to replace it. To cancel the operation, press Escape.
 
@@ -215,14 +215,14 @@ After clicking the button to move the marker, click at the desired position on t
 When a marker, a [shape](Geo%20Map/Drawing%20shapes.md), or track is clicked, a popup will open to the right which contains the following information:
 
 *   The title and icon of the marker, both editable.
-*   An indicator for the coordinates; clicking it will copy the coordinates to clipboard.
-*   A button to maximize the popup.
+*   An indicator for the coordinates (<span class="tn-icon bx bx-crosshair"></span>); clicking it will copy the coordinates to clipboard.
+*   A <span class="tn-icon bx bx-expand-alt"></span> button to maximize the popup.
 *   Buttons to interact with the current item:
-    *   Open the marker in the same pane, new tab, etc.
-    *   A button to open the location in a dedicated application (e.g. Google Maps on mobile).
-    *   Color picker to change the color of the marker.
-    *   Markers can also be moved, unlike tracks or shapes (which need to be redrawn).
-    *   Button to remove the marker from the map, which can optionally delete its corresponding note.
+    *   <span class="tn-icon bx bx-log-in"></span> Open the marker in the same pane, or use <span class="tn-icon bx bx-dots-horizontal-rounded"></span> to open it in a new tab, split, etc.
+    *   A <span class="tn-icon bx bx-map-alt"></span> button to open the location in a dedicated application (e.g. Google Maps on mobile).
+    *   <span class="tn-icon bx bx-palette"></span> Color picker to change the color of the marker.
+    *   <span class="tn-icon bx bx-move"></span> Markers can also be moved, unlike tracks or shapes (which need to be redrawn).
+    *   <span class="tn-icon bx bx-trash"></span> Button to remove the marker from the map, which can optionally delete its corresponding note.
         *   Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
         *   Similarly, removing a shape will remove its `#geoShape` attribute.
 *   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the marker, if any.
@@ -245,14 +245,15 @@ Markers can have <a class="reference-link" href="../Note%20Types/Text/Links/Int
 It's possible to press the right mouse button to display a contextual menu.
 
 1.  If right-clicking an empty section of the map (not on a marker), it allows to:
-    1.  Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
-    2.  Open the location using an external application (if the operating system supports it).
-    3.  Adding a new marker at that location.
+    1.  <span class="tn-icon bx bx-crosshair"></span> Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
+    2.  <span class="tn-icon bx bx-map-alt"></span> Open the location using an external application (if the operating system supports it).
+    3.  <span class="tn-icon bx bx-pin"></span> Adding a new marker at that location.
 2.  If right-clicking on a marker, it allows to:
-    1.  Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
-    2.  Open the location using an external application (if the operating system supports it).
+    1.  <span class="tn-icon bx bx-crosshair"></span> Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
+    2.  <span class="tn-icon bx bx-map-alt"></span> Open the location using an external application (if the operating system supports it).
     3.  Open the note in a new tab, split or window.
-    4.  Button to remove the marker from the map, which can optionally delete its corresponding note. Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
+    4.  <span class="tn-icon bx bx-move"></span> Move the marker to another location.
+    5.  <span class="tn-icon bx bx-trash"></span> Button to remove the marker from the map, which can optionally delete its corresponding note. Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
 3.  Shapes can also be right-clicked and the menu is similar to markers except they cannot be moved.
 
 ### Icon and color
@@ -310,7 +311,7 @@ To add a track, either:
 
 1.  Drag & drop a `.gpx` file inside the geo map in the note tree.
     1.  In order for the file to be recognized as a GPS track, it needs to show up as `application/gpx+xml` in the _File type_ field.
-2.  Press the _Add a GPS track from a GPX file_ which will directly prompt for a GPX file and import it as a subnote of the collection.
+2.  Press the _Add a GPS track from a GPX file_ (<span class="tn-icon bx bx-trip"></span>) button which will directly prompt for a GPX file and import it as a subnote of the collection.
 
 When going back to the map, the track should now be visible.
 
@@ -328,11 +329,12 @@ When clicking on the markers of a track (whether it's the start or stop builtin 
 
 When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) all editing features will be disabled such as:
 
-*   The add button at the bottom of the map.
+*   The _Add marker_ (<span class="tn-icon bx bx-pin"></span>) button at the bottom of the map.
 *   Repositioning markers.
 *   Editing from the contextual menu (removing locations or adding new items).
 *   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
 *   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
+*   The _Geo map properties_ dialog; its entry is hidden from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
 
 To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Editable_ → _Read-only_.
 
@@ -340,7 +342,7 @@ To set a map as read-only, go to <a class="reference-link" href="../Basic%20Con
 
 ### Map Style
 
-The styling of the map can be adjusted in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> or manually via the `#map:style` attribute.
+The styling of the map can be adjusted in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, under _Background_ in the _Geo map properties_ dialog, or manually via the `#map:style` attribute.
 
 The geo map comes with two different types of styles:
 
@@ -361,7 +363,7 @@ The default theme is Versatiles Colorful (vector).
 
 <figure class="image"><img style="aspect-ratio:2727/1642;" src="2_Geo Map_image.png" width="2727" height="1642"></figure>
 
-Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter 3D mode, simply press the corresponding button at the bottom-right of the map or press Ctrl and drag across the map.
+Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter 3D mode, simply press the _3D_ button at the bottom-right of the map or press Ctrl and drag across the map.
 
 The buildings will only appear from zoom 14 onwards to avoid lag.
 
@@ -372,12 +374,21 @@ The buildings will only appear from zoom 14 onwards to avoid lag.
 
 Starting with v0.102.0 it is possible to use custom tile sets, but only in raster format.
 
-To do so, manually set the `#map:style` [label](../Advanced%20Usage/Attributes/Labels.md) to the URL of the tile set. For example, to use Esri.NatGeoWorldMap, set the value to [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`.](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D.)
+To use one:
+
+1.  Open the _Geo map properties_ dialog from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+2.  Under _Background_, set _Type_ to _Custom tileset_.
+3.  In _Tile URL_, enter the address of the tile set, with `{z}`, `{x}` and `{y}` where the zoom level and the position of the tile go. For example, to use Esri.NatGeoWorldMap, enter [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D). The URL is saved once you leave the field; a URL that doesn't start with `http://` or `https://`, or that lacks one of the three placeholders, is not saved. A map drawn over an image keeps its image until a URL is saved.
+4.  If the tiles are dark, turn on _Dark tileset_, which draws the marker titles in a light color so that they remain readable.
 
 Additionally:
 
 *   Hi-DPI tiles are supported via the `{r}` placeholder.
-*   To mark the custom style as dark (which affects the styling of the UI), apply the `map:darkStyle` label. This attribute also overrides builtin themes.
+*   Servers that number their tiles by quadkey are supported via the `{quadkey}` placeholder, in place of `{z}`, `{x}` and `{y}`.
+
+To go back to a built-in style, set _Type_ back to _Vector & Raster_. The tile set is switched off rather than removed: its label is renamed to `#disabled:map:style`, so setting _Type_ to _Custom tileset_ again brings back the same URL. A tile set inherited from a parent note or a template is overridden by the default style instead.
+
+The tile set can also be set manually: the URL goes in the `#map:style` [label](../Advanced%20Usage/Attributes/Labels.md), and the `#map:darkStyle` label marks it as dark. `#map:darkStyle` also overrides the built-in styles.
 
 > [!NOTE]
 > For a list of tile sets, see the [Leaflet Providers preview](https://leaflet-extras.github.io/leaflet-providers/preview/) page. Select a desired tile set and just copy the URL from the _Plain JavaScript_ example.
@@ -386,7 +397,7 @@ Custom vector map support is planned, but not yet implemented.
 
 ### Other options
 
-The following options can be configured either via the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, by clicking on the settings (Gear icon). Alternatively, each of these options also have a corresponding [label](../Advanced%20Usage/Attributes/Labels.md) that can be set manually.
+The following options can be configured either via the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, by clicking on the settings (<span class="tn-icon bx bx-cog"></span>) button. Alternatively, each of these options also have a corresponding [label](../Advanced%20Usage/Attributes/Labels.md) that can be set manually.
 
 *   Scale, which illustrates the scale of the map in either kilometers or miles in the bottom-left of the map.
     *   The unit is determined by the _Formatting locale_ option in _Language & Region_.
@@ -394,3 +405,7 @@ The following options can be configured either via the <a class="reference-link
 *   v0.105.0 also introduces a feature called _Group nearby markers_ which will cluster multiple markers together at low zoom.
     *   The clusters display the number of items they contain. The color also changes based on the count.
     *   Clicking on a cluster will automatically zoom in so that the individual markers that make up the cluster are now visible.
+
+The same options are also listed under _General_ in the <span class="tn-icon bx bx-cog"></span>_Geo map properties_ dialog, opened from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> or from the settings menu of the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>. Its _Included notes_ section sets whether archived notes are shown and the _Maximum nesting depth_ (see below), and its _Background_ section holds the map style, the URL of a custom tile set when _Type_ is set to _Custom tileset_ (see above), or, with _Type_ set to _Custom image_, draws the map over an image of your own instead, as described in <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>.
+
+The map shows the notes of its whole subtree, not only its children. _Maximum nesting depth_ (`#maxNestingDepth`) limits how deep below the map it looks: `0` shows only the children, `1` adds their children, and so on. Without a value, every level is shown.

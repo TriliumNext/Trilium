@@ -19,7 +19,7 @@ import { existsSync } from "fs";
 import path from "path";
 
 import { RESOURCE_DIR } from "../../resource_dir.js";
-import { cachedProbe, findOnPath, runVersionProbe } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath, runVersionProbe } from "./binary_lookup.js";
 
 const PROBE_TIMEOUT_MS = 15000;
 
@@ -79,5 +79,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error(`The Codex CLI (codex) was not found. ${INSTALL_HINT}`);
+    throw new Error(await describeFlatpakSandbox("Codex CLI") ?? `The Codex CLI (codex) was not found. ${INSTALL_HINT}`);
 }

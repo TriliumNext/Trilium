@@ -183,6 +183,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "autoFixConsistencyIssues", value: "true", isSynced: false },
     { name: "vimKeymapEnabled", value: "false", isSynced: false },
     { name: "codeLineWrapEnabled", value: "true", isSynced: false },
+    { name: "codeLineNumbersEnabled", value: "true", isSynced: false },
     { name: "transcriptCleanupEnabled", value: "true", isSynced: true },
     { name: "transcriptionEnabled", value: "false", isSynced: true },
     { name: "transcriptionModel", value: DEFAULT_TRANSCRIPTION_MODEL, isSynced: false },
@@ -192,9 +193,10 @@ const defaultOptions: DefaultOption[] = [
     { name: "codeNoteIndentWithTabs", value: "false", isSynced: true },
     {
         name: "codeNotesMimeTypes",
-        value: '["text/x-csrc","text/x-c++src","text/x-csharp","text/css","text/x-elixir","text/x-go","text/x-groovy","text/x-haskell","text/html","message/http","text/x-java","text/javascript","application/javascript;env=frontend","application/javascript;env=backend","application/json","text/x-kotlin","text/x-markdown","text/x-perl","text/x-php","text/x-python","text/x-ruby",null,"text/x-sql","text/x-sqlite;schema=trilium","text/x-swift","text/xml","text/x-yaml","text/x-sh","application/typescript"]',
+        value: '["text/x-csrc","text/x-c++src","text/x-csharp","text/css","text/x-dockerfile","text/x-go","text/html","text/x-java","text/javascript","application/javascript;env=frontend","application/javascript;env=backend","application/json","text/jsx","text/x-kotlin","text/x-markdown","text/x-php","application/x-powershell","text/x-python","text/x-ruby","text/x-rustsrc",null,"text/x-sql","text/x-sqlite;schema=trilium","text/x-swift","text/xml","text/x-yaml","text/x-sh","application/typescript","text/typescript-jsx"]',
         isSynced: true
     },
+    { name: "codeNotesMimeTypesSortAlphabetically", value: "true", isSynced: true },
     { name: "contentManagerSortOrder", value: "title", isSynced: true },
     { name: "contentManagerViewMode", value: "category", isSynced: true },
     { name: "leftPaneWidth", value: "25", isSynced: false },
@@ -214,6 +216,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "headingStyle", value: "underline", isSynced: true },
     { name: "autoCollapseNoteTree", value: "true", isSynced: true },
     { name: "treeScrollFollowNavigation", value: "true", isSynced: true },
+    { name: "treeDensity", value: "relaxed", isSynced: false },
     { name: "autoReadonlySizeText", value: "32000", isSynced: false },
     { name: "autoReadonlySizeCode", value: "64000", isSynced: false },
     { name: "dailyBackupEnabled", value: "true", isSynced: false },
@@ -328,6 +331,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    { name: "textNoteStickyTableHeadersEnabled", value: "true", isSynced: false },
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
     { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
@@ -369,6 +373,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiEnabled", value: (optionsMap) => optionsMap.experimentalFeatures?.includes('"llm"') ? "true" : "false", isSynced: true },
     { name: "llmProviders", value: "[]", isSynced: true },
     { name: "llmWebSearchProvider", value: "", isSynced: true },
+    { name: "llmPermissionMode", value: "ask_before_changes", isSynced: true },
     { name: "aiAssistantModel", value: "", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
 

@@ -1,6 +1,7 @@
 import { Writable } from "node:stream";
 
 import { HttpError } from "../errors";
+import type { ResponseLocals } from "../http_interface";
 import * as routes from "../routes";
 import { getContext } from "../services/context";
 import entityChanges from "../services/entity_changes";
@@ -60,6 +61,8 @@ export interface TestResponse<T = unknown> {
     body: T;
     /** The file a handler asked Express to send rather than write itself, if it did. */
     sentFile?: string;
+    /** What an `apiRoute` handler left in `res.locals`. */
+    locals?: ResponseLocals;
 }
 
 export interface RequestOptions {
@@ -149,6 +152,7 @@ class MockResponse extends Writable {
     used = false;
     statusCode = 200;
     headers: Record<string, string> = {};
+    locals: ResponseLocals = {};
 
     sentFile?: string;
 
@@ -215,11 +219,12 @@ export class CoreApiTester {
     private registerAll() {
         const apiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
+                const mockRes = createMockResponse();
                 const result = await getContext().init(() => {
                     seedContext(req);
-                    return getSql().transactional(() => handler(req));
+                    return getSql().transactional(() => handler(req, mockRes));
                 });
-                return formatApiResult(result);
+                return { ...formatApiResult(result), locals: mockRes.locals };
             });
 
         const asyncApiRoute = (method: HttpMethod, path: string, handler: Handler) =>

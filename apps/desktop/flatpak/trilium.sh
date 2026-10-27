@@ -9,4 +9,8 @@ if [ -z "${TRILIUM_DATA_DIR:-}" ]; then
     fi
 fi
 
+# Chromium hands GNOME's tray its icon as a file in TMPDIR; the sandbox's /tmp is private,
+# while this directory has the same path on the host.
+export TMPDIR="$XDG_RUNTIME_DIR/app/$FLATPAK_ID"
+
 exec zypak-wrapper /app/lib/electron/trilium /app/lib/trilium "$@"

@@ -321,7 +321,7 @@ export declare const LinkButton: FunctionComponent<LinkButtonProps>;
 export declare const LoadingSpinner: FunctionComponent<{}>;
 
 interface ModalProps {
-    className: string;
+    className?: string;
     title?: ComponentChildren;
     customTitleBarButtons?: ({ title: string; iconClassName: string; onClick: (e: MouseEvent) => void } | null)[];
     size: "xl" | "lg" | "md" | "sm";
@@ -443,6 +443,8 @@ interface SortableCardProps<T extends SortableItem> {
     itemCreationButtons?: ItemCreationButton<T>[];
     /** Which edge of a segment the grip stands on. The trailing one by default. */
     gripPlacement?: "start" | "end";
+    /** Whether the reader can reorder the entries. Off, the card has no grip. True by default. */
+    isReorderable?: boolean;
     /** Called with the focused entry for a key the card does not handle itself. */
     onItemKeyDown?: (item: T, event: KeyboardEvent) => void;
     selectedKey?: string;

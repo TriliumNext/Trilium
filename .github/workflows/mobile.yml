@@ -30,6 +30,29 @@ jobs:
       - name: Build mobile APK
         uses: ./.github/actions/build-mobile
 
+      - name: Upload Android coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: apps/mobile/android/app/build/reports/coverage/test/debug/report.xml
+          flags: mobile
+          disable_search: true
+          fail_ci_if_error: false
+
+  test_ios_request_broker:
+    name: Test iOS request broker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run the RequestBroker tests
+        working-directory: apps/mobile/ios/RequestBroker
+        run: |
+          swift --version
+          swift test
+
   build_ios:
     name: Build iOS App
     # iOS builds require Xcode, which is only available on macOS runners.

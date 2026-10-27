@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI, type GoogleGenerativeAIProvider } from "@ai-sdk/google";
 import type { LlmMessage } from "@triliumnext/commons";
 import { getLog } from "../../../services/log.js";
-import { stepCountIs, streamText, type ToolSet } from "ai";
+import { streamText, type ToolSet } from "ai";
 
 import type { LlmProviderConfig, StreamResult } from "../types.js";
 import { BaseProvider, type RemoteModel, TELEMETRY_OFF } from "./base_provider.js";
@@ -23,8 +23,8 @@ function geminiHasToolConflict(config: LlmProviderConfig): boolean {
 
 export class GoogleProvider extends BaseProvider {
     name = "google";
-    protected defaultModel = "gemini-2.5-flash";
-    protected titleModel = "gemini-2.5-flash-lite";
+    protected defaultModel = "gemini-3.8-flash";
+    protected titleModel = "gemini-3.5-flash-lite";
 
     private google: GoogleGenerativeAIProvider;
 
@@ -97,7 +97,7 @@ export class GoogleProvider extends BaseProvider {
         const systemPrompt = this.buildSystemPrompt(messages, config);
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
         const modelId = config.model || this.defaultModel;
-        const coreMessages = this.buildMessages(chatMessages, modelId);
+        const coreMessages = this.buildMessages(chatMessages, modelId, config.attachmentKinds);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(modelId),
@@ -117,12 +117,7 @@ export class GoogleProvider extends BaseProvider {
             }
         };
 
-        const tools = this.buildTools(config);
-        if (Object.keys(tools).length > 0) {
-            streamOptions.tools = tools;
-            streamOptions.stopWhen = stepCountIs(5);
-            streamOptions.toolChoice = "auto";
-        }
+        this.addTools(streamOptions, config, 5);
 
         return streamText(streamOptions);
     }

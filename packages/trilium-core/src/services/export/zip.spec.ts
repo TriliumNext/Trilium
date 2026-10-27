@@ -7,16 +7,20 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isLocalPreviewImageSrc } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
+import becca_loader from "../../becca/becca_loader.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
 import sql_init from "../sql_init.js";
-import { decodeUtf8 } from "../utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../virtual_notes.js";
 import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
 import { getZipProvider, initZipProvider } from "../zip_provider.js";
 import zip, { shouldStoreUncompressed } from "./zip.js";
+import type { AdvancedExportOptions } from "./zip/abstract_provider.js";
 import ShareThemeExportProvider from "./zip/share_theme.js";
 import {
     getZipExportProviderFactory,
@@ -24,8 +28,8 @@ import {
     type ZipExportProviderFactory
 } from "./zip_export_provider_factory.js";
 
-// happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
-const isBrowserRuntime = typeof window !== "undefined";
+// Standalone runs core in a Web Worker, whose scope has `self`; the Node server suite has none.
+const isBrowserRuntime = typeof self !== "undefined";
 
 let counter = 0;
 
@@ -36,7 +40,7 @@ let counter = 0;
  */
 function createNote(
     parentNoteId: string,
-    overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
+    overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string; isProtected: boolean }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
     return getContext().init(() =>
@@ -45,7 +49,8 @@ function createNote(
             title: overrides.title ?? `zip-spec-${counter}`,
             content: overrides.content ?? "<p>hello</p>",
             type: overrides.type ?? "text",
-            mime: overrides.mime
+            mime: overrides.mime,
+            isProtected: overrides.isProtected
         })
     );
 }
@@ -98,12 +103,12 @@ async function readArchive(buffer: Buffer): Promise<Record<string, Buffer>> {
     return entries;
 }
 
-async function exportSubtree(branch: BBranch, format: ExportFormat = "html") {
+async function exportSubtree(branch: BBranch, format: ExportFormat = "html", zipExportOptions?: AdvancedExportOptions) {
     const taskContext = (await import("../task_context.js")).default;
     const ctx = new taskContext("no-progress-reporting", "export", null);
     const res = new FakeResponse();
     const done = collect(res);
-    await zip.exportToZip(ctx, branch, format, res);
+    await zip.exportToZip(ctx, branch, format, res, true, zipExportOptions);
     const buffer = await done;
     return { buffer, res, entries: await readArchive(buffer) };
 }
@@ -264,6 +269,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             getContext().init(() => {
                 note.addRelation("internalLink", target.noteId);
                 note.addRelation("imageLink", target.noteId);
+                note.addLabel("internalBookmark", "intro");
                 // The importer reads these two back to remap note ids inside the content.
                 note.addRelation("includeNoteLink", target.noteId);
                 note.addRelation("relationMapLink", target.noteId);
@@ -277,6 +283,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
 
             expect(names).not.toContain("internalLink");
             expect(names).not.toContain("imageLink");
+            expect(names).not.toContain("internalBookmark");
             expect(names).toContain("includeNoteLink");
             expect(names).toContain("relationMapLink");
             expect(names).toContain("userRelation");
@@ -378,6 +385,45 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             // Illegal filename characters are stripped (previously left untouched).
             expect(attFileName).not.toMatch(/[/\\:*?"<>|]/);
             expect(entries[attFileName]).toBeDefined();
+        });
+
+        it("names a converted image after its mime, not after the title it was uploaded under", async () => {
+            // Uploading a PNG with compression on stores JPEG bytes under the name the upload
+            // arrived with: the mime follows the conversion, the title deliberately does not.
+            // The export is the last point at which the file name can still describe the bytes.
+            //
+            // This is the shape of the 51 mislabelled files in docs/User Guide — JPEGs written
+            // to a .png name, each one recorded as image/jpg in the meta beside it.
+            const { note } = createNote("root", { title: "ConvertedImageHost", content: "<p>host</p>" });
+            const jpegBytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]);
+            getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/jpg", title: "image.png", content: jpegBytes })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            // Named exactly, not merely ending in the right thing: the extension replaces the one
+            // the title carried rather than being appended to it, and "image.png.jpg" would pass
+            // any check that only looked at how the name ends.
+            const attFileName = (rootMeta.attachments ?? [])[0]?.dataFileName ?? "";
+            expect(attFileName).toBe("ConvertedImageHost_image.jpg");
+            // The renamed file is the one actually written, and its bytes are the JPEG's.
+            expect(entries[attFileName]).toBeDefined();
+            expect(Buffer.compare(entries[attFileName], jpegBytes)).toBe(0);
+        });
+
+        it("keeps a dotted title whole when the extension is added rather than substituted", async () => {
+            // `extname` reads "v0.48" as ending in ".48", and a release note is called exactly that.
+            // Only a picture's extension is replaced; anywhere else the name is left alone and the
+            // new extension is appended, so this must not export as "v0.md".
+            const { note } = createNote("root", { title: "v0.48", content: "<p>changelog</p>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+
+            expect(parseMeta(entries).files[0].dataFileName).toBe("v0.48.md");
         });
 
         it("round-trips binary attachment content byte-for-byte", async () => {
@@ -511,6 +557,80 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
                 for (const [, src] of sources) {
                     expect(isLocalPreviewImageSrc(src), `${format}: ${src}`).toBe(true);
                 }
+            }
+        });
+
+        it("exports a virtual subtree as a copy that imports with its pictures, files and links", async () => {
+            const picture = new Uint8Array([ 0x89, 0x50, 0x4e, 0x47, 1, 2, 3 ]);
+            const file = new Uint8Array([ 7, 8, 9 ]);
+            registerVirtualNoteProvider({
+                namespace: "_vzip",
+                parentNoteId: "_hidden",
+                getSubtree: () => [{
+                    id: "_vzipGuide", title: "Guide", type: "book",
+                    attributes: [{ type: "label", name: "readOnly", value: "", isInheritable: true }],
+                    children: [
+                        { id: "_vzipPage", title: "Page", type: "text" },
+                        { id: "_vzipOther", title: "Other", type: "text" }
+                    ]
+                }],
+                getContent: (noteId) => (noteId === "_vzipPage"
+                    ? `<p><img src="assets/v1/vzip/My%20picture.png"></p>`
+                        + `<p><a href="assets/v1/vzip/data.dat">data</a></p>`
+                        + `<p><a class="reference-link" href="#root/_vzipOther">Other</a></p>`
+                    : "<p>other</p>"),
+                getAssets: (noteId) => (noteId === "_vzipPage"
+                    ? [
+                        { id: "_vzipPage_a1", url: "assets/v1/vzip/My%20picture.png", title: "My picture.png", mime: "image/png", getContent: async () => picture },
+                        { id: "_vzipPage_a2", url: "assets/v1/vzip/data.dat", title: "data.dat", mime: "application/octet-stream", getContent: async () => file }
+                    ]
+                    : [])
+            });
+
+            try {
+                getContext().init(() => becca_loader.load());
+                const taskContext = (await import("../task_context.js")).default;
+                const importZip = (await import("../import/zip.js")).default;
+
+                for (const format of [ "html", "markdown" ] as const) {
+                    const { buffer, entries } = await exportSubtree(becca.getBranchOrThrow("_hidden__vzipGuide"), format);
+                    const guideMeta = parseMeta(entries).files[0];
+                    const pageMeta = guideMeta.children?.find((child) => child.noteId === "_vzipPage");
+                    const attachmentFile = (title: string) => pageMeta?.attachments?.find((a) => a.title === title)?.dataFileName;
+                    expect(new Uint8Array(entries[`Guide/${attachmentFile("My picture.png")}`]), format).toEqual(picture);
+                    expect(new Uint8Array(entries[`Guide/${attachmentFile("data.dat")}`]), format).toEqual(file);
+
+                    const pageFile = entries[`Guide/${pageMeta?.dataFileName}`].toString("utf-8");
+                    expect(pageFile, format).not.toContain("assets/v1/vzip");
+                    // Markdown percent-encodes the file name; HTML writes it as it is.
+                    const pictureFile = String(attachmentFile("My picture.png"));
+                    expect([ pictureFile, encodeURIComponent(pictureFile) ].some((name) => pageFile.includes(name)), format).toBe(true);
+
+                    const guide = await getContext().init(async () => await importZip.importZip(
+                        new taskContext("no-progress-reporting", "importNotes", {}),
+                        buffer,
+                        becca.getNoteOrThrow("root")
+                    ));
+
+                    const [ page, other ] = [ "Page", "Other" ].map((title) => guide.getChildNotes().find((n) => n.title === title));
+                    expect(guide.isVirtual || page?.isVirtual, format).toBeFalsy();
+                    const pictureCopy = page?.getAttachments().find((a) => a.title === "My picture.png");
+                    const fileCopy = page?.getAttachments().find((a) => a.title === "data.dat");
+                    expect(new Uint8Array(pictureCopy?.getContent() as Uint8Array), format).toEqual(picture);
+                    expect(new Uint8Array(fileCopy?.getContent() as Uint8Array), format).toEqual(file);
+
+                    const content = page?.getContent().toString();
+                    expect(content, format).toContain(`src="api/attachments/${pictureCopy?.attachmentId}/image/`);
+                    expect(content, format).toContain(`attachmentId=${fileCopy?.attachmentId}`);
+                    expect(content, format).toContain(`href="#root/${other?.noteId}"`);
+
+                    // The copy is the user's own: it saves like any other note.
+                    getContext().init(() => page?.setContent("<p>edited</p>"));
+                    expect(page?.getContent(), format).toBe("<p>edited</p>");
+                }
+            } finally {
+                unregisterVirtualNoteProvider("_vzip");
+                getContext().init(() => becca_loader.load());
             }
         });
 
@@ -776,6 +896,74 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             getContext().init(() => note.addLabel("excludeFromExport"));
 
             await expect(exportSubtree(note.getParentBranches()[0], "html")).rejects.toThrow("Unable to create root meta.");
+        });
+    });
+
+    describe("exportToZip with excludeProtected", () => {
+        const SECRET_TITLE = "ProtectedExportSecretTitle";
+        const SECRET_CONTENT = "ProtectedExportSecretContent";
+        const SECRET_ATTACHMENT_TITLE = "ProtectedExportSecretAttachment";
+        const SECRET_ATTACHMENT_CONTENT = "ProtectedExportSecretAttachmentContent";
+        const SECRETS = [ SECRET_TITLE, SECRET_CONTENT, SECRET_ATTACHMENT_TITLE, SECRET_ATTACHMENT_CONTENT ];
+        const FORMATS = [ "html", "markdown", "share" ] as const;
+        // Share pages read titles from becca in the share-theme page model, so ETAPI refuses a
+        // share export of a subtree with a protected note instead.
+        const EXCLUDING_FORMATS = [ "html", "markdown" ] as const;
+
+        let host: BNote;
+        let secret: BNote;
+
+        // The protected session stays open for the whole block: that is the state in which
+        // becca holds the decrypted title and `getContent()` decrypts.
+        beforeAll(() => {
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+            ({ note: host } = createNote("root", { title: "ProtectedExportHost", content: "<p>host body</p>" }));
+            ({ note: secret } = createNote(host.noteId, {
+                title: SECRET_TITLE,
+                content: `<p>${SECRET_CONTENT}</p>`,
+                isProtected: true
+            }));
+            getContext().init(() => secret.saveAttachment({
+                role: "file", mime: "text/plain", title: SECRET_ATTACHMENT_TITLE, content: SECRET_ATTACHMENT_CONTENT
+            }));
+            createNote(secret.noteId, { title: "ProtectedExportPlainChild", content: "<p>plain child body</p>" });
+        });
+
+        afterAll(() => protectedSessionService.resetDataKey());
+
+        function findSecrets(entries: Record<string, Buffer>, res: FakeResponse) {
+            const haystacks = [
+                ...Object.keys(entries),
+                ...Object.values(entries).map((buffer) => buffer.toString("utf-8")),
+                ...Object.values(res.headers)
+            ];
+            return SECRETS.filter((s) => haystacks.some((haystack) => haystack.includes(s)));
+        }
+
+        it.each(FORMATS)("includes protected content without the option (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(host.getParentBranches()[0], format);
+
+            expect(findSecrets(entries, res)).toEqual(SECRETS);
+        });
+
+        it.each(EXCLUDING_FORMATS)("leaves a protected descendant's title, content and attachments out (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(host.getParentBranches()[0], format, { excludeProtected: true });
+
+            expect(findSecrets(entries, res)).toEqual([]);
+            const secretMeta = parseMeta(entries).files[0].children?.find((c) => c.noteId === secret.noteId);
+            expect(secretMeta).toMatchObject({ title: "[protected]", attachments: [] });
+            expect(secretMeta?.dataFileName).toBeUndefined();
+            // Notes around the protected one keep their content.
+            const allContent = Object.values(entries).map((buffer) => buffer.toString("utf-8")).join("\n");
+            expect(allContent).toContain("host body");
+            expect(allContent).toContain("plain child body");
+        });
+
+        it.each(EXCLUDING_FORMATS)("leaves a protected export root's title and content out (%s)", async (format) => {
+            const { entries, res } = await exportSubtree(secret.getParentBranches()[0], format, { excludeProtected: true });
+
+            expect(findSecrets(entries, res)).toEqual([]);
+            expect(res.headers["Content-Disposition"]).toContain("protected");
         });
     });
 

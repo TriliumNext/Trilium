@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
     setupMermaid: vi.fn(),
     applyTableScroll: vi.fn(),
     applyStickyTableHeaders: vi.fn(),
+    applyListItemAlignment: vi.fn(),
     applyTabs: vi.fn(),
     revealFragment: vi.fn(),
     showBlockReference: vi.fn(),
@@ -43,6 +44,9 @@ vi.mock("@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js", () => ({
 }));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
     applyStickyTableHeaders: mocks.applyStickyTableHeaders
+}));
+vi.mock("@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js", () => ({
+    applyListItemAlignment: mocks.applyListItemAlignment
 }));
 vi.mock("@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js", () => ({
     applyTabs: mocks.applyTabs,
@@ -103,7 +107,8 @@ describe("share theme entry", () => {
 
     it("enhances a text note's content and reveals the tab panel the address points to", () => {
         document.body.className = "type-text";
-        document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab">`
+        document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab"`
+            + ` data-tab-previous-label="Back" data-tab-next-label="On">`
             + `<blockquote><figure class="include-note"></figure></blockquote></div>`;
         const panel = { scrollIntoView: vi.fn() };
         mocks.revealFragment.mockReturnValue(panel);
@@ -117,7 +122,11 @@ describe("share theme entry", () => {
         expect(mocks.applyTableScroll.mock.calls)
             .toEqual([ [ content ], [ content?.querySelector(".include-note") ] ]);
         expect(mocks.applyStickyTableHeaders.mock.calls).toEqual([ [ content ] ]);
-        expect(mocks.applyTabs).toHaveBeenCalledWith(content, { placeholder: "Tab" });
+        expect(mocks.applyListItemAlignment.mock.calls).toEqual([ [ content ] ]);
+        expect(mocks.applyTabs).toHaveBeenCalledWith(content, {
+            placeholder: "Tab",
+            scrollLabels: { start: "Back", end: "On" }
+        });
         expect(panel.scrollIntoView).toHaveBeenCalledOnce();
 
         window.dispatchEvent(new Event("hashchange"));
@@ -160,7 +169,10 @@ describe("share theme entry", () => {
         document.dispatchEvent(new Event("DOMContentLoaded"));
 
         expect(mocks.applyTabs)
-            .toHaveBeenCalledWith(document.getElementById("content"), { placeholder: "" });
+            .toHaveBeenCalledWith(document.getElementById("content"), {
+                placeholder: "",
+                scrollLabels: { start: "", end: "" }
+            });
 
         mocks.applyTabs.mockClear();
         document.body.className = "type-text";

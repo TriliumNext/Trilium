@@ -67,10 +67,11 @@ This is a list of labels that Trilium natively supports.
 | `inbox` | Default inbox location for new notes. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a> for more information. |
 | `sqlConsoleHome` | Default location of <a class="reference-link" href="../Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a> saved queries. |
 | `bookmarked` | Indicates this note is a [bookmark](../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md). |
-| `bookmarkFolder` | Note with this label will appear in bookmarks as folder (allowing access to its children). See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
+| `bookmarkFolder` | Note with this label will appear in bookmarks, or on the launch bar when dropped onto it, as a folder (allowing access to its children). The _Folder_ option in the button's context menu toggles it. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
 | `share*` | See the attribute reference in <a class="reference-link" href="../Sharing.md">Sharing</a>. |
 | `displayRelations`, `hideRelations` | Comma delimited names of relations which should be displayed/hidden in a <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">Relation Map</a> (both the note type and the <a class="reference-link" href="../Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a> general functionality). |
 | `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.        <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
+| `template:titleTemplate` | Set on a template note: default title of notes created from the template, taking precedence over the parent's `titleTemplate`. Evaluated the same way as `titleTemplate`. See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a>. |
 | `template` | This note will appear in the selection of available template when creating new note. See <a class="reference-link" href="../Templates.md">Templates</a> for more information. |
 | `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f         <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
 | `keyboardShortcut` | Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect. |
@@ -78,6 +79,7 @@ This is a list of labels that Trilium natively supports.
 | `executeButton` | Title of the button which will execute the current code note |
 | `executeDescription` | Longer description of the current code note displayed together with the execute button |
 | `excludeFromNoteMap` | Notes with this label will be hidden from the <a class="reference-link" href="../../Note%20Types/Note%20Map.md">Note Map</a>. |
+| `excludeFromLlm` | Hides this note from the AI chat and the MCP server. Make it inheritable to hide the notes below it as well. See <a class="reference-link" href="../../AI/Privacy.md">Privacy</a>. |
 | `newNotesOnTop` | New notes will be created at the top of the parent note, not on the bottom. |
 | `hideChildrenOverview` | Hides the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> for that particular note. |
 | `subtreeHidden` | Hides all child notes of this note from the tree, displaying a badge with the count of hidden children. Children remain accessible via search or direct links. |

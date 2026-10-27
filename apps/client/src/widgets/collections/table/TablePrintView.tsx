@@ -10,7 +10,7 @@ import Tabulator from "./tabulator";
 
 export default function TablePrintView({ note, noteIds, viewConfig, onReady }: ViewModeProps<TableConfig>) {
     const tabulatorRef = useRef<VanillaTabulator>(null);
-    const { columnDefs, rowData, hasChildren } = useData(note, noteIds, viewConfig, undefined, () => {});
+    const { columnDefs, rowData, hasChildren } = useData(note, noteIds, viewConfig, undefined, () => {}, true);
     const [ html, setHtml ] = useState<string>();
 
     useEffect(() => {

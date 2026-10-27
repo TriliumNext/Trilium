@@ -26,4 +26,4 @@ In addition, scripts can be run automatically when the server starts up, on a fi
 
 ## Script API
 
-Trilium exposes a set of APIs that can be directly consumed by scripts, under the `api` object. For a reference of this API, see <a class="reference-link" href="Script%20API/Backend%20API.dat">Backend API</a>.
+Trilium exposes a set of APIs that can be directly consumed by scripts, under the `api` object. For a reference of this API, see <a class="reference-link" href="Script%20API/Backend%20API.md">Backend API</a>.

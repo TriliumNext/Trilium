@@ -12,7 +12,8 @@
   },
   "plugins": {
     "Keyboard": {
-      "resize": "native"
+      "resize": "native",
+      "autoBackdropColor": "dom"
     }
   }
 }

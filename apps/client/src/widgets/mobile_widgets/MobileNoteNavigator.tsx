@@ -1,7 +1,8 @@
 import "./MobileNoteNavigator.css";
 
 import clsx from "clsx";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import type { ComponentChildren } from "preact";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type Component from "../../components/component";
 import type FNote from "../../entities/fnote";
@@ -12,11 +13,16 @@ import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
-import utils from "../../services/utils";
+import search from "../../services/search";
+import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
+import tree from "../../services/tree";
+import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
+import { useShareState } from "../layout/NoteBadges";
 import { Badge } from "../react/Badge";
 import {
     useActiveNoteContext,
+    useChildNotes,
     useLongPressContextMenu,
     useNote,
     useNoteColorClass,
@@ -29,6 +35,8 @@ import {
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
+import { ParentComponent } from "../react/react_utils";
+import { getLastSegment, getSpotlightedNoteId, getTreeStack, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -47,21 +55,21 @@ export default function MobileNoteNavigator() {
     // This keeps the previously-committed view visible during drill/back transitions
     // so there's no placeholder flash.
     const [nextStack, setNextStack] = useState<string[] | null>(null);
-    const manualStackRef = useRef(false);
 
-    // Hoisting always reframes the navigator around the hoisted note, so drop
-    // any manual drill position when it changes.
-    useEffect(() => {
-        manualStackRef.current = false;
-    }, [effectiveHoistedId]);
-
-    // Sync stack with the active note path unless the user has manually drilled.
-    useEffect(() => {
-        if (manualStackRef.current) return;
-        const newStack = buildStackForActiveNote(activeNotePath, effectiveHoistedId);
+    // Each tab keeps the column its tree was left on, until the tab opens another note or hoists.
+    const tabId = noteContext?.getMainContext().ntxId;
+    const treeOwnerRef = useRef({ tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId });
+    treeOwnerRef.current = { tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId };
+    const commitStack = useCallback((newStack: string[]) => {
         setStack(newStack);
+        const { tabId, ...owner } = treeOwnerRef.current;
+        if (tabId) setTabTree(tabId, { ...owner, stack: newStack });
+    }, []);
+
+    useEffect(() => {
+        commitStack(getTreeStack(tabId, activeNotePath, effectiveHoistedId));
         setNextStack(null);
-    }, [activeNotePath, effectiveHoistedId]);
+    }, [tabId, activeNotePath, effectiveHoistedId, commitStack]);
 
     // Rebuild when Froca reports structural changes that could affect the current column.
     // `useNavigatorChildren` is responsible for loading any newly-added child notes asynchronously.
@@ -85,7 +93,6 @@ export default function MobileNoteNavigator() {
 
     const pendingPath = nextStack?.[nextStack.length - 1];
     const pendingId = pendingPath ? getLastSegment(pendingPath) : undefined;
-    const pendingNote = useNote(pendingId);
     const pendingChildId = nextStack && nextStack.length > stack.length ? pendingId : undefined;
     const pendingPop = !!nextStack && nextStack.length < stack.length;
 
@@ -111,21 +118,35 @@ export default function MobileNoteNavigator() {
     }, [currentParentId, loadedParents]);
 
     const isLoaded = !!currentParentId && loadedParents.has(currentParentId);
-    const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden);
+    const spotlightedNoteId = getSpotlightedNoteId(currentParentPath, activeNotePath);
+    const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId);
     const canGoBack = stack.length > 1;
     const backTargetId = canGoBack ? getLastSegment(stack[stack.length - 2]) : undefined;
     const backTargetParentId = stack.length >= 3 ? getLastSegment(stack[stack.length - 3]) : undefined;
     const backTargetTitle = useNoteTitle(backTargetId, backTargetParentId);
 
+    // The columns shown last keep their rendered preview, so going back to one (in another tab,
+    // or a step back) shows it laid out at once. The pending column renders its preview hidden,
+    // and the stack commits once it is ready.
+    const [previewIds, setPreviewIds] = useState<string[]>([]);
+    useEffect(() => {
+        if (currentParentId) setPreviewIds((prev) => getPreviewNoteIds(prev, currentParentId));
+    }, [currentParentId]);
+    const [readyPreviewIds, setReadyPreviewIds] = useState<ReadonlySet<string>>(() => new Set());
+    const setPreviewReady = useCallback((noteId: string, ready: boolean) => {
+        setReadyPreviewIds((prev) => {
+            if (prev.has(noteId) === ready) return prev;
+            const next = new Set(prev);
+            if (ready) next.add(noteId);
+            else next.delete(noteId);
+            return next;
+        });
+    }, []);
+
     // Gate the visible body on the content preview being ready to avoid a layout shift
-    // when the preview finishes rendering. Tied to the parent's noteId so a stale "ready"
-    // flag from the previous column can't leak into the new one.
-    const [readyForNoteId, setReadyForNoteId] = useState<string | null>(null);
-    const previewReady = !!parentNote && readyForNoteId === parentNote.noteId;
+    // when the preview finishes rendering.
+    const previewReady = !!currentParentId && readyPreviewIds.has(currentParentId);
     const bodyVisible = previewReady && isLoaded;
-    const onPreviewReady = useCallback(() => {
-        if (parentNote) setReadyForNoteId(parentNote.noteId);
-    }, [parentNote]);
 
     // Full-screen spinner only for the very first render — once a body has been shown,
     // subsequent navigations swap views without a global placeholder.
@@ -133,27 +154,19 @@ export default function MobileNoteNavigator() {
     if (bodyVisible) hasCommittedOnceRef.current = true;
     const showInitialLoader = !bodyVisible && !hasCommittedOnceRef.current;
 
-    // Preload state for the pending stack target. Once ready, commit the stack change.
-    const [nextReadyNoteId, setNextReadyNoteId] = useState<string | null>(null);
-    const onPendingReady = useCallback(() => {
-        if (pendingNote) setNextReadyNoteId(pendingNote.noteId);
-    }, [pendingNote]);
-
     const scrollRef = useRef<HTMLDivElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
     const directionRef = useRef<"forward" | "backward" | null>(null);
     const [commitCounter, setCommitCounter] = useState(0);
 
     useEffect(() => {
-        if (!nextStack || !pendingId || nextReadyNoteId !== pendingId) return;
-        setStack(nextStack);
-        setReadyForNoteId(pendingId);
+        if (!nextStack || !pendingId || !readyPreviewIds.has(pendingId)) return;
+        commitStack(nextStack);
         setNextStack(null);
-        setNextReadyNoteId(null);
         setCommitCounter((c) => c + 1);
         // Reset scroll so the committed tile is visible at the top of the column.
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }, [nextStack, pendingId, nextReadyNoteId]);
+    }, [nextStack, pendingId, readyPreviewIds, commitStack]);
 
     // Brief slide-in on forward / back so the swap feels directional without blocking the user.
     useLayoutEffect(() => {
@@ -177,23 +190,34 @@ export default function MobileNoteNavigator() {
             if (hasCommittedOnceRef.current) {
                 setNextStack(newStack);
             } else {
-                setStack(newStack);
+                commitStack(newStack);
             }
         },
-        []
+        [commitStack]
     );
 
     const goBack = useCallback(() => {
         if (stack.length <= 1) return;
-        manualStackRef.current = true;
         directionRef.current = "backward";
         navigateTo(stack.slice(0, -1));
     }, [stack, navigateTo]);
 
+    // Registered once, so a menu or dialog opened over the tree later answers back first.
+    const isTreeShown = useRef(false);
+    useTriliumEvent("activeScreenChanged", ({ activeScreen }) => {
+        isTreeShown.current = activeScreen === "tree";
+    });
+    const goBackOnSystemBack = useRef<SystemBackHandler>(() => false);
+    goBackOnSystemBack.current = () => {
+        if (!canGoBack || pendingPop || (utils.isNarrowLayout() && !isTreeShown.current)) return false;
+        goBack();
+        return true;
+    };
+    useEffect(() => onSystemBack(() => goBackOnSystemBack.current()), []);
+
     const openNotePath = useCallback(
         async (notePath: string) => {
             await noteContext?.setNote(notePath);
-            manualStackRef.current = false;
             parentComponent?.triggerCommand("setActiveScreen", { screen: "detail" });
         },
         [noteContext, parentComponent]
@@ -206,7 +230,6 @@ export default function MobileNoteNavigator() {
 
     const drillInto = useCallback(
         (childNotePath: string) => {
-            manualStackRef.current = true;
             directionRef.current = "forward";
             navigateTo([...stack, childNotePath]);
         },
@@ -248,6 +271,31 @@ export default function MobileNoteNavigator() {
 
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
+                    {!isHoisted && currentParentId === "root" && <WorkspaceCards />}
+                    {!isHoisted && currentParentId === "root" && (
+                        <BookmarkList
+                            renderRow={({ note, notePath, parentNoteId }) => (
+                                <NavigatorRow
+                                    key={note.noteId}
+                                    note={note}
+                                    parentNoteId={parentNoteId}
+                                    childNotePath={notePath}
+                                    isActive={note.noteId === activeNoteId}
+                                    isPending={note.noteId === pendingChildId}
+                                    isSpotlighted={false}
+                                    hideArchived={hideArchived}
+                                    onDrill={drillInto}
+                                    onOpen={openNotePath}
+                                    parentComponent={parentComponent}
+                                />
+                            )}
+                        />
+                    )}
+                    {parentNote && (
+                        <div className="mobile-navigator-children-label">
+                            {t("mobile_note_navigator.current_note")}
+                        </div>
+                    )}
                     {parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
@@ -261,7 +309,7 @@ export default function MobileNoteNavigator() {
                         >
                             <div className="mobile-navigator-current-header">
                                 <Icon icon={parentIcon ?? "bx bx-folder"} className="mobile-navigator-current-icon" />
-                                <span className="mobile-navigator-current-title">{parentTitle ?? parentNote.title}</span>
+                                <TitleWithIndicators note={parentNote} title={parentTitle ?? parentNote.title} className="mobile-navigator-current-title" />
                                 <button
                                     type="button"
                                     className="mobile-navigator-current-action"
@@ -288,21 +336,24 @@ export default function MobileNoteNavigator() {
                                 </button>
                             </div>
                             <div className="mobile-navigator-current-preview">
-                                <NoteContent
-                                    note={parentNote}
-                                    trim
-                                    noChildrenList
-                                    highlightedTokens={null}
-                                    includeArchivedNotes={!hideArchived}
-                                    onReady={onPreviewReady}
-                                />
+                                {getPreviewNotes(getPreviewNoteIds(previewIds, currentParentId, pendingId)).map((note) => (
+                                    <PreviewSlot
+                                        key={note.noteId}
+                                        note={note}
+                                        shown={note.noteId === currentParentId}
+                                        hideArchived={hideArchived}
+                                        onReady={setPreviewReady}
+                                    />
+                                ))}
                             </div>
                         </div>
                     )}
 
                     {isLoaded && parentNote && children.length > 0 && (
                         <div className="mobile-navigator-children-label">
-                            {t("mobile_note_navigator.children_count", { count: children.length })}
+                            {isParentSubtreeHidden
+                                ? t("mobile_note_navigator.children_hidden")
+                                : t("mobile_note_navigator.children_count", { count: children.length })}
                         </div>
                     )}
 
@@ -318,6 +369,8 @@ export default function MobileNoteNavigator() {
                                     childNotePath={`${currentParentPath}/${child.note.noteId}`}
                                     isActive={child.note.noteId === activeNoteId}
                                     isPending={child.note.noteId === pendingChildId}
+                                    isSpotlighted={isParentSubtreeHidden}
+                                    hideArchived={hideArchived}
                                     onDrill={drillInto}
                                     onOpen={openNotePath}
                                     parentComponent={parentComponent}
@@ -333,23 +386,68 @@ export default function MobileNoteNavigator() {
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
 
-            {/* Hidden preloader: renders NoteContent for the pending target so we can
-                commit the stack change only after its preview is ready. */}
-            {pendingNote && (
-                <div className="mobile-navigator-preloader" aria-hidden="true">
+/** How many columns keep their rendered preview. */
+const PREVIEW_CACHE_SIZE = 5;
+
+/**
+ * The columns whose preview stays rendered: the current one, the pending one and those shown
+ * last, most recent first.
+ */
+export function getPreviewNoteIds(recentIds: string[], currentId: string | undefined, pendingId?: string) {
+    const ids = [ currentId, pendingId, ...recentIds ].filter((id): id is string => !!id);
+    return [ ...new Set(ids) ].slice(0, PREVIEW_CACHE_SIZE);
+}
+
+/** Notes in a stable order, so a preview keeps its place in the DOM as the recency changes. */
+function getPreviewNotes(noteIds: string[]) {
+    return [ ...noteIds ].sort()
+        .map((noteId) => froca.getNoteFromCache(noteId))
+        .filter((note): note is FNote => !!note);
+}
+
+export function PreviewSlot({ note, shown, hideArchived, onReady }: {
+    note: FNote;
+    shown: boolean;
+    hideArchived: boolean;
+    onReady: (noteId: string, ready: boolean) => void;
+}) {
+    const { noteId } = note;
+    useEffect(() => () => onReady(noteId, false), [ noteId, onReady ]);
+    // `NoteContent` renders again only for another note, and froca updates this one in place, so
+    // a content change mounts a new one, hidden until it is ready.
+    const [ versions, setVersions ] = useState({ shown: 0, latest: 0 });
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (!loadResults.isNoteContentReloaded(noteId)) return;
+        onReady(noteId, false);
+        setVersions(({ shown, latest }) => ({ shown, latest: latest + 1 }));
+    });
+    const renderedVersions = versions.shown === versions.latest
+        ? [ versions.shown ]
+        : [ versions.shown, versions.latest ];
+
+    return (
+        <>
+            {renderedVersions.map((version) => (
+                <div key={version} className="mobile-navigator-preview-slot" hidden={!shown || version !== versions.shown}>
                     <NoteContent
-                        key={pendingNote.noteId}
-                        note={pendingNote}
+                        note={note}
                         trim
                         noChildrenList
                         highlightedTokens={null}
                         includeArchivedNotes={!hideArchived}
-                        onReady={onPendingReady}
+                        onReady={() => {
+                            if (version !== versions.latest) return;
+                            setVersions((prev) => prev.shown === version ? prev : { shown: version, latest: version });
+                            onReady(noteId, true);
+                        }}
                     />
                 </div>
-            )}
-        </div>
+            ))}
+        </>
     );
 }
 
@@ -379,12 +477,122 @@ function HoistedNoteBadge({ hoistedNoteId }: { hoistedNoteId: string }) {
             </>}
             tooltip={t("breadcrumb.hoisted_badge_title")}
             onClick={() => hoisted_note.unhoist()}
-            style={workspaceColor ? {
-                "--color": workspaceColor,
-                "color": getReadableTextColor(workspaceColor)
-            } as Record<string, string> : undefined}
+            style={workspaceColorStyle(workspaceColor)}
         />
     );
+}
+
+/**
+ * The workspace notes, as the empty tab lists them, for the root column of a tab that is not
+ * hoisted: a heading and a grid of cards, each with the workspace's icon over its title.
+ * Tapping one hoists the tab into it.
+ */
+export function WorkspaceCards() {
+    const [ workspaceNotes, setWorkspaceNotes ] = useState<FNote[]>([]);
+    const parentComponent = useContext(ParentComponent);
+
+    const refresh = useCallback(() => {
+        search.searchForNotes("#workspace #!template").then(setWorkspaceNotes);
+    }, []);
+    useEffect(refresh, [ refresh ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.getAttributeRows().some((attr) => attr.name === "workspace")) refresh();
+    });
+
+    if (!workspaceNotes.length) return null;
+
+    return (
+        <>
+            <div className="mobile-navigator-children-label mobile-navigator-workspaces-label">
+                {t("mobile_note_navigator.workspaces")}
+            </div>
+            <div className="mobile-navigator-workspaces">
+                {workspaceNotes.map((workspaceNote) => (
+                    <WorkspaceCard
+                        key={workspaceNote.noteId}
+                        note={workspaceNote}
+                        onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
+                    />
+                ))}
+            </div>
+        </>
+    );
+}
+
+interface Bookmark {
+    note: FNote;
+    /** The note's best path in the tree, not the one through `_lbBookmarks`. */
+    notePath: string;
+    parentNoteId: string | undefined;
+}
+
+/**
+ * The bookmarks, as the launch bar's Bookmarks button lists them, for the root column of a tab
+ * that is not hoisted: a heading and a list of rows that `renderRow` draws.
+ */
+export function BookmarkList({ renderRow }: { renderRow: (bookmark: Bookmark) => ComponentChildren }) {
+    const bookmarkNotes = useChildNotes("_lbBookmarks");
+    const [ bookmarks, setBookmarks ] = useState<Bookmark[]>([]);
+    // A bookmarked note moved elsewhere in the tree changes no branch under `_lbBookmarks`.
+    const [ treeVersion, setTreeVersion ] = useState(0);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const bookmarkIds = new Set(bookmarkNotes.map((note) => note.noteId));
+        if (loadResults.getBranchRows().some((branch) => !!branch.noteId && bookmarkIds.has(branch.noteId))) {
+            setTreeVersion((version) => version + 1);
+        }
+    });
+
+    useEffect(() => {
+        let cancelled = false;
+        Promise.all(bookmarkNotes.map(async (note) => {
+            const notePath = await tree.resolveNotePath(note.noteId);
+            return notePath ? { note, notePath, parentNoteId: notePath.split("/").at(-2) } : null;
+        })).then((resolved) => {
+            if (!cancelled) setBookmarks(resolved.filter((bookmark): bookmark is Bookmark => !!bookmark));
+        });
+        return () => { cancelled = true; };
+    }, [ bookmarkNotes, treeVersion ]);
+
+    if (!bookmarks.length) return null;
+
+    return (
+        <>
+            <div className="mobile-navigator-children-label mobile-navigator-bookmarks-label">
+                {t("mobile_note_navigator.bookmarks")}
+            </div>
+            <div className="mobile-navigator-list">
+                {bookmarks.map(renderRow)}
+            </div>
+        </>
+    );
+}
+
+function WorkspaceCard({ note, onClick }: { note: FNote, onClick: () => void }) {
+    const icon = useNoteIcon(note);
+    const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
+    const [ workspaceColor ] = useNoteLabel(note, "workspaceTabBackgroundColor");
+    const title = useNoteTitle(note.noteId, undefined);
+
+    return (
+        <button
+            type="button"
+            className={clsx("mobile-navigator-workspace", { "has-color": !!workspaceColor })}
+            onClick={onClick}
+        >
+            <Icon
+                icon={workspaceIconClass || icon}
+                className="mobile-navigator-workspace-icon"
+                style={workspaceColorStyle(workspaceColor)}
+            />
+            <span className="mobile-navigator-workspace-title">{title ?? note.title}</span>
+        </button>
+    );
+}
+
+/** Paints an element in the workspace's `#workspaceTabBackgroundColor`, with a text color readable on it. */
+function workspaceColorStyle(workspaceColor: string | null | undefined) {
+    if (!workspaceColor) return undefined;
+    return { "--color": workspaceColor, "color": getReadableTextColor(workspaceColor) } as Record<string, string>;
 }
 
 interface NavigatorRowProps {
@@ -393,12 +601,14 @@ interface NavigatorRowProps {
     childNotePath: string;
     isActive: boolean;
     isPending: boolean;
+    isSpotlighted: boolean;
+    hideArchived: boolean;
     onDrill: (notePath: string) => void;
     onOpen: (notePath: string) => void;
     parentComponent: Component | null;
 }
 
-function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
+function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, isSpotlighted, hideArchived, onDrill, onOpen, parentComponent }: NavigatorRowProps) {
     const icon = useNoteIcon(note);
     const [isSubtreeHidden] = useNoteLabelBoolean(note, "subtreeHidden");
     const rawChildCount = note.getChildNoteIds().length;
@@ -421,6 +631,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
                 "is-active": isActive,
                 "is-archived": note.isArchived,
                 "is-pending": isPending,
+                "is-spotlighted": isSpotlighted,
                 "has-children": hasChildren
             })}
             role="button"
@@ -429,7 +640,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             {...contextProps}
         >
             <Icon icon={icon ?? "bx bx-note"} className="mobile-navigator-row-icon" />
-            <span className="mobile-navigator-row-title">{title}</span>
+            <TitleWithIndicators note={note} title={title} className="mobile-navigator-row-title" />
             {showHiddenBadge && (
                 <span
                     className="mobile-navigator-row-hidden-badge"
@@ -437,6 +648,9 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
                 >
                     {rawChildCount}
                 </span>
+            )}
+            {hasChildren && isIOS() && (
+                <span className="mobile-navigator-row-count">{getListedChildCount(note, hideArchived)}</span>
             )}
             {isPending ? (
                 <Icon icon="bx bx-loader bx-spin" className="mobile-navigator-row-chevron" />
@@ -447,16 +661,74 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
     );
 }
 
+/**
+ * A note's title followed by the clone and share icons the desktop tree shows. The title
+ * shortens with an ellipsis, so the icons stay visible next to it.
+ */
+export function TitleWithIndicators({ note, title, className }: { note: FNote, title: string, className: string }) {
+    const [ isShared ] = useShareState(note);
+    const realParents = useRealParentNotes(note);
+
+    return (
+        <span className="mobile-navigator-title-group">
+            <span className={className}>{title}</span>
+            {realParents.length > 1 && (
+                <Icon
+                    icon="bx bxs-directions"
+                    className="mobile-navigator-indicator clone-indicator"
+                    role="img"
+                    aria-label={tree.getCloneIndicatorTooltip(realParents)}
+                />
+            )}
+            {isShared && (
+                <Icon
+                    icon="bx bx-share-alt"
+                    className="mobile-navigator-indicator shared-indicator"
+                    role="img"
+                    aria-label={t("note_tree.shared-indicator-tooltip")}
+                />
+            )}
+        </span>
+    );
+}
+
+/** The real parents of `note`, read again when one of its branches changes. */
+function useRealParentNotes(note: FNote) {
+    const [ realParents, setRealParents ] = useState(() => note.getRealParentNotes());
+    useEffect(() => setRealParents(note.getRealParentNotes()), [ note ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.getBranchRows().some((b) => b.noteId === note.noteId)) {
+            setRealParents(note.getRealParentNotes());
+        }
+    });
+    return realParents;
+}
+
+/**
+ * Counts the children that `useNavigatorChildren()` lists for `note`. A child that is not in
+ * froca yet counts as listed, since its archived state is unknown until it loads.
+ */
+export function getListedChildCount(note: FNote, hideArchived: boolean) {
+    let count = 0;
+    for (const childNoteId of note.getChildNoteIds()) {
+        if (childNoteId === "_hidden") continue;
+        if (hideArchived && froca.getNoteFromCache(childNoteId)?.isArchived) continue;
+        count++;
+    }
+    return count;
+}
+
 interface NavigatorChild {
     note: FNote;
     branchId: string;
 }
 
-function useNavigatorChildren(
+export function useNavigatorChildren(
     parentNote: FNote | null | undefined,
     hideArchived: boolean,
     isLoaded: boolean,
-    isParentSubtreeHidden: boolean
+    isParentSubtreeHidden: boolean,
+    spotlightedNoteId: string | undefined
 ): NavigatorChild[] {
     const [children, setChildren] = useState<NavigatorChild[]>([]);
     // Re-run when the parent's child list mutates in place (e.g., a new branch is added by
@@ -465,12 +737,15 @@ function useNavigatorChildren(
     const childrenKey = parentNote?.children?.join(",");
 
     useEffect(() => {
-        if (!parentNote || !isLoaded || isParentSubtreeHidden) {
+        if (!parentNote || !isLoaded || (isParentSubtreeHidden && !spotlightedNoteId)) {
             setChildren([]);
             return;
         }
         let cancelled = false;
-        const branches = parentNote.getChildBranches().filter((b): b is NonNullable<typeof b> => !!b);
+        // A parent with `#subtreeHidden` lists only the child on the active note's path.
+        const branches = parentNote.getChildBranches()
+            .filter((b): b is NonNullable<typeof b> => !!b)
+            .filter((b) => !isParentSubtreeHidden || b.noteId === spotlightedNoteId);
         // Use the async loader so notes that aren't yet in cache (e.g., freshly created via "+")
         // are pulled in. `processNoteChange` only updates notes already in froca, so without this
         // newly-created child notes would be silently skipped.
@@ -488,42 +763,9 @@ function useNavigatorChildren(
             setChildren(result);
         });
         return () => { cancelled = true; };
-    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden]);
+    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId]);
 
     return children;
-}
-
-function getLastSegment(notePath: string): string {
-    const idx = notePath.lastIndexOf("/");
-    return idx >= 0 ? notePath.slice(idx + 1) : notePath;
-}
-
-function buildStackForActiveNote(activeNotePath: string | null | undefined, hoistedId: string): string[] {
-    if (!activeNotePath) return [hoistedId];
-
-    const segments = activeNotePath.split("/");
-    const activeNoteId = segments[segments.length - 1];
-    const activeNote = froca.getNoteFromCache(activeNoteId);
-
-    // If the active note is a folder, show its own children; otherwise show its parent's.
-    // Notes marked with `#subtreeHidden` hide their children (e.g. options), so we
-    // treat them like leaves and land on the parent column instead of an empty one.
-    const treatAsFolder = !!activeNote?.hasChildren() && !activeNote.isLabelTruthy("subtreeHidden");
-    const parentSegments = treatAsFolder ? segments : segments.slice(0, -1);
-
-    // Clamp to the hoisted root.
-    let start = parentSegments.indexOf(hoistedId);
-    if (start < 0) start = 0;
-    const clamped = parentSegments.slice(start);
-    if (clamped.length === 0) {
-        return [hoistedId];
-    }
-
-    const stack: string[] = [];
-    for (let i = 0; i < clamped.length; i++) {
-        stack.push(clamped.slice(0, i + 1).join("/"));
-    }
-    return stack;
 }
 
 /**
@@ -564,7 +806,7 @@ function buildNoteContextMenu(notePath: string, parentComponent: Component | nul
             notePath,
             component: parentComponent,
             target: "mobile" as const,
-            onBeforeCommand: () => {
+            onRevealNote: () => {
                 if (utils.isMobile()) {
                     parentComponent.triggerCommand("setActiveScreen", { screen: "detail" });
                 }

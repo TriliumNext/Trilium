@@ -1,18 +1,29 @@
-import { t } from "../../services/i18n";
-import Modal from "../react/Modal";
-import Button from "../react/Button";
-import FormRadioGroup from "../react/FormRadioGroup";
-import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
-import { useRef, useState, useEffect } from "preact/hooks";
-import tree from "../../services/tree";
+import "./add_link.css";
+
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+import { useEffect, useRef, useState } from "preact/hooks";
+
 import froca from "../../services/froca";
+import { t } from "../../services/i18n";
 import type { Suggestion } from "../../services/note_autocomplete";
+import tree from "../../services/tree";
+import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
-import FormGroup from "../react/FormGroup.js";
-import { refToJQuerySelector } from "../react/react_utils";
+import Button from "../react/Button";
+import { Card, CardSection, OptionCardSection } from "../react/Card";
+import FormSelect from "../react/FormSelect";
+import FormTextBox from "../react/FormTextBox";
+import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
+import { refToJQuerySelector } from "../react/react_utils";
+import SegmentedChoice from "../react/SegmentedChoice";
 
 type LinkType = "reference-link" | "external-link" | "hyper-link";
+
+/** What the link points at: a note, or an address outside Trilium. */
+type LinkTarget = "note" | "url";
 
 function findAnchorIds(content: string): string[] {
     const re = /<a\b([^>]*)>(<\/a>)?/g;
@@ -55,6 +66,13 @@ export interface AddLinkOpts {
      */
     currentLink?: Suggestion;
     /**
+     * The text of the link being edited. The dialog opens with the title not mirroring the note's,
+     * and keeps this text until another note or anchor is picked.
+     */
+    currentTitle?: string;
+    /** The anchor within the note that the link being edited points at. */
+    currentBookmark?: string;
+    /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
      */
@@ -71,7 +89,15 @@ export default function AddLinkDialog() {
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
     const [ noteTitle, setNoteTitle ] = useState("");
     const [ shown, setShown ] = useState(false);
+    const [ target, setTarget ] = useState<LinkTarget>("note");
+    const [ webLink, setWebLink ] = useState("");
     const hasSubmittedRef = useRef(false);
+    const webLinkRef = useRef<HTMLInputElement>(null);
+    // The text of the link being edited, while it stands in for the picked note's title.
+    const keptTitleRef = useRef<string | null>(null);
+    const initialBookmarkRef = useRef("");
+    // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
+    const autoFocus = !isMobile();
 
     useTriliumEvent("showAddLinkDialog", opts => {
         setOpts(opts);
@@ -79,22 +105,77 @@ export default function AddLinkDialog() {
     });
 
     useEffect(() => {
-        if (opts?.hasSelection) {
+        if (opts?.hasSelection || opts?.currentTitle !== undefined) {
             setLinkType("hyper-link");
         } else {
             setLinkType("reference-link");
         }
 
+        const initialWebLink = opts ? getInitialWebLink(opts) : null;
+        setTarget(initialWebLink !== null ? "url" : "note");
+        setWebLink(initialWebLink ?? "");
+        keptTitleRef.current = opts?.currentTitle ?? null;
+        initialBookmarkRef.current = opts?.currentBookmark ?? "";
+        setLinkTitle(opts?.currentTitle ?? "");
+
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
         // offers, whether it is a link outside Trilium at all) is settled for it as well.
-        setSuggestion(opts?.currentLink ?? null);
+        const initialLink = initialWebLink !== null ? normalizeWebLink(initialWebLink) : null;
+        setSuggestion(opts?.currentLink ?? (initialLink ? { externalLink: initialLink } : null));
     }, [ opts ]);
+
+    function changeWebLink(text: string) {
+        setWebLink(text);
+        const link = normalizeWebLink(text);
+        setSuggestion(link ? { externalLink: link } : null);
+    }
+
+    function changeTarget(next: LinkTarget, text = "") {
+        keptTitleRef.current = null;
+        setTarget(next);
+        setNoteTitle("");
+        setLinkTitle("");
+        setLinkType(opts?.hasSelection ? "hyper-link" : "reference-link");
+        if (next === "url") {
+            changeWebLink(text);
+        } else {
+            setWebLink("");
+            setSuggestion(null);
+        }
+    }
+
+    useEffect(() => {
+        if (!autoFocus) return;
+        if (target === "url") {
+            webLinkRef.current?.focus();
+        } else {
+            autocompleteRef.current?.focus();
+        }
+    }, [ target ]);
+
+    // A URL pasted on the note side moves to the web link side.
+    useEffect(() => {
+        const input = autocompleteRef.current;
+        if (!input || target !== "note" || opts?.fixLink) return;
+
+        const onPaste = (e: ClipboardEvent) => {
+            const text = e.clipboardData?.getData("text/plain").trim();
+            if (text && hasScheme(text)) {
+                e.preventDefault();
+                changeTarget("url", text);
+            }
+        };
+        input.addEventListener("paste", onPaste);
+        return () => input.removeEventListener("paste", onPaste);
+    }, [ target, opts ]);
 
     async function setDefaultLinkTitle(noteId: string) {
         const title = await tree.getNoteTitle(noteId);
         setNoteTitle(title);
-        setLinkTitle(title);
+        if (keptTitleRef.current === null) {
+            setLinkTitle(title);
+        }
     }
 
     useEffect(() => {
@@ -131,14 +212,14 @@ export default function AddLinkDialog() {
                     }
 
                     setBookmarks(bkms);
-                    setSelectedBookmark("");
+                    setSelectedBookmark(initialBookmarkRef.current);
+                    initialBookmarkRef.current = "";
                 })();
             }
             resetExternalLink();
         }
 
         if (suggestion.externalLink) {
-            setLinkTitle(suggestion.externalLink);
             setLinkType("external-link");
         }
 
@@ -146,6 +227,7 @@ export default function AddLinkDialog() {
     }, [suggestion]);
 
     useEffect(() => {
+        if (keptTitleRef.current !== null) return;
         if (selectedBookmark) {
             setLinkTitle(`${noteTitle} - ${selectedBookmark}`);
         } else {
@@ -154,6 +236,14 @@ export default function AddLinkDialog() {
     }, [selectedBookmark, noteTitle]);
 
     async function onShown() {
+        if (target === "url") {
+            if (autoFocus) {
+                webLinkRef.current?.focus();
+                webLinkRef.current?.select();
+            }
+            return;
+        }
+
         const $autocompleteEl = refToJQuerySelector(autocompleteRef);
         const currentNotePath = opts?.currentLink?.notePath;
         const currentNoteId = currentNotePath && tree.getNoteIdFromUrl(currentNotePath);
@@ -166,16 +256,18 @@ export default function AddLinkDialog() {
             || opts?.text;
 
         if (!text) {
-            handleRef.current?.showRecentNotes();
+            if (autoFocus) handleRef.current?.showRecentNotes();
         } else {
             // The note the dialog opens on is picked already, so the field selects it.
             handleRef.current?.setText(text, currentNotePath);
         }
 
         // to be able to quickly remove entered text
-        $autocompleteEl
-            .trigger("focus")
-            .trigger("select");
+        if (autoFocus) {
+            $autocompleteEl
+                .trigger("focus")
+                .trigger("select");
+        }
     }
 
     function onSubmit() {
@@ -196,11 +288,23 @@ export default function AddLinkDialog() {
     const buttonText = opts?.fixLink ? t("add_link.button_fix_link")
         : opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link");
 
+    const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
+    const titleSection = (
+        <OptionCardSection
+            className="add-link-text" name="link-title" label={t("add_link.link_title")}
+        >
+            <FormTextBox
+                currentValue={linkTitle}
+                placeholder={target === "url" ? suggestion?.externalLink : undefined}
+                onChange={setLinkTitle}
+            />
+        </OptionCardSection>
+    );
+
     return (
         <Modal
             className="add-link-dialog"
             size="lg"
-            maxWidth={1000}
             title={title}
             helpPageId="QEAPj01N5f7w"
             footer={<Button text={buttonText} keyboardShortcut="Enter" />}
@@ -218,8 +322,9 @@ export default function AddLinkDialog() {
                             : suggestion.notePath;
                         opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
                     } else if (suggestion.externalLink) {
-                        // Handle external link
-                        opts.addLink(suggestion.externalLink, linkTitle, true);
+                        // An external link without a text of its own reads as its address.
+                        const text = linkTitle.trim() || suggestion.externalLink;
+                        opts.addLink(suggestion.externalLink, text, true);
                     }
                 }
 
@@ -231,64 +336,135 @@ export default function AddLinkDialog() {
             }}
             show={shown}
         >
-            <FormGroup label={t("add_link.note")} name="note">
-                <NoteAutocomplete
-                    inputRef={autocompleteRef}
-                    handleRef={handleRef}
-                    onChange={setSuggestion}
-                    opts={{
-                        allowExternalLinks: !opts?.fixLink,
-                        allowCreatingNotes: true
-                    }}
-                />
-            </FormGroup>
+            <Card>
+                {!opts?.fixLink && (
+                    <CardSection>
+                        <SegmentedChoice<LinkTarget>
+                            className="add-link-target"
+                            options={[
+                                { value: "note", label: t("add_link.note"), icon: "bx-note" },
+                                { value: "url", label: t("add_link.web_link"), icon: "bx-globe" }
+                            ]}
+                            currentValue={target}
+                            onChange={(next) => changeTarget(next)}
+                        />
+                    </CardSection>
+                )}
 
-            {bookmarks.length > 0 && !opts?.targetOnly && (
-                <FormGroup label={t("add_link.anchor")} name="anchor">
-                    <select
-                        className="form-select"
-                        value={selectedBookmark}
-                        onChange={(e) => setSelectedBookmark((e.target as HTMLSelectElement).value)}
+                {target === "url" ? (
+                    <OptionCardSection
+                        className="add-link-url" name="url" label={t("add_link.url")}
+                        subSectionsVisible={showsTitle}
+                        subSections={titleSection}
                     >
-                        <option value="">{t("add_link.anchor_none")}</option>
-                        {bookmarks.map((bk) => (
-                            <option key={bk} value={bk}>{bk}</option>
-                        ))}
-                    </select>
-                </FormGroup>
-            )}
-
-            {!opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink && (
-                <div className="add-link-title-settings">
-                    {(linkType !== "external-link") && (
-                        <>
-                            <FormRadioGroup
-                                name="link-type"
-                                currentValue={linkType}
-                                values={[
-                                    { value: "reference-link", label: t("add_link.link_title_mirrors") },
-                                    { value: "hyper-link", label: t("add_link.link_title_arbitrary") }
-                                ]}
-                                onChange={(newValue) => setLinkType(newValue as LinkType)}
+                        <FormTextBox
+                            inputRef={webLinkRef}
+                            inputMode="url"
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                            spellcheck={false}
+                            placeholder="https://"
+                            currentValue={webLink}
+                            onChange={changeWebLink}
+                        />
+                    </OptionCardSection>
+                ) : (
+                    <>
+                        <OptionCardSection
+                            className="add-link-note" name="note" label={t("add_link.note")}
+                        >
+                            <NoteAutocomplete
+                                inputRef={autocompleteRef}
+                                handleRef={handleRef}
+                                // A URL picked from the search belongs on the web link side.
+                                onChange={(picked) => {
+                                    if (picked?.externalLink) {
+                                        changeTarget("url", picked.externalLink);
+                                        return;
+                                    }
+                                    // Another note takes its own title over the edited link's text.
+                                    if (picked?.notePath !== suggestion?.notePath) {
+                                        keptTitleRef.current = null;
+                                    }
+                                    setSuggestion(picked);
+                                }}
+                                opts={{
+                                    allowExternalLinks: !opts?.fixLink,
+                                    allowCreatingNotes: true
+                                }}
                             />
-                        </>
-                    )}
+                        </OptionCardSection>
 
-                    {(linkType !== "reference-link" && (
-                        <div className="add-link-title-form-group form-group">
-                            <br/>
-                            <label>
-                                {t("add_link.link_title")}
-
-                                <input className="link-title form-control" style={{ width: "100%" }}
-                                    value={linkTitle}
-                                    onInput={e => setLinkTitle((e.target as HTMLInputElement)?.value ?? "")}
+                        {bookmarks.length > 0 && !opts?.targetOnly && (
+                            <OptionCardSection name="anchor" label={t("add_link.anchor")}>
+                                <FormSelect
+                                    values={[
+                                        { value: "", title: t("add_link.anchor_none") },
+                                        ...bookmarks.map((bookmark) => ({
+                                            value: bookmark, title: bookmark
+                                        }))
+                                    ]}
+                                    keyProperty="value"
+                                    titleProperty="title"
+                                    currentValue={selectedBookmark}
+                                    onChange={(bookmark) => {
+                                        keptTitleRef.current = null;
+                                        setSelectedBookmark(bookmark);
+                                    }}
                                 />
-                            </label>
-                        </div>
-                    ))}
-                </div>
-            )}
+                            </OptionCardSection>
+                        )}
+
+                        {showsTitle && (
+                            <OptionCardSection
+                                className="add-link-mirror"
+                                name="mirror-title"
+                                label={t("add_link.mirror_title")}
+                                description={t("add_link.mirror_title_description")}
+                                subSectionsVisible={linkType === "hyper-link"}
+                                subSections={titleSection}
+                            >
+                                <FormToggle
+                                    currentValue={linkType === "reference-link"}
+                                    onChange={(mirror) => {
+                                        setLinkType(mirror ? "reference-link" : "hyper-link");
+                                    }}
+                                />
+                            </OptionCardSection>
+                        )}
+                    </>
+                )}
+            </Card>
         </Modal>
     );
+}
+
+/**
+ * The address the dialog opens on, on the web link side: the external link being edited, or a
+ * selected text that is a URL. `null` opens it on the note side.
+ */
+function getInitialWebLink(opts: AddLinkOpts): string | null {
+    if (opts.fixLink) return null;
+    if (opts.currentLink) return opts.currentLink.externalLink ?? null;
+    const text = opts.text.trim();
+    return opts.hasSelection && hasScheme(text) ? text : null;
+}
+
+/** Whether `text` is a whole URL with a scheme, the way the note search tells URLs apart. */
+function hasScheme(text: string) {
+    return /^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(text);
+}
+
+/**
+ * The link for an address as typed: trimmed, and with `https://` before an address that names no
+ * scheme, as CKEditor's `link.defaultProtocol` does. `null` for an empty one.
+ */
+export function normalizeWebLink(text: string): string | null {
+    const link = text.trim();
+    if (!link) return null;
+    const scheme = /^([a-z][a-z0-9+.-]*):(\d?)/i.exec(link);
+    // A colon followed by a digit is a port, as in `localhost:8080`, unless it ends a scheme
+    // Trilium allows, as in `tel:123`.
+    const hasScheme = scheme && (!scheme[2] || ALLOWED_PROTOCOLS.includes(scheme[1].toLowerCase()));
+    return hasScheme ? link : `https://${link}`;
 }

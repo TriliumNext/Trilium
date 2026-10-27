@@ -2,7 +2,7 @@ import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_refere
 
 import "../../theme/block_reference.css";
 import { CLASSES as TAB_CLASSES } from "../tabs/constants.js";
-import { revealTab } from "../tabs/tabs_read_only.js";
+import { getTabTitle, revealTab } from "../tabs/tabs_read_only.js";
 
 const FLASH_CLASS = "block-reference-flash";
 /** The duration of the `block-reference-flash` animation in `block_reference.css`. */
@@ -46,7 +46,7 @@ export function flashBlocks(elements: Element[]) {
  */
 export function getBlockBoxes(block: Element): { top: Element; bottom: Element } {
     if (block.classList.contains(TAB_CLASSES.tab)) {
-        const title = block.querySelector(`:scope > .${TAB_CLASSES.tabTitle}`);
+        const title = getTabTitle(block);
         const panel = block.querySelector(`:scope > .${TAB_CLASSES.tabPanel}`);
         if (title && panel) {
             return { top: title, bottom: panel };

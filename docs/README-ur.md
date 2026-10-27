@@ -356,6 +356,10 @@ Trilium اس کے پیچھے موجود ٹیکنالوجیز کے بغیر مم�
   ایڈیٹر۔
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - بڑی تعداد میں زبانوں
   کی سپورٹ کے ساتھ کوڈ ایڈیٹر۔
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas نوٹس میں
   استعمال ہونے والی لامحدود وائٹ بورڈ۔
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - مائنڈ میپ

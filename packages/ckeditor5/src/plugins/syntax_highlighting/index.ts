@@ -162,9 +162,13 @@ export default class SyntaxHighlighting extends Plugin {
 
         // Can't invoke addMarker with an already existing marker name,
         // clear all highlight markers first. Marker names follow the
-        // pattern hljs:cssClassName:uniqueId, eg hljs:hljs-comment:1
+        // pattern hljs:cssClassName:uniqueId, eg hljs:hljs-comment:1.
+        // Markers of other features (find results, comments) stay.
         const codeBlockRange = model.createRangeIn(codeBlock);
         for (const marker of model.markers.getMarkersIntersectingRange(codeBlockRange)) {
+            if (!marker.name.startsWith("hljs:")) {
+                continue;
+            }
             dbg("removing marker " + marker.name);
             writer.removeMarker(marker.name);
         }

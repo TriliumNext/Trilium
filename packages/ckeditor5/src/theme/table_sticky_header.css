@@ -1,7 +1,7 @@
 /* Without a scroll timeline, an `animation` runs on time and ends at once. Longhands only: Lightning
    CSS expands the `animation` shorthand with a `0s` duration, which ends a scroll-driven one too. */
 @supports (view-timeline-name: --table-header) {
-    .ck-content figure.table:not(.layout-table) {
+    .ck-content figure.table:not(.layout-table, .sticky-table-headers-disabled *) {
         view-timeline: --table-header block;
         view-timeline-inset: auto;
 
@@ -12,20 +12,19 @@
             animation-range: exit-crossing 0% exit-crossing 100%;
         }
 
-        /* `StickyTableHeaders` sets `--table-header-start` and `--table-header-travel`. */
+        /* `StickyTableHeaders` sets `--table-header-start`, `--table-header-travel` and, in
+           Firefox, `--table-header-easing`. */
         > table > thead {
-            /* Leaves room for the 1px that the borders of `th::before` reach past the cells. */
-            --table-header-end: calc(var(--table-header-travel, 1px) - 1px);
-
             position: relative;
             animation-name: table-header-stick, table-header-stuck;
             animation-duration: auto;
-            animation-timing-function: linear;
+            animation-timing-function: var(--table-header-easing, linear);
             animation-fill-mode: forwards;
             animation-timeline: --table-header;
             animation-range:
                 exit-crossing var(--table-header-start, 0px)
-                exit-crossing calc(var(--table-header-start, 0px) + var(--table-header-end));
+                exit-crossing
+                calc(var(--table-header-start, 0px) + var(--table-header-travel, 0px));
 
             > tr > th {
                 position: relative;
@@ -57,7 +56,7 @@
     }
 
     to {
-        translate: 0 var(--table-header-end);
+        translate: 0 var(--table-header-travel, 0px);
     }
 }
 

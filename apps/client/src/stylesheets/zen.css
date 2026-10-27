@@ -1,0 +1,172 @@
+body.zen {
+    --tab-bar-height: 0;
+
+    .gutter,
+    #launcher-container,
+    #launcher-pane,
+    #left-pane,
+    #left-pane-host,
+    .left-pane-peek-button,
+    #right-pane,
+    #right-pane-host,
+    .right-pane-peek-button,
+    #mobile-sidebar-wrapper,
+    .tab-row-container,
+    .tab-row-widget,
+    .title-row .icon-action,
+    .note-badges > *:not(.read-only-badge),
+    .note-actions-bar,
+    .inline-title,
+    .promoted-attributes-widget,
+    .action-button,
+    .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
+    .note-split:not(.type-book) .note-list-widget {
+        display: none !important;
+    }
+
+    .status-bar {
+        display: none;
+    }
+
+    #vertical-main-container {
+        /* Remove the placeholder for the right pane peek button */
+        --right-pane-peek-button-gutter: 0 !important;
+    }
+
+    #horizontal-main-container {
+        --left-pane-peek-button-gutter: 0 !important;
+    }
+
+    .split-note-container-widget > .gutter {
+        display: unset !important;
+    }
+
+    #launcher-pane {
+        position: absolute !important;
+        top: 0 !important;
+        inset-inline-end: 0 !important;
+        width: 64px !important;
+        height: 64px !important;
+        background: transparent !important;
+        border: 0 !important;
+    }
+
+    .title-row {
+        height: unset !important;
+        -webkit-app-region: drag;
+        padding-inline-start: env(titlebar-area-x);
+        padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
+        border-bottom: none !important;
+    }
+
+    .note-title-widget,
+    .note-title-widget input {
+        font-size: 1rem !important;
+    }
+
+    #detail-container {
+        width: 100%;
+    }
+
+    .note-split:not(.full-content-width) {
+        .scrolling-container {
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: unset !important;
+        }
+
+        .note-detail {
+            margin: auto;
+            padding-bottom: 25vh;
+            max-width: var(--max-content-width);
+            width: 100%;
+        }
+
+        .scroll-padding-widget {
+            display: none;
+        }
+    }
+
+    .note-split.type-text {
+        position: relative;
+        font-size: 1.15em;
+
+        .scrolling-container {
+            --padding-bottom: 130px; /* Should be enough to avoid caret being hidden by the formatting toolbar */
+
+            /* (Usually) keeps the caret above the fixed toolbar */
+            scroll-padding-bottom: var(--padding-bottom);
+        }
+    }
+
+    &:not(.backdrop-effects-disabled) .note-split.type-text {
+        .title-row {
+            --start-color: var(--main-background-color);
+
+            position: absolute;
+            width: 100%;
+            background: linear-gradient(var(--start-color) 30%, transparent 100%);
+            z-index: 1000;
+        }
+
+        .scrolling-container {
+            --padding-top: 50px; /* Should be enough to cover the title row */
+
+            padding-top: var(--padding-top);
+            scroll-padding-top: var(--padding-top);
+        }
+    }
+
+    @supports (background: color-mix(in srgb, white, transparent)) {
+        .note-split.type-text .title-row {
+            --start-color: color-mix(in srgb, var(--main-background-color), transparent 10%);
+        }
+    }
+
+    /* Fixed formatting toolbar */
+
+    .classic-toolbar-widget {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        z-index: 1000;
+        opacity: 0; /* Hidden unless the current note split is focused */
+        pointer-events: none;
+        transition: opacity 100ms linear;
+        width: fit-content;
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
+        border-radius: 8px;
+        border: 1px solid var(--main-border-color);
+        padding: 4px;
+        background: var(--menu-background-color) !important;
+        transform: translateX(-50%);
+        backdrop-filter: blur(6px);
+    }
+
+    /* An open dropdown holds the toolbar up: hovering its submenu takes focus out of the split. */
+    #root-widget:has(.note-split.type-text:focus-within) .classic-toolbar-widget,
+    .classic-toolbar-widget:focus-within,
+    .classic-toolbar-widget:has(.ck-dropdown__panel-visible) {
+        opacity: 1; /* Show when the note split is focused */
+        pointer-events: all;
+    }
+
+    @media (max-width: 1300px) {
+        .classic-toolbar-widget {
+            /* Set the toolbar to full with */
+            width: 100%;
+        }
+
+        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel {
+            &.ck-dropdown__panel_se,
+            &.ck-dropdown__panel_sw,
+            &.ck-dropdown__panel_smw,
+            &.ck-dropdown__panel_sme,
+            &.ck-dropdown__panel_s {
+                /* Force toolbar items overflow dropdowns open upwards */
+                top: auto;
+                bottom: 100%;
+            }
+        }
+    }
+}

@@ -20,15 +20,17 @@
  *     with every built-in Claude Code tool (file access, bash, …) disabled.
  */
 
-import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SDKMessage, SDKUserMessage, SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
+import type { CanUseTool, Options as AgentOptions, query as queryFn, SDKAssistantMessage, SDKMessage, SDKResultMessage, SDKUserMessage, SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
 import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
+import { getSelectedModel } from "@triliumnext/core/src/services/llm/index.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
 import { anthropicRecommendedIds } from "@triliumnext/core/src/services/llm/providers/anthropic.js";
-import { buildModelList, mergeModelLists, type RemoteModel } from "@triliumnext/core/src/services/llm/providers/base_provider.js";
+import { getProviderPrices, type ProviderPrices } from "@triliumnext/core/src/services/llm/providers/base_provider.js";
 import { buildSystemPrompt } from "@triliumnext/core/src/services/llm/system_prompt.js";
+import { TOOL_CALL_DECLINED_REASON, type ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "@triliumnext/core/src/services/llm/types.js";
 import { encodeBase64 } from "@triliumnext/core/src/services/utils/binary.js";
 import { spawn as nodeSpawn } from "child_process";
@@ -46,7 +48,7 @@ import {
     rememberSession as rememberWarmSession,
     takeWarmSession
 } from "./claude_session_pool.js";
-import { buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
+import { buildHistoryReplay, buildTitlePrompt, cleanTitle, flattenContent, hashTranscript } from "./transcript.js";
 
 // Re-exported for existing importers (specs, siblings); the implementations
 // now live in the shared transcript module.
@@ -57,91 +59,39 @@ type SupportedImageMime = "image/png" | "image/jpeg" | "image/gif" | "image/webp
 const SUPPORTED_IMAGE_MIMES = new Set<string>(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
 /**
- * Curated Claude subscription models, mirroring Claude Code's own `/model`
- * picker (the Agent SDK accepts any of these). Pricing is zero because usage is
- * covered by the subscription — the per-turn `usage` chunk still reports the
- * API-equivalent cost as informational metadata from the agent's result.
- *
- * This is now the *metadata + fallback* list: {@link ClaudeAgentProvider.listModels}
- * discovers the actually-available models live from the CLI and enriches them
- * against these entries (context windows, legacy flags), falling back to this
- * list wholesale when the probe can't run (Claude Code not installed / not
- * logged in).
+ * Claude Code's own picker value for the model it recommends to this account. A chat
+ * on it sends no model, so Claude Code chooses.
  */
-const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
-    // ===== Current Models =====
-    {
-        id: "claude-fable-5",
-        name: "Claude Fable 5",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isSubscription: true
-    },
-    {
-        id: "claude-opus-4-8",
-        name: "Claude Opus 4.8",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isSubscription: true
-    },
-    {
-        id: "claude-opus-4-7",
-        name: "Claude Opus 4.7",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isSubscription: true
-    },
-    {
-        id: "claude-sonnet-5",
-        name: "Claude Sonnet 5",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isDefault: true,
-        isSubscription: true
-    },
-    {
-        id: "claude-haiku-4-5-20251001",
-        name: "Claude Haiku 4.5",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 200000,
-        isSubscription: true
-    },
-    // ===== Legacy Models =====
-    {
-        id: "claude-sonnet-4-6",
-        name: "Claude Sonnet 4.6",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isLegacy: true,
-        isSubscription: true
-    },
-    {
-        id: "claude-opus-4-6",
-        name: "Claude Opus 4.6",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 1000000,
-        isLegacy: true,
-        isSubscription: true
-    },
-    {
-        id: "claude-sonnet-4-5-20250929",
-        name: "Claude Sonnet 4.5",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 200000,
-        isLegacy: true,
-        isSubscription: true
-    },
-    {
-        id: "claude-opus-4-5-20251101",
-        name: "Claude Opus 4.5",
-        pricing: { input: 0, output: 0 },
-        contextWindow: 200000,
-        isLegacy: true,
-        isSubscription: true
-    }
-]);
+const DEFAULT_MODEL = "default";
+
+/**
+ * The catalog available without asking Claude Code anything. `chat.ts` needs a
+ * synchronous default for a chat that stores no model, and {@link DEFAULT_MODEL}
+ * is the one id that never goes out of date. {@link ClaudeAgentProvider.listModels}
+ * reads the real line-up from the CLI.
+ */
+const FALLBACK_MODELS: ModelInfo[] = [
+    { id: DEFAULT_MODEL, name: "Default", pricing: { input: 0, output: 0 }, isDefault: true, isSubscription: true }
+];
 
 const TITLE_MODEL = "claude-haiku-4-5-20251001";
+
+/**
+ * The pool key of the session titles share. Note IDs never contain a colon, so
+ * it cannot collide with a chat's own session.
+ */
+const TITLE_SESSION_KEY = ":title";
+const TITLE_FINGERPRINT = "title";
+/**
+ * The title session's system prompt. `/clear` leaves no earlier titles in the
+ * history to imitate, so the examples here hold the model to the word limit.
+ */
+const TITLE_SYSTEM_PROMPT = "You generate short, descriptive titles. A title has at most five words: name the subject "
+    + "and leave out filler such as \"Guide\", \"Overview\", \"Basics\" or \"Common Mistakes\". Reply with only the title "
+    + "text — no quotes, no punctuation around it. Examples of good titles: \"Garden Shed Wiring Plan\", "
+    + "\"Quarterly Budget Review\", \"Fixing Login Timeouts\".";
+/** How long a title or a `/clear` waits for its result before the title session is closed. */
+export const TITLE_TIMEOUT_MS = 60_000;
 
 /** Upper bound on assistant↔tool round-trips within one chat turn. */
 const MAX_TURNS = 25;
@@ -178,6 +128,9 @@ interface SessionEntry {
  */
 const sessionsByChatNote = new Map<string, SessionEntry>();
 
+/** Settles when the title in progress does; a session answers one prompt at a time. */
+let titleQueue: Promise<unknown> = Promise.resolve();
+
 function rememberSession(chatNoteId: string, entry: SessionEntry) {
     // Refresh insertion order so the oldest mapping is evicted first.
     sessionsByChatNote.delete(chatNoteId);
@@ -193,15 +146,20 @@ function rememberSession(chatNoteId: string, entry: SessionEntry) {
 export class ClaudeAgentProvider implements LlmProvider {
     name = "claude-agent";
 
+    /**
+     * Free for every model the subscription covers: Claude Code's default, the
+     * models its catalog listed, and any Claude model the price table knows.
+     * Long-context variants (`claude-opus-4-8[1m]`) are looked up by their base id.
+     */
     getModelPricing(model: string): ModelPricing | undefined {
-        // Long-context variants (`claude-opus-4-8[1m]`) are the same model on the
-        // same plan, so they price like their base id rather than as unknowns.
-        const base = parseContextVariant(model)?.base;
-        return MODEL_PRICING[model] ?? (base ? MODEL_PRICING[base] : undefined);
+        const known = model === DEFAULT_MODEL
+            || subscriptionModelCache?.models.some(m => m.id === model)
+            || Object.hasOwn(getProviderPrices("anthropic"), baseModelId(model));
+        return known ? { input: 0, output: 0 } : undefined;
     }
 
     getAvailableModels(): ModelInfo[] {
-        return AVAILABLE_MODELS;
+        return FALLBACK_MODELS;
     }
 
     /**
@@ -217,7 +175,7 @@ export class ClaudeAgentProvider implements LlmProvider {
     recommendedModelIds(models: ModelInfo[]): Set<string> {
         const idsByBase = new Map<string, string[]>();
         for (const model of models) {
-            const base = parseContextVariant(model.id)?.base ?? model.id;
+            const base = baseModelId(model.id);
             idsByBase.set(base, [...(idsByBase.get(base) ?? []), model.id]);
         }
         const bases = anthropicRecommendedIds([...idsByBase.keys()].map(id => ({ id, name: id })));
@@ -225,17 +183,16 @@ export class ClaudeAgentProvider implements LlmProvider {
     }
 
     /**
-     * Dynamically list the models Claude Code actually offers on this host,
-     * enriched with curated metadata. Unlike the API providers there is no
+     * Dynamically list the models Claude Code actually offers on this host, with
+     * context windows from the committed price table. Unlike the API providers there is no
      * `/models` endpoint: the catalog is whatever the installed CLI reports for
      * the logged-in account (tier, version, any managed `availableModels`
      * allowlist), which the Agent SDK hands over via the `initialize` handshake.
      *
      * Cached for {@link SUBSCRIPTION_MODEL_TTL_MS}. A probe *failure* (Claude
      * Code not installed, not logged in, or timed out) propagates so the
-     * add/edit-provider screen surfaces an actionable error rather than masking
-     * it as success with the curated defaults. The curated list stays available
-     * via {@link getAvailableModels} as the static catalog used elsewhere.
+     * add/edit-provider screen surfaces an actionable error. There is no offline
+     * line-up to fall back to: {@link getAvailableModels} holds only Claude Code's default.
      */
     async listModels(): Promise<ModelInfo[]> {
         const now = Date.now();
@@ -243,14 +200,14 @@ export class ClaudeAgentProvider implements LlmProvider {
             return subscriptionModelCache.models;
         }
         if (!subscriptionModelInFlight) {
-            subscriptionModelInFlight = this.fetchAndMergeModels().finally(() => {
+            subscriptionModelInFlight = this.fetchModels().finally(() => {
                 subscriptionModelInFlight = undefined;
             });
         }
         return subscriptionModelInFlight;
     }
 
-    private async fetchAndMergeModels(): Promise<ModelInfo[]> {
+    private async fetchModels(): Promise<ModelInfo[]> {
         let sdkModels: SubscriptionModelSource[];
         try {
             sdkModels = await this.probeSupportedModels();
@@ -259,9 +216,9 @@ export class ClaudeAgentProvider implements LlmProvider {
             // so the caller can show an actionable message.
             throw new Error(describeAgentError(error));
         }
-        const merged = buildSubscriptionModelList(sdkModels, AVAILABLE_MODELS);
-        subscriptionModelCache = { models: merged, fetchedAt: Date.now() };
-        return merged;
+        const models = buildSubscriptionModelList(sdkModels, getProviderPrices("anthropic"));
+        subscriptionModelCache = { models, fetchedAt: Date.now() };
+        return models;
     }
 
     /**
@@ -373,10 +330,11 @@ export class ClaudeAgentProvider implements LlmProvider {
         const onAbort = () => abortController.abort();
         signal?.addEventListener("abort", onAbort, { once: true });
 
-        const model = config.model || AVAILABLE_MODELS.find(m => m.isDefault)?.id;
+        // A chat without a model, or on the default, sends none, so Claude Code chooses.
+        const model = config.model && config.model !== DEFAULT_MODEL ? config.model : undefined;
         // Report the friendly name in usage metadata (the chat pane renders it
         // verbatim); `model` itself must stay the raw ID for the query() call.
-        const modelDisplayName = describeModel(model);
+        const modelDisplayName = describeModel(model, config.providerId);
         let sessionId: string | undefined;
         let assistantText = "";
         /** The session this turn is driving, released (not closed) at the end. */
@@ -423,11 +381,11 @@ export class ClaudeAgentProvider implements LlmProvider {
             } else {
                 yield { type: "status", status: "starting_agent" };
                 const input = new Pushable<SDKUserMessage>();
-                session = {
+                const created: ClaudeSession = {
                     query: query({
                         prompt: input,
                         options: {
-                            ...await this.buildBaseOptions(config),
+                            ...await this.buildBaseOptions(config, () => created.toolApprovals),
                             systemPrompt,
                             model,
                             resume,
@@ -442,12 +400,14 @@ export class ClaudeAgentProvider implements LlmProvider {
                     busy: true,
                     model
                 };
+                session = created;
                 if (config.chatNoteId) {
                     rememberWarmSession(config.chatNoteId, session);
                 }
             }
             const active = session;
             held = active;
+            active.toolApprovals = config.toolApprovals;
             await pushUserTurn(active.input, prompt);
 
             // Manual iteration on purpose: `for await (…) { break }` calls
@@ -612,6 +572,9 @@ export class ClaudeAgentProvider implements LlmProvider {
             yield { type: "error", error: describeAgentError(error) };
         } finally {
             signal?.removeEventListener("abort", onAbort);
+            if (held) {
+                held.toolApprovals = undefined;
+            }
             const reusable = held && config.chatNoteId && turnComplete && !held.closed && !signal?.aborted;
             if (reusable && held && config.chatNoteId) {
                 // Keep the subprocess warm; the pool reaps it when idle.
@@ -630,29 +593,67 @@ export class ClaudeAgentProvider implements LlmProvider {
         }
     }
 
+    /**
+     * Name a chat after its first message, in the session titles share. Titles
+     * take turns, because a session answers one prompt at a time, and each is
+     * followed by a `/clear` that the title does not wait for but the next one does.
+     */
     async generateTitle(firstMessage: string): Promise<string> {
+        const title = titleQueue.then(() => this.requestTitle(firstMessage));
+        titleQueue = title.then(() => clearTitleSession());
+        return title;
+    }
+
+    private async requestTitle(firstMessage: string): Promise<string> {
+        let session: ClaudeSession | undefined;
+        let answered = false;
         try {
-            const query = await loadQuery();
-            const response = query({
-                prompt: `Generate a short title (at most 5 words) summarizing this chat message. Reply with only the title, no quotes or punctuation around it:\n\n${firstMessage.substring(0, 500)}`,
+            session = await this.titleSession();
+            await pushUserTurn(session.input, buildTitlePrompt(firstMessage));
+            const result = await nextResult(session);
+            answered = result !== undefined;
+            return result?.subtype === "success" ? cleanTitle(result.result) : "";
+        } catch (error) {
+            getLog().error(`Claude Agent title generation failed: ${describeAgentError(error)}`);
+            return "";
+        } finally {
+            // A title that got no result leaves the session in an unknown state.
+            if (session && answered) {
+                releaseSession(TITLE_SESSION_KEY, session);
+            } else if (session) {
+                closeSession(TITLE_SESSION_KEY, session);
+            }
+        }
+    }
+
+    /** The warm title session, or a new one on {@link TITLE_MODEL}. */
+    private async titleSession(): Promise<ClaudeSession> {
+        const warm = takeWarmSession(TITLE_SESSION_KEY, TITLE_FINGERPRINT);
+        if (warm) {
+            return warm;
+        }
+
+        const query = await loadQuery();
+        const input = new Pushable<SDKUserMessage>();
+        const session: ClaudeSession = {
+            query: query({
+                prompt: input,
                 options: {
                     ...await this.buildBaseOptions({ enableNoteTools: false }),
-                    systemPrompt: "You generate short, descriptive titles. Reply with only the title text — no quotes, no punctuation around it.",
+                    systemPrompt: TITLE_SYSTEM_PROMPT,
                     model: TITLE_MODEL,
                     maxTurns: 1,
                     persistSession: false
                 }
-            });
-
-            for await (const message of response) {
-                if (message.type === "result" && message.subtype === "success") {
-                    return message.result.trim().replace(/^["']|["']$/g, "").substring(0, 100);
-                }
-            }
-        } catch (error) {
-            getLog().error(`Claude Agent title generation failed: ${describeAgentError(error)}`);
-        }
-        return "";
+            }),
+            input,
+            fingerprint: TITLE_FINGERPRINT,
+            closed: false,
+            busy: true,
+            model: TITLE_MODEL
+        };
+        rememberWarmSession(TITLE_SESSION_KEY, session);
+        return session;
     }
 
     /**
@@ -675,8 +676,14 @@ export class ClaudeAgentProvider implements LlmProvider {
         return buildSystemPrompt(messages, promptConfig) ?? "";
     }
 
-    /** Options shared by every agent invocation. */
-    private async buildBaseOptions(config: Pick<LlmProviderConfig, "enableNoteTools" | "enableWebSearch" | "enableExtendedThinking">): Promise<AgentOptions> {
+    /**
+     * Options shared by every agent invocation. `approvalsOf` gives the approvals of the turn
+     * that drives the session when a note tool is called; without it, note tools run unasked.
+     */
+    private async buildBaseOptions(
+        config: Pick<LlmProviderConfig, "enableNoteTools" | "enableWebSearch" | "enableExtendedThinking">,
+        approvalsOf?: () => ToolApprovals | undefined
+    ): Promise<AgentOptions> {
         // Built-in Claude Code tools (file access, bash, …) stay disabled — the
         // agent runs on the server host and must only ever touch notes. Web
         // search is the one opt-in exception.
@@ -693,6 +700,9 @@ export class ClaudeAgentProvider implements LlmProvider {
             settingSources: [],
             strictMcpConfig: true,
             permissionMode: "dontAsk",
+            // A preset title stops Claude Code from spending a model call on one of
+            // its own; Trilium names the chat note itself (see generateTitle()).
+            title: "Trilium chat",
             // Extended thinking: `adaptive` lets these (modern) models decide how
             // much to think and stream summarized reasoning, mirroring the metered
             // Anthropic provider. Adaptive is the SDK's default for supporting
@@ -725,8 +735,13 @@ export class ClaudeAgentProvider implements LlmProvider {
             options.mcpServers = {
                 trilium: { type: "sdk", name: "trilium", instance: await createMcpServer() }
             };
-            // Bare server prefix auto-allows every tool from that server.
-            allowedTools.push("mcp__trilium");
+            if (approvalsOf) {
+                options.permissionMode = "default";
+                options.canUseTool = askBeforeNoteTool(approvalsOf);
+            } else {
+                // Bare server prefix auto-allows every tool from that server.
+                allowedTools.push("mcp__trilium");
+            }
         }
 
         options.allowedTools = allowedTools;
@@ -802,121 +817,65 @@ interface SubscriptionModelSource {
 }
 
 /**
- * Merge Claude Code's live catalog with the curated subscription metadata.
+ * Turn Claude Code's live catalog into Trilium's model list.
  *
  * The canonical wire id (`resolvedModel`) is preferred over the picker alias
- * (`value`) so a chat stores a stable, concrete model id that matches the
- * metered Anthropic provider's ids; aliases resolving to the same model are
- * deduped. The CLI's display name wins; curated entries supply the context
- * window and legacy flag for models they know, and unknown models come through
- * with whatever the CLI reported. Every row is a subscription model, so the
- * plan-covered invariants (zero pricing, no metered cost) are re-asserted
- * across the merged list.
+ * (`value`) so a chat stores a concrete model id that matches the metered
+ * Anthropic provider's ids; aliases resolving to the same model are deduped.
+ * Names and order are Claude Code's. `prices` (the price table's `anthropic`
+ * slice) supplies the context window, by the base id for a long-context variant
+ * it doesn't list. The subscription covers every model, so every row is free.
+ *
+ * {@link DEFAULT_MODEL} is not listed: it would win the dedupe and label its model
+ * "Default (recommended)". The model it resolves to is flagged as the default
+ * instead, or the first one when the catalog has no default.
  */
-export function buildSubscriptionModelList(sdkModels: SubscriptionModelSource[], curated: ModelInfo[]): ModelInfo[] {
-    const remote: RemoteModel[] = [];
+export function buildSubscriptionModelList(sdkModels: SubscriptionModelSource[], prices: ProviderPrices): ModelInfo[] {
+    const defaultId = sdkModels.find(m => m.value === DEFAULT_MODEL)?.resolvedModel;
+    const models: ModelInfo[] = [];
     const seen = new Set<string>();
     for (const model of sdkModels) {
-        // `default` is an account-level alias rather than a model: it resolves to
-        // whatever Claude Code currently recommends, and picking it would freeze
-        // that resolution into the chat under the unhelpful label "Default
-        // (recommended)". Worse, it sorts first, so the dedupe below would drop
-        // the concrete row pointing at the same model (`opus[1m]` → "Opus") and
-        // keep the alias's label instead. Trilium marks its own default via
-        // `isDefault`, so nothing is lost by skipping it.
-        if (model.value === "default") {
-            continue;
-        }
         const id = model.resolvedModel ?? model.value;
-        if (!id || seen.has(id)) {
+        if (model.value === DEFAULT_MODEL || !id || seen.has(id)) {
             continue;
         }
         seen.add(id);
-        remote.push({ id, name: model.displayName });
+        models.push({
+            id,
+            name: model.displayName ?? id,
+            contextWindow: prices[id]?.ctx ?? prices[baseModelId(id)]?.ctx,
+            pricing: { input: 0, output: 0 },
+            isSubscription: true
+        });
     }
 
-    return mergeModelLists(withContextVariants(curated, remote), remote).map(model => ({
-        ...model,
-        isSubscription: true,
-        pricing: model.pricing ?? { input: 0, output: 0 }
-    }));
+    const defaultIndex = Math.max(models.findIndex(m => m.id === defaultId), 0);
+    if (models.length > 0) {
+        models[defaultIndex] = { ...models[defaultIndex], isDefault: true };
+    }
+    return models;
 }
 
-/** A long-context model id: `claude-opus-4-8[1m]` → base `claude-opus-4-8`, label `1M`. */
-const CONTEXT_VARIANT = /\[([^\]]+)\]$/;
+/** The suffix of a long-context model id, such as `[1m]` in `claude-opus-4-8[1m]`. */
+const CONTEXT_VARIANT = /\[[^\]]+\]$/;
 
-function parseContextVariant(id: string): { base: string; label: string } | null {
-    const match = CONTEXT_VARIANT.exec(id);
-    if (!match) {
-        return null;
-    }
-    return { base: id.slice(0, match.index), label: match[1].toUpperCase() };
-}
-
-/**
- * Re-key curated metadata onto the long-context ids the CLI reports.
- *
- * Claude Code offers extended-context variants under a suffixed id
- * (`claude-opus-4-8[1m]`) that no curated entry carries, so the merge would file
- * them as unknown models — losing the context window and legacy flag, and leaving
- * anything that looks a model up by id (pricing, the usage row's display name)
- * with nothing but the raw id to show. A synthetic entry per variant, inserted
- * next to the model it varies so the curated ordering survives, makes them known.
- * The suffix stays part of the id: it is what selects the larger window when the
- * id is handed back to the SDK.
- */
-function withContextVariants(curated: ModelInfo[], remote: RemoteModel[]): ModelInfo[] {
-    const curatedIds = new Set(curated.map(m => m.id));
-    const variantsByBase = new Map<string, string[]>();
-    for (const model of remote) {
-        if (curatedIds.has(model.id)) {
-            continue;
-        }
-        const variant = parseContextVariant(model.id);
-        if (!variant || !curatedIds.has(variant.base)) {
-            continue;
-        }
-        variantsByBase.set(variant.base, [...(variantsByBase.get(variant.base) ?? []), model.id]);
-    }
-    if (variantsByBase.size === 0) {
-        return curated;
-    }
-
-    return curated.flatMap(entry => [
-        entry,
-        // A variant is a distinct row, so it must not inherit the base entry's
-        // default flag — that would leave two models claiming to be the default.
-        ...(variantsByBase.get(entry.id) ?? []).map(id => ({ ...entry, id, name: variantName(entry.name, id), isDefault: false }))
-    ]);
-}
-
-/** Offline fallback name for a variant row: `Claude Opus 4.8` + `[1m]` → `Claude Opus 4.8 (1M)`. */
-function variantName(baseName: string, id: string): string {
-    const variant = parseContextVariant(id);
-    return variant ? `${baseName} (${variant.label})` : baseName;
+/** The model a long-context id varies (`claude-opus-4-8[1m]` → `claude-opus-4-8`); other ids unchanged. */
+function baseModelId(id: string): string {
+    return id.replace(CONTEXT_VARIANT, "");
 }
 
 /**
- * Friendly name for the model id a chat turn was answered by, for the usage row.
- *
- * The live catalog is consulted first: it is the only source that names models
- * the curated list has never heard of, and it carries the CLI's own wording. It
- * is a cache though, so a chat sent before any model picker was opened falls
- * back to the curated list — by exact id, then by the base of a long-context id
- * — and finally to the raw id, which at least says which model answered.
+ * Friendly name for the model a chat turn ran on, for the usage row: the live
+ * catalog's, then the stored selection's (for a chat sent before this process
+ * listed the models), then the raw id. A turn on Claude Code's default has no id.
  */
-function describeModel(model: string | undefined): string | undefined {
+function describeModel(model: string | undefined, providerId: string | undefined): string | undefined {
     if (!model) {
         return undefined;
     }
-    const listed = subscriptionModelCache?.models.find(m => m.id === model)
-        ?? AVAILABLE_MODELS.find(m => m.id === model);
-    if (listed) {
-        return listed.name;
-    }
-    const base = parseContextVariant(model)?.base;
-    const curated = base ? AVAILABLE_MODELS.find(m => m.id === base) : undefined;
-    return curated ? variantName(curated.name, model) : model;
+    return subscriptionModelCache?.models.find(m => m.id === model)?.name
+        ?? getSelectedModel(providerId, model)?.name
+        ?? model;
 }
 
 /**
@@ -990,6 +949,55 @@ async function* streamSingleUserMessage(content: ContentBlockParam[]): AsyncIter
 }
 
 /**
+ * Empty the warm title session with `/clear`, which Claude Code runs in the
+ * process without a model call, so the next title starts from no history. A
+ * `/clear` that fails closes the session, and the next title starts another.
+ */
+async function clearTitleSession(): Promise<void> {
+    const session = takeWarmSession(TITLE_SESSION_KEY, TITLE_FINGERPRINT);
+    if (!session) {
+        return;
+    }
+    try {
+        await pushUserTurn(session.input, "/clear");
+        if (await nextResult(session)) {
+            releaseSession(TITLE_SESSION_KEY, session);
+            return;
+        }
+    } catch (error) {
+        getLog().info(`Claude Agent provider: clearing the title session failed (${describeAgentError(error)}).`);
+    }
+    closeSession(TITLE_SESSION_KEY, session);
+}
+
+/**
+ * Read a title session up to the `result` of the turn just pushed, or undefined
+ * when the stream ends first. Throws when no result comes within
+ * {@link TITLE_TIMEOUT_MS}, since a wedged `query.next()` might never settle.
+ * Iterates by hand, as in `chatChunks()`: breaking out of `for await` closes the query.
+ */
+async function nextResult(session: ClaudeSession): Promise<SDKResultMessage | undefined> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`no reply within ${TITLE_TIMEOUT_MS / 1000} s`)), TITLE_TIMEOUT_MS);
+    });
+    try {
+        for (;;) {
+            const next = await Promise.race([session.query.next(), timeout]);
+            if (next.done) {
+                session.closed = true;
+                return undefined;
+            }
+            if (next.value.type === "result") {
+                return next.value;
+            }
+        }
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
  * Feed one user turn into a live session's streaming input. Accepts both prompt
  * forms {@link buildPrompt} produces: a plain string, or the one-message stream
  * used for natively-consumable attachments (drained here, since a pooled
@@ -1014,6 +1022,32 @@ async function pushUserTurn(input: Pushable<SDKUserMessage>, prompt: string | As
  * "mcp__trilium__search_notes"), and Claude Code's web tools under the names the other providers give
  * theirs. Their inputs already carry the `query` and `url` the chat shows.
  */
+/**
+ * Ask the user before a call to one of Trilium's note tools, through the approvals of the turn that
+ * makes it. Anything else is denied: the in-process server is the only one Trilium registers, and
+ * the agent has no other tool that is not pre-approved.
+ */
+function askBeforeNoteTool(approvalsOf: () => ToolApprovals | undefined): CanUseTool {
+    return async (toolName, input, { toolUseID, mcpServer }) => {
+        const isNoteTool = toolName.startsWith("mcp__trilium__")
+            && (mcpServer === undefined || (mcpServer.source === "sdk" && mcpServer.name === "trilium"));
+        if (!isNoteTool) {
+            getLog().info(`Claude Agent provider: denied the call to "${toolName}", which is not a note tool.`);
+            return { behavior: "deny", message: "Only Trilium's note tools are available." };
+        }
+
+        const approvals = approvalsOf();
+        const approved = !approvals || await approvals.request({
+            toolCallId: toolUseID,
+            toolName: friendlyToolName(toolName),
+            toolInput: input
+        });
+        return approved
+            ? { behavior: "allow", updatedInput: input }
+            : { behavior: "deny", message: TOOL_CALL_DECLINED_REASON };
+    };
+}
+
 function friendlyToolName(name: string): string {
     return BUILTIN_TOOL_NAMES[name] ?? name.replace(/^mcp__trilium__/, "");
 }

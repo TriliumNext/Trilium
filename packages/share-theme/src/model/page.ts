@@ -117,6 +117,8 @@ export interface PageHeading {
     level: number;
     /** The heading's plain text. */
     text: string;
+    /** The heading's text with its inline formatting, such as `<code>`, as safe HTML. */
+    html: string;
     /** The ID of the heading's anchor, unique on the page. */
     slug: string;
     /** The link to the heading: `#` and `slug`, URL-encoded. */

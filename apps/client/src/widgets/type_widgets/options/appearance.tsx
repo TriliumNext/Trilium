@@ -1,19 +1,18 @@
 import "./appearance.css";
 
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useMemo } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
 import { ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES } from "../../../services/color_scheme";
 import { t } from "../../../services/i18n";
-import server from "../../../services/server";
-import { isElectron, isMobile } from "../../../services/utils";
+import { isElectron, isIOS, isMobile } from "../../../services/utils";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
 import { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import SegmentedChoice, { SegmentedChoiceOption } from "../../react/SegmentedChoice";
 import Fonts from "./appearance_fonts";
@@ -24,13 +23,6 @@ import RelatedSettings from "./components/RelatedSettings";
 import RestartAction from "./components/RestartAction";
 
 const MIN_CONTENT_WIDTH = 640;
-
-interface CustomTheme {
-    val: string;
-    title: string;
-    icon?: string;
-    noteId?: string;
-}
 
 interface ThemeFamily {
     key: string;
@@ -92,14 +84,8 @@ export default function AppearanceSettings() {
 
 function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme");
-    const [ customThemes, setCustomThemes ] = useState<CustomTheme[]>([]);
+    const customThemes = useUserThemes();
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
-
-    useEffect(() => {
-        server.get<CustomTheme[]>("options/user-themes").then((userThemes) => {
-            setCustomThemes(userThemes);
-        });
-    }, []);
 
     const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
     const isCustom = resolved.isCustom;
@@ -327,7 +313,7 @@ function Performance() {
                 <FormToggle currentValue={shadowsEnabled} onChange={setShadowsEnabled} />
             </OptionCardSection>
 
-            {!isMobile() && (
+            {(!isMobile() || isIOS()) && (
                 <OptionCardSection name="backdrop-effects-enabled" label={t("ui-performance.enable-backdrop-effects")}>
                     <FormToggle currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled} />
                 </OptionCardSection>

@@ -16,3 +16,27 @@
     flex-direction: column;
     min-height: 0;
 }
+
+@supports (animation-timeline: scroll()) {
+    .modal-dialog-scrollable .modal-body {
+        --modal-body-fade: 12px;
+        /* A mask cannot be faded in, so it is slid down from above the body as it scrolls. */
+        mask-image: linear-gradient(to bottom, transparent, black var(--modal-body-fade));
+        mask-repeat: no-repeat;
+        mask-size: 100% calc(100% + var(--modal-body-fade));
+        mask-position: 0 calc(-1 * var(--modal-body-fade));
+        animation: modal-body-fade linear both;
+        animation-timeline: scroll(self);
+        animation-range: 0 var(--modal-body-fade);
+    }
+}
+
+@keyframes modal-body-fade {
+    to {
+        mask-position: 0 0;
+    }
+}
+
+.script-modal-host {
+    display: contents;
+}

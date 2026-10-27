@@ -37,7 +37,7 @@ Since v0.100.0, it's possible to have a split view on the mobile view as well, w
 
 Interaction:
 
-*   To create a new split, click the three dots button on the right of the note title and select _Create new split_.
+*   To create a new split, click the three dots button on the right of the note title and tap <span class="tn-icon bx bx-dock-right"></span> _New split_ in the row of icons at the top.
     *   This option will only be available if there is no split already open in the current tab.
 *   To close a split, click the three dots button on the right of the note title and select _Close this pane_.
     *   Note that this option will only be available on the second note in the split (the one at the bottom on smartphones, the one on the right on tablets).

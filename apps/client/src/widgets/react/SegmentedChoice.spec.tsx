@@ -66,6 +66,8 @@ describe("SegmentedChoice", () => {
         const buttons = [ ...container.querySelectorAll("button") ];
         expect(buttons.map((button) => button.textContent?.trim())).toStrictEqual([ "Yours", "System" ]);
         expect(buttons.map((button) => button.classList.contains("active"))).toStrictEqual([ false, true ]);
+        expect(buttons.map((button) => button.getAttribute("aria-pressed")))
+            .toStrictEqual([ "false", "true" ]);
     });
 
     it("shows a count as a badge beside the name rather than inside it", () => {

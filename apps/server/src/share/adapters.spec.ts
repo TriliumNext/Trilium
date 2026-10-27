@@ -70,18 +70,22 @@ describe("share routes", () => {
 });
 
 describe("share provider", () => {
-    it("registers once and reads a template from the sources on every use in development", async () => {
-        const { provider, readFileSync } = await registerProvider("development");
+    it("registers once and reads a template from the sources again in development once it changes", async () => {
+        const { provider, readFileSync, statSync } = await registerProvider("development");
 
         expect(provider.readTemplate("page")).toBe("template");
         expect(provider.readTemplate("page")).toBe("template");
-        expect(readFileSync).toHaveBeenCalledTimes(2);
+        expect(readFileSync).toHaveBeenCalledOnce();
         expect(String(readFileSync.mock.calls[0][0]).replaceAll("\\", "/"))
             .toMatch(/packages\/share-theme\/src\/templates\/page\.ejs$/);
+
+        statSync.mockReturnValue({ mtimeMs: 2 });
+        expect(provider.readTemplate("page")).toBe("template");
+        expect(readFileSync).toHaveBeenCalledTimes(2);
     });
 
     it("reads each template once, from the resource directory, outside development", async () => {
-        const { provider, readFileSync } = await registerProvider("production");
+        const { provider, readFileSync, statSync } = await registerProvider("production");
 
         expect(provider.readTemplate("404")).toBe("template");
         expect(provider.readTemplate("404")).toBe("template");
@@ -89,18 +93,21 @@ describe("share provider", () => {
         expect(readFileSync).toHaveBeenCalledOnce();
         expect(String(readFileSync.mock.calls[0][0]).replaceAll("\\", "/"))
             .toMatch(/^\/resources\/share-theme\/templates\/404\.ejs$/);
+        expect(statSync).not.toHaveBeenCalled();
     });
 
     async function registerProvider(nodeEnv: string) {
         vi.stubEnv("NODE_ENV", nodeEnv);
         const readFileSync = vi.fn((_path: string) => "template");
+        const statSync = vi.fn((_path: string) => ({ mtimeMs: 1 }));
         const initShare = vi.fn<(provider: ShareProvider) => void>();
         vi.resetModules();
         vi.doMock(SHARE_INDEX, () => ({ initShare }));
         vi.doMock("./sql.js", () => ({ default: {}, isShareDbReady: () => true }));
         vi.doMock("fs", async (importOriginal) => ({
             ...await importOriginal<object>(),
-            readFileSync
+            readFileSync,
+            statSync
         }));
         vi.doMock("../services/utils.js", () => ({ getResourceDir: () => "/resources" }));
         vi.doMock("../services/scripting_guard.js", () => ({ isScriptingEnabled: () => false }));
@@ -109,7 +116,7 @@ describe("share provider", () => {
         registerShareProvider();
 
         expect(initShare).toHaveBeenCalledOnce();
-        return { provider: initShare.mock.calls[0][0], readFileSync };
+        return { provider: initShare.mock.calls[0][0], readFileSync, statSync };
     }
 });
 

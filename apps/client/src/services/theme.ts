@@ -1,3 +1,5 @@
+import type { UserTheme } from "@triliumnext/commons";
+
 import { readCssVar } from "../utils/css-var.js";
 
 export function getThemeStyle(): "auto" | "light" | "dark" {
@@ -170,7 +172,7 @@ export async function applyThemeFromOptions() {
 
     // Custom theme — resolve its note to build the CSS URL and the optional `next` base.
     const { default: server } = await import("./server.js");
-    const userThemes = await server.get<CustomThemeInfo[]>("options/user-themes");
+    const userThemes = await server.get<UserTheme[]>("options/user-themes");
 
     // The theme may have changed again while the request was in flight; applying the stale
     // one now would override the latest choice (whose own invocation may already have run).
@@ -184,12 +186,6 @@ export async function applyThemeFromOptions() {
         match ? `api/notes/download/${match.noteId}` : undefined,
         match?.appThemeBase
     );
-}
-
-interface CustomThemeInfo {
-    val: string;
-    noteId: string;
-    appThemeBase?: ThemeBase;
 }
 
 /**

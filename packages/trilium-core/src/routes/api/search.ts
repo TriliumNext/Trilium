@@ -3,7 +3,7 @@ import {
     type SearchResultDetails, type SearchResultDetailsRequest, type SearchResultDetailsResponse,
     type SearchWithTokensResponse, type TemplatesResponse
 } from "@triliumnext/commons";
-import type { Request } from "../../http_interface";
+import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import becca_service from "../../becca/becca_service.js";
@@ -155,14 +155,20 @@ function quickSearch(req: Request<{}, { searchString?: string }>): QuickSearchRe
 }
 
 function search(
-    req: Request<{}, { searchString?: string, ancestorNoteId?: string, includeTokens?: string }>
+    req: Request<{}, {
+        searchString?: string, ancestorNoteId?: string, includeTokens?: string,
+        includeArchivedNotes?: string
+    }>,
+    res: Response
 ): string[] | SearchWithTokensResponse {
     const searchString = getSearchString(req);
-    const { ancestorNoteId, includeTokens } = req.query;
+    const { ancestorNoteId, includeTokens, includeArchivedNotes } = req.query;
 
     const searchContext = new SearchContext({
         fastSearch: false,
-        includeArchivedNotes: true,
+        // A collection that hides archived notes asks for them to be left out, so their content is
+        // never read.
+        includeArchivedNotes: includeArchivedNotes !== "false",
         fuzzyAttributeSearch: false,
         ignoreHoistedNote: true,
         // Restricts the results to one subtree, for callers that filter a collection rather
@@ -172,6 +178,12 @@ function search(
 
     const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
         .map((sr) => sr.noteId);
+
+    // The request line carries the query URL-encoded, so the log repeats it in a readable form.
+    if (res.locals) {
+        const query = searchString.trim().replace(/\s+/g, " ");
+        res.locals.logSummary = `Search: ${query}  (returned ${noteIds.length} items)`;
+    }
 
     if (includeTokens !== "true") {
         return noteIds;

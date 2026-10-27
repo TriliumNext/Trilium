@@ -37,6 +37,10 @@ body.setup {
             position: relative;
             height: 100%;
 
+            body.electron & {
+                border-radius: 0;
+            }
+
             @media (min-width: 700px) {
                 display: flex;
                 width: 750px;
@@ -132,21 +136,27 @@ body.setup {
         }
 
         .page {
+            --page-padding-inline: 2em;
+            --page-padding-block: 2em;
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding-top: calc(2em + var(--safe-area-inset-top, env(safe-area-inset-top)));
-            padding-bottom: calc(2em + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
-            padding-left: calc(2em + var(--safe-area-inset-left, env(safe-area-inset-left)));
-            padding-right: calc(2em + var(--safe-area-inset-right, env(safe-area-inset-right)));
+            padding-top: calc(var(--page-padding-block) + env(titlebar-area-height, 0px) + var(--safe-area-inset-top, env(safe-area-inset-top)));
+            padding-bottom: calc(var(--page-padding-block) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+            padding-left: calc(var(--page-padding-inline) + var(--safe-area-inset-left, env(safe-area-inset-left)));
+            padding-right: calc(var(--page-padding-inline) + var(--safe-area-inset-right, env(safe-area-inset-right)));
             overflow: auto;
+
+            body.electron & {
+                --page-padding-block: 1em;
+            }
 
             >.back-button {
                 /* `.page` scrolls (not `.setup-container`), so sticky is required here, not
                    absolute, to stay in flow and follow the scroll. */
                 position: sticky;
-                top: calc(1em + var(--safe-area-inset-top, env(safe-area-inset-top)));
-                inset-inline-start: 1em;
+                top: 0;
+                inset-inline-start: 0;
                 align-self: flex-start;
                 z-index: 1;
                 color: var(--muted-text-color);
@@ -156,11 +166,6 @@ body.setup {
 
                 body.background-effects & {
                     background: transparent;
-                }
-
-                body.desktop & {
-                    inset-inline-start: 2em;
-                    top: 2em;
                 }
 
                 .tn-icon {
@@ -191,7 +196,7 @@ body.setup {
             >footer {
                 background: var(--main-background-color);
                 position: sticky;
-                bottom: -2rem;
+                bottom: calc(-1 * var(--page-padding-block));
                 left: 0;
                 right: 0;
                 display: flex;
@@ -199,10 +204,10 @@ body.setup {
                 gap: 0.5rem;
                 border-top: 1px solid var(--main-border-color);
                 padding-top: 1rem;
-                padding-bottom: 2rem;
-                margin-inline: -2rem;
-                margin-bottom: -2rem;
-                padding-inline: 2rem;
+                padding-bottom: var(--page-padding-block);
+                margin-inline: calc(-1 * var(--page-padding-inline));
+                margin-bottom: calc(-1 * var(--page-padding-block));
+                padding-inline: var(--page-padding-inline);
 
                 body.background-effects & {
                     background: transparent;
@@ -222,8 +227,10 @@ body.setup {
                 padding-inline-end: 2.5em;
                 user-select: text;
 
-                @media (min-width: 700px) {
-                    border-radius: 16px 16px 0 0;
+                body:not(.electron) & {
+                    @media (min-width: 700px) {
+                        border-radius: 16px 16px 0 0;
+                    }
                 }
 
                 button {
@@ -241,7 +248,7 @@ body.setup {
             width: 100%;
             margin-inline: auto;
 
-            body.desktop & {
+            @media (min-width: 700px) {
                 width: 80%;
             }
 
@@ -355,14 +362,14 @@ body.setup.background-effects .setup-container {
     background: transparent;
 }
 
-/* macOS: draggable title bar region and traffic light buttons */
-body.setup.platform-darwin {
+/* The band the window controls are drawn in, which drags the window in place of the title bar. */
+body.setup.electron {
     .drag-region {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        height: 40px;
+        height: env(titlebar-area-height, 40px);
         -webkit-app-region: drag;
         z-index: 10;
     }
@@ -370,6 +377,42 @@ body.setup.platform-darwin {
     .back-button {
         -webkit-app-region: no-drag;
         z-index: 11;
+    }
+
+    /* The error's header shares the band with the window controls: it drags the window and stays
+       clear of the controls on either side. Stacked above `.drag-region` so the dismiss button
+       receives clicks. */
+    .page > .page-error {
+        z-index: 11;
+        padding-top: 0;
+
+        .admonition-header {
+            height: env(titlebar-area-height, 40px);
+            margin-block-end: 0;
+            padding-left: max(0px, calc(env(titlebar-area-x, 0px) - 1em));
+            padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+            -webkit-app-region: drag;
+        }
+
+        button {
+            top: calc(env(titlebar-area-height, 40px) / 2);
+            right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 0.5em);
+            transform: translateY(-50%);
+            -webkit-app-region: no-drag;
+        }
+
+        /* Without a header, the content starts below the band and the banner stays under
+           `.drag-region`, so the band still drags the window. */
+        &.no-title {
+            z-index: 1;
+            padding-top: calc(env(titlebar-area-height, 40px) + 1em);
+
+            button {
+                top: calc(env(titlebar-area-height, 40px) + 0.5em);
+                right: 0.5em;
+                transform: none;
+            }
+        }
     }
 }
 

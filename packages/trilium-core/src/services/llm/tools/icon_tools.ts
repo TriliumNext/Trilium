@@ -17,6 +17,7 @@ export const iconTools = defineTools({
             "To give a note an icon, assign the icon class to the note's 'iconClass' label via set_attribute.",
             "ALWAYS use this instead of prepending an emoji to a note's title."
         ].join(" "),
+        readsUserData: false,
         inputSchema: z.object({
             query: z.string().describe("One or more keywords describing the desired icon, e.g. 'rocket' or 'building landmark monument'. Keywords are matched individually, so listing several synonyms is safe: icons matching more of them rank first."),
             limit: z.number().optional().describe("Maximum number of icons to return. Defaults to 20.")

@@ -158,6 +158,60 @@ describe("Popup", () => {
         expect(onPlaced).toHaveBeenCalledTimes(1);
     });
 
+    it("names the side it reveals itself from once placed, when it is asked to reveal itself", async () => {
+        anchorAt(100, 50);
+        expect((await open({ reveal: true })).dataset.reveal).toBe("bottom-start");
+
+        render(null, host);
+        anchorAt(100, 740);
+        expect((await open({ reveal: true })).dataset.reveal).toBe("top-start");
+
+        render(null, host);
+        expect((await open({ reveal: true, placedByStylesheet: true })).dataset.reveal).toBe("stylesheet");
+
+        render(null, host);
+        expect((await open()).dataset.reveal).toBeUndefined();
+    });
+
+    it("leaves an inert copy in its wrapper to play its closing animation, gone once that ends", async () => {
+        anchorAt(100, 50);
+        const popup = await open({ reveal: true, portalClassName: "tn-dropdown-portal global-menu", id: "the-menu" });
+        popup.scrollTop = 40;
+        let finish = () => {};
+        const finished = new Promise<void>((resolve) => {
+            finish = resolve;
+        });
+        vi.spyOn(HTMLElement.prototype, "getAnimations").mockImplementation(function (this: HTMLElement) {
+            return this.dataset.closing !== undefined ? [ { finished } as unknown as Animation ] : [];
+        });
+
+        render(null, host);
+        const copy = document.querySelector<HTMLElement>(".tn-popup");
+        expect(copy).not.toBeNull();
+        expect(copy).not.toBe(popup);
+        expect(copy?.dataset.closing).toBe("");
+        expect(copy?.dataset.reveal).toBe("bottom-start");
+        expect([ copy?.hasAttribute("inert"), copy?.getAttribute("aria-hidden"), copy?.id ]).toEqual([ true, "true", "" ]);
+        expect(copy?.scrollTop).toBe(40);
+        expect(copy?.parentElement?.className).toBe("tn-dropdown-portal global-menu");
+        expect(copy?.parentElement?.parentElement).toBe(document.body);
+
+        finish();
+        await vi.waitFor(() => expect(document.querySelector(".tn-dropdown-portal")).toBeNull());
+    });
+
+    it("leaves no copy behind without a reveal, or with nothing to play", async () => {
+        anchorAt(100, 50);
+        await open();
+        render(null, host);
+        expect(document.querySelector(".tn-popup")).toBeNull();
+
+        // As with motion turned off, which leaves no animation.
+        await open({ reveal: true });
+        render(null, host);
+        expect(document.querySelector(".tn-popup")).toBeNull();
+    });
+
     it("says nothing of a placement that settles once it has closed", async () => {
         anchorAt(100, 50);
         const onPlaced = vi.fn();
@@ -257,6 +311,25 @@ describe("Popup", () => {
         press(popup);
         click(icon);
         expect(iconClicked).toHaveBeenCalledTimes(3);
+
+        // A tap that starts on the button's glyph and ends on its padding clicks the button.
+        const glyph = document.createElement("span");
+        icon.append(glyph);
+        press(glyph);
+        click(icon);
+        expect(iconClicked).toHaveBeenCalledTimes(4);
+
+        // WebKit takes a tap close to the one before as a double tap, and clicks where that one
+        // landed instead of where this one did.
+        const other = document.createElement("button");
+        const otherClicked = vi.fn();
+        other.addEventListener("click", otherClicked);
+        document.body.append(other);
+        press(glyph);
+        other.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 2 }));
+        expect(otherClicked).not.toHaveBeenCalled();
+        expect(iconClicked).toHaveBeenCalledTimes(5);
+        other.remove();
         cover.remove();
         icon.remove();
     });

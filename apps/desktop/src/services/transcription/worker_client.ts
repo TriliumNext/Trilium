@@ -8,6 +8,8 @@ import type { Logger, WorkerEvent, WorkerRequest } from "./protocol";
 export interface WorkerListeners {
     onUtterance(utterance: TranscriptUtterance): void;
     onPendingChanged(sources: TranscriptSource[]): void;
+    /** Called with the RMS of each chunk a source delivers, from 0 to 1. */
+    onLevel(source: TranscriptSource, level: number): void;
     /** Called when the process ends without having been stopped, as when it crashes. */
     onUnexpectedExit(code: number): void;
     log: Logger;
@@ -93,6 +95,9 @@ export class TranscriptionWorker {
                 break;
             case "utterance":
                 this.listeners.onUtterance(event.utterance);
+                break;
+            case "level":
+                this.listeners.onLevel(event.source, event.level);
                 break;
             case "log":
                 this.listeners.log[event.level](event.message);

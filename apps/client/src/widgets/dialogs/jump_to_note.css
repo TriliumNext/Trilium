@@ -141,6 +141,8 @@ body.desktop .jump-to-note-dialog.wide {
 
         .modal-content {
             padding-bottom: 0 !important;
+            padding-left: calc(var(--jump-to-note-padding) + var(--safe-area-inset-left, env(safe-area-inset-left))) !important;
+            padding-right: calc(var(--jump-to-note-padding) + var(--safe-area-inset-right, env(safe-area-inset-right))) !important;
         }
 
         .modal-body {

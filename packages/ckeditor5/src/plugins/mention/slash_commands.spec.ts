@@ -17,15 +17,16 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
 import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TIME_PRESETS } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
+import { LINK_EMBED_COMMAND } from "../link_embed/link_embed_commands.js";
+import LinkEmbedUI from "../link_embed/link_embed_ui.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
@@ -586,6 +587,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "collapsible", "Collapsible block", "collapsible" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
         [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
+        [ "link-preview", "Link preview", LINK_EMBED_COMMAND ],
         [ "attach-file", "Attach file as a link", "fileUpload" ],
         [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
         [ "drawing-canvas", "Drawing canvas", "fileUpload" ],
@@ -596,7 +598,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
-        [ "mermaid", "Mermaid diagram", INSERT_MERMAID_COMMAND ]
+        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ]
     ])("defines %s, running its command with an icon and a description", (id, title, commandName) => {
         const entry = definition(id);
 
@@ -698,8 +700,7 @@ describe("buildTriliumSlashCommands", () => {
 
         beforeEach(async () => {
             formatDateTime = vi.fn((_date: Date, format?: string) => format ?? "2026-09-25 10:30");
-            installGlobMock({ getComponentByEl: () => ({ formatDateTime }) });
-            editor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ]);
+            editor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ], { formatDateTime });
         });
 
         function dateTimeEntries() {
@@ -814,6 +815,14 @@ describe("buildTriliumSlashCommands", () => {
         expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
     });
 
+    it("finds the link preview entry by the words people type for a web page or a video", () => {
+        const entries = [ definition("link-preview") ];
+
+        for (const query of [ "preview", "embed", "url", "website", "youtube", "video" ]) {
+            expect(matchSlashCommands(entries, query)).toHaveLength(1);
+        }
+    });
+
     it("opens the math balloon rather than running a command", () => {
         const { fake, pluginInstances } = makeFakeEditor();
         const showUI = vi.fn();
@@ -828,7 +837,8 @@ describe("buildTriliumSlashCommands", () => {
     // finished its own DOM and selection cleanup.
     it.each([
         [ "anchor", BookmarkUI, "_showFormView" ],
-        [ "icon", InlineIconUI, "showPicker" ]
+        [ "icon", InlineIconUI, "showPicker" ],
+        [ "link-preview", LinkEmbedUI, "showForm" ]
     ] as const)("defers the %s entry's balloon to the next tick", (id, plugin, method) => {
         vi.useFakeTimers();
         try {
@@ -849,15 +859,17 @@ describe("buildTriliumSlashCommands", () => {
     // The samples come from `mermaid.samples`, which the editor already carries for the Mermaid UI —
     // it was passed to the builder separately back when the host built these definitions.
     it("builds one entry per Mermaid sample, inserting that sample's source", () => {
-        const { fake, executeSpy } = makeFakeEditor();
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
         const sample = definition("mermaid-sample-0");
 
         expect(sample.title).toBe("Mermaid diagram: Flowchart");
         expect(sample.description).toBe("Insert a \"Flowchart\" Mermaid diagram template");
         expect(sample.aliases).toContain("Flowchart");
 
-        sample.execute?.(fake);
-        expect(executeSpy).toHaveBeenCalledWith(INSERT_MERMAID_COMMAND, { source: "graph TD;" });
+        sample.execute?.(editor);
+        expect(execute).toHaveBeenCalledWith(
+            INSERT_INLINE_EMBED_COMMAND, { language: "mermaid", source: "graph TD;" }
+        );
     });
 
     it("carries no sample entries when the editor configures none", async () => {

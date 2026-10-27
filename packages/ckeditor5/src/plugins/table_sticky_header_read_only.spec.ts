@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "v
 
 import { applyTableScroll } from "./table_scroll_read_only.js";
 import {
-    applyStickyTableHeaders, START_PROPERTY, StickyTableHeaders, TRAVEL_PROPERTY
+    applyStickyTableHeaders, EASING_PROPERTY, START_PROPERTY, StickyTableHeaders, TRAVEL_PROPERTY
 } from "./table_sticky_header_read_only.js";
 
 const SCROLLER_HEIGHT = 200;
@@ -37,7 +37,9 @@ describe("applyStickyTableHeaders", () => {
         const start = header.top - figure.getBoundingClientRect().top;
         expect(start).toBeGreaterThan(10);
         expect(lengthOf(thead, START_PROPERTY)).toBeCloseTo(start, 1);
-        expect(lengthOf(thead, TRAVEL_PROPERTY)).toBeCloseTo(tableBox.bottom - header.bottom, 1);
+        expect(lengthOf(thead, TRAVEL_PROPERTY))
+            .toBeCloseTo(tableBox.bottom - header.bottom - 1, 1);
+        expect(thead.style.getPropertyValue(EASING_PROPERTY)).toBe("");
         expect(bordersOf(thead)).toBe("none");
 
         await scrollTo(scroller, offsetIn(scroller, thead) + 150);
@@ -54,6 +56,24 @@ describe("applyStickyTableHeaders", () => {
         await scrollTo(scroller, 0);
         expect(getComputedStyle(thead).translate).toBe("none");
         expect(bordersOf(thead)).toBe("none");
+    });
+
+    it("leaves the header rows in place while `sticky-table-headers-disabled` is set", async () => {
+        document.body.classList.add("sticky-table-headers-disabled");
+        onTestFinished(() => document.body.classList.remove("sticky-table-headers-disabled"));
+        const { scroller, content } = renderContent(tableFigure(1, 20));
+        applyStickyTableHeaders(content);
+        await settle();
+
+        const { thead } = parts(content);
+        await scrollTo(scroller, offsetIn(scroller, thead) + 150);
+        expect(topIn(scroller, thead)).toBeCloseTo(-150, 0);
+        expect(getComputedStyle(thead).translate).toBe("none");
+
+        // Content already on screen follows the class.
+        document.body.classList.remove("sticky-table-headers-disabled");
+        await settle();
+        expect(topIn(scroller, thead)).toBeCloseTo(0, 0);
     });
 
     it("measures the header rows again when the table grows while they stick", async () => {
@@ -75,6 +95,20 @@ describe("applyStickyTableHeaders", () => {
         expect(topIn(scroller, thead)).toBeCloseTo(0, 0);
     });
 
+    it("stops measuring the header rows once disposed", async () => {
+        const { content } = renderContent(tableFigure(1, 20));
+        const dispose = applyStickyTableHeaders(content);
+        await settle();
+
+        const { table, thead } = parts(content);
+        const travel = lengthOf(thead, TRAVEL_PROPERTY);
+        dispose();
+        const row = table.tBodies[0].rows[0];
+        row.after(row.cloneNode(true));
+        await settle();
+        expect(lengthOf(thead, TRAVEL_PROPERTY)).toBe(travel);
+    });
+
     it("sticks below the scroll padding of the scrolled area", async () => {
         const { scroller, content } = renderContent(tableFigure(1, 20));
         scroller.style.scrollPaddingTop = "30px";
@@ -84,6 +118,99 @@ describe("applyStickyTableHeaders", () => {
         const { thead } = parts(content);
         await scrollTo(scroller, offsetIn(scroller, thead) + 100);
         expect(topIn(scroller, thead)).toBeCloseTo(30, 0);
+    });
+
+    it("moves the header rows by device pixels where scroll offsets are rounded", async () => {
+        snapScrollOffsets();
+        const { scroller, content, spacer } = renderContent(tableFigure(1, 20));
+        scroller.style.scrollPaddingTop = "10px";
+        spacer.style.height = "100.4px";
+        applyStickyTableHeaders(content);
+        await settle();
+
+        const { figure, thead } = parts(content);
+        const steps = lengthOf(thead, TRAVEL_PROPERTY) * SCALE;
+        expect(steps).toBeCloseTo(Math.round(steps), 1);
+        expect(thead.style.getPropertyValue(EASING_PROPERTY)).toBe(`steps(${Math.round(steps)})`);
+        expect(stickOffsetOf(scroller, figure, 10) * SCALE % 1).toBeCloseTo(0.5, 1);
+
+        for (const offset of [ 120, 121, 122 ]) {
+            await scrollTo(scroller, offset);
+            const shift = shiftOf(thead) * SCALE;
+            expect(shift).toBeGreaterThan(0);
+            expect(shift).toBeCloseTo(Math.round(shift), 1);
+            expect(topIn(scroller, thead)).toBeCloseTo(10, 0);
+        }
+    });
+
+    it("aligns the header rows again as their scroll container starts to scroll", async () => {
+        snapScrollOffsets();
+        const { scroller, content, spacer } = renderContent(tableFigure(1, 20));
+        const dispose = applyStickyTableHeaders(content);
+        await settle();
+
+        const { figure, thead } = parts(content);
+        const start = thead.style.getPropertyValue(START_PROPERTY);
+        spacer.style.height = "100.4px";
+        await settle();
+        expect(thead.style.getPropertyValue(START_PROPERTY)).toBe(start);
+
+        await scrollTo(scroller, 120);
+        expect(thead.style.getPropertyValue(START_PROPERTY)).not.toBe(start);
+        expect(stickOffsetOf(scroller, figure, 0) * SCALE % 1).toBeCloseTo(0.5, 1);
+
+        dispose();
+        const aligned = thead.style.getPropertyValue(START_PROPERTY);
+        spacer.style.height = "100px";
+        await scrollTo(scroller, 0);
+        expect(thead.style.getPropertyValue(START_PROPERTY)).toBe(aligned);
+    });
+
+    it("aligns the header rows once per scroll of their scroll container", async () => {
+        snapScrollOffsets();
+        const { scroller, content, spacer } = renderContent(tableFigure(1, 20));
+        onTestFinished(applyStickyTableHeaders(content));
+        await settle();
+        const { thead } = parts(content);
+        const start = () => thead.style.getPropertyValue(START_PROPERTY);
+
+        spacer.style.height = "100.4px";
+        scroller.dispatchEvent(new Event("scroll"));
+        await settle();
+        const aligned = start();
+        spacer.style.height = "100px";
+        scroller.dispatchEvent(new Event("scroll"));
+        await settle();
+        expect(start()).toBe(aligned);
+
+        scroller.dispatchEvent(new Event("scrollend"));
+        scroller.dispatchEvent(new Event("scroll"));
+        await settle();
+        expect(start()).not.toBe(aligned);
+    });
+
+    it("aligns the header rows of a table that scrolls with the page", async () => {
+        snapScrollOffsets();
+        const content = document.createElement("div");
+        content.className = "ck-content";
+        content.innerHTML = `<div style="height:100.4px"></div>${tableFigure(1, 20)}`
+            + "<div style=\"height:2000px\"></div>";
+        document.body.appendChild(content);
+        document.documentElement.style.scrollPaddingTop = "10.5px";
+        window.scrollTo(0, 31);
+        onTestFinished(() => {
+            content.remove();
+            document.documentElement.style.scrollPaddingTop = "";
+            window.scrollTo(0, 0);
+        });
+        onTestFinished(applyStickyTableHeaders(content));
+        await settle();
+
+        const { figure, thead } = parts(content);
+        expect(window.scrollY).toBe(31);
+        const offset = figure.getBoundingClientRect().top + window.scrollY - 10.5
+            + lengthOf(thead, START_PROPERTY);
+        expect(offset * SCALE % 1).toBeCloseTo(0.5, 1);
     });
 
     it("keeps the header rows of a table that scrolls sideways in view", async () => {
@@ -150,6 +277,18 @@ describe("applyStickyTableHeaders", () => {
     });
 });
 
+const SCALE = 1.5;
+
+/** Measures as Firefox needs, at a device pixel ratio of `SCALE`. */
+function snapScrollOffsets() {
+    vi.spyOn(CSS, "supports").mockReturnValue(true);
+    vi.stubGlobal("devicePixelRatio", SCALE);
+    onTestFinished(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+}
+
 /** A table figure with header rows and body rows, and a caption when `caption` is set. */
 function tableFigure(headerRows: number, bodyRows: number, caption = "", style = "") {
     const row = (cell: string, index: number) => `<tr><${cell}>${cell} ${index}</${cell}>`
@@ -169,12 +308,14 @@ function renderContent(html: string) {
         + `height:${SCROLLER_HEIGHT}px;width:400px;overflow:auto;`;
     const content = document.createElement("div");
     content.className = "ck-content";
-    content.innerHTML = `<div style="height:100px"></div>${html}`
-        + `<div style="height:${SCROLLER_HEIGHT * 2}px"></div>`;
+    const spacer = document.createElement("div");
+    spacer.style.height = "100px";
+    content.innerHTML = `${html}<div style="height:${SCROLLER_HEIGHT * 2}px"></div>`;
+    content.prepend(spacer);
     scroller.appendChild(content);
     document.body.appendChild(scroller);
     onTestFinished(() => scroller.remove());
-    return { scroller, content };
+    return { scroller, content, spacer };
 }
 
 function parts(container: Element) {
@@ -203,6 +344,15 @@ function bordersOf(thead: HTMLElement) {
 function offsetIn(scroller: HTMLElement, element: HTMLElement) {
     return element.getBoundingClientRect().top - scroller.getBoundingClientRect().top
         + scroller.scrollTop;
+}
+
+/** The scroll offset at which the header rows of `figure` start to move. */
+function stickOffsetOf(scroller: HTMLElement, figure: HTMLElement, padding: number) {
+    return offsetIn(scroller, figure) - padding + lengthOf(parts(figure).thead, START_PROPERTY);
+}
+
+function shiftOf(element: HTMLElement) {
+    return parseFloat(getComputedStyle(element).translate.split(" ")[1] ?? "0");
 }
 
 /** The distance from the top of `scroller` to where `element` is drawn. */

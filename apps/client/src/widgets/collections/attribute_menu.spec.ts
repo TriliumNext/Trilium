@@ -4,6 +4,7 @@ import type FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
+import DatePicker from "../react/DatePicker";
 import { buildAttributeMenuItems } from "./attribute_menu";
 import type { PromotedAttribute } from "./promoted_attributes";
 
@@ -13,6 +14,9 @@ vi.mock("../../services/attributes", async (importOriginal) => ({
     ...await importOriginal<object>(),
     ...writes
 }));
+
+// The picker is a component of its own, with its own spec; here only what it is handed counts.
+vi.mock("../react/DatePicker", () => ({ default: vi.fn(() => null) }));
 
 // i18next is never initialised under test, so `t` echoes the key it is given.
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
@@ -136,11 +140,12 @@ describe("buildAttributeMenuItems", () => {
             return entry.items ?? [];
         }
 
-        it("offers the options as defined, above nothing but Not set, and no icons", () => {
+        it("offers the options as defined, below Not set and a separator, and no icons", () => {
             const items = options(buildNote({ title: "Card" }));
 
             expect(titles(items)).toEqual([
                 `<span class="tn-menu-name">attribute_menu.not-set</span>`,
+                "separator",
                 `<span class="tn-menu-name">To Do</span>`,
                 `<span class="tn-menu-name">Doing</span>`,
                 `<span class="tn-menu-name">Done</span>`
@@ -167,7 +172,7 @@ describe("buildAttributeMenuItems", () => {
             const note = buildNote({ title: "Card", "#state": "Doing" });
             const items = options(note);
 
-            pick(items[2]);
+            pick(items[3]);
             expect(writes.setLabelValues).toHaveBeenCalledWith(note, "state", [ "Doing" ]);
 
             pick(items[0]);
@@ -197,7 +202,7 @@ describe("buildAttributeMenuItems", () => {
             const first = buildNote({ title: "One" });
             const second = buildNote({ title: "Two", "#state": "Done" });
 
-            await pick(options(first, second)[2]);
+            await pick(options(first, second)[3]);
 
             expect(writes.setLabelValues).toHaveBeenCalledWith(first, "state", [ "Doing" ]);
             expect(writes.setLabelValues).toHaveBeenCalledWith(second, "state", [ "Doing" ]);
@@ -221,6 +226,62 @@ describe("buildAttributeMenuItems", () => {
         });
     });
 
+    describe("a date", () => {
+        const due = [ attribute({ name: "due", title: "Due", labelType: "date" }) ];
+
+        function entries(...notes: FNote[]) {
+            const items = buildAttributeMenuItems<string>({ notes, attributes: due });
+            const entry = items[1];
+            if (!entry || !("items" in entry)) throw new Error("expected a submenu");
+            return entry.items ?? [];
+        }
+
+        it("offers Not set, then a date picker", () => {
+            const items = entries(buildNote({ title: "Card" }));
+
+            expect(items).toHaveLength(3);
+            expect(titles(items)[0]).toBe(`<span class="tn-menu-name">attribute_menu.not-set</span>`);
+            expect(items.slice(1)).toMatchObject([ { kind: "separator" }, { kind: "custom" } ]);
+            expect(marked(items)).toEqual([
+                `<span class="tn-menu-name">attribute_menu.not-set</span>`
+            ]);
+            expect(marked(entries(buildNote({ title: "Card", "#due": "2026-10-22" })))).toEqual([]);
+        });
+
+        it("hands the picker the date every item holds, and writes the date picked", () => {
+            const note = buildNote({ title: "Card", "#due": "2026-12-01" });
+            const picker = pickerOf(entries(note, buildNote({ title: "Two", "#due": "2026-12-01" })));
+
+            expect(picker.value).toBe("2026-12-01");
+            expect(picker.onClear).toBeUndefined();
+            picker.onChange("2026-12-24");
+            expect(writes.setLabelValues).toHaveBeenCalledWith(note, "due", [ "2026-12-24" ]);
+
+            expect(pickerOf(entries(note, buildNote({ title: "Three" }))).value).toBeUndefined();
+
+            pick(entries(note)[0]);
+            expect(writes.setLabelValues).toHaveBeenCalledWith(note, "due", []);
+        });
+
+        /** What the submenu's custom row hands the date picker. */
+        function pickerOf(items: MenuItem<string>[]) {
+            const row = items.at(-1);
+            if (!row || !("kind" in row) || row.kind !== "custom") throw new Error("expected a picker");
+            vi.mocked(DatePicker).mockClear();
+            row.componentFn();
+            const props = vi.mocked(DatePicker).mock.calls[0]?.[0];
+            if (!props) throw new Error("expected the picker to render");
+            return props;
+        }
+
+        it("leaves out a date and time, which a menu cannot set without its time", () => {
+            expect(build({ title: "Card" }, [
+                attribute({ name: "at", title: "At", labelType: "datetime" }),
+                attribute({ name: "time", title: "Time", labelType: "time" })
+            ])).toEqual([]);
+        });
+    });
+
     it("escapes what a crafted name would plant in the menu", () => {
         const crafted = `<img src=x onerror="alert(1)">`;
         const items = build({ title: "Card" }, [ attribute({
@@ -232,7 +293,7 @@ describe("buildAttributeMenuItems", () => {
         const escaped = "<span class=\"tn-menu-name\">"
             + "&lt;img src&#x3D;x onerror&#x3D;&quot;alert(1)&quot;&gt;</span>";
         expect(titles(items)[1]).toBe(escaped);
-        expect(titles(entry.items ?? [])[1]).toBe(escaped);
+        expect(titles(entry.items ?? [])[2]).toBe(escaped);
     });
 });
 

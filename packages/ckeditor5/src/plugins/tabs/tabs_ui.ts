@@ -4,7 +4,6 @@ import {
     Collection,
     type Command,
     createDropdown,
-    type Editor,
     IconLink,
     IconNextArrow,
     IconPlus,
@@ -74,7 +73,7 @@ export default class TabsUI extends Plugin {
 
             const command = editor.commands.get("assignTabReference") as Command;
             button.bind("isEnabled").to(command, "isEnabled");
-            this.listenTo(button, "execute", () => getHost(editor).copyTabReference?.());
+            this.listenTo(button, "execute", () => editor.config.get("tabs")?.copyReference?.());
             return button;
         });
     }
@@ -141,7 +140,12 @@ function getAlignmentIcon(alignment: TabAlignment): string {
     return alignment === "bottom" ? tabsBottomIcon : tabsIcon;
 }
 
-/** Returns the host component of `editor`, which copies links. */
-function getHost(editor: Editor) {
-    return glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
+declare module "ckeditor5" {
+    interface EditorConfig {
+        /** What the host of the editor does with tabs blocks. */
+        tabs?: {
+            /** Copies a link to the tab that holds the selection. */
+            copyReference?(): void;
+        };
+    }
 }

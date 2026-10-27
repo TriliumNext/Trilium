@@ -213,6 +213,19 @@ export function sanitizeSqlIdentifier(str: string) {
 export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
 
 /**
+ * Headers for stored, non-SVG content served without a `Content-Disposition`. A browser that
+ * navigates to such a response renders it as a document in Trilium's origin, so `sandbox` keeps
+ * its scripts from running. Embedders (`<img>`, `<video>`, `fetch()`, `@font-face`) ignore the
+ * policy. A PDF goes without it, because Chrome refuses to display a sandboxed PDF.
+ */
+export function getInlineContentHeaders(mime: string): Record<string, string> {
+    return {
+        "X-Content-Type-Options": "nosniff",
+        ...(mime === "application/pdf" ? {} : { "Content-Security-Policy": "sandbox" })
+    };
+}
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */

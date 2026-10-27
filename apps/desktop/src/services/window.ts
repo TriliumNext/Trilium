@@ -6,7 +6,7 @@ import { t } from "i18next";
 import path from "path";
 
 import { markStartupMetric } from "./startup_metrics.js";
-import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
+import { isTriliumAppShellUrl, TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
 
 // Preload bundle path. Two layouts:
@@ -406,7 +406,11 @@ async function createSetupWindow() {
         icon: getIcon(),
         // Background effects (Mica on Windows 11 22H2+, vibrancy on macOS)
         ...(coreUtils.isWindows() && supportsBackgroundMaterial && { backgroundMaterial: "mica" as const }),
-        ...(coreUtils.isMac() && { transparent: true, visualEffectState: "active" as const, vibrancy: "under-window" as const, titleBarStyle: "hiddenInset" as const }),
+        ...(coreUtils.isMac() && { transparent: true, visualEffectState: "active" as const, vibrancy: "under-window" as const }),
+        // The window controls draw over the page, as in the main window with its default
+        // `nativeTitleBarVisible`; the page reserves `env(titlebar-area-height)` for them.
+        titleBarStyle: coreUtils.isMac() ? "hiddenInset" : "hidden",
+        titleBarOverlay: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -528,9 +532,12 @@ export function setupWindowing() {
         console.error(`Could not set the application menu: ${e}`);
     });
 
+    // Only app windows: reloading the hidden transcription capture page would end its capture.
     electron.ipcMain.on("reload-all-windows", () => {
         for (const win of electron.BrowserWindow.getAllWindows()) {
-            win.reload();
+            if (isTriliumAppShellUrl(win.webContents.getURL())) {
+                win.reload();
+            }
         }
     });
 

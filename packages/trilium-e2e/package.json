@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {},
   "devDependencies": {
-    "dotenv": "18.0.7"
+    "dotenv": "18.0.8"
   }
 }

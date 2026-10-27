@@ -35,11 +35,12 @@ import { useEffectiveReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean
 import { ParentComponent } from "../../react/react_utils";
 import { offeredTemplateIds, useTemplateChoice } from "../../react/TemplateDropdown";
 import { ViewModeProps } from "../interface";
+import type { PromotedAttributeSetting } from "../promoted_attributes";
 import { type CalendarViewData, changeEvent, DEFAULT_EVENT_TEMPLATES, newEvent } from "./api";
 import Calendar from "./calendar";
 import { openCalendarContextMenu } from "./context_menu";
 import { CalendarSelection, EventDraft } from "./selection";
-import { buildEvents, buildEventsForCalendar, buildOccurrenceTitle } from "./event_builder";
+import { buildEvents, buildEventsForCalendar, buildOccurrenceTitle, routineEventDisplay } from "./event_builder";
 import { formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 const CALENDAR_VIEWS = [
@@ -128,11 +129,15 @@ export default function CalendarView({
     const [ firstDayOfWeek ] = useTriliumOptionInt("firstDayOfWeek");
     const [ hideWeekends ] = useNoteLabelBoolean(note, "calendar:hideWeekends");
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
+    const [ hideRoutineEvents ] = useNoteLabelBoolean(note, "calendar:hideRoutineEvents");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
     const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
     const [ slotDuration ] = useNoteLabel(note, "calendar:slotDuration");
     const [ slotLabelInterval ] = useNoteLabel(note, "calendar:slotLabelInterval");
     const initialView = useRef(calendarView);
+    const [ viewType, setViewType ] = useState(() =>
+        initialView.current && SUPPORTED_CALENDAR_VIEW_TYPE.includes(initialView.current)
+            ? initialView.current : "dayGridMonth");
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     // FullCalendar v7 sizes itself from its own ResizeObserver; the v6 `updateSize()` nudge this
     // used to need is gone along with the method.
@@ -172,7 +177,8 @@ export default function CalendarView({
         return true;
     }, []);
 
-    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface, isReadOnly);
+    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface, isReadOnly,
+        viewConfig?.promotedAttributes);
     const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId,
         setSelection, effectiveSlotDuration);
 
@@ -370,6 +376,7 @@ export default function CalendarView({
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
+                eventDisplay={routineEventDisplay(hideRoutineEvents, viewType)}
                 slotDuration={effectiveSlotDuration}
                 slotHeaderInterval={isValidDuration(slotLabelInterval) ? slotLabelInterval : DEFAULT_SLOT_LABEL_INTERVAL}
                 height="100%"
@@ -407,6 +414,13 @@ export default function CalendarView({
                 eventContent={eventContent}
                 eventInnerClass={eventInnerClass}
                 eventDidMount={eventDidMount}
+                datesSet={({ view }) => {
+                    // Set here as well as through the state, so the new view is drawn again
+                    // without routine events before the browser paints it.
+                    calendarRef.current?.setOption("eventDisplay",
+                        routineEventDisplay(hideRoutineEvents, view.type));
+                    setViewType(view.type);
+                }}
                 viewDidMount={({ view }) => {
                     // A read-only calendar keeps the view it was switched to only while it is shown.
                     if (initialView.current !== view.type && !isReadOnly) {
@@ -722,7 +736,13 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
     /** Puts away whatever surface stands over the calendar, answering whether there was one. */
     dismissSurface: () => boolean,
     /** Whether the calendar is read-only, whose events' menu offers only the places to open them in. */
-    isReadOnly: boolean) {
+    isReadOnly: boolean,
+    /** How the calendar arranges its promoted attributes, which the events' menu offers to set. */
+    attributeSettings: PromotedAttributeSetting[] | undefined) {
+    // Read when the menu opens, as a chip's listener outlives the render it was attached in.
+    const attributeSettingsRef = useRef(attributeSettings);
+    attributeSettingsRef.current = attributeSettings;
+
     /**
      * The chip's own content, drawn so the note's icon can lead its title.
      *
@@ -786,7 +806,8 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
-            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId, isReadOnly);
+            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId, isReadOnly,
+                attributeSettingsRef.current);
         }
 
         // A long press raises it on a phone, as a right-click does on a desktop; the tap itself now

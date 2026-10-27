@@ -160,6 +160,15 @@ describe("WasmStatement reads and writes", () => {
             .toEqual(["alice", "bob"]);
     });
 
+    it("iterate() resets the statement when a loop exits early", () => {
+        const stmt = provider.prepare("SELECT name FROM t ORDER BY name /* it-break */");
+        for (const row of stmt.iterate()) {
+            expect(row).toEqual({ name: "alice" });
+            break;
+        }
+        expect([...stmt.iterate()]).toEqual([{ name: "alice" }, { name: "bob" }]);
+    });
+
     it("toggling raw/pluck off restores object rows", () => {
         const stmt = provider.prepare("SELECT name FROM t WHERE name = ? /* toggle */").raw().pluck();
         stmt.raw(false).pluck(false);

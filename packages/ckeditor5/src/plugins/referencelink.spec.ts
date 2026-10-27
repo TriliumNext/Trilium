@@ -2,7 +2,6 @@ import { _getModelData as getModelData, _getViewData as getViewData, _setModelDa
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import ReferenceLink, { getAttachmentId, getNoteId } from "./referencelink.js";
 
 describe("ReferenceLink", () => {
@@ -15,13 +14,13 @@ describe("ReferenceLink", () => {
         getReferenceLinkTitle = vi.fn(async () => "Some title");
         getReferenceLinkTitleSync = vi.fn(() => "Some title");
         loadReferenceLinkTitle = vi.fn(async () => undefined);
-        installGlobMock({
-            getComponentByEl: () => ({ loadReferenceLinkTitle }),
-            getReferenceLinkTitle,
-            getReferenceLinkTitleSync
+        editor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink], {
+            referenceLink: {
+                getTitle: getReferenceLinkTitle,
+                getTitleSync: getReferenceLinkTitleSync,
+                renderTitle: loadReferenceLinkTitle
+            }
         });
-
-        editor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink]);
     });
 
     it("loads the plugin, registers the schema and the command", () => {
@@ -178,13 +177,25 @@ describe("ReferenceLink", () => {
         expect(view).toContain("reference-link");
         expect(view).toContain("ck-widget");
 
-        // Force the UIElement's render callback to run so loadReferenceLinkTitle is invoked.
+        // Force the UIElement's render callback to run so `renderTitle` is invoked.
         const domRoot = editor.editing.view.getDomRoot();
         const anchor = domRoot?.querySelector("a.reference-link");
         expect(anchor).not.toBeNull();
         expect(loadReferenceLinkTitle).toHaveBeenCalledTimes(1);
         expect(loadReferenceLinkTitle.mock.calls[0]?.[1]).toBe("#root/noteAbc");
         expect(loadReferenceLinkTitle.mock.calls[0]?.[2]).toBe("Some title");
+    });
+
+    it("shows the title it reads itself without a host to render it", () => {
+        editor.config.set("referenceLink", { renderTitle: undefined });
+        getReferenceLinkTitleSync.mockReturnValue("Synced title");
+
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc">Stored</a></p>');
+
+        const anchor = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+        expect(anchor?.textContent).toBe("Synced title");
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc", "Stored");
+        expect(loadReferenceLinkTitle).not.toHaveBeenCalled();
     });
 
     it("shows a placeholder's file name, then redraws it as a titled link once uploaded", () => {
@@ -284,6 +295,17 @@ describe("ReferenceLink", () => {
         expect(data).toContain("Some title");
     });
 
+    it("titles a reference with its stored title, or else its href, without referenceLink", async () => {
+        const plainEditor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink]);
+
+        plainEditor.setData('<p><a class="reference-link" href="#root/noteAbc">Stored</a></p>');
+        expect(plainEditor.getData()).toContain(">Stored</a>");
+
+        setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
+        plainEditor.execute("referenceLink", { href: "#root/noteNew" });
+        await vi.waitFor(() => expect(plainEditor.getData()).toContain('href="#root/noteNew">#root/noteNew</a>'));
+    });
+
     it("maps a view position inside the reference widget to a model position outside of it", () => {
         editor.setData('<p><a class="reference-link" href="#root/noteAbc">Some title</a></p>');
 
@@ -354,15 +376,10 @@ describe("ReferenceLink", () => {
 
     it("asks to fix a reference to a missing note when it is clicked, and not one to a note", () => {
         const fixReferenceLink = vi.fn();
-        // The test setup makes `$` a passthrough, so the title element arrives as itself.
         loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement, href: string) => {
             el.classList.toggle("reference-link-missing", href === "#root/gone");
         });
-        installGlobMock({
-            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
-            getReferenceLinkTitle,
-            getReferenceLinkTitleSync
-        });
+        editor.config.set("referenceLink", { fixLink: fixReferenceLink });
         editor.setData(
             '<p><a class="reference-link" href="#root/noteAbc">Fine</a>'
             + '<a class="reference-link" href="#root/gone">Gone</a></p>'
@@ -394,11 +411,7 @@ describe("ReferenceLink", () => {
         loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement) => {
             el.classList.add("reference-link-missing");
         });
-        installGlobMock({
-            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
-            getReferenceLinkTitle,
-            getReferenceLinkTitleSync
-        });
+        editor.config.set("referenceLink", { fixLink: fixReferenceLink });
         editor.setData(
             '<p><a class="reference-link" href="#root/gone"></a><a href="https://x.org">x</a></p>'
         );

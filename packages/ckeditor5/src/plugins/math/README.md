@@ -23,6 +23,44 @@ and opt-in — it turns `$$` or `\[` at the start of a block into an equation pr
 | `utils.ts` | Delimiter helpers, `renderEquation`, balloon positioning |
 | `typings_external.ts` | Types for KaTeX and MathJax, which are read off globals |
 
+## Styling
+
+`theme/math_form.css` draws the dialog from CKEditor's tokens, and a theme draws over it (the Next
+theme does so in `theme-next/forms.css` and `theme-next/notes/text.css`). MathLive renders its
+field and its menu in the math field's shadow root, which a theme reaches only through `::part()`
+and MathLive's `--ui-*` variables. As `::part(menu-item)` also matches the headings and the cells
+of the matrix and color grids, and no part reaches a color swatch's color or a checkmark,
+`MathInputView` adopts a stylesheet into that root that reads the look of the menu rows, headings,
+checkmarks and swatches from variables of its own:
+
+| Variable | Default (MathLive's own) |
+|---|---|
+| `--ck-math-menu-item-margin` | `0 6px` |
+| `--ck-math-menu-item-padding` | `1px 7px` |
+| `--ck-math-menu-item-border-radius` | `4px` |
+| `--ck-math-menu-heading-margin` | `0.5em 6px 0` |
+| `--ck-math-menu-heading-padding` | `1px 7px` |
+| `--ck-math-menu-heading-border` | `none` (a bottom border) |
+| `--ck-math-menu-heading-opacity` | `0.5` on the row, `0.4` on its label |
+| `--ck-math-menu-heading-font-size` | inherited |
+| `--ck-math-menu-heading-font-weight` | `bold` |
+| `--ck-math-menu-heading-letter-spacing` | inherited |
+| `--ck-math-menu-heading-text-transform` | `none` |
+| `--ck-math-menu-heading-color` | inherited |
+| `--ck-math-menu-checkmark-order` | `0` (before the label; `1` puts it after) |
+| `--ck-math-menu-checkmark-margin-inline` | `-4px -11px` |
+| `--ck-math-menu-checkmark-color` | inherited |
+| `--ck-math-menu-checkmark-indent` | `12px` (the labels' room for a leading checkmark) |
+| `--ck-math-menu-swatch-size` | `2rem` |
+| `--ck-math-menu-swatch-gap` | `18px` (the grid keeps its four columns) |
+| `--ck-math-menu-swatch-background` | `var(--neutral-200)`, `var(--neutral-100)` when active |
+| `--ck-math-menu-swatch-border-radius` | `50%`, `2px` when active |
+| `--ck-math-menu-swatch-shadow` | `none` |
+
+The same stylesheet fixes the tooltips of the keyboard and menu toggles above them with CSS anchor
+positioning, flipping them below when there is no room, as the scrolling field would clip them.
+Where `position-area` is unsupported, they keep MathLive's placement.
+
 ## Storage formats
 
 Which one is produced depends on `config.math.outputType` (Trilium uses `span`):
@@ -66,7 +104,7 @@ Vendored, then reworked.
 
 Forked from [isaul32/ckeditor5-math](https://github.com/isaul32/ckeditor5-math) by Sauli Anto,
 **ISC** licensed — see [`LICENSE`](./LICENSE) next to this file. ISC is permissive and combines with
-this repository's AGPL-3.0-only license.
+this repository's AGPL-3.0-or-later license.
 
 It is not tracked against upstream and could not easily be: the source was ported to TypeScript and
 through several CKEditor 5 API renames, the MathLive-based input view and its preview are Trilium's

@@ -20,6 +20,19 @@
         margin-bottom: 0;
     }
 
+    .tn-card.add-provider-models {
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
+
+        .tn-card-body,
+        .tn-card-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+    }
+
     /* The picked provider's logo introducing the connection step, following the
        setup wizard's illustrations: one large centred mark, muted so it stays
        decoration rather than competing with the fields below it. */
@@ -30,8 +43,8 @@
         color: var(--muted-text-color);
         opacity: 0.6;
 
-        .masked-icon {
-            --masked-icon-size: 80px;
+        .tn-icon {
+            font-size: 80px;
         }
     }
 

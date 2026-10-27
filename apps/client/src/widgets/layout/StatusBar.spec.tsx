@@ -1,4 +1,7 @@
-import { render } from "preact";
+import type { CursorPosition } from "@triliumnext/codemirror";
+import type { NoteType } from "@triliumnext/commons";
+import { Tooltip } from "bootstrap";
+import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,13 +10,30 @@ import FNote from "../../entities/fnote";
 // The bar follows whichever note is being read; the tests hand it one directly, along with the tab it
 // is read in — neither of which a rendered widget brings with it.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
-    useActiveNoteContext: () => ({
-        note: shownNote.current,
-        noteContext: { ntxId: "ntx1" },
-        hoistedNoteId: "root"
-    })
+const contextData = vi.hoisted(() => new Map<string, unknown>());
+vi.mock("../react/hooks", async (importOriginal) => {
+    const noteContext = { ntxId: "ntx1", getContextData: (key: string) => contextData.get(key) };
+    return {
+        ...(await importOriginal<typeof import("../react/hooks")>()),
+        useActiveNoteContext: () => ({
+            note: shownNote.current,
+            noteContext,
+            hoistedNoteId: "root"
+        })
+    };
+});
+
+// i18next is not initialized under test, so `t()` returns the key and the stub renders the
+// components of `Trans` in order.
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/i18n")>()),
+    t: (key: string) => key
+}));
+vi.mock("react-i18next", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("react-i18next")>()),
+    Trans: ({ i18nKey, components }: { i18nKey: string; components: Record<string, VNode> }) => (
+        <span data-i18n-key={i18nKey}>{Object.values(components)}</span>
+    )
 }));
 
 // The attributes panel builds its editor on CKEditor, which is a legacy widget wanting a real parent
@@ -35,7 +55,7 @@ import type Component from "../../components/component";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import StatusBar from "./StatusBar";
+import StatusBar, { useAttributeCount } from "./StatusBar";
 
 describe("StatusBar panels", () => {
     let container: HTMLElement;
@@ -53,6 +73,7 @@ describe("StatusBar panels", () => {
     afterEach(() => {
         render(null, container);
         container.remove();
+        contextData.clear();
     });
 
     it("opens the similar notes panel on the keyboard action, and puts it away on a second press", () => {
@@ -103,6 +124,14 @@ describe("StatusBar panels", () => {
         expect(isShown(".attribute-list")).toBe(false);
     });
 
+    it("offers no attributes panel for a note that cannot be edited, not even on the shortcut", () => {
+        renderBar(false);
+        expect(container.querySelector(".attributes-button")).toBeNull();
+
+        fire("addNewLabel");
+        expect(container.querySelector(".attribute-editor-stub")).toBeNull();
+    });
+
     it("closes the similar notes panel from its own title bar", () => {
         renderBar();
         fire("toggleRibbonTabSimilarNotes");
@@ -116,8 +145,72 @@ describe("StatusBar panels", () => {
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
     });
 
-    function renderBar() {
-        shownNote.current = buildNote({ id: "note1", title: "A note" });
+    it("shows the cursor position of a code note first in the row, and follows the cursor", () => {
+        let report: ((position: CursorPosition) => void) | undefined;
+        const unsubscribe = vi.fn();
+        contextData.set("codeEditor", {
+            addCursorPositionListener(listener: (position: CursorPosition) => void) {
+                report = listener;
+                listener({ line: 12, column: 32, selectionLength: 0 });
+                return unsubscribe;
+            }
+        });
+        // Each part is an element of its own, so the gap of the row falls between the parts.
+        const getParts = () => {
+            const parts = container.querySelectorAll(".cursor-position > * > [data-i18n-key]");
+            return [ ...parts ].map((part) => [
+                part.getAttribute("data-i18n-key"),
+                part.querySelector(".value")?.textContent
+            ]);
+        };
+        const getTooltip = (index: number) => {
+            const part = container.querySelectorAll(".cursor-position > *")[index];
+            return part ? Tooltip.getInstance(part) : null;
+        };
+        const getTooltipText = (index: number) => {
+            const tooltip = getTooltip(index);
+            tooltip?.show();
+            const text = document.querySelector(".tooltip-inner")?.textContent;
+            tooltip?.hide();
+            return text;
+        };
+
+        renderBar(true, "code");
+        const position = container.querySelector(".actions-row > .cursor-position");
+        expect(position).not.toBeNull();
+        expect(position?.previousElementSibling).toBeNull();
+        expect(getParts()).toEqual([
+            [ "status_bar.cursor_line", "12" ],
+            [ "status_bar.cursor_column", "32" ]
+        ]);
+
+        const lineTooltip = getTooltip(0);
+        expect(lineTooltip).not.toBeNull();
+        act(() => report?.({ line: 3, column: 1, selectionLength: 120 }));
+        expect(getParts()).toEqual([
+            [ "status_bar.cursor_line", "3" ],
+            [ "status_bar.cursor_column", "1" ],
+            [ "status_bar.cursor_selection", "120" ]
+        ]);
+        expect(getTooltip(0)).toBe(lineTooltip);
+        expect([ 0, 1, 2 ].map(getTooltipText)).toEqual([
+            "status_bar.cursor_line_title",
+            "status_bar.cursor_column_title",
+            "status_bar.cursor_selection_title"
+        ]);
+        act(() => report?.({ line: 3, column: 1, selectionLength: 0 }));
+        expect(getParts().map(([ key ]) => key)).not.toContain("status_bar.cursor_selection");
+
+        act(() => render(null, container));
+        expect(unsubscribe).toHaveBeenCalled();
+        renderBar(true, "text");
+        expect(container.querySelector(".actions-row")).not.toBeNull();
+        expect(container.querySelector(".cursor-position")).toBeNull();
+    });
+
+    function renderBar(isContentWritable = true, type: NoteType = "text") {
+        shownNote.current = buildNote({ id: "note1", title: "A note", type });
+        shownNote.current.isContentWritable = isContentWritable;
         eventHandlers = new Map();
         const parent = {
             componentId: "status-bar-cid",
@@ -132,6 +225,17 @@ describe("StatusBar panels", () => {
             container
         ));
     }
+
+    it("counts the attributes of a note, leaving out the links its content makes", () => {
+        const target = buildNote({ title: "Target" });
+        const note = buildNote({ title: "Counted", "#color": "red", "~template": target.noteId, "~internalLink": target.noteId });
+        function Count() {
+            return <span className="count">{useAttributeCount(note)}</span>;
+        }
+        const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
+        act(() => render(<ParentComponent.Provider value={parent}><Count /></ParentComponent.Provider>, container));
+        expect(container.querySelector(".count")?.textContent).toBe("2");
+    });
 
     /** Hands the bar one of the keyboard actions it listens for, as the app's event bus would. */
     function fire(eventName: string) {

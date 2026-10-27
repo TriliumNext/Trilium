@@ -8,6 +8,7 @@ On the left side, the <a class="reference-link" href="Breadcrumb.md">Breadcrumb
 On the right side, specific sections will show depending on the type of the current note.
 
 1.  For <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, the language mode of the note is indicated (e.g. JavaScript, plain text), as well as allowing easy switching to another mode.
+    1.  Before it, the position of the cursor is shown as a line and a column, such as _Ln: 12 Col: 32_. It updates as the cursor moves. While text is selected, the number of selected characters follows, such as _Selected: 120_.
 2.  For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, the content language is displayed and can be changed, thus configuring the spell-check and the right-to-left support.
     1.  Note that this applies to the entire note and not the selection, unlike some text editors.
 3.  If a note is placed in multiple places in the tree (cloned), the number of the note paths will be displayed.

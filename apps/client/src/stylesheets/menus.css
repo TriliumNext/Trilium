@@ -122,6 +122,19 @@ body.mobile .dropdown-menu .dropdown-submenu > span {
     padding-inline-start: 12px;
 }
 
+.dropdown-item span.menu-trailing-text {
+    flex-grow: 1;
+    box-sizing: content-box;
+    margin-inline-start: auto;
+    padding-inline-start: 3em;
+    max-width: 20em;
+    color: var(--muted-text-color);
+    text-align: end;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .dropdown-menu kbd {
     color: var(--muted-text-color);
     border: none;
@@ -195,7 +208,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
 }
 
-body.mobile .dropdown-menu {
+body.mobile .dropdown-menu:not(.excalidraw *) {
     position: fixed !important;
     z-index: 3000 !important;
 }

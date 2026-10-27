@@ -22,5 +22,5 @@ it under the shipped empty allow-list.
 It lived at `packages/ckeditor5-keyboard-marker` until it was folded into this package — it had no
 consumers outside `@triliumnext/ckeditor5`, was never published, and carried a full
 `ckeditor5-package-generator` scaffold (sample pages, its own ESLint/Stylelint/vitest configs) that
-nothing invoked. GPL-3.0 combines with this repository's AGPL-3.0-only license, so the split bought
+nothing invoked. GPL-3.0 combines with this repository's AGPL-3.0-or-later license, so the split bought
 no license isolation either.

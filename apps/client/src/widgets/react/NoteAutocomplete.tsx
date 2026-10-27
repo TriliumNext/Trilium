@@ -31,8 +31,11 @@ import { renderShortcutKbds } from "./shortcut_kbd";
 const DROPDOWN_MIN_WIDTH = 500;
 /** Keyboard hints are left out on mobile, as `Button` leaves out its shortcut. */
 const cachedIsMobile = isMobile();
-/** How many notes {@link NoteMentionList} shows; typing more of the title narrows them down. */
-const MENTION_NOTE_LIMIT = 10;
+/**
+ * How many notes {@link NoteMentionList} shows; typing more of the title narrows them down. Fewer on
+ * mobile, where the list shares the screen with the keyboard.
+ */
+const MENTION_NOTE_LIMIT = cachedIsMobile ? 6 : 10;
 
 export interface NoteAutocompleteProps {
     id?: string;
@@ -48,8 +51,15 @@ export interface NoteAutocompleteProps {
     onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
+    /**
+     * A search query the suggested notes must also match, such as `note.type = image`, whatever is
+     * typed. With an empty field, the notes it matches are suggested instead of the recent ones.
+     */
+    filter?: string;
     /** Shows the selected note without allowing a different one to be picked. */
     readOnly?: boolean;
+    /** Keeps an enclosing form from submitting while the field is empty. */
+    required?: boolean;
     /** Places the input in the tab order of a host that orders its fields with `tabIndex`. */
     tabIndex?: number;
     /** Receives the functions that drive the field from outside it. */
@@ -81,7 +91,7 @@ export interface NoteAutocompleteHandle {
     clear(): void;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, container, containerStyle, opts, onChange, onTextChange, onKeyDown, onBlur, noteIdChanged, noteId, readOnly, tabIndex, handleRef, anchorRef, searchFooter, onHighlight }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, container, containerStyle, opts, onChange, onTextChange, onKeyDown, onBlur, noteIdChanged, noteId, filter, readOnly, required, tabIndex, handleRef, anchorRef, searchFooter, onHighlight }: NoteAutocompleteProps) {
     const inputRef = useSyncedRef<HTMLInputElement>(externalInputRef);
     const groupRef = useRef<HTMLDivElement>(null);
     const [ value, setValue ] = useState("");
@@ -105,7 +115,8 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
         const options = {
             allowCreatingNotes,
             allowJumpToSearchNotes: allowJumpToSearchNotes && !hasSearchFooter,
-            allowExternalLinks
+            allowExternalLinks,
+            filter
         };
         if (hasSearchFooter) {
             return getNoteSuggestions(query, includeContents ? { ...options, fastSearch: false } : options);
@@ -122,7 +133,7 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
         }
     }, [
         isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks, fullTextSearchCount,
-        hasSearchFooter, includeContents
+        hasSearchFooter, includeContents, filter
     ]);
     const schedule = useMemo(() => createSearchScheduler(), []);
 
@@ -290,6 +301,7 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                 className="note-autocomplete form-control note-autocomplete-input"
                 value={value}
                 readOnly={readOnly}
+                required={required}
                 tabIndex={tabIndex}
                 placeholder={placeholder ?? t("add_link.search_note")}
                 autoComplete="off"

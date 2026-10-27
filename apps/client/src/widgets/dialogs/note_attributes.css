@@ -83,12 +83,8 @@ body.desktop .modal.note-attributes-modal {
  * nothing to be put away in favour of. All that is left here is fitting the rows to that card, the rows
  * being full-width menu items where a settings card holds inset controls.
  *
- * A page rather than a sheet, too: the sections are the whole of what there is to read here, and a sheet
- * sized to them would stand as tall as whatever the note happens to carry. `isFullPageOnMobile` asks for
- * the height, and being scrollable with it takes it away again — the two generic rules collide
- * (`height: 100%` against `height: unset`, at equal weight, in that order in style.css) — so the height
- * is claimed here and passed down: the content fills the dialog, and the body takes what the header
- * leaves and scrolls the sections within it.
+ * The sheet has a fixed height, as the revisions dialog's does, so that it neither grows with the
+ * note's attributes nor jumps between the list and an attribute's page.
  */
 body.mobile .modal.note-attributes-modal {
     .options-section-card {
@@ -111,11 +107,46 @@ body.mobile .modal.note-attributes-modal {
         min-width: 0;
         padding: 0;
 
+        /* Nor a menu's standing above the app. `body.mobile .dropdown-menu` lifts every menu to 3000
+           so that one opening floats over everything; this list opens over nothing, it sits in a
+           card. The rule that un-fixes its position (`body.mobile .modal-dialog .dropdown-menu`)
+           leaves that 3000 behind, and it does not lie idle as it would on any ordinary static box:
+           the list is a flex item of the panel, and a flex item takes its z-index whether it is
+           positioned or not. So the rows stood at 3000 and the selection's bar — a sticky 1 — was
+           drawn underneath them, which is what a row scrolling past it looked like it was doing. */
+        z-index: auto !important;
+
         /* The card is the surface now, so the rows keep only what tells them apart from one another: the
            dividers between them, and whatever a row is being pressed or read in. */
         .attribute-row {
             background: transparent;
             border-radius: 0;
+        }
+
+        /* `!important` to outweigh the menus' hover fill (`.dropdown-item:hover` in
+           theme-next/menus.css), which a touch screen leaves on the last row tapped. */
+        .attribute-row.selected {
+            background-color: var(--selection-background-color) !important;
+        }
+    }
+
+    /* The help button beside the title in every card, whether or not an add button follows it. */
+    .options-section-header {
+        justify-content: flex-start;
+        gap: 4px;
+    }
+
+    .attribute-toolbar {
+        --icon-button-size: 36px;
+
+        height: 48px;
+        border-bottom: 0;
+        background-color: var(--modal-background-color);
+
+        .form-checkbox label,
+        .attribute-selection-count,
+        .attribute-toolbar-read-only {
+            font-size: 1em;
         }
     }
 
@@ -133,11 +164,13 @@ body.mobile .modal.note-attributes-modal {
     }
 
     .modal-dialog {
-        height: 100%;
+        height: 85vh;
     }
 
     .modal-content {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
+        padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
     }
 
     .modal-body {

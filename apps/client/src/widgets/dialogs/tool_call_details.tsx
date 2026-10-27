@@ -6,7 +6,7 @@ import { t } from "../../services/i18n";
 import CodeBlock from "../react/CodeBlock";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
-import type { ToolCall } from "../type_widgets/llm_chat/llm_chat_types";
+import { type ToolCall, toolCallLabelKey } from "../type_widgets/llm_chat/llm_chat_types";
 
 /**
  * Shows the raw input and result of an LLM tool call. Summon it with
@@ -23,7 +23,7 @@ export default function ToolCallDetailsDialog() {
 
     const title = toolCall && (
         <h5 className="modal-title">
-            {t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}
+            {t(toolCallLabelKey(toolCall), { defaultValue: toolCall.toolName })}
             <code className="tool-call-details-name">{toolCall.toolName}</code>
         </h5>
     );

@@ -1,6 +1,6 @@
 /**
  * The LLM endpoints' handlers. Where each is *registered* differs by runtime, so
- * only {@link getProviderModels} is in the shared route table.
+ * only {@link getProviderModels} and {@link answerToolCall} are in the shared route table.
  *
  * Streaming has no shared form. The server and the desktop app answer
  * `/api/llm-chat/stream` with Server-Sent Events (that route lives in
@@ -11,10 +11,11 @@
  * browser_routes.ts — and the chunks come back over the WebSocket-style channel.
  */
 
-import type { LlmMessage } from "@triliumnext/commons";
+import type { LlmMessage, LlmToolApprovalAnswer } from "@triliumnext/commons";
 
 import { ValidationError } from "../../errors.js";
 import * as cls from "../../services/context.js";
+import { answerToolApproval } from "../../services/llm/tool_approval.js";
 import type { LlmProviderConfig } from "../../services/llm/types.js";
 import { getLog } from "../../services/log.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
@@ -90,6 +91,22 @@ export function startChatStream(req: { body: ChatStreamRequest }) {
     return {};
 }
 
+/**
+ * Pass on the user's answer to a tool call that waits in a running turn, whichever
+ * transport streams it. `answered` is `false` when the turn has ended or the call
+ * was already answered, which a second click or a stopped turn can cause.
+ */
+export function answerToolCall(req: { body: Partial<LlmToolApprovalAnswer> }) {
+    const { streamId, toolCallId, approved, scope } = req.body ?? {};
+    if (!streamId || !toolCallId || typeof approved !== "boolean") {
+        throw new ValidationError("streamId, toolCallId and approved are required");
+    }
+    if (scope !== undefined && scope !== "chat") {
+        throw new ValidationError("scope must be \"chat\" when given");
+    }
+    return { answered: answerToolApproval(streamId, toolCallId, approved, scope) };
+}
+
 /** Stop a completion started by {@link startChatStream}; unknown ids are a no-op. */
 export function abortChatStream(req: { body: { streamId?: string } }) {
     activeStreams.get(req.body?.streamId ?? "")?.abort();
@@ -127,7 +144,7 @@ async function streamToClients(
         // The tools a completion may call write notes, which needs a context of
         // its own: the request that started this one has long since answered.
         await cls.init(async () => {
-            for await (const chunk of runChat(messages, config, signal)) {
+            for await (const chunk of runChat(streamId, messages, config, signal)) {
                 ws.sendMessageToAllClients({ type: "llm-stream", streamId, chunk });
             }
         });
@@ -147,5 +164,6 @@ async function streamToClients(
 export default {
     getProviderModels,
     startChatStream,
+    answerToolCall,
     abortChatStream
 };

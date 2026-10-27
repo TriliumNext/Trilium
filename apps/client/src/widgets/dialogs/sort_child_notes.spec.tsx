@@ -12,13 +12,13 @@ vi.mock("../../services/i18n", () => ({
 }));
 
 describe("serializeSortLevels", () => {
-    it("writes each level as its key plus desc where descending, skipping a nameless label", () => {
+    it("writes each level as its key and direction, with `#` before a label, skipping a nameless label", () => {
         expect(serializeSortLevels([
             { kind: "label", labelName: " priority ", direction: "desc" },
             { kind: "label", labelName: "", direction: "asc" },
             { kind: "dateCreated", labelName: "", direction: "asc" },
             { kind: "title", labelName: "ignored", direction: "desc" }
-        ])).toBe("priority desc, dateCreated asc, title desc");
+        ])).toBe("#priority desc, dateCreated asc, title desc");
     });
 });
 
@@ -102,8 +102,8 @@ describe("SortChildNotesDialog", () => {
     });
 
     it("builds a multi-level criteria string from the added levels", async () => {
-        await click(container.querySelector(".sort-level-add"));
-        await click(container.querySelector(".sort-level-add"));
+        await click(container.querySelector(".tn-card-adder"));
+        await click(container.querySelector(".tn-card-adder"));
         expect(levels()).toHaveLength(3);
 
         const [ first, second, third ] = levels();
@@ -119,13 +119,13 @@ describe("SortChildNotesDialog", () => {
         await submit();
         // The first level's direction is the request's, which is what groups folders last.
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "priority desc, dateModified asc",
+            sortBy: "#priority desc, dateModified asc",
             sortDirection: "desc"
         }));
     });
 
     it("reorders levels with the arrows, which are off at the ends", async () => {
-        await click(container.querySelector(".sort-level-add"));
+        await click(container.querySelector(".tn-card-adder"));
         const [ first, second ] = levels();
         await choose(second.querySelector("select"), "dateCreated");
         expect(first.querySelector(".sort-level-up")).toHaveProperty("disabled", true);

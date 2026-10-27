@@ -1,0 +1,15 @@
+.modal.geo-map-properties-dialog {
+    .geo-map-corner input {
+        width: 8em;
+
+        & + input {
+            margin-inline-start: 0.5em;
+        }
+    }
+
+    .geo-map-image-notice,
+    .geo-map-coordinates-error,
+    .geo-map-tiles-url-error {
+        margin: 0;
+    }
+}

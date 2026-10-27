@@ -13,6 +13,7 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
@@ -33,7 +34,6 @@ export default class MobileLayout {
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
             .class("horizontal-layout")
-            .child(new FlexContainer("column").id("mobile-sidebar-container"))
             .child(
                 new FlexContainer("row")
                     .filling()
@@ -49,7 +49,6 @@ export default class MobileLayout {
                             .child(
                                 new FlexContainer("column")
                                     .filling()
-                                    .id("mobile-sidebar-wrapper")
                                     .child(<QuickSearch />)
                                     .child(<MobileNoteNavigator />)
                             )
@@ -100,7 +99,8 @@ export default class MobileLayout {
                         .child(<GlobalMenuWidget isHorizontalLayout />)
                         .id("launcher-pane"))
             )
-            .child(<CloseZenModeButton />);
+            .child(<CloseZenModeButton />)
+            .child(<HideKeyboardButton />);
         applyModals(rootContainer);
         return rootContainer;
     }

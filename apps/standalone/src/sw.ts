@@ -426,7 +426,7 @@ self.addEventListener("fetch", (event) => {
     // On the Capacitor custom URL scheme (capacitor://) the WebView serves app assets
     // through its native URLSchemeHandler, which a service worker cannot reach via fetch() —
     // let those requests fall through to the WebView's own loader. In practice the SW is only
-    // registered on http/https origins (main.ts uses a fetch/XHR interceptor instead of a SW
+    // registered on http/https origins (main.ts installs the native request bridge instead
     // on capacitor://), so this is a defensive guard rather than a hot path.
     if (self.location.protocol === "capacitor:") {
         return;

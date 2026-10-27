@@ -23,7 +23,7 @@ import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadP
 import { FormListItem } from "../react/FormList";
 import { openHelpPageFor } from "../react/HelpButton";
 import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
-import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
+import { DISPLAY_MODE_OPTIONS, isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
 
 interface NoteActionsCustomProps {
@@ -187,7 +187,7 @@ function CompressImageButton({ note, noteMime }: NoteActionsCustomInnerProps) {
     return (
         <NoteAction
             icon="bx bx-collapse-alt"
-            text={t("compress-image")}
+            text={t("compress-image-menu")}
             disabled={!note.isContentAvailable()}
             onClick={() => void showImageCompressionDialog({ type: "note", noteId: note.noteId, mime: noteMime })}
         />
@@ -267,11 +267,9 @@ function DisplayModeSwitcher({ note, noteContext, isDefaultViewMode }: NoteActio
 
     // Mirror SplitEditor's mode resolution so the active button matches the actual pane.
     const mode = resolveDisplayMode(displayMode, readOnly || isSplitEditorForcedReadOnly(note));
-    const buttons: Array<{ value: "source" | "split" | "preview"; icon: string; text: string }> = [
-        { value: "source", icon: "bx bx-code", text: t("display_mode.source") },
-        { value: "split", icon: "bx bxs-dock-left", text: t("display_mode.split") },
-        { value: "preview", icon: "bx bx-show", text: t("display_mode.preview") }
-    ];
+    const buttons = DISPLAY_MODE_OPTIONS.map(({ value, icon, titleKey }) => ({
+        value, icon, text: t(titleKey)
+    }));
 
     if (cachedIsMobile) {
         return (

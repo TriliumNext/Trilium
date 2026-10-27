@@ -136,6 +136,19 @@ describe("CaptureWindow", () => {
         expect(onLost).toHaveBeenCalledExactlyOnceWith("the capture page ended (oom)");
     });
 
+    it("reports the capture lost when its page reloads", async () => {
+        const { onLost, window } = await startCapture();
+        const url = "file:///tmp/trilium-transcription.html";
+        window.webContents.emit("did-start-navigation",
+            { url: `${url}#x`, isMainFrame: true, isSameDocument: true });
+        window.webContents.emit("did-start-navigation",
+            { url, isMainFrame: false, isSameDocument: false });
+        expect(onLost).not.toHaveBeenCalled();
+        window.webContents.emit("did-start-navigation",
+            { url, isMainFrame: true, isSameDocument: false });
+        expect(onLost).toHaveBeenCalledExactlyOnceWith("the capture page reloaded");
+    });
+
     it("reports the capture lost once every source has ended", async () => {
         const { onLost, window } = await startCapture();
         window.webContents.ipc.emit("transcription-source-ended", {}, "microphone");

@@ -39,17 +39,25 @@ export default function NoteBadges() {
             <ClippedNoteBadge />
             <ExecuteBadge />
             <SnippetBadge />
+            <TemplateBadge />
             <ActiveContentBadges />
         </div>
     );
 }
 
-function ReadOnlyBadge() {
+export function ReadOnlyBadge() {
     const { note, noteContext } = useNoteContext();
-    const { isReadOnly, enableEditing, temporarilyEditable } = useIsNoteReadOnly(note, noteContext);
+    const { isReadOnly, isLocked, enableEditing, temporarilyEditable } = useIsNoteReadOnly(note, noteContext);
     const isExplicitReadOnly = note?.isLabelTruthy("readOnly");
 
-    if (temporarilyEditable) {
+    if (isLocked) {
+        return <Badge
+            icon="bx bx-lock-alt"
+            text={t("breadcrumb_badges.read_only_locked")}
+            tooltip={t("breadcrumb_badges.read_only_locked_description")}
+            className="read-only-badge"
+        />;
+    } else if (temporarilyEditable) {
         return <Badge
             icon="bx bx-lock-open-alt"
             text={t("breadcrumb_badges.read_only_temporarily_disabled")}
@@ -294,6 +302,64 @@ export function ExecuteBadge() {
             onClick={() => parentComponent.triggerCommand("runActiveNote", { ntxId })}
         />
     );
+}
+
+/**
+ * Marks a template, whose attributes every note created from it inherits. Its dropdown switches it
+ * between `#template` and `#workspaceTemplate`; the latter only for a template inside a workspace.
+ */
+export function TemplateBadge() {
+    const { note, parentComponent } = useNoteContext();
+    const [ isTemplate ] = useNoteLabelBoolean(note, "template");
+    const [ isWorkspaceTemplate ] = useNoteLabelBoolean(note, "workspaceTemplate");
+    if (!note || (!isTemplate && !isWorkspaceTemplate)) return;
+
+    const isInWorkspace = hasWorkspaceAncestor(note);
+
+    async function switchScope(toWorkspace: boolean) {
+        if (!note) return;
+        const [ added, removed ] = toWorkspace ? [ "workspaceTemplate", "template" ] : [ "template", "workspaceTemplate" ];
+        // The new label goes on first, so the note never stops being a template in between.
+        await attributes.setBooleanWithInheritance(note, added, true);
+        await attributes.setBooleanWithInheritance(note, removed, false);
+    }
+
+    return (
+        <BadgeWithDropdown
+            className="template-badge"
+            icon="bx bx-copy-alt"
+            text={isTemplate ? t("breadcrumb_badges.template") : t("breadcrumb_badges.workspace_template")}
+            tooltip={t("breadcrumb_badges.template_description")}
+            dropdownProps={{ mobileBottomSheet: true }}
+        >
+            <FormListItem
+                icon="bx bx-globe"
+                checkable checked={isTemplate}
+                onClick={() => !isTemplate && switchScope(false)}
+            >{t("breadcrumb_badges.template_scope_global")}</FormListItem>
+            <FormListItem
+                icon="bx bx-door-open"
+                checkable checked={!isTemplate}
+                disabled={!isInWorkspace}
+                disabledTooltip={t("breadcrumb_badges.template_scope_workspace_unavailable")}
+                onClick={() => isTemplate && switchScope(true)}
+            >{t("breadcrumb_badges.template_scope_workspace")}</FormListItem>
+            <FormDropdownDivider />
+            <FormListItem
+                icon="bx bx-cog"
+                onClick={() => parentComponent?.triggerEvent("showTemplateProperties", { noteId: note.noteId })}
+            >{t("breadcrumb_badges.template_properties")}</FormListItem>
+        </BadgeWithDropdown>
+    );
+}
+
+function hasWorkspaceAncestor(note: FNote, visited = new Set<string>()): boolean {
+    for (const parent of note.getParentNotes()) {
+        if (visited.has(parent.noteId)) continue;
+        visited.add(parent.noteId);
+        if (parent.hasOwnedLabel("workspace") || hasWorkspaceAncestor(parent, visited)) return true;
+    }
+    return false;
 }
 
 const SAVE_STATE_DEBOUNCE_MS = 200;

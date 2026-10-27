@@ -145,6 +145,7 @@ A button, menu or toolbar control is named by its icon, never by a cropped scree
 ```html
 <span class="tn-icon bx bx-history"></span>            <!-- app UI: Boxicons v2 -->
 <span class="tn-icon cke cke-three-vertical-dots"></span>   <!-- text editor toolbar: Text Editor Icons -->
+<span class="tn-icon tn-brand tn-brand-openai"></span>      <!-- AI provider or import source: Brand Icons -->
 ```
 
 - 106 icons on 36 pages (55 `bx`, 51 `cke`), almost all under Note Types and Basic Concepts. Class is
@@ -158,7 +159,8 @@ A button, menu or toolbar control is named by its icon, never by a cropped scree
 - `cke` (235 glyphs) is the editor's own icon set built into a font (`packages/trilium-core/src/
   services/icon_pack_text_editor.json`); upstream `IconTableMergeCell` → `cke-table-merge-cell`,
   Trilium's own SVGs → `cke-trilium-<file>` (`cke-trilium-kbd`, `cke-trilium-ai`). `bx` is
-  `icon_pack_boxicons-v2.json` (1635). `docs.mjs icons <terms>` searches both; `icons --check`
+  `icon_pack_boxicons-v2.json` (1635). `tn-brand` holds the marks of the AI providers and import
+  sources (`icon_pack_brands.json`). `docs.mjs icons <terms>` searches all three; `icons --check`
   validates every class in the docs. `iconClass` in the meta uses `bx` only. The `cke` font is
   rebuilt by hand, so a new editor button can be missing from it; see rule 8 in `SKILL.md`.
 

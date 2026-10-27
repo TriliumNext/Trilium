@@ -24,14 +24,16 @@ interface FormSelectProps<T, Q> extends ValueConfig<T, Q> {
     style?: CSSProperties;
     className?: string;
     disabled?: boolean;
+    /** Keeps an enclosing form from submitting while the option with an empty value is chosen. */
+    required?: boolean;
 }
 
 /**
  * Combobox component that takes in any object array as data. Each item of the array is rendered as an item, and the key and values are obtained by looking into the object by a specified key.
  */
-export default function FormSelect<T>({ name, id, onChange, style, className, disabled, ...restProps }: FormSelectProps<T, T>) {
+export default function FormSelect<T>({ name, id, onChange, style, className, disabled, required, ...restProps }: FormSelectProps<T, T>) {
     return (
-        <FormSelectBody name={name} id={id} onChange={onChange} style={style} className={className} disabled={disabled}>
+        <FormSelectBody name={name} id={id} onChange={onChange} style={style} className={className} disabled={disabled} required={required}>
             <FormSelectGroup {...restProps} />
         </FormSelectBody>
     );
@@ -61,7 +63,7 @@ export function FormSelectWithGroups<T>({ name, id, values, keyProperty, titlePr
     )
 }
 
-function FormSelectBody({ id, name, children, onChange, style, className, disabled }: { id?: string, name?: string, children: ComponentChildren, onChange: OnChangeListener, style?: CSSProperties, className?: string, disabled?: boolean }) {
+function FormSelectBody({ id, name, children, onChange, style, className, disabled, required }: { id?: string, name?: string, children: ComponentChildren, onChange: OnChangeListener, style?: CSSProperties, className?: string, disabled?: boolean, required?: boolean }) {
     return (
         <select
             id={id}
@@ -70,6 +72,7 @@ function FormSelectBody({ id, name, children, onChange, style, className, disabl
             style={style}
             className={`form-select ${className ?? ""}`}
             disabled={disabled}
+            required={required}
         >
             {children}
         </select>

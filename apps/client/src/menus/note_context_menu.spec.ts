@@ -2,7 +2,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // All mutable mock state lives in a hoisted holder so the (hoisted) vi.mock
 // factory below can reference it.
-const h = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
+const h = vi.hoisted(() => ({
+    triggerCommand: vi.fn(),
+    options: {} as Record<string, string>
+}));
 
 vi.mock("../components/app_context.js", () => ({
     default: { triggerCommand: h.triggerCommand }
@@ -16,13 +19,20 @@ vi.mock("../services/block_reference.js", () => ({
 }));
 vi.mock("../services/clipboard_ext.js", () => ({ copyHtml: vi.fn(), copyTextWithToast: vi.fn() }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
-vi.mock("../services/options.js", () => ({ default: { get: () => "" } }));
+vi.mock("../services/options.js", () => ({
+    default: { get: (name: string) => h.options[name] ?? "" }
+}));
 vi.mock("../services/server.js", () => ({ default: { post: vi.fn() } }));
 vi.mock("../services/utils.js", () => ({
     default: { escapeHtml: (s: string) => s, isMac: () => false },
     reuseAcrossHotReloads: <T>(_hot: unknown, create: () => T) => create()
 }));
+// `context_menu_utils` imports `tree`, whose imports fail against the partial mocks above.
+vi.mock("../services/tree.js", () => ({ default: {}, NOTE_PATH_TITLE_SEPARATOR: " › " }));
 vi.mock("./context_menu.js", () => ({ default: { show: vi.fn() } }));
+vi.mock("./code_editor_context_menu.js", () => ({
+    buildCodeEditorContextMenuItems: vi.fn(async () => null)
+}));
 vi.mock("./table_context_menu.js", () => ({
     buildTableContextMenuSections: vi.fn(async () => null),
     hasTableCellSelection: vi.fn(async () => false)
@@ -32,6 +42,7 @@ import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import server from "../services/server.js";
 import { setEditorNoteId } from "../widgets/react/NoteStore.js";
+import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import {
     buildTableContextMenuSections,
@@ -75,7 +86,8 @@ function fakeEditor(domRoot: HTMLElement, selectedHtml: string, plainText = "", 
  * Points window.getSelection() at `anchorNode`, cloning `fallbackHtml` for the DOM-range path.
  * `text` is what the selection stringifies to — what the browser menu's gate reads. happy-dom lays
  * nothing out, so the highlighted box is stated here: it covers the origin every `rightClick`
- * lands on unless that test says otherwise.
+ * lands on unless that test says otherwise. The selection touches `anchorNode`, so it partly
+ * contains the ancestors of that node.
  */
 function setSelection(anchorNode: Node | null, fallbackHtml = "", text = "") {
     const fragment = document.createDocumentFragment();
@@ -91,6 +103,9 @@ function setSelection(anchorNode: Node | null, fallbackHtml = "", text = "") {
             cloneContents: () => fragment.cloneNode(true),
             getClientRects: () => [ { left: 0, top: 0, right: 200, bottom: 100 } ]
         }),
+        isCollapsed: !text,
+        containsNode: (node: Node, allowPartialContainment = false) => !!anchorNode
+            && (node === anchorNode || (allowPartialContainment && node.contains(anchorNode))),
         toString: () => text
     } as unknown as Selection);
 }
@@ -151,6 +166,7 @@ function submenu(items: MenuItem<any>[], title: string): MenuItem<any>[] {
 describe("buildNoteContextMenuItems", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        h.options = {};
     });
 
     it("offers copy, copy-as-markdown and the search rows for a plain selection", async () => {
@@ -259,6 +275,66 @@ describe("buildNoteContextMenuItems", () => {
         expect(h.triggerCommand).toHaveBeenCalledWith("searchNotes", {
             searchString: "trilium notes"
         });
+    });
+
+    it("searches with the configured engine and its icon, leaving it out for none", async () => {
+        const host = browserLikeHost();
+        const webSearchIcon = async () =>
+            findItem(await build(), "electron_context_menu.search_online")?.uiIcon;
+        h.options = {
+            customSearchEngineName: "Google",
+            customSearchEngineUrl: "https://www.google.com/search?q={keyword}"
+        };
+        const items = await build({ selectionText: "trilium" }, host);
+        expect(await webSearchIcon()).toBe("bx bxl-google");
+        run(items, "electron_context_menu.search_online");
+        expect(host.openExternal).toHaveBeenCalledWith("https://www.google.com/search?q=trilium");
+
+        // A custom engine has no logo of its own, and nothing stored means DuckDuckGo.
+        h.options = {
+            customSearchEngineName: "Example",
+            customSearchEngineUrl: "https://example.com/?s={keyword}"
+        };
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
+        h.options = {};
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
+
+        h.options = { customSearchEngineName: "", customSearchEngineUrl: "none" };
+        expect(titles(await build())).toEqual([
+            "electron_context_menu.copy",
+            "---",
+            "electron_context_menu.search_in_trilium"
+        ]);
+    });
+
+    it("puts the text tools of a code editor below the clipboard rows", async () => {
+        const line = document.createElement("div");
+        vi.mocked(buildCodeEditorContextMenuItems).mockResolvedValueOnce([
+            { title: "LINES" }, { title: "CASE" }
+        ]);
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+
+        const items = await build({ isEditable: true, element: line }, host);
+
+        expect(buildCodeEditorContextMenuItems).toHaveBeenCalledWith(line);
+        expect(titles(items)).toEqual([
+            "electron_context_menu.cut",
+            "electron_context_menu.copy",
+            "electron_context_menu.paste",
+            "---",
+            "LINES",
+            "CASE",
+            "---",
+            "electron_context_menu.search_online",
+            "electron_context_menu.search_in_trilium"
+        ]);
+    });
+
+    it("looks for text tools only over an element that takes typing", async () => {
+        await build({ isEditable: false, element: document.createElement("div") });
+        expect(buildCodeEditorContextMenuItems).not.toHaveBeenCalled();
     });
 
     it("puts the table sections around the clipboard rows and hands them the element", async () => {
@@ -472,6 +548,14 @@ describe("setupContextMenu (browser)", () => {
         }
         document.body.appendChild(content);
         return content;
+    }
+
+    /** A line of a code editor, as CodeMirror renders one inside its `.cm-content`. */
+    function codeLine(content: HTMLElement) {
+        const line = document.createElement("div");
+        line.className = "cm-line";
+        content.appendChild(line);
+        return line;
     }
 
     /** Right-clicks `element` and returns the rows the menu went up with. */
@@ -762,6 +846,37 @@ describe("setupContextMenu (browser)", () => {
         } finally {
             delete (navigator as { clipboard?: unknown }).clipboard;
         }
+    });
+
+    it("claims a selection of blank lines or spaces on a line of a code note", async () => {
+        const line = codeLine(codeEditable());
+        setSelection(line, "", "\n  \n");
+
+        // Away from the highlighted box: any part of a line that the selection touches counts.
+        const event = rightClick(line, { clientX: 500, clientY: 500 });
+        await vi.waitFor(() => expect(contextMenu.show).toHaveBeenCalled());
+
+        expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("leaves a blank selection to the browser off its lines or when read-only", async () => {
+        const content = codeEditable();
+        const selectedLine = codeLine(content);
+        setSelection(selectedLine, "", "  ");
+        const otherLine = rightClick(codeLine(content));
+
+        const readOnlyLine = codeLine(codeEditable(true));
+        setSelection(readOnlyLine, "", "  ");
+        const readOnly = rightClick(readOnlyLine);
+
+        const caretLine = codeLine(codeEditable());
+        setSelection(caretLine, "", "");
+        const caret = rightClick(caretLine);
+        await settle();
+
+        expect([ otherLine, readOnly, caret ].map((event) => event.defaultPrevented))
+            .toEqual([ false, false, false ]);
+        expect(contextMenu.show).not.toHaveBeenCalled();
     });
 
     it("drops the cut row in a read-only code note", async () => {

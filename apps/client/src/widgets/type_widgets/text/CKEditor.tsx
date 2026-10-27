@@ -1,15 +1,18 @@
-import { type CKEditorError, CKTextEditor, ClassicEditor, onTextEditorError, PopupEditor, SnippetDefinition } from "@triliumnext/ckeditor5";
+import {
+    type CKEditorError, CKTextEditor, ClassicEditor, getLinkAtSelection, type IconPickerRequest,
+    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
+} from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
-import { HTMLAttributes, RefObject } from "preact";
+import { createPortal, HTMLAttributes, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 import froca from "../../../services/froca";
-import link from "../../../services/link";
-import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
-import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { isMobile } from "../../../services/utils";
+import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
-import { buildConfig, BuildEditorOptions } from "./config";
+import { buildConfig, BuildEditorOptions, type ContentEmbedHandlers } from "./config";
 
 export type BoxSize = "tiny" | "small" | "medium" | "full" | "expandable";
 
@@ -17,7 +20,11 @@ export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
     hasSelection(): boolean;
     getSelectedText(): string;
+    /** The address and the whole text of the link around the caret, or `null` outside one. */
+    getCurrentLink(): { href: string; text: string } | null;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
+    /** Rewrites the link around the caret, as {@link addLink} would write a new one. */
+    updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
     addContentEmbed(noteId: string, boxSize?: BoxSize): void;
@@ -58,9 +65,11 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     /** Rebuilds the editor each time it changes, e.g. to recover from an error. */
     rebuildKey?: number;
     containerRef?: RefObject<HTMLDivElement | null>;
+    /** What renders the embeds of the editor and acts on them. Editors without embeds leave it out. */
+    contentEmbedHandlers?: ContentEmbedHandlers;
 }
 
-export default function CKEditor({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError, onChange, onEditorInitialized, editorApi, templates, rebuildKey }: CKEditorProps) {
+export default function CKEditor({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError, onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
     const stopReportingErrorsRef = useRef<() => void>(undefined);
@@ -126,6 +135,24 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
     // note would name whichever one happened to be open when the editor was built.
     const noteLocationRef = useRef<AiNoteLocation | null>(null);
     noteLocationRef.current = note ? { title: note.title, notePath } : null;
+    const noteRef = useRef(note);
+    noteRef.current = note;
+    const contentEmbedHandlersRef = useRef(contentEmbedHandlers);
+    contentEmbedHandlersRef.current = contentEmbedHandlers;
+    /** The open icon picker request and its balloon container, or `null` when none is open. */
+    const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerRequest | null>(null);
+
+    // CKEditor creates and positions the balloon; `IconPicker` renders into its container.
+    // On mobile, `showIconPickerDialog` opens the picker in a modal instead.
+    function showIconPicker(request: IconPickerRequest) {
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showIconPickerDialog", { onSelect: request.onSelect });
+            return null;
+        }
+
+        setIconPickerRequest(request);
+        return () => setIconPickerRequest(null);
+    }
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
 
@@ -151,6 +178,18 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
             }
 
             return text;
+        },
+        getCurrentLink() {
+            const editor = editorRef.current;
+            return editor ? getLinkAtSelection(editor) : null;
+        },
+        async updateLink(notePath, linkTitle, externalLink) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.editing.view.focus();
+            const href = externalLink ? notePath : `#${notePath}`;
+            await replaceLinkAtSelection(editor, href, linkTitle);
         },
         addLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;
@@ -227,34 +266,6 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
         },
     }));
 
-    useLegacyImperativeHandlers({
-        async loadReferenceLinkTitle(
-            $el: JQuery<HTMLElement>, href: string | null = null, storedTitle?: string
-        ) {
-            await link.loadReferenceLinkTitle($el, href, note?.noteId, storedTitle);
-        },
-        async fetchLinkMetadata(url: string) {
-            // The preview's pictures are stored as attachments of the note being edited, so there
-            // is nothing to fetch into before the note context has resolved one. Answering as
-            // unresolved leaves the URL a plain link, which is what the editor does with any
-            // preview it could not build.
-            if (!note) {
-                return linkEmbedService.unresolvedMetadata(url);
-            }
-
-            return await linkEmbedService.fetchMetadata(url, note.noteId);
-        },
-        detectEmbedType(url: string) {
-            return linkEmbedService.detectEmbedType(url);
-        },
-        renderLinkEmbed(container: HTMLElement, metadata: EmbedMetadata) {
-            linkEmbedService.renderEmbedPreview(container, metadata, true);
-        },
-        renderLinkMention(container: HTMLElement, metadata: EmbedMetadata) {
-            linkEmbedService.renderMentionPreview(container, metadata, true);
-        }
-    });
-
     async function destroyEditor() {
         const editor = editorRef.current;
         editorRef.current = null;
@@ -284,7 +295,18 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
                 uiLanguage: uiLanguage as DISPLAYABLE_LOCALE_IDS,
                 contentLanguage: contentLanguage ?? null,
                 templates: templatesRef.current,
-                getNoteLocation: () => noteLocationRef.current
+                getNoteLocation: () => noteLocationRef.current,
+                getNoteId: () => noteRef.current?.noteId,
+                getComponentId: () => parentComponent?.componentId,
+                triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
+                showIconPicker,
+                referenceSource: {
+                    getEditor: () => editorRef.current,
+                    getNote: () => noteRef.current,
+                    getNotePath: () => noteLocationRef.current?.notePath,
+                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
+                },
+                getContentEmbedHandlers: () => contentEmbedHandlersRef.current
             });
 
             if (isStale) {
@@ -406,9 +428,22 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
     }, [ editor, onChange ]);
 
     return (
-        <div ref={containerRef} className={className} tabIndex={tabIndex} />
+        <>
+            <div ref={containerRef} className={className} tabIndex={tabIndex} />
+            {iconPickerRequest && createPortal(
+                <IconPicker
+                    columnCount={ICON_PICKER_COLUMNS}
+                    compact
+                    onSelect={iconPickerRequest.onSelect}
+                />,
+                iconPickerRequest.container
+            )}
+        </>
     );
 }
+
+/** The number of icons per row of the picker in the editor's balloon. */
+const ICON_PICKER_COLUMNS = 9;
 
 async function buildEditor(element: HTMLElement, isClassicEditor: boolean, opts: BuildEditorOptions) {
     const editorClass = isClassicEditor ? ClassicEditor : PopupEditor;

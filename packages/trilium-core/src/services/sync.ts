@@ -165,13 +165,15 @@ async function sync() {
         ) {
             ws.syncFailed();
 
-            log.info("No connection to sync server.");
+            const message = `No connection to sync server: ${e.message}`;
 
-            lastSyncError = "No connection to sync server.";
+            log.info(message);
+
+            lastSyncError = redactUrlHosts(message);
 
             return {
                 success: false,
-                message: lastSyncError
+                message
             };
         }
         log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);

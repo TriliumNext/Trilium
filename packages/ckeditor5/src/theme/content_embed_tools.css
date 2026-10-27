@@ -8,3 +8,9 @@
     border-inline-end: 1px solid var(--ck-content-embed-tools-divider-color);
     padding-inline-end: var(--ck-spacing-small, var(--ck-spacing-sm));
 }
+
+/* CKEditor hides a toolbar separator that is the first child of its container, which the one
+   between the embed's own items and these tools is. */
+.ck.ck-toolbar .ck.ck-content-embed-tools > .ck.ck-toolbar__separator:first-child {
+    display: inline-block;
+}

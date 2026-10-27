@@ -1,19 +1,17 @@
-import "./i18n.css";
-
 import type { Locale } from "@triliumnext/commons";
 import { useMemo } from "preact/hooks";
 
 import { getAvailableLocales, t } from "../../../services/i18n";
 import { isElectron } from "../../../services/utils";
-import { Card, CardSection, OptionCardSection } from "../../react/Card";
+import { Card, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
-import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
-import CheckboxList from "./components/CheckboxList";
+import HelpButton from "../../react/HelpButton";
+import { useTriliumOption } from "../../react/hooks";
 import { LocaleSelector } from "./components/LocaleSelector";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";
 import RestartAction from "./components/RestartAction";
-import HelpButton from "../../react/HelpButton";
+import { ContentLanguagesCard } from "./content_languages_card";
 
 export default function InternationalizationOptions() {
     return (
@@ -21,7 +19,10 @@ export default function InternationalizationOptions() {
             <OptionsPageHeader />
             <LocalizationOptions />
             <DateSettings />
-            <ContentLanguages />
+            <ContentLanguagesCard
+                heading={t("content_language.title")}
+                actions={<HelpButton helpPage="veGu4faJErEM" />}
+            />
             {/* Both cards above only take effect once the app has started again. */}
             <RestartAction text={t("electron_integration.restart-app-button")} />
             {isElectron() && (
@@ -157,33 +158,5 @@ function DateSettings() {
             )}
         </Card>
     )
-}
-
-function ContentLanguages() {
-    return (
-        <Card
-            heading={t("content_language.title")}
-            description={t("content_language.description")}
-            actions={<HelpButton helpPage="veGu4faJErEM" />}
-        >
-            <CardSection className="i18n-content-languages">
-                <ContentLanguagesList />
-            </CardSection>
-        </Card>
-    );
-}
-
-export function ContentLanguagesList() {
-    const locales = useMemo(() => getAvailableLocales(), []);
-    const [ languages, setLanguages ] = useTriliumOptionJson<string[]>("languages");
-
-    return (
-        <CheckboxList
-            values={locales}
-            keyProperty="id" titleProperty="name"
-            currentValue={languages} onChange={setLanguages}
-            columnWidth="300px"
-        />
-    );
 }
 

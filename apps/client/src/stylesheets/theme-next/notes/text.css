@@ -7,7 +7,9 @@
  */
 
 .ck.ck-toolbar,
-.ck.ck-block-toolbar-button {
+.ck.ck-block-toolbar-button,
+.ck.ck-color-selector,
+.ck-math-form .ck-math-button-row {
     --ck-color-toolbar-background: transparent;
 
     --ck-color-button-default-background: transparent;
@@ -20,12 +22,6 @@
 
     --ck-color-split-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
 
-    --ck-focus-ring: 1px solid transparent;
-    --ck-button-focus-border-color: transparent;
-    --ck-color-focus-border: var(--input-focus-outline-color);
-    --ck-focus-outer-shadow: none;
-    --ck-focus-disabled-outer-shadow: none;
-
     --ck-border-radius: 6px;
     --ck-toolbar-text-font-size: 13px;
 }
@@ -33,6 +29,10 @@
 /* Toolbar button in on state */
 .ck.ck-toolbar .ck-button.ck-on:not(.ck-dropdown__button):not(.ck-list-item-button):not(.ck-button_with-text) {
     --ck-color-button-on-background: var(--ck-editor-toolbar-button-on-background);
+    --ck-color-button-on-hover-background:
+        linear-gradient(var(--hover-item-background-color), var(--hover-item-background-color)),
+        var(--ck-editor-toolbar-button-on-background);
+    --ck-color-button-on-active-background: var(--ck-color-button-on-hover-background);
     --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
     box-shadow: var(--ck-editor-toolbar-button-on-shadow);
 }
@@ -40,23 +40,31 @@
 /* Toolbar button with its dropdown open */
 .ck.ck-toolbar .ck-button.ck-dropdown__button {
     --ck-color-button-on-background: var(--ck-editor-toolbar-dropdown-button-open-background);
+    --ck-color-button-on-hover-background:
+        linear-gradient(var(--hover-item-background-color), var(--hover-item-background-color)),
+        var(--ck-editor-toolbar-dropdown-button-open-background);
+    --ck-color-button-on-active-background: var(--ck-color-button-on-hover-background);
     --ck-color-button-on-color: currentColor;
 }
 
 /* The toolbar show / hide button for the current text block. Unlike the buttons above it, this one
-   floats free and needs a surface of its own; the hover tint is flattened onto it. */
+   floats free, so its hover and on states need a surface of their own; the hover tint is flattened
+   onto it. */
 :root .ck.ck-block-toolbar-button {
     --block-toolbar-button-hover-surface:
         linear-gradient(var(--hover-item-background-color), var(--hover-item-background-color)),
         var(--main-background-color);
 
     --ck-color-block-toolbar-button: var(--muted-text-color);
-    --ck-color-button-default-background: var(--main-background-color);
     --ck-color-button-on-background: var(--main-background-color);
     --ck-color-button-default-hover-background: var(--block-toolbar-button-hover-surface);
     --ck-color-button-on-hover-background: var(--block-toolbar-button-hover-surface);
     --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
     z-index: 1600;
+}
+
+:root .ck.block-drag-handle:not(:hover) {
+    color: var(--main-border-color);
 }
 
 :root .ck.ck-toolbar .ck-button:not(.ck-disabled):active {
@@ -67,7 +75,7 @@
     background: var(--block-toolbar-button-hover-surface);
 }
 
-.ck.ck-toolbar .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
+.ck.ck-toolbar:not([role="radiogroup"]) .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
 .ck.ck-block-toolbar-button:active svg {
     transform: scale(.8);
 }
@@ -78,7 +86,20 @@
 }
 
 /* Focus visible */
-.ck.ck-toolbar .ck-button:focus-visible {
+.ck.ck-toolbar,
+.ck.ck-block-toolbar-button,
+.ck.ck-dropdown__panel,
+.ck-math-form .ck-math-button-row {
+    --ck-focus-ring: 1px solid transparent;
+    --ck-button-focus-border-color: transparent;
+    --ck-color-focus-border: var(--input-focus-outline-color);
+    --ck-focus-outer-shadow: none;
+    --ck-focus-disabled-outer-shadow: none;
+}
+
+.ck.ck-toolbar .ck-button:focus-visible,
+.ck.ck-dropdown__panel .ck-button:focus-visible,
+.ck-math-form .ck-math-button-row .ck-button:focus-visible {
     --ck-focus-ring: 1px solid var(--input-focus-outline-color);
     --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
@@ -350,11 +371,51 @@ div.ck.ck-collapsible {
 /* Color palette */
 :root .ck.ck-color-selector .ck-color-grid {
     --ck-editor-toolbar-button-on-shadow: none; /* Remove the shadow of the selected color button */
-    --ck-color-grid-gap: 5px;
-    --ck-color-grid-tile-border-radius: var(--ck-border-radius);
-    --ck-color-interactive-focus-border: var(--ck-color-focus-border);
+    --ck-color-grid-gap: 8px;
+    --ck-color-grid-tile-border-radius: 4px;
 
     width: auto;
+}
+
+/* Color tiles, drawn as the cells of ColorPicker.css */
+:root .ck.ck-color-selector .ck-color-grid__tile {
+    &:is(.ck-on, :hover, :focus) {
+        box-shadow: none;
+    }
+
+    &.ck-color-selector__color-tile_bordered {
+        box-shadow: inset 0 0 0 1px var(--ck-color-border-control);
+    }
+
+    &:hover:not(.ck-on, .ck-disabled) {
+        transform: scale(1.2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--input-focus-outline-color);
+        outline-offset: 2px;
+    }
+
+    &.ck-on .ck-icon {
+        display: none;
+    }
+
+    /* The selection ring takes the tile's own color, which only its inline background holds. */
+    &.ck-on::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        background: inherit;
+        mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+        mask-clip: padding-box, border-box;
+        mask-composite: exclude;
+    }
+
+    &.ck-color-selector__color-tile_bordered.ck-on::after {
+        background: var(--main-text-color);
+    }
 }
 
 /* Color picker button */
@@ -363,15 +424,6 @@ div.ck.ck-collapsible {
 
     border-bottom-left-radius: var(--ck-border-radius);
     border-bottom-right-radius: var(--ck-border-radius);
-}
-
-/* Current color checkmark */
-:root .ck.ck-color-selector .ck-color-grid .ck-icon {
-    color: white;
-}
-
-:root .ck.ck-color-selector .ck-color-grid .ck-icon__fill {
-    fill: black !important;
 }
 
 /* Hex color input box prefix */
@@ -423,6 +475,7 @@ div.ck.ck-collapsible {
     width: 100%;
     margin: 4px;
     background: color-mix(in srgb, var(--accent) 15%, var(--main-background-color));
+    padding-block: 4px;
     padding-inline-end: 2em;
     border: 1px solid var(--accent);
     border-radius: 6px;
@@ -566,18 +619,164 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     border-top: none;
 }
 
+/* Anchors and the anchors list, drawn as menu items (menus.css, Menu.css) */
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button,
+:root .ck.ck-link-providers .ck-link-providers__list .ck-list__item > .ck-button {
+    border-color: transparent;
+    color: var(--menu-text-color);
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+}
+
+:root .ck.ck-link-form .ck-link-form__providers-list .ck-link__button > .ck-icon {
+    color: var(--menu-item-arrow-color);
+}
+
 /* Math popup */
 
-.ck-math-form .ck-labeled-field-view {
-    --ck-input-label-height: 0;
+:root .ck-math-form .ck-math-button-row {
+    --ck-button-border-radius: var(--ck-border-radius);
+}
 
-    margin-inline-end: 8px;
+/* Room inside the scrolling view for the fields' focus ring animation */
+:root .ck.ck-math-input > :is(.ck-mathlive-container, .ck-latex-textarea) {
+    margin: 4px;
+}
+
+:root .ck.ck-math-input > .ck-mathlive-container {
+    padding-inline: 12px;
+}
+
+:root .ck.ck-math-input > .ck-latex-textarea {
+    padding-inline: 16px;
+}
+
+:root .ck-math-form math-field::part(virtual-keyboard-toggle),
+:root .ck-math-form math-field::part(menu-toggle) {
+    color: var(--icon-button-color);
+}
+
+:root .ck-math-form math-field::part(virtual-keyboard-toggle):hover,
+:root .ck-math-form math-field::part(menu-toggle):hover {
+    background: var(--icon-button-hover-background);
+    color: var(--icon-button-hover-color);
+}
+
+:root .ck-math-form math-field {
+    --ui-font-family: var(--ck-font-face);
+    --ui-font-size: 0.9rem;
+    --ui-menu-bg: var(--menu-background-color);
+    --ui-menu-text: var(--ck-color-text);
+    --ui-menu-bg-active: var(--hover-item-background-color);
+    --ui-menu-text-active: var(--ck-color-text);
+    --ui-menu-bg-active-muted: var(--hover-item-background-color);
+    --ui-menu-text-active-muted: var(--ck-color-text);
+    --ui-menu-divider: var(--menu-item-delimiter-color);
+    --ui-menu-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+
+    /* CKEditor's list row geometry: 27px tall, 4px apart, 11px from the menu's edge */
+    --ui-line-height: 21px;
+    --ck-math-menu-item-margin: 4px 11px;
+    --ck-math-menu-item-padding: 1px 15px;
+    --ck-math-menu-item-border-radius: 6px;
+
+    --ck-math-menu-heading-margin: 0 0 8px;
+    --ck-math-menu-heading-padding: 2px 26px 1px;
+    --ck-math-menu-heading-border: 1px solid var(--menu-item-delimiter-color);
+    --ck-math-menu-heading-opacity: 1;
+    --ck-math-menu-heading-font-size: 0.8em;
+    --ck-math-menu-heading-font-weight: 500;
+    --ck-math-menu-heading-letter-spacing: 1pt;
+    --ck-math-menu-heading-text-transform: uppercase;
+    --ck-math-menu-heading-color: var(--menu-item-group-header-color);
+
+    --ck-math-menu-checkmark-order: 1;
+    --ck-math-menu-checkmark-margin-inline: 12px 2px;
+    --ck-math-menu-checkmark-color: var(--menu-item-icon-color);
+    --ck-math-menu-checkmark-indent: 0;
+
+    --ck-math-menu-swatch-size: var(--ck-color-grid-tile-size);
+    --ck-math-menu-swatch-gap: 8px;
+    --ck-math-menu-swatch-background: transparent;
+    --ck-math-menu-swatch-border-radius: 4px;
+    --ck-math-menu-swatch-shadow: inset 0 0 0 1px var(--main-border-color);
+}
+
+:root .ck-math-form math-field::part(ui-menu-container) {
+    /* An outline takes no room from the four swatch columns of `.swatches-submenu` */
+    outline: 1px solid var(--ck-editor-popup-border-color);
+    outline-offset: -1px;
+    border-radius: var(--dropdown-border-radius);
+    padding-block: 7px;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+}
+
+:root .ck-math-form math-field::part(menu-divider) {
+    margin: calc(.5em + 2px) 0;
+    padding: 0;
+    width: 100%;
+    opacity: 1;
+}
+
+body.background-effects .ck-math-form math-field {
+    --ui-menu-bg: var(--menu-background-color-no-backdrop);
+}
+
+body.background-effects .ck-math-form math-field::part(ui-menu-container) {
+    backdrop-filter: none;
+}
+
+/* Special character and emoji tiles, drawn as the cells of the note icon list (shell.css) */
+:root .ck.ck-character-grid button.ck-button.ck-character-grid__tile,
+:root .ck.ck-emoji .ck.ck-emoji__tiles button.ck-button.ck-emoji__tile {
+    box-shadow: none;
+    border-radius: 6px;
+    background: transparent;
+    transition: transform 150ms ease-out;
+
+    &:is(:hover, :focus-visible):not(.ck-disabled) {
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
+
+    &:hover:not(.ck-disabled) {
+        transform: scale(1.5);
+    }
+
+    /* Emoji fonts advance wider than the tile, and overflowing text ignores `text-align`. */
+    > .ck-button__label {
+        display: flex;
+        justify-content: center;
+    }
 }
 
 /* Emoji dropdown */
 
-.ck-emoji-picker-form .ck-emoji__search .ck-button_with-text:not(.ck-list-item-button) {
-    margin-top: var(--ck-input-label-height);
+:root .ck.ck-emoji {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Categories, drawn as a segmented button (buttons.css) */
+:root .ck.ck-emoji__categories-list {
+    order: 1;
+    margin-top: 12px;
+}
+
+:root .ck.ck-emoji__categories-list > .ck-tab-button::before {
+    display: none;
+}
+
+:root .ck.ck-emoji .ck.ck-emoji__tiles {
+    border-top: none;
+}
+
+:root .ck.ck-emoji-picker-form .ck-emoji__search {
+    align-items: end;
+    padding-bottom: 12px;
 }
 
 /* Find and replace dialog */
@@ -594,7 +793,8 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
  * Buttons
  */
 
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text {
     --ck-color-text: var(--cmd-button-text-color);
 
     min-width: 60px;
@@ -624,6 +824,136 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     background: var(--input-background-color);
 }
 
+/*
+ * Combo boxes
+ */
+
+/* forms.css draws the arrow as a background and dims the whole box when disabled. */
+:root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow,
+:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow,
+:root .ck-link-embed-form__actions > .ck-dropdown .ck-dropdown__arrow {
+    display: none;
+}
+
+:root .ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label,
+:root .ck-link-embed-form__actions > .ck.ck-dropdown
+    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label {
+    opacity: 1;
+}
+
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button {
+    padding-inline-start: var(--ck-spacing-padding);
+}
+
+/*
+ * Color inputs
+ */
+
+:root .ck.ck-input-color {
+    --input-group-padding-inline-end: 0;
+    --ck-input-color-preview-border-radius: 4px;
+}
+
+:root .ck.ck-input-color > .ck.ck-dropdown > button.ck.ck-input-color__button {
+    box-shadow: none;
+    border-color: transparent;
+    background: transparent;
+}
+
+:root .ck.ck-input-color__button__preview {
+    --ck-color-input-border: transparent;
+}
+
+:root .ck.ck-input-color__button:focus-visible > .ck-input-color__button__preview {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+}
+
+/* No color, drawn as the reset cell of ColorPicker.css */
+:root .ck.ck-input-color__button__preview:not(:has(> .ck-hidden)) {
+    background: var(--note-color-picker-clear-color-cell-background);
+
+    &::after {
+        content: "\ec8d";
+        display: flex;
+        position: absolute;
+        inset: 0;
+        justify-content: center;
+        align-items: center;
+        font-family: boxicons;
+        font-size: 16px;
+        color: var(--note-color-picker-clear-color-cell-color);
+    }
+
+    > .ck-input-color__button__preview__no-color-indicator {
+        visibility: hidden;
+    }
+}
+
+/*
+ * Button groups
+ */
+
+:root .ck.ck-toolbar[role="radiogroup"] {
+    border: none;
+}
+
+/*
+ * Toggle switches, drawn as the switches of menu rows (FormToggle.css, FormList.css)
+ */
+
+:root button.ck.ck-button.ck-switchbutton {
+    --ck-switch-button-toggle-width: 40px;
+    --ck-switch-button-toggle-inner-size: 12px;
+    --ck-switch-button-translation: 20px;
+    --ck-switch-button-toggle-border-radius: 24px;
+    --ck-switch-button-toggle-inner-border-radius: 50%;
+    --ck-switch-button-inner-hover-shadow: none;
+    --ck-color-switch-button-off-background: var(--switch-off-track-background);
+    --ck-color-switch-button-off-hover-background: var(--switch-off-track-background);
+    --ck-color-switch-button-on-background: var(--switch-on-track-background);
+    --ck-color-switch-button-on-hover-background: var(--switch-on-track-background);
+    --ck-color-switch-button-inner-background: var(--switch-off-thumb-background);
+    --ck-color-list-button-hover-background: var(--hover-item-background-color);
+    --ck-color-list-background: transparent;
+    --ck-color-surface-control: transparent;
+
+    &:focus-visible {
+        --ck-color-surface-control: var(--input-focus-outline-color);
+
+        border-color: var(--input-focus-outline-color);
+    }
+
+    .ck-button__toggle {
+        box-shadow: none;
+        outline: none;
+        border: none;
+        padding: 4px;
+        transition: background 200ms ease-in;
+    }
+
+    .ck-button__toggle__inner {
+        transition:
+            transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+            background 200ms ease-out;
+    }
+
+    &.ck-on {
+        --ck-color-switch-button-inner-background: var(--switch-on-thumb-background);
+
+        .ck-button__toggle {
+            transition: background 100ms ease-out;
+        }
+
+        .ck-button__toggle__inner {
+            transition:
+                transform 200ms cubic-bezier(0.64, 0, 0.78, 0),
+                background 100ms ease-in;
+        }
+    }
+}
+
 /* AI assistant composer */
 
 :root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text,
@@ -635,16 +965,24 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 /* Forms */
 
+:root .ck.ck-form__row.ck-form__row_with-submit {
+    align-items: baseline;
+}
+
 :root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
     margin-inline-start: 16px;
 }
 
-.ck.ck-form__row_with-submit button {
-    margin-top: var(--ck-input-label-height);
-}
-
 :root .ck.ck-form__header {
     border-bottom: none;
+}
+
+/* Back button, drawn as an icon button (buttons.css) */
+:root button.ck.ck-button.ck-button-back {
+    --ck-icon-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+
+    box-shadow: none;
+    background: transparent;
 }
 
 /*
@@ -705,8 +1043,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
  */
 
 .attachment-content-wrapper pre,
-:root .ck-content pre,
-.ck-mermaid__editing-view {
+:root .ck-content pre {
     border: 0;
     border-radius: 6px;
     box-shadow: var(--code-block-box-shadow);
@@ -772,8 +1109,7 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
 }
 
 .attachment-content-wrapper pre code,
-:root .ck-content pre code,
-.ck-mermaid__editing-view {
+:root .ck-content pre code {
     display: block;
     padding: var(--padding-size, 1em);
     overflow: auto;
@@ -842,6 +1178,15 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     white-space: pre;
 }
 
+:root .ck-content td pre {
+    --padding-size: 0.5em;
+}
+
+:root .ck-content td pre code {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
 .code-sample-wrapper .hljs {
     transition: background-color linear 100ms;
 }
@@ -869,6 +1214,17 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     outline: none;
     box-shadow: 0 0 0 2px var(--link-selection-outline-color);
     background: var(--link-hover-background);
+}
+
+/* Anchors */
+
+.ck-content .ck-bookmark.ck-widget {
+    --ck-bookmark-icon-hover-fill-color: var(--quick-search-result-highlight-color);
+    --ck-bookmark-icon-selected-fill-color: var(--quick-search-result-highlight-color);
+
+    .ck-bookmark__icon .ck-icon__fill {
+        fill: var(--quick-search-result-highlight-color);
+    }
 }
 
 /* Reference link */

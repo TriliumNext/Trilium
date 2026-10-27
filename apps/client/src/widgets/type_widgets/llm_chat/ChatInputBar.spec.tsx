@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
 vi.mock("../../../components/app_context.js", () => ({ default: { triggerEvent: mocks.triggerEvent } }));
 
+import link from "../../../services/link";
 import { renderInto } from "../../../test/render";
-import { PendingAttachmentChip } from "./ChatInputBar";
+import { buildChatInputConfig, PendingAttachmentChip } from "./ChatInputBar";
 import type { AttachmentBlock } from "./useLlmChat";
 
 const image: AttachmentBlock = { type: "image", attachmentId: "img", mime: "image/png", title: "cat.png", url: "api/attachments/img/image/cat.png" };
@@ -40,5 +41,15 @@ describe("PendingAttachmentChip", () => {
         expect(chip?.querySelector("a")).toBeNull();
         expect(chip?.querySelector(".llm-chat-attachment-file-name")?.textContent).toBe("notes.txt");
         expect(chip?.querySelector<HTMLButtonElement>(".llm-chat-attachment-remove")?.disabled).toBe(true);
+    });
+});
+
+describe("buildChatInputConfig", () => {
+    it("titles the notes picked from the @ list, so the message names them", () => {
+        const referenceLink = buildChatInputConfig([]).referenceLink;
+
+        expect(referenceLink?.getTitle).toBe(link.getReferenceLinkTitle);
+        expect(referenceLink?.getTitleSync).toBe(link.getReferenceLinkTitleSync);
+        expect(referenceLink?.renderTitle).toBeTypeOf("function");
     });
 });

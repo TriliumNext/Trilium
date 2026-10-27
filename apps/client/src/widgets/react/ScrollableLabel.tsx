@@ -1,13 +1,16 @@
 import "./ScrollableLabel.css";
 
 import clsx from "clsx";
-import type { ComponentChildren } from "preact";
+import { type ComponentChildren, createRef, type RefObject, render } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { useScrollFade } from "./scroll_fade";
 
 /** How fast a label reads itself out, in pixels a second: walking pace for the eye, not a marquee. */
 const AUTO_SCROLL_SPEED = 30;
+
+/** How far a pressed mouse moves along the label before it drags the line, in pixels. */
+const DRAG_THRESHOLD = 4;
 
 interface ScrollableLabelProps {
     children?: ComponentChildren;
@@ -43,6 +46,7 @@ export default function ScrollableLabel({ children, className, autoScroll }: Scr
         direction: "horizontal",
         minOverflow: 1
     });
+    useMouseDragScroll(ref);
     // Set by the reader's own first scroll, and cleared only by a remount, which is what a new label
     // is: a walk they interrupted must not start again while the same line is still on screen. A
     // consumer whose label changes what it names keys it, so the new one arrives with a fresh walk.
@@ -115,6 +119,115 @@ export default function ScrollableLabel({ children, className, autoScroll }: Scr
             onWheel={autoScroll ? handOver : undefined}
         >{children}</div>
     );
+}
+
+/**
+ * Moves the content of `element`, which Preact does not render, into a {@link ScrollableLabel}
+ * mounted inside it. Returns a function that unmounts the label and puts the content back.
+ */
+export function mountScrollableLabel(element: HTMLElement) {
+    // `render()` reuses or removes the children it finds in `element`.
+    const nodes = [ ...element.childNodes ];
+    element.replaceChildren();
+
+    const contentRef = createRef<HTMLSpanElement>();
+    render(<ScrollableLabel><span ref={contentRef} /></ScrollableLabel>, element);
+    const content = contentRef.current;
+    content?.append(...nodes);
+
+    return () => {
+        const current = content ? [ ...content.childNodes ] : nodes;
+        render(null, element);
+        element.replaceChildren(...current);
+    };
+}
+
+/**
+ * Scrolls the label in `ref` with a mouse dragged along it, as a swipe does on a touch screen.
+ * While the label overflows, a mouse press on it starts no native drag, such as that of a link, and
+ * no text selection, and the click that ends a drag is canceled.
+ */
+function useMouseDragScroll(ref: RefObject<HTMLElement | null>) {
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+
+        let press: { pointerId: number; x: number; scrollLeft: number; isDragging: boolean }
+            | undefined;
+        let isClickCanceled = false;
+
+        // `user-select: none` on a pressed label keeps Firefox from starting a selection drag, whose
+        // autoscroll moves the label toward the pointer even when `selectstart` is canceled.
+        const setPress = (next: typeof press) => {
+            press = next;
+            element.toggleAttribute("data-pressed", !!next);
+        };
+
+        const onPointerDown = (event: PointerEvent) => {
+            isClickCanceled = false;
+            setPress(event.pointerType === "mouse" && event.button === 0
+                && element.scrollWidth > element.clientWidth
+                ? {
+                    pointerId: event.pointerId,
+                    x: event.clientX,
+                    scrollLeft: element.scrollLeft,
+                    isDragging: false
+                }
+                : undefined);
+        };
+        const onPointerMove = (event: PointerEvent) => {
+            if (event.pointerId !== press?.pointerId) return;
+            // Released away from the label before the drag captured the pointer.
+            if (!(event.buttons & 1)) {
+                setPress(undefined);
+                return;
+            }
+
+            const distance = event.clientX - press.x;
+            if (!press.isDragging && Math.abs(distance) >= DRAG_THRESHOLD) {
+                press.isDragging = true;
+                // Keeps the drag going once the pointer leaves the label.
+                element.setPointerCapture(event.pointerId);
+            }
+            if (press.isDragging) {
+                element.scrollLeft = press.scrollLeft - distance;
+            }
+        };
+        const onPointerUp = (event: PointerEvent) => {
+            if (event.pointerId !== press?.pointerId) return;
+
+            isClickCanceled = event.type === "pointerup" && press.isDragging;
+            setPress(undefined);
+        };
+        const preventWhilePressed = (event: Event) => {
+            if (press) {
+                event.preventDefault();
+            }
+        };
+        const cancelClick = (event: MouseEvent) => {
+            if (isClickCanceled) {
+                isClickCanceled = false;
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        };
+
+        element.addEventListener("pointerdown", onPointerDown);
+        element.addEventListener("pointermove", onPointerMove);
+        element.addEventListener("pointerup", onPointerUp);
+        element.addEventListener("pointercancel", onPointerUp);
+        element.addEventListener("dragstart", preventWhilePressed);
+        element.addEventListener("click", cancelClick, true);
+        return () => {
+            element.removeEventListener("pointerdown", onPointerDown);
+            element.removeEventListener("pointermove", onPointerMove);
+            element.removeEventListener("pointerup", onPointerUp);
+            element.removeEventListener("pointercancel", onPointerUp);
+            element.removeEventListener("dragstart", preventWhilePressed);
+            element.removeEventListener("click", cancelClick, true);
+            element.removeAttribute("data-pressed");
+        };
+    }, [ ref ]);
 }
 
 /** A line that moves on its own is the thing this setting is there to ask for less of. */

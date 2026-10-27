@@ -23,7 +23,7 @@
 import { getLog } from "@triliumnext/core";
 import { existsSync } from "fs";
 
-import { cachedProbe, findOnPath, runVersionProbe } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath, runVersionProbe } from "./binary_lookup.js";
 
 const PROBE_TIMEOUT_MS = 15000;
 
@@ -77,5 +77,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error("GitHub Copilot CLI not found. Install it (`npm install -g @github/copilot`) and run `copilot login` on the machine running the Trilium server, or set the TRILIUM_COPILOT_PATH environment variable to its location.");
+    throw new Error(await describeFlatpakSandbox("GitHub Copilot CLI") ?? "GitHub Copilot CLI not found. Install it (`npm install -g @github/copilot`) and run `copilot login` on the machine running the Trilium server, or set the TRILIUM_COPILOT_PATH environment variable to its location.");
 }

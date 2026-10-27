@@ -1,5 +1,5 @@
-import { render } from "preact";
-import { useState } from "preact/hooks";
+import { createContext, render } from "preact";
+import { useContext, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,8 @@ vi.mock("./modal_focustrap", () => ({
     suspendModalFocusTraps: mocks.suspendModalFocusTraps
 }));
 
-import Modal from "./Modal";
+import { handleSystemBack } from "../../services/system_back";
+import Modal, { ScriptModal } from "./Modal";
 
 let container: HTMLDivElement;
 
@@ -80,6 +81,72 @@ function DialogWithTypedInto({ show, onHidden }: { show: boolean; onHidden(): vo
 }
 
 describe("Modal", () => {
+    it("mounts a script modal above a contained render note while preserving context and cleanup", async () => {
+        const Context = createContext("missing");
+        const onClick = vi.fn();
+
+        function Content() {
+            return <button onClick={onClick}>{useContext(Context)}</button>;
+        }
+
+        container.classList.add("note-detail-render-content");
+        container.dataset.ntxId = "source-pane";
+        container.style.contain = "size";
+        container.style.overflow = "auto";
+        await act(async () => {
+            render(<Context.Provider value="from render note">
+                <ScriptModal className="script-dialog" size="md" show onHidden={() => {}}>
+                    <Content />
+                </ScriptModal>
+            </Context.Provider>, container);
+        });
+
+        const dialog = document.querySelector<HTMLElement>(".script-dialog");
+        expect(dialog?.parentElement?.parentElement).toBe(document.body);
+        expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(true);
+        expect(container.contains(dialog)).toBe(false);
+        expect(mocks.openDialog).toHaveBeenCalledWith(expect.anything(), true, { focus: true }, undefined);
+
+        const button = dialog?.querySelector<HTMLButtonElement>(".modal-body button");
+        expect(button?.textContent).toBe("from render note");
+        expect(button?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("source-pane");
+        await act(async () => button?.click());
+        expect(onClick).toHaveBeenCalledOnce();
+
+        await act(async () => render(null, container));
+        expect(document.querySelector(".script-dialog")).toBeNull();
+        expect(mocks.hide).toHaveBeenCalled();
+    });
+
+    it("keeps a script modal's pane without applying render-note styles outside a render note", async () => {
+        container.dataset.ntxId = "script-pane";
+
+        await act(async () => {
+            render(<ScriptModal className="script-dialog" size="md" show onHidden={() => {}}>body</ScriptModal>, container);
+        });
+
+        const dialog = document.querySelector<HTMLElement>(".script-dialog");
+        expect(dialog?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("script-pane");
+        expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(false);
+    });
+
+    it("carries the render-note scope and pane into a nested script modal", async () => {
+        container.classList.add("note-detail-render-content");
+        container.dataset.ntxId = "nested-source-pane";
+
+        await act(async () => {
+            render(<ScriptModal className="outer-script" size="md" show onHidden={() => {}}>
+                <ScriptModal className="inner-script" size="sm" show stackable onHidden={() => {}}>nested</ScriptModal>
+            </ScriptModal>, container);
+        });
+
+        for (const className of [ "outer-script", "inner-script" ]) {
+            const dialog = document.querySelector<HTMLElement>(`.${className}`);
+            expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(true);
+            expect(dialog?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("nested-source-pane");
+        }
+    });
+
     /**
      * The bug this pins: `modalRef.current` stood among the effect's dependencies, and a ref holds
      * nothing while the render that names them runs and the element by the time the effect does —
@@ -157,6 +224,14 @@ describe("Modal", () => {
         expect(dialog?.classList.contains("show")).toBe(true);
     });
 
+    it("renders without a class of the host's own", async () => {
+        await act(async () => {
+            render(<Modal size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+
+        expect(container.querySelector(".modal")?.getAttribute("class")).toBe("modal fade mx-auto");
+    });
+
     /**
      * `openDialog` moves focus onto the new backdrop synchronously, and a focus-trap still active on
      * the dialog underneath pulls it straight back in. Over the Options dialog that lands in the
@@ -170,6 +245,60 @@ describe("Modal", () => {
         });
 
         expect(mocks.raising).toEqual([ "suspendModalFocusTraps", "openDialog" ]);
+    });
+
+    it("marks a dialog taller than half the screen", async () => {
+        let onResize = () => {};
+        vi.stubGlobal("ResizeObserver", class {
+            constructor(callback: () => void) { onResize = callback; }
+            observe() {}
+            disconnect() {}
+        });
+        vi.stubGlobal("innerHeight", 800);
+
+        await act(async () => {
+            render(<Modal size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        const dialog = container.querySelector<HTMLElement>(".modal-dialog");
+        expect(dialog).not.toBeNull();
+        let height = 500;
+        Object.defineProperty(dialog, "offsetHeight", { get: () => height });
+
+        act(() => onResize());
+        expect(dialog?.classList).toContain("modal-dialog-tall");
+
+        // Going tall widens the dialog, which can rewrap it a little shorter.
+        height = 380;
+        act(() => onResize());
+        expect(dialog?.classList).toContain("modal-dialog-tall");
+
+        height = 300;
+        act(() => onResize());
+        expect(dialog?.classList).not.toContain("modal-dialog-tall");
+
+        // The screen can change height without the dialog changing size.
+        height = 380;
+        act(() => onResize());
+        expect(dialog?.classList).not.toContain("modal-dialog-tall");
+        vi.stubGlobal("innerHeight", 700);
+        act(() => { window.dispatchEvent(new Event("resize")); });
+        expect(dialog?.classList).toContain("modal-dialog-tall");
+        vi.unstubAllGlobals();
+    });
+
+    it("closes on the system back while it is shown", async () => {
+        await act(async () => {
+            render(<Modal size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        expect(handleSystemBack()).toBe(true);
+        expect(mocks.hide).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            render(<Modal size="md" show={false} onHidden={() => {}}>body</Modal>, container);
+        });
+        mocks.hide.mockClear();
+        expect(handleSystemBack()).toBe(false);
+        expect(mocks.hide).not.toHaveBeenCalled();
     });
 
     it("opens a dialog that starts closed only once it is asked to show", async () => {

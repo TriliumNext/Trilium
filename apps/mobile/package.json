@@ -3,7 +3,7 @@
   "version": "0.102.2",
   "description": "Capacitor-based mobile app for TriliumNext, built on the standalone client.",
   "private": true,
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "build": "pnpm --filter @triliumnext/standalone build",

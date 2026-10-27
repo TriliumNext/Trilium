@@ -5,10 +5,8 @@ import { syncNativeWindowWithTheme } from "./native_window.js";
 
 type Glob = NonNullable<typeof window.glob>;
 
-const optionsCtrl = vi.hoisted(() => ({ get: vi.fn(() => "false") }));
 const themeCtrl = vi.hoisted(() => ({ getThemeStyle: vi.fn(() => "auto") }));
 
-vi.mock("./options.js", () => ({ default: optionsCtrl }));
 vi.mock("./theme.js", () => ({ getThemeStyle: themeCtrl.getThemeStyle }));
 
 /** The subset of the Electron window API this module drives, all spied. */
@@ -39,7 +37,6 @@ function setPlatform(platform: Glob["platform"]) {
 beforeEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
-    optionsCtrl.get.mockReturnValue("false");
     themeCtrl.getThemeStyle.mockReturnValue("auto");
     win.getZoomFactor.mockReturnValue(1);
     setPlatform("linux");
@@ -173,7 +170,7 @@ describe("syncNativeWindowWithTheme", () => {
     });
 
     it("leaves the title bar alone when the native one is visible, since setting the overlay then throws", () => {
-        optionsCtrl.get.mockReturnValue("true");
+        window.glob.hasNativeTitleBar = true;
         stubThemeVariables({
             "--native-titlebar-background": "#111",
             "--native-titlebar-foreground": "#eee"

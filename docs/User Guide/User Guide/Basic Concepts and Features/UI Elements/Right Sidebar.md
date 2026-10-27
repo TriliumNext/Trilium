@@ -8,6 +8,8 @@ The right sidebar displays specific content for the current note. The sidebar is
 *   <a class="reference-link" href="Right%20Sidebar/AI%20chat%20tab.md">AI chat tab</a>, which uses the <a class="reference-link" href="../../AI.md">AI</a> integration to chat, with optional access to the current note.
 *   <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a>, which groups together the note map, note paths, backlinks and similar notes.
 
+Each window keeps its own selected tab, so switching tabs in one window does not affect the others. A newly opened window starts on the tab that was selected last.
+
 ## Toggling the right sidebar
 
 There are two ways to toggle the right sidebar:
@@ -24,3 +26,5 @@ There is a small strip near the right edge of the app which shows an arrow icon.
     *   Clicking outside the sidebar while in peek mode will simply hide the sidebar. Same goes for the X button and clicking on the right edge.
     *   Pressing the pin icon will dock the sidebar.
 *   When the sidebar is docked, pressing the edge will hide the sidebar (similar to the toggle icon at the top).
+
+The _Peek Right Pane_ [keyboard shortcut](../Keyboard%20Shortcuts.md), <kbd>Alt</kbd>+<kbd>]</kbd> by default, does the same as pressing the strip.

@@ -2,7 +2,7 @@ import { MercatorCoordinate } from "maplibre-gl";
 import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../../../test/easy-froca";
-import { geoSpace, imageSpace, isShapeNote, locationOf, parseImageExtent, shapeOf } from "./space";
+import { formatImageExtent, geoSpace, type ImageExtent, imageSpace, isShapeNote, locationOf, parseImageExtent, shapeOf } from "./space";
 
 describe("geoSpace", () => {
     it("stores latitude first and hands MapLibre longitude first", () => {
@@ -147,6 +147,12 @@ describe("imageSpace with named corners", () => {
         for (const value of [ "", "0,0", "0,0 10", "0,0 0,5", "0,0 10,0", "a,b c,d", "0,0 1,1 2,2", "-100,-100,1200,512", null, undefined ]) {
             expect(parseImageExtent(value)).toBeNull();
         }
+    });
+
+    it("writes corners in the form it reads them", () => {
+        const extent = { topLeft: [ -512.5, 1000 ], bottomRight: [ 512, -1000 ] } as ImageExtent;
+        expect(formatImageExtent(extent)).toBe("-512.5,1000 512,-1000");
+        expect(parseImageExtent(formatImageExtent(extent))).toEqual(extent);
     });
 });
 

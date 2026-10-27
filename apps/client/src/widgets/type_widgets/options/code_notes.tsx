@@ -10,7 +10,7 @@ import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
-import { CodeMimeTypesList } from "./code_mime_types_list";
+import { CodeMimeTypesCard } from "./code_mime_types_card";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import ThemeModeSelector from "./components/ThemeModeSelector";
 import codeNoteSample from "./samples/code_note.txt?raw";
@@ -19,14 +19,22 @@ const SAMPLE_MIME = "application/typescript";
 
 export default function CodeNoteSettings() {
     const [codeLineWrapEnabled, setCodeLineWrapEnabled] = useTriliumOptionBool("codeLineWrapEnabled");
+    const [codeLineNumbersEnabled, setCodeLineNumbersEnabled] =
+        useTriliumOptionBool("codeLineNumbersEnabled");
     const [codeNoteTabWidth] = useTriliumOption("codeNoteTabWidth");
 
     return (
         <>
             <OptionsPageHeader />
-            <Editor wordWrapping={codeLineWrapEnabled} setWordWrapping={setCodeLineWrapEnabled} />
-            <Appearance wordWrapping={codeLineWrapEnabled} indentSize={parseInt(codeNoteTabWidth) || 4} />
-            <CodeMimeTypes />
+            <Editor
+                wordWrapping={codeLineWrapEnabled} setWordWrapping={setCodeLineWrapEnabled}
+                lineNumbers={codeLineNumbersEnabled} setLineNumbers={setCodeLineNumbersEnabled}
+            />
+            <Appearance
+                wordWrapping={codeLineWrapEnabled} lineNumbers={codeLineNumbersEnabled}
+                indentSize={parseInt(codeNoteTabWidth) || 4}
+            />
+            <CodeMimeTypesCard heading={t("code_mime_types.title")} />
         </>
     );
 }
@@ -34,9 +42,11 @@ export default function CodeNoteSettings() {
 interface EditorProps {
     wordWrapping: boolean;
     setWordWrapping: (newValue: boolean) => void;
+    lineNumbers: boolean;
+    setLineNumbers: (newValue: boolean) => void;
 }
 
-function Editor({ wordWrapping, setWordWrapping }: EditorProps) {
+function Editor({ wordWrapping, setWordWrapping, lineNumbers, setLineNumbers }: EditorProps) {
     const [vimKeymapEnabled, setVimKeymapEnabled] = useTriliumOptionBool("vimKeymapEnabled");
     const [autoReadonlySize, setAutoReadonlySize] = useTriliumOption("autoReadonlySizeCode");
     const [codeNoteTabWidth, setCodeNoteTabWidth] = useTriliumOption("codeNoteTabWidth");
@@ -45,6 +55,10 @@ function Editor({ wordWrapping, setWordWrapping }: EditorProps) {
         <Card heading={t("code-editor-options.title")}>
             <OptionCardSection name="word-wrap" label={t("code_theme.word_wrapping")}>
                 <FormToggle currentValue={wordWrapping} onChange={setWordWrapping} />
+            </OptionCardSection>
+
+            <OptionCardSection name="line-numbers" label={t("code-editor-options.line_numbers")}>
+                <FormToggle currentValue={lineNumbers} onChange={setLineNumbers} />
             </OptionCardSection>
 
             {/* Avoid using "code" in the name of numeric inputs to prevent KeepassXC from triggering. */}
@@ -87,6 +101,7 @@ function Editor({ wordWrapping, setWordWrapping }: EditorProps) {
 
 interface AppearanceProps {
     wordWrapping: boolean;
+    lineNumbers: boolean;
     indentSize: number;
 }
 
@@ -101,7 +116,7 @@ function useFilteredThemes(variant?: ThemeVariant) {
     }, [variant]);
 }
 
-function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
+function Appearance({ wordWrapping, lineNumbers, indentSize }: AppearanceProps) {
     const [codeNoteTheme, setCodeNoteTheme] = useTriliumOption("codeNoteTheme");
     const [matchesApp, setMatchesApp] = useTriliumOptionBool("codeNoteThemeMatchesApp");
     const [lightTheme, setLightTheme] = useTriliumOption("codeNoteThemeLight");
@@ -150,13 +165,25 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
             {/* A specimen of the editor rather than a control standing beside a label, shown
                 the way a code block is shown in a note. */}
             <CardSection className="code-note-preview" filterRole="companion">
-                <CodeNotePreview wordWrapping={wordWrapping} themeName={effectiveTheme} indentSize={indentSize} />
+                <CodeNotePreview
+                    wordWrapping={wordWrapping} lineNumbers={lineNumbers}
+                    themeName={effectiveTheme} indentSize={indentSize}
+                />
             </CardSection>
         </Card>
     );
 }
 
-function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: string, wordWrapping: boolean, indentSize: number }) {
+interface CodeNotePreviewProps {
+    themeName: string;
+    wordWrapping: boolean;
+    lineNumbers: boolean;
+    indentSize: number;
+}
+
+function CodeNotePreview({
+    themeName, wordWrapping, lineNumbers, indentSize
+}: CodeNotePreviewProps) {
     const editorRef = useRef<CodeMirror>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -181,6 +208,10 @@ function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: s
     useEffect(() => {
         editorRef.current?.setLineWrapping(wordWrapping);
     }, [ wordWrapping ]);
+
+    useEffect(() => {
+        editorRef.current?.setLineNumbers(lineNumbers);
+    }, [ lineNumbers ]);
 
     useEffect(() => {
         const editor = editorRef.current;
@@ -210,15 +241,5 @@ function reindentSample(sample: string, indentSize: number): string {
         const level = match.length / SAMPLE_BASE_INDENT;
         return " ".repeat(Math.round(level) * indentSize);
     });
-}
-
-function CodeMimeTypes() {
-    return (
-        <Card heading={t("code_mime_types.title")}>
-            <CardSection>
-                <CodeMimeTypesList />
-            </CardSection>
-        </Card>
-    );
 }
 

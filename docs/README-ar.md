@@ -361,6 +361,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   الملاحظات النصية.
 * محرر [CodeMirror](https://github.com/codemirror/CodeMirror): - محرر أكواد يدعم
   عدداً هائلاً من اللغات.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * برنامج [Excalidraw](https://github.com/excalidraw/excalidraw): - السبورة
   البيضاء اللانهائية المستخدمة في ملاحظات Canvas.
 * برنامج [Mind Elixir](https://github.com/SSShooter/mind-elixir-core): - يوفر

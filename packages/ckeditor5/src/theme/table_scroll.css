@@ -28,6 +28,17 @@
 }
 
 .ck.ck-editor__editable.ck-content figure.table.ck-widget.ck-table-overflowing {
+    /* `TriliumTableScroll` sets `--table-viewport-width`, CKEditor `--ck-table-scroll-offset`. */
+    > table.scroll-fade {
+        mask-size: var(--table-viewport-width) 100%;
+        mask-position: var(--ck-table-scroll-offset) 0;
+        mask-repeat: no-repeat;
+
+        &.scroll-fade-rtl {
+            mask-position: calc(100% + var(--ck-table-scroll-offset)) 0;
+        }
+    }
+
     > figcaption {
         position: sticky;
         inset-inline-start: 0;
@@ -70,7 +81,6 @@
                 order: -2;
                 align-self: flex-start;
                 inset-inline-start: var(--button-inset);
-                margin-block-end: calc(-1 * var(--ck-widget-type-around-button-size));
                 margin-inline-start: var(--button-inset);
             }
 
@@ -79,9 +89,19 @@
                 align-self: flex-end;
                 inset-inline-start:
                     calc(100% - min(10%, 30px) - var(--ck-widget-type-around-button-size));
-                margin-block-start: calc(-1 * var(--ck-widget-type-around-button-size));
                 margin-inline-end: min(10%, 30px);
             }
         }
+    }
+}
+
+.ck-content figure.table.scroll-fade,
+.ck-content figure.table > table.scroll-fade {
+    &.scroll-fade-start {
+        --scroll-fade-start: 2.5%;
+    }
+
+    &.scroll-fade-end {
+        --scroll-fade-end: 2.5%;
     }
 }

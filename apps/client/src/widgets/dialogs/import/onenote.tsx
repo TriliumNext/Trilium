@@ -11,7 +11,6 @@ import { useTriliumOptionBool } from "../../react/hooks.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/onenote.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 
 type Phase = "checking" | "disconnected" | "connecting" | "ready";
@@ -347,7 +346,7 @@ const provider: ImportProvider = {
     id: "onenote",
     helpPage: "GnhlmrATVqcH",
     name: t("onenote_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-onenote",
     description: t("onenote_import.description"),
     Panel: OneNotePanel
 };

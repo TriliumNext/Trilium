@@ -1,6 +1,6 @@
 import { chooseLinkPreviewKind, isUrlAloneInBlock, type BlockChildLike } from '@triliumnext/commons';
 import { Plugin } from 'ckeditor5';
-import { EMBEDDABLE_URL_REGEX } from './link_embed_commands.js';
+import { EMBEDDABLE_URL_REGEX, getLinkEmbedHost } from './link_embed_commands.js';
 
 /**
  * Auto-converts typed/pasted URLs to link preview widgets.
@@ -86,10 +86,8 @@ export default class AutoLinkToMention extends Plugin {
 
     private _replaceWithPreview(url: string, parentPath: number[]) {
         const editor = this.editor;
-        const editorEl = editor.editing.view.getDomRoot();
-        const component = glob.getComponentByEl<EditorComponent>(editorEl);
 
-        component.fetchLinkMetadata(url).then((metadata: LinkEmbedMetadata) => {
+        getLinkEmbedHost(editor).fetchMetadata(url).then((metadata: LinkEmbedMetadata) => {
             // The page told us nothing (bot challenge, network error, no title of its own): leave the
             // plain link AutoLink already created. A preview built from a hostname placeholder would
             // show strictly less than the URL it replaced.

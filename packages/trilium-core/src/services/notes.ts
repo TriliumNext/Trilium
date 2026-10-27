@@ -161,9 +161,48 @@ function copyAttachments(origNote: BNote, newNote: BNote) {
 }
 
 function getNewNoteTitle(parentNote: BNote) {
-    let title = t("notes.new-note");
+    return evaluateTitleTemplate(
+        parentNote.getLabelValue("titleTemplate"),
+        parentNote,
+        `titleTemplate of note '${parentNote.noteId}'`
+    );
+}
 
-    const titleTemplate = parentNote.getLabelValue("titleTemplate");
+/**
+ * Returns the default title that the first of the note's templates carrying a
+ * `#template:titleTemplate` gives it, or `null` when none does.
+ */
+function getTemplateNoteTitle(note: BNote, parentNote: BNote) {
+    for (const relation of note.getOwnedRelations("template")) {
+        const templateNote = relation.targetNote;
+        const titleTemplate = templateNote ? getTemplateTitleTemplate(templateNote) : null;
+
+        if (templateNote && titleTemplate !== null) {
+            return evaluateTitleTemplate(
+                titleTemplate,
+                parentNote,
+                `template:titleTemplate of note '${templateNote.noteId}'`
+            );
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Reads the template's own `#template:titleTemplate`, or one inherited from its ancestors in the tree.
+ * A value lent through `~template` is skipped, so a note created from a template and later marked
+ * `#template` does not adopt the original template's title, as with `~template:newNoteDefaultParent`.
+ */
+function getTemplateTitleTemplate(templateNote: BNote) {
+    const sourceNoteIds = new Set([ templateNote.noteId, ...templateNote.getAncestorNoteIds() ]);
+
+    return templateNote.getLabels("template:titleTemplate")
+        .find((label) => sourceNoteIds.has(label.noteId))?.value ?? null;
+}
+
+function evaluateTitleTemplate(titleTemplate: string | null, parentNote: BNote, source: string) {
+    let title = t("notes.new-note");
 
     if (titleTemplate !== null) {
         const now = dayjs(date_utils.localNowDateTime() || new Date());
@@ -175,7 +214,7 @@ function getNewNoteTitle(parentNote: BNote) {
             titleTemplate,
             { now, parentNote },
             title,
-            `titleTemplate of note '${parentNote.noteId}'`
+            source
         );
     }
 
@@ -226,7 +265,8 @@ function createNewNote(params: NoteParams): {
 } {
     const parentNote = getAndValidateParent(params);
 
-    if (params.title === null || params.title === undefined) {
+    const isTitleDefaulted = params.title === null || params.title === undefined;
+    if (isTitleDefaulted) {
         params.title = getNewNoteTitle(parentNote);
     }
 
@@ -252,6 +292,10 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
+    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+        throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
+    }
+
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
@@ -275,9 +319,6 @@ function createNewNote(params: NoteParams): {
                 cls.disableEntityEvents();
             }
 
-            // TODO: think about what can happen if the note already exists with the forced ID
-            //       I guess on DB it's going to be fine, but becca references between entities
-            //       might get messed up (two note instances for the same ID existing in the references)
             note = new BNote({
                 noteId: params.noteId, // optionally can force specific noteId
                 title: params.title,
@@ -335,6 +376,13 @@ function createNewNote(params: NoteParams): {
         }
 
         copyChildAttributes(parentNote, note, params.isTypeDefaulted);
+
+        // Read once the templates are applied, so both a chosen template and a `child:template` count.
+        const templateTitle = isTitleDefaulted ? getTemplateNoteTitle(note, parentNote) : null;
+        if (templateTitle !== null) {
+            note.title = templateTitle;
+            note.save();
+        }
 
         eventService.emit(eventService.ENTITY_CREATED, { entityName: "notes", entity: note });
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "notes", entity: note });
@@ -404,6 +452,13 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
 }
 
 function protectNoteRecursively(note: BNote, protect: boolean, includingSubTree: boolean, taskContext: TaskContext<"protectNotes">) {
+    if (note.isVirtual) {
+        // Virtual notes (e.g. the in-app help) are read-only, application-owned and never
+        // persisted — (un)protecting them is meaningless. Their children are virtual too,
+        // so the whole subtree is skipped.
+        return;
+    }
+
     protectNote(note, protect);
 
     taskContext.increaseProgressCount();
@@ -1188,6 +1243,13 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
 
     if (!note || !note.isContentAvailable()) {
         throw new Error(`Note '${noteId}' is not available for change!`);
+    }
+
+    // Revisions, attachments and link attributes are database rows, which a virtual note has none
+    // of; its provider stores the content alone.
+    if (note.isVirtual) {
+        note.setContent(content);
+        return;
     }
 
     saveRevisionIfNeeded(note);

@@ -1,4 +1,4 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
@@ -8,6 +8,7 @@ import {
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
+import type FNote from "../entities/fnote.js";
 import contextMenu, { type MenuItem } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
@@ -17,6 +18,7 @@ import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
+import { getNoteShareLink } from "./share_link.js";
 import toast from "./toast.js";
 
 const HIGHLIGHT_CLASS = "block-reference-highlight";
@@ -48,10 +50,51 @@ export interface BlockHandleMenuActions {
     copyShareLink?: () => void;
 }
 
-/** The component of a text editor that copies references to the blocks of its note. */
-interface BlockReferenceHost {
-    copyBlockReference?(): Promise<void>;
-    copyTabReference?(): void;
+/** The note a text editor is open on, which the references it copies point to. */
+export interface ReferenceSource {
+    getEditor(): CKTextEditor | null | undefined;
+    getNote(): FNote | null | undefined;
+    /** The path the note is open at, if known. */
+    getNotePath(): string | null | undefined;
+    /** Saves the note now, so that a copied link resolves at once. */
+    save(): unknown;
+}
+
+type CopyReference = (editor: CKTextEditor, notePath: string, noteTitle: string) => unknown;
+
+/** The `blockReference` and `tabs` editor config, which copy references into `source`. */
+export function buildReferenceConfig(
+    source: ReferenceSource
+): Pick<EditorConfig, "blockReference" | "tabs"> {
+    async function copy(copyTo: CopyReference) {
+        const editor = source.getEditor();
+        const note = source.getNote();
+        if (!editor || !note) {
+            return;
+        }
+
+        await copyTo(editor, source.getNotePath() ?? `root/${note.noteId}`, note.title);
+        await source.save();
+    }
+
+    return {
+        blockReference: {
+            openHandleMenu(event, count) {
+                const note = source.getNote();
+                const shareLink = note && getNoteShareLink(note);
+                openBlockHandleMenu(event, count, {
+                    copyReference: () => void copy(copyBlockReference),
+                    copyShareLink: shareLink
+                        ? () => void copy((editor) => copyBlockShareLink(editor, shareLink))
+                        : undefined
+                });
+            },
+            copyReference: () => void copy(copyBlockReference)
+        },
+        tabs: {
+            copyReference: () => void copy(copyTabReference)
+        }
+    };
 }
 
 /** Opens the menu of the block handle at `event`, for `count` selected blocks. */
@@ -261,27 +304,25 @@ function getCopyItem(count: number, copyReference: () => void): MenuItem<Command
 
 function getCopyMenuItem(editor: CKTextEditor) {
     const command = editor.commands.get("assignBlockReference");
-    const root = editor.editing.view.getDomRoot();
-    const host: BlockReferenceHost | undefined = root && glob.getComponentByEl(root);
-    if (!command?.isEnabled || !host?.copyBlockReference) {
+    const copyReference = editor.config.get("blockReference")?.copyReference;
+    if (!command?.isEnabled || !copyReference) {
         return null;
     }
 
-    return getCopyItem(command.value, () => void host.copyBlockReference?.());
+    return getCopyItem(command.value, () => copyReference());
 }
 
 function getCopyTabMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
     const command = editor.commands.get("assignTabReference");
-    const root = editor.editing.view.getDomRoot();
-    const host: BlockReferenceHost | undefined = root && glob.getComponentByEl(root);
-    if (!command?.isEnabled || !host?.copyTabReference) {
+    const copyReference = editor.config.get("tabs")?.copyReference;
+    if (!command?.isEnabled || !copyReference) {
         return null;
     }
 
     return {
         title: t("block_reference.copy_tab"),
         uiIcon: "bx bx-link",
-        handler: () => host.copyTabReference?.()
+        handler: () => copyReference()
     };
 }
 

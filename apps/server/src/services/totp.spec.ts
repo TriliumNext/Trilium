@@ -1,7 +1,8 @@
+import type { TotpConfig, TotpOptions } from "time2fa";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
-    mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
+    mockGenerateKey: vi.fn<GenerateKey>(),
     mockValidate: vi.fn<typeof import("time2fa").Hotp.validate>()
 }));
 
@@ -128,7 +129,8 @@ describe("totp", () => {
         expect(result?.success).toBe(true);
         expect(result?.message).toBe(SECRET);
         expect(result?.url).toBe(SECRET_URL);
-        expect(mockGenerateKey).toHaveBeenCalledWith({ issuer: "Trilium", user: "host" });
+        expect(mockGenerateKey).toHaveBeenCalledWith(
+            { issuer: "Trilium", user: "host" }, { secretSize: 20 });
         // Generation alone must NOT persist the secret: it only becomes active after the user
         // confirms a code for it, which is what prevents an accidental lockout.
         expect(totp.checkForTotpSecret()).toBe(false);
@@ -141,6 +143,23 @@ describe("totp", () => {
         });
         expect(totp.checkForTotpSecret()).toBe(true);
         expect(totp.getTotpSecret()).toBe(SECRET);
+    });
+
+    it("generates 160-bit secrets and still validates older 80-bit ones", async () => {
+        const actual = await vi.importActual<typeof import("time2fa")>("time2fa");
+        mockGenerateKey.mockImplementation((opts, config) => actual.Totp.generateKey(opts, config));
+        mockValidate.mockImplementation(actual.Hotp.validate.bind(actual.Hotp));
+
+        const { message: secret = "", url } = totp.generateSecret("host");
+        expect(secret).toMatch(/^[A-Z2-7]{32}$/);
+        expect(url).toContain(`secret=${secret}`);
+
+        const step = Math.floor(Date.now() / 1000 / 30);
+        for (const enrolled of [ secret, SECRET ]) {
+            const config = actual.generateConfig({ secretSize: enrolled.length * 5 / 8 });
+            const code = actual.Hotp.generatePasscode({ secret: enrolled, counter: step }, config);
+            expect(totp.validateTOTPForSecret(enrolled, code)).toBe(true);
+        }
     });
 
     it("generateSecret returns failure when secret generation throws", () => {
@@ -319,3 +338,5 @@ async function useRealCodes() {
 
     return (counter: number) => actual.Hotp.generatePasscode({ secret: SECRET, counter }, config);
 }
+
+type GenerateKey = (opts: TotpOptions, config?: TotpConfig) => { secret: string; url: string };

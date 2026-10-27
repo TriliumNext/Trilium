@@ -1,4 +1,4 @@
-import { attributes, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 
 import config from "./config.js";
@@ -267,9 +267,23 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
     const password = colonIndex === -1 ? "" : auth.substr(colonIndex + 1);
     // username is ignored
 
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+    // Checked before the password so that the answer says nothing about the password.
+    const totpToken = req.headers["trilium-totp"];
+    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
+        res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
+        getLog().info(`WARNING: Missing TOTP token from ${req.ip}, rejecting.`);
+        return;
+    }
+
+    // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
+    // `verifyRecoveryCode()` write options when they accept a code.
+    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+    } else if (failedFactor === "totp") {
+        res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
+        getLog().info(`WARNING: Wrong TOTP token from ${req.ip}, rejecting.`);
     } else {
         next();
     }

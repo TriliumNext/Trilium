@@ -249,6 +249,26 @@ describe("share handlers", () => {
         }
     });
 
+    it("sandboxes a note viewed inline unless it is a PDF", () => {
+        buildShareTree([
+            { id: "htmlFile", type: "file", mime: "text/html", content: "<script>alert(1)</script>" },
+            { id: "pdfFile", type: "file", mime: "application/pdf", content: "%PDF" }
+        ]);
+        const view = (noteId: string) => request("/share/api/notes/:noteId/view", { params: { noteId } });
+
+        const html = view("htmlFile");
+        expect(html).toMatchObject({ status: 200, body: "<script>alert(1)</script>" });
+        expect(html.headers).toMatchObject({
+            "Content-Type": "text/html",
+            "Content-Security-Policy": "sandbox",
+            "X-Content-Type-Options": "nosniff"
+        });
+
+        const pdf = view("pdfFile");
+        expect(pdf).toMatchObject({ status: 200, body: "%PDF" });
+        expect(pdf.headers).not.toHaveProperty("Content-Security-Policy");
+    });
+
     it("locks a raw SVG note down with a content security policy, but not raw HTML", () => {
         buildShareTree([
             { id: "rawSvg", type: "image", mime: "image/svg+xml", content: "<svg/>", "#shareRaw": "" },
@@ -405,7 +425,12 @@ describe("share handlers", () => {
 
         const png = image("pngAttachment");
         expect(png).toMatchObject({ status: 200, body: pngBytes });
-        expect(png.headers).toEqual({ "X-Robots-Tag": "noindex", "Content-Type": "image/png" });
+        expect(png.headers).toEqual({
+            "X-Robots-Tag": "noindex",
+            "Content-Type": "image/png",
+            "Content-Security-Policy": "sandbox",
+            "X-Content-Type-Options": "nosniff"
+        });
 
         const svg = image("svgAttachment");
         expect(svg.body).toBe("<svg></svg>");
@@ -496,7 +521,7 @@ describe("share handlers", () => {
                 highlightedSnippet: "<b>plain</b> snippet"
             } ]
         });
-        expect(findResults.mock.lastCall?.[1].ancestorNoteId).toBe("_share");
+        expect(findResults.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "_share", allowRegex: false });
         expect(buildDetails.mock.lastCall?.[0]).toEqual([ visible ]);
 
         const authorized = search({ search: "anything" }, `Basic ${encodeBase64("root:hunter2")}`);
@@ -540,6 +565,13 @@ describe("share handlers", () => {
         const authorized = filter({ searchString: "seen", ancestorNoteId: "board" },
             `Basic ${encodeBase64("root:hunter2")}`);
         expect(JSON.parse(String(authorized.body)).searchResultNoteIds).toEqual([ "seen", "guarded" ]);
+
+        const lastContext = () => vi.mocked(searchService.findResultsWithQuery).mock.lastCall?.[1];
+        const includesArchived = () => lastContext()?.includeArchivedNotes;
+        expect(lastContext()?.allowRegex).toBe(false);
+        expect(includesArchived()).toBe(true);
+        filter({ searchString: "seen", ancestorNoteId: "board", includeArchivedNotes: "false" });
+        expect(includesArchived()).toBe(false);
 
         expect(filter({ ancestorNoteId: "board" }).status).toBe(400);
         expect(filter({ searchString: "seen" }).status).toBe(400);

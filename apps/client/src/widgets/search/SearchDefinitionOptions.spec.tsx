@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { renderInto } from "../../test/render";
+import { Card } from "../react/Card";
 import { SEARCH_OPTIONS } from "./SearchDefinitionOptions";
 
 // Echoes the key, so a spec can tell which string a title shows.
@@ -94,7 +95,7 @@ function renderOption(note: FNote, container?: HTMLDivElement, error?: { message
 
     const Component = option.component;
     const vnode = (
-        <table><tbody>
+        <Card>
             <Component
                 note={note}
                 refreshResults={() => {}}
@@ -103,7 +104,7 @@ function renderOption(note: FNote, container?: HTMLDivElement, error?: { message
                 attributeName="searchString"
                 attributeType="label"
             />
-        </tbody></table>
+        </Card>
     );
 
     if (container) {

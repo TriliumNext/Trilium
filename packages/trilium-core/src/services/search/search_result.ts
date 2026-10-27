@@ -94,6 +94,7 @@ class SearchResult {
     highlightedParentPathTitle?: string;
     contentSnippet?: string;
     highlightedContentSnippet?: string;
+    contentSnippetTruncated?: boolean;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
     matchedTerms?: string[];

@@ -1,4 +1,11 @@
 .collapsible {
+    .collapsible-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 1rem;
+    }
+
     .collapsible-title {
         line-height: 1em;
         display: flex;
@@ -23,6 +30,14 @@
     .collapsible-inner-body {
         padding-top: 0.5em;
         opacity: 0;
+    }
+
+    &.collapsible-card .collapsible-inner-body {
+        margin-top: 0.5em;
+        padding: 0;
+        overflow: hidden;
+        border-radius: var(--card-border-radius, 8px);
+        background: var(--card-background-color, var(--accented-background-color));
     }
 
     &.expanded {

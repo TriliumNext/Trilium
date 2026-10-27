@@ -61,8 +61,7 @@ export default function useColTableEditing(
                 allAttributes: [ attr ],
                 isOwned: true,
                 x: 0,
-                focus: "name",
-                hideMultiplicity: true
+                focus: "name"
             });
         },
         async updateAttributeListCommand({ attributes }: CommandListenerData<"updateAttributeList">) {

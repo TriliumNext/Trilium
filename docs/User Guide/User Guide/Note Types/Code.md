@@ -10,7 +10,7 @@ This can be useful for a few things:
 
 For shorter snippets of code that can be embedded in [Text](Text.md) notes, see [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md).
 
-![](Code_image.png)
+![](Code_image.jpg)
 
 ## Creating a code note
 
@@ -23,11 +23,22 @@ In the [Note Tree](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tre
 
 To change the language of a code note, look for the <span class="tn-icon bx bx-code"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>. When clicked it will reveal the list of available languages (which can be customized according to the section below). The menu also features a search bar to quickly filter, and icons to visually distinguish some of the programming languages.
 
-On the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same list is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Change language mode_.
+On the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same list is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note settings_ → _Change language mode_.
 
 ## Adjusting the list of languages
 
-Trilium supports syntax highlighting for many languages, but by default displays only some of them. The supported languages can be adjusted by going to [Options](../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md), then _Code Notes_ and looking for the _Available MIME types in the dropdown_ section. Simply check any of the items to add them to the list, or un-check them to remove them from the list.
+Trilium supports syntax highlighting for many languages, but by default displays only some of them. To change which languages are offered, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ and find _Available MIME types in the dropdown_. Here you can:
+
+*   Add a language by pressing the <span class="tn-icon bx bx-plus"></span> _Add another language_ button, which also shows how many languages are left, and then selecting it. While picking, hover a language to see where it is syntax highlighted.
+*   Press the <span class="tn-icon bx bx-x"></span> button beside a language, or select it and press <kbd>Delete</kbd>, to remove it from the list. _Plain text_ cannot be removed.
+*   See where each language is syntax highlighted: the _Code blocks_ badge stands for code blocks in text notes, the _Code notes_ badge for code notes.
+
+The languages are listed in the same order wherever you choose one: the language menu in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, the _Code_ submenu when creating a note, and the language of a code block. By default, the list is sorted alphabetically, with _Plain text_ first. To use an order of your own:
+
+1.  Turn off the _Sort alphabetically_ switch at the top of the section.
+2.  Hold the **\=** handle shown beside a language, and then drag it up or down. Alternatively, select a language and press <kbd>Ctrl</kbd>+<kbd>↑</kbd> or <kbd>Ctrl</kbd>+<kbd>↓</kbd>.
+
+Turning _Sort alphabetically_ back on does not discard your order: it is used again the next time the switch is turned off.
 
 Note that the list of languages is not immediately refreshed, you'd have to manually [refresh the application](../Troubleshooting/Refreshing%20the%20application.md).
 
@@ -45,15 +56,27 @@ Long lines can be displayed on multiple lines:
 > [!NOTE]
 > Word wrapping can also be adjusted at note level through the `#wrapLines` [label](../Advanced%20Usage/Attributes/Labels.md), which can also be inherited.
 
+## Line numbers
+
+The numbers at the start of each line can be hidden from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ → _Line numbers_. The setting applies to every code editor, such as the source of a [Markdown](Markdown.md) note, and to code shown without its editor (see _Color schemes_ below).
+
+An included code note or an embedded code file can show or hide them on its own through the _Line numbers_ submenu of its _More actions_ menu, see <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>. Its _Auto_ entry follows the setting.
+
 ## Adjusting options using the status bar
 
-The status bar at the bottom of the editor shows the current indentation settings and language. Clicking on the indentation indicator opens a menu with three sections:
+The status bar at the bottom of the editor shows the position of the cursor, the current indentation settings and language.
+
+The cursor position is shown as _Ln_ (the line) and _Col_ (the column), both counted from 1. A tab counts as many columns as the display width of tabs, so the column matches where the cursor appears on screen. While text is selected, _Selected_ shows the number of selected characters, counting each line break as one.
+
+Clicking on the indentation indicator opens a menu with three sections:
 
 1.  _Indent Using_ — switch between Spaces and Tabs (`#indentWithTabs`). If a per-note override is active, a "Reset to default" option appears.
 2.  _Display Width_ — choose from preset widths (1, 2, 3, 4, 6, 8). Changes are saved as a per-note `#tabWidth` label.
 3.  _Re-indent Content To_ — convert existing indentation to a different style. For example, re-indent a file from 4 spaces to 2 spaces, or from spaces to tabs. This rewrites the leading whitespace on every line while preserving alignment remainders.
 
 Clicking the language indicator lets you change the note's MIME type. As in the _Note type_ selector, typing narrows the list of languages.
+
+The same two menus are in the toolbar of a code note or a code file included in a text note, see <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
 
 ### Re-indentation
 
@@ -64,9 +87,26 @@ When you re-indent content, the editor:
 *   Rebuilds the leading whitespace in the target style
 *   Preserves non-leading whitespace, blank lines, and content without indentation
 
+## Transforming text
+
+To change the selected lines or text, right-click the selection and open _Transform_. Its commands come in three groups:
+
+*   _Sort ascending_, _Sort descending_, _Shuffle lines_, _Reverse line order_ and _Deduplicate lines_, which keeps the first copy of each line.
+*   _Trim leading_, _Trim trailing_ and _Trim both_ remove the whitespace at the start, at the end or at both ends of each line. _Remove blank lines_ also removes the lines that hold only whitespace.
+*   _To uppercase_, _To lowercase_, _To sentence case_, _To title case_ and _Remove diacritics_.
+
+The commands of the first two groups change every line that the selection touches, even partly. Those of the third group change only the selected text. Each change is undone in one step with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+
+*   Sorting reads numbers, dates and times by their value, as sorting a table does (see <a class="reference-link" href="Text/Tables.md">Tables</a>), and ignores the case of letters and the indentation. Blank lines go last.
+*   _To sentence case_ lowercases the text and capitalizes the first word of each sentence and of each line. _To title case_ capitalizes every word except minor words such as "of" and "the", which stay lowercase unless they start or end a sentence.
+*   _Remove diacritics_ turns letters such as `é`, `ș` and `ł` into `e`, `s` and `l`, and removes the vowel points of Hebrew and Arabic. Letters such as `ß` and `æ` stay as they are.
+*   Sorting and the case changes follow the language set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Default content language_. In Turkish, for example, an uppercase `i` is `İ`.
+
 ## Color schemes
 
 Since Trilium 0.94.0 the colors of code notes can be customized by going <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Code Notes and looking for the _Appearance_ section.
+
+A code note or a code file shown without its editor, such as in an <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>, on the cards of <a class="reference-link" href="../Collections.md">Collections</a> or in a tooltip, uses the same colors and line numbers as the editor does. A printout uses the _Light theme_. A [shared page](../Advanced%20Usage/Sharing.md) uses the VS Code light or dark theme, following the mode of the page.
 
 > [!NOTE]
 > **Why are there only a few themes whereas the code block themes for text notes have a lot?**  

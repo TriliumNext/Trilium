@@ -8,7 +8,9 @@ import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
 import { ParentComponent } from "../../react/react_utils";
-import AttachmentSaves, { NoteSaves, useAttachmentEditor, useNoteEditor } from "./attachment_saves";
+import AttachmentSaves, {
+    InlineSourceSaves, NoteSaves, useAttachmentEditor, useNoteEditor
+} from "./attachment_saves";
 
 const serverPost = vi.hoisted(() => vi.fn(async () => undefined));
 const serverPut = vi.hoisted(() => vi.fn(async () => undefined));
@@ -289,5 +291,31 @@ describe("useNoteEditor", () => {
         expect(serverPut).toHaveBeenCalledTimes(2);
         expect(serverPut).toHaveBeenLastCalledWith(
             "notes/code1/data", { content: "second" }, component.componentId);
+    });
+});
+
+describe("InlineSourceSaves", () => {
+    it("schedules a save for a held write, and makes the writes still held on flush", () => {
+        const scheduleUpdate = vi.fn();
+        const saves = new InlineSourceSaves(scheduleUpdate);
+        const made: string[] = [];
+        // Holds a write that, like an inline source, leaves `saves` once made.
+        const hold = (text: string) => {
+            const write = () => {
+                saves.delete(write);
+                made.push(text);
+            };
+            saves.add(write);
+            return write;
+        };
+
+        hold("a");
+        const written = hold("b");
+        written();
+        expect(scheduleUpdate).toHaveBeenCalledTimes(2);
+
+        saves.flush();
+        saves.flush();
+        expect(made).toEqual([ "b", "a" ]);
     });
 });

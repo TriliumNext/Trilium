@@ -10,6 +10,9 @@
  *    of anything pointing into the repository, and waits for its HTTP server to answer.
  *    `--smoke` then quits it; otherwise the app stays open for manual testing.
  *
+ * On NixOS the stock Electron binary runs through nix-ld, which this script points at the shared
+ * libraries Electron links against, built from the nixpkgs revision in `flake.lock`.
+ *
  * `electron-forge:test-packaged` packages first and then runs this script.
  */
 
@@ -31,6 +34,13 @@ const TEST_DIR = join(tmpdir(), "trilium-packaged-test");
 const EXECUTABLE_NAME = "trilium";
 const PORT = 37850;
 const STARTUP_TIMEOUT_MS = 120_000;
+/** The nixpkgs attributes holding the shared libraries Electron links against. */
+const NIXOS_ELECTRON_LIBRARIES = [
+    "alsa-lib", "at-spi2-atk", "at-spi2-core", "cairo", "cups", "dbus", "expat", "glib", "gtk3",
+    "libdrm", "libGL", "libgbm", "libxkbcommon", "mesa", "nspr", "nss", "pango", "systemd",
+    "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes",
+    "xorg.libXrandr", "xorg.libxcb", "xorg.libxshmfence"
+];
 
 /** Workspace packages that a packaged app never loads, so they are not shipped. */
 const NOT_SHIPPED: Record<string, string> = {
@@ -195,8 +205,10 @@ async function launch(appDir: string, smoke: boolean) {
     }
 
     const dataDir = join(TEST_DIR, "data");
+    const cleanEnv = getCleanEnv();
     const env = {
-        ...getCleanEnv(),
+        ...cleanEnv,
+        ...getNixOsEnv(cleanEnv),
         TRILIUM_DATA_DIR: dataDir,
         TRILIUM_ELECTRON_DATA_DIR: join(TEST_DIR, "data-electron"),
         TRILIUM_PORT: String(PORT)
@@ -253,6 +265,44 @@ function getCleanEnv() {
         }
     }
     return env;
+}
+
+/**
+ * On NixOS, returns a `NIX_LD_LIBRARY_PATH` that adds Electron's shared libraries to those of
+ * `programs.nix-ld.libraries`. Elsewhere, returns no variables.
+ */
+function getNixOsEnv(env: Record<string, string>): Record<string, string> {
+    if (process.platform !== "linux" || !existsSync("/etc/NIXOS")) {
+        return {};
+    }
+    if (!env.NIX_LD) {
+        throw new Error("NixOS runs the packaged app only through nix-ld; "
+            + "enable it with `programs.nix-ld.enable = true;`.");
+    }
+
+    const lock = JSON.parse(readFileSync(join(REPO_DIR, "flake.lock"), "utf-8"));
+    const { owner, repo, rev, narHash } = lock.nodes[lock.nodes.root.inputs.nixpkgs].locked;
+    const nixpkgs = `github:${owner}/${repo}/${rev}?narHash=${encodeURIComponent(narHash)}`;
+    const expression = `
+        let pkgs = (builtins.getFlake "${nixpkgs}").legacyPackages.\${builtins.currentSystem};
+        in pkgs.symlinkJoin {
+            name = "trilium-electron-libs";
+            paths = map pkgs.lib.getLib (with pkgs; [ ${NIXOS_ELECTRON_LIBRARIES.join(" ")} ]);
+        }`;
+    console.log("Building Electron's shared libraries for nix-ld.");
+    const build = spawnSync(
+        "nix", [ "build", "--impure", "--no-link", "--print-out-paths", "--expr", expression ],
+        { encoding: "utf-8", stdio: [ "ignore", "pipe", "inherit" ] }
+    );
+    if (build.status !== 0) {
+        const reason = build.error ?? `exit code ${build.status}`;
+        throw new Error(`Building Electron's shared libraries failed (${reason}).`);
+    }
+
+    const libDir = join(build.stdout.trim(), "lib");
+    return {
+        NIX_LD_LIBRARY_PATH: [ libDir, env.NIX_LD_LIBRARY_PATH ].filter(Boolean).join(delimiter)
+    };
 }
 
 async function responds(url: string) {

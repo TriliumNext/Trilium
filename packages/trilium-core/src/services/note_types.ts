@@ -1,35 +1,35 @@
-const noteTypes = [
-    { type: "text", defaultMime: "text/html" },
-    { type: "code", defaultMime: "text/plain" },
-    { type: "render", defaultMime: "" },
-    { type: "file", defaultMime: "application/octet-stream" },
-    { type: "image", defaultMime: "" },
-    { type: "search", defaultMime: "" },
-    { type: "relationMap", defaultMime: "application/json" },
-    { type: "book", defaultMime: "" },
-    { type: "noteMap", defaultMime: "" },
-    { type: "mermaid", defaultMime: "text/vnd.mermaid" },
-    { type: "canvas", defaultMime: "application/json" },
-    { type: "webView", defaultMime: "" },
-    { type: "launcher", defaultMime: "" },
-    { type: "doc", defaultMime: "" },
-    { type: "contentWidget", defaultMime: "" },
-    { type: "mindMap", defaultMime: "application/json" },
-    { type: "spreadsheet", defaultMime: "application/json" },
-    { type: "llmChat", defaultMime: "application/json" }
-];
+import { ALLOWED_NOTE_TYPES, isNoteType, type NoteType } from "@triliumnext/commons";
+
+const DEFAULT_MIMES: Record<NoteType, string> = {
+    text: "text/html",
+    code: "text/plain",
+    render: "",
+    file: "application/octet-stream",
+    image: "",
+    search: "",
+    relationMap: "application/json",
+    book: "",
+    noteMap: "",
+    mermaid: "text/vnd.mermaid",
+    canvas: "application/json",
+    webView: "",
+    launcher: "",
+    doc: "",
+    contentWidget: "",
+    mindMap: "application/json",
+    spreadsheet: "application/json",
+    llmChat: "application/json"
+};
 
 function getDefaultMimeForNoteType(typeName: string) {
-    const typeRec = noteTypes.find((nt) => nt.type === typeName);
-
-    if (!typeRec) {
+    if (!isNoteType(typeName)) {
         throw new Error(`Cannot find note type '${typeName}'`);
     }
 
-    return typeRec.defaultMime;
+    return DEFAULT_MIMES[typeName];
 }
 
 export default {
-    getNoteTypeNames: () => noteTypes.map((nt) => nt.type),
+    getNoteTypeNames: (): string[] => [...ALLOWED_NOTE_TYPES],
     getDefaultMimeForNoteType
 };

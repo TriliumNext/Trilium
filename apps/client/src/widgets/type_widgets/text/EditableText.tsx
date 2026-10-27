@@ -10,50 +10,46 @@ import {
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
-import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
-import {
-    consumeBlockReference, copyBlockReference, copyBlockShareLink, copyTabReference,
-    openBlockHandleMenu
-} from "../../../services/block_reference";
+import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import { getUploadBoxSize } from "../../../services/content_renderer";
 import dialog from "../../../services/dialog";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
 import type LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
-import options from "../../../services/options";
 import { consumeSearchTerms } from "../../../services/search_jump";
-import { getNoteShareLink } from "../../../services/share_link";
 import type SpacedUpdate from "../../../services/spaced_update";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import type { IconPickerOpts } from "../../dialogs/icon_picker";
+import type { AddLinkOpts } from "../../dialogs/add_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
 } from "../../react/hooks";
-import IconPicker from "../../react/IconPicker";
 import { setEditorNoteId } from "../../react/NoteStore";
-import { convertImageToDrawing } from "../canvas/image_to_drawing";
 import { TypeWidgetProps } from "../type_widget";
-import AttachmentSaves, { useNoteEditor } from "./attachment_saves";
+import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
-import { getContentEmbedTools } from "./content_embed_tools";
+import type { ContentEmbedHandlers } from "./config";
+import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
 import { useEmbedEditors } from "./editable_embed";
+import EmbedHistories from "./embed_history";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
-import linkEmbedService from "../../../services/link_embed";
 import { usesClassicToolbar } from "./toolbar";
 import {
     getAttachmentHref,
     loadEmbeddedAttachment,
     loadEmbeddedNote,
+    loadInlineEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
+    setupTodoCheckboxTaps,
+    showsAttachmentSave,
     watchContentEmbeds
 } from "./utils";
 
@@ -82,9 +78,8 @@ export default function EditableText({
     const focusedAttachmentIdRef = useRef<string | undefined>(undefined);
     const editorRef = useRef<CKTextEditor>(null);
     const stopWatchingEmbedsRef = useRef<(() => void) | undefined>(undefined);
+    const stopTodoCheckboxTapsRef = useRef<(() => void) | undefined>(undefined);
     const editorApiRef = useRef<CKEditorApi>(null);
-    /** The open icon picker request and its balloon container, or `null` when none is open. */
-    const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerOpts & { container: HTMLElement } | null>(null);
     const [ language ] = useNoteLabel(note, "language");
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
@@ -100,14 +95,21 @@ export default function EditableText({
         : undefined));
     const [ attachmentSaves ] = useState(() =>
         new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
+    const [ inlineSourceSaves ] = useState(() =>
+        new InlineSourceSaves(() => spacedUpdate.scheduleUpdate()));
+    const [ embedHistories ] = useState(() => new EmbedHistories(() => editorRef.current));
     const noteEditor = useNoteEditor(noteContext);
-    const { noteEditor: embedNoteEditor, attachmentEditor: embedAttachmentEditor } =
-        useEmbedEditors({ noteEditor, attachmentEditor: attachmentSaves });
+    const {
+        noteEditor: embedNoteEditor, attachmentEditor: embedAttachmentEditor, histories
+    } = useEmbedEditors({
+        noteEditor, attachmentEditor: attachmentSaves, histories: embedHistories
+    });
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
         noteType: "text",
         block,
+        shownRef: containerRef,
         getData() {
             const editor = editorRef.current;
             if (!editor) {
@@ -115,6 +117,7 @@ export default function EditableText({
                 return;
             }
 
+            inlineSourceSaves.flush();
             const attachments = attachmentSaves.collect();
             const savedAttachments = attachments.length ? { attachments } : {};
             if (block !== undefined) {
@@ -183,19 +186,6 @@ export default function EditableText({
         consumeBlockReference(root, noteContext?.viewScope);
     }
 
-    async function copyReference(
-        copy: (editor: CKTextEditor, notePath: string, noteTitle: string) => void | Promise<void>
-            = copyBlockReference
-    ) {
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        const notePath = noteContext?.notePath ?? `root/${note.noteId}`;
-        await copy(editor, notePath, note.title);
-        // Saved now, so that the link resolves at once.
-        spacedUpdate.updateNowIfNecessary();
-    }
-
     useTriliumEvent("scrollToEnd", () => {
         const editor = editorRef.current;
         if (!editor) return;
@@ -219,47 +209,51 @@ export default function EditableText({
         editor.editing.view.focus();
     });
 
+    const contentEmbedHandlers: ContentEmbedHandlers = {
+        loadNote(noteId, wrapper, boxSize, embedBlock, onEmbedBlockChange) {
+            void loadEmbeddedNote(noteId, $(wrapper), boxSize, {
+                noteEditor: embedNoteEditor,
+                histories,
+                block: embedBlock,
+                onBlockChange: onEmbedBlockChange
+            });
+        },
+        loadAttachment(attachmentId, wrapper, boxSize) {
+            const isFocused = focusedAttachmentIdRef.current === attachmentId;
+            if (isFocused) {
+                focusedAttachmentIdRef.current = undefined;
+            }
+            void loadEmbeddedAttachment(attachmentId, $(wrapper), boxSize, {
+                attachmentEditor: embedAttachmentEditor,
+                histories,
+                isFocused
+            });
+        },
+        loadInline(source, wrapper, boxSize, options) {
+            void loadInlineEmbed(source, $(wrapper), boxSize, {
+                ...options, saves: inlineSourceSaves, histories
+            });
+        },
+        focusAttachment(attachmentId) {
+            focusedAttachmentIdRef.current = attachmentId;
+        },
+        getAttachmentHref,
+        openMenu: (embed, anchor) => void openContentEmbedMenu(embed, anchor),
+        getTools: getContentEmbedTools,
+        enter: enterContentEmbed
+    };
+
     useLegacyImperativeHandlers({
         addLinkToTextCommand() {
             if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showAddLinkDialog", {
-                text: editorApiRef.current.getSelectedText(),
-                hasSelection: editorApiRef.current.hasSelection(),
-                async addLink(notePath, linkTitle, externalLink) {
-                    await waitForEditor();
-                    return editorApiRef.current?.addLink(notePath, linkTitle, externalLink);
-                }
-            });
-        },
-        fixReferenceLink(storedTitle: string, fix: (href: string) => void) {
-            parentComponent?.triggerCommand("showAddLinkDialog", {
-                text: storedTitle,
-                hasSelection: false,
-                fixLink: true,
-                async addLink(notePath) {
-                    fix(`#${notePath}`);
-                }
-            });
+            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor);
+            parentComponent?.triggerCommand("showAddLinkDialog", opts);
         },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
             parentComponent?.triggerCommand("showPasteMarkdownDialog", {
                 editorApi: editorApiRef.current,
             });
-        },
-        // CKEditor creates and positions the balloon; `IconPicker` renders into its container.
-        // On mobile, `showIconPickerDialog` opens the picker in a modal instead.
-        showIconPicker(request: IconPickerOpts & { container: HTMLElement }) {
-            if (isMobile()) {
-                parentComponent?.triggerCommand("showIconPickerDialog", { onSelect: request.onSelect });
-                return null;
-            }
-
-            setIconPickerRequest(request);
-            return () => setIconPickerRequest(null);
-        },
-        formatDateTime(date: Date, format?: string) {
-            return utils.formatDateTime(date, format ?? options.get("customDateTimeFormat"));
         },
         // Keyboard shortcut
         async insertDateTimeToTextCommand() {
@@ -271,68 +265,8 @@ export default function EditableText({
             if (!editorApiRef.current) return;
             parentComponent?.triggerCommand("showContentEmbedDialog", {
                 editorApi: editorApiRef.current,
+                sizeEditable: true
             });
-        },
-        loadEmbeddedNote(
-            noteId: string,
-            $el: JQuery<HTMLElement>,
-            boxSize?: string,
-            embedBlock?: string,
-            onBlockChange?: (block: string) => void
-        ) {
-            return loadEmbeddedNote(noteId, $el, boxSize, {
-                noteEditor: embedNoteEditor,
-                block: embedBlock,
-                onBlockChange
-            });
-        },
-        loadEmbeddedAttachment(attachmentId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
-            const isFocused = focusedAttachmentIdRef.current === attachmentId;
-            if (isFocused) {
-                focusedAttachmentIdRef.current = undefined;
-            }
-            return loadEmbeddedAttachment(attachmentId, $el, boxSize, {
-                attachmentEditor: embedAttachmentEditor,
-                isFocused
-            });
-        },
-        focusContentEmbed(attachmentId: string) {
-            focusedAttachmentIdRef.current = attachmentId;
-        },
-        convertImageToDrawing(src: string) {
-            return convertImageToDrawing(note.noteId, src, parentComponent?.componentId);
-        },
-        getAttachmentHref,
-        getNoteId() {
-            return note.noteId;
-        },
-        getEmbedBoxSize: getUploadBoxSize,
-        openContentEmbedMenu,
-        openBlockHandleMenu(event: MouseEvent, count: number) {
-            const shareLink = getNoteShareLink(note);
-            openBlockHandleMenu(event, count, {
-                copyReference: () => void copyReference(),
-                copyShareLink: shareLink
-                    ? () => void copyReference((editor) => copyBlockShareLink(editor, shareLink))
-                    : undefined
-            });
-        },
-        copyBlockReference: () => copyReference(),
-        copyTabReference: () => void copyReference(copyTabReference),
-        getContentEmbedTools,
-        // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
-        // so the host only has to supply the metadata and the rendering.
-        async fetchLinkMetadata(url: string) {
-            return await linkEmbedService.fetchMetadata(url, note.noteId);
-        },
-        detectEmbedType(url: string) {
-            return linkEmbedService.detectEmbedType(url);
-        },
-        renderLinkEmbed(container, metadata, editable) {
-            linkEmbedService.renderEmbedPreview(container, metadata, editable);
-        },
-        renderLinkMention(container, metadata, editable) {
-            linkEmbedService.renderMentionPreview(container, metadata, editable);
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -389,17 +323,23 @@ export default function EditableText({
             });
         },
         async saveNoteDetailNowCommand() {
-            // used by cutToNote in CKEditor build, and by a shared page leaving its editor
+            // Used by `cutToNote`, by the block and tab references the editor copies, and by a
+            // shared page leaving its editor.
             await saveNow(spacedUpdate);
         }
     });
 
     useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
-        refreshEmbeddedNote(containerRef.current, noteId, { noteEditor: embedNoteEditor });
+        refreshEmbeddedNote(containerRef.current, noteId, {
+            noteEditor: embedNoteEditor, histories
+        });
     });
 
-    useEffect(() => () => stopWatchingEmbedsRef.current?.(), []);
+    useEffect(() => () => {
+        stopWatchingEmbedsRef.current?.();
+        stopTodoCheckboxTapsRef.current?.();
+    }, []);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const editor = editorRef.current;
@@ -500,6 +440,8 @@ export default function EditableText({
         };
 
         const scrollCaretIntoView = () => {
+            if (!isCaretInFocus(document.activeElement, window.getSelection())) return;
+
             const caretRect = getCaretRect();
             if (!caretRect) return;
             const scroller = findScrollableAncestor(window.getSelection()?.focusNode);
@@ -512,7 +454,9 @@ export default function EditableText({
             const visibleBottom = Math.min(containerRect.bottom, viewportBottom);
             const visibleTop = Math.max(containerRect.top, viewportTop);
 
-            const overshoot = caretRect.bottom - (visibleBottom - CARET_BOTTOM_MARGIN_PX);
+            // The mobile formatting toolbar floats over the scroller and reserves its height here.
+            const toolbarClearance = parseFloat(getComputedStyle(scroller).scrollPaddingBottom) || 0;
+            const overshoot = caretRect.bottom - (visibleBottom - toolbarClearance - CARET_BOTTOM_MARGIN_PX);
             if (overshoot > 0) {
                 scroller.scrollTop += overshoot;
                 return;
@@ -545,78 +489,6 @@ export default function EditableText({
         };
     }, []);
 
-    // Mobile-only: toggle todo-list checkboxes on the first tap and widen the
-    // hit area so finger taps don't have to land precisely on the ~16px box.
-    // Two problems are being solved:
-    //   1. iOS WKWebView doesn't dispatch `change` on the first tap inside a
-    //      contenteditable that isn't focused — users have to tap twice.
-    //   2. The native checkbox is too small to hit reliably with a finger.
-    // We accept any tap whose point lands within ~14px of the checkbox's
-    // bounding box (roughly a 44px touch target, matching Apple HIG), flip
-    // the checkbox, and fire a synthetic change event that CKEditor's
-    // TodoCheckboxChangeObserver picks up.
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container || !isMobile()) return;
-
-        const HIT_PAD = 14;
-        let tapped: HTMLInputElement | null = null;
-
-        const findCheckboxFromTap = (e: TouchEvent): HTMLInputElement | null => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return null;
-
-            // Direct hit on the checkbox.
-            const direct = target.closest<HTMLInputElement>(
-                '.todo-list__label input[type="checkbox"]'
-            );
-            if (direct) return direct;
-
-            // Near-miss: tap landed on the label or its surroundings. Accept
-            // if the touch point is within HIT_PAD of the checkbox rect.
-            const label = target.closest(".todo-list__label");
-            if (!label) return null;
-            const checkbox = label.querySelector<HTMLInputElement>(
-                'input[type="checkbox"]'
-            );
-            if (!checkbox) return null;
-
-            const touch = e.touches[0] ?? e.changedTouches[0];
-            if (!touch) return null;
-            const rect = checkbox.getBoundingClientRect();
-            if (
-                touch.clientX >= rect.left - HIT_PAD &&
-                touch.clientX <= rect.right + HIT_PAD &&
-                touch.clientY >= rect.top - HIT_PAD &&
-                touch.clientY <= rect.bottom + HIT_PAD
-            ) {
-                return checkbox;
-            }
-            return null;
-        };
-
-        const onTouchStart = (e: TouchEvent) => {
-            tapped = findCheckboxFromTap(e);
-        };
-
-        const onTouchEnd = (e: TouchEvent) => {
-            if (!tapped) return;
-            const checkbox = tapped;
-            tapped = null;
-            // Suppress the synthesised click so we don't toggle twice.
-            e.preventDefault();
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-        };
-
-        container.addEventListener("touchstart", onTouchStart, { passive: true });
-        container.addEventListener("touchend", onTouchEnd, { passive: false });
-        return () => {
-            container.removeEventListener("touchstart", onTouchStart);
-            container.removeEventListener("touchend", onTouchEnd);
-        };
-    }, []);
-
     return (
         <>
             {note && !!templates && <CKEditor
@@ -632,6 +504,7 @@ export default function EditableText({
                 onNotificationInfo={onNotificationInfo}
                 onEditorError={(error) => reportEditorError(error, reloadEditor)}
                 rebuildKey={editorRebuildKey}
+                contentEmbedHandlers={contentEmbedHandlers}
                 onChange={() => {
                     spacedUpdate.scheduleUpdate();
                     const editor = editorRef.current;
@@ -647,6 +520,10 @@ export default function EditableText({
                             containerRef.current,
                             editor
                         );
+                        stopTodoCheckboxTapsRef.current?.();
+                        stopTodoCheckboxTapsRef.current = isMobile()
+                            ? setupTodoCheckboxTaps(containerRef.current)
+                            : undefined;
                     }
 
                     editor.plugins.get("FileUploadEditing")
@@ -667,22 +544,10 @@ export default function EditableText({
                 }}
             />}
 
-            {iconPickerRequest && createPortal(
-                <IconPicker
-                    columnCount={ICON_PICKER_COLUMNS}
-                    compact
-                    onSelect={iconPickerRequest.onSelect}
-                />,
-                iconPickerRequest.container
-            )}
         </>
     );
 }
 
-/**
- * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
- * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
- */
 /**
  * Saves the pending change of `spacedUpdate` at once, and resolves once it is stored. It resolves
  * on a failed save too: the spaced update logs it, reports the error state and tries again.
@@ -695,6 +560,57 @@ export async function saveNow(spacedUpdate: Pick<SpacedUpdate<unknown>, "updateN
     }
 }
 
+/**
+ * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
+ * link at the selection.
+ */
+export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>): AddLinkOpts {
+    const currentLink = api.getCurrentLink();
+    if (currentLink) {
+        return {
+            text: currentLink.text,
+            hasSelection: false,
+            currentTitle: currentLink.text,
+            ...parseLinkHref(currentLink.href),
+            async addLink(notePath, linkTitle, externalLink) {
+                await ready();
+                await api.updateLink(notePath, linkTitle, externalLink);
+            }
+        };
+    }
+
+    return {
+        text: api.getSelectedText(),
+        hasSelection: api.hasSelection(),
+        async addLink(notePath, linkTitle, externalLink) {
+            await ready();
+            api.addLink(notePath, linkTitle, externalLink);
+        }
+    };
+}
+
+/**
+ * What a link's `href` opens the Add link dialog on: the note, with the anchor it points at, or
+ * the address.
+ */
+export function parseLinkHref(href: string): Pick<AddLinkOpts, "currentLink" | "currentBookmark"> {
+    if (!href.startsWith("#")) {
+        return { currentLink: { externalLink: href }, currentBookmark: undefined };
+    }
+
+    const [ path, query = "" ] = href.slice(1).split("?", 2);
+    const params = new URLSearchParams(query);
+    const bookmark = params.get("bookmark") ?? undefined;
+    params.delete("bookmark");
+    const rest = params.toString();
+    const notePath = rest ? `${path}?${rest}` : path;
+    return { currentLink: { notePath }, currentBookmark: bookmark };
+}
+
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
 export function getBlockData(editor: CKTextEditor, block: string) {
     return {
         content: editor.getData({ trim: "none" }),
@@ -735,14 +651,25 @@ export function revealLinkTargetWhenReady(
     }
 }
 
+/**
+ * Whether focus is in an editable element that holds the selection. Focus taken by something else,
+ * such as a menu, leaves the selection behind in the editor, which is then no caret to scroll to.
+ * Neither is the fake selection CKEditor puts in a hidden element pinned to the top of the viewport
+ * while a widget, such as an image, is selected.
+ */
+export function isCaretInFocus(focused: Element | null, selection: Selection | null) {
+    const focusNode = selection?.focusNode;
+    const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement;
+    return focused instanceof HTMLElement && focused.isContentEditable
+        && !!focusNode && focused.contains(focusNode)
+        && !focusElement?.closest(".ck-fake-selection-container");
+}
+
 /** The blocks that an editor of the blocks `block` holds, preferring the ids of `block`. */
 function getEditorBlocks(editor: CKTextEditor, block: string) {
     const range = editor.plugins.get("BlockReferenceEditing").getRange(parseBlockRange(block));
     return range ? formatBlockRange(range) : undefined;
 }
-
-/** The number of icons per row of the picker in the editor's balloon. */
-const ICON_PICKER_COLUMNS = 9;
 
 /**
  * Inserts an empty paragraph at the very top of the document and places the cursor in it, giving the
@@ -879,7 +806,8 @@ interface PendingAttachmentChanges {
 /**
  * Passes the attachments changed in `loadResults` to the editor's reference links, so a link shows
  * the new title of its attachment or goes away with it. Changes that this editor saved, such as a
- * canvas drawing, are skipped: redrawing an embed remounts what it shows.
+ * canvas drawing, are skipped: redrawing an embed remounts what it shows. So are the saves that
+ * every embed of the attachment shows by itself (`showsAttachmentSave()`).
  *
  * When `loadResults` also reloads the note's content, the changes wait in `pending` until
  * `applyPendingAttachmentChanges()` runs on the reloaded content.
@@ -893,10 +821,15 @@ export function notifyAttachmentChanges(
     componentId: string | undefined,
     pending: { current: PendingAttachmentChanges | undefined }
 ) {
+    const root = editor.editing.view.getDomRoot();
     const rows = loadResults.getAttachmentRows(componentId);
-    const changes = rows.flatMap(({ attachmentId, isDeleted }) =>
-        attachmentId ? [ { attachmentId, isDeleted: !!isDeleted } ] : []
-    );
+    const changes = rows.flatMap(({ attachmentId, isDeleted }) => {
+        if (!attachmentId) return [];
+        const attachment = froca.attachments[attachmentId];
+        const isShown = !isDeleted && !!root && !!attachment
+            && showsAttachmentSave(root, attachment);
+        return isShown ? [] : [ { attachmentId, isDeleted: !!isDeleted } ];
+    });
     if (!changes.length) {
         return;
     }

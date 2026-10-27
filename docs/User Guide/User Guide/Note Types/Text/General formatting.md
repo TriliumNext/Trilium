@@ -23,7 +23,7 @@ Apart from using the UI, it is also possible to quickly insert headings using th
 
 One way to highlight a portion of text is to increase the size of the font.
 
-To do so, select some text and choose an option from the _Font size_ selector (as pictured to the right).
+To do so, select some text and choose an option from the _Font size_ (<span class="tn-icon cke cke-font-size"></span>) selector (as pictured to the right).
 
 Unlike other text editors such as Microsoft Word, the font size is relative (i.e. “Tiny”, “Small” instead of a number like 12).
 
@@ -33,9 +33,9 @@ Avoid using this feature just to simply make all text bigger. In that case it's 
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
 
-Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons in the formatting toolbar.
+Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) in the formatting toolbar.
 
-This formatting can be easily removed using the _Remove formatting_ item.
+This formatting can be easily removed using the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) item.
 
 The following keyboard shortcuts can be used here:
 
@@ -61,7 +61,7 @@ For mathematical formulas, prefer the <a class="reference-link" href="Math%20Eq
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
-Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker.
+Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>).
 
 Once there is at least one color defined in the document, it will appear in the list for easy reuse.
 
@@ -85,7 +85,7 @@ The following formatting is preserved:
 
 Colors are preserved when pasting from Word, Google Docs or another note.
 
-To remove either the background or foreground color of a text, select the corresponding formatting button and press _Remove color_ or use the _Remove formatting_ toolbar item.
+To remove either the background or foreground color of a text, select the corresponding formatting button (<span class="tn-icon cke cke-font-color"></span> or <span class="tn-icon cke cke-font-background"></span>) and press _Remove color_ (<span class="tn-icon cke cke-eraser"></span>) or use the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) toolbar item.
 
 ## Remove formatting
 

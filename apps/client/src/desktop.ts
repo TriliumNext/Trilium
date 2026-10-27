@@ -44,6 +44,7 @@ export const ready = bundleService.getWidgetBundlesByParent().then(async (widget
 });
 
 glob.setupGlobs();
+initFullScreenDetection();
 
 if (utils.isElectron()) {
     initOnElectron();
@@ -70,7 +71,6 @@ function initOnElectron() {
     win.onOpenInSameTab(async (noteId) => appContext.tabManager.openInSameTab(noteId));
 
     syncNativeWindowWithTheme();
-    initFullScreenDetection(win);
     initDevToolsDockDetection(win);
 
     // With an "auto" theme the effective colors of background effects and the native title bar
@@ -96,9 +96,23 @@ function reportFullRenderStartupMetric() {
     });
 }
 
-function initFullScreenDetection(win: ElectronWindowApi) {
-    win.onEnterFullScreen(() => document.body.classList.add("full-screen"));
-    win.onLeaveFullScreen(() => document.body.classList.remove("full-screen"));
+/** Sets `full-screen` on the body while the window, or the page in a browser, is full screen. */
+function initFullScreenDetection() {
+    const setFullScreen = (isFullScreen: boolean) => {
+        document.body.classList.toggle("full-screen", isFullScreen);
+    };
+
+    const win = window.electronApi?.window;
+    if (win) {
+        setFullScreen(win.isFullScreen());
+        win.onEnterFullScreen(() => setFullScreen(true));
+        win.onLeaveFullScreen(() => setFullScreen(false));
+        return;
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+        setFullScreen(document.fullscreenElement === document.documentElement);
+    });
 }
 
 /**

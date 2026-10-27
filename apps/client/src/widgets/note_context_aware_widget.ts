@@ -76,9 +76,6 @@ class NoteContextAwareWidget extends BasicWidget {
         }
     }
 
-    /**
-     * Override this method to be able to refresh your widget with each note.
-     */
     async refreshWithNote(note: FNote | null | undefined) {}
 
     async noteSwitchedEvent({ noteContext, notePath }: EventData<"noteSwitched">) {

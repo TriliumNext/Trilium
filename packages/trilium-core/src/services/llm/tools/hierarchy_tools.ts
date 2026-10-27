@@ -2,13 +2,12 @@
  * LLM tools for navigating the note hierarchy (tree structure, branches).
  */
 
-import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import cloningService from "../../../services/cloning.js";
 import { z } from "zod";
 
 import branchService from "../../branches.js";
-import { PROTECTED_SYSTEM_NOTES } from "./helpers.js";
+import { getLlmChildNotes, getLlmNote, isExcludedFromLlm, PROTECTED_SYSTEM_NOTES } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 //#region Subtree tool implementation
@@ -30,14 +29,14 @@ function buildSubtree(note: BNote, depth: number, maxDepth: number): SubtreeNode
     };
 
     if (depth >= maxDepth) {
-        const childCount = note.getChildNotes().length;
+        const childCount = getLlmChildNotes(note).length;
         if (childCount > 0) {
             node.children = `${childCount} children not shown (depth limit reached)`;
         }
         return node;
     }
 
-    const children = note.getChildNotes();
+    const children = getLlmChildNotes(note);
     if (children.length === 0) {
         return node;
     }
@@ -64,16 +63,16 @@ export const hierarchyTools = defineTools({
             noteId: z.string().describe("The ID of the parent note (use 'root' for top-level)")
         }),
         execute: ({ noteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
 
-            return note.getChildNotes().map((child) => ({
+            return getLlmChildNotes(note).map((child) => ({
                 noteId: child.noteId,
                 title: child.getTitleOrProtected(),
                 type: child.type,
-                childCount: child.getChildNotes().length
+                childCount: getLlmChildNotes(child).length
             }));
         }
     },
@@ -85,7 +84,7 @@ export const hierarchyTools = defineTools({
             depth: z.number().min(1).max(MAX_DEPTH).optional().describe(`How many levels deep to traverse (1-${MAX_DEPTH}). Defaults to 2.`)
         }),
         execute: ({ noteId, depth = 2 }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -102,7 +101,7 @@ export const hierarchyTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, newParentNoteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -113,7 +112,7 @@ export const hierarchyTools = defineTools({
                 return { error: "Note is protected and cannot be moved" };
             }
 
-            const targetParent = becca.getNote(newParentNoteId);
+            const targetParent = getLlmNote(newParentNoteId);
             if (!targetParent) {
                 return { error: "Target parent note not found" };
             }
@@ -121,18 +120,14 @@ export const hierarchyTools = defineTools({
                 return { error: "Cannot move note to a protected parent" };
             }
 
-            // Use the first (primary) parent branch for the move
-            const branches = note.getParentBranches();
-            /* v8 ignore next 3 -- rare edge case, not worth simulating in a unit test:
-               an orphaned note (its last parent branch removed but the note itself not
-               yet deleted from Becca, e.g. during a sync race) can momentarily have zero
-               parent branches. The guard returns a clean error instead of crashing on branches[0]. */
-            if (branches.length === 0) {
-                return { error: "Note has no parent branches" };
+            // Moving only a branch under a visible parent keeps an excluded parent unchanged and unnamed.
+            const branch = note.getParentBranches().find((b) => b.parentNote && !isExcludedFromLlm(b.parentNote));
+            if (!branch) {
+                return { error: "Note has no parent it can be moved from" };
             }
 
-            const oldParentNoteId = branches[0].parentNoteId;
-            const result = branchService.moveBranchToNote(branches[0], newParentNoteId);
+            const oldParentNoteId = branch.parentNoteId;
+            const result = branchService.moveBranchToNote(branch, newParentNoteId);
             if (Array.isArray(result)) {
                 // Validation error: [statusCode, { success: false, message }]
                 const validation = result[1] as { success: boolean; message?: string };
@@ -163,8 +158,9 @@ export const hierarchyTools = defineTools({
             prefix: z.string().optional().describe("Optional branch prefix (displayed before the note title in the tree)")
         }),
         mutates: true,
+        additive: true,
         execute: ({ noteId, parentNoteId, prefix }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -172,8 +168,11 @@ export const hierarchyTools = defineTools({
                 return { error: "Note is protected and cannot be cloned" };
             }
 
-            const parent = becca.getNote(parentNoteId);
-            if (parent && !parent.isContentAvailable()) {
+            const parent = getLlmNote(parentNoteId);
+            if (!parent) {
+                return { error: "Parent note not found" };
+            }
+            if (!parent.isContentAvailable()) {
                 return { error: "Cannot clone note to a protected parent" };
             }
 
@@ -188,9 +187,7 @@ export const hierarchyTools = defineTools({
                 noteId,
                 title: note.getTitleOrProtected(),
                 parentNoteId,
-                // A successful clone always has a real (content-available) parent note.
-                /* v8 ignore next -- defensive: parent is non-null on the success path */
-                parentTitle: parent?.getTitleOrProtected() ?? parentNoteId,
+                parentTitle: parent.getTitleOrProtected(),
                 branchId: result.branchId
             };
         }

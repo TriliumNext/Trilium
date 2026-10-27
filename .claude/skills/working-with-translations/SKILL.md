@@ -84,6 +84,12 @@ node $S add client dialog.my_thing "Save changes"
 
 `add` refuses to overwrite an existing key (`--force` to override) and refuses to nest under one that is already a string.
 
+A menu label ends in "..." when its item opens a dialog, prompt, chooser or confirm (see "Dropdowns: menus and panels" in the `building-client-ui` skill). For that reason, don't reuse a menu label's key as the title of the dialog it opens. Add a second key without the "..." instead, for example `board_view.properties` and `board_view.properties-title`.
+
+A menu label is a noun when its item opens a place or toggles a mode (_Backend log_, _Fullscreen_), and a verb only when it acts (_Reload frontend_, _Log out_). The full rule is in the same section of `building-client-ui`.
+
+**To reword an existing string, change its English value and keep its key**, even when the key names the old text (`global_menu.show_backend_log` → "Backend log"). Renaming the key drops the string from every locale's catalogue, so each one falls back to English until Weblate catches up. Keeping the key leaves the old translations showing until translators update them. Then update the User Guide pages that quote the old text (`docs.mjs impact --diff`, or grep `docs/User Guide` for the old phrase, since a common noun gives `impact` many false hits).
+
 Then use it: `t("dialog.my_thing")`. Only `en/` changes — Weblate carries the string to the other locales, and you should **not** hand-edit the other ~38 locale files.
 
 ### Write US English, and mirror the difference into `en-GB`

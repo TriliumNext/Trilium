@@ -1,13 +1,16 @@
 import "./Card.css";
 import { cloneElement, ComponentChildren, createContext, isValidElement } from "preact";
-import { JSX, HTMLAttributes } from "preact";
+import { JSX, HTMLAttributes, type RefObject } from "preact";
 import { useCallback, useContext, useLayoutEffect, useRef, useState } from "preact/hooks";
 import clsx from "clsx";
 
+import type { MenuItem } from "../../menus/context_menu";
+import Button from "./Button";
 import {
     type FilterRole, FilterPassthrough, filterRoleClass, useFilterMatch, useIsFiltering
 } from "./filter";
 import { useUniqueName } from "./hooks";
+import Icon from "./Icon";
 
 // #region Card Frame
 
@@ -79,7 +82,7 @@ export function Card(props: {children: ComponentChildren} & CardProps) {
             {props.heading}
             {props.actions && <span className="tn-card-heading-actions">{props.actions}</span>}
         </h5>}
-        {props.description && <p className="tn-card-description">{props.description}</p>}
+        {props.description && <div className="tn-card-description">{props.description}</div>}
         <div className="tn-card-body">
             <FilterPassthrough when={matched}>{props.children}</FilterPassthrough>
         </div>
@@ -181,6 +184,11 @@ export interface OptionCardSectionProps extends CardSectionProps {
      * whole width — a URL, a path, anything read as well as typed.
      */
     stacked?: boolean;
+    /**
+     * Keeps the control beside the label on a narrow card too, for a control known to fit there,
+     * such as a segmented choice between two short words. The opposite of {@link stacked}.
+     */
+    inline?: boolean;
     /** The controls the option is operated with, placed on the trailing edge. */
     children?: ComponentChildren;
     /**
@@ -202,7 +210,7 @@ export interface OptionCardSectionProps extends CardSectionProps {
  */
 export function OptionCardSection(props: OptionCardSectionProps) {
     const {
-        label, description, name, stacked, children, className, subSections,
+        label, description, name, stacked, inline, children, className, subSections,
         filterExtraKeywords, ...rest
     } = props;
     const matched = useFilterMatch(label, description, filterExtraKeywords);
@@ -226,7 +234,7 @@ export function OptionCardSection(props: OptionCardSectionProps) {
     return <CardSection elementRef={keepRow}
                         className={clsx("tn-card-option", className, {
                             "tn-card-option-stacked": stacked,
-                            "tn-card-option-wide": wide
+                            "tn-card-option-wide": wide && !inline
                         })}
                         // Kept for its details rather than itself, which is what a companion is.
                         filterRole={filtering ? (matched ? "match" : "companion") : undefined}
@@ -264,6 +272,95 @@ function holdsSmallControl(element: HTMLElement) {
     }
 
     return false;
+}
+
+// #endregion
+
+// #region Item Creation Row
+
+interface ItemCreationRowButtonBase {
+    label: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+    /** Turns the button off, for a caller that cannot make an entry yet. */
+    disabled?: boolean;
+    /** The button's `name` attribute, which tests find it by. */
+    name?: string;
+}
+
+/**
+ * One button of an {@link ItemCreationRow}: one that creates the entry on a press, or one that
+ * opens a context menu of the entries it can create.
+ */
+export type ItemCreationRowButton = ItemCreationRowButtonBase & (
+    | { onClick: (event: MouseEvent) => void; menu?: undefined }
+    | { menu: MenuItem<string>[]; onClick?: undefined }
+);
+
+interface ItemCreationRowProps {
+    buttons: ItemCreationRowButton[];
+    elementRef?: RefObject<HTMLElement | null>;
+    onKeyDown?: (event: KeyboardEvent) => void;
+}
+
+/**
+ * The buttons that create an entry, as the last section of a card. Each is painted as a segment of
+ * the card rather than as a button, so the row reads as the foot of the list above it.
+ */
+export function ItemCreationRow({ buttons, elementRef, onKeyDown }: ItemCreationRowProps) {
+    // The position of the button whose menu is open.
+    const [ openMenuIndex, setOpenMenuIndex ] = useState<number>();
+
+    return (
+        // Transparent: each button paints itself, and the gaps show the card through.
+        <section ref={elementRef} className="tn-card-section tn-card-adders" onKeyDown={onKeyDown}>
+            {buttons.map((button, index) => {
+                const { menu } = button;
+                return (
+                    <Button
+                        // The position in the row: two buttons can share a label.
+                        key={index}
+                        name={button.name}
+                        // Not a command button: the theme gives those a background, a shadow and a
+                        // minimum width, none of which suit a segment.
+                        kind="lowProfile"
+                        className="tn-card-adder"
+                        text={<>
+                            {button.icon && <Icon icon={button.icon} />}
+                            <span>{button.label}</span>
+                        </>}
+                        disabled={button.disabled}
+                        aria-haspopup={menu ? "menu" : undefined}
+                        aria-expanded={menu ? openMenuIndex === index : undefined}
+                        onClick={menu
+                            ? (event) => void openItemCreationMenu(event.currentTarget, menu, {
+                                onShow: () => setOpenMenuIndex(index),
+                                onHide: () => setOpenMenuIndex(undefined)
+                            })
+                            : button.onClick}
+                    />
+                );
+            })}
+        </section>
+    );
+}
+
+/**
+ * Opens `items` as a context menu centered below `button`, or above it where there is no room
+ * below. The press that put the menu away opens nothing.
+ */
+async function openItemCreationMenu(
+    button: HTMLButtonElement,
+    items: MenuItem<string>[],
+    { onShow, onHide }: { onShow: () => void; onHide: () => void }
+) {
+    // Loaded on demand: the login and setup pages show cards but no menus.
+    const { default: contextMenu } = await import("../../menus/context_menu");
+    if (contextMenu.dismissedByLastPress) return;
+
+    await contextMenu.show({
+        anchor: button, centered: true, items, selectMenuItemHandler: () => {}, onShow, onHide
+    });
 }
 
 // #endregion

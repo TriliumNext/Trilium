@@ -7,6 +7,7 @@
 import type { LlmAttachmentKind, LlmChatConfig, LlmMessage, LlmReasoningEffort, LlmStreamChunk } from "@triliumnext/commons";
 import type { streamText } from "ai";
 
+import type { ToolApprovals } from "./tool_approval.js";
 import type { WebSearchSetup } from "./web_search.js";
 
 /**
@@ -20,12 +21,33 @@ export interface LlmProviderConfig extends LlmChatConfig {
      * `runChat()`. When set, web search goes through it instead of the model's built-in search.
      */
     webSearch?: WebSearchSetup;
+    /**
+     * Where the turn asks the user about each tool call, set by `runChat()`. Absent, the
+     * tools run unasked.
+     */
+    toolApprovals?: ToolApprovals;
+    /**
+     * The attachment kinds the turn's model reads natively, from its stored selection, set by
+     * `runChat()`. Absent, the provider's own `acceptsAttachment()` decides.
+     */
+    attachmentKinds?: LlmAttachmentKind[];
 }
 
 /**
  * Result type from streamText - the AI SDK's unified streaming interface.
  */
 export type StreamResult = ReturnType<typeof streamText>;
+
+/** The steps of a finished turn, one per request to the model. */
+export type TurnSteps = Awaited<StreamResult["steps"]>;
+
+/** What a finished turn reports about itself, in place of what the request named and the listed price. */
+export interface TurnReport {
+    /** Display name of the model that answered. */
+    model?: string;
+    /** What the provider billed for the turn, in USD. */
+    cost?: number;
+}
 
 /**
  * Pricing per million tokens for a model.
@@ -104,6 +126,15 @@ export interface LlmProvider {
      * Get pricing for a model. Returns undefined if pricing is not available.
      */
     getModelPricing(model: string): ModelPricing | undefined;
+
+    /**
+     * Read a finished turn's steps for the model that answered and what the turn was billed. For a
+     * router that picks the model per request, both differ from what the turn asked for.
+     *
+     * @param requestedModel the id the turn asked for
+     * @param modelName the display name of a model in the provider's stored selection, if it is there
+     */
+    describeTurn?(steps: TurnSteps, requestedModel: string, modelName: (id: string) => string | undefined): Promise<TurnReport>;
 
     /**
      * Get list of available models for this provider.

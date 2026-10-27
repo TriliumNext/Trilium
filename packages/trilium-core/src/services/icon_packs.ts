@@ -4,6 +4,7 @@ import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
+import brandsManifest from "./icon_pack_brands.json" with { type: "json" };
 import textEditorManifest from "./icon_pack_text_editor.json" with { type: "json" };
 import { getLog } from "./log";
 import search from "./search/services/search";
@@ -88,6 +89,18 @@ export function getIconPacks() {
             fontAttachmentId: "text-editor-icons",
             title: "Text Editor Icons",
             icon: "cke cke-pilcrow",
+            builtin: true,
+            internal: true
+        },
+        {
+            // The marks of the AI providers and import sources, built by `apps/icon-pack-builder`.
+            prefix: "tn-brand",
+            manifest: brandsManifest,
+            manifestNoteId: "brand-icons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "brand-icons",
+            title: "Brand Icons",
+            icon: "tn-brand tn-brand-openai",
             builtin: true,
             internal: true
         }

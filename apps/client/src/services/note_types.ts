@@ -1,11 +1,10 @@
 import {
-    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType as CommonNoteType, type NoteTypeId,
+    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType, type NoteTypeId,
     type TemplatesResponse
 } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import type { NoteType } from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
@@ -130,7 +129,7 @@ export async function getNoteTypeOptions(): Promise<NoteTypeOption[]> {
         .filter((mapping) => !mapping.reserved && mapping.type !== "book")
         .filter((mapping) => mapping.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
         .map<NoteTypeOption>((mapping) => ({
-            id: buildNoteTypeId(mapping.type as CommonNoteType, mapping.mime),
+            id: buildNoteTypeId(mapping.type, mapping.mime),
             title: mapping.title,
             icon: `bx ${mapping.icon ?? "bx-note"}`,
             group: "type",
@@ -336,8 +335,8 @@ function getBlankNoteTypes(command?: TreeCommandNames): MenuCommandItem<TreeComm
  */
 function getCodeLanguageItems(command?: TreeCommandNames): MenuItem<TreeCommandNames>[] {
     mimeTypes.loadMimeTypes();
-    const languages = mimeTypes.getMimeTypes()
-        .filter((mimeType) => mimeType.enabled && mimeType.mime !== MARKDOWN_NOTE_TYPE_MIME)
+    const languages = mimeTypes.getEnabledMimeTypes()
+        .filter((mimeType) => mimeType.mime !== MARKDOWN_NOTE_TYPE_MIME)
         .map<MenuItem<TreeCommandNames>>((mimeType) => ({
             title: escapeHtml(mimeType.title),
             uiIcon: getCodeLanguageIcon(mimeType),
@@ -370,7 +369,15 @@ function getTemplateItems(data: NoteTypeData, group: BuiltInTemplateGroup | "use
 }
 
 function getUserTemplates(command: TreeCommandNames | undefined, templateNotes: FNote[], newTemplates: Set<string>) {
-    const header: MenuItem<TreeCommandNames> = { title: t("note_type_chooser.templates"), kind: "header" };
+    const header: MenuItem<TreeCommandNames> = {
+        title: t("note_type_chooser.templates"),
+        kind: "header",
+        actions: [ {
+            icon: "bx bx-cog",
+            caption: t("note_type_chooser.manage_templates"),
+            callback: () => void appContext.triggerCommand("showOptions", { section: "_optionsContentManager" })
+        } ]
+    };
     return withLeading(header, getUserTemplateRows(command, templateNotes, newTemplates));
 }
 

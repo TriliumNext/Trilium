@@ -1,7 +1,10 @@
 import { h, render } from "preact";
+import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import appContext, { type EventData } from "../components/app_context";
+import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import froca from "../services/froca";
@@ -10,51 +13,17 @@ import froca from "../services/froca";
 // global the test env doesn't provide. The pure function under test never touches the tree, so stub it.
 vi.mock("./note_tree", () => ({ default: class {} }));
 
-import { getExtendedWidgetType, useDeferredDetailFocus } from "./NoteDetail";
-import { isContextInActiveTab } from "./react/hooks";
+import {
+    getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange, useDeferredDetailFocus,
+    useNoteInfo
+} from "./NoteDetail";
+import { useLegacyImperativeHandlers, useTriliumEvent } from "./react/hooks";
+import {
+    ContainerVisibilityContext, NoteContextContext, ParentComponent
+} from "./react/react_utils";
+import type { TypeWidgetProps } from "./type_widgets/type_widget";
 
 const FAKE_NOTE_ID = "blob-stub-note";
-
-/**
- * Builds a tab as a list of note contexts: the first is the main context (the tab itself),
- * the rest are its splits. Every context resolves its main context to the first one — the
- * same topology `NoteContext.getMainContext()` produces, without needing a real tab manager.
- */
-function buildTab(ntxIds: string[]): NoteContext[] {
-    const contexts = ntxIds.map((id, i) => new NoteContext(id, "root", i === 0 ? null : ntxIds[0]));
-    const mainContext = contexts[0];
-    for (const context of contexts) {
-        context.getMainContext = () => mainContext;
-    }
-    return contexts;
-}
-
-describe("isContextInActiveTab", () => {
-    it("treats every split of the active tab as active, not just the focused one", () => {
-        const [ mainContext, secondarySplit ] = buildTab([ "A", "B" ]);
-
-        // The active tab is "A". Both the main split and the secondary (non-focused) split belong to
-        // it, so both must load eagerly. The secondary split is the regression case: keying deferral on
-        // the focused split alone (its own ntxId "B") would leave it blank until clicked.
-        expect(isContextInActiveTab(mainContext, "A")).toBe(true);
-        expect(isContextInActiveTab(secondarySplit, "A")).toBe(true);
-    });
-
-    it("defers splits that belong to a different (background) tab", () => {
-        const [ backgroundMain, backgroundSplit ] = buildTab([ "C", "D" ]);
-
-        expect(isContextInActiveTab(backgroundMain, "A")).toBe(false);
-        expect(isContextInActiveTab(backgroundSplit, "A")).toBe(false);
-    });
-
-    it("returns false when the context is missing or no tab is active yet", () => {
-        const [ , split ] = buildTab([ "A", "B" ]);
-
-        expect(isContextInActiveTab(undefined, "A")).toBe(false);
-        expect(isContextInActiveTab(split, null)).toBe(false);
-        expect(isContextInActiveTab(split, undefined)).toBe(false);
-    });
-});
 
 describe("getExtendedWidgetType blob-stub routing", () => {
     afterEach(() => {
@@ -141,5 +110,181 @@ describe("useDeferredDetailFocus", () => {
         renderHarness(false);
         renderHarness(true);
         expect(replay).not.toHaveBeenCalled();
+    });
+});
+
+describe("useNoteInfo", () => {
+    const host = document.createElement("div");
+
+    function Harness() {
+        useNoteInfo();
+        return null;
+    }
+
+    afterEach(() => {
+        render(null, host);
+    });
+
+    it("reloads on a type or MIME change of its own note only", async () => {
+        const note = {
+            noteId: "shown-note",
+            type: "text",
+            isProtected: false,
+            isTriliumSqlite: () => false,
+            isMarkdown: () => false,
+            isIconPack: () => false
+        } as unknown as FNote;
+        const setContextData = vi.fn();
+        const noteContext = {
+            note,
+            notePath: "root/shown-note",
+            hoistedNoteId: "root",
+            viewScope: {},
+            isReadOnly: async () => false,
+            setContextData
+        } as unknown as NoteContext;
+        const parentComponent = new Component();
+        await act(async () => render(
+            h(ParentComponent.Provider, { value: parentComponent },
+                h(NoteContextContext.Provider, { value: noteContext }, h(Harness, {}))),
+            host
+        ));
+        const loadStates = () => setContextData.mock.calls
+            .map(([ key, { state } ]) => `${key}:${state}`);
+        await vi.waitFor(() => expect(loadStates()).toEqual(
+            [ "contentLoad:loading", "contentLoad:loaded" ]));
+        setContextData.mockClear();
+
+        const changeNoteType = (noteId: string) => act(async () => {
+            await parentComponent.handleEventInChildren("noteTypeMimeChanged", { noteId });
+        });
+
+        // A `NoteDetail` that shows the changed note triggers the event for the whole app.
+        await changeNoteType("other-note");
+        expect(setContextData).not.toHaveBeenCalled();
+
+        await changeNoteType("shown-note");
+        await vi.waitFor(() => expect(loadStates()).toEqual(
+            [ "contentLoad:loading", "contentLoad:loaded" ]));
+    });
+});
+
+describe("NoteDetailWrapper", () => {
+    const host = document.createElement("div");
+    const received: string[] = [];
+    let typeWidgetParent: Component | null = null;
+    let typeWidgetProps: TypeWidgetProps | null = null;
+    let hostComponent = new Component();
+    const addLinkToText = vi.fn();
+    const imperativeHandlers = { addLinkToTextCommand: addLinkToText };
+
+    function TypeWidget(props: TypeWidgetProps) {
+        typeWidgetParent = useContext(ParentComponent);
+        typeWidgetProps = props;
+        useLegacyImperativeHandlers(imperativeHandlers);
+        useTriliumEvent("findInText", () => received.push("findInText"));
+        useTriliumEvent("executeWithCodeEditor", () => received.push("executeWithCodeEditor"));
+        useTriliumEvent("entitiesReloaded", () => received.push("entitiesReloaded"));
+        useTriliumEvent("noteSwitched", () => received.push("noteSwitched"));
+        useTriliumEvent("sqlQueryResults", () => received.push("sqlQueryResults"));
+        return h("div", {}, h("p", { className: "type-widget-content" }));
+    }
+
+    function renderWrapper(isVisible: boolean, containerVisible = true) {
+        const wrapper = h(NoteDetailWrapper, {
+            Element: TypeWidget, type: "editableText", isVisible, isFullHeight: false,
+            props: { parentComponent: hostComponent } as TypeWidgetProps
+        });
+        act(() => render(
+            h(ParentComponent.Provider, { value: hostComponent },
+                h(ContainerVisibilityContext.Provider, { value: containerVisible }, wrapper)),
+            host
+        ));
+    }
+
+    async function dispatchAll() {
+        await hostComponent.handleEventInChildren("findInText", {});
+        await hostComponent.handleEventInChildren("executeWithCodeEditor",
+            { ntxId: "ntx", resolve: () => {} } as unknown as EventData<"executeWithCodeEditor">);
+        await hostComponent.handleEventInChildren("entitiesReloaded",
+            {} as EventData<"entitiesReloaded">);
+        await hostComponent.handleEventInChildren("noteSwitched", {} as EventData<"noteSwitched">);
+        await hostComponent.handleEventInChildren("sqlQueryResults",
+            {} as EventData<"sqlQueryResults">);
+    }
+
+    afterEach(() => {
+        render(null, host);
+        received.length = 0;
+        typeWidgetParent = null;
+        typeWidgetProps = null;
+        hostComponent = new Component();
+        addLinkToText.mockReset();
+    });
+
+    it("sends requests only to the displayed type widget, and syncs a hidden one", async () => {
+        renderWrapper(false);
+        await dispatchAll();
+        expect(received).toEqual([ "entitiesReloaded", "noteSwitched", "sqlQueryResults" ]);
+
+        received.length = 0;
+        renderWrapper(true, false);
+        await dispatchAll();
+        expect(received).toEqual([ "entitiesReloaded", "noteSwitched", "sqlQueryResults" ]);
+
+        received.length = 0;
+        renderWrapper(true);
+        await dispatchAll();
+        expect(received).toEqual(
+            [ "findInText", "executeWithCodeEditor", "entitiesReloaded", "noteSwitched",
+                "sqlQueryResults" ]);
+    });
+
+    it("gives the type widget a parent that saves and commands as the host", () => {
+        const triggerCommand = vi.spyOn(hostComponent, "triggerCommand");
+        renderWrapper(true);
+
+        const parent = typeWidgetParent;
+        if (!parent) throw new Error("The type widget did not render.");
+        expect(parent).not.toBe(hostComponent);
+        expect(parent.componentId).toBe(hostComponent.componentId);
+        expect(hostComponent.children).toContain(parent);
+
+        parent.triggerCommand("hoistNote", { noteId: "root" });
+        expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: "root" });
+
+        render(null, host);
+        expect(hostComponent.children).not.toContain(parent);
+    });
+
+    it("lets the DOM and the widget's props reach the handlers the type widget installs", () => {
+        renderWrapper(true);
+        const parent = typeWidgetParent;
+        const content = host.querySelector<HTMLElement>(".type-widget-content");
+        if (!parent || !content) throw new Error("The type widget did not render.");
+
+        // The text editor finds its host this way, e.g. for reference link titles.
+        expect(appContext.getComponentByEl(content)).toBe(parent);
+        expect(typeWidgetProps?.parentComponent).toBe(parent);
+
+        // Keyboard shortcuts trigger their command on `props.parentComponent`.
+        typeWidgetProps?.parentComponent?.triggerCommand("addLinkToText", {});
+        expect(addLinkToText).toHaveBeenCalledOnce();
+    });
+});
+
+describe("shouldFocusOnNoteChange", () => {
+    it("focuses the editor of a note opened elsewhere, but not on a phone, nor while the tree or the split has focus", () => {
+        const split = document.createElement("div");
+        const title = document.createElement("input");
+        split.append(title);
+        const treeTitle = document.createElement("span");
+        treeTitle.className = "fancytree-title";
+        const elsewhere = document.createElement("button");
+
+        expect(shouldFocusOnNoteChange(elsewhere, split, false)).toBe(true);
+        expect(shouldFocusOnNoteChange(elsewhere, split, true)).toBe(false);
+        expect(shouldFocusOnNoteChange(treeTitle, split, false)).toBe(false);
+        expect(shouldFocusOnNoteChange(title, split, false)).toBe(false);
     });
 });

@@ -118,7 +118,7 @@ describe("CalendarProperties", () => {
         const card = draw(undefined);
 
         expect(document.querySelector(".calendar-properties-dialog .modal-title")?.textContent)
-            .toContain("calendar_view.properties");
+            .toContain("calendar_view.properties-title");
         expect(card?.dataset.heading).toBe("calendar_view.event_templates");
         expect(card?.dataset.instruction).toBe("calendar_view.event_templates_hint");
         expect(card?.dataset.note).toBe("calendar1");
@@ -137,12 +137,36 @@ describe("CalendarProperties", () => {
         expect(titles).toEqual([
             "book_properties_config.hide-weekends",
             "book_properties_config.display-week-numbers",
+            "book_properties_config.hide-routine-events",
             "calendar_view.time_slots",
             "calendar_view.slot_duration",
-            "calendar_view.slot_label_interval",
-            "book_properties.include_archived_notes"
+            "calendar_view.slot_label_interval"
         ]);
         expect(general?.compareDocumentPosition(document.querySelector(".templates-stub") as Node))
+            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it("holds which notes the calendar gathers in a card of their own, after General", () => {
+        draw(undefined);
+        const dialog = document.querySelector(".calendar-properties-dialog");
+        const general = dialog?.querySelector(".calendar-properties-general");
+        const included = dialog?.querySelector(".collection-included-notes");
+        const titles = [ ...included?.querySelectorAll(".tn-card-option-title") ?? [] ]
+            .map((title) => title.textContent);
+
+        expect(included?.querySelector(".tn-card-heading")?.textContent)
+            .toContain("book_properties.included_notes");
+        expect(titles).toEqual([
+            "book_properties.include_archived_notes",
+            "book_properties_config.max-nesting-depth"
+        ]);
+        const depth = [ ...included?.querySelectorAll(".tn-card-option-label") ?? [] ].at(-1);
+        expect(depth?.querySelector(".tn-card-option-description")?.textContent)
+            .toBe("book_properties_config.max-nesting-depth-description");
+        expect(general?.compareDocumentPosition(included as Node))
+            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        const attributes = document.querySelector(".attributes-stub");
+        expect(included?.compareDocumentPosition(attributes as Node))
             .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 

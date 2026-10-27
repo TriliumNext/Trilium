@@ -4,6 +4,7 @@ import {
     Plugin,
     Table,
     TableColumnResize,
+    TableMouse,
     TableSelection,
     TableUtils,
     TableWalker
@@ -17,10 +18,11 @@ import { DistributeTableColumnsCommand } from "./table_distribute_columns.js";
  *
  * Registers insert commands that honor the size of the current selection (the upstream
  * `insertTableRow*` / `insertTableColumn*` commands always insert one row or column) and
- * `triliumDistributeTableColumns`, keeps a multi-cell selection alive under a right-click, and
- * moves the selection to the cell a context menu is opened on. Merge, split and delete need no
- * counterparts here: the upstream `mergeTableCells`, `splitTableCell*` and `removeTableRow` /
- * `removeTableColumn` commands already act on the whole selection.
+ * `triliumDistributeTableColumns`, keeps a multi-cell selection alive under a right-click, limits
+ * mouse cell selection and column resizing to the primary button, and moves the selection to the
+ * cell a context menu is opened on. Merge, split and delete need no counterparts here: the upstream
+ * `mergeTableCells`, `splitTableCell*` and `removeTableRow` / `removeTableColumn` commands already
+ * act on the whole selection.
  */
 export default class TableContextMenu extends Plugin {
 
@@ -54,15 +56,31 @@ export default class TableContextMenu extends Plugin {
             new TableHeaderRowsCommand(editor, "laterRow"));
 
         const view = editor.editing.view;
+        const tableMouse = editor.plugins.get(TableMouse);
         view.addObserver(MouseObserver);
         this.listenTo<ViewDocumentMouseDownEvent>(view.document, "mousedown", (evt, data) => {
+            const { button } = data.domEvent;
+
+            // Limits `TableMouse` drag and Shift+click cell selection to the primary button.
+            // `TableMouse` checks `isEnabled` only on mousedown.
+            if (button === PRIMARY_MOUSE_BUTTON) {
+                tableMouse.clearForceDisabled(TableContextMenu.pluginName);
+            } else {
+                tableMouse.forceDisabled(TableContextMenu.pluginName);
+            }
+
             // Stops the caret move that would collapse a multi-cell selection before the
             // `contextmenu` event fires.
-            const isRightButton = data.domEvent.button === RIGHT_MOUSE_BUTTON;
-            if (isRightButton && this.isInsideCellSelection(data.domTarget)) {
+            if (button === RIGHT_MOUSE_BUTTON && this.isInsideCellSelection(data.domTarget)) {
                 data.preventDefault();
             }
-        }, { priority: "high" });
+
+            // Keeps `TableColumnResizeEditing` from starting a resize. The default action, such as
+            // the autoscroll of the middle button, still runs.
+            if (button !== PRIMARY_MOUSE_BUTTON && data.target.hasClass(COLUMN_RESIZER_CLASS)) {
+                evt.stop();
+            }
+        }, { priority: "highest" });
     }
 
     /**
@@ -102,7 +120,9 @@ export default class TableContextMenu extends Plugin {
 
 }
 
+const PRIMARY_MOUSE_BUTTON = 0;
 const RIGHT_MOUSE_BUTTON = 2;
+const COLUMN_RESIZER_CLASS = "ck-table-column-resizer";
 
 /** Where {@link TableMultiInsertCommand} inserts, relative to the rows or columns it spans. */
 export type TableMultiInsertDirection = "above" | "below" | "left" | "right";

@@ -2,6 +2,7 @@
 @import "./adaptive-colors.css";
 @import "./menus.css";
 @import "./buttons.css";
+@import "./zen.css";
 
 @font-face {
     font-family: Montserrat;
@@ -62,15 +63,28 @@ body#trilium-app.backdrop-effects-disabled *::after {
 }
 
 :root {
-    --submenu-opening-delay: 150ms;
+    --submenu-opening-delay: 250ms;
     --launcher-pane-size: 53px;
     --bs-body-color: var(--main-text-color);
+    /* What a menu, the sidebar or a dialog dims the page behind it with in the phone layout. */
+    --mobile-backdrop-color: rgba(0, 0, 0, 0.5);
+    --mobile-modal-backdrop-color: var(--mobile-backdrop-color);
 }
 
 html {
     /* this fixes FF filter vs. position fixed bug: https://github.com/zadam/trilium/issues/233 */
     height: 100vh;
+    /* Chrome on Android sizes `vh` without its toolbar, which leaves the page that much to scroll. */
+    height: 100dvh;
     overscroll-behavior: none;
+}
+
+/* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
+   the first rotation (WebKit bug 301108); the large viewport is the screen's height from the start. */
+html.ios-web-app,
+html.ios-web-app body,
+html.ios-web-app #root-widget {
+    height: 100lvh !important;
 }
 
 body {
@@ -124,6 +138,8 @@ body.mobile.context-menu-shown * {
 
 body.mobile #root-widget {
     padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+    padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+    padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
 }
 
 body.mobile #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
@@ -289,7 +305,7 @@ samp {
  * content and not what anyone is asking for. Inheritance is what makes `.cm-editor` enough to cover
  * CodeMirror's internals.
  */
-body.monospace-ligatures-disabled :is(code, kbd, pre, samp, .cm-editor, .ck-mermaid__editing-view) {
+body.monospace-ligatures-disabled :is(code, kbd, pre, samp, .cm-editor) {
     font-variant-ligatures: none;
 }
 
@@ -400,6 +416,11 @@ button kbd {
     font-family: var(--monospace-font-family) !important;
 }
 
+:root pre.code-preview > .code-preview-content {
+    font-family: var(--monospace-font-family);
+    font-size: var(--monospace-font-size);
+}
+
 .cm-editor .cm-placeholder {
     color: inherit;
     opacity: 0.5;
@@ -425,6 +446,86 @@ button kbd {
     left: 0;
     z-index: 2000;
     font-size: var(--monospace-font-size);
+}
+
+/* CodeMirror's hover and lint tooltips in the app's tooltip style: a code note renders them in
+   `.cm-tooltip-host`, the search field (`search_field_editor.css`) inside its own editor. */
+:is(.cm-tooltip-host, .search-string-editor .cm-editor) {
+    .cm-tooltip:is(.cm-tooltip-hover, .cm-tooltip-lint) {
+        --cm-tooltip-background: var(--tooltip-background-color, transparent);
+
+        max-width: 500px;
+        padding: 0;
+        border: 0;
+        border-radius: var(--tooltip-border-radius, 5px);
+        background:
+            linear-gradient(var(--cm-tooltip-background), var(--cm-tooltip-background)),
+            var(--main-background-color);
+        color: var(--tooltip-foreground-color, var(--main-text-color));
+        box-shadow: var(--tooltip-box-shadow, 0 5px 10px rgba(0, 0, 0, 0.2));
+        font-family: var(--main-font-family);
+        font-size: var(--tooltip-font-size, 0.9em);
+        line-height: 1.5;
+        overflow: hidden;
+    }
+
+    .cm-diagnostic {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5em;
+        margin: 0;
+        padding: var(--tooltip-padding, 4px 8px);
+        padding-inline-start: 16px;
+        border: 0;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 6px;
+            inset-inline-start: 6px;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--cm-diagnostic-color, transparent);
+        }
+    }
+
+    .cm-diagnostic-error {
+        --cm-diagnostic-color: var(--admonition-caution-accent-color);
+    }
+
+    .cm-diagnostic-warning {
+        --cm-diagnostic-color: var(--admonition-warning-accent-color);
+    }
+
+    .cm-diagnostic-info {
+        --cm-diagnostic-color: var(--admonition-note-accent-color);
+    }
+
+    .cm-diagnosticAction {
+        margin: 0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, currentColor 15%, transparent);
+        color: inherit;
+
+        &:hover {
+            background: color-mix(in srgb, currentColor 25%, transparent);
+        }
+    }
+
+    .cm-ts-hover {
+        padding: var(--tooltip-padding, 4px 8px);
+    }
+
+    .cm-ts-hover-signature {
+        font-family: var(--monospace-font-family);
+    }
+
+    .cm-tooltip-section:not(:first-child) {
+        border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    }
 }
 
 #sql-console-query {
@@ -488,9 +589,9 @@ button.btn-sm {
 }
 
 .ck.ck-button.ck-block-toolbar-button {
-    transform: translateX(7px);
+    transform: translateX(10px);
+    --ck-color-button-default-background: transparent;
     color: var(--muted-text-color);
-    background-color: var(--main-background-color);
     /* Making this narrower because https://github.com/zadam/trilium/issues/502 (problem only in smaller font sizes) */
     min-width: 0;
     padding: 0;
@@ -500,7 +601,7 @@ button.btn-sm {
 }
 
 body[dir=rtl] .ck.ck-block-toolbar-button {
-    transform: translateX(-7px);
+    transform: translateX(-10px);
 }
 
 pre:not(.hljs) {
@@ -826,10 +927,6 @@ div[data-notify="container"] {
     color: var(--muted-text-color);
 }
 
-.ck-editor__editable .ck-mermaid__editing-view {
-    font-family: var(--monospace-font-family);
-}
-
 svg.ck-icon.note-icon {
     color: var(--main-text-color);
     font-size: 20px;
@@ -840,6 +937,23 @@ svg.ck-icon.note-icon {
     --ck-content-font-size: 1.1em;
     --ck-content-font-color: var(--main-text-color);
     --ck-content-line-height: var(--bs-body-line-height);
+}
+
+/*
+ * Table borders in text notes. `ckeditor5-content.css` hardcodes a light grey, which glares on a
+ * dark background. The default mixes the text color into transparency, which matches that grey
+ * on a light theme. A border set through the table or cell properties is inline and still wins.
+ */
+:where(:root) {
+    --text-note-table-border-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+}
+
+:root .ck-content .table table:not(.layout-table) {
+    border-color: var(--text-note-table-border-color);
+
+    & > :is(thead, tbody, tfoot) > tr > :is(td, th) {
+        border-color: var(--text-note-table-border-color);
+    }
 }
 
 :root .ck-content .table table:not(.layout-table) th {
@@ -1016,12 +1130,37 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 
 /* Includes in a series share flush edges, as link previews and collapsible blocks do. */
 .include-note + .include-note {
-    --_include-note-top-border-radius: 0;
+    --_include-note-top-border-radius: 0px;
 }
 
 .include-note:has(+ .include-note) {
-    --_include-note-bottom-border-radius: 0;
+    --_include-note-bottom-border-radius: 0px;
     margin-bottom: 3px;
+}
+
+.include-note {
+    /* The corners of the embed box that its content touches, as lengths for `calc()`. */
+    --_include-note-content-top-radius: 0px;
+    --_include-note-content-bottom-radius: var(--_include-note-bottom-border-radius, 8px);
+    /* The frame around content that fills the box. Below a title and above a caption, the 2px
+       border between them and the content is the frame on that side. */
+    --_include-note-content-inset: 2px;
+    --_include-note-content-top-inset: 0px;
+    --_include-note-content-bottom-inset: var(--_include-note-content-inset);
+    --_include-note-framed-top-radius:
+        max(0px, var(--_include-note-content-top-radius) - var(--_include-note-content-top-inset));
+    --_include-note-framed-bottom-radius: max(0px,
+        var(--_include-note-content-bottom-radius) - var(--_include-note-content-bottom-inset));
+
+    &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
+        --_include-note-content-top-radius: var(--_include-note-top-border-radius, 8px);
+        --_include-note-content-top-inset: var(--_include-note-content-inset);
+    }
+
+    &:has(> figcaption) {
+        --_include-note-content-bottom-radius: 0px;
+        --_include-note-content-bottom-inset: 0px;
+    }
 }
 
 /* CKEditor counts only non-UIElements as content (see `hasContent` in the
@@ -1115,11 +1254,28 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 
 /* Media takes a resized height inside the border and padding, as with the edge-to-edge types. */
 .include-note[data-box-size] .include-note-content:is(
-    .type-image, .type-canvas, .type-canvasDrawing, .type-mindMap, .type-spreadsheet, .type-mermaid,
+    .type-image, .type-canvas, .type-canvasDrawing, .type-mermaidDiagram, .type-mindMap,
+    .type-spreadsheet, .type-mermaid,
     .type-video
 ) {
     box-sizing: content-box;
     max-height: none;
+}
+
+.include-note-box-height {
+    height: var(--include-note-height, 20em);
+}
+
+.include-note[data-box-size="small"] .include-note-box-height {
+    height: var(--include-note-height, 10em);
+}
+
+.include-note[data-box-size="full"] .include-note-box-height {
+    height: 50em;
+}
+
+.include-note-content:fullscreen .include-note-box-height {
+    height: 100%;
 }
 
 /* Tiny and Full fit their content: only these box sizes take a resized size. */
@@ -1134,7 +1290,7 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     }
 
     &:has(.include-note-content[hidden]) > .ck-widget__resize-handles
-        > :not(.ck-widget__resize-handle_width) {
+        > .ck-widget__resize-handle:not(.ck-widget__resize-handle_width) {
         display: none;
     }
 }
@@ -1191,9 +1347,25 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     text-decoration: none;
 }
 
-/* Expandable include note styles */
-.include-note[data-box-size="expandable"] .include-note-title-row {
+.include-note[data-box-size="expandable"] > .include-note-wrapper > .include-note-title-row {
+    border-start-start-radius: var(--_include-note-top-border-radius, 8px);
+    border-start-end-radius: var(--_include-note-top-border-radius, 8px);
+
+    &:hover {
+        background: var(--card-background-hover-color);
+    }
+}
+
+.include-note[data-box-size="expandable"]:not(.ck-widget)
+    > .include-note-wrapper > .include-note-title-row {
     cursor: pointer;
+}
+
+.include-note[data-box-size="expandable"]:not(:has(> figcaption))
+    > .include-note-wrapper:has(> .include-note-body > .include-note-content[hidden])
+    > .include-note-title-row {
+    border-end-start-radius: var(--_include-note-bottom-border-radius, 8px);
+    border-end-end-radius: var(--_include-note-bottom-border-radius, 8px);
 }
 
 /* The title inside the expandable row defers its header styling to the row. */
@@ -1203,9 +1375,12 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     margin: 0;
     padding: 0;
     border-bottom: none;
+    width: max-content;
     font-weight: inherit;
     font-size: inherit;
-    min-width: 0;
+}
+
+.include-note-title-row > .include-note-title-label {
     flex-grow: 1;
 }
 
@@ -1213,11 +1388,31 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     flex-shrink: 0;
 }
 
+.include-note-title-row > .include-note-display-modes {
+    flex-shrink: 0;
+}
+
+/* Outranks `:root div.btn-group .icon-action`, so the group is as tall as the other buttons. */
+:root .include-note-title-row > .include-note-display-modes .icon-action {
+    --icon-button-size: 24px;
+}
+
+/* Browsers drop a click on a disabled button, which then toggles no expandable embed. */
+.include-note-title-row > .icon-action.disabled {
+    pointer-events: auto;
+}
+
 .include-note-title-row > .include-note-badges:empty {
     display: none;
 }
 
+.include-note-badges > .excerpt-badge {
+    order: 1;
+}
+
 .include-note-toggle {
+    --icon-button-hover-background: transparent;
+
     transition: transform 0.2s ease;
 }
 
@@ -1296,6 +1491,38 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     margin-bottom: 0;
 }
 
+/* Outranks the margin, shadow and corners that the themes give `.ck-content pre`, the first two
+   with `!important`. */
+:root .include-note-content pre.code-embed-editor,
+:root .include-note-content.type-code pre {
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0;
+}
+
+.include-note-content pre.code-embed-editor {
+    padding: 0;
+}
+
+pre.code-embed-editor.read-only .cm-activeLine {
+    background-color: transparent;
+}
+
+.include-note-content.type-code {
+    padding: var(--_include-note-content-top-inset) var(--_include-note-content-inset)
+             var(--_include-note-content-bottom-inset);
+}
+
+:root .include-note-content.type-code pre {
+    border-radius: var(--_include-note-framed-top-radius) var(--_include-note-framed-top-radius)
+                   var(--_include-note-framed-bottom-radius)
+                   var(--_include-note-framed-bottom-radius);
+
+    &.code-embed-editor {
+        overflow: hidden;
+    }
+}
+
 /* Takes the wheel and the touch gestures for the page until the content has the focus. */
 .include-note-backdrop {
     position: absolute;
@@ -1343,6 +1570,7 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 .include-note-content.type-video,
 .include-note-content.type-canvas,
 .include-note-content.type-canvasDrawing,
+.include-note-content.type-mermaidDiagram,
 .include-note-content.type-webView,
 .include-note-content.type-book:has(.note-list-widget.full-height),
 .include-note-content.type-search:has(.note-list-widget.full-height) {
@@ -1363,6 +1591,10 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     overflow: auto;
 }
 
+.include-note-content:fullscreen > .rendered-content > .source-embed {
+    height: 100%;
+}
+
 .include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > * {
     max-width: var(--preferred-max-content-width);
     margin-inline: auto;
@@ -1377,7 +1609,8 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
         calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + var(--overlay-group-inset));
     --overlay-group-inset-end:
         calc(var(--safe-area-inset-right, env(safe-area-inset-right)) + var(--overlay-group-inset));
-    z-index: 1;
+    /* Above the 10 of `.note-detail-error-card` in SplitEditor.css. */
+    z-index: 11;
 }
 
 .include-note-exit-fullscreen > button {
@@ -1645,41 +1878,58 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
         padding-bottom: calc(max(var(--menu-padding-size), var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))) !important;
     }
 
-    #mobile-sidebar-container {
-        position: fixed;
-        top: 0;
-        inset-inline-start: 0;
-        inset-inline-end: 0;
-        bottom: 0;
-        z-index: 1000;
-        transition: background-color 250ms ease-in-out;
-        visibility: hidden;
-        background: rgba(0, 0, 0, 0.4);
-    }
-
-    #mobile-sidebar-container.show {
-        visibility: visible;
+    #mobile-rest-container {
+        overflow: clip;
+        position: relative;
     }
 
     #mobile-rest-container > #mobile-sidebar-wrapper {
         position: absolute;
         top: 0;
         inset-inline-start: 0;
-        height: 100dvh;
-        width: 85vw;
-        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
-        transform: translateX(-100%);
+        height: 100%;
+        width: 100%;
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);
-        z-index: 2000;
-    }
 
-    body[dir="rtl"] #mobile-rest-container > #mobile-sidebar-wrapper {
-        transform: translateX(100%);
+        &:not(.show, .dragging) {
+            visibility: hidden;
+            transition: transform 250ms ease-in-out, visibility 0s 250ms;
+        }
     }
 
     #detail-container {
+        position: relative;
         width: 100%;
+        background: var(--main-background-color);
+        transition: transform 250ms ease-in-out;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            inset-inline-end: 100%;
+            width: 24px;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.12), transparent);
+            pointer-events: none;
+            transition: opacity 250ms ease-in-out;
+        }
+    }
+
+    body:has(#mobile-sidebar-wrapper.show) #detail-container::before {
+        opacity: 0;
+    }
+
+    #mobile-rest-container.instant-screen-change {
+        > #mobile-sidebar-wrapper,
+        > #detail-container,
+        > #detail-container::before {
+            transition: none !important;
+        }
+    }
+
+    body[dir="rtl"] #detail-container::before {
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
     }
 
     .note-split.empty-note {
@@ -1690,16 +1940,22 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
         margin: 15px;
     }
 
-    #mobile-sidebar-container.show #mobile-sidebar-wrapper {
-        transform: translateX(0);
-    }
-
     body.mobile #launcher-container {
         justify-content: space-evenly;
     }
 
     body.mobile .modal.show {
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: var(--mobile-modal-backdrop-color);
+    }
+
+    body.mobile .modal-backdrop {
+        background-color: transparent !important;
+    }
+
+    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
+    body.mobile .tn-popover-backdrop {
+        background-color: var(--mobile-backdrop-color);
+        opacity: 1;
     }
 
     body.mobile .modal-dialog {
@@ -1735,6 +1991,11 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     body.mobile .modal-content {
         overflow-y: auto;
         border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
+    }
+
+    body.mobile .modal:not(.options-dialog) .modal-content {
+        padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+        padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
     }
 
     body.mobile .modal-footer {
@@ -1785,6 +2046,14 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     #mobile-sidebar-wrapper {
         transform: none !important;
         background-color: var(--left-pane-background-color) !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
+        display: none !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #detail-container {
+        width: 100%;
     }
 
     #mobile-rest-container {
@@ -1999,6 +2268,13 @@ body.electron:not(.platform-darwin) .tab-row-container {
     padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
 }
 
+@media (display-mode: window-controls-overlay) {
+    body:not(.electron) .tab-row-container {
+        padding-inline-start: env(titlebar-area-x, 0px);
+        padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+    }
+}
+
 .tab-row-container .toggle-button {
     background: transparent;
     appearance: none;
@@ -2022,168 +2298,6 @@ body.electron:not(.platform-darwin) .tab-row-container {
     border-color: var(--hover-item-border-color);
     background: var(--hover-item-background-color);
     color: var(--hover-item-text-color);
-}
-
-body.zen {
-    --tab-bar-height: 0;
-}
-
-body.zen .gutter,
-body.zen #launcher-container,
-body.zen #launcher-pane,
-body.zen #left-pane,
-body.zen #right-pane,
-body.zen .right-pane-peek-button,
-body.zen #mobile-sidebar-wrapper,
-body.zen .tab-row-container,
-body.zen .tab-row-widget,
-body.zen .title-row .icon-action,
-body.zen .note-badges > *:not(.read-only-badge),
-body.zen .note-actions-bar,
-body.zen .inline-title,
-body.zen .promoted-attributes-widget,
-body.zen .action-button,
-body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
-body.zen .note-split:not(.type-book) .note-list-widget {
-    display: none !important;
-}
-
-body.zen #vertical-main-container {
-    /* Remove the placeholder for the right pane peek button */
-    --right-pane-peek-button-gutter: 0 !important;
-}
-
-body.zen .split-note-container-widget > .gutter {
-    display: unset !important;
-}
-
-body.zen #launcher-pane {
-    position: absolute !important;
-    top: 0 !important;
-    inset-inline-end: 0 !important;
-    width: 64px !important;
-    height: 64px !important;
-    background: transparent !important;
-    border: 0 !important;
-}
-
-body.zen .title-row {
-    height: unset !important;
-    -webkit-app-region: drag;
-    padding-inline-start: env(titlebar-area-x);
-    padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
-    border-bottom: none !important;
-}
-
-body.zen .note-title-widget,
-body.zen .note-title-widget input {
-    font-size: 1rem !important;
-}
-
-body.zen #detail-container {
-    width: 100%;
-}
-
-body.zen .note-split:not(.full-content-width) .scrolling-container {
-    display: flex;
-    flex-direction: column;
-    scroll-behavior: unset !important;
-}
-
-body.zen .note-split:not(.full-content-width) .note-detail {
-    margin: auto;
-    padding-bottom: 25vh;
-    max-width: var(--max-content-width);
-    width: 100%;
-}
-
-body.zen .note-split:not(.full-content-width) .scroll-padding-widget {
-    display: none;
-}
-
-body.zen .note-split.type-text {
-    position: relative;
-    font-size: 1.15em;
-}
-
-body.zen:not(.backdrop-effects-disabled) .note-split.type-text .title-row {
-    --start-color: var(--main-background-color);
-
-    position: absolute;
-    width: 100%;
-    background: linear-gradient(var(--start-color) 30%, transparent 100%);
-    z-index: 1000;
-}
-
-@supports (background: color-mix(in srgb, white, transparent)) {
-    body.zen .note-split.type-text .title-row {
-        --start-color: color-mix(in srgb, var(--main-background-color), transparent 10%);
-    }
-}
-
-body.zen .note-split.type-text .scrolling-container {
-    --padding-bottom: 130px; /* Should be enough to avoid caret being hidden by the formatting toolbar */
-
-    /* (Usually) keeps the caret above the fixed toolbar */
-    scroll-padding-bottom: var(--padding-bottom);
-}
-
-body.zen:not(.backdrop-effects-disabled) .note-split.type-text .scrolling-container {
-    --padding-top: 50px; /* Should be enough to cover the title row */
-
-    padding-top: var(--padding-top);
-    scroll-padding-top: var(--padding-top);
-}
-
-/* Fixed formatting toolbar */
-
-body.zen {
-    .status-bar {
-        display: none;
-    }
-
-    .classic-toolbar-widget {
-        position: fixed;
-        left: 50%;
-        bottom: 20px;
-        z-index: 1000;
-        opacity: 0; /* Hidden unless the current note split is focused */
-        pointer-events: none;
-        transition: opacity 100ms linear;
-        width: fit-content;
-        box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
-        border-radius: 8px;
-        border: 1px solid var(--main-border-color);
-        padding: 4px;
-        background: var(--menu-background-color) !important;
-        transform: translateX(-50%);
-        backdrop-filter: blur(6px);
-    }
-
-    /* An open dropdown holds the toolbar up: hovering its submenu takes focus out of the split. */
-    #root-widget:has(.note-split.type-text:focus-within) .classic-toolbar-widget,
-    .classic-toolbar-widget:focus-within,
-    .classic-toolbar-widget:has(.ck-dropdown__panel-visible) {
-        opacity: 1; /* Show when the note split is focused */
-        pointer-events: all;
-    }
-
-    @media (max-width: 1300px) {
-        .classic-toolbar-widget {
-            /* Set the toolbar to full with */
-            width: 100%;
-        }
-
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
-            /* Force toolbar items overflow dropdowns open upwards */
-            top: auto;
-            bottom: 100%;
-        }
-    }
 }
 
 /* Content renderer */
@@ -2473,14 +2587,15 @@ footer.webview-footer button {
     text-decoration: line-through;
 }
 
+/* Content that sizes itself from its container while rendering (a Mermaid gantt chart) needs a
+   real width: A4 minus the 2cm `@page` margins that `print.tsx` sets for the browser. */
 iframe.print-iframe {
     position: absolute;
     top: 0;
-    left: -600px;
-    right: -600px;
-    bottom: 0;
-    width: 0;
+    left: -10000px;
+    width: 170mm;
     height: 0;
+    border: 0;
 }
 
 .excalidraw.theme--dark canvas {
@@ -2489,7 +2604,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.note-split:not(.type-text.view-mode-normal) > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
     display: flex;
     flex-direction: column;
 }
@@ -2500,6 +2615,13 @@ iframe.print-iframe {
     flex-grow: 1;
     width: 100%;
     overflow: hidden;
+}
+
+/* Fills what the content above leaves, but never less than half the container, so content taller
+   than the container pushes the collection below it instead of squeezing it to nothing. */
+.scrolling-container > .note-list-widget.full-height {
+    flex: 1 0 0;
+    min-height: 50%;
 }
 
 /* A full-height note fills the container instead of scrolling it, so the padding that lets

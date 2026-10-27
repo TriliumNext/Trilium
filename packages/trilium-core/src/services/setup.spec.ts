@@ -90,9 +90,23 @@ describe("setup service", () => {
             vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
             execImpl = async () => ({ syncVersion: appInfo.syncVersion, options: [{ name: "documentId", value: "d" }] });
 
-            await setupService.setupSyncFromSyncServer("http://srv", "proxy", "pw", 20971520);
+            await setupService.setupSyncFromSyncServer("http://srv", "proxy", "pw", "", 20971520);
 
             expect(createSpy).toHaveBeenCalledWith([{ name: "documentId", value: "d" }], "http://srv", "proxy", 20971520);
+        });
+
+        it("sends the password and the TOTP token with the seed request", async () => {
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+            const seedRequests: ExecOpts[] = [];
+            execImpl = async (opts) => {
+                seedRequests.push(opts);
+                throw new Error("401 Unauthorized TOTP token is required");
+            };
+
+            const result = await setupService.setupSyncFromSyncServer("http://srv", "", "pw", "123456");
+
+            expect(seedRequests.map((opts) => opts.auth)).toEqual([{ password: "pw", totpToken: "123456" }]);
+            expect(result).toEqual({ result: "failure", error: "401 Unauthorized TOTP token is required" });
         });
 
         it("fails on a sync version mismatch", async () => {

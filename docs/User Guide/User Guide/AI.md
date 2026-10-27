@@ -31,22 +31,36 @@ Once enabled, the assistant is available as:
 
 Trilium supports four different types of providers:
 
-*   **Cloud providers**  
-    Pay-per use with an API key which is billed separately from any subscription you might already have
-    *   Anthropic (Claude)
-    *   OpenAI (GPT)
-    *   Google (Gemini)
-    *   DeepSeek
-*   **Subscription-based**  
-    Reuses an existing subscription instead of paying per use.
-    *   Currently only Claude Code is supported.
-*   **Local or self-hosted LLM solutions**
-    *   Ollama
-    *   LM Studio.
-*   **Custom OpenAI compatible endpoints**  
-    For other providers that are not directly supported by Trilium, either local or hosted (e.g. OpenRouter, Groq, Mistral).
+=== "<span class="tn-icon bx bx-cloud"></span> Cloud"
 
-For more information about each provider, see <a class="reference-link" href="AI/Providers.md">Providers</a>. See the dedicated <a class="reference-link" href="AI/Privacy.md">Privacy</a> to better understand what data is sent to providers.
+    Pay-per use with an API key which is billed separately from any subscription you might already have.
+
+    *   <span class="tn-icon tn-brand tn-brand-anthropic"></span> Anthropic Claude
+    *   <span class="tn-icon tn-brand tn-brand-openai"></span> OpenAI GPT
+    *   <span class="tn-icon tn-brand tn-brand-gemini"></span> Google Gemini
+    *   <span class="tn-icon tn-brand tn-brand-deepseek"></span> DeepSeek
+    *   <span class="tn-icon tn-brand tn-brand-openrouter"></span> OpenRouter, which reaches the models of most labs with one key
+
+=== "<span class="tn-icon bx bx-coin"></span> Subscription-based"
+
+    Reuses an existing subscription instead of paying per use.
+
+    *   <span class="tn-icon tn-brand tn-brand-claude"></span> [Claude Code](AI/Providers/Subscription-based%20providers.md)
+    *   <span class="tn-icon tn-brand tn-brand-github-copilot"></span> [GitHub Copilot](AI/Providers/Subscription-based%20providers.md)
+    *   <span class="tn-icon tn-brand tn-brand-antigravity"></span> [Google Antigravity](AI/Providers/Subscription-based%20providers.md)
+    *   <span class="tn-icon tn-brand tn-brand-codex"></span> [OpenAI Codex](AI/Providers/Subscription-based%20providers.md)
+
+=== "<span class="tn-icon bx bx-network-chart"></span> Local/self-hosted"
+
+    *   <span class="tn-icon tn-brand tn-brand-ollama"></span> Ollama
+    *   <span class="tn-icon tn-brand tn-brand-lmstudio"></span> LM Studio
+
+=== "<span class="tn-icon bx bx-code-curly"></span> Custom endpoints"
+
+    For other providers that are not directly supported by Trilium, either local or hosted (e.g. Groq, Mistral, Together).
+
+> [!TIP]
+> For more information about each provider, see <a class="reference-link" href="AI/Providers.md">Providers</a>. See the dedicated <a class="reference-link" href="AI/Privacy.md">Privacy</a> to better understand what data is sent to providers.
 
 ## Enabling the AI integration
 
@@ -85,11 +99,11 @@ Pricing information is displayed for known models. The pricing information (pric
 
 The AI can optionally search the web to find more information about a specific topic. 
 
-Where the search comes from is chosen under _Web search_ in the <span class="tn-icon bx bx-shield-quarter"></span> _Tools_ menu next to the model selector at the bottom of the chat:
+Where the search comes from is chosen in the _Web search_ submenu of the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ menu next to the model selector at the bottom of the chat, whose row shows the source in use:
 
 *   _Disabled_ turns web search off for this chat.
-*   _Use the model's built-in search_, the default, lets the model search with its provider's own search. Anthropic, OpenAI and Google Gemini models have one, as do Claude Code, Google Antigravity and OpenAI Codex. DeepSeek, Ollama, LM Studio and custom endpoints don't, so this choice is disabled for their models.
-*   A search provider (Brave Search, Tavily, Exa, Serper, Perplexity or SearXNG) searches through that service instead, whichever model is answering. Search providers are added in the _Search Providers_ section of the AI settings, which the <span class="tn-icon bx bx-cog"></span> button beside the _Web search_ heading in the menu opens. The browser version can't use Brave Search, Exa or Perplexity, whose services refuse requests made from a web page, so they're shown disabled there.
+*   _Use the model's built-in search_, the default, lets the model search with its provider's own search. Anthropic, OpenAI, Google Gemini and DeepSeek models have one, as do Claude Code, Google Antigravity and OpenAI Codex. OpenRouter, Ollama, LM Studio and custom endpoints don't, so this choice is disabled for their models. DeepSeek's search is billed per search on your DeepSeek account and works only with DeepSeek's own endpoint, not with a custom base URL.
+*   A search provider (Brave Search, Tavily, Exa, Serper, Perplexity or SearXNG) searches through that service instead, whichever model is answering. Search providers are added in the _Search Providers_ section of the AI settings, which _Manage search providers_ at the bottom of the submenu opens. The browser version can't use Brave Search, Exa or Perplexity, whose services refuse requests made from a web page, so they're shown disabled there.
 
 To use SearXNG, enable its JSON output by adding `json` to the search formats in the instance's `settings.yml`. SearXNG turns JSON off by default, and without it every search fails.
 
@@ -102,9 +116,9 @@ search:
 
 SearXNG doesn't use API keys, so leave the API key empty. Fill it in only if your instance sits behind a proxy that requires a token; Trilium sends it as a bearer token in the `Authorization` header.
 
-Whether web search is on is kept per chat; the search source is shared by all chats. A choice the current model can't use stays in the menu, disabled; hover the <span class="tn-icon bx bx-info-circle"></span> icon next to it to see why. Claude Code, GitHub Copilot, Google Antigravity and OpenAI Codex run their own tools, so they can't use a search provider.
+Whether web search is on is kept per chat; the search source is shared by all chats. A choice the current model can't use stays in the menu, disabled; hover the <span class="tn-icon bx bx-info-circle"></span>icon next to it to see why. Claude Code, GitHub Copilot, Google Antigravity and OpenAI Codex run their own tools, so they can't use a search provider.
 
-In the chat, a search run through a search provider shows that provider's logo at the start of its line instead of the <span class="tn-icon bx bx-search"></span> magnifier; hover the logo to see the provider's name.
+In the chat, a search run through a search provider shows that provider's logo at the start of its line instead of the <span class="tn-icon bx bx-search"></span>magnifier; hover the logo to see the provider's name.
 
 With a search provider, the model can also read the pages it finds, or a link you give it, as text: Trilium fetches the page itself and hands the model up to its first 20,000 characters. Addresses on your own machine or network are refused. In the browser version most sites don't allow being read this way, so reading a page there usually fails.
 
@@ -114,8 +128,8 @@ Some models reason before they answer. While the model is thinking, its reasonin
 
 How much a model thinks is set per chat, in one of two ways depending on the model:
 
-*   Most models have an <span class="tn-icon bx bx-brain"></span> _Extended thinking_ button, next to the <span class="tn-icon bx bx-shield-quarter"></span> _Tools_ button.
-*   Models that offer several levels of reasoning (DeepSeek V4, OpenAI Codex, Antigravity) have a <span class="tn-icon bx bx-brain"></span> reasoning effort dropdown next to the model selector instead. _None_, where offered, turns thinking off; higher levels give better answers to hard questions, but take longer and cost more.
+*   Most models have an <span class="tn-icon bx bx-brain"></span>_Extended thinking_ button, next to the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ button.
+*   Models that offer several levels of reasoning (DeepSeek V4, OpenRouter models that reason, OpenAI Codex, Antigravity) have a <span class="tn-icon bx bx-brain"></span>reasoning effort dropdown next to the model selector instead. _None_, where offered, turns thinking off; higher levels give better answers to hard questions, but take longer and cost more.
 
 > [!NOTE]
 > The effort dropdown only appears once Trilium knows the model's levels. For a DeepSeek provider set up with an earlier version of Trilium, edit the provider in the model selection box and press _Save_ once.
@@ -124,7 +138,7 @@ How much a model thinks is set per chat, in one of two ways depending on the mod
 
 Tools allow the agentic AI to understand and operate on notes directly within your Trilium instance.
 
-This feature is on by default. To turn it off, press the <span class="tn-icon bx bx-shield-quarter"></span> _Tools_ button next to the model selector at the bottom of the chat and switch off _Note access_. The _Tools_ button is highlighted while note access or web search is on.
+This feature is on by default. To turn it off, press the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ button next to the model selector at the bottom of the chat and switch off _Note access_. The _Tools_ button is highlighted while note access or web search is on.
 
 Here are a few tools that Trilium provides for the LLM:
 
@@ -140,8 +154,8 @@ Here are a few tools that Trilium provides for the LLM:
     *   Rename or delete a note.
 *   At attribute level:
     *   Get the full list of attributes, or a specific attribute.
-    *   Set the value of an attribute.
-        *   An attribute that runs code, such as `#run`, `#widget` or `~renderNote`, is saved with a `disabled:` prefix (for example `#disabled:widget`), the same way a safe import disables it (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Active%20content.md">Active content</a>). If the note already had that attribute enabled, the AI removes it, so none of it runs until you enable the new value. The AI tells you which note it is on; review the code, then enable it with the toggle next to the active content badge beside the note's title or, for a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, the _Enable render note_ button in the note.
+    *   Set the value of an attribute, or add another value next to the existing ones (such as a second `#tag`). When setting a value replaces an existing one, the AI is told which value it replaced.
+        *   An attribute that runs code, such as `#run`, `#widget` or `~renderNote`, is saved with a `disabled:` prefix (for example `#disabled:widget`), the same way a safe import disables it (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Active%20content.md">Active content</a>). If the note already had that attribute enabled and the AI sets rather than adds the value, the AI removes the enabled one, so none of it runs until you enable the new value. The AI tells you which note it is on; review the code, then enable it with the toggle next to the active content badge beside the note's title or, for a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, the _Enable render note_ button in the note.
     *   Delete an attribute.
 *   At tree level:
     *   Get the direct children of a note.
@@ -152,12 +166,36 @@ Here are a few tools that Trilium provides for the LLM:
     *   Get the content of an attachment.
 *   Skills (see the dedicated section).
 
-Each tool the AI uses appears in the chat as a single line naming the tool and the note or query it worked on; a renamed note shows its previous title struck through, a deleted note its title struck through, a moved note where it was moved from and to, an attribute the AI read, set or deleted as a pill (struck through once deleted), an attachment by its title, note and size, and a web page the AI read as a link. A line folds open only when there is something to read inline: the notes a search found, the pages a web search found, the icons an icon search found, the type, attributes or start of the content of a note the AI read, all the attributes of a note, the text of an attachment or of a web page, the User Guide pages the AI looked up or its table of contents (both open in the help panel), the children or the whole subtree of a note, what the AI wrote into a note it created, rewrote or added to, the changes of an edit, or the reason a tool failed. A search also shows how many notes it found, the part of the tree it was confined to, if any, and how many of the matches the AI asked for; each note it lists opens with a click. To see exactly what the AI sent to a tool and what it got back, hover the line and press the <span class="tn-icon bx bx-code-alt"></span> button next to it; on touch screens the button is always shown.
+Each tool the AI uses appears in the chat as a single line naming the tool and the note or query it worked on; a renamed note shows its previous title struck through, a deleted note its title struck through, a moved note where it was moved from and to, an attribute the AI read, set, added or deleted as a pill (struck through once deleted), an attachment by its title, note and size, and a web page the AI read as a link. A line folds open only when there is something to read inline: the notes a search found, the pages a web search found, the icons an icon search found, the type, attributes or start of the content of a note the AI read, all the attributes of a note, the text of an attachment or of a web page, the User Guide pages the AI looked up or its table of contents (both open in the help panel), the children or the whole subtree of a note, what the AI wrote into a note it created, rewrote or added to, the changes of an edit, or the reason a tool failed. A search names on its line the part of the tree it is confined to, if any, and also shows how many notes it found and how many of the matches the AI asked for; each note it lists opens with a click. To see exactly what the AI sent to a tool and what it got back, hover the line and press the <span class="tn-icon bx bx-code-alt"></span>button next to it; on touch screens the button is always shown.
 
 When the reply stops moving for a couple of seconds while the AI is still at work, for example while it reads what a tool returned, a _Still working…_ line appears under it until the next part of the reply arrives.
 
-> [!WARNING]
-> Currently there is **no permission management** implemented for note tools, meaning that the LLM could potentially remove existing notes or clutter the tree with notes. Generally most actions are easily reversible (deleting the notes, restoring deleted notes, reverting modifications to a note), but there are some that are harder to revert (e.g. setting an attribute because there is no attribute history).
+#### Approving tool calls
+
+Before the AI runs a tool, the chat asks whether to allow it. The tool's line is marked with a <span class="tn-icon bx bxs-hand"></span>icon and has _Allow_ and _Deny_ buttons below it. When the call would write to a note, the line opens on the text it would write or the changes of an edit. The reply waits until you answer.
+
+*   To let the call run, press _Allow_.
+*   To stop asking about a tool for the rest of the chat, open the menu next to _Allow_ and choose to always allow that tool for this chat. The call runs, and so do the other calls of that tool still waiting and every later one in this chat. Other tools keep asking, and a new chat asks again.
+*   To refuse it, press _Deny_. The AI is told that you declined, and its reply carries on without the call, which is marked _denied_.
+*   Stopping the reply denies every call that is still waiting.
+
+To make a chat ask about a tool again, open the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ menu at the bottom of the chat and, under _Allowed in this chat_, press the tool. The submenu is shown once the chat has allowed a tool.
+
+Which calls ask depends on the chat's permission mode, chosen in the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ menu under _Permissions_:
+
+*   _Always ask_: every call asks, including the ones that only read (searching notes, or reading a note or an attachment).
+*   _Ask before changes_: the calls that only read run on their own, and the ones that change your notes (creating, editing, renaming, moving or deleting a note, and setting, adding or deleting an attribute) ask.
+*   _Don't ask_: every call runs without asking, changes included.
+
+A new chat starts in the mode you picked last, in any chat, or in _Ask before changes_ until you pick one. Picking _Don't ask_ therefore carries over to the next chat too.
+
+A tool allowed for the chat runs without asking in every mode. So does looking something up in what ships with Trilium (its User Guide, the skill sheets that teach the AI Trilium's search syntax and note types, and the icons), since it reads none of your notes. Searching the web and reading a web page never ask either: turning on web search in the _Tools_ menu is what allows them, whether the model searches on its own or through a search provider.
+
+> [!NOTE]
+> The <a class="reference-link" href="AI/Providers/Subscription-based%20providers.md">Subscription-based providers</a> (Claude Code, GitHub Copilot, Google Antigravity and OpenAI Codex) ask like any other provider.
+
+> [!NOTE]
+> Most changes you allow can be undone: a deleted note can be restored, and an edit reverted from its revision. Setting an attribute is harder to undo, since attributes have no history.
 
 > [!NOTE]
 > Gemini can't use its built-in search while note access is on. While it is, the built-in search choice in the _Tools_ menu is disabled and says why; a search provider works with note access on.
@@ -174,7 +212,7 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 Not every model reads every kind of attachment: DeepSeek reads no PDFs, and images only with its vision models; OpenAI Codex, GitHub Copilot and Google Antigravity read images but no PDFs. For such a model:
 
 *   The attach button offers only the kinds the model reads, and a pasted or dropped file it can't read is not attached.
-*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span> warning, and the message can't be sent until the attachment is removed or another model is selected.
+*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span>warning, and the message can't be sent until the attachment is removed or another model is selected.
 *   An attachment sent in an earlier message reaches the model as its name only, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content.
 
 To upload an attachment:
@@ -211,7 +249,7 @@ The following skills are built-in:
 *   Search syntax: understands the full syntax of <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.
 *   Backend scripting: to be able to write proper <a class="reference-link" href="Scripting/Backend%20scripts.md">Backend scripts</a>.
 *   Frontend scripting: to be able to write proper [front-end scripts](Scripting/Frontend%20Basics.md) (basic scripts, widgets, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>).
-*   Dashboards: to build a <a class="reference-link" href="Collections/Dashboard.md">Dashboard</a> and its widgets, including interactive ones made with a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.
+*   Dashboards: to build a <a class="reference-link" href="Collections/Dashboard.md">Dashboard</a> and its widgets, including interactive ones made with a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.
 
 When _Note tools_ are enabled the skills will automatically be made available to the AI, so no user interaction is required.
 

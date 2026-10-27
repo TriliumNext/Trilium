@@ -19,11 +19,34 @@ vi.mock("../../../services/i18n", () => ({
     t: (key: string, opts?: Record<string, unknown>) => (opts && "count" in opts ? `${key}:${opts.count}` : key)
 }));
 
+// The expanded view renders the full note through the note list; the toggle is what is under test.
+const noteContentState = vi.hoisted(() => ({
+    ready: true,
+    reportReady: undefined as (() => void) | undefined
+}));
+vi.mock("../legacy/ListOrGridView", async () => {
+    const { useEffect } = await import("preact/hooks");
+    return {
+        NoteContent: ({ onReady }: { onReady?: () => void }) => {
+            useEffect(() => {
+                if (noteContentState.ready) {
+                    onReady?.();
+                } else {
+                    noteContentState.reportReady = onReady;
+                }
+            }, []);
+            return "EXPANDED";
+        }
+    };
+});
+
 import Component from "../../../components/component";
+import type FNote from "../../../entities/fnote";
 import { calculateHash } from "../../../services/link";
 import server from "../../../services/server";
 import { buildNote, buildNotes } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
+import { useNoteIds } from "../NoteList";
 import SearchResultCard, { getBreadcrumbTitle, searchTermsFor, toPlainSearchTerms } from "./SearchResultCard";
 import SearchResultsList, { SearchResultsToolbar } from "./SearchResultsList";
 
@@ -46,6 +69,8 @@ let container: HTMLElement;
 let parent: Component;
 
 beforeEach(() => {
+    noteContentState.ready = true;
+    noteContentState.reportReady = undefined;
     parent = new Component();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -80,13 +105,17 @@ describe("SearchResultCard", () => {
             <SearchResultCard noteId={note.noteId} details={makeDetails()} loading={false} highlightedTokens={["sync"]} />
         );
 
-        const link = container.querySelector("a.search-result-card");
+        const link = container.querySelector("a.search-result-card-title");
         // The card's href carries the highlighted plain tokens as `searchTerms` so the destination
         // type widget can highlight/jump to them via ViewScope.searchTerms.
         expect(link?.getAttribute("href")).toBe(`#${note.noteId}?searchTerms=sync`);
         expect(container.querySelector(".search-result-card-title")?.textContent).toBe("Meeting notes");
-        // Breadcrumb is the note-path title minus the note's own (last) segment.
-        expect(container.querySelector(".search-result-card-path")?.textContent).toBe("Work › 2026");
+        // Breadcrumb is the note-path title minus the note's own (last) segment, marked up as the
+        // note list does, so the shared stylesheet hides its brackets and draws the separators.
+        const path = container.querySelector(".search-result-card .note-path");
+        expect(path?.textContent).toContain("Work / 2026");
+        expect(path?.querySelectorAll(".path-bracket")).toHaveLength(2);
+        expect(path?.querySelector(".path-delimiter")?.textContent).toBe(" / ");
 
         const snippet = container.querySelector(".search-result-card-snippet");
         expect(snippet?.innerHTML).toContain("<b>sync</b>");
@@ -105,13 +134,13 @@ describe("SearchResultCard", () => {
         await mount(
             <SearchResultCard noteId={note.noteId} details={makeDetails({ matchedTerms: [ "Ktorý" ] })} loading={false} highlightedTokens={[ "ktory" ]} />
         );
-        expect(container.querySelector("a.search-result-card")?.getAttribute("href"))
+        expect(container.querySelector("a.search-result-card-title")?.getAttribute("href"))
             .toBe(calculateHash({ notePath: note.noteId, viewScope: { searchTerms: [ "Ktorý" ] } }));
 
         await mount(
             <SearchResultCard noteId={note.noteId} details={makeDetails({ matchedTerms: [] })} loading={false} highlightedTokens={[ "ktory" ]} />
         );
-        expect(container.querySelector("a.search-result-card")?.getAttribute("href")).toBe(`#${note.noteId}?searchTerms=ktory`);
+        expect(container.querySelector("a.search-result-card-title")?.getAttribute("href")).toBe(`#${note.noteId}?searchTerms=ktory`);
     });
 
     it("shows a snippet skeleton while the page's details are still loading", async () => {
@@ -142,6 +171,72 @@ describe("SearchResultCard", () => {
         expect(container.querySelector(".search-result-card-snippet.skeleton")).toBeNull();
         expect(container.querySelector(".search-result-card-badges")).toBeNull();
     });
+
+    it("links only the title, leaving the snippet outside the link", async () => {
+        const note = buildNote({ id: "note1", title: "Meeting notes", type: "text" });
+        await mount(
+            <SearchResultCard noteId={note.noteId} details={makeDetails()} loading={false} highlightedTokens={null} />
+        );
+
+        expect(container.querySelector("a.search-result-card")).toBeNull();
+        expect(container.querySelector("a.search-result-card-title")).not.toBeNull();
+        expect(container.querySelector(".search-result-card-content a")).toBeNull();
+        expect(container.querySelector(".search-result-card-content")?.textContent).toContain("calendar");
+    });
+
+    it("renders a code note's excerpt in a code font", async () => {
+        const note = buildNote({ id: "note1", title: "script.ts", type: "code" });
+        await mount(
+            <SearchResultCard noteId={note.noteId} details={makeDetails()} loading={false} highlightedTokens={null} />
+        );
+
+        expect(container.querySelector(".search-result-card-snippet")?.classList.contains("type-code")).toBe(true);
+    });
+
+    it("keeps the excerpt while the note it expands to is still rendering", async () => {
+        noteContentState.ready = false;
+        const note = buildNote({ id: "note1", title: "Meeting notes", type: "text" });
+        await mount(
+            <SearchResultCard
+                noteId={note.noteId}
+                details={makeDetails({ contentSnippetTruncated: true })}
+                loading={false}
+                highlightedTokens={null}
+            />
+        );
+
+        const more = container.querySelector<HTMLAnchorElement>(".search-result-card-more");
+        await act(async () => more?.click());
+        expect(container.querySelector(".search-result-card-snippet")).not.toBeNull();
+        expect(container.querySelector(".search-result-card-more")?.textContent).toContain("search_result.show_less");
+
+        await act(async () => noteContentState.reportReady?.());
+        expect(container.querySelector(".search-result-card-snippet")).toBeNull();
+    });
+
+    it("expands to the full note content when the snippet leaves more behind", async () => {
+        const note = buildNote({ id: "note1", title: "Meeting notes", type: "text" });
+        await mount(
+            <SearchResultCard
+                noteId={note.noteId}
+                details={makeDetails({ contentSnippetTruncated: true })}
+                loading={false}
+                highlightedTokens={null}
+            />
+        );
+
+        const more = container.querySelector<HTMLAnchorElement>(".search-result-card-more");
+        expect(more?.textContent).toContain("search_result.show_more");
+        expect(container.querySelector(".search-result-card-snippet")).not.toBeNull();
+
+        await act(async () => more?.click());
+        expect(container.textContent).toContain("EXPANDED");
+        expect(container.querySelector(".search-result-card-snippet")).toBeNull();
+        expect(container.querySelector(".search-result-card-more")?.textContent).toContain("search_result.show_less");
+
+        await act(async () => container.querySelector<HTMLAnchorElement>(".search-result-card-more")?.click());
+        expect(container.querySelector(".search-result-card-snippet")).not.toBeNull();
+    });
 });
 
 describe("SearchResultsList", () => {
@@ -153,7 +248,7 @@ describe("SearchResultsList", () => {
         const note = buildNote({ id: "search", title: "Search", type: "search" });
         note.children = firstResults;
 
-        await mount(<SearchResultsList note={note} notePath="search" ntxId="ntx1" media="screen" />);
+        await mount(<Harness note={note} ntxId="ntx1" />);
         await settle();
         const secondPageButton = [ ...container.querySelectorAll(".note-list-pager-page-button") ]
             .find((button) => button.textContent?.trim() === "2");
@@ -180,9 +275,15 @@ describe("SearchResultsList", () => {
     }
 
     function cardHrefs() {
-        return [ ...container.querySelectorAll("a.search-result-card") ].map((card) => card.getAttribute("href"));
+        return [ ...container.querySelectorAll("a.search-result-card-title") ].map((card) => card.getAttribute("href"));
     }
 });
+
+/** Mirrors the collection pipeline, which supplies the ids and refreshes them on `searchRefreshed`. */
+function Harness({ note, ntxId }: { note: FNote; ntxId: string }) {
+    const noteIds = useNoteIds(note, "searchPreview", ntxId);
+    return <SearchResultsList note={note} noteIds={noteIds} ntxId={ntxId} />;
+}
 
 describe("SearchResultsToolbar", () => {
     it("always renders the result count, including for a single page", async () => {

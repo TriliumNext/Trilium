@@ -14,21 +14,21 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
 import ClipboardPlainTextIndent from "./clipboard_plain_text_indent.js";
 import CutToNotePlugin from "./cuttonote.js";
 
 describe("CutToNotePlugin", () => {
     let editor: ClassicEditor;
-    let triggerCommand: ReturnType<typeof vi.fn>;
+    let cut: ReturnType<typeof vi.fn>;
+    let saveNow: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        triggerCommand = vi.fn();
-        installGlobMock({
-            getComponentByEl: () => ({ triggerCommand })
-        });
+        cut = vi.fn();
+        saveNow = vi.fn(async () => undefined);
 
-        editor = await createTestEditor([Essentials, Paragraph, CutToNotePlugin]);
+        editor = await createTestEditor([Essentials, Paragraph, CutToNotePlugin], {
+            cutToNote: { cut, saveNow }
+        });
     });
 
     it("loads the plugin and registers the toolbar button", () => {
@@ -41,10 +41,10 @@ describe("CutToNotePlugin", () => {
         expect(view.label).toBe("Cut selection into a sub-note");
     });
 
-    it("triggers the cutIntoNote command on the Trilium component when the button is executed", () => {
+    it("has the host cut the selection into a note when the button is executed", () => {
         const view = editor.ui.componentFactory.create("cutToNote") as { fire(name: string): void };
         view.fire("execute");
-        expect(triggerCommand).toHaveBeenCalledWith("cutIntoNote");
+        expect(cut).toHaveBeenCalledOnce();
     });
 
     it("augments the editor with getSelectedHtml that serializes the selected content", () => {
@@ -324,7 +324,7 @@ describe("CutToNotePlugin", () => {
 
         expect(editor.getData()).not.toContain("bar");
         expect(editor.getData()).toContain("foobaz");
-        expect(triggerCommand).toHaveBeenCalledWith("saveNoteDetailNow");
+        expect(saveNow).toHaveBeenCalledOnce();
     });
 
     it("removeSelection on a collapsed selection still inserts a paragraph and saves", async () => {
@@ -333,7 +333,17 @@ describe("CutToNotePlugin", () => {
         await editor.removeSelection();
 
         expect(editor.getData()).toContain("foobar");
-        expect(triggerCommand).toHaveBeenCalledWith("saveNoteDetailNow");
+        expect(saveNow).toHaveBeenCalledOnce();
+    });
+
+    it("removes the selection without the cutToNote config entry, and cuts nothing", async () => {
+        const plainEditor = await createTestEditor([Essentials, Paragraph, CutToNotePlugin]);
+        setModelData(plainEditor.model, "<paragraph>foo[bar]baz</paragraph>");
+
+        const view = plainEditor.ui.componentFactory.create("cutToNote") as { fire(name: string): void };
+        expect(() => view.fire("execute")).not.toThrow();
+        await plainEditor.removeSelection();
+        expect(plainEditor.getData()).toContain("foobaz");
     });
 });
 

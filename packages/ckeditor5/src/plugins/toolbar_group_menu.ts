@@ -1,8 +1,11 @@
 import {
     BalloonToolbar, BlockToolbar, ButtonView, DropdownView, type Editor, type FocusTracker,
-    ListItemView, ListSeparatorView, Plugin, SplitButtonView, type ToolbarConfig,
-    type ToolbarConfigItem, ToolbarSeparatorView, type ToolbarView, type View
+    ListItemGroupView, ListItemView, ListSeparatorView, ListView, Plugin, SearchTextView, SplitButtonView, SwitchButtonView,
+    type ToolbarConfig, type ToolbarConfigItem, ToolbarSeparatorView, type ToolbarView, type View
 } from "ckeditor5";
+
+import ContextToolbar from "./context_toolbar.js";
+import TextFormattingToolbar from "./text_formatting_toolbar.js";
 
 declare module "ckeditor5" {
     interface EditorConfig {
@@ -18,6 +21,12 @@ export interface ToolbarGroupMenuHost {
     show(request: ToolbarGroupMenuRequest): void;
     hide(): void;
     destroy(): void;
+    /**
+     * Whether the shown menu takes the place of the on-screen keyboard. Its button then gives that
+     * place back as it closes the menu, focusing the text in the same press, as a mobile browser
+     * raises the keyboard only for a focus a press makes.
+     */
+    isInPlaceOfKeyboard?(): boolean;
 }
 
 /** What a {@link ToolbarGroupMenuHost} shows a menu for. */
@@ -25,6 +34,11 @@ export interface ToolbarGroupMenuRequest {
     /** The group's button, which the menu opens under. */
     anchor: HTMLElement;
     items: ToolbarGroupMenuItem[];
+    /**
+     * `tiles` draws the entries as tiles, each its icon over its label, for a list of choices that
+     * a phone shows better side by side. Left out for rows.
+     */
+    layout?: "tiles";
     /**
      * Receives the menu's element once it is in the page, and `null` as it leaves. The editor
      * counts focus and presses inside that element as its own, so the toolbar holding the group
@@ -38,29 +52,70 @@ export interface ToolbarGroupMenuRequest {
     onClose(returnFocus: boolean): void;
 }
 
-export type ToolbarGroupMenuItem = { kind: "separator" } | ToolbarGroupMenuEntry;
+export type ToolbarGroupMenuItem = { kind: "separator" } | { kind: "heading"; label: string } | ToolbarGroupMenuEntry;
 
 export interface ToolbarGroupMenuEntry {
     kind: "entry";
     label: string;
     /** The SVG of the icon of the toolbar item. */
     icon?: string;
+    /** An icon-pack glyph as a class list, such as `bx bx-cog`, for an entry with no SVG. */
+    iconClass?: string;
     isEnabled: boolean;
+    /**
+     * Whether the item is on, for a button that is on or off, as `bold` is or a row of the
+     * `heading` list. Left out for any other.
+     */
+    isOn?: boolean;
+    /** Whether the item is a switch, as the "Header row" row of `tableRow` is, for the host to draw as one. */
+    isSwitch?: boolean;
+    /** The classes CKEditor gives the item, such as `ck-fontsize-option text-tiny`, for the host to style. */
+    className?: string;
     /** Runs the toolbar item. An entry with `children` and no action only opens them. */
     run?(): void;
     children?: ToolbarGroupMenuItem[];
+}
+
+/** How a dropdown handed to {@link openListAsMenu} is shown. */
+export interface ListMenuOptions {
+    /** See {@link ToolbarGroupMenuRequest.layout}. */
+    layout?: "tiles";
+    /**
+     * Describes the menu's entries on each open, for a dropdown whose content its views do not
+     * hold. `run` wraps an entry's action, so the menu hides before it runs.
+     */
+    describe?(run: (action: () => void) => () => void): ToolbarGroupMenuItem[];
+}
+
+/** The dropdowns handed to {@link openListAsMenu}, with their options. */
+const listMenuDropdowns = new WeakMap<DropdownView, ListMenuOptions>();
+
+/**
+ * Has {@link ToolbarGroupMenu} open the list of `dropdown` as a menu of its rows, as it does a
+ * group marked `asMenu`, or the buttons of its toolbar for a dropdown that holds one, as
+ * `alignment` does. Without the plugin or a host, the dropdown opens its own panel.
+ */
+export function openListAsMenu(dropdown: DropdownView, options: ListMenuOptions = {}) {
+    listMenuDropdowns.set(dropdown, options);
+}
+
+/** Whether `dropdown` was handed to {@link openListAsMenu}. */
+export function isListMenu(dropdown: DropdownView) {
+    return listMenuDropdowns.has(dropdown);
 }
 
 /**
  * Opens a toolbar group as a menu drawn by the host application (`toolbarGroupMenu.host`), with a
  * row of icon and label per entry, and a submenu for an entry that carries a list of its own.
  *
- * A group opts in with `asMenu: true` beside its `label` in the toolbar configuration.
+ * A group opts in with `asMenu: true` beside its `label` in the toolbar configuration, or with the
+ * {@link ListMenuOptions} of its menu, such as `asMenu: { layout: "tiles" }`.
  * `ToolbarView#_createNestedToolbarDropdown()` builds those dropdowns and keeps no reference to the
  * definition each came from, so the labels of the opted-in groups are read from the configuration
  * and matched against the dropdown buttons. The dropdown never opens its own panel: the views
  * CKEditor lays out in it are described to the host each time it would, and a row runs its view.
- * A group holds buttons and dropdowns that list rows.
+ * A group holds buttons and dropdowns that list rows. A dropdown handed to {@link openListAsMenu}
+ * opens as a menu of its own list's rows.
  */
 export default class ToolbarGroupMenu extends Plugin {
 
@@ -77,24 +132,25 @@ export default class ToolbarGroupMenu extends Plugin {
 
     afterInit() {
         const editor = this.editor;
-        const labels = collectMenuGroupLabels(
+        const groups = collectMenuGroups(
             editor.config.get("toolbar"),
             editor.config.get("balloonToolbar"),
-            editor.config.get("blockToolbar")
+            editor.config.get("blockToolbar"),
+            editor.config.get("textFormattingToolbar")
         );
         const menuConfig = editor.config.get("toolbarGroupMenu");
-        if (!labels.size || !menuConfig) {
+        if (!menuConfig) {
             return;
         }
         const createHost = () => menuConfig.host(editor);
 
         for (const toolbar of this.getToolbarViews()) {
             for (const item of toolbar.items) {
-                this.watchGroupDropdown(toolbar, item, labels, createHost);
+                this.watchGroupDropdown(toolbar, item, groups, createHost);
             }
 
             this.listenTo(toolbar.items, "add", (evt, item: View) => {
-                this.watchGroupDropdown(toolbar, item, labels, createHost);
+                this.watchGroupDropdown(toolbar, item, groups, createHost);
             });
         }
     }
@@ -106,7 +162,8 @@ export default class ToolbarGroupMenu extends Plugin {
 
     /**
      * The toolbars an editor can hold: the fixed bar of a `DecoupledEditor`, the selection balloon
-     * of a `BalloonEditor`, and the block toolbar either of them can carry.
+     * of a `BalloonEditor`, the block toolbar either of them can carry, the `TextFormattingToolbar`
+     * and the `ContextToolbar`.
      */
     private getToolbarViews() {
         const editor = this.editor;
@@ -122,19 +179,27 @@ export default class ToolbarGroupMenu extends Plugin {
         if (editor.plugins.has(BlockToolbar)) {
             toolbars.push(editor.plugins.get(BlockToolbar).toolbarView);
         }
+        if (editor.plugins.has(TextFormattingToolbar)) {
+            toolbars.push(editor.plugins.get(TextFormattingToolbar).toolbarView);
+        }
+        if (editor.plugins.has(ContextToolbar)) {
+            toolbars.push(editor.plugins.get(ContextToolbar).toolbarView);
+        }
 
         return toolbars;
     }
 
     private watchGroupDropdown(
-        toolbar: ToolbarView, item: View, labels: Set<string>, createHost: () => ToolbarGroupMenuHost
+        toolbar: ToolbarView, item: View, groups: Map<string, ListMenuOptions>,
+        createHost: () => ToolbarGroupMenuHost
     ) {
         if (!(item instanceof DropdownView) || this.watchedDropdowns.has(item)) {
             return;
         }
 
         const label = item.buttonView.label;
-        if (!label || !labels.has(label)) {
+        const options = listMenuDropdowns.get(item) ?? (label ? groups.get(label) : undefined);
+        if (!options) {
             return;
         }
 
@@ -149,15 +214,20 @@ export default class ToolbarGroupMenu extends Plugin {
 
             evt.return = false;
             if (this.shown?.dropdown === item) {
+                const toKeyboard = this.host?.isInPlaceOfKeyboard?.() ?? false;
                 this.hideMenu();
+                if (toKeyboard) {
+                    this.editor.editing.view.focus();
+                }
             } else {
-                this.showMenu(toolbar, item, createHost);
+                this.showMenu(toolbar, item, options, createHost);
             }
         }, { priority: "high" });
     }
 
     private showMenu(
-        toolbar: ToolbarView, dropdown: DropdownView, createHost: () => ToolbarGroupMenuHost
+        toolbar: ToolbarView, dropdown: DropdownView, options: ListMenuOptions,
+        createHost: () => ToolbarGroupMenuHost
     ) {
         const editor = this.editor;
         const anchor = dropdown.buttonView.element;
@@ -176,19 +246,30 @@ export default class ToolbarGroupMenu extends Plugin {
             && !!child.element?.contains(anchor));
         const trackers = [editor.ui.focusTracker, ...enclosing.map((child) => child.focusTracker)];
 
-        const run = (view: View) => () => {
+        const runAction = (action: () => void) => () => {
             this.hideMenu();
             for (const child of enclosing) {
                 child.isOpen = false;
             }
             editor.editing.view.focus();
-            view.fire("execute");
+            action();
         };
+        const run = (view: View) => runAction(() => view.fire("execute"));
 
         let element: HTMLElement | null = null;
+        const { describe, ...menuOptions } = options;
+        let items: ToolbarGroupMenuItem[];
+        if (describe) {
+            items = describe(runAction);
+        } else if (listMenuDropdowns.has(dropdown)) {
+            items = this.describeList(dropdown, run);
+        } else {
+            items = describeItems(this.sourceItems(dropdown), run);
+        }
         const request: ToolbarGroupMenuRequest = {
             anchor,
-            items: describeItems(this.sourceItems(dropdown), run),
+            items,
+            ...menuOptions,
             setElement: (next) => {
                 if (element) {
                     untrackElement(element, trackers);
@@ -218,6 +299,21 @@ export default class ToolbarGroupMenu extends Plugin {
             this.shown = null;
             this.host?.hide();
         }
+    }
+
+    /** The rows of a dropdown handed to {@link openListAsMenu}. */
+    private describeList(dropdown: DropdownView, run: (view: View) => () => void) {
+        this.building = true;
+        // The dropdown builds its list or its toolbar the first time it opens.
+        if (!dropdown.listView && !dropdown.toolbarView) {
+            dropdown.isOpen = true;
+            dropdown.isOpen = false;
+        }
+        const rows = dropdown.toolbarView
+            ? describeItems([...dropdown.toolbarView.items], run)
+            : describeListEntries(dropdown, run) ?? [];
+        this.building = false;
+        return rows;
     }
 
     /** The views CKEditor lays out in the group, which it builds the first time it is opened. */
@@ -260,27 +356,29 @@ function untrackElement(element: HTMLElement, trackers: FocusTracker[]) {
     }
 }
 
-function collectMenuGroupLabels(...configs: (ToolbarConfig | undefined)[]) {
-    const labels = new Set<string>();
+/** The labels of the groups marked `asMenu`, with the options of their menus. */
+function collectMenuGroups(...configs: (ToolbarConfig | undefined)[]) {
+    const groups = new Map<string, ListMenuOptions>();
 
     for (const config of configs) {
-        collectFromItems(Array.isArray(config) ? config : config?.items, labels);
+        collectFromItems(Array.isArray(config) ? config : config?.items, groups);
     }
 
-    return labels;
+    return groups;
 }
 
-function collectFromItems(items: ToolbarConfigItem[] | undefined, labels: Set<string>) {
+function collectFromItems(items: ToolbarConfigItem[] | undefined, groups: Map<string, ListMenuOptions>) {
     for (const item of items ?? []) {
         if (typeof item === "string") {
             continue;
         }
 
-        if ((item as { asMenu?: boolean }).asMenu) {
-            labels.add(item.label);
+        const { asMenu } = item as { asMenu?: boolean | ListMenuOptions };
+        if (asMenu) {
+            groups.set(item.label, asMenu === true ? {} : asMenu);
         }
 
-        collectFromItems(item.items, labels);
+        collectFromItems(item.items, groups);
     }
 }
 
@@ -297,33 +395,52 @@ function describeItems(items: View[], run: (view: View) => () => void) {
         } else if (item instanceof ButtonView) {
             described.push(describeButton(item, run(item)));
         } else if (item instanceof DropdownView) {
-            const children: ToolbarGroupMenuItem[] = [];
-            for (const entry of listEntriesOf(item)) {
-                if (entry instanceof ListSeparatorView) {
-                    addRule(children);
-                } else {
-                    children.push(describeButton(entry, run(entry)));
-                }
-            }
-            trimRule(children);
-            if (!children.length) {
+            const children = describeListEntries(item, run);
+            if (!children) {
                 continue;
             }
 
+            // A list with no rows, such as the templates before there are any, is drawn disabled
+            // rather than left out, so the place of the entry does not change.
             const opener = item.buttonView;
+            const split = opener instanceof SplitButtonView;
             described.push({
                 kind: "entry",
                 label: opener.label ?? "",
                 icon: opener.icon,
-                isEnabled: item.isEnabled,
-                run: opener instanceof SplitButtonView ? run(opener) : undefined,
-                children
+                isEnabled: item.isEnabled && (split || children.length > 0),
+                run: split ? run(opener) : undefined,
+                children: children.length ? children : undefined
             });
         }
     }
 
     trimRule(described);
     return described;
+}
+
+/**
+ * The rows of the list `dropdown` holds, with a rule wherever the list has a separator, or
+ * `undefined` for a dropdown that holds no list.
+ */
+function describeListEntries(dropdown: DropdownView, run: (view: View) => () => void) {
+    const entries = listEntriesOf(dropdown);
+    if (!entries) {
+        return undefined;
+    }
+
+    const rows: ToolbarGroupMenuItem[] = [];
+    for (const entry of entries) {
+        if (entry instanceof ListSeparatorView) {
+            addRule(rows);
+        } else if (entry instanceof ListItemGroupView) {
+            rows.push({ kind: "heading", label: entry.label });
+        } else {
+            rows.push(describeButton(entry, run(entry)));
+        }
+    }
+    trimRule(rows);
+    return rows;
 }
 
 /** Adds a rule after the entries `items` holds, unless it would lead or double one. */
@@ -340,25 +457,58 @@ function trimRule(items: ToolbarGroupMenuItem[]) {
 }
 
 function describeButton(view: ButtonView, run: () => void): ToolbarGroupMenuEntry {
-    return {
+    const entry: ToolbarGroupMenuEntry = {
         kind: "entry", label: view.label ?? "", icon: view.icon, isEnabled: view.isEnabled, run
     };
+    if (view instanceof SwitchButtonView) {
+        entry.isSwitch = true;
+        entry.isOn = view.isOn;
+    } else if (view.isToggleable || view.role === "menuitemradio" || view.role === "menuitemcheckbox") {
+        entry.isOn = view.isOn;
+    }
+    if (view.class) {
+        entry.className = view.class;
+    }
+    return entry;
 }
 
-/** The rows a dropdown's own list holds, which it builds the first time it is opened. */
+/**
+ * The rows a dropdown's list holds, which it builds the first time it is opened: its own, or that
+ * of a search panel, as `insertTemplate` has.
+ */
 function listEntriesOf(dropdown: DropdownView) {
     const wasOpen = dropdown.isOpen;
     dropdown.isOpen = true;
     dropdown.isOpen = wasOpen;
 
-    const entries: Array<ButtonView | ListSeparatorView> = [];
-    for (const item of dropdown.listView?.items ?? []) {
+    const listView = dropdown.listView ?? searchedListOf(dropdown);
+    if (!listView) {
+        return undefined;
+    }
+
+    return listItemEntries(listView.items);
+}
+
+/** The buttons and separators of a list's items, a group's label before its own. */
+function listItemEntries(items: Iterable<View>) {
+    const entries: Array<ButtonView | ListSeparatorView | ListItemGroupView> = [];
+    for (const item of items) {
         if (item instanceof ListSeparatorView) {
             entries.push(item);
+        } else if (item instanceof ListItemGroupView) {
+            entries.push(item, ...listItemEntries(item.items));
         } else if (item instanceof ListItemView && item.children.first instanceof ButtonView) {
             entries.push(item.children.first);
         }
     }
-
     return entries;
+}
+
+function searchedListOf(dropdown: DropdownView) {
+    for (const child of dropdown.panelView.children) {
+        if (child instanceof SearchTextView && child.filteredView instanceof ListView) {
+            return child.filteredView;
+        }
+    }
+    return undefined;
 }

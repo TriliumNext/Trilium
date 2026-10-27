@@ -1,7 +1,7 @@
 import * as rruleLib from "rrule";
 import { describe, expect, it } from "vitest";
 
-import { parseRecurrence, serializeRecurrence, SimpleRecurrence } from "./recurrence";
+import { occurrencesPerWeek, parseRecurrence, serializeRecurrence, SimpleRecurrence } from "./recurrence";
 
 describe("parseRecurrence", () => {
     it("reads no label as no repetition", () => {
@@ -67,6 +67,30 @@ describe("parseRecurrence", () => {
         [ "a zero count", "RRULE:FREQ=DAILY;COUNT=0" ]
     ])("steps aside for %s", (_description, value) => {
         expect(parseRecurrence(value)).toEqual({ kind: "custom", value });
+    });
+});
+
+describe("occurrencesPerWeek", () => {
+    it("counts the days a week a rule falls on", () => {
+        expect(occurrencesPerWeek(undefined)).toBe(0);
+        expect(occurrencesPerWeek("RRULE:FREQ=DAILY")).toBe(7);
+        expect(occurrencesPerWeek("FREQ=DAILY;INTERVAL=2")).toBe(3.5);
+        expect(occurrencesPerWeek("RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR")).toBe(5);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20261231T235959")).toBe(5);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR")).toBe(3);
+        expect(occurrencesPerWeek("rrule:freq=weekly")).toBe(1);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,TU,WE,TH,FR,SA,SU")).toBe(3.5);
+        expect(occurrencesPerWeek("RRULE:FREQ=HOURLY;INTERVAL=8")).toBe(Infinity);
+        expect(occurrencesPerWeek("RRULE:FREQ=MONTHLY;BYMONTHDAY=1")).toBe(0);
+        expect(occurrencesPerWeek("RRULE:FREQ=YEARLY")).toBe(0);
+    });
+
+    it("sums the RRULE lines of a rule set and skips the others", () => {
+        expect(occurrencesPerWeek([
+            "RRULE:FREQ=WEEKLY;BYDAY=MO,WE",
+            "RRULE:FREQ=WEEKLY;BYDAY=FR,SA",
+            "EXDATE:20261012T090000"
+        ].join("\n"))).toBe(4);
     });
 });
 

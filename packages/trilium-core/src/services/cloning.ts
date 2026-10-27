@@ -125,29 +125,44 @@ function toggleNoteInParent(present: boolean, noteId: string, parentNoteId: stri
 }
 
 function cloneNoteAfter(noteId: string, afterBranchId: string) {
+    return cloneNoteNextToBranch(noteId, afterBranchId, "after");
+}
+
+/** Clones the note into the parent of `beforeBranchId`, placed right before that branch. */
+function cloneNoteBefore(noteId: string, beforeBranchId: string) {
+    return cloneNoteNextToBranch(noteId, beforeBranchId, "before");
+}
+
+function cloneNoteNextToBranch(noteId: string, siblingBranchId: string, side: "before" | "after") {
     if (["_hidden", "root"].includes(noteId)) {
         return { success: false, message: `Cloning the note '${noteId}' is forbidden.` };
     }
 
-    const afterBranch = becca.getBranch(afterBranchId);
+    const siblingBranch = becca.getBranch(siblingBranchId);
 
-    if (!afterBranch) {
-        return { success: false, message: `Branch '${afterBranchId}' does not exist.` };
+    if (!siblingBranch) {
+        return { success: false, message: `Branch '${siblingBranchId}' does not exist.` };
     }
 
-    if (afterBranch.noteId === "_hidden") {
-        return { success: false, message: "Cannot clone after the hidden branch." };
+    if (siblingBranch.noteId === "_hidden") {
+        return { success: false, message: `Cannot clone ${side} the hidden branch.` };
     }
 
-    const afterNote = becca.getBranch(afterBranchId);
+    const { parentNoteId } = siblingBranch;
 
     if (!(noteId in becca.notes)) {
-        return { success: false, message: `Note to be cloned '${noteId}' is deleted or does not exist.` };
-    } else if (!afterNote || !(afterNote.parentNoteId in becca.notes)) {
-        return { success: false, message: `After note '${afterNote?.parentNoteId}' is deleted or does not exist.` };
+        return {
+            success: false,
+            message: `Note to be cloned '${noteId}' is deleted or does not exist.`
+        };
+    } else if (!(parentNoteId in becca.notes)) {
+        return {
+            success: false,
+            message: `Parent note '${parentNoteId}' is deleted or does not exist.`
+        };
     }
 
-    const parentNote = becca.getNote(afterNote.parentNoteId);
+    const parentNote = becca.getNote(parentNoteId);
 
     if (!parentNote || parentNote.type === "search") {
         return {
@@ -156,26 +171,37 @@ function cloneNoteAfter(noteId: string, afterBranchId: string) {
         };
     }
 
-    const validationResult = treeService.validateParentChild(afterNote.parentNoteId, noteId);
+    const validationResult = treeService.validateParentChild(parentNoteId, noteId);
 
     if (!validationResult.success) {
         return validationResult;
     }
 
+    // Before: the clone takes the sibling's position and the sibling moves down with the rest.
+    // After: the sibling stays and the clone takes the position below it.
+    const siblingPosition = siblingBranch.notePosition;
+    const notePosition = side === "after" ? siblingPosition + 10 : siblingPosition;
+    const movedPositions = side === "after" ? "notePosition > ?" : "notePosition >= ?";
+
     // we don't change utcDateModified, so other changes are prioritized in case of conflict
     // also we would have to sync all those modified branches otherwise hash checks would fail
-    getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [afterNote.parentNoteId, afterNote.notePosition]);
+    getSql().execute(/*sql*/`
+        UPDATE branches SET notePosition = notePosition + 10
+        WHERE parentNoteId = ? AND ${movedPositions} AND isDeleted = 0`,
+    [parentNoteId, siblingPosition]);
 
-    eventChangesService.putNoteReorderingEntityChange(afterNote.parentNoteId);
+    // Also copies the new positions into becca, which the next clone next to a sibling reads.
+    eventChangesService.putNoteReorderingEntityChange(parentNoteId);
 
     const branch = new BBranch({
         noteId: noteId,
-        parentNoteId: afterNote.parentNoteId,
-        notePosition: afterNote.notePosition + 10,
+        parentNoteId,
+        notePosition,
         isExpanded: false
     }).save();
 
-    getLog().info(`Cloned note '${noteId}' into parent note '${afterNote.parentNoteId}' after note '${afterNote.noteId}', branch '${afterBranchId}'`);
+    getLog().info(`Cloned note '${noteId}' into parent note '${parentNoteId}' ${side} note `
+        + `'${siblingBranch.noteId}', branch '${siblingBranchId}'`);
 
     return { success: true, branchId: branch.branchId };
 }
@@ -186,5 +212,6 @@ export default {
     ensureNoteIsPresentInParent,
     ensureNoteIsAbsentFromParent,
     toggleNoteInParent,
-    cloneNoteAfter
+    cloneNoteAfter,
+    cloneNoteBefore
 };

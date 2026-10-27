@@ -1,11 +1,14 @@
 import { useLayoutEffect } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
 import LoadResults from "../../services/load_results";
+import { buildNote } from "../../test/easy-froca";
 import NoteWrapperWidget from "../note_wrapper";
+import { useNoteContext } from "../react/hooks";
 import SplitNoteContainer from "./split_note_container";
 
 // The resizer drives Split.js against the real #center-pane layout, on an animation frame that
@@ -35,6 +38,7 @@ describe("SplitNoteContainer", () => {
             activeNtxId: null,
             noteContexts,
             getActiveMainContext: () => noteContexts[0],
+            getMainNoteContexts: () => noteContexts.filter((c) => c.isMainContext()),
             getNoteContextById: (ntxId: string) => noteContexts.find((c) => c.ntxId === ntxId),
             activateNoteContext: () => {},
             removeNoteContext
@@ -98,6 +102,125 @@ describe("SplitNoteContainer", () => {
         // Detaching the widget stops the events; only unmounting releases the Preact tree and the
         // DOM it still points at.
         expect(isMounted).toBe(false);
+    });
+
+    it("keeps the note of a background tab from its panes until the tab is shown", async () => {
+        function Probe() {
+            const { note } = useNoteContext();
+            return <div className="probe">{note?.noteId ?? ""}</div>;
+        }
+
+        const container = new SplitNoteContainer(() => new NoteWrapperWidget().child(<Probe />));
+        container.render();
+
+        // A shown tab, then a background tab of two splits, each opened on a note as loadTabs() does:
+        // openEmptyTab() creates the pane, then setNote() switches it to the note.
+        const panes = [
+            new NoteContext("shown"),
+            new NoteContext("background"),
+            new NoteContext("background-split", "root", "background")
+        ];
+        await act(async () => {
+            for (const noteContext of panes) {
+                noteContext.setEmpty();
+                noteContexts.push(noteContext);
+                await container.newNoteContextCreatedEvent({ noteContext });
+
+                const { noteId } = buildNote({ id: `${noteContext.ntxId}-note`, title: "Note" });
+                noteContext.notePath = noteId;
+                noteContext.noteId = noteId;
+                await container.handleEvent("noteSwitched", { noteContext, notePath: noteId });
+            }
+        });
+
+        const findPane = (ntxId: string) => container.$widget.find(`[data-ntx-id="${ntxId}"]`);
+        const readProbe = (ntxId: string) => {
+            const $probe = findPane(ntxId).find(".probe");
+            expect($probe).toHaveLength(1);
+            return $probe.text();
+        };
+        expect(readProbe("shown")).toBe("shown-note");
+        expect(readProbe("background")).toBe("");
+        expect(readProbe("background-split")).toBe("");
+        // `resizer.ts` selects the panes of a tab by this class, also before the tab is shown.
+        expect(findPane("background").hasClass("note-split")).toBe(true);
+        expect(findPane("background-split").hasClass("note-split")).toBe(true);
+
+        // Focusing either split shows the whole tab.
+        appContext.tabManager.getActiveMainContext = () => panes[1];
+        await act(async () => {
+            await container.handleEvent("activeContextChanged", { noteContext: panes[2] });
+        });
+
+        expect(readProbe("background")).toBe("background-note");
+        expect(readProbe("background-split")).toBe("background-split-note");
+    });
+
+    it("renders the tabs next to the active one on mobile, a while after it is shown", async () => {
+        function Probe() {
+            const { note } = useNoteContext();
+            return <div className="probe">{note?.noteId ?? ""}</div>;
+        }
+
+        const { device } = window.glob;
+        window.glob.device = "mobile";
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        try {
+            const container = new SplitNoteContainer(() => new NoteWrapperWidget().child(<Probe />));
+            container.render();
+            // The first tab is active: the second is next to it, and the last is not, around the end.
+            const tabs = [ "first", "second", "third", "fourth" ].map((ntxId) => new NoteContext(ntxId));
+            await act(async () => {
+                for (const noteContext of tabs) {
+                    noteContext.setEmpty();
+                    noteContexts.push(noteContext);
+                    await container.newNoteContextCreatedEvent({ noteContext });
+
+                    const { noteId } = buildNote({ id: `${noteContext.ntxId}-note`, title: "Note" });
+                    noteContext.notePath = noteId;
+                    noteContext.noteId = noteId;
+                    await container.handleEvent("noteSwitched", { noteContext, notePath: noteId });
+                }
+                await container.handleEvent("activeContextChanged", { noteContext: tabs[0] });
+            });
+
+            const readProbes = () => tabs.map(({ ntxId }) => container.$widget.find(`[data-ntx-id="${ntxId}"] .probe`).text());
+            expect(readProbes()).toEqual([ "first-note", "", "", "" ]);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000);
+            });
+            expect(readProbes()).toEqual([ "first-note", "second-note", "", "" ]);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000);
+            });
+            // Still hidden: only the active tab is shown.
+            expect(container.$widget.find("[data-ntx-id=second]").hasClass("hidden-ext")).toBe(true);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(5000);
+            });
+            expect(readProbes()).toEqual([ "first-note", "second-note", "", "" ]);
+        } finally {
+            vi.useRealTimers();
+            window.glob.device = device;
+        }
+    });
+
+    it("leaves the background tabs alone on desktop", async () => {
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        try {
+            const container = await openSplits([ "shown" ]);
+            const background = new NoteContext("background");
+            noteContexts.push(background);
+            await container.newNoteContextCreatedEvent({ noteContext: background });
+            await container.handleEvent("activeContextChanged", { noteContext: noteContexts[0] });
+
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(container.$widget.find("[data-ntx-id=background]").hasClass("empty-note")).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     describe("keyboard actions", () => {

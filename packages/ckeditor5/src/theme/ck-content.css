@@ -1,6 +1,7 @@
 @import "ckeditor5/ckeditor5-content.css";
 @import "./content_colors.css";
 @import "./admonitions.css";
+@import "./lists.css";
 
 .printed-content .ck-widget__selection-handle, .printed-content .ck-widget__type-around { /* gets rid of triangles: https://github.com/zadam/trilium/issues/1129 */
     display: none;

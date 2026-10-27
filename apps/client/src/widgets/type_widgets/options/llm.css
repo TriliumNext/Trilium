@@ -4,10 +4,6 @@
     gap: 0.5em;
 }
 
-.llm-add-provider {
-    text-align: end;
-}
-
 /* One line, cut off at the row's width; the full list is in its tooltip. */
 .llm-provider-models {
     display: block;
@@ -16,9 +12,8 @@
     white-space: nowrap;
 }
 
-/* Scale the provider logo down to sit inline with the row label text. */
-.llm-provider-name .masked-icon {
-    --masked-icon-size: 1.2em;
+.llm-provider-name .tn-icon {
+    font-size: 1.2em;
 }
 
 /* MCP endpoint list: one group per reachability scope (this device / LAN), each

@@ -1,22 +1,18 @@
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
 import { t } from "../../../services/i18n.js";
-import BulkAction from "../BulkAction.jsx";
-import FormTextBox from "../../react/FormTextBox.jsx";
-import { useEffect, useState } from "preact/hooks";
-import { useSpacedUpdate } from "../../react/hooks.jsx";
+import BulkAction, { BulkActionAttributeName, useSaveAction } from "../BulkAction.jsx";
+import { useState } from "preact/hooks";
 
 function DeleteRelationBulkActionComponent({ bulkAction, actionDef }: { bulkAction: AbstractBulkAction, actionDef: ActionDefinition }) {
     const [ relationName, setRelationName ] = useState(actionDef.relationName);
-    const spacedUpdate = useSpacedUpdate(() => bulkAction.saveAction({ relationName }));
-    useEffect(() => spacedUpdate.scheduleUpdate(), [ relationName ]);
+    useSaveAction(bulkAction, { relationName });
 
     return (
         <BulkAction
             bulkAction={bulkAction}
-            label={t("delete_relation.delete_relation")}
         >
-            <FormTextBox
-                pattern="[\\p{L}\\p{N}_:]+"
+            <BulkActionAttributeName
+                type="relation"
                 placeholder={t("delete_relation.relation_name")}
                 title={t("delete_relation.allowed_characters")}
                 currentValue={relationName} onChange={setRelationName}
@@ -33,6 +29,12 @@ export default class DeleteRelationBulkAction extends AbstractBulkAction {
 
     static get actionTitle() {
         return t("delete_relation.delete_relation");
+    }
+    static get actionIcon() {
+        return "bx bx-transfer bulk-action-marker-delete";
+    }
+    static get actionDescription() {
+        return t("delete_relation.description");
     }
 
     doRender() {

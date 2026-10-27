@@ -5,7 +5,7 @@ import { getAvailableLocales, getLocaleById, t } from "../../services/i18n";
 import { resolveContentLanguage } from "../../utils/formatters";
 import { useNoteLabel, useTriliumEvent, useTriliumOption } from "../react/hooks.jsx";
 import Modal from "../react/Modal";
-import { ContentLanguagesList } from "../type_widgets/options/i18n";
+import { ContentLanguagesCard } from "../type_widgets/options/content_languages_card";
 
 /**
  * The content-languages modal, summoned by a command rather than owned by whatever offers it.
@@ -74,9 +74,9 @@ export function ContentLanguagesModal({ modalShown, setModalShown }: { modalShow
             className="content-languages-modal"
             title={t("content_language.title")}
             show={modalShown} onHidden={() => setModalShown(false)}
-            size="lg" scrollable
+            size="md" scrollable
         >
-            <ContentLanguagesList />
+            <ContentLanguagesCard />
         </Modal>
     );
 }

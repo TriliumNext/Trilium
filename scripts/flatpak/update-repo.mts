@@ -25,7 +25,7 @@ import { join, resolve } from "node:path";
 
 const REPO_ROOT = join(import.meta.dirname, "../..");
 const FLATPAK_DIR = join(REPO_ROOT, "apps/desktop/flatpak");
-const MANIFEST_NAME = "org.triliumnotes.Trilium.yml";
+export const MANIFEST_NAME = "org.triliumnotes.Trilium.yml";
 // The wrapper is a manifest source; flathub.json configures Flathub's bots and
 // only takes effect on the packaging repo's default branch.
 const COPIED_FILES = [ "trilium.sh", "flathub.json" ];
@@ -41,23 +41,8 @@ export async function main(argv: string[]) {
     }
     const repoDir = resolve(repoDirArg);
 
-    const commit = git("rev-parse", `${ref}^{commit}`);
-    const tag = isTag(ref) ? ref : undefined;
-
-    let manifest = updateGitSource(readFileSync(join(FLATPAK_DIR, MANIFEST_NAME), "utf-8"), commit, tag);
-
-    const pnpmVersion = parsePnpmVersion(git("show", `${commit}:package.json`));
-    checkPnpmSupported(pnpmVersion);
-    manifest = updatePnpmPins(manifest, pnpmVersion, {
-        x64: await sha256OfUrl(pnpmExeUrl("x64", pnpmVersion)),
-        arm64: await sha256OfUrl(pnpmExeUrl("arm64", pnpmVersion))
-    });
-    checkPlaceholdersFilled(manifest);
-
-    writeFileSync(join(repoDir, MANIFEST_NAME), manifest);
-    for (const file of COPIED_FILES) {
-        copyFileSync(join(FLATPAK_DIR, file), join(repoDir, file));
-    }
+    const { manifest, commit, tag, pnpmVersion } = await renderManifest(ref);
+    writePackagingFiles(repoDir, manifest);
     // `git ls-files` keeps listing a deletion that is staged but not committed, so a
     // re-run against the same checkout finds the file already gone.
     for (const file of selectStaleFiles(gitIn(repoDir, "ls-files"))) {
@@ -70,6 +55,31 @@ export async function main(argv: string[]) {
         appendFileSync(process.env.GITHUB_OUTPUT, formatOutputs(commit, tag, pnpmVersion));
     }
     console.log(`Updated ${repoDir}: ${tag ?? "beta"} @ ${commit}, pnpm ${pnpmVersion}.`);
+}
+
+/** The manifest with every placeholder filled in for `ref`, which must resolve to a commit. */
+export async function renderManifest(ref: string) {
+    const commit = git("rev-parse", `${ref}^{commit}`);
+    const tag = isTag(ref) ? ref : undefined;
+
+    let manifest = updateGitSource(readFileSync(join(FLATPAK_DIR, MANIFEST_NAME), "utf-8"), commit, tag);
+
+    const pnpmVersion = parsePnpmVersion(git("show", `${commit}:package.json`));
+    checkPnpmSupported(pnpmVersion);
+    manifest = updatePnpmPins(manifest, pnpmVersion, {
+        x64: await sha256OfUrl(pnpmExeUrl("x64", pnpmVersion)),
+        arm64: await sha256OfUrl(pnpmExeUrl("arm64", pnpmVersion))
+    });
+    checkPlaceholdersFilled(manifest);
+    return { manifest, commit, tag, pnpmVersion };
+}
+
+/** Writes the manifest and copies the files it names as sources next to it. */
+export function writePackagingFiles(dir: string, manifest: string) {
+    writeFileSync(join(dir, MANIFEST_NAME), manifest);
+    for (const file of COPIED_FILES) {
+        copyFileSync(join(FLATPAK_DIR, file), join(dir, file));
+    }
 }
 
 /**

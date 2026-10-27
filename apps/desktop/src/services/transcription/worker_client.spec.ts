@@ -44,6 +44,7 @@ beforeEach(() => {
     listeners = {
         onUtterance: vi.fn(),
         onPendingChanged: vi.fn(),
+        onLevel: vi.fn(),
         onUnexpectedExit: vi.fn(),
         log: { info: vi.fn(), error: vi.fn() }
     };
@@ -96,6 +97,8 @@ describe("TranscriptionWorker", () => {
         child.report({ type: "utterance", utterance });
         child.report({ type: "pending", sources: [ "system" ] });
         child.report({ type: "log", level: "error", message: "system failed" });
+        child.report({ type: "level", source: "microphone", level: 0.25 });
+        expect(listeners.onLevel).toHaveBeenCalledExactlyOnceWith("microphone", 0.25);
         expect(listeners.onUtterance).toHaveBeenCalledExactlyOnceWith(utterance);
         expect(listeners.onPendingChanged).toHaveBeenCalledExactlyOnceWith([ "system" ]);
         expect(listeners.log.error).toHaveBeenCalledExactlyOnceWith("system failed");

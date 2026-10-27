@@ -1,3 +1,5 @@
+@import "../legacy/ListOrGridView.css";
+
 .search-results-list {
     display: flex;
     flex-direction: column;
@@ -40,60 +42,69 @@
         min-width: 0;
     }
 
-    .search-result-card {
-        display: block;
+    .search-result-card.note-book-card {
+        flex: 0 0 auto;
+        max-height: none;
+        width: 100%;
         min-width: 0;
-        padding: 10px 14px;
-        border: 1px solid var(--main-border-color);
-        border-radius: 8px;
-        background: var(--accented-background-color);
         color: inherit;
         text-decoration: none;
-        transition: background 0.15s ease, border-color 0.15s ease;
+        user-select: text;
     }
 
-    .search-result-card:hover {
-        background: var(--hover-item-background-color);
-        border-color: var(--main-border-color);
-        text-decoration: none;
-    }
-
-    .search-result-card-header {
-        display: flex;
-        align-items: baseline;
-        flex-wrap: wrap;
-        gap: 4px 8px;
-        min-width: 0;
-    }
-
-    .search-result-card-icon {
-        flex: 0 0 auto;
-        align-self: center;
+    .note-list-container.search-results .search-result-card.note-book-card:active {
+        transform: none;
     }
 
     .search-result-card-title {
-        flex: 1 1 auto;
-        min-width: 0;
-        font-weight: 600;
+        font-weight: 500;
         overflow-wrap: anywhere;
+        color: inherit;
+        text-decoration: none;
     }
 
-    .search-result-card-path {
-        flex: 0 1 auto;
-        min-width: 0;
-        margin-inline-start: auto;
-        opacity: 0.6;
-        font-size: 0.85em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .search-result-card-content {
+        padding: .5rem 1rem 1rem;
+        font-size: 0.85rem;
+        cursor: text;
+        user-select: text;
+    }
+
+    .search-result-card-content .note-book-content {
+        font-size: inherit;
+        animation: none;
+    }
+
+    .search-result-card-content .note-book-content .rendered-content {
+        padding: 0;
+    }
+
+    .search-result-card-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        color: var(--muted-text-color);
+        cursor: pointer;
+
+        &:hover {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+    }
+
+    .search-result-card-more:hover .search-result-card-more-label {
+        text-decoration: underline;
     }
 
     .search-result-card-snippet {
-        margin-top: 4px;
         line-height: 1.4;
-        color: var(--muted-text-color);
         overflow-wrap: anywhere;
+    }
+
+    .search-result-card-snippet.type-code {
+        font-family: var(--monospace-font-family);
+        white-space: pre-wrap;
     }
 
     .search-result-card-snippet.unavailable {
@@ -107,7 +118,7 @@
         background: linear-gradient(
             90deg,
             var(--main-border-color) 25%,
-            var(--accented-background-color) 37%,
+            var(--card-background-color) 37%,
             var(--main-border-color) 63%
         );
         background-size: 400% 100%;

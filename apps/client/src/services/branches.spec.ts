@@ -262,7 +262,7 @@ describe("deleteNotes", () => {
         expect(setNote).toHaveBeenCalledWith("root");
     });
 
-    it("asks for all clones, erases & reloads, and tolerates navigation errors", async () => {
+    it("asks for all clones, erases without reloading, and tolerates navigation errors", async () => {
         const note = buildNote({ title: "Del3" });
         makeBranch("delBranch3", note.noteId, "root");
 
@@ -282,7 +282,7 @@ describe("deleteNotes", () => {
         const [, body, componentId] = (server.post as any).mock.calls[0];
         expect(body).toMatchObject({ deleteAllClones: true, eraseNotes: true });
         expect(componentId).toBe("comp-9");
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        expect(reloadSpy).not.toHaveBeenCalled();
         expect(errSpy).toHaveBeenCalled();
         reloadSpy.mockRestore();
         errSpy.mockRestore();
@@ -380,6 +380,21 @@ describe("activateNeighbouringNotePath (via deleteNotes navigation)", () => {
         setNote = confirmDeletion(["root", p, "clB"], true);
         await branches.deleteNotes([`${p}_clB`, "Q_clX"], true);
         expect(setNote).toHaveBeenCalledWith(`root/${p}/clC`);
+    });
+
+    it("never activates the hidden subtree when deleting the last child of root", async () => {
+        const root = froca.getNoteFromCache("root");
+        for (const noteId of ["rootFirst", "rootLast", "_hidden"]) {
+            buildNote({ id: noteId, title: noteId });
+            makeBranch(`root_${noteId}`, noteId, "root");
+            root?.addChild(noteId, `root_${noteId}`, false);
+            froca.getNoteFromCache(noteId)?.addParent("root", `root_${noteId}`, false);
+        }
+        expect(root?.getChildNoteIds()).toEqual(["rootFirst", "rootLast", "_hidden"]);
+
+        const setNote = confirmDeletion(["root", "rootLast"]);
+        await branches.deleteNotes(["root_rootLast"]);
+        expect(setNote).toHaveBeenCalledWith("root/rootFirst");
     });
 
     it("falls back to the parent when its children are not loaded in froca", async () => {
@@ -514,6 +529,15 @@ describe("clone helpers", () => {
         server.put = vi.fn(async () => ({ success: false, message: "e3" })) as typeof server.put;
         await branches.cloneNoteAfter("noteN", "afterB");
         expect(toastService.showError).toHaveBeenCalledWith("e3");
+    });
+
+    it("cloneNoteBefore calls server and surfaces errors", async () => {
+        await branches.cloneNoteBefore("noteN", "beforeB");
+        expect(server.put).toHaveBeenCalledWith("notes/noteN/clone-before/beforeB");
+
+        server.put = vi.fn(async () => ({ success: false, message: "e4" })) as typeof server.put;
+        await branches.cloneNoteBefore("noteN", "beforeB");
+        expect(toastService.showError).toHaveBeenCalledWith("e4");
     });
 });
 

@@ -253,7 +253,9 @@ export async function getBoardData(
     definitionOptions: string[] = [],
     pendingRenames: ReadonlyMap<string, string | undefined> = new Map(),
     /** Whether the board keeps an inbox, which decides whether unassigned notes are collected. */
-    inboxEnabled = false
+    inboxEnabled = false,
+    /** How many levels below its children the board collects cards from, unlimited if absent. */
+    maxDepth?: number
 ) {
     const byColumn: ColumnMap = new Map();
     const storedColumns = readColumns(persistedData, groupByColumn) ?? [];
@@ -274,7 +276,7 @@ export async function getBoardData(
     // First, scan all notes to find what columns actually exist
     await recursiveGroupBy(
         parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived,
-        new Set<string>(), inbox, 0);
+        new Set<string>(), inbox, 0, maxDepth);
 
     const discoveredValues = [ ...byColumn.keys() ];
     const columns = resolveBoardColumns(
@@ -357,10 +359,12 @@ function regroupRenamedCards(
 /**
  * @param inbox where unassigned notes are collected, absent if the board has no inbox.
  * @param depth how deep below the board the branches are, the board's own children being 0.
+ * @param maxDepth the deepest `depth` collected, unlimited if absent or negative.
  */
 async function recursiveGroupBy(
     branches: FBranch[], byColumn: ColumnMap, groupByColumn: string, includeArchived: boolean,
-    seenNoteIds: Set<string>, inbox: { nested: boolean } | undefined, depth: number
+    seenNoteIds: Set<string>, inbox: { nested: boolean } | undefined, depth: number,
+    maxDepth: number | undefined
 ) {
     for (const branch of branches) {
         const note = await branch.getNote();
@@ -370,10 +374,11 @@ async function recursiveGroupBy(
         // properties is filed under it, and the inbox would otherwise collect it as one.
         const isTemplate = note.hasLabel("template");
 
-        if (note.type !== "search" && note.hasChildren()) {
+        const canDescend = maxDepth === undefined || maxDepth < 0 || depth < maxDepth;
+        if (canDescend && note.type !== "search" && note.hasChildren()) {
             await recursiveGroupBy(
                 note.getChildBranches(), byColumn, groupByColumn, includeArchived,
-                seenNoteIds, inbox, depth + 1);
+                seenNoteIds, inbox, depth + 1, maxDepth);
         }
 
         // A note with no value goes to the inbox, if the board has one and reaches this deep.

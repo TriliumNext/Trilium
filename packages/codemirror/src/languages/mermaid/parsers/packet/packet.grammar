@@ -1,0 +1,40 @@
+@top PacketDiagram {
+  document
+}
+
+@skip { spaces | LineComment }
+
+document {
+  DiagramName (Title TitleText | Field)*
+}
+
+Field {
+  Range ":" String
+}
+
+Range {
+  Number ("-" Number)?
+}
+
+@skip {} {
+  String {
+    '"' (stringContentDouble)* '"'
+  }
+}
+
+DiagramName { "packet-beta" | "packet" }
+
+Title { "title" }
+
+@tokens {
+  spaces { @whitespace+ }
+  LineComment { "%%" ![\n]* }
+  Number { @digit+ }
+  stringContentDouble { !["]+ }
+  "-"
+  ":"
+}
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@external propSource packetHighlighting from "./highlight.js"

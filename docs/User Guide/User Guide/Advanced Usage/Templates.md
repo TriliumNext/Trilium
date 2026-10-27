@@ -35,14 +35,14 @@ To specify a template for child notes, you can use a `~child:template` relation 
 
 ## Default parent for new notes
 
-A template can gather the notes created from it in one place, instead of having them land wherever they happen to be created. To do so, add a `~template:newNoteDefaultParent` relation to the template note, pointing at the note that should hold the instances, for example a _Person_ template pointing to a _People_ note.
+A template can gather the notes created from it in one place, instead of having them land wherever they happen to be created. To do so, add a `~template:newNoteDefaultParent` relation to the template note, pointing at the note that should hold the instances, for example a _Person_ template pointing to a _People_ note. The relation can also be set by clicking the template badge next to the note title and selecting _Template properties..._, then picking a note under _Default location of created notes_.
 
 Adding the relation several times places the new note in every target, as <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Cloning Notes</a>. The relation can also be inherited (e.g. from a folder holding several templates), in which case a relation owned by the template itself replaces the inherited one. The default parent is only inherited from the template's ancestors in the tree: a template created from another template does not adopt that template's default parent.
 
 The default parent is used whenever a note is created from the template through the _Choose note type_ dialog:
 
 *   Via `@`\-completion in a <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note
-*   Via the _Create note_ or _Create child note_ options of the note search (new tab or <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>), but only if the default/empty location is set.
+*   Via the _Create note_ or _Create child note_ options of the note search (new tab or <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>), but only if the dialog's _Location_ field is left empty.
 
 Creating an instance note from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> context menu (_Insert child note_, _Insert note after_) still creates it at the chosen place.
 
@@ -59,10 +59,14 @@ By default, newly created notes are <a class="reference-link" href="../Note%20T
 
 Selecting a specific template from the creation menu always takes precedence over `child:template`.
 
+## Default title for new notes
+
+A template can also give its instances a default title, using the `#template:titleTemplate` label. To set it without editing the label by hand, click the template badge next to the note title and select _Template properties..._, which checks the expressions as you type and previews the resulting title. See <a class="reference-link" href="Default%20Note%20Title.md">Default Note Title</a> for details.
+
 ## Additional Notes
 
 From a visual perspective, templates can define `#iconClass` and `#cssClass` attributes, allowing all instance notes (e.g., books) to display a specific icon and CSS style.
 
 Explore the concept further in the <a class="reference-link" href="Database/Demo%20Notes.md">Demo Notes</a>, including examples like the <a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a>, <a class="reference-link" href="Advanced%20Showcases/Task%20Manager.md">Task Manager</a>, and <a class="reference-link" href="Advanced%20Showcases/Day%20Notes.md">Day Notes</a>.
 
-Additionally, see <a class="reference-link" href="Default%20Note%20Title.md">Default Note Title</a> for creating title templates. Note templates and title templates can be combined by creating a `#titleTemplate` for a template note.
+Additionally, see <a class="reference-link" href="Default%20Note%20Title.md">Default Note Title</a> for creating title templates. A `#titleTemplate` on a template note is passed on to its instances like any other label, so it names the children of each instance rather than the instances themselves; to name the instances, use `#template:titleTemplate`.

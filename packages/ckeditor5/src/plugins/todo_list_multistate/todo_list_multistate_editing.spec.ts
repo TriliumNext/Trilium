@@ -1,6 +1,6 @@
 import { type TaskStateDef } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
-import { _setModelData as setModelData, ClassicEditor, Essentials, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, Essentials, HorizontalLine, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -899,5 +899,48 @@ describe("TodoListMultistateEditing", () => {
             expect(title).not.toContain("<script>");
             expect(title).toContain("&lt;script&gt;");
         });
+    });
+});
+
+describe("toggling a checkbox of an editor without a selection of its own", () => {
+    async function createEditorWithObjectFirst(): Promise<ClassicEditor> {
+        const editor = await createTestEditor([Essentials, Paragraph, HorizontalLine, List, TodoList, TodoListMultistateEditing]);
+        setModelData(editor.model, "<horizontalLine></horizontalLine>"
+            + '<paragraph listIndent="0" listItemId="t-a" listType="todo">Task</paragraph>'
+            + '<paragraph listIndent="0" listItemId="t-b" listType="todo">Other</paragraph>');
+        return editor;
+    }
+
+    function toggle(editor: ClassicEditor, index: number) {
+        const inputs = editor.editing.view.getDomRoot()?.querySelectorAll<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+        const input = inputs?.[index];
+        expect(input).toBeDefined();
+        if (!input) return;
+        input.checked = !input.checked;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    it("leaves the selection in the toggled item rather than on the object ahead of the list", async () => {
+        const editor = await createEditorWithObjectFirst();
+        editor.model.change((writer) => writer.setSelection(null));
+        const selection = editor.model.document.selection;
+        expect(selection.hasOwnRange).toBe(false);
+        expect(selection.getSelectedElement()?.name).toBe("horizontalLine");
+
+        toggle(editor, 1);
+        expect(getBlock(editor, 2).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        expect(selection.getSelectedElement()).toBeNull();
+        expect(selection.getFirstPosition()?.parent).toBe(getBlock(editor, 2));
+    });
+
+    it("restores a selection of its own, as upstream does", async () => {
+        const editor = await createEditorWithObjectFirst();
+        editor.model.change((writer) => writer.setSelection(getBlock(editor, 1), 2));
+
+        toggle(editor, 1);
+        expect(getBlock(editor, 2).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(position?.parent).toBe(getBlock(editor, 1));
+        expect(position?.offset).toBe(2);
     });
 });

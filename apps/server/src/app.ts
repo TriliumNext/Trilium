@@ -11,7 +11,7 @@ import path from "path";
 import favicon from "serve-favicon";
 import type serveStatic from "serve-static";
 
-import assets from "./routes/assets.js";
+import assets, { getClientDir } from "./routes/assets.js";
 import custom from "./routes/custom.js";
 import error_handlers from "./routes/error_handlers.js";
 import mcpRoutes from "./routes/mcp.js";
@@ -31,7 +31,8 @@ export default async function buildApp() {
     const app = express();
 
     const publicDir = isDev ? path.join(getResourceDir(), "../dist/public") : path.join(getResourceDir(), "public");
-    const publicAssetsDir = path.join(publicDir, "assets");
+    // The client source dir in dev, where `dist/public` is not rebuilt; the built `public` dir otherwise.
+    const publicAssetsDir = path.join(getClientDir(), "assets");
     const assetsDir = RESOURCE_DIR;
 
     // view engine setup
@@ -116,9 +117,14 @@ export default async function buildApp() {
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
 
-    const { default: sessionParser, startSessionCleanup } = await import("./routes/session_parser.js");
+    const {
+        default: sessionParser,
+        startSessionCleanup,
+        startSessionRevocationOnPasswordChange
+    } = await import("./routes/session_parser.js");
     app.use(sessionParser);
     startSessionCleanup();
+    startSessionRevocationOnPasswordChange();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
     // Always mount the OIDC middleware, but have it activate reactively from the current `mfaMethod`

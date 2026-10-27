@@ -21,18 +21,25 @@ import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
 import "./content/full_height.css";
 import "./content/app_view.css";
+import setupCodeCopy from "./content/code_copy.js";
 import setupMath from "./content/math.js";
 import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
+import "@triliumnext/codemirror/src/code_preview.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
+import "@triliumnext/ckeditor5/src/theme/scrollable_bar.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
 import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
 import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
 import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
 import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
+import "@triliumnext/commons/src/lib/scroll_fade.css";
 
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
 import {
     applyStickyTableHeaders
@@ -79,9 +86,11 @@ $try(setupSpeculation);
 function setupTextNote() {
     const diagrams = $try(setupMermaid);
     $try(setupMath);
+    $try(setupCodeCopy);
     $try(() => enhanceLinkPreviews(document.body));
     $try(setupTableScroll);
     $try(setupStickyTableHeaders);
+    $try(setupListItemAlignment);
     $try(setupTabs);
     $try(setupShareEdit);
     return diagrams;
@@ -122,10 +131,21 @@ function setupStickyTableHeaders() {
     }
 }
 
+function setupListItemAlignment() {
+    const content = document.getElementById("content");
+    if (content) {
+        applyListItemAlignment(content);
+    }
+}
+
 function setupTabs() {
     const content = document.getElementById("content");
     if (content) {
-        applyTabs(content, { placeholder: content.dataset.tabTitlePlaceholder ?? "" });
+        const { tabTitlePlaceholder, tabPreviousLabel, tabNextLabel } = content.dataset;
+        applyTabs(content, {
+            placeholder: tabTitlePlaceholder ?? "",
+            scrollLabels: { start: tabPreviousLabel ?? "", end: tabNextLabel ?? "" }
+        });
     }
 
     // The browser does not scroll to a fragment inside a hidden panel.

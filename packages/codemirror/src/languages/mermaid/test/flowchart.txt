@@ -1,0 +1,594 @@
+# Flowchart
+
+flowchart
+
+==>
+
+FlowchartDiagram(DiagramName)
+
+# Orientation
+
+flowchart TD
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation)
+
+# NodeId
+
+flowchart TD
+  nodeOne
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId)
+
+# RoundNode
+
+flowchart TD
+  nodeOne(Some text)
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# StadiumNode
+
+flowchart TD
+  nodeOne([Some text])
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# SubroutineNode
+
+flowchart TD
+  nodeOne[[Some text]]
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# CylindricalNode
+
+flowchart TD
+  nodeOne[(Some text)]
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# CircleNode
+
+flowchart TD
+  nodeOne((Some text))
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# AsymmetricNode
+
+flowchart TD
+  nodeOne>Some text]
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# RhombusNode
+
+flowchart TD
+  nodeOne{Some text}
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# HexagonNode
+
+flowchart TD
+  nodeOne{{Some text}}
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# BracketNode
+
+flowchart TD
+  nodeOne[Some text]
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# DoubleCircleNode
+
+flowchart TD
+  nodeOne(((Some text)))
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# LinkTextNode
+
+flowchart TD
+  nodeOne|Some text|
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText))
+
+# Link ~~~
+
+flowchart TD
+    A ~~~ B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link -->
+
+flowchart TD
+    A --> B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link --->
+
+flowchart TD
+  A ---> B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ----o
+
+flowchart TD
+  A ----o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ----x
+
+flowchart TD
+  A ----x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ---->
+
+flowchart TD
+  A ----> B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ====o
+
+flowchart TD
+  A ====o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ====x
+
+flowchart TD
+  A ====x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link --o
+
+flowchart TD
+  A --o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ---o
+
+flowchart TD
+  A ---o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ==o
+
+flowchart TD
+  A ==o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ===o
+
+flowchart TD
+    A ===o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link --x
+
+flowchart TD
+  A --x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ---x
+
+flowchart TD
+  A ---x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ==x
+
+flowchart TD
+  A ==x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link ===x
+
+flowchart TD
+  A ===x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o--
+
+flowchart TD
+  A o-- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o---
+
+flowchart TD
+  A o--- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o==
+
+flowchart TD
+  A o== B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o===
+
+flowchart TD
+  A o=== B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link x==
+
+flowchart TD
+  A x== B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link x===
+
+flowchart TD
+  A x=== B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link <--
+
+flowchart TD
+  A <-- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link <==
+
+flowchart TD
+  A <== B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link <-->
+
+flowchart TD
+  A <--> B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link <--->
+
+flowchart TD
+  A <---> B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link -.-
+
+flowchart TD
+  A -.- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,Link,NodeId)
+
+# Link -...-
+
+flowchart TD
+  A -...- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,Link,NodeId)
+
+# Link x-.-x
+
+flowchart TD
+  A x-.-x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link x-...-x
+
+flowchart TD
+  A x-...-x B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o-.-o
+
+flowchart TD
+  A o-.-o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# Link o-...-o
+
+flowchart TD
+  A o-...-o B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId)
+
+# NodeEdgeText (hyphens)
+
+flowchart TD
+  A -- some node edge text --- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,NodeEdge(DoubleHyphen,NodeEdgeText,Link),NodeId)
+
+# NodeEdgeText (dotted)
+
+flowchart TD
+  A -. some node edge text .- B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,Link,NodeId,NodeId,NodeId,NodeId,Link,NodeId)
+
+# NodeEdgeText (thick)
+
+flowchart TD
+  A == some node edge text === B
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,NodeEdge(DoubleEqual,NodeEdgeText,Link),NodeId)
+
+# Link Chaining (same line)
+
+flowchart LR
+  A -- text1 --> B -- text2 --> C
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,NodeEdge(DoubleHyphen,NodeEdgeText,Link),NodeId,NodeEdge(DoubleHyphen,NodeEdgeText,Link),NodeId)
+
+# Link Chaining (with &)
+
+flowchart LR
+  A --> B & C --> D
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId,NodeId,Link,NodeId)
+
+# Link Chaining (multiple lines)
+
+flowchart TB
+  A --> C
+  A --> D
+  B --> C
+  B --> D
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId,NodeId,Link,NodeId,NodeId,Link,NodeId,NodeId,Link,NodeId)
+
+# Subgraph
+
+flowchart TB
+  subgraph one
+  A --> B
+  end
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,Keyword,NodeId,NodeId,Link,NodeId,Keyword)
+
+# Subgraph with Direction
+
+flowchart LR
+  subgraph TOP
+    direction TB
+    subgraph B1
+        direction RL
+        a1 --> b1
+    end
+    subgraph B2
+        direction BT
+        a2 --> b2
+    end
+  end
+  A --> TOP --> B
+  B1 --> B2
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,Keyword,NodeId,Keyword,NodeId(Orientation),Keyword,NodeId,Keyword,NodeId(Orientation),NodeId,Link,NodeId,Keyword,Keyword,NodeId,Keyword,NodeId(Orientation),NodeId,Link,NodeId,Keyword,Keyword,NodeId,Link,NodeId,Link,NodeId,NodeId,Link,NodeId)
+
+# Subgraph over Multiple Lines with Markdown
+
+flowchart LR
+subgraph "One"
+  a("\`The **cat**
+  in the hat\`") -- "edge label" --> b{{"\`The **dog** in the hog\`"}}
+end
+subgraph "\`**Two**\`"
+  c("\`The **cat**
+  in the hat\`") -- "\`Bold **edge label**\`" --> d("The dog in the hog")
+end
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,Keyword,String,NodeId,Node(String),NodeEdge(DoubleHyphen,String,Link),NodeId,Node(String),Keyword,Keyword,String,NodeId,Node(String),NodeEdge(DoubleHyphen,String,Link),NodeId,Node(String),Keyword)
+
+# Interaction
+
+flowchart LR
+  A-->B
+  B-->C
+  C-->D
+  click A callback "Tooltip for a callback"
+  click B "https://www.github.com" "This is a tooltip for a link"
+  click A call callback() "Tooltip for a callback"
+  click B href "https://www.github.com" "This is a tooltip for a link" _blank
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId,NodeId,Link,NodeId,NodeId,Link,NodeId,Keyword,NodeId,NodeId,String,Keyword,NodeId,String,String,Keyword,NodeId,Keyword,NodeId,String,Keyword,NodeId,Keyword,String,String,Keyword)
+
+# Comments
+
+flowchart LR
+%% this is a comment A -- text --> B{node}
+  A -- text --> B -- text2 --> C
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,LineComment,NodeId,NodeEdge(DoubleHyphen,NodeEdgeText,Link),NodeId,NodeEdge(DoubleHyphen,NodeEdgeText,Link),NodeId)
+
+# Styling
+
+flowchart LR
+  id1(Start)-->id2(Stop)
+  style id1 fill:#f9f,stroke:#333,stroke-width:4px
+  style id2 fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Node(NodeText),Link,NodeId,Node(NodeText),StyleKeyword,NodeId,StyleText,StyleKeyword,NodeId,StyleText)
+
+# Classes
+
+flowchart LR
+  A:::someclass --> B
+  classDef someclass fill:#f96
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,":::",NodeId,Link,NodeId,StyleKeyword,NodeId,StyleText)
+
+# Semicolons
+
+flowchart LR
+  A ----> B;
+  C <---> D;
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId,NodeId,Link,NodeId)
+
+# Style without text
+
+flowchart LR
+  style A
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,StyleKeyword,NodeId,⚠)
+
+# Shape metadata
+
+flowchart TB
+  A@{ shape: rect }
+  B["Label"]@{
+    shape: tool
+  }
+  flow --> A
+
+==>
+
+FlowchartDiagram(DiagramName,Orientation,NodeId,Metadata,NodeId,Node(String),Metadata,NodeId,Link,NodeId)

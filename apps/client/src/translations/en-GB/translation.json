@@ -107,8 +107,6 @@
     "help_on_links": "Help on links",
     "note": "Note",
     "search_note": "search for note by its name",
-    "link_title_mirrors": "link title mirrors the note's current title",
-    "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
     "anchor_none": "None (link to note)",
@@ -145,11 +143,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
-    "affected_notes": "Affected notes",
     "include_descendants": "Include descendants of the selected notes",
-    "available_actions": "Available actions",
     "chosen_actions": "Chosen actions",
-    "execute_bulk_actions": "Execute bulk actions",
+    "execute_bulk_actions_one": "Execute bulk actions",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Bulk actions have been executed successfully.",
     "none_yet": "None yet... add an action by clicking one of the available ones above.",
     "labels": "Labels",
@@ -249,5 +246,18 @@
   },
   "resource_download": {
     "license": "{{license}} licence"
+  },
+  "geo-map": {
+    "dark-image-description": "Draws the marker titles in a light colour, so that they can be read over a dark image.",
+    "dark-tiles-description": "Draws the marker titles in a light colour, so that they can be read over dark tiles."
+  },
+  "ocr": {
+    "no_text_recognized": "OCR found no text to recognise."
+  },
+  "text-editor": {
+    "color-menu": {
+      "text-color": "Text colour",
+      "background-color": "Background colour"
+    }
   }
 }

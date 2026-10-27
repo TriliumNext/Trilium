@@ -6,7 +6,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
-import { isMobile } from "../../../services/utils";
+import { isElectron, isLinux, isMobile } from "../../../services/utils";
 import { useFullscreen } from "../../react/hooks";
 import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "../../react/OverlayControlGroup";
 import { ParentMap, useMapPitch } from "./map";
@@ -277,9 +277,13 @@ function useGeolocate(map: MapLibreGLMap | null, onLocationClick?: (location: Ln
     return { state, hasError, toggle };
 }
 
-/** Whether the Geolocation API can be asked at all: browsers refuse it on an insecure origin. */
+/**
+ * Whether the Geolocation API can be asked at all. Browsers refuse it on an insecure origin, and
+ * Electron on Linux has no location provider: Chromium falls back to Google's network service,
+ * which needs an API key Electron does not ship.
+ */
 function canLocate() {
-    return window.isSecureContext === true && !!navigator.geolocation;
+    return window.isSecureContext === true && !!navigator.geolocation && !(isElectron() && isLinux());
 }
 
 /**

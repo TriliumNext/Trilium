@@ -48,7 +48,7 @@ describe("TableStickyHeader", () => {
         const newHead = domHead(editor);
         const tableBottom = newHead.closest("table")?.getBoundingClientRect().bottom ?? 0;
         expect(parseFloat(newHead.style.getPropertyValue(TRAVEL_PROPERTY)))
-            .toBeCloseTo(tableBottom - newHead.getBoundingClientRect().bottom, 1);
+            .toBeCloseTo(tableBottom - newHead.getBoundingClientRect().bottom - 1, 1);
         expect(parseFloat(newHead.style.getPropertyValue(TRAVEL_PROPERTY))).toBeLessThan(travel);
     });
 

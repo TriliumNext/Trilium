@@ -46,12 +46,13 @@ body.desktop:not(.motion-disabled) .dropdown-submenu > .dropdown-menu.tn-menu {
     animation-fill-mode: backwards;
 }
 
-/* A submenu that replaces an open one, or that a key or a press opened, shows at once. */
+/* A submenu that replaces one in view, or that a key or a press opened, shows at once. */
 body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
     animation: none;
 }
 
-.tn-menu-page {
+.tn-menu-page,
+.tn-menu-filterable {
     --tn-popup-padding: var(--padding, var(--menu-padding-size));
     display: flex;
     flex-direction: column;
@@ -67,6 +68,10 @@ body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
     }
 }
 
+.tn-menu-page > .tn-menu-filterable {
+    margin: 0;
+}
+
 .tn-menu-page-header {
     padding: var(--tn-popup-padding) var(--tn-popup-padding) 0;
 }
@@ -75,7 +80,7 @@ body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
     overflow-x: hidden;
 }
 
-.dropdown-menu.tn-menu > :is(.tn-menu-scroll, .tn-menu-page) {
+.dropdown-menu.tn-menu > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page) {
     &:has(+ .tn-menu-page:not(.tn-menu-page-leaving)) {
         position: absolute;
         inset: 0;
@@ -108,11 +113,11 @@ body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
 }
 
 body[dir="rtl"] .dropdown-menu.tn-menu {
-    > :is(.tn-menu-scroll, .tn-menu-page):has(+ .tn-menu-page-entering) {
+    > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page):has(+ .tn-menu-page-entering) {
         animation-name: tn-slide-out-to-right;
     }
 
-    > :is(.tn-menu-scroll, .tn-menu-page):has(+ .tn-menu-page-leaving) {
+    > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page):has(+ .tn-menu-page-leaving) {
         animation-name: tn-slide-in-from-right;
     }
 
@@ -190,8 +195,20 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     border-color: transparent !important;
 }
 
-.tn-menu-filter-row {
-    padding-bottom: 4px;
+.tn-menu-filter {
+    flex: none;
+    padding: var(--tn-popup-padding) var(--tn-popup-padding) 4px;
+
+    + .tn-menu-scroll {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+        padding-top: 0;
+        scroll-padding-top: 0;
+    }
+
+    .tn-menu-scroll + & {
+        padding: 4px var(--tn-popup-padding) var(--tn-popup-padding);
+    }
 
     .tn-menu-filter-box {
         display: flex;
@@ -202,6 +219,10 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
         border-radius: 6px;
         color: var(--muted-text-color);
         cursor: text;
+    }
+
+    .tn-menu-filter-clear {
+        margin: calc((1em - var(--icon-button-size)) / 2);
     }
 
     .tn-menu-filter-input,
@@ -217,6 +238,13 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
         color: var(--menu-text-color);
         font: inherit;
     }
+}
+
+.tn-menu-scroll:has(+ .tn-menu-filter) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    padding-bottom: 0;
+    scroll-padding-bottom: 0;
 }
 
 .tn-menu-filter-empty {
@@ -260,12 +288,13 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     line-height: 1.2;
 
     &:hover:not(:disabled),
-    &.tn-menu-active {
+    &.tn-menu-active,
+    body.desktop &.submenu-open {
         color: var(--hover-item-text-color);
         background-color: var(--hover-item-background-color);
     }
 
-    .tn-menu-keyboard &:hover:not(.tn-menu-active) {
+    .tn-menu-keyboard &:hover:not(.tn-menu-active, .submenu-open) {
         color: var(--menu-text-color);
         background-color: transparent;
     }
@@ -288,6 +317,22 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     }
 }
 
+/* The gaps and the card background match `.form-list-row` and the mobile `.dropdown-item` in theme-next/menus.css. */
+body.mobile .tn-menu-actions.tn-menu-actions-cards {
+    gap: 1em;
+    margin-bottom: 1em;
+
+    & > .tn-menu-action {
+        padding-block: var(--dropdown-menu-padding-vertical);
+        background: var(--card-background-color);
+        border-radius: var(--mobile-menu-group-radius, 6px);
+
+        &::before {
+            content: none;
+        }
+    }
+}
+
 .tn-menu-action-icon {
     position: relative;
     display: inline-flex;
@@ -306,9 +351,22 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     font-size: 0.6em;
 }
 
+.tn-menu-action-more {
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-end: 2px;
+    color: var(--menu-item-icon-color);
+    opacity: 0.6;
+
+    &:dir(rtl) {
+        transform: scaleX(-1);
+    }
+}
+
 .tn-menu-action-title {
     max-width: 100%;
     overflow: hidden;
+    font-size: 0.8em;
     text-overflow: ellipsis;
     white-space: nowrap;
 }

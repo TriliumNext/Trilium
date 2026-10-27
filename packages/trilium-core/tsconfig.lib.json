@@ -18,6 +18,9 @@
   ],
   "references": [
     {
+      "path": "../codemirror/tsconfig.lib.json"
+    },
+    {
       "path": "../highlightjs/tsconfig.lib.json"
     }
   ],

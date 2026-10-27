@@ -11,8 +11,8 @@ const SOURCE_ENDED_CHANNEL = "transcription-source-ended";
 
 export interface CaptureWindowOptions {
     /**
-     * Called once when capturing stops on its own: the page crashed, or every source ended (a
-     * device was unplugged, the system audio went away). Not called after
+     * Called once when capturing stops on its own: the page crashed or reloaded, or every source
+     * ended (a device was unplugged, the system audio went away). Not called after
      * {@link CaptureWindow.stop}.
      */
     onLost(reason: string): void;
@@ -55,6 +55,11 @@ export class CaptureWindow {
         this.window = window;
         window.webContents.on("render-process-gone", (_event, { reason }) =>
             this.lose(`the capture page ended (${reason})`));
+        window.webContents.on("did-start-navigation", ({ isMainFrame, isSameDocument }) => {
+            if (isMainFrame && !isSameDocument) {
+                this.lose("the capture page reloaded");
+            }
+        });
         window.webContents.ipc.on(SOURCE_ENDED_CHANNEL, (_event, source: TranscriptSource) => {
             getLog().error(`Transcription: the ${source} source ended.`);
             this.running.delete(source);

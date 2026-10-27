@@ -17,7 +17,7 @@ Even if Markdown is now specially treated by having a preview mechanism, Trilium
 ### Source view pane
 
 *   Syntax highlighting for the Markdown syntax.
-*   Nested syntax highlighting for code inside code blocks.
+*   Nested syntax highlighting for code inside code blocks, including <a class="reference-link" href="Mermaid%20Diagrams.md">Mermaid Diagrams</a> in ` ```mermaid ` blocks.
 *   When editing larger documents, the preview scrolls along with the source editor.
 
 ### Preview pane
@@ -197,6 +197,7 @@ The list of languages matches the one for <a class="reference-link" href="Code.
 ### Other features
 
 *   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
+*   A Markdown note included in a <a class="reference-link" href="Text.md">Text</a> note shows its source, its preview or both, and can be edited in place. See _Included Markdown_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
 
 ### Shared notes
 

@@ -16,7 +16,7 @@ export const CHANGE_ICON = "changeIcon";
  * The buttons that insert or replace an icon, and the balloon the picking happens in.
  *
  * The editor positions the balloon and takes it down; the application renders its own picker into
- * it through `showIconPicker`, the one place every installed icon pack is searchable. A host with
+ * it through `inlineIcon.showPicker`, the one place every installed icon pack is searchable. A host with
  * no room for a balloon shows the picker its own way and returns nothing to release.
  */
 export default class InlineIconUI extends Plugin {
@@ -95,14 +95,14 @@ export default class InlineIconUI extends Plugin {
             return;
         }
 
-        const release = glob.getComponentByEl<EditorComponent>(editorEl).showIconPicker({
+        const release = editor.config.get("inlineIcon")?.showPicker({
             container,
             onSelect: (iconClass) => {
                 this._hide();
                 editor.execute(INSERT_ICON_COMMAND, { iconClass });
                 editor.editing.view.focus();
             }
-        });
+        }) ?? null;
 
         if (!release) {
             this._hide();
@@ -230,4 +230,25 @@ function getBalloonPosition(editor: Editor, shownAt: ViewRange) {
             return view.domConverter.viewRangeToDom(range);
         }
     };
+}
+
+/** What the editor asks the host's icon picker for. */
+export interface IconPickerRequest {
+    /** The element to paint the picker into, which the editor owns and places. */
+    container: HTMLElement;
+    /** Receives the class of the icon picked, e.g. `bx bx-star`. */
+    onSelect(iconClass: string): void;
+}
+
+declare module "ckeditor5" {
+    interface EditorConfig {
+        inlineIcon?: {
+            /**
+             * Paints the host's icon picker into `request.container`, and answers with the way to
+             * take it down again. A host that shows the picker somewhere of its own (a phone, which
+             * has no room for a balloon) leaves the container alone and answers `null`.
+             */
+            showPicker(request: IconPickerRequest): (() => void) | null;
+        };
+    }
 }

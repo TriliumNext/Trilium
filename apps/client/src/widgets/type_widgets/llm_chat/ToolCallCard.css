@@ -12,7 +12,8 @@
 .llm-chat-tool-call-detail,
 .llm-chat-tool-call-attachment-title,
 .llm-chat-tool-call-count,
-.llm-chat-tool-call-result-count {
+.llm-chat-tool-call-result-count,
+.llm-chat-tool-call-approval-badge {
     font-size: 0.75rem;
     font-weight: 400;
     opacity: 0.75;
@@ -22,6 +23,11 @@
     font-size: 0.75rem;
     font-weight: 400;
     margin-left: 0.25rem;
+}
+
+.llm-chat-tool-call-scope {
+    font-size: 0.75rem;
+    font-weight: 400;
 }
 
 /* Shown on hover, on focus, on an open line, and always where there is no hover. */
@@ -66,8 +72,6 @@
     overflow-wrap: anywhere;
 }
 
-/* Raw JSON arriving from the LLM, shown until it parses. The blinking caret marks it as still
-   arriving. */
 .llm-chat-tool-call-streaming {
     margin: 0;
     max-height: 300px;
@@ -75,7 +79,11 @@
     font-size: 0.8rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
 
+/* Raw JSON arriving from the LLM, shown until it parses. The blinking caret marks it as still
+   arriving. */
+.llm-chat-tool-call-streaming {
     &::after {
         content: "▍";
         color: var(--muted-text-color);
@@ -102,6 +110,17 @@
     margin-left: 0.3rem;
 }
 
+.llm-chat-tool-call-new-title {
+    font-size: 0.75rem;
+
+    &::before {
+        content: "→";
+        display: inline-block;
+        margin-right: 0.3rem;
+        opacity: 0.75;
+    }
+}
+
 
 /* Sized as the glyphs beside it in `.expandable-line` (0.9rem in a 1.4rem line). */
 .llm-chat-tool-call-provider {
@@ -109,7 +128,54 @@
     height: 1.4rem;
     align-items: center;
 
-    .masked-icon {
-        --masked-icon-size: 0.9rem;
+    .tn-icon {
+        font-size: 0.9rem;
+    }
+}
+
+/* Matches the card of the chat input island in ChatInputBar.css. */
+.llm-chat-tool-call-pending {
+    --pending-inset: 0.5rem;
+
+    margin: 0.25rem calc(-1 * var(--pending-inset) - 1px);
+    padding: 0.25rem var(--pending-inset) var(--pending-inset);
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: 10px;
+    background: var(--card-background-color, var(--accented-background-color));
+    box-shadow: var(--card-box-shadow, none);
+
+    > .llm-chat-tool-call > :is(.expandable-section-summary, .expandable-line-header) > .expandable-section-label {
+        flex-wrap: wrap;
+        row-gap: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    > .llm-chat-tool-approval {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+
+        button.btn.btn-sm {
+            min-width: unset;
+        }
+
+        > .btn-group {
+            gap: 0;
+            padding: 0;
+            border-radius: 6px;
+            background: var(--cmd-button-background-color);
+            box-shadow: 1px 1px 1px var(--cmd-button-shadow-color);
+
+            button.btn {
+                border-radius: 6px 0 0 6px;
+            }
+
+            button.btn.dropdown-toggle-split {
+                padding-inline: 0.4rem;
+                border-inline-start: 1px solid var(--main-border-color);
+                border-radius: 0 6px 6px 0;
+            }
+        }
     }
 }

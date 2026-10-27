@@ -1,3 +1,4 @@
+import type { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,10 +7,31 @@ import Component from "../../components/component";
 import { ParentComponent } from "../react/react_utils";
 import ItemPickerDialog, { type ItemPickerDialogOptions, type PickerItem } from "./item_picker";
 
+const mocks = vi.hoisted(() => ({
+    /** Every tooltip `useStaticTooltip` attached, so a test can ask one for its title. */
+    tooltips: [] as { element: Element, config: Partial<Tooltip.Options> }[]
+}));
+
 // i18next is never initialised under test, so the built-in title and placeholder are undefined.
 vi.mock("../../services/i18n", () => ({
     t: (key: string) => key
 }));
+
+// Attaches from an effect with the real hook's dependencies, so an element that is not rendered
+// yet when the effect runs gets no tooltip, as in the app.
+vi.mock("../react/hooks", async (importOriginal) => {
+    const { useEffect } = await import("preact/hooks");
+    return {
+        ...(await importOriginal<typeof import("../react/hooks")>()),
+        useStaticTooltip: (ref: { current: Element | null }, config?: Partial<Tooltip.Options>) => {
+            useEffect(() => {
+                if (ref.current && config) {
+                    mocks.tooltips.push({ element: ref.current, config });
+                }
+            }, [ ref, config ]);
+        }
+    };
+});
 
 const GROUPS = [
     {
@@ -101,6 +123,25 @@ describe("ItemPickerDialog", () => {
         await close();
 
         expect(picked).toEqual([ GROUPS[1].items[1] ]);
+    });
+
+    it("shows the tooltip of an item that has one", async () => {
+        await open({ items: [
+            { key: "one", caption: "One", tooltip: "<strong>First</strong>" },
+            { key: "two", caption: "Two" }
+        ] });
+
+        const one = item("One");
+        const config = mocks.tooltips.find(({ element, config: candidate }) =>
+            one && element.contains(one)
+            && typeof candidate.selector === "string" && one.matches(candidate.selector))?.config;
+        expect(config).toBeDefined();
+        expect(item("Two")?.matches(String(config?.selector))).toBe(false);
+
+        const title = config?.title;
+        expect(typeof title === "function" && one ? title.call(one) : undefined)
+            .toBe("<strong>First</strong>");
+        expect(config?.html).toBe(true);
     });
 
     describe("searching", () => {

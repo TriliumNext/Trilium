@@ -49,19 +49,14 @@ export default function InlineTitle() {
         if (!titleRow) return;
 
         titleRow.classList.toggle("hide-title", true);
-        const observer = new IntersectionObserver((entries) => {
-            titleRow.classList.toggle("hide-title", entries[0].isIntersecting);
-            setTitleHidden(!entries[0].isIntersecting);
-        }, {
-            threshold: 0.85
+        const stopObserving = containerRef.current && observeTitleInView(containerRef.current, (isInView) => {
+            titleRow.classList.toggle("hide-title", isInView);
+            setTitleHidden(!isInView);
         });
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
-        }
 
         return () => {
             titleRow.classList.remove("hide-title");
-            observer.disconnect();
+            stopObserving?.();
         };
     }, [ shown, parentComponent ]);
 
@@ -79,6 +74,25 @@ export default function InlineTitle() {
             </div>
         </div>
     );
+}
+
+/**
+ * Calls `onChange` as `title` comes into view in its scrolling container or leaves it. Measured
+ * against the container rather than the viewport, so a note sliding in from off-screen (the
+ * navigation stack on iPhones) keeps its title in view while it moves.
+ */
+export function observeTitleInView(title: HTMLElement, onChange: (isInView: boolean) => void) {
+    const observer = new IntersectionObserver(([ entry ]) => {
+        // A title with no box sits in a hidden tab, which shows it again as it was left.
+        const { width, height } = entry.boundingClientRect;
+        if (!entry.isIntersecting && !width && !height) return;
+        onChange(entry.isIntersecting);
+    }, {
+        root: title.closest(".scrolling-container"),
+        threshold: 0.85
+    });
+    observer.observe(title);
+    return () => observer.disconnect();
 }
 
 export function shouldShowInlineTitle(note: FNote | null | undefined, type: NoteType | undefined, viewScope: ViewScope | undefined) {

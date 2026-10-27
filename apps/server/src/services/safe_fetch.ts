@@ -20,17 +20,24 @@ const ALLOWED_IP_RANGES = new Set(["unicast"]);
  * LAN is common enough that refusing RFC1918 would break the feature for a large share of the
  * people who use it at all.
  *
- * Link-local and carrier-grade NAT stay refused, and they are the reason this is a widening
- * rather than a switch to no checking: nothing is legitimately served on either, while both
- * carry a cloud instance's metadata endpoint (169.254.169.254, and 100.100.100.200).
+ * Carrier-grade NAT is allowed because a Tailscale tailnet assigns its nodes addresses in it.
+ * Link-local stays refused: nothing is served on it, and it carries a cloud instance's metadata
+ * endpoint (169.254.169.254).
  */
-const ALLOWED_IP_RANGES_INCLUDING_PRIVATE = new Set(["unicast", "loopback", "private", "uniqueLocal"]);
+const ALLOWED_IP_RANGES_INCLUDING_PRIVATE = new Set(["unicast", "loopback", "private", "uniqueLocal", "carrierGradeNat"]);
+
+/**
+ * Cloud metadata endpoints inside an allowed range, refused under every policy: Alibaba Cloud's
+ * in carrier-grade NAT and AWS's IPv6 one in unique-local. Listed in `ipaddr.js` `toString()`
+ * form, which `isBlockedIP` compares against.
+ */
+const METADATA_ADDRESSES = new Set(["100.100.100.200", "fd00:ec2::254"]);
 
 /** How hard an address is vetted, and how long the caller is prepared to wait for it. */
 export interface SafeFetchPolicy {
     /**
-     * Permit loopback, RFC1918 and unique-local addresses. For a destination the operator
-     * configured themselves; never for one that arrived in note content.
+     * Permit loopback, RFC1918, unique-local and carrier-grade NAT addresses. For a destination
+     * the operator configured themselves; never for one that arrived in note content.
      */
     allowPrivateNetwork?: boolean;
     /**
@@ -58,7 +65,7 @@ function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>): boolean {
         if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
             parsed = (parsed as ipaddr.IPv6).toIPv4Address();
         }
-        return !allowedRanges.has(parsed.range());
+        return METADATA_ADDRESSES.has(parsed.toString()) || !allowedRanges.has(parsed.range());
     } catch {
         return true; // unparseable → treat as blocked
     }
@@ -106,7 +113,7 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
  */
 function blockedAddressMessage(allowPrivateNetwork: boolean): string {
     return allowPrivateNetwork
-        ? "URLs pointing to link-local or carrier-grade NAT addresses are not allowed"
+        ? "URLs pointing to link-local addresses or a cloud metadata endpoint are not allowed"
         : "URLs pointing to private/internal networks are not allowed";
 }
 

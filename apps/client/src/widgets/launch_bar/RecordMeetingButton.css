@@ -31,5 +31,37 @@
         color: var(--left-pane-item-selected-color, var(--main-text-color));
         box-shadow: var(--left-pane-item-selected-shadow);
         font-variant-numeric: tabular-nums;
+
+        &.has-issue {
+            --color: var(--danger-color, #dc3545);
+            color: #fff;
+        }
+    }
+}
+
+.tn-popover.record-meeting-consent {
+    --menu-background-color: color-mix(
+        in srgb, var(--link-color) 18%,
+        var(--menu-background-color-no-backdrop, var(--main-background-color))
+    );
+    --menu-text-color: var(--main-text-color);
+    --dropdown-border-color: var(--link-color);
+    max-width: 18rem;
+    backdrop-filter: none;
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--link-color) 35%, transparent);
+
+    .record-meeting-consent-body {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9em;
+        cursor: pointer;
+
+        .bx {
+            flex-shrink: 0;
+            font-size: 1.25em;
+            color: var(--link-color);
+        }
     }
 }

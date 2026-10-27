@@ -1,7 +1,8 @@
 import "./TextEmbedEditor.css";
 
+import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { createPortal, type RefObject } from "preact";
-import { useLayoutEffect, useRef } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
@@ -9,10 +10,15 @@ import type FNote from "../../../entities/fnote";
 import {
     announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext
 } from "../../EmbeddedNotePane";
+import { TextEditorFindTarget } from "../../find_in_text";
 import { SaveStatusBadge } from "../../layout/NoteBadges";
-import { useLegacyComponentElement, useNoteContext } from "../../react/hooks";
+import MergedFind from "../../merged_find";
+import { useLegacyComponentElement, useNoteContext, useTriliumEvent } from "../../react/hooks";
+import { registerEmbedFindTarget } from "./content_embed_tools";
 import EditableText, { getBlockData } from "./EditableText";
-import { findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot } from "./editable_embed";
+import {
+    findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot, useEmbedCaretNavigation
+} from "./editable_embed";
 import { getClosingSave, trackClosingSave } from "./TextEmbed";
 
 interface TextEmbedEditorProps {
@@ -50,6 +56,9 @@ export default function TextEmbedEditor({
         floatingToolbar: !hasFixedToolbar,
         skipRecentNotes: true
     });
+    useEmbedCaretNavigation(() => (
+        findTextEditorIn(rootRef.current)?.plugins.get("ContentEmbedCaret")
+    ));
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {
@@ -87,9 +96,10 @@ interface ScopedEditorProps {
 /** The editor, once the note context of the embed holds `note`. */
 function ScopedEditor({ rootRef, note, block, onBlockChange }: ScopedEditorProps) {
     const { note: contextNote, noteContext, ntxId, parentComponent } = useNoteContext();
-    // The plugins of the editor find their host by the element of its component.
+    // `appContext.getComponentByEl()` finds the host of the editor by this element.
     useLegacyComponentElement(rootRef);
     const badgeSlot = useEmbedBadgeSlot(rootRef);
+    useEditorFindTarget(ntxId);
 
     return (
         <div ref={rootRef} className="text-embed-editor">
@@ -107,6 +117,26 @@ function ScopedEditor({ rootRef, note, block, onBlockChange }: ScopedEditorProps
             {badgeSlot && createPortal(<SaveStatusBadge />, badgeSlot)}
         </div>
     );
+}
+
+/**
+ * Lets "Search in note" search the text editor of `ntxId` and its embeds, once the editor is
+ * ready, in place of the preview of the embed.
+ */
+function useEditorFindTarget(ntxId: string | null | undefined) {
+    const [ editor, setEditor ] = useState<CKTextEditor | null>(null);
+    useTriliumEvent("textEditorRefreshed", ({ ntxId: editorNtxId, editor: refreshedEditor }) => {
+        if (editorNtxId === ntxId) {
+            setEditor(refreshedEditor);
+        }
+    });
+
+    useEffect(() => {
+        const root = editor?.editing.view.getDomRoot();
+        if (!editor || !root) return;
+
+        return registerEmbedFindTarget(root, new MergedFind(new TextEditorFindTarget(editor)));
+    }, [ editor ]);
 }
 
 /**

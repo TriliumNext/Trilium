@@ -1,16 +1,17 @@
 import { _getViewData as getViewData, _setModelData as setModelData, type ClassicEditor, type ViewElement } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createTestEditor, installLinkEmbedComponentMock, LINK_EMBED_TEST_PLUGINS, type LinkEmbedComponentMocks } from "../../../test/link-embed-kit.js";
+import { createLinkEmbedHost, createTestEditor, LINK_EMBED_TEST_PLUGINS, type LinkEmbedHostMocks } from "../../../test/link-embed-kit.js";
 
 describe("LinkEmbedEditing", () => {
     let editor: ClassicEditor;
-    let renderLinkEmbed: LinkEmbedComponentMocks["renderLinkEmbed"];
-    let renderLinkMention: LinkEmbedComponentMocks["renderLinkMention"];
+    let renderEmbed: LinkEmbedHostMocks["renderEmbed"];
+    let renderMention: LinkEmbedHostMocks["renderMention"];
 
     beforeEach(async () => {
-        ({ renderLinkEmbed, renderLinkMention } = installLinkEmbedComponentMock());
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
+        const host = createLinkEmbedHost();
+        ({ renderEmbed, renderMention } = host);
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: host });
     });
 
     // -----------------------------------------------------------------------
@@ -52,8 +53,8 @@ describe("LinkEmbedEditing", () => {
         }
 
         // The editing downcast UIElement callback ran and rendered the embed.
-        expect(renderLinkEmbed).toHaveBeenCalled();
-        const [, metadata, editable] = renderLinkEmbed.mock.calls[0];
+        expect(renderEmbed).toHaveBeenCalled();
+        const [, metadata, editable] = renderEmbed.mock.calls[0];
         expect(metadata.url).toBe("https://e.com/");
         expect(editable).toBe(true);
     });
@@ -107,8 +108,8 @@ describe("LinkEmbedEditing", () => {
         expect(view).toContain('data-site-name="S"');
         expect(view).toContain('data-image="I"');
 
-        expect(renderLinkEmbed).toHaveBeenCalled();
-        const [container, metadata, editable] = renderLinkEmbed.mock.calls[0];
+        expect(renderEmbed).toHaveBeenCalled();
+        const [container, metadata, editable] = renderEmbed.mock.calls[0];
         expect(container).toBeInstanceOf(HTMLElement);
         expect(metadata).toMatchObject({ url: "https://e.com/", embedType: "web", title: "T" });
         expect(editable).toBe(true);
@@ -133,7 +134,7 @@ describe("LinkEmbedEditing", () => {
             expect(mention.getAttribute("favicon")).toBe("F");
         }
 
-        expect(renderLinkMention).toHaveBeenCalled();
+        expect(renderMention).toHaveBeenCalled();
     });
 
     it("data-downcasts a fully-populated linkMention, omitting empty optional attributes", () => {
@@ -214,8 +215,8 @@ describe("LinkEmbedEditing", () => {
         expect(view).toContain('data-site-name="S"');
         expect(view).toContain('data-image="I"');
 
-        expect(renderLinkMention).toHaveBeenCalled();
-        const [container, metadata, editable] = renderLinkMention.mock.calls[0];
+        expect(renderMention).toHaveBeenCalled();
+        const [container, metadata, editable] = renderMention.mock.calls[0];
         expect(container).toBeInstanceOf(HTMLElement);
         expect(metadata).toMatchObject({ url: "https://e.com/", title: "T", favicon: "F" });
         expect(editable).toBe(true);
@@ -255,4 +256,28 @@ describe("LinkEmbedEditing", () => {
         expect(modelPosition.parent.is("element", "paragraph")).toBe(true);
         expect(modelPosition.offset).toBe(4);
     });
+
+    it("turns the renderer's focus back on for a key in the text after a press on a mention", () => {
+        setModelData(editor.model, "<paragraph>foo[]"
+            + "<linkMention url=\"https://e.com/\" embedType=\"opengraph\"></linkMention>"
+            + "</paragraph>");
+        // A headless page cannot take the real focus, so set the flag the renderer reads.
+        editor.editing.view.document.isFocused = true;
+        const domRoot = editor.editing.view.getDomRoot();
+        const mention = domRoot?.querySelector(".link-mention-inner");
+        if (!domRoot || !mention) {
+            throw new Error("The link mention was not rendered.");
+        }
+
+        mention.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+        expect(rendererIsFocused()).toBe(false);
+
+        domRoot.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace" }));
+        expect(rendererIsFocused()).toBe(true);
+    });
+
+    function rendererIsFocused() {
+        //@ts-expect-error: The renderer is a private field.
+        return editor.editing.view._renderer.isFocused as boolean;
+    }
 });

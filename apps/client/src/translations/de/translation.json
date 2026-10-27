@@ -58,8 +58,6 @@
     "help_on_links": "Hilfe zu Links",
     "note": "Notiz",
     "search_note": "Suche nach einer Notiz anhand ihres Namens",
-    "link_title_mirrors": "Der Linktitel spiegelt den aktuellen Titel der Notiz wider",
-    "link_title_arbitrary": "Der Linktitel kann beliebig geändert werden",
     "link_title": "Linktitel",
     "button_add_link": "Link hinzufügen",
     "anchor": "Anker (optional)",
@@ -82,11 +80,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Massenaktionen",
-    "affected_notes": "Betroffene Notizen",
     "include_descendants": "Unternotizen der ausgewählten Notizen einbeziehen",
-    "available_actions": "Verfügbare Aktionen",
     "chosen_actions": "Ausgewählte Aktionen",
-    "execute_bulk_actions": "Massenaktionen ausführen",
+    "execute_bulk_actions_one": "Massenaktionen ausführen",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Massenaktionen wurden erfolgreich ausgeführt.",
     "none_yet": "Noch keine ... Fügen Sie eine Aktion hinzu, indem Sie oben auf eine der verfügbaren Aktionen klicken.",
     "labels": "Labels",
@@ -263,14 +260,7 @@
   "include_note": {
     "dialog_title": "Notiz einbinden",
     "label_note": "Notiz",
-    "placeholder_search": "Suche nach einer Notiz anhand ihres Namens",
-    "box_size_prompt": "Boxgröße der eingebundenen Notiz:",
-    "box_size_small": "klein (~ 10 Zeilen)",
-    "box_size_medium": "mittel (~ 30 Zeilen)",
-    "box_size_full": "vollständig (Box zeigt vollständigen Text)",
-    "button_include": "Notiz einbinden",
-    "box_size_expandable": "ausklappbar (standardmäßig eingeklappt)",
-    "box_size_tiny": "winzig (einzelne Zeile mit Titel und Aktionen)"
+    "button_include": "Notiz einbinden"
   },
   "info": {
     "modalTitle": "Infonachricht",
@@ -298,10 +288,7 @@
   },
   "note_type_chooser": {
     "modal_title": "Notiztyp auswählen",
-    "modal_body": "Notiztyp / Vorlage der neuen Notiz auswählen:",
-    "templates": "Vorlagen",
-    "change_path_prompt": "Ändern, wo die neue Notiz erzeugt wird:",
-    "search_placeholder": "Pfad nach Namen durchsuchen (Standard falls leer)"
+    "templates": "Vorlagen"
   },
   "password_not_set": {
     "title": "Das Passwort ist nicht festgelegt",
@@ -644,21 +631,13 @@
     "remove_this_search_action": "Diese Suchaktion entfernen"
   },
   "execute_script": {
-    "execute_script": "Skript ausführen",
-    "help_text": "Sie können einfache Skripte für die übereinstimmenden Notizen ausführen.",
-    "example_1": "Um beispielsweise eine Zeichenfolge an den Titel einer Notiz anzuhängen, verwenden Sie dieses kleine Skript:",
-    "example_2": "Ein komplexeres Beispiel wäre das Löschen aller übereinstimmenden Notizattribute:"
+    "execute_script": "Skript ausführen"
   },
   "add_label": {
     "add_label": "Label hinzufügen",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to_value": "auf Wert",
-    "new_value_placeholder": "neuer Wert",
-    "help_text": "Auf allen übereinstimmenden Notizen:",
-    "help_text_item1": "Erstellt das angegebene Label, sofern die Notiz noch keines hat",
-    "help_text_item2": "oder den Wert des vorhandenen Labels ändern",
-    "help_text_note": "Sie können diese Methode auch ohne Wert aufrufen. In diesem Fall wird der Notiz ein Label ohne Wert zugewiesen."
+    "new_value_placeholder": "neuer Wert"
   },
   "delete_label": {
     "delete_label": "Label löschen",
@@ -667,9 +646,7 @@
   },
   "rename_label": {
     "rename_label": "Label umbenennen",
-    "rename_label_from": "Label umbenennen von",
     "old_name_placeholder": "alter Name",
-    "to": "zu",
     "new_name_placeholder": "neuer Name",
     "name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
@@ -677,49 +654,26 @@
     "update_label_value": "Labelwert aktualisieren",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to_value": "auf Wert",
-    "new_value_placeholder": "neuer Wert",
-    "help_text": "Bei allen übereinstimmenden Notizen den Wert des vorhandenen Labels ändern.",
-    "help_text_note": "Sie können diese Methode auch ohne Wert aufrufen. In diesem Fall wird der Notiz ein Label ohne Wert zugewiesen."
+    "new_value_placeholder": "neuer Wert"
   },
   "delete_note": {
-    "delete_note": "Notiz löschen",
-    "delete_matched_notes": "Übereinstimmende Notizen löschen",
-    "delete_matched_notes_description": "Dadurch werden übereinstimmende Notizen gelöscht.",
-    "undelete_notes_instruction": "Nach dem Löschen ist es möglich, sie im Dialogfeld „Letzte Änderungen“ wiederherzustellen.",
-    "erase_notes_instruction": "Um Notizen dauerhaft zu löschen, gehen Sie nach der Löschung zu Optionen → Andere und klicken Sie auf die Schaltfläche „Gelöschte Notizen jetzt löschen“."
+    "delete_note": "Notiz löschen"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Notizrevisionen löschen",
-    "all_past_note_revisions": "Alle früheren Notizrevisionen übereinstimmender Notizen werden gelöscht. Die Notiz selbst bleibt vollständig erhalten. Mit anderen Worten: Der Verlauf der Notiz wird entfernt."
+    "delete_note_revisions": "Notizrevisionen löschen"
   },
   "move_note": {
     "move_note": "Notiz verschieben",
-    "to": "nach",
-    "target_parent_note": "Übergeordnete Zielnotiz",
-    "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "move_note_new_parent": "Die Notiz in die neue übergeordnete Notiz verschieben, wenn die Notiz nur eine übergeordnete Notiz hat (d. h. der alte Zweig wird entfernt und ein neuer Zweig in die neue übergeordnete Notiz erstellt)",
-    "clone_note_new_parent": "Notiz zur neuen übergeordneten Notiz klonen, wenn die Notiz mehrere Klone/Zweige hat (es ist unklar, welcher Zweig entfernt werden soll)",
-    "nothing_will_happen": "Es passiert nichts, wenn die Notiz nicht zur Zielnotiz verschoben werden kann (z.B. wenn dies einen Kreislauf in der Baumstruktur erzeugen würde)"
+    "target_parent_note": "Übergeordnete Zielnotiz"
   },
   "rename_note": {
-    "rename_note": "Notiz umbenennen",
-    "rename_note_title_to": "Notiztitel umbenennen in",
-    "new_note_title": "neuer Notiztitel",
-    "click_help_icon": "Klicken Sie rechts auf das Hilfesymbol, um alle Optionen anzuzeigen",
-    "evaluated_as_js_string": "Der angegebene Wert wird als JavaScript-String ausgewertet und kann somit über die injizierte <code>note</code>-Variable mit dynamischem Inhalt angereichert werden (Notiz wird umbenannt). Beispiele:",
-    "example_note": "<code>Notiz</code> – alle übereinstimmenden Notizen werden in „Notiz“ umbenannt",
-    "example_new_title": "<code>NEU: ${note.title}</code> – Übereinstimmende Notiztitel erhalten das Präfix „NEU:“",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> – übereinstimmende Notizen werden mit dem Erstellungsmonat und -datum der Notiz vorangestellt",
-    "api_docs": "Siehe API-Dokumentation für <a href='https://zadam.github.io/trilium/backend_api/Note.html'>Notiz</a> und <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj-Eigenschaften</a> für Details."
+    "rename_note": "Notiz umbenennen"
   },
   "add_relation": {
     "add_relation": "Relation hinzufügen",
     "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to": "zu",
-    "target_note": "Zielnotiz",
-    "create_relation_on_all_matched_notes": "Für alle übereinstimmenden Notizen die angegebene Relation erstellen."
+    "target_note": "Zielnotiz"
   },
   "delete_relation": {
     "delete_relation": "Relation löschen",
@@ -728,20 +682,14 @@
   },
   "rename_relation": {
     "rename_relation": "Relation umbenennen",
-    "rename_relation_from": "Relation umbenennen von",
     "old_name": "alter Name",
-    "to": "zu",
     "new_name": "neuer Name",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
   "update_relation_target": {
-    "update_relation": "Relation aktualisieren",
     "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to": "zu",
     "target_note": "Zielnotiz",
-    "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "change_target_note": "oder die Zielnotiz der bestehenden Relation ändern",
     "update_relation_target": "Relationsziel aktualisieren"
   },
   "attachments_actions": {
@@ -888,7 +836,6 @@
     "in_progress": "Der Synchronisierungsvorgang mit dem Server ist im Gange."
   },
   "left_pane_toggle": {
-    "show_panel": "Panel anzeigen",
     "hide_panel": "Panel ausblenden"
   },
   "move_pane_button": {
@@ -907,7 +854,6 @@
     "import_files": "Dateien importieren",
     "export_note": "Notiz exportieren",
     "delete_note": "Notiz löschen",
-    "print_note": "Notiz drucken...",
     "save_revision": "Revision speichern",
     "convert_into_attachment_failed": "Konvertierung der Notiz „{{title}}“ fehlgeschlagen.",
     "convert_into_attachment_successful": "Notiz „{{title}}“ wurde als Anhang konvertiert.",
@@ -965,7 +911,6 @@
     "no_backlinks": "Keine Notizen verlinken auf diese Notiz."
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Untergeordnete Notiz einfügen",
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
     "error_unrecognized_command": "Unbekannter Befehl {{command}}",
@@ -1089,18 +1034,8 @@
   },
   "search_definition": {
     "add_search_option": "Suchoption hinzufügen:",
-    "search_string": "Suchzeichenfolge",
-    "search_script": "Suchskript",
-    "ancestor": "Vorfahre",
-    "fast_search": "schnelle Suche",
-    "fast_search_description": "Die Option „Schnellsuche“ deaktiviert die Volltextsuche von Notizinhalten, was die Suche in großen Datenbanken beschleunigen könnte.",
-    "include_archived": "archiviert einschließen",
     "include_archived_notes_description": "Archivierte Notizen sind standardmäßig von den Suchergebnissen ausgeschlossen, mit dieser Option werden sie einbezogen.",
-    "order_by": "Sortieren nach",
-    "limit": "Limit",
     "limit_description": "Begrenze die Anzahl der Ergebnisse",
-    "debug": "debuggen",
-    "debug_description": "Debug gibt zusätzliche Protokolleinträge in der Konsole aus, um die Fehlerdiagnose komplexer Abfragen zu erleichtern",
     "action": "Aktion",
     "search_button": "Suchen",
     "search_execute": "Aktionen suchen und ausführen",
@@ -1143,8 +1078,7 @@
     "include_archived_notes": "Archivierte Notizen einbeziehen"
   },
   "limit": {
-    "limit": "Limit",
-    "take_first_x_results": "Nehmen Sie nur die ersten X angegebenen Ergebnisse."
+    "limit": "Limit"
   },
   "order_by": {
     "order_by": "Sortieren nach",
@@ -1790,7 +1724,6 @@
     "hide-archived-notes": "Archivierte Notizen ausblenden",
     "automatically-collapse-notes": "Notizen automatisch zusammenklappen",
     "automatically-collapse-notes-title": "Notizen werden nach einer Inaktivitätsperiode automatisch zusammengeklappt, um den Baum zu entlasten.",
-    "save-changes": "Änderungen speichern und anwenden",
     "auto-collapsing-notes-after-inactivity": "Automatisches Zusammenklappen von Notizen nach Inaktivität...",
     "saved-search-note-refreshed": "Gespeicherte Such-Notiz wurde aktualisiert.",
     "hoist-this-note-workspace": "Diese Notiz fokussieren (Arbeitsbereich)",
@@ -2796,8 +2729,7 @@
     "processing_started": "OCR-Verarbeitung wurde gestartet. Bitte warten Sie einen Moment und aktualisieren Sie die Ansicht.",
     "processing_complete": "OCR-Verarbeitung abgeschlossen.",
     "processing_failed": "OCR-Verarbeitung konnte nicht gestartet werden",
-    "text_filtered_low_confidence": "OCR hat Text mit einer Konfidenz von {{confidence}} % erkannt, aber er wurde verworfen, weil Ihr Mindestschwellenwert bei {{threshold}} % liegt.",
-    "image_based_pdf_not_supported": "Dieses PDF scheint bildbasiert (gescannt) zu sein. Die Textextraktion aus bildbasierten PDFs wird derzeit noch nicht unterstützt."
+    "text_filtered_low_confidence": "OCR hat Text mit einer Konfidenz von {{confidence}} % erkannt, aber er wurde verworfen, weil Ihr Mindestschwellenwert bei {{threshold}} % liegt."
   },
   "revisions": {
     "note_revisions": "Revisionsverlauf",
@@ -3172,16 +3104,13 @@
   },
   "save_revision": {
     "save_revision": "Revision speichern",
-    "revision_name_placeholder": "Revisionsname (optional)",
-    "help": "Für jede passende Notiz wird eine benannte Revision mit ihrem aktuellen Inhalt und Titel gespeichert."
+    "revision_name_placeholder": "Revisionsname (optional)"
   },
   "convert_note": {
     "convert_note": "Konvertieren",
-    "convert_note_to": "Notiz konvertieren",
     "choose_conversion": "(Konvertierung auswählen)",
     "conversion_htmlToMarkdown": "Textnotizen → Markdown-Notizen (verlustbehaftet)",
     "conversion_markdownToHtml": "Markdown-Notizen → Textnotizen",
-    "help_text": "Die Konvertierung wird nur auf Notizen des Quelltyps angewendet; andere Notizen bleiben unverändert. Vorher wird eine Revision jeder konvertierten Notiz gespeichert.",
     "warning": "Bei der Konvertierung von Notizen können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
     "warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können."
   },
@@ -3238,14 +3167,6 @@
   },
   "attribute_list_panel": {
     "no_attributes": "Keine Attribute",
-    "owned_one": "{{count}} eigenes Attribut",
-    "owned_other": "{{count}} eigene Attribute",
-    "inherited_one": "{{count}} geerbtes Attribut",
-    "inherited_other": "{{count}} geerbte Attribute",
-    "definitions_one": "{{count}} Definition",
-    "definitions_other": "{{count}} Definitionen",
-    "internal_one": "{{count}} internes Systemattribut",
-    "internal_other": "{{count}} interne Systemattribute",
     "back": "Zurück zu den Attributen",
     "inheritable": "Vererbbar: Wird auf diese Notiz und alle Unternotizen angewendet",
     "delete": "Dieses Attribut löschen",

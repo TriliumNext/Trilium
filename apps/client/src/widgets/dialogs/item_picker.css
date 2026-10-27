@@ -167,6 +167,10 @@ body:not(.mobile) .modal.item-picker-dialog {
         height: 60vh;
         max-height: 100%;
     }
+
+    .item-picker-item {
+        --card-padding-block: 6px;
+    }
 }
 
 /* A phone fills the screen instead, together with `isFullPageOnMobile`. */

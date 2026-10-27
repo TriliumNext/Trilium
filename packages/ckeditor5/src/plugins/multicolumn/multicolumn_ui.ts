@@ -80,7 +80,7 @@ export default class MulticolumnUI extends Plugin {
         const command = editor.commands.get("multicolumnLayout") as Command;
         const dropdown = createDropdown(locale, SplitButtonView);
         dropdown.buttonView.set({
-            label: editor.t("Multiple column layout"),
+            label: editor.t("Columns"),
             icon: multicolumnIcon,
             tooltip: true
         });

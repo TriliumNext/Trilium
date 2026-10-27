@@ -3,31 +3,27 @@ import type { Express } from "express";
 import fs from "fs";
 import http from "http";
 import https from "https";
+import { networkInterfaces } from "os";
 import tmp from "tmp";
 
 import buildApp from "./app.js";
+import { TRILIUM_LOGO } from "./log_provider.js";
 import config from "./services/config.js";
 import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
 import { registerServerLlmExtensions } from "./services/llm/index.js";
+import { listListeningUrls } from "./services/network_addresses.js";
 import port from "./services/port.js";
 import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
+import { isElectron } from "./services/utils.js";
 import { publishHealthcheckTarget } from "./services/healthcheck.js";
 import { getDbSize } from "./services/sql_init.js";
 import { isHttpAttachableMessagingProvider } from "./services/ws_messaging_provider.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
-
-const LOGO = `\
- _____     _ _ _
-|_   _| __(_) (_)_   _ _ __ ___   | \\ | | ___ | |_ ___  ___
-  | || '__| | | | | | | '_ \` _ \\  |  \\| |/ _ \\| __/ _ \\/ __|
-  | || |  | | | | |_| | | | | | | | |\\  | (_) | ||  __/\\__ \\
-  |_||_|  |_|_|_|\\__,_|_| |_| |_| |_| \\_|\\___/ \\__\\___||___/ [version]
-`;
 
 export default async function startTriliumServer(): Promise<Express> {
     await displayStartupMessage();
@@ -102,7 +98,7 @@ export default async function startTriliumServer(): Promise<Express> {
 }
 
 async function displayStartupMessage() {
-    getLog().info(`\n${LOGO.replace("[version]", appInfo.appVersion)}`);
+    getLog().info(`\n${TRILIUM_LOGO} ${appInfo.appVersion}\n`);
     getLog().info(`📦 Versions:    app=${appInfo.appVersion} db=${appInfo.dbVersion} sync=${appInfo.syncVersion} clipper=${appInfo.clipperProtocolVersion}`);
     getLog().info(`🔧 Build:       ${utils.formatUtcTime(appInfo.buildDate)} (${appInfo.buildRevision.substring(0, 10)})`);
     getLog().info(`📂 Data dir:    ${appInfo.dataDirectory}`);
@@ -207,6 +203,7 @@ function startHttpServer(app: Express) {
     httpServer.on("listening", () => {
         if (listenOnTcp) {
             getLog().info(`Listening on port ${port}`);
+            printListeningUrls();
         } else {
             getLog().info(`Listening on unix socket ${host}`);
         }
@@ -216,4 +213,25 @@ function startHttpServer(app: Express) {
     });
 
     return httpServer;
+}
+
+/**
+ * Prints the URLs the server answers on. It writes to the console only, since the log file ends
+ * up in bug reports and the list can hold a public address. Desktop has no console to read, and
+ * in a container the interfaces belong to the container network rather than the host.
+ */
+function printListeningUrls() {
+    if (isElectron || fs.existsSync("/.dockerenv") || fs.existsSync("/run/.containerenv")) {
+        return;
+    }
+
+    const protocol = config["Network"]["https"] ? "https" : "http";
+    const { local, network } = listListeningUrls(protocol, host, port, networkInterfaces());
+
+    if (local) {
+        console.log(`🌐 Local:       ${local}`);
+    }
+    for (const [index, url] of network.entries()) {
+        console.log(`${index === 0 ? "🌐 Network:     " : "                "}${url}`);
+    }
 }

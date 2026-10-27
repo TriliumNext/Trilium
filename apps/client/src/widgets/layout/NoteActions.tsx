@@ -8,6 +8,7 @@ import appContext, { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
+import type { MenuCommandItem } from "../../menus/context_menu";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
@@ -19,12 +20,15 @@ import ws from "../../services/ws";
 import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
+import { resolveViewType } from "../collections/interface";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import { MenuItemRows } from "../react/Menu";
 import { ParentComponent, POPUP_EDITOR_NTX_ID, useCommandTrigger } from "../react/react_utils";
+import { getWordWrapMenu } from "./code_menus";
 import NoteActionsCustom from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
 import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
@@ -50,10 +54,17 @@ export default function NoteActions({ paneButtons = true }: {
 
 type ItemToFocus = "basic-properties";
 
-export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNoteSettings, dropdownRef: externalDropdownRef }: {
+export function NoteContextMenu({ note, noteContext, leadingViewActions = [], trailingViewActions = [], itemsAtStart, noteSettingsItems, itemsNearNoteSettings, dropdownRef: externalDropdownRef }: {
     note: FNote,
     noteContext?: NoteContext,
+    /** Tiles placed before the note's own in the strip of tiles. */
+    leadingViewActions?: MenuCommandItem<CommandNames>[];
+    /** Tiles placed after the note's own in the strip of tiles. */
+    trailingViewActions?: MenuCommandItem<CommandNames>[];
     itemsAtStart?: ComponentChildren;
+    /** Rows placed among the note settings, after the note type and its editability. */
+    noteSettingsItems?: ComponentChildren;
+    /** Rows that join the group of the note's properties. */
     itemsNearNoteSettings?: ComponentChildren;
     dropdownRef?: RefObject<DropdownHandle | null>;
 }) {
@@ -76,6 +87,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
         ["text", "code", "spreadsheet", "llmChat"].includes(noteType) ||
         (noteType === "render" && !!renderNote) ||
         (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? "")) ||
+        (noteType === "search" && ["list", "searchPreview"].includes(resolveViewType(note, viewType) ?? "")) ||
         (noteType === "file" && note.mime === "application/pdf")
     );
     const isElectron = getIsElectron();
@@ -84,16 +96,57 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType) || note.isSvg();
     const isSearchOrBook = ["search", "book"].includes(noteType);
     const isBoard = noteType === "book" && viewType === "board";
+    const isGeoMap = noteType === "book" && viewType === "geoMap";
+    const isTable = noteType === "book" && viewType === "table";
     // A calendar root makes day notes rather than events, so it has no templates to configure.
     const isEventCalendar = noteType === "book" && viewType === "calendar"
         && !note.hasLabel("calendarRoot") && !note.hasLabel("workspaceCalendarRoot");
     const isHelpPage = note.noteId.startsWith("_help");
     const [syncServerHost] = useTriliumOption("syncServerHost");
-    const { isReadOnly, enableEditing } = useIsNoteReadOnly(note, noteContext);
+    const { isReadOnly, isLocked, enableEditing } = useIsNoteReadOnly(note, noteContext);
+    const isViewReadOnly = useEffectiveReadOnly(note, noteContext);
+    // The views other than the board open their properties dialog only while they are editable.
+    const hasCollectionProperties = isBoard
+        || (!isViewReadOnly && (isEventCalendar || isGeoMap || isTable));
     const isNormalViewMode = noteContext?.viewScope?.viewMode === "default";
-    // The quick edit popup has no find bar, and the note map and a converted attachment open in the tab behind it.
+    const hasBasicProperties = isNormalViewMode && !isHelpPage;
+    // The note map and a converted attachment open in the tab behind the quick edit popup.
     const isInPopup = !!noteContext?.ntxId?.startsWith(POPUP_EDITOR_NTX_ID);
     const itemToFocusRef = useRef<ItemToFocus>(null);
+    const showRevisions = useCommandTrigger("showRevisions");
+    const searchInNote = useCommandTrigger("findInText");
+    const showAttachments = useCommandTrigger("showAttachments");
+    const showNoteMap = useCommandTrigger("toggleRibbonTabNoteMap");
+    const findAction: MenuCommandItem<CommandNames>[] = [ {
+        title: t("note_actions.search_in_note_short"), tooltip: t("note_actions.search_in_note"),
+        uiIcon: "bx bx-file-find", keyboardShortcut: "findInText" as const, enabled: isSearchable,
+        handler: () => searchInNote?.()
+    } ];
+    // The mobile menu lists the attachments in a row of its own, beside the attributes.
+    const attachmentsAction: MenuCommandItem<CommandNames>[] = isMobile ? [] : [ {
+        title: t("note_actions.note_attachments_short"), tooltip: t("note_actions.note_attachments"),
+        uiIcon: "bx bx-paperclip", enabled: !isInOptionsOrHelp,
+        handler: () => showAttachments?.()
+    } ];
+    const noteMapAction: MenuCommandItem<CommandNames>[] = isInPopup ? [] : [ {
+        title: t("note_actions.note_map"),
+        uiIcon: "bx bxs-network-chart", keyboardShortcut: "toggleRibbonTabNoteMap" as const, enabled: !isInOptionsOrHelp,
+        handler: () => showNoteMap?.()
+    } ];
+    /** The actions that look into the note, drawn as a strip of tiles at the top of the menu. */
+    const viewActions: MenuCommandItem<CommandNames>[] = [
+        ...leadingViewActions,
+        // A phone's thumb reaches the right end most easily, so Find goes nearer it.
+        ...(isMobile ? [ ...noteMapAction, ...findAction ] : [ ...findAction, ...attachmentsAction, ...noteMapAction ]),
+        ...trailingViewActions
+    ];
+    const viewStrip = viewActions.length > 0 && <>
+        <MenuItemRows items={viewActions.length > 1
+            ? [ { kind: "actions", items: viewActions, className: "note-actions-strip tn-menu-actions-cards" } ]
+            // One action, as in the quick edit popup on mobile, is too few for a strip, so it is a row under its full name.
+            : viewActions.map((item) => ({ ...item, title: item.tooltip ?? item.title }))} />
+        {(!isMobile || viewActions.length === 1) && <FormDropdownDivider />}
+    </>;
     // Keyboard shortcuts.
     useTriliumEvent("toggleRibbonTabBasicProperties", ({ ntxId }) => {
         if (!noteContext || ntxId !== noteContext.ntxId) return;
@@ -113,37 +166,29 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 iconAction
                 onHidden={() => itemToFocusRef.current = null }
             >
-                {itemsAtStart}
+                {isMobile && viewStrip}
 
                 {(note.type === "code" || note.noteId === "_backendLog") && <CodeProperties note={note} />}
 
-                {isReadOnly && <>
+                {isReadOnly && !isLocked && <>
                     <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}
                         command={() => enableEditing()} />
                     <FormDropdownDivider />
                 </>}
 
-                {!isInPopup && <CommandItem command="findInText" icon="bx bx-search" disabled={!isSearchable} text={t("note_actions.search_in_note")} />}
-                <CommandItem command="showAttachments" icon="bx bx-paperclip" disabled={isInOptionsOrHelp} text={t("note_actions.note_attachments")} />
-                {!isInPopup && <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />}
-                {/* The attributes panel is a right pane tab where there is a right pane; on a phone the
-                    menu is where it is reached, and a modal is where it is shown. */}
-                {isMobile && <CommandItem command="showNoteAttributes" icon="bx bx-list-check" disabled={isInOptionsOrHelp} text={t("note_actions.note_attributes")} />}
+                {itemsAtStart}
 
-                <FormDropdownDivider />
+                {!isMobile && viewStrip}
 
-                {isNormalViewMode && !isHelpPage && <>
-                    <NoteBasicProperties note={note} focus={itemToFocusRef} isInPopup={isInPopup} />
-                    <FormDropdownDivider />
-                </>}
-
+                {hasBasicProperties && <NoteBasicProperties note={note} focus={itemToFocusRef} isInPopup={isInPopup} settingsItems={noteSettingsItems} />}
                 {itemsNearNoteSettings}
+                {(hasBasicProperties || itemsNearNoteSettings) && <FormDropdownDivider />}
 
                 <CommandItem icon="bx bx-import" text={t("note_actions.import_files")}
                     disabled={isInOptionsOrHelp || note.type === "search"}
                     command={() => parentComponent?.triggerCommand("showImportDialog", { noteId: note.noteId })} />
                 <CommandItem icon="bx bx-export" text={t("note_actions.export_note")}
-                    disabled={isInOptionsOrHelp || note.noteId === "_backendLog"}
+                    disabled={note.noteId.startsWith("_options") || note.noteId === "_backendLog"}
                     command={() => noteContext?.notePath && parentComponent?.triggerCommand("showExportDialog", {
                         notePath: noteContext.notePath,
                         defaultType: "single"
@@ -162,23 +207,30 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                     </>
                 )}
                 <CommandItem command="printActiveNote" icon="bx bx-printer" disabled={!isPrintable}
-                    text={isElectron ? t("note_actions.print_or_export_to_pdf") : t("note_actions.print_note")}
+                    text={t("note_actions.print_or_export_to_pdf")}
                 />
 
                 <FormDropdownDivider />
 
-                <CommandItem command="showRevisions" icon="bx bx-history" text={t("note_actions.view_revisions")} />
-                <CommandItem command="forceSaveRevision" icon="bx bx-save" disabled={isInOptionsOrHelp} text={t("note_actions.save_revision")} />
-                <CommandItem command="saveNamedRevision" icon="bx bx-purchase-tag" disabled={isInOptionsOrHelp} text={t("note_actions.save_named_revision")} />
-
-                <FormDropdownDivider />
-
+                {/* A split row's own action runs only on the desktop, so a phone's page lists it too. */}
+                <FormDropdownSubmenu icon="bx bx-history" title={t("note_actions.view_revisions")}
+                    onDropdownToggleClicked={() => {
+                        dropdownRef.current?.hide();
+                        showRevisions?.();
+                    }}
+                >
+                    {isMobile && <CommandItem command="showRevisions" icon="bx bx-history" text={t("note_actions.view_revisions")} />}
+                    <CommandItem command="forceSaveRevision" icon="bx bx-save" disabled={isInOptionsOrHelp} text={t("note_actions.save_revision")} />
+                    <CommandItem command="saveNamedRevision" icon="bx bx-purchase-tag" disabled={isInOptionsOrHelp} text={t("note_actions.save_named_revision")} />
+                </FormDropdownSubmenu>
                 {canBeConvertedToAttachment && !isInPopup && <ConvertToAttachment note={note} />}
                 {note.type === "render" && <CommandItem command="renderActiveNote" icon="bx bx-extension" text={t("note_actions.re_render_note")}
                 />}
 
-                {(isBoard || isEventCalendar) && <CommandItem icon="bx bx-cog"
-                    text={isBoard ? t("board_view.properties") : t("calendar_view.properties")}
+                {hasCollectionProperties && <CommandItem icon="bx bx-cog"
+                    text={isBoard ? t("board_view.properties")
+                        : isGeoMap ? t("geo-map.properties")
+                        : isTable ? t("table_view.properties") : t("calendar_view.properties")}
                     command={() => parentComponent?.triggerEvent("showCollectionProperties", { ntxId: noteContext?.ntxId })} />}
 
                 <FormDropdownSubmenu icon="bx bx-wrench" title={t("note_actions.advanced")}>
@@ -189,7 +241,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                         <ConvertNoteFormat note={note} />}
                     {/* Always the note-level dialog, an image note included: it has children of its
                         own, and reaching them is what makes this "images" and not "image". */}
-                    <CommandItem icon="bx bx-collapse-alt" text={t("compress-images")}
+                    <CommandItem icon="bx bx-collapse-alt" text={t("compress-images-menu")}
                         disabled={isInOptionsOrHelp || !isContentAvailable}
                         command={() => void showImageCompressionDialog({ type: "note", noteId: note.noteId })} />
                     <CommandItem command="showNoteOCRText" icon="bx bx-text" disabled={!["image", "file"].includes(noteType) || !isContentAvailable} text={t("note_actions.view_ocr_text")} />
@@ -216,24 +268,15 @@ function CodeProperties({ note }: { note: FNote }) {
 
     return (
         <>
-            <FormDropdownSubmenu title={t("note_actions.word_wrap")} icon="bx bx-align-justify">
-                <FormListItem checked={wrapLines == null} onClick={() => setWrapLines(null)} description={t("note_actions.word_wrap_auto_description")}>
-                    {t("note_actions.word_wrap_auto")}
-                </FormListItem>
-                <FormListItem checked={wrapLines === true} onClick={() => setWrapLines(true)}>
-                    {t("note_actions.word_wrap_on")}
-                </FormListItem>
-                <FormListItem checked={wrapLines === false} onClick={() => setWrapLines(false)}>
-                    {t("note_actions.word_wrap_off")}
-                </FormListItem>
-            </FormDropdownSubmenu>
+            <MenuItemRows items={[ getWordWrapMenu(wrapLines, setWrapLines) ]} />
             <FormDropdownDivider />
         </>
     );
 }
 
-function NoteBasicProperties({ note, focus, isInPopup }: {
+function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
     note: FNote;
+    settingsItems?: ComponentChildren;
     focus: RefObject<ItemToFocus | null>;
     /** Whether the menu is in the quick edit popup, whose width the full content width label does not change. */
     isInPopup: boolean;
@@ -251,31 +294,11 @@ function NoteBasicProperties({ note, focus, isInPopup }: {
         }
     }, [ focus ]);
 
-    return <>
-        <FormListToggleableItem
-            icon="bx bx-share-alt"
-            title={t("shared_switch.shared")}
-            currentValue={isShared} onChange={switchShareState}
-            helpPage="R9pX4DGra2Vt"
-            disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
-            itemRef={itemToFocusRef}
-        />
-        <FormListToggleableItem
-            icon="bx bx-lock-alt"
-            title={t("protect_note.toggle-on")}
-            currentValue={!!isProtected} onChange={shouldProtect => protected_session.protectNote(note.noteId, shouldProtect, false)}
-        />
-        <FormListToggleableItem
-            icon="bx bx-bookmark"
-            title={t("bookmark_switch.bookmark")}
-            currentValue={isBookmarked} onChange={setIsBookmarked}
-            disabled={["root", "_hidden"].includes(note?.noteId ?? "")}
-        />
-
-        <FormDropdownDivider />
-
+    const isMobile = getIsMobile();
+    const settings = <>
         <NoteTypeDropdown note={note} />
-        <EditabilityDropdown note={note} />
+        {!isMobile && <EditabilityDropdown note={note} />}
+        {settingsItems}
 
         <FormListToggleableItem
             icon="bx bx-copy-alt"
@@ -291,10 +314,63 @@ function NoteBasicProperties({ note, focus, isInPopup }: {
                 currentValue={isFullContentWidth} onChange={setIsFullContentWidth}
             />
         }
+        {isMobile && <>
+            <FormDropdownDivider />
+            <FormListHeader text={t("basic_properties.editable")} />
+            <EditabilityOptions note={note} />
+        </>}
+    </>;
+
+    const shared = <FormListToggleableItem
+        icon="bx bx-share-alt"
+        title={t("shared_switch.shared")}
+        currentValue={isShared} onChange={switchShareState}
+        helpPage="R9pX4DGra2Vt"
+        disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
+        itemRef={itemToFocusRef}
+    />;
+    const protect = <FormListToggleableItem
+        icon="bx bx-lock-alt"
+        title={t("protect_note.toggle-on")}
+        currentValue={!!isProtected} onChange={shouldProtect => protected_session.protectNote(note.noteId, shouldProtect, false)}
+    />;
+    const bookmark = <FormListToggleableItem
+        icon="bx bx-bookmark"
+        title={t("bookmark_switch.bookmark")}
+        currentValue={isBookmarked} onChange={setIsBookmarked}
+        disabled={["root", "_hidden"].includes(note?.noteId ?? "")}
+    />;
+
+    if (isMobile) {
+        return <>
+            {protect}
+            <FormDropdownSubmenu icon="bx bx-slider-alt" title={t("note_actions.note_settings")}>
+                {shared}
+                {bookmark}
+                <FormDropdownDivider />
+                {settings}
+            </FormDropdownSubmenu>
+        </>;
+    }
+
+    return <>
+        {shared}
+        {protect}
+        {bookmark}
+        <FormDropdownDivider />
+        {settings}
     </>;
 }
 
 function EditabilityDropdown({ note }: { note: FNote }) {
+    return (
+        <FormDropdownSubmenu title={t("basic_properties.editable")} icon="bx bx-edit-alt">
+            <EditabilityOptions note={note} />
+        </FormDropdownSubmenu>
+    );
+}
+
+function EditabilityOptions({ note }: { note: FNote }) {
     const [ readOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const [ autoReadOnlyDisabled, setAutoReadOnlyDisabled ] = useNoteLabelBoolean(note, "autoReadOnlyDisabled");
 
@@ -303,13 +379,11 @@ function EditabilityDropdown({ note }: { note: FNote }) {
         setAutoReadOnlyDisabled(autoReadOnlyDisabled);
     }
 
-    return (
-        <FormDropdownSubmenu title={t("basic_properties.editable")} icon="bx bx-edit-alt">
-            <FormListItem checked={!readOnly && !autoReadOnlyDisabled} onClick={() => setState(false, false)} description={t("editability_select.note_is_editable")}>{t("editability_select.auto")}</FormListItem>
-            <FormListItem checked={readOnly && !autoReadOnlyDisabled} onClick={() => setState(true, false)} description={t("editability_select.note_is_read_only")}>{t("editability_select.read_only")}</FormListItem>
-            <FormListItem checked={!readOnly && autoReadOnlyDisabled} onClick={() => setState(false, true)} description={t("editability_select.note_is_always_editable")}>{t("editability_select.always_editable")}</FormListItem>
-        </FormDropdownSubmenu>
-    );
+    return <>
+        <FormListItem checked={!readOnly && !autoReadOnlyDisabled} onClick={() => setState(false, false)} description={t("editability_select.note_is_editable")}>{t("editability_select.auto")}</FormListItem>
+        <FormListItem checked={readOnly && !autoReadOnlyDisabled} onClick={() => setState(true, false)} description={t("editability_select.note_is_read_only")}>{t("editability_select.read_only")}</FormListItem>
+        <FormListItem checked={!readOnly && autoReadOnlyDisabled} onClick={() => setState(false, true)} description={t("editability_select.note_is_always_editable")}>{t("editability_select.always_editable")}</FormListItem>
+    </>;
 }
 
 function NoteTypeDropdown({ note }: { note: FNote }) {

@@ -22,6 +22,7 @@
     --dropdown-border-color: #404040;
     --dropdown-shadow-opacity: 0.6;
     --dropdown-item-icon-destructive-color: #d58477;
+    --form-error-text-color: #ff8a80;
     --contextual-help-icon-color: #7fd2ef;
 
     --accented-background-color: #555;
@@ -113,6 +114,13 @@
     --menu-item-delimiter-color: #ffffff1c;
     --menu-item-group-header-color: #ffffff91;
     --menu-section-background-color: #fefefe08;
+
+    --glass-background: #26262699;
+    --glass-edge-color: #ffffff1f;
+    --glass-highlight-color: #ffffff2e;
+
+    --grouped-background-color: #161616;
+    --grouped-card-background-color: #2c2c2e;
     --menu-submenu-mobile-background-color: rgba(0, 0, 0, 0.15);
 
     --modal-backdrop-color: #000;
@@ -192,6 +200,7 @@
 
     --right-pane-heading-color: gray;
     --right-pane-peek-background: #303030dc;
+    --left-pane-peek-background: #1f1f1fdc;
 
     --peek-pane-backdrop-color: #00000032;
     --peek-pane-shadow-color: #000000a8;
@@ -225,6 +234,8 @@
     --badge-office-preview-background-color: #3f5470;
     --badge-share-background-color: #4d4d4d;
     --badge-snippet-background-color: #4d4d4d;
+    --badge-template-background-color: #7d6f52;
+    --badge-template-text-color: white;
     --badge-clipped-note-background-color: #295773;
     --badge-doc-url-background-color: #1e5c42;
     --badge-execute-background-color: #604180;
@@ -276,6 +287,8 @@
     --log-query-verb-color: #fa74bb;
     --log-query-line-background-color: #edbe670f;
     --log-sql-color: #f4c8ae;
+    --log-search-verb-color: #3f9189;
+    --log-search-count-color: #818181;
     --log-error-color: #FF867F;
     --log-error-line-background-color: #d44b4b1f;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
@@ -305,6 +318,8 @@
     --calendar-day-hover-color: var(--hover-item-text-color);
     --calendar-day-hover-background: var(--active-item-background-color);
     --calendar-day-highlight-background: #8080805a;
+    --calendar-day-selected-background: var(--menu-text-color);
+    --calendar-day-selected-color: var(--menu-background-color-no-backdrop);
 
     --timeline-bullet-color: gray;
     --timeline-bullet-hover-color: white;

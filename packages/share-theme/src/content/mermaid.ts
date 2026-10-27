@@ -44,13 +44,14 @@ interface Diagram {
 function findDiagrams() {
     const placeholders: Omit<Diagram, "element">[] = [];
 
-    for (const block of document.querySelectorAll("#content pre")) {
+    for (const block of document.querySelectorAll<HTMLElement>("#content pre")) {
         const code = block.querySelector<HTMLElement>(":scope > code.language-mermaid");
         if (code) {
             placeholders.push({
                 placeholder: block,
                 source: code.textContent,
-                blockId: code.dataset.triliumBlockId
+                // A code block keeps its block ID on `<code>`, a Mermaid embed on `<pre>`.
+                blockId: block.dataset.triliumBlockId ?? code.dataset.triliumBlockId
             });
         }
     }

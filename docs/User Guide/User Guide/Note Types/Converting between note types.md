@@ -12,14 +12,14 @@ Before conversion, a revision is saved automatically, so you can restore the ori
 
 Markdown notes can be converted to Text Notes with negligible loss of formatting fidelity.
 
-To do so, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to Text Note_.
+To do so, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to text note_.
 
 ### Text Note to Markdown
 
 > [!WARNING]
 > Since Markdown does not support all the capabilities of Text notes, this conversion is lossy in terms of formatting: some formatting may be lost, and some unsupported elements may even be dropped. It's strongly recommended that you inspect the content for any information that might have gone missing after the conversion.
 
-To convert a text note to Markdown, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to Markdown Note_.
+To convert a text note to Markdown, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to Markdown note_.
 
 ## Converting multiple notes
 

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     stored: {} as Record<string, string | boolean>,
     saved: [] as [ string, string | boolean ][],
+    previewLineNumbers: [] as boolean[],
     colorScheme: "light" as "light" | "dark"
 }));
 
@@ -17,6 +18,9 @@ vi.mock("@triliumnext/codemirror", () => ({
         setText() {}
         setMimeType() {}
         setLineWrapping() {}
+        setLineNumbers(isShown: boolean) {
+            mocks.previewLineNumbers.push(isShown);
+        }
         setIndentSize() {}
         setTheme() {}
         destroy() {}
@@ -55,6 +59,7 @@ let host: HTMLElement;
 beforeEach(() => {
     mocks.stored = { codeNoteTabWidth: "4" };
     mocks.saved = [];
+    mocks.previewLineNumbers = [];
     mocks.colorScheme = "light";
     host = document.body.appendChild(document.createElement("div"));
 });
@@ -131,5 +136,24 @@ describe("the code note editor settings", () => {
 
         act(() => void wrap?.dispatchEvent(new Event("input", { bubbles: true })));
         expect(mocks.saved).toContainEqual([ "codeLineWrapEnabled", true ]);
+    });
+
+    it("offers line numbers below word wrapping, and shows them in the preview as set", () => {
+        mocks.stored = { ...mocks.stored, codeLineNumbersEnabled: true };
+        open();
+        expect(optionLabels().slice(0, 2))
+            .toEqual([ "code_theme.word_wrapping", "code-editor-options.line_numbers" ]);
+        expect(mocks.previewLineNumbers).toEqual([ true ]);
+
+        const toggle = host.querySelector<HTMLInputElement>(
+            "input.switch-toggle[id^='line-numbers-']"
+        );
+        expect(toggle?.checked).toBe(true);
+        act(() => void toggle?.dispatchEvent(new Event("input", { bubbles: true })));
+        expect(mocks.saved).toContainEqual([ "codeLineNumbersEnabled", false ]);
+
+        mocks.stored = { ...mocks.stored, codeLineNumbersEnabled: false };
+        open();
+        expect(mocks.previewLineNumbers).toEqual([ true, false ]);
     });
 });

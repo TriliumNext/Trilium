@@ -41,6 +41,8 @@ export type WorkerEvent =
     | { type: "failed"; message: string }
     | { type: "pending"; sources: TranscriptSource[] }
     | { type: "utterance"; utterance: TranscriptUtterance }
+    /** The RMS of a source's latest chunk, from 0 to 1; one per chunk, about four a second. */
+    | { type: "level"; source: TranscriptSource; level: number }
     | { type: "log"; level: keyof Logger; message: string }
     /** Every utterance captured before `stop` has been sent. */
     | { type: "stopped" }

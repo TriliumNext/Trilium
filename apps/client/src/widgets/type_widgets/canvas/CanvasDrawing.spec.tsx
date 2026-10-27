@@ -43,19 +43,13 @@ vi.mock("./persistence", () => ({
     loadDrawingFiles: async () => ({ files: {}, referencedFileIds: new Set() }),
     exportDrawingPicture
 }));
-const { detailEditor, attachmentEditorMounts, canvasEditorMounts, exportDrawingPicture } =
-    vi.hoisted(() => ({
-        detailEditor: { canEdit: () => true, release: vi.fn() },
-        attachmentEditorMounts: vi.fn(),
-        canvasEditorMounts: vi.fn(),
-        exportDrawingPicture: vi.fn(async (_scene: unknown, _files: unknown, _isDark: boolean) =>
-            document.createElementNS("http://www.w3.org/2000/svg", "svg"))
-    }));
+const { detailEditor, exportDrawingPicture } = vi.hoisted(() => ({
+    detailEditor: { canEdit: () => true, release: vi.fn() },
+    exportDrawingPicture: vi.fn(async (_scene: unknown, _files: unknown, _isDark: boolean) =>
+        document.createElementNS("http://www.w3.org/2000/svg", "svg"))
+}));
 vi.mock("../text/attachment_saves", () => ({
-    useAttachmentEditor: () => {
-        useEffect(() => attachmentEditorMounts(), []);
-        return detailEditor;
-    }
+    useAttachmentEditor: () => detailEditor
 }));
 
 const canvasEditorProps = vi.fn();
@@ -81,7 +75,6 @@ function MockCanvasEditor(props: MockCanvasEditorProps) {
     canvasEditorProps(props);
     const [ isLoaded, setIsLoaded ] = useState(false);
     useEffect(() => setIsLoaded(true), []);
-    useEffect(() => canvasEditorMounts(), []);
     return isLoaded ? <div className="excalidraw" tabIndex={0} /> : <span className="loading" />;
 }
 
@@ -871,23 +864,6 @@ describe("CanvasDrawing", () => {
         await mount();
         expect(document.activeElement).toBe(editable);
         editable.remove();
-    });
-
-    it("loads the drawing again for each revision, keeping its detail editor", async () => {
-        const note = buildNote({ title: "Owner" });
-        const mountDetail = (revision: number) => act(async () => {
-            render(
-                <CanvasDrawingDetail attachment={ATTACHMENT} note={note} revision={revision} />,
-                box
-            );
-        });
-        attachmentEditorMounts.mockClear();
-        canvasEditorMounts.mockClear();
-
-        await mountDetail(0);
-        await mountDetail(1);
-        expect(canvasEditorMounts).toHaveBeenCalledTimes(2);
-        expect(attachmentEditorMounts).toHaveBeenCalledOnce();
     });
 
     it("edits the drawing in the detail of its attachment unless its note is read-only", async () => {

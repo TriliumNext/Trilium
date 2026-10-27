@@ -47,8 +47,10 @@ export function createShareFrocaSource(
         // A visitor cannot change notes, so what a view saves holds only while the page is open.
         saveAttachment: async () => {},
         removeAttachment: async () => {},
-        searchInSubtree: (query, ancestorNoteId) => {
-            const params = new URLSearchParams({ searchString: query, ancestorNoteId });
+        searchInSubtree: (query, ancestorNoteId, includeArchived) => {
+            const params = new URLSearchParams({
+                searchString: query, ancestorNoteId, includeArchivedNotes: String(includeArchived)
+            });
             return getJson(`api/search?${params}`);
         },
         getAttributeNames: (type, query) =>

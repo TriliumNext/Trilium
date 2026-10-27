@@ -86,10 +86,17 @@ describe("PromotedAttributesCard", () => {
     let itemNotes: FNote[] | undefined;
     let unarrangedHidden: boolean | undefined;
     let omitDrawn: boolean | undefined;
+    /** Wraps the card's deletion where a test hands one, recording what it was called with. */
+    let runDeletion: ((deletion: () => Promise<void>, type: "label" | "relation", name: string)
+        => Promise<void>) | undefined;
+    /** What `runDeletion` was called with, and whether the definition was gone before and after. */
+    let wrapped: { type: string, name: string, removedBefore: boolean, removedAfter: boolean }[];
 
     beforeEach(() => {
         vi.clearAllMocks();
         stored = [];
+        runDeletion = undefined;
+        wrapped = [];
         settings = undefined;
         drawnByCollection = undefined;
         itemNotes = undefined;
@@ -406,6 +413,35 @@ describe("PromotedAttributesCard", () => {
             expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:dueDate");
         });
 
+        /** A board drops the columns it stores for a grouping in the same write. */
+        it("hands the deletion to a collection that wraps one, from either button", async () => {
+            runDeletion = async (deletion, type, name) => {
+                const removedBefore = mocks.removeOwned.mock.calls.length > 0;
+                await deletion();
+                wrapped.push({
+                    type, name, removedBefore, removedAfter: mocks.removeOwned.mock.calls.length > 0
+                });
+            };
+            draw();
+
+            await act(async () => {
+                segments()[0].querySelector<HTMLElement>(".promoted-attribute-delete")?.click();
+                await flush();
+            });
+            edit(1);
+            await act(async () => {
+                mocks.detail.callbacks.onDelete();
+                await flush();
+            });
+
+            expect(wrapped).toEqual([
+                { type: "label", name: "dueDate", removedBefore: false, removedAfter: true },
+                { type: "label", name: "owner", removedBefore: true, removedAfter: true }
+            ]);
+            expect(mocks.bulk).toHaveBeenCalledTimes(2);
+            expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:owner");
+        });
+
         it("leaves everything alone where the reader said no", async () => {
             mocks.confirm.mockResolvedValue(false);
             draw();
@@ -547,6 +583,7 @@ describe("PromotedAttributesCard", () => {
                         unarrangedHidden={unarrangedHidden}
                         omitDrawn={omitDrawn}
                         onChange={(attributes) => stored.push(attributes)}
+                        runDeletion={runDeletion}
                     />
                 </ParentComponent.Provider>,
                 container);
@@ -595,7 +632,7 @@ describe("PromotedAttributesCard", () => {
     }
 
     function adder() {
-        return container.querySelector<HTMLElement>(".tn-sortable-adder");
+        return container.querySelector<HTMLElement>(".tn-card-adder");
     }
 
     /** The editor reporting a definition and being told to save it. */

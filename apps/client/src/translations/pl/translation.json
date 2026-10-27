@@ -57,11 +57,9 @@
     "add_link": "Dodaj link",
     "note": "Notatka",
     "search_note": "wyszukaj notatkę po nazwie",
-    "link_title_arbitrary": "tytuł linku można dowolnie zmieniać",
     "link_title": "Tytuł linku",
     "button_add_link": "Dodaj link",
     "help_on_links": "Pomoc dotycząca linków",
-    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki",
     "edit_link": "Edycja linku",
     "anchor": "Zakotwiczenie (opcjonalne)",
     "anchor_none": "Brak (link do notatki)",
@@ -84,12 +82,12 @@
     "relations": "Relacje",
     "bulk_actions": "Akcje masowe",
     "include_descendants": "Uwzględnij elementy podrzędne wybranych notatek",
-    "available_actions": "Dostępne akcje",
     "chosen_actions": "Wybrane akcje",
-    "execute_bulk_actions": "Wykonaj akcje masowe",
+    "execute_bulk_actions_one": "Wykonaj akcje masowe",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_many": "",
     "bulk_actions_executed": "Akcje masowe zostały wykonane pomyślnie.",
-    "none_yet": "Jeszcze nic... dodaj akcję, klikając jedną z dostępnych powyżej.",
-    "affected_notes": "Dotyczy notatek"
+    "none_yet": "Jeszcze nic... dodaj akcję, klikając jedną z dostępnych powyżej."
   },
   "confirm": {
     "ok": "OK",
@@ -290,12 +288,7 @@
     "add_label": "Dodaj etykietę",
     "label_name_placeholder": "nazwa etykiety",
     "label_name_title": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to_value": "na wartość",
-    "new_value_placeholder": "nowa wartość",
-    "help_text": "Na wszystkich dopasowanych notatkach:",
-    "help_text_item2": "lub zmień wartość istniejącej etykiety",
-    "help_text_item1": "utwórz podaną etykietę, jeśli notatka jeszcze jej nie ma",
-    "help_text_note": "Możesz również wywołać tę metodę bez wartości, w takim przypadku etykieta zostanie przypisana do notatki bez wartości."
+    "new_value_placeholder": "nowa wartość"
   },
   "attribute_detail": {
     "delete": "Usuń",
@@ -488,23 +481,13 @@
   },
   "search_definition": {
     "add_search_option": "Dodaj opcję wyszukiwania:",
-    "search_string": "ciąg wyszukiwania",
-    "search_script": "skrypt wyszukiwania",
-    "ancestor": "przodek",
-    "fast_search": "szybkie wyszukiwanie",
-    "fast_search_description": "Opcja szybkiego wyszukiwania wyłącza pełnotekstowe przeszukiwanie treści notatek, co może przyspieszyć wyszukiwanie w dużych bazach danych.",
-    "include_archived": "uwzględnij zarchiwizowane",
     "include_archived_notes_description": "Zarchiwizowane notatki są domyślnie wykluczone z wyników wyszukiwania, ta opcja spowoduje ich uwzględnienie.",
-    "order_by": "sortuj według",
-    "limit": "limit",
     "limit_description": "Ogranicz liczbę wyników",
     "save_to_note": "Zapisz do notatki",
     "search_parameters": "Parametry wyszukiwania",
     "unknown_search_option": "Nieznana opcja wyszukiwania {{searchOptionName}}",
     "search_note_saved": "Notatka wyszukiwania została zapisana w {{- notePathTitle}}",
     "actions_executed": "Akcje zostały wykonane.",
-    "debug": "debug",
-    "debug_description": "Debugowanie wypisze dodatkowe informacje debugowania w konsoli, aby pomóc w debugowaniu złożonych zapytań",
     "action": "akcja",
     "search_button": "Szukaj",
     "search_execute": "Szukaj i wykonaj akcje",
@@ -547,13 +530,8 @@
   },
   "include_note": {
     "label_note": "Notatka",
-    "placeholder_search": "wyszukaj notatkę po nazwie",
     "dialog_title": "Dołącz notatkę",
-    "button_include": "Dołącz notatkę",
-    "box_size_prompt": "Rozmiar pola dołączonej notatki:",
-    "box_size_small": "mały (~ 10 linii)",
-    "box_size_medium": "średni (~ 30 linii)",
-    "box_size_full": "pełny (pole pokazuje cały tekst)"
+    "button_include": "Dołącz notatkę"
   },
   "info": {
     "closeButton": "Zamknij",
@@ -571,8 +549,7 @@
     "modal_body_text": "Ze względu na ograniczenia przeglądarki (sandbox) nie można bezpośrednio odczytać schowka z poziomu JavaScript. Proszę wkleić treść Markdown do zaimportowania w poniższe pole tekstowe i kliknąć przycisk Importuj"
   },
   "limit": {
-    "limit": "Limit",
-    "take_first_x_results": "Weź tylko pierwsze X określonych wyników."
+    "limit": "Limit"
   },
   "link_context_menu": {
     "open_note_in_popup": "Szybka edycja",
@@ -726,10 +703,7 @@
   },
   "note_type_chooser": {
     "modal_title": "Wybierz typ notatki",
-    "modal_body": "Wybierz typ notatki / szablon nowej notatki:",
-    "templates": "Szablony",
-    "change_path_prompt": "Zmień miejsce utworzenia nowej notatki:",
-    "search_placeholder": "szukaj ścieżki po nazwie (domyślna, jeśli puste)"
+    "templates": "Szablony"
   },
   "password_not_set": {
     "title": "Hasło nie jest ustawione",
@@ -741,9 +715,7 @@
     "add_relation": "Dodaj relację",
     "relation_name": "nazwa relacji",
     "allowed_characters": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to": "do",
-    "target_note": "notatka docelowa",
-    "create_relation_on_all_matched_notes": "Na wszystkich dopasowanych notatkach utwórz podaną relację."
+    "target_note": "notatka docelowa"
   },
   "prompt": {
     "title": "Monit",
@@ -805,10 +777,7 @@
     "remove_this_search_action": "Usuń tę akcję wyszukiwania"
   },
   "execute_script": {
-    "execute_script": "Wykonaj skrypt",
-    "help_text": "Możesz wykonywać proste skrypty na dopasowanych notatkach.",
-    "example_1": "Na przykład, aby dodać ciąg znaków do tytułu notatki, użyj tego małego skryptu:",
-    "example_2": "Bardziej złożonym przykładem byłoby usunięcie wszystkich atrybutów dopasowanej notatki:"
+    "execute_script": "Wykonaj skrypt"
   },
   "delete_label": {
     "delete_label": "Usuń etykietę",
@@ -817,9 +786,7 @@
   },
   "rename_label": {
     "rename_label": "Zmień nazwę etykiety",
-    "rename_label_from": "Zmień nazwę etykiety z",
     "old_name_placeholder": "stara nazwa",
-    "to": "Na",
     "new_name_placeholder": "nowa nazwa",
     "name_title": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek."
   },
@@ -827,41 +794,20 @@
     "update_label_value": "Zaktualizuj wartość etykiety",
     "label_name_placeholder": "nazwa etykiety",
     "label_name_title": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to_value": "na wartość",
-    "new_value_placeholder": "nowa wartość",
-    "help_text": "Na wszystkich dopasowanych notatkach zmień wartość istniejącej etykiety.",
-    "help_text_note": "Możesz również wywołać tę metodę bez wartości, w takim przypadku etykieta zostanie przypisana do notatki bez wartości."
+    "new_value_placeholder": "nowa wartość"
   },
   "delete_note": {
-    "delete_note": "Usuń notatkę",
-    "delete_matched_notes": "Usuń dopasowane notatki",
-    "delete_matched_notes_description": "To spowoduje usunięcie dopasowanych notatek.",
-    "undelete_notes_instruction": "Po usunięciu możliwe jest ich przywrócenie w oknie Ostatnie zmiany.",
-    "erase_notes_instruction": "Aby trwale wymazać notatki, możesz po usunięciu przejść do Opcje -> Inne i kliknąć przycisk \"Wymaż usunięte notatki teraz\"."
+    "delete_note": "Usuń notatkę"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Usuń wersje notatki",
-    "all_past_note_revisions": "Wszystkie przeszłe wersje dopasowanych notatek zostaną usunięte. Sama notatka zostanie w pełni zachowana. Innymi słowy, historia notatki zostanie usunięta."
+    "delete_note_revisions": "Usuń wersje notatki"
   },
   "move_note": {
     "move_note": "Przenieś notatkę",
-    "to": "do",
-    "target_parent_note": "docelowa notatka nadrzędna",
-    "on_all_matched_notes": "Na wszystkich dopasowanych notatkach",
-    "move_note_new_parent": "przenieś notatkę do nowego rodzica, jeśli notatka ma tylko jednego rodzica (tj. stara gałąź jest usuwana, a nowa gałąź do nowego rodzica jest tworzona)",
-    "clone_note_new_parent": "sklonuj notatkę do nowego rodzica, jeśli notatka ma wiele klonów/gałęzi (nie jest jasne, która gałąź powinna zostać usunięta)",
-    "nothing_will_happen": "nic się nie stanie, jeśli notatki nie można przenieść do notatki docelowej (tj. utworzyłoby to cykl w drzewie)"
+    "target_parent_note": "docelowa notatka nadrzędna"
   },
   "rename_note": {
-    "rename_note": "Zmień nazwę notatki",
-    "rename_note_title_to": "Zmień tytuł notatki na",
-    "new_note_title": "nowy tytuł notatki",
-    "click_help_icon": "Kliknij ikonę pomocy po prawej stronie, aby zobaczyć wszystkie opcje",
-    "evaluated_as_js_string": "Podana wartość jest ewaluowana jako ciąg JavaScript i dzięki temu może być wzbogacona o dynamiczną zawartość za pomocą wstrzykniętej zmiennej <code>note</code> (zmieniana notatka). Przykłady:",
-    "example_note": "<code>Notatka</code> - wszystkie dopasowane notatki zmieniają nazwę na 'Notatka'",
-    "example_new_title": "<code>NOWA: ${note.title}</code> - tytuły dopasowanych notatek są poprzedzone prefiksem 'NOWA: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - dopasowane notatki są poprzedzone miesiącem i dniem utworzenia notatki",
-    "api_docs": "Zobacz dokumentację API dla <a href='https://zadam.github.io/trilium/backend_api/Note.html'>notatki</a> i jej właściwości <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a> po szczegóły."
+    "rename_note": "Zmień nazwę notatki"
   },
   "delete_relation": {
     "delete_relation": "Usuń relację",
@@ -870,20 +816,14 @@
   },
   "rename_relation": {
     "rename_relation": "Zmień nazwę relacji",
-    "rename_relation_from": "Zmień nazwę relacji z",
     "old_name": "stara nazwa",
-    "to": "Na",
     "new_name": "nowa nazwa",
     "allowed_characters": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek."
   },
   "update_relation_target": {
-    "update_relation": "Zaktualizuj relację",
     "relation_name": "nazwa relacji",
     "allowed_characters": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to": "do",
     "target_note": "notatka docelowa",
-    "on_all_matched_notes": "Na wszystkich dopasowanych notatkach",
-    "change_target_note": "zmień notatkę docelową istniejącej relacji",
     "update_relation_target": "Zaktualizuj cel relacji"
   },
   "attachments_actions": {
@@ -990,7 +930,6 @@
     "in_progress": "Trwa synchronizacja z serwerem."
   },
   "left_pane_toggle": {
-    "show_panel": "Pokaż panel",
     "hide_panel": "Ukryj panel"
   },
   "move_pane_button": {
@@ -1009,7 +948,6 @@
     "import_files": "Importuj pliki",
     "export_note": "Eksportuj notatkę",
     "delete_note": "Usuń notatkę",
-    "print_note": "Drukuj notatkę",
     "save_revision": "Zapisz wersję",
     "convert_into_attachment_failed": "Konwersja notatki '{{title}}' nie powiodła się.",
     "convert_into_attachment_successful": "Notatka '{{title}}' została przekonwertowana na załącznik.",
@@ -1047,7 +985,6 @@
     "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Wstaw notatkę podrzędną",
     "delete_this_note": "Usuń tę notatkę",
     "note_revisions": "Wersje notatki",
     "error_cannot_get_branch_id": "Nie można pobrać branchId dla ścieżki notatki '{{notePath}}'",
@@ -1643,7 +1580,6 @@
     "hide-archived-notes": "Ukryj zarchiwizowane notatki",
     "automatically-collapse-notes": "Automatycznie zwijaj notatki",
     "automatically-collapse-notes-title": "Notatki zostaną zwinięte po okresie bezczynności, aby uporządkować drzewo.",
-    "save-changes": "Zapisz i zastosuj zmiany",
     "auto-collapsing-notes-after-inactivity": "Automatyczne zwijanie notatek po bezczynności...",
     "saved-search-note-refreshed": "Notatka zapisanego wyszukiwania odświeżona.",
     "hoist-this-note-workspace": "Zawęź widok do tej notatki (obszar roboczy)",

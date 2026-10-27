@@ -136,3 +136,32 @@ describe("revision commands", () => {
         expect(post).toHaveBeenLastCalledWith("notes/tabNote/revision");
     });
 });
+
+describe("toggleFullscreenCommand", () => {
+    const entrypoints = new Entrypoints();
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        delete window.electronApi;
+    });
+
+    it("enters and leaves the page's full screen in a browser", () => {
+        const requestFullscreen = vi.fn(async () => {});
+        const exitFullscreen = vi.fn(async () => {});
+        document.documentElement.requestFullscreen = requestFullscreen;
+        document.exitFullscreen = exitFullscreen;
+
+        Object.defineProperty(document, "fullscreenElement", { value: null, configurable: true });
+        entrypoints.toggleFullscreenCommand();
+        expect(requestFullscreen).toHaveBeenCalledOnce();
+        expect(exitFullscreen).not.toHaveBeenCalled();
+
+        Object.defineProperty(document, "fullscreenElement", {
+            value: document.documentElement,
+            configurable: true
+        });
+        entrypoints.toggleFullscreenCommand();
+        expect(exitFullscreen).toHaveBeenCalledOnce();
+        expect(requestFullscreen).toHaveBeenCalledOnce();
+    });
+});

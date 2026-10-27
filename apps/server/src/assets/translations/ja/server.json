@@ -77,7 +77,8 @@
     "note-panels": "ノートパネル",
     "show-note-map": "右ペインにノートマップを表示",
     "focus-collection-properties": "コレクションの表示タイプセレクターにフォーカスを移動",
-    "focus-formatting-toolbar": "固定の書式設定ツールバーとエディター間でフォーカスを移動"
+    "focus-formatting-toolbar": "固定の書式設定ツールバーとエディター間でフォーカスを移動",
+    "peek-left-pane": "コンテンツの上に浮かぶ一時的なパネルとしてノートツリーを表示する"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -187,7 +188,8 @@
     "show-note-map": "ノートマップを表示",
     "show-note-info": "ノート情報を表示",
     "show-note-paths": "ノートパスを表示",
-    "toggle-similar-notes": "類似ノートの表示を切り替え"
+    "toggle-similar-notes": "類似ノートの表示を切り替え",
+    "peek-left-pane": "ツリーペインをピーク表示"
   },
   "login": {
     "title": "ログイン",
@@ -261,7 +263,7 @@
     "open-today-journal-note-title": "今日の日記を開く",
     "quick-search-title": "クイック検索",
     "recent-changes-title": "最近の変更",
-    "root-title": "隠されたノート",
+    "root-title": "非表示ノート",
     "note-map-title": "ノートマップ",
     "shared-notes-title": "共有ノート",
     "bulk-action-title": "一括操作",
@@ -315,7 +317,9 @@
     "content-manager-title": "コンテンツマネージャー",
     "database-title": "データベース",
     "space-usage-title": "スペース使用状況",
-    "record-meeting-title": "ミーティングの文字起こし"
+    "record-meeting-title": "ミーティングの文字起こし",
+    "transcription-title": "文字起こし",
+    "resources-title": "ダウンロード済みリソース"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -385,7 +389,10 @@
     "previous": "前へ",
     "next": "次へ",
     "page-navigation": "前後のページ",
-    "hidden-subpages_other": "ツリーから非表示になっているサブページ {{count}} 個"
+    "hidden-subpages_other": "ツリーから非表示になっているサブページ {{count}} 個",
+    "previous-tabs": "前のタブエリアへスクロール",
+    "next-tabs": "次のタブエリアへスクロール",
+    "copy-code": "コードをコピー"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",
@@ -567,6 +574,32 @@
     "save-locked": "保護されたセッションがロックされている間は、文字起こしを保存できません。Trilium が開いている限りデータは保持され、保護されたセッションに入ると保存されます。",
     "save-failed": "文字起こしを保存できませんでした: {{- message}} データは保持され、次の文で再試行します。",
     "capture-lost": "音声を取得できなくなったため、文字起こしが停止しました。それまでに文字起こしされた内容は保存されます。",
-    "attachment-title": "文字起こし"
+    "attachment-title": "文字起こし",
+    "model-not-downloaded": "音声認識モデルがまだダウンロードされていません。ランチャーから録音を開始して、モデルをダウンロードしてください。",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3（高精度）",
+    "recognizer-description": "NVIDIA が提供する音声認識モデルでヨーロッパの 25 言語に対応しています。認識処理はすべてデバイス上で行われるため、録音データが外部に送信されることはありません。",
+    "vad-title": "Silero VAD",
+    "vad-description": "音声の中の発言を検出し、発言が含まれる部分のみを文字起こしするために使用されます。",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "話者を識別し、文字起こし結果において誰が何を言ったかを判別するために使用されます。"
+  },
+  "resources": {
+    "unknown": "{{id}} という名前のリソースは存在しません。",
+    "http-error": "{{name}} のダウンロードに失敗しました。 HTTP ステータス {{status}}。",
+    "size-mismatch": "{{name}} のサイズが想定されたサイズと一致しません。",
+    "hash-mismatch": "{{name}} のチェックサムが想定と一致しなかったため、破棄されました。",
+    "delete-while-downloading": "{{- title}} は現在ダウンロード中です。削除する前にダウンロードをキャンセルしてください。",
+    "not-foreign": "{{- name}} はリソースフォルダ内の未使用エントリーではありません。",
+    "stalled": "{{name}} のダウンロードが停止しました: {{seconds}} 秒間データを受信できませんでした。接続状況を確認してから、再度お試しください。"
+  },
+  "share_target": {
+    "default-title": "共有コンテンツ",
+    "nothing-to-share": "共有するものがありません: テキスト、リンク、またはファイルが受信されていません。",
+    "rejected": "共有が拒否されました: {{- reason}}",
+    "other-page": "このアドレスにコンテンツを送信できるのはシステムの共有メニューからのみです。"
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium は Flatpak として動作するため、{{- cli}} などのサンドボックス外にインストールされたプログラムを起動できません。{{- cli}} を使用するには:\n\n1. このコンピュータにインストールし、ターミナルからサインインします。\n2. ターミナルで以下のコマンドを実行し、Triliumがサンドボックス外のプログラムを起動できるようにします:\n\n{{- grantCommand}}\n\n3. Trilium を再起動します。\n\nこれにより、Trilium は Flatpak 以外でインストールされた場合と同様に、コンピュータへのアクセス権を取得します。アクセス権を元に戻すには、以下のコマンドを実行してください:\n\n{{- revokeCommand}}"
   }
 }

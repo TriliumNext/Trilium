@@ -80,6 +80,15 @@ export const EMPTY_CANVAS_CONTENT = JSON.stringify({
     appState: {}
 });
 
+/** The media type of a Mermaid diagram saved in an attachment, such as one in a text note. */
+export const MERMAID_ATTACHMENT_MIME = "text/vnd.mermaid";
+
+/** The title of the attachment a new Mermaid diagram is saved in. */
+export const MERMAID_ATTACHMENT_TITLE = "Diagram.mmd";
+
+/** The content of a new Mermaid diagram. */
+export const NEW_MERMAID_CONTENT = "flowchart LR\n    A --> B\n";
+
 /**
  * The media type of a file attached under `fileName`: {@link CANVAS_ATTACHMENT_MIME} for an
  * Excalidraw file, so that it shows as a canvas drawing, else `mime`.
@@ -122,7 +131,8 @@ const FILE_MIME_MAPPINGS: Record<string, string> = {
     "application/vnd.oasis.opendocument.spreadsheet": "bx bx-spreadsheet",
     "application/vnd.ms-excel": "bx bx-spreadsheet",
     "text/csv": "bx bx-spreadsheet",
-    [CANVAS_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.canvas
+    [CANVAS_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.canvas,
+    [MERMAID_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.mermaid
 };
 
 const IMAGE_MIME_MAPPINGS: Record<string, string> = {
@@ -151,12 +161,16 @@ export const GEO_SHAPE_ICONS: Record<string, string> = {
     circle: "bx bx-shape-circle"
 };
 
-/** The icon of a note made by the web clipper, keyed by its `#clipType` label. */
+/**
+ * The icon of a note made by the web clipper or the PWA share target, keyed by its `#clipType`
+ * label.
+ */
 export const CLIP_TYPE_ICONS: ReadonlyMap<string, string> = new Map([
     [ "clippings", "bx bx-paperclip" ],
     [ "page", "bx bx-globe" ],
     [ "note", "bx bx-bookmark" ],
-    [ "tabs", "bx bx-window-alt" ]
+    [ "tabs", "bx bx-window-alt" ],
+    [ "share", "bx bx-share" ]
 ]);
 
 /** The icon of a calendar event, a text note with a start date (see {@link getEventStartDate}). */
@@ -309,6 +323,7 @@ export function getNoteContentType(type: string, mime: string, hasIconPackLabel:
 export function getFileContentType(type: string, mime: string) {
     if (type === "file" && mime === "application/pdf") return "pdf";
     if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
+    if (type === "file" && mime === MERMAID_ATTACHMENT_MIME) return "mermaidDiagram";
     if ((type === "file" || type === "viewConfig") && mime === "application/json") return "code";
     if (type === "file" && mime.startsWith("audio/")) return "audio";
     if (type === "file" && mime.startsWith("video/")) return "video";
@@ -327,6 +342,7 @@ export const CONTENT_RENDERER_GROUPS: Readonly<Record<string, string>> = {
     markdown: "markdown",
     image: "image",
     canvasDrawing: "file",
+    mermaidDiagram: "file",
     pdf: "file",
     audio: "file",
     video: "file",

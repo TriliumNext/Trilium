@@ -89,6 +89,7 @@ describe("BNote attribute methods (real DB)", () => {
             getContext().init(() => {
                 template.note.addLabel("fromTemplate", "tval");
                 template.note.addLabel("template"); // marker, must NOT be inherited
+                template.note.addLabel("workspaceTemplate"); // marker, must NOT be inherited
             });
 
             const consumer = createNote("root");
@@ -97,8 +98,9 @@ describe("BNote attribute methods (real DB)", () => {
             const templated = consumer.note.getAttributes("label", "fromTemplate");
             expect(templated).toHaveLength(1);
             expect(templated[0].value).toBe("tval");
-            // The 'template' marker label must be filtered out.
+            // The marker labels must be filtered out.
             expect(consumer.note.getAttributes("label", "template")).toHaveLength(0);
+            expect(consumer.note.getAttributes("label", "workspaceTemplate")).toHaveLength(0);
         });
 
         it("returns empty inheritable attributes for a note with no inheritable owned attrs", () => {

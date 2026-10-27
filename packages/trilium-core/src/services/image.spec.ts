@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { imageMimeForExtension } from "@triliumnext/commons";
+
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
@@ -27,10 +29,13 @@ const fakeBuffer = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
  * Replaces the provider's processImage with one that resolves to the given
  * processed image, so the async persistence branch runs deterministically.
  */
-function stubProcessImage(format: { ext: string }, buffer: Uint8Array = fakeBuffer) {
+function stubProcessImage(format: { ext: string; mime?: string }, buffer: Uint8Array = fakeBuffer) {
     const processed: ProcessedImage = {
+        // A real provider reports both halves and they agree — `{ ext: "jpg", mime: "image/jpeg" }`
+        // is what the codec hands back. Deriving the default the same way keeps a stub from
+        // describing an image no provider would ever produce.
         buffer,
-        format: { ext: format.ext, mime: `image/${format.ext}` }
+        format: { ext: format.ext, mime: format.mime ?? imageMimeForExtension(format.ext) }
     };
     return vi.spyOn(getImageProvider(), "processImage").mockResolvedValue(processed);
 }
@@ -113,7 +118,7 @@ describe("image service (real DB)", () => {
             expect(bytesOf(note.getContent())).toEqual(Array.from(fakeBuffer));
         });
 
-        it("maps the svg extension to the svg+xml mime and appends the extension when missing", async () => {
+        it("stores the svg+xml mime whole and appends the extension when the name has none", async () => {
             stubProcessImage({ ext: "svg" });
             counter++;
             const baseName = `nodotsvg${counter}`;
@@ -276,9 +281,29 @@ describe("image service (real DB)", () => {
             await flushAsync();
 
             const attachment = becca.getAttachment(att.attachmentId!)!;
-            expect(attachment.mime).toBe("image/jpg");
+            expect(attachment.mime).toBe("image/jpeg");
             expect(attachment.title).toBe("nodotattach.jpg");
             expect(bytesOf(attachment.getContent())).toEqual(Array.from(fakeBuffer));
+        });
+
+        it("records the media type the provider reported rather than rebuilding one from its extension", async () => {
+            // The codec names JPEG `{ ext: "jpg", mime: "image/jpeg" }`, so the correct media
+            // type is already in hand. Deriving it from the extension instead yields the
+            // unregistered "image/jpg", which every consumer downstream then needs a special
+            // case for — mapExtension carries one, and IMAGE_MIMES has to list it.
+            const host = createTargetNote();
+            stubProcessImage({ ext: "jpg", mime: "image/jpeg" });
+
+            const att = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, "screenshot.png", false)
+            );
+            await flushAsync();
+
+            const attachment = becca.getAttachment(att.attachmentId ?? "");
+            expect(attachment?.mime).toBe("image/jpeg");
+            // The title is left alone on purpose (a canvas addresses its images by it), which is
+            // precisely why the mime has to be right — it is all the export has left to go on.
+            expect(attachment?.title).toBe("screenshot.png");
         });
     });
 
@@ -327,7 +352,7 @@ describe("image service (real DB)", () => {
             expect(note.getOwnedLabelValue("originalFileName")).toBe("renamed.png");
             // Mime/content now reflect updateImage's distinct provider output, which
             // differs from the PNG/[1,2,3] state saveImage produced.
-            expect(note.mime).toBe("image/jpg");
+            expect(note.mime).toBe("image/jpeg");
             expect(bytesOf(note.getContent())).toEqual(Array.from(updatedBuffer));
         });
     });

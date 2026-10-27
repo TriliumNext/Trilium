@@ -198,7 +198,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     );
 }
 
-function MindElixir({ children, containerRef: externalContainerRef, containerProps, apiRef: externalApiRef, onChange, onSelectionChange, editable }: MindElixirProps) {
+export function MindElixir({ children, containerRef: externalContainerRef, containerProps, apiRef: externalApiRef, onChange, onSelectionChange, editable }: MindElixirProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const apiRef = useRef<MindElixirInstance>(null);
     const [ locale ] = useTriliumOption("locale");
@@ -211,6 +211,7 @@ function MindElixir({ children, containerRef: externalContainerRef, containerPro
     function reinitialize() {
         if (!containerRef.current) return;
 
+        apiRef.current?.destroy();
         const mind = new VanillaMindElixir({
             el: containerRef.current,
             editable,
@@ -238,12 +239,11 @@ function MindElixir({ children, containerRef: externalContainerRef, containerPro
         setInstanceVersion((version) => version + 1);
     }
 
-    useEffect(() => {
-        reinitialize();
-        return () => {
-            apiRef.current?.destroy();
-            apiRef.current = null;
-        };
+    // The instance is built by the effect that follows `editable` and `locale`, which also runs on
+    // mount; this one only tears it down.
+    useEffect(() => () => {
+        apiRef.current?.destroy();
+        apiRef.current = null;
     }, []);
 
     // React to theme changes.
@@ -311,9 +311,42 @@ function MindElixir({ children, containerRef: externalContainerRef, containerPro
         };
 
         dressNodes();
-        mind.bus.addListener("linkDiv", dressNodes);
+        const { bus } = mind;
+        bus.addListener("linkDiv", dressNodes);
 
-        return () => mind.bus.removeListener("linkDiv", dressNodes);
+        // The instance is destroyed by the effect above, whose cleanup runs first and clears `bus`.
+        return () => bus.removeListener("linkDiv", dressNodes);
+    }, [ instanceVersion ]);
+
+    // A map laid out while hidden, such as in a quick-edit popup that is still loading, measures
+    // every node at 0: `linkDiv()` draws its branches with `NaN` coordinates and `toCenter()`
+    // misplaces it. Lay it out and center it again once its container gets a size.
+    useEffect(() => {
+        const mind = apiRef.current;
+        const container = containerRef.current;
+        if (!mind || !container) return;
+
+        const isLaidOutHidden = () =>
+            mind.nodes.querySelector("me-root") !== null && mind.nodes.offsetHeight === 0;
+        let laidOutHidden = isLaidOutHidden();
+        const recordLayout = () => {
+            laidOutHidden = isLaidOutHidden();
+        };
+
+        const observer = new ResizeObserver(() => {
+            if (!laidOutHidden || mind.nodes.offsetHeight === 0) return;
+            mind.linkDiv();
+            mind.toCenter();
+        });
+
+        const { bus } = mind;
+        bus.addListener("linkDiv", recordLayout);
+        observer.observe(container);
+
+        return () => {
+            bus.removeListener("linkDiv", recordLayout);
+            observer.disconnect();
+        };
     }, [ instanceVersion ]);
 
     // Selection listener. The events only carry the nodes that were added to or removed from the
@@ -325,16 +358,17 @@ function MindElixir({ children, containerRef: externalContainerRef, containerPro
         const reportSelection = () => onSelectionChange(mind.currentNodes.map(({ nodeObj }) => nodeObj));
 
         reportSelection();
-        mind.bus.addListener("selectNodes", reportSelection);
-        mind.bus.addListener("unselectNodes", reportSelection);
+        const { bus } = mind;
+        bus.addListener("selectNodes", reportSelection);
+        bus.addListener("unselectNodes", reportSelection);
         // Operations edit the node objects in place, leaving the selection pointing at the same
         // ones. Report it again so that what is shown of a selected node follows its edits.
-        mind.bus.addListener("operation", reportSelection);
+        bus.addListener("operation", reportSelection);
 
         return () => {
-            mind.bus.removeListener("selectNodes", reportSelection);
-            mind.bus.removeListener("unselectNodes", reportSelection);
-            mind.bus.removeListener("operation", reportSelection);
+            bus.removeListener("selectNodes", reportSelection);
+            bus.removeListener("unselectNodes", reportSelection);
+            bus.removeListener("operation", reportSelection);
         };
     }, [ onSelectionChange, instanceVersion ]);
 

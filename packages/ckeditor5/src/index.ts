@@ -13,17 +13,35 @@ import { CLASSIC_EDITOR_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./pl
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 export { onTextEditorError } from "./editor_errors.js";
 export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
-export type { CKEditorError, EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, TextTransformationConfig, TextTypingTransformationDescription } from "ckeditor5";
+export type { CKEditorError, EditorConfig, FindResultType, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, TextTransformationConfig, TextTypingTransformationDescription } from "ckeditor5";
 export type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 export type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
 export type { FileUploadData, FileUploadEvent } from "./plugins/file_upload/fileuploadediting.js";
 export type { PasteTarget } from "./plugins/cuttonote.js";
-export type { ContentEmbedState } from "./plugins/content_embed/content_embed.js";
+export type {
+    ContentEmbedCodeView, ContentEmbedState
+} from "./plugins/content_embed/content_embed.js";
+export type { EmbedEdge } from "./plugins/content_embed/content_embed_caret.js";
+export { default as EmbedHistory } from "./plugins/content_embed/embed_history.js";
+export type {
+    EmbedHistoryEntry, EmbedHistoryStep
+} from "./plugins/content_embed/embed_history.js";
+export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
+export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
+export { getLinkAtSelection, replaceLinkAtSelection } from "./plugins/internallink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
 export type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./plugins/mention/types.js";
 export type { ToolbarGroupMenuEntry, ToolbarGroupMenuHost, ToolbarGroupMenuItem, ToolbarGroupMenuRequest } from "./plugins/toolbar_group_menu.js";
+export type { default as TextFormattingToolbar } from "./plugins/text_formatting_toolbar.js";
+export type { default as ContextToolbar } from "./plugins/context_toolbar.js";
+export type { default as MobileToolbarItems } from "./plugins/mobile_toolbar_items.js";
+export type { LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
+export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
+export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
+export type { BlockReferenceHost } from "./plugins/block_reference/block_reference.js";
+export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";
@@ -41,11 +59,18 @@ export * from "./utils.js";
 import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
 import "./plugins/content_embed/content_embed.js";
+import "./plugins/content_embed/content_embed_caret.js";
+import "./plugins/find_in_link_widgets.js";
+import "./plugins/find_reveal.js";
+import "./plugins/image_to_drawing.js";
+import "./plugins/insert_date_time.js";
+import "./plugins/markdownimport.js";
 import "./plugins/math/math.js";
 import "./plugins/tabs/tabs.js";
 import "./plugins/multicolumn/multicolumn.js";
 import "./plugins/mermaid/mermaid.js";
 import "./plugins/referencelink.js";
+import "./plugins/table_column_bar/table_column_bar.js";
 import "./plugins/table_context_menu.js";
 import "./plugins/table_paste_rows.js";
 

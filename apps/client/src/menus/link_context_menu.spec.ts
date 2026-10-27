@@ -53,6 +53,8 @@ vi.mock("../services/utils", () => ({
         return mocks.isShare;
     }
 }));
+// `context_menu_utils` imports `tree`, whose imports fail against the partial mocks above.
+vi.mock("../services/tree", () => ({ default: {}, NOTE_PATH_TITLE_SEPARATOR: " › " }));
 
 vi.mock("../widgets/widget_utils", () => ({ getClosestNtxId: mocks.getClosestNtxId }));
 
@@ -75,6 +77,7 @@ vi.mock("../components/app_context", () => ({
     }
 }));
 
+import { registerContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools";
 import linkContextMenu from "./link_context_menu";
 
 const VIEW_SCOPE = { viewMode: "attachments" as const, attachmentId: "att-1" };
@@ -458,6 +461,10 @@ describe("openContextMenu", () => {
         const selectEmbedAt = vi.fn();
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
+        const getBoxSizes = vi.fn(() => [
+            { value: "tiny", label: "Tiny" },
+            { value: "medium", label: "Medium" }
+        ]);
         let editable: HTMLElement;
 
         beforeEach(() => {
@@ -478,10 +485,7 @@ describe("openContextMenu", () => {
                     get: () => ({
                         selectEmbedAt,
                         getEmbedStateAt: () => state,
-                        getBoxSizes: () => [
-                            { value: "tiny", label: "Tiny" },
-                            { value: "medium", label: "Medium" }
-                        ]
+                        getBoxSizes
                     })
                 },
                 commands: { get: () => undefined },
@@ -566,6 +570,7 @@ describe("openContextMenu", () => {
             const items = await openOn(editable.querySelector("a"));
             expect(pick(items[7].items[0]))
                 .toEqual([ [ "contentEmbedBoxSize", { value: "tiny" } ] ]);
+            expect(getBoxSizes).toHaveBeenLastCalledWith(embed());
             expect(pick(items[8])).toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
@@ -597,6 +602,72 @@ describe("openContextMenu", () => {
             state = { ...state, isEditable: false };
             expect((await openOn(editable.querySelector("a")))[7])
                 .toMatchObject({ title: "link_context_menu.editable", checked: false });
+        });
+
+        it("offers the display modes above the size, for content that has them", async () => {
+            state = { ...state, displayMode: "source" };
+            const items = await openOn(editable.querySelector("a"));
+
+            expect(items.slice(6, 12)).toMatchObject([
+                { kind: "separator" },
+                { title: "display_mode.source", uiIcon: "bx bx-code", checked: true },
+                { title: "display_mode.split", uiIcon: "bx bxs-dock-left", checked: false },
+                { title: "display_mode.preview", uiIcon: "bx bx-show", checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" }
+            ]);
+            expect(items).toHaveLength(17);
+            expect(pick(items[9]))
+                .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
+
+            // After Editable, which comes first.
+            state = { ...state, isEditableToggleable: true };
+            expect((await openOn(editable.querySelector("a"))).slice(7, 12)).toMatchObject([
+                { title: "link_context_menu.editable" },
+                { title: "display_mode.source" },
+                { title: "display_mode.split" },
+                { title: "display_mode.preview" },
+                { kind: "separator" }
+            ]);
+        });
+
+        it("offers the items of its content after Editable, in a group of their own", async () => {
+            state = { ...state, isEditable: true, isEditableToggleable: true };
+            const content = embed().querySelector<HTMLElement>(".include-note-content");
+            if (!content) throw new Error("Expected the content box.");
+            const wrap = { title: "Word wrap", items: [] };
+            const lineNumbers = { title: "Show line numbers", checked: true };
+            const unregister = registerContentEmbedTools(content, {
+                getTools: () => [],
+                execute: () => {},
+                subscribe: () => () => {},
+                getMenuItems: () => [ wrap, lineNumbers ]
+            });
+
+            try {
+                expect((await openOn(editable.querySelector("a"))).slice(6, 12)).toMatchObject([
+                    { kind: "separator" },
+                    { title: "link_context_menu.editable" },
+                    wrap,
+                    lineNumbers,
+                    { kind: "separator" },
+                    { title: "link_context_menu.include_size" }
+                ]);
+
+                // Before the display modes, which follow in a group of their own.
+                state = { ...state, displayMode: "split" };
+                expect((await openOn(editable.querySelector("a"))).slice(9, 16)).toMatchObject([
+                    lineNumbers,
+                    { kind: "separator" },
+                    { title: "display_mode.source" },
+                    { title: "display_mode.split" },
+                    { title: "display_mode.preview" },
+                    { kind: "separator" },
+                    { title: "link_context_menu.include_size" }
+                ]);
+            } finally {
+                unregister();
+            }
         });
 
         it("appends the commands of an embedded note, its conversion in a group of its own", async () => {

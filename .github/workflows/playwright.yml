@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - hotfix
+      - stable
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -81,7 +82,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Copy test fixture database
         run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
@@ -117,7 +118,7 @@ jobs:
         run: pkill -f trilium || true
 
   e2e-pdfjs-viewer:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     name: PDF viewer E2E tests
     steps:
       - uses: actions/checkout@v7
@@ -177,7 +178,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build standalone
         run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter standalone build

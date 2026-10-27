@@ -2,6 +2,7 @@
 
 import { type AttachmentRow, isImageAttachmentRole } from "@triliumnext/commons";
 
+import { ValidationError } from "../../errors.js";
 import dateUtils from "../../services/utils/date";
 import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -237,6 +238,10 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     override beforeSaving() {
+        if (this.becca.notes[this.ownerId]?.isVirtual) {
+            throw new ValidationError(`Cannot save an attachment of note '${this.ownerId}': virtual notes have no attachments.`);
+        }
+
         super.beforeSaving();
 
         if (this.position === undefined || this.position === null) {

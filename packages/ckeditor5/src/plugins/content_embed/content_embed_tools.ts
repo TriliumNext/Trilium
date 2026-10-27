@@ -1,7 +1,7 @@
 import "../../theme/content_embed_tools.css";
 
 import {
-    addListToDropdown, ButtonView, Collection, createDropdown, DropdownView,
+    addListToDropdown, ButtonView, Collection, createDropdown, DropdownButtonView, DropdownView,
     getEnvKeystrokeText, type ListDropdownItemDefinition, ListItemView, type Locale, Plugin,
     ToolbarSeparatorView, View, type ViewCollection, ViewModel
 } from "ckeditor5";
@@ -13,7 +13,7 @@ export const CONTENT_EMBED_TOOLS = "contentEmbedTools";
 
 /**
  * Shows the buttons that the content of the selected embed adds to the embed's toolbar, such as
- * the tools of a canvas drawing. The host supplies them through `getContentEmbedTools()`.
+ * the tools of a canvas drawing. The host supplies them through `contentEmbed.getTools()`.
  */
 export default class ContentEmbedTools extends Plugin {
 
@@ -54,6 +54,8 @@ type ContentEmbedToolsResizeEvent = {
 /** The view of a tool, and the way it shows a new state of the tool and of its children. */
 interface ToolView {
     view: ButtonView | DropdownView;
+    /** The element that wraps `view` in the toolbar, if any. */
+    wrapper?: View;
     update(tool: ContentEmbedTool, children: ContentEmbedTool[]): void;
 }
 
@@ -116,17 +118,21 @@ export class ContentEmbedToolsView extends View {
     /** Shows the tools of the provider. Returns whether the views were created again. */
     private showTools() {
         const tools = this.provider?.getTools() ?? [];
+        // The Editable toggle and the display modes come before the tools.
+        const isAfterItems = !!(this.provider?.hasEditableFlag || this.provider?.hasDisplayModes);
         const keys = tools.map(tool => JSON.stringify([
             tool.group,
             tool.id,
+            tool.opensMenu,
             tool.children?.map(child => [ child.group, child.id, child.keystroke ])
         ]));
+        keys.push(String(isAfterItems));
         const isNewSet = keys.length !== this.toolKeys.length
             || keys.some((key, index) => key !== this.toolKeys[index]);
 
         if (isNewSet) {
             this.toolKeys = keys;
-            this.createViews(tools);
+            this.createViews(tools, isAfterItems);
         }
 
         for (const [ index, tool ] of tools.entries()) {
@@ -137,11 +143,17 @@ export class ContentEmbedToolsView extends View {
         return isNewSet;
     }
 
-    /** Creates a view for each tool, with a separator between groups. */
-    private createViews(tools: ContentEmbedTool[]) {
+    /**
+     * Creates a view for each tool, with a separator between groups, and before the first one
+     * when `isAfterItems`.
+     */
+    private createViews(tools: ContentEmbedTool[], isAfterItems: boolean) {
         this.items.clear();
         this.views = [];
         this.updaters = [];
+        if (isAfterItems && tools.length) {
+            this.items.add(new ToolbarSeparatorView(this.locale));
+        }
 
         let group: string | undefined;
         for (const tool of tools) {
@@ -150,13 +162,18 @@ export class ContentEmbedToolsView extends View {
             }
             group = tool.group;
 
-            const { view, update } = tool.children
-                ? this.createMenu(tool.children)
-                : this.createButton(tool.id);
+            const { view, wrapper, update } = this.createToolView(tool);
             this.views.push(view);
             this.updaters.push(update);
-            this.items.add(view);
+            this.items.add(wrapper ?? view);
         }
+    }
+
+    private createToolView(tool: ContentEmbedTool): ToolView {
+        if (tool.children) {
+            return this.createMenu(tool.children);
+        }
+        return tool.opensMenu ? this.createMenuButton(tool.id) : this.createButton(tool.id);
     }
 
     private createButton(id: string): ToolView {
@@ -170,6 +187,43 @@ export class ContentEmbedToolsView extends View {
                 ...getButtonFace(tool),
                 class: tool.class,
                 isToggleable: tool.isOn !== undefined,
+                isOn: tool.isOn ?? false,
+                isEnabled: tool.isEnabled ?? true
+            })
+        };
+    }
+
+    /**
+     * A button with the arrow of a dropdown, which has the provider open its menu below it. It is
+     * wrapped in a `ck-dropdown` element, as CKEditor styles a dropdown button inside one.
+     */
+    private createMenuButton(id: string): ToolView {
+        const button = new DropdownButtonView(this.locale);
+        button.extendTemplate({
+            attributes: {
+                class: [ "ck-dropdown__button", "ck-dropdown__button_label-width_auto" ]
+            }
+        });
+        keepFocus(button);
+        this.listenTo(button, "open", () => {
+            /* v8 ignore next -- `ViewCollection` renders the button as `createViews()` adds it. */
+            if (!button.element) return;
+            this.provider?.openMenu?.(id, button.element);
+        });
+
+        const wrapper = new View(this.locale);
+        wrapper.setTemplate({
+            tag: "div",
+            attributes: { class: [ "ck", "ck-dropdown" ] },
+            children: [ button ]
+        });
+
+        return {
+            view: button,
+            wrapper,
+            update: (tool) => button.set({
+                ...getButtonFace(tool),
+                class: tool.class,
                 isOn: tool.isOn ?? false,
                 isEnabled: tool.isEnabled ?? true
             })

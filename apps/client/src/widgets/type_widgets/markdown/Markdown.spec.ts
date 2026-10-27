@@ -5,7 +5,7 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
 import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { findActiveBlock, renderWithSourceLines, revealTabAtLine, scrollToSourceLine } from "./Markdown.js";
 
@@ -395,6 +395,17 @@ describe("scrollToSourceLine", () => {
 });
 
 describe("revealTabAtLine", () => {
+    // `applyTabs()` watches the title bars it builds, and jsdom has no `ResizeObserver`.
+    beforeEach(() => {
+        vi.stubGlobal("ResizeObserver", class {
+            observe() {}
+            disconnect() {}
+        });
+    });
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     const src = [
         "=== \"A\"",          // 1
         "",                     // 2
@@ -416,12 +427,12 @@ describe("revealTabAtLine", () => {
     function preview() {
         const el = document.createElement("div");
         el.innerHTML = renderWithSourceLines(src).html;
-        applyTabs(el, { placeholder: "" });
+        applyTabs(el, { placeholder: "", scrollLabels: { start: "", end: "" } });
         return el;
     }
 
     function activeTitles(el: HTMLElement) {
-        return [ ...el.querySelectorAll(".trilium-tab--active > .trilium-tab-title") ].map((title) => title.textContent);
+        return [ ...el.querySelectorAll(".trilium-tab-title--active") ].map((title) => title.textContent);
     }
 
     it("tags each tab with the line of its header", () => {

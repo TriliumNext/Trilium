@@ -31,12 +31,19 @@ export interface NoteContextState {
     lastActiveNtxId?: string | null;
 }
 
+/** A `switchToHistoryEntry()` call, and the note context that shows its entry. */
+export interface HistoryEntry {
+    noteContext: NoteContext;
+}
+
 export default class TabManager extends Component {
     public children: NoteContext[];
     public mutex: Mutex;
     public activeNtxId: string | null;
     public recentlyClosedTabs: TabState[];
     public tabsUpdate: SpacedUpdate;
+    /** The current `switchToHistoryEntry()` call, until another note context is activated. */
+    private historyEntry: HistoryEntry | null = null;
 
     constructor() {
         super();
@@ -181,14 +188,23 @@ export default class TabManager extends Component {
 
     setCurrentNavigationStateToHash() {
         const calculatedHash = this.calculateHash();
+        const activeNoteContext = this.getActiveContext();
+
+        // Activating another note context is a new navigation, even while the history entry loads.
+        if (this.historyEntry?.noteContext !== activeNoteContext) {
+            this.historyEntry = null;
+        }
 
         // update if it's the first history entry or there has been a change
         if (window.history.length === 0 || calculatedHash !== window.location?.hash) {
             // using pushState instead of directly modifying document.location because it does not trigger hashchange
-            window.history.pushState(null, "", calculatedHash);
+            if (this.historyEntry) {
+                window.history.replaceState(null, "", calculatedHash);
+            } else {
+                window.history.pushState(null, "", calculatedHash);
+            }
         }
 
-        const activeNoteContext = this.getActiveContext();
         this.updateDocumentTitle(activeNoteContext);
 
         this.triggerEvent("activeNoteChanged", {ntxId:activeNoteContext?.ntxId}); // trigger this even in on popstate event
@@ -286,6 +302,30 @@ export default class TabManager extends Component {
 
         if (notePath) {
             await noteContext.setNote(notePath, { viewScope });
+        }
+    }
+
+    /**
+     * Shows the history entry the browser went to. While its note context is active, the hash
+     * updates replace the entry instead of pushing one, so the entries after it stay reachable.
+     */
+    async switchToHistoryEntry(
+        ntxId: string | null,
+        notePath: string,
+        viewScope: Record<string, any> = {}
+    ) {
+        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId) ||
+            await this.openEmptyTab();
+        const historyEntry: HistoryEntry = { noteContext };
+        this.historyEntry = historyEntry;
+
+        try {
+            await this.activateNoteContext(noteContext.ntxId);
+            await noteContext.setNote(notePath, { viewScope, historyEntry });
+        } finally {
+            if (this.historyEntry === historyEntry) {
+                this.historyEntry = null;
+            }
         }
     }
 
@@ -435,6 +475,8 @@ export default class TabManager extends Component {
             pinned?: boolean | null;
             /** Where the new tab is placed in the row. Defaults to `"end"`; link/middle-click opens pass `"afterCurrent"`. */
             placement?: TabPlacement | null;
+            /** The `switchToHistoryEntry()` call that opens this tab. */
+            historyEntry?: HistoryEntry | null;
         } = {}
     ): Promise<NoteContext> {
         const activate = !!opts.activate;
@@ -459,6 +501,11 @@ export default class TabManager extends Component {
         }
 
         if (activate && noteContext.notePath) {
+            // The new tab shows the history entry in place of the pinned tab.
+            if (opts.historyEntry) {
+                opts.historyEntry.noteContext = noteContext;
+            }
+
             this.activateNoteContext(noteContext.ntxId, false);
 
             await this.triggerEvent("noteSwitchedAndActivated", {
@@ -979,6 +1026,16 @@ export default class TabManager extends Component {
     }
 
     async frocaReloadedEvent() {
+        // A rebuild drops the notes the backend no longer has. Collected before the per-context
+        // handlers clear noteId, as in entitiesReloadedEvent().
+        const removedPinnedNtxIds = this.mainNoteContexts
+            .filter((nc) => nc.pinned && nc.noteId && !(nc.noteId in froca.notes))
+            .map((nc) => nc.ntxId);
+
+        for (const ntxId of removedPinnedNtxIds) {
+            await this.setTabPinned(ntxId, false);
+        }
+
         const activeContext = this.getActiveContext();
         if (activeContext) {
             await this.updateDocumentTitle(activeContext);

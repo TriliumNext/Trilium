@@ -1,6 +1,7 @@
 ---
 name: developing-pdf-viewer
-description: Use when changing Trilium's built-in PDF viewer — anything under `packages/pdfjs-viewer` (the code injected into Mozilla's PDF.js viewer: `bootstrap.ts`, `annotations.ts`, `pages.ts`, `toc.ts`, `layers.ts`, `attachments.ts`, `persistence.ts`, `editing.ts`), the client side that talks to it (`apps/client/src/widgets/type_widgets/file/Pdf.tsx`, `PdfViewer.tsx`, the sidebar panels in `widgets/sidebar/pdf/`), the postMessage protocol between them, PDF links (`?page=` / `?annotation=`), or a bug where the viewer "does not pick up" a change. Covers the mandatory rebuild after every viewer change, the message protocol, the hidden-but-mounted viewer, the pdf.js timing traps, and how to test at each level.
+description: >-
+  Use when changing Trilium's built-in PDF viewer — anything under `packages/pdfjs-viewer` (the code injected into Mozilla's PDF.js viewer: `bootstrap.ts`, `annotations.ts`, `pages.ts`, `toc.ts`, `layers.ts`, `attachments.ts`, `persistence.ts`, `editing.ts`), the client side that talks to it (`apps/client/src/widgets/type_widgets/file/Pdf.tsx`, `PdfViewer.tsx`, the sidebar panels in `widgets/sidebar/pdf/`), the postMessage protocol between them, PDF links (`?page=` / `?annotation=`), or a bug where the viewer "does not pick up" a change. Covers the mandatory rebuild after every viewer change, the message protocol, the hidden-but-mounted viewer, the pdf.js timing traps, and how to test at each level.
 ---
 
 # Developing the PDF viewer

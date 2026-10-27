@@ -12,4 +12,6 @@ When a note has one or more child notes, they will be listed at the end of the n
 
 The view types dictate how the child notes are represented. By default, the notes will be displayed in a grid, however there are also some other view types available.
 
-Generally the view type can only be changed from the <a class="reference-link" href="../../Collections/Collection%20Properties.md">Collection Properties</a>, but it can also be changed manually on any type of note using the `#viewType` [label](../../Advanced%20Usage/Attributes/Labels.md).
+Generally the view type can only be changed from the <a class="reference-link" href="../../Collections/Collection%20Properties.md">Collection Properties</a>, but it can also be changed manually on any type of note using the `#viewType` [label](../../Advanced%20Usage/Attributes/Labels.md).
+
+Saved searches use _Search preview_ by default: it draws each result as a snippet card with the text and attributes that matched. It is limited to search notes and is described in <a class="reference-link" href="../Navigation/Search.md">Search</a>.

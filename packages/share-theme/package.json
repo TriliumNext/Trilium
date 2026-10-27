@@ -19,15 +19,16 @@
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
     "katex": "0.19.0",
-    "mermaid": "12.1.0"
+    "mermaid": "12.2.0"
   },
   "devDependencies": {
     "@triliumnext/ckeditor5": "workspace:*",
     "@triliumnext/client": "workspace:*",
+    "@triliumnext/codemirror": "workspace:*",
     "@types/ejs": "3.1.5",
-    "ejs": "7.0.1",
-    "happy-dom": "20.14.6",
+    "ejs": "7.0.2",
+    "happy-dom": "21.0.4",
     "typescript": "6.0.3",
-    "vitest": "5.0.3"
+    "vitest": "5.0.5"
   }
 }

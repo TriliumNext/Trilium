@@ -4,9 +4,9 @@
 
 The SQL Console is Trilium's built-in database editor.
 
-It can be accessed by going to the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → Advanced → Open SQL Console.
+It can be accessed by going to the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → Advanced → SQL console.
 
-![](SQL%20Console_image.png)
+![](SQL%20Console_image.jpg)
 
 ### Interaction
 
@@ -16,13 +16,13 @@ It can be accessed by going to the <a class="reference-link" href="../../../Bas
 *   For queries that return a result, the data will displayed in a table.
 *   For statements (e.g. `INSERT`, `UPDATE`), the number of affected rows is displayed.
 
-<figure class="image"><img style="aspect-ratio:1124/571;" src="1_SQL Console_image.png" width="1124" height="571"></figure>
+<figure class="image"><img style="aspect-ratio:1124/571;" src="SQL Console_image.png" width="1124" height="571"></figure>
 
 ### Interacting with the table
 
 After executing a query, a table with the results will be displayed:
 
-*   Clicking on a column allows sorting ascending or descending.
+*   Clicking on a column allows sorting ascending or descending. The `#` column numbers the rows and can't be sorted.
 *   Underneath each column there is an input field which allows filtering by text.
 *   Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy the current cell to clipboard.
 *   Multiple cells can be selected by dragging or by holding <kbd>Shift</kbd> + arrow keys

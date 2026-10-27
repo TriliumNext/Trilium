@@ -108,6 +108,10 @@ async function openZip(source: ZipSource) {
         return yauzl.fromBufferPromise(buffer.subarray(0, findArchiveEnd(tail, buffer.length)), options);
     }
 
+    if ("blob" in source) {
+        throw new Error("A Blob zip source is only readable in the browser.");
+    }
+
     const handle = await fs.promises.open(source.path, "r");
     let size: number;
     let end: number;

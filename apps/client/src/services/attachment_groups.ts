@@ -36,8 +36,8 @@ export const ATTACHMENT_ROLE_GROUPS: Record<AttachmentRole, AttachmentGroup> = {
     canvasLibraryItem: "system",
     // The file an import was read from, kept so an import that went wrong can be looked at again.
     importSource: "system",
-    // A meeting recording's transcript: made by the app, but what the reader asked for.
-    transcript: "user"
+    // A meeting recording's transcript, which `PinnedAttachments` shows above the note's content.
+    transcript: "system"
 };
 
 /**

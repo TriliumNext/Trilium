@@ -39,7 +39,10 @@ vi.mock("../../../services/shortcuts", async (importOriginal) => ({
     removeIndividualBinding
 }));
 
-import { registerContentEmbedTools } from "./content_embed_tools";
+import { HtmlFindTarget } from "../../find_in_html";
+import {
+    getEmbedFindTarget, registerContentEmbedTools, revealContentEmbed
+} from "./content_embed_tools";
 import ContentEmbed, {
     getNoteActions,
     type ContentEmbedProps,
@@ -194,6 +197,35 @@ function placeInHostEditor() {
     return { editor: { selectEmbedAt, execute, focus }, embed };
 }
 
+/** Tools of content with display modes, which the title row of its embed switches. */
+const DISPLAY_MODE_TOOLS = {
+    hasDisplayModes: true,
+    getTools: () => [],
+    execute: () => {},
+    subscribe: () => () => {}
+};
+
+/** Moves the box into an embed outside a text editor, as a read-only note shows it. */
+function placeInEmbed() {
+    const embed = document.createElement("figure");
+    embed.className = "include-note";
+    embed.append(container);
+    document.body.append(embed);
+    onTestFinished(() => embed.remove());
+    return embed;
+}
+
+/** The display mode buttons of the title row: Source, Split and Preview. */
+function displayModeButtons() {
+    return [ ...container.querySelectorAll<HTMLButtonElement>(".include-note-display-modes button") ];
+}
+
+/** The display mode whose button is on, or `null`. */
+function shownDisplayMode() {
+    const index = displayModeButtons().findIndex((button) => button.classList.contains("active"));
+    return index < 0 ? null : [ "source", "split", "preview" ][index];
+}
+
 /** Clicks `target` and tells whether the click was kept from what surrounds the box. */
 function click(target: HTMLElement) {
     const event = new MouseEvent("click", { bubbles: true, cancelable: true });
@@ -206,14 +238,14 @@ function click(target: HTMLElement) {
 
 describe("ContentEmbed", () => {
     it("lays out the title row for each box size", () => {
-        const plain = [ "title", "badges", "open", "menu" ];
-        const withFullscreen = [ "title", "badges", "open", "fullscreen", "menu" ];
+        const plain = [ "title-label", "badges", "open", "menu" ];
+        const withFullscreen = [ "title-label", "badges", "open", "fullscreen", "menu" ];
         const layouts: [ string | undefined, string[] ][] = [
             [ undefined, plain ],
             [ "small", plain ],
             [ "medium", withFullscreen ],
             [ "full", withFullscreen ],
-            [ "expandable", [ "toggle", "title", "badges", "open", "menu" ] ]
+            [ "expandable", [ "toggle", "title-label", "badges", "open", "menu" ] ]
         ];
 
         for (const [ boxSize, expected ] of layouts) {
@@ -224,7 +256,7 @@ describe("ContentEmbed", () => {
     });
 
     it("lays out an excerpt with an edit button in place of fullscreen", () => {
-        const excerpt = [ "title", "badges", "open", "edit", "menu" ];
+        const excerpt = [ "title-label", "badges", "open", "edit", "menu" ];
         const layouts: [ string, string[] ][] = [
             [ "small", excerpt ],
             [ "medium", excerpt ],
@@ -240,9 +272,11 @@ describe("ContentEmbed", () => {
         }
     });
 
-    it("shows its title and content, and swaps them on a new render", () => {
+    it("shows its scrollable title and its content, and swaps them on a new render", () => {
         const titleChildren = () => [
-            ...container.querySelector("h4.include-note-title")?.childNodes ?? []
+            ...container.querySelector(
+                ".include-note-title-label.scrollable-label > h4.include-note-title"
+            )?.childNodes ?? []
         ];
         const first = renderBox({ contentType: "pdf" });
         const box = contentBox();
@@ -289,6 +323,67 @@ describe("ContentEmbed", () => {
         act(() => render(null, container));
         renderBox({ boxSize: "full" });
         expect(contentBox().hidden).toBe(false);
+    });
+
+    it("lets the find search text, and shows a collapsed box for a current match", async () => {
+        container.classList.add("include-note");
+        renderBox({ boxSize: "expandable" });
+        const target = getEmbedFindTarget(container);
+        expect(target).toBeInstanceOf(HtmlFindTarget);
+        expect(await target?.find("body", { matchCase: false, wholeWord: false })).toBe(1);
+        target?.close(null);
+
+        act(() => revealContentEmbed(container, true));
+        expect(contentBox().hidden).toBe(false);
+        expect(button("include-note-toggle").getAttribute("aria-expanded")).toBe("true");
+        act(() => revealContentEmbed(container, false));
+        expect(contentBox().hidden).toBe(true);
+
+        // Collapsing drops the reveal, and expanding keeps the box open once the find moves on.
+        act(() => revealContentEmbed(container, true));
+        click(button("include-note-toggle"));
+        expect(contentBox().hidden).toBe(true);
+        click(button("include-note-toggle"));
+        act(() => revealContentEmbed(container, true));
+        act(() => revealContentEmbed(container, false));
+        expect(contentBox().hidden).toBe(false);
+
+        act(() => render(null, container));
+        renderBox({ contentType: "book" });
+        expect(getEmbedFindTarget(container)).toBeNull();
+    });
+
+    it("toggles an expandable box on a click on its title row, but its buttons and link", () => {
+        const titleRow = () => {
+            const row = container.querySelector<HTMLElement>(".include-note-title-row");
+            const label = row?.querySelector<HTMLElement>(".include-note-title-label");
+            const link = label?.querySelector<HTMLElement>("a");
+            if (!row || !label || !link) {
+                throw new Error("Expected the title row, its label and its link.");
+            }
+            link.addEventListener("click", (e) => e.preventDefault());
+            return { row, label, link };
+        };
+        renderBox({ boxSize: "expandable" });
+        const { row, label, link } = titleRow();
+
+        click(row);
+        expect(contentBox().hidden).toBe(false);
+        click(label);
+        expect(contentBox().hidden).toBe(true);
+        for (const target of [ link, button("include-note-open"), button("include-note-menu") ]) {
+            click(target);
+            expect(contentBox().hidden).toBe(true);
+        }
+        click(button("include-note-toggle"));
+        expect(contentBox().hidden).toBe(false);
+
+        // In an editor, a click on the row selects the embed instead.
+        act(() => render(null, container));
+        placeInHostEditor();
+        renderBox({ boxSize: "expandable" });
+        click(titleRow().row);
+        expect(contentBox().hidden).toBe(true);
     });
 
     it("opens the note in a new tab, and its context menu, from the title row", () => {
@@ -364,6 +459,84 @@ describe("ContentEmbed", () => {
         act(() => unregister());
         expect(edit.disabled).toBe(true);
         expect(edit.classList.contains("active")).toBe(false);
+    });
+
+    it("switches the display mode of content that has them, from the title row", async () => {
+        const embed = placeInEmbed();
+        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        expect(container.querySelector(".include-note-display-modes")).toBeNull();
+
+        let unregister = () => {};
+        act(() => {
+            unregister = registerContentEmbedTools(content, DISPLAY_MODE_TOOLS);
+        });
+        expect(titleRow()).toEqual([
+            "title-label", "badges", "display-modes", "open", "fullscreen", "menu"
+        ].map((name) => `include-note-${name}`));
+        const buttons = displayModeButtons();
+        expect(buttons.map((button) => /\bbxs?-[\w-]+/.exec(button.className)?.[0]))
+            .toEqual([ "bx-code", "bxs-dock-left", "bx-show" ]);
+        expect(buttons.map((button) => tooltipOf(button)))
+            .toEqual([ "display_mode.source", "display_mode.split", "display_mode.preview" ]);
+        expect(shownDisplayMode()).toBe("preview");
+        expect(buttons.map((button) => button.getAttribute("aria-pressed")))
+            .toEqual([ "false", "false", "true" ]);
+
+        // Content that can be edited shows split while Editable is on, until a mode is picked.
+        await act(async () => {
+            embed.dataset.editable = "true";
+            await Promise.resolve();
+        });
+        expect(shownDisplayMode()).toBe("preview");
+        act(() => {
+            unregister();
+            unregister = registerContentEmbedTools(content, {
+                ...DISPLAY_MODE_TOOLS, hasEditableFlag: true
+            });
+        });
+        expect(shownDisplayMode()).toBe("split");
+
+        // Outside a text editor, the mode lasts until the embed is drawn again.
+        expect(click(displayModeButtons()[0]).isStopped).toBe(true);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(embed.dataset.displayMode).toBe("source");
+        expect(shownDisplayMode()).toBe("source");
+
+        act(() => unregister());
+        expect(container.querySelector(".include-note-display-modes")).toBeNull();
+    });
+
+    it("picks the display mode through the text editor that holds the embed", () => {
+        const { editor, embed } = placeInHostEditor();
+        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        act(() => {
+            onTestFinished(registerContentEmbedTools(content, DISPLAY_MODE_TOOLS));
+        });
+
+        click(displayModeButtons()[2]);
+        expect(editor.selectEmbedAt).toHaveBeenCalledWith(contentBox());
+        expect(editor.execute)
+            .toHaveBeenCalledWith("contentEmbedDisplayMode", { value: "preview" });
+        expect(embed.hasAttribute("data-display-mode")).toBe(false);
+    });
+
+    it("shows the display mode buttons of an expandable box only while it is open", () => {
+        placeInEmbed();
+        const { content } = renderBox({ boxSize: "expandable", contentType: "markdown" });
+        act(() => {
+            onTestFinished(registerContentEmbedTools(content, DISPLAY_MODE_TOOLS));
+        });
+        expect(titleRow()).toEqual([ "toggle", "title-label", "badges", "open", "menu" ]
+            .map((name) => `include-note-${name}`));
+
+        click(button("include-note-toggle"));
+        expect(titleRow()).toContain("include-note-display-modes");
+        expect(shownDisplayMode()).toBe("preview");
+
+        click(button("include-note-toggle"));
+        expect(container.querySelector(".include-note-display-modes")).toBeNull();
     });
 
     it("keeps the edit button of an excerpt disabled without an editor around it", () => {
@@ -664,8 +837,11 @@ describe("TinyContentEmbed", () => {
         ]);
         expect(container.querySelector(".include-note-content")).toBeNull();
         expect(container.querySelector(".include-note-icon")?.className).toContain("bx-file");
-        expect([ ...container.querySelector("h4.include-note-title")?.childNodes ?? [] ])
-            .toEqual([ title ]);
+        expect([
+            ...container.querySelector(
+                ".include-note-heading > .scrollable-label > h4.include-note-title"
+            )?.childNodes ?? []
+        ]).toEqual([ title ]);
         expect(container.querySelector(".include-note-heading > small.include-note-description")
             ?.textContent).toBe("2 KiB");
 

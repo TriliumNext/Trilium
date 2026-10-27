@@ -29,6 +29,9 @@ export default class FetchRequestProvider implements RequestProvider {
         if (opts.auth?.password) {
             headers["trilium-cred"] = btoa(`dummy:${opts.auth.password}`);
         }
+        if (opts.auth?.totpToken) {
+            headers["trilium-totp"] = opts.auth.totpToken;
+        }
 
         let body: string | undefined;
         if (opts.body) {
@@ -39,6 +42,8 @@ export default class FetchRequestProvider implements RequestProvider {
         const timeoutId = opts.timeout
             ? setTimeout(() => controller.abort(), opts.timeout)
             : undefined;
+        const startTime = Date.now();
+        let headersReceived: { status: number; afterMs: number } | undefined;
 
         try {
             const response = await fetch(opts.url, {
@@ -48,6 +53,7 @@ export default class FetchRequestProvider implements RequestProvider {
                 signal: controller.signal,
                 credentials: "include"
             });
+            headersReceived = { status: response.status, afterMs: Date.now() - startTime };
 
             if ([200, 201, 204].includes(response.status)) {
                 const text = await response.text();
@@ -65,7 +71,15 @@ export default class FetchRequestProvider implements RequestProvider {
 
         } catch (e: any) {
             if (e.name === "AbortError") {
-                throw new Error(`${opts.method} ${opts.url} failed, error: timeout after ${opts.timeout}ms`);
+                // The timeout covers the body download too, so a slow transfer of a large sync
+                // response looks like an unresponsive server unless the phase is reported.
+                const phase = headersReceived
+                    ? `while reading the response body (status ${headersReceived.status} `
+                        + `received after ${headersReceived.afterMs}ms)`
+                    : "waiting for the response headers";
+                throw new Error(
+                    `${opts.method} ${opts.url} failed, error: timeout after ${opts.timeout}ms ${phase}`
+                );
             }
             if (e instanceof TypeError && e.message === "Failed to fetch") {
                 const isCrossOrigin = !opts.url.startsWith(location.origin);

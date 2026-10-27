@@ -2,11 +2,17 @@
 // DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
-import { beforeAll, describe, expect, it } from "vitest";
+import { h } from "preact";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../../entities/fnote";
 import { buildNote } from "../../../test/easy-froca";
 import { buildPresentationModel, PresentationModel } from "./model";
+
+vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
+    default: ({ messages }: { messages: { content: string }[] }) =>
+        h("p", { class: "chat-preview" }, messages.map((message) => message.content).join(", "))
+}));
 
 let presentationNote!: FNote;
 let data!: PresentationModel;
@@ -84,5 +90,24 @@ describe("Presentation model", () => {
 
     it("rewrites links even if they are not part of the slideshow", () => {
         expect(data.slides[0].verticalSlides![0].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-other"><span><span class="tn-icon bx bx-note"></span>Other note</span></a>.</p></div>`);
+    });
+
+    it("keeps the content of a slide that mounts a component", async () => {
+        const messages = [ { id: "m0", role: "user", content: "Hello", createdAt: "2026-01-01" } ];
+        const chatPresentation = buildNote({
+            title: "Chat presentation",
+            "#viewType": "presentation",
+            children: [ {
+                title: "Chat",
+                type: "llmChat",
+                content: JSON.stringify({ version: 1, messages })
+            } ]
+        });
+
+        const { slides } = await buildPresentationModel(chatPresentation);
+
+        expect(slides[0].content.__html).toStrictEqual(
+            `<div class="note-detail-llm-chat-preview"><p class="chat-preview">Hello</p></div>`
+        );
     });
 });

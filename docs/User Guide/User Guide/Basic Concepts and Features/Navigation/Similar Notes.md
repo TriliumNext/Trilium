@@ -7,6 +7,7 @@ To access the list of similar notes:
 
 *   Go to the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and look for the corresponding section.
 *   Alternatively, press the <span class="tn-icon bx bx-info-circle"></span> in the <a class="reference-link" href="../UI%20Elements/Status%20bar.md">Status bar</a> and select _Show similar notes_ which will open a pane at the bottom.
+*   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, open the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> → _Note info_ and select _Show similar notes_.
 
 ## Interaction
 
