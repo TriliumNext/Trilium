@@ -3943,7 +3943,11 @@
       "image-position": "画像の位置",
       "list": "リスト",
       "list-type": "リストタイプ",
-      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入"
+      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入",
+      "use-headers": "ヘッダーを使用",
+      "header-columns": "ヘッダー列",
+      "header-rows": "ヘッダー行",
+      "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
