@@ -340,6 +340,18 @@ describe("narrowThirdPartySelectors", () => {
         }
     });
 
+    it("clears the float of a `<legend>` on the side Bootstrap floats it", () => {
+        for (const { specifier } of THIRD_PARTY_STYLESHEETS.slice(0, 2)) {
+            const path = createRequire(import.meta.url).resolve(specifier);
+            const narrowed = narrowSelectorsSource(readFileSync(path, "utf8"), path) ?? "";
+
+            const side = narrowed.match(/\blegend\{float:(left|right);/)?.[1];
+            expect(side, specifier).toBeDefined();
+            expect(narrowed.match(/[^{}]*\{clear:(?:left|right)\}/g), specifier)
+                .toEqual([ `fieldset>:not(legend){clear:${side}}` ]);
+        }
+    });
+
     it("leaves other modules alone and fails once a selector no longer matches", () => {
         const other = "/app/node_modules/other/dist/a.css";
         const ckeditor = "/app/node_modules/ckeditor5/dist/ckeditor5.css?direct";

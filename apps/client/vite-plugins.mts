@@ -162,7 +162,7 @@ interface SelectorRewrite {
 }
 
 /**
- * Bootstrap's minified selectors, the same in its LTR and RTL builds. Trilium uses no `<legend>`,
+ * Bootstrap's minified selectors, the same in its LTR and RTL builds. Trilium uses no
  * `.table-striped-columns` or `.has-validation`; floating labels need `.form-control` or
  * `.form-select` on the field.
  */
@@ -224,12 +224,12 @@ export const THIRD_PARTY_STYLESHEETS = [
     {
         specifier: "bootstrap/dist/css/bootstrap.min.css",
         file: "bootstrap/dist/css/bootstrap.min.css",
-        rewrites: [ { from: "legend+*{clear:left}", to: "", count: 1 }, ...BOOTSTRAP_REWRITES ]
+        rewrites: [ clearAfterLegend("left"), ...BOOTSTRAP_REWRITES ]
     },
     {
         specifier: "bootstrap/dist/css/bootstrap.rtl.min.css",
         file: "bootstrap/dist/css/bootstrap.rtl.min.css",
-        rewrites: [ { from: "legend+*{clear:right}", to: "", count: 1 }, ...BOOTSTRAP_REWRITES ]
+        rewrites: [ clearAfterLegend("right"), ...BOOTSTRAP_REWRITES ]
     },
     {
         specifier: "ckeditor5/ckeditor5.css",
@@ -237,6 +237,18 @@ export const THIRD_PARTY_STYLESHEETS = [
         rewrites: CKEDITOR_REWRITES
     }
 ];
+
+/**
+ * Bootstrap floats a `<legend>` to `side` and clears the element after it. Excalidraw's panels
+ * put each legend first in its `<fieldset>`, so the rewrite clears the other children instead.
+ */
+function clearAfterLegend(side: "left" | "right"): SelectorRewrite {
+    return {
+        from: `legend+*{clear:${side}}`,
+        to: `fieldset>:not(legend){clear:${side}}`,
+        count: 1
+    };
+}
 
 /** The share theme's sources, which the app build bundles into the files shared pages load. */
 const SHARE_THEME_SRC = join(import.meta.dirname, "../../packages/share-theme/src");
