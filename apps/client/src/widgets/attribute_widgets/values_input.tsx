@@ -10,7 +10,7 @@ import ActionButton from "../react/ActionButton";
 import Chip from "../react/Chip";
 import FormAutocomplete from "../react/FormAutocomplete";
 import FormTextBox from "../react/FormTextBox";
-import { ColorSwatch } from "./label_value_display";
+import { ColorSwatch, renderLabelValue } from "./label_value_display";
 import { DEFAULT_COLOR, LABEL_MAPPINGS } from "./label_value_input";
 
 interface ValuesInputProps {
@@ -150,7 +150,7 @@ export default function ValuesInput({ labelType, values, onCommit, source, remov
                 the eye. A swatch rather than the chip's own ground, as the read-only chips wear
                 it: this chip also holds the button removing it, which no ground a user may pick
                 can be trusted to keep visible. */}
-            <span>{isColor ? <ColorSwatch color={value} /> : value}</span>
+            <span>{isColor ? <ColorSwatch color={value} /> : LINK_TYPES.has(labelType) ? renderLabelValue(value, labelType) : value}</span>
         </Chip>
     ));
 
@@ -251,6 +251,9 @@ export default function ValuesInput({ labelType, values, onCommit, source, remov
  * rather than by typing into a box.
  */
 const PICKED_TYPES = new Set<LabelType>([ "color", "date", "datetime", "time" ]);
+
+/** The types whose chips are links, so that a value can be followed without leaving the field. */
+const LINK_TYPES = new Set<LabelType>([ "url", "email", "phone" ]);
 
 /**
  * The box and the button beside it, held together as the one thing they are, so that the pair moves
