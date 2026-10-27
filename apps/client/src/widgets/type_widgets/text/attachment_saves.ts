@@ -12,6 +12,9 @@ import { ParentComponent } from "../../react/react_utils";
 
 type SavedAttachments = NonNullable<SavedData["attachments"]>;
 
+/** The spaced update that saves a note together with the attachment changes. */
+type NoteUpdate = Pick<SpacedUpdate<unknown>, "scheduleUpdate" | "resetUpdateTimer">;
+
 interface SavedNote {
     note: FNote;
     content: string;
@@ -116,10 +119,10 @@ export default class AttachmentSaves
     private noteId: string | undefined;
 
     /**
-     * @param scheduleUpdate schedules a save of the text note.
+     * @param getUpdate returns the spaced update that saves the note.
      * @param componentId the component that sends the saves.
      */
-    constructor(private scheduleUpdate: () => void, readonly componentId?: string) {
+    constructor(private getUpdate: () => NoteUpdate, readonly componentId?: string) {
         super();
     }
 
@@ -141,7 +144,11 @@ export default class AttachmentSaves
         onSaved?: (content: string) => void
     ) {
         this.schedule(attachment.attachmentId, attachment, getContent, onSaved);
-        this.scheduleUpdate();
+        this.getUpdate().scheduleUpdate();
+    }
+
+    postponeSave() {
+        this.getUpdate().resetUpdateTimer();
     }
 
     /** The attachments to save with the note, read at the time of the call. */
@@ -265,8 +272,7 @@ export function useAttachmentEditor(
 ): AttachmentEditor {
     const parentComponent = useContext(ParentComponent);
     const [ saves ] = useState(() => {
-        const saves = new AttachmentSaves(
-            () => spacedUpdate.scheduleUpdate(), parentComponent?.componentId);
+        const saves = new AttachmentSaves(() => spacedUpdate, parentComponent?.componentId);
         saves.setNoteId(note.noteId);
         return saves;
     });

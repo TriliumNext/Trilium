@@ -604,8 +604,12 @@ export function useCanvasDrawingPersistence(
             }
             drawingMount?.record();
 
-            // Excalidraw reports each move of a drag: the save waits until the pointer is up.
-            if (state.cursorButton === "down") return;
+            // Each change postpones the save, as in a canvas note. Excalidraw reports each move of
+            // a drag, so the save waits until the pointer is up.
+            if (state.cursorButton === "down") {
+                if (sceneVersion !== currentSceneVersion.current) editor.postponeSave?.();
+                return;
+            }
 
             const appState = getImportantAppState(api.getAppState());
             const previousAppState = appStateToCompare.current;
@@ -616,6 +620,7 @@ export function useCanvasDrawingPersistence(
             if (sceneVersion === currentSceneVersion.current && !isAppStateChanged) return;
 
             currentSceneVersion.current = sceneVersion;
+            editor.postponeSave?.();
             editor.scheduleSave(
                 () => serializeDrawing({
                     elements: api.getSceneElements(),

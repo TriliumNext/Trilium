@@ -1,6 +1,6 @@
 import { h, render } from "preact";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
@@ -29,10 +29,10 @@ const drawing = {
 } as FAttachment;
 
 function setUp() {
-    const scheduleUpdate = vi.fn();
-    const saves = new AttachmentSaves(scheduleUpdate);
+    const update = { scheduleUpdate: vi.fn(), resetUpdateTimer: vi.fn() };
+    const saves = new AttachmentSaves(() => update);
     saves.setNoteId("note1");
-    return { saves, scheduleUpdate };
+    return { saves, update };
 }
 
 describe("AttachmentSaves", () => {
@@ -47,13 +47,13 @@ describe("AttachmentSaves", () => {
     });
 
     it("schedules a save and reads the content when the note saves", () => {
-        const { saves, scheduleUpdate } = setUp();
+        const { saves, update } = setUp();
         let content = "first";
 
         saves.scheduleSave(drawing, () => content);
         content = "second";
 
-        expect(scheduleUpdate).toHaveBeenCalledOnce();
+        expect(update.scheduleUpdate).toHaveBeenCalledOnce();
         expect(saves.getUnsavedContent("drawing1")).toBe("second");
         expect(saves.collect()).toStrictEqual([ {
             attachmentId: "drawing1",
@@ -62,6 +62,16 @@ describe("AttachmentSaves", () => {
             title: "Canvas.excalidraw",
             content: "second"
         } ]);
+    });
+
+    it("postpones the save of the note, also through the editor of one attachment", () => {
+        const { saves, update } = setUp();
+
+        saves.postponeSave();
+        bindAttachmentEditor(saves, drawing).postponeSave?.();
+
+        expect(update.resetUpdateTimer).toHaveBeenCalledTimes(2);
+        expect(update.scheduleUpdate).not.toHaveBeenCalled();
     });
 
     it("keeps a change made while a save runs, and reports only the last change saved", () => {
@@ -148,6 +158,10 @@ describe("useAttachmentEditor", () => {
         return null;
     }
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it("saves on its own before the note switches, and once the content goes away", async () => {
         component = new Component();
         const container = document.createElement("div");
@@ -174,6 +188,38 @@ describe("useAttachmentEditor", () => {
         await act(() => render(null, container));
         expect(serverPost).toHaveBeenCalledTimes(2);
         expect(serverPost).toHaveBeenLastCalledWith(...savedRequest("second"));
+    });
+
+    it("saves once the changes pause for a second, or 10 s after the first one", async () => {
+        vi.useFakeTimers();
+        serverPost.mockClear();
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        // A stroke every 400 ms, which the drawing reports as it ends.
+        let strokes = 0;
+        const write = async (count: number) => {
+            for (let i = 0; i < count; i++) {
+                const content = `stroke ${++strokes}`;
+                editor?.postponeSave();
+                editor?.scheduleSave(drawing, () => content);
+                await vi.advanceTimersByTimeAsync(400);
+            }
+        };
+
+        await write(5);
+        expect(serverPost).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(serverPost).toHaveBeenCalledExactlyOnceWith(...savedRequest("stroke 5"));
+
+        await write(24);
+        expect(serverPost).toHaveBeenCalledOnce();
+        await write(2);
+        expect(serverPost).toHaveBeenCalledTimes(2);
+
+        await act(() => render(null, container));
     });
 });
 

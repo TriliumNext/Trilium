@@ -149,6 +149,11 @@ export interface AttachmentEditor {
         getContent: () => string,
         onSaved?: (content: string) => void
     ): void;
+    /**
+     * Postpones the scheduled save by its interval. Content that changes continuously, such as a
+     * canvas drawing, calls it at each change, so that it saves once the changes pause.
+     */
+    postponeSave(): void;
     /** Reads the unsaved content of the attachment now, before its editor unmounts. */
     release(attachmentId: string): void;
 }
@@ -571,6 +576,8 @@ export interface ContentEditor {
     canEdit(): boolean;
     getUnsavedContent(): string | undefined;
     scheduleSave(getContent: () => string, onSaved?: (content: string) => void): void;
+    /** Postpones the scheduled save by its interval, as `AttachmentEditor.postponeSave()` does. */
+    postponeSave?(): void;
     release(): void;
     /**
      * How the saving goes, for content that saves on its own rather than with the note that shows
@@ -593,6 +600,7 @@ export function bindAttachmentEditor(
         canEdit: () => editor.canEdit(attachment),
         getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
         scheduleSave: (getContent, onSaved) => editor.scheduleSave(attachment, getContent, onSaved),
+        postponeSave: () => editor.postponeSave(),
         release: () => editor.release(attachment.attachmentId)
     };
 }

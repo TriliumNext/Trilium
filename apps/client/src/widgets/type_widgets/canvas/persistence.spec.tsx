@@ -479,6 +479,7 @@ describe("useCanvasDrawingPersistence", () => {
             canEdit: () => true,
             getUnsavedContent: vi.fn(() => unsavedContent),
             scheduleSave: vi.fn(),
+            postponeSave: vi.fn(),
             release: vi.fn()
         } satisfies ContentEditor;
     }
@@ -621,7 +622,7 @@ describe("useCanvasDrawingPersistence", () => {
         expect(editor.release).toHaveBeenCalledOnce();
     });
 
-    it("holds the save while the pointer is down", async () => {
+    it("postpones the save at each change and holds it while the pointer is down", async () => {
         const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
         const { attachment } = buildAttachment({ elements: loaded });
         const editor = buildEditor();
@@ -629,17 +630,24 @@ describe("useCanvasDrawingPersistence", () => {
         change();
         sceneElements = loaded;
         change();
+        expect(editor.postponeSave).not.toHaveBeenCalled();
 
         appState = { ...appState, cursorButton: "down" };
         sceneElements = [ { ...loaded[0], version: 4 } ];
         change();
         sceneElements = [ { ...loaded[0], version: 5 } ];
         change();
+        expect(editor.postponeSave).toHaveBeenCalledTimes(2);
         expect(editor.scheduleSave).not.toHaveBeenCalled();
 
         appState = { ...appState, cursorButton: "up" };
         change();
+        change();
+        expect(editor.postponeSave).toHaveBeenCalledTimes(3);
         expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        // The save is due a whole interval after the change that schedules it.
+        expect(editor.postponeSave.mock.invocationCallOrder[2])
+            .toBeLessThan(editor.scheduleSave.mock.invocationCallOrder[0]);
     });
 
     it("loads the saves of other components only, not those of its own editor", async () => {
