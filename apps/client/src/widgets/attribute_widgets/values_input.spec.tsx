@@ -82,6 +82,9 @@ describe("ValuesInput", () => {
         await mount({ labelType: "email", values: [ "a@b.test" ], onCommit: vi.fn() });
         expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("mailto:a@b.test");
 
+        await mount({ labelType: "phone", values: [ "+15550100" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("tel:+15550100");
+
         await mount({ labelType: "text", values: [ "https://a.test/" ], onCommit: vi.fn() });
         expect(container.querySelector(".tn-chip a")).toBeNull();
     });
