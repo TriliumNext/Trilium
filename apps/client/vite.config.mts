@@ -5,7 +5,9 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { shareTheme, stripUniverEmojiData, stripUniverHyphenation } from './vite-plugins.mjs';
+import {
+    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+} from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
@@ -20,12 +22,14 @@ if (isDev) {
         ...(process.env.TRILIUM_NO_HMR ? [] : [ prefresh() ]),
         stripUniverHyphenation(),
         stripUniverEmojiData(),
+        narrowThirdPartySelectors(),
         ...shareTheme()
     ];
 } else {
     plugins = [
         stripUniverHyphenation(),
         stripUniverEmojiData(),
+        narrowThirdPartySelectors(),
         ...shareTheme(),
         viteStaticCopy({
             targets: assets.map((asset) => ({

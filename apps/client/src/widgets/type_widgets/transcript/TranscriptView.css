@@ -102,7 +102,7 @@
         white-space: pre-wrap;
     }
 
-    p + p {
+    .transcript-paragraph + .transcript-paragraph {
         margin-top: 0.5rem;
     }
 

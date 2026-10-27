@@ -149,7 +149,7 @@
 }
 
 /* The parent element of the "Library" button  */
-.excalidraw .App-menu.App-menu_top > div:nth-child(3) {
+.excalidraw .App-menu.App-menu_top > .layer-ui__wrapper__top-right:nth-child(3) {
     flex-direction: row-reverse;
 }
 

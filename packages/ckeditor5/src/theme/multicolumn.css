@@ -69,7 +69,7 @@
     }
 
     .ck-content .trilium-multicolumn-layout.ck-widget
-        > :nth-child(even of .trilium-multicolumn-column) {
+        > .trilium-multicolumn-column:nth-child(even of .trilium-multicolumn-column) {
         background: var(--multicolumn-layout-stacked-background);
     }
 }
