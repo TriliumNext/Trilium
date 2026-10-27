@@ -85,5 +85,5 @@ test("Displays math popup", async ({ page, context }) => {
     }, { timeout: 5000 });
 
     await expect(preview.locator('.katex')).toBeVisible();
-    await expect(preview).toMatchAriaSnapshot("- math: e = m c 2");
+    await expect(preview).toMatchAriaSnapshot(`- img "e=mc^2"`);
 });

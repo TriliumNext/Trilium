@@ -46,7 +46,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
     }
 
     refresh() {
-        const classes = new Set(this.getClasses().join(" ").split(" ").filter(Boolean));
+        const classes = new Set(this.getClasses().join(" ").split(/[\t\n\f\r ]+/).filter(Boolean));
 
         // Only the difference is applied: a class change on the split restyles the whole note.
         const classList = this.$widget[0].classList;
@@ -62,7 +62,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         }
     }
 
-    /** The classes of the split, each entry holding one or more space-separated class names. */
+    /** The classes of the split, each entry holding one or more class names split by whitespace. */
     private getClasses() {
         // These are owned by SplitNoteContainer, not by the note, so they are kept as they are.
         const classes = CONTAINER_OWNED_CLASSES.filter((cls) => this.$widget.hasClass(cls));

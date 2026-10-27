@@ -744,9 +744,16 @@ describe("useCanvasDrawingPersistence", () => {
         act(() => render(null, other));
     });
 
-    it("keeps the picture of a save made while it checks the loaded picture", async () => {
+    it.each([
+        [ "the scene", { elements: [ { id: "r1", type: "rectangle", version: 4 } ] } ],
+        [ "the background alone", { appState: { viewBackgroundColor: "#ffc9c9" } } ]
+    ])("keeps the picture of a save of %s made while it checks the loaded picture", async (
+        _,
+        edit: { elements?: FakeElement[]; appState?: object }
+    ) => {
         vi.useFakeTimers();
         const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        vi.mocked(exportToSvg).mockClear();
         let finishCheck = () => {};
         const pictures = new Promise((resolve) => {
             finishCheck = () => resolve([
@@ -762,7 +769,8 @@ describe("useCanvasDrawingPersistence", () => {
         sceneElements = loaded;
         change();
 
-        sceneElements = [ { ...loaded[0], version: 4 } ];
+        sceneElements = edit.elements ?? sceneElements;
+        appState = { ...appState, ...edit.appState };
         change();
         const [ getContent, onSaved ] = editor.scheduleSave.mock.calls[0];
         const saved = getContent();
@@ -772,8 +780,9 @@ describe("useCanvasDrawingPersistence", () => {
             finishCheck();
             await vi.advanceTimersByTimeAsync(30000);
         });
-        expect(vi.mocked(exportToSvg).mock.calls.map(([ { elements } ]) => elements))
-            .toEqual([ sceneElements ]);
+        expect(vi.mocked(exportToSvg).mock.calls.map(([ { elements, appState } ]) =>
+            ({ elements, background: appState?.viewBackgroundColor })))
+            .toEqual([ { elements: sceneElements, background: appState.viewBackgroundColor } ]);
         expect(post).toHaveBeenCalledOnce();
         post.mockRestore();
     });

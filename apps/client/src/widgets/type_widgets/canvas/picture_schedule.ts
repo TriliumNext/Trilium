@@ -11,6 +11,8 @@ const INPUT_EVENTS = [ "pointerdown", "pointermove", "wheel", "keydown" ];
 const pendingPictures = new Map<string, PendingPicture>();
 /** The latest draw of each drawing, which the next draw of the drawing waits for. */
 const runningDraws = new Map<string, Promise<void>>();
+/** How many pictures of each drawing were scheduled, which `watchPictures()` compares. */
+const scheduleCounts = new Map<string, number>();
 let lastInputTime = 0;
 let isWatchingPage = false;
 
@@ -21,6 +23,7 @@ let isWatchingPage = false;
  * until the user is idle.
  */
 export function schedulePicture(key: string, draw: () => Promise<void>, delay: number) {
+    scheduleCounts.set(key, (scheduleCounts.get(key) ?? 0) + 1);
     const pending = pendingPictures.get(key);
     if (pending) {
         clearTimeout(pending.timer);
@@ -30,6 +33,15 @@ export function schedulePicture(key: string, draw: () => Promise<void>, delay: n
     if (document.visibilityState === "hidden") {
         drawPicture(key);
     }
+}
+
+/**
+ * Returns a check that is `true` until a picture of the drawing `key` is scheduled. A picture of a
+ * loaded drawing must not replace the picture of a save made while it loads.
+ */
+export function watchPictures(key: string) {
+    const count = scheduleCounts.get(key);
+    return () => scheduleCounts.get(key) === count;
 }
 
 /** Draws the picture of `key` that waits, or waits until the user's input pauses. */

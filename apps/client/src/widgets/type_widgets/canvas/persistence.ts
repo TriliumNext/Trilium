@@ -29,7 +29,7 @@ import { type DrawingView, getBoundedView, getFittedView } from "./drawing_view"
 import {
     buildNewImageAttachments, CANVAS_EXPORT_TITLE, IMAGE_ROLE, loadImageAttachments, loadImageFiles
 } from "./image_attachments";
-import { schedulePicture } from "./picture_schedule";
+import { schedulePicture, watchPictures } from "./picture_schedule";
 
 interface AttachmentMetadata {
     title: string;
@@ -900,8 +900,9 @@ async function saveNotePicture(noteId: string, scene: PictureScene, files: Binar
 }
 
 /**
- * Schedules a picture of `scene`, loaded from `note`, when the saved one is missing or older.
- * `isCurrent()` returns `false` once a change replaced the scene, which then gets no picture.
+ * Schedules a picture of `scene`, loaded from `note`, when the saved one is missing or older. None
+ * is scheduled once a change replaced the scene, as `isCurrent()` tells, or once a save scheduled a
+ * picture of its own.
  */
 async function refreshNotePicture(
     note: FNote,
@@ -910,11 +911,12 @@ async function refreshNotePicture(
     isCurrent: () => boolean
 ) {
     if (!(scene.elements ?? []).some((element) => !element.isDeleted)) return;
+    const isUnscheduled = watchPictures(note.noteId);
     try {
         const picture = await getPicture(note, CANVAS_EXPORT_TITLE);
         const isOutdated = !picture
             || picture.utcDateModified < (await note.getMetadata()).utcDateModified;
-        if (isOutdated && isCurrent()) {
+        if (isOutdated && isCurrent() && isUnscheduled()) {
             scheduleNotePicture(note.noteId, scene, files);
         }
     } catch (e) {
@@ -933,7 +935,8 @@ function scheduleDrawingPicture(drawing: FAttachment, content: string, files: Bi
 
 /**
  * Schedules a picture of `drawing`, saved as `content`, when the saved one is missing or older.
- * `isCurrent()` returns `false` once a change replaced the content, which then gets no picture.
+ * None is scheduled once a change replaced the content, as `isCurrent()` tells, or once a save from
+ * any view of the drawing scheduled a picture of its own.
  */
 async function refreshDrawingPicture(
     drawing: FAttachment,
@@ -941,12 +944,13 @@ async function refreshDrawingPicture(
     files: BinaryFiles,
     isCurrent: () => boolean
 ) {
+    const isUnscheduled = watchPictures(drawing.attachmentId);
     try {
         const owner = await froca.getNote(drawing.ownerId);
         if (!owner) return;
         const picture = await getPicture(owner, getDrawingPictureTitle(drawing.attachmentId));
         const isOutdated = !picture || picture.utcDateModified < drawing.utcDateModified;
-        if (isOutdated && isCurrent()) {
+        if (isOutdated && isCurrent() && isUnscheduled()) {
             scheduleDrawingPicture(drawing, content, files);
         }
     } catch (e) {

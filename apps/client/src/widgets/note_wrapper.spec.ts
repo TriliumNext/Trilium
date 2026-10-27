@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
@@ -53,6 +53,19 @@ describe("NoteWrapperWidget", () => {
         expect(widget.$widget.hasClass("type-code")).toBe(true);
         expect(widget.$widget.hasClass("active")).toBe(true);
         expect(widget.$widget.hasClass("last-visible")).toBe(true);
+    });
+
+    it("adds the classes of a note split at any whitespace", () => {
+        // A browser refuses a class with whitespace in `classList.add()`; happy-dom accepts it.
+        const add = vi.spyOn(Object.getPrototypeOf(document.body.classList) as DOMTokenList, "add");
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showNote(widget, buildNote({ title: "Styled", type: "text", "#cssClass": "a\tb\nc\r\nd" }));
+        const added = add.mock.calls.flat();
+        add.mockRestore();
+
+        expect(added).toEqual(expect.arrayContaining([ "a", "b", "c", "d", "type-text" ]));
+        expect(added.filter((cls) => /\s/.test(cls))).toEqual([]);
     });
 
     it("marks the split as translucent (bgfx) for the note types that render on a bare background", () => {

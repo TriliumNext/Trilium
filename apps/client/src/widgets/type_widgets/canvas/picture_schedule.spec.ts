@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("schedulePicture", () => {
     let schedulePicture: typeof import("./picture_schedule").schedulePicture;
+    let watchPictures: typeof import("./picture_schedule").watchPictures;
 
     beforeEach(async () => {
         vi.useFakeTimers();
         // A new module, without the input and the pictures of the other tests.
         vi.resetModules();
-        ({ schedulePicture } = await import("./picture_schedule"));
+        ({ schedulePicture, watchPictures } = await import("./picture_schedule"));
     });
 
     afterEach(() => {
@@ -87,5 +88,20 @@ describe("schedulePicture", () => {
         finishFirst();
         await vi.advanceTimersByTimeAsync(0);
         expect(order).toEqual([ "first started", "first failed", "second started" ]);
+    });
+
+    it("tells whether a picture of the drawing was scheduled since the watch began", () => {
+        const draw = async () => {};
+        schedulePicture("d1", draw, 1000);
+        const isUnscheduled = watchPictures("d1");
+        const isOtherUnscheduled = watchPictures("d2");
+
+        schedulePicture("d2", draw, 1000);
+        expect(isUnscheduled()).toBe(true);
+        expect(isOtherUnscheduled()).toBe(false);
+
+        schedulePicture("d1", draw, 1000);
+        expect(isUnscheduled()).toBe(false);
+        expect(watchPictures("d1")()).toBe(true);
     });
 });
