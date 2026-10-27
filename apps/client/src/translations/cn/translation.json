@@ -2007,7 +2007,7 @@
     "toggle-on": "保护笔记"
   },
   "shared_switch": {
-    "shared": "已分享",
+    "shared": "分享",
     "shared-branch": "此笔记仅作为共享笔记存在，取消共享将删除它。你确定要继续并删除此笔记吗？",
     "inherited": "此笔记无法在此处取消共享，因为它通过继承自上级笔记共享。"
   },
@@ -3959,7 +3959,11 @@
       "image-position": "图片位置",
       "list": "列表",
       "list-type": "列表类型",
-      "insert-a-preview-of-a-web-page-or-a-video": "插入网页或视频的预览"
+      "insert-a-preview-of-a-web-page-or-a-video": "插入网页或视频的预览",
+      "use-headers": "使用表头",
+      "header-columns": "表头列",
+      "header-rows": "表头行",
+      "enter-a-whole-number-between-0-and-0": "请输入介于 0 和 %0 之间的整数。"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
