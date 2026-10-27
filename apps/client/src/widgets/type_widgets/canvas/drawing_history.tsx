@@ -38,6 +38,8 @@ export interface DrawingMount {
     attach(api: ExcalidrawImperativeAPI, root: HTMLElement | null, store: DrawingStore): void;
     /** Records the change of the drawing that Excalidraw ended, if any. */
     record(): void;
+    /** Whether this Excalidraw shows the drawing and no other one in the text note does. */
+    isOnlyDrawing(): boolean;
     /**
      * Shows `scene`, saved elsewhere, outside the undo history. Before `attach()`, it shows nothing
      * and returns `false`.
@@ -124,6 +126,7 @@ export default class DrawingHistory {
             record: () => {
                 if (drawing) this.record(drawing);
             },
+            isOnlyDrawing: () => !!drawing && this.drawings.size === 1,
             show: (scene) => {
                 if (!drawing) return false;
                 showScene(drawing, scene);

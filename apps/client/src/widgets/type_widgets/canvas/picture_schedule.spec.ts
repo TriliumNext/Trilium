@@ -45,18 +45,25 @@ describe("schedulePicture", () => {
         expect(draw).toHaveBeenCalledOnce();
     });
 
-    it("draws the waiting pictures once the page is hidden", async () => {
+    it("draws the waiting pictures once the page is hidden, and new ones at once", async () => {
         const draw = vi.fn(async () => {});
         schedulePicture("d1", draw, 30000);
 
         const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
         document.dispatchEvent(new Event("visibilitychange"));
-        visibility.mockRestore();
         await vi.advanceTimersByTimeAsync(0);
         expect(draw).toHaveBeenCalledOnce();
 
+        // A save that ends after the page is hidden.
+        const later = vi.fn(async () => {});
+        schedulePicture("d2", later, 30000);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(later).toHaveBeenCalledOnce();
+        visibility.mockRestore();
+
         await vi.advanceTimersByTimeAsync(30000);
         expect(draw).toHaveBeenCalledOnce();
+        expect(later).toHaveBeenCalledOnce();
     });
 
     it("draws the pictures of a drawing one after the other, also after a failed one", async () => {

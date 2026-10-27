@@ -16,9 +16,9 @@ let isWatchingPage = false;
 
 /**
  * Draws the picture of the drawing `key` with `draw` once `delay` ms pass without another call for
- * `key` and the user pauses their input, or once the page is hidden. A later call replaces the
- * `draw` that waits. Drawing blocks the main thread for the whole scene, so it waits until the
- * user is idle.
+ * `key` and the user pauses their input, or at once while the page is hidden. A later call
+ * replaces the `draw` that waits. Drawing blocks the main thread for the whole scene, so it waits
+ * until the user is idle.
  */
 export function schedulePicture(key: string, draw: () => Promise<void>, delay: number) {
     const pending = pendingPictures.get(key);
@@ -27,6 +27,9 @@ export function schedulePicture(key: string, draw: () => Promise<void>, delay: n
     }
     pendingPictures.set(key, { draw, timer: setTimeout(() => drawWhenIdle(key), delay) });
     watchPage();
+    if (document.visibilityState === "hidden") {
+        drawPicture(key);
+    }
 }
 
 /** Draws the picture of `key` that waits, or waits until the user's input pauses. */

@@ -149,7 +149,8 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
                 libraryItems: libraryResult.libraryItems
             });
             if (canSavePicture) {
-                void refreshNotePicture(note, { elements, appState: content.appState }, files);
+                void refreshNotePicture(note, { elements, appState: content.appState }, files,
+                    () => currentSceneVersion.current === expectedSceneVersion);
             }
         } catch (err) {
             console.error("Failed to prepare initial canvas data", err);
@@ -182,6 +183,11 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
 
         loadData(api, content, theme);
 
+        // Initialize tracking state after loading to prevent redundant updates from initial
+        // onChange events
+        currentSceneVersion.current = getSceneVersion(api.getSceneElements());
+        const loadedSceneVersion = currentSceneVersion.current;
+
         // Images live as attachments (titled with their fileId); fetch them, rebuild their
         // data URLs and inject them so elements referencing those fileIds render. Legacy notes
         // that still carry inline images in `content.files` were already loaded by loadData().
@@ -197,12 +203,10 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
                 for (const file of [ ...Object.values(content.files ?? {}), ...files ]) {
                     allFiles[file.id] = file;
                 }
-                void refreshNotePicture(note, content, allFiles);
+                void refreshNotePicture(note, content, allFiles,
+                    () => currentSceneVersion.current === loadedSceneVersion);
             }
         });
-
-        // Initialize tracking state after loading to prevent redundant updates from initial onChange events
-        currentSceneVersion.current = getSceneVersion(api.getSceneElements());
 
         // load the library state
         loadLibrary(note).then(({ libraryItems, metadata }) => {
@@ -373,11 +377,13 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
                 }
             }
 
-            // Excalidraw reports each move of a drag: the save waits until the pointer is up.
-            if (hasChanges && appState.cursorButton !== "down") {
+            if (hasChanges) {
                 spacedUpdate.resetUpdateTimer();
-                spacedUpdate.scheduleUpdate();
-                currentSceneVersion.current = newSceneVersion;
+                // Excalidraw reports each move of a drag: the save waits until the pointer is up.
+                if (appState.cursorButton !== "down") {
+                    spacedUpdate.scheduleUpdate();
+                    currentSceneVersion.current = newSceneVersion;
+                }
             }
         },
         onLibraryChange: (libraryItems) => {
@@ -451,7 +457,9 @@ export function useCanvasDrawingPersistence(
             && !isLoadedSceneEmptyRef.current;
         // With unsaved changes, their save schedules the picture.
         if (editor?.canEdit() && unsavedContent === undefined && !isLoadedSceneEmptyRef.current) {
-            void refreshDrawingPicture(attachment, blobContent, loaded.files);
+            const loadedVersion = currentSceneVersion.current;
+            void refreshDrawingPicture(attachment, blobContent, loaded.files,
+                () => currentSceneVersion.current === loadedVersion);
         }
 
         return {
@@ -545,9 +553,12 @@ export function useCanvasDrawingPersistence(
         appStateToCompare.current = appState;
     }
 
-    // This drawing already shows the saves that `editor` makes.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        const isSaved = loadResults.getAttachmentRows(editor?.componentId).some((row) =>
+        // While no other Excalidraw of the text note shows the drawing, the saves of `editor` come
+        // from this one, which shows them already.
+        const isOnlyDrawing = !drawingMount || drawingMount.isOnlyDrawing();
+        const rows = loadResults.getAttachmentRows(isOnlyDrawing ? editor?.componentId : undefined);
+        const isSaved = rows.some((row) =>
             row.attachmentId === attachment.attachmentId && !row.isDeleted);
         if (isSaved) {
             void loadSavedDrawing();
@@ -878,12 +889,22 @@ async function saveNotePicture(noteId: string, scene: PictureScene, files: Binar
     }
 }
 
-/** Schedules a picture of `scene`, loaded from `note`, when the saved one is missing or older. */
-async function refreshNotePicture(note: FNote, scene: PictureScene, files: BinaryFiles) {
+/**
+ * Schedules a picture of `scene`, loaded from `note`, when the saved one is missing or older.
+ * `isCurrent()` returns `false` once a change replaced the scene, which then gets no picture.
+ */
+async function refreshNotePicture(
+    note: FNote,
+    scene: PictureScene,
+    files: BinaryFiles,
+    isCurrent: () => boolean
+) {
     if (!(scene.elements ?? []).some((element) => !element.isDeleted)) return;
     try {
         const picture = await getPicture(note, CANVAS_EXPORT_TITLE);
-        if (!picture || picture.utcDateModified < (await note.getMetadata()).utcDateModified) {
+        const isOutdated = !picture
+            || picture.utcDateModified < (await note.getMetadata()).utcDateModified;
+        if (isOutdated && isCurrent()) {
             scheduleNotePicture(note.noteId, scene, files);
         }
     } catch (e) {
@@ -900,13 +921,22 @@ function scheduleDrawingPicture(drawing: FAttachment, content: string, files: Bi
     );
 }
 
-/** Schedules a picture of `drawing`, saved as `content`, when the saved one is missing or older. */
-async function refreshDrawingPicture(drawing: FAttachment, content: string, files: BinaryFiles) {
+/**
+ * Schedules a picture of `drawing`, saved as `content`, when the saved one is missing or older.
+ * `isCurrent()` returns `false` once a change replaced the content, which then gets no picture.
+ */
+async function refreshDrawingPicture(
+    drawing: FAttachment,
+    content: string,
+    files: BinaryFiles,
+    isCurrent: () => boolean
+) {
     try {
         const owner = await froca.getNote(drawing.ownerId);
         if (!owner) return;
         const picture = await getPicture(owner, getDrawingPictureTitle(drawing.attachmentId));
-        if (!picture || picture.utcDateModified < drawing.utcDateModified) {
+        const isOutdated = !picture || picture.utcDateModified < drawing.utcDateModified;
+        if (isOutdated && isCurrent()) {
             scheduleDrawingPicture(drawing, content, files);
         }
     } catch (e) {
