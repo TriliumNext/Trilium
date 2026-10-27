@@ -25,7 +25,9 @@ import LoadResults from "../../../services/load_results";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
+import type { SavedData } from "../../react/hooks";
 import type { EmbedHostHistory } from "../text/embed_history";
+import { CANVAS_EXPORT_TITLE } from "./image_attachments";
 import useCanvasPersistence, {
     saveDrawingPicture, useCanvasDrawingPersistence
 } from "./persistence";
@@ -75,11 +77,12 @@ type PersistenceProps = ReturnType<typeof useCanvasPersistence>;
 
 let props: PersistenceProps | undefined;
 
-function Probe({ note, apiRef }: {
+function Probe({ note, apiRef, isReadOnly = false }: {
     note: FNote;
     apiRef: RefObject<ExcalidrawImperativeAPI | null>;
+    isReadOnly?: boolean;
 }) {
-    props = useCanvasPersistence(note, null, apiRef, "light", false);
+    props = useCanvasPersistence(note, null, apiRef, "light", isReadOnly);
     return null;
 }
 
@@ -268,6 +271,127 @@ describe("useCanvasPersistence content loading (#10279)", () => {
     });
 });
 
+describe("useCanvasPersistence saves", () => {
+    const PICTURE_TIME = "2026-10-27 10:00:00.000Z";
+    let container: HTMLElement;
+    let puts: { url: string; data: SavedData }[];
+    let post: ReturnType<typeof vi.spyOn>;
+    let sceneElements: FakeElement[];
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        props = undefined;
+        puts = [];
+        sceneElements = [];
+        server.put = vi.fn(async (url: string, data: SavedData) => {
+            puts.push({ url, data });
+            return {};
+        }) as typeof server.put;
+        post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        vi.mocked(exportToSvg).mockClear();
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+        post.mockRestore();
+        vi.useRealTimers();
+    });
+
+    /** A canvas note modified at `modified`, whose picture was saved at `pictureTime`, if any. */
+    function buildNoteWithPicture(modified: string, pictureTime?: string) {
+        const { note, elements } = buildCanvasNote([ "a1" ]);
+        note.getMetadata = (async () => ({ utcDateModified: modified })) as never;
+        note.getAttachmentsByRole = (async (role: string) => role === "image" && pictureTime
+            ? [ { title: CANVAS_EXPORT_TITLE, utcDateModified: pictureTime } ]
+            : []) as never;
+        return { note, elements };
+    }
+
+    async function mount(note: FNote, isReadOnly = false) {
+        const { api } = buildApi(() => sceneElements);
+        const apiRef = { current: api } as RefObject<ExcalidrawImperativeAPI | null>;
+        await act(async () => {
+            render(<Probe note={note} apiRef={apiRef} isReadOnly={isReadOnly} />, container);
+        });
+        await act(async () => {});
+        await resolvedInitialData();
+    }
+
+    async function waitFor(ms: number) {
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(ms);
+        });
+    }
+
+    function change(appState: object = {}) {
+        props?.onChange?.([], appState as never, {} as never);
+    }
+
+    it("saves the scene alone, and its picture once the saves pause", async () => {
+        const { note, elements } = buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME);
+        await mount(note);
+        sceneElements = elements;
+        change();
+
+        sceneElements = [ { ...elements[0], version: 99 } ];
+        change();
+        await waitFor(1500);
+        expect(puts).toHaveLength(1);
+        expect(puts[0].data.attachments).toEqual([]);
+        expect(exportToSvg).not.toHaveBeenCalled();
+
+        await waitFor(5000);
+        expect(vi.mocked(exportToSvg).mock.calls.map(([ { elements } ]) => elements))
+            .toEqual([ sceneElements ]);
+        expect(post).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/attachments?matchBy=title`,
+            { role: "image", mime: "image/svg+xml", title: CANVAS_EXPORT_TITLE, content: "<svg/>" }
+        );
+    });
+
+    it("holds the save while the pointer is down", async () => {
+        const { note, elements } = buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME);
+        await mount(note);
+        sceneElements = elements;
+        change();
+
+        sceneElements = [ { ...elements[0], version: 99 } ];
+        change({ cursorButton: "down" });
+        sceneElements = [ { ...elements[0], version: 100 } ];
+        change({ cursorButton: "down" });
+        await waitFor(1500);
+        expect(puts).toEqual([]);
+
+        change({ cursorButton: "up" });
+        await waitFor(1500);
+        expect(puts).toHaveLength(1);
+    });
+
+    it("draws a missing or older picture once the note loads, unless read-only", async () => {
+        const postedNoteIds = () => post.mock.calls.map(([ url ]) => String(url).split("/")[1]);
+        const stale = buildNoteWithPicture("2026-10-27 11:00:00.000Z", PICTURE_TIME).note;
+        await mount(stale);
+        await waitFor(5000);
+        expect(postedNoteIds()).toEqual([ stale.noteId ]);
+        expect(vi.mocked(exportToSvg).mock.calls[0]?.[0].elements)
+            .toMatchObject([ { id: "a1" } ]);
+
+        // The notes that the canvas loads next.
+        await mount(buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME).note);
+        await mount(buildNoteWithPicture("2026-10-27 11:00:00.000Z", PICTURE_TIME).note, true);
+        await waitFor(5000);
+        expect(postedNoteIds()).toEqual([ stale.noteId ]);
+
+        const unpictured = buildNoteWithPicture(PICTURE_TIME).note;
+        await mount(unpictured);
+        await waitFor(5000);
+        expect(postedNoteIds()).toEqual([ stale.noteId, unpictured.noteId ]);
+    });
+});
+
 describe("useCanvasDrawingPersistence", () => {
     const IMAGE = { id: "f1", dataURL: "data:image/png;base64,AA==", mimeType: "image/png" };
     const UNUSED_IMAGE = { ...IMAGE, id: "f2" };
@@ -278,6 +402,8 @@ describe("useCanvasDrawingPersistence", () => {
     let appState: Record<string, unknown>;
     let updateScene: ReturnType<typeof vi.fn>;
     let parent: Component;
+    /** The note that owns the drawings, with a picture saved after them. */
+    let owner: FNote;
 
     function DrawingProbe({ attachment, editor, apiRef, options }: {
         attachment: FAttachment;
@@ -295,6 +421,10 @@ describe("useCanvasDrawingPersistence", () => {
         sceneFiles = { f1: IMAGE, f2: UNUSED_IMAGE };
         updateScene = vi.fn();
         parent = new Component();
+        owner = buildNote({ title: "Owner" });
+        owner.getAttachmentsByRole = (async () => [
+            { title: "a1.svg", utcDateModified: "2026-01-02 00:00:00.000Z" }
+        ]) as never;
         appState = {
             scrollX: 1, scrollY: 2, zoom: { value: 1 }, gridModeEnabled: false,
             viewBackgroundColor: "transparent", theme: "light"
@@ -307,11 +437,16 @@ describe("useCanvasDrawingPersistence", () => {
         act(() => render(null, container));
         container.remove();
         vi.unstubAllGlobals();
+        vi.useRealTimers();
     });
 
     function buildAttachment(content: object) {
         const getBlob = vi.fn(async () => ({ content: JSON.stringify(content) }));
-        return { attachment: { attachmentId: "a1", getBlob } as unknown as FAttachment, getBlob };
+        const attachment = {
+            attachmentId: "a1", ownerId: owner.noteId, utcDateModified: "2026-01-01 00:00:00.000Z",
+            getBlob
+        } as unknown as FAttachment;
+        return { attachment, getBlob };
     }
 
     function buildEditor(unsavedContent?: string) {
@@ -359,10 +494,10 @@ describe("useCanvasDrawingPersistence", () => {
         drawingProps?.onChange?.([], appState as never, {});
     }
 
-    /** Reports a save of the attachment `a1` made elsewhere, and waits until it shows. */
-    async function reportSave(row: object = { attachmentId: "a1" }) {
+    /** Reports a save of the attachment `a1` made by `componentId`, and waits until it shows. */
+    async function reportSave(row: object = { attachmentId: "a1" }, componentId = "other") {
         const loadResults = new LoadResults([]);
-        loadResults.addAttachmentRow(row as never, "otherComponent");
+        loadResults.addAttachmentRow(row as never, componentId);
         await act(async () => {
             await parent.handleEvent("entitiesReloaded", { loadResults });
             await new Promise((resolve) => setTimeout(resolve));
@@ -430,15 +565,25 @@ describe("useCanvasDrawingPersistence", () => {
             }
         });
 
-        // Once saved, the drawing saves its picture, drawn with the images Excalidraw holds.
+        // Once the saves pause, the drawing saves its picture, drawn with the images loaded in
+        // Excalidraw.
         const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
         vi.mocked(exportToSvg).mockClear().mockResolvedValueOnce(svgOf("picture"));
+        vi.useFakeTimers();
         await act(async () => onSaved(getContent()));
-        expect(vi.mocked(exportToSvg).mock.calls[0]?.[0].files).toBe(sceneFiles);
-        expect(post).toHaveBeenCalledExactlyOnceWith(
-            "notes/undefined/attachments?matchBy=title",
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(29000);
+        });
+        expect(exportToSvg).not.toHaveBeenCalled();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1000);
+        });
+        vi.useRealTimers();
+        await vi.waitFor(() => expect(post).toHaveBeenCalledExactlyOnceWith(
+            `notes/${owner.noteId}/attachments?matchBy=title`,
             expect.objectContaining({ title: "a1.svg" })
-        );
+        ));
+        expect(vi.mocked(exportToSvg).mock.calls[0]?.[0].files).toBe(sceneFiles);
         post.mockRestore();
 
         appState = { ...appState, viewBackgroundColor: "#ffc9c9" };
@@ -448,6 +593,74 @@ describe("useCanvasDrawingPersistence", () => {
 
         act(() => render(null, container));
         expect(editor.release).toHaveBeenCalledOnce();
+    });
+
+    it("holds the save while the pointer is down", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const { attachment } = buildAttachment({ elements: loaded });
+        const editor = buildEditor();
+        await mount(attachment, editor);
+        change();
+        sceneElements = loaded;
+        change();
+
+        appState = { ...appState, cursorButton: "down" };
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        change();
+        sceneElements = [ { ...loaded[0], version: 5 } ];
+        change();
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+
+        appState = { ...appState, cursorButton: "up" };
+        change();
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+    });
+
+    it("loads the saves of other components only, not those of its own editor", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        await mount(attachment, { ...buildEditor(), componentId: "textNote" });
+        change();
+        sceneElements = loaded;
+        change();
+        getBlob.mockClear();
+
+        await reportSave({ attachmentId: "a1" }, "textNote");
+        expect(getBlob).not.toHaveBeenCalled();
+        await reportSave();
+        expect(getBlob).toHaveBeenCalledOnce();
+    });
+
+    it("draws a picture older than the drawing once it loads, if it can save one", async () => {
+        vi.useFakeTimers();
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        const loaded = { elements: [ { id: "r1", type: "rectangle", version: 3 } ] };
+        async function load(content: object, editor: ContentEditor | undefined) {
+            act(() => render(null, container));
+            await mount(buildAttachment(content).attachment, editor);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(30000);
+            });
+        }
+
+        // None for a current picture. For an older one, none without an editor, for an empty
+        // drawing, or while the editor has changes to save.
+        await load(loaded, buildEditor());
+        owner.getAttachmentsByRole = (async () => [
+            { title: "a1.svg", utcDateModified: "2025-12-31 00:00:00.000Z" }
+        ]) as never;
+        await load(loaded, undefined);
+        await load({ elements: [] }, buildEditor());
+        await load(loaded, buildEditor(JSON.stringify(loaded)));
+        expect(post).not.toHaveBeenCalled();
+
+        vi.mocked(exportToSvg).mockResolvedValueOnce(svgOf("picture"));
+        await load(loaded, buildEditor());
+        expect(post).toHaveBeenCalledExactlyOnceWith(
+            `notes/${owner.noteId}/attachments?matchBy=title`,
+            expect.objectContaining({ title: "a1.svg" })
+        );
+        post.mockRestore();
     });
 
     it("saves nothing for the content as Excalidraw restores it, only the edits", async () => {
@@ -704,7 +917,8 @@ describe("useCanvasDrawingPersistence", () => {
         const owner = buildNote({ title: "Owner" });
         const getAttachmentsByRole = vi.fn(async () => [
             { attachmentId: "img1", title: "f9.png" },
-            { attachmentId: "img2", title: "other.png" }
+            { attachmentId: "img2", title: "other.png" },
+            { attachmentId: "pic1", title: "a1.svg", utcDateModified: "2026-01-02 00:00:00.000Z" }
         ]);
         owner.getAttachmentsByRole = getAttachmentsByRole as never;
         const fetchImage = vi.fn(async () => ({

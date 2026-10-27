@@ -115,8 +115,11 @@ export default class AttachmentSaves
     implements AttachmentEditor {
     private noteId: string | undefined;
 
-    /** @param scheduleUpdate schedules a save of the text note. */
-    constructor(private scheduleUpdate: () => void) {
+    /**
+     * @param scheduleUpdate schedules a save of the text note.
+     * @param componentId the component that sends the saves.
+     */
+    constructor(private scheduleUpdate: () => void, readonly componentId?: string) {
         super();
     }
 
@@ -262,7 +265,8 @@ export function useAttachmentEditor(
 ): AttachmentEditor {
     const parentComponent = useContext(ParentComponent);
     const [ saves ] = useState(() => {
-        const saves = new AttachmentSaves(() => spacedUpdate.scheduleUpdate());
+        const saves = new AttachmentSaves(
+            () => spacedUpdate.scheduleUpdate(), parentComponent?.componentId);
         saves.setNoteId(note.noteId);
         return saves;
     });

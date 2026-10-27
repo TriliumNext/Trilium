@@ -93,7 +93,7 @@ export default function EditableText({
         ? watchEditorBlocks(block, onBlockChange)
         : undefined));
     const [ attachmentSaves ] = useState(() =>
-        new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
+        new AttachmentSaves(() => spacedUpdate.scheduleUpdate(), parentComponent?.componentId));
     const [ inlineSourceSaves ] = useState(() =>
         new InlineSourceSaves(() => spacedUpdate.scheduleUpdate()));
     const [ embedHistories ] = useState(() => new EmbedHistories(() => editorRef.current));

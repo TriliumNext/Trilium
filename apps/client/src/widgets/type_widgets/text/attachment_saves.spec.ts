@@ -6,7 +6,9 @@ import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
+import {
+    type AttachmentEditor, bindAttachmentEditor, type NoteEditor
+} from "../../../services/content_renderer";
 import { ParentComponent } from "../../react/react_utils";
 import AttachmentSaves, {
     InlineSourceSaves, NoteSaves, useAttachmentEditor, useNoteEditor
@@ -153,6 +155,10 @@ describe("useAttachmentEditor", () => {
             render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
         });
         expect(editor?.canEdit(drawing)).toBe(true);
+        // Its saves send this component ID, so a drawing can skip the changes they report.
+        expect(editor?.componentId).toBe(component.componentId);
+        expect(editor && bindAttachmentEditor(editor, drawing).componentId)
+            .toBe(component.componentId);
 
         editor?.scheduleSave(drawing, () => "first");
         await act(async () => {
