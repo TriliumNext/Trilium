@@ -4368,7 +4368,11 @@
       "image-position": "이미지 위치",
       "list": "목록",
       "list-type": "목록 유형",
-      "insert-a-preview-of-a-web-page-or-a-video": "웹 페이지 또는 동영상 미리보기 삽입"
+      "insert-a-preview-of-a-web-page-or-a-video": "웹 페이지 또는 동영상 미리보기 삽입",
+      "use-headers": "헤더 사용",
+      "header-columns": "헤더 열",
+      "header-rows": "헤더 행",
+      "enter-a-whole-number-between-0-and-0": "0에서 %0 사이의 정수를 입력하세요."
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
