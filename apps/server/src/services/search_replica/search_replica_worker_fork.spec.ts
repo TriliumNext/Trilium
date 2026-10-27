@@ -227,7 +227,11 @@ function battery(): Query[] {
         [ "autocomplete", { ...root, query: "", filter: "#workspace" } ],
         [ "autocomplete", { ...root, query: "note", filter: "note.type = text" } ],
         [ "autocomplete", { hoistedNoteId: WORKSPACES_NOTE_ID, query: "" } ],
-        [ "autocomplete", { ...root, query: 42 } ]
+        [ "autocomplete", { ...root, query: 42 } ],
+        [ "etapiSearch", { ...root, search: "note", params: {} } ],
+        [ "etapiSearch", { ...root, search: "note", params: { fastSearch: true, limit: 5, orderBy: "title", orderDirection: "desc" } } ],
+        [ "etapiSearch", { ...root, search: "#workspace", params: { ancestorNoteId: WORKSPACES_NOTE_ID, ancestorDepth: "lt3" } } ],
+        [ "etapiSearch", { ...root, search: "#status = Done", params: { debug: true, includeArchivedNotes: true } } ]
     ];
 
     if (savedSearchNoteId) {

@@ -202,7 +202,8 @@ export {
 } from "./services/search/search_executor";
 export {
     deserializeSearchQueryError, runSearchQuery, serializeSearchQueryError,
-    type AutocompleteArgs, type NeedsMainResult, type QuickSearchArgs, type RelatedNotesArgs, type RelatedNotesResponse,
+    type AutocompleteArgs, type EtapiSearchArgs, type EtapiSearchResponse, type NeedsMainResult, type QuickSearchArgs,
+    type RelatedNotesArgs, type RelatedNotesResponse,
     type SearchArgs, type SearchFromNoteArgs, type SearchQueryArgs, type SearchQueryBaseArgs, type SearchQueryError,
     type SearchQueryKind, type SearchQueryOptions, type SearchQueryResults, type SearchResultDetailsArgs,
     type SearchResultRecord

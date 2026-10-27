@@ -86,8 +86,9 @@ The query functions live in `packages/trilium-core/src/services/search/search_qu
 | `searchFromNote` | `GET /api/search-note/:noteId` |
 | `searchResultDetails` | `POST /api/search-note/:noteId/result-details` |
 | `autocomplete` | `GET /api/autocomplete` |
+| `etapiSearch` | `GET /etapi/notes` (ETAPI) |
 
-All other searches stay on the main process: date notes, special notes, the web clipper, `search-and-execute`, backend scripts (`api.searchForNotes`), LLM and MCP tools, ETAPI and share. They search and then write inside one synchronous transaction, or have a synchronous API contract, so they need read-your-writes inside the transaction, which a replica cannot give.
+All other searches stay on the main process: date notes, special notes, the web clipper, `search-and-execute`, backend scripts (`api.searchForNotes`), LLM and MCP tools, and share. They search and then write inside one synchronous transaction, or have a synchronous API contract, so they need read-your-writes inside the transaction, which a replica cannot give.
 
 The replica runs with `deferScripts: true`. A saved search with a `~searchScript` relation answers `{ needsMain: true }` instead of running the script, and `executeSearch()` reruns it on the main process.
 

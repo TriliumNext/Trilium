@@ -14,6 +14,7 @@ import { escapeHtml } from "../utils/index.js";
 import SearchContext from "./search_context.js";
 import type SearchResult from "./search_result.js";
 import searchService, { type SearchNoteResult } from "./services/search.js";
+import type { SearchParams } from "./services/types.js";
 
 /**
  * The route-level searches as plain functions: plain arguments in, plain JSON out, so that they can
@@ -26,6 +27,7 @@ export interface SearchQueryArgs {
     searchFromNote: SearchFromNoteArgs;
     searchResultDetails: SearchResultDetailsArgs;
     autocomplete: AutocompleteArgs;
+    etapiSearch: EtapiSearchArgs;
 }
 
 export interface SearchQueryResults {
@@ -35,6 +37,7 @@ export interface SearchQueryResults {
     searchFromNote: SearchNoteResult | NeedsMainResult;
     searchResultDetails: SearchResultDetailsResponse | NeedsMainResult;
     autocomplete: AutocompleteResult[];
+    etapiSearch: EtapiSearchResponse;
 }
 
 export type SearchQueryKind = keyof SearchQueryArgs;
@@ -76,6 +79,18 @@ export interface AutocompleteArgs extends SearchQueryBaseArgs {
     limit?: unknown;
     filter?: unknown;
     activeNoteId?: unknown;
+}
+
+/** The ETAPI search: the query and the parameters the route has already validated. */
+export interface EtapiSearchArgs extends SearchQueryBaseArgs {
+    search: string;
+    params: SearchParams;
+}
+
+export interface EtapiSearchResponse {
+    noteIds: string[];
+    /** The search context's debug information in its JSON form, as the response carries it. */
+    debugInfo: unknown;
 }
 
 /** A {@link SearchResult} in the shape `JSON.stringify` gives it: its own fields, no getters. */
@@ -172,7 +187,8 @@ const queries: QueryFunctions = {
     relatedNotes,
     searchFromNote,
     searchResultDetails,
-    autocomplete
+    autocomplete,
+    etapiSearch
 };
 
 function quickSearch({ searchString }: QuickSearchArgs): QuickSearchResponse {
@@ -364,6 +380,17 @@ function autocomplete(args: AutocompleteArgs) {
 }
 
 const NEEDS_MAIN: NeedsMainResult = { needsMain: true };
+
+function etapiSearch({ search: query, params }: EtapiSearchArgs): EtapiSearchResponse {
+    const searchContext = new SearchContext(params);
+    const results = searchService.findResultsWithQuery(query, searchContext);
+
+    return {
+        noteIds: results.map((result) => result.noteId),
+        // The parsed expression can hold comparator functions, which a structured clone rejects.
+        debugInfo: searchContext.debugInfo ? JSON.parse(JSON.stringify(searchContext.debugInfo)) : null
+    };
+}
 
 function requireSearchString(searchString: unknown): string {
     if (typeof searchString !== "string" || searchString.length === 0) {
