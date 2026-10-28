@@ -1,4 +1,5 @@
-body {
+/* Outranks the later-loaded `:root, :host` of ckeditor5.css, which composes tokens from these. */
+html:root {
     /* -- Overrides generic colors. ------------------------------------------------------------- */
 
     --ck-color-base-text: var(--main-text-color);
@@ -57,7 +58,6 @@ body {
     --ck-color-input-disabled-text: var(--muted-text-color);
 
     --ck-color-border-control: var(--main-border-color);
-    --ck-border-control: var(--ck-border-width-control) solid var(--ck-color-border-control);
 
     /* -- Overrides the default .ck-list class colors. ------------------------------------------ */
 
@@ -114,6 +114,7 @@ body {
 
     --ck-font-face: var(--main-font-family);
     --ck-input-label-height: 1.5em;
+    --ck-mention-list-max-height: 500px;
 }
 
 div.ck.ck-dialog {
