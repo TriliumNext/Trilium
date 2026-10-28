@@ -9,6 +9,8 @@ import { extensions as mimeToExt, types as extToMime } from "mime-types";
 import { basename, extname } from "./path";
 import { NoteMeta } from "../../meta";
 
+export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
 export function isStandalone() { return getPlatform().isStandalone; }
@@ -282,15 +284,6 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
         map.set(keyForMap, el);
     }
     return map;
-}
-
-const HTML_ESCAPES: Record<string, string> = {
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
-};
-
-/** Escapes `&`, `<`, `>`, `"` and `'`, so the result is safe in element content and quoted attributes. */
-export function escapeHtml(str: string): string {
-    return str.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 }
 
 /**
