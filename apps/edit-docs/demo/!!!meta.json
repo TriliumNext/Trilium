@@ -191,7 +191,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "includeNoteLink",
+                                            "value": "VsFbpoySMCE3",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
                                     "format": "html",
                                     "dataFileName": "The Last Question.html",
                                     "attachments": [],
