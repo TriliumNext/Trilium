@@ -428,9 +428,6 @@ importers:
       electron-dl:
         specifier: 5.0.0
         version: 5.0.0
-      electron-squirrel-startup:
-        specifier: 1.0.1
-        version: 1.0.1(supports-color@10.2.2)
       electron-window-state:
         specifier: 5.0.3
         version: 5.0.3
@@ -477,9 +474,6 @@ importers:
       '@triliumnext/server':
         specifier: workspace:*
         version: link:../server
-      '@types/electron-squirrel-startup':
-        specifier: 1.0.2
-        version: 1.0.2
       '@types/pngjs':
         specifier: 6.0.5
         version: 6.0.5
@@ -4807,9 +4801,6 @@ packages:
   '@types/ejs@3.1.5':
     resolution: {integrity: sha512-nv+GSx77ZtXiJzwKdsASqi+YQ5Z7vwHsTP0JY2SiQgjGckkBRKZnk8nIM+7oUZ1VCtuTz0+By4qVR7fqzp/Dfg==}
 
-  '@types/electron-squirrel-startup@1.0.2':
-    resolution: {integrity: sha512-AzxnvBzNh8K/0SmxMmZtpJf1/IWoGXLP+pQDuUaVkPyotI8ryvAtBSqgxR/qOSvxWHYWrxkeNsJ+Ca5xOuUxJQ==}
-
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
 
@@ -7019,9 +7010,6 @@ packages:
   electron-is-dev@3.0.1:
     resolution: {integrity: sha512-8TjjAh8Ec51hUi3o4TaU0mD3GMTOESi866oRNavj9A3IQJ7pmv+MJVmdZBFGw4GFT36X7bkqnuDNYvkQgvyI8Q==}
     engines: {node: '>=18'}
-
-  electron-squirrel-startup@1.0.1:
-    resolution: {integrity: sha512-sTfFIHGku+7PsHLJ7v0dRcZNkALrV+YEozINTW8X1nM//e5O3L+rfYuvSW00lmGHnYmUjARZulD8F2V8ISI9RA==}
 
   electron-to-chromium@1.5.426:
     resolution: {integrity: sha512-2Gcq6inCQs/AqfHP3f5ftCzk+pqeW2VlA1LgmPqEj2hfBO8HiZRspNYkD4HzFBe4u6lGqca4BspFr6Ix4Q400g==}
@@ -15775,8 +15763,6 @@ snapshots:
 
   '@types/ejs@3.1.5': {}
 
-  '@types/electron-squirrel-startup@1.0.2': {}
-
   '@types/esrecurse@4.3.1': {}
 
   '@types/estree@1.0.9': {}
@@ -18637,12 +18623,6 @@ snapshots:
     optional: true
 
   electron-is-dev@3.0.1: {}
-
-  electron-squirrel-startup@1.0.1(supports-color@10.2.2):
-    dependencies:
-      debug: 2.6.9(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - supports-color
 
   electron-to-chromium@1.5.426: {}
 

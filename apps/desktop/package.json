@@ -35,7 +35,6 @@
     "better-sqlite3": "13.0.3",
     "electron-debug": "5.0.0",
     "electron-dl": "5.0.0",
-    "electron-squirrel-startup": "1.0.1",
     "electron-window-state": "5.0.3",
     "sherpa-onnx-node": "1.13.8"
   },
@@ -53,7 +52,6 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
-    "@types/electron-squirrel-startup": "1.0.2",
     "@types/pngjs": "6.0.5",
     "electron": "45.0.0",
     "gifenc": "1.0.3",
