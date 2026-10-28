@@ -1,7 +1,8 @@
 import {
     BalloonToolbar, BlockToolbar, ButtonView, DropdownView, type Editor, type FocusTracker,
     ListItemGroupView, ListItemView, ListSeparatorView, ListView, Plugin, SearchTextView, SplitButtonView, SwitchButtonView,
-    type ToolbarConfig, type ToolbarConfigItem, ToolbarSeparatorView, type ToolbarView, type View
+    type ToolbarConfig, type ToolbarConfigItem, ToolbarSeparatorView, type ToolbarView, type View,
+    WidgetToolbarRepository
 } from "ckeditor5";
 
 import ContextToolbar from "./context_toolbar.js";
@@ -143,14 +144,27 @@ export default class ToolbarGroupMenu extends Plugin {
             return;
         }
         const createHost = () => menuConfig.host(editor);
-
-        for (const toolbar of this.getToolbarViews()) {
+        const watchToolbar = (toolbar: ToolbarView) => {
             for (const item of toolbar.items) {
                 this.watchGroupDropdown(toolbar, item, groups, createHost);
             }
 
             this.listenTo(toolbar.items, "add", (evt, item: View) => {
                 this.watchGroupDropdown(toolbar, item, groups, createHost);
+            });
+        };
+
+        for (const toolbar of this.getToolbarViews()) {
+            watchToolbar(toolbar);
+        }
+
+        // The plugins that own a widget toolbar register it in their own `afterInit()`, which can
+        // run after this one, and `WidgetToolbarRepository` fills it the first time it shows it.
+        if (editor.plugins.has(WidgetToolbarRepository)) {
+            this.listenTo(editor, "ready", () => {
+                for (const toolbar of getWidgetToolbarViews(editor)) {
+                    watchToolbar(toolbar);
+                }
             });
         }
     }
@@ -380,6 +394,17 @@ function collectFromItems(items: ToolbarConfigItem[] | undefined, groups: Map<st
 
         collectFromItems(item.items, groups);
     }
+}
+
+/**
+ * The toolbars registered with `WidgetToolbarRepository`, such as the one of an image. The
+ * repository keeps them in a private map, as `ContextToolbar` reads it too.
+ */
+function getWidgetToolbarViews(editor: Editor) {
+    const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
+        _toolbarDefinitions: Map<string, { view: ToolbarView }>;
+    };
+    return [...repository._toolbarDefinitions.values()].map(({ view }) => view);
 }
 
 /**

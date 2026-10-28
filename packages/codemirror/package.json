@@ -58,7 +58,7 @@
     "@fsegurai/codemirror-theme-volcano": "6.2.7",
     "@fsegurai/codemirror-theme-vscode-dark": "6.2.8",
     "@fsegurai/codemirror-theme-vscode-light": "6.2.8",
-    "@lezer/common": "1.5.3",
+    "@lezer/common": "1.5.4",
     "@lezer/highlight": "1.2.5",
     "@lezer/lr": "1.4.11",
     "@replit/codemirror-indentation-markers": "6.5.3",

@@ -30,7 +30,7 @@ overrides:
   "@codemirror/autocomplete": "6.20.4"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
-  "@lezer/common": "1.5.3"
+  "@lezer/common": "1.5.4"
   "@lezer/highlight": "1.2.5"
   "@lezer/lr": "1.4.11"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in

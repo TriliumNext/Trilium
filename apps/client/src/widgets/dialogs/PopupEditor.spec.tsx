@@ -171,7 +171,22 @@ async function attachmentsReloaded(attachmentId: string) {
         await parent.handleEvent("entitiesReloaded", {
             loadResults: {
                 getAttachmentRows: () => [ { attachmentId } ],
-                getAttributeRows: () => []
+                getAttributeRows: () => [],
+                isNoteReloaded: () => false
+            }
+        } as never);
+    });
+}
+
+/** An entity reload of one note, deleted or not. */
+async function noteReloaded(noteId: string, isDeleted: boolean) {
+    await act(async () => {
+        await parent.handleEvent("entitiesReloaded", {
+            loadResults: {
+                getAttachmentRows: () => [],
+                getAttributeRows: () => [],
+                isNoteReloaded: (id: string) => id === noteId,
+                getEntityRow: (_entityName: string, id: string) => (id === noteId ? { noteId, isDeleted } : undefined)
             }
         } as never);
     });
@@ -344,6 +359,17 @@ describe("PopupEditor", () => {
         // What a press on a node of the note map amounts to: the map navigates the pane behind the
         // popup, so the popup would otherwise be left covering the note it has just gone to.
         await act(async () => { await parent.handleEvent("closePopupEditor", {} as never); });
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
+    it("closes when the note it shows is deleted, and only then", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        await noteReloaded("other", true);
+        await noteReloaded("n1", false);
+        expect(modal()?.dataset.shown).toBe("true");
+
+        await noteReloaded("n1", true);
         expect(modal()?.dataset.shown).toBe("false");
     });
 

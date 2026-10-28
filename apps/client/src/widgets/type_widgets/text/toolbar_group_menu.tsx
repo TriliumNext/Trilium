@@ -155,7 +155,7 @@ function MenuTileGroups({ items }: { items: ToolbarGroupMenuItem[] }) {
                             )
                             : (
                                 <MenuTile
-                                    key={tileIndex} icon={iconClass} iconSvg={icon} title={escapeHtml(label)} tooltip={label}
+                                    key={tileIndex} icon={iconClass} iconSvg={icon} title={escapeHtml(label)}
                                     disabled={!isEnabled} checked={isOn} onSelect={() => run?.()}
                                 />
                             )

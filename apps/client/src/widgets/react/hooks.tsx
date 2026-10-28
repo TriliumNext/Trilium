@@ -162,6 +162,8 @@ export function useEditorSpacedUpdate({
         // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a
         // shared page cannot save
         if (data === undefined || !note || note.type !== noteType || isShare) return;
+        // A deleted note is gone from `froca`, and the server refuses its changes.
+        if (!(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 
@@ -288,7 +290,7 @@ export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData
 
     const commit = useCallback(async (data: Blob | undefined) => {
         // for read only notes
-        if (data === undefined || note.type !== noteType) return;
+        if (data === undefined || note.type !== noteType || !(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
         await server.upload(`notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`, new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
