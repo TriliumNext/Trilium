@@ -63,6 +63,11 @@
     z-index: 1600;
 }
 
+/* Inside the note, under the sticky formatting toolbar of the popup editor (998). */
+:root .block-drag-handle-container .ck.ck-block-toolbar-button {
+    z-index: auto;
+}
+
 :root .ck.block-drag-handle:not(:hover) {
     color: var(--main-border-color);
 }
