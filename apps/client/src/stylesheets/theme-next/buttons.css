@@ -6,7 +6,7 @@ button.btn.btn-primary,
 button.btn.btn-secondary,
 button.btn.btn-sm:not(.select-button),
 button.btn.btn-success,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text,
 button.ck.ck-button.ck-ai-assistant-form__icon-action {
     display: inline-flex;
@@ -29,7 +29,7 @@ button.btn.btn-primary:hover,
 button.btn.btn-secondary:hover,
 button.btn.btn-sm:not(.select-button):hover,
 button.btn.btn-success:hover,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):hover,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):hover,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):hover,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):hover {
     background: var(--cmd-button-hover-background-color);
@@ -40,7 +40,7 @@ button.btn.btn-primary:active,
 button.btn.btn-secondary:active,
 button.btn.btn-sm:not(.select-button):active,
 button.btn.btn-success:active,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):active,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):active,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):active,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):active {
     opacity: 0.85;
@@ -54,7 +54,7 @@ button.btn.btn-primary:disabled,
 button.btn.btn-secondary:disabled,
 button.btn.btn-sm:not(.select-button):disabled,
 button.btn.btn-success:disabled,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text.ck-disabled,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text.ck-disabled,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text.ck-disabled,
 button.ck.ck-button.ck-ai-assistant-form__icon-action.ck-disabled {
     opacity: var(--cmd-button-disabled-opacity);
@@ -64,7 +64,7 @@ button.btn.btn-primary:focus-visible,
 button.btn.btn-secondary:focus-visible,
 button.btn.btn-sm:not(.select-button):focus-visible,
 button.btn.btn-success:focus-visible,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):focus-visible,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):focus-visible,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):focus-visible,
 .tn-focusable-button:focus-visible {
