@@ -86,6 +86,7 @@ import ContextToolbar from "./plugins/context_toolbar.js";
 import ImagePosition from "./plugins/image_position.js";
 import ColorMenu from "./plugins/color_menu.js";
 import BlockDragHandle from "./plugins/block_drag_handle.js";
+import SkipUnchangedAttributes from "./plugins/skip_unchanged_attributes.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -154,6 +155,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TriliumSnippets,
     TriliumAiAssistant,
     FindInLinkWidgets,
+    SkipUnchangedAttributes,
 ];
 
 /**
