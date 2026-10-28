@@ -1,3 +1,5 @@
+import { Mutex } from "@triliumnext/commons";
+
 import Component from "./component.js";
 import SpacedUpdate from "../services/spaced_update.js";
 import server from "../services/server.js";
@@ -6,7 +8,6 @@ import froca from "../services/froca.js";
 import treeService from "../services/tree.js";
 import NoteContext from "./note_context.js";
 import appContext from "./app_context.js";
-import Mutex from "../utils/mutex.js";
 import linkService from "../services/link.js";
 import { partitionPinnedFirst } from "../services/tab_pinning.js";
 import type { EventData, NoteCommandData } from "./app_context.js";
@@ -581,7 +582,7 @@ export default class TabManager extends Component {
     async removeNoteContext(ntxId: string | null): Promise<boolean> {
         // removing note context is an async process which can take some time, if users presses CTRL-W quickly, two
         // close events could interleave which would then lead to attempting to activate already removed context.
-        return await this.mutex.runExclusively(async (): Promise<boolean> => {
+        return await this.mutex.runExclusive(async (): Promise<boolean> => {
             let noteContextToRemove;
 
             try {
@@ -902,7 +903,7 @@ export default class TabManager extends Component {
     }
 
     async reopenLastTabCommand() {
-        const closeLastEmptyTab: NoteContext | undefined = await this.mutex.runExclusively(async () => {
+        const closeLastEmptyTab: NoteContext | undefined = await this.mutex.runExclusive(async () => {
             let closeLastEmptyTab
             if (this.recentlyClosedTabs.length === 0) {
                 return closeLastEmptyTab;
