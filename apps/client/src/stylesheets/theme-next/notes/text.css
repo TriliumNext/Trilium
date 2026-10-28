@@ -147,6 +147,12 @@
 
 :root .ck.ck-dropdown__panel {
     --ck-editor-popup-padding: var(--menu-padding-size);
+    --ck-button-focus-border-color: transparent;
+    --ck-focus-outer-shadow: none;
+}
+
+:root .ck.ck-dropdown__panel .ck-button:focus-visible {
+    --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
 
 /* Submenu panel */
@@ -612,6 +618,28 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
 
     min-width: 60px;
     font-weight: 500;
+}
+
+/*
+ * Dropdowns in forms
+ */
+
+:root .ck.ck-form .ck.ck-dropdown > .ck.ck-button.ck-dropdown__button {
+    border: unset;
+    border-radius: var(--bs-border-radius);
+    box-shadow: unset;
+    background: var(--input-background-color);
+    color: var(--input-text-color);
+
+    &:not(.ck-disabled):hover {
+        background: var(--input-hover-background);
+        color: var(--input-hover-color);
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--input-focus-outline-color);
+        outline-offset: 0;
+    }
 }
 
 /*
