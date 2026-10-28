@@ -2208,10 +2208,6 @@ textarea {
     cursor: auto;
 }
 
-.ck-powered-by-balloon {
-    display: none !important;
-}
-
 .attachment-actions-toolbar {
     display: flex;
     align-items: center;
