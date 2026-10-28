@@ -1649,6 +1649,26 @@ pre.code-embed-editor.read-only .cm-activeLine {
     display: none;
 }
 
+/* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
+@supports (content-visibility: hidden) {
+    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+        display: flex !important;
+        flex: 0 0 100% !important;
+        margin-inline: -100% 0;
+        content-visibility: hidden;
+        clip-path: inset(50%);
+        animation: none;
+    }
+}
+
+.caret-stop {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    user-select: text;
+}
+
 .right-dropdown-widget {
     flex-shrink: 0;
 }

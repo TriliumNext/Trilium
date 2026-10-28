@@ -1091,7 +1091,7 @@ export function useWhenShown(ref: RefObject<Element | null> | undefined) {
         } else if (waiting) {
             waiting.callback = callback;
         } else {
-            // `display: none` gives the element no size, so showing it resizes it.
+            // A `ResizeObserver` first reports a hidden element once it is shown.
             const observer = new ResizeObserver(() => {
                 const current = waitingRef.current;
                 if (current && isShown(element)) {

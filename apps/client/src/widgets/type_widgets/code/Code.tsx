@@ -135,7 +135,7 @@ export function EditableCode({
             if (!codeEditor) return;
             codeEditor.setText(content ?? "");
             // `setText()` loads a hidden editor without an update, so its listener reports nothing.
-            if (codeEditor.dom.offsetParent === null) {
+            if (!codeEditor.dom.checkVisibility()) {
                 onContentChanged?.(content ?? "");
             }
             codeEditor.setMimeType(note.mime);

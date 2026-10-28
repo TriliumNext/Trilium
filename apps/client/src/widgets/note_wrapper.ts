@@ -21,8 +21,16 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
     doRender() {
         super.doRender();
+        this.$widget.prepend(createCaretStop()).append(createCaretStop());
         // Adds `note-split` before the note context arrives: `resizer.ts` selects the panes by it.
         this.refresh();
+    }
+
+    toggleExt(show: boolean | null | "" | undefined) {
+        super.toggleExt(show);
+        if (!show) {
+            releaseFocusAndSelection(this.$widget[0]);
+        }
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
@@ -137,6 +145,35 @@ export function markVisibleSplits(container: HTMLElement) {
     container.classList.toggle("multiple-splits", visibleSplits.length > 1);
     bodyClasses.toggle("first-split-bgfx", !!firstVisible?.classList.contains("bgfx"));
     bodyClasses.toggle("last-split-bgfx", !!lastVisible?.classList.contains("bgfx"));
+}
+
+/**
+ * Returns an invisible, selectable element. When an editor takes focus, Chromium searches the page
+ * for the nearest selectable position, and stops at this element instead of walking through the
+ * notes of the hidden tabs.
+ */
+export function createCaretStop() {
+    const stop = document.createElement("div");
+    stop.className = "caret-stop";
+    stop.setAttribute("aria-hidden", "true");
+    stop.textContent = "​";
+    return stop;
+}
+
+/**
+ * Blurs the focused element and clears the selection inside a split that is being hidden. Chromium
+ * keeps both in a `content-visibility: hidden` split, where resolving the caret walks the note.
+ */
+function releaseFocusAndSelection(split: HTMLElement) {
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && split.contains(focused)) {
+        focused.blur();
+    }
+
+    const selection = document.getSelection();
+    if (selection?.anchorNode && split.contains(selection.anchorNode)) {
+        selection.removeAllRanges();
+    }
 }
 
 /**

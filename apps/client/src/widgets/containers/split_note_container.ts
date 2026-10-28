@@ -6,7 +6,7 @@ import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import { getTabToward } from "../mobile_widgets/tab_swipe.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
-import { markVisibleSplits } from "../note_wrapper.js";
+import { createCaretStop, markVisibleSplits } from "../note_wrapper.js";
 import FlexContainer from "./flex_container.js";
 
 interface SplitNoteWidget extends BasicWidget {
@@ -38,6 +38,11 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         this.collapsible();
     }
 
+    doRender() {
+        super.doRender();
+        this.$widget.append(createCaretStop(), createCaretStop());
+    }
+
     async newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {
         const widget = this.widgetFactory();
 
@@ -46,7 +51,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         $renderedWidget.attr("data-ntx-id", noteContext.ntxId);
         $renderedWidget.on("click", () => appContext.tabManager.activateNoteContext(noteContext.ntxId));
 
-        this.$widget.append($renderedWidget);
+        this.$widget.children(".caret-stop").last().before($renderedWidget);
 
         widget.handleEvent("initialRenderComplete", {});
 

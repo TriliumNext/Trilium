@@ -373,14 +373,10 @@ export default class CodeMirror extends EditorView {
             },
             annotations: Transaction.addToHistory.of(!isLoad)
         });
-        // Dispatching a full-document replacement maps the viewport onto the whole new document.
-        // A visible editor's next measure shrinks it back, but an editor inside a display:none
-        // subtree cannot measure (`measure()` bails out off-screen), so every line of the new
-        // document stays rendered in the DOM for as long as the editor stays hidden — e.g. a
-        // background tab that received its content after being covered. Rebuilding the view from
-        // the updated state resets the viewport to the initial estimate instead; the first
-        // measure after the editor becomes visible then sizes it to the real geometry.
-        if (this.dom.offsetParent === null) {
+        // Dispatching a full-document replacement maps the viewport onto the whole new document,
+        // which only a measure shrinks back. A hidden editor, such as one in a background tab, is
+        // rebuilt from the new state instead, so it does not keep every line rendered.
+        if (!this.dom.checkVisibility()) {
             this.setState(transaction.state);
         } else {
             this.dispatch(transaction);

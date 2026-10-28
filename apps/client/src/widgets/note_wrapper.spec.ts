@@ -95,6 +95,46 @@ describe("NoteWrapperWidget", () => {
         expect(hasBackgroundEffects(doc)).toBe(false);
     });
 
+    it("places a caret stop at both ends of the split", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        const split = widget.$widget[0];
+        for (const stop of [ split.firstElementChild, split.lastElementChild ]) {
+            expect(stop?.classList.contains("caret-stop")).toBe(true);
+            expect(stop?.getAttribute("aria-hidden")).toBe("true");
+            expect(stop?.textContent).toBe("​");
+        }
+    });
+
+    it("releases the focus and the selection inside the split it hides, and no others", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        const inside = document.createElement("input");
+        const insideText = document.createTextNode("Inside");
+        widget.$widget.append(inside, insideText);
+        const outside = document.createElement("input");
+        const outsideText = document.createTextNode("Outside");
+        document.body.append(widget.$widget[0], outside, outsideText);
+        const selection = document.getSelection();
+
+        outside.focus();
+        selection?.collapse(outsideText, 1);
+        widget.toggleExt(false);
+        expect(document.activeElement).toBe(outside);
+        expect(selection?.anchorNode).toBe(outsideText);
+
+        widget.toggleExt(true);
+        inside.focus();
+        selection?.collapse(insideText, 1);
+        expect(document.activeElement).toBe(inside);
+        widget.toggleExt(false);
+        expect(document.activeElement).toBe(document.body);
+        expect(selection?.rangeCount).toBe(0);
+
+        document.body.replaceChildren();
+    });
+
     it("updates the body classes of the outer splits when its note changes translucency", () => {
         const container = document.createElement("div");
         const widget = new NoteWrapperWidget();
