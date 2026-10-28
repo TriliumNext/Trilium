@@ -45,14 +45,21 @@ describe("formatHtml", () => {
         ].join("\n"));
     });
 
-    it("keeps a container verbatim when splitting it would add whitespace between its children", () => {
-        expect(formatHtml(`<ul><li>text<ul><li>n</li></ul></li><li><span>a</span><span>b</span></li></ul>`)).toBe([
+    it("splits only at blocks, keeping each run of text and inline elements on one line", () => {
+        expect(formatHtml(`<ul><li><a href="x">X</a><ul><li>n</li></ul></li><li><span>a</span><span>b</span></li></ul>`)).toBe([
             "<ul>",
-            "  <li>text<ul><li>n</li></ul></li>",
+            "  <li>",
+            `    <a href="x">X</a>`,
+            "    <ul>",
+            "      <li>n</li>",
+            "    </ul>",
+            "  </li>",
             "  <li><span>a</span><span>b</span></li>",
             "</ul>"
         ].join("\n"));
-        expect(formatHtml(`text before <p>a block</p>`)).toBe(`text before <p>a block</p>`);
+        expect(formatHtml(`<div> a <b>b</b><!-- c --> c<p>p</p> d </div>`))
+            .toBe([ "<div>", "  a <b>b</b><!-- c --> c", "  <p>p</p>", "   d", "</div>" ].join("\n"));
+        expect(formatHtml(`text before <p>a block</p>`)).toBe("text before\n<p>a block</p>");
     });
 
     it("leaves the content of every element it does not split untouched", () => {
