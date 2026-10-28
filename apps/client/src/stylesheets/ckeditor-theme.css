@@ -56,6 +56,9 @@ body {
     --ck-color-input-disabled-border: var(--main-border-color);
     --ck-color-input-disabled-text: var(--muted-text-color);
 
+    --ck-color-border-control: var(--main-border-color);
+    --ck-border-control: var(--ck-border-width-control) solid var(--ck-color-border-control);
+
     /* -- Overrides the default .ck-list class colors. ------------------------------------------ */
 
     --ck-color-list-background: var(--accented-background-color);
