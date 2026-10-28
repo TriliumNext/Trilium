@@ -61,7 +61,6 @@
     "@types/serve-favicon": "2.5.7",
     "@types/serve-static": "2.2.0",
     "@types/supertest": "7.2.1",
-    "@types/tmp": "0.2.6",
     "@types/ws": "8.18.2",
     "@types/yauzl": "3.4.0",
     "archiver": "8.0.0",
@@ -95,7 +94,6 @@
     "supertest": "7.3.1",
     "tesseract.js": "7.0.0",
     "time2fa": "1.4.2",
-    "tmp": "0.2.7",
     "upng-js": "2.1.0",
     "vite": "8.3.5",
     "yauzl": "3.4.0"

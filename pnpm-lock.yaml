@@ -728,9 +728,6 @@ importers:
       '@types/supertest':
         specifier: 7.2.1
         version: 7.2.1
-      '@types/tmp':
-        specifier: 0.2.6
-        version: 0.2.6
       '@types/ws':
         specifier: 8.18.2
         version: 8.18.2
@@ -830,9 +827,6 @@ importers:
       time2fa:
         specifier: 1.4.2
         version: 1.4.2
-      tmp:
-        specifier: 0.2.7
-        version: 0.2.7
       upng-js:
         specifier: 2.1.0
         version: 2.1.0
@@ -4941,9 +4935,6 @@ packages:
 
   '@types/tabulator-tables@6.3.6':
     resolution: {integrity: sha512-H4xtYl8Dy/g4SrNnZx+oEK/N5+FLLEGTuU3MM7bpUUk3gtYy5aYqSjxQ1pqITnQ/PKHqV1aD4Zd5xels9AnPSA==}
-
-  '@types/tmp@0.2.6':
-    resolution: {integrity: sha512-chhaNf2oKHlRkDGt+tiKE2Z5aJ6qalm7Z9rlLdBwmOiAAf09YQvvoLXjWK4HWPF1xU/fqvMgfNfpVoBscA/tKA==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -15923,8 +15914,6 @@ snapshots:
       '@types/superagent': 8.1.11
 
   '@types/tabulator-tables@6.3.6': {}
-
-  '@types/tmp@0.2.6': {}
 
   '@types/trusted-types@2.0.7':
     optional: true

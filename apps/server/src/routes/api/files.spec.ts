@@ -2,8 +2,10 @@ import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { becca, cls, note_service as noteService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import fs from "fs";
+import path from "path";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import dataDirs from "../../services/data_dir.js";
 import filesRoute from "./files.js";
 
 let noteId: string;
@@ -29,6 +31,11 @@ describe("Files API", () => {
         it("saves a note to a temp file then uploads the modified content back", () => {
             const { tmpFilePath } = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId })));
             expect(fs.existsSync(tmpFilePath)).toBe(true);
+            expect(path.dirname(tmpFilePath)).toBe(path.resolve(dataDirs.TMP_DIR));
+            expect(path.basename(tmpFilePath)).toMatch(/^tmp-\d+-\w{12}-File note\.txt$/);
+            if (process.platform !== "win32") {
+                expect(fs.statSync(tmpFilePath).mode & 0o777).toBe(0o600);
+            }
 
             fs.writeFileSync(tmpFilePath, "edited-on-disk");
             cls.init(() => filesRoute.uploadModifiedFileToNote(fileReq({ noteId }, undefined, {}, { filePath: tmpFilePath })));
@@ -74,6 +81,15 @@ describe("Files API", () => {
             ))).toThrow(ValidationError);
             const req = fileReq({ attachmentId } as Record<string, string>, undefined, {}, { filePath: "/nope" }) as unknown as Request<{ attachmentId: string }>;
             expect(() => cls.init(() => filesRoute.uploadModifiedFileToAttachment(req))).toThrow(ValidationError);
+        });
+
+        it("removes the temp files when the process exits", () => {
+            const { tmpFilePath } = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId })));
+            const cleanup = process.listeners("exit").find((listener) => listener.name === "removeTemporaryFiles");
+            expect(cleanup).toBeDefined();
+
+            cleanup?.(0);
+            expect(fs.existsSync(tmpFilePath)).toBe(false);
         });
     });
 });
