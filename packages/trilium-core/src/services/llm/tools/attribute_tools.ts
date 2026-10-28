@@ -6,8 +6,25 @@ import attributeService from "../../../services/attributes.js";
 import becca from "../../../becca/becca.js";
 import { z } from "zod";
 
+import type BNote from "../../../becca/entities/bnote.js";
+import type { AttributeType } from "@triliumnext/commons";
+
 import { flag, getLlmNote, isAttributeVisibleToLlm } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
+
+/** Like `note.setAttribute`, but also applies `isInheritable` when it is given. */
+function upsertAttribute(note: BNote, type: AttributeType, name: string, value: string, isInheritable?: boolean) {
+    const existing = note.getOwnedAttributes(type, name)[0];
+    if (!existing) {
+        note.addAttribute(type, name, value, isInheritable ?? false);
+    } else if (existing.value !== value || (isInheritable !== undefined && existing.isInheritable !== isInheritable)) {
+        existing.value = value;
+        if (isInheritable !== undefined) {
+            existing.isInheritable = isInheritable;
+        }
+        existing.save();
+    }
+}
 
 export const attributeTools = defineTools({
     get_attributes: {
@@ -63,10 +80,11 @@ export const attributeTools = defineTools({
             name: z.string().describe("The attribute name"),
             value: z.string().optional().describe("The attribute value (for relations, this must be a target noteId)"),
             mode: z.enum(["set", "add"]).optional().describe("'set' (default) updates the existing attribute of this name; 'add' creates another one next to it, for multi-valued labels such as #tag"),
-            attributeId: z.string().optional().describe("The ID of the attribute to update (from get_attributes), when several share the name; type and name must match it. Not used with mode 'add'")
+            attributeId: z.string().optional().describe("The ID of the attribute to update (from get_attributes), when several share the name; type and name must match it. Not used with mode 'add'"),
+            isInheritable: z.boolean().optional().describe("Whether child notes inherit the attribute. New attributes are not inheritable by default; when updating an existing attribute, leaving this out keeps its current setting")
         }),
         mutates: true,
-        execute: ({ noteId, type, name, value = "", mode = "set", attributeId }) => {
+        execute: ({ noteId, type, name, value = "", mode = "set", attributeId, isInheritable }) => {
             const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
@@ -106,9 +124,9 @@ export const attributeTools = defineTools({
                     attribute.markAsDeleted();
                 }
                 if (mode === "add" || target) {
-                    note.addAttribute(type, disabledName, value);
+                    note.addAttribute(type, disabledName, value, isInheritable ?? false);
                 } else {
-                    note.setAttribute(type, disabledName, value);
+                    upsertAttribute(note, type, disabledName, value, isInheritable);
                 }
 
                 return {
@@ -117,6 +135,7 @@ export const attributeTools = defineTools({
                     type,
                     name: disabledName,
                     value,
+                    ...(isInheritable === undefined ? {} : { isInheritable }),
                     disabled: true,
                     message: `${sigil}${name.trim()} can run code, so it was saved as ${sigil}${disabledName} and is inactive. `
                         + (target
@@ -129,26 +148,29 @@ export const attributeTools = defineTools({
                 };
             }
 
-            const result = { success: true, noteId: note.noteId, type, name, value };
+            const result = { success: true, noteId: note.noteId, type, name, value, ...(isInheritable === undefined ? {} : { isInheritable }) };
 
             if (mode === "add") {
-                note.addAttribute(type, name, value);
+                note.addAttribute(type, name, value, isInheritable ?? false);
                 return result;
             }
 
             if (target) {
                 const previousValue = target.value;
-                if (previousValue === value) {
+                if (previousValue === value && (isInheritable === undefined || target.isInheritable === isInheritable)) {
                     return result;
                 }
                 target.value = value;
+                if (isInheritable !== undefined) {
+                    target.isInheritable = isInheritable;
+                }
                 target.save();
-                return { ...result, previousValue };
+                return previousValue === value ? result : { ...result, previousValue };
             }
 
             const [ existing, ...others ] = note.getOwnedAttributes(type, name);
             const previousValue = existing?.value;
-            note.setAttribute(type, name, value);
+            upsertAttribute(note, type, name, value, isInheritable);
             if (previousValue === undefined || previousValue === value) {
                 return result;
             }

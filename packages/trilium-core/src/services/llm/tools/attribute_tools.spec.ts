@@ -102,6 +102,44 @@ describe("attribute_tools", () => {
             expect(result.value).toBe("");
         });
 
+        it("creates an inheritable label when isInheritable is true", () => {
+            const note = createNote("Inheritable host");
+            const result = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "iconClass", value: "bx bx-star", isInheritable: true
+            }));
+            expect(result).toMatchObject({ success: true, isInheritable: true });
+            expect(note.getOwnedAttributes("label", "iconClass")[0].isInheritable).toBe(true);
+        });
+
+        it("toggles isInheritable on an existing attribute and keeps it when omitted", () => {
+            const note = createNote("Toggle host");
+            cls.init(() => note.addLabel("tag", "MCP"));
+
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "MCP", isInheritable: true
+            }));
+            expect(note.getOwnedLabels("tag")[0].isInheritable).toBe(true);
+
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "AI"
+            }));
+            expect(note.getOwnedLabels("tag")[0]).toMatchObject({ value: "AI", isInheritable: true });
+
+            const attributeId = note.getOwnedLabels("tag")[0].attributeId;
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "AI", attributeId, isInheritable: false
+            }));
+            expect(note.getOwnedLabels("tag")[0].isInheritable).toBe(false);
+        });
+
+        it("creates an inheritable attribute in add mode", () => {
+            const note = createNote("Add inheritable host");
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "MCP", mode: "add", isInheritable: true
+            }));
+            expect(note.getOwnedLabels("tag")[0].isInheritable).toBe(true);
+        });
+
         it("appends same-name labels in add mode instead of replacing them", () => {
             const note = createNote("Add mode host");
             for (const value of [ "MCP", "AI", "Blender" ]) {
