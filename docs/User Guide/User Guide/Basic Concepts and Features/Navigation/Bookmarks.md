@@ -17,6 +17,22 @@ The notes in the menu open the way links do: a middle click or <kbd>Ctrl</kbd>+c
 
 _Folder_ assigns the `#bookmarkFolder` label to the note, so adding the label by hand works as well. Because the label belongs to the note, a note that is both bookmarked and dropped onto the launch bar shows its children in both places.
 
+## Choosing where a bookmark opens
+
+A bookmark opens its note in the current tab. To open it somewhere else, add the `#bookmarkOpenMode` label to the note, with one of these values:
+
+| Value | Where the note opens |
+| --- | --- |
+| `currentTab` | In the current tab, the same as without the label. |
+| `newTab` | In a new tab after the current one (see <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a>). |
+| `newSplit` | In a new split next to the current note (see <a class="reference-link" href="../UI%20Elements/Split%20View.md">Split View</a>). |
+| `newWindow` | In a new window. |
+| `quickEdit` | In a popup over the current note (see <a class="reference-link" href="Quick%20edit.md">Quick edit</a>). |
+
+The label works the same way for a note dropped onto the launch bar and for the notes in a bookmark folder's menu. To set it for all the notes in a folder, make the label inheritable on the folder (see <a class="reference-link" href="../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md">Attribute Inheritance</a>). A note can still set a value of its own, such as `currentTab`.
+
+The label applies to a plain click only. A middle click or <kbd>Ctrl</kbd>+click still opens the note in a new tab, and <kbd>Shift</kbd>+click on a note in a folder's menu still opens it in a new window.
+
 ## Mobile
 
 On mobile, bookmarks are only displayed starting with v0.102.0. Because of the more constrained screen size, the bookmarks are grouped under a single icon instead of displaying them as separate icons.

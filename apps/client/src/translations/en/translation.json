@@ -664,6 +664,7 @@
     "workspace_inbox": "Default inbox location for new notes when hoisted to some ancestor of this workspace note.",
     "sql_console_home": "Default location of SQL console notes.",
     "bookmark_folder": "Note with this label will appear in bookmarks as folder (allowing access to its children).",
+    "bookmark_open_mode": "Where a click on the note's button in the launch bar opens it: <code>currentTab</code> (the default), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> or <code>quickEdit</code>. Applies to bookmarks, notes dropped onto the launch bar and the notes in a bookmark folder.",
     "share_hidden_from_tree": "This note is hidden from left navigation tree, but still accessible with its URL.",
     "share_external_link": "Note will act as a link to an external website in the share tree.",
     "share_alias": "Define an alias using which the note will be available under https://your_trilium_host/share/[your_alias].",

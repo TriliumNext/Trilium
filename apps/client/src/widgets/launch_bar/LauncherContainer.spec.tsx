@@ -24,14 +24,16 @@ vi.mock("./RecordMeetingButton", () => ({
 }));
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
-    CustomNoteLauncher: ({ launcherNote, getTargetNoteId, parentNoteId }: {
+    CustomNoteLauncher: ({ launcherNote, getTargetNoteId, getOpenMode, parentNoteId }: {
         launcherNote: FNote,
         getTargetNoteId: (launcherNote: FNote) => unknown,
+        getOpenMode?: (launcherNote: FNote) => unknown,
         parentNoteId?: string
     }) => (
         <span
             className="custom-note-launcher"
             data-target={`${getTargetNoteId(launcherNote)}`}
+            data-open-mode={`${getOpenMode?.(launcherNote)}`}
             data-parent={`${parentNoteId}`}
         />
     )
@@ -139,7 +141,9 @@ describe("LauncherContainer", () => {
         buildNote({
             id: "_lbVisibleLaunchers",
             title: "Visible Launchers",
-            children: [ { id: "clonedNote", title: "Cloned note" } ]
+            children: [
+                { id: "clonedNote", title: "Cloned note", "#bookmarkOpenMode": "newWindow" }
+            ]
         });
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -152,6 +156,7 @@ describe("LauncherContainer", () => {
         const slot = container.querySelector(".launcher-slot[data-launcher-id='clonedNote']");
         const launcher = slot?.querySelector(".custom-note-launcher");
         expect(launcher?.getAttribute("data-target")).toBe("clonedNote");
+        expect(launcher?.getAttribute("data-open-mode")).toBe("newWindow");
         // "Remove from launch bar" removes this placement, not a bookmark of the note.
         expect(launcher?.getAttribute("data-parent")).toBe("_lbVisibleLaunchers");
 
