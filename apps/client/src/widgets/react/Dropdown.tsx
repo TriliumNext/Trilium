@@ -202,7 +202,7 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const popupRef = useRef<HTMLDivElement | null>(null);
     const [ shown, setShown ] = useState(false);
-    useBodyClass("backdrop-open", shown && !!backdrop);
+    useBodyClass("backdrop-open", shown && (!!backdrop || mobileBackdrop));
     /** The item to start at once the popup shows, for a popup a key on the toggle opened. */
     const [ startAt, setStartAt ] = useState<"first" | "last">();
 
