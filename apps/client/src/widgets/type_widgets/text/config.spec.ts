@@ -193,6 +193,13 @@ describe("CK config", () => {
         }
     }, 20_000);
 
+    // With "auto", a pasted image goes inline in a list item or after text, and on its own line in an
+    // empty paragraph; CKEditor's fallback inserts every image as a block.
+    it("inserts images inline or as a block depending on where the cursor is", async () => {
+        const config = await buildConfig(baseOpts());
+        expect((config.image as { insert?: { type?: string } }).insert?.type).toBe("auto");
+    });
+
     // The `text-editor.ck` section of the English catalog is the registry of editor strings: each
     // entry names the English message id a plugin passes to `editor.t()`, and the value the editor
     // gets for it is that key resolved through the app's i18n.
