@@ -20,8 +20,10 @@ export default class BlockDragHandle extends Plugin {
     private isDragging = false;
     private isHovered = false;
     private isUpdateScheduled = false;
+    private buttonSize?: { width: number; height: number };
     private targets: ViewElement[] = [];
     private readonly domEmitter = new (DomEmitterMixin())();
+    private readonly layoutEmitter = new (DomEmitterMixin())();
 
     static get pluginName() {
         return "BlockDragHandle" as const;
@@ -67,12 +69,9 @@ export default class BlockDragHandle extends Plugin {
 
         this.listenTo(editor.ui, "update", () => this.update());
         this.listenTo(editor, "change:isReadOnly", () => this.update(), { priority: "low" });
-        this.listenTo(editor.ui.focusTracker, "change:isFocused", () => this.update());
-
-        this.domEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
-        this.domEmitter.listenTo(document, "scroll", () => this.scheduleUpdate(), {
-            useCapture: true,
-            usePassive: true
+        this.listenTo(editor.ui.focusTracker, "change:isFocused", (_evt, _name, isFocused) => {
+            this.followLayoutChanges(isFocused);
+            this.update();
         });
 
         this.domEmitter.listenTo(document, "dragover", (_evt, domEvent: DragEvent) => {
@@ -88,8 +87,27 @@ export default class BlockDragHandle extends Plugin {
 
     override destroy() {
         this.domEmitter.stopListening();
+        this.layoutEmitter.stopListening();
         this.buttonView?.destroy();
         super.destroy();
+    }
+
+    /**
+     * Moves the handle with its block on resizes and scrolls while the editor has focus. Without
+     * focus there is no handle to move.
+     */
+    private followLayoutChanges(isFocused: boolean) {
+        if (!isFocused) {
+            this.layoutEmitter.stopListening();
+            return;
+        }
+
+        this.layoutEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
+        this.layoutEmitter.listenTo(document, "scroll", (_evt, domEvent: Event) => {
+            if (this.canMoveEditable(domEvent.target as Node)) {
+                this.scheduleUpdate();
+            }
+        }, { useCapture: true, usePassive: true });
     }
 
     private scheduleUpdate() {
@@ -104,7 +122,16 @@ export default class BlockDragHandle extends Plugin {
         });
     }
 
-    /** Shows the handle beside the first selected block, or hides it. */
+    /** Whether a scroll of `scrolled` can move the editable, or a block inside it. */
+    private canMoveEditable(scrolled: Node) {
+        const domEditable = this.editor.ui.getEditableElement();
+        return !!domEditable && (scrolled.contains(domEditable) || domEditable.contains(scrolled));
+    }
+
+    /**
+     * Shows the handle beside the first selected block, or hides it. Measures everything before
+     * changing the button, so that a scroll costs no layout of its own.
+     */
     private update() {
         const buttonView = this.buttonView;
         if (!buttonView?.element || this.isDragging) {
@@ -112,22 +139,16 @@ export default class BlockDragHandle extends Plugin {
         }
 
         const target = this.getTarget();
-        if (!target) {
+        const position = target && this.findPosition(buttonView, buttonView.element, target);
+        if (!position) {
             buttonView.isVisible = false;
             this.updateTargets();
             return;
         }
 
-        // The button must be visible before it can be measured.
+        buttonView.top = position.top;
+        buttonView.left = position.left;
         buttonView.isVisible = true;
-        const buttonRect = this.placeButton(buttonView, buttonView.element, target);
-
-        // Hide the handle when its block scrolls out of the visible part of the editable.
-        const visibleRect = new Rect(target.domEditable).getVisible();
-        const buttonCenter = buttonRect.top + buttonRect.height / 2;
-        buttonView.isVisible = !!visibleRect
-            && buttonCenter >= visibleRect.top
-            && buttonCenter <= visibleRect.bottom;
         this.updateTargets();
     }
 
@@ -190,20 +211,22 @@ export default class BlockDragHandle extends Plugin {
     }
 
     /**
-     * Places the handle outside the editable, level with the first line of the block.
-     * Same geometry as `BlockToolbar`. Returns the handle's rectangle in the viewport.
+     * Finds where the handle goes: outside the editable, level with the first line of the block,
+     * as `BlockToolbar` places it. Returns nothing when that is out of the visible part of the
+     * editable.
      */
-    private placeButton(
+    private findPosition(
         buttonView: BlockButtonView,
         buttonElement: HTMLElement,
         target: BlockTarget
     ) {
         const { domBlock, domEditable } = target;
+        const buttonRect = this.measureButton(buttonView, buttonElement);
         const styles = window.getComputedStyle(domBlock);
         const paddingTop = parseInt(styles.paddingTop, 10);
         const lineHeight = parseInt(styles.lineHeight, 10) || parseInt(styles.fontSize, 10) * 1.2;
         const editableRect = new Rect(domEditable);
-        const buttonRect = new Rect(buttonElement);
+        const visibleRect = editableRect.getVisible();
 
         const left = this.editor.locale.uiLanguageDirection === "ltr"
             ? editableRect.left - buttonRect.width
@@ -211,10 +234,30 @@ export default class BlockDragHandle extends Plugin {
         const top = new Rect(domBlock).top + paddingTop + (lineHeight - buttonRect.height) / 2;
         buttonRect.moveTo(left, top);
 
-        const absoluteRect = buttonRect.toAbsoluteRect();
-        buttonView.top = absoluteRect.top;
-        buttonView.left = absoluteRect.left;
+        const buttonCenter = buttonRect.top + buttonRect.height / 2;
+        if (!visibleRect || buttonCenter < visibleRect.top || buttonCenter > visibleRect.bottom) {
+            return null;
+        }
 
+        return buttonRect.toAbsoluteRect();
+    }
+
+    /**
+     * Measures the handle. A hidden handle has no box, so it gets the size it had when last shown
+     * instead of being shown to be measured, which would cost a layout on every scroll. Only the
+     * first measurement shows it.
+     */
+    private measureButton(buttonView: BlockButtonView, buttonElement: HTMLElement) {
+        if (!buttonView.isVisible && !this.buttonSize) {
+            buttonView.isVisible = true;
+        }
+
+        const buttonRect = new Rect(buttonElement);
+        if (buttonView.isVisible) {
+            this.buttonSize = { width: buttonRect.width, height: buttonRect.height };
+        } else {
+            Object.assign(buttonRect, this.buttonSize);
+        }
         return buttonRect;
     }
 

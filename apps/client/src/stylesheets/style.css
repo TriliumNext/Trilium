@@ -26,7 +26,6 @@
     --bs-body-font-weight: var(--main-font-weight) !important;
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;
-    --ck-mention-list-max-height: 500px;
     --tn-modal-max-height: 90svh;
 
     --tree-item-light-theme-max-color-lightness: 50;
@@ -2207,10 +2206,6 @@ button.close:hover {
 
 textarea {
     cursor: auto;
-}
-
-.ck-powered-by-balloon {
-    display: none !important;
 }
 
 .attachment-actions-toolbar {

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../components/app_context";
 import branches from "../services/branches";
+import froca from "../services/froca";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import server from "../services/server";
@@ -44,7 +45,8 @@ export default function NoteTitleWidget(props: {className?: string}) {
 
     // Save changes to title.
     const spacedUpdate = useSpacedUpdate(async () => {
-        if (!note) {
+        // A deleted note is gone from `froca`, and the server refuses its changes.
+        if (!note || !(note.noteId in froca.notes)) {
             return;
         }
         protected_session_holder.touchProtectedSessionIfNecessary(note);

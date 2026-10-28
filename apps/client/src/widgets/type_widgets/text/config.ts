@@ -111,6 +111,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             ...bindContentEmbedHandlers(opts.getContentEmbedHandlers)
         },
         image: {
+            insert: {
+                type: "auto"
+            },
             styles: {
                 options: [
                     "inline",

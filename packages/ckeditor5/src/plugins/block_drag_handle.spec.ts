@@ -3,7 +3,7 @@ import {
     DragDrop, env, Essentials, Paragraph, Table, TableCaption
 } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
-import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
+import { beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import Admonition from "./admonition/admonition.js";
@@ -69,6 +69,61 @@ describe("BlockDragHandle", () => {
         editorElement?.style.setProperty("margin", "80px 200px");
         document.dispatchEvent(new Event("scroll"));
         await expect.poll(() => isBesideBlock(editor, button, 0)).toBe(true);
+    });
+
+    it("follows its block through a scroll, measuring before it changes the handle", async () => {
+        const { editor, button, scroller } = await createScrolledEditor(3);
+        const buttonView = editor.plugins.get(BlockDragHandle).buttonView;
+        const forcedLayouts = watchForcedLayouts(button);
+
+        await scrollTo(scroller, 20);
+        expect(isBesideBlock(editor, button, 3)).toBe(true);
+        expect(buttonView?.isVisible).toBe(true);
+
+        // Out of the visible part of the editable, and back.
+        const bottom = scroller.scrollHeight - scroller.clientHeight;
+        await scrollTo(scroller, bottom);
+        expect(buttonView?.isVisible).toBe(false);
+        await scrollTo(scroller, bottom - 50);
+        expect(buttonView?.isVisible).toBe(false);
+        await scrollTo(scroller, 0);
+        expect(buttonView?.isVisible).toBe(true);
+        expect(isBesideBlock(editor, button, 3)).toBe(true);
+
+        expect(forcedLayouts).toEqual([]);
+    });
+
+    it("ignores the scrolls of elements that cannot move the editable", async () => {
+        const { editor } = await createEditor("<paragraph>on[]e</paragraph>");
+        const other = document.createElement("div");
+        document.body.append(other);
+        onTestFinished(() => other.remove());
+        const requestAnimationFrame = vi.spyOn(window, "requestAnimationFrame");
+        onTestFinished(() => requestAnimationFrame.mockRestore());
+
+        other.dispatchEvent(new Event("scroll"));
+        expect(requestAnimationFrame).not.toHaveBeenCalled();
+
+        // A scrolled element inside the editable moves the blocks it holds.
+        getBlock(editor, 0).dispatchEvent(new Event("scroll"));
+        expect(requestAnimationFrame).toHaveBeenCalledOnce();
+    });
+
+    it("follows scrolls and resizes only while the editor has focus", async () => {
+        const { editor } = await createEditor("<paragraph>on[]e</paragraph>");
+        getEditable(editor).blur();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(false);
+        const requestAnimationFrame = vi.spyOn(window, "requestAnimationFrame");
+        onTestFinished(() => requestAnimationFrame.mockRestore());
+
+        document.dispatchEvent(new Event("scroll"));
+        window.dispatchEvent(new Event("resize"));
+        expect(requestAnimationFrame).not.toHaveBeenCalled();
+
+        editor.editing.view.focus();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(true);
+        document.dispatchEvent(new Event("scroll"));
+        expect(requestAnimationFrame).toHaveBeenCalledOnce();
     });
 
     it("drags the selected block to where it is dropped", async () => {
@@ -498,6 +553,83 @@ async function createEditor(
     }
 
     return { editor, button };
+}
+
+/**
+ * Creates an editor of 40 paragraphs in a scrolled box, as the note pane holds it, with the
+ * selection in the paragraph at `index`.
+ */
+async function createScrolledEditor(index: number) {
+    const paragraphs = Array.from({ length: 40 }, (_, paragraphIndex) => (
+        paragraphIndex === index ? "<paragraph>bl[]ock</paragraph>" : "<paragraph>text</paragraph>"
+    ));
+    const { editor, button } = await createEditor(paragraphs.join(""));
+    const scroller = document.createElement("div");
+    scroller.style.setProperty("height", "200px");
+    scroller.style.setProperty("overflow", "auto");
+    document.body.prepend(scroller);
+    onTestFinished(() => scroller.remove());
+
+    const editorElement = editor.ui.view.element;
+    if (editorElement) {
+        scroller.append(editorElement);
+    }
+    editor.editing.view.focus();
+    await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(true);
+    editor.ui.update();
+
+    return { editor, button, scroller };
+}
+
+/** Scrolls `scroller` to `top` and waits for the frame in which the handle follows. */
+async function scrollTo(scroller: HTMLElement, top: number) {
+    if (Math.round(scroller.scrollTop) === top) {
+        throw new Error(`The box is already scrolled to ${top}.`);
+    }
+
+    const scrolled = new Promise((resolve) => {
+        scroller.addEventListener("scroll", resolve, { once: true });
+    });
+    scroller.scrollTop = top;
+    await scrolled;
+    await new Promise(requestAnimationFrame);
+}
+
+/**
+ * Lists the layout reads of `BlockDragHandle` that follow a change to `button`: each makes the
+ * browser compute style and layout again within the frame.
+ */
+function watchForcedLayouts(button: HTMLElement) {
+    const forcedLayouts: string[] = [];
+    const observer = new MutationObserver(() => undefined);
+    observer.observe(button, { attributes: true });
+    const readers = [
+        { owner: Element.prototype, name: "getBoundingClientRect" },
+        { owner: Element.prototype, name: "getClientRects" },
+        { owner: window, name: "getComputedStyle" }
+    ] as const;
+    for (const { owner, name } of readers) {
+        const read = owner[name] as (...args: unknown[]) => unknown;
+        Object.defineProperty(owner, name, {
+            configurable: true,
+            writable: true,
+            value(this: unknown, ...args: unknown[]) {
+                if (new Error().stack?.includes("/block_drag_handle.ts")) {
+                    const changes = observer.takeRecords().map((record) => record.attributeName);
+                    if (changes.length) {
+                        forcedLayouts.push(`${name} after a change to ${changes.join(", ")}`);
+                    }
+                }
+                return read.apply(this, args);
+            }
+        });
+        onTestFinished(() => {
+            Object.defineProperty(owner, name, { configurable: true, writable: true, value: read });
+        });
+    }
+    onTestFinished(() => observer.disconnect());
+
+    return forcedLayouts;
 }
 
 /**

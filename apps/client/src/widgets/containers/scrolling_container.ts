@@ -6,12 +6,13 @@ import { findScrollAnchor, restoreScrollAnchor, type ScrollAnchor } from "./scro
 import "./scrolling_container.css";
 
 const SCROLL_HOLD_TIMEOUT_MS = 10_000;
+const SCROLL_STOP_DELAY_MS = 150;
 
 export default class ScrollingContainer extends Container<BasicWidget> {
 
     private noteContext?: NoteContext;
     private scrollAnchor: ScrollAnchor | null = null;
-    private pendingAnchorFrame: number | null = null;
+    private pendingAnchorTimeout?: ReturnType<typeof setTimeout>;
     private resizeObserver?: ResizeObserver;
     private scrollListener?: AbortController;
     private scrollHold?: AbortController;
@@ -40,14 +41,18 @@ export default class ScrollingContainer extends Container<BasicWidget> {
                 : null;
         };
 
+        // Recorded once the scroll stops, so that a scrolled frame does no layout reads of its own.
         this.scrollListener = new AbortController();
-        container.addEventListener("scroll", () => {
-            if (this.pendingAnchorFrame !== null) return;
-            this.pendingAnchorFrame = requestAnimationFrame(() => {
-                this.pendingAnchorFrame = null;
-                recordAnchor();
-            });
-        }, { passive: true, signal: this.scrollListener.signal });
+        const listenerOptions = { passive: true, signal: this.scrollListener.signal };
+        if ("onscrollend" in HTMLElement.prototype) {
+            container.addEventListener("scrollend", recordAnchor, listenerOptions);
+        } else {
+            // WebKit before Safari 26.2, which the iOS app still runs on, has no `scrollend`.
+            container.addEventListener("scroll", () => {
+                clearTimeout(this.pendingAnchorTimeout);
+                this.pendingAnchorTimeout = setTimeout(recordAnchor, SCROLL_STOP_DELAY_MS);
+            }, listenerOptions);
+        }
 
         let wasHidden = false;
         this.resizeObserver = new ResizeObserver(([ entry ]) => {
@@ -70,10 +75,7 @@ export default class ScrollingContainer extends Container<BasicWidget> {
         this.scrollListener?.abort();
         this.scrollHold?.abort();
         this.resizeObserver?.disconnect();
-        if (this.pendingAnchorFrame !== null) {
-            cancelAnimationFrame(this.pendingAnchorFrame);
-            this.pendingAnchorFrame = null;
-        }
+        clearTimeout(this.pendingAnchorTimeout);
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {

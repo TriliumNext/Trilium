@@ -1,6 +1,6 @@
 import { h, render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
@@ -19,6 +19,16 @@ const serverPut = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../../../services/server", () => ({
     default: { get: async () => [], post: serverPost, put: serverPut }
 }));
+
+const frocaNotes = vi.hoisted((): Record<string, unknown> => ({}));
+vi.mock("../../../services/froca", () => ({ default: { notes: frocaNotes } }));
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    for (const noteId of [ "note1", "code1" ]) {
+        frocaNotes[noteId] = {};
+    }
+});
 
 const drawing = {
     attachmentId: "drawing1",
@@ -190,6 +200,24 @@ describe("useAttachmentEditor", () => {
         expect(serverPost).toHaveBeenLastCalledWith(...savedRequest("second"));
     });
 
+    it("drops the changes to a note deleted before they save", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+
+        editor?.scheduleSave(drawing, () => "first");
+        delete frocaNotes.note1;
+        await act(async () => {
+            await component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        });
+        expect(serverPost).not.toHaveBeenCalled();
+        expect(editor?.getUnsavedContent("drawing1")).toBeUndefined();
+        expect(noteContext.setContextData).toHaveBeenLastCalledWith("saveState", { state: "saved" });
+        await act(() => render(null, container));
+    });
+
     it("saves once the changes pause for a second, or 10 s after the first one", async () => {
         vi.useFakeTimers();
         serverPost.mockClear();
@@ -343,6 +371,24 @@ describe("useNoteEditor", () => {
         expect(serverPut).toHaveBeenCalledTimes(2);
         expect(serverPut).toHaveBeenLastCalledWith(
             "notes/code1/data", { content: "second" }, component.componentId);
+    });
+
+    it("drops the change to a note deleted before it saves", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+
+        editor?.scheduleSave(code, () => "first");
+        delete frocaNotes.code1;
+        await act(async () => {
+            await component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        });
+        expect(serverPut).not.toHaveBeenCalled();
+        expect(editor?.getUnsavedContent("code1")).toBeUndefined();
+        expect(editor?.getSaveState("code1")).toBe("saved");
+        await act(() => render(null, container));
     });
 });
 

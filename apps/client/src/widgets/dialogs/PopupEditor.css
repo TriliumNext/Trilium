@@ -152,10 +152,6 @@ body.mobile .modal.popup-editor-dialog .popup-editor-scroll {
     margin-block: 0;
 }
 
-body.mobile #root-widget:not(.virtual-keyboard-opened) .modal.popup-editor-dialog .promoted-attributes-widget {
-    flex-shrink: 0;
-}
-
 body.desktop .modal.popup-editor-dialog .classic-toolbar-widget {
     position: sticky;
     margin-inline: 8px;

@@ -12,6 +12,8 @@ To add an image to the note:
 *   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same menu also offers _Camera_, which takes a photo and inserts it.
 *   You can also copy and paste an image from web (see section below).
 
+Where the image goes depends on the cursor. In an empty paragraph, the image is displayed on a line of its own. In a list item, or after some text in a paragraph, the image is inserted _In line_, inside the text. To change it afterwards, use the _Image position_ button described in the alignment section below.
+
 > [!TIP]
 > To link a picture instead of displaying it, attach it with _Attach file as a link_, from the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>.
 
