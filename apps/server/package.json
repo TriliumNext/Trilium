@@ -74,7 +74,6 @@
     "express-openid-connect": "3.4.0",
     "express-rate-limit": "8.7.1",
     "express-session": "1.19.0",
-    "file-uri-to-path": "2.0.0",
     "helmet": "8.3.0",
     "html": "1.0.0",
     "http-proxy-agent": "9.1.0",
