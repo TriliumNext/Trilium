@@ -626,7 +626,7 @@ function MenuAction<T>({ item, onSelect }: { item: MenuCommandItem<T>, onSelect:
     return (
         <MenuTile
             icon={item.uiIcon} iconBadge={item.uiIconBadge} title={item.title}
-            tooltip={item.tooltip ?? textOf(item.title)} keyboardShortcut={item.keyboardShortcut}
+            tooltip={item.tooltip} keyboardShortcut={item.keyboardShortcut}
             disabled={item.enabled === false} onSelect={(e) => onSelect?.(item, e)}
         />
     );
@@ -641,8 +641,8 @@ interface MenuTileProps {
     iconBadge?: string;
     /** The title as HTML, as for a row's. */
     title: string;
-    /** The full title, which a narrow tile can cut short. */
-    tooltip: string;
+    /** What the tooltip shows in place of the title, such as a word of explanation. */
+    tooltip?: string;
     keyboardShortcut?: MenuCommandItem<unknown>["keyboardShortcut"];
     disabled?: boolean;
     /** Makes the tile one that is checked or not, which a menu tells assistive technology. */
@@ -659,10 +659,12 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
     const buttonRef = useRef<HTMLButtonElement | null>(null);
-    // The full title, which a narrow menu can cut short, and the shortcut a row would show. A phone
-    // has no pointer to hover with and no keyboard, so it gets neither; an empty title shows none.
+    // The explanation or the shortcut a row would show, with the title only alongside a shortcut,
+    // since the tile shows its title already. A phone has no pointer to hover with and no keyboard,
+    // so it gets neither; an empty title shows none.
     const mobile = isMobile();
-    useStaticTooltipWithKeyboardShortcut(buttonRef, mobile ? "" : tooltip,
+    const tooltipText = tooltip ?? (keyboardShortcut ? textOf(title) : "");
+    useStaticTooltipWithKeyboardShortcut(buttonRef, mobile ? "" : tooltipText,
         mobile ? undefined : keyboardShortcut, ACTION_TOOLTIP);
 
     return (

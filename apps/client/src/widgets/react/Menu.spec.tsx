@@ -513,7 +513,7 @@ describe("Menu with an action row", () => {
 
     it("names or describes each action in its tooltip, with the shortcut on line 1", async () => {
         const { menu } = renderMenu();
-        const [ cut, , remove ] = menu.querySelectorAll<HTMLElement>(".tn-menu-action");
+        const [ cut, copy, remove ] = menu.querySelectorAll<HTMLElement>(".tn-menu-action");
         const tooltipText = (button: HTMLElement | undefined) => {
             const tooltip = button && Tooltip.getInstance(button);
             if (!tooltip) return undefined;
@@ -530,6 +530,10 @@ describe("Menu with an action row", () => {
         const deleteKey = joinShortcut(formatShortcut("CommandOrControl+D"));
         await vi.waitFor(() =>
             expect(tooltipText(remove)).toBe(`Delete (${deleteKey})\nAsks first`));
+
+        // Without a shortcut or a tooltip of its own, a tooltip would repeat the title under it.
+        if (!copy) throw new Error("expected the Copy action to render");
+        expect(Tooltip.getInstance(copy)).toBeNull();
     });
 
     it("gives the actions no tooltip on a phone, which has no pointer to hover with", async () => {
