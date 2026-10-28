@@ -554,6 +554,35 @@ describe("ToolbarGroupMenu", () => {
         expect(host.destroy).toHaveBeenCalled();
     });
 
+    it("converts a dropdown of a widget toolbar, registered and filled after the plugin is set up", async () => {
+        const { _setModelData: setModelData, Image, ImageStyle, ImageToolbar, WidgetToolbarRepository } = await import("ckeditor5");
+        const { default: ImagePosition } = await import("./image_position.js");
+        const { config, last } = createHost();
+        const editor = await createTestEditor([...PLUGINS, Image, ImageStyle, ImageToolbar, ImagePosition], {
+            ...config,
+            toolbar: { items: ["bold"] },
+            image: { toolbar: ["imagePosition"], styles: { options: ["inline", "alignLeft"] } }
+        });
+
+        // The repository fills a toolbar the first time it shows it, for a selected image.
+        editor.editing.view.focus();
+        setModelData(editor.model, "[<imageBlock src=\"a.png\"></imageBlock>]<paragraph>b</paragraph>");
+        editor.ui.update();
+
+        const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
+            _toolbarDefinitions: Map<string, { view: ToolbarView }>;
+        };
+        const toolbar = repository._toolbarDefinitions.get("image")?.view;
+        if (!toolbar) {
+            throw new Error("No image toolbar was registered.");
+        }
+        const dropdown = groupDropdown(toolbar, "Image position");
+        dropdown.buttonView.fire("open");
+
+        expect(dropdown.isOpen).toBe(false);
+        expect(labels(last().items)).toStrictEqual(["In line", "Wrap text", "Align left"]);
+    });
+
     it("opens a dropdown handed to openListAsMenu as a menu of its rows, with the one on checked", async () => {
         const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
