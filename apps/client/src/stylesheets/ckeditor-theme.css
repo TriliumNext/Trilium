@@ -98,8 +98,6 @@ body {
 
     --ck-color-labeled-field-label-background: var(--accented-background-color);
 
-    --ck-color-editable-blur-selection: var(--accented-background-color);
-
     /* todo lists */
 
     --ck-color-todo-list-checkmark-border: var(--main-border-color);

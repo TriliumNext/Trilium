@@ -51,6 +51,10 @@ describe("findSlowSelectors", () => {
         expect(shapes(".row > :nth-child(2) { color: red }")).toEqual([ "keyless-nth" ]);
         expect(shapes(".card { header { &:not(:first-of-type) { color: red } } }"))
             .toEqual([ "keyless-nth" ]);
+        expect(shapes(".ck-editor__editable.ck-blurred ::selection { color: red }"))
+            .toEqual([ "focus-then-universal" ]);
+        expect(shapes(".ck-editor__editable { &:not(.ck-focused) svg * { color: red } }"))
+            .toEqual([ "focus-then-universal" ]);
 
         expect(shapes([
             ".list > .ck + .ck",
@@ -58,13 +62,16 @@ describe("findSlowSelectors", () => {
             ".row > .item:nth-child(2)",
             ".a > li:first-child",
             ".a + .b",
-            ".transcript-paragraph + .transcript-paragraph"
+            ".transcript-paragraph + .transcript-paragraph",
+            ".ck-blurred .ck-widget > .ck-button",
+            ".ck-focused svg",
+            ".ck-blurred::selection"
         ].map((selector) => `${selector} { color: red }`).join("\n"))).toEqual([]);
     });
 });
 
 describe("Stylesheets", () => {
-    it("have no selector that restyles a whole container when an element is inserted", () => {
+    it("have no selector that restyles a whole container on an insert or a focus change", () => {
         const found: string[] = [];
         for (const dir of SOURCES) {
             for (const file of cssFiles(join(ROOT, dir))) {
