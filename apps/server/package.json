@@ -91,7 +91,6 @@
     "multer": "2.5.0",
     "officeparser": "8.2.0",
     "openid-client": "6.8.8",
-    "rand-token": "1.0.1",
     "serve-favicon": "2.5.1",
     "supertest": "7.3.1",
     "tesseract.js": "7.0.0",

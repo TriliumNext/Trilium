@@ -818,9 +818,6 @@ importers:
       openid-client:
         specifier: 6.8.8
         version: 6.8.8
-      rand-token:
-        specifier: 1.0.1
-        version: 1.0.1
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -10035,10 +10032,6 @@ packages:
 
   quickselect@3.0.0:
     resolution: {integrity: sha512-XdjUArbK4Bm5fLLvlm5KpTFOiOThgfWWI4axAZDWg4E/0mKdZyI9tNEfds27qCi1ze/vwTR16kvmmGhRra3c2g==}
-
-  rand-token@1.0.1:
-    resolution: {integrity: sha512-Zri5SfJmEzBJ3IexFdigvPSCamslJ7UjLkUn0tlgH7COJvaUr5V7FyUYgKifEMTw7gFO8ZLcWjcU+kq8akipzg==}
-    engines: {node: '>= 10'}
 
   random-bytes@1.0.0:
     resolution: {integrity: sha512-iv7LhNVO047HzYR3InF6pUcUsPQiHTM1Qal51DcGSuZFBil1aBBWG5eHPNek7bvILMaYJ/8RU1e8w1AMdHmLQQ==}
@@ -22209,8 +22202,6 @@ snapshots:
   quick-format-unescaped@4.0.4: {}
 
   quickselect@3.0.0: {}
-
-  rand-token@1.0.1: {}
 
   random-bytes@1.0.0: {}
 
