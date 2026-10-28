@@ -161,6 +161,33 @@ describe("TableOfContents while an auto-read-only note is temporarily editable",
 
         expect(toc.headings()).toEqual([ "Typed while loading" ]);
     });
+
+    it("reads the headings once per frame, however many changes arrive in it", async () => {
+        const toc = await setupUnlockScenario();
+        await toc.unlock();
+        const createRangeIn = vi.spyOn(toc.editor.editor.model, "createRangeIn");
+
+        await toc.editor.loadNote(toc.noteId, [ [ 2, "Current" ] ], { changes: 3 });
+
+        expect(createRangeIn).toHaveBeenCalledTimes(1);
+        expect(toc.headings()).toEqual([ "Current" ]);
+    });
+
+    it("reads the headings without changing the model, and keeps each heading's id", async () => {
+        const toc = await setupUnlockScenario();
+        await toc.unlock();
+        const change = vi.spyOn(toc.editor.editor.model, "change");
+
+        await toc.editor.loadNote(toc.noteId, [ [ 2, "Current" ], [ 2, "Current" ] ]);
+        const [ first, second ] = toc.rows();
+        expect(toc.rows()).toHaveLength(2);
+        await toc.editor.notify();
+
+        expect(change).not.toHaveBeenCalled();
+        expect(toc.rows()).toHaveLength(2);
+        expect(toc.rows()[0]).toBe(first);
+        expect(toc.rows()[1]).toBe(second);
+    });
 });
 
 async function setupUnlockScenario() {
@@ -205,6 +232,7 @@ async function setupUnlockScenario() {
         noteId: note.noteId,
         editor,
         headings: () => [ ...container.querySelectorAll(".toc .item-content") ].map((el) => el.textContent),
+        rows: () => [ ...container.querySelectorAll(".toc li") ],
         async unlock({ rounds }: { rounds?: number } = {}) {
             await act(async () => {
                 if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
@@ -238,8 +266,7 @@ function fakeTextEditor() {
                 on: (_event: string, callback: () => void) => listeners.add(callback),
                 off: (_event: string, callback: () => void) => listeners.delete(callback)
             },
-            change: (callback: (writer: { setAttribute(name: string, value: string, item: FakeHeadingItem): void }) => void) =>
-                callback({ setAttribute: (name, value, item) => item.attrs.set(name, value) }),
+            change: () => {},
             createRangeIn: () => ({ getWalker: () => items.map((item) => ({ type: "elementStart", item })) })
         },
         editing: {
@@ -250,38 +277,44 @@ function fakeTextEditor() {
 
     return {
         editor,
-        /** Stands in for the note detail feeding the editor a note's content once its blob arrives. */
-        async loadNote(noteId: string, headings: [ number, string ][]) {
+        /**
+         * Stands in for the note detail feeding the editor a note's content once its blob arrives,
+         * reported as `changes` separate changes within one frame.
+         */
+        async loadNote(noteId: string, headings: [ number, string ][], { changes = 1 } = {}) {
             items = headings.map(([ level, text ]) => fakeHeadingItem(level, text));
             setEditorNoteId(editor, noteId);
-            await act(async () => {
-                for (const listener of [ ...listeners ]) listener();
-                await new Promise((resolve) => requestAnimationFrame(resolve));
-            });
-        }
+            await notify(changes);
+        },
+        /** Reports a change that leaves the headings as they are. */
+        notify
     };
+
+    async function notify(changes = 1) {
+        await act(async () => {
+            for (let i = 0; i < changes; i++) {
+                for (const listener of [ ...listeners ]) listener();
+            }
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+        });
+    }
 }
 
 interface FakeHeadingItem {
     name: string;
     el: HTMLElement;
-    attrs: Map<string, string>;
     is(type: string, name?: string): boolean;
-    getAttribute(key: string): string | undefined;
     getChildren(): never[];
 }
 
 function fakeHeadingItem(level: number, text: string): FakeHeadingItem {
     const el = document.createElement(`h${level}`);
     el.textContent = text;
-    const attrs = new Map<string, string>();
 
     return {
         name: `heading${level}`,
         el,
-        attrs,
         is: (type, name) => type === "element" && (!name || name === `heading${level}`),
-        getAttribute: (key) => attrs.get(key),
         getChildren: () => []
     };
 }

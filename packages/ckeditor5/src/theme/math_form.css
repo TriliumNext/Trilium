@@ -25,13 +25,14 @@
     box-sizing: border-box;
 	min-width: 400px;
     max-width: 60vw;
-    max-height: 350px;
+    /* Fits both fields at their 120px max-height */
+    max-height: 480px;
     overflow: visible;
     user-select: text;
 }
 
 /* Scrollable content - vertical scroll, horizontal visible for tooltips */
-.ck-math-view {
+.ck.ck-math-form .ck-math-view {
     overflow-y: auto;
     overflow-x: visible;
     display: flex;
@@ -39,7 +40,9 @@
     flex: 1 1 auto;
     gap: var(--ck-spacing-standard, var(--ck-spacing-base));
     min-height: 0;
-    width: 100%;
+    /* Room for the fields' 3px focus rings, which the scrolling view clips at its padding edge */
+    margin: -3px;
+    padding: 3px;
 }
 
 /* === MATH INPUT === */
@@ -50,23 +53,31 @@
     width: fit-content;
     min-width: 100%;
     max-width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 1 0 auto;
     overflow: visible !important;
 }
 
 /* === MATHLIVE EDITOR === */
 .ck.ck-math-input .ck-mathlive-container {
+    display: flex;
+    flex-direction: column;
     position: relative;
-    width: 100%;
-    min-height: 50px;
     padding: var(--ck-spacing-small, var(--ck-spacing-sm));
     border: 1px solid var(--ck-color-input-border);
     border-radius: var(--ck-border-radius);
-    background: var(--ck-color-input-background) !important;
+    /* The LaTeX textarea's min-width: `--ck-input-width` (18em) at its 0.95em font size */
+    min-width: calc(0.95 * var(--ck-input-width));
+    background: var(--ck-color-input-background);
+    color: var(--ck-color-input-text);
     transition: border-color 120ms ease;
-    overflow: auto;
     clip-path: none;
+}
+.ck.ck-math-input :is(.ck-mathlive-container, .ck-latex-textarea) {
+    max-width: 100%;
+    min-height: 60px;
+    max-height: 120px;
+    resize: both;
+    overflow: auto;
 }
 .ck.ck-math-input .ck-mathlive-container:focus-within {
     border-color: var(--ck-color-focus-border);
@@ -88,10 +99,11 @@
 /* Math field element */
 .ck.ck-math-form math-field {
     display: block !important;
+    flex-grow: 1;
     width: 100%;
     font-size: 1.5em;
     background: transparent !important;
-    color: var(--ck-color-input-text);
+    color: inherit;
     border: none !important;
     padding: 0;
     outline: none !important;
@@ -101,22 +113,6 @@
 }
 
 /* === LATEX TEXTAREA === */
-.ck.ck-math-input .ck-latex-wrapper {
-    display: flex;
-    flex-direction: column;
-    width: fit-content;
-    min-width: 100%;
-    max-width: 100%;
-    padding: var(--ck-spacing-small, var(--ck-spacing-sm));
-    border: 1px solid var(--ck-color-input-border);
-    border-radius: var(--ck-border-radius);
-    background: var(--ck-color-input-background) !important;
-    transition: border-color 120ms ease;
-    box-sizing: border-box;
-}
-.ck.ck-math-input .ck-latex-wrapper:focus-within {
-    border-color: var(--ck-color-focus-border);
-}
 .ck.ck-math-input .ck-latex-label {
     font-size: 12px;
     font-weight: 600;
@@ -126,20 +122,8 @@
     flex-shrink: 0;
 }
 .ck.ck-math-input .ck-latex-textarea {
-    width: fit-content;
-    min-width: 100%;
-    max-width: 100%;
-    min-height: 60px;
-    max-height: calc(80vh - 300px);
-    resize: both;
-    overflow: auto;
     font-family: 'Courier New', monospace;
     font-size: 0.95em;
-    background: transparent !important;
-    color: var(--ck-color-input-text);
-    border: none !important;
-    padding: 0;
-    outline: none !important;
     box-sizing: border-box;
 }
 
@@ -189,22 +173,4 @@
     justify-content: flex-end;
     margin-top: var(--ck-spacing-standard, var(--ck-spacing-base));
 }
-.ck-button-save, .ck-button-cancel {
-    padding-block: var(--ck-spacing-small, var(--ck-spacing-sm));
-    padding-inline: var(--ck-spacing-standard, var(--ck-spacing-base));
-    border: 1px solid var(--ck-color-input-border);
-    border-radius: var(--ck-border-radius);
-    cursor: pointer;
-    font-weight: 500;
-}
-.ck-button-save {
-    background: var(--ck-color-focus-border);
-    color: white;
-}
-.ck-button-cancel {
-    background: var(--ck-color-input-background);
-    color: var(--ck-color-text);
-}
-.ck-button-save:hover { opacity: 0.9; }
-.ck-button-cancel:hover { background: var(--ck-color-base-background); }
 

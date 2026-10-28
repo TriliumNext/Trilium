@@ -13,7 +13,7 @@ interface MathFieldElement extends HTMLElement {
 	readOnly: boolean;
 	mathVirtualKeyboardPolicy: string;
 	inlineShortcuts?: InlineShortcutDefinitions;
-	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
+	setValue: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
 // Wrapper for the MathLive element to make it focusable in CKEditor's UI system
@@ -38,7 +38,9 @@ export class LatexTextAreaView extends View implements FocusableView {
 	constructor( locale: Locale ) {
 		super( locale );
 		this.setTemplate( { tag: 'textarea', attributes: {
-			class: [ 'ck', 'ck-textarea', 'ck-latex-textarea' ], spellcheck: 'false', tabindex: 0
+			class: [ 'ck', 'ck-input', 'ck-textarea', 'ck-latex-textarea' ],
+			spellcheck: 'false',
+			tabindex: 0
 		} } );
 	}
 	public focus(): void {
@@ -81,7 +83,7 @@ export default class MathInputView extends View {
 		}
 		children.push(
 			{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
-			{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
+			this.latexTextAreaView
 		);
 		this.setTemplate( {
 			tag: 'div', attributes: { class: [ 'ck', 'ck-math-input' ] },
@@ -209,7 +211,13 @@ export default class MathInputView extends View {
 			this._setMathfieldValue( this.value ?? '' );
 			return;
 		}
+		// Made before MathLive defines it, the element has no shadow root to adopt `SHADOW_STYLES`;
+		// `_loadMathLive()` creates it with the current value once MathLive has loaded.
+		if ( !customElements.get( 'math-field' ) ) {
+			return;
+		}
 		const mf = document.createElement( 'math-field' ) as MathFieldElement;
+		adoptShadowStyles( mf );
 		mf.mathVirtualKeyboardPolicy = 'auto';
 		mf.setAttribute( 'tabindex', '0' );
 		mf.value = this.value ?? '';
@@ -264,11 +272,7 @@ export default class MathInputView extends View {
 		if ( !this.mathfield ) {
 			return;
 		}
-		if ( this.mathfield.setValue ) {
-			this.mathfield.setValue( value, { silenceNotifications: true } );
-		} else {
-			this.mathfield.value = value;
-		}
+		this.mathfield.setValue( value, { silenceNotifications: true } );
 	}
 
 	public hideKeyboard(): void {
@@ -301,4 +305,93 @@ export default class MathInputView extends View {
 // under `zh-cn`, which CKEditor calls `zh`.
 function toMathLiveLocale( uiLanguage: string ): string {
 	return uiLanguage === 'zh' ? 'zh-cn' : uiLanguage;
+}
+
+// The scrolling `.ck-mathlive-container` clips the toggles' tooltips, so these rules fix them to
+// their toggles. `::part()` can't tell MathLive's menu rows from its headings and grid cells, or
+// reach a swatch's color or a checkmark, so the menu rules read variables that fall back to
+// MathLive's values.
+const SHADOW_STYLES = `@supports (position-area: top) {
+	[part='virtual-keyboard-toggle'] {
+		anchor-name: --ck-math-keyboard-toggle;
+	}
+	[part='menu-toggle'] {
+		anchor-name: --ck-math-menu-toggle;
+	}
+	[part='virtual-keyboard-toggle']::after {
+		position-anchor: --ck-math-keyboard-toggle;
+	}
+	[part='menu-toggle']::after {
+		position-anchor: --ck-math-menu-toggle;
+	}
+	:is([part='virtual-keyboard-toggle'], [part='menu-toggle'])::after {
+		position: fixed;
+		inset: auto;
+		margin-bottom: 4px;
+		position-area: top;
+		position-try-fallbacks: flip-block;
+	}
+}
+:where(.ui-menu-container > li:not([role='divider'])) {
+	margin: var(--ck-math-menu-item-margin, 0 6px);
+	padding: var(--ck-math-menu-item-padding, 1px 7px);
+	border-radius: var(--ck-math-menu-item-border-radius, 4px);
+}
+:where(.ui-menu-container > li:has(> .heading)) {
+	margin: var(--ck-math-menu-heading-margin, 0.5em 6px 0);
+	padding: var(--ck-math-menu-heading-padding, 1px 7px);
+	border-bottom: var(--ck-math-menu-heading-border, none);
+	opacity: var(--ck-math-menu-heading-opacity, 0.5);
+}
+:where(.ui-menu-container > li > .heading) {
+	font-size: var(--ck-math-menu-heading-font-size, inherit);
+	font-weight: var(--ck-math-menu-heading-font-weight, bold);
+	letter-spacing: var(--ck-math-menu-heading-letter-spacing, inherit);
+	text-transform: var(--ck-math-menu-heading-text-transform, none);
+	color: var(--ck-math-menu-heading-color, inherit);
+	opacity: var(--ck-math-menu-heading-opacity, 0.4);
+}
+.swatches-submenu {
+	--_swatch-size: var(--ck-math-menu-swatch-size, 2rem);
+	max-width: calc(
+		var(--_columns) * (var(--_swatch-size) + var(--ck-math-menu-swatch-gap, 18px)) + 16px
+	);
+}
+.menu-swatch {
+	background: var(--ck-math-menu-swatch-background, var(--neutral-200));
+}
+.menu-swatch.active {
+	background: var(--ck-math-menu-swatch-background, var(--neutral-100));
+}
+.menu-swatch > .label > span {
+	/* Besides two of these margins, a gap holds two 2px swatch margins and two 1px label borders. */
+	margin: calc((var(--ck-math-menu-swatch-gap, 18px) - 6px) / 2);
+	box-shadow: var(--ck-math-menu-swatch-shadow, none);
+	border-radius: var(--ck-math-menu-swatch-border-radius, 50%);
+}
+.menu-swatch.active > .label > span {
+	border-radius: var(--ck-math-menu-swatch-border-radius, 2px);
+}
+.ui-menu-container > li:not(.menu-swatch) > :is(.ui-checkmark, .ui-mixedmark) {
+	order: var(--ck-math-menu-checkmark-order, 0);
+	margin-inline: var(--ck-math-menu-checkmark-margin-inline, -4px -11px);
+	color: var(--ck-math-menu-checkmark-color, inherit);
+}
+:where(.ui-menu-container > li > .label.indent) {
+	margin-inline-start: var(--ck-math-menu-checkmark-indent, 12px);
+}`;
+
+let shadowStyleSheet: CSSStyleSheet | undefined;
+
+function adoptShadowStyles( mathfield: HTMLElement ): void {
+	const root = mathfield.shadowRoot;
+	/* v8 ignore next 3 -- MathLive attaches an open shadow root in the math-field constructor */
+	if ( !root ) {
+		return;
+	}
+	if ( !shadowStyleSheet ) {
+		shadowStyleSheet = new CSSStyleSheet();
+		shadowStyleSheet.replaceSync( SHADOW_STYLES );
+	}
+	root.adoptedStyleSheets = [ ...root.adoptedStyleSheets, shadowStyleSheet ];
 }

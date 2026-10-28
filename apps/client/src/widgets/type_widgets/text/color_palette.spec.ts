@@ -12,6 +12,7 @@ const LABELS = [
     "Red", "Orange", "Yellow", "Light green", "Green", "Aquamarine", "Turquoise",
     "Light blue", "Blue", "Purple", "text-editor.colors.pink"
 ];
+const BORDERED = [ "Black", "White" ];
 
 describe("buildFontColorConfig", () => {
     it("lists four greys, then every note color hue, four to a row", () => {
@@ -19,6 +20,7 @@ describe("buildFontColorConfig", () => {
             expect(palette.columns).toBe(4);
             expect(palette.colors.map(({ label }) => label)).toEqual(LABELS);
             expect(palette.colors.map(({ color }) => color)).toEqual(SOURCES);
+            expect(borderedLabels(palette.colors)).toEqual(BORDERED);
         }
     });
 
@@ -29,14 +31,24 @@ describe("buildFontColorConfig", () => {
 });
 
 describe("buildTableColorConfig", () => {
-    it("gives table and cell borders and backgrounds the same swatches", () => {
+    it("gives table and cell borders and backgrounds the same swatches, four to a row", () => {
         const { tableProperties, tableCellProperties } = buildTableColorConfig();
+        expect(tableProperties.colorGridColumns).toBe(4);
+        expect(tableCellProperties.colorGridColumns).toBe(4);
         for (const colors of [
             tableProperties.borderColors, tableProperties.backgroundColors,
             tableCellProperties.borderColors, tableCellProperties.backgroundColors
         ]) {
             expect(colors.map(({ label }) => label)).toEqual(LABELS);
             expect(colors.map(({ color }) => color)).toEqual(SOURCES);
+            expect(borderedLabels(colors)).toEqual(BORDERED);
         }
     });
 });
+
+/** The labels of the swatches CKEditor draws with an edge. */
+function borderedLabels(colors: { label: string }[]) {
+    return colors
+        .filter((swatch) => "hasBorder" in swatch && swatch.hasBorder)
+        .map(({ label }) => label);
+}

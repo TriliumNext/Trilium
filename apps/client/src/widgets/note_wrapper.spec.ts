@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import type NoteContext from "../components/note_context";
+import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
 import NoteWrapperWidget, { hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote } from "./note_wrapper";
 
 describe("NoteWrapperWidget", () => {
-    it("preserves the classes owned by SplitNoteContainer through the class reset in refresh()", () => {
+    it("preserves the classes owned by SplitNoteContainer in refresh()", () => {
         const widget = new NoteWrapperWidget();
         widget.render();
         widget.$widget.addClass("active last-visible");
@@ -18,6 +20,52 @@ describe("NoteWrapperWidget", () => {
         // Without a note context, the split renders as empty — the note-derived classes still apply.
         expect(widget.$widget.hasClass("note-split")).toBe(true);
         expect(widget.$widget.hasClass("empty-note")).toBe(true);
+    });
+
+    it("changes no class when a refresh produces the same classes", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showNote(widget, buildNote({ title: "Styled", type: "text", "#cssClass": "first second" }));
+        widget.$widget.addClass("active");
+
+        const observer = new MutationObserver(() => {});
+        observer.observe(widget.$widget[0], { attributes: true, attributeFilter: [ "class" ] });
+        widget.refresh();
+        const records = observer.takeRecords();
+        observer.disconnect();
+
+        expect(records).toHaveLength(0);
+        for (const cls of [ "active", "visible", "note-split", "type-text", "first", "second" ]) {
+            expect(widget.$widget.hasClass(cls)).toBe(true);
+        }
+    });
+
+    it("drops the classes of the previous note and keeps those of SplitNoteContainer", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showNote(widget, buildNote({ title: "Styled", type: "text", "#cssClass": "first second" }));
+        widget.$widget.addClass("active last-visible");
+
+        showNote(widget, buildNote({ title: "Plain", type: "code" }));
+
+        expect(widget.$widget.hasClass("first")).toBe(false);
+        expect(widget.$widget.hasClass("type-text")).toBe(false);
+        expect(widget.$widget.hasClass("type-code")).toBe(true);
+        expect(widget.$widget.hasClass("active")).toBe(true);
+        expect(widget.$widget.hasClass("last-visible")).toBe(true);
+    });
+
+    it("adds the classes of a note split at any whitespace", () => {
+        // A browser refuses a class with whitespace in `classList.add()`; happy-dom accepts it.
+        const add = vi.spyOn(Object.getPrototypeOf(document.body.classList) as DOMTokenList, "add");
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showNote(widget, buildNote({ title: "Styled", type: "text", "#cssClass": "a\tb\nc\r\nd" }));
+        const added = add.mock.calls.flat();
+        add.mockRestore();
+
+        expect(added).toEqual(expect.arrayContaining([ "a", "b", "c", "d", "type-text" ]));
+        expect(added.filter((cls) => /\s/.test(cls))).toEqual([]);
     });
 
     it("marks the split as translucent (bgfx) for the note types that render on a bare background", () => {
@@ -117,3 +165,8 @@ describe("isFullWidthNote", () => {
         expect(isFullWidthNote(buildNote({ title: "Calendar", type: "search", "#viewType": "calendar" }))).toBe(true);
     });
 });
+
+function showNote(widget: NoteWrapperWidget, note: FNote) {
+    const noteContext = { note, viewScope: { viewMode: "default" } } as unknown as NoteContext;
+    widget.setNoteContextEvent({ noteContext });
+}

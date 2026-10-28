@@ -149,10 +149,8 @@
     }
 }
 
-.ck-editor__editable .trilium-tabs:has(.ck-editor__nested-editable_focused) {
-    &:not(:has(.trilium-tabs .ck-editor__nested-editable_focused)) {
-        outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
-    }
+.ck-editor__editable .trilium-tabs.ck-widget.trilium-tabs--focused {
+    outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
 }
 
 .ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-panel {

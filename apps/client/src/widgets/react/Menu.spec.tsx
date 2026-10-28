@@ -1,6 +1,7 @@
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { useState } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MenuHeaderAction, MenuHeaderActions, MenuItem } from "../../menus/context_menu";
@@ -236,6 +237,79 @@ describe("Menu with declared rows", () => {
         leave();
         await new Promise((resolve) => setTimeout(resolve));
         expect(activeTitle(menu)).toBe("Copy");
+    });
+
+    it("keeps a submenu in view open for 750ms once the pointer moves onto another row", async () => {
+        vi.useFakeTimers();
+        try {
+            render((
+                <Menu anchor={{ x: 10, y: 10 }} onClose={vi.fn()}>
+                    <FormDropdownSubmenu title="Advanced" icon="bx bx-chip">
+                        <FormListItem>Reload</FormListItem>
+                    </FormDropdownSubmenu>
+                    <FormListItem>Copy</FormListItem>
+                    <FormDropdownSubmenu title="Export" icon="bx bx-export">
+                        <FormListItem>As PDF</FormListItem>
+                    </FormDropdownSubmenu>
+                </Menu>
+            ), host);
+            const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+            if (!menu) throw new Error("expected the menu to render");
+            const layer = () => menu.querySelector<HTMLElement>(":scope > div.dropdown-submenu > .dropdown-menu");
+            const enter = (element: Element | null) => {
+                if (!element) throw new Error("expected an element to point at");
+                act(() => void element.dispatchEvent(new PointerEvent("pointerenter")));
+            };
+            const wait = (ms: number) => act(async () => {
+                await vi.advanceTimersByTimeAsync(ms);
+            });
+
+            // happy-dom runs no animation, so a submenu the pointer opened never leaves the
+            // stylesheet's opening delay: unseen, it closes at once.
+            enter(rowTitled("Advanced"));
+            expect(layers(menu)).toEqual([ [ "Reload" ] ]);
+            enter(rowTitled("Copy"));
+            expect(layers(menu)).toEqual([]);
+
+            // Opened by a press, it shows at once, and stays while the pointer crosses a row on its
+            // way into the layer.
+            act(() => press(rowTitled("Advanced")));
+            enter(rowTitled("Copy"));
+            await wait(749);
+            expect(layers(menu)).toEqual([ [ "Reload" ] ]);
+            expect(activeTitle(menu)).toBe("Copy");
+            enter(layer());
+            await wait(750);
+            expect(layers(menu)).toEqual([ [ "Reload" ] ]);
+
+            // The delay runs from the first row the pointer moves onto; the row it rests on then
+            // opens its own submenu, at once, as it replaces one in view.
+            enter(rowTitled("Copy"));
+            await wait(400);
+            enter(rowTitled("Export"));
+            await wait(349);
+            expect(layers(menu)).toEqual([ [ "Reload" ] ]);
+            await wait(1);
+            expect(layers(menu)).toEqual([ [ "As PDF" ] ]);
+            expect(layer()?.classList).toContain("tn-menu-immediate");
+
+            // Back on the submenu's row, off the menu, or with a key, the submenu stays.
+            enter(rowTitled("Copy"));
+            enter(rowTitled("Export"));
+            await wait(750);
+            expect(layers(menu)).toEqual([ [ "As PDF" ] ]);
+            enter(rowTitled("Copy"));
+            act(() => void menu.dispatchEvent(new PointerEvent("pointerleave")));
+            await wait(750);
+            expect(layers(menu)).toEqual([ [ "As PDF" ] ]);
+            enter(rowTitled("Copy"));
+            act(() => void key(menu, "ArrowDown"));
+            await wait(750);
+            expect(layers(menu)).toEqual([ [ "As PDF" ] ]);
+            expect(activeTitle(menu)).toBe("Export");
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("starts at the last row when asked to, and takes no focus once it is no longer wanted", async () => {

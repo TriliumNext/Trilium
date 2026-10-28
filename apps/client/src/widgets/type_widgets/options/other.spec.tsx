@@ -52,7 +52,7 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 
-import OtherSettings from "./other";
+import OtherSettings, { getSearchEngineChoice } from "./other";
 
 let host: HTMLElement;
 
@@ -86,25 +86,83 @@ function open() {
 const button = (name: string) => host.querySelector<HTMLButtonElement>(`button[name='${name}']`);
 
 describe("the search engine settings", () => {
-    it("marks the engine currently in use, and takes both its name and its address when one is picked", () => {
-        mocks.stored = { ...mocks.stored, customSearchEngineUrl: "https://www.google.com/search?q={keyword}" };
+    const toggle = () => host.querySelector<HTMLElement>(".search-engine-picker > button");
+    const urlBox = () => host.querySelector<HTMLInputElement>("input[type='url']");
+    /** Opens the engine menu, which is placed in the body, and returns its rows. */
+    function openMenu() {
+        const button = toggle();
+        expect(button).not.toBeNull();
+        act(() => button?.click());
+        return [ ...document.querySelectorAll<HTMLElement>(".dropdown-item") ];
+    }
+    function choose(title: string) {
+        const item = openMenu().find((row) => row.textContent?.trim() === title);
+        expect(item).toBeDefined();
+        act(() => item?.click());
+    }
+
+    it("offers none, the presets and custom, showing the entry for the stored URL", () => {
         open();
+        expect(toggle()?.textContent?.trim()).toBe("search_engine.duckduckgo");
+        expect(urlBox()).toBeNull();
+        expect(openMenu().map((row) => [
+            row.textContent?.trim(),
+            [ ...row.querySelector(".tn-icon")?.classList ?? [] ]
+                .filter((name) => name !== "tn-icon").join(" ")
+        ])).toEqual([
+            [ "search_engine.none", "bx bx-block" ],
+            [ "search_engine.duckduckgo", "bx bx-search-alt" ],
+            [ "search_engine.baidu", "bx bxl-baidu" ],
+            [ "search_engine.bing", "bx bxl-bing" ],
+            [ "search_engine.brave", "tn-brand tn-brand-brave" ],
+            [ "search_engine.google", "bx bxl-google" ],
+            [ "search_engine.yandex", "bx bx-search-alt" ],
+            [ "search_engine.custom", "bx bx-edit-alt" ]
+        ]);
 
-        const chips = [ ...host.querySelectorAll(".search-engine-templates .ext-badge") ];
-        expect(chips).toHaveLength(5);
-        expect(chips.filter((chip) => chip.className.includes("selected"))).toHaveLength(1);
-
-        act(() => (chips[0] as HTMLElement).click());
-        expect(mocks.saved.map(([ name ]) => name)).toEqual([ "customSearchEngineName", "customSearchEngineUrl" ]);
+        expect(getSearchEngineChoice("none")).toBe("none");
+        expect(getSearchEngineChoice("https://www.bing.com/search?q={keyword}"))
+            .toBe("https://www.bing.com/search?q={keyword}");
+        expect(getSearchEngineChoice("https://example.com/?s={keyword}")).toBe("custom");
     });
 
-    it("turns the web search off with the none preset", () => {
+    it("stores the name and address of a preset, and the sentinel for none", () => {
         open();
-        const none = host.querySelector(".search-engine-templates .ext-badge:last-child");
-        expect(none?.textContent).toBe("search_engine.none");
 
-        act(() => (none as HTMLElement).click());
-        expect(mocks.saved).toEqual([ [ "customSearchEngineName", "" ], [ "customSearchEngineUrl", "none" ] ]);
+        choose("search_engine.google");
+        choose("search_engine.none");
+        expect(mocks.saved).toEqual([
+            [ "customSearchEngineName", "search_engine.google" ],
+            [ "customSearchEngineUrl", "https://www.google.com/search?q={keyword}" ],
+            [ "customSearchEngineName", "" ],
+            [ "customSearchEngineUrl", "none" ]
+        ]);
+    });
+
+    it("shows the name and URL fields only for a custom engine", () => {
+        const store = (url: string) => {
+            mocks.stored = { ...mocks.stored, customSearchEngineUrl: url };
+        };
+        store("https://example.com/?s={keyword}");
+        open();
+        expect(toggle()?.textContent?.trim()).toBe("search_engine.custom");
+        expect(urlBox()?.type).toBe("url");
+        expect(urlBox()?.value).toBe("https://example.com/?s={keyword}");
+
+        // Switching from a preset keeps its values to edit; from none, it clears the sentinel.
+        store("https://www.bing.com/search?q={keyword}");
+        open();
+        choose("search_engine.custom");
+        expect(urlBox()).not.toBeNull();
+        expect(mocks.saved).toEqual([]);
+
+        store("none");
+        open();
+        choose("search_engine.custom");
+        expect(mocks.saved).toEqual([
+            [ "customSearchEngineName", "" ],
+            [ "customSearchEngineUrl", "" ]
+        ]);
     });
 });
 

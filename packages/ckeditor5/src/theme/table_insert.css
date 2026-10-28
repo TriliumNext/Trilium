@@ -4,11 +4,12 @@
 
 .ck.ck-table-insert-form {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: 1fr auto;
     align-items: center;
     row-gap: var(--ck-spacing-standard, var(--ck-spacing-base));
     column-gap: var(--ck-spacing-large, var(--ck-spacing-lg));
     padding: var(--ck-spacing-large, var(--ck-spacing-lg));
+    min-width: 250px;
 
     &:focus {
         outline: none;
@@ -24,12 +25,21 @@
 
     .ck.ck-input-number {
         min-width: 0;
-        width: 10em;
+        width: 5em;
     }
 
-    /* `width: 0` keeps the message from widening the column; it wraps under the input instead. */
+    /* Aligns the label and the toggle with the fields. */
+    .ck.ck-switchbutton {
+        grid-column: 1 / -1;
+        margin-inline: calc(-1 * var(--ck-spacing-small, var(--ck-spacing-sm)));
+        padding-inline: calc(
+            var(--ck-spacing-small, var(--ck-spacing-sm)) - var(--ck-border-width-control)
+        );
+    }
+
+    /* `width: 0` keeps the message from widening the form; it wraps instead. */
     .ck-table-insert-form__error {
-        grid-column: 2;
+        grid-column: 1 / -1;
         min-width: 100%;
         width: 0;
         color: var(--ck-table-insert-form-error-color);
@@ -37,12 +47,8 @@
         white-space: normal;
     }
 
-    .ck-table-insert-form__size-error {
-        grid-column: 1 / -1;
-    }
-
     .ck.ck-button-action {
-        grid-column: 2;
-        justify-self: start;
+        grid-column: 1 / -1;
+        justify-self: end;
     }
 }

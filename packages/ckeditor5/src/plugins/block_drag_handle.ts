@@ -1,7 +1,13 @@
 import {
-    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator,
-    type Model, type ModelElement, ModelLiveRange, type ModelRange, Plugin, Rect
+    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env,
+    findClosestScrollableAncestor, IconDragIndicator, type Model, type ModelElement,
+    ModelLiveRange, type ModelRange, type ModelSchema, Plugin, Rect, type ViewElement
 } from "ckeditor5";
+
+import "../theme/block_drag_handle.css";
+
+/** The class of the blocks that a drag from the hovered handle moves. */
+const TARGET_CLASS = "block-drag-handle-target";
 
 /**
  * The drag handle of `BlockToolbar` without the toolbar, for the fixed-toolbar editor: a grip
@@ -12,8 +18,10 @@ export default class BlockDragHandle extends Plugin {
 
     buttonView?: BlockButtonView;
     private isDragging = false;
+    private isHovered = false;
     private isUpdateScheduled = false;
     private buttonSize?: { width: number; height: number };
+    private targets: ViewElement[] = [];
     private readonly domEmitter = new (DomEmitterMixin())();
     private readonly layoutEmitter = new (DomEmitterMixin())();
 
@@ -40,10 +48,18 @@ export default class BlockDragHandle extends Plugin {
             isToggleable: false
         });
         buttonView.extendTemplate({
-            attributes: { draggable: "true" },
+            attributes: { class: "block-drag-handle", draggable: "true" },
             on: {
                 dragstart: buttonView.bindTemplate.to((domEvent) => {
                     this.startDrag(domEvent as DragEvent);
+                }),
+                mouseenter: buttonView.bindTemplate.to(() => {
+                    this.isHovered = true;
+                    this.updateTargets();
+                }),
+                mouseleave: buttonView.bindTemplate.to(() => {
+                    this.isHovered = false;
+                    this.updateTargets();
                 })
             }
         });
@@ -64,9 +80,8 @@ export default class BlockDragHandle extends Plugin {
         this.domEmitter.listenTo(document, "drop", (_evt, domEvent: DragEvent) => {
             this.forwardDrag(domEvent);
         });
-        this.domEmitter.listenTo(document, "dragend", () => {
-            this.isDragging = false;
-            this.update();
+        this.domEmitter.listenTo(document, "dragend", (_evt, domEvent: DragEvent) => {
+            this.endDrag(domEvent);
         }, { useCapture: true });
     }
 
@@ -127,12 +142,52 @@ export default class BlockDragHandle extends Plugin {
         const position = target && this.findPosition(buttonView, buttonView.element, target);
         if (!position) {
             buttonView.isVisible = false;
+            this.updateTargets();
             return;
         }
 
         buttonView.top = position.top;
         buttonView.left = position.left;
         buttonView.isVisible = true;
+        this.updateTargets();
+    }
+
+    /** Tints the blocks that a drag moves while the pointer is over the visible handle. */
+    private updateTargets() {
+        const view = this.editor.editing.view;
+        // `view.change()` throws during rendering, and the `layoutChanged` after it updates again.
+        if (view.isRenderingInProgress) {
+            return;
+        }
+
+        const isShown = this.isHovered && !this.isDragging && !!this.buttonView?.isVisible;
+        const range = isShown ? getDraggedRange(this.editor.model) : null;
+        const targets = range ? this.toViewElements(range) : [];
+        const previous = this.targets;
+        if (targets.length === previous.length
+            && targets.every((target, index) => target === previous[index])) {
+            return;
+        }
+
+        // Set before the change, whose rendering calls `update()` again.
+        this.targets = targets;
+        view.change((writer) => {
+            for (const target of previous) {
+                writer.removeClass(TARGET_CLASS, target);
+            }
+            for (const target of targets) {
+                writer.addClass(TARGET_CLASS, target);
+            }
+        });
+    }
+
+    /** The editing view elements of the outermost nodes in `range`. */
+    private toViewElements(range: ModelRange) {
+        const mapper = this.editor.editing.mapper;
+        return Array.from(range.getItems({ shallow: true }))
+            .filter((item) => item.is("element"))
+            .map((element) => mapper.toViewElement(element))
+            .filter((element) => element !== undefined);
     }
 
     private getTarget(): BlockTarget | null {
@@ -206,27 +261,20 @@ export default class BlockDragHandle extends Plugin {
         return buttonRect;
     }
 
-    /** Selects the whole selected blocks and starts a drag of them in the editing view. */
+    /** Selects the dragged blocks and starts a drag of them in the editing view. */
     private startDrag(domEvent: DragEvent) {
         const editor = this.editor;
-        const model = editor.model;
         const dragDrop = editor.plugins.get(DragDrop);
-        const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
-        const firstBlock = blocks.at(0);
-        // The outermost block that holds the last one, so that a collapsible moves whole even when
-        // the selection ends in its body.
-        const lastAncestors = blocks.at(-1)?.getAncestors({ includeSelf: true });
-        const lastBlock = blocks.find((block) => lastAncestors?.includes(block));
-        if (!dragDrop.isEnabled || !firstBlock || !lastBlock) {
+        const range = getDraggedRange(editor.model);
+        if (!dragDrop.isEnabled || !range) {
             domEvent.preventDefault();
             return;
         }
 
-        const range = widenToWholeContainers(model, model.createRange(
-            model.createPositionBefore(firstBlock),
-            model.createPositionAfter(lastBlock)
-        ));
-        model.change((writer) => writer.setSelection(range));
+        // The drag takes the pointer off the handle.
+        this.isHovered = false;
+        this.updateTargets();
+        editor.model.change((writer) => writer.setSelection(range));
 
         this.isDragging = true;
         editor.editing.view.focus();
@@ -235,34 +283,43 @@ export default class BlockDragHandle extends Plugin {
     }
 
     /**
-     * Passes a `dragover` or `drop` in the margin beside the blocks, over an element that holds
-     * the editable, to the editing view: 100px into the content from the pointer and within the
-     * editable. The editing view takes a drop over the content itself, and another pane its own.
+     * Passes a `dragover` or `drop` around the blocks to the editing view, 100px into the content
+     * from the pointer and within the editable: over an element that holds the editable, or
+     * anywhere in its scrolling container, where a drop above or below the blocks lands at their
+     * start or end. The editing view takes a drop over the content itself. Anywhere else, the
+     * editing view gets a `dragleave`, which removes the drop marker.
      */
     private forwardDrag(domEvent: DragEvent) {
         const domEditable = this.editor.ui.getEditableElement();
         const pointedNode = domEvent.target;
         if (!this.isDragging || !domEditable || !(pointedNode instanceof Node)
-            || !pointedNode.contains(domEditable)) {
+            || (pointedNode !== domEditable && domEditable.contains(pointedNode))) {
             return;
         }
 
         const isLtr = this.editor.locale.contentLanguageDirection === "ltr";
         const editableRect = domEditable.getBoundingClientRect();
-        const clientX = Math.min(
-            Math.max(domEvent.clientX + (isLtr ? 100 : -100), editableRect.left + 1),
+        const clientX = clamp(
+            domEvent.clientX + (isLtr ? 100 : -100),
+            editableRect.left + 1,
             editableRect.right - 1
         );
-        const clientY = domEvent.clientY;
-        const target = document.elementFromPoint(clientX, clientY);
-        if (!target || !domEditable.contains(target)) {
-            return;
-        }
+        // Without a scrolling ancestor, the closest one is the body, which holds the other panes.
+        const scrollable = findClosestScrollableAncestor(domEditable);
+        const isInScrollable = !!scrollable && scrollable !== document.body
+            && scrollable.contains(pointedNode);
+        const clientY = isInScrollable
+            ? clamp(domEvent.clientY, editableRect.top + 1, editableRect.bottom - 1)
+            : domEvent.clientY;
+        const target = isInScrollable || pointedNode.contains(domEditable)
+            ? document.elementFromPoint(clientX, clientY)
+            : null;
+        const isBesideBlocks = !!target && domEditable.contains(target);
 
         const forwardedEvent = {
-            type: domEvent.type,
+            type: isBesideBlocks ? domEvent.type : "dragleave",
             dataTransfer: domEvent.dataTransfer,
-            target,
+            target: isBesideBlocks ? target : domEditable,
             clientX,
             clientY,
             preventDefault: () => domEvent.preventDefault(),
@@ -270,6 +327,21 @@ export default class BlockDragHandle extends Plugin {
         } as unknown as DragEvent;
         this.editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(forwardedEvent);
     }
+
+    /**
+     * Passes the `dragend` of a drag from the handle to the editing view, which does not get it
+     * because the handle is outside the editable. `DragDrop` ends the drag on it: it removes the
+     * drop marker, and deletes the dragged blocks when a drop outside this editor moved them.
+     */
+    private endDrag(domEvent: DragEvent) {
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(domEvent);
+        }
+
+        this.update();
+    }
+
 }
 
 interface BlockTarget {
@@ -277,9 +349,69 @@ interface BlockTarget {
     domEditable: HTMLElement;
 }
 
+function clamp(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * The range that the handle drags: the selected blocks, widened over the limit elements and the
+ * containers that they cover whole.
+ */
+function getDraggedRange(model: Model) {
+    const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
+    const firstBlock = blocks.at(0);
+    // The outermost block that holds the last one, so that a collapsible moves whole even when
+    // the selection ends in its body.
+    const lastAncestors = blocks.at(-1)?.getAncestors({ includeSelf: true });
+    const lastBlock = blocks.find((block) => lastAncestors?.includes(block));
+    if (!firstBlock || !lastBlock) {
+        return null;
+    }
+
+    const range = model.createRange(
+        model.createPositionBefore(firstBlock),
+        model.createPositionAfter(lastBlock)
+    );
+    return widenToWholeContainers(model, widenToCommonLimit(model, range));
+}
+
 /** The block that the handle drags for `block`: the whole collapsible for its title. */
 function getDraggedBlock(block: ModelElement) {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
+}
+
+/**
+ * Widens each end of `range` that is in a different limit element than the other end, such as
+ * another table cell, over its outermost limit element. The selection post-fixer does the same.
+ */
+function widenToCommonLimit(model: Model, range: ModelRange) {
+    const schema = model.schema;
+    const startLimit = schema.getLimitElement(range.start);
+    const endLimit = schema.getLimitElement(range.end);
+    if (startLimit === endLimit) {
+        return range;
+    }
+
+    return model.createRange(
+        startLimit.is("rootElement")
+            ? range.start
+            : model.createPositionBefore(getOutermostLimit(schema, startLimit)),
+        endLimit.is("rootElement")
+            ? range.end
+            : model.createPositionAfter(getOutermostLimit(schema, endLimit))
+    );
+}
+
+/** The outermost limit element below the root that contains `element`, such as its table. */
+function getOutermostLimit(schema: ModelSchema, element: ModelElement) {
+    let outermost = element;
+    let parent = element.parent;
+    while (parent?.is("element") && !parent.is("rootElement") && schema.isLimit(parent)) {
+        outermost = parent;
+        parent = parent.parent;
+    }
+
+    return outermost;
 }
 
 /**

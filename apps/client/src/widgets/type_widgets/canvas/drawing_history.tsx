@@ -38,6 +38,8 @@ export interface DrawingMount {
     attach(api: ExcalidrawImperativeAPI, root: HTMLElement | null, store: DrawingStore): void;
     /** Records the change of the drawing that Excalidraw ended, if any. */
     record(): void;
+    /** Whether this Excalidraw shows the drawing and no other one in the text note does. */
+    isOnlyDrawing(): boolean;
     /**
      * Shows `scene`, saved elsewhere, outside the undo history. Before `attach()`, it shows nothing
      * and returns `false`.
@@ -124,6 +126,7 @@ export default class DrawingHistory {
             record: () => {
                 if (drawing) this.record(drawing);
             },
+            isOnlyDrawing: () => !!drawing && this.drawings.size === 1,
             show: (scene) => {
                 if (!drawing) return false;
                 showScene(drawing, scene);
@@ -218,7 +221,7 @@ export default class DrawingHistory {
         const appState = api.getAppState();
         if (isInteracting(appState)) return;
 
-        const changes = commitElements(drawing);
+        const changes = takeChanges(drawing);
         const step: DrawingStep = { changes, files: getChangedFiles(api, changes) };
         if (appState.viewBackgroundColor !== drawing.background) {
             step.background = [ drawing.background, appState.viewBackgroundColor ];
@@ -357,20 +360,32 @@ export function isInteracting(appState: AppState) {
 }
 
 /** Takes the elements that changed since the last call as recorded, and returns their changes. */
-function commitElements(drawing: AttachedDrawing) {
+function takeChanges(drawing: AttachedDrawing) {
     const changes = new Map<string, ElementChange>();
+    for (const [ before, after ] of commitElements(drawing)) {
+        const keys = getChangedKeys(before, after);
+        if (keys.length) {
+            changes.set(after.id, { before, after, keys });
+        }
+    }
+    return changes;
+}
+
+/**
+ * Takes the elements that changed since the last call as recorded, and returns each with the
+ * element that it replaces, if any.
+ */
+function commitElements(drawing: AttachedDrawing) {
+    const committed: [ ExcalidrawElement | undefined, ExcalidrawElement ][] = [];
     for (const element of drawing.api.getSceneElementsIncludingDeleted()) {
         const before = drawing.committed.get(element.id);
         if (before?.version === element.version) continue;
 
         const after = structuredClone(element);
         drawing.committed.set(element.id, after);
-        const keys = getChangedKeys(before, after);
-        if (keys.length) {
-            changes.set(element.id, { before, after, keys });
-        }
+        committed.push([ before, after ]);
     }
-    return changes;
+    return committed;
 }
 
 /** Adds the changes of `next`, which follow those of `step`, to `step`. */

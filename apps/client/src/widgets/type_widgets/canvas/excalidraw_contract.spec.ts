@@ -184,6 +184,31 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(unpatched).toEqual([]);
     });
 
+    it("rules out a pen stroke by its bounds, and copies no element for the pen or eraser", () => {
+        const unpatched = [ productionDir, developmentDir ].flatMap((dir) => {
+            const source = readBundle(dir, [ ".js" ]).replace(/\s+/g, "");
+            // `hitElement()` tests the bounds of an unselected freedraw element before its outline.
+            const boundsCheck = source.match(new RegExp([
+                String.raw`hitElement\((\w+),(\w+),(\w+),\w+=(?:true|!0)\)\{(?:\/\/.*?)?`,
+                String.raw`if\(\3\.type==="freedraw"&&!this\.state\.selectedElementIds\[\3\.id\]&&`,
+                String.raw`!([\w$]+)\(\1,\2,\3,this\.scene\.getNonDeletedElementsMap\(\),`,
+                String.raw`this\.getElementHitThreshold\(\)\)\)`
+            ].join("")));
+            // The helper is `hitElementBoundingBox()`, which `shouldHideLinkPopup()` calls.
+            const helper = boundsCheck?.[4] ?? "";
+            const isBoundsHelper = !!helper && source.includes(`.zoom.value;if(${helper}(`);
+            const isCopySkipped = source.includes([
+                "originalElements:[\"freedraw\",\"eraser\"].includes(this.state.activeTool.type)",
+                dir === productionDir ? "?newMap:" : "?newMap():"
+            ].join(""));
+            return [
+                ...(isBoundsHelper ? [] : [ `${dir}: hitElement` ]),
+                ...(isCopySkipped ? [] : [ `${dir}: originalElements` ])
+            ];
+        });
+        expect(unpatched).toEqual([]);
+    });
+
     it("pans and zooms with the wheel through `translateCanvas()`, which the patch limits", () => {
         const source = readBundle(developmentDir, [ ".js" ]);
         const handleWheel = source.split("__publicField(this, \"handleWheel\"")[1]

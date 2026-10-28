@@ -1,0 +1,16 @@
+:where(:root) {
+    --block-drag-handle-target-background:
+        color-mix(in srgb, var(--main-text-color, var(--ck-color-text)) 6%, transparent);
+}
+
+.ck.ck-button.block-drag-handle {
+    cursor: grab;
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.ck-editor__editable .block-drag-handle-target {
+    box-shadow: inset 0 0 0 100vmax var(--block-drag-handle-target-background);
+}

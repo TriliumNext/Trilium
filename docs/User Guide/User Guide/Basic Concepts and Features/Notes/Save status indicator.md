@@ -8,4 +8,6 @@ It indicates the following states:
 *   <span class="tn-icon bx bx-check"></span> _Saved_, if all the changes were successfully saved to the server.
 *   <span class="tn-icon bx bx-error"></span> _Error_, if the changes could not be saved, for example due to a communication server with the server.
 
+In a text note, the changes are saved once typing pauses for a second, and at least every ten seconds while typing continues.
+
 After all changes have been saved, the indicator will hide automatically after a few seconds.

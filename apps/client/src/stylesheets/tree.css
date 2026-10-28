@@ -44,6 +44,16 @@ span.fancytree-node.fancytree-hide {
     color: var(--custom-color, inherit);
 }
 
+.tree-wrapper.dense {
+    .fancytree-node {
+        height: calc(1lh + 6px);
+    }
+
+    .tn-icon.tree-item-button {
+        font-size: 1em;
+    }
+}
+
 .fancytree-node:not(.fancytree-loading) .fancytree-expander {
     background: none;
     height: auto;

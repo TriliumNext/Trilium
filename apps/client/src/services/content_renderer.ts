@@ -134,6 +134,8 @@ export interface RenderOptions {
 
 /** Saves the changes that rendered content makes to attachments of the note that shows it. */
 export interface AttachmentEditor {
+    /** The ID of the component that sends the saves, which their entity changes include. */
+    readonly componentId?: string;
     /** Whether the rendered content can change `attachment`. */
     canEdit(attachment: FAttachment): boolean;
     /** The content of the attachment that is not saved yet, or `undefined`. */
@@ -147,6 +149,11 @@ export interface AttachmentEditor {
         getContent: () => string,
         onSaved?: (content: string) => void
     ): void;
+    /**
+     * Postpones the scheduled save by its interval. Content that changes continuously, such as a
+     * canvas drawing, calls it at each change, so that it saves once the changes pause.
+     */
+    postponeSave(): void;
     /** Reads the unsaved content of the attachment now, before its editor unmounts. */
     release(attachmentId: string): void;
 }
@@ -563,10 +570,14 @@ function getCodeMime(entity: FNote | FAttachment) {
 
 /** Saves the changes that rendered content makes to one note or attachment. */
 export interface ContentEditor {
+    /** The ID of the component that sends the saves, which their entity changes include. */
+    componentId?: string;
     /** Whether the rendered content can change the note or attachment. */
     canEdit(): boolean;
     getUnsavedContent(): string | undefined;
     scheduleSave(getContent: () => string, onSaved?: (content: string) => void): void;
+    /** Postpones the scheduled save by its interval, as `AttachmentEditor.postponeSave()` does. */
+    postponeSave?(): void;
     release(): void;
     /**
      * How the saving goes, for content that saves on its own rather than with the note that shows
@@ -585,9 +596,11 @@ export function bindAttachmentEditor(
     attachment: FAttachment
 ): ContentEditor {
     return {
+        componentId: editor.componentId,
         canEdit: () => editor.canEdit(attachment),
         getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
         scheduleSave: (getContent, onSaved) => editor.scheduleSave(attachment, getContent, onSaved),
+        postponeSave: () => editor.postponeSave(),
         release: () => editor.release(attachment.attachmentId)
     };
 }

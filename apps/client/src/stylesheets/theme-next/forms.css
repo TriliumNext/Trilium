@@ -52,6 +52,7 @@ input[type="datetime-local"],
 textarea.form-control,
 textarea,
 :root textarea.ck.ck-textarea,
+:root .ck.ck-math-input > .ck-mathlive-container,
 .tn-input-field {
     outline: 3px solid transparent;
     outline-offset: 6px;
@@ -76,6 +77,7 @@ input[type="datetime-local"]:hover,
 textarea.form-control:hover,
 textarea:hover,
 :root textarea.ck.ck-textarea:hover,
+:root .ck.ck-math-input > .ck-mathlive-container:hover,
 .tn-input-field:hover {
     background: var(--input-hover-background);
     color: var(--input-hover-color);
@@ -96,6 +98,7 @@ input[type="datetime-local"]:focus,
 textarea.form-control:focus,
 textarea:focus,
 :root textarea.ck.ck-textarea:focus,
+:root .ck.ck-math-input > .ck-mathlive-container:focus-within,
 .tn-input-field:focus,
 .tn-input-field:focus-within {
     box-shadow: unset;
@@ -132,7 +135,8 @@ input::selection,
 
 /* Input groups */
 
-.input-group {
+.input-group,
+:root .ck.ck-input-color {
     /* Named rather than written into the padding alone, so that a field drawing an indicator of its
        own can place it against the group's edge — which is this much further out than the field's. */
     --input-group-padding-inline-end: 8px;
@@ -146,11 +150,13 @@ input::selection,
     flex-wrap: nowrap;
 }
 
-.input-group:hover {
+.input-group:hover,
+:root .ck.ck-input-color:hover {
     background: var(--input-hover-background);
 }
 
-.input-group:focus-within {
+.input-group:focus-within,
+:root .ck.ck-input-color:focus-within {
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
     background: var(--input-focus-background);
@@ -163,7 +169,8 @@ input::selection,
 .input-group input:focus,
 .input-group .form-control,
 .input-group .form-control:hover,
-.input-group .form-control:focus {
+.input-group .form-control:focus,
+:root .ck.ck-input-color > input.ck.ck-input-text {
     /* Ignore the focus outline for the inputs that are children of an input group */
     outline: unset;
 
@@ -261,7 +268,10 @@ label.input-group.tn-number-unit-pair input {
 select,
 select.form-select,
 select.form-control,
-.select-button.dropdown-toggle.btn {
+.select-button.dropdown-toggle.btn,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown > button.ck.ck-dropdown__button,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button,
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button {
     --dropdown-arrow: var(--select-arrow-svg) right 0.75rem center/15px 20px no-repeat;
 
     outline: 3px solid transparent;
@@ -276,19 +286,32 @@ select.form-control,
 body[dir=rtl] select,
 body[dir=rtl] select.form-select,
 body[dir=rtl] select.form-control,
-body[dir=rtl] .select-button.dropdown-toggle.btn {
+body[dir=rtl] .select-button.dropdown-toggle.btn,
+:root body[dir=rtl] .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button,
+:root body[dir=rtl] .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button,
+:root body[dir=rtl] .ck.ck-link-embed-form__actions > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button {
     background-position: left 0.75rem center;
 }
 
 select:hover,
 select.form-select:hover,
 select.form-control:hover,
-.select-button.dropdown-toggle.btn:hover {
+.select-button.dropdown-toggle.btn:hover,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:hover,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button:hover,
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button:hover {
     background: var(--input-hover-background) var(--dropdown-arrow,);
     color: var(--input-hover-color);
 }
 
-button.select-button.dropdown-toggle.btn:active {
+button.select-button.dropdown-toggle.btn:active,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:active,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button:active,
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button:active {
     background-color: transparent;
     color: var(--select-focus-text-color);
 }
@@ -297,7 +320,13 @@ select:focus,
 select.form-select:focus,
 select.form-control:focus,
 .select-button.dropdown-toggle.btn:focus,
-.select-button.focus-outline:focus {
+.select-button.focus-outline:focus,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on),
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on),
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on) {
     box-shadow: unset;
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
@@ -310,7 +339,12 @@ select.form-control:focus,
 
 select:disabled,
 select.form-select:disabled,
-select.form-control:disabled {
+select.form-control:disabled,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button.ck-disabled,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button.ck-disabled,
+:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button.ck-disabled {
     background: var(--input-background-color) var(--dropdown-arrow);
     color: var(--input-text-color);
     opacity: 0.65;
@@ -527,7 +561,8 @@ optgroup {
     --icon-button-size: 28px;
 }
 
-div.switch-widget {
+div.switch-widget,
+:root .ck.ck-switchbutton {
     --switch-off-track-background: var(--cmd-button-background-color);
     --switch-on-track-background: var(--cmd-button-text-color);
 

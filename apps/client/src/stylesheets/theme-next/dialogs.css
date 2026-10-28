@@ -297,7 +297,7 @@ body.desktop .jump-to-note-dialog .input-group {
 }
 
 /* Item title & path container */
-.recent-changes-content ul li > span:nth-child(2) {
+.recent-changes-content ul li > span:not(:first-child) {
     display: inline-block;
 }
 
@@ -317,7 +317,7 @@ body.desktop .jump-to-note-dialog .input-group {
 }
 
 /* Item path */
-.recent-changes-content ul li > span:nth-child(2) small {
+.recent-changes-content ul li > span:not(:first-child) small {
     display: block;
     line-height: 1;
     opacity: 0.75;
@@ -346,7 +346,7 @@ body.desktop .jump-to-note-dialog .input-group {
 }
 
 /* The first item of the timeline */
-.recent-changes-content > div:first-child > *:first-child {
+.recent-changes-content > div:first-child > b:first-child {
     --connector-top: 50%;
     --connector-radius: calc(var(--timeline-connector-size) / 2);
 }
@@ -425,7 +425,7 @@ body.desktop .jump-to-note-dialog .input-group {
     padding: 0;
 }
 
-.help-dialog .help-cards li + li {
+.help-dialog .help-cards li:not(:first-child) {
     margin-top: 0.4em;
 }
 

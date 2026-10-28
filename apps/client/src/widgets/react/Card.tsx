@@ -184,6 +184,11 @@ export interface OptionCardSectionProps extends CardSectionProps {
      * whole width — a URL, a path, anything read as well as typed.
      */
     stacked?: boolean;
+    /**
+     * Keeps the control beside the label on a narrow card too, for a control known to fit there,
+     * such as a segmented choice between two short words. The opposite of {@link stacked}.
+     */
+    inline?: boolean;
     /** The controls the option is operated with, placed on the trailing edge. */
     children?: ComponentChildren;
     /**
@@ -205,7 +210,7 @@ export interface OptionCardSectionProps extends CardSectionProps {
  */
 export function OptionCardSection(props: OptionCardSectionProps) {
     const {
-        label, description, name, stacked, children, className, subSections,
+        label, description, name, stacked, inline, children, className, subSections,
         filterExtraKeywords, ...rest
     } = props;
     const matched = useFilterMatch(label, description, filterExtraKeywords);
@@ -229,7 +234,7 @@ export function OptionCardSection(props: OptionCardSectionProps) {
     return <CardSection elementRef={keepRow}
                         className={clsx("tn-card-option", className, {
                             "tn-card-option-stacked": stacked,
-                            "tn-card-option-wide": wide
+                            "tn-card-option-wide": wide && !inline
                         })}
                         // Kept for its details rather than itself, which is what a companion is.
                         filterRole={filtering ? (matched ? "match" : "companion") : undefined}

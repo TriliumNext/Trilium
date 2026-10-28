@@ -6,7 +6,7 @@
     column-width: var(--checkbox-list-column-width, 400px);
     list-style-type: none;
 
-    > li + li {
+    > li:not(:first-child) {
         margin-block-start: 6px;
     }
 }

@@ -30,7 +30,7 @@ overrides:
   "@codemirror/autocomplete": "6.20.4"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
-  "@lezer/common": "1.5.3"
+  "@lezer/common": "1.5.4"
   "@lezer/highlight": "1.2.5"
   "@lezer/lr": "1.4.11"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in
@@ -38,7 +38,7 @@ overrides:
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.65"
+  "@ai-sdk/provider-utils": "5.0.68"
   # The Codex provider runs the adapter against the user's own `codex` (CODEX_PATH), so the
   # 300-400 MB native Codex build the adapter depends on is never used.
   "@agentclientprotocol/codex-acp>@openai/codex": "-"
