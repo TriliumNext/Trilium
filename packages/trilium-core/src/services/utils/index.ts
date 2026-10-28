@@ -6,7 +6,6 @@ import { getPlatform } from "../platform";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
-import escape from "escape-html";
 import { basename, extname } from "./path";
 import { NoteMeta } from "../../meta";
 
@@ -285,7 +284,14 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
     return map;
 }
 
-export const escapeHtml = escape;
+const HTML_ESCAPES: Record<string, string> = {
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+};
+
+/** Escapes `&`, `<`, `>`, `"` and `'`, so the result is safe in element content and quoted attributes. */
+export function escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+}
 
 /**
  * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.

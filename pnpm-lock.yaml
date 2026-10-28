@@ -1486,9 +1486,6 @@ importers:
       ejs:
         specifier: 7.0.2
         version: 7.0.2
-      escape-html:
-        specifier: 1.0.3
-        version: 1.0.3
       html-to-text:
         specifier: 10.0.1
         version: 10.0.1
@@ -1538,9 +1535,6 @@ importers:
       '@types/ejs':
         specifier: 3.1.5
         version: 3.1.5
-      '@types/escape-html':
-        specifier: 1.0.4
-        version: 1.0.4
       '@types/html-to-text':
         specifier: 9.0.4
         version: 9.0.4
@@ -4835,9 +4829,6 @@ packages:
 
   '@types/electron-squirrel-startup@1.0.2':
     resolution: {integrity: sha512-AzxnvBzNh8K/0SmxMmZtpJf1/IWoGXLP+pQDuUaVkPyotI8ryvAtBSqgxR/qOSvxWHYWrxkeNsJ+Ca5xOuUxJQ==}
-
-  '@types/escape-html@1.0.4':
-    resolution: {integrity: sha512-qZ72SFTgUAZ5a7Tj6kf2SHLetiH5S6f8G5frB2SPQ3EyF02kxdyBFf4Tz4banE3xCgGnKgWLt//a6VuYHKYJTg==}
 
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
@@ -15840,8 +15831,6 @@ snapshots:
   '@types/ejs@3.1.5': {}
 
   '@types/electron-squirrel-startup@1.0.2': {}
-
-  '@types/escape-html@1.0.4': {}
 
   '@types/esrecurse@4.3.1': {}
 
