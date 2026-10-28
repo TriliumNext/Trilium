@@ -10,7 +10,7 @@ import {
 } from "./share_edit.js";
 
 // scrypt runs in pure JS under the standalone suite and is far slower there.
-if (typeof window !== "undefined") {
+if (typeof self !== "undefined") {
     vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
 }
 
