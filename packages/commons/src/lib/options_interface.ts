@@ -340,6 +340,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** Number of search results shown per page on the full-search results view. */
     searchResultsPageSize: number;
 
+    // Canvas settings
+    /** Whether a new pen stroke on a canvas takes half the stroke width that is picked. */
+    canvasThinStroke: boolean;
+
     // Share settings
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;

@@ -4947,5 +4947,9 @@
     "tomorrow": "Tomorrow",
     "next-week": "Next week",
     "clear": "Clear"
+  },
+  "canvas": {
+    "thin_stroke": "Thin pen stroke",
+    "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width."
   }
 }

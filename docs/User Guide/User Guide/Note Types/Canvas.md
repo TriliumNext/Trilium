@@ -7,6 +7,10 @@ Canvas notes use the Excalidraw library to allow handwritten notes with mouse, p
 
 *   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
 
+## Pen width
+
+The pen draws at half the _Stroke width_ picked in the properties panel, which suits handwriting. To draw at the full width instead, turn off _Thin pen stroke_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Other_. Strokes already drawn keep their width.
+
 ## Embedding notes
 
 Since v0.104.0, Canvas supports embedding notes in a similar fashion to the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality for <a class="reference-link" href="Text.md">Text</a> notes.

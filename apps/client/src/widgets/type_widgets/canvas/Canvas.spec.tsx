@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CanvasEditorProps } from "./Canvas";
 
 const excalidrawProps = vi.fn((_props: ExcalidrawProps) => undefined);
+const options = vi.hoisted(() => ({ canvasThinStroke: false }));
 vi.mock("@excalidraw/excalidraw", () => ({
     Excalidraw: (props: ExcalidrawProps) => {
         excalidrawProps(props);
@@ -18,7 +19,8 @@ vi.mock("@excalidraw/excalidraw", () => ({
 }));
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../react/hooks")>(),
-    useTriliumOption: () => [ "en" ]
+    useTriliumOption: () => [ "en" ],
+    useTriliumOptionBool: (name: keyof typeof options) => [ options[name] ]
 }));
 
 const { CanvasEditor } = await import("./Canvas");
@@ -32,6 +34,7 @@ describe("CanvasEditor", () => {
 
     beforeEach(() => {
         excalidrawProps.mockClear();
+        options.canvasThinStroke = false;
         offsets = { offsetLeft: 0, offsetTop: 0 };
         refresh = vi.fn(() => {
             offsets = { offsetLeft: 0, offsetTop: 0 };
@@ -121,5 +124,18 @@ describe("CanvasEditor", () => {
         const constrainView = vi.fn();
         await mount({ constrainView });
         expect(excalidrawProps.mock.lastCall?.[0].UIOptions?.constrainView).toBe(constrainView);
+    });
+
+    it("draws a pen stroke at half the picked width only while thin strokes are on", async () => {
+        const getFactor = () =>
+            excalidrawProps.mock.lastCall?.[0].UIOptions?.freedrawStrokeWidthFactor;
+
+        options.canvasThinStroke = true;
+        await mount();
+        expect(getFactor()).toBe(0.5);
+
+        options.canvasThinStroke = false;
+        await mount({ isReadOnly: true });
+        expect(getFactor()).toBe(1);
     });
 });
