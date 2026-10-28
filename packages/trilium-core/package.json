@@ -24,7 +24,6 @@
     "chardet": "2.2.0",
     "color": "5.0.3",
     "ejs": "7.0.2",
-    "html-to-text": "10.0.1",
     "i18next": "26.5.10",
     "js-yaml": "5.5.0",
     "lz-string": "1.5.0",
@@ -42,7 +41,6 @@
   },
   "devDependencies": {
     "@types/ejs": "3.1.5",
-    "@types/html-to-text": "9.0.4",
     "@types/mime-types": "3.0.1",
     "@types/sanitize-html": "2.16.2",
     "@types/xml2js": "0.4.14"
