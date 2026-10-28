@@ -4,6 +4,7 @@ import type { default as NoteContext, SaveState } from "../../../components/note
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
+import froca from "../../../services/froca";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import SpacedUpdate from "../../../services/spaced_update";
@@ -271,6 +272,11 @@ export function useAttachmentEditor(
 
     const prepare = useCallback(() => saves.collect(), [ saves ]);
     const commit = useCallback(async (attachments: SavedAttachments) => {
+        // A deleted note is gone from `froca`, and the server refuses its changes.
+        if (!(note.noteId in froca.notes)) {
+            saves.markSaved(attachments);
+            return;
+        }
         protected_session_holder.touchProtectedSessionIfNecessary(note);
         for (const attachment of attachments) {
             await server.post(
@@ -317,7 +323,8 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
     const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>({
         key: null,
         prepare: () => saves.collect(),
-        commit: (notes) => saves.save(notes, ({ note, content }) => {
+        commit: (notes) => saves.save(notes, async ({ note, content }) => {
+            if (!(note.noteId in froca.notes)) return;
             protected_session_holder.touchProtectedSessionIfNecessary(note);
             return server.put(`notes/${note.noteId}/data`, { content }, saves.componentId);
         })

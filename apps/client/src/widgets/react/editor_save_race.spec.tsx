@@ -23,6 +23,7 @@ import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import FBlob from "../../entities/fblob";
 import type FNote from "../../entities/fnote";
+import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
@@ -211,6 +212,25 @@ describe("note switch save race (#9614)", () => {
         });
         await vi.advanceTimersByTimeAsync(20);
         expect(editor.content).toBe("BBB");
+    });
+
+    it("drops a change to a note deleted before it saves, so the window can still close", async () => {
+        const harness = setupEditorHarness();
+        cleanupContainer = harness.container;
+        const { noteA, editor, show } = harness;
+        await show(noteA);
+        const put = vi.fn(async () => {
+            throw new Error(`Note '${noteA.noteId}' is not available for change!`);
+        });
+        server.put = put as typeof server.put;
+
+        editor.content = "AAA edited";
+        getSpacedUpdate().scheduleUpdate();
+        delete froca.notes[noteA.noteId];
+        await vi.advanceTimersByTimeAsync(1500);
+
+        expect(put).not.toHaveBeenCalled();
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
     });
 
     it("keeps unsaved changes when another editor saves the note, and reloads an editor without any", async () => {
