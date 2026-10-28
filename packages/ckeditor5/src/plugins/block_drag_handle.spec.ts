@@ -102,6 +102,23 @@ describe("BlockDragHandle", () => {
         expect(requestAnimationFrame).toHaveBeenCalledOnce();
     });
 
+    it("follows scrolls and resizes only while the editor has focus", async () => {
+        const { editor } = await createEditor("<paragraph>on[]e</paragraph>");
+        getEditable(editor).blur();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(false);
+        const requestAnimationFrame = vi.spyOn(window, "requestAnimationFrame");
+        onTestFinished(() => requestAnimationFrame.mockRestore());
+
+        document.dispatchEvent(new Event("scroll"));
+        window.dispatchEvent(new Event("resize"));
+        expect(requestAnimationFrame).not.toHaveBeenCalled();
+
+        editor.editing.view.focus();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(true);
+        document.dispatchEvent(new Event("scroll"));
+        expect(requestAnimationFrame).toHaveBeenCalledOnce();
+    });
+
     it("drags the selected block to where it is dropped", async () => {
         const { editor, button } = await createEditor(
             "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"

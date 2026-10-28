@@ -15,6 +15,7 @@ export default class BlockDragHandle extends Plugin {
     private isUpdateScheduled = false;
     private buttonSize?: { width: number; height: number };
     private readonly domEmitter = new (DomEmitterMixin())();
+    private readonly layoutEmitter = new (DomEmitterMixin())();
 
     static get pluginName() {
         return "BlockDragHandle" as const;
@@ -52,14 +53,10 @@ export default class BlockDragHandle extends Plugin {
 
         this.listenTo(editor.ui, "update", () => this.update());
         this.listenTo(editor, "change:isReadOnly", () => this.update(), { priority: "low" });
-        this.listenTo(editor.ui.focusTracker, "change:isFocused", () => this.update());
-
-        this.domEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
-        this.domEmitter.listenTo(document, "scroll", (_evt, domEvent: Event) => {
-            if (this.canMoveEditable(domEvent.target as Node)) {
-                this.scheduleUpdate();
-            }
-        }, { useCapture: true, usePassive: true });
+        this.listenTo(editor.ui.focusTracker, "change:isFocused", (_evt, _name, isFocused) => {
+            this.followLayoutChanges(isFocused);
+            this.update();
+        });
 
         this.domEmitter.listenTo(document, "dragover", (_evt, domEvent: DragEvent) => {
             this.forwardDrag(domEvent);
@@ -75,8 +72,27 @@ export default class BlockDragHandle extends Plugin {
 
     override destroy() {
         this.domEmitter.stopListening();
+        this.layoutEmitter.stopListening();
         this.buttonView?.destroy();
         super.destroy();
+    }
+
+    /**
+     * Moves the handle with its block on resizes and scrolls while the editor has focus. Without
+     * focus there is no handle to move.
+     */
+    private followLayoutChanges(isFocused: boolean) {
+        if (!isFocused) {
+            this.layoutEmitter.stopListening();
+            return;
+        }
+
+        this.layoutEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
+        this.layoutEmitter.listenTo(document, "scroll", (_evt, domEvent: Event) => {
+            if (this.canMoveEditable(domEvent.target as Node)) {
+                this.scheduleUpdate();
+            }
+        }, { useCapture: true, usePassive: true });
     }
 
     private scheduleUpdate() {
