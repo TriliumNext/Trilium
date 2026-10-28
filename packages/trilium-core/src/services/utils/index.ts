@@ -7,9 +7,11 @@ import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
 import { basename, extname } from "./path";
+import { stripTags } from "./strip_tags";
 import { NoteMeta } from "../../meta";
 
 export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+export { stripTags };
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
@@ -515,10 +517,6 @@ export function slugify(text: string) {
         .toLowerCase()
         .replace(/[^\p{Letter}\p{Number}]+/gu, "-") // replace non-letter/number with "-"
         .replace(/(^-|-$)+/g, ""); // trim dashes
-}
-
-export function stripTags(text: string) {
-    return text.replace(/<(?:.|\n)*?>/gm, "");
 }
 
 /**
