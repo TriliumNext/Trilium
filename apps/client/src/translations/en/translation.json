@@ -3029,6 +3029,12 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remove from launch bar",
     "show_as_folder": "Folder",
+    "open_mode": "Open mode",
+    "open_mode_current_tab": "Current tab",
+    "open_mode_new_tab": "New tab",
+    "open_mode_new_split": "New split",
+    "open_mode_new_window": "New window",
+    "open_mode_quick_edit": "Quick edit",
     "configure_launch_bar": "Configure launch bar...",
     "launch_bar_orientation": "Launch bar orientation",
     "will_reload_frontend": "(will reload app)"

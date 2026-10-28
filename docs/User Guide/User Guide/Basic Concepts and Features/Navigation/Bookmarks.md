@@ -19,19 +19,19 @@ _Folder_ assigns the `#bookmarkFolder` label to the note, so adding the label by
 
 ## Choosing where a bookmark opens
 
-A bookmark opens its note in the current tab. To open it somewhere else, add the `#bookmarkOpenMode` label to the note, with one of these values:
+A bookmark opens its note in the current tab. To open it somewhere else, right click its button in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> and pick a place under _Open mode_. The place in effect is checked.
 
-| Value | Where the note opens |
-| --- | --- |
-| `currentTab` | In the current tab, the same as without the label. |
-| `newTab` | In a new tab after the current one (see <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a>). |
-| `newSplit` | In a new split next to the current note (see <a class="reference-link" href="../UI%20Elements/Split%20View.md">Split View</a>). |
-| `newWindow` | In a new window. |
-| `quickEdit` | In a popup over the current note (see <a class="reference-link" href="Quick%20edit.md">Quick edit</a>). |
+| _Open mode_ | Label value | Where the note opens |
+| --- | --- | --- |
+| _Current tab_ | `currentTab` | In the current tab. This is the default. |
+| _New tab_ | `newTab` | In a new tab after the current one (see <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a>). |
+| _New split_ | `newSplit` | In a new split next to the current note (see <a class="reference-link" href="../UI%20Elements/Split%20View.md">Split View</a>). |
+| _New window_ | `newWindow` | In a new window. |
+| _Quick edit_ | `quickEdit` | In a popup over the current note (see <a class="reference-link" href="Quick%20edit.md">Quick edit</a>). |
 
-The label works the same way for a note dropped onto the launch bar and for the notes in a bookmark folder's menu. To set it for all the notes in a folder, make the label inheritable on the folder (see <a class="reference-link" href="../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md">Attribute Inheritance</a>). A note can still set a value of its own, such as `currentTab`.
+_Open mode_ sets the `#bookmarkOpenMode` label on the note, so adding the label by hand works as well. The label works the same way for a note dropped onto the launch bar and for the notes in a bookmark folder's menu. On a folder, _Open mode_ makes the label inheritable, so every note in the folder's menu and its submenus follows it, the folder's own note included (see <a class="reference-link" href="../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md">Attribute Inheritance</a>). A note in the folder can still have a value of its own, such as `currentTab`, added by hand.
 
-The label applies to a plain click only. A middle click or <kbd>Ctrl</kbd>+click still opens the note in a new tab, and <kbd>Shift</kbd>+click on a note in a folder's menu still opens it in a new window.
+The open mode applies to a plain click only. A middle click or <kbd>Ctrl</kbd>+click still opens the note in a new tab, and <kbd>Shift</kbd>+click on a note in a folder's menu still opens it in a new window.
 
 ## Mobile
 
