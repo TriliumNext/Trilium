@@ -51,7 +51,7 @@ To add a note to the launch bar, drag it from the <a class="reference-link" hre
 
 The button is a clone of the note in the _Visible Launchers_ section (see <a class="reference-link" href="../Notes/Cloning%20Notes.md">Cloning Notes</a>), so it always shows the note's current title and icon. Right click it and select _Remove from launch bar_ to remove the clone; the note itself stays where it is in the tree. If the launch bar is the only place the note is in, it's moved to the _Available Launchers_ instead, so that the note isn't deleted.
 
-To list the note's children instead of opening the note, right click the button and check _Folder_, the same way as for a [bookmark folder](../Navigation/Bookmarks.md). To open the note in a new tab, a split, a new window or a quick edit popup instead of the current tab, right click the button and pick a place under _Open mode_, as described in [Bookmarks](../Navigation/Bookmarks.md).
+To list the note's children instead of opening the note, right click the button and check _Show as a folder_, the same way as for a [bookmark folder](../Navigation/Bookmarks.md). To open the note in a new tab, a split, a new window or a quick edit popup instead of the current tab, right click the button and pick a place under _Open mode_, as described in [Bookmarks](../Navigation/Bookmarks.md).
 
 ## Customizing the launcher
 
