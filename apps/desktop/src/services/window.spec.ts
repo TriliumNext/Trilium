@@ -217,8 +217,9 @@ vi.mock("electron", () => ({
     globalShortcut: fakeGlobalShortcut
 }));
 
-vi.mock("electron-window-state", () => ({
-    default: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
+// Window state persistence has its own suite (window_state.spec.ts).
+vi.mock("./window_state", () => ({
+    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
 }));
 
 // setupWindowing() installs the WebContents security policy; that behaviour has

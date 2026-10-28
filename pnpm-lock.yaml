@@ -427,9 +427,6 @@ importers:
       electron-dl:
         specifier: 5.0.0
         version: 5.0.0
-      electron-window-state:
-        specifier: 5.0.3
-        version: 5.0.3
       sherpa-onnx-node:
         specifier: 1.13.8
         version: 1.13.8
@@ -7000,10 +6997,6 @@ packages:
 
   electron-to-chromium@1.5.426:
     resolution: {integrity: sha512-2Gcq6inCQs/AqfHP3f5ftCzk+pqeW2VlA1LgmPqEj2hfBO8HiZRspNYkD4HzFBe4u6lGqca4BspFr6Ix4Q400g==}
-
-  electron-window-state@5.0.3:
-    resolution: {integrity: sha512-1mNTwCfkolXl3kMf50yW3vE2lZj0y92P/HYWFBrb+v2S/pCka5mdwN3cagKm458A7NjndSwijynXgcLWRodsVg==}
-    engines: {node: '>=8.0.0'}
 
   electron-winstaller@5.4.4:
     resolution: {integrity: sha512-j9ETcBGJaXxAY/b6UBpR7LZfjdU4BAO+yvr4ifqHEdyuc3UNCy91PDGkWKY5UQ4coHNYfnwFggrqD6QPeFGAlg==}
@@ -18592,11 +18585,6 @@ snapshots:
 
   electron-to-chromium@1.5.426: {}
 
-  electron-window-state@5.0.3:
-    dependencies:
-      jsonfile: 4.0.0
-      mkdirp: 0.5.6
-
   electron-winstaller@5.4.4(supports-color@10.2.2):
     dependencies:
       '@electron/asar': 3.4.1
@@ -20432,6 +20420,7 @@ snapshots:
   jsonfile@4.0.0:
     optionalDependencies:
       graceful-fs: 4.2.11
+    optional: true
 
   jsonfile@6.2.1:
     dependencies:
