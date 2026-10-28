@@ -1403,14 +1403,6 @@ div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type
     margin-inline-end: 0.5em;
 }
 
-div.promoted-attribute-cell.promoted-attribute-label-color {
-    justify-content: space-between;
-}
-
-div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
-    width: auto;
-}
-
 /*
  * Find and replace bar
  */
