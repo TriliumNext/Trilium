@@ -2,7 +2,8 @@
     --hide-keyboard-button-size: 38px;
 }
 
-body.mobile :is(.hide-keyboard-button, .hide-keyboard-action) {
+body.mobile .hide-keyboard-button,
+body.mobile .hide-keyboard-action {
     display: none;
 
     .icon-action {
@@ -31,7 +32,8 @@ body.mobile .hide-keyboard-action.closes-menu .icon-action::after {
     content: none;
 }
 
-body.mobile .virtual-keyboard-opened :is(.hide-keyboard-button, .hide-keyboard-action),
+body.mobile .virtual-keyboard-opened .hide-keyboard-button,
+body.mobile .virtual-keyboard-opened .hide-keyboard-action,
 body.mobile.keyboard-panel-open .hide-keyboard-action {
     display: flex;
 }

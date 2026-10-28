@@ -1083,7 +1083,7 @@ pre button.copy-button.icon-action {
 }
 
 /* Child combinator: as a descendant one it also hit first-children nested inside a block, stacking a pixel per level. */
-html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
+html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     /* Create some space for the top-side shadow */
     margin-top: 1px !important;
 }
@@ -1158,7 +1158,12 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
 }
 
 /* `:where(:not(.excalidraw *))` leaves out the UI of an embedded canvas drawing. */
-.ck-content :is(h1, h2, h3, h4, h5, h6):where(:not(.excalidraw *)) {
+.ck-content h1:where(:not(.excalidraw *)),
+.ck-content h2:where(:not(.excalidraw *)),
+.ck-content h3:where(:not(.excalidraw *)),
+.ck-content h4:where(:not(.excalidraw *)),
+.ck-content h5:where(:not(.excalidraw *)),
+.ck-content h6:where(:not(.excalidraw *)) {
     font-weight: 300;
 }
 
