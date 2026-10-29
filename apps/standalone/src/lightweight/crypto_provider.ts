@@ -236,6 +236,11 @@ class AesCbcCipher implements Cipher {
             return cbc(this.key, this.iv).encrypt(data);
         }
 
+        // node:crypto's message, which `data_encryption.decrypt()` recognizes (zadam/trilium#510).
+        if (data.length === 0 || data.length % 16 !== 0) {
+            throw new Error("wrong final block length");
+        }
+
         // The padding is stripped by hand because `cbc()` throws on invalid padding, which most
         // wrong keys leave. `data_encryption.decrypt()` detects those through its digest instead.
         const decrypted = cbc(this.key, this.iv, { disablePadding: true }).decrypt(data);

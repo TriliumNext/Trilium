@@ -1,5 +1,6 @@
 import {
     createCipheriv as nodeCreateCipheriv,
+    createDecipheriv as nodeCreateDecipheriv,
     createHash as nodeCreateHash,
     createHmac as nodeCreateHmac,
     scryptSync as nodeScrypt
@@ -138,10 +139,17 @@ describe("BrowserCryptoProvider parity with the Node.js provider", () => {
             }
         });
 
-        it("throws for ciphertext that is not a whole number of blocks", () => {
-            const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
-            decipher.update(new Uint8Array(20));
-            expect(() => decipher.final()).toThrow();
+        it("throws node:crypto's error for ciphertext that is not a whole number of blocks", () => {
+            // `data_encryption.decrypt()` recognizes this message (zadam/trilium#510).
+            for (const length of [ 0, 20 ]) {
+                const nodeDecipher = nodeCreateDecipheriv("aes-128-cbc", key, iv);
+                nodeDecipher.update(new Uint8Array(length));
+                expect(() => nodeDecipher.final()).toThrow("wrong final block length");
+
+                const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
+                decipher.update(new Uint8Array(length));
+                expect(() => decipher.final(), `${length} bytes`).toThrow("wrong final block length");
+            }
         });
     });
 });
