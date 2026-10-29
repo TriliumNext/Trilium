@@ -21,6 +21,7 @@ import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 
 const SLIDE_WIDTH = 1280;
 const SLIDE_HEIGHT = 720;
+const MAX_FIT_ATTEMPTS = 8;
 
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
@@ -270,13 +271,37 @@ function fitSlides(container: HTMLElement) {
 /**
  * Zooms out the content of a slide that is larger than the slide, so that it fits. A hidden slide measures
  * as empty and keeps no zoom until it is fitted again.
+ *
+ * Some lengths (percentages, container query units) do not scale with `zoom`, so the content is measured
+ * again after each zoom. The overflow is close to linear in the zoom, so each next zoom is a secant step.
  */
 export function fitSlideContent(content: HTMLElement) {
     content.style.zoom = "";
-    const scale = Math.min(1, SLIDE_WIDTH / content.scrollWidth, SLIDE_HEIGHT / content.scrollHeight);
-    if (scale < 1) {
+    let previous = { scale: 1, overflow: measureOverflow(content) };
+    if (previous.overflow <= 1) return;
+
+    let scale = 1 / previous.overflow;
+    for (let attempt = 0; attempt < MAX_FIT_ATTEMPTS; attempt++) {
         content.style.zoom = String(scale);
+        const overflow = measureOverflow(content);
+        if (overflow <= 1) break;
+
+        const slope = (previous.overflow - overflow) / (previous.scale - scale);
+        const next = scale - (overflow - 1) / slope;
+        previous = { scale, overflow };
+        scale = slope > 0 && next > 0 ? next : scale / overflow;
     }
+}
+
+/** Returns how many times larger the content is than the slide, as measured on screen. */
+function measureOverflow(content: HTMLElement) {
+    const slides = content.closest<HTMLElement>(".slides");
+    const slidesHeight = slides?.getBoundingClientRect().height;
+    if (!slidesHeight || !content.clientWidth) return 0;
+
+    const heightRatio = content.getBoundingClientRect().height / slidesHeight;
+    const widthRatio = content.scrollWidth / content.clientWidth;
+    return Math.max(heightRatio, widthRatio);
 }
 
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {
