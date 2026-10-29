@@ -67,12 +67,19 @@ html.theme-light .link-embed-favicon-light {
 /* ---------- Video embed (YouTube iframe) ---------- */
 
 .link-embed-video {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
     max-width: 640px;
     margin: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
+
+    & > iframe,
+    & > .link-embed-video-facade {
+        grid-area: 1 / 1;
+    }
 }
 
 .link-embed-video iframe {
@@ -95,6 +102,10 @@ html.theme-light .link-embed-favicon-light {
     border: none;
     background: #000;
     cursor: pointer;
+}
+
+.link-embed-video-facade-loading {
+    cursor: progress;
 }
 
 .link-embed-video-thumbnail {

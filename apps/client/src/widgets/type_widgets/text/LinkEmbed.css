@@ -124,9 +124,16 @@ body.light-theme .link-embed-favicon-light {
 /* ---------- Video embed (YouTube iframe) ---------- */
 
 .link-embed-video {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
     width: 100%;
     overflow: hidden;
+
+    & > iframe,
+    & > .link-embed-video-facade {
+        grid-area: 1 / 1;
+    }
 }
 
 .link-embed-preview-wrapper > .link-embed-video {
@@ -160,6 +167,10 @@ body.light-theme .link-embed-favicon-light {
     background: #000;
     cursor: pointer;
     overflow: hidden;
+
+    &.link-embed-video-facade-loading {
+        cursor: progress;
+    }
 
     &:hover .link-embed-video-thumbnail-lowres {
         filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.65);

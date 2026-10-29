@@ -71,23 +71,55 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     document.body.innerHTML = "";
 });
 
 describe("enhanceLinkPreviews", () => {
     const VIDEO = { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", embedType: "youtube" };
 
-    it("loads the player only once the facade is clicked, with the page's web origin", () => {
+    it("loads the player under the facade once clicked, with the page's web origin", () => {
+        const fade = new EventTarget() as Animation;
+        const animate = vi.spyOn(Element.prototype, "animate").mockReturnValue(fade);
         const container = render(renderLinkEmbedHtml(VIDEO, OPTIONS));
+        const facade = container.querySelector<HTMLButtonElement>(".link-embed-video-facade");
         expect(container.querySelector("iframe")).toBeNull();
 
-        container.querySelector<HTMLButtonElement>(".link-embed-video-facade")?.click();
+        facade?.click();
 
         const iframe = container.querySelector("iframe");
-        expect(container.querySelector(".link-embed-video-facade")).toBeNull();
         expect(iframe?.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
             + `?rel=0&autoplay=1&origin=${encodeURIComponent(location.origin)}`);
         expect(iframe?.parentElement?.className).toBe("link-embed-video");
+        expect(iframe?.nextElementSibling).toBe(facade);
+        expect(facade?.classList.contains("link-embed-video-facade-loading")).toBe(true);
+        expect(animate).not.toHaveBeenCalled();
+
+        // Fades out once the player has loaded, and is removed once faded.
+        iframe?.dispatchEvent(new Event("load"));
+        expect(animate).toHaveBeenCalledExactlyOnceWith(
+            { opacity: [ 1, 0 ] }, expect.objectContaining({ duration: 300 })
+        );
+        expect(animate.mock.contexts[0]).toBe(facade);
+        expect(facade?.isConnected).toBe(true);
+        fade.dispatchEvent(new Event("finish"));
+        expect(facade?.isConnected).toBe(false);
+        expect(iframe?.isConnected).toBe(true);
+    });
+
+    it("removes the facade without fading it for a user who asks for reduced motion", () => {
+        vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
+        const animate = vi.spyOn(Element.prototype, "animate");
+        const container = render(renderLinkEmbedHtml(VIDEO, OPTIONS));
+        const facade = container.querySelector<HTMLButtonElement>(".link-embed-video-facade");
+
+        facade?.click();
+        expect(facade?.isConnected).toBe(true);
+        container.querySelector("iframe")?.dispatchEvent(new Event("load"));
+
+        expect(window.matchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
+        expect(animate).not.toHaveBeenCalled();
+        expect(facade?.isConnected).toBe(false);
     });
 
     it("leaves the origin out on the desktop app's custom protocol", () => {

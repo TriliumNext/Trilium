@@ -40,9 +40,9 @@ export function enhanceLinkPreviews(container: ParentNode) {
 }
 
 /**
- * Replaces a video facade with the YouTube player. The click was the play command, hence
- * `autoplay=1`. `origin` is valid only for a web origin: YouTube rejects the desktop app's
- * `trilium-app://` one.
+ * Loads the YouTube player under a video facade, which fades out once the player has loaded. The
+ * click was the play command, hence `autoplay=1`. `origin` is valid only for a web origin: YouTube
+ * rejects the desktop app's `trilium-app://` one.
  */
 function playVideo(facade: HTMLButtonElement) {
     const videoId = encodeURIComponent(String(facade.dataset.videoId));
@@ -57,7 +57,26 @@ function playVideo(facade: HTMLButtonElement) {
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
     iframe.allowFullscreen = true;
     iframe.setAttribute("frameborder", "0");
-    facade.replaceWith(iframe);
+    iframe.addEventListener("load", () => revealPlayer(facade), { once: true });
+    facade.classList.add("link-embed-video-facade-loading");
+    facade.before(iframe);
+}
+
+/** How long a video facade takes to fade out over the player, in milliseconds. */
+const FACADE_FADE_DURATION = 300;
+
+/** Fades out `facade` over the player loaded under it, then removes it. */
+function revealPlayer(facade: HTMLButtonElement) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        facade.remove();
+        return;
+    }
+
+    const fade = facade.animate(
+        { opacity: [ 1, 0 ] },
+        { duration: FACADE_FADE_DURATION, easing: "ease-out", fill: "forwards" }
+    );
+    fade.addEventListener("finish", () => facade.remove(), { once: true });
 }
 
 /**
