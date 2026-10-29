@@ -9,6 +9,7 @@ import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
 import { buildNote } from "../../test/easy-froca";
+import { highlightedTexts } from "../../test/highlights";
 import { setupHoldContextMenu } from "../widget_utils";
 import {
     type DelayedVisibilityPhase,
@@ -649,7 +650,7 @@ describe("useImperativeSearchHighlighlighting", () => {
     }
 
     function markedTexts(el: HTMLElement) {
-        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+        return highlightedTexts("search-match", el);
     }
 
     /**
@@ -717,17 +718,29 @@ describe("useImperativeSearchHighlighlighting", () => {
         await remount(null);
         liveHighlight?.(el);
 
-        expect(el.innerHTML).toBe("<p>a needle here</p>");
-        expect(el.querySelector("p")?.childNodes).toHaveLength(1);
+        expect(markedTexts(el)).toEqual([]);
         el.remove();
     });
 
-    it("does not touch an element that was never highlighted", async () => {
-        await remount(null);
+    it("stops drawing its highlights once unmounted", async () => {
+        await remount([ "needle" ]);
+        const el = content("<p>a needle here</p>");
+        liveHighlight?.(el);
+        expect(markedTexts(el)).toEqual([ "needle" ]);
+
+        act(() => render(null, container));
+
+        expect(markedTexts(el)).toEqual([]);
+        el.remove();
+    });
+
+    it("leaves the DOM of the highlighted element untouched", async () => {
+        await remount([ "needle" ]);
         const el = content("<p>a needle here</p>");
 
         liveHighlight?.(el);
 
+        expect(markedTexts(el)).toEqual([ "needle" ]);
         expect(el.innerHTML).toBe("<p>a needle here</p>");
         el.remove();
     });

@@ -566,13 +566,6 @@ body.mobile .board-view-container .board-add-column {
 .board-view-container .board-note > .title {
   display: block;
   padding-inline-start: calc(var(--card-title-inset) - var(--card-padding));
-
-  /* The spans `highlightTerms()` wraps a filter's matched tokens in. Matches the search result cards. */
-  .ck-find-result {
-    background: var(--note-list-view-search-result-highlight-background);
-    color: var(--note-list-view-search-result-highlight-color);
-    text-decoration: underline;
-  }
 }
 
 /* A card carrying `boardCardRedirectTo` opens the note it points at, so its title reads as a link.

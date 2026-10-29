@@ -1,32 +1,43 @@
 import { escapeRegExp } from "./utils.js";
 
-export interface HighlightOptions {
-    /** The class of the `<span>` that wraps each match. */
-    className: string;
+/**
+ * The highlights of `CSS.highlights` that the client draws, which `::highlight(name)` styles, and
+ * their priorities: a range in two highlights draws the one with the higher priority on top.
+ */
+const PRIORITIES = {
+    "search-match": 0,
+    "find-result-secondary": 0,
+    "find-result": 1,
+    "find-result-selected": 2
+};
+
+export type HighlightName = keyof typeof PRIORITIES;
+
+export interface MatchOptions {
     /** Selectors of the elements whose own text is not searched. */
     exclude?: string[];
-    /** The maximum number of matches to wrap. */
+    /** The maximum number of matches to return. */
     limit?: number;
 }
 
-/** Elements whose text is never displayed, so a match inside them is never wrapped. */
+/** Elements whose text is never displayed, so a match inside them is never returned. */
 const ALWAYS_EXCLUDED = [ "script", "style", "title", "head", "html" ];
 
 /**
- * Wraps each match of `regExp` in the text under `root`, and returns the wrappers in document
- * order. A match cannot span two text nodes. {@link removeHighlights} unwraps them again.
+ * The ranges of the matches of `regExp` in the text under `root`, in document order. A match
+ * cannot span two text nodes.
  */
-export function highlightRegExp(root: HTMLElement, regExp: RegExp, options: HighlightOptions) {
+export function findRegExpRanges(root: HTMLElement, regExp: RegExp, options: MatchOptions = {}) {
     const global = regExp.global ? regExp : new RegExp(regExp.source, `${regExp.flags}g`);
-    return highlightRanges(root, options, (text) => findRanges(global, text));
+    return findRanges(root, options, (text) => findOffsets(global, text));
 }
 
 /**
- * Wraps each occurrence of the literal `terms` in the text under `root`, ignoring case and
+ * The ranges of the occurrences of the literal `terms` in the text under `root`, ignoring case and
  * diacritics the way the server's `normalize()` does, so the unaccented token "ktory" still
  * matches "ktorý". Whitespace in a term matches any run of whitespace.
  */
-export function highlightTerms(root: HTMLElement, terms: string[], options: HighlightOptions) {
+export function findTermRanges(root: HTMLElement, terms: string[], options: MatchOptions = {}) {
     const patterns = terms
         .map((term) => fold(term).text.trim())
         .filter((term) => term.length > 0)
@@ -37,38 +48,86 @@ export function highlightTerms(root: HTMLElement, terms: string[], options: High
     }
 
     const regExp = new RegExp(patterns.join("|"), "g");
-    return highlightRanges(root, options, (text) => {
+    return findRanges(root, options, (text) => {
         const folded = fold(text);
-        return findRanges(regExp, folded.text)
-            .map(([ start, end ]): Range => [ folded.starts[start], folded.ends[end - 1] ]);
+        return findOffsets(regExp, folded.text)
+            .map(([ start, end ]): Offsets => [ folded.starts[start], folded.ends[end - 1] ]);
     });
 }
 
-/** Unwraps the elements that {@link highlightRegExp} and {@link highlightTerms} returned. */
-export function removeHighlights(elements: Iterable<HTMLElement>) {
-    for (const element of elements) {
-        const parent = element.parentNode;
-        if (!parent) continue;
+/** Draws `ranges` as part of the highlight `name`. Browsers without `CSS.highlights` draw nothing. */
+export function addHighlights(name: HighlightName, ranges: Iterable<Range>) {
+    const registry = getRegistry();
+    if (!registry) return;
 
-        element.replaceWith(...element.childNodes);
-        parent.normalize();
+    let highlight = registry.get(name);
+    if (!highlight) {
+        highlight = new Highlight();
+        highlight.priority = PRIORITIES[name];
+        registry.set(name, highlight);
+    }
+    for (const range of ranges) {
+        highlight.add(range);
     }
 }
 
-type Range = [ start: number, end: number ];
+/** Stops drawing `ranges` as part of the highlight `name`, leaving its other ranges drawn. */
+export function removeHighlights(name: HighlightName, ranges: Iterable<Range>) {
+    const highlight = getRegistry()?.get(name);
+    if (!highlight) return;
 
-function highlightRanges(root: HTMLElement, options: HighlightOptions, getRanges: (text: string) => Range[]) {
+    for (const range of ranges) {
+        highlight.delete(range);
+    }
+}
+
+/**
+ * Scrolls each scrolling ancestor of `range`, innermost first, so that the range sits in its
+ * middle. `Element.scrollIntoView()` would center the whole parent element instead, which can be
+ * a code block taller than the view.
+ */
+export function scrollRangeIntoView(range: Range) {
+    for (let element = range.startContainer.parentElement; element; element = element.parentElement) {
+        if (!isScrollable(element)) continue;
+
+        const target = range.getBoundingClientRect();
+        const box = element.getBoundingClientRect();
+        element.scrollBy({
+            left: target.left + target.width / 2 - (box.left + box.width / 2),
+            top: target.top + target.height / 2 - (box.top + box.height / 2)
+        });
+    }
+}
+
+type Offsets = [ start: number, end: number ];
+
+function getRegistry() {
+    return typeof Highlight === "undefined" ? undefined : globalThis.CSS?.highlights;
+}
+
+function isScrollable(element: Element) {
+    const { overflowX, overflowY } = getComputedStyle(element);
+    const scrolls = (overflow: string) => /auto|scroll|overlay/.test(overflow);
+    return (element.scrollHeight > element.clientHeight && scrolls(overflowY))
+        || (element.scrollWidth > element.clientWidth && scrolls(overflowX));
+}
+
+function findRanges(root: HTMLElement, options: MatchOptions, getOffsets: (text: string) => Offsets[]) {
     const excluded = [ ...ALWAYS_EXCLUDED, ...options.exclude ?? [] ].join(",");
     const limit = options.limit ?? Infinity;
-    const wrappers: HTMLElement[] = [];
+    const ranges: Range[] = [];
 
     for (const node of getTextNodes(root, excluded)) {
-        const ranges = getRanges(node.data).slice(0, limit - wrappers.length);
-        wrappers.push(...wrapRanges(node, ranges, options.className));
-        if (wrappers.length >= limit) break;
+        for (const [ start, end ] of getOffsets(node.data).slice(0, limit - ranges.length)) {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, end);
+            ranges.push(range);
+        }
+        if (ranges.length >= limit) break;
     }
 
-    return wrappers;
+    return ranges;
 }
 
 function getTextNodes(root: HTMLElement, excluded: string) {
@@ -85,35 +144,15 @@ function getTextNodes(root: HTMLElement, excluded: string) {
     return nodes;
 }
 
-/** The non-empty matches of the global `regExp` in `text`. */
-function findRanges(regExp: RegExp, text: string) {
-    const ranges: Range[] = [];
+/** The offsets of the non-empty matches of the global `regExp` in `text`. */
+function findOffsets(regExp: RegExp, text: string) {
+    const offsets: Offsets[] = [];
     for (const match of text.matchAll(regExp)) {
         if (match[0].length > 0) {
-            ranges.push([ match.index, match.index + match[0].length ]);
+            offsets.push([ match.index, match.index + match[0].length ]);
         }
     }
-    return ranges;
-}
-
-function wrapRanges(node: Text, ranges: Range[], className: string) {
-    const wrappers: HTMLElement[] = [];
-    let rest = node;
-    let offset = 0;
-
-    for (const [ start, end ] of ranges) {
-        const matched = rest.splitText(start - offset);
-        rest = matched.splitText(end - start);
-        offset = end;
-
-        const wrapper = document.createElement("span");
-        wrapper.className = className;
-        matched.replaceWith(wrapper);
-        wrapper.append(matched);
-        wrappers.push(wrapper);
-    }
-
-    return wrappers;
+    return offsets;
 }
 
 /**

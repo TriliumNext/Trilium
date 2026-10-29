@@ -18,7 +18,7 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { expandAncestorDetails } from "../../services/collapsible";
 import froca from "../../services/froca";
-import { highlightRegExp, highlightTerms, removeHighlights } from "../../services/highlight_matches";
+import { addHighlights, findRegExpRanges, findTermRanges, removeHighlights } from "../../services/highlight_matches";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
@@ -1776,28 +1776,31 @@ const MAX_REGEX_MATCHES = 500;
 export function useImperativeSearchHighlighlighting(
     highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
 ) {
-    const highlights = useRef<HTMLElement[]>([]);
+    const ranges = useRef<Range[]>([]);
     const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
         if (!highlightedTokens?.length) return null;
         return highlightedTokens.map((token) => (typeof token === "string" ? { token, type: "plain" as const } : token));
     }, [ highlightedTokens ]);
+
+    // `CSS.highlights` keeps the ranges, and the nodes they hold, after the element is removed.
+    useEffect(() => () => removeHighlights("search-match", ranges.current), []);
 
     return (el: HTMLElement | null | undefined) => {
         if (!el) return;
 
         // Clearing comes first and happens even with no tokens left: callers that keep the same
         // element and merely drop the tokens (e.g. emptying a filter box) rely on this to remove the
-        // previous highlights, which would otherwise stay in the DOM for good.
-        removeHighlights(highlights.current);
-        highlights.current = [];
+        // previous highlights, which would otherwise stay drawn for good.
+        removeHighlights("search-match", ranges.current);
+        ranges.current = [];
 
         if (!tokenInfos) return;
 
-        // `highlightTerms()` ignores diacritics, so an unaccented query like "ktory" (the server
+        // `findTermRanges()` ignores diacritics, so an unaccented query like "ktory" (the server
         // strips diacritics before indexing) still highlights "ktorý" (#10616). It matches
         // substrings, so CJK tokens without word boundaries ("笔记" in "我的笔记本") work too.
         const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
-        highlights.current.push(...highlightTerms(el, plainTokens, { className: "ck-find-result" }));
+        ranges.current.push(...findTermRanges(el, plainTokens));
 
         for (const info of tokenInfos) {
             if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
@@ -1810,16 +1813,16 @@ export function useImperativeSearchHighlighlighting(
                 continue;
             }
 
-            highlights.current.push(...highlightRegExp(el, regex, {
-                className: "ck-find-result",
-                limit: MAX_REGEX_MATCHES
-            }));
+            ranges.current.push(...findRegExpRanges(el, regex, { limit: MAX_REGEX_MATCHES }));
         }
 
-        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted in
-        // the DOM but hidden until the block is expanded.
-        for (const match of el.querySelectorAll<HTMLElement>(".ck-find-result")) {
-            expandAncestorDetails(match);
+        addHighlights("search-match", ranges.current);
+
+        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted but
+        // hidden until the block is expanded.
+        for (const range of ranges.current) {
+            const parent = range.startContainer.parentElement;
+            if (parent) expandAncestorDetails(parent);
         }
     };
 }

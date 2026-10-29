@@ -26,6 +26,7 @@ import LoadResults from "../../../services/load_results";
 import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
+import { highlightedTexts } from "../../../test/highlights";
 import { ParentComponent } from "../../react/react_utils";
 import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
@@ -3980,8 +3981,8 @@ describe("Board filtering", () => {
             tokens: [ { token: "First", type: "plain" } ]
         });
 
-        const marks = [ ...container.querySelectorAll(".board-note .title .ck-find-result") ];
-        expect(marks.map(el => el.textContent)).toEqual([ "First" ]);
+        const titles = [ ...container.querySelectorAll(".board-note .title") ];
+        expect(titles.flatMap((title) => highlightedTexts("search-match", title))).toEqual([ "First" ]);
     });
 
     /**

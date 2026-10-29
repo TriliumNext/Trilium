@@ -99,13 +99,6 @@
         font-size: 1.2em;
         color: var(--note-icon-custom-color, var(--note-list-view-large-icon-color));
     }
-
-    .ck-find-result {
-        background: var(--note-list-view-search-result-highlight-background);
-        color: var(--note-list-view-search-result-highlight-color);
-        font-weight: 600;
-        text-decoration: underline;
-    }
 }
 
 @keyframes note-preview-show {
@@ -124,13 +117,6 @@
 
     &.note-book-content-ready {
         display: block;
-    }
-
-    .ck-find-result {
-        outline: 2px solid var(--note-list-view-content-search-result-highlight-background);
-        border-radius: 4px;
-        background: var(--note-list-view-content-search-result-highlight-background);
-        color: var(--note-list-view-content-search-result-highlight-color);
     }
 }
 

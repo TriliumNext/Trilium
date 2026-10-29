@@ -1,6 +1,7 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { highlightedRanges, highlightedTexts } from "../test/highlights";
 import type FindWidget from "./find";
 import FindInHtml, { HtmlFindTarget, HtmlNoteFindTarget } from "./find_in_html.js";
 import MergedFind from "./merged_find";
@@ -42,11 +43,6 @@ function setup(html: string) {
 }
 
 describe("FindInHtml", () => {
-    beforeEach(() => {
-        // happy-dom doesn't implement scrollIntoView; jumpTo() calls it.
-        (Element.prototype as any).scrollIntoView = vi.fn();
-    });
-
     afterEach(() => {
         document.body.innerHTML = "";
     });
@@ -58,8 +54,8 @@ describe("FindInHtml", () => {
 
         expect(result.totalFound).toBe(2);
         expect(result.currentFound).toBe(1);
-        expect(container.querySelectorAll(".ck-find-result").length).toBe(2);
-        expect(container.querySelectorAll(".find-result-secondary").length).toBe(0);
+        expect(highlightedTexts("find-result", container)).toEqual([ "alpha", "alpha" ]);
+        expect(highlightedTexts("find-result-secondary", container)).toEqual([]);
     });
 
     it("highlightExtraTokens marks non-seed tokens with the muted secondary class only", async () => {
@@ -69,8 +65,8 @@ describe("FindInHtml", () => {
         await finder.highlightExtraTokens([ "beta", "gamma" ]);
 
         // Seed count is unaffected: Enter/F3 still cycles only the primary matches.
-        expect(container.querySelectorAll(".ck-find-result").length).toBe(1);
-        expect(container.querySelectorAll(".find-result-secondary").length).toBe(2);
+        expect(highlightedTexts("find-result", container)).toEqual([ "alpha" ]);
+        expect(highlightedTexts("find-result-secondary", container)).toEqual([ "beta", "gamma" ]);
     });
 
     it("findBoxClosed clears the primary and the secondary marks together", async () => {
@@ -78,10 +74,14 @@ describe("FindInHtml", () => {
 
         await finder.performFind("alpha", false, false);
         await finder.highlightExtraTokens([ "beta" ]);
-        expect(container.querySelectorAll(".ck-find-result, .find-result-secondary").length).toBe(2);
+        expect(highlightedTexts("find-result", container)).toEqual([ "alpha" ]);
+        expect(highlightedTexts("find-result-secondary", container)).toEqual([ "beta" ]);
 
         await finder.findBoxClosed(1, 0);
 
+        expect(highlightedTexts("find-result", container)).toEqual([]);
+        expect(highlightedTexts("find-result-selected", container)).toEqual([]);
+        expect(highlightedTexts("find-result-secondary", container)).toEqual([]);
         expect(container.innerHTML).toBe("<p>alpha beta gamma</p>");
     });
 
@@ -90,7 +90,7 @@ describe("FindInHtml", () => {
 
         await finder.highlightExtraTokens([ "beta" ]);
 
-        expect(container.querySelectorAll(".find-result-secondary").length).toBe(0);
+        expect(highlightedTexts("find-result-secondary", container)).toEqual([]);
     });
 
     it("highlightExtraTokens safely handles tokens containing regex metacharacters", async () => {
@@ -100,7 +100,7 @@ describe("FindInHtml", () => {
         await finder.highlightExtraTokens([ "a.c", "a+c" ]);
 
         // Literal matches only, no regex injection (both literal tokens exist once each).
-        const secondary = Array.from(container.querySelectorAll(".find-result-secondary")).map((el) => el.textContent);
+        const secondary = highlightedTexts("find-result-secondary", container);
         expect(secondary).toContain("a.c");
         expect(secondary).toContain("a+c");
     });
@@ -135,15 +135,16 @@ describe("FindInHtml", () => {
         expect(await handler.performFind("needle", false, false))
             .toEqual({ totalFound: 3, currentFound: 1 });
         await handler.findNext(1, 1, 2);
-        const selected = content.querySelector(".ck-find-result_selected");
-        expect(selected?.closest("details")?.open).toBe(true);
+        const [ selected ] = highlightedRanges("find-result-selected", content);
+        expect(selected?.startContainer.parentElement?.closest("details")?.open).toBe(true);
         await handler.highlightExtraTokens([ "before", "" ]);
-        expect(content.querySelector(".find-result-secondary")?.textContent).toBe("before");
+        expect(highlightedTexts("find-result-secondary", content)).toEqual([ "before" ]);
 
         cleanups.push(registerEmbedFindTarget(embed, new HtmlFindTarget(embed)));
         expect(parent.invalidateResults).toHaveBeenCalledOnce();
         await handler.findBoxClosed(3, 3);
-        expect(content.querySelector(".ck-find-result, .find-result-secondary")).toBeNull();
+        expect(highlightedTexts("find-result", content)).toEqual([]);
+        expect(highlightedTexts("find-result-secondary", content)).toEqual([]);
         cleanups.push(registerEmbedFindTarget(content, new HtmlFindTarget(content)));
         expect(parent.invalidateResults).toHaveBeenCalledOnce();
     });
@@ -155,23 +156,24 @@ describe("HtmlNoteFindTarget", () => {
         const target = new HtmlNoteFindTarget(content);
 
         expect(await target.find("needle", OPTIONS)).toBe(3);
-        expect(embed.querySelectorAll(".include-note-wrapper .ck-find-result")).toHaveLength(0);
+        const wrapper = embed.querySelector(".include-note-wrapper");
+        expect(wrapper && highlightedTexts("find-result", wrapper)).toEqual([]);
         expect(target.getEmbeds()).toEqual([ embed ]);
         expect(target.countMatchesBefore(embed)).toBe(1);
         expect(target.canReplace()).toBe(false);
         expect(await target.replaceAll()).toBe(3);
 
         target.highlight(2);
-        const selected = content.querySelector(".ck-find-result_selected");
-        expect(selected?.textContent).toBe("needle");
-        expect(selected?.closest("details")?.open).toBe(true);
+        const [ selected ] = highlightedRanges("find-result-selected", content);
+        expect(selected?.toString()).toBe("needle");
+        expect(selected?.startContainer.parentElement?.closest("details")?.open).toBe(true);
         expect(target.getFirstMatchBelow(-Infinity)).toBe(0);
         expect(target.getFirstMatchBelow(Infinity)).toBeNull();
         target.highlight(null);
-        expect(content.querySelector(".ck-find-result_selected")).toBeNull();
+        expect(highlightedTexts("find-result-selected", content)).toEqual([]);
 
         expect(target.close()).toBe(false);
-        expect(content.querySelector(".ck-find-result")).toBeNull();
+        expect(highlightedTexts("find-result", content)).toEqual([]);
         expect(await target.find("", OPTIONS)).toBe(0);
     });
 
@@ -183,7 +185,7 @@ describe("HtmlNoteFindTarget", () => {
         const find = new MergedFind(new HtmlNoteFindTarget(content));
 
         expect(await find.find("needle", OPTIONS)).toBe(4);
-        expect(box.querySelectorAll(".ck-find-result")).toHaveLength(1);
+        expect(highlightedTexts("find-result", box)).toEqual([ "needle" ]);
 
         find.highlight(1);
         expect(box.querySelector("details")?.open).toBe(true);

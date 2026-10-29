@@ -1,8 +1,7 @@
-// ck-find-result and ck-find-result_selected are the styles ck-editor
-// uses for highlighting matches, use the same one on CodeMirror
-// for consistency
 import { revealElement } from "../services/collapsible.js";
-import { highlightRegExp, highlightTerms, removeHighlights } from "../services/highlight_matches.js";
+import {
+    addHighlights, findRegExpRanges, findTermRanges, removeHighlights, scrollRangeIntoView
+} from "../services/highlight_matches.js";
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
 import MergedFind, {
@@ -10,12 +9,6 @@ import MergedFind, {
 } from "./merged_find";
 import { watchEmbedFindTargets } from "./type_widgets/text/content_embed_tools";
 
-const FIND_RESULT_SELECTED_CSS_CLASSNAME = "ck-find-result_selected";
-const FIND_RESULT_CSS_CLASSNAME = "ck-find-result";
-// Muted highlight for the non-seed tokens of a multi-token search (jump-to-match). Styled in the
-// FindWidget's style block. Deliberately distinct from FIND_RESULT_CSS_CLASSNAME so these marks are
-// not counted as primary matches and Enter/F3 keeps cycling only the seed.
-const FIND_RESULT_SECONDARY_CSS_CLASSNAME = "find-result-secondary";
 // The content of an embed searches itself, and its title row is not searched.
 const EMBED_EXCLUSION = [ ".include-note-wrapper", ".include-note-wrapper *" ];
 
@@ -86,13 +79,16 @@ export default class FindInHtml {
 
 }
 
-/** Searches rendered content, which it cannot change, by marking up its matches. */
+/** Searches rendered content, which it cannot change, by highlighting the ranges of its matches. */
 export class HtmlFindTarget implements FindTarget {
 
-    protected matches: HTMLElement[] = [];
-    /** The elements that wrap the matches and the extra tokens, which `unmark()` removes. */
-    private markElements: HTMLElement[] = [];
-    private current: HTMLElement | null = null;
+    protected matches: Range[] = [];
+    /**
+     * The ranges of the extra tokens. They are not matches, so Enter and F3 keep cycling only
+     * {@link matches}.
+     */
+    private extraRanges: Range[] = [];
+    private current: Range | null = null;
 
     /** Searches `root`, apart from the elements that the `exclude` selectors match. */
     constructor(readonly root: HTMLElement, private readonly exclude: string[] = []) {}
@@ -108,26 +104,28 @@ export class HtmlFindTarget implements FindTarget {
             wholeWordChar + utils.escapeRegExp(term) + wholeWordChar,
             matchCase ? "g" : "gi"
         );
-        this.matches = highlightRegExp(this.root, regExp, {
-            className: FIND_RESULT_CSS_CLASSNAME,
-            exclude: this.exclude
-        });
-        this.markElements.push(...this.matches);
+        this.matches = findRegExpRanges(this.root, regExp, { exclude: this.exclude });
+        addHighlights("find-result", this.matches);
         return this.matches.length;
     }
 
     highlight(index: number | null) {
-        this.current?.classList.remove(FIND_RESULT_SELECTED_CSS_CLASSNAME);
+        if (this.current) {
+            removeHighlights("find-result-selected", [ this.current ]);
+        }
         this.current = index === null ? null : this.matches[index] ?? null;
         if (!this.current) {
             return;
         }
 
         // Reveal matches inside collapsed <details> and inactive tabs, like native find-in-page.
-        // Must precede scrollIntoView so the target is laid out first (#10616).
-        revealElement(this.current, this.root);
-        this.current.scrollIntoView({ block: "center", inline: "center" });
-        this.current.classList.add(FIND_RESULT_SELECTED_CSS_CLASSNAME);
+        // Must precede scrolling so the target is laid out first (#10616).
+        const parent = this.current.startContainer.parentElement;
+        if (parent) {
+            revealElement(parent, this.root);
+        }
+        scrollRangeIntoView(this.current);
+        addHighlights("find-result-selected", [ this.current ]);
     }
 
     getFirstMatchBelow(top: number) {
@@ -157,20 +155,23 @@ export class HtmlFindTarget implements FindTarget {
      * cycling through. The tokens match literally, so a regex metacharacter cannot inject.
      */
     async highlightExtraTokens(tokens: string[]) {
-        this.markElements.push(...highlightTerms(this.root, tokens, {
-            className: FIND_RESULT_SECONDARY_CSS_CLASSNAME,
-            exclude: this.exclude
-        }));
+        const ranges = findTermRanges(this.root, tokens, { exclude: this.exclude });
+        this.extraRanges.push(...ranges);
+        addHighlights("find-result-secondary", ranges);
     }
 
     /**
-     * Unwraps the elements of this target only, not those of the other targets in its root, such
-     * as the embeds in a note.
+     * Removes the ranges of this target only, not those of the other targets in its root, such as
+     * the embeds in a note.
      */
     private unmark() {
-        removeHighlights(this.markElements);
-        this.markElements = [];
+        removeHighlights("find-result", this.matches);
+        removeHighlights("find-result-secondary", this.extraRanges);
+        if (this.current) {
+            removeHighlights("find-result-selected", [ this.current ]);
+        }
         this.matches = [];
+        this.extraRanges = [];
         this.current = null;
     }
 
@@ -190,7 +191,7 @@ export class HtmlNoteFindTarget extends HtmlFindTarget implements HostFindTarget
 
     countMatchesBefore(embed: HTMLElement) {
         return this.matches.filter(
-            (match) => embed.compareDocumentPosition(match) & Node.DOCUMENT_POSITION_PRECEDING
+            (match) => embed.compareDocumentPosition(match.startContainer) & Node.DOCUMENT_POSITION_PRECEDING
         ).length;
     }
 
