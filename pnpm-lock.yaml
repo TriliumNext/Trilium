@@ -435,8 +435,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3
       sherpa-onnx-node:
-        specifier: 1.13.8
-        version: 1.13.8
+        specifier: 2.0.0
+        version: 2.0.0
     devDependencies:
       '@electron-forge/cli':
         specifier: 8.0.1
@@ -10535,36 +10535,41 @@ packages:
     resolution: {integrity: sha512-JdxDPD0DBTyu08pq0kPC0xSNet/qsU07qT6IsX1AS8oO2ICNRY4ldNa8OAI6PuwAH8tG3lxEhbqmyp4Dw4036g==}
     engines: {node: '>= 0.4'}
 
-  sherpa-onnx-darwin-arm64@1.13.8:
-    resolution: {integrity: sha512-FPNgJMgnWVl/KhRTIhG3KL3A4Om63Rn4YKXc9/uHY7SzLcvqLJLc/h7UBWJwduXvv7K18t5NpxHR6XgXn4sjWw==}
+  sherpa-onnx-darwin-arm64@2.0.0:
+    resolution: {integrity: sha512-4+r/37ZBRaqyJGUf1W4HVcC6roRTFU27b/rZEMBSr6MQRJWX2D3s04fosOhbAi3zYFvEVbuY9xEWmvMUPquPAg==}
     cpu: [arm64]
     os: [darwin]
 
-  sherpa-onnx-darwin-x64@1.13.8:
-    resolution: {integrity: sha512-7BLRpjM6w4f9W46/nmkmq8lEKUayhebvcpslCVQ+6QN2uReYlZEMDZlSpXMjme+hUFrPfRz8P3UNq8ep/4d19g==}
+  sherpa-onnx-darwin-x64@2.0.0:
+    resolution: {integrity: sha512-Vya3QygqyGRds0VSJGobKBqf4gd8kO2QWGMIdt/tqJxSCjeEMWzpXWk999lmKOpRUow3h+DCU9lTH1tq8P3oRw==}
     cpu: [x64]
     os: [darwin]
 
-  sherpa-onnx-linux-arm64@1.13.8:
-    resolution: {integrity: sha512-Tlg7a70b/Wge3OF8IgTHF9jhSVCsLyKQKhwc4BsJ5A+dL/SrFtGBjzuHp4XeLhiiOT7afCxX5PdSn/D4c8Lnuw==}
+  sherpa-onnx-linux-arm64@2.0.0:
+    resolution: {integrity: sha512-Uv1nJufU6fFQ/81La4Jlh5qRt70L5pr+oQaliQ8DlOWHqWmH45EcOXhSsq5061iMt1TjGyRsqbvlhWtHUHKw9g==}
     cpu: [arm64]
     os: [linux]
 
-  sherpa-onnx-linux-x64@1.13.8:
-    resolution: {integrity: sha512-6plnhjagsSeTntCgnlag86hWbs/uZE9Crms1LgOb68/1nKsIQjMd+WG519m+aPwT6TrsBOiEMzrx41t8sL5L5g==}
+  sherpa-onnx-linux-x64@2.0.0:
+    resolution: {integrity: sha512-Pp2McNdxRIIref6+nXKgkh3yPk02zl5/9xsCIzJopypmdtCGoMBII2MMsnf9ibwnFTVTlz+lhCn6YlwV2p5RRA==}
     cpu: [x64]
     os: [linux]
 
-  sherpa-onnx-node@1.13.8:
-    resolution: {integrity: sha512-MsDMBdhLFTZ1GwvcGSSQhnS7g/EA8OMH6IYysCVUOM7j8Icty9KRc0E6YT1A5fWBsZwRfKOeh88QC95aRvS8ag==}
+  sherpa-onnx-node@2.0.0:
+    resolution: {integrity: sha512-c/FGNV77jNWENxReoMrL3LCPGQFP4nV/B1uWqqx5pC2gUEkfu3Wxa9B9NLjt9qrC0xe/57JgamkZyvAeI2Wifw==}
 
-  sherpa-onnx-win-ia32@1.13.8:
-    resolution: {integrity: sha512-H0Ojln9hfvM+pxWqW0cnjB/XK8/JPq4/k0IWu2JpY5Z458M3zv+XC3Hu+wmot3AoH/K1Bgt23n/tTKtPV9x8qg==}
+  sherpa-onnx-win-arm64@2.0.0:
+    resolution: {integrity: sha512-0KTVDA1aq13jqcIfxOmLcNpzZcIOiwbH9MoKc6Bx1XEFTNj38nVdDcOA6WFoy3wqUNgMfwwv6EYPGhl1SW0Iuw==}
+    cpu: [arm64]
+    os: [win32]
+
+  sherpa-onnx-win-ia32@2.0.0:
+    resolution: {integrity: sha512-O+RXB9rOHJYdpatVgG8UJnV5UrGZShVmYISivMPVunnzgVZ/2bSj95sUWlBp6WRf7iYoA2EkrP0nljl6j016gQ==}
     cpu: [ia32]
     os: [win32]
 
-  sherpa-onnx-win-x64@1.13.8:
-    resolution: {integrity: sha512-oZF1c9VPOKtMwn83Bboc5XSWL+76BRoyB3eUuVnCknBKxwSULZU2Foia9VHWzU+n4I12rPsP6z6H9Rp1hD9o8g==}
+  sherpa-onnx-win-x64@2.0.0:
+    resolution: {integrity: sha512-AAVPXTcuIoYKmkim2yclCtgIzqqMd2yGjs1XSB2nG2pmnC/T+tKV5nqXMZlwbdZgsN+dWVQaorSpQ69U5s5xKw==}
     cpu: [x64]
     os: [win32]
 
@@ -22867,31 +22872,35 @@ snapshots:
 
   shell-quote@1.11.0: {}
 
-  sherpa-onnx-darwin-arm64@1.13.8:
+  sherpa-onnx-darwin-arm64@2.0.0:
     optional: true
 
-  sherpa-onnx-darwin-x64@1.13.8:
+  sherpa-onnx-darwin-x64@2.0.0:
     optional: true
 
-  sherpa-onnx-linux-arm64@1.13.8:
+  sherpa-onnx-linux-arm64@2.0.0:
     optional: true
 
-  sherpa-onnx-linux-x64@1.13.8:
+  sherpa-onnx-linux-x64@2.0.0:
     optional: true
 
-  sherpa-onnx-node@1.13.8:
+  sherpa-onnx-node@2.0.0:
     optionalDependencies:
-      sherpa-onnx-darwin-arm64: 1.13.8
-      sherpa-onnx-darwin-x64: 1.13.8
-      sherpa-onnx-linux-arm64: 1.13.8
-      sherpa-onnx-linux-x64: 1.13.8
-      sherpa-onnx-win-ia32: 1.13.8
-      sherpa-onnx-win-x64: 1.13.8
+      sherpa-onnx-darwin-arm64: 2.0.0
+      sherpa-onnx-darwin-x64: 2.0.0
+      sherpa-onnx-linux-arm64: 2.0.0
+      sherpa-onnx-linux-x64: 2.0.0
+      sherpa-onnx-win-arm64: 2.0.0
+      sherpa-onnx-win-ia32: 2.0.0
+      sherpa-onnx-win-x64: 2.0.0
 
-  sherpa-onnx-win-ia32@1.13.8:
+  sherpa-onnx-win-arm64@2.0.0:
     optional: true
 
-  sherpa-onnx-win-x64@1.13.8:
+  sherpa-onnx-win-ia32@2.0.0:
+    optional: true
+
+  sherpa-onnx-win-x64@2.0.0:
     optional: true
 
   side-channel-list@1.0.1:

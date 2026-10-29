@@ -37,7 +37,7 @@
     "electron-dl": "5.0.0",
     "electron-squirrel-startup": "1.0.1",
     "electron-window-state": "5.0.3",
-    "sherpa-onnx-node": "1.13.8"
+    "sherpa-onnx-node": "2.0.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "8.0.1",
