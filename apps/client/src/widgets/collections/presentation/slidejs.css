@@ -18,8 +18,12 @@
     display: flow-root;
 }
 
+.reveal figure {
+    margin-inline: auto;
+}
+
 .reveal figure.image {
-    margin: 0 auto;
+    margin-block: 0;
 }
 
 .reveal figure img {
