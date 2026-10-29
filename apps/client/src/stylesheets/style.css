@@ -1537,6 +1537,14 @@ pre.code-embed-editor.read-only .cm-activeLine {
         padding-block: var(--padding-size, 1em);
         padding-inline-start: calc(var(--padding-size, 1em) - 6px);
     }
+
+    .cm-editor[data-theme-name="vs-code-light"] {
+        background-color: #f6f6f6;
+    }
+
+    .cm-editor[data-theme-name="vs-code-dark"] {
+        background-color: #1c1b1b;
+    }
 }
 
 /* CodeMirror scrolls in place of the box, so that the language label stays put. */

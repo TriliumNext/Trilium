@@ -268,14 +268,19 @@ describe("CodeMirror", () => {
     });
 
     describe("configuration changes", () => {
-        it("swaps the theme", async () => {
+        it("swaps the theme, and names the one it shows", async () => {
             editor = build();
             const theme = getThemeById("abyss");
-            expect(theme).not.toBeNull();
-            if (!theme) return;
+            const otherTheme = getThemeById("github-light");
+            expect([ theme, otherTheme ]).not.toContain(null);
+            if (!theme || !otherTheme) return;
 
             await editor.setTheme(theme);
             expect(editor.getText()).toBe("");
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("abyss");
+
+            await editor.setTheme(otherTheme);
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("github-light");
         });
 
         it("applies a theme it has loaded before without waiting", async () => {

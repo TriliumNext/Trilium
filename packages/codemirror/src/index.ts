@@ -383,7 +383,10 @@ export default class CodeMirror extends EditorView {
         }
     }
 
-    /** Applies `theme`, at once if an editor has loaded it before. */
+    /**
+     * Applies `theme`, at once if an editor has loaded it before, and names it in the
+     * `data-theme-name` attribute of `dom`.
+     */
     async setTheme(theme: ThemeDefinition) {
         let extension = loadedThemes.get(theme);
         if (!extension) {
@@ -391,7 +394,9 @@ export default class CodeMirror extends EditorView {
             loadedThemes.set(theme, extension);
         }
         this.dispatch({
-            effects: [ this.themeCompartment.reconfigure([ extension ]) ]
+            effects: [ this.themeCompartment.reconfigure([
+                extension, EditorView.editorAttributes.of({ "data-theme-name": theme.id })
+            ]) ]
         });
     }
 
