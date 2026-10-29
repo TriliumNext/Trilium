@@ -6,7 +6,6 @@ import {
     UserTheme
 } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
-import Mark from "mark.js";
 import { CSSProperties, Ref, RefObject, VNode } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useCallback, useContext, useDebugValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -19,6 +18,7 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { expandAncestorDetails } from "../../services/collapsible";
 import froca from "../../services/froca";
+import { addHighlights, findRegExpRanges, findTermRanges, removeHighlights } from "../../services/highlight_matches";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
@@ -1770,50 +1770,37 @@ export function useSyncedRef<T>(
 
 /** Longer regex tokens are rejected outright rather than compiled, to avoid pathological patterns. */
 const MAX_REGEX_TOKEN_LENGTH = 1000;
-/** Caps the number of matches a single regex token can wrap, mirroring the cap mark.js's own term API implicitly applies via node-at-a-time processing. */
+/** Caps the number of matches a single regex token can wrap. */
 const MAX_REGEX_MATCHES = 500;
 
 export function useImperativeSearchHighlighlighting(
     highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
 ) {
-    const mark = useRef<Mark | undefined>(undefined);
+    const ranges = useRef<Range[]>([]);
     const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
         if (!highlightedTokens?.length) return null;
         return highlightedTokens.map((token) => (typeof token === "string" ? { token, type: "plain" as const } : token));
     }, [ highlightedTokens ]);
 
+    // `CSS.highlights` keeps the ranges, and the nodes they hold, after the element is removed.
+    useEffect(() => () => removeHighlights("search-match", ranges.current), []);
+
     return (el: HTMLElement | null | undefined) => {
         if (!el) return;
 
-        // Nothing has ever been highlighted here, so there is also nothing to clear.
-        if (!mark.current && !tokenInfos) return;
-
-        if (!mark.current) {
-            mark.current = new Mark(el);
-        }
-
         // Clearing comes first and happens even with no tokens left: callers that keep the same
         // element and merely drop the tokens (e.g. emptying a filter box) rely on this to remove the
-        // previous highlights, which would otherwise stay in the DOM for good.
-        mark.current.unmark();
+        // previous highlights, which would otherwise stay drawn for good.
+        removeHighlights("search-match", ranges.current);
+        ranges.current = [];
 
         if (!tokenInfos) return;
 
+        // `findTermRanges()` ignores diacritics, so an unaccented query like "ktory" (the server
+        // strips diacritics before indexing) still highlights "ktorý" (#10616). It matches
+        // substrings, so CJK tokens without word boundaries ("笔记" in "我的笔记本") work too.
         const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
-        if (plainTokens.length) {
-            // Term API (not markRegExp): its diacritics map lets an unaccented query like "ktory"
-            // (the server strips diacritics before indexing) still highlight "ktorý" (#10616).
-            // separateWordSearch: false keeps a multi-word token as one literal phrase; the default
-            // "partially" accuracy keeps plain substring matching, so CJK tokens without word
-            // boundaries (e.g. "笔记" inside "我的笔记本") keep working.
-            mark.current.mark(plainTokens, {
-                separateWordSearch: false,
-                diacritics: true,
-                caseSensitive: false,
-                element: "span",
-                className: "ck-find-result"
-            });
-        }
+        ranges.current.push(...findTermRanges(el, plainTokens));
 
         for (const info of tokenInfos) {
             if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
@@ -1826,19 +1813,16 @@ export function useImperativeSearchHighlighlighting(
                 continue;
             }
 
-            mark.current.markRegExp(regex, {
-                element: "span",
-                className: "ck-find-result",
-                // markRegExp's filter is called as (node, match, totalCounter so far); returning
-                // false once the cap is hit stops further matches from being wrapped.
-                filter: (_node, _match, totalCounter) => totalCounter < MAX_REGEX_MATCHES
-            });
+            ranges.current.push(...findRegExpRanges(el, regex, { limit: MAX_REGEX_MATCHES }));
         }
 
-        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted in
-        // the DOM but hidden until the block is expanded.
-        for (const match of el.querySelectorAll<HTMLElement>(".ck-find-result")) {
-            expandAncestorDetails(match);
+        addHighlights("search-match", ranges.current);
+
+        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted but
+        // hidden until the block is expanded.
+        for (const range of ranges.current) {
+            const parent = range.startContainer.parentElement;
+            if (parent) expandAncestorDetails(parent);
         }
     };
 }

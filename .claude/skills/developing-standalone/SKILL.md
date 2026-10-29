@@ -46,7 +46,7 @@ apps/standalone/
 |---|---|---|
 | SQL | `sql_provider.ts` | wraps sqlite-wasm statements to core's `Statement` interface; SAHPool VFS install; nested transactions become SAVEPOINTs |
 | Execution context (CLS) | `cls_provider.ts` | per-request context stack with a grace period for unawaited promises |
-| Crypto | `crypto_provider.ts` | WebCrypto + `scrypt-js` (pure JS, slow under coverage) |
+| Crypto | `crypto_provider.ts` | `@noble/hashes` + `@noble/ciphers` (pure JS and synchronous; scrypt is slow under coverage) |
 | Zip / export | `zip_provider.ts`, `zip_export_provider_factory.ts` | bytes only — no filesystem `path` source |
 | Request (outbound HTTP, sync) | `request_provider.ts` (`fetch`), `bridged_request_provider.ts` (Capacitor native, via `HTTP_REQUEST` to the page) | |
 | Messaging | `messaging_provider.ts` | `postMessage` in place of WS |

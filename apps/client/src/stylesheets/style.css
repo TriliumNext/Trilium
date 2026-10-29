@@ -386,6 +386,12 @@ div.ui-tooltip {
     display: block;
 }
 
+/* The search terms `useImperativeSearchHighlighlighting()` finds in titles, cards and previews. */
+::highlight(search-match) {
+    color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+    text-decoration: underline;
+}
+
 /* Allow to use <kbd> elements inside the title to define shortcut hints. */
 .ui-menu kbd,
 button kbd {

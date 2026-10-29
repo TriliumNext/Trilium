@@ -219,7 +219,7 @@ body.desktop .revisions-dialog {
         padding: 0;
     }
 
-    /* HTML diff styles (htmldiff-js) */
+    /* The `ins`/`del` marks of `diffHtml()` */
     .revision-diff-content {
         ins {
             text-decoration: none;

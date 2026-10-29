@@ -83,7 +83,7 @@ coverage: {
 - **Don't assert on translated (i18n) strings** — assert structure/keys/behavior (classes, counts, ids), not human-readable English.
 - **happy-dom is not a browser:** `getBoundingClientRect()` returns zeros, `ResizeObserver`/layout/visibility are stubs. Anything pixel/size/scroll-based needs `@vitest/browser`, not happy-dom.
 - **`@vitest/browser` real-browser mode IS configured** — the `packages/ckeditor5`, `-mermaid` and `-math` bundles run their co-located `src/**/*.spec.ts` in headless Chromium (`@vitest/browser-playwright`; see `packages/ckeditor5/vitest.config.ts`). These are the browser-mode `test:sequential` suites. Reserve real-browser mode for genuine layout/integration needs (CKEditor, Excalidraw, Modal transitions, size measurement); normal unit tests stay on happy-dom.
-- **WASM scrypt is ~10× slower** under the standalone suite (pure-JS `scrypt-js` under V8 coverage instrumentation, vs Node's native `scryptSync`) — enough to blow the 5s default. A core spec that hashes a password bumps the timeout for the standalone runtime only; copy the guard from `packages/trilium-core/src/routes/api/login.spec.ts:13`:
+- **WASM scrypt is ~10× slower** under the standalone suite (pure-JS `@noble/hashes` scrypt under V8 coverage instrumentation, vs Node's native `scryptSync`) — enough to blow the 5s default. A core spec that hashes a password bumps the timeout for the standalone runtime only; copy the guard from `packages/trilium-core/src/routes/api/login.spec.ts:13`:
     ```ts
     const isBrowserRuntime = typeof window !== "undefined";
     if (isBrowserRuntime) {

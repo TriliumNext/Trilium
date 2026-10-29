@@ -287,9 +287,6 @@ importers:
       gridstack:
         specifier: 14.0.0
         version: 14.0.0
-      htmldiff-js:
-        specifier: 1.0.5
-        version: 1.0.5
       i18next:
         specifier: 26.5.11
         version: 26.5.11(typescript@6.0.3)
@@ -308,9 +305,6 @@ importers:
       maplibre-gl:
         specifier: 6.16.0
         version: 6.16.0
-      mark.js:
-        specifier: 8.11.1
-        version: 8.11.1
       marked:
         specifier: 18.1.1
         version: 18.1.1
@@ -372,9 +366,6 @@ importers:
       '@types/jquery':
         specifier: 4.0.1
         version: 4.0.1
-      '@types/mark.js':
-        specifier: 8.11.12
-        version: 8.11.12
       '@types/tabulator-tables':
         specifier: 6.3.6
         version: 6.3.6
@@ -829,6 +820,12 @@ importers:
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
+      '@noble/ciphers':
+        specifier: 2.4.0
+        version: 2.4.0
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -862,9 +859,6 @@ importers:
       '@triliumnext/split.js':
         specifier: workspace:*
         version: link:../../packages/splitjs
-      aes-js:
-        specifier: 3.1.2
-        version: 3.1.2
       bootstrap:
         specifier: 5.3.8
         version: 5.3.8(@popperjs/core@2.11.8)
@@ -904,27 +898,12 @@ importers:
       jquery.fancytree:
         specifier: 2.38.5
         version: 2.38.5(jquery@4.0.0)
-      js-md5:
-        specifier: 0.9.2
-        version: 0.9.2
-      js-sha1:
-        specifier: 0.7.0
-        version: 0.7.0
-      js-sha256:
-        specifier: 1.0.0
-        version: 1.0.0
-      js-sha512:
-        specifier: 0.9.0
-        version: 0.9.0
       katex:
         specifier: 0.19.1
         version: 0.19.1
       maplibre-gl:
         specifier: 6.16.0
         version: 6.16.0
-      mark.js:
-        specifier: 8.11.1
-        version: 8.11.1
       marked:
         specifier: 18.1.1
         version: 18.1.1
@@ -949,9 +928,6 @@ importers:
       reveal.js:
         specifier: 6.0.2
         version: 6.0.2
-      scrypt-js:
-        specifier: 3.0.1
-        version: 3.0.1
       tabulator-tables:
         specifier: 6.7.1
         version: 6.7.1
@@ -968,18 +944,12 @@ importers:
       '@prefresh/vite':
         specifier: 4.0.1
         version: 4.0.1(@babel/core@7.29.7(supports-color@10.2.2))(@prefresh/babel-plugin@0.5.3)(preact@11.0.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.106.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
-      '@types/aes-js':
-        specifier: 3.1.4
-        version: 3.1.4
       '@types/bootstrap':
         specifier: 5.2.11
         version: 5.2.11
       '@types/jquery':
         specifier: 4.0.1
         version: 4.0.1
-      '@types/mark.js':
-        specifier: 8.11.12
-        version: 8.11.12
       '@types/reveal.js':
         specifier: 5.2.2
         version: 5.2.2
@@ -3533,6 +3503,10 @@ packages:
   '@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1':
     resolution: {integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==}
 
+  '@noble/ciphers@2.4.0':
+    resolution: {integrity: sha512-AnjFn0Jv92laAkvMrghlFZq4qQCIN/4DxFV/eooqtC2YTjB7kBeLMS2T9KJX4Dn+ZVXLOwK0lSgqDtx9gvxtiw==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
@@ -4645,9 +4619,6 @@ packages:
   '@tweenjs/tween.js@25.0.0':
     resolution: {integrity: sha512-XKLA6syeBUaPzx4j3qwMqzzq+V4uo72BnlbOjmuljLrRqdsd3qnzvZZoxvMHZ23ndsRS4aufU6JOZYpCbU6T1A==}
 
-  '@types/aes-js@3.1.4':
-    resolution: {integrity: sha512-v3D66IptpUqh+pHKVNRxY8yvp2ESSZXe0rTzsGdzUhEwag7ljVfgCllkWv2YgiYXDhWFBrEywll4A5JToyTNFA==}
-
   '@types/appdmg@0.5.5':
     resolution: {integrity: sha512-G+n6DgZTZFOteITE30LnWj+HRVIGr7wMlAiLWOO02uJFWVEitaPU9JVXm9wJokkgshBawb2O1OykdcsmkkZfgg==}
 
@@ -4838,9 +4809,6 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
-  '@types/mark.js@8.11.12':
-    resolution: {integrity: sha512-244ZnaIBpz4c6xutliAnYVZp6xJlmC569jZqnR3ElO1Y01ooYASSVQEqpd2x0A2UfrgVMs5V9/9tUAdZaDMytQ==}
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -5612,9 +5580,6 @@ packages:
   adm-zip@0.6.1:
     resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
     engines: {node: '>=14.0'}
-
-  aes-js@3.1.2:
-    resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -7895,9 +7860,6 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
-  htmldiff-js@1.0.5:
-    resolution: {integrity: sha512-rmow9353OK0elkub15Sbze8Nj7BYfduqoJJw4yEvHHjOcHeCazNPk0PoUbjE8SvxKgjymeRIFU/OnS8jtitRtA==}
-
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
 
@@ -8399,18 +8361,6 @@ packages:
   jquery@4.0.0:
     resolution: {integrity: sha512-TXCHVR3Lb6TZdtw1l3RTLf8RBWVGexdxL6AC8/e0xZKEpBflBsjh9/8LXw+dkNFuOyW9B7iB3O1sP7hS0Kiacg==}
 
-  js-md5@0.9.2:
-    resolution: {integrity: sha512-QK62elp/ozZj7kzyCG5yaeK+uWeqxPlg3w3znYDBvwyqzJs7nh5bgTAAH9KltLni2LT7qx/E1EgSVwfiOSRe0Q==}
-
-  js-sha1@0.7.0:
-    resolution: {integrity: sha512-oQZ1Mo7440BfLSv9TX87VNEyU52pXPVG19F9PL3gTgNt0tVxlZ8F4O6yze3CLuLx28TxotxvlyepCNaaV0ZjMw==}
-
-  js-sha256@1.0.0:
-    resolution: {integrity: sha512-Bqxf6ENUzYIMzuELCmRNrJOVbjKH1oMgbfYJBKVr/W1Xf9fazpahqCbb24v1pR7XV1isuqhM+w9KWpK7zCyUQw==}
-
-  js-sha512@0.9.0:
-    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
-
   js-tokens@10.0.0:
     resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
 
@@ -8848,9 +8798,6 @@ packages:
   maplibre-gl@6.16.0:
     resolution: {integrity: sha512-gApO66EMtoDZuio680RUBvskR7ahFd/NNhLN4tBAs+Y7FeT4gQV8zVFgYVMRmFxQznOEzecW19w6xOd9XjZjiA==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
-
-  mark.js@8.11.1:
-    resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
   markdown-it@14.3.3:
     resolution: {integrity: sha512-L//tDAkjTjJCU6pBUSBTgs3Kg4InVaZuUZog/b6V12UKhcDQ7S78877ibbCanRExwPuYP1CZD7Gd2dxSy1GXRg==}
@@ -10348,9 +10295,6 @@ packages:
   schema-utils@4.4.0:
     resolution: {integrity: sha512-ZzWFVzFgyRHi/T2Ecxm37lL6J9+hZO0P9L7LCuLxAbC6XWxkvxcaQBCXhQxMGn/Tdt9nD7zIBk0ELwhMQ3UEDg==}
     engines: {node: '>= 10.13.0'}
-
-  scrypt-js@3.0.1:
-    resolution: {integrity: sha512-cdwTTnqPu0Hyvf5in5asVdZocVDTNRmR7XEcJuIzMjJeSHybHl7vpB66AzwTaIg6CLSbtjcxc8fqcySfnTkccA==}
 
   scule@1.3.0:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
@@ -14659,6 +14603,8 @@ snapshots:
     dependencies:
       eslint-scope: 5.1.1
 
+  '@noble/ciphers@2.4.0': {}
+
   '@noble/hashes@1.8.0': {}
 
   '@noble/hashes@2.4.0': {}
@@ -15554,8 +15500,6 @@ snapshots:
 
   '@tweenjs/tween.js@25.0.0': {}
 
-  '@types/aes-js@3.1.4': {}
-
   '@types/appdmg@0.5.5':
     dependencies:
       '@types/node': 24.19.0
@@ -15782,10 +15726,6 @@ snapshots:
   '@types/jquery@4.0.1': {}
 
   '@types/json-schema@7.0.15': {}
-
-  '@types/mark.js@8.11.12':
-    dependencies:
-      '@types/jquery': 4.0.1
 
   '@types/mdast@4.0.4':
     dependencies:
@@ -16982,8 +16922,6 @@ snapshots:
       express: 5.2.1(supports-color@10.2.2)
 
   adm-zip@0.6.1: {}
-
-  aes-js@3.1.2: {}
 
   agent-base@7.1.4: {}
 
@@ -19820,8 +19758,6 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
-  htmldiff-js@1.0.5: {}
-
   htmlparser2@10.1.0:
     dependencies:
       domelementtype: 2.3.0
@@ -20339,14 +20275,6 @@ snapshots:
 
   jquery@4.0.0: {}
 
-  js-md5@0.9.2: {}
-
-  js-sha1@0.7.0: {}
-
-  js-sha256@1.0.0: {}
-
-  js-sha512@0.9.0: {}
-
   js-tokens@10.0.0: {}
 
   js-tokens@4.0.0: {}
@@ -20793,8 +20721,6 @@ snapshots:
       potpack: 2.1.0
       quickselect: 3.0.0
       tinyqueue: 3.0.0
-
-  mark.js@8.11.1: {}
 
   markdown-it@14.3.3:
     dependencies:
@@ -22568,8 +22494,6 @@ snapshots:
       ajv-formats: 3.0.1
       ajv-keywords: 5.1.0(ajv@8.20.0)
     optional: true
-
-  scrypt-js@3.0.1: {}
 
   scule@1.3.0: {}
 
