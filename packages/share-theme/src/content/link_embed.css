@@ -102,6 +102,9 @@ html.theme-light .link-embed-favicon-light {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.link-embed-video-thumbnail-lowres {
     filter: blur(20px) brightness(0.65);
 }
 

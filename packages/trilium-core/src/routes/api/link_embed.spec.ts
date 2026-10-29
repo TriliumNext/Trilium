@@ -124,6 +124,12 @@ async function makePng(width: number, height: number, color: number) {
     return Buffer.from(await image.getBuffer("image/png"));
 }
 
+/** A real JPEG, with the size in its header that the YouTube thumbnail checks read. */
+async function makeJpeg(width: number, height: number) {
+    const image = new Jimp({ width, height, color: 0x336699ff });
+    return Buffer.from(await image.getBuffer("image/jpeg"));
+}
+
 /**
  * A PNG that is genuinely large, for the ceilings that are about bytes rather than pixels.
  *
@@ -225,6 +231,80 @@ describe("link-embed getMetadata", () => {
         // from the note by the URL the store answered with.
         expect(stored("favicon")?.fileName).toBe("www.youtube.com.ico");
         expect(result.favicon).toMatch(/^api\/attachments\/att\d+\/image\/www\.youtube\.com\.ico$/);
+    });
+
+    describe("YouTube thumbnails", () => {
+        type ThumbnailName = "maxresdefault" | "sddefault" | "hqdefault";
+
+        /** Serves the given thumbnail sizes of the video, and a 404 for every other address. */
+        function serveThumbnails(thumbnails: Partial<Record<ThumbnailName, Buffer>>) {
+            safeFetch.mockImplementation(async (url: string) => {
+                for (const [ name, bytes ] of Object.entries(thumbnails)) {
+                    if (url === `https://i.ytimg.com/vi/dQw4w9WgXcQ/${name}.jpg`) {
+                        return fakeResponse(bytes, { contentType: "image/jpeg" });
+                    }
+                }
+                return fakeResponse("", { ok: false });
+            });
+        }
+
+        /** The cover stored by a fresh preview of the video. */
+        async function coverOf() {
+            safeFetch.mockClear();
+            saveImageToAttachment.mockClear();
+            await linkEmbedRoute.getMetadata(req("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
+            return stored("coverImage");
+        }
+
+        it("keeps the 1280x720 thumbnail as served, named by the video ID", async () => {
+            const hd = await makeJpeg(1280, 720);
+            serveThumbnails({
+                maxresdefault: hd,
+                sddefault: await makeJpeg(640, 480),
+                hqdefault: await makeJpeg(480, 360)
+            });
+
+            const cover = await coverOf();
+            expect(cover?.fileName).toBe("youtube-dQw4w9WgXcQ.jpg");
+            expect(cover?.buffer.equals(hd)).toBe(true);
+
+            const requested = safeFetch.mock.calls.map(([ url ]) => String(url));
+            expect(requested.filter((url) => /sddefault|hqdefault/.test(url))).toEqual([]);
+        });
+
+        it("steps down when a larger thumbnail is missing, too small or too large", async () => {
+            const sd = await makeJpeg(640, 480);
+
+            serveThumbnails({ sddefault: sd });
+            expect((await coverOf())?.buffer.equals(sd)).toBe(true);
+
+            // The 120x90 placeholder YouTube serves for a missing size.
+            serveThumbnails({ maxresdefault: await makeJpeg(120, 90), sddefault: sd });
+            expect((await coverOf())?.buffer.equals(sd)).toBe(true);
+
+            // A valid JPEG padded past the 300KB cap.
+            const oversized = Buffer.concat([
+                await makeJpeg(1280, 720),
+                Buffer.alloc(300 * 1024)
+            ]);
+            serveThumbnails({ maxresdefault: oversized, sddefault: sd });
+            expect((await coverOf())?.buffer.equals(sd)).toBe(true);
+
+            const hq = await makeJpeg(480, 360);
+            serveThumbnails({ hqdefault: hq });
+            expect((await coverOf())?.buffer.equals(hq)).toBe(true);
+
+            serveThumbnails({});
+            expect(await coverOf()).toBeUndefined();
+        });
+
+        it("keeps a thumbnail over the verbatim cap where nothing can decode it", async () => {
+            installResizer(noResizer);
+            const hd = Buffer.concat([ await makeJpeg(1280, 720), Buffer.alloc(150 * 1024) ]);
+            serveThumbnails({ maxresdefault: hd });
+
+            expect((await coverOf())?.buffer.equals(hd)).toBe(true);
+        });
     });
 
     it("parses OpenGraph metadata from an HTML page", async () => {
@@ -817,10 +897,12 @@ describe("link-embed getMetadata", () => {
     });
 
     it("sets no title or thumbnail override when oEmbed answers with an empty payload", async () => {
-        const thumb = await makePng(120, 90, 0xff0000ff);
+        const thumb = await makeJpeg(1280, 720);
         safeFetch.mockImplementation(async (url: string) => {
             if (url.includes("oembed")) return fakeResponse("", { json: {} });
-            if (url.includes("hqdefault.jpg")) return fakeResponse(thumb, { contentType: "image/jpeg" });
+            if (url.includes("maxresdefault.jpg")) {
+                return fakeResponse(thumb, { contentType: "image/jpeg" });
+            }
             if (url.includes("favicon")) return fakeResponse(makeIco(), { contentType: "image/x-icon" });
             return fakeResponse("", { ok: false });
         });
@@ -828,7 +910,7 @@ describe("link-embed getMetadata", () => {
         const result = await linkEmbedRoute.getMetadata(req("https://youtu.be/dQw4w9WgXcQ"));
         expect(result.embedType).toBe("youtube");
         // An empty payload is not an error: nothing throws, so the generic fallback title is not
-        // used either, and the thumbnail comes from the conventional hqdefault URL.
+        // used either. The thumbnail does not depend on oEmbed.
         expect(result.title).toBeUndefined();
         expect(result.description).toBeUndefined();
         expect(stored("coverImage")?.fileName).toMatch(/\.jpg$/);

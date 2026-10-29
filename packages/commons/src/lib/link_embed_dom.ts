@@ -5,15 +5,23 @@ import { LINK_EMBED_CARD_IMAGE_PLACEHOLDER } from "./link_embed_markup.js";
 
 /**
  * Makes the link previews in `container`, as `renderLinkEmbedHtml()` and `renderLinkMentionHtml()`
- * draw them, behave: a video facade loads the player on click, a picture that fails to load gives
- * way to what stands in for a missing one, and a favicon gets the class that lets the page correct
- * an icon drawn for the other background.
+ * draw them, behave: a video facade loads the player on click, a low-resolution video thumbnail is
+ * marked for blurring, a picture that fails to load is replaced by a placeholder or removed, and a
+ * favicon gets the class that lets the page correct an icon drawn for the other background.
  */
 export function enhanceLinkPreviews(container: ParentNode) {
     const facades = container.querySelectorAll<HTMLButtonElement>(
         "button.link-embed-video-facade[data-video-id]");
     for (const facade of facades) {
         facade.addEventListener("click", () => playVideo(facade), { once: true });
+    }
+
+    const thumbnails = container.querySelectorAll<HTMLImageElement>(
+        "img.link-embed-video-thumbnail");
+    for (const thumbnail of thumbnails) {
+        // Checked now for a picture that is already loaded, and again on every load.
+        markLowResThumbnail(thumbnail);
+        thumbnail.addEventListener("load", () => markLowResThumbnail(thumbnail));
     }
 
     // An attachment can be erased under a preview that still references it, and a broken-image
@@ -50,6 +58,19 @@ function playVideo(facade: HTMLButtonElement) {
     iframe.allowFullscreen = true;
     iframe.setAttribute("frameborder", "0");
     facade.replaceWith(iframe);
+}
+
+/**
+ * Video thumbnails narrower than this are blurred. It matches YouTube's `hqdefault`, the smallest
+ * thumbnail `downloadYouTubeThumbnail()` in core keeps.
+ */
+const MIN_VIDEO_THUMBNAIL_WIDTH = 480;
+
+/** Sets the class the stylesheets blur a video thumbnail with, from its loaded width. */
+function markLowResThumbnail(thumbnail: HTMLImageElement) {
+    const width = thumbnail.naturalWidth;
+    thumbnail.classList.toggle("link-embed-video-thumbnail-lowres",
+        width > 0 && width < MIN_VIDEO_THUMBNAIL_WIDTH);
 }
 
 /**

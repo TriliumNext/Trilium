@@ -161,7 +161,7 @@ body.light-theme .link-embed-favicon-light {
     cursor: pointer;
     overflow: hidden;
 
-    &:hover .link-embed-video-thumbnail {
+    &:hover .link-embed-video-thumbnail-lowres {
         filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.65);
     }
 }
@@ -171,6 +171,9 @@ body.light-theme .link-embed-favicon-light {
     height: 100%;
     object-fit: contain;
     display: block;
+}
+
+.link-embed-video-facade .link-embed-video-thumbnail-lowres {
     filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.5);
 }
 
