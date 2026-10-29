@@ -50,30 +50,6 @@ export function normalizeSearchText(text: string): string {
 }
 
 /**
- * Strips HTML tags from content for snippet extraction.
- * Uses iterative replacement to handle nested/malformed tags like `<scr<script>ipt>`.
- *
- * @param html The HTML content to strip
- * @returns Plain text with all HTML tags removed
- */
-export function stripHtmlTags(html: string): string {
-    if (!html || typeof html !== "string") {
-        return "";
-    }
-
-    let result = html;
-    let previous: string;
-
-    // Loop until no more tags — handles nested cases like <scr<script>ipt>
-    do {
-        previous = result;
-        result = result.replace(/<[^>]*>/g, "");
-    } while (result !== previous);
-
-    return result;
-}
-
-/**
  * Optimized edit distance calculation using single array and early termination.
  * This is significantly more memory efficient than the 2D matrix approach and includes
  * early termination optimizations for better performance.

@@ -6,9 +6,12 @@ import { getPlatform } from "../platform";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
-import escape from "escape-html";
 import { basename, extname } from "./path";
+import { stripTags } from "./strip_tags";
 import { NoteMeta } from "../../meta";
+
+export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+export { stripTags };
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
@@ -285,8 +288,6 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
     return map;
 }
 
-export const escapeHtml = escape;
-
 /**
  * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.
  * Covers the markup characters alongside the quote and the backslash, because the HTML
@@ -516,10 +517,6 @@ export function slugify(text: string) {
         .toLowerCase()
         .replace(/[^\p{Letter}\p{Number}]+/gu, "-") // replace non-letter/number with "-"
         .replace(/(^-|-$)+/g, ""); // trim dashes
-}
-
-export function stripTags(text: string) {
-    return text.replace(/<(?:.|\n)*?>/gm, "");
 }
 
 /**

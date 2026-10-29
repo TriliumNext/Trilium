@@ -4,7 +4,6 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import { networkInterfaces } from "os";
-import tmp from "tmp";
 
 import buildApp from "./app.js";
 import { TRILIUM_LOGO } from "./log_provider.js";
@@ -67,8 +66,6 @@ export default async function startTriliumServer(): Promise<Express> {
         console.error();
         process.exit(1);
     }
-
-    tmp.setGracefulCleanup();
 
     const app = await buildApp();
     const httpServer = startHttpServer(app);

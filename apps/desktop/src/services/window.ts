@@ -8,6 +8,7 @@ import path from "path";
 import { markStartupMetric } from "./startup_metrics.js";
 import { isTriliumAppShellUrl, TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
+import { createWindowStateKeeper } from "./window_state.js";
 
 // Preload bundle path. Two layouts:
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
@@ -122,9 +123,7 @@ async function createMainWindow(startHidden = false) {
         ]);
     }
 
-    const windowStateKeeper = (await import("electron-window-state")).default; // should not be statically imported
-
-    const mainWindowState = windowStateKeeper({
+    const mainWindowState = createWindowStateKeeper({
         // default window width & height, so it's usable on a 1600 * 900 display (including some extra panels etc.)
         defaultWidth: 1200,
         defaultHeight: 800
@@ -476,7 +475,7 @@ async function registerGlobalShortcuts() {
 }
 
 function showWindow(window: BrowserWindow) {
-    // electron-window-state can reveal a hidden maximized window while it restores state.
+    // Restoring the maximized state of a hidden window reveals it.
     // Restore immediately before an intentional reveal so the window starts hidden.
     deferredWindowStateManagers.get(window)?.();
     window.show();

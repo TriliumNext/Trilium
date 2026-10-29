@@ -15,7 +15,6 @@ import {
     type NavigationItem, type PageHeading, type ShareNote
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
-import escapeHtml from "escape-html";
 import { t } from "i18next";
 import { HTMLElement, type Node as ParsedNode, Options, parse, TextNode } from "node-html-parser";
 
@@ -414,7 +413,7 @@ export function preparePageContent(
         const heading = { level: Number(element.tagName.slice(1)), text, html, slug, href };
         element.setAttribute("id", slug);
         element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="${href}"`
-            + ` aria-label="${escapeHtml(options.headingLinkLabel)}">`
+            + ` aria-label="${utils.escapeHtml(options.headingLinkLabel)}">`
             + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`);
         return heading;
     });
@@ -600,7 +599,7 @@ function renderIndex(result: Result) {
     for (const childNote of rootNote.getChildNotes()) {
         const link = getShareLink(childNote, sanitize.sanitizeUrl);
         const target = link.isExternal ? ` target="_blank" rel="noopener noreferrer"` : "";
-        result.content += `<li><a class="${childNote.type}" href="${escapeHtml(link.href)}"${target}>`
+        result.content += `<li><a class="${childNote.type}" href="${utils.escapeHtml(link.href)}"${target}>`
             + `${childNote.escapedTitle}</a></li>`;
     }
 
@@ -614,7 +613,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     };
     const document = parse(result.content || "", parseOpts);
     if (options.block !== undefined && !sliceToBlockReference(document, options.block)) {
-        const message = escapeHtml(t("content_renderer.broken-block-reference"));
+        const message = utils.escapeHtml(t("content_renderer.broken-block-reference"));
         result.content = `<p class="block-reference-broken">${message}</p>`;
         return;
     }
@@ -677,14 +676,14 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
         // title is withheld too, since an embedded note need not appear in the visible share tree.
         if (options.canAccessEmbed && !options.canAccessEmbed(embeddedNote)) {
-            embedEl.replaceWith(...parse(`<p class="include-note-forbidden">${escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
+            embedEl.replaceWith(...parse(`<p class="include-note-forbidden">${utils.escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
             continue;
         }
 
         // The link-processing passes below resolve the reference link to the shared note.
         if (embed.asLink) {
-            const href = escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
-            const title = escapeHtml(embeddedNote.title);
+            const href = utils.escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
+            const title = utils.escapeHtml(embeddedNote.title);
             const link = `<a class="reference-link" href="${href}">${title}</a>`;
             embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             continue;
@@ -769,13 +768,13 @@ function renderAttachmentEmbed(
     }
 
     const src = `api/attachments/${image.attachmentId}/image/${encodeURIComponent(image.title)}`;
-    return `<img src="${src}" alt="${escapeHtml(attachment.title)}">`;
+    return `<img src="${src}" alt="${utils.escapeHtml(attachment.title)}">`;
 }
 
 /** The reference link to an attachment, which `handleAttachmentLink` then resolves. */
 function renderAttachmentLink(attachmentId: string, attachment: BAttachment | SAttachment) {
-    const href = escapeHtml(getAttachmentEmbedHref(attachment.ownerId, attachmentId));
-    return `<a class="reference-link" href="${href}">${escapeHtml(attachment.title)}</a>`;
+    const href = utils.escapeHtml(getAttachmentEmbedHref(attachment.ownerId, attachmentId));
+    return `<a class="reference-link" href="${href}">${utils.escapeHtml(attachment.title)}</a>`;
 }
 
 function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
@@ -841,7 +840,7 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
+        linkEl.innerHTML = `<span><span class="${utils.escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
     }
 }
 
@@ -992,9 +991,9 @@ export function renderCode(
         // loop (#9717). The <code> wrapper and its `language-*` class additionally let renderText
         // apply syntax highlighting, bounded by shouldSyntaxHighlight().
         const languageClass = mime
-            ? ` class="language-${escapeHtml(normalizeMimeTypeForCKEditor(mime))}"`
+            ? ` class="language-${utils.escapeHtml(normalizeMimeTypeForCKEditor(mime))}"`
             : "";
-        result.content = `<pre><code${languageClass}>${escapeHtml(result.content)}</code></pre>`;
+        result.content = `<pre><code${languageClass}>${utils.escapeHtml(result.content)}</code></pre>`;
     }
 }
 
@@ -1020,7 +1019,7 @@ function renderMermaid(result: Result, note: SNote | BNote) {
 <hr>
 <details>
     <summary>Chart source</summary>
-    <pre class="mermaid-note-source">${escapeHtml(result.content)}</pre>
+    <pre class="mermaid-note-source">${utils.escapeHtml(result.content)}</pre>
 </details>
 </div>`;
 }

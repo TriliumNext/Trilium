@@ -386,6 +386,12 @@ div.ui-tooltip {
     display: block;
 }
 
+/* The search terms `useImperativeSearchHighlighlighting()` finds in titles, cards and previews. */
+::highlight(search-match) {
+    color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+    text-decoration: underline;
+}
+
 /* Allow to use <kbd> elements inside the title to define shortcut hints. */
 .ui-menu kbd,
 button kbd {
@@ -633,12 +639,14 @@ pre > button.copy-button {
     padding-inline-end: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
 }
 
-pre > button.copy-button:hover {
+pre > button.copy-button:hover,
+.code-embed-content > button.copy-button:hover {
     color: inherit !important;
     opacity: 1;
 }
 
-pre > button.copy-button:active {
+pre > button.copy-button:active,
+.code-embed-content > button.copy-button:active {
     background-color: unset !important;
 }
 
@@ -1503,8 +1511,17 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     padding: 0;
 }
 
-pre.code-embed-editor.read-only .cm-activeLine {
-    background-color: transparent;
+pre.code-embed-editor.read-only,
+pre.code-embed-editor > .cm-editor:not(.cm-focused) {
+    .cm-activeLine {
+        background-color: transparent;
+    }
+
+    .cm-activeLineGutter {
+        background-color: transparent;
+        color: inherit;
+        font-weight: inherit;
+    }
 }
 
 .include-note-content.type-code {
@@ -1519,6 +1536,64 @@ pre.code-embed-editor.read-only .cm-activeLine {
 
     &.code-embed-editor {
         overflow: hidden;
+    }
+}
+
+:root .include-note-content.type-extendedCodeBlock pre.code-embed-editor {
+    border-radius: var(--_include-note-content-top-radius) var(--_include-note-content-top-radius)
+                   var(--_include-note-content-bottom-radius)
+                   var(--_include-note-content-bottom-radius);
+    overflow: hidden;
+
+    .cm-gutters {
+        padding-inline: 4px;
+    }
+
+    /* `.cm-line` adds 6px before each line. */
+    .cm-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-start: calc(var(--padding-size, 1em) - 6px);
+    }
+
+    .cm-editor[data-theme-name="vs-code-light"] {
+        background-color: #f6f6f6;
+    }
+
+    .cm-editor[data-theme-name="vs-code-dark"] {
+        background-color: #1c1b1b;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock {
+    display: flex;
+    flex-direction: column;
+
+    > .rendered-content,
+    > .rendered-content > .source-embed,
+    .code-embed-content,
+    pre.code-embed-editor,
+    .cm-editor {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 37px;
+    --_copy-button-inset: .35em;
+
+    position: relative;
+
+    > button.copy-button {
+        position: absolute;
+        top: var(--_copy-button-inset);
+        inset-inline-end: var(--_copy-button-inset);
+    }
+
+    &:has(> button.copy-button) .cm-content {
+        padding-inline-end: calc(var(--_copy-button-size) + var(--_copy-button-inset) * 2);
     }
 }
 
@@ -1570,6 +1645,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
 .include-note-content.type-canvas,
 .include-note-content.type-canvasDrawing,
 .include-note-content.type-mermaidDiagram,
+.include-note-content.type-extendedCodeBlock,
 .include-note-content.type-webView,
 .include-note-content.type-book:has(.note-list-widget.full-height),
 .include-note-content.type-search:has(.note-list-widget.full-height) {

@@ -14,6 +14,7 @@ import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
+import { spawn } from "child_process";
 import { app, BrowserWindow,globalShortcut } from "electron";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
@@ -81,8 +82,7 @@ export async function main() {
     setupTriliumAppProtocol(expressAppPromise);
 
     // Prevent Trilium starting twice on first install and on uninstall for the Windows installer.
-    /* v8 ignore next 3 -- squirrel uses a CJS require() that vi.mock cannot intercept, so the truthy/exit path is un-coverable in unit tests */
-    if ((require("electron-squirrel-startup")).default) {
+    if (handleSquirrelEvent()) {
         process.exit(0);
     }
 
@@ -332,6 +332,36 @@ function readDbOption(provider: BetterSqlite3Provider, name: string): string | n
     } catch {
         return null;
     }
+}
+
+/**
+ * Handles the `--squirrel-*` argument the Squirrel.Windows installer launches the app with: on
+ * install, update or uninstall, `Update.exe` (one directory above the versioned app directory)
+ * creates or removes the shortcuts. Returns `true` when the app was launched for such an event and
+ * must exit instead of starting.
+ */
+function handleSquirrelEvent() {
+    if (process.platform !== "win32") {
+        return false;
+    }
+
+    const target = path.basename(process.execPath);
+    const actions: Record<string, string | null> = {
+        "--squirrel-install": `--createShortcut=${target}`,
+        "--squirrel-updated": `--createShortcut=${target}`,
+        "--squirrel-uninstall": `--removeShortcut=${target}`,
+        "--squirrel-obsolete": null
+    };
+    const action = actions[process.argv[1] ?? ""];
+    if (action === undefined) {
+        return false;
+    }
+
+    if (action) {
+        const updateExe = path.resolve(path.dirname(process.execPath), "..", "Update.exe");
+        spawn(updateExe, [ action ], { detached: true });
+    }
+    return true;
 }
 
 /**

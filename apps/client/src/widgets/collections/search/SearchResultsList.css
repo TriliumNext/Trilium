@@ -132,9 +132,7 @@
         margin-top: 6px;
     }
 
-    /* Style the server-injected <b> highlights (snippet + attribute badges) and the client-side
-       mark.js .ck-find-result spans (title) identically. */
-    .search-result-card-title .ck-find-result,
+    /* The server-injected <b> highlights of the snippet and the attribute badges. */
     .search-result-card-snippet b,
     .search-result-card-badges b {
         background: var(--note-list-view-search-result-highlight-background);

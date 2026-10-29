@@ -2,6 +2,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { highlightedTexts } from "../../test/highlights";
 import RawHtml, { getHtml, HighlightedText, RawHtmlBlock, SanitizedHtml } from "./RawHtml";
 
 let container: HTMLDivElement;
@@ -88,8 +89,8 @@ describe("HighlightedText", () => {
             container
         ));
 
-        const marks = () => [ ...container.querySelectorAll(".ck-find-result") ];
-        expect(marks().map((mark) => mark.textContent)).toEqual([ "matched" ]);
+        const marks = () => highlightedTexts("search-match", container);
+        expect(marks()).toEqual([ "matched" ]);
 
         act(() => render(
             <HighlightedText text="the matched word" highlightedTokens={null} />,
@@ -110,6 +111,6 @@ describe("HighlightedText", () => {
         ));
 
         expect(container.textContent).toBe("another match here");
-        expect(container.querySelectorAll(".ck-find-result")).toHaveLength(1);
+        expect(highlightedTexts("search-match", container)).toEqual([ "match" ]);
     });
 });

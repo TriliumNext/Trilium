@@ -11,7 +11,7 @@ import content_renderer, {
 import { getEmbedCaption, getEmbedCodeView } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
 import link, { ViewScope } from "../../../services/link";
-import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
+import { getInlineEmbedType } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
@@ -208,9 +208,7 @@ export async function loadInlineEmbed(
     boxSize: string | undefined,
     { isFocused, saves, histories }: InlineEmbedOptions
 ) {
-    const type = getSourceEmbedTypeByLanguage(source.language);
-    if (!type) return;
-
+    const type = getInlineEmbedType(source.language);
     const el = $el[0];
     const [ component, { InlineSourceEmbed } ] = await Promise.all([
         type.load(),

@@ -1,7 +1,7 @@
-import type { AccessibleInputHTMLAttributes, InputHTMLAttributes, RefObject } from "preact";
+import type { InputHTMLAttributes, LooseInputHTMLAttributes, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
-export interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
+export interface FormTextBoxProps extends Omit<LooseInputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
     id?: string;
     currentValue?: string;
     onChange?(newValue: string, validity: ValidityState): void;
@@ -87,7 +87,7 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
             {...({
                 ...rest,
                 type: type ?? "text"
-            } as AccessibleInputHTMLAttributes<HTMLInputElement>)}
+            } as InputHTMLAttributes<HTMLInputElement>)}
         />
     );
 }

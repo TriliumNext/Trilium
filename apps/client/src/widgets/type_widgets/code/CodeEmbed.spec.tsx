@@ -12,6 +12,7 @@ import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
 import attributes from "../../../services/attributes";
+import { copyTextWithToast } from "../../../services/clipboard_ext";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
@@ -26,13 +27,15 @@ import { CodeMirrorFindTarget } from "../../find_in_code";
 import { NoteSaves } from "../text/attachment_saves";
 import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 import EmbedHistories from "../text/embed_history";
-import CodeEmbed from "./CodeEmbed";
+import CodeEmbed, { InlineCodeEmbed } from "./CodeEmbed";
 
 vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<object>()),
     t: (key: string, values?: Record<string, unknown>) =>
         values ? `${key} ${Object.values(values).join(" ")}` : key
 }));
+
+vi.mock("../../../services/clipboard_ext", () => ({ copyTextWithToast: vi.fn() }));
 
 // `CodeEditor` reads the theme as a string, and the line numbers set to Auto from the option.
 options.set("codeNoteTheme", "");
@@ -58,7 +61,8 @@ describe("CodeEmbed", () => {
         const view = await findView(figure, true);
         expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "print(1)", true ]);
         const tools = getContentEmbedTools(figure);
-        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon ]).toEqual([ true, moveVerticalIcon ]);
+        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon, tools?.hiddenToolbarItems ])
+            .toEqual([ true, moveVerticalIcon, undefined ]);
         expect(moveVerticalIcon).toContain("<svg");
 
         const { figure: locked } = await mount(note, buildEditor({ canEdit: () => false }), {
@@ -741,6 +745,137 @@ describe("CodeEmbed", () => {
     });
 });
 
+describe("InlineCodeEmbed", () => {
+    function getLabel(figure: HTMLElement) {
+        return figure.querySelector("pre.code-embed-editor")?.getAttribute("data-language");
+    }
+
+    it("shows the code in the language of its embed", async () => {
+        const setMimeType = vi.spyOn(VanillaCodeMirror.prototype, "setMimeType");
+        const { editable } = buildCodeViewTextEditor();
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", container: editable
+        });
+
+        const view = await findView(figure, true);
+        expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "pass", true ]);
+        expect(setMimeType).toHaveBeenLastCalledWith("text/x-python");
+        const tools = getContentEmbedTools(figure);
+        // The menu of the embed offers the box size and the Editable toggle.
+        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon, tools?.hiddenToolbarItems ]).toEqual([
+            true, moveVerticalIcon, [ "contentEmbedBoxSizeDropdown", "toggleContentEmbedEditable" ]
+        ]);
+
+        // Without an editor, as in a read-only text note, in a language that names no MIME type.
+        const { figure: shown } = await mountInline("x", undefined, {
+            language: "text-x-trilium-auto"
+        });
+        await findView(shown, true);
+        await vi.waitFor(() => expect(setMimeType).toHaveBeenLastCalledWith("text/plain"));
+        expect(getLabel(shown)).toBeNull();
+        expectBoxSizeIconAlone(shown);
+    });
+
+    it("edits the code, follows the code the note writes, and sets its language", async () => {
+        options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-sh" ]));
+        vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        const setMimeType = vi.spyOn(VanillaCodeMirror.prototype, "setMimeType");
+        let unsavedContent: string | undefined;
+        const editor = buildEditor({
+            getUnsavedContent: () => unsavedContent,
+            scheduleSave: vi.fn((getContent: () => string) => {
+                unsavedContent = getContent();
+            })
+        });
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const { figure, rerender } = await mountInline("a", editor, {
+            language: "text-x-python", isEditable: true, container: editable
+        });
+
+        const view = await findView(figure);
+        act(() => view.dispatch({ changes: { from: 1, insert: "b" } }));
+        expect(unsavedContent).toBe("ab");
+
+        // Once written, the code that the note holds replaces the shown code.
+        unsavedContent = undefined;
+        await rerender("c");
+        expect(view.state.doc.toString()).toBe("c");
+        unsavedContent = "c, edited";
+        await rerender("d");
+        expect(view.state.doc.toString()).toBe("c");
+
+        await selectMenuItem(figure, "codeLanguage", "Shell (bash)");
+        expect(textEditor.execute)
+            .toHaveBeenLastCalledWith("setContentEmbedCodeView", { language: "text/x-sh" });
+        await act(async () => {
+            figure.dataset.language = "text-x-sh";
+            await Promise.resolve();
+        });
+        await vi.waitFor(() => expect(setMimeType).toHaveBeenLastCalledWith("text/x-sh"));
+        expect(getLabel(figure)).toBe("Shell (bash)");
+    });
+
+    it("names the language while edited, and offers a copy button otherwise", async () => {
+        const copyButton = (figure: HTMLElement) =>
+            figure.querySelector<HTMLElement>(".code-embed-content > button.copy-button");
+        const { editable } = buildCodeViewTextEditor();
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", isEditable: true, container: editable
+        });
+        await findView(figure);
+        await vi.waitFor(() => expect(getLabel(figure)).toBe("Python"));
+        expect(copyButton(figure)).toBeNull();
+
+        // With the Editable toggle off, the block reads as a code block of a read-only note.
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await findView(figure, true);
+        expect(getLabel(figure)).toBeNull();
+        const button = copyButton(figure);
+        if (!button) throw new Error("Expected a copy button.");
+        expect([ button.classList.contains("bx-copy"), button.getAttribute("type") ])
+            .toEqual([ true, "button" ]);
+        act(() => button.click());
+        expect(copyTextWithToast).toHaveBeenCalledExactlyOnceWith("pass");
+
+        // Without an editor, as in a read-only text note.
+        const { figure: shown } = await mountInline("x", undefined, {
+            language: "text-x-python"
+        });
+        await findView(shown, true);
+        expect(copyButton(shown)).not.toBeNull();
+    });
+});
+
+interface InlineMountOptions extends Pick<MountOptions, "isEditable" | "container"> {
+    language: string;
+}
+
+/** Renders `InlineCodeEmbed` in the markup of an embed, as the host does. */
+async function mountInline(
+    content: string,
+    editor: ContentEditor | undefined,
+    { language, isEditable, container }: InlineMountOptions
+) {
+    const { figure, box } = buildFigure({
+        isEditable, container, embedAttributes: { "data-language": language }
+    });
+    const renderContent = (shown: string) => render(
+        <ParentComponent.Provider value={parent}>
+            <InlineCodeEmbed content={shown} editor={editor} language={language} />
+        </ParentComponent.Provider>,
+        box
+    );
+
+    await act(async () => renderContent(content));
+    return {
+        figure,
+        rerender: (shown: string) => act(async () => renderContent(shown))
+    };
+}
+
 interface MountOptions {
     content?: string;
     mime?: string;
@@ -761,6 +896,29 @@ async function mount(
     options: MountOptions = {}
 ) {
     const content = options.content ?? "";
+    const { figure, box } = buildFigure(options);
+
+    await act(async () => {
+        render(
+            <ParentComponent.Provider value={parent}>
+                <CodeEmbed
+                    entity={entity}
+                    editor={editor}
+                    content={options.content ?? (await entity.getBlob())?.content ?? content}
+                    mime={options.mime ?? entity.mime}
+                    codeLanguage={options.codeLanguage}
+                    isCodeWrapped={options.isCodeWrapped}
+                    hasCodeLineNumbers={options.hasCodeLineNumbers}
+                />
+            </ParentComponent.Provider>,
+            box
+        );
+    });
+    return { figure };
+}
+
+/** The markup of an embed in the page, with the box that its content renders in. */
+function buildFigure(options: MountOptions) {
     const figure = document.createElement("figure");
     figure.className = "include-note";
     if (options.isEditable) {
@@ -782,24 +940,7 @@ async function mount(
     figure.append(wrapper);
     (options.container ?? document.body).append(figure);
     figures.push(figure);
-
-    await act(async () => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <CodeEmbed
-                    entity={entity}
-                    editor={editor}
-                    content={options.content ?? (await entity.getBlob())?.content ?? content}
-                    mime={options.mime ?? entity.mime}
-                    codeLanguage={options.codeLanguage}
-                    isCodeWrapped={options.isCodeWrapped}
-                    hasCodeLineNumbers={options.hasCodeLineNumbers}
-                />
-            </ParentComponent.Provider>,
-            box
-        );
-    });
-    return { figure };
+    return { figure, box };
 }
 
 function buildCodeNote(content: string) {

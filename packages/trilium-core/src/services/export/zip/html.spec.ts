@@ -87,7 +87,7 @@ describe("HtmlExportProvider", () => {
             expect(result).toContain("A &lt;b&gt; &amp; &quot;Title&quot;");
             expect(result).not.toContain("<b> &");
             expect(result).toContain('<base target="_parent">');
-            // Content is pretty-printed, so the body markup is preserved (line layout may differ).
+            // formatHtml() changes only the line layout, so the body markup is preserved.
             expect(result).toContain('<div class="ck-content">');
             expect(result).toContain("<p>Body</p>");
             expect(result).toContain('<h1 data-trilium-h1>');
@@ -96,10 +96,9 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn.mock.calls[0][1]).toBe(noteMeta);
         });
 
-        it("keeps the space after an inline tag that the pretty-printer wraps inside of", () => {
+        it("writes a paragraph exactly as the note holds it", () => {
             const { provider } = buildProvider({ zipExportOptions: { skipHtmlTemplate: true } });
             const noteMeta: NoteMeta = { format: "html", notePath: ["root", "leaf"] };
-            // Long enough that the 70-column wrap lands inside the third <code> tag.
             const content = "<p>When given a value, it will sort by other criteria instead: a comma-separated "
                 + "list of levels, each <code spellcheck=\"false\">title</code>, "
                 + "<code spellcheck=\"false\">dateCreated</code>, "
@@ -107,11 +106,10 @@ describe("HtmlExportProvider", () => {
 
             const result = provider.prepareContent("Sorting", content, noteMeta) as string;
 
-            expect(result).not.toMatch(/<\/code>[A-Za-z]/);
-            expect(result.replace(/\s+/g, " ")).toContain("</code> or the name of a label");
+            expect(result).toBe(content);
         });
 
-        it("wraps identically however long the href was before rewriteFn shortened it", () => {
+        it("exports the same file however long the href was before rewriteFn shortened it", () => {
             // Both forms are written by Trilium for the same link: the editor stores a full note
             // path, an import stores a bare ID. rewriteFn collapses each to the same target, so
             // the exported file must not differ.
@@ -202,10 +200,10 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn).not.toHaveBeenCalled();
         });
 
-        it("does not pretty-print very large content but still wraps and rewrites it", () => {
+        it("formats large content too, after wrapping and rewriting it", () => {
             const rewriteFn = vi.fn((content: string) => content);
             const { provider } = buildProvider({ rewriteFn });
-            const big = "<p>x</p>".repeat(20000); // well over the 100k pretty-print threshold
+            const big = "<p>x</p>".repeat(20000);
 
             const result = provider.prepareContent("T", big, {
                 format: "html",
@@ -213,7 +211,7 @@ describe("HtmlExportProvider", () => {
             }) as string;
 
             expect(result).toContain('<base target="_parent">');
-            expect(result.length).toBeGreaterThan(100_000);
+            expect(result.split("\n        <p>x</p>")).toHaveLength(20001);
             expect(rewriteFn).toHaveBeenCalledTimes(1);
         });
     });
@@ -293,7 +291,7 @@ describe("HtmlExportProvider", () => {
             expect(appendCalls).toHaveLength(0);
         });
 
-        it("does not pretty-print a very large navigation tree", () => {
+        it("formats a very large navigation tree too, one item per line", () => {
             const { provider, appendCalls } = buildProvider();
             provider.prepareMeta(buildMetaFile());
             const rootMeta: NoteMeta = {
@@ -313,9 +311,7 @@ describe("HtmlExportProvider", () => {
             const navigation = appendCalls.find((c) => c.name === "navigation.html")?.content;
             expect(typeof navigation).toBe("string");
             expect(String(navigation).length).toBeGreaterThan(100_000);
-            // Emitted verbatim past the threshold, so the list still sits on the template's own line
-            // instead of being broken up one tag per line by the pretty printer.
-            expect(String(navigation)).toContain("<ul><li>");
+            expect(String(navigation).match(/^ +<li><a href="[^"]+" target="detail">Note number \d+<\/a><\/li>$/gm)).toHaveLength(2000);
         });
 
         it("throws when meta was never prepared", () => {

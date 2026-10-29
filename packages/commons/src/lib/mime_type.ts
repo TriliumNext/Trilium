@@ -272,6 +272,7 @@ export function shouldSyntaxHighlight(code: string) {
 
 let byMarkdownNameMappings: Record<string, MimeTypeDefinition> | null = null;
 let byCKEditorLanguageMappings: Record<string, string> | null = null;
+let mimeTypesByCKEditorLanguage: Map<string, string> | null = null;
 
 export type MermaidMimeType = "text/vnd.mermaid" | "text/mermaid";
 export type SupportedMimeTypes = typeof MIME_TYPES_DICT_RAW[number]["mime"] | MermaidMimeType;
@@ -328,6 +329,19 @@ export function getMarkdownNameFromCKEditorLanguage(ckEditorLanguage: string) {
     }
 
     return byCKEditorLanguageMappings[ckEditorLanguage];
+}
+
+/**
+ * The MIME type of a CKEditor code block language, such as `text/x-python` for `text-x-python`.
+ *
+ * @param ckEditorLanguage a MIME type normalized with {@link normalizeMimeTypeForCKEditor}.
+ * @returns the MIME type, or `undefined` for an unknown language and for {@link MIME_TYPE_AUTO}.
+ */
+export function getMimeTypeFromCKEditorLanguage(ckEditorLanguage: string) {
+    mimeTypesByCKEditorLanguage ??= new Map(MIME_TYPES_DICT.map(({ mime }) => [
+        normalizeMimeTypeForCKEditor(mime), mime
+    ]));
+    return mimeTypesByCKEditorLanguage.get(ckEditorLanguage);
 }
 
 /**

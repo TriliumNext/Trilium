@@ -27,6 +27,15 @@ export interface NestedEmbedOptions {
     embedsAsReferenceLinks?: true;
 }
 
+/**
+ * The class of the `<pre>` of an extended code block: a code block of the text note shown in an
+ * embed with the code editor, saved as `<pre><code class="language-…">`.
+ */
+export const EXTENDED_CODE_BLOCK_CLASS = "extended-code-block";
+
+/** The language of an extended code block that names none, as a CKEditor code block language. */
+export const EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE = "text-plain";
+
 const ENTITY_ID = /^[a-zA-Z0-9_]+$/;
 
 /** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */

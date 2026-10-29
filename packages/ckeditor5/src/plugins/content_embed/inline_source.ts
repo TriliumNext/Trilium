@@ -1,10 +1,12 @@
 import {
+	EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
+} from '@triliumnext/commons';
+import {
 	Command,
 	type DowncastConversionApi,
 	type DowncastInsertEvent,
 	type Editor,
 	findOptimalInsertionRange,
-	type Model,
 	type ModelElement,
 	Plugin,
 	type UpcastConversionApi,
@@ -43,7 +45,10 @@ export interface InlineEmbedSource {
 export interface InsertInlineEmbedOptions {
 	language: string;
 	source: string;
+	/** Medium by default. */
+	boxSize?: BoxSizeValue;
 }
+
 
 /** The flags of an embed and the `data-*` attributes they are saved as on the `<pre>`. */
 const FLAG_ATTRIBUTES = [
@@ -58,8 +63,9 @@ const SIZE_PROPERTIES = [
 ] as const;
 
 /**
- * Embeds whose content lives in the note, as `<pre><code class="language-…">` code blocks of the
- * languages in `contentEmbed.inlineLanguages`. The embed keeps the language and the source as
+ * Embeds whose content lives in the note, as `<pre><code class="language-…">` code blocks: the
+ * diagrams of the languages in `contentEmbed.inlineLanguages`, and the extended code blocks, whose
+ * `<pre>` has the `EXTENDED_CODE_BLOCK_CLASS` class. The embed keeps the language and the source as
  * attributes, and is saved as the code block, with its box size, flags and size on the `<pre>`,
  * so that anything reading the note sees a plain code block.
  *
@@ -86,13 +92,20 @@ export default class ContentEmbedInlineSource extends Plugin {
 		editor.data.upcastDispatcher.on<UpcastElementEvent>(
 			'element:code', ( _evt, data, api ) => this.upcast( data, api ), { priority: 'high' } );
 		editor.data.downcastDispatcher.on<DowncastInsertEvent<ModelElement>>(
-			'insert:contentEmbed', ( _evt, data, api ) => downcastData( editor.model, data.item, api ),
+			'insert:contentEmbed', ( _evt, data, api ) => downcastData( editor, data.item, api ),
 			{ priority: 'high' } );
 		editor.editing.downcastDispatcher.on( 'attribute:source:contentEmbed', ( _evt, data ) => {
 			for ( const listener of this.listeners.get( data.item as ModelElement ) ?? [] ) {
 				listener();
 			}
 		} );
+
+		// The host writes edited sources after a delay: write them before the clipboard reads them.
+		for ( const event of [ 'copy', 'cut', 'dragstart' ] as const ) {
+			this.listenTo( editor.editing.view.document, event, () => {
+				editor.config.get( 'contentEmbed' )?.flushInline?.();
+			}, { priority: 'highest' } );
+		}
 	}
 
 	afterInit() {
@@ -125,7 +138,9 @@ export default class ContentEmbedInlineSource extends Plugin {
 		const listeners = this.listeners;
 
 		return {
-			language: embed.getAttribute( 'language' ) as string,
+			get language() {
+				return embed.getAttribute( 'language' ) as string;
+			},
 			getSource: () => embed.getAttribute( 'source' ) as string | undefined ?? '',
 			setSource: source => {
 				const root = embed.root;
@@ -152,22 +167,31 @@ export default class ContentEmbedInlineSource extends Plugin {
 		};
 	}
 
-	/** Turns a `<pre><code>` of an inline language into an embed of its source. */
+	/**
+	 * Turns a `<pre><code>` of an inline language, or of an extended code block, into an embed of
+	 * its source.
+	 */
 	private upcast( data: UpcastElementEvent[ 'args' ][ 0 ], api: UpcastConversionApi ) {
 		const code = data.viewItem;
 		const pre = code.parent;
-		const language = getInlineLanguage( this.editor, code );
-		if ( !language || !pre?.is( 'element', 'pre' ) || !api.consumable.test( code, { name: true } ) ) {
+		if ( !pre?.is( 'element', 'pre' ) || !api.consumable.test( code, { name: true } ) ) {
+			return;
+		}
+
+		const codeLanguage = getCodeLanguage( code );
+		const isDiagram = !!codeLanguage && getInlineLanguages( this.editor ).includes( codeLanguage );
+		const isCodeBlock = !isDiagram && pre.hasClass( EXTENDED_CODE_BLOCK_CLASS );
+		if ( !isDiagram && !isCodeBlock ) {
 			return;
 		}
 
 		const source = getViewText( code );
 		const embed = api.writer.createElement( 'contentEmbed', {
-			language,
+			language: codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE,
 			source,
-			boxSize: getBoxSizeOfView( pre ),
+			boxSize: getBoxSizeOfView( pre, isCodeBlock ? 'full' : 'medium' ),
 			hideTitle: true,
-			...getModeOfSavedView( pre, code ),
+			...( isCodeBlock ? getCodeBlockModeOfView( pre ) : getModeOfSavedView( pre, code ) ),
 			...getFlagsOfView( pre ),
 			...getSizesOfView( pre ),
 			...getCodeViewOfView( pre )
@@ -190,7 +214,7 @@ class InsertInlineEmbedCommand extends Command {
 		this.isEnabled = !!position && model.schema.findAllowedParent( position, 'contentEmbed' ) !== null;
 	}
 
-	override execute( { language, source }: InsertInlineEmbedOptions ) {
+	override execute( { language, source, boxSize = 'medium' }: InsertInlineEmbedOptions ) {
 		const editor = this.editor;
 		const model = editor.model;
 
@@ -198,7 +222,7 @@ class InsertInlineEmbedCommand extends Command {
 			const embed = writer.createElement( 'contentEmbed', {
 				language,
 				source,
-				boxSize: 'medium',
+				boxSize,
 				hideTitle: true,
 				editable: true
 			} );
@@ -215,14 +239,30 @@ export function isInlineSourceEmbed( embed: ModelElement ) {
 	return !!embed.getAttribute( 'language' );
 }
 
+/** Whether `embed` is an extended code block: an inline embed of a language that is no diagram. */
+export function isExtendedCodeBlock( editor: Editor, embed: ModelElement ) {
+	const language = embed.getAttribute( 'language' );
+	return typeof language === 'string' && !getInlineLanguages( editor ).includes( language );
+}
+
+/** The extended code block that the selection is on, or `null`. */
+export function getSelectedExtendedCodeBlock( editor: Editor ): ModelElement | null {
+	const embed = editor.model.document.selection.getSelectedElement();
+	if ( !embed?.is( 'element', 'contentEmbed' ) ) {
+		return null;
+	}
+	return isExtendedCodeBlock( editor, embed ) ? embed : null;
+}
+
 /** Saves an embed of a source as `<pre><code class="language-…">`. */
-function downcastData( model: Model, embed: ModelElement, api: DowncastConversionApi ) {
+function downcastData( editor: Editor, embed: ModelElement, api: DowncastConversionApi ) {
 	if ( !isInlineSourceEmbed( embed ) || !api.consumable.consume( embed, 'insert' ) ) {
 		return;
 	}
 
 	const { writer, mapper } = api;
 	const preAttributes: Record<string, string> = {
+		...( isExtendedCodeBlock( editor, embed ) ? { class: EXTENDED_CODE_BLOCK_CLASS } : {} ),
 		'data-box-size': embed.getAttribute( 'boxSize' ) as string,
 		...getDisplayModeAttributes( embed )
 	};
@@ -242,7 +282,7 @@ function downcastData( model: Model, embed: ModelElement, api: DowncastConversio
 	writer.insert( writer.createPositionAt( code, 0 ),
 		writer.createText( embed.getAttribute( 'source' ) as string | undefined ?? '' ) );
 	writer.insert( writer.createPositionAt( pre, 0 ), code );
-	writer.insert( mapper.toViewPosition( model.createPositionBefore( embed ) ), pre );
+	writer.insert( mapper.toViewPosition( editor.model.createPositionBefore( embed ) ), pre );
 	// `ResizableWidgets` writes the size attributes on the `<pre>` through this mapping.
 	mapper.bindElements( embed, pre );
 }
@@ -262,13 +302,16 @@ function getViewText( element: ViewElement ): string {
 		.join( '' );
 }
 
-/** The inline language of `code`, when it is one in `contentEmbed.inlineLanguages`. */
-function getInlineLanguage( editor: Editor, code: ViewElement ) {
-	const languages = editor.config.get( 'contentEmbed.inlineLanguages' ) ?? [];
+/** The languages of the diagrams that the host renders, from `contentEmbed.inlineLanguages`. */
+function getInlineLanguages( editor: Editor ): string[] {
+	return editor.config.get( 'contentEmbed.inlineLanguages' ) ?? [];
+}
+
+/** The language that the `language-…` class of `code` names, or `null`. */
+function getCodeLanguage( code: ViewElement ) {
 	for ( const className of code.getClassNames() ) {
-		const language = className.startsWith( 'language-' ) && className.slice( 'language-'.length );
-		if ( language && languages.includes( language ) ) {
-			return language;
+		if ( className.startsWith( 'language-' ) ) {
+			return className.slice( 'language-'.length );
 		}
 	}
 	return null;
@@ -288,10 +331,18 @@ function getModeOfSavedView( pre: ViewElement, code: ViewElement ) {
 	return { displayMode: mode ?? 'split', editable: true };
 }
 
-/** The box size of a saved embed, Medium when it has none or one that needs a title. */
-function getBoxSizeOfView( pre: ViewElement ): BoxSizeValue {
+/**
+ * The display mode and Editable flag of an extended code block. A code block saved without the
+ * settings of an embed opens editable, as a code block of the text note is.
+ */
+function getCodeBlockModeOfView( pre: ViewElement ) {
+	return pre.hasAttribute( 'data-box-size' ) ? getDisplayModeOfView( pre ) : { editable: true };
+}
+
+/** The box size of a saved embed, `fallback` when it has none or one that needs a title. */
+function getBoxSizeOfView( pre: ViewElement, fallback: BoxSizeValue ): BoxSizeValue {
 	const boxSize = INLINE_BOX_SIZES.find( size => size === pre.getAttribute( 'data-box-size' ) );
-	return boxSize ?? 'medium';
+	return boxSize ?? fallback;
 }
 
 function getFlagsOfView( pre: ViewElement ) {
