@@ -1,8 +1,9 @@
-import type { FileStream, ZipArchive, ZipArchiveEntryOptions, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
+import { MAX_BLOB_CONTENT_LENGTH } from "@triliumnext/core";
+import { entryTooLargeError, type FileStream, type ZipArchive, type ZipArchiveEntryOptions, type ZipEntry, type ZipProvider, type ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { ZipArchive as ArchiverZip } from "archiver";
 import fs from "fs";
 import type { FileHandle } from "fs/promises";
-import type { Stream } from "stream";
+import type { Readable } from "stream";
 import * as yauzl from "yauzl";
 
 import { asBuffer } from "./services/binary.js";
@@ -88,9 +89,21 @@ class NodejsZipArchive implements ZipArchive {
     }
 }
 
-function streamToBuffer(stream: Stream): Promise<Buffer> {
+/**
+ * Collects an entry's decompressed bytes, destroying the stream as soon as they pass `maxLength`: a small
+ * deflated entry can expand to gigabytes, and the entry's declared size is not trusted.
+ */
+function streamToBuffer(stream: Readable, fileName: string, maxLength: number): Promise<Buffer> {
     const chunks: Uint8Array[] = [];
-    stream.on("data", (chunk: Uint8Array) => chunks.push(chunk));
+    let length = 0;
+    stream.on("data", (chunk: Uint8Array) => {
+        length += chunk.length;
+        if (length > maxLength) {
+            stream.destroy(entryTooLargeError(fileName, maxLength));
+            return;
+        }
+        chunks.push(chunk);
+    });
     return new Promise((res, rej) => {
         stream.on("end", () => res(Buffer.concat(chunks)));
         stream.on("error", rej);
@@ -135,6 +148,13 @@ async function openZip(source: ZipSource) {
 }
 
 export default class NodejsZipProvider implements ZipProvider {
+    /** The most bytes `readContent()` decompresses from one entry; nothing larger can be stored as a blob. */
+    readonly #maxEntryLength: number;
+
+    constructor(maxEntryLength = MAX_BLOB_CONTENT_LENGTH) {
+        this.#maxEntryLength = maxEntryLength;
+    }
+
     async detectFilenameEncoding(source: ZipSource): Promise<string> {
         const zipfile = await openZip(source);
 
@@ -198,8 +218,11 @@ export default class NodejsZipProvider implements ZipProvider {
                 const fileName = decodeBuffer(entry.fileNameRaw, encoding);
 
                 const readContent = async () => {
+                    if (entry.uncompressedSize > this.#maxEntryLength) {
+                        throw entryTooLargeError(fileName, this.#maxEntryLength);
+                    }
                     const readStream = await zipfile.openReadStreamPromise(entry);
-                    return await streamToBuffer(readStream);
+                    return await streamToBuffer(readStream, fileName, this.#maxEntryLength);
                 };
 
                 await processEntry({ fileName, lastModified: entry.getLastModDate() }, readContent);

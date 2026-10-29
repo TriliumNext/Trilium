@@ -1,4 +1,5 @@
-import type { FileStream, ZipArchive, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
+import { MAX_BLOB_CONTENT_LENGTH } from "@triliumnext/core";
+import { entryTooLargeError, type FileStream, type ZipArchive, type ZipEntry, type ZipProvider, type ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { inflateSync, strToU8, zipSync } from "fflate";
 
 type ZipOutput = {
@@ -54,6 +55,13 @@ class BrowserZipArchive implements ZipArchive {
 }
 
 export default class BrowserZipProvider implements ZipProvider {
+    /** The most bytes `readContent()` inflates from one entry; nothing larger can be stored as a blob. */
+    readonly #maxEntryLength: number;
+
+    constructor(maxEntryLength = MAX_BLOB_CONTENT_LENGTH) {
+        this.#maxEntryLength = maxEntryLength;
+    }
+
     async detectFilenameEncoding(source: ZipSource): Promise<string> {
         const entries = await readCentralDirectory(toByteSource(source));
         const rawSamples = collectRawFilenameSamples(entries);
@@ -74,10 +82,15 @@ export default class BrowserZipProvider implements ZipProvider {
     ): Promise<void> {
         const byteSource = toByteSource(source);
         for (const record of await readCentralDirectory(byteSource)) {
-            await processEntry(
-                { fileName: decodeZipFileName(record, filenameEncoding) },
-                () => readEntryContent(byteSource, record)
-            );
+            const fileName = decodeZipFileName(record, filenameEncoding);
+            await processEntry({ fileName }, async () => {
+                // `inflateSync()` writes into a buffer of the declared size and drops anything past it,
+                // so checking the declared size bounds the allocation.
+                if (record.uncompressedSize > this.#maxEntryLength) {
+                    throw entryTooLargeError(fileName, this.#maxEntryLength);
+                }
+                return await readEntryContent(byteSource, record);
+            });
         }
     }
 

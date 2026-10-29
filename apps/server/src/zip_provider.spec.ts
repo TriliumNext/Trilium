@@ -223,6 +223,41 @@ describe("NodejsZipProvider", () => {
         });
     });
 
+    describe("per-entry size limit", () => {
+        const limited = new NodejsZipProvider(64 * 1024);
+        const tooLarge = /"zeros\.bin" decompresses to more than 65536 bytes/;
+
+        async function readWithLimit(buffer: Buffer) {
+            const out: Record<string, number> = {};
+            await limited.readZipFile(buffer, async (entry, readContent) => {
+                out[entry.fileName] = (await readContent()).length;
+            });
+            return out;
+        }
+
+        /** Rewrites every central directory record's uncompressed size, as a decompression bomb can. */
+        function setDeclaredSizes(buffer: Buffer, size: number) {
+            let offset = buffer.indexOf("PK\x01\x02", 0, "binary");
+            while (offset !== -1) {
+                buffer.writeUInt32LE(size, offset + 24);
+                offset = buffer.indexOf("PK\x01\x02", offset + 4, "binary");
+            }
+        }
+
+        it("reads entries up to the limit and rejects one declared past it", async () => {
+            expect(await readWithLimit(await buildZip([{ name: "small.bin", content: new Uint8Array(64 * 1024) }])))
+                .toEqual({ "small.bin": 64 * 1024 });
+            await expect(readWithLimit(await buildZip([{ name: "zeros.bin", content: new Uint8Array(1024 * 1024) }])))
+                .rejects.toThrow(tooLarge);
+        });
+
+        it("stops inflating an entry whose declared size understates its content", async () => {
+            const bomb = await buildZip([{ name: "zeros.bin", content: new Uint8Array(1024 * 1024) }]);
+            setDeclaredSizes(bomb, 16);
+            await expect(readWithLimit(bomb)).rejects.toThrow(tooLarge);
+        });
+    });
+
     it("rejects a Blob source, which only the browser provider reads", async () => {
         await expect(provider.readZipFile({ blob: new Blob([]) }, async () => {}))
             .rejects.toThrow("A Blob zip source is only readable in the browser.");
