@@ -48,9 +48,7 @@ async function main() {
  * Copies `sherpa-onnx-node`, which the meeting transcription worker loads, together with the
  * package holding its native addon for the target platform. That package is only an optional
  * dependency, so pnpm installs it just for the host's platform; CI installs the others it
- * packages for with `--cpu`. Upstream publishes none for Windows on arm64, so CI builds
- * `sherpa-onnx-win-arm64` itself (`.github/workflows/sherpa-onnx-win-arm64.yml`) and places it in
- * `node_modules`. A target with no such package ships neither.
+ * packages for with `--cpu`. A target with no such package ships neither.
  */
 function copySherpaOnnx() {
     const sherpaDir = join(build.rootDir, "node_modules", "sherpa-onnx-node");
@@ -58,12 +56,11 @@ function copySherpaOnnx() {
     const { optionalDependencies } = JSON.parse(sherpaPackageJson);
     const platform = process.platform === "win32" ? "win" : process.platform;
     const platformPackage = `sherpa-onnx-${platform}-${targetArch()}`;
-    const isInstalled = existsSync(join(build.rootDir, "node_modules", platformPackage));
-    if (!(platformPackage in optionalDependencies) && !isInstalled) {
+    if (!(platformPackage in optionalDependencies)) {
         console.warn(`sherpa-onnx has no ${platformPackage}; transcription is unavailable there.`);
         return;
     }
-    if (!isInstalled) {
+    if (!existsSync(join(build.rootDir, "node_modules", platformPackage))) {
         throw new Error(`${platformPackage} is not installed. Install the target architecture's `
             + `optional dependencies too: pnpm install --cpu=${process.arch},${targetArch()}`);
     }
