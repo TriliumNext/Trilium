@@ -1,5 +1,6 @@
 import "./index.css";
 
+import multicolumnStylesheet from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
 import { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import Reveal, { RevealApi } from "reveal.js";
@@ -92,6 +93,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
                 slideBaseStylesheet,
                 themeStylesheet,
                 katexStylesheet,
+                multicolumnStylesheet,
                 slideCustomStylesheet
             ];
             if (media === "screen") {

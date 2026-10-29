@@ -10,9 +10,23 @@
     box-shadow: none;
 }
 
-figure img {
-    aspect-ratio: unset !important;
+:host .reveal .slides {
+    container-type: size;
+}
+
+.reveal figure.image {
+    margin: 0 auto;
+}
+
+.reveal figure img {
+    width: auto !important;
     height: auto !important;
+    aspect-ratio: unset !important;
+    max-height: 50cqh;
+}
+
+.reveal figcaption {
+    font-size: 0.6em;
 }
 
 p:has(span.text-tiny),
