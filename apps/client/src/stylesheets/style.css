@@ -633,12 +633,14 @@ pre > button.copy-button {
     padding-inline-end: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
 }
 
-pre > button.copy-button:hover {
+pre > button.copy-button:hover,
+.code-embed-content > button.copy-button:hover {
     color: inherit !important;
     opacity: 1;
 }
 
-pre > button.copy-button:active {
+pre > button.copy-button:active,
+.code-embed-content > button.copy-button:active {
     background-color: unset !important;
 }
 
@@ -1570,6 +1572,23 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
         flex: 1 1 auto;
         flex-direction: column;
         min-height: 0;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 37px;
+    --_copy-button-inset: .35em;
+
+    position: relative;
+
+    > button.copy-button {
+        position: absolute;
+        top: var(--_copy-button-inset);
+        inset-inline-end: var(--_copy-button-inset);
+    }
+
+    &:has(> button.copy-button) .cm-content {
+        padding-inline-end: calc(var(--_copy-button-size) + var(--_copy-button-inset) * 2);
     }
 }
 

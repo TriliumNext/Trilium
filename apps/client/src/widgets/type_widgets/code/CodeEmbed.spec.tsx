@@ -12,6 +12,7 @@ import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
 import attributes from "../../../services/attributes";
+import { copyTextWithToast } from "../../../services/clipboard_ext";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
@@ -33,6 +34,8 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
     t: (key: string, values?: Record<string, unknown>) =>
         values ? `${key} ${Object.values(values).join(" ")}` : key
 }));
+
+vi.mock("../../../services/clipboard_ext", () => ({ copyTextWithToast: vi.fn() }));
 
 // `CodeEditor` reads the theme as a string, and the line numbers set to Auto from the option.
 options.set("codeNoteTheme", "");
@@ -747,7 +750,7 @@ describe("InlineCodeEmbed", () => {
         return figure.querySelector("pre.code-embed-editor")?.getAttribute("data-language");
     }
 
-    it("shows the code in the language of its embed, named while it can edit", async () => {
+    it("shows the code in the language of its embed", async () => {
         const setMimeType = vi.spyOn(VanillaCodeMirror.prototype, "setMimeType");
         const { editable } = buildCodeViewTextEditor();
         const { figure } = await mountInline("pass", buildEditor(), {
@@ -757,7 +760,6 @@ describe("InlineCodeEmbed", () => {
         const view = await findView(figure, true);
         expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "pass", true ]);
         expect(setMimeType).toHaveBeenLastCalledWith("text/x-python");
-        await vi.waitFor(() => expect(getLabel(figure)).toBe("Python"));
         const tools = getContentEmbedTools(figure);
         // The menu of the embed offers the box size and the Editable toggle.
         expect([ tools?.hasEditableFlag, tools?.boxSizeIcon, tools?.hiddenToolbarItems ]).toEqual([
@@ -811,6 +813,39 @@ describe("InlineCodeEmbed", () => {
         });
         await vi.waitFor(() => expect(setMimeType).toHaveBeenLastCalledWith("text/x-sh"));
         expect(getLabel(figure)).toBe("Shell (bash)");
+    });
+
+    it("names the language while edited, and offers a copy button otherwise", async () => {
+        const copyButton = (figure: HTMLElement) =>
+            figure.querySelector<HTMLElement>(".code-embed-content > button.copy-button");
+        const { editable } = buildCodeViewTextEditor();
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", isEditable: true, container: editable
+        });
+        await findView(figure);
+        await vi.waitFor(() => expect(getLabel(figure)).toBe("Python"));
+        expect(copyButton(figure)).toBeNull();
+
+        // With the Editable toggle off, the block reads as a code block of a read-only note.
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await findView(figure, true);
+        expect(getLabel(figure)).toBeNull();
+        const button = copyButton(figure);
+        if (!button) throw new Error("Expected a copy button.");
+        expect([ button.classList.contains("bx-copy"), button.getAttribute("type") ])
+            .toEqual([ true, "button" ]);
+        act(() => button.click());
+        expect(copyTextWithToast).toHaveBeenCalledExactlyOnceWith("pass");
+
+        // Without an editor, as in a read-only text note.
+        const { figure: shown } = await mountInline("x", undefined, {
+            language: "text-x-python"
+        });
+        await findView(shown, true);
+        expect(copyButton(shown)).not.toBeNull();
     });
 });
 

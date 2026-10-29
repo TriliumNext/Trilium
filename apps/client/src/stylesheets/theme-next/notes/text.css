@@ -1126,6 +1126,18 @@ pre button.copy-button.icon-action {
     padding-inline-end: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
 }
 
+:root .include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 1.8em;
+    /* Centers the button on the first line: 1.4 is CodeMirror's line height, 1em the padding of
+       `.cm-content` in style.css. */
+    --_copy-button-inset: calc((1.4em + 1em * 2 - var(--_copy-button-size)) / 2);
+
+    > button.copy-button.icon-action {
+        --icon-button-size: var(--_copy-button-size);
+        font-size: 1em;
+    }
+}
+
 /* Child combinator: as a descendant one it also hit first-children nested inside a block, stacking a pixel per level. */
 html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     /* Create some space for the top-side shadow */

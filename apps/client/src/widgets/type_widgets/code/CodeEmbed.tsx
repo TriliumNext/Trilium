@@ -10,8 +10,10 @@ import type { CommandNames } from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
 import FNote from "../../../entities/fnote";
 import type { MenuItem } from "../../../menus/context_menu";
+import { copyTextWithToast } from "../../../services/clipboard_ext";
 import type { CodePreviewLines } from "../../../services/code_note_preview";
 import type { ContentEditor } from "../../../services/content_renderer";
+import { t } from "../../../services/i18n";
 import { PLAIN_TEXT_MIME } from "../../../services/mime_types";
 import type { SourceEmbedProps } from "../../../services/source_embeds";
 import {
@@ -20,6 +22,7 @@ import {
 } from "../../layout/code_menus";
 import { SaveStateBadge } from "../../layout/NoteBadges";
 import { useMimeTypes } from "../../layout/NoteTypeSwitcher";
+import ActionButton from "../../react/ActionButton";
 import {
     useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
@@ -117,6 +120,7 @@ export function InlineCodeEmbed({ content: savedContent, editor, language }: Sou
             settings={settings}
             mime={settings.mime ?? PLAIN_TEXT_MIME}
             hasLanguageLabel
+            hasCopyButton
             hiddenToolbarItems={EXTENDED_CODE_BLOCK_HIDDEN_ITEMS}
         />
     );
@@ -139,8 +143,13 @@ interface CodeEmbedContentProps {
     initialLines?: CodePreviewLines;
     /** Whether the title row shows the save state while the content is edited. */
     hasSaveStatus?: boolean;
-    /** Whether the editor shows the name of its language in its corner while it can edit. */
+    /** Whether the editor shows the name of its language in its corner while it is edited. */
     hasLanguageLabel?: boolean;
+    /**
+     * Whether a button in the corner copies the content while it is not edited, as on a code
+     * block of a read-only text note.
+     */
+    hasCopyButton?: boolean;
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
 }
@@ -148,7 +157,7 @@ interface CodeEmbedContentProps {
 /** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
 function CodeEmbedContent({
     rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
-    hasSaveStatus, hasLanguageLabel, hiddenToolbarItems
+    hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems
 }: CodeEmbedContentProps) {
     const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
@@ -190,12 +199,23 @@ function CodeEmbedContent({
                             useTabs={settings.useTabs}
                             wrapLines={lines.wrapLines}
                             hasLineNumbers={lines.hasLineNumbers}
-                            languageLabel={hasLanguageLabel && canEdit ? languageLabel : undefined}
+                            languageLabel={hasLanguageLabel && isEditing ? languageLabel : undefined}
                             viewRef={viewRef}
                             onClose={onContentChange}
                         />
                     </Suspense>
                 </CaretNavigationContext.Provider>
+                {hasCopyButton && !isEditing && (
+                    <ActionButton
+                        className="tn-tool-button copy-button"
+                        icon="bx bx-copy"
+                        text={t("code_block.copy_title")}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            copyTextWithToast(getCodeText().getText());
+                        }}
+                    />
+                )}
             </div>
             {hasSaveStatus && editor && (
                 <SaveStatus rootRef={rootRef} editor={editor} isShown={isEditing} />
