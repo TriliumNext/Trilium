@@ -1,8 +1,23 @@
+:host {
+    position: relative;
+}
+
 :host .reveal {
     flex: none;
     width: min(100cqw, 100cqh * 16 / 9);
     height: auto;
     aspect-ratio: 16 / 9;
+    clip-path: inset(0 round var(--bs-border-radius));
+}
+
+/* The shadow of `.reveal`, which its own `clip-path` would cut off. */
+:host::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: min(100cqw, 100cqh * 16 / 9);
+    height: min(100cqw * 9 / 16, 100cqh);
+    margin: auto;
     border-radius: var(--bs-border-radius);
     box-shadow:
         0 1px 3px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity) * 0.5)),
@@ -10,8 +25,11 @@
 }
 
 :host(:fullscreen) .reveal {
-    border-radius: 0;
-    box-shadow: none;
+    clip-path: none;
+}
+
+:host(:fullscreen)::before {
+    content: none;
 }
 
 :host .reveal .slides {
@@ -20,6 +38,24 @@
 
 .slide-content {
     display: flow-root;
+}
+
+.slide-editor .ck.ck-editor__editable_inline {
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+    cursor: text;
+
+    &.ck-focused:not(.ck-editor__nested-editable) {
+        border: 0;
+        box-shadow: none;
+    }
+}
+
+.slide-editor {
+    outline: 2px dashed var(--r-link-color);
+    outline-offset: 8px;
 }
 
 .reveal .slides section.has-dark-background {

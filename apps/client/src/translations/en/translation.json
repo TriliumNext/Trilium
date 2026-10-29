@@ -3844,6 +3844,7 @@
   },
   "presentation_view": {
     "edit-slide": "Edit this slide",
+    "finish-editing": "Finish editing",
     "start-presentation": "Start presentation",
     "slide-overview": "Toggle an overview of the slides"
   },

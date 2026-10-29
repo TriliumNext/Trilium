@@ -1,13 +1,15 @@
 import "./index.css";
 
 import multicolumnStylesheet from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
-import { RefObject } from "preact";
+import { createPortal, RefObject } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import Reveal, { RevealApi } from "reveal.js";
 import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
 import { openInCurrentNoteContext } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
 import utils from "../../../services/utils";
@@ -25,6 +27,7 @@ const SLIDE_WIDTH = 1280;
 const SLIDE_HEIGHT = 720;
 const isElectron = utils.isElectron();
 const MAX_FIT_ATTEMPTS = 8;
+const SlideEditor = lazy(() => import("./slide_editor"));
 
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
@@ -33,6 +36,20 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const stylesheets = usePresentationStylesheets(note, media);
     const { noteContext } = useNoteContext();
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    const [ editedNoteId, setEditedNoteId ] = useState<string>();
+    const [ editorHost, setEditorHost ] = useState<HTMLElement | null>(null);
+    const editedNote = editedNoteId ? froca.getNoteFromCache(editedNoteId) : undefined;
+    const finishEditing = () => setEditedNoteId(undefined);
+
+    useEffect(() => {
+        if (!api) return;
+        api.on("slidechanged", finishEditing);
+        api.on("overviewshown", finishEditing);
+        return () => {
+            api.off("slidechanged", finishEditing);
+            api.off("overviewshown", finishEditing);
+        };
+    }, [ api ]);
 
     function refresh() {
         buildPresentationModel(note, onProgressChanged).then(setPresentation);
@@ -59,7 +76,14 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const content = (
         <>
             {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
-            <Presentation presentation={presentation} setApi={setApi} ntxId={noteContext?.ntxId} />
+            <Presentation
+                presentation={presentation}
+                setApi={setApi}
+                ntxId={noteContext?.ntxId}
+                editedNoteId={editedNoteId}
+                onEditSlide={media === "screen" && !isReadOnly ? setEditedNoteId : undefined}
+                onEditorHost={setEditorHost}
+            />
         </>
     );
 
@@ -68,12 +92,26 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
             <div class="presentation-view">
                 <CollectionProperties
                     note={note}
-                    rightChildren={<ButtonOverlay containerRef={containerRef} api={api} isReadOnly={isReadOnly} />}
+                    rightChildren={<ButtonOverlay
+                        containerRef={containerRef}
+                        api={api}
+                        isReadOnly={isReadOnly}
+                        isEditing={!!editedNoteId}
+                        onFinishEditing={finishEditing}
+                    />}
                 />
                 <ShadowDom
                     className="presentation-container"
                     containerRef={containerRef}
                 >{content}</ShadowDom>
+                {/* A portal keeps the editor in this tree, whose contexts the shadow root's tree lacks. */}
+                {editedNote && editorHost && createPortal(
+                    // Its own boundary, so that loading the editor does not suspend the presentation.
+                    <Suspense fallback={null}>
+                        <SlideEditor note={editedNote} onFinish={finishEditing} />
+                    </Suspense>,
+                    editorHost
+                )}
             </div>
         );
     } else if (media === "print") {
@@ -111,7 +149,15 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     return stylesheets;
 }
 
-function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObject<HTMLDivElement | null>, api: RevealApi | undefined, isReadOnly: boolean }) {
+interface ButtonOverlayProps {
+    containerRef: RefObject<HTMLDivElement | null>;
+    api: RevealApi | undefined;
+    isReadOnly: boolean;
+    isEditing: boolean;
+    onFinishEditing(): void;
+}
+
+function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditing }: ButtonOverlayProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;
@@ -128,6 +174,14 @@ function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObj
 
     return (
         <>
+            {isEditing && (
+                <ActionButton
+                    icon="bx bx-check"
+                    text={t("presentation_view.finish-editing")}
+                    onClick={onFinishEditing}
+                />
+            )}
+
             {!isReadOnly && (
                 <ActionButton
                     icon="bx bx-edit"
@@ -159,7 +213,19 @@ function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObj
     );
 }
 
-function Presentation({ presentation, setApi, ntxId } : { presentation: PresentationModel, setApi: (api: RevealApi | undefined) => void, ntxId: string | null | undefined }) {
+interface PresentationProps {
+    presentation: PresentationModel;
+    setApi: (api: RevealApi | undefined) => void;
+    ntxId: string | null | undefined;
+    /** The note of the slide being edited in place. */
+    editedNoteId: string | undefined;
+    /** Starts editing a text slide in place; left out when the presentation cannot be edited. */
+    onEditSlide: ((noteId: string) => void) | undefined;
+    /** Receives the element that the editor of the edited slide goes into. */
+    onEditorHost: (element: HTMLElement | null) => void;
+}
+
+function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, onEditorHost }: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
     const fitObserverRef = useRef<ResizeObserver>(null);
@@ -182,7 +248,10 @@ function Presentation({ presentation, setApi, ntxId } : { presentation: Presenta
                     return false;
                 }
 
-                return true;
+                // Reveal.js checks `document.activeElement`, which is the shadow host rather than
+                // the slide editor inside it.
+                const target = event.composedPath()[0];
+                return !(target instanceof HTMLElement && target.isContentEditable);
             },
         });
         const container = containerRef.current;
@@ -225,19 +294,34 @@ function Presentation({ presentation, setApi, ntxId } : { presentation: Presenta
         for (const content of containerRef.current.querySelectorAll(".slide-content")) {
             fitObserver.observe(content);
         }
-    }, [ presentation, revealApi ]);
+    }, [ presentation, revealApi, editedNoteId ]);
+
+    function renderSlide(slide: PresentationSlideBaseModel) {
+        const canEdit = onEditSlide && slide.type === "text";
+        return (
+            <Slide
+                key={slide.noteId}
+                slide={slide}
+                ntxId={ntxId}
+                editorHostRef={slide.noteId === editedNoteId ? onEditorHost : undefined}
+                onEdit={canEdit ? () => {
+                    if (!revealApi?.isOverview()) onEditSlide(slide.noteId);
+                } : undefined}
+            />
+        );
+    }
 
     return (
         <div ref={containerRef} className="reveal">
             <div className="slides">
                 {presentation.slides?.map(slide => {
                     if (!slide.verticalSlides) {
-                        return <Slide key={slide.noteId} slide={slide} ntxId={ntxId} />;
+                        return renderSlide(slide);
                     }
                     return (
                         <section>
-                            <Slide key={slide.noteId} slide={slide} ntxId={ntxId} />
-                            {slide.verticalSlides.map(slide => <Slide key={slide.noteId} slide={slide} ntxId={ntxId} /> )}
+                            {renderSlide(slide)}
+                            {slide.verticalSlides.map(renderSlide)}
                         </section>
                     );
 
@@ -248,11 +332,27 @@ function Presentation({ presentation, setApi, ntxId } : { presentation: Presenta
 
 }
 
-export function Slide({ slide, ntxId }: { slide: PresentationSlideBaseModel, ntxId: string | null | undefined }) {
+interface SlideProps {
+    slide: PresentationSlideBaseModel;
+    ntxId: string | null | undefined;
+    /** Set while the slide is edited in place, to receive the element that the editor goes into. */
+    editorHostRef?: (element: HTMLElement | null) => void;
+    /** Starts editing the slide in place, on a double-click. */
+    onEdit?: () => void;
+}
+
+export function Slide({ slide, ntxId, editorHostRef, onEdit }: SlideProps) {
     // On desktop a web view goes in an Electron `<webview>`, whose own session keeps the page away
     // from the app; elsewhere Reveal.js frames it in the slide's background.
     const desktopWebViewSrc = isElectron ? slide.webViewSrc : undefined;
     const backgroundIframe = isElectron ? undefined : slide.webViewSrc;
+
+    function renderContent() {
+        if (desktopWebViewSrc) return <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />;
+        // The keys keep Preact from reusing the rendered content's element, and its zoom, for the editor.
+        if (editorHostRef) return <div key="editor" className="slide-content slide-editor" ref={editorHostRef} />;
+        return <div key="content" className="slide-content" dangerouslySetInnerHTML={slide.content} />;
+    }
 
     return (
         <section
@@ -263,10 +363,9 @@ export function Slide({ slide, ntxId }: { slide: PresentationSlideBaseModel, ntx
             data-background-gradient={slide.backgroundGradient}
             data-background-iframe={backgroundIframe}
             data-background-interactive={backgroundIframe ? "" : undefined}
+            onDblClick={editorHostRef ? undefined : onEdit}
         >
-            {desktopWebViewSrc
-                ? <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />
-                : <div className="slide-content" dangerouslySetInnerHTML={slide.content} />}
+            {renderContent()}
         </section>
     );
 }

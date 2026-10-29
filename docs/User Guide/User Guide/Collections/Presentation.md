@@ -31,6 +31,14 @@ The following keyboard shortcuts are supported:
 *   Press <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> or  to go to the next/previous slide in order.
 *   And a few more, press <kbd>?</kbd> to display a popup with all the supported keyboard combinations.
 
+## Editing a slide in place
+
+Double-click a slide made from a text note to edit it directly on the slide, in the presentation's theme. A dashed outline marks the slide being edited, and the formatting toolbar appears next to the selected text. Changes are saved as you type, as in any text note, and a slide that grows past the edge of the slide is zoomed out to fit.
+
+To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button in the floating toolbar or go to another slide.
+
+Slides of other note types, such as diagrams or canvases, are edited from their note, using the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place.
+
 ## Vertical slides and nesting
 
 Unlike traditional presentation software such as Microsoft PowerPoint, the slides in Trilium can be laid out horizontally or vertically in order to create depth or better organize the slides by topic.
