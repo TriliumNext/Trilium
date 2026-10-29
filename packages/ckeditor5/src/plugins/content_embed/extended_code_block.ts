@@ -1,9 +1,11 @@
 import { EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE } from "@triliumnext/commons";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
-import { ButtonView, Command, type DowncastAttributeEvent, type Editor, Plugin } from "ckeditor5";
+import {
+    ButtonView, Command, type DowncastAttributeEvent, type Editor, type ModelElement, Plugin
+} from "ckeditor5";
 
 import ContentEmbed from "./content_embed.js";
-import { INSERT_INLINE_EMBED_COMMAND } from "./inline_source.js";
+import { INSERT_INLINE_EMBED_COMMAND, isExtendedCodeBlock } from "./inline_source.js";
 
 export const INSERT_EXTENDED_CODE_BLOCK_COMMAND = "insertExtendedCodeBlock";
 
@@ -30,11 +32,12 @@ export default class ExtendedCodeBlock extends Plugin {
         const command = new InsertExtendedCodeBlockCommand(editor);
         editor.commands.add(INSERT_EXTENDED_CODE_BLOCK_COMMAND, command);
 
-        // A new block takes the language that was set last.
-        editor.editing.downcastDispatcher.on<DowncastAttributeEvent>(
+        // A new block takes the language that was set last on a code block.
+        editor.editing.downcastDispatcher.on<DowncastAttributeEvent<ModelElement>>(
             "attribute:language:contentEmbed",
             (_evt, data) => {
-                if (typeof data.attributeNewValue === "string") {
+                if (typeof data.attributeNewValue === "string"
+                    && isExtendedCodeBlock(editor, data.item)) {
                     command.language = data.attributeNewValue;
                 }
             }

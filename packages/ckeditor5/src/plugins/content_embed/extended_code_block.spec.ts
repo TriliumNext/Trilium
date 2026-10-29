@@ -8,6 +8,7 @@ import { CODE_VIEW_COMMAND_NAME } from "./content_embed.js";
 import ExtendedCodeBlock, {
     EXTENDED_CODE_BLOCK_BUTTON, INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
 } from "./extended_code_block.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "./inline_source.js";
 
 describe("ExtendedCodeBlock", () => {
     function createEditor() {
@@ -42,7 +43,7 @@ describe("ExtendedCodeBlock", () => {
         expect(editor.commands.get(INSERT_EXTENDED_CODE_BLOCK_COMMAND)?.isEnabled).toBe(false);
     });
 
-    it("gives a new block the language that was set last", async () => {
+    it("gives a new block the language that was set last on a code block", async () => {
         const editor = await createEditor();
         editor.setData(`<pre class="extended-code-block">`
             + `<code class="language-text-plain">x</code></pre>`);
@@ -54,6 +55,7 @@ describe("ExtendedCodeBlock", () => {
         editor.model.change((writer) => writer.removeAttribute("language", embed));
 
         setModelData(editor.model, "<paragraph>[]</paragraph>");
+        editor.execute(INSERT_INLINE_EMBED_COMMAND, { language: "mermaid", source: "" });
         insertExtendedCodeBlock(editor);
 
         expect(editor.getData()).toContain(`<code class="language-text-x-python"></code>`);
