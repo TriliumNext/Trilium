@@ -76,6 +76,8 @@ describe("formatHtml", () => {
             .toBe([ `<div id="d">`, `  <p>See <a class="reference-link" href='a  b' data-x=1>x</a>.</p>`, "</div>" ].join("\n"));
         expect(formatHtml(`<pre   class="x"><code   class="y">  <b  >keep</b></code></pre>`))
             .toBe(`<pre class="x"><code   class="y">  <b  >keep</b></code></pre>`);
+        expect(formatHtml(`<p><a href=chapter one.html  data-x =1>x</a></p>`))
+            .toBe(`<p><a href=chapter one.html data-x =1>x</a></p>`);
     });
 
     it("formats a container with more blocks than a call takes arguments", () => {

@@ -97,11 +97,18 @@ function normalizeAllAttributes(root: HTMLElement) {
     }
 }
 
-/** An attribute name, optionally followed by `=` and a quoted or unquoted value. */
-const ATTRIBUTE = /[^\s"'<>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'<>=`]+))?/g;
+/**
+ * An attribute name, optionally followed by `=` and a quoted or unquoted value. HTML separates
+ * attributes only at ASCII whitespace, so `[\t\n\f\r ]` stands in for `\s`, which also matches
+ * U+00A0 and the other Unicode spaces.
+ */
+const ATTRIBUTE = /[^\t\n\f\r "'<>/=]+(?:[\t\n\f\r ]*=[\t\n\f\r ]*(?:"[^"]*"|'[^']*'|[^\t\n\f\r "'<>=`]+))?/g;
+
+/** The name of an attribute and its `=`, with the whitespace around the `=`. */
+const NAME_AND_EQUALS = /^([^\t\n\f\r =]+)[\t\n\f\r ]*=[\t\n\f\r ]*/;
 
 /** Joins the attributes of `rawAttrs` with one space, without touching the text of their values. */
 function normalizeAttributes(rawAttrs: string) {
-    return Array.from(rawAttrs.matchAll(ATTRIBUTE), ([ attribute ]) => attribute.replace(/^([^=\s]+)\s*=\s*/, "$1="))
+    return Array.from(rawAttrs.matchAll(ATTRIBUTE), ([ attribute ]) => attribute.replace(NAME_AND_EQUALS, "$1="))
         .join(" ");
 }
