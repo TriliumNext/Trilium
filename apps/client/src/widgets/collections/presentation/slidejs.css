@@ -3,6 +3,11 @@
     width: min(100cqw, 100cqh * 16 / 9);
     height: auto;
     aspect-ratio: 16 / 9;
+    box-shadow: 0 2px 12px var(--tool-dialog-shadow-color);
+}
+
+:host(:fullscreen) .reveal {
+    box-shadow: none;
 }
 
 figure img {

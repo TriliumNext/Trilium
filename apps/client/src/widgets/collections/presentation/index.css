@@ -10,10 +10,11 @@
     align-items: center;
     justify-content: center;
     min-height: 0;
+    padding: 1em;
     container-type: size;
-    background-color: var(--accented-background-color);
 
     &:fullscreen {
+        padding: 0;
         background-color: black;
     }
 }
