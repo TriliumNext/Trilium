@@ -2860,7 +2860,9 @@
     "title": "実験オプション",
     "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。",
     "llm_name": "AI / LLM チャット",
-    "llm_description": "大規模言語モデルを活用した AI チャットサイドバーと LLM チャットノートを有効にします。"
+    "llm_description": "大規模言語モデルを活用した AI チャットサイドバーと LLM チャットノートを有効にします。",
+    "extended_code_blocks_name": "拡張コードブロック",
+    "extended_code_blocks_description": "より高度な構文ハイライトエンジンとコード折りたたみ機能を備えた、高速なコードブロックです。"
   },
   "breadcrumb_badges": {
     "read_only_explicit": "読み取り専用",
@@ -3954,7 +3956,9 @@
       "use-headers": "ヘッダーを使用",
       "header-columns": "ヘッダー列",
       "header-rows": "ヘッダー行",
-      "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。"
+      "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。",
+      "extended-code-block": "拡張コードブロック",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "コードノートとして編集可能なコードブロックを挿入します。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
