@@ -61,7 +61,11 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
 
 function removeTemporaryFiles() {
     for (const filePath of createdTemporaryFiles) {
-        fs.rmSync(filePath, { force: true });
+        try {
+            fs.rmSync(filePath, { force: true });
+        } catch {
+            // On Windows, an editor that still holds the file open makes `rmSync()` throw.
+        }
     }
 }
 

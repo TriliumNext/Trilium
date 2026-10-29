@@ -3,7 +3,7 @@ import { becca, cls, note_service as noteService, ValidationError } from "@trili
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import dataDirs from "../../services/data_dir.js";
 import filesRoute from "./files.js";
@@ -90,6 +90,27 @@ describe("Files API", () => {
 
             cleanup?.(0);
             expect(fs.existsSync(tmpFilePath)).toBe(false);
+        });
+
+        it("removes the other temp files when one cannot be removed", () => {
+            const locked = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+            const other = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+            const rmSync = fs.rmSync;
+            const spy = vi.spyOn(fs, "rmSync").mockImplementation((filePath, options) => {
+                if (filePath === locked) {
+                    throw new Error("EBUSY: resource busy or locked");
+                }
+                rmSync(filePath, options);
+            });
+            const cleanup = process.listeners("exit").find((listener) => listener.name === "removeTemporaryFiles");
+
+            try {
+                expect(() => cleanup?.(0)).not.toThrow();
+                expect(fs.existsSync(other)).toBe(false);
+            } finally {
+                spy.mockRestore();
+                fs.rmSync(locked, { force: true });
+            }
         });
     });
 });
