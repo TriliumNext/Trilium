@@ -1,5 +1,5 @@
 import { ComponentChildren, HTMLAttributes, JSX, RefObject, render } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useLayoutEffect, useState } from "preact/hooks";
 import { useSyncedRef } from "./hooks";
 
 interface ShadowDomProps extends Omit<HTMLAttributes<HTMLDivElement>, "ref"> {
@@ -12,14 +12,15 @@ export default function ShadowDom({ children, containerRef: externalContainerRef
     const [ shadowRoot, setShadowRoot ] = useState<ShadowRoot | null>(null);
 
     // Create the shadow root.
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!containerRef.current) return;
         const shadow = containerRef.current.attachShadow({ mode: "open" });
         setShadowRoot(shadow);
     }, []);
 
-    // Render the child elements.
-    useEffect(() => {
+    // Render the child elements. A layout effect, so the shadow tree commits before the paint
+    // together with the tree around it, as a portal from that tree into the shadow tree expects.
+    useLayoutEffect(() => {
         if (!shadowRoot) return;
         render(<>{children}</>, shadowRoot);
     }, [ shadowRoot, children ]);

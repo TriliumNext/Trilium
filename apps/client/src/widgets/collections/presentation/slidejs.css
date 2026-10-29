@@ -58,6 +58,15 @@
     outline-offset: 8px;
 }
 
+.slide-editor-pending {
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
 .reveal .slides section.has-dark-background {
     color-scheme: dark;
 }

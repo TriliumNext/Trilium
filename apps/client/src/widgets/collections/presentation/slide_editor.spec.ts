@@ -1,6 +1,81 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { adoptEditorStyleSheet, collectEditorStylesheet } from "./slide_editor";
+import type FNote from "../../../entities/fnote";
+import { adoptEditorStyleSheet, collectEditorStylesheet, whenEditorHoldsContent } from "./slide_editor";
+
+describe("whenEditorHoldsContent", () => {
+    function setUp(noteContent: string) {
+        const root = document.createElement("div");
+        const note = { getContent: async () => noteContent } as unknown as FNote;
+        const onReady = vi.fn();
+        const focus = vi.fn();
+        const stop = whenEditorHoldsContent(root, note, onReady);
+
+        /** Mounts an editor root as CKEditor does, holding `data`. */
+        function mountEditor(data: string, { hidden = false } = {}) {
+            const editable = document.createElement("div");
+            editable.className = "ck-editor__editable";
+            editable.style.visibility = hidden ? "hidden" : "";
+            Object.assign(editable, {
+                ckeditorInstance: {
+                    getData: () => data,
+                    editing: { view: { focus, getDomRoot: () => editable } }
+                }
+            });
+            root.replaceChildren(editable);
+            document.body.append(root);
+            return editable;
+        }
+        return { onReady, focus, stop, mountEditor };
+    }
+
+    it("focuses the editor only once it is shown", async () => {
+        const { onReady, focus, mountEditor } = setUp("<p>Slide</p>");
+        const editable = mountEditor("<p>Slide</p>", { hidden: true });
+        await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(focus).not.toHaveBeenCalled();
+
+        editable.style.visibility = "";
+        await vi.waitFor(() => expect(focus).toHaveBeenCalledOnce());
+    });
+
+    it("waits for the note's content before reporting the editor ready, then focuses it", async () => {
+        const { onReady, focus, mountEditor } = setUp("<p>Slide</p>");
+        mountEditor("");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(onReady).not.toHaveBeenCalled();
+
+        mountEditor("<p>Slide</p>");
+        await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
+        await vi.waitFor(() => expect(focus).toHaveBeenCalledOnce());
+    });
+
+    it("reports an empty note ready once its editor exists, and nothing after stopping", async () => {
+        const empty = setUp("");
+        empty.mountEditor("");
+        await vi.waitFor(() => expect(empty.onReady).toHaveBeenCalledOnce());
+
+        const stopped = setUp("<p>Slide</p>");
+        stopped.stop();
+        stopped.mountEditor("<p>Slide</p>");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(stopped.onReady).not.toHaveBeenCalled();
+    });
+
+    it("shows the editor anyway when it takes too long to load", async () => {
+        vi.useFakeTimers();
+        try {
+            const { onReady } = setUp("<p>Slide</p>");
+            await vi.advanceTimersByTimeAsync(2999);
+            expect(onReady).not.toHaveBeenCalled();
+            await vi.advanceTimersByTimeAsync(1);
+            expect(onReady).toHaveBeenCalledOnce();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
 
 describe("adoptEditorStyleSheet", () => {
     it("shares one stylesheet between edits and removes only its own", () => {

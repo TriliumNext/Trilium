@@ -40,7 +40,16 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const [ editedNoteId, setEditedNoteId ] = useState<string>();
     const [ editorHost, setEditorHost ] = useState<HTMLElement | null>(null);
     const editedNote = editedNoteId ? froca.getNoteFromCache(editedNoteId) : undefined;
-    const finishEditing = () => setEditedNoteId(undefined);
+    const [ readyEditorNoteId, setReadyEditorNoteId ] = useState<string>();
+    // Each edit waits for its own editor, so editing the same slide again starts out not ready.
+    const startEditing = (noteId: string) => {
+        setReadyEditorNoteId(undefined);
+        setEditedNoteId(noteId);
+    };
+    const finishEditing = () => {
+        setEditedNoteId(undefined);
+        setReadyEditorNoteId(undefined);
+    };
     const shadowHost = useElementOf(containerRef);
 
     useEffect(() => {
@@ -86,7 +95,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 setApi={setApi}
                 ntxId={noteContext?.ntxId}
                 editedNoteId={editedNoteId}
-                onEditSlide={media === "screen" && !isReadOnly ? setEditedNoteId : undefined}
+                isEditorReady={!!editedNoteId && readyEditorNoteId === editedNoteId}
+                onEditSlide={media === "screen" && !isReadOnly ? startEditing : undefined}
                 onEditorHost={setEditorHost}
             />
         </>
@@ -121,7 +131,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 {editedNote && editorHost && createPortal(
                     // Its own boundary, so that loading the editor does not suspend the presentation.
                     <Suspense fallback={null}>
-                        <SlideEditor note={editedNote} onFinish={finishEditing} />
+                        <SlideEditor
+                            note={editedNote}
+                            onReady={() => setReadyEditorNoteId(editedNote.noteId)}
+                            onFinish={finishEditing}
+                        />
                     </Suspense>,
                     editorHost
                 )}
@@ -281,13 +295,15 @@ interface PresentationProps {
     ntxId: string | null | undefined;
     /** The note of the slide being edited in place. */
     editedNoteId: string | undefined;
+    /** Whether the editor of the edited slide holds its content. */
+    isEditorReady: boolean;
     /** Starts editing a text slide in place; left out when the presentation cannot be edited. */
     onEditSlide: ((noteId: string) => void) | undefined;
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
 }
 
-function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, onEditorHost }: PresentationProps) {
+function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady, onEditSlide, onEditorHost }: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
     const fitObserverRef = useRef<ResizeObserver>(null);
@@ -362,6 +378,7 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, 
                 slide={slide}
                 ntxId={ntxId}
                 editorHostRef={slide.noteId === editedNoteId ? onEditorHost : undefined}
+                isEditorReady={isEditorReady}
                 onEdit={canEdit ? () => {
                     if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);
                 } : undefined}
@@ -395,11 +412,13 @@ interface SlideProps {
     ntxId: string | null | undefined;
     /** Set while the slide is edited in place, to receive the element that the editor goes into. */
     editorHostRef?: (element: HTMLElement | null) => void;
+    /** Whether the editor of the slide holds its content, so that it replaces the rendered content. */
+    isEditorReady?: boolean;
     /** Starts editing the slide in place, on a double-click. */
     onEdit?: () => void;
 }
 
-export function Slide({ slide, ntxId, editorHostRef, onEdit }: SlideProps) {
+export function Slide({ slide, ntxId, editorHostRef, isEditorReady, onEdit }: SlideProps) {
     // On desktop a web view goes in an Electron `<webview>`, whose own session keeps the page away
     // from the app; elsewhere Reveal.js frames it in the slide's background.
     const desktopWebViewSrc = isElectron ? slide.webViewSrc : undefined;
@@ -408,9 +427,17 @@ export function Slide({ slide, ntxId, editorHostRef, onEdit }: SlideProps) {
     function renderContent() {
         if (desktopWebViewSrc) return <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />;
         if (slide.isCollection) return <slot name={getCollectionSlotName(slide.noteId)} />;
-        // The keys keep Preact from reusing the rendered content's element, and its zoom, for the editor.
-        if (editorHostRef) return <div key="editor" className="slide-content slide-editor" ref={editorHostRef} />;
-        return <div key="content" className="slide-content" dangerouslySetInnerHTML={slide.content} />;
+        // The rendered content stays, with its zoom, until the editor that loads hidden beside it
+        // holds the slide; then one render swaps them. The keys keep the two elements apart.
+        return [
+            (!editorHostRef || !isEditorReady) &&
+                <div key="content" className="slide-content" dangerouslySetInnerHTML={slide.content} />,
+            editorHostRef && <div
+                key="editor"
+                className={`slide-content slide-editor ${isEditorReady ? "" : "slide-editor-pending"}`}
+                ref={editorHostRef}
+            />
+        ];
     }
 
     return (
