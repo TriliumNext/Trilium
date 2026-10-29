@@ -143,12 +143,19 @@ footer.file-footer {
     height: 100%;
 }
 
+/* The whole viewport in slide pixels, for content that covers it as a background does; a pixel more on
+   each side covers the rounding of the viewport size. Reveal.js sets the variables on each layout. */
+.reveal {
+    --full-bleed-width: calc(var(--viewport-width, 1280px) / var(--slide-scale, 1) + 2px);
+    --full-bleed-height: calc(var(--viewport-height, 720px) / var(--slide-scale, 1) + 2px);
+}
+
 .reveal webview {
     display: flex;
     position: absolute;
     top: 50%;
     left: 50%;
-    width: calc(var(--viewport-width, 1280px) / var(--slide-scale, 1) + 2px);
-    height: calc(var(--viewport-height, 720px) / var(--slide-scale, 1) + 2px);
+    width: var(--full-bleed-width);
+    height: var(--full-bleed-height);
     transform: translate(-50%, -50%);
 }
