@@ -351,7 +351,7 @@
     "find-in-text": "在文本中查找",
     "toggle-left-pane": "切换左侧面板",
     "toggle-full-screen": "切换全屏模式",
-    "save-named-revision": "保存已命名的修订",
+    "save-named-revision": "保存修订并命名",
     "toggle-archived-notes": "显示/隐藏已归档笔记",
     "show-deleted-notes": "显示已删除的笔记",
     "peek-right-pane": "快速查看右侧面板",
