@@ -82,8 +82,20 @@ describe("Note type mappings", () => {
         expect(result.payload).toBe(content);
     });
 
+    it("exports mind map notes as their JSON content with a .json extension", () => {
+        const content = JSON.stringify({ nodeData: { id: "root", topic: "Root", children: [] } });
+        const note = buildNote({ type: "mindMap", mime: "application/json", title: "Mind map" });
+        for (const format of [ "html", "markdown" ] as ExportFormat[]) {
+            expect(mapByNoteType(note, content, format)).toMatchObject({
+                payload: content,
+                extension: "json",
+                mime: "application/json"
+            });
+        }
+    });
+
     it("falls back to a raw .dat dump for note types without a dedicated mapping", () => {
-        // book/webView/mindMap/… aren't handled explicitly; rather than a zero-byte `.undefined`, they
+        // book/webView/… aren't handled explicitly; rather than a zero-byte `.undefined`, they
         // export their raw content with a generic extension (mirrors the zip export's `dat` fallback).
         const note = buildNote({ type: "book", mime: "", title: "My book" });
         expect(mapByNoteType(note, "raw contents", "html")).toMatchObject({

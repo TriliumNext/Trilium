@@ -112,7 +112,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
         payload = content;
         extension = "triliumsheet";
         mime = "application/json";
-    } else if (note.type === "relationMap" || note.type === "search") {
+    } else if (note.type === "relationMap" || note.type === "search" || note.type === "mindMap") {
         payload = content;
         extension = "json";
         mime = "application/json";
