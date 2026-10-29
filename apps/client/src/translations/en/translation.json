@@ -1882,7 +1882,9 @@
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",
     "llm_name": "AI / LLM Chat",
-    "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models."
+    "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models.",
+    "extended_code_blocks_name": "Extended code blocks",
+    "extended_code_blocks_description": "A faster code block with a more advanced syntax highlighting engine and code folding."
   },
   "fonts": {
     "theme_defined": "Theme defined",
@@ -4683,7 +4685,9 @@
       "image-position": "Image position",
       "list": "List",
       "list-type": "List type",
-      "insert-a-preview-of-a-web-page-or-a-video": "Insert a preview of a web page or a video"
+      "insert-a-preview-of-a-web-page-or-a-video": "Insert a preview of a web page or a video",
+      "extended-code-block": "Extended code block",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Insert a code block that is edited as a code note."
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

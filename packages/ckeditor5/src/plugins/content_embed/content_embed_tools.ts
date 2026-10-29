@@ -6,7 +6,7 @@ import {
     ToolbarSeparatorView, View, type ViewCollection, ViewModel
 } from "ckeditor5";
 
-import ContentEmbed from "./content_embed.js";
+import ContentEmbed, { isEditableToggleShown } from "./content_embed.js";
 
 /** The toolbar item with the buttons that the content of the selected embed adds. */
 export const CONTENT_EMBED_TOOLS = "contentEmbedTools";
@@ -119,7 +119,8 @@ export class ContentEmbedToolsView extends View {
     private showTools() {
         const tools = this.provider?.getTools() ?? [];
         // The Editable toggle and the display modes come before the tools.
-        const isAfterItems = !!(this.provider?.hasEditableFlag || this.provider?.hasDisplayModes);
+        const isAfterItems = isEditableToggleShown(this.provider)
+            || !!this.provider?.hasDisplayModes;
         const keys = tools.map(tool => JSON.stringify([
             tool.group,
             tool.id,

@@ -13,6 +13,9 @@ import {
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
 import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+import {
+    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
+} from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "preact/hooks";
@@ -259,17 +262,28 @@ function applyContentEmbeds(container: HTMLDivElement) {
  */
 function applySourceEmbeds(container: HTMLDivElement) {
     const loaded: Promise<unknown>[] = [];
-    for (const code of container.querySelectorAll<HTMLElement>("pre > code[class*='language-']")) {
+    for (const code of container.querySelectorAll<HTMLElement>("pre > code")) {
         const pre = code.parentElement;
-        const language = [ ...code.classList ]
+        const codeLanguage = [ ...code.classList ]
             .find((name) => name.startsWith("language-"))?.slice("language-".length);
-        if (!pre || !language || !getSourceEmbedTypeByLanguage(language)) continue;
+        const isDiagram = !!codeLanguage && !!getSourceEmbedTypeByLanguage(codeLanguage);
+        const isCodeBlock = !isDiagram && !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS);
+        if (!pre || (!isDiagram && !isCodeBlock)) continue;
+        const language = codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
 
         const figure = document.createElement("figure");
-        figure.className = "include-note";
-        const { boxSize, displayMode, codeWrapLines, codeLineNumbers } = pre.dataset;
-        figure.dataset.boxSize = boxSize === "small" || boxSize === "full" ? boxSize : "medium";
-        const views = { displayMode, codeWrapLines, codeLineNumbers };
+        figure.className = clsx("include-note", isCodeBlock && EXTENDED_CODE_BLOCK_CLASS);
+        const {
+            boxSize, displayMode, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
+        } = pre.dataset;
+        const defaultBoxSize = isCodeBlock ? "full" : "medium";
+        figure.dataset.boxSize = boxSize === "small" || boxSize === "medium" || boxSize === "full"
+            ? boxSize
+            : defaultBoxSize;
+        figure.dataset.language = language;
+        const views = {
+            displayMode, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
+        };
         for (const [ name, value ] of Object.entries(views)) {
             if (value) {
                 figure.dataset[name] = value;

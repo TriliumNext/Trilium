@@ -33,6 +33,10 @@ Interaction:
 
 See the dedicated <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> page.
 
+## Extended code block
+
+Choose <span class="tn-icon bx bx-code-block"></span> _Extended code block_ to insert a code block that is edited as a code note. This entry is experimental and is shown only once it is turned on. See _Extended code blocks_ in <a class="reference-link" href="Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>.
+
 ## Math equations
 
 See the dedicated <a class="reference-link" href="Math%20Equations.md">Math Equations</a> page.

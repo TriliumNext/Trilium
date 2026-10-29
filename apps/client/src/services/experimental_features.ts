@@ -12,6 +12,11 @@ export const experimentalFeatures = [
         id: "llm",
         name: t("experimental_features.llm_name"),
         description: t("experimental_features.llm_description"),
+    },
+    {
+        id: "extendedCodeBlocks",
+        name: t("experimental_features.extended_code_blocks_name"),
+        description: t("experimental_features.extended_code_blocks_description")
     }
 ] as const satisfies ExperimentalFeature[];
 

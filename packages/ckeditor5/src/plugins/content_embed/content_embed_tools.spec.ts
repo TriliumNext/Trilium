@@ -155,6 +155,10 @@ describe("ContentEmbedTools", () => {
         selectEmbed();
         expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
 
+        provider = { ...provider, hiddenToolbarItems: [ "toggleContentEmbedEditable" ] };
+        editor.ui.update();
+        expect(getItems(tools)).toEqual([ "1", "2" ]);
+
         provider = { ...provider, hasEditableFlag: false, hasDisplayModes: true };
         editor.ui.update();
         expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
@@ -318,7 +322,7 @@ describe("ContentEmbedTools", () => {
     it("hides the items of the embed toolbar that the content leaves to the embed menu", () => {
         const names = [
             "contentEmbedBoxSizeDropdown", "toggleContentEmbedTitle", "convertEmbedToLink",
-            "toggleContentEmbedCaption"
+            "toggleContentEmbedEditable", "toggleContentEmbedCaption"
         ];
         const items = names.map((name) => {
             const item = editor.ui.componentFactory.create(name);
@@ -326,20 +330,22 @@ describe("ContentEmbedTools", () => {
             return item;
         });
         const getShown = () => items.map((item) => !item.element?.classList.contains("ck-hidden"));
+        provider = { ...provider, hasEditableFlag: true };
         selectEmbed();
-        expect(getShown()).toEqual([ true, true, true, true ]);
+        expect(getShown()).toEqual([ true, true, true, true, true ]);
 
-        provider = createProvider([ SELECTION ], names.slice(0, 3));
+        provider = { ...createProvider([ SELECTION ], names.slice(0, 4)), hasEditableFlag: true };
         editor.ui.update();
-        expect(getShown()).toEqual([ false, false, false, true ]);
+        expect(getShown()).toEqual([ false, false, false, false, true ]);
         const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
         expect(embed && editor.plugins.get(ContentEmbed).getEmbedStateAt(embed)).toMatchObject({
-            boxSize: "medium", isTitleToggleable: true, isConvertibleToLink: true
+            boxSize: "medium", isTitleToggleable: true, isConvertibleToLink: true,
+            isEditableToggleable: true
         });
 
-        provider = createProvider([ SELECTION ]);
+        provider = { ...createProvider([ SELECTION ]), hasEditableFlag: true };
         editor.ui.update();
-        expect(getShown()).toEqual([ true, true, true, true ]);
+        expect(getShown()).toEqual([ true, true, true, true, true ]);
     });
 
     it("reads the tools again when the editor updates, as they can follow the embed", () => {
