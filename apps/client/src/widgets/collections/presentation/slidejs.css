@@ -18,6 +18,14 @@
     display: flow-root;
 }
 
+.reveal .slides section.has-dark-background {
+    color-scheme: dark;
+}
+
+.reveal .slides section.has-light-background {
+    color-scheme: light;
+}
+
 .reveal figure {
     margin-inline: auto;
 }
