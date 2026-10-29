@@ -58,7 +58,8 @@ describe("CodeEmbed", () => {
         const view = await findView(figure, true);
         expect([ view.state.doc.toString(), view.state.readOnly ]).toEqual([ "print(1)", true ]);
         const tools = getContentEmbedTools(figure);
-        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon ]).toEqual([ true, moveVerticalIcon ]);
+        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon, tools?.hiddenToolbarItems ])
+            .toEqual([ true, moveVerticalIcon, undefined ]);
         expect(moveVerticalIcon).toContain("<svg");
 
         const { figure: locked } = await mount(note, buildEditor({ canEdit: () => false }), {
@@ -758,7 +759,10 @@ describe("InlineCodeEmbed", () => {
         expect(setMimeType).toHaveBeenLastCalledWith("text/x-python");
         await vi.waitFor(() => expect(getLabel(figure)).toBe("Python"));
         const tools = getContentEmbedTools(figure);
-        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon ]).toEqual([ true, moveVerticalIcon ]);
+        // The menu of the embed offers the box size and the Editable toggle.
+        expect([ tools?.hasEditableFlag, tools?.boxSizeIcon, tools?.hiddenToolbarItems ]).toEqual([
+            true, moveVerticalIcon, [ "contentEmbedBoxSizeDropdown", "toggleContentEmbedEditable" ]
+        ]);
 
         // Without an editor, as in a read-only text note, in a language that names no MIME type.
         const { figure: shown } = await mountInline("x", undefined, {

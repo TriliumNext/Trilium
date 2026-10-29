@@ -369,7 +369,8 @@ class ContentEmbedUI extends Plugin {
 			// Shown only for content that has an editable mode.
 			if ( command ) {
 				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
-				buttonView.bind( 'isVisible' ).to( command, 'isEnabled' );
+				bindToolbarItemVisibility( editor, buttonView, command,
+					TOGGLE_EDITABLE_COMMAND_NAME );
 			}
 
 			this.listenTo( buttonView, 'execute', () => {
@@ -384,7 +385,7 @@ class ContentEmbedUI extends Plugin {
 			const separator = new ToolbarItemSeparatorView( locale );
 			separator.bind( 'isVisible' ).to(
 				editor.plugins.get( ContentEmbed ), 'selectedEmbedTools',
-				tools => !!tools?.hasEditableFlag && !!tools.hasDisplayModes );
+				tools => isEditableToggleShown( tools ) && !!tools?.hasDisplayModes );
 			return separator;
 		} );
 
@@ -1353,6 +1354,12 @@ export function isToolbarItemHidden(
 	name: ContentEmbedToolbarItem
 ) {
 	return !!tools?.hiddenToolbarItems?.includes( name );
+}
+
+/** Whether the toolbar of the selected embed, whose buttons are `tools`, shows Editable. */
+export function isEditableToggleShown( tools: ContentEmbedToolProvider | null ) {
+	return !!tools?.hasEditableFlag
+		&& !isToolbarItemHidden( tools, TOGGLE_EDITABLE_COMMAND_NAME );
 }
 
 /**

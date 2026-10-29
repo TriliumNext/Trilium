@@ -24,12 +24,19 @@ import {
     useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
 import { useContentEmbedMenus } from "../text/content_embed_menus";
-import { useContentEmbedAttribute, useContentEmbedFlag } from "../text/content_embed_tools";
+import {
+    type ContentEmbedToolbarItem, useContentEmbedAttribute, useContentEmbedFlag
+} from "../text/content_embed_tools";
 import {
     CaretNavigationContext, findTextEditorAround, useEditableEmbed, useEmbedBadgeSlot
 } from "../text/editable_embed";
 
 const CodeEmbedEditor = lazy(() => import("./CodeEmbedEditor"));
+
+/** The items that the toolbar of an extended code block leaves to the menu of its embed. */
+const EXTENDED_CODE_BLOCK_HIDDEN_ITEMS: readonly ContentEmbedToolbarItem[] = [
+    "contentEmbedBoxSizeDropdown", "toggleContentEmbedEditable"
+];
 
 interface CodeEmbedProps {
     entity: FNote | FAttachment;
@@ -110,6 +117,7 @@ export function InlineCodeEmbed({ content: savedContent, editor, language }: Sou
             settings={settings}
             mime={settings.mime ?? PLAIN_TEXT_MIME}
             hasLanguageLabel
+            hiddenToolbarItems={EXTENDED_CODE_BLOCK_HIDDEN_ITEMS}
         />
     );
 }
@@ -133,12 +141,14 @@ interface CodeEmbedContentProps {
     hasSaveStatus?: boolean;
     /** Whether the editor shows the name of its language in its corner while it can edit. */
     hasLanguageLabel?: boolean;
+    /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
+    hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
 }
 
 /** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
 function CodeEmbedContent({
     rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
-    hasSaveStatus, hasLanguageLabel
+    hasSaveStatus, hasLanguageLabel, hiddenToolbarItems
 }: CodeEmbedContentProps) {
     const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
@@ -196,6 +206,7 @@ function CodeEmbedContent({
                 canEdit={canEdit}
                 menuItems={lines.menuItems}
                 getCodeText={getCodeText}
+                hiddenToolbarItems={hiddenToolbarItems}
             />
         </>
     );
@@ -327,6 +338,8 @@ interface CodeToolsProps {
     menuItems: MenuItem<CommandNames>[];
     /** The text that the re-indent items of the tab width menu convert. */
     getCodeText: () => CodeText;
+    /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
+    hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
 }
 
 /**
@@ -334,7 +347,9 @@ interface CodeToolsProps {
  * "Change language mode" and "Change tab width" menus of the status bar as buttons of the toolbar
  * and `menuItems` in the menu of the embed.
  */
-function CodeTools({ rootRef, settings, canEdit, menuItems, getCodeText }: CodeToolsProps) {
+function CodeTools({
+    rootRef, settings, canEdit, menuItems, getCodeText, hiddenToolbarItems
+}: CodeToolsProps) {
     const language = useCodeLanguageMenu(settings);
     const tabWidth = useTabWidthMenu(settings, async () => getCodeText());
     useContentEmbedMenus(rootRef, canEdit ? [
@@ -342,7 +357,8 @@ function CodeTools({ rootRef, settings, canEdit, menuItems, getCodeText }: CodeT
         { id: "tabWidth", ...tabWidth }
     ] : [], canEdit ? menuItems : [], {
         hasEditableFlag: canEdit,
-        boxSizeIcon: moveVerticalIcon
+        boxSizeIcon: moveVerticalIcon,
+        hiddenToolbarItems
     });
 
     return canEdit ? language.modal : null;
