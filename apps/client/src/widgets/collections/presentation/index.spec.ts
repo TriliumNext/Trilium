@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createFitObserver, fitSlideContent } from "./index";
+import { createFitObserver, fitSlideContent, keepKeyboardInPresentation } from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -91,4 +91,55 @@ function buildContent({ height = () => 1, width = () => 1, hidden }: ContentSize
     Object.defineProperty(content, "offsetWidth", { get: () => clientWidth });
     Object.defineProperty(content, "offsetHeight", { get: () => 720 * height(zoom()) });
     return content;
+}
+
+describe("keepKeyboardInPresentation", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        document.body.replaceChildren();
+    });
+
+    it("takes focus back from a frame that is clicked, as Chromium and Firefox report it", () => {
+        vi.useFakeTimers();
+        for (const tag of [ "iframe", "webview" ]) {
+            // Chromium: focus entering the frame is a `focusin` on its element.
+            const clicked = buildFrame(tag);
+            clicked.frame.focus();
+            expect(document.activeElement, tag).not.toBe(clicked.frame);
+
+            // Firefox: only the window blurs, and the frame is the active element just after.
+            const firefox = buildFrame(tag);
+            firefox.container.addEventListener("focusin", stopFocusIn, true);
+            firefox.frame.focus();
+            expect(document.activeElement, tag).toBe(firefox.frame);
+            window.dispatchEvent(new Event("blur"));
+            vi.runAllTimers();
+            expect(document.activeElement, tag).not.toBe(firefox.frame);
+            firefox.container.removeEventListener("focusin", stopFocusIn, true);
+        }
+
+        // A frame outside the presentation keeps its focus.
+        const outside = document.createElement("iframe");
+        document.body.append(outside);
+        outside.focus();
+        window.dispatchEvent(new Event("blur"));
+        vi.runAllTimers();
+        expect(document.activeElement).toBe(outside);
+    });
+});
+
+/** Keeps a `focusin` from reaching the guard, as Firefox does not dispatch one for a click into a frame. */
+function stopFocusIn(e: Event) {
+    e.stopPropagation();
+}
+
+/** Mounts a frame in the light DOM: happy-dom does not match `:focus` inside a shadow root. */
+function buildFrame(tag: string) {
+    const container = document.createElement("div");
+    document.body.append(container);
+    keepKeyboardInPresentation(container);
+    const frame = document.createElement(tag);
+    frame.tabIndex = 0;
+    container.append(frame);
+    return { container, frame };
 }

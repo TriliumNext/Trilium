@@ -274,8 +274,10 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, 
             if (api.isReady()) api.layout();
         });
         resizeObserver.observe(container);
+        const releaseKeyboard = keepKeyboardInPresentation(container);
 
         return () => {
+            releaseKeyboard();
             fitObserver.disconnect();
             fitObserverRef.current = null;
             resizeObserver.disconnect();
@@ -432,6 +434,40 @@ function measureOverflow(content: HTMLElement) {
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     if (!slide) return;
     return slide.dataset.noteId;
+}
+
+const FRAME_SELECTOR = "iframe, webview";
+
+/**
+ * Takes the keyboard back whenever an iframe or `<webview>` in the slides gets focus, from a click or from
+ * the page focusing itself, so that Space and the arrow keys keep moving between slides. Clicks, links and
+ * wheel scrolling still reach the page. Chromium reports focus entering a frame as `focusin` on its
+ * element; Firefox only blurs the window, so the frame is then found as the active element.
+ */
+export function keepKeyboardInPresentation(container: HTMLElement) {
+    const returnFocus = (frame: HTMLElement) => {
+        frame.blur();
+        window.focus();
+    };
+    const onFocusIn = (e: Event) => {
+        if (e.target instanceof HTMLElement && e.target.matches(FRAME_SELECTOR)) returnFocus(e.target);
+    };
+    const onWindowBlur = () => {
+        // The frame becomes the active element only after the window's `blur` is dispatched.
+        setTimeout(() => {
+            const active = (container.getRootNode() as Document | ShadowRoot).activeElement;
+            if (active instanceof HTMLElement && active.matches(FRAME_SELECTOR) && container.contains(active)) {
+                returnFocus(active);
+            }
+        });
+    };
+
+    container.addEventListener("focusin", onFocusIn);
+    window.addEventListener("blur", onWindowBlur);
+    return () => {
+        container.removeEventListener("focusin", onFocusIn);
+        window.removeEventListener("blur", onWindowBlur);
+    };
 }
 
 function rewireLinks(container: HTMLElement, api: RevealApi) {

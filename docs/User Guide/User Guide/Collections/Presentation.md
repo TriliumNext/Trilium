@@ -93,7 +93,7 @@ At slide level:
                     backgroundColor: transparent
         ---
         ```
-*   A <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> slide shows its page across the whole slide, and the page can be used as normal (scrolling, clicking links). Only `http://` and `https://` addresses are shown. It works the same way as the web view note itself, so outside the desktop application some websites refuse to be shown.
+*   A <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> slide shows its page across the whole slide, and the page can be scrolled and its links clicked. The keyboard stays with the presentation, so <kbd>Space</kbd> and the arrow keys still change slides after clicking the page; to type into the page, open the web view note itself. Only `http://` and `https://` addresses are shown. It works the same way as the web view note itself, so outside the desktop application some websites refuse to be shown.
 
 ## Under the hood
 
