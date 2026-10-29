@@ -1,7 +1,6 @@
 
 
 import type { Response } from "../../http_interface";
-import html from "html";
 import mimeTypes from "mime-types";
 
 import becca from "../../becca/becca.js";
@@ -10,6 +9,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
+import { formatHtml } from "./format_html.js";
 import mdService from "./markdown.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 import { ExportFormat } from "../../meta.js";
@@ -81,7 +81,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
                 content = `<html><head><meta charset="utf-8"></head><body>${content}</body></html>`;
             }
 
-            payload = content.length < 100_000 ? html.prettyPrint(content, { indent_size: 2 }) : content;
+            payload = formatHtml(content);
 
             extension = "html";
             mime = "text/html";
