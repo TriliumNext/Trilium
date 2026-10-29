@@ -78,6 +78,14 @@ describe("formatHtml", () => {
             .toBe(`<pre class="x"><code   class="y">  <b  >keep</b></code></pre>`);
     });
 
+    it("formats a container with more blocks than a call takes arguments", () => {
+        const paragraphs = "<p>a</p>".repeat(200_000);
+        const lines = formatHtml(`<div>${paragraphs}</div>`).split("\n");
+
+        expect(lines).toHaveLength(200_002);
+        expect(lines.at(-2)).toBe("  <p>a</p>");
+    });
+
     it("gives the same output when run on its own output", () => {
         const html = `<html><head><title>T</title></head><body><div><p>a</p>\n\n   <p>b</p></div></body></html>`;
         const formatted = formatHtml(html);

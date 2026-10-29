@@ -9,9 +9,7 @@ import { type HTMLElement, type Node, NodeType, parse } from "node-html-parser";
  */
 export function formatHtml(html: string) {
     const root = parse(html, { comment: true });
-    for (const element of root.querySelectorAll("*")) {
-        element.rawAttrs = normalizeAttributes(element.rawAttrs);
-    }
+    normalizeAllAttributes(root);
     return canSplit(root) ? formatChildren(root, 0).join("\n") : root.toString();
 }
 
@@ -61,7 +59,9 @@ function formatChildren(element: HTMLElement, depth: number) {
     for (const child of element.childNodes) {
         if (isBlock(child)) {
             flushInline();
-            lines.push(...formatElement(child as HTMLElement, depth));
+            for (const line of formatElement(child as HTMLElement, depth)) {
+                lines.push(line);
+            }
         } else {
             inline += child.toString();
         }
@@ -78,6 +78,23 @@ function canSplit(element: HTMLElement) {
 
 function isBlock(node: Node) {
     return node.nodeType === NodeType.ELEMENT_NODE && BLOCK_TAGS.has((node as HTMLElement).rawTagName.toLowerCase());
+}
+
+/**
+ * Normalizes the attributes of every element below `root`. Walks the tree by hand, since
+ * `querySelectorAll("*")` grows faster than quadratically with the element count.
+ */
+function normalizeAllAttributes(root: HTMLElement) {
+    const pending = [ ...root.childNodes ];
+    for (let node = pending.pop(); node; node = pending.pop()) {
+        if (node.nodeType === NodeType.ELEMENT_NODE) {
+            const element = node as HTMLElement;
+            element.rawAttrs = normalizeAttributes(element.rawAttrs);
+            for (const child of element.childNodes) {
+                pending.push(child);
+            }
+        }
+    }
 }
 
 /** An attribute name, optionally followed by `=` and a quoted or unquoted value. */
