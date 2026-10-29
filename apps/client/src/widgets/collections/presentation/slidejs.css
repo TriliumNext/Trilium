@@ -46,6 +46,7 @@
     overflow: visible;
     background: transparent;
     cursor: text;
+    text-align: inherit;
 
     &.ck-focused:not(.ck-editor__nested-editable) {
         border: 0;
