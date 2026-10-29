@@ -10,7 +10,8 @@
 }
 
 /* One class, so the next theme's input-group rules override these. */
-:is(.go-to-selected-note-button, .input-clearer-button) {
+.go-to-selected-note-button,
+.input-clearer-button {
     cursor: pointer;
 }
 

@@ -1,5 +1,5 @@
 import {
-    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env,
+    BlockButtonView, ClipboardObserver, createElement, DomEmitterMixin, DragDrop, env,
     findClosestScrollableAncestor, IconDragIndicator, type Model, type ModelElement,
     ModelLiveRange, type ModelRange, type ModelSchema, Plugin, Rect, type ViewElement
 } from "ckeditor5";
@@ -13,10 +13,19 @@ const TARGET_CLASS = "block-drag-handle-target";
  * The drag handle of `BlockToolbar` without the toolbar, for the fixed-toolbar editor: a grip
  * beside the block at the selection that drags the selected blocks to another place in the note.
  * The drag follows `DragDropBlockToolbar`, which only works with `BlockToolbar` itself.
+ *
+ * The handle sits in a container right after the editable, inside whatever scrolls the blocks,
+ * so a scroll moves it along with them and needs no work here.
  */
 export default class BlockDragHandle extends Plugin {
 
     buttonView?: BlockButtonView;
+    private container?: HTMLElement;
+    /** The editable that `container` follows, observed for changes of its size. */
+    private domEditable?: HTMLElement;
+    /** Whether the handle scrolls along with its block, as of the last placement. */
+    private isScrollingWithBlock = false;
+    private resizeObserver?: ResizeObserver;
     private isDragging = false;
     private isHovered = false;
     private isUpdateScheduled = false;
@@ -64,7 +73,7 @@ export default class BlockDragHandle extends Plugin {
             }
         });
         buttonView.on("execute", () => editor.editing.view.focus());
-        editor.ui.view.body.add(buttonView);
+        buttonView.render();
         this.buttonView = buttonView;
 
         this.listenTo(editor.ui, "update", () => this.update());
@@ -88,6 +97,8 @@ export default class BlockDragHandle extends Plugin {
     override destroy() {
         this.domEmitter.stopListening();
         this.layoutEmitter.stopListening();
+        this.resizeObserver?.disconnect();
+        this.container?.remove();
         this.buttonView?.destroy();
         super.destroy();
     }
@@ -104,10 +115,21 @@ export default class BlockDragHandle extends Plugin {
 
         this.layoutEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
         this.layoutEmitter.listenTo(document, "scroll", (_evt, domEvent: Event) => {
-            if (this.canMoveEditable(domEvent.target as Node)) {
+            if (this.mustFollowScrollOf(domEvent.target)) {
                 this.scheduleUpdate();
             }
         }, { useCapture: true, usePassive: true });
+    }
+
+    /**
+     * Whether the placed handle has to follow a scroll of `scrolled`: a scroll inside the editable
+     * moves the blocks away from the handle, and a scroll of an element that holds the editable
+     * moves a handle that does not scroll with its block.
+     */
+    private mustFollowScrollOf(scrolled: EventTarget | null) {
+        const domEditable = this.domEditable;
+        return scrolled instanceof Node && !!domEditable && (domEditable.contains(scrolled)
+            || (!this.isScrollingWithBlock && scrolled.contains(domEditable)));
     }
 
     private scheduleUpdate() {
@@ -120,12 +142,6 @@ export default class BlockDragHandle extends Plugin {
             this.isUpdateScheduled = false;
             this.update();
         });
-    }
-
-    /** Whether a scroll of `scrolled` can move the editable, or a block inside it. */
-    private canMoveEditable(scrolled: Node) {
-        const domEditable = this.editor.ui.getEditableElement();
-        return !!domEditable && (scrolled.contains(domEditable) || domEditable.contains(scrolled));
     }
 
     /**
@@ -150,6 +166,48 @@ export default class BlockDragHandle extends Plugin {
         buttonView.left = position.left;
         buttonView.isVisible = true;
         this.updateTargets();
+    }
+
+    /**
+     * Puts the handle's container right after `domEditable`, inside whatever scrolls the blocks,
+     * and places the handle again whenever the size of the editable changes while the editor has
+     * focus, as when an embed renders. Returns the container.
+     */
+    private mount(buttonElement: HTMLElement, domEditable: HTMLElement) {
+        if (!this.container) {
+            // The classes of the body collection, which the styles of the editor's UI expect.
+            this.container = createElement(document, "div", {
+                class: "ck ck-reset_all ck-rounded-corners block-drag-handle-container",
+                dir: this.editor.locale.uiLanguageDirection
+            }, [ buttonElement ]);
+            // A press focuses the handle, and the editor must stay focused for the drag to start.
+            this.editor.ui.focusTracker.add(this.container);
+        }
+        const container = this.container;
+        if (container.previousElementSibling === domEditable) {
+            return container;
+        }
+
+        domEditable.after(container);
+        this.domEditable = domEditable;
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = new ResizeObserver(() => {
+            if (this.editor.ui.focusTracker.isFocused) {
+                this.scheduleUpdate();
+            }
+        });
+        this.resizeObserver.observe(domEditable);
+        return container;
+    }
+
+    /**
+     * Whether the handle in `container` scrolls along with `domBlock`, within the closest scrolling
+     * ancestor of the block.
+     */
+    private scrollsWith(container: HTMLElement, domBlock: HTMLElement) {
+        const scrollable = findClosestScrollableAncestor(domBlock);
+        const containingBlock = container.offsetParent;
+        return !!scrollable && !!containingBlock && scrollable.contains(containingBlock);
     }
 
     /** Tints the blocks that a drag moves while the pointer is over the visible handle. */
@@ -211,9 +269,9 @@ export default class BlockDragHandle extends Plugin {
     }
 
     /**
-     * Finds where the handle goes: outside the editable, level with the first line of the block,
-     * as `BlockToolbar` places it. Returns nothing when that is out of the visible part of the
-     * editable.
+     * Finds where the handle goes in its container: outside the editable, level with the first
+     * line of the block, as `BlockToolbar` places it. Returns nothing when that is out of the
+     * visible part of the editable and the handle does not scroll with the block.
      */
     private findPosition(
         buttonView: BlockButtonView,
@@ -221,25 +279,34 @@ export default class BlockDragHandle extends Plugin {
         target: BlockTarget
     ) {
         const { domBlock, domEditable } = target;
+        const container = this.mount(buttonElement, domEditable);
         const buttonRect = this.measureButton(buttonView, buttonElement);
         const styles = window.getComputedStyle(domBlock);
         const paddingTop = parseInt(styles.paddingTop, 10);
         const lineHeight = parseInt(styles.lineHeight, 10) || parseInt(styles.fontSize, 10) * 1.2;
         const editableRect = new Rect(domEditable);
-        const visibleRect = editableRect.getVisible();
+        const containerRect = new Rect(container);
 
         const left = this.editor.locale.uiLanguageDirection === "ltr"
             ? editableRect.left - buttonRect.width
             : editableRect.right;
         const top = new Rect(domBlock).top + paddingTop + (lineHeight - buttonRect.height) / 2;
-        buttonRect.moveTo(left, top);
+        const position = { top: top - containerRect.top, left: left - containerRect.left };
 
-        const buttonCenter = buttonRect.top + buttonRect.height / 2;
+        // A handle that scrolls with its block is clipped with it. Any other one hides when its
+        // block scrolls out of the visible part of the editable.
+        this.isScrollingWithBlock = this.scrollsWith(container, domBlock);
+        if (this.isScrollingWithBlock) {
+            return position;
+        }
+
+        const visibleRect = editableRect.getVisible();
+        const buttonCenter = top + buttonRect.height / 2;
         if (!visibleRect || buttonCenter < visibleRect.top || buttonCenter > visibleRect.bottom) {
             return null;
         }
 
-        return buttonRect.toAbsoluteRect();
+        return position;
     }
 
     /**

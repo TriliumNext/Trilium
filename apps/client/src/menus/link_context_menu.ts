@@ -22,6 +22,9 @@ import { getTextEditorContaining } from "./text_editor_context_menu.js";
  */
 export type LinkMenuOrigin = Pick<MouseEvent, "pageX" | "pageY" | "target">;
 
+/** The event that a note is opened from, whose target picks the split a new split goes next to. */
+type EventOrigin = Pick<Event, "target"> | GeoMouseEvent;
+
 /** The embed a menu is opened on, in a text note open for editing. */
 interface MenuEmbed {
     editor: CKTextEditor;
@@ -163,7 +166,7 @@ function getOpenNoteItem(e: LinkMenuOrigin | GeoMouseEvent): MenuItem<CommandNam
     };
 }
 
-function handleLinkContextMenuItem(command: string | undefined, e: LinkMenuOrigin | GeoMouseEvent, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
+function handleLinkContextMenuItem(command: string | undefined, e: EventOrigin, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
     if (isShare) {
         return openSharedPage(command, notePath);
     }
@@ -442,7 +445,7 @@ async function getEditingTextEditor(element: Element | null) {
     return getTextEditorContaining(element);
 }
 
-function getNtxId(e: LinkMenuOrigin | GeoMouseEvent) {
+function getNtxId(e: EventOrigin) {
     if (utils.isDesktop()) {
         const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
         if (!subContexts) return null;

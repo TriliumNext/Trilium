@@ -59,6 +59,14 @@ describe("SplitNoteContainer", () => {
         return container;
     }
 
+    it("keeps its splits between the caret stops at both of its ends", async () => {
+        const container = await openSplits([ "split-a", "split-b" ]);
+
+        const children = [ ...container.$widget[0].children ];
+        expect(children.map((child) => child.getAttribute("data-ntx-id") ?? child.className))
+            .toEqual([ "caret-stop", "split-a", "split-b", "caret-stop" ]);
+    });
+
     it("stops delivering events to a split once its tab is closed", async () => {
         const container = await openSplits([ "split-a", "split-b" ]);
         const [ staysOpen, getsClosed ] = container.children;

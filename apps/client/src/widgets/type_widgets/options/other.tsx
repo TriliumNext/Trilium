@@ -21,6 +21,7 @@ export default function OtherSettings() {
     return (
         <>
             <OptionsPageHeader />
+            <CanvasSettings />
             <SearchSettings />
             <SearchEngineSettings />
             <NoteErasureTimeout />
@@ -30,6 +31,22 @@ export default function OtherSettings() {
             <ShareSettings />
             <NetworkSettings />
         </>
+    );
+}
+
+function CanvasSettings() {
+    const [ isThinStroke, setThinStroke ] = useTriliumOptionBool("canvasThinStroke");
+
+    return (
+        <Card heading={t("note_types.canvas")}>
+            <OptionCardSection
+                name="canvas-thin-stroke"
+                label={t("canvas.thin_stroke")}
+                description={t("canvas.thin_stroke_description")}
+            >
+                <FormToggle currentValue={isThinStroke} onChange={setThinStroke} />
+            </OptionCardSection>
+        </Card>
     );
 }
 

@@ -26,7 +26,8 @@ body.layout-horizontal #horizontal-main-container {
     --peek-button-collapse-background-color: var(--left-pane-peek-button-collapse-background-color);
 }
 
-body.desktop.background-effects.layout-horizontal #horizontal-main-container:has(.note-split.visible.bgfx:not(.visible ~ .visible)) > .left-pane-peek-button {
+body.desktop.background-effects.layout-horizontal.first-split-bgfx
+    #horizontal-main-container > .left-pane-peek-button {
     --peek-button-expand-background-color: var(--center-pane-background-color-bgfx, var(--main-background-color));
 }
 

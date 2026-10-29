@@ -120,6 +120,8 @@ function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ..
  * Rewrites the third-party selectors that make Chromium restyle a whole container each time an
  * element is inserted into it, which in a large note is the whole note on every Enter: a `*`
  * after `+`, `~` or a position pseudo-class, and a sibling or `:nth-*` compound without a class.
+ * Also a `*` or bare pseudo-element after `.ck-focused` or `.ck-blurred`, which restyles the
+ * whole note each time the editor gains or loses focus.
  * `vite-plugins.spec.ts` checks every rewrite still matches the installed stylesheet.
  */
 export function narrowThirdPartySelectors(): Plugin {
@@ -213,7 +215,20 @@ const CKEDITOR_REWRITES: SelectorRewrite[] = [
     { from: "& > * + * {", to: "& > .ck + .ck {", count: 2 },
     { from: "& + * {", to: "&.ck + .ck {", count: 3 },
     // The keys of a keystroke, with only text between them.
-    { from: "& + kbd {", to: "&:not(:first-child) {", count: 1 }
+    { from: "& + kbd {", to: "&:not(:first-child) {", count: 1 },
+    // A blurred editor shows its selection in the same color as a focused one.
+    {
+        from: "&.ck-blurred ::selection {\n"
+            + "    background: var(--ck-color-editable-blur-selection, #d9d9d9);\n  }",
+        to: "",
+        count: 1
+    },
+    // The icon's `svg *` rule reads its stroke from this variable.
+    {
+        from: "& svg * {\n    stroke: var(--ck-color-widget-blurred-border);\n  }",
+        to: "--ck-color-widget-type-around-button-icon: var(--ck-color-widget-blurred-border);",
+        count: 1
+    }
 ];
 
 /**

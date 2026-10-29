@@ -561,11 +561,13 @@ describe("Dropdown", () => {
             // Nothing placed it beside the toggle; the `.mobile-bottom-menu` rules do.
             expect([ popup()?.style.left, popup()?.style.top ]).toEqual([ "", "" ]);
             expect([ ...cover.classList ]).toEqual([ "show", "global-menu-cover" ]);
+            expect(document.body.classList.contains("backdrop-open")).toBe(true);
 
             // A tap on the cover is one outside the menu.
             cover.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
             await vi.waitFor(() => expect(popup()).toBeNull());
             expect(cover.classList.contains("show")).toBe(false);
+            expect(document.body.classList.contains("backdrop-open")).toBe(false);
             cover.remove();
         });
 
@@ -593,6 +595,7 @@ describe("Dropdown", () => {
             expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(false);
             const { left, top, maxHeight } = popup()?.style ?? {};
             expect([ left, top, maxHeight ]).toEqual([ "", "", "" ]);
+            expect(document.body.classList.contains("backdrop-open")).toBe(true);
 
             click(toggle);
             await vi.waitFor(() => expect(popup()).toBeNull());
@@ -634,6 +637,7 @@ describe("Dropdown", () => {
             expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(false);
             expect(popup()?.style.top).toBe("82px");
             expect(cover.classList.contains("show")).toBe(false);
+            expect(document.body.classList.contains("backdrop-open")).toBe(false);
             cover.remove();
         });
 
@@ -644,6 +648,11 @@ describe("Dropdown", () => {
             await vi.waitFor(() => expect(popup()).not.toBeNull());
             const drawn = [ ...popup()?.parentElement?.children ?? [] ].map((child) => child.classList[0]);
             expect(drawn).toEqual([ "tn-dropdown-backdrop", "tn-popup" ]);
+            expect(document.body.classList.contains("backdrop-open")).toBe(true);
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            expect(document.body.classList.contains("backdrop-open")).toBe(false);
         });
     });
 });

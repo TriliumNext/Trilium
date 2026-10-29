@@ -21,8 +21,16 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
     doRender() {
         super.doRender();
+        this.$widget.prepend(createCaretStop()).append(createCaretStop());
         // Adds `note-split` before the note context arrives: `resizer.ts` selects the panes by it.
         this.refresh();
+    }
+
+    toggleExt(show: boolean | null | "" | undefined) {
+        super.toggleExt(show);
+        if (!show) {
+            releaseFocusAndSelection(this.$widget[0]);
+        }
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
@@ -59,6 +67,12 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             if (!classList.contains(cls)) {
                 classList.add(cls);
             }
+        }
+
+        // `bgfx` can change here without SplitNoteContainer refreshing.
+        const container = this.$widget[0].parentElement;
+        if (container) {
+            markVisibleSplits(container);
         }
     }
 
@@ -110,6 +124,57 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
 /** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
 const CONTAINER_OWNED_CLASSES = [ "active", "last-visible" ];
+
+/**
+ * Marks the rightmost visible split of `container` with `last-visible`, and the container with
+ * `multiple-splits` while it shows more than one. Sets `first-split-bgfx` and `last-split-bgfx` on
+ * `body` while the outer visible splits are translucent, for the peek buttons on either side of
+ * `#center-pane`. Reads the DOM order, since `SplitNoteContainer` reorders the splits in place.
+ */
+export function markVisibleSplits(container: HTMLElement) {
+    const splits = [ ...container.children ]
+        .filter((child) => child.classList.contains("note-split"));
+    const visibleSplits = splits.filter((split) => !split.classList.contains("hidden-ext"));
+    const firstVisible = visibleSplits.at(0);
+    const lastVisible = visibleSplits.at(-1);
+    for (const split of splits) {
+        split.classList.toggle("last-visible", split === lastVisible);
+    }
+
+    const bodyClasses = document.body.classList;
+    container.classList.toggle("multiple-splits", visibleSplits.length > 1);
+    bodyClasses.toggle("first-split-bgfx", !!firstVisible?.classList.contains("bgfx"));
+    bodyClasses.toggle("last-split-bgfx", !!lastVisible?.classList.contains("bgfx"));
+}
+
+/**
+ * Returns an invisible, selectable element. When an editor takes focus, Chromium searches the page
+ * for the nearest selectable position, and stops at this element instead of walking through the
+ * notes of the hidden tabs.
+ */
+export function createCaretStop() {
+    const stop = document.createElement("div");
+    stop.className = "caret-stop";
+    stop.setAttribute("aria-hidden", "true");
+    stop.textContent = "​";
+    return stop;
+}
+
+/**
+ * Blurs the focused element and clears the selection inside a split that is being hidden. Chromium
+ * keeps both in a `content-visibility: hidden` split, where resolving the caret walks the note.
+ */
+function releaseFocusAndSelection(split: HTMLElement) {
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && split.contains(focused)) {
+        focused.blur();
+    }
+
+    const selection = document.getSelection();
+    if (selection?.anchorNode && split.contains(selection.anchorNode)) {
+        selection.removeAllRanges();
+    }
+}
 
 /**
  * Whether the split should be translucent (`bgfx`), letting the window background effect show through.

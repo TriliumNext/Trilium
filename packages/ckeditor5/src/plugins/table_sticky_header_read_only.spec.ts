@@ -45,6 +45,7 @@ describe("applyStickyTableHeaders", () => {
         await scrollTo(scroller, offsetIn(scroller, thead) + 150);
         expect(topIn(scroller, thead)).toBeCloseTo(0, 0);
         expect(bordersOf(thead)).toBe("block");
+        expect(getComputedStyle(thead).overflowAnchor).toBe("none");
         const hit = document.elementFromPoint(
             thead.getBoundingClientRect().left + 10, scroller.getBoundingClientRect().top + 5);
         expect(hit?.closest("thead")).toBe(thead);

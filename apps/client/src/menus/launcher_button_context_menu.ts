@@ -2,7 +2,7 @@ import type { ToggleInParentResponse } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import { setBooleanWithInheritance } from "../services/attributes.js";
+import { setBooleanWithInheritance, setLabelValueWithInheritance } from "../services/attributes.js";
 import branchService from "../services/branches.js";
 import { t } from "../services/i18n.js";
 import options from "../services/options.js";
@@ -12,6 +12,24 @@ import { isMobile, reloadFrontendApp } from "../services/utils.js";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "./context_menu.js";
 
 const VISIBLE_LAUNCHER_PARENTS = ["_lbVisibleLaunchers", "_lbMobileVisibleLaunchers"];
+
+/**
+ * The `#bookmarkOpenMode` values in menu order, each with the icon of the link menu item that opens
+ * a note the same way.
+ */
+export const BOOKMARK_OPEN_MODES = [
+    { value: "currentTab", uiIcon: "bx bx-tab",
+        titleKey: "launcher_button_context_menu.open_mode_current_tab" },
+    { value: "newTab", uiIcon: "bx bx-link-external",
+        titleKey: "launcher_button_context_menu.open_mode_new_tab" },
+    { value: "newSplit", uiIcon: "bx bx-dock-right",
+        titleKey: "launcher_button_context_menu.open_mode_new_split" },
+    { value: "newWindow", uiIcon: "bx bx-window-open",
+        titleKey: "launcher_button_context_menu.open_mode_new_window" },
+    { value: "quickEdit", uiIcon: "bx bx-edit",
+        titleKey: "launcher_button_context_menu.open_mode_quick_edit" }
+] as const;
+const DEFAULT_OPEN_MODE = "currentTab";
 
 function getVisibleLauncherBranch(launcherNote: FNote) {
     return launcherNote.getParentBranches().find((b) => VISIBLE_LAUNCHER_PARENTS.includes(b.parentNoteId));
@@ -105,7 +123,11 @@ export async function showLauncherContextMenu<T extends string>(
     if (launcherNote && canRemoveFromLaunchBar(launcherNote, options.parentNoteId)) {
         // Bookmarks and dropped notes are regular notes, which `#bookmarkFolder` shows as folders.
         if (launcherNote.type !== "launcher") {
-            pushGroup(widgetItems, buildShowAsFolderItem(launcherNote));
+            pushGroup(
+                widgetItems,
+                buildOpenModeItem(launcherNote),
+                buildShowAsFolderItem(launcherNote)
+            );
         }
         pushGroup(widgetItems, {
             title: t("launcher_button_context_menu.remove_from_launch_bar"),
@@ -136,12 +158,37 @@ export async function showLauncherContextMenu<T extends string>(
     });
 }
 
-/** Appends `item` to `items` as a group of its own. */
-function pushGroup(items: MenuItem<string>[], item: MenuItem<string>) {
+/** Appends `group` to `items` as a group of its own. */
+function pushGroup(items: MenuItem<string>[], ...group: MenuItem<string>[]) {
     if (items.length > 0) {
         items.push({ kind: "separator" });
     }
-    items.push(item);
+    items.push(...group);
+}
+
+/**
+ * The _Open mode_ submenu, which sets where a click on the note's button opens it. A folder's mode
+ * is inheritable, so the notes in its menu follow it, and the check shows the mode they follow.
+ */
+function buildOpenModeItem(note: FNote): MenuItem<string> {
+    const isFolder = note.isLabelTruthy("bookmarkFolder");
+    const labels = note.getLabels("bookmarkOpenMode");
+    const labelValue = (isFolder ? labels.find((label) => label.isInheritable) : labels[0])?.value;
+    const current = BOOKMARK_OPEN_MODES.find((mode) => mode.value === labelValue)?.value
+        ?? DEFAULT_OPEN_MODE;
+
+    return {
+        title: t("launcher_button_context_menu.open_mode"),
+        uiIcon: "bx bx-link-external",
+        items: BOOKMARK_OPEN_MODES.map(({ value, titleKey, uiIcon }) => ({
+            title: t(titleKey),
+            uiIcon,
+            checked: value === current,
+            handler: () => setLabelValueWithInheritance(
+                note, "bookmarkOpenMode", value, DEFAULT_OPEN_MODE, isFolder
+            )
+        }))
+    };
 }
 
 function buildShowAsFolderItem(note: FNote): MenuItem<string> {

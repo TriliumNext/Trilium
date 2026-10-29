@@ -12,13 +12,16 @@ import { buildNote } from "../../test/easy-froca";
 import { setupHoldContextMenu } from "../widget_utils";
 import {
     type DelayedVisibilityPhase,
+    useBodyClass,
     useDelayedVisibility,
     useDetachedNoteContext,
+    useDocumentFocus,
     useFocusWithin,
     useHoldContextMenu,
     useImperativeSearchHighlighlighting,
     useMediaQuery,
     useNoteLabelBoolean,
+    useParentClass,
     useStaticTooltip,
     useTooltip,
     useWhenShown
@@ -235,6 +238,112 @@ describe("useFocusWithin", () => {
         expect(isFocusWithin).toBe(false);
 
         activeElement.mockRestore();
+    });
+});
+
+describe("useParentClass", () => {
+    function Child({ enabled }: { enabled: boolean }) {
+        const ref = useRef<HTMLDivElement>(null);
+        useParentClass(ref, "child-is-tall", enabled);
+        return <div ref={ref} />;
+    }
+
+    it("marks the parent while enabled, and unmarks it when disabled or unmounted", () => {
+        const parent = document.createElement("div");
+        document.body.appendChild(parent);
+
+        act(() => render(<Child enabled={true} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(true);
+
+        act(() => render(<Child enabled={false} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(false);
+
+        act(() => render(<Child enabled={true} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(true);
+        act(() => render(null, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(false);
+        parent.remove();
+    });
+});
+
+describe("useBodyClass", () => {
+    function Marker({ enabled }: { enabled: boolean }) {
+        useBodyClass("probe-open", enabled);
+        return null;
+    }
+
+    it("keeps the class while any component enables it", () => {
+        const first = document.createElement("div");
+        const second = document.createElement("div");
+        act(() => render(<Marker enabled={true} />, first));
+        act(() => render(<Marker enabled={true} />, second));
+        expect(document.body.classList.contains("probe-open")).toBe(true);
+
+        act(() => render(<Marker enabled={false} />, first));
+        expect(document.body.classList.contains("probe-open")).toBe(true);
+
+        act(() => render(null, second));
+        expect(document.body.classList.contains("probe-open")).toBe(false);
+        act(() => render(null, first));
+    });
+});
+
+describe("useDocumentFocus", () => {
+    let host: HTMLElement;
+    let root: HTMLElement;
+    let isFocused: boolean | undefined;
+
+    function Probe({ selector }: { selector?: string }) {
+        isFocused = useDocumentFocus(selector);
+        return null;
+    }
+
+    beforeEach(() => {
+        host = document.createElement("div");
+        host.innerHTML = `
+            <div class="note-split type-text"><input class="in-text"></div>
+            <div class="note-split type-code"><input class="in-code"></div>`;
+        root = document.createElement("div");
+        document.body.append(host, root);
+    });
+
+    afterEach(() => {
+        act(() => render(null, root));
+        host.remove();
+        root.remove();
+    });
+
+    function inputs() {
+        const inText = host.querySelector<HTMLInputElement>(".in-text");
+        const inCode = host.querySelector<HTMLInputElement>(".in-code");
+        expect(inText && inCode).toBeTruthy();
+        return { inText, inCode };
+    }
+
+    it("follows the focus into an element that matches the selector and out of it", () => {
+        const { inText, inCode } = inputs();
+        act(() => render(<Probe selector=".note-split.type-text" />, root));
+        expect(isFocused).toBe(false);
+
+        act(() => inText?.focus());
+        expect(isFocused).toBe(true);
+
+        act(() => inCode?.focus());
+        expect(isFocused).toBe(false);
+
+        act(() => inText?.focus());
+        act(() => inText?.blur());
+        expect(isFocused).toBe(false);
+    });
+
+    it("follows any focus without a selector, including one held before it mounts", () => {
+        const { inCode } = inputs();
+        act(() => inCode?.focus());
+        act(() => render(<Probe />, root));
+        expect(isFocused).toBe(true);
+
+        act(() => inCode?.blur());
+        expect(isFocused).toBe(false);
     });
 });
 

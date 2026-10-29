@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
-import NoteWrapperWidget, { hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote } from "./note_wrapper";
+import NoteWrapperWidget, {
+    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote, markVisibleSplits
+} from "./note_wrapper";
 
 describe("NoteWrapperWidget", () => {
     it("preserves the classes owned by SplitNoteContainer in refresh()", () => {
@@ -91,6 +93,96 @@ describe("NoteWrapperWidget", () => {
         const doc = buildNote({ title: "Doc", type: "file" });
         doc.mime = "application/msword";
         expect(hasBackgroundEffects(doc)).toBe(false);
+    });
+
+    it("places a caret stop at both ends of the split", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        const split = widget.$widget[0];
+        for (const stop of [ split.firstElementChild, split.lastElementChild ]) {
+            expect(stop?.classList.contains("caret-stop")).toBe(true);
+            expect(stop?.getAttribute("aria-hidden")).toBe("true");
+            expect(stop?.textContent).toBe("​");
+        }
+    });
+
+    it("releases the focus and the selection inside the split it hides, and no others", () => {
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        const inside = document.createElement("input");
+        const insideText = document.createTextNode("Inside");
+        widget.$widget.append(inside, insideText);
+        const outside = document.createElement("input");
+        const outsideText = document.createTextNode("Outside");
+        document.body.append(widget.$widget[0], outside, outsideText);
+        const selection = document.getSelection();
+
+        outside.focus();
+        selection?.collapse(outsideText, 1);
+        widget.toggleExt(false);
+        expect(document.activeElement).toBe(outside);
+        expect(selection?.anchorNode).toBe(outsideText);
+
+        widget.toggleExt(true);
+        inside.focus();
+        selection?.collapse(insideText, 1);
+        expect(document.activeElement).toBe(inside);
+        widget.toggleExt(false);
+        expect(document.activeElement).toBe(document.body);
+        expect(selection?.rangeCount).toBe(0);
+
+        document.body.replaceChildren();
+    });
+
+    it("updates the body classes of the outer splits when its note changes translucency", () => {
+        const container = document.createElement("div");
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        container.append(widget.$widget[0]);
+
+        showNote(widget, buildNote({ title: "Photo", type: "image" }));
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(true);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(true);
+
+        showNote(widget, buildNote({ title: "Plain", type: "text" }));
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(false);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(false);
+    });
+});
+
+describe("markVisibleSplits", () => {
+    afterEach(() => {
+        document.body.classList.remove("first-split-bgfx", "last-split-bgfx");
+    });
+
+    function buildContainer(...splitClasses: string[]) {
+        const container = document.createElement("div");
+        for (const classes of splitClasses) {
+            const split = document.createElement("div");
+            split.className = `note-split ${classes}`;
+            container.append(split);
+        }
+        return container;
+    }
+
+    it("marks the last visible split, multiple splits and the translucent outer splits", () => {
+        const container = buildContainer("bgfx", "", "bgfx hidden-ext last-visible");
+        const [ first, second, hidden ] = container.children;
+
+        markVisibleSplits(container);
+        expect(first.classList.contains("last-visible")).toBe(false);
+        expect(second.classList.contains("last-visible")).toBe(true);
+        expect(hidden.classList.contains("last-visible")).toBe(false);
+        expect(container.classList.contains("multiple-splits")).toBe(true);
+        expect(document.body.classList.contains("first-split-bgfx")).toBe(true);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(false);
+
+        second.classList.add("hidden-ext");
+        markVisibleSplits(container);
+        expect(first.classList.contains("last-visible")).toBe(true);
+        expect(container.classList.contains("multiple-splits")).toBe(false);
+        expect(document.body.classList.contains("last-split-bgfx")).toBe(true);
     });
 });
 

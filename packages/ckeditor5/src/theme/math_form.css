@@ -72,7 +72,8 @@
     transition: border-color 120ms ease;
     clip-path: none;
 }
-.ck.ck-math-input :is(.ck-mathlive-container, .ck-latex-textarea) {
+.ck.ck-math-input .ck-mathlive-container,
+.ck.ck-math-input .ck-latex-textarea {
     max-width: 100%;
     min-height: 60px;
     max-height: 120px;

@@ -49,6 +49,10 @@ span.fancytree-node.fancytree-hide {
         height: calc(1lh + 6px);
     }
 
+    .fancytree-title {
+        font-size: 0.9em;
+    }
+
     .tn-icon.tree-item-button {
         font-size: 1em;
     }
