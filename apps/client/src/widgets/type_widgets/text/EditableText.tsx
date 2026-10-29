@@ -30,6 +30,7 @@ import {
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
 } from "../../react/hooks";
 import { setEditorNoteId } from "../../react/NoteStore";
+import { POPUP_EDITOR_NTX_ID } from "../../react/react_utils";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
@@ -260,6 +261,18 @@ export default function EditableText({
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
         },
+        async addChildNoteToTextCommand() {
+            const editor = await waitForEditor();
+            const parentNote = noteContext?.note;
+            const parentNotePath = noteContext?.notePath;
+            if (!editor || !parentNote || !parentNotePath) return;
+
+            await insertChildNote(editor, {
+                parentNotePath,
+                isProtected: parentNote.isProtected,
+                ntxId
+            });
+        },
         // Include note functionality note
         addIncludeNoteToTextCommand() {
             if (!editorApiRef.current) return;
@@ -351,6 +364,7 @@ export default function EditableText({
                 pendingAttachmentChangesRef
             );
         }
+        editor?.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
         if (editor?.plugins.has("ImageEditingSource")) {
             editor.plugins.get("ImageEditingSource").refresh();
         }
@@ -580,6 +594,33 @@ export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>):
             api.addLink(notePath, linkTitle, externalLink);
         }
     };
+}
+
+/**
+ * Creates an empty child note of `parentNotePath`, links to it at the selection of `editor`, and
+ * opens it in the quick edit popup with its title selected. An editor in that popup opens it in the
+ * nested popup, over the note being edited.
+ *
+ * Exported for testing.
+ */
+export async function insertChildNote(editor: CKTextEditor, {
+    parentNotePath, isProtected, ntxId
+}: {
+    parentNotePath: string;
+    isProtected: boolean;
+    ntxId: string | null | undefined;
+}) {
+    const { note } = await note_create.createNote(parentNotePath, { activate: false, isProtected });
+    if (!note) return;
+
+    const notePath = `${parentNotePath}/${note.noteId}`;
+    editor.execute("referenceLink", { href: `#${notePath}` });
+    const command = ntxId?.startsWith(POPUP_EDITOR_NTX_ID) ? "openInNestedPopup" : "openInPopup";
+    void appContext.triggerCommand(command, {
+        noteIdOrPath: notePath,
+        showNoteTypeSwitcher: true,
+        selectTitle: true
+    });
 }
 
 /**

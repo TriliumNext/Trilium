@@ -49,13 +49,16 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
     const [ switchable, setSwitchable ] = useState(false);
+    const selectsTitleRef = useRef(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
     useDetachedNoteContext(noteContext);
 
-    useTriliumEvent(openCommand, async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
+    useTriliumEvent(openCommand, async ({
+        noteIdOrPath, viewScope, showNoteTypeSwitcher, selectTitle
+    }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -70,6 +73,7 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
         const noteContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
         setSwitchable(!!showNoteTypeSwitcher);
+        selectsTitleRef.current = !!selectTitle;
 
         const hasUserSetNoteReadOnly = note.hasLabel("readOnly");
         await noteContext.setNote(noteIdOrPath, {
@@ -208,7 +212,16 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                     className="popup-editor-dialog"
                     size="lg"
                     show={shown}
-                    onShown={() => parentComponent?.handleEvent("focusOnDetail", { ntxId: noteContext.ntxId })}
+                    onShown={() => {
+                        const shownNtxId = noteContext.ntxId;
+                        if (selectsTitleRef.current) {
+                            parentComponent?.handleEvent("focusAndSelectTitle", {
+                                isNewNote: true, ntxId: shownNtxId
+                            });
+                        } else {
+                            parentComponent?.handleEvent("focusOnDetail", { ntxId: shownNtxId });
+                        }
+                    }}
                     onHidden={() => setShown(false)}
                     keepInDom // needed for faster loading
                     noFocus // automatic focus breaks block popup

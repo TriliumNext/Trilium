@@ -157,9 +157,10 @@ function fakeNote(labels: string[] = [], isOptions = false) {
 let container: HTMLDivElement;
 let parent: Component;
 
-async function openPopup(
-    data: { noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean }
-) {
+async function openPopup(data: {
+    noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean,
+    selectTitle?: boolean
+}) {
     await act(async () => {
         await parent.handleEvent("openInPopup", data as never);
     });
@@ -416,6 +417,25 @@ describe("PopupEditor", () => {
         await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
         expect(modal()?.dataset.shown).toBe("false");
         expect(document.body.classList.contains("popup-editor-open")).toBe(false);
+    });
+
+    it("selects the title instead of the content when asked to, for that open only", async () => {
+        const handleEvent = vi.spyOn(parent, "handleEvent");
+        const show = () =>
+            act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+
+        await openPopup({ noteIdOrPath: "root/n1", selectTitle: true });
+        await show();
+        expect(handleEvent).toHaveBeenCalledWith("focusAndSelectTitle", {
+            isNewNote: true, ntxId: "_popup-editor"
+        });
+        expect(handleEvent).not.toHaveBeenCalledWith("focusOnDetail", expect.anything());
+
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n2" });
+        await show();
+        expect(handleEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: "_popup-editor" });
+        expect(handleEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
     });
 
     it("opens a nested popup over itself, which answers only its own command and context", async () => {

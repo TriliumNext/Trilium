@@ -29,6 +29,8 @@ You can also insert internal links “inline” by using the `@` symbol:
 1.  Type `@` in a text note, which will open the note search menu.
 2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to create the link. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_ or _Create child note_, as described above.
 
+To create an empty child note and link to it before naming it, use _New child note_, described in <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
+
 ## Pasting internal links
 
 You can also insert internal links by copying a note from the note tree.

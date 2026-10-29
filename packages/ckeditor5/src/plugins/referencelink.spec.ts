@@ -270,6 +270,47 @@ describe("ReferenceLink", () => {
         expect(getModelData(editor.model)).toBe(before);
     });
 
+    it("redraws the links to a renamed note without changing the document, and only those", () => {
+        const titles: Record<string, string> = {
+            "#root/renamed": "Old",
+            "#root/parent/renamed": "Old",
+            "#root/unchanged": "Same",
+            "#root/unlisted": "Old"
+        };
+        getReferenceLinkTitleSync.mockImplementation((href: string) => titles[href]);
+        editor.setData(
+            "<p><a class=\"reference-link\" href=\"#root/renamed\">a</a>"
+            + "<a class=\"reference-link\" href=\"#root/parent/renamed\">b</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unchanged\">c</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unlisted\">d</a></p>"
+            + "<p><a href=\"#root/renamed\">e</a></p>"
+        );
+        // Anchors that only look like references: a plain link to the renamed note, and one
+        // without an address.
+        const domRoot = editor.editing.view.getDomRoot();
+        domRoot?.querySelector("a:not(.reference-link)")?.classList.add("reference-link");
+        domRoot?.appendChild(document.createElement("a")).classList.add("reference-link");
+        const before = getModelData(editor.model);
+        const references = editor.plugins.get("ReferenceLinkEditing");
+        const redrawnHrefs = () =>
+            [ ...new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href)) ];
+
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        references.refreshNoteLinks([]);
+        expect(redrawnHrefs()).toEqual([]);
+
+        titles["#root/renamed"] = titles["#root/parent/renamed"] = titles["#root/unlisted"] = "New";
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        expect(redrawnHrefs()).toEqual([ "#root/renamed", "#root/parent/renamed" ]);
+        expect(getModelData(editor.model)).toBe(before);
+
+        // Drawn with the new title, so the next change of the note leaves them alone.
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed" ]);
+        expect(redrawnHrefs()).toEqual([]);
+    });
+
     it("reads the attachment a link points to, and none from a note link or a missing href", () => {
         expect(getAttachmentId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("att1");
         expect(getAttachmentId("#root/noteAbc")).toBeNull();

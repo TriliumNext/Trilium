@@ -4683,7 +4683,10 @@
       "list-type": "List type",
       "insert-a-preview-of-a-web-page-or-a-video": "Insert a preview of a web page or a video",
       "extended-code-block": "Extended code block",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "Insert a code block that is edited as a code note."
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Insert a code block that is edited as a code note.",
+      "new-child-note": "New child note",
+      "create-a-new-child-note": "Create a new child note",
+      "create-a-new-child-note-and-insert-a-link-to-it": "Create a new child note and insert a link to it"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

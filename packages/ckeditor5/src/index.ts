@@ -54,6 +54,7 @@ export * from "./utils.js";
 // Import with sideffects to ensure that type augmentations are present.
 import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
+import "./plugins/child_note.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/content_embed/content_embed_caret.js";
 import "./plugins/find_in_link_widgets.js";

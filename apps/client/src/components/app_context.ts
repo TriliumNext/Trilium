@@ -99,6 +99,8 @@ export interface OpenInPopupData extends CommandData {
     viewScope?: ViewScope;
     /** Offers the note type switcher while the note is still blank, as the tab layout does. */
     showNoteTypeSwitcher?: boolean;
+    /** Focuses the title with all of it selected instead of the content, for a note to name. */
+    selectTitle?: boolean;
 }
 
 export interface ExecuteCommandData<T> extends CommandData {
@@ -387,6 +389,7 @@ export type CommandMappings = {
     pasteMarkdownIntoText: CommandData;
     cutIntoNote: CommandData;
     saveNoteDetailNow: CommandData;
+    addChildNoteToText: CommandData;
     addIncludeNoteToText: CommandData;
     editReadOnlyNote: CommandData;
     toggleRibbonTabClassicEditor: CommandData;

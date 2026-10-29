@@ -7,11 +7,13 @@
  * being uploaded flickered and vanished instead of a "cannot upload" toast appearing.
  */
 import type { CKEditorError, CKTextEditor, FileUploadData } from "@triliumnext/ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
+import appContext from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
 import froca from "../../../services/froca";
 import type LoadResults from "../../../services/load_results";
+import noteCreate from "../../../services/note_create";
 
 const showError = vi.hoisted(() => vi.fn());
 const showErrorTitleAndMessage = vi.hoisted(() => vi.fn());
@@ -43,6 +45,7 @@ const {
     applyPendingAttachmentChanges,
     getAddLinkOpts,
     getBlockData,
+    insertChildNote,
     isCaretInFocus,
     notifyAttachmentChanges,
     onNotificationInfo,
@@ -481,5 +484,52 @@ describe("getAddLinkOpts", () => {
         await opts.addLink("https://example.com", "Example", true);
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
+    });
+});
+
+describe("insertChildNote", () => {
+    const editor = { execute: vi.fn() };
+    const insert = (ntxId: string) => insertChildNote(editor as unknown as CKTextEditor, {
+        parentNotePath: "root/parent", isProtected: true, ntxId
+    });
+    let createNote: MockInstance<typeof noteCreate.createNote>;
+    let triggerCommand: MockInstance<typeof appContext.triggerCommand>;
+
+    beforeEach(() => {
+        editor.execute.mockClear();
+        createNote = vi.spyOn(noteCreate, "createNote")
+            .mockResolvedValue({ note: { noteId: "child" }, branch: null } as never);
+        triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("links to a new child note and opens it to be named, nested in a popup", async () => {
+        await insert("ntx-1");
+
+        expect(createNote).toHaveBeenCalledExactlyOnceWith("root/parent", {
+            activate: false, isProtected: true
+        });
+        expect(editor.execute)
+            .toHaveBeenCalledExactlyOnceWith("referenceLink", { href: "#root/parent/child" });
+        expect(triggerCommand).toHaveBeenCalledExactlyOnceWith("openInPopup", {
+            noteIdOrPath: "root/parent/child", showNoteTypeSwitcher: true, selectTitle: true
+        });
+
+        await insert("_popup-editor");
+        expect(triggerCommand).toHaveBeenLastCalledWith(
+            "openInNestedPopup", expect.objectContaining({ noteIdOrPath: "root/parent/child" })
+        );
+    });
+
+    it("links and opens nothing when the note is not created", async () => {
+        createNote.mockResolvedValue({ note: null, branch: undefined } as never);
+
+        await insert("ntx-1");
+
+        expect(editor.execute).not.toHaveBeenCalled();
+        expect(triggerCommand).not.toHaveBeenCalled();
     });
 });

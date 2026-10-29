@@ -5,6 +5,12 @@ Press the <span class="tn-icon cke cke-plus"></span> button in the <a class="r
 
 See the dedicated <a class="reference-link" href="Anchors.md">Anchors</a> section.
 
+## New child note
+
+Choose <span class="tn-icon bx bx-note"></span> _New child note_ to create an empty child note of the current note and insert a link to it at the cursor. The new note opens in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> with its title selected, so typing names it, and the link shows the new title. While the note is still empty, Quick edit offers the note types to turn it into.
+
+The same action is available as _Create a new child note_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. A child note of a protected note is protected too.
+
 ## Emoji
 
 <figure class="image image-style-align-right image_resized" style="width:42.4%;"><img style="aspect-ratio:366/410;" src="Insert buttons_plus.png" width="366" height="410"></figure>

@@ -31,6 +31,7 @@ import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
+import bxNote from "boxicons/svg/regular/bx-note.svg?raw";
 import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
 import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
 import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
@@ -47,6 +48,7 @@ import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
+import { COMMAND_NAME as CHILD_NOTE_COMMAND } from "../child_note.js";
 import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
 import {
     INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
@@ -452,6 +454,14 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             aliases: [ "latex", "equation" ],
             icon: mathIcon,
             execute: (target: Editor) => target.plugins.get(MathUI)._showUI()
+        },
+        {
+            id: "child-note",
+            title: t("Create a new child note"),
+            description: t("Create a new child note and insert a link to it"),
+            aliases: [ "new note", "subnote", "sub-note", "page" ],
+            icon: bxNote,
+            commandName: CHILD_NOTE_COMMAND
         },
         {
             id: "content-embed",

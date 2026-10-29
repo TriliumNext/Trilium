@@ -203,6 +203,25 @@ describe("group labels", () => {
     });
 });
 
+describe("the insert menus", () => {
+    function insertItems(items: unknown[]) {
+        const group = items.find((item): item is { label: string; items: string[] } =>
+            typeof item === "object" && item !== null
+            && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+        return group?.items ?? [];
+    }
+
+    it("list the new child note right above the included note", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            const insert = insertItems(items);
+            expect(insert).toContain("childNote");
+            expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
+        }
+    });
+});
+
 describe("buildMobileToolbar", () => {
     it("nests only the insert menu, which holds the least used insertions and the wrapping blocks", () => {
         const { toolbar, textFormattingToolbar } = buildMobileToolbar(true);
@@ -222,7 +241,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "math", "drawingCanvas", "mermaid",
                 "|",
-                "bookmark", "linkEmbed", "contentEmbed",
+                "bookmark", "linkEmbed", "childNote", "contentEmbed",
                 "|",
                 "specialCharacters", "emoji", "insertIcon",
                 "|",
