@@ -531,7 +531,7 @@ describe("ReadOnlyText Mermaid diagrams", () => {
                 language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "small",
                 options: { isFocused: false }, isInPage: true,
                 data: {
-                    boxSize: "small", displayMode: "source", hideTitle: "true",
+                    boxSize: "small", displayMode: "source", hideTitle: "true", language: "mermaid",
                     triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false"
                 },
                 height: "12em"
@@ -539,7 +539,9 @@ describe("ReadOnlyText Mermaid diagrams", () => {
             {
                 language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "medium",
                 options: { isFocused: false }, isInPage: true,
-                data: { boxSize: "medium", hideTitle: "true", triliumBlockId: "b2" },
+                data: {
+                    boxSize: "medium", hideTitle: "true", language: "mermaid", triliumBlockId: "b2"
+                },
                 height: ""
             }
         ]);
@@ -559,6 +561,56 @@ describe("ReadOnlyText Mermaid diagrams", () => {
         expect(printed.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
         await printed.unmount();
         expect(loadInlineEmbed).not.toHaveBeenCalled();
+    });
+});
+
+describe("ReadOnlyText extended code blocks", () => {
+    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+        loadInlineEmbed.mockClear();
+        const html = `<pre class="extended-code-block" data-box-size="medium"`
+            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
+            + `<code class="language-text-x-python">pass</code></pre>`
+            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
+            + `<pre><code class="language-text-x-python">plain</code></pre>`;
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+
+        const embeds = loadInlineEmbed.mock.calls.map((call: unknown[]) => {
+            const [ source, $el, boxSize ] = call as [
+                { language: string; getSource(): string }, JQuery<HTMLElement>, string
+            ];
+            const figure = $el[0];
+            return {
+                language: source.language,
+                source: source.getSource(),
+                boxSize,
+                className: figure.className,
+                data: { ...figure.dataset }
+            };
+        });
+        expect(embeds).toEqual([
+            {
+                language: "text-x-python", source: "pass", boxSize: "medium",
+                className: "include-note extended-code-block",
+                data: {
+                    boxSize: "medium", hideTitle: "true", language: "text-x-python",
+                    codeTabWidth: "2", codeIndentWithTabs: "false"
+                }
+            },
+            {
+                language: "text-plain", source: "x", boxSize: "full",
+                className: "include-note extended-code-block",
+                data: {
+                    boxSize: "full", hideTitle: "true", language: "text-plain",
+                    triliumBlockId: "b1"
+                }
+            }
+        ]);
+        expect(container.querySelector("pre > code.language-text-x-python")?.textContent)
+            .toBe("plain");
+        await act(async () => render(null, container));
+        container.remove();
     });
 });
 

@@ -1087,6 +1087,13 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
     margin-top: 2px !important;
 }
 
+.include-note.extended-code-block {
+    --_include-note-top-border-radius: 6px;
+    --_include-note-bottom-border-radius: 6px;
+
+    box-shadow: var(--code-block-box-shadow);
+}
+
 .attachment-content-wrapper pre {
     border-radius: var(--dropdown-border-radius);
 }

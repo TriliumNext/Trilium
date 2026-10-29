@@ -1522,6 +1522,19 @@ pre.code-embed-editor.read-only .cm-activeLine {
     }
 }
 
+:root .include-note-content.type-extendedCodeBlock pre.code-embed-editor {
+    border-radius: var(--_include-note-content-top-radius) var(--_include-note-content-top-radius)
+                   var(--_include-note-content-bottom-radius)
+                   var(--_include-note-content-bottom-radius);
+    overflow: hidden;
+
+    /* `.cm-line` adds 6px before each line. */
+    .cm-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-start: calc(var(--padding-size, 1em) - 6px);
+    }
+}
+
 /* Takes the wheel and the touch gestures for the page until the content has the focus. */
 .include-note-backdrop {
     position: absolute;
@@ -1570,6 +1583,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
 .include-note-content.type-canvas,
 .include-note-content.type-canvasDrawing,
 .include-note-content.type-mermaidDiagram,
+.include-note-content.type-extendedCodeBlock,
 .include-note-content.type-webView,
 .include-note-content.type-book:has(.note-list-widget.full-height),
 .include-note-content.type-search:has(.note-list-widget.full-height) {

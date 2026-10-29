@@ -1,5 +1,6 @@
 import type { ContentEmbedCodeView } from "@triliumnext/ckeditor5";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
+import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import { createPortal, type RefObject } from "preact";
 import { lazy, Suspense, useSyncExternalStore } from "preact/compat";
@@ -11,11 +12,14 @@ import FNote from "../../../entities/fnote";
 import type { MenuItem } from "../../../menus/context_menu";
 import type { CodePreviewLines } from "../../../services/code_note_preview";
 import type { ContentEditor } from "../../../services/content_renderer";
+import { PLAIN_TEXT_MIME } from "../../../services/mime_types";
+import type { SourceEmbedProps } from "../../../services/source_embeds";
 import {
     type CodeSettings, type CodeText, getLineNumbersMenu, getWordWrapMenu, useCodeLanguageMenu,
     useNoteCodeSettings, useTabWidthMenu
 } from "../../layout/code_menus";
 import { SaveStateBadge } from "../../layout/NoteBadges";
+import { useMimeTypes } from "../../layout/NoteTypeSwitcher";
 import {
     useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
@@ -55,21 +59,94 @@ export default function CodeEmbed({
     hasCodeLineNumbers
 }: CodeEmbedProps) {
     const rootRef = useRef<HTMLDivElement>(null);
-    const viewRef = useRef<VanillaCodeMirror>(null);
     const note = entity instanceof FNote ? entity : null;
+    const noteSettings = useNoteCodeSettings(note);
+    const fileSettings = useFileCodeSettings(rootRef, initialMime, codeLanguage);
+    const settings = note ? noteSettings : fileSettings;
+    const [ content, setContent ] = useState(initialContent);
+    useSavedContent(entity, editor, setContent, rootRef);
+
+    return (
+        <CodeEmbedContent
+            rootRef={rootRef}
+            note={note}
+            ownerNote={entity instanceof FNote ? entity : entity.getNote()}
+            editor={editor}
+            content={content}
+            onContentChange={setContent}
+            settings={settings}
+            mime={settings.mime ?? initialMime}
+            initialLines={{ isWrapped: isCodeWrapped, hasLineNumbers: hasCodeLineNumbers }}
+            hasSaveStatus
+        />
+    );
+}
+
+/**
+ * An extended code block: code kept inline in a text note, shown in a read-only CodeMirror, which
+ * edits it while the Editable toggle of its embed is on. The language is the `data-language`
+ * attribute of the embed, and the indentation and the lines its `data-code-*` attributes.
+ */
+export function InlineCodeEmbed({ content: savedContent, editor, language }: SourceEmbedProps) {
+    const rootRef = useRef<HTMLDivElement>(null);
+    const settings = useInlineCodeSettings(rootRef, language);
+    const [ content, setContent ] = useState(savedContent);
+
+    // Code written elsewhere, or undone, replaces the shown code unless it has unsaved edits.
+    useEffect(() => {
+        if (editor?.getUnsavedContent() === undefined) {
+            setContent(savedContent);
+        }
+    }, [ savedContent ]);
+
+    return (
+        <CodeEmbedContent
+            rootRef={rootRef}
+            note={null}
+            ownerNote={null}
+            editor={editor}
+            content={content}
+            onContentChange={setContent}
+            settings={settings}
+            mime={settings.mime ?? PLAIN_TEXT_MIME}
+            hasLanguageLabel
+        />
+    );
+}
+
+interface CodeEmbedContentProps {
+    /** The root of the content. The parent reads the settings of the embed through it. */
+    rootRef: RefObject<HTMLDivElement | null>;
+    note: FNote | null;
+    /** The note that holds an attachment, which images upload to and new notes go under. */
+    ownerNote: FNote | null;
+    editor: ContentEditor | undefined;
+    content: string;
+    /** Receives the content when it changes in the embed. */
+    onContentChange: (content: string) => void;
+    settings: CodeSettings;
+    /** The MIME type that highlights the content. */
+    mime: string;
+    /** How the lines show until the content is in the embed. */
+    initialLines?: CodePreviewLines;
+    /** Whether the title row shows the save state while the content is edited. */
+    hasSaveStatus?: boolean;
+    /** Whether the editor shows the name of its language in its corner while it can edit. */
+    hasLanguageLabel?: boolean;
+}
+
+/** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
+function CodeEmbedContent({
+    rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
+    hasSaveStatus, hasLanguageLabel
+}: CodeEmbedContentProps) {
+    const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
     const { canEdit, isEditing } = useEditableEmbed(rootRef, {
         editor, note, tools: null, focusTarget: ".cm-content"
     });
-    const noteSettings = useNoteCodeSettings(note);
-    const fileSettings = useFileCodeSettings(rootRef, initialMime, codeLanguage);
-    const settings = note ? noteSettings : fileSettings;
-    const lines = useEmbedLines(rootRef, note, {
-        isWrapped: isCodeWrapped, hasLineNumbers: hasCodeLineNumbers
-    });
-    const [ content, setContent ] = useState(initialContent);
-    const mime = settings.mime ?? initialMime;
-    useSavedContent(entity, editor, setContent, rootRef);
+    const lines = useEmbedLines(rootRef, note, initialLines);
+    const languageLabel = useMimeTypeTitle(mime);
     // The editor while the content is edited, otherwise the content with the unsaved changes of any
     // embed of it, which a change saves.
     const getCodeText = (): CodeText => (isEditing ? viewRef.current : null) ?? {
@@ -83,7 +160,7 @@ export default function CodeEmbed({
             }
             view?.setText(text);
             editor?.scheduleSave(() => text);
-            setContent(text);
+            onContentChange(text);
         }
     };
 
@@ -94,7 +171,7 @@ export default function CodeEmbed({
                     <Suspense fallback={null}>
                         <CodeEmbedEditor
                             note={note}
-                            ownerNote={entity instanceof FNote ? entity : entity.getNote()}
+                            ownerNote={ownerNote}
                             editor={isEditing ? editor : undefined}
                             history={editor?.history}
                             content={content}
@@ -103,13 +180,16 @@ export default function CodeEmbed({
                             useTabs={settings.useTabs}
                             wrapLines={lines.wrapLines}
                             hasLineNumbers={lines.hasLineNumbers}
+                            languageLabel={hasLanguageLabel && canEdit ? languageLabel : undefined}
                             viewRef={viewRef}
-                            onClose={setContent}
+                            onClose={onContentChange}
                         />
                     </Suspense>
                 </CaretNavigationContext.Provider>
             </div>
-            {editor && <SaveStatus rootRef={rootRef} editor={editor} isShown={isEditing} />}
+            {hasSaveStatus && editor && (
+                <SaveStatus rootRef={rootRef} editor={editor} isShown={isEditing} />
+            )}
             <CodeTools
                 rootRef={rootRef}
                 settings={settings}
@@ -179,14 +259,42 @@ function useFileCodeSettings(
     initialLanguage: string | undefined
 ): CodeSettings {
     const language = useContentEmbedAttribute(rootRef, "data-code-language", initialLanguage ?? null);
+
+    return {
+        ...useEmbedIndentation(rootRef),
+        mime: language ?? fileMime,
+        setMime: (mime) => {
+            setCodeView(rootRef.current, { language: mime === fileMime ? null : mime });
+        }
+    };
+}
+
+/**
+ * The code settings of an extended code block: the language, from the `data-language` attribute
+ * of its embed, and the indentation. `initialLanguage` is the language until the content is in the
+ * embed. Both languages are CKEditor code block languages.
+ */
+function useInlineCodeSettings(
+    rootRef: RefObject<HTMLElement | null>,
+    initialLanguage: string | undefined
+): CodeSettings {
+    const language = useContentEmbedAttribute(rootRef, "data-language", initialLanguage ?? null);
+
+    return {
+        ...useEmbedIndentation(rootRef),
+        mime: language ? getMimeTypeFromCKEditorLanguage(language) : undefined,
+        setMime: (mime) => setCodeView(rootRef.current, { language: mime })
+    };
+}
+
+/** The indentation, from the `data-code-*` attributes of the embed around `rootRef`. */
+function useEmbedIndentation(
+    rootRef: RefObject<HTMLElement | null>
+): Pick<CodeSettings, "tabWidth" | "useTabs" | "setIndentation"> {
     const tabWidth = useContentEmbedAttribute(rootRef, "data-code-tab-width");
     const useTabs = useContentEmbedAttribute(rootRef, "data-code-indent-with-tabs");
 
     return {
-        mime: language ?? fileMime,
-        setMime: (mime) => {
-            setCodeView(rootRef.current, { language: mime === fileMime ? null : mime });
-        },
         tabWidth: tabWidth ? parseInt(tabWidth, 10) || undefined : undefined,
         useTabs: useTabs === null ? undefined : useTabs === "true",
         setIndentation: (indentation) => setCodeView(rootRef.current, {
@@ -194,6 +302,12 @@ function useFileCodeSettings(
             indentWithTabs: indentation.useTabs
         })
     };
+}
+
+/** The name of the language of `mime`, such as "Python". */
+function useMimeTypeTitle(mime: string) {
+    const { allMimeTypes } = useMimeTypes();
+    return allMimeTypes.find((mimeType) => mimeType.mime === mime)?.title;
 }
 
 /** Sets how the embed around `root` shows its code, through the text editor that holds it. */

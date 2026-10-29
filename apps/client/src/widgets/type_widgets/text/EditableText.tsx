@@ -233,6 +233,7 @@ export default function EditableText({
                 ...options, saves: inlineSourceSaves, histories
             });
         },
+        flushInline: () => inlineSourceSaves.flush(),
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
         },
