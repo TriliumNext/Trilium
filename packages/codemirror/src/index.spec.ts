@@ -191,14 +191,21 @@ describe("CodeMirror", () => {
     describe("setText while hidden", () => {
         const bigDoc = Array.from({ length: 10_000 }, (_, i) => `line ${i}`).join("\n");
 
-        /** happy-dom has no layout, so offsetParent cannot tell hidden from visible on its own. */
-        function pinOffsetParent(el: HTMLElement, value: Element | null) {
-            Object.defineProperty(el, "offsetParent", { value, configurable: true });
+        /**
+         * Pins what `checkVisibility()` reports, as happy-dom renders nothing. A hidden tab keeps
+         * its editor laid out under `content-visibility: hidden`, so the `offsetParent` stays set.
+         */
+        function pinVisibility(el: HTMLElement, isVisible: boolean) {
+            Object.defineProperty(el, "checkVisibility", {
+                value: () => isVisible,
+                configurable: true
+            });
+            Object.defineProperty(el, "offsetParent", { value: document.body, configurable: true });
         }
 
         it("keeps the viewport small instead of rendering every line of the new document", () => {
             editor = build();
-            pinOffsetParent(editor.dom, null);
+            pinVisibility(editor.dom, false);
             editor.setText(bigDoc);
 
             expect(editor.getText()).toBe(bigDoc);
@@ -206,7 +213,7 @@ describe("CodeMirror", () => {
             expect(editor.dom.querySelectorAll(".cm-line").length).toBeLessThan(1_000);
 
             // The rebuilt view keeps accepting transactions once visible again.
-            pinOffsetParent(editor.dom, document.body);
+            pinVisibility(editor.dom, true);
             editor.setText("visible again");
             expect(editor.getText()).toBe("visible again");
             editor.dispatch({ changes: { from: 0, insert: "still " } });
@@ -217,13 +224,13 @@ describe("CodeMirror", () => {
             const onContentChanged = vi.fn();
             editor = build({ onContentChanged });
 
-            pinOffsetParent(editor.dom, null);
+            pinVisibility(editor.dom, false);
             editor.setText(bigDoc);
             // The hidden path swaps the state in without an update, so no change notification
             // fires — hidden loads are programmatic, and the caller resets history right after.
             expect(onContentChanged).not.toHaveBeenCalled();
 
-            pinOffsetParent(editor.dom, document.body);
+            pinVisibility(editor.dom, true);
             editor.setText("typed");
             expect(onContentChanged).toHaveBeenCalledTimes(1);
         });

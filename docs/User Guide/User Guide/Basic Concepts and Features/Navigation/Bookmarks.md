@@ -9,13 +9,29 @@ If bookmarks don't appear in the launch bar, then most likely the bookmark secti
 
 Space in the left panel is limited, and you might want to bookmark many items. One possible solution is to bookmark a folder, so it shows its children:
 
-To do this, bookmark a folder, then right click its button in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> and check _Folder_. The button then opens a menu instead of the note itself: the note is at the top, followed by its children. Uncheck _Folder_ to turn it back into a regular bookmark.
+To do this, bookmark a folder, then right click its button in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> and check _Show as a folder_. The button then opens a menu instead of the note itself: the note is at the top, followed by its children. Uncheck _Show as a folder_ to turn it back into a regular bookmark.
 
 A child that has children of its own shows an arrow at the end of its row. Click the arrow to list its children in a submenu, or click the rest of the row to open the note. Submenus nest up to four levels deep. A menu that lists more than 15 children shows a filter field above them: type part of a title to list only the notes that match. A note whose subtree is hidden (see <a class="reference-link" href="../UI%20Elements/Note%20Tree/Hiding%20the%20subtree.md">Hiding the subtree</a>) doesn't list its children here either.
 
 The notes in the menu open the way links do: a middle click or <kbd>Ctrl</kbd>+click opens a note in a new tab, <kbd>Shift</kbd>+click opens it in a new window, and a right click lists the other places it can be opened in.
 
-_Folder_ assigns the `#bookmarkFolder` label to the note, so adding the label by hand works as well. Because the label belongs to the note, a note that is both bookmarked and dropped onto the launch bar shows its children in both places.
+_Show as a folder_ assigns the `#bookmarkFolder` label to the note, so adding the label by hand works as well. Because the label belongs to the note, a note that is both bookmarked and dropped onto the launch bar shows its children in both places.
+
+## Choosing where a bookmark opens
+
+A bookmark opens its note in the current tab. To open it somewhere else, right click its button in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> and pick a place under _Open mode_. The place in effect is checked.
+
+| _Open mode_ | Label value | Where the note opens |
+| --- | --- | --- |
+| _Current tab_ | `currentTab` | In the current tab. This is the default. |
+| _New tab_ | `newTab` | In a new tab after the current one (see <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a>). |
+| _New split_ | `newSplit` | In a new split next to the current note (see <a class="reference-link" href="../UI%20Elements/Split%20View.md">Split View</a>). |
+| _New window_ | `newWindow` | In a new window. |
+| _Quick edit_ | `quickEdit` | In a popup over the current note (see <a class="reference-link" href="Quick%20edit.md">Quick edit</a>). |
+
+_Open mode_ sets the `#bookmarkOpenMode` label on the note, so adding the label by hand works as well. The label works the same way for a note dropped onto the launch bar and for the notes in a bookmark folder's menu. On a folder, _Open mode_ makes the label inheritable, so every note in the folder's menu and its submenus follows it, the folder's own note included (see <a class="reference-link" href="../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md">Attribute Inheritance</a>). A note in the folder can still have a value of its own, such as `currentTab`, added by hand.
+
+The open mode applies to a plain click only. A middle click or <kbd>Ctrl</kbd>+click still opens the note in a new tab, and <kbd>Shift</kbd>+click on a note in a folder's menu still opens it in a new window.
 
 ## Mobile
 

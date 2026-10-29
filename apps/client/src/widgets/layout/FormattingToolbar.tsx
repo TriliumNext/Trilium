@@ -6,7 +6,10 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import options from "../../services/options";
-import { useActiveNoteContext, useNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import {
+    useActiveNoteContext, useDocumentFocus, useNoteContext, useNoteProperty, useTriliumEvent,
+    useTriliumEvents, useTriliumOption
+} from "../react/hooks";
 import { useNestedEditor } from "../type_widgets/text/editable_embed";
 
 /**
@@ -74,6 +77,8 @@ export function FixedFormattingToolbar() {
     const { note, noteContext, ntxId } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
     const renderState = useRenderState(noteContext, note);
+    // In zen mode, the toolbar shows only while a text note's split has the focus.
+    const isTextSplitFocused = useDocumentFocus(".note-split.type-text");
     const [ toolbarToRender, setToolbarToRender ] = useState<HTMLElement | null | undefined>();
     const nestedEditor = useNestedEditor(ntxId);
     const shownToolbar = nestedEditor?.ui.view.toolbar?.element ?? toolbarToRender;
@@ -134,7 +139,8 @@ export function FixedFormattingToolbar() {
             ref={containerRef}
             className={clsx("classic-toolbar-widget", {
                 "hidden-ext": renderState === "hidden",
-                "disabled": renderState === "disabled"
+                "disabled": renderState === "disabled",
+                "split-focused": isTextSplitFocused
             })}
         />
     );

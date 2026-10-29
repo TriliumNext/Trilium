@@ -84,7 +84,7 @@ overrides:
   extract-zip>yauzl: 3.4.0
 
 patchedDependencies:
-  '@excalidraw/excalidraw@0.18.1': c3ec98fc71b950a037705d5b29b69e8d18bcc958c8019688efaf4c07b79eb0b6
+  '@excalidraw/excalidraw@0.18.1': 932f97160609de7d5e51b53c60130e2cf5c04746e35166094ee6c170ac16b1f5
   html@1.0.0: 8acc288f8e9cde3c8a0c6e89f0b3796aeeb8251b88db9d1ba313e2352a591d68
   react-zoom-pan-pinch@4.2.0: 09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548
 
@@ -197,7 +197,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=c3ec98fc71b950a037705d5b29b69e8d18bcc958c8019688efaf4c07b79eb0b6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.18.1(patch_hash=932f97160609de7d5e51b53c60130e2cf5c04746e35166094ee6c170ac16b1f5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
@@ -850,7 +850,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=c3ec98fc71b950a037705d5b29b69e8d18bcc958c8019688efaf4c07b79eb0b6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.18.1(patch_hash=932f97160609de7d5e51b53c60130e2cf5c04746e35166094ee6c170ac16b1f5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
@@ -13688,7 +13688,7 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@excalidraw/excalidraw@0.18.1(patch_hash=c3ec98fc71b950a037705d5b29b69e8d18bcc958c8019688efaf4c07b79eb0b6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@excalidraw/excalidraw@0.18.1(patch_hash=932f97160609de7d5e51b53c60130e2cf5c04746e35166094ee6c170ac16b1f5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@braintree/sanitize-url': 6.0.2
       '@excalidraw/laser-pointer': 1.3.1

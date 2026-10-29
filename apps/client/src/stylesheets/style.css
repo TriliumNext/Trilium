@@ -1648,6 +1648,26 @@ pre.code-embed-editor.read-only .cm-activeLine {
     display: none;
 }
 
+/* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
+@supports (content-visibility: hidden) {
+    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+        display: flex !important;
+        flex: 0 0 100% !important;
+        margin-inline: -100% 0;
+        content-visibility: hidden;
+        clip-path: inset(50%);
+        animation: none;
+    }
+}
+
+.caret-stop {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    user-select: text;
+}
+
 .right-dropdown-widget {
     flex-shrink: 0;
 }
@@ -1915,7 +1935,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
         }
     }
 
-    body:has(#mobile-sidebar-wrapper.show) #detail-container::before {
+    body.mobile-sidebar-open #detail-container::before {
         opacity: 0;
     }
 
@@ -2607,7 +2627,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.note-split > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split > .scrolling-container:is(.detail-full-height, .list-full-height) {
     display: flex;
     flex-direction: column;
 }
@@ -2629,7 +2649,7 @@ iframe.print-iframe {
 
 /* A full-height note fills the container instead of scrolling it, so the padding that lets
    flowing content scroll past its end would only take height away from the note. */
-.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+.scrolling-container.detail-full-height > .scroll-padding-widget {
     display: none;
 }
 

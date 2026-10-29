@@ -32,6 +32,13 @@ vi.mock("./CodeMirror", async (importOriginal) => {
 // The `/` list of a Markdown editor loads the task states from the `_taskStates` subtree.
 vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: async () => [] }));
 
+// jsdom has no `checkVisibility()`, and lays nothing out, so an editor counts as hidden unless a
+// test says otherwise.
+beforeEach(() => stubVisibility(false));
+afterEach(() => {
+    Reflect.deleteProperty(HTMLElement.prototype, "checkVisibility");
+});
+
 describe("EditableCode", () => {
     const parent = { registerHandler() {}, removeHandler() {}, componentId: "c" } as any;
     const markdown = { type: "code", mime: "text/x-markdown" } as const;
@@ -54,8 +61,9 @@ describe("EditableCode", () => {
         vi.restoreAllMocks();
     });
 
-    // jsdom has no layout, so every editor has a null `offsetParent` and counts as hidden.
     it("reports each note loaded into a hidden editor", async () => {
+        // A hidden tab keeps its editor laid out under `content-visibility: hidden`.
+        vi.spyOn(HTMLElement.prototype, "offsetParent", "get").mockReturnValue(document.body);
         const onContentChanged = vi.fn();
 
         let container: HTMLElement | undefined;
@@ -69,7 +77,7 @@ describe("EditableCode", () => {
     });
 
     it("reports a load into a visible editor once", async () => {
-        vi.spyOn(HTMLElement.prototype, "offsetParent", "get").mockReturnValue(document.body);
+        stubVisibility(true);
         const onContentChanged = vi.fn();
 
         await act(async () => { renderInto(show(noteA, onContentChanged)); });
@@ -209,3 +217,10 @@ describe("API log", () => {
         }
     });
 });
+
+function stubVisibility(isVisible: boolean) {
+    Object.defineProperty(HTMLElement.prototype, "checkVisibility", {
+        configurable: true,
+        value: () => isVisible
+    });
+}

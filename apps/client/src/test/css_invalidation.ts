@@ -2,11 +2,13 @@ import { type Selector, type SelectorComponent, transform } from "lightningcss";
 
 /**
  * A selector shape that makes Chromium restyle a whole container when an element is inserted
- * into it. Chromium keys sibling and position invalidation by class, id and attribute only.
+ * into it, or a whole editor when it gains or loses focus. Chromium keys sibling and position
+ * invalidation by class, id and attribute only, and descendant invalidation also by tag.
  */
 export type SlowShape =
     | "sibling-then-universal"
     | "positional-then-universal"
+    | "focus-then-universal"
     | "keyless-sibling"
     | "keyless-nth";
 
@@ -51,6 +53,8 @@ const NTH = new Set([
 ]);
 const POSITIONAL = new Set([ ...NTH, "first-child", "last-child", "only-child" ]);
 const LOGICAL = new Set([ "is", "where" ]);
+/** The classes CKEditor toggles on the editable each time it gains or loses focus. */
+const FOCUS_CLASSES = new Set([ "ck-focused", "ck-blurred" ]);
 
 interface Compound {
     combinator: string | null;
@@ -74,6 +78,10 @@ export function classifySelector(selector: Selector): SlowShape | null {
         }
     }
     const subject = compounds[compounds.length - 1];
+    const ancestors = compounds.slice(0, -1);
+    if (isBare(subject) && ancestors.some((compound) => hasClass(compound.parts, FOCUS_CLASSES))) {
+        return "focus-then-universal";
+    }
     for (const [ index, compound ] of compounds.entries()) {
         if (isSibling(compound) && !hasKey(compounds[index - 1].parts) && !hasKey(subject.parts)) {
             return "keyless-sibling";
@@ -115,6 +123,12 @@ function hasPseudo(parts: SelectorComponent[], kinds: Set<string>): boolean {
     return parts.some((part) => part.type === "pseudo-class" && (kinds.has(part.kind)
         || argumentsOf(part).some((argument) =>
             splitCompounds(argument).some((compound) => hasPseudo(compound.parts, kinds)))));
+}
+
+function hasClass(parts: SelectorComponent[], names: Set<string>): boolean {
+    return parts.some((part) => (part.type === "class" && names.has(part.name))
+        || argumentsOf(part).some((argument) =>
+            splitCompounds(argument).some((compound) => hasClass(compound.parts, names))));
 }
 
 /** The selector list of `:not()`, `:is()` or `:where()`, and none for other components. */

@@ -16,6 +16,7 @@
            Firefox, `--table-header-easing`. */
         > table > thead {
             position: relative;
+            overflow-anchor: none;
             animation-name: table-header-stick, table-header-stuck;
             animation-duration: auto;
             animation-timing-function: var(--table-header-easing, linear);

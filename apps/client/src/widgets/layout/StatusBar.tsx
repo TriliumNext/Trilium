@@ -29,8 +29,9 @@ import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps }
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpDropdown from "../react/HelpDropdown";
 import {
-    useActiveNoteContext, useAttachments, useGetContextDataFrom, useLegacyImperativeHandlers,
-    useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumEvents
+    useActiveNoteContext, useAttachments, useBodyClass, useGetContextDataFrom,
+    useLegacyImperativeHandlers, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent,
+    useTriliumEvents
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
@@ -76,8 +77,11 @@ export default function StatusBar() {
     const isHiddenNote = note?.isHiddenCompletely();
     const canEditAttributes = note?.isContentWritable !== false;
 
+    // The note split comes before the bar in the DOM, so its corner rule keys on a body class.
+    useBodyClass("status-bar-panel-open", !!activePane);
+
     return (
-        <div className={clsx("status-bar", {"status-bar-panel-open": !!activePane})}>
+        <div className="status-bar">
             {attributesContext && canEditAttributes && <AttributesPane {...attributesContext} />}
             {noteInfoContext && <SimilarNotesPane {...noteInfoContext} />}
 

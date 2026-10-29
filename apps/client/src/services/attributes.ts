@@ -62,6 +62,50 @@ export async function setBooleanWithInheritance(note: FNote, labelName: string, 
     await setLabel(note.noteId, labelName, value ? "" : "false");
 }
 
+/**
+ * Sets a label with a value on the given note, taking inheritance into account like
+ * {@link setBooleanWithInheritance}: the owned labels are removed when the note inherits `value`, or
+ * reads it as `defaultValue` without a label, and one owned label is created or updated otherwise.
+ *
+ * @param note the note on which to set the label.
+ * @param labelName the name of the label to set.
+ * @param value the value to set for the label.
+ * @param defaultValue the value of a note without the label, or with an empty one.
+ * @param isInheritable whether the note's children must read the value too. Without it, an owned
+ * label keeps its inheritability, and a new one is not inheritable.
+ */
+export async function setLabelValueWithInheritance(
+    note: FNote,
+    labelName: string,
+    value: string,
+    defaultValue: string,
+    isInheritable = false
+) {
+    const [ ownedLabel, ...duplicates ] = note.getOwnedLabels(labelName);
+    const inheritedLabel = note.getLabels(labelName).find((label) => label.noteId !== note.noteId);
+
+    if (ownedLabel && (ownedLabel.value || defaultValue) === value
+            && (!isInheritable || ownedLabel.isInheritable)) {
+        return;
+    }
+
+    // A label the note inherits reaches its children only when the label is inheritable itself.
+    const reachesChildren = !isInheritable || !inheritedLabel || inheritedLabel.isInheritable;
+    if (reachesChildren && (inheritedLabel?.value || defaultValue) === value) {
+        await removeOwnedAttributesByNameOrType(note, "label", labelName);
+        return;
+    }
+
+    // `set-attribute` changes the value of an owned label but not its inheritability.
+    const replaced = isInheritable && ownedLabel && !ownedLabel.isInheritable
+        ? [ ownedLabel, ...duplicates ]
+        : duplicates;
+    for (const label of replaced) {
+        await removeAttributeById(note.noteId, label.attributeId);
+    }
+    await setLabel(note.noteId, labelName, value, isInheritable);
+}
+
 async function removeAttributeById(noteId: string, attributeId: string) {
     await server.remove(`notes/${noteId}/attributes/${attributeId}`);
 }

@@ -31,7 +31,10 @@ describe("BlockDragHandle", () => {
         expect(getComputedStyle(button).cursor).toBe("grab");
         expect(isBesideBlock(editor, button, 1)).toBe(true);
 
+        // A press focuses the handle, which keeps it shown for the drag that follows.
         button.focus();
+        await nextFrames();
+        expect(buttonView?.isVisible).toBe(true);
         button.click();
         expect(document.activeElement).toBe(getEditable(editor));
 
@@ -55,8 +58,10 @@ describe("BlockDragHandle", () => {
         await expect.poll(() => buttonView?.isVisible).toBe(false);
     });
 
-    it("follows its block when the window resizes or the page scrolls", async () => {
-        const { editor, button } = await createEditor("<paragraph>on[]e</paragraph>");
+    it("follows its block when the window resizes or the content above it grows", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+        );
         const editorElement = editor.ui.view.element;
         // Without a line height in pixels, the first line is measured from the font size.
         getEditable(editor).style.lineHeight = "normal";
@@ -64,11 +69,72 @@ describe("BlockDragHandle", () => {
         editorElement?.style.setProperty("margin", "40px 150px");
         window.dispatchEvent(new Event("resize"));
         window.dispatchEvent(new Event("resize"));
-        await expect.poll(() => isBesideBlock(editor, button, 0)).toBe(true);
+        await expect.poll(() => isBesideBlock(editor, button, 1)).toBe(true);
 
-        editorElement?.style.setProperty("margin", "80px 200px");
-        document.dispatchEvent(new Event("scroll"));
+        // Content such as an embed can grow without a render of the editing view.
+        getBlock(editor, 0).style.setProperty("height", "200px");
+        await expect.poll(() => isBesideBlock(editor, button, 1)).toBe(true);
+    });
+
+    it("scrolls with its block, without being measured or moved again", async () => {
+        const { editor, button } = await createEditor(
+            `<paragraph>fi[]rst</paragraph>${"<paragraph>more</paragraph>".repeat(20)}`
+        );
+        const { scrollable } = placeInScrollingContainer(editor);
+        scrollable.style.setProperty("position", "relative");
+        scrollable.style.setProperty("height", "100px");
+        // As in a note, the editable does not scroll by itself.
+        const view = editor.editing.view;
+        view.change((writer) => {
+            const root = view.document.getRoot();
+            if (root) {
+                writer.setStyle("overflow", "visible", root);
+            }
+        });
+        // Moving the editor takes the focus away from it.
+        view.focus();
+        await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(true);
+        editor.ui.update();
+        await nextFrames();
+        expect(isBesideBlock(editor, button, 0)).toBe(true);
+
+        const style = button.getAttribute("style");
+        let visibilityChanges = 0;
+        editor.plugins.get(BlockDragHandle).buttonView?.on("change:isVisible", () => {
+            visibilityChanges++;
+        });
+        for (const scrollTop of [ 20, 400, 0 ]) {
+            scrollable.scrollTop = scrollTop;
+            expect(isBesideBlock(editor, button, 0)).toBe(true);
+            await nextFrames();
+            // A render while the block is out of view keeps the handle for when it comes back.
+            editor.ui.update();
+            expect(button.getAttribute("style")).toBe(style);
+        }
+        expect(visibilityChanges).toBe(0);
+    });
+
+    it("follows its block and hides with it when the editable scrolls on its own", async () => {
+        const { editor, button } = await createEditor(
+            `<paragraph>fi[]rst</paragraph>${"<paragraph>more</paragraph>".repeat(20)}`
+        );
+        const buttonView = editor.plugins.get(BlockDragHandle).buttonView;
+        const view = editor.editing.view;
+        view.change((writer) => {
+            const root = view.document.getRoot();
+            if (root) {
+                writer.setStyle({ "overflow-y": "auto", height: "100px" }, root);
+            }
+        });
+        const editable = getEditable(editor);
+
+        editable.scrollTop = 10;
         await expect.poll(() => isBesideBlock(editor, button, 0)).toBe(true);
+        editable.scrollTop = 400;
+        await expect.poll(() => buttonView?.isVisible).toBe(false);
+        editable.scrollTop = 0;
+        await expect.poll(() => buttonView?.isVisible).toBe(true);
+        expect(isBesideBlock(editor, button, 0)).toBe(true);
     });
 
     it("follows its block through a scroll, measuring before it changes the handle", async () => {
@@ -634,7 +700,8 @@ function watchForcedLayouts(button: HTMLElement) {
 
 /**
  * Moves the editor into a scrolling container, between an element above it and one below it, as
- * a note's title and the space after its content surround it. Returns the two elements' rectangles.
+ * a note's title and the space after its content surround it. Returns the container and the two
+ * elements' rectangles.
  */
 function placeInScrollingContainer(editor: ClassicEditor) {
     const editorElement = editor.ui.view.element;
@@ -653,7 +720,18 @@ function placeInScrollingContainer(editor: ClassicEditor) {
     scrollable.scrollIntoView();
     onTestFinished(() => scrollable.remove());
 
-    return { above: above.getBoundingClientRect(), below: below.getBoundingClientRect() };
+    return {
+        scrollable,
+        above: above.getBoundingClientRect(),
+        below: below.getBoundingClientRect()
+    };
+}
+
+/** Waits until the browser has drawn two frames, so that a scroll and its listeners have run. */
+function nextFrames() {
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
 }
 
 /** Whether `button` is left of the editable, level with the first line of the block at `index`. */

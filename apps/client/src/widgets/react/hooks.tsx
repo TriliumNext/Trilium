@@ -1093,7 +1093,7 @@ export function useWhenShown(ref: RefObject<Element | null> | undefined) {
         } else if (waiting) {
             waiting.callback = callback;
         } else {
-            // `display: none` gives the element no size, so showing it resizes it.
+            // A `ResizeObserver` first reports a hidden element once it is shown.
             const observer = new ResizeObserver(() => {
                 const current = waitingRef.current;
                 if (current && isShown(element)) {
@@ -1151,6 +1151,74 @@ export function useIsOnScreen(ref: RefObject<Element | null>, enabled: boolean) 
     }, [ ref, enabled ]);
 
     return isOnScreen;
+}
+
+/**
+ * Puts `className` on the parent of the element in `ref` while `enabled` holds, for a parent laid
+ * out by what the component renders, such as a legacy `ScrollingContainer`. The parent is read when
+ * `enabled` turns true: a legacy container renders its Preact children into a fragment first.
+ */
+export function useParentClass(
+    ref: RefObject<HTMLElement | null>, className: string, enabled: boolean
+) {
+    useLayoutEffect(() => {
+        const parent = ref.current?.parentElement;
+        if (!enabled || !parent) return;
+        parent.classList.add(className);
+        return () => parent.classList.remove(className);
+    }, [ ref, className, enabled ]);
+}
+
+/**
+ * Puts `className` on `body` while at least one mounted component enables it, for an element whose
+ * style depends on a state it has no DOM relation to.
+ */
+export function useBodyClass(className: string, enabled: boolean) {
+    useLayoutEffect(() => {
+        if (!enabled) return;
+        bodyClassCounts.set(className, (bodyClassCounts.get(className) ?? 0) + 1);
+        document.body.classList.add(className);
+        return () => {
+            const remaining = (bodyClassCounts.get(className) ?? 1) - 1;
+            if (remaining > 0) {
+                bodyClassCounts.set(className, remaining);
+                return;
+            }
+            bodyClassCounts.delete(className);
+            document.body.classList.remove(className);
+        };
+    }, [ className, enabled ]);
+}
+
+/** How many mounted components enable each class of {@link useBodyClass}. */
+const bodyClassCounts = new Map<string, number>();
+
+/**
+ * Whether an element holds the focus anywhere in the document and, given `selector`, sits in an
+ * element that matches it. Unlike {@link useFocusWithin}, it needs no element of its own.
+ */
+export function useDocumentFocus(selector?: string) {
+    const [ isFocused, setIsFocused ] = useState(() => isFocusIn(document.activeElement, selector));
+
+    useEffect(() => {
+        // During `focusout`, `relatedTarget` is the element that receives the focus, if any.
+        const update = (e: FocusEvent) => {
+            setIsFocused(isFocusIn(e.type === "focusin" ? e.target : e.relatedTarget, selector));
+        };
+        document.addEventListener("focusin", update);
+        document.addEventListener("focusout", update);
+        return () => {
+            document.removeEventListener("focusin", update);
+            document.removeEventListener("focusout", update);
+        };
+    }, [ selector ]);
+
+    return isFocused;
+}
+
+function isFocusIn(target: EventTarget | null, selector: string | undefined) {
+    return target instanceof Element && target !== document.body
+        && (!selector || !!target.closest(selector));
 }
 
 /**

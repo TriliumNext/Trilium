@@ -22,7 +22,10 @@ declare module "draggabilly" {
             containment: HTMLElement
         });
         element: HTMLElement;
-        on(event: "staticClick" | "dragStart" | "dragEnd" | "dragMove", callback: Callback);
+        on(
+            event: "pointerDown" | "staticClick" | "dragStart" | "dragEnd" | "dragMove",
+            callback: Callback
+        );
         dragEnd();
         isDragging: boolean;
         positionDrag: () => void;

@@ -664,6 +664,7 @@
     "workspace_inbox": "Default inbox location for new notes when hoisted to some ancestor of this workspace note.",
     "sql_console_home": "Default location of SQL console notes.",
     "bookmark_folder": "Note with this label will appear in bookmarks as folder (allowing access to its children).",
+    "bookmark_open_mode": "Where a click on the note's button in the launch bar opens it: <code>currentTab</code> (the default), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> or <code>quickEdit</code>. Applies to bookmarks, notes dropped onto the launch bar and the notes in a bookmark folder.",
     "share_hidden_from_tree": "This note is hidden from left navigation tree, but still accessible with its URL.",
     "share_external_link": "Note will act as a link to an external website in the share tree.",
     "share_alias": "Define an alias using which the note will be available under https://your_trilium_host/share/[your_alias].",
@@ -3027,7 +3028,13 @@
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remove from launch bar",
-    "show_as_folder": "Folder",
+    "show_as_folder": "Show as a folder",
+    "open_mode": "Open mode",
+    "open_mode_current_tab": "Current tab",
+    "open_mode_new_tab": "New tab",
+    "open_mode_new_split": "New split",
+    "open_mode_new_window": "New window",
+    "open_mode_quick_edit": "Quick edit",
     "configure_launch_bar": "Configure launch bar...",
     "launch_bar_orientation": "Launch bar orientation",
     "will_reload_frontend": "(will reload app)"
@@ -4947,5 +4954,9 @@
     "tomorrow": "Tomorrow",
     "next-week": "Next week",
     "clear": "Clear"
+  },
+  "canvas": {
+    "thin_stroke": "Thin pen stroke",
+    "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width."
   }
 }

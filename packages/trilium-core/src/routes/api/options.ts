@@ -147,6 +147,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "searchEnableFuzzyMatching",
     "searchAutocompleteFuzzy",
     "searchResultsPageSize",
+    "canvasThinStroke",
     "redirectBareDomain",
     "showLoginInShareTheme",
     "splitEditorOrientation",

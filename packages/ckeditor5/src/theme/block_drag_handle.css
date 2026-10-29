@@ -3,6 +3,12 @@
         color-mix(in srgb, var(--main-text-color, var(--ck-color-text)) 6%, transparent);
 }
 
+.ck.ck-reset_all.block-drag-handle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 .ck.ck-button.block-drag-handle {
     cursor: grab;
 

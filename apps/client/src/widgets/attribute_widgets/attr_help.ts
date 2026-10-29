@@ -47,6 +47,7 @@ export const ATTR_HELP: AttrHelpMap = {
         workspaceInbox: t("attribute_detail.workspace_inbox"),
         sqlConsoleHome: t("attribute_detail.sql_console_home"),
         bookmarkFolder: t("attribute_detail.bookmark_folder"),
+        bookmarkOpenMode: t("attribute_detail.bookmark_open_mode"),
         shareHiddenFromTree: t("attribute_detail.share_hidden_from_tree"),
         shareExternalLink: t("attribute_detail.share_external_link"),
         shareAlias: t("attribute_detail.share_alias"),
