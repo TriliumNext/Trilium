@@ -73,4 +73,10 @@ describe("diffHtml", () => {
         expect(diffHtml("<p>foo <strong>bar</strong></p>", "<p>foo bar</p>"))
             .toBe("<p>foo bar</p>");
     });
+
+    it("diffs a long note with a short edit", () => {
+        const words = Array.from({ length: 100_000 }, (_, index) => `w${index}`).join(" ");
+        expect(diffHtml(`<p>${words} old</p>`, `<p>${words} new</p>`))
+            .toBe(`<p>${words} <del class="diffmod">old</del><ins class="diffmod">new</ins></p>`);
+    });
 });

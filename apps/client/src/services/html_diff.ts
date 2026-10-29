@@ -43,7 +43,9 @@ export function diffHtml(oldHtml: string, newHtml: string): string {
     const output: string[] = [];
     for (const segment of mergeShortUnchangedRuns(segments)) {
         if ("unchanged" in segment) {
-            output.push(...segment.unchanged);
+            for (const token of segment.unchanged) {
+                output.push(token);
+            }
             continue;
         }
         const isReplacement = segment.deleted.length > 0 && segment.inserted.length > 0;
