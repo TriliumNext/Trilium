@@ -40,6 +40,21 @@ describe("diffHtml", () => {
         expect(diffHtml("<p>a</p>", "<p>a b</p>")).toBe("<p>a<ins class=\"diffins\">&nbsp;b</ins></p>");
     });
 
+    it("marks a reworded phrase as one replacement rather than word by word", () => {
+        expect(diffHtml("<p>In an age that prizes speed</p>", "<p>These days everyone's obsessed with speed</p>"))
+            .toBe("<p><del class=\"diffmod\">In an age that prizes</del>"
+                + "<ins class=\"diffmod\">These days everyone's obsessed with</ins> speed</p>");
+        expect(diffHtml("<p>has become a quietly radical act</p>", "<p>almost feels like a rebellious little act</p>"))
+            .toBe("<p><del class=\"diffmod\">has become a quietly radical</del>"
+                + "<ins class=\"diffmod\">almost feels like a rebellious little</ins> act</p>");
+    });
+
+    it("keeps a tag between two changes out of the marks", () => {
+        expect(diffHtml("<p>old</p><p>text</p>", "<p>new</p><p>words</p>"))
+            .toBe("<p><del class=\"diffmod\">old</del><ins class=\"diffmod\">new</ins></p>"
+                + "<p><del class=\"diffmod\">text</del><ins class=\"diffmod\">words</ins></p>");
+    });
+
     it("keeps accented and non-Latin words whole", () => {
         expect(diffHtml("<p>Pijem čaj.</p>", "<p>Pijem čas.</p>"))
             .toBe("<p>Pijem <del class=\"diffmod\">čaj</del><ins class=\"diffmod\">čas</ins>.</p>");

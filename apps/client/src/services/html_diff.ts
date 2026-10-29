@@ -6,7 +6,8 @@
  * It follows htmldiff (and its `htmldiff-js` port): the fragments are split into words, tags,
  * whitespace and punctuation, and aligned on the longest common run of those, then recursively on
  * the longest runs on either side of it. Aligning on long runs rather than on the shortest edit
- * keeps a reworded sentence readable, where a minimal diff would match every "a" and "the" in it.
+ * keeps a reworded sentence readable, where a minimal diff would match every "a" and "the" in it;
+ * {@link mergeShortUnchangedRuns} then folds what short matches remain into the changes around them.
  *
  * Tags are compared without their attributes, so a changed attribute alone is not marked; an
  * `<img>` counts as a word, attributes included, so a changed image is. A deleted formatting tag
@@ -23,19 +24,31 @@ export function diffHtml(oldHtml: string, newHtml: string): string {
     const matches = findMatchingRuns(oldTokens.map(toKey), newTokens.map(toKey));
     matches.push({ inOld: oldTokens.length, inNew: newTokens.length, size: 0 });
 
-    const output: string[] = [];
+    const segments: Segment[] = [];
     let positionInOld = 0;
     let positionInNew = 0;
     for (const match of matches) {
         const deleted = oldTokens.slice(positionInOld, match.inOld);
         const inserted = newTokens.slice(positionInNew, match.inNew);
-        const isReplacement = deleted.length > 0 && inserted.length > 0;
-        markRun(output, "del", isReplacement ? "diffmod" : "diffdel", deleted);
-        markRun(output, "ins", isReplacement ? "diffmod" : "diffins", inserted);
-
-        output.push(...newTokens.slice(match.inNew, match.inNew + match.size));
+        if (deleted.length || inserted.length) {
+            segments.push({ deleted, inserted });
+        }
+        if (match.size) {
+            segments.push({ unchanged: newTokens.slice(match.inNew, match.inNew + match.size) });
+        }
         positionInOld = match.inOld + match.size;
         positionInNew = match.inNew + match.size;
+    }
+
+    const output: string[] = [];
+    for (const segment of mergeShortUnchangedRuns(segments)) {
+        if ("unchanged" in segment) {
+            output.push(...segment.unchanged);
+            continue;
+        }
+        const isReplacement = segment.deleted.length > 0 && segment.inserted.length > 0;
+        markRun(output, "del", isReplacement ? "diffmod" : "diffdel", segment.deleted);
+        markRun(output, "ins", isReplacement ? "diffmod" : "diffins", segment.inserted);
     }
 
     return output.join("");
@@ -46,6 +59,52 @@ interface Match {
     inOld: number;
     inNew: number;
     size: number;
+}
+
+/** A run of tokens both fragments have, or the tokens the new fragment has instead of the old one's. */
+type Segment = { unchanged: string[] } | { deleted: string[]; inserted: string[] };
+
+/**
+ * Folds each unchanged run between two changes into them when its text is no longer than the
+ * larger side of the change on either side of it, which is the semantic cleanup of Google's
+ * diff-match-patch. Without it a reworded phrase is aligned on the spaces and short words it
+ * shares, and reads as the old and the new phrase interleaved a word at a time. A run that holds
+ * a tag stays, so that no tag is emitted on both sides of a change.
+ */
+function mergeShortUnchangedRuns(segments: Segment[]) {
+    const merged = [ ...segments ];
+    for (let index = 1; index < merged.length - 1;) {
+        const before = merged[index - 1];
+        const segment = merged[index];
+        const after = merged[index + 1];
+        if (!("unchanged" in segment) || "unchanged" in before || "unchanged" in after
+            || segment.unchanged.some(isTag)) {
+            index++;
+            continue;
+        }
+
+        const length = textLength(segment.unchanged);
+        if (length > changeLength(before) || length > changeLength(after)) {
+            index++;
+            continue;
+        }
+
+        merged.splice(index - 1, 3, {
+            deleted: [ ...before.deleted, ...segment.unchanged, ...after.deleted ],
+            inserted: [ ...before.inserted, ...segment.unchanged, ...after.inserted ]
+        });
+        // The merged change is longer, so the unchanged run before it can now qualify too.
+        index = Math.max(1, index - 1);
+    }
+    return merged;
+}
+
+function changeLength(change: { deleted: string[]; inserted: string[] }) {
+    return Math.max(textLength(change.deleted), textLength(change.inserted));
+}
+
+function textLength(tokens: string[]) {
+    return tokens.reduce((length, token) => length + (isTag(token) ? 0 : token.length), 0);
 }
 
 /**
