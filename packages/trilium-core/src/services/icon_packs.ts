@@ -31,6 +31,7 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
  * inline `<style>` element that `generateCss()` output is served in.
  */
 const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
+const MAX_LOGGED_SKIPPED_KEYS = 10;
 
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {
     "font/ttf": "ttf",
@@ -236,14 +237,21 @@ export function generateIconTransformCss(): string {
 export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
     try {
         const iconDeclarations: string[] = [];
+        const skippedKeys: string[] = [];
         for (const [ key, mapping ] of Object.entries(manifest.icons)) {
             if (!CSS_CLASS_NAME_PATTERN.test(key)) {
-                getLog().error(`Skipping icon '${key}' of icon pack '${prefix}': keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
+                skippedKeys.push(key);
                 continue;
             }
 
             const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
             iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
+        }
+
+        if (skippedKeys.length) {
+            const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
+            const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
+            getLog().error(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;

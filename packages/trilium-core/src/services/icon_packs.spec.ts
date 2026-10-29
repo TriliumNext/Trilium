@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import becca from "../becca/becca";
 import { buildNote } from "../test/becca_easy_mocking";
 import { determineBestFontAttachment, generateCss, generateIconRegistry, generateIconTransformCss, getIconPacks, IconPackManifest, processIconPack } from "./icon_packs";
+import { getLog } from "./log";
 import { getPlatform } from "./platform";
 import search from "./search/services/search";
 
@@ -225,6 +226,21 @@ describe("Generating CSS for untrusted manifests", () => {
         expect(css).toContain(`.un.un-ok::before { content: "\ue9c2"; }`);
         expect(css).not.toContain("<script>");
         expect(css).not.toContain(".un.un evil");
+    });
+
+    it("reports the skipped icon keys of a pack in a single log line", () => {
+        const errorSpy = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        generateCssFor({
+            "un-ok": { glyph: "", terms: [ "ok" ] },
+            "un-a,b": { glyph: "", terms: [ "a" ] },
+            "un-c,d": { glyph: "", terms: [ "c" ] },
+            "un e": { glyph: "", terms: [ "e" ] }
+        });
+
+        expect(errorSpy).toHaveBeenCalledOnce();
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Skipping 3 icons of icon pack 'un'"));
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("'un-a,b', 'un-c,d', 'un e'"));
+        errorSpy.mockRestore();
     });
 
     it("keeps non-ASCII icon keys, which are valid CSS class names", () => {
