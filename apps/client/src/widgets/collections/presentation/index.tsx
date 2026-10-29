@@ -159,6 +159,7 @@ function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObj
 function Presentation({ presentation, setApi } : { presentation: PresentationModel, setApi: (api: RevealApi | undefined) => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
+    const fitObserverRef = useRef<ResizeObserver>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -182,23 +183,10 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
             },
         });
         const container = containerRef.current;
-        const fit = () => {
-            fitSlides(container);
+        const fitObserver = createFitObserver(() => {
             if (api.isReady()) api.layout();
-        };
-        const fitLoadedImage = (e: Event) => {
-            const content = (e.target as HTMLElement).closest<HTMLElement>(".slide-content");
-            if (!content) return;
-            fitSlideContent(content);
-            if (api.isReady()) api.layout();
-        };
-
-        // Reveal.js shows only the slides near the current one, so the others are fitted once they appear.
-        api.on("ready", fit);
-        api.on("slidechanged", fit);
-        api.on("overviewshown", fit);
-        container.addEventListener("load", fitLoadedImage, true);
-        document.fonts.ready.then(fit);
+        });
+        fitObserverRef.current = fitObserver;
 
         api.initialize().then(() => {
             setRevealApi(api);
@@ -213,7 +201,8 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
         resizeObserver.observe(container);
 
         return () => {
-            container.removeEventListener("load", fitLoadedImage, true);
+            fitObserver.disconnect();
+            fitObserverRef.current = null;
             resizeObserver.disconnect();
             api.destroy();
             setRevealApi(undefined);
@@ -222,10 +211,14 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
     }, []);
 
     useEffect(() => {
-        if (!revealApi || !containerRef.current) return;
+        const fitObserver = fitObserverRef.current;
+        if (!revealApi || !containerRef.current || !fitObserver) return;
         revealApi.sync();
-        fitSlides(containerRef.current);
-        revealApi.layout();
+
+        fitObserver.disconnect();
+        for (const content of containerRef.current.querySelectorAll(".slide-content")) {
+            fitObserver.observe(content);
+        }
     }, [ presentation, revealApi ]);
 
     return (
@@ -262,10 +255,27 @@ function Slide({ slide }: { slide: PresentationSlideBaseModel }) {
     );
 }
 
-function fitSlides(container: HTMLElement) {
-    for (const content of container.querySelectorAll<HTMLElement>(".slide-content")) {
-        fitSlideContent(content);
-    }
+/**
+ * Fits each observed slide content again whenever its size changes: an image or a font loads, the theme
+ * changes, or Reveal.js shows a slide it had hidden. The size each fit leaves behind is remembered, so the
+ * fit's own zoom does not trigger another fit.
+ */
+export function createFitObserver(onFitted: () => void) {
+    const fittedSizes = new WeakMap<Element, string>();
+    return new ResizeObserver((entries) => {
+        let fitted = false;
+        for (const { target } of entries) {
+            if (!(target instanceof HTMLElement) || fittedSizes.get(target) === measureSize(target)) continue;
+            fitSlideContent(target);
+            fittedSizes.set(target, measureSize(target));
+            fitted = true;
+        }
+        if (fitted) onFitted();
+    });
+}
+
+function measureSize(element: HTMLElement) {
+    return `${element.offsetWidth}x${element.offsetHeight}`;
 }
 
 /**

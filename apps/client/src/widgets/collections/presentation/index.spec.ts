@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { fitSlideContent } from "./index";
+import { createFitObserver, fitSlideContent } from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -35,6 +35,38 @@ describe("fitSlideContent", () => {
     });
 });
 
+describe("createFitObserver", () => {
+    it("fits again when the size changes, but not for the size its own fit leaves", () => {
+        let notify: ResizeObserverCallback = () => {};
+        vi.stubGlobal("ResizeObserver", class {
+            constructor(callback: ResizeObserverCallback) { notify = callback; }
+            disconnect() {}
+        });
+
+        let naturalHeight = 2;
+        const content = buildContent({ height: zoom => naturalHeight * zoom });
+        const onFitted = vi.fn();
+        const observer = createFitObserver(onFitted);
+        const resize = () => notify([ { target: content } as unknown as ResizeObserverEntry ], observer);
+
+        resize();
+        expect(Number(content.style.zoom)).toBeCloseTo(0.5);
+        expect(onFitted).toHaveBeenCalledTimes(1);
+
+        // The notification for the zoom the fit applied.
+        resize();
+        expect(onFitted).toHaveBeenCalledTimes(1);
+
+        // A stylesheet makes the content taller.
+        naturalHeight = 4;
+        resize();
+        expect(Number(content.style.zoom)).toBeCloseTo(0.25);
+        expect(onFitted).toHaveBeenCalledTimes(2);
+
+        vi.unstubAllGlobals();
+    });
+});
+
 interface ContentSize {
     /** The height relative to the slide's, for a given zoom. */
     height?: (zoom: number) => number;
@@ -56,5 +88,7 @@ function buildContent({ height = () => 1, width = () => 1, hidden }: ContentSize
     content.getBoundingClientRect = () => DOMRect.fromRect({ width: 640, height: 360 * height(zoom()) });
     Object.defineProperty(content, "clientWidth", { get: () => clientWidth });
     Object.defineProperty(content, "scrollWidth", { get: () => clientWidth * width(zoom()) });
+    Object.defineProperty(content, "offsetWidth", { get: () => clientWidth });
+    Object.defineProperty(content, "offsetHeight", { get: () => 720 * height(zoom()) });
     return content;
 }
