@@ -358,6 +358,20 @@ paths:
             description: Imports ZIP file into a given note.
             tags: [Notes]
             operationId: importZip
+            requestBody:
+                description: >
+                    The ZIP file, sent as `application/zip` or `application/octet-stream`;
+                    other content types are not accepted.
+                required: true
+                content:
+                    application/zip:
+                        schema:
+                            type: string
+                            format: binary
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: note created
