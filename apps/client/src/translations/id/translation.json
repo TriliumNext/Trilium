@@ -1458,9 +1458,7 @@
   },
   "experimental_features": {
     "title": "Opsi Eksperimental",
-    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati.",
-    "llm_name": "Chat AI / LLM",
-    "llm_description": "Aktifkan panel samping chat AI dan catatan chat LLM yang didukung oleh large language model."
+    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati."
   },
   "fonts": {
     "theme_defined": "Tema ditentukan",

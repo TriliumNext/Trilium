@@ -1014,9 +1014,7 @@
   },
   "experimental_features": {
     "title": "प्रायोगिक विकल्प (Experimental Options)",
-    "disclaimer": "ये विकल्प अभी टेस्टिंग में (experimental) हैं और इनसे अस्थिरता आ सकती है। सावधानी से इस्तेमाल करें।",
-    "llm_name": "AI / LLM चैट",
-    "llm_description": "बड़े भाषा मॉडल (LLMs) द्वारा संचालित एआई चैट साइडबार और एलएलएम चैट नोट्स इनेबल करें।"
+    "disclaimer": "ये विकल्प अभी टेस्टिंग में (experimental) हैं और इनसे अस्थिरता आ सकती है। सावधानी से इस्तेमाल करें।"
   },
   "fonts": {
     "theme_defined": "थीम के अनुसार",

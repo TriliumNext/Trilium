@@ -1891,9 +1891,7 @@
   },
   "experimental_features": {
     "title": "Deneysel Seçenekler",
-    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın.",
-    "llm_name": "Yapay Zeka / LLM Sohbeti",
-    "llm_description": "Büyük dil modelleri tarafından desteklenen yapay zeka sohbet kenar çubuğunu ve LLM sohbet notlarını etkinleştirir."
+    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın."
   },
   "fonts": {
     "theme_defined": "Tema tarafından tanımlanır",

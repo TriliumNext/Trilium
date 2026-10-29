@@ -2392,9 +2392,7 @@
   },
   "experimental_features": {
     "title": "Opțiuni experimentale",
-    "disclaimer": "Aceste opțiuni sunt experimentale și pot cauza instabilitate. Folosiți cu prudență.",
-    "llm_name": "Chat AI / LLM",
-    "llm_description": "Activează bara laterală de chat AI și notițele de chat LLM bazate pe modele lingvistice mari."
+    "disclaimer": "Aceste opțiuni sunt experimentale și pot cauza instabilitate. Folosiți cu prudență."
   },
   "server": {
     "unknown_http_error_title": "Eroare de comunicare cu server-ul",

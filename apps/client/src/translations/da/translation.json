@@ -1879,9 +1879,7 @@
   },
   "experimental_features": {
     "title": "Eksperimentelle indstillinger",
-    "disclaimer": "Disse indstillinger er eksperimentelle og kan forårsage ustabilitet. Brug med forsigtighed.",
-    "llm_name": "AI / LLM-chat",
-    "llm_description": "Aktivér AI-chatsidepanelet og LLM-chatnoter drevet af store sprogmodeller."
+    "disclaimer": "Disse indstillinger er eksperimentelle og kan forårsage ustabilitet. Brug med forsigtighed."
   },
   "fonts": {
     "theme_defined": "Defineret af tema",

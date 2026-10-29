@@ -1775,9 +1775,7 @@
   },
   "experimental_features": {
     "title": "실험적 옵션",
-    "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요.",
-    "llm_name": "AI / LLM 채팅",
-    "llm_description": "AI 채팅 사이드바와 대형 언어 모델이 지원하는 LLM 채팅 노트를 활성화하세요."
+    "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요."
   },
   "fonts": {
     "theme_defined": "테마 지정",

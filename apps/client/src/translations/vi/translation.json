@@ -1848,9 +1848,7 @@
   },
   "experimental_features": {
     "title": "Tùy chọn thử nghiệm",
-    "disclaimer": "Các tùy chọn này mang tính thử nghiệm và có thể gây ra sự bất ổn. Hãy sử dụng cẩn thận.",
-    "llm_name": "Trò chuyện AI / LLM",
-    "llm_description": "Bật thanh bên trò chuyện AI và các ghi chú trò chuyện LLM được hỗ trợ bởi các mô hình ngôn ngữ lớn."
+    "disclaimer": "Các tùy chọn này mang tính thử nghiệm và có thể gây ra sự bất ổn. Hãy sử dụng cẩn thận."
   },
   "fonts": {
     "theme_defined": "Đã định nghĩa giao diện",

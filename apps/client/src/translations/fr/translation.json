@@ -2040,9 +2040,7 @@
   },
   "experimental_features": {
     "title": "Fonctionnalités expérimentales",
-    "disclaimer": "Ces fonctionnalités sont expérimentales et peuvent provoquer une instabilité. Utilisez les avec prudence.",
-    "llm_name": "AI / LLM Chat",
-    "llm_description": "Activer la barre de chat AI et les notes de chat LLM alimentées par de grands modèles de langage."
+    "disclaimer": "Ces fonctionnalités sont expérimentales et peuvent provoquer une instabilité. Utilisez les avec prudence."
   },
   "read-only-info": {
     "edit-note": "Modifier la note"

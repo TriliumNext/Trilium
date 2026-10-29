@@ -999,9 +999,7 @@
   },
   "experimental_features": {
     "title": "Experimentální Nastavení",
-    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností.",
-    "llm_name": "AI / LLM Chat",
-    "llm_description": "Povolte postranní panel AI chatu a poznámky LLM chatu poháněné velkými jazykovými modely."
+    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností."
   },
   "fonts": {
     "theme_defined": "Definované téma",

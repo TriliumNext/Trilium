@@ -1388,9 +1388,7 @@
   },
   "experimental_features": {
     "title": "Roghanna Turgnamhacha",
-    "disclaimer": "Is roghanna turgnamhacha iad seo agus d’fhéadfadh éagobhsaíocht a bheith mar thoradh orthu. Bain úsáid astu go cúramach.",
-    "llm_name": "Comhrá AI / LLM",
-    "llm_description": "Cumasaigh an taobhbharra comhrá AI agus nótaí comhrá LLM faoi thiomáint ag samhlacha teanga móra."
+    "disclaimer": "Is roghanna turgnamhacha iad seo agus d’fhéadfadh éagobhsaíocht a bheith mar thoradh orthu. Bain úsáid astu go cúramach."
   },
   "fonts": {
     "theme_defined": "Téama sainmhínithe",

@@ -2870,9 +2870,7 @@
   },
   "experimental_features": {
     "title": "实验选项",
-    "disclaimer": "这些选项处于实验阶段，可能导致系统不稳定。请谨慎使用。",
-    "llm_name": "AI/大语言模型对话",
-    "llm_description": "启用由大语言模型驱动的 AI对话侧边栏和大语言模型对话笔记。"
+    "disclaimer": "这些选项处于实验阶段，可能导致系统不稳定。请谨慎使用。"
   },
   "tab_history_navigation_buttons": {
     "go-back": "返回上一笔记",

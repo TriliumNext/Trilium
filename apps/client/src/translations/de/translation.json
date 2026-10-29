@@ -2287,9 +2287,7 @@
   },
   "experimental_features": {
     "title": "Experimentelle Optionen",
-    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden.",
-    "llm_name": "KI- / LLM-Chat",
-    "llm_description": "Aktiviert die KI-Chat Seitenleiste sowie LLM-Chat Notizen die von einem Sprachmodell betrieben werden."
+    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden."
   },
   "server": {
     "unknown_http_error_title": "Kommunikationsfehler mit dem Server",
