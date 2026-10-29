@@ -1558,7 +1558,6 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     }
 }
 
-/* CodeMirror scrolls in place of the box, so that the language label stays put. */
 .include-note-content.type-extendedCodeBlock {
     display: flex;
     flex-direction: column;
