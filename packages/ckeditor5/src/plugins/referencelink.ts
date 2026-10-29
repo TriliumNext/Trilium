@@ -1,6 +1,7 @@
 import {
-	ClickObserver, Command, type Editor, LinkEditing, ModelElement, ModelLivePosition, Plugin, toWidget,
-	type ViewDocumentClickEvent, ViewElement, viewToModelPositionOutsideModelElement, Widget
+	ClickObserver, Command, type Editor, LinkEditing, ModelElement, ModelLivePosition,
+	type ModelPosition, Plugin, toWidget, type ViewDocumentClickEvent, ViewElement,
+	viewToModelPositionOutsideModelElement, Widget
 } from "ckeditor5";
 
 export default class ReferenceLink extends Plugin {
@@ -12,9 +13,14 @@ export default class ReferenceLink extends Plugin {
 class ReferenceLinkCommand extends Command {
 
 	/**
-	 * Inserts a reference to `href` at the selection, or in place of the `replace` reference.
+	 * Inserts a reference to `href` at `position`, or at the selection, or in place of the `replace`
+	 * reference.
 	 */
-	override execute({ href, replace }: { href: string; replace?: ModelElement }) {
+	override execute({ href, replace, position }: {
+		href: string;
+		replace?: ModelElement;
+		position?: ModelPosition;
+	}) {
 		if (!href?.trim()) {
 			return;
 		}
@@ -38,7 +44,7 @@ class ReferenceLinkCommand extends Command {
 			return;
 		}
 
-		const selectionPosition = editor.model.document.selection.getFirstPosition();
+		const selectionPosition = position ?? editor.model.document.selection.getFirstPosition();
 		if (!selectionPosition) {
 			return;
 		}
@@ -127,7 +133,7 @@ export class ReferenceLinkEditing extends Plugin {
 				continue;
 			}
 
-			const href = String( reference.getAttribute( 'href' ) ?? '' );
+			const href = reference.getAttribute( 'href' ) as string;
 			const storedTitle = reference.getAttribute( 'storedTitle' ) as string | undefined;
 			const title = getReferenceTitleSync( editor, href, storedTitle );
 			if ( this._drawnTitles.get( reference ) !== title ) {

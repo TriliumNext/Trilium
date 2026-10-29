@@ -407,12 +407,11 @@ describe("CK config - tables", () => {
         expect(config.attachmentUpload?.getEmbedBoxSize?.("image/png", 1)).toBe("medium");
     });
 
-    it("hands dialogs, child notes and cut to note to the app commands that do them", async () => {
+    it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {
         const triggerHostCommand = vi.fn(async () => undefined);
         const config = await buildConfig(baseOpts({ triggerHostCommand }));
         const callbacks = [
             [ config.internalLink?.openDialog, "addLinkToText" ],
-            [ config.childNote?.create, "addChildNoteToText" ],
             [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
             [ config.contentEmbed?.pickNote, "addIncludeNoteToText" ],
             [ config.cutToNote?.cut, "cutIntoNote" ],

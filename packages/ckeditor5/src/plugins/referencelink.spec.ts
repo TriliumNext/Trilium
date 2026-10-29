@@ -140,6 +140,37 @@ describe("ReferenceLink", () => {
 
             expect(findReference(editor)).toBeUndefined();
         });
+
+        it("inserts at the position it is given instead of the selection", async () => {
+            setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph) {
+                throw new Error("The paragraph is missing.");
+            }
+
+            editor.execute("referenceLink", {
+                href: "#root/noteAbc", position: editor.model.createPositionAt(paragraph, 0)
+            });
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<paragraph><reference href=\"#root/noteAbc\"></reference>foobar</paragraph>"
+            );
+        });
+    });
+
+    it("titles a reference by its stored title, or else its address, without a host", async () => {
+        const hostless =
+            await createTestEditor([ Essentials, Paragraph, LinkEditing, ReferenceLink ]);
+        setModelData(hostless.model, "<paragraph>"
+            + "<reference href=\"#root/a\" storedTitle=\"Stored\"></reference>"
+            + "<reference href=\"#root/b\"></reference></paragraph>");
+
+        const anchors = hostless.editing.view.getDomRoot()?.querySelectorAll("a.reference-link");
+        expect([ ...anchors ?? [] ].map((anchor) => anchor.textContent))
+            .toEqual([ "Stored", "#root/b" ]);
     });
 
     it("is enabled where text is allowed and disabled where it is not", () => {

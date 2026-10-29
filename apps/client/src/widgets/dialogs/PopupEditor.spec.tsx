@@ -421,21 +421,24 @@ describe("PopupEditor", () => {
 
     it("selects the title instead of the content when asked to, for that open only", async () => {
         const handleEvent = vi.spyOn(parent, "handleEvent");
-        const show = () =>
-            act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+        const focusCalls = () =>
+            handleEvent.mock.calls.filter(([ name ]) => name.startsWith("focus"));
+        const selectTitle = [ "focusAndSelectTitle", { isNewNote: true, ntxId: "_popup-editor" } ];
+        const focusContent = [ "focusOnDetail", { ntxId: "_popup-editor" } ];
 
         await openPopup({ noteIdOrPath: "root/n1", selectTitle: true });
-        await show();
-        expect(handleEvent).toHaveBeenCalledWith("focusAndSelectTitle", {
-            isNewNote: true, ntxId: "_popup-editor"
-        });
-        expect(handleEvent).not.toHaveBeenCalledWith("focusOnDetail", expect.anything());
+        expect(focusCalls()).toEqual([]);
+        await act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+        expect(focusCalls()).toEqual([ selectTitle ]);
 
+        // Opened in the popup already on show, which fires no `shown` event.
         handleEvent.mockClear();
         await openPopup({ noteIdOrPath: "root/n2" });
-        await show();
-        expect(handleEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: "_popup-editor" });
-        expect(handleEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
+        expect(focusCalls()).toEqual([ focusContent ]);
+
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n3", selectTitle: true });
+        expect(focusCalls()).toEqual([ selectTitle ]);
     });
 
     it("opens a nested popup over itself, which answers only its own command and context", async () => {

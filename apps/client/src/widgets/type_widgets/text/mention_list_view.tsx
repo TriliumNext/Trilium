@@ -48,7 +48,7 @@ export function createNoteMentionList({
                     state.commit(mention);
                     // Runs after the commit inserts the link, which focuses the editor.
                     void mention.then((created) => created && openChildNote(
-                        created.notePath, childNoteParent, { selectTitle: false }
+                        created.notePath, childNoteParent.ntxId, { selectTitle: false }
                     ));
                 })}
             />

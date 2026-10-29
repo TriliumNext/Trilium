@@ -126,7 +126,7 @@ describe("createNoteMentionList", () => {
         expect(await commit.mock.calls[0]?.[0])
             .toEqual({ id: "@root/edited/al", notePath: "root/edited/al" });
         expect(openChildNote)
-            .toHaveBeenCalledExactlyOnceWith("root/edited/al", parent, { selectTitle: false });
+            .toHaveBeenCalledExactlyOnceWith("root/edited/al", "ntx", { selectTitle: false });
         expect(order).toEqual([ "link", "open" ]);
 
         // Nothing is linked or opened where the note is not created.

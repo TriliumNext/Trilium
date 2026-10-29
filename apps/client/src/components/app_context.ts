@@ -389,7 +389,6 @@ export type CommandMappings = {
     pasteMarkdownIntoText: CommandData;
     cutIntoNote: CommandData;
     saveNoteDetailNow: CommandData;
-    addChildNoteToText: CommandData;
     addIncludeNoteToText: CommandData;
     editReadOnlyNote: CommandData;
     toggleRibbonTabClassicEditor: CommandData;

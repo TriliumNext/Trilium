@@ -32,7 +32,6 @@ import {
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
-import { insertChildNote } from "./child_note";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
 import type { ContentEmbedHandlers } from "./config";
 import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
@@ -260,18 +259,6 @@ export default function EditableText({
         async insertDateTimeToTextCommand() {
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
-        },
-        async addChildNoteToTextCommand() {
-            const editor = await waitForEditor();
-            const parentNote = noteContext?.note;
-            const parentNotePath = noteContext?.notePath;
-            if (!editor || !parentNote || !parentNotePath) return;
-
-            await insertChildNote(editor, {
-                notePath: parentNotePath,
-                isProtected: parentNote.isProtected,
-                ntxId
-            });
         },
         // Include note functionality note
         addIncludeNoteToTextCommand() {

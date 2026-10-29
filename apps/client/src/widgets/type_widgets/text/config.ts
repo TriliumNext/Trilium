@@ -27,7 +27,7 @@ import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
 import diffAiResponse from "./ai_diff.js";
-import type { ChildNoteParent } from "./child_note.js";
+import { buildChildNoteHost, type ChildNoteParent } from "./child_note.js";
 import { createColorMenuHost } from "./color_menu.js";
 import { buildFontColorConfig, buildTableColorConfig } from "./color_palette.js";
 import { createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view.js";
@@ -55,8 +55,8 @@ export interface BuildEditorOptions {
      */
     getNoteLocation?: AiNoteLocationProvider;
     /**
-     * The note the editor is open on, for the `@` list to create a child note under. A getter for
-     * the same reason as `getNoteLocation`.
+     * The note the editor is open on, for the "New child note" button and the `@` list to create a
+     * child note under. A getter for the same reason as `getNoteLocation`.
      */
     getChildNoteParent?: () => ChildNoteParent | undefined;
     /** The ID of the note the editor is open on. A getter for the same reason as `getNoteLocation`. */
@@ -258,7 +258,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
         internalLink: { openDialog: bindHostCommand(opts, "addLinkToText") },
-        childNote: { create: bindHostCommand(opts, "addChildNoteToText") },
+        childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },
         ...(opts.referenceSource && buildReferenceConfig(opts.referenceSource)),
