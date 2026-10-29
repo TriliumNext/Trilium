@@ -322,12 +322,16 @@ describe("buildSortSelectionMenuItem", () => {
         expect(editor.editing.view.focus).toHaveBeenCalled();
         rows[0].handler?.(rows[0], null as never);
         expect(editor.execute).toHaveBeenLastCalledWith("triliumSortSelectionAscending");
+
+        expect(buildSortSelectionMenuItem(sortEditor("listItems"), { isRowsExcluded: true }))
+            .toMatchObject({ title: "sort_selection.sort_list_items" });
     });
 
-    it("is absent for one block, nothing to sort, no editor, or with the feature off", () => {
+    it("is absent for one block, nothing to sort, excluded rows, no editor or feature", () => {
         expect(buildSortSelectionMenuItem(sortEditor("blocks", 1))).toBeNull();
         expect(buildSortSelectionMenuItem(sortEditor(null))).toBeNull();
         expect(buildSortSelectionMenuItem(sortEditor("rows", 2, false))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor("rows"), { isRowsExcluded: true })).toBeNull();
         expect(buildSortSelectionMenuItem(null)).toBeNull();
 
         experimentalState.enabled.clear();

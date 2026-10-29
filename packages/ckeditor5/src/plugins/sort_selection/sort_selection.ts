@@ -79,7 +79,7 @@ export class SortSelectionCommand extends Command {
 
         // A caret moves with its block. A range is set over the sorted runs, as its ends moved.
         const isRange = !editor.model.document.selection.isCollapsed;
-        sortRuns(editor, target.runs, this.isDescending, (writer, sorted) => {
+        sortRuns(editor, target.getRuns(), this.isDescending, (writer, sorted) => {
             if (isRange) {
                 writer.setSelection(writer.createRange(
                     writer.createPositionBefore(sorted[0].first),

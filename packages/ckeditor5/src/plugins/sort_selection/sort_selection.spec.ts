@@ -12,7 +12,7 @@ import {
     TodoList
 } from "ckeditor5";
 import type { ButtonView, ClassicEditor, DropdownView, ModelElement } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { modelTable, selectCells } from "../../../test/table-kit.js";
@@ -84,9 +84,31 @@ describe("SortSelection", () => {
 
         it("sorts only the selected items of a range", () => {
             setModelData(editor.model,
-                item("d", "d") + item("c", "[c") + item("b", "b]") + item("a", "a"));
+                item("d", "d") + item("c", "c") + item("c", "[an aside") + item("b", "b]")
+                + item("a", "a"));
             sort();
-            expect(outline()).toEqual([ "* d", "* b", "* c", "* a" ]);
+            expect(outline()).toEqual([ "* d", "* b", "* c", "* an aside", "* a" ]);
+        });
+
+        it("reads no text and no item past the next one until it sorts", () => {
+            setModelData(editor.model,
+                item("a", "a[]") + item("a", "a more") + item("c", "c") + item("b", "b"));
+            const model = editor.model;
+            const lastItem = model.document.getRoot()?.getChild(3) as ModelElement;
+            const createRangeIn = vi.spyOn(model, "createRangeIn");
+            const reads = [
+                vi.spyOn(lastItem, "getAttribute"),
+                vi.spyOn(lastItem, "hasAttribute")
+            ];
+
+            editor.commands.get(ASCENDING)?.refresh();
+            expect(isEnabled()).toBe(true);
+            expect(reads.map((read) => read.mock.calls.length)).toEqual([ 0, 0 ]);
+            expect(createRangeIn).not.toHaveBeenCalled();
+
+            sort();
+            expect(createRangeIn).toHaveBeenCalled();
+            expect(outline()).toEqual([ "* a", "* a more", "* b", "* c" ]);
         });
 
         it("sorts the items at the lowest level of a range starting in a nested item", () => {
@@ -118,6 +140,10 @@ describe("SortSelection", () => {
 
         it("is disabled in a list of one item, and for items in different parents", () => {
             setModelData(editor.model, item("a", "a[]") + "<paragraph>b</paragraph>");
+            expect(isEnabled()).toBe(false);
+
+            setModelData(editor.model,
+                item("a", "a[]") + item("a1", "a1", 1) + item("a", "a more"));
             expect(isEnabled()).toBe(false);
 
             setModelData(editor.model,

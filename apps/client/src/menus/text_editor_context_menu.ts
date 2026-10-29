@@ -138,13 +138,16 @@ function buildQuickActionItems(
 /**
  * The _Sort_ submenu for a selection over several blocks of `editor`, named by what it sorts. It
  * is `null` while the experimental feature is off, for a selection inside one block, and when
- * nothing at the selection can be sorted.
+ * nothing at the selection can be sorted. `isRowsExcluded` leaves out a sort of table rows, for a
+ * menu that has its own.
  */
 export function buildSortSelectionMenuItem(
-    editor: CKTextEditor | null | undefined
+    editor: CKTextEditor | null | undefined,
+    { isRowsExcluded = false } = {}
 ): MenuItem<CommandNames> | null {
     const command = editor?.commands.get("triliumSortSelectionAscending");
     if (!editor || !command?.isEnabled || !command.value
+            || (isRowsExcluded && command.value === "rows")
             || !isExperimentalFeatureEnabled("sortSelection")
             || Array.from(editor.model.document.selection.getSelectedBlocks()).length < 2) {
         return null;

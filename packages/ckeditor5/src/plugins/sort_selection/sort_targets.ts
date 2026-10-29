@@ -3,6 +3,7 @@ import {
     _getListItems as getListItems,
     _isFirstBlockOfListItem as isFirstBlockOfListItem,
     _isListItemBlock as isListItemBlock,
+    _ListWalker as ListWalker,
     TableUtils
 } from "ckeditor5";
 import type { _ListElement as ListElement, Editor, Model, ModelElement } from "ckeditor5";
@@ -14,7 +15,7 @@ import { unitText } from "./sort_runs.js";
 export type SortTargetKind = "listItems" | "blocks" | "rows";
 
 export type SortTarget =
-    | { kind: "listItems" | "blocks"; runs: SortRun[] }
+    | { kind: "listItems" | "blocks"; getRuns: () => SortRun[] }
     | { kind: "rows" };
 
 /** The table commands that a sort of rows runs. */
@@ -26,7 +27,8 @@ export const TABLE_SORT_COMMANDS = {
 /**
  * What a sort of the current selection reorders, or `null` when nothing can be sorted. The
  * innermost structure is sorted: in a table cell, a list or several selected blocks are sorted,
- * and a caret elsewhere in the cell sorts the rows.
+ * and a caret elsewhere in the cell sorts the rows. Commands refresh on every change, so the text
+ * is read and a whole list walked only in `getRuns()`.
  */
 export function resolveSortTarget(editor: Editor): SortTarget | null {
     const model = editor.model;
@@ -62,27 +64,24 @@ function getListTarget(model: Model, blocks: ModelElement[]): SortTarget | null 
     }
 
     const level = Math.min(...listBlocks.map(getIndent));
-    const firstItem = getAncestorItem(listBlocks[0], level);
-    const lastItem = getAncestorItem(listBlocks[listBlocks.length - 1], level);
-    const firstId = firstItem.getAttribute("listItemId");
-    const lastId = lastItem.getAttribute("listItemId");
-    const heads = getListItems(firstItem).filter((block) => isFirstBlockOfListItem(block));
-
-    let selected = heads;
-    if (firstId !== lastId) {
-        const first = heads.findIndex((head) => head.getAttribute("listItemId") === firstId);
-        const last = heads.findIndex((head) => head.getAttribute("listItemId") === lastId);
-        // `slice()` returns nothing when the last item is in another list, such as a numbered
-        // list after a bulleted one or a list in a quote.
-        selected = heads.slice(first, last + 1);
+    const firstHead = getItemHead(listBlocks[0], level);
+    const lastHead = getItemHead(listBlocks[listBlocks.length - 1], level);
+    if (firstHead === lastHead) {
+        return hasSiblingItem(firstHead)
+            ? getListItemsTarget(model,
+                () => getListItems(firstHead).filter((block) => isFirstBlockOfListItem(block)))
+            : null;
     }
 
-    if (selected.length < 2) {
-        return null;
-    }
+    const heads = getHeadsBetween(firstHead, lastHead);
+    return heads && getListItemsTarget(model, () => heads);
+}
+
+/** Sorts the items whose first blocks `getHeads()` returns, each with its nested items. */
+function getListItemsTarget(model: Model, getHeads: () => ListElement[]): SortTarget {
     return {
         kind: "listItems",
-        runs: selected.map((head) => {
+        getRuns: () => getHeads().map((head) => {
             const itemBlocks = getAllListItemBlocks(head, { higherIndent: true });
             return {
                 first: head,
@@ -91,6 +90,46 @@ function getListTarget(model: Model, blocks: ModelElement[]): SortTarget | null 
             };
         })
     };
+}
+
+/** Whether the list of `item` has another item at its level, read from the closest blocks. */
+function hasSiblingItem(item: ListElement): boolean {
+    for (const direction of [ "backward", "forward" ] as const) {
+        const walker = new ListWalker(item, {
+            direction,
+            sameIndent: true,
+            sameAttributes: "listType"
+        });
+        for (const block of walker) {
+            if (block.getAttribute("listItemId") !== item.getAttribute("listItemId")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * The first block of each item from `firstHead` to `lastHead`, or `null` when `lastHead` is in
+ * another list, such as a numbered list after a bulleted one or a list in a quote.
+ */
+function getHeadsBetween(firstHead: ListElement, lastHead: ListElement): ListElement[] | null {
+    const heads: ListElement[] = [];
+    const walker = new ListWalker(firstHead, {
+        direction: "forward",
+        includeSelf: true,
+        sameIndent: true,
+        sameAttributes: "listType"
+    });
+    for (const block of walker) {
+        if (isFirstBlockOfListItem(block)) {
+            heads.push(block);
+        }
+        if (block === lastHead) {
+            return heads;
+        }
+    }
+    return null;
 }
 
 /**
@@ -127,7 +166,8 @@ function getBlocksTarget(
 
     return {
         kind: "blocks",
-        runs: units.map((unit) => ({ first: unit, last: unit, text: unitText(model, unit) }))
+        getRuns: () => units.map((unit) =>
+            ({ first: unit, last: unit, text: unitText(model, unit) }))
     };
 }
 
@@ -137,13 +177,13 @@ function getSortableBlock(block: ModelElement): ModelElement {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
 }
 
-/** The item at `level` that holds `block`: itself, or the closest preceding item at that level. */
-function getAncestorItem(block: ListElement, level: number): ListElement {
+/** The first block of the item at `level` that holds `block`. */
+function getItemHead(block: ListElement, level: number): ListElement {
     let item = block;
     while (getIndent(item) > level && isListItemBlock(item.previousSibling)) {
         item = item.previousSibling;
     }
-    return item;
+    return getAllListItemBlocks(item)[0];
 }
 
 function getIndent(block: ListElement): number {
