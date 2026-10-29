@@ -28,8 +28,9 @@ const SLIDE_HEIGHT = 720;
 const isElectron = utils.isElectron();
 const MAX_FIT_ATTEMPTS = 8;
 const SlideEditor = lazy(() => import("./slide_editor"));
+const EmbeddedNoteList = lazy(() => import("../NoteList").then(({ EmbeddedNoteList }) => ({ default: EmbeddedNoteList })));
 
-export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
+export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged, onOpenNote }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [ api, setApi ] = useState<RevealApi>();
@@ -40,6 +41,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const [ editorHost, setEditorHost ] = useState<HTMLElement | null>(null);
     const editedNote = editedNoteId ? froca.getNoteFromCache(editedNoteId) : undefined;
     const finishEditing = () => setEditedNoteId(undefined);
+    const shadowHost = useElementOf(containerRef);
 
     useEffect(() => {
         if (!api) return;
@@ -107,6 +109,14 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     className="presentation-container"
                     containerRef={containerRef}
                 >{content}</ShadowDom>
+                {shadowHost && createPortal(
+                    <CollectionSlides
+                        presentation={presentation}
+                        ntxId={noteContext?.ntxId}
+                        onOpenNote={onOpenNote}
+                    />,
+                    shadowHost
+                )}
                 {/* A portal keeps the editor in this tree, whose contexts the shadow root's tree lacks. */}
                 {editedNote && editorHost && createPortal(
                     // Its own boundary, so that loading the editor does not suspend the presentation.
@@ -126,6 +136,55 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         // Shadow DOM doesn't work well with Reveal.js's PDF printing mechanism.
         return content;
     }
+}
+
+/** Returns the element that `ref` holds once it is mounted, so that a render can depend on it. */
+function useElementOf<T extends HTMLElement>(ref: RefObject<T | null>) {
+    const [ element, setElement ] = useState<T | null>(null);
+    useLayoutEffect(() => {
+        if (ref.current !== element) setElement(ref.current);
+    });
+    return element;
+}
+
+interface CollectionSlidesProps {
+    presentation: PresentationModel;
+    ntxId: string | null | undefined;
+    onOpenNote: ((noteId: string) => void) | undefined;
+}
+
+/**
+ * Renders the collection of each collection slide with the app's own note list, as children of the shadow
+ * host that its slide's `<slot>` shows. Outside the shadow root, the document's stylesheets style the
+ * collection and the slide's theme does not; the collection is still drawn, scaled and moved with its slide.
+ */
+export function CollectionSlides({ presentation, ntxId, onOpenNote }: CollectionSlidesProps) {
+    const slides = presentation.slides.flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ]);
+    return (
+        <>
+            {slides.filter(slide => slide.isCollection).map(slide => {
+                const note = froca.getNoteFromCache(slide.noteId);
+                if (!note) return null;
+                return (
+                    <div key={slide.noteId} slot={getCollectionSlotName(slide.noteId)} className="presentation-collection-slide">
+                        <Suspense fallback={null}>
+                            <EmbeddedNoteList
+                                note={note}
+                                notePath={note.getBestNotePathString()}
+                                ntxId={ntxId}
+                                media="screen"
+                                onOpenNote={onOpenNote}
+                            />
+                        </Suspense>
+                    </div>
+                );
+            })}
+        </>
+    );
+}
+
+function getCollectionSlotName(noteId: string) {
+    return `collection-${noteId}`;
 }
 
 function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
@@ -251,10 +310,7 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, 
                     return false;
                 }
 
-                // Reveal.js checks `document.activeElement`, which is the shadow host rather than
-                // the slide editor inside it.
-                const target = event.composedPath()[0];
-                return !(target instanceof HTMLElement && target.isContentEditable);
+                return !isTypingIn(event);
             },
         });
         const container = containerRef.current;
@@ -351,6 +407,7 @@ export function Slide({ slide, ntxId, editorHostRef, onEdit }: SlideProps) {
 
     function renderContent() {
         if (desktopWebViewSrc) return <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />;
+        if (slide.isCollection) return <slot name={getCollectionSlotName(slide.noteId)} />;
         // The keys keep Preact from reusing the rendered content's element, and its zoom, for the editor.
         if (editorHostRef) return <div key="editor" className="slide-content slide-editor" ref={editorHostRef} />;
         return <div key="content" className="slide-content" dangerouslySetInnerHTML={slide.content} />;
@@ -360,7 +417,7 @@ export function Slide({ slide, ntxId, editorHostRef, onEdit }: SlideProps) {
         <section
             id={`slide-${slide.noteId}`}
             data-note-id={slide.noteId}
-            className={desktopWebViewSrc ? "web-view-slide" : undefined}
+            className={desktopWebViewSrc ? "web-view-slide" : slide.isCollection ? "collection-slide" : undefined}
             data-background-color={slide.backgroundColor}
             data-background-gradient={slide.backgroundGradient}
             data-background-iframe={backgroundIframe}
@@ -429,6 +486,15 @@ function measureOverflow(content: HTMLElement) {
     const heightRatio = content.getBoundingClientRect().height / slidesHeight;
     const widthRatio = content.scrollWidth / content.clientWidth;
     return Math.max(heightRatio, widthRatio);
+}
+
+/**
+ * Whether a key press goes to a field being typed in: the slide editor, or an input of a collection slide.
+ * Reveal.js checks `document.activeElement` for that, which is the shadow host rather than the field.
+ */
+export function isTypingIn(event: Event) {
+    const target = event.composedPath()[0];
+    return target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
 }
 
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {

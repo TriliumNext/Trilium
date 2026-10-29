@@ -133,3 +133,39 @@ describe("Presentation model with web views", () => {
         ]);
     });
 });
+
+describe("Presentation model with collections", () => {
+    it("shows a board or table collection on one slide, and keeps the child notes of other collections as vertical slides", async () => {
+        const presentation = buildNote({
+            title: "Collections",
+            "#viewType": "presentation",
+            children: [
+                {
+                    id: "boardSlide", title: "Board", type: "book", "#viewType": "board",
+                    children: [ { id: "boardCard", title: "Card", content: "<p>Card</p>" } ]
+                },
+                {
+                    id: "tableSlide", title: "Table", type: "book", "#viewType": "table",
+                    children: [ { id: "tableRow", title: "Row", content: "<p>Row</p>" } ]
+                },
+                {
+                    id: "chapterSlide", title: "Chapter", type: "book", "#viewType": "grid",
+                    children: [ { id: "chapterChild", title: "Child", content: "<p>Child</p>" } ]
+                }
+            ]
+        });
+
+        const { slides } = await buildPresentationModel(presentation);
+
+        expect(slides.map(({ noteId, isCollection, content, verticalSlides }) => ({
+            noteId,
+            isCollection,
+            content,
+            verticalSlides: verticalSlides?.map(slide => slide.noteId)
+        }))).toStrictEqual([
+            { noteId: "boardSlide", isCollection: true, content: { __html: "" }, verticalSlides: undefined },
+            { noteId: "tableSlide", isCollection: true, content: { __html: "" }, verticalSlides: undefined },
+            { noteId: "chapterSlide", isCollection: undefined, content: expect.any(Object), verticalSlides: [ "chapterChild" ] }
+        ]);
+    });
+});

@@ -18,3 +18,26 @@
         background-color: black;
     }
 }
+
+.presentation-collection-slide {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: var(--main-background-color);
+    color: var(--main-text-color);
+    font-family: var(--main-font-family);
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: 1.5;
+    text-align: start;
+    text-transform: none;
+    letter-spacing: normal;
+    text-shadow: none;
+
+    > * {
+        flex: 1;
+        min-height: 0;
+    }
+}

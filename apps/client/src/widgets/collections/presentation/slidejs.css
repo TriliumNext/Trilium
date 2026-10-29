@@ -139,7 +139,7 @@ footer.file-footer {
     border: 0;
 }
 
-.reveal .slides section.web-view-slide {
+.reveal .slides section:is(.web-view-slide, .collection-slide) {
     height: 100%;
 }
 

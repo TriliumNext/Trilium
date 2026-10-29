@@ -20,7 +20,15 @@ export interface PresentationSlideBaseModel {
     backgroundGradient?: string;
     /** The page a web view slide shows, across the whole slide. */
     webViewSrc?: string;
+    /** Whether the slide shows its note's collection live, with the app's own view, across the whole slide. */
+    isCollection?: boolean;
 }
+
+/**
+ * The view types of the collections that a slide shows live. A collection with another view type stays a
+ * slide of its own content whose child notes are its vertical slides.
+ */
+const COLLECTION_SLIDE_VIEW_TYPES = new Set([ "board", "table" ]);
 
 export interface PresentationModel {
     slides: PresentationSlideModel[];
@@ -34,7 +42,8 @@ export async function buildPresentationModel(note: FNote, onProgressChanged?: Pr
 
     const slidePromises = slideNotes.map(slideNote => (async () => {
         const base = await buildSlideModel(slideNote);
-        const verticalSlides = note.type !== "search" ? await buildVerticalSlides(slideNote) : undefined;
+        // The child notes of a collection slide are what its collection shows.
+        const verticalSlides = note.type !== "search" && !base.isCollection ? await buildVerticalSlides(slideNote) : undefined;
         const slide: PresentationSlideModel = { ...base, verticalSlides };
         completed++;
         onProgressChanged?.(Math.min(0.3 + (completed / total) * 0.4, 0.7));
@@ -70,14 +79,21 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
 
     const slideBackground = note.getLabelValue("slide:background") ?? undefined;
     const isGradient = slideBackground?.includes("gradient(");
+    const isCollection = isCollectionSlide(note);
 
     return {
         noteId: note.noteId,
         type: note.type,
-        content: await processContent(note),
+        content: isCollection ? { __html: "" } : await processContent(note),
+        isCollection: isCollection || undefined,
         backgroundColor: !isGradient ? slideBackground : undefined,
         backgroundGradient: isGradient ? slideBackground : undefined
     }
+}
+
+/** Whether `note` is a collection that its slide shows live, see {@link COLLECTION_SLIDE_VIEW_TYPES}. */
+export function isCollectionSlide(note: FNote) {
+    return note.type === "book" && COLLECTION_SLIDE_VIEW_TYPES.has(note.getLabelValue("viewType") ?? "");
 }
 
 /**
