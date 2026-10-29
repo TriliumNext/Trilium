@@ -5,6 +5,15 @@
 }
 
 .presentation-container {
-    width: 100%;
-    height: 100%;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    container-type: size;
+    background-color: var(--accented-background-color);
+
+    &:fullscreen {
+        background-color: black;
+    }
 }

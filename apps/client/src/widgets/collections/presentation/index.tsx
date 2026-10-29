@@ -18,6 +18,9 @@ import { buildPresentationModel, PresentationModel, PresentationSlideBaseModel }
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 
+const SLIDE_WIDTH = 1280;
+const SLIDE_HEIGHT = 720;
+
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -160,6 +163,11 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
         const api = new Reveal(containerRef.current, {
             transition: "slide",
             embedded: true,
+            // Must match the aspect ratio of `.reveal` in slidejs.css.
+            width: SLIDE_WIDTH,
+            height: SLIDE_HEIGHT,
+            minScale: 0,
+            maxScale: Infinity,
             pdfMaxPagesPerSlide: 1,
             keyboardCondition(event) {
                 // Full-screen requests sometimes fail, we rely on the UI button instead.
@@ -179,7 +187,14 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
             }
         });
 
+        // Reveal.js listens only to window resizes, not to the note pane changing size.
+        const resizeObserver = new ResizeObserver(() => {
+            if (api.isReady()) api.layout();
+        });
+        resizeObserver.observe(containerRef.current);
+
         return () => {
+            resizeObserver.disconnect();
             api.destroy();
             setRevealApi(undefined);
             setApi(undefined);

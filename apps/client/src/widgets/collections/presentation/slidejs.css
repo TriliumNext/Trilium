@@ -1,3 +1,10 @@
+:host .reveal {
+    flex: none;
+    width: min(100cqw, 100cqh * 16 / 9);
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
 figure img {
     aspect-ratio: unset !important;
     height: auto !important;
