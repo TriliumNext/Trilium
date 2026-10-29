@@ -1503,9 +1503,17 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     padding: 0;
 }
 
-pre.code-embed-editor.read-only .cm-activeLine,
-pre.code-embed-editor > .cm-editor:not(.cm-focused) .cm-activeLine {
-    background-color: transparent;
+pre.code-embed-editor.read-only,
+pre.code-embed-editor > .cm-editor:not(.cm-focused) {
+    .cm-activeLine {
+        background-color: transparent;
+    }
+
+    .cm-activeLineGutter {
+        background-color: transparent;
+        color: inherit;
+        font-weight: inherit;
+    }
 }
 
 .include-note-content.type-code {

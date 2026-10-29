@@ -361,6 +361,21 @@ describe("CodeMirror", () => {
             expect(hasLineNumbers(editor)).toBe(false);
         });
 
+        it("highlights the number of the active line while the line numbers show", () => {
+            const activeNumbers = (view: CodeMirror) => [
+                ...view.dom.querySelectorAll(".cm-lineNumbers .cm-activeLineGutter")
+            ].map((element) => element.textContent);
+            editor = build();
+            editor.loadText("one\ntwo\nthree");
+            editor.dispatch({ selection: { anchor: editor.state.doc.line(2).from } });
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
+
+            editor.setLineNumbers(false);
+            expect(editor.dom.querySelector(".cm-activeLineGutter")).toBeNull();
+            editor.setLineNumbers(true);
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
+        });
+
         it("blends an inset gutter into the code while the line numbers are off", async () => {
             const theme = getThemeById("github-light");
             expect(theme).not.toBeNull();
