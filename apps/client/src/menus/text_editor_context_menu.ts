@@ -1,9 +1,13 @@
-import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor } from "@triliumnext/ckeditor5";
+import type {
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SortTargetKind
+} from "@triliumnext/ckeditor5";
 
 import type { CommandNames } from "../components/app_context.js";
+import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
 import { t } from "../services/i18n.js";
 import { getEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuItem } from "./context_menu.js";
+import { submenuItem } from "./context_menu_utils.js";
 
 /**
  * The "AI assistant" row of the text editor's right-click menu: the toolbar's split-button entry,
@@ -132,6 +136,39 @@ function buildQuickActionItems(
 }
 
 /**
+ * The _Sort_ submenu for a selection over several blocks of `editor`, named by what it sorts. It
+ * is `null` while the experimental feature is off, for a selection inside one block, and when
+ * nothing at the selection can be sorted. `isRowsExcluded` leaves out a sort of table rows, for a
+ * menu that has its own.
+ */
+export function buildSortSelectionMenuItem(
+    editor: CKTextEditor | null | undefined,
+    { isRowsExcluded = false } = {}
+): MenuItem<CommandNames> | null {
+    const command = editor?.commands.get("triliumSortSelectionAscending");
+    if (!editor || !command?.isEnabled || !command.value
+            || (isRowsExcluded && command.value === "rows")
+            || !isExperimentalFeatureEnabled("sortSelection")
+            || Array.from(editor.model.document.selection.getSelectedBlocks()).length < 2) {
+        return null;
+    }
+
+    const sortItem = (title: string, uiIcon: string, commandName: SortSelectionCommandName) => ({
+        title,
+        uiIcon,
+        handler: () => {
+            editor.execute(commandName);
+            editor.editing.view.focus();
+        }
+    });
+    return submenuItem({ title: getSortMenuTitle(command.value), uiIcon: "bx bx-sort-alt-2" }, [
+        sortItem(t("sort_selection.ascending"), "bx bx-sort-up", "triliumSortSelectionAscending"),
+        sortItem(t("sort_selection.descending"), "bx bx-sort-down",
+            "triliumSortSelectionDescending")
+    ]);
+}
+
+/**
  * The text editor the live DOM selection sits in, or `null` when it sits anywhere else.
  *
  * The containment check is what makes this answer the click rather than the tab: the active note
@@ -157,6 +194,19 @@ export async function getTextEditorContaining(
     const element = node instanceof Element ? node : node?.parentElement;
     const editor = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
     return editor && getEditorNoteId(editor) ? editor : null;
+}
+
+type SortSelectionCommandName = "triliumSortSelectionAscending" | "triliumSortSelectionDescending";
+
+function getSortMenuTitle(kind: SortTargetKind) {
+    switch (kind) {
+        case "listItems":
+            return t("sort_selection.sort_list_items");
+        case "rows":
+            return t("sort_selection.sort_rows");
+        case "blocks":
+            return t("sort_selection.sort_blocks");
+    }
 }
 
 /** The editable root of a text editor, which CKEditor gives a reference to the editor. */

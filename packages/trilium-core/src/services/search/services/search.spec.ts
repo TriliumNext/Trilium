@@ -1242,7 +1242,7 @@ describe("Search", () => {
 
 
     it("breaks a collapsible summary onto its own line in the quick-search snippet", () => {
-        // striptags concatenates block text with no separator, which would merge a
+        // `stripTags()` concatenates block text with no separator, which would merge a
         // collapsible's summary straight into its body ("Summary TitleBody text").
         const noteBuilder = note("Collapsible note");
         noteBuilder.note.getContent = () => "<details class=\"trilium-collapsible\"><summary>Summary Title</summary><p>Body text here</p></details><p>After the block</p>";
@@ -1311,7 +1311,7 @@ describe("Search", () => {
     });
 
     it("surfaces link-preview url/title/description as separate lines in the quick-search snippet", () => {
-        // The url/title/description live in data attributes that striptags would otherwise drop,
+        // The url/title/description live in data attributes that `stripTags()` would drop,
         // leaving a blank snippet even though the note matched on the embedded title. The entity-
         // encoded ampersand in the title must be decoded rather than shown as "&amp;".
         const noteBuilder = note("Link preview note");
@@ -1323,8 +1323,8 @@ describe("Search", () => {
     });
 
     it("decodes HTML entities in the quick-search snippet instead of showing escape codes", () => {
-        // striptags leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, which would surface as
-        // literal escape codes in the dropdown.
+        // `stripTags()` leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, so they would
+        // surface as literal escape codes in the dropdown.
         const noteBuilder = note("Entity note");
         noteBuilder.note.getContent = () => "<p>if a &lt; b &amp;&amp; b &gt; c, then&nbsp;done</p>";
         rootNote.child(noteBuilder);

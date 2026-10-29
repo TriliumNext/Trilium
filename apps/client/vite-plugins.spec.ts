@@ -325,17 +325,20 @@ describe("checkHostedGroups", () => {
 /**
  * Canary for `narrowThirdPartySelectors`. An upgrade of Bootstrap or CKEditor can reword a
  * selector the plugin rewrites, or add another `* + *`, which brings back a whole-note restyle
- * on every Enter.
+ * on every Enter or every focus change.
  */
 describe("narrowThirdPartySelectors", () => {
-    it("rewrites every listed selector, leaving no `*` after a sibling or position", () => {
+    it("rewrites every listed selector, leaving no `*` after a sibling, position or focus", () => {
+        const universalShapes = [
+            "sibling-then-universal", "positional-then-universal", "focus-then-universal"
+        ];
         for (const { specifier } of THIRD_PARTY_STYLESHEETS) {
             const path = createRequire(import.meta.url).resolve(specifier);
             const narrowed = narrowSelectorsSource(readFileSync(path, "utf8"), path);
             expect(narrowed, specifier).not.toBeNull();
 
             const universal = findSlowSelectors(narrowed ?? "", path).filter(({ shape }) =>
-                shape === "sibling-then-universal" || shape === "positional-then-universal");
+                universalShapes.includes(shape));
             expect(universal, specifier).toEqual([]);
         }
     });

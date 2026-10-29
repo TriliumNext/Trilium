@@ -191,14 +191,21 @@ describe("CodeMirror", () => {
     describe("setText while hidden", () => {
         const bigDoc = Array.from({ length: 10_000 }, (_, i) => `line ${i}`).join("\n");
 
-        /** happy-dom has no layout, so offsetParent cannot tell hidden from visible on its own. */
-        function pinOffsetParent(el: HTMLElement, value: Element | null) {
-            Object.defineProperty(el, "offsetParent", { value, configurable: true });
+        /**
+         * Pins what `checkVisibility()` reports, as happy-dom renders nothing. A hidden tab keeps
+         * its editor laid out under `content-visibility: hidden`, so the `offsetParent` stays set.
+         */
+        function pinVisibility(el: HTMLElement, isVisible: boolean) {
+            Object.defineProperty(el, "checkVisibility", {
+                value: () => isVisible,
+                configurable: true
+            });
+            Object.defineProperty(el, "offsetParent", { value: document.body, configurable: true });
         }
 
         it("keeps the viewport small instead of rendering every line of the new document", () => {
             editor = build();
-            pinOffsetParent(editor.dom, null);
+            pinVisibility(editor.dom, false);
             editor.setText(bigDoc);
 
             expect(editor.getText()).toBe(bigDoc);
@@ -206,7 +213,7 @@ describe("CodeMirror", () => {
             expect(editor.dom.querySelectorAll(".cm-line").length).toBeLessThan(1_000);
 
             // The rebuilt view keeps accepting transactions once visible again.
-            pinOffsetParent(editor.dom, document.body);
+            pinVisibility(editor.dom, true);
             editor.setText("visible again");
             expect(editor.getText()).toBe("visible again");
             editor.dispatch({ changes: { from: 0, insert: "still " } });
@@ -217,13 +224,13 @@ describe("CodeMirror", () => {
             const onContentChanged = vi.fn();
             editor = build({ onContentChanged });
 
-            pinOffsetParent(editor.dom, null);
+            pinVisibility(editor.dom, false);
             editor.setText(bigDoc);
             // The hidden path swaps the state in without an update, so no change notification
             // fires — hidden loads are programmatic, and the caller resets history right after.
             expect(onContentChanged).not.toHaveBeenCalled();
 
-            pinOffsetParent(editor.dom, document.body);
+            pinVisibility(editor.dom, true);
             editor.setText("typed");
             expect(onContentChanged).toHaveBeenCalledTimes(1);
         });
@@ -261,14 +268,19 @@ describe("CodeMirror", () => {
     });
 
     describe("configuration changes", () => {
-        it("swaps the theme", async () => {
+        it("swaps the theme, and names the one it shows", async () => {
             editor = build();
             const theme = getThemeById("abyss");
-            expect(theme).not.toBeNull();
-            if (!theme) return;
+            const otherTheme = getThemeById("github-light");
+            expect([ theme, otherTheme ]).not.toContain(null);
+            if (!theme || !otherTheme) return;
 
             await editor.setTheme(theme);
             expect(editor.getText()).toBe("");
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("abyss");
+
+            await editor.setTheme(otherTheme);
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("github-light");
         });
 
         it("applies a theme it has loaded before without waiting", async () => {
@@ -347,6 +359,21 @@ describe("CodeMirror", () => {
 
             editor = build({ lineNumbers: false });
             expect(hasLineNumbers(editor)).toBe(false);
+        });
+
+        it("highlights the number of the active line while the line numbers show", () => {
+            const activeNumbers = (view: CodeMirror) => [
+                ...view.dom.querySelectorAll(".cm-lineNumbers .cm-activeLineGutter")
+            ].map((element) => element.textContent);
+            editor = build();
+            editor.loadText("one\ntwo\nthree");
+            editor.dispatch({ selection: { anchor: editor.state.doc.line(2).from } });
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
+
+            editor.setLineNumbers(false);
+            expect(editor.dom.querySelector(".cm-activeLineGutter")).toBeNull();
+            editor.setLineNumbers(true);
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
         });
 
         it("blends an inset gutter into the code while the line numbers are off", async () => {

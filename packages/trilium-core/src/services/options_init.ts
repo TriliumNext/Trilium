@@ -355,6 +355,9 @@ const defaultOptions: DefaultOption[] = [
     // that could disagree with them.
     { name: "imageCompressionToolOptions", value: "{}", isSynced: true },
 
+    // Canvas settings
+    { name: "canvasThinStroke", value: "true", isSynced: true },
+
     // Share settings
     { name: "redirectBareDomain", value: "false", isSynced: true },
     { name: "showLoginInShareTheme", value: "false", isSynced: true },

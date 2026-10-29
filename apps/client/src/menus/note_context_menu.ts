@@ -11,7 +11,10 @@ import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
 import { splitMenuItem } from "./context_menu_utils.js";
 import { buildTableContextMenuSections, hasTableCellSelection } from "./table_context_menu.js";
-import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
+import {
+    buildAiActionsMenuItem, buildSortSelectionMenuItem, getTextEditorAtSelection,
+    getTextEditorContaining
+} from "./text_editor_context_menu.js";
 
 /** What the pointer was over when the menu was summoned. */
 export interface ContextMenuTarget {
@@ -144,6 +147,11 @@ export async function buildNoteContextMenuItems(
     const codeEditorItems = target.isEditable
         ? await buildCodeEditorContextMenuItems(target.element)
         : null;
+    // The table section sorts the rows.
+    const sortItem = target.isEditable
+        ? buildSortSelectionMenuItem(await getTextEditorContaining(target.element),
+            { isRowsExcluded: tableSections !== null })
+        : null;
     const hasText = !hasCellSelection && target.selectionText.trim().length > 0;
     const hasClipboardContent = hasText || hasCellSelection;
 
@@ -251,8 +259,11 @@ export async function buildNoteContextMenuItems(
     }
 
     if (tableSections) {
-        items.push({ kind: "separator" }, tableSections.sort, { kind: "separator" },
+        const sortItems = sortItem ? [ tableSections.sort, sortItem ] : [ tableSections.sort ];
+        items.push({ kind: "separator" }, ...sortItems, { kind: "separator" },
             ...tableSections.delete, { kind: "separator" }, tableSections.select);
+    } else if (sortItem) {
+        items.push({ kind: "separator" }, sortItem);
     }
 
     if (codeEditorItems) {

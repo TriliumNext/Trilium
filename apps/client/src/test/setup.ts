@@ -7,11 +7,14 @@ import { Modal } from "bootstrap";
 import $ from "jquery";
 import { afterAll, vi } from "vitest";
 
+import { stubHighlightApi } from "./highlights";
+
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
 vi.mock("../services/ws.js", mockWebsocket);
 vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
+stubHighlightApi();
 survivePendingModalCallbacks();
 deferSelectionChange();
 drainBootstrapTransitions();

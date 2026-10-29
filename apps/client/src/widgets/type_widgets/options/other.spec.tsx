@@ -257,6 +257,20 @@ describe("redirecting the bare domain", () => {
     });
 });
 
+describe("the canvas pen", () => {
+    it("shows whether pen strokes are thin, and stores the choice", async () => {
+        mocks.stored.canvasThinStroke = "true";
+        open();
+
+        const toggle = host.querySelector<HTMLInputElement>(
+            "input.switch-toggle[id^='canvas-thin-stroke-']");
+        expect(toggle?.checked).toBe(true);
+
+        await act(async () => void toggle?.dispatchEvent(new Event("input", { bubbles: true })));
+        expect(mocks.saved).toEqual([ [ "canvasThinStroke", false ] ]);
+    });
+});
+
 describe("the tags an HTML import may keep", () => {
     it("reads the stored set out as one line, and takes back what is typed over it", () => {
         mocks.json = { allowedHtmlTags: [ "p", "strong", "em" ] };

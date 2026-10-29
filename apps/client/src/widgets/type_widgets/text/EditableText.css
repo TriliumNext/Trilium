@@ -16,12 +16,12 @@ body.mobile .note-detail-editable-text {
     cursor: pointer;
 }
 
-.note-detail-editable-text :is(a[href^="http://"], a[href^="https://"]):where(:not(.excalidraw *)) {
+.note-detail-editable-text a:is([href^="http://"], [href^="https://"]):where(:not(.excalidraw *)) {
     cursor: text !important;
 }
 
 .note-detail-editable-text
-    *:not(figure, .include-note, hr, .excalidraw *, .cm-editor *):first-child {
+    :first-child:not(figure, .include-note, hr, .excalidraw *, .cm-editor *) {
     margin-top: 0 !important;
 }
 

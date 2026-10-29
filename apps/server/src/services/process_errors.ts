@@ -55,6 +55,26 @@ let appReady = false;
 export function installProcessErrorHandlers() {
     process.on("uncaughtException", (error) => reportProcessError(UNCAUGHT_EXCEPTION, error));
     process.on("unhandledRejection", (reason) => reportProcessError(UNHANDLED_REJECTION, reason));
+    process.stdout.on("error", reportStdioError);
+    process.stderr.on("error", reportStdioError);
+}
+
+/**
+ * Handles a failed write to stdout or stderr, which would otherwise surface as an uncaught exception
+ * whose report is written to the same failed stream.
+ *
+ * `EIO` (the terminal was closed while the process kept running) and `EPIPE` (the reader of a pipe
+ * exited) mean nothing reads the console any more, so the error is dropped; the log file still receives
+ * every entry.
+ *
+ * Exported for tests — production code reaches it through {@link installProcessErrorHandlers}.
+ */
+export function reportStdioError(error: NodeJS.ErrnoException) {
+    if (error.code === "EIO" || error.code === "EPIPE") {
+        return;
+    }
+
+    reportProcessError(UNCAUGHT_EXCEPTION, error);
 }
 
 /**

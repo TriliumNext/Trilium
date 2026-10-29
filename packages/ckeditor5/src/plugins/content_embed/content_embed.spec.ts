@@ -1849,6 +1849,13 @@ describe("ContentEmbed display mode", () => {
         editor.ui.update();
         expect(isShown()).toBe(true);
 
+        getContentEmbedTools.mockReturnValue({
+            hasEditableFlag: true, hasDisplayModes: true,
+            hiddenToolbarItems: [ TOGGLE_EDITABLE_COMMAND_NAME ]
+        });
+        editor.ui.update();
+        expect(isShown()).toBe(false);
+
         getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
         editor.ui.update();
         expect(isShown()).toBe(false);

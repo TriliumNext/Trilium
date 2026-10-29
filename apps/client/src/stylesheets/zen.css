@@ -144,7 +144,7 @@ body.zen {
     }
 
     /* An open dropdown holds the toolbar up: hovering its submenu takes focus out of the split. */
-    #root-widget:has(.note-split.type-text:focus-within) .classic-toolbar-widget,
+    .classic-toolbar-widget.split-focused,
     .classic-toolbar-widget:focus-within,
     .classic-toolbar-widget:has(.ck-dropdown__panel-visible) {
         opacity: 1; /* Show when the note split is focused */

@@ -12,6 +12,7 @@ import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
 import InsertDateTimePlugin from "./plugins/insert_date_time.js";
 import ReferenceLink from "./plugins/referencelink.js";
+import NoPoweredByBadge from "./plugins/no_powered_by_badge.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
 import MarkdownImportPlugin from "./plugins/markdownimport.js";
@@ -63,6 +64,7 @@ import ContentEmbedBoxSizeDropdown
     from "./plugins/content_embed/content_embed_box_size_dropdown.js";
 import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.js";
 import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
+import ExtendedCodeBlock from "./plugins/content_embed/extended_code_block.js";
 import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
@@ -73,6 +75,7 @@ import TableContextMenu from "./plugins/table_context_menu.js";
 import TableMove from "./plugins/table_move/table_move.js";
 import TablePasteRows from "./plugins/table_paste_rows.js";
 import TableSort from "./plugins/table_sort.js";
+import SortSelection from "./plugins/sort_selection/sort_selection.js";
 import TableInsertUI from "./plugins/table_insert/table_insert_ui.js";
 import TableToolbarDropdowns from "./plugins/table_toolbar_dropdowns.js";
 import TriliumTableScroll from "./plugins/table_scroll.js";
@@ -86,6 +89,7 @@ import ContextToolbar from "./plugins/context_toolbar.js";
 import ImagePosition from "./plugins/image_position.js";
 import ColorMenu from "./plugins/color_menu.js";
 import BlockDragHandle from "./plugins/block_drag_handle.js";
+import SkipUnchangedAttributes from "./plugins/skip_unchanged_attributes.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -119,6 +123,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ContentEmbedBoxSizeDropdown,
     ContentEmbedToolbar,
     ContentEmbedCaret,
+    ExtendedCodeBlock,
     LinkEmbedToolbar,
     TodoListMultistate,
     CollapsibleListItems,
@@ -128,6 +133,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TableMove,
     TablePasteRows,
     TableSort,
+    SortSelection,
     TableInsertUI,
     TableToolbarDropdowns,
     TriliumTableScroll,
@@ -154,6 +160,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TriliumSnippets,
     TriliumAiAssistant,
     FindInLinkWidgets,
+    SkipUnchangedAttributes,
 ];
 
 /**
@@ -186,7 +193,8 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     // Trilium plugins
     TriliumMentionUI,
     MentionCustomization,
-    ReferenceLink
+    ReferenceLink,
+    NoPoweredByBadge
 ];
 
 /**

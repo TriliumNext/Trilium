@@ -63,6 +63,11 @@
     z-index: 1600;
 }
 
+/* Inside the note, under the sticky formatting toolbar of the popup editor (998). */
+:root .block-drag-handle-container .ck.ck-block-toolbar-button {
+    z-index: auto;
+}
+
 :root .ck.block-drag-handle:not(:hover) {
     color: var(--main-border-color);
 }
@@ -160,6 +165,12 @@
 
 :root .ck.ck-dropdown__panel {
     --ck-editor-popup-padding: var(--menu-padding-size);
+    --ck-button-focus-border-color: transparent;
+    --ck-focus-outer-shadow: none;
+}
+
+:root .ck.ck-dropdown__panel .ck-button:focus-visible {
+    --ck-button-focus-border-color: var(--input-focus-outline-color);
 }
 
 /* Submenu panel */
@@ -282,6 +293,10 @@ body.background-effects .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__pane
     margin-inline-start: calc(0px - var(--ck-editor-popup-padding));
     width: calc(100% + (var(--ck-editor-popup-padding) * 2));
     background: var(--menu-item-delimiter-color);
+}
+
+:root .ck.ck-list {
+    --ck-list-divider-color: var(--menu-item-delimiter-color);
 }
 
 /* Collapsible section */
@@ -793,12 +808,34 @@ body.background-effects .ck-math-form math-field::part(ui-menu-container) {
  * Buttons
  */
 
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button_standard).ck-button_with-text,
 .ck-table-form__action-row > button.ck.ck-button.ck-button_with-text {
     --ck-color-text: var(--cmd-button-text-color);
 
     min-width: 60px;
     font-weight: 500;
+}
+
+/*
+ * Dropdowns in forms
+ */
+
+:root .ck.ck-form .ck.ck-dropdown > .ck.ck-button.ck-dropdown__button {
+    border: unset;
+    border-radius: var(--bs-border-radius);
+    box-shadow: unset;
+    background: var(--input-background-color);
+    color: var(--input-text-color);
+
+    &:not(.ck-disabled):hover {
+        background: var(--input-hover-background);
+        color: var(--input-hover-color);
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--input-focus-outline-color);
+        outline-offset: 0;
+    }
 }
 
 /*
@@ -817,6 +854,19 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     background: transparent;
     font-size: .85em;
     font-weight: 600;
+}
+
+.ck.ck-table-form__cell-type-row > .ck.ck-labeled-field-view,
+.ck.ck-labeled-field-view.ck-table-cell-properties-form__background {
+    padding-top: 0 !important;
+
+    > .ck.ck-labeled-field-view__input-wrapper > label.ck.ck-label {
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
 }
 
 :root input.ck.ck-input-text[readonly="true"] {
@@ -1050,6 +1100,13 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     margin-top: 2px !important;
 }
 
+.include-note.extended-code-block {
+    --_include-note-top-border-radius: 6px;
+    --_include-note-bottom-border-radius: 6px;
+
+    box-shadow: var(--code-block-box-shadow);
+}
+
 .attachment-content-wrapper pre {
     border-radius: var(--dropdown-border-radius);
 }
@@ -1082,8 +1139,20 @@ pre button.copy-button.icon-action {
     padding-inline-end: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
 }
 
+:root .include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 1.8em;
+    /* Centers the button on the first line: 1.4 is CodeMirror's line height, 1em the padding of
+       `.cm-content` in style.css. */
+    --_copy-button-inset: calc((1.4em + 1em * 2 - var(--_copy-button-size)) / 2);
+
+    > button.copy-button.icon-action {
+        --icon-button-size: var(--_copy-button-size);
+        font-size: 1em;
+    }
+}
+
 /* Child combinator: as a descendant one it also hit first-children nested inside a block, stacking a pixel per level. */
-html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
+html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     /* Create some space for the top-side shadow */
     margin-top: 1px !important;
 }
@@ -1158,7 +1227,12 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
 }
 
 /* `:where(:not(.excalidraw *))` leaves out the UI of an embedded canvas drawing. */
-.ck-content :is(h1, h2, h3, h4, h5, h6):where(:not(.excalidraw *)) {
+.ck-content h1:where(:not(.excalidraw *)),
+.ck-content h2:where(:not(.excalidraw *)),
+.ck-content h3:where(:not(.excalidraw *)),
+.ck-content h4:where(:not(.excalidraw *)),
+.ck-content h5:where(:not(.excalidraw *)),
+.ck-content h6:where(:not(.excalidraw *)) {
     font-weight: 300;
 }
 

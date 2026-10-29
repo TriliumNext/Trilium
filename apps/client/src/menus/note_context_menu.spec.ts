@@ -37,6 +37,10 @@ vi.mock("./table_context_menu.js", () => ({
     buildTableContextMenuSections: vi.fn(async () => null),
     hasTableCellSelection: vi.fn(async () => false)
 }));
+vi.mock("./text_editor_context_menu.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./text_editor_context_menu.js")>(),
+    buildSortSelectionMenuItem: vi.fn(() => null)
+}));
 
 import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
@@ -49,6 +53,7 @@ import {
     hasTableCellSelection,
     type TableMenuSections
 } from "./table_context_menu.js";
+import { buildSortSelectionMenuItem } from "./text_editor_context_menu.js";
 import {
     buildNoteContextMenuItems,
     type ContextMenuHost,
@@ -380,6 +385,44 @@ describe("buildNoteContextMenuItems", () => {
             "PR1",
             "PR2"
         ]);
+    });
+
+    it("puts the sort submenu below the clipboard rows, or beside the table's", async () => {
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+        vi.mocked(buildSortSelectionMenuItem).mockReturnValueOnce({ title: "SORT" });
+
+        const items = await build({ isEditable: true, element: document.createElement("p") }, host);
+
+        expect(titles(items)).toEqual([
+            "electron_context_menu.cut",
+            "electron_context_menu.copy",
+            "electron_context_menu.paste",
+            "---",
+            "SORT",
+            "---",
+            "electron_context_menu.search_online",
+            "electron_context_menu.search_in_trilium"
+        ]);
+        expect(buildSortSelectionMenuItem)
+            .toHaveBeenLastCalledWith(null, { isRowsExcluded: false });
+
+        // In a cell, the submenu sorts what the selection holds there; the table sorts the rows.
+        vi.mocked(buildSortSelectionMenuItem).mockReturnValueOnce({ title: "SORT" });
+        vi.mocked(buildTableContextMenuSections).mockResolvedValueOnce({
+            main: [], sort: { title: "S" }, delete: [ { title: "DEL" } ], select: { title: "SEL" },
+            pasteRows: []
+        } as TableMenuSections);
+        const cell = document.createElement("td");
+        const cellItems = await build({ isEditable: true, element: cell, selectionText: "" }, host);
+        expect(buildSortSelectionMenuItem).toHaveBeenLastCalledWith(null, { isRowsExcluded: true });
+        expect(titles(cellItems).slice(-7))
+            .toEqual([ "---", "S", "SORT", "---", "DEL", "---", "SEL" ]);
+
+        vi.mocked(buildSortSelectionMenuItem).mockClear();
+        await build({ element: document.createElement("p") }, host);
+        expect(buildSortSelectionMenuItem).not.toHaveBeenCalled();
     });
 
     it("skips the table section for a non-editable target", async () => {

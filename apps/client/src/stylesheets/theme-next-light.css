@@ -361,8 +361,6 @@
     --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
     --note-list-view-search-result-fuzzy-highlight-color: var(--quick-search-result-fuzzy-highlight-color);
     --note-list-view-content-background: #b1b1b133;
-    --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
-    --note-list-view-content-search-result-highlight-color: white;
 
     --calendar-coll-event-background-lightness: 95%;
     --calendar-coll-event-background-saturation: 80%;

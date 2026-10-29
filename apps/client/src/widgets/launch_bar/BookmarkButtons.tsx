@@ -67,7 +67,11 @@ function SingleBookmark({ note }: { note: FNote }) {
         desktop={
             bookmarkFolder
                 ? <BookmarkFolder note={note} />
-                : <CustomNoteLauncher launcherNote={note} getTargetNoteId={() => note.noteId} />
+                : <CustomNoteLauncher
+                    launcherNote={note}
+                    getTargetNoteId={() => note.noteId}
+                    getOpenMode={getBookmarkOpenMode}
+                />
         }
         mobile={<MobileBookmarkItem noteId={note.noteId} bookmarkFolder={bookmarkFolder} />}
     />;
@@ -226,5 +230,14 @@ function getLinkHandlers(note: FNote) {
 }
 
 function launchNote(e: MouseEvent | KeyboardEvent, note: FNote) {
-    void launchCustomNoteLauncher(e, { launcherNote: note, getTargetNoteId: () => note.noteId });
+    void launchCustomNoteLauncher(e, {
+        launcherNote: note,
+        getTargetNoteId: () => note.noteId,
+        getOpenMode: getBookmarkOpenMode
+    });
+}
+
+/** Where a click opens a bookmarked note, or one dropped onto the launch bar. */
+export function getBookmarkOpenMode(note: FNote) {
+    return note.getLabelValue("bookmarkOpenMode");
 }

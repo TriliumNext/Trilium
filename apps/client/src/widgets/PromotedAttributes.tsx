@@ -17,7 +17,6 @@ import ws from "../services/ws";
 import LabelValueInput, { useLabelValueSuggestions } from "./attribute_widgets/label_value_input";
 import MultiValueInput from "./attribute_widgets/multi_value_input";
 import RelationValuesInput from "./attribute_widgets/relation_values_input";
-import ColorPicker from "./react/ColorPicker";
 import FormAutocomplete from "./react/FormAutocomplete";
 import { useNoteContext, useNoteLabel, useTriliumEvent, useUniqueName } from "./react/hooks";
 import NoteAutocomplete from "./react/NoteAutocomplete";
@@ -272,17 +271,7 @@ function LabelInput(props: CellProps & { inputId: string }) {
             <label for={inputId}>{definition.promotedAlias ?? valueName}</label>
         </>;
     }
-    return (
-        <div className="input-group">
-            {input}
-            { definition.labelType === "color" && (
-                <ColorPicker
-                    currentValue={valueAttr.value || null}
-                    onChange={(color) => updateAttribute(note, cell, componentId, color ?? "", setCells)}
-                />
-            )}
-        </div>
-    );
+    return <div className="input-group">{input}</div>;
 }
 
 /**

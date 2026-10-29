@@ -93,6 +93,14 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
     // the note it has just gone to with a map of the note it came from.
     useTriliumEvent("closePopupEditor", () => setShown(false));
 
+    // The popup's context is detached, so it never receives `entitiesReloaded` to clear a deleted note.
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const { noteId } = noteContext;
+        if (noteId && loadResults.isNoteReloaded(noteId) && loadResults.getEntityRow("notes", noteId)?.isDeleted) {
+            setShown(false);
+        }
+    });
+
     // Keep navigation that follows internal links inside the popup, rather than letting the global
     // link handler open the target in the background tab. Settings links open the options dialog.
     const navigateInPopup = useCallback((notePath: string, viewScope: ViewScope | undefined) => {

@@ -263,8 +263,7 @@
 
 /* Checkbox cells */
 
-.tabulator .tabulator-cell:has(svg),
-.tabulator .tabulator-cell:has(input[type="checkbox"]) {
+.tabulator .tabulator-cell:has(svg, input[type="checkbox"]) {
     padding-inline-start: 8px;
     display: inline-flex;
     flex-direction: column;

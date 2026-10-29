@@ -1,7 +1,6 @@
 import type { HighlightedTokenInfo, SearchResultDetails } from "@triliumnext/commons";
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import { t } from "i18next";
-import striptags from "striptags";
 
 import becca from "../../../becca/becca.js";
 import becca_service from "../../../becca/becca_service.js";
@@ -12,7 +11,9 @@ import optionService from "../../options.js";
 import { getLog } from "../../log.js";
 import scriptService from "../../script.js";
 import { isScriptingEnabled } from "../../scripting_guard.js";
-import { escapeHtml, escapeRegExp, normalizePreservingLength, unescapeHtml } from "../../utils/index.js";
+import {
+    escapeHtml, escapeRegExp, normalizePreservingLength, stripTags, unescapeHtml
+} from "../../utils/index.js";
 import type Expression from "../expressions/expression.js";
 import {
     ICON_TAG_RE, readIconClasses, readIconName
@@ -611,7 +612,7 @@ function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInf
 
         // Strip HTML tags for text notes
         if (note.type === "text") {
-            // A collapsible's summary and body must not run into surrounding text: striptags
+            // A collapsible's summary and body must not run into surrounding text: `stripTags()`
             // drops tags with no separator, so break the line after the summary and after the
             // whole block. The newlines become paragraph breaks in the snippet (rendered as <br>).
             content = content
@@ -621,14 +622,14 @@ function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInf
                 .replace(/<br\s*\/?>/gi, "$&\n")
                 .replace(BLOCK_END_TAG_RE, "$&\n");
             // Link previews (link-embed / link-mention) keep their url/title/description in data
-            // attributes that striptags would drop; surface them as separate lines instead.
+            // attributes that `stripTags()` would drop; surface them as separate lines instead.
             content = content.replace(/<(section|span)\b[^>]*\bclass="[^"]*\blink-(?:embed|mention)\b[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, (element) => {
                 const url = element.match(/\bdata-url="([^"]*)"/i)?.[1] ?? "";
                 const title = element.match(/\bdata-title="([^"]*)"/i)?.[1] ?? "";
                 const description = element.match(/\bdata-description="([^"]*)"/i)?.[1] ?? "";
                 return `\n${[url, title, description].filter(Boolean).join("\n")}\n`;
             });
-            // An icon is an empty element, so striptags leaves no trace of it and a note found by
+            // An icon is an empty element, so `stripTags()` leaves no trace of it and a note found by
             // the icon's name had nothing in its snippet to centre on or to mark. Name it instead;
             // the snippet is escaped before it is shown, so the icon itself cannot be drawn there.
             content = content.replace(ICON_TAG_RE, (tag) => {
@@ -636,7 +637,7 @@ function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInf
 
                 return className ? ` [${readIconName(className)}] ` : "";
             });
-            content = striptags(content);
+            content = stripTags(content);
             // Decode HTML entities so the snippet shows real characters instead of escape codes
             // (e.g. "&lt;", "&amp;", "&nbsp;") — attribute-sourced text above is entity-encoded too.
             content = unescapeHtml(content).replace(/&nbsp;/g, " ");

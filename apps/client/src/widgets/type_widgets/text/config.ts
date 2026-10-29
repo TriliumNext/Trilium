@@ -12,6 +12,7 @@ import { buildReferenceConfig, type ReferenceSource } from "../../../services/bl
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getUploadBoxSize } from "../../../services/content_renderer.js";
 import { prompt } from "../../../services/dialog.js";
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
@@ -115,6 +116,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             ...bindContentEmbedHandlers(opts.getContentEmbedHandlers)
         },
         image: {
+            insert: {
+                type: "auto"
+            },
             styles: {
                 options: [
                     "inline",
@@ -266,8 +270,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         slashCommand: {
             // Drop CKEditor's built-in list slash commands, whose Title Case titles the palette
-            // re-defines in sentence case.
-            removeCommands: ["bulletedList", "numberedList"],
+            // re-defines in sentence case, and those of the experimental features that are off.
+            removeCommands: ["bulletedList", "numberedList", ...getDisabledExperimentalCommands()],
             list: createSlashCommandList
         },
         snippets: {
@@ -410,6 +414,7 @@ function bindContentEmbedHandlers(
         loadNote: (...args) => getHandlers()?.loadNote(...args),
         loadAttachment: (...args) => getHandlers()?.loadAttachment(...args),
         loadInline: (...args) => getHandlers()?.loadInline(...args),
+        flushInline: () => getHandlers()?.flushInline(),
         focusAttachment: (attachmentId) => getHandlers()?.focusAttachment(attachmentId),
         getAttachmentHref: async (attachmentId) =>
             (await getHandlers()?.getAttachmentHref(attachmentId)) ?? null,
@@ -417,6 +422,11 @@ function bindContentEmbedHandlers(
         getTools: (embed) => getHandlers()?.getTools(embed) ?? null,
         enter: (embed, edge) => getHandlers()?.enter(embed, edge) ?? false
     };
+}
+
+/** The slash commands of the experimental features that are off. */
+function getDisabledExperimentalCommands(): string[] {
+    return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [] : [ "extended-code-block" ];
 }
 
 /** A callback that triggers `command` on the component that hosts the editor, and waits for it. */

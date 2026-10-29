@@ -177,7 +177,7 @@ body.mobile.ios {
 
         /* Safari tints its bars from the page's background and from `theme-color`, which
            `#initThemeColor()` in root_container.ts copies from `#background-color-tracker`. */
-        &:has(#mobile-sidebar-wrapper.show) {
+        &.mobile-sidebar-open {
             background-color: var(--grouped-background-color);
 
             #root-widget {

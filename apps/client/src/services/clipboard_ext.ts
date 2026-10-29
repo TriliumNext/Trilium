@@ -15,13 +15,21 @@ export function copyText(text: string) {
         // Fallback method: https://stackoverflow.com/a/72239825
         const textArea = document.createElement("textarea");
         textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        // An open Bootstrap modal traps focus, so the textarea goes inside it to keep its selection.
+        const previouslyFocused = document.activeElement;
+        const container = previouslyFocused?.closest(".modal.show") ?? document.body;
         try {
-            document.body.appendChild(textArea);
+            container.appendChild(textArea);
             textArea.focus();
             textArea.select();
             return document.execCommand('copy');
         } finally {
-            document.body.removeChild(textArea);
+            textArea.remove();
+            if (previouslyFocused instanceof HTMLElement) {
+                previouslyFocused.focus();
+            }
         }
         
     } catch (e) {

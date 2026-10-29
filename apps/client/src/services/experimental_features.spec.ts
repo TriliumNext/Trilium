@@ -24,7 +24,16 @@ describe("experimental_features", () => {
 
     it("lists every feature", async () => {
         const { mod } = await freshModule([]);
-        expect(mod.getAvailableExperimentalFeatures().map((f) => f.id)).toEqual(["llm"]);
+        expect(mod.getAvailableExperimentalFeatures().map((f) => f.id))
+            .toEqual(["llm", "extendedCodeBlocks", "sortSelection"]);
+    });
+
+    it("names and describes every feature before the translations load", async () => {
+        const { mod } = await freshModule([]);
+        for (const feature of mod.getAvailableExperimentalFeatures()) {
+            expect(feature.name, feature.id).toMatch(/\S/);
+            expect(feature.description, feature.id).toMatch(/\S/);
+        }
     });
 
     it("llm enablement is driven by the aiEnabled option", async () => {
@@ -42,6 +51,14 @@ describe("experimental_features", () => {
 
         const readded = await freshModule([], { aiEnabled: true });
         expect(readded.mod.getEnabledExperimentalFeatureIds()).toEqual(["llm"]);
+    });
+
+    it("enables a feature that the persisted set lists", async () => {
+        const enabled = await freshModule(["extendedCodeBlocks"]);
+        expect(enabled.mod.isExperimentalFeatureEnabled("extendedCodeBlocks")).toBe(true);
+
+        const disabled = await freshModule([]);
+        expect(disabled.mod.isExperimentalFeatureEnabled("extendedCodeBlocks")).toBe(false);
     });
 
     it("warns and treats the set as empty when persisted JSON is invalid", async () => {

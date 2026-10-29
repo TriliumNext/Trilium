@@ -26,7 +26,6 @@
     --bs-body-font-weight: var(--main-font-weight) !important;
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;
-    --ck-mention-list-max-height: 500px;
     --tn-modal-max-height: 90svh;
 
     --tree-item-light-theme-max-color-lightness: 50;
@@ -387,6 +386,12 @@ div.ui-tooltip {
     display: block;
 }
 
+/* The search terms `useImperativeSearchHighlighlighting()` finds in titles, cards and previews. */
+::highlight(search-match) {
+    color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+    text-decoration: underline;
+}
+
 /* Allow to use <kbd> elements inside the title to define shortcut hints. */
 .ui-menu kbd,
 button kbd {
@@ -634,12 +639,14 @@ pre > button.copy-button {
     padding-inline-end: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
 }
 
-pre > button.copy-button:hover {
+pre > button.copy-button:hover,
+.code-embed-content > button.copy-button:hover {
     color: inherit !important;
     opacity: 1;
 }
 
-pre > button.copy-button:active {
+pre > button.copy-button:active,
+.code-embed-content > button.copy-button:active {
     background-color: unset !important;
 }
 
@@ -1504,8 +1511,17 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     padding: 0;
 }
 
-pre.code-embed-editor.read-only .cm-activeLine {
-    background-color: transparent;
+pre.code-embed-editor.read-only,
+pre.code-embed-editor > .cm-editor:not(.cm-focused) {
+    .cm-activeLine {
+        background-color: transparent;
+    }
+
+    .cm-activeLineGutter {
+        background-color: transparent;
+        color: inherit;
+        font-weight: inherit;
+    }
 }
 
 .include-note-content.type-code {
@@ -1520,6 +1536,64 @@ pre.code-embed-editor.read-only .cm-activeLine {
 
     &.code-embed-editor {
         overflow: hidden;
+    }
+}
+
+:root .include-note-content.type-extendedCodeBlock pre.code-embed-editor {
+    border-radius: var(--_include-note-content-top-radius) var(--_include-note-content-top-radius)
+                   var(--_include-note-content-bottom-radius)
+                   var(--_include-note-content-bottom-radius);
+    overflow: hidden;
+
+    .cm-gutters {
+        padding-inline: 4px;
+    }
+
+    /* `.cm-line` adds 6px before each line. */
+    .cm-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-start: calc(var(--padding-size, 1em) - 6px);
+    }
+
+    .cm-editor[data-theme-name="vs-code-light"] {
+        background-color: #f6f6f6;
+    }
+
+    .cm-editor[data-theme-name="vs-code-dark"] {
+        background-color: #1c1b1b;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock {
+    display: flex;
+    flex-direction: column;
+
+    > .rendered-content,
+    > .rendered-content > .source-embed,
+    .code-embed-content,
+    pre.code-embed-editor,
+    .cm-editor {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 37px;
+    --_copy-button-inset: .35em;
+
+    position: relative;
+
+    > button.copy-button {
+        position: absolute;
+        top: var(--_copy-button-inset);
+        inset-inline-end: var(--_copy-button-inset);
+    }
+
+    &:has(> button.copy-button) .cm-content {
+        padding-inline-end: calc(var(--_copy-button-size) + var(--_copy-button-inset) * 2);
     }
 }
 
@@ -1571,6 +1645,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
 .include-note-content.type-canvas,
 .include-note-content.type-canvasDrawing,
 .include-note-content.type-mermaidDiagram,
+.include-note-content.type-extendedCodeBlock,
 .include-note-content.type-webView,
 .include-note-content.type-book:has(.note-list-widget.full-height),
 .include-note-content.type-search:has(.note-list-widget.full-height) {
@@ -1647,6 +1722,26 @@ pre.code-embed-editor.read-only .cm-activeLine {
 
 .hidden-ext.note-split + .gutter {
     display: none;
+}
+
+/* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
+@supports (content-visibility: hidden) {
+    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+        display: flex !important;
+        flex: 0 0 100% !important;
+        margin-inline: -100% 0;
+        content-visibility: hidden;
+        clip-path: inset(50%);
+        animation: none;
+    }
+}
+
+.caret-stop {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    user-select: text;
 }
 
 .right-dropdown-widget {
@@ -1916,7 +2011,7 @@ pre.code-embed-editor.read-only .cm-activeLine {
         }
     }
 
-    body:has(#mobile-sidebar-wrapper.show) #detail-container::before {
+    body.mobile-sidebar-open #detail-container::before {
         opacity: 0;
     }
 
@@ -2207,10 +2302,6 @@ button.close:hover {
 
 textarea {
     cursor: auto;
-}
-
-.ck-powered-by-balloon {
-    display: none !important;
 }
 
 .attachment-actions-toolbar {
@@ -2612,7 +2703,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.note-split > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split > .scrolling-container:is(.detail-full-height, .list-full-height) {
     display: flex;
     flex-direction: column;
 }
@@ -2634,7 +2725,7 @@ iframe.print-iframe {
 
 /* A full-height note fills the container instead of scrolling it, so the padding that lets
    flowing content scroll past its end would only take height away from the note. */
-.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+.scrolling-container.detail-full-height > .scroll-padding-widget {
     display: none;
 }
 

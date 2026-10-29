@@ -4,9 +4,9 @@
  * elements carrying metadata. Rendering the stored HTML on its own therefore shows less than the
  * note does, and in the case of a link preview shows nothing at all (#10707).
  */
-import HtmlDiff from "htmldiff-js";
 import { describe, expect, it, vi } from "vitest";
 
+import { diffHtml } from "../../services/html_diff";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { RevisionContentDiff, RevisionContentText, seedLinkPreviewTitles } from "./revisions";
@@ -157,12 +157,12 @@ describe("seedLinkPreviewTitles", () => {
         const withPreview = seedLinkPreviewTitles(`<p>x</p><p>${mention}</p>`);
         const without = seedLinkPreviewTitles("<p>x</p>");
 
-        const added = HtmlDiff.execute(without, withPreview);
-        const removed = HtmlDiff.execute(withPreview, without);
+        const added = diffHtml(without ?? "", withPreview ?? "");
+        const removed = diffHtml(withPreview ?? "", without ?? "");
 
         expect(added).toContain("diffins");
         expect(removed).toContain("diffdel");
-        // Unseeded, htmldiff-js emits these two byte-identical: the empty element carries no word
+        // Unseeded, `diffHtml()` emits these two byte-identical: the empty element carries no word
         // for it to compare, so neither direction produces a marker at all.
         expect(added).not.toBe(removed);
     });

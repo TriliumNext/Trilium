@@ -5,11 +5,11 @@ import {
 import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
-import escapeHtml from "escape-html";
 import { parse as parseHtml } from "node-html-parser";
 import Turnish, { type Rule } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
+import { escapeHtml } from "../utils/index.js";
 
 /** One converter per headerless-table mode, built lazily and reused across invocations. */
 const instances = new Map<HeaderlessTableMode, Turnish>();

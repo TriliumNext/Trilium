@@ -46,6 +46,22 @@ describe("HideKeyboardButton", () => {
         expect(document.activeElement).not.toBe(input);
     });
 
+    it("is marked while nothing holds the focus", () => {
+        input = document.createElement("input");
+        document.body.append(input);
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<HideKeyboardButton />); });
+        const button = container?.querySelector(".hide-keyboard-button");
+        expect(button).toBeInstanceOf(HTMLElement);
+        expect(button?.classList.contains("no-focus")).toBe(true);
+
+        act(() => input?.focus());
+        expect(button?.classList.contains("no-focus")).toBe(false);
+
+        act(() => input?.blur());
+        expect(button?.classList.contains("no-focus")).toBe(true);
+    });
+
     it("closes the menu instead, as an X, while it is given one to close", () => {
         input = document.createElement("input");
         document.body.append(input);

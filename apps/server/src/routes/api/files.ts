@@ -3,7 +3,6 @@ import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import tmp from "tmp";
 
 import { becca, note_service as noteService } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
@@ -32,38 +31,42 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 const createdTemporaryFiles = new Set<string>();
 
 function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
-    const tmpObj = tmp.fileSync({
-        postfix: fileName,
-        tmpdir: dataDirs.TMP_DIR
-    });
+    const tmpFileName = `tmp-${process.pid}-${utils.randomString(12)}-${fileName}`;
+    const tmpFilePath = path.resolve(dataDirs.TMP_DIR, tmpFileName);
+    fs.writeFileSync(tmpFilePath, content, { flag: "wx", mode: 0o600 });
 
-    if (typeof content === "string") {
-        fs.writeSync(tmpObj.fd, content);
-    } else {
-        fs.writeSync(tmpObj.fd, content);
+    if (createdTemporaryFiles.size === 0) {
+        process.once("exit", removeTemporaryFiles);
     }
+    createdTemporaryFiles.add(tmpFilePath);
 
-    fs.closeSync(tmpObj.fd);
-
-    createdTemporaryFiles.add(tmpObj.name);
-
-    getLog().info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpFilePath}`);
 
     if (utils.isElectron) {
-        chokidar.watch(tmpObj.name).on("change", (path, stats) => {
+        chokidar.watch(tmpFilePath).on("change", (path, stats) => {
             ws.sendMessageToAllClients({
                 type: "openedFileUpdated",
                 entityType,
                 entityId,
                 lastModifiedMs: stats?.atimeMs,
-                filePath: tmpObj.name
+                filePath: tmpFilePath
             });
         });
     }
 
     return {
-        tmpFilePath: tmpObj.name
+        tmpFilePath
     };
+}
+
+function removeTemporaryFiles() {
+    for (const filePath of createdTemporaryFiles) {
+        try {
+            fs.rmSync(filePath, { force: true });
+        } catch {
+            // On Windows, an editor that still holds the file open makes `rmSync()` throw.
+        }
+    }
 }
 
 /**

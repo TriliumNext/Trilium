@@ -1,5 +1,6 @@
-import { ButtonView, Command, Plugin } from "ckeditor5";
+import { ButtonView, Command, type Editor, type Locale, Plugin } from "ckeditor5";
 import copyIcon from "../icons/copy.svg?raw";
+import { getSelectedExtendedCodeBlock } from "./content_embed/inline_source.js";
 
 export default class CopyToClipboardButton extends Plugin {
 
@@ -8,24 +9,29 @@ export default class CopyToClipboardButton extends Plugin {
         editor.commands.add("copyToClipboard", new CopyToClipboardCommand(this.editor));
 
         const componentFactory = editor.ui.componentFactory;
-        componentFactory.add("copyToClipboard", locale => {
-            const button = new ButtonView(locale);
-            // A `label` rather than a literal `tooltip` string: the tooltip reads the same, and the
-            // icon-only button gains the accessible name it had no way to expose before.
-            button.set({
-                label: editor.t("Copy to clipboard"),
-                tooltip: true,
-                icon: copyIcon
-            });
-
-            this.listenTo(button, "execute", () => {
-                editor.execute("copyToClipboard");
-            });
-
-            return button;
+        componentFactory.add("copyToClipboard", (locale) => {
+            return createCopyToClipboardButton(editor, locale);
         });
     }
 
+}
+
+/** A button that copies the code at the selection through the `copyToClipboard` command. */
+export function createCopyToClipboardButton(editor: Editor, locale: Locale) {
+    const button = new ButtonView(locale);
+    // A `label` rather than a literal `tooltip` string: the tooltip reads the same, and the
+    // icon-only button gains the accessible name it had no way to expose before.
+    button.set({
+        label: editor.t("Copy to clipboard"),
+        tooltip: true,
+        icon: copyIcon
+    });
+
+    button.on("execute", () => {
+        editor.execute("copyToClipboard");
+    });
+
+    return button;
 }
 
 export class CopyToClipboardCommand extends Command {
@@ -39,6 +45,15 @@ export class CopyToClipboardCommand extends Command {
 
         if (!this.executeCallback) {
             this.executeCallback = this.editor.config.get("clipboard")?.copy;
+        }
+
+        const embed = getSelectedExtendedCodeBlock(editor);
+        if (embed) {
+            // The host writes the code typed last into the model after a delay.
+            editor.config.get("contentEmbed")?.flushInline?.();
+            const source = embed.getAttribute("source") as string | undefined;
+            this.copyText(source ?? "", "extended code block");
+            return;
         }
 
         // Try code block first

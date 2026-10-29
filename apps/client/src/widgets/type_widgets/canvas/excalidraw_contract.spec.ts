@@ -163,6 +163,27 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(unpatched).toEqual([]);
     });
 
+    it("sizes a pen stroke by the width factor in the `UIOptions` of the Trilium patch", () => {
+        // A new stroke reads the factor once, the stroke width picker twice.
+        const hooks: Record<string, number> = {
+            "this.props.UIOptions.freedrawStrokeWidthFactor??1": 1,
+            "app.props.UIOptions.freedrawStrokeWidthFactor??1": 2
+        };
+        const unpatched = [ productionDir, developmentDir ].flatMap((dir) => {
+            const source = readBundle(dir, [ ".js" ]).replace(/\s+/g, "");
+            return Object.entries(hooks)
+                .filter(([ hook, count ]) => source.split(hook).length - 1 !== count)
+                .map(([ hook ]) => `${dir}: ${hook}`);
+        });
+        expect(unpatched).toEqual([]);
+
+        // `getFreeDrawSvgPath()` draws a stroke at 4.25 times its `strokeWidth`.
+        for (const dir of [ productionDir, developmentDir ]) {
+            const source = readBundle(dir, [ ".js" ]).replace(/\s+/g, "");
+            expect(source).toMatch(/size:\w+\.strokeWidth\*4\.25,thinning:0?\.6,/);
+        }
+    });
+
     it("draws the scene and the new element in the layout effects of the Trilium patch", () => {
         // What `StaticCanvas` and `NewElementCanvas` render right after the effect that draws them.
         const markers = [

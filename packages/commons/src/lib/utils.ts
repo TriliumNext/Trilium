@@ -61,6 +61,17 @@ export function deferred<T>(): DeferredPromise<T> {
     })();
 }
 
+/** Runs callbacks one at a time, in the order `runExclusive()` was called. */
+export class Mutex {
+    private tail: Promise<unknown> = Promise.resolve();
+
+    runExclusive<T>(callback: () => T | PromiseLike<T>): Promise<T> {
+        const result = this.tail.then(() => callback());
+        this.tail = result.catch(() => undefined);
+        return result;
+    }
+}
+
 /**
  * Hashes a string with FNV-1a, returning the digest as an unsigned 32-bit number.
  *

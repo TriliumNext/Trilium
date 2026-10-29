@@ -57,13 +57,19 @@ const TPL = /*html*/`
             flex-grow: 1;
         }
 
-        /* Muted highlight for the non-seed tokens of a multi-token jump-to-match (see
-           FindInHtml.highlightExtraTokens): a reduced-opacity variant of the primary
-           .ck-find-result highlight, so extra matches are visible without competing with the
-           seed match that Enter/F3 cycles. */
-        .find-result-secondary {
+        /* The highlights of FindInHtml, in the colors CKEditor gives .ck-find-result and
+           .ck-find-result_selected in an editable text note. */
+        ::highlight(find-result) {
+            background-color: var(--ck-color-highlight-background);
+            color: var(--ck-color-text);
+        }
+
+        ::highlight(find-result-selected) {
+            background-color: var(--ck-color-find-result-selected);
+        }
+
+        ::highlight(find-result-secondary) {
             background-color: color-mix(in srgb, var(--ck-color-find-result-background, #66ff99) 40%, transparent);
-            border-radius: 2px;
         }
     </style>
 

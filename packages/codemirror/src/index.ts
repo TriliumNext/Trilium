@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
+import { EditorView, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import {
     Compartment, countColumn, EditorSelection, EditorState, Prec, StateEffect, Transaction,
@@ -176,9 +176,7 @@ export default class CodeMirror extends EditorView {
             typeCompletionCompartment.of([]),
             completionSourceCompartment.of([]),
             highlightActiveLine(),
-            lineNumbersCompartment.of(
-                config.lineNumbers === false ? hiddenLineNumbersTheme : lineNumbers()
-            ),
+            lineNumbersCompartment.of(buildLineNumbers(config.lineNumbers !== false)),
             themeCompartment.of([
                 syntaxHighlighting(defaultHighlightStyle, { fallback: true })
             ]),
@@ -373,21 +371,20 @@ export default class CodeMirror extends EditorView {
             },
             annotations: Transaction.addToHistory.of(!isLoad)
         });
-        // Dispatching a full-document replacement maps the viewport onto the whole new document.
-        // A visible editor's next measure shrinks it back, but an editor inside a display:none
-        // subtree cannot measure (`measure()` bails out off-screen), so every line of the new
-        // document stays rendered in the DOM for as long as the editor stays hidden — e.g. a
-        // background tab that received its content after being covered. Rebuilding the view from
-        // the updated state resets the viewport to the initial estimate instead; the first
-        // measure after the editor becomes visible then sizes it to the real geometry.
-        if (this.dom.offsetParent === null) {
+        // Dispatching a full-document replacement maps the viewport onto the whole new document,
+        // which only a measure shrinks back. A hidden editor, such as one in a background tab, is
+        // rebuilt from the new state instead, so it does not keep every line rendered.
+        if (!this.dom.checkVisibility()) {
             this.setState(transaction.state);
         } else {
             this.dispatch(transaction);
         }
     }
 
-    /** Applies `theme`, at once if an editor has loaded it before. */
+    /**
+     * Applies `theme`, at once if an editor has loaded it before, and names it in the
+     * `data-theme-name` attribute of `dom`.
+     */
     async setTheme(theme: ThemeDefinition) {
         let extension = loadedThemes.get(theme);
         if (!extension) {
@@ -395,7 +392,9 @@ export default class CodeMirror extends EditorView {
             loadedThemes.set(theme, extension);
         }
         this.dispatch({
-            effects: [ this.themeCompartment.reconfigure([ extension ]) ]
+            effects: [ this.themeCompartment.reconfigure([
+                extension, EditorView.editorAttributes.of({ "data-theme-name": theme.id })
+            ]) ]
         });
     }
 
@@ -427,11 +426,7 @@ export default class CodeMirror extends EditorView {
 
         this.hasLineNumbers = isShown;
         this.dispatch({
-            effects: [
-                this.lineNumbersCompartment.reconfigure(
-                    isShown ? lineNumbers() : hiddenLineNumbersTheme
-                )
-            ]
+            effects: [ this.lineNumbersCompartment.reconfigure(buildLineNumbers(isShown)) ]
         });
     }
 
@@ -822,6 +817,14 @@ const hiddenCaretTheme = Prec.highest(EditorView.theme({
 
 /** The extension of each theme that an editor has loaded. */
 const loadedThemes = new WeakMap<ThemeDefinition, Extension>();
+
+/**
+ * The line numbers with the number of the active line highlighted, or a gutter merged into the
+ * code area. The fold markers left in a hidden gutter take no highlight.
+ */
+function buildLineNumbers(isShown: boolean): Extension {
+    return isShown ? [ lineNumbers(), highlightActiveLineGutter() ] : hiddenLineNumbersTheme;
+}
 
 /**
  * Merges the gutter, which still holds the fold markers, into the code area while the line

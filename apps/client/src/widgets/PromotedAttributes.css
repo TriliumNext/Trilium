@@ -1,9 +1,3 @@
-body.mobile .promoted-attributes-widget {
-    /* https://github.com/zadam/trilium/issues/4468 */
-    flex-shrink: 0.4;
-    overflow: auto;
-}
-
 .component.promoted-attributes-widget {
     contain: none;
 }
@@ -12,7 +6,6 @@ body.mobile .promoted-attributes-widget {
    flex cells, each one took an anonymous row of its own and the attributes stacked one per line. */
 .promoted-attributes-container {
     margin: 0 1.5em;
-    overflow: auto;
     display: flex;
     flex-wrap: wrap;
 }

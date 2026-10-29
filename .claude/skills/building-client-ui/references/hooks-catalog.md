@@ -121,7 +121,7 @@ All react to `loadResults.getOptionNames()` and persist via `options.save`.
 | `useCollectionTreeDrag(containerRef, opts)` | `useNoteTreeDrag` for a collection view; adds `dragEnabled`/`includeArchived` and warns when dropped notes are archived-and-hidden. |
 | `useLongPressContextMenu(handler, holdMs?)` | right-click + touch long-press → context-menu props to spread. |
 | `useContainedLinkNavigation(containerRef, onNavigate)` | keep internal note-link clicks inside a popup/dialog instead of the global handler (capture-phase). |
-| `useImperativeSearchHighlighlighting(tokens)` | returns a fn that `mark.js`-highlights search tokens in an element. |
+| `useImperativeSearchHighlighlighting(tokens)` | returns a fn that highlights search tokens (`services/highlight_matches.ts`) in an element. |
 | `useMathRendering(containerRef, deps)` | lazily KaTeX-render `.math-tex` elements (TOC/highlights sidebars). |
 
 ## Misc utilities

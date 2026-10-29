@@ -51,7 +51,8 @@ declare global {
 
     /** An item of the embed toolbar that the content of an embed can hide. */
     type ContentEmbedToolbarItem =
-        "contentEmbedBoxSizeDropdown" | "toggleContentEmbedTitle" | "convertEmbedToLink";
+        "contentEmbedBoxSizeDropdown" | "toggleContentEmbedTitle" | "convertEmbedToLink"
+        | "toggleContentEmbedEditable";
 
     /** The buttons that the content of an embed, such as a canvas drawing, adds to its toolbar. */
     interface ContentEmbedToolProvider {

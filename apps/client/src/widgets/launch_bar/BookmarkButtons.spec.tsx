@@ -8,7 +8,12 @@ import { renderInto } from "../../test/render";
 import { BookmarkFolder } from "./BookmarkButtons";
 import { launchCustomNoteLauncher } from "./GenericButtons";
 
-const h = vi.hoisted(() => ({ isMobile: false, opened: [] as string[], openContextMenu: vi.fn() }));
+const h = vi.hoisted(() => ({
+    isMobile: false,
+    opened: [] as string[],
+    openModes: [] as (string | null)[],
+    openContextMenu: vi.fn()
+}));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
@@ -20,17 +25,21 @@ vi.mock("../../menus/link_context_menu", async (importOriginal) => {
 });
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
-    launchCustomNoteLauncher: vi.fn(async (_e: MouseEvent, { launcherNote, getTargetNoteId }: {
+    launchCustomNoteLauncher: vi.fn(async (_e: MouseEvent, options: {
         launcherNote: FNote,
-        getTargetNoteId: (launcherNote: FNote) => string
+        getTargetNoteId: (launcherNote: FNote) => string,
+        getOpenMode?: (launcherNote: FNote) => string | null
     }) => {
+        const { launcherNote, getTargetNoteId, getOpenMode } = options;
         h.opened.push(getTargetNoteId(launcherNote));
+        h.openModes.push(getOpenMode?.(launcherNote) ?? null);
     })
 }));
 
 afterEach(() => {
     h.isMobile = false;
     h.opened.length = 0;
+    h.openModes.length = 0;
     vi.clearAllMocks();
     document.body.classList.remove("motion-disabled");
 });
@@ -155,6 +164,26 @@ describe("BookmarkFolder", () => {
         press(rowTitled(rowsOf(menu), "Folder"));
         expect(h.opened).toEqual([ "branch", "folder" ]);
         await vi.waitFor(() => expect(popup()).toBeNull());
+    });
+
+    it("opens a row's note in its #bookmarkOpenMode, which the folder can pass on", async () => {
+        const folder = buildNote({
+            id: "folder",
+            title: "Folder",
+            "#bookmarkOpenMode(inheritable)": "newSplit",
+            children: [
+                { id: "first", title: "First" },
+                { id: "own", title: "Own", "#bookmarkOpenMode": "currentTab" }
+            ]
+        });
+
+        for (const title of [ "Folder", "First", "Own" ]) {
+            const menu = await openMenu(folder, 3);
+            press(rowTitled(rowsOf(menu), title));
+            await vi.waitFor(() => expect(popup()).toBeNull());
+        }
+        expect(h.opened).toEqual([ "folder", "first", "own" ]);
+        expect(h.openModes).toEqual([ "newSplit", "newSplit", "currentTab" ]);
     });
 
     it("nests submenus four levels deep, listing the notes below as plain rows", async () => {

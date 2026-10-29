@@ -55,6 +55,11 @@ vi.mock("i18next", () => ({
     }
 }));
 
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
+
 vi.mock("../../../services/options.js", () => ({
     default: {
         get(name: string) {
@@ -168,6 +173,7 @@ async function buildDynamicConfig(overrides: Partial<BuildEditorOptions> = {}) {
 beforeEach(() => {
     optionsState.map = {};
     optionsState.json = {};
+    experimentalState.enabled.clear();
     imageState.copySupported = false;
     catalogState.bundle = undefined;
     catalogState.entries = {};
@@ -206,6 +212,13 @@ describe("CK config", () => {
             }
         }
     }, 20_000);
+
+    // With "auto", a pasted image goes inline in a list item or after text, and on its own line in an
+    // empty paragraph; CKEditor's fallback inserts every image as a block.
+    it("inserts images inline or as a block depending on where the cursor is", async () => {
+        const config = await buildConfig(baseOpts());
+        expect((config.image as { insert?: { type?: string } }).insert?.type).toBe("auto");
+    });
 
     // The `text-editor.ck` section of the English catalog is the registry of editor strings: each
     // entry names the English message id a plugin passes to `editor.t()`, and the value the editor
@@ -472,6 +485,7 @@ describe("CK config - tables", () => {
             loadNote: vi.fn(),
             loadAttachment: vi.fn(),
             loadInline: vi.fn(),
+            flushInline: vi.fn(),
             focusAttachment: vi.fn(),
             getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
             openMenu: vi.fn(),
@@ -492,6 +506,7 @@ describe("CK config - tables", () => {
         host?.loadNote?.("n2", wrapper, undefined, undefined, onBlockChange);
         host?.loadAttachment?.("a1", wrapper, "medium");
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
+        host?.flushInline?.();
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -499,6 +514,7 @@ describe("CK config - tables", () => {
         expect(second.loadNote).toHaveBeenCalledExactlyOnceWith("n2", wrapper, undefined, undefined, onBlockChange);
         expect(first.loadAttachment).toHaveBeenCalledWith("a1", wrapper, "medium");
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
+        expect(first.flushInline).toHaveBeenCalledOnce();
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");
@@ -511,6 +527,7 @@ describe("CK config - tables", () => {
         expect(host?.getTools?.(embed)).toBeNull();
         expect(host?.enter?.(embed, "start")).toBe(false);
         expect(() => host?.loadNote?.("n1", wrapper, undefined, undefined, onBlockChange)).not.toThrow();
+        expect(() => host?.flushInline?.()).not.toThrow();
     });
 
     it("titles reference links through the link service, in the note open at the time", async () => {
@@ -810,6 +827,16 @@ describe("CK config - inline embeds", () => {
     it("keeps the source of every source embed type inline, as a code block of its language", async () => {
         const config = await buildDynamicConfig();
         expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
+    });
+
+    it("offers the slash command of extended code blocks while their feature is on", async () => {
+        const getRemoved = async () =>
+            (await buildConfig(baseOpts())).slashCommand?.removeCommands ?? [];
+
+        expect(await getRemoved()).toContain("extended-code-block");
+        experimentalState.enabled.add("extendedCodeBlocks");
+        expect(await getRemoved()).not.toContain("extended-code-block");
+        expect(await getRemoved()).toEqual([ "bulletedList", "numberedList" ]);
     });
 });
 

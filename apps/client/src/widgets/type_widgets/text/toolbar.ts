@@ -1,5 +1,6 @@
 import utils, { isShareEditing } from "../../../services/utils.js";
 import options from "../../../services/options.js";
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
 import { t } from "../../../services/i18n.js";
 import { IconAlignCenter } from "@ckeditor/ckeditor5-icons";
 
@@ -104,7 +105,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                         "|",
                         "codeBlock", "blockQuote", "admonition",
                         "|",
-                        "collapsible", "tabs", "multicolumnLayout",
+                        "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
                         "|",
                         "horizontalLine", "pageBreak", "footnote",
                         "|",
@@ -128,6 +129,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                 "indent",
                 "moveBlockUp",
                 "moveBlockDown",
+                ...getSortSelectionItems(),
                 ...(aiAssistant ? ["|", "aiAssistantMenu"] : [])
             ]
         },
@@ -163,7 +165,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
         // The row of the `contextToolbar` button in a list, as a list has no toolbar of its own. It
         // replaces the main row, so it repeats the indentation and the moves, used most in a list.
         listToolbar: [
-            "outdent", "indent", "moveBlockUp", "moveBlockDown",
+            "outdent", "indent", "moveBlockUp", "moveBlockDown", ...getSortSelectionItems(),
             "|",
             "listTypeMenu", "listStartAt", "listReversed"
         ],
@@ -210,12 +212,20 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 "footnote",
                 {
                     ...buildInsertGroup(),
-                    items: ["link", "linkEmbed", "bookmark", "internallink", "contentEmbed", "|", "collapsible", "tabs", "multicolumnLayout", "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji", "insertIcon"]
+                    items: [
+                        "link", "linkEmbed", "bookmark", "internallink", "contentEmbed",
+                        "|",
+                        "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
+                        "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak",
+                        "|",
+                        "dateTime", "specialCharacters", "emoji", "insertIcon"
+                    ]
                 },
                 "|",
                 buildAlignmentToolbar(),
                 "outdent",
                 "indent",
+                ...getSortSelectionItems(),
                 "|",
                 "insertTemplate",
                 "markdownImport",
@@ -280,12 +290,18 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "footnote",
             {
                 ...buildInsertGroup(),
-                items: ["link", "linkEmbed", "bookmark", "internallink", "contentEmbed", "|", "collapsible", "tabs", "multicolumnLayout", "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+                items: [
+                    "link", "linkEmbed", "bookmark", "internallink", "contentEmbed",
+                    "|",
+                    "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
+                    "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak", "dateTime"
+                ]
             },
             "|",
             buildAlignmentToolbar(),
             "outdent",
             "indent",
+            ...getSortSelectionItems(),
             "|",
             "insertTemplate",
             "markdownImport",
@@ -315,6 +331,16 @@ function buildInsertGroup() {
         // the `ToolbarGroupMenu` plugin) opens it as the app's menu of icon-and-label rows instead.
         asMenu: true
     };
+}
+
+/** The button that inserts an extended code block, while its experimental feature is on. */
+function getExtendedCodeBlockItems(): string[] {
+    return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [ "extendedCodeBlock" ] : [];
+}
+
+/** The button that sorts the selection, while its experimental feature is on. */
+function getSortSelectionItems(): string[] {
+    return isExperimentalFeatureEnabled("sortSelection") ? [ "sortSelection" ] : [];
 }
 
 function buildAlignmentToolbar() {

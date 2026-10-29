@@ -246,18 +246,20 @@ describe("loadCustomCss", () => {
         const promise = loadCustomCss(note);
 
         const codeLink = await vi.waitFor(() => {
-            const link = document.head.querySelector<HTMLLinkElement>('link[href="/api/notes/css-code/download"]');
+            const link = document.head.querySelector<HTMLLinkElement>('link[href="api/notes/css-code/download"]');
             expect(link).toBeTruthy();
             return link;
         });
-        expect(document.head.querySelector('link[href="/api/notes/css-mime/download"]')).toBeTruthy();
+        expect(document.head.querySelector('link[href="api/notes/css-mime/download"]')).toBeTruthy();
         await promise;
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-code"));
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-mime"));
         warn.mockRestore();
 
         expect(codeLink?.rel).toBe("stylesheet");
-        expect(document.head.querySelector('link[href="/api/notes/css-text/download"]')).toBeNull();
+        // Relative, so it resolves against the app base when Trilium is served from a subpath
+        expect(codeLink?.getAttribute("href")).toBe("api/notes/css-code/download");
+        expect(document.head.querySelector('link[href="api/notes/css-text/download"]')).toBeNull();
     });
 });
 
