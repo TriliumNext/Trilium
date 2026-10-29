@@ -53,7 +53,7 @@
     "i18next-http-backend": "4.0.4",
     "jquery": "4.0.0",
     "jquery.fancytree": "2.38.5",
-    "katex": "0.19.0",
+    "katex": "0.19.1",
     "maplibre-gl": "6.16.0",
     "mark.js": "8.11.1",
     "marked": "18.1.1",
