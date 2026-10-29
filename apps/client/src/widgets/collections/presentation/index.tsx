@@ -10,10 +10,12 @@ import { openInCurrentNoteContext } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
+import utils from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
 import ShadowDom from "../../react/ShadowDom";
+import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { buildPresentationModel, PresentationModel, PresentationSlideBaseModel } from "./model";
 import slideCustomStylesheet from "./slidejs.css?raw";
@@ -21,6 +23,7 @@ import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 
 const SLIDE_WIDTH = 1280;
 const SLIDE_HEIGHT = 720;
+const isElectron = utils.isElectron();
 const MAX_FIT_ATTEMPTS = 8;
 
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
@@ -56,7 +59,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const content = (
         <>
             {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
-            <Presentation presentation={presentation} setApi={setApi} />
+            <Presentation presentation={presentation} setApi={setApi} ntxId={noteContext?.ntxId} />
         </>
     );
 
@@ -156,7 +159,7 @@ function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObj
     );
 }
 
-function Presentation({ presentation, setApi } : { presentation: PresentationModel, setApi: (api: RevealApi | undefined) => void }) {
+function Presentation({ presentation, setApi, ntxId } : { presentation: PresentationModel, setApi: (api: RevealApi | undefined) => void, ntxId: string | null | undefined }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
     const fitObserverRef = useRef<ResizeObserver>(null);
@@ -192,11 +195,14 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
             setRevealApi(api);
             setApi(api);
             rewireLinks(container, api);
+            setViewportSize(container, api);
         });
 
         // Reveal.js listens only to window resizes, not to the note pane changing size.
         const resizeObserver = new ResizeObserver(() => {
-            if (api.isReady()) api.layout();
+            if (!api.isReady()) return;
+            api.layout();
+            setViewportSize(container, api);
         });
         resizeObserver.observe(container);
 
@@ -226,12 +232,12 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
             <div className="slides">
                 {presentation.slides?.map(slide => {
                     if (!slide.verticalSlides) {
-                        return <Slide key={slide.noteId} slide={slide} />;
+                        return <Slide key={slide.noteId} slide={slide} ntxId={ntxId} />;
                     }
                     return (
                         <section>
-                            <Slide key={slide.noteId} slide={slide} />
-                            {slide.verticalSlides.map(slide => <Slide key={slide.noteId} slide={slide} /> )}
+                            <Slide key={slide.noteId} slide={slide} ntxId={ntxId} />
+                            {slide.verticalSlides.map(slide => <Slide key={slide.noteId} slide={slide} ntxId={ntxId} /> )}
                         </section>
                     );
 
@@ -242,17 +248,25 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
 
 }
 
-function Slide({ slide }: { slide: PresentationSlideBaseModel }) {
+export function Slide({ slide, ntxId }: { slide: PresentationSlideBaseModel, ntxId: string | null | undefined }) {
+    // On desktop a web view goes in an Electron `<webview>`, whose own session keeps the page away
+    // from the app; elsewhere Reveal.js frames it in the slide's background.
+    const desktopWebViewSrc = isElectron ? slide.webViewSrc : undefined;
+    const backgroundIframe = isElectron ? undefined : slide.webViewSrc;
+
     return (
         <section
             id={`slide-${slide.noteId}`}
             data-note-id={slide.noteId}
+            className={desktopWebViewSrc ? "web-view-slide" : undefined}
             data-background-color={slide.backgroundColor}
             data-background-gradient={slide.backgroundGradient}
-            data-background-iframe={slide.backgroundIframe}
-            data-background-interactive={slide.backgroundIframe ? "" : undefined}
+            data-background-iframe={backgroundIframe}
+            data-background-interactive={backgroundIframe ? "" : undefined}
         >
-            <div className="slide-content" dangerouslySetInnerHTML={slide.content} />
+            {desktopWebViewSrc
+                ? <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />
+                : <div className="slide-content" dangerouslySetInnerHTML={slide.content} />}
         </section>
     );
 }
@@ -319,6 +333,18 @@ function measureOverflow(content: HTMLElement) {
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     if (!slide) return;
     return slide.dataset.noteId;
+}
+
+/**
+ * Sets `--viewport-width` and `--viewport-height` on the `.reveal` element to its size in slide pixels.
+ * Reveal.js fits the slide inside a margin and rounds the scale, so this is what a `<webview>` takes to
+ * cover the whole viewport, as a background iframe does.
+ */
+export function setViewportSize(container: HTMLElement, api: Pick<RevealApi, "getScale">) {
+    const scale = api.getScale();
+    if (!scale) return;
+    container.style.setProperty("--viewport-width", `${container.offsetWidth / scale}px`);
+    container.style.setProperty("--viewport-height", `${container.offsetHeight / scale}px`);
 }
 
 function rewireLinks(container: HTMLElement, api: RevealApi) {

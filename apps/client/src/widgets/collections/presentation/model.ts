@@ -18,8 +18,8 @@ export interface PresentationSlideBaseModel {
     content: DangerouslySetInnerHTML;
     backgroundColor?: string;
     backgroundGradient?: string;
-    /** The page a web view slide shows, which Reveal.js loads into the slide's background. */
-    backgroundIframe?: string;
+    /** The page a web view slide shows, across the whole slide. */
+    webViewSrc?: string;
 }
 
 export interface PresentationModel {
@@ -64,7 +64,7 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
             noteId: note.noteId,
             type: note.type,
             content: { __html: "" },
-            backgroundIframe: getWebViewSrc(note)
+            webViewSrc: getWebViewSrc(note)
         };
     }
 

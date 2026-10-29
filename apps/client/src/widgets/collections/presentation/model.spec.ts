@@ -126,10 +126,10 @@ describe("Presentation model with web views", () => {
 
         const { slides } = await buildPresentationModel(presentation);
 
-        expect(slides.map(({ noteId, backgroundIframe, content }) => ({ noteId, backgroundIframe, content }))).toStrictEqual([
-            { noteId: "webHttps", backgroundIframe: "https://example.com/page", content: { __html: "" } },
-            { noteId: "webScript", backgroundIframe: undefined, content: { __html: "" } },
-            { noteId: "webBlank", backgroundIframe: undefined, content: { __html: "" } }
+        expect(slides.map(({ noteId, webViewSrc, content }) => ({ noteId, webViewSrc, content }))).toStrictEqual([
+            { noteId: "webHttps", webViewSrc: "https://example.com/page", content: { __html: "" } },
+            { noteId: "webScript", webViewSrc: undefined, content: { __html: "" } },
+            { noteId: "webBlank", webViewSrc: undefined, content: { __html: "" } }
         ]);
     });
 });

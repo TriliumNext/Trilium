@@ -102,3 +102,17 @@ footer.file-footer {
     display: block;
     border: 0;
 }
+
+.reveal .slides section.web-view-slide {
+    height: 100%;
+}
+
+.reveal webview {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--viewport-width, 100%);
+    height: var(--viewport-height, 100cqh);
+    transform: translate(-50%, -50%);
+}

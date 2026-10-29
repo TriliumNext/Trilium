@@ -36,7 +36,7 @@ export default function WebView({ note, ntxId }: TypeWidgetProps) {
         : <BrowserWebView src={webViewSrc} ntxId={ntxId} />;
 }
 
-function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | undefined }) {
+export function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | undefined }) {
     const webviewRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
