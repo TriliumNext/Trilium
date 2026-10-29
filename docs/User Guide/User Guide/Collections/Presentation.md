@@ -74,7 +74,6 @@ At slide level:
 
 *   Text notes generally respect the formatting (bold, italic, foreground and background colors) and font size. Code blocks and tables also work.
 *   Try using more than just text notes, the presentation uses the same mechanism as [shared notes](../Advanced%20Usage/Sharing.md) and <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> so it should be able to display <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> and <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> in full-screen (without the interactivity).
-    *   Consider using a transparent background for <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a>, if the slides have a custom background (go to the hamburger menu in the Canvas, press the button select a custom color and write `transparent`).
     *   For <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, some of them have a predefined background which can be changed via the frontmatter. For example, for XY-charts:
         
         ```

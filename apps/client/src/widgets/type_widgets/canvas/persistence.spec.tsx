@@ -59,7 +59,7 @@ vi.mock("@excalidraw/excalidraw", () => ({
         element.type === "text" && !element.text && !element.isDeleted
             ? { ...element, isDeleted: true, version: element.version + 1 }
             : element),
-    exportToSvg: vi.fn(async () => ({ outerHTML: "<svg/>" })),
+    exportToSvg: vi.fn(async () => document.createElementNS("http://www.w3.org/2000/svg", "svg")),
     getCommonBounds: (elements: PlacedElement[]) => [
         Math.min(...elements.map(({ x }) => x)),
         Math.min(...elements.map(({ y }) => y)),
@@ -353,6 +353,7 @@ describe("useCanvasPersistence saves", () => {
 
     it("saves the scene alone, and its picture once the saves pause", async () => {
         const { note, elements } = buildNoteWithPicture(PICTURE_TIME, PICTURE_TIME);
+        vi.mocked(exportToSvg).mockResolvedValueOnce(pictureWithImages());
         await mount(note);
         sceneElements = elements;
         change();
@@ -365,12 +366,18 @@ describe("useCanvasPersistence saves", () => {
         expect(exportToSvg).not.toHaveBeenCalled();
 
         await waitFor(5000);
-        expect(vi.mocked(exportToSvg).mock.calls.map(([ { elements } ]) => elements))
-            .toEqual([ sceneElements ]);
+        expect(vi.mocked(exportToSvg).mock.calls.map(([ { elements, appState } ]) =>
+            [ elements, appState?.exportBackground ])).toEqual([ [ sceneElements, false ] ]);
         expect(post).toHaveBeenCalledExactlyOnceWith(
-            `notes/${note.noteId}/attachments?matchBy=title`,
-            { role: "image", mime: "image/svg+xml", title: CANVAS_EXPORT_TITLE, content: "<svg/>" }
+            `notes/${note.noteId}/attachments?matchBy=title`, {
+                role: "image", mime: "image/svg+xml", title: CANVAS_EXPORT_TITLE,
+                content: expect.stringMatching(/^<svg id="picture" class="trilium-drawing-picture">/)
+            }
         );
+        // Dark while its page is dark, with the bitmaps in their own colors.
+        const content = (post.mock.calls[0]?.[1] as { content: string }).content;
+        expect(content).toContain("@media (prefers-color-scheme: dark)");
+        expect(content).toContain(`<use href="#image-f1" class="trilium-drawing-bitmap"`);
     });
 
     it("saves a pen stroke to 3 decimals", async () => {
@@ -1229,7 +1236,7 @@ describe("saveDrawingPicture", () => {
         expect(exportToSvg).toHaveBeenCalledExactlyOnceWith({
             elements: [ image ],
             appState: {
-                viewBackgroundColor: "#ffc9c9", exportBackground: true, exportWithDarkMode: false
+                viewBackgroundColor: "#ffc9c9", exportBackground: false, exportWithDarkMode: false
             },
             files,
             exportPadding: 5
