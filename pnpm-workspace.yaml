@@ -44,7 +44,7 @@ overrides:
   "@agentclientprotocol/codex-acp>@openai/codex": "-"
   "zod": "4.6.7"
   "mermaid": "12.2.0"
-  "preact": "11.0.1"
+  "preact": "11.0.2"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"
   "flat@<5.0.1": ">=5.0.1"
