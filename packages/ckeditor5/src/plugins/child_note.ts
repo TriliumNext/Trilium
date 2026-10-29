@@ -1,4 +1,4 @@
-import childNoteIcon from "boxicons/svg/regular/bx-note.svg?raw";
+import childNoteIcon from "boxicons/svg/regular/bx-subdirectory-right.svg?raw";
 import { ButtonView, Command, Plugin } from "ckeditor5";
 
 import ReferenceLink from "./referencelink.js";

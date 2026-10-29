@@ -7,6 +7,7 @@ import collapsibleIcon from "@triliumnext/ckeditor5/src/icons/collapsible.svg?ra
 import dateTimeIcon from "@triliumnext/ckeditor5/src/icons/date-time.svg?raw";
 import insertFootnoteIcon from "@triliumnext/ckeditor5/src/icons/insert-footnote.svg?raw";
 import mathIcon from "@triliumnext/ckeditor5/src/icons/math.svg?raw";
+import noteIcon from "@triliumnext/ckeditor5/src/icons/note.svg?raw";
 import tabsIcon from "@triliumnext/ckeditor5/src/icons/tabs.svg?raw";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
@@ -16,7 +17,6 @@ import type {
 import { isAnchorState, type TaskStateDef } from "@triliumnext/commons";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
-import bxDetail from "boxicons/svg/regular/bx-detail.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
@@ -98,7 +98,7 @@ export function buildMarkdownCommands(
         command("include", {
             title: t("markdown_slash_commands.titles.include"),
             description: t("markdown_slash_commands.include"),
-            iconSvg: bxDetail
+            iconSvg: noteIcon
         }, runAction(showIncludeNoteDialog)),
         command("image", {
             title: t("markdown_slash_commands.titles.image"),

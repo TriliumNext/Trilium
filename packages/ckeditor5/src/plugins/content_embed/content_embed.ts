@@ -24,11 +24,11 @@ import {
 	type Observable
 } from 'ckeditor5';
 import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
-import detailIcon from 'boxicons/svg/regular/bx-detail.svg?raw';
 import editIcon from 'boxicons/svg/regular/bx-edit-alt.svg?raw';
 import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
 import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
+import noteIcon from '../../icons/note.svg?raw';
 import {
 	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, normalizeMimeTypeForCKEditor, parseBlockRange
 } from '@triliumnext/commons';
@@ -288,7 +288,7 @@ class ContentEmbedUI extends Plugin {
 				// The t() function helps localize the editor. All strings enclosed in t() can be
 				// translated and change when the language of the editor changes.
 				label: t( 'Include note' ),
-				icon: detailIcon,
+				icon: noteIcon,
 				tooltip: true
 			} );
 

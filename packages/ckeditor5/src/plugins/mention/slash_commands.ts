@@ -27,14 +27,13 @@ import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
-import bxDetail from "boxicons/svg/regular/bx-detail.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
-import bxNote from "boxicons/svg/regular/bx-note.svg?raw";
 import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
 import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
+import bxSubdirectoryRight from "boxicons/svg/regular/bx-subdirectory-right.svg?raw";
 import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
 
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
@@ -43,6 +42,7 @@ import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
 import linkPreviewIcon from "../../icons/link-preview.svg?raw";
 import importMarkdownIcon from "../../icons/markdown-mark.svg?raw";
 import mathIcon from "../../icons/math.svg?raw";
+import noteIcon from "../../icons/note.svg?raw";
 import tabsIcon from "../../icons/tabs.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
@@ -460,14 +460,14 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             title: t("Create a new child note"),
             description: t("Create a new child note and insert a link to it"),
             aliases: [ "new note", "subnote", "sub-note", "page" ],
-            icon: bxNote,
+            icon: bxSubdirectoryRight,
             commandName: CHILD_NOTE_COMMAND
         },
         {
             id: "content-embed",
             title: t("Include note"),
             description: t("Display the content of another note in this note"),
-            icon: bxDetail,
+            icon: noteIcon,
             commandName: CONTENT_EMBED_COMMAND
         },
         {
