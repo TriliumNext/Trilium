@@ -45,9 +45,12 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         if (!api) return;
         api.on("slidechanged", finishEditing);
         api.on("overviewshown", finishEditing);
+        // The editor's toolbars are in `document.body`, which full-screen hides.
+        document.addEventListener("fullscreenchange", finishEditing);
         return () => {
             api.off("slidechanged", finishEditing);
             api.off("overviewshown", finishEditing);
+            document.removeEventListener("fullscreenchange", finishEditing);
         };
     }, [ api ]);
 
@@ -302,7 +305,7 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, 
                 ntxId={ntxId}
                 editorHostRef={slide.noteId === editedNoteId ? onEditorHost : undefined}
                 onEdit={canEdit ? () => {
-                    if (!revealApi?.isOverview()) onEditSlide(slide.noteId);
+                    if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);
                 } : undefined}
             />
         );

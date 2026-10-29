@@ -35,7 +35,7 @@ The following keyboard shortcuts are supported:
 
 Double-click a slide made from a text note to edit it directly on the slide, in the presentation's theme. A dashed outline marks the slide being edited, and the formatting toolbar appears next to the selected text. Changes are saved as you type, as in any text note, and a slide that grows past the edge of the slide is zoomed out to fit.
 
-To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button in the floating toolbar or go to another slide.
+To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button in the floating toolbar or go to another slide. Starting the presentation in full-screen also finishes editing, and slides can't be edited in full-screen.
 
 Slides of other note types, such as diagrams or canvases, are edited from their note, using the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place.
 

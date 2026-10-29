@@ -84,6 +84,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     const config: EditorConfig = {
         licenseKey: OPEN_SOURCE_LICENSE_KEY,
         placeholder: t("editable_text.placeholder"),
+        // An editor inside a shadow root, such as a presentation slide's, would otherwise mount its
+        // balloons and toolbars in that root, out of reach of the app's stylesheets.
+        ui: {
+            overlayContainer: document.body
+        },
         codeBlock: {
             languages: buildListOfLanguages()
         },
