@@ -856,6 +856,19 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
     font-weight: 600;
 }
 
+.ck.ck-table-form__cell-type-row > .ck.ck-labeled-field-view,
+.ck.ck-labeled-field-view.ck-table-cell-properties-form__background {
+    padding-top: 0 !important;
+
+    > .ck.ck-labeled-field-view__input-wrapper > label.ck.ck-label {
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
 :root input.ck.ck-input-text[readonly="true"] {
     cursor: not-allowed;
     background: var(--input-background-color);
