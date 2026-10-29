@@ -102,6 +102,20 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-hyper-link/locales/es-ES')
         ])
     },
+    fa: {
+        type: LocaleType.FA_IR,
+        load: () => Promise.all([
+            import('@univerjs/preset-sheets-core/locales/fa-IR'),
+            import('@univerjs/preset-sheets-drawing/locales/fa-IR'),
+            import('@univerjs/preset-sheets-find-replace/locales/fa-IR'),
+            import('@univerjs/preset-sheets-note/locales/fa-IR'),
+            import('@univerjs/preset-sheets-filter/locales/fa-IR'),
+            import('@univerjs/preset-sheets-sort/locales/fa-IR'),
+            import('@univerjs/preset-sheets-data-validation/locales/fa-IR'),
+            import('@univerjs/preset-sheets-conditional-formatting/locales/fa-IR'),
+            import('@univerjs/preset-sheets-hyper-link/locales/fa-IR')
+        ])
+    },
     fr: {
         type: LocaleType.FR_FR,
         load: () => Promise.all([

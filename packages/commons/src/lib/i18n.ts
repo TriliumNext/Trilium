@@ -81,7 +81,7 @@ const UNSORTED_LOCALES = [
         id: "fa",
         name: "فارسی",
         rtl: true,
-        contentOnly: true,
+        electronLocale: "fa",
         tesseractCode: "fas"
     },
     { // Uyghur
