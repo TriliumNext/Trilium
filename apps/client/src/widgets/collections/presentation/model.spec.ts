@@ -111,3 +111,25 @@ describe("Presentation model", () => {
         );
     });
 });
+
+describe("Presentation model with web views", () => {
+    it("shows a web view in the slide background, but only for an http or https URL", async () => {
+        const presentation = buildNote({
+            title: "Web views",
+            "#viewType": "presentation",
+            children: [
+                { id: "webHttps", title: "Site", type: "webView", "#webViewSrc": "https://example.com/page" },
+                { id: "webScript", title: "Script", type: "webView", "#webViewSrc": "javascript:alert(1)" },
+                { id: "webBlank", title: "Blank", type: "webView" }
+            ]
+        });
+
+        const { slides } = await buildPresentationModel(presentation);
+
+        expect(slides.map(({ noteId, backgroundIframe, content }) => ({ noteId, backgroundIframe, content }))).toStrictEqual([
+            { noteId: "webHttps", backgroundIframe: "https://example.com/page", content: { __html: "" } },
+            { noteId: "webScript", backgroundIframe: undefined, content: { __html: "" } },
+            { noteId: "webBlank", backgroundIframe: undefined, content: { __html: "" } }
+        ]);
+    });
+});

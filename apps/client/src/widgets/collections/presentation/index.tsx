@@ -249,6 +249,8 @@ function Slide({ slide }: { slide: PresentationSlideBaseModel }) {
             data-note-id={slide.noteId}
             data-background-color={slide.backgroundColor}
             data-background-gradient={slide.backgroundGradient}
+            data-background-iframe={slide.backgroundIframe}
+            data-background-interactive={slide.backgroundIframe ? "" : undefined}
         >
             <div className="slide-content" dangerouslySetInnerHTML={slide.content} />
         </section>

@@ -85,6 +85,7 @@ At slide level:
                     backgroundColor: transparent
         ---
         ```
+*   A <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> slide shows its page across the whole slide, and the page can be used as normal (scrolling, clicking links). Only `http://` and `https://` addresses are shown. Many websites refuse to be shown inside another page, in which case the slide shows the browser's error page instead.
 
 ## Under the hood
 

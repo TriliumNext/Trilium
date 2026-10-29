@@ -18,6 +18,8 @@ export interface PresentationSlideBaseModel {
     content: DangerouslySetInnerHTML;
     backgroundColor?: string;
     backgroundGradient?: string;
+    /** The page a web view slide shows, which Reveal.js loads into the slide's background. */
+    backgroundIframe?: string;
 }
 
 export interface PresentationModel {
@@ -57,6 +59,15 @@ async function buildVerticalSlides(parentSlideNote: FNote): Promise<undefined | 
 }
 
 async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel> {
+    if (note.type === "webView") {
+        return {
+            noteId: note.noteId,
+            type: note.type,
+            content: { __html: "" },
+            backgroundIframe: getWebViewSrc(note)
+        };
+    }
+
     const slideBackground = note.getLabelValue("slide:background") ?? undefined;
     const isGradient = slideBackground?.includes("gradient(");
 
@@ -66,6 +77,22 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
         content: await processContent(note),
         backgroundColor: !isGradient ? slideBackground : undefined,
         backgroundGradient: isGradient ? slideBackground : undefined
+    }
+}
+
+/**
+ * Returns the `#webViewSrc` of a web view note if it is an `http:` or `https:` URL. Reveal.js frames the page
+ * without a `sandbox`, so another protocol such as `javascript:` would run in the app's origin.
+ */
+function getWebViewSrc(note: FNote) {
+    const src = note.getLabelValue("webViewSrc")?.trim();
+    if (!src) return;
+
+    try {
+        const { protocol } = new URL(src);
+        return protocol === "http:" || protocol === "https:" ? src : undefined;
+    } catch {
+        return undefined;
     }
 }
 

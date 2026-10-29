@@ -97,3 +97,8 @@ footer.file-footer {
     max-width: unset;
     max-height: unset;
 }
+
+.reveal .slide-background-content iframe {
+    display: block;
+    border: 0;
+}
