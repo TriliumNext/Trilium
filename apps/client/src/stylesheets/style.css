@@ -1528,10 +1528,31 @@ pre.code-embed-editor.read-only .cm-activeLine {
                    var(--_include-note-content-bottom-radius);
     overflow: hidden;
 
+    .cm-gutters {
+        padding-inline: 4px;
+    }
+
     /* `.cm-line` adds 6px before each line. */
     .cm-content {
         padding-block: var(--padding-size, 1em);
         padding-inline-start: calc(var(--padding-size, 1em) - 6px);
+    }
+}
+
+/* CodeMirror scrolls in place of the box, so that the language label stays put. */
+.include-note-content.type-extendedCodeBlock {
+    display: flex;
+    flex-direction: column;
+
+    > .rendered-content,
+    > .rendered-content > .source-embed,
+    .code-embed-content,
+    pre.code-embed-editor,
+    .cm-editor {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
     }
 }
 
