@@ -27,6 +27,7 @@ import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
+import bxDetail from "boxicons/svg/regular/bx-detail.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
@@ -42,7 +43,6 @@ import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
 import linkPreviewIcon from "../../icons/link-preview.svg?raw";
 import importMarkdownIcon from "../../icons/markdown-mark.svg?raw";
 import mathIcon from "../../icons/math.svg?raw";
-import noteIcon from "../../icons/note.svg?raw";
 import tabsIcon from "../../icons/tabs.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
@@ -467,7 +467,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             id: "content-embed",
             title: t("Include note"),
             description: t("Display the content of another note in this note"),
-            icon: noteIcon,
+            icon: bxDetail,
             commandName: CONTENT_EMBED_COMMAND
         },
         {
