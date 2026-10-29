@@ -683,7 +683,8 @@
     "meeting_recording": "标记由启动栏中「转录会议」按钮创建的笔记，其中保存着会议的转录文本。",
     "template_title_template": "设置在模板笔记上：从该模板创建的笔记的默认标题，用来替代父笔记的 <code>#titleTemplate</code>。求值方式与 <code>#titleTemplate</code> 相同，会注入 <code>now</code> 和 <code>parentNote</code> 变量，例如 <code>Meeting ${now.format('YYYY-MM-DD')}</code>。",
     "calendar_hide_routine_events": "将每周重复 {{days}} 天或以上的定时事件从月视图、年视图和列表视图中隐藏。无论其值为何都会生效。",
-    "exclude_from_llm": "对 AI 聊天和 MCP 服务器隐藏此笔记。将标签设为可继承，即可一并隐藏其下方的笔记。"
+    "exclude_from_llm": "对 AI 聊天和 MCP 服务器隐藏此笔记。将标签设为可继承，即可一并隐藏其下方的笔记。",
+    "bookmark_open_mode": "点击启动栏中笔记的按钮时，笔记的打开方式：<code>当前标签页</code>（默认）、<code>新建标签页</code>、<code>新建分栏</code>、<code>新建窗口</code> 或 <code>快速编辑</code>。适用于书签、拖放到启动栏的笔记以及书签文件夹中的笔记。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -969,7 +970,7 @@
     "word_wrap_on": "开启",
     "word_wrap_off": "关闭",
     "print_or_export_to_pdf": "打印/导出为 PDF…",
-    "save_named_revision": "保存已命名的修订...",
+    "save_named_revision": "保存修订并命名...",
     "convert_to_markdown": "转换为 Markdown 笔记...",
     "convert_to_text": "转换为文本笔记...",
     "convert_format_warning": "转换过程中可能会丢失部分格式，之后可能需要手动调整。转换前会先为当前笔记保存一个修订，方便随时还原。要继续吗？",
@@ -3503,7 +3504,7 @@
     "preview_not_available": "无法预览此类型的笔记。",
     "highlight_changes": "高亮变更",
     "save_revision_now": "立即保存修订",
-    "save_named_revision": "保存已命名的修订...",
+    "save_named_revision": "保存修订并命名...",
     "snapshot_header": "笔记修订快照",
     "snapshot_interval_value": "间隔：{{seconds}}秒",
     "snapshot_limit_value": "上限：{{number}}",
@@ -3583,7 +3584,13 @@
     "configure_launch_bar": "配置启动栏...",
     "launch_bar_orientation": "启动栏方向",
     "will_reload_frontend": "（将重新加载应用）",
-    "show_as_folder": "文件夹"
+    "show_as_folder": "显示为文件夹",
+    "open_mode": "打开方式",
+    "open_mode_current_tab": "当前标签页",
+    "open_mode_new_tab": "新建标签页",
+    "open_mode_new_split": "新建分栏",
+    "open_mode_new_window": "新建窗口",
+    "open_mode_quick_edit": "快速编辑"
   },
   "link": {
     "failed_to_open": "无法打开链接“{{- href}}”：{{- message}}"
@@ -4859,5 +4866,9 @@
     "tomorrow": "明天",
     "next-week": "下周",
     "clear": "清除"
+  },
+  "canvas": {
+    "thin_stroke": "细笔触",
+    "thin_stroke_description": "绘制更细的笔触，适合手写。已绘制的笔触保持原有宽度。"
   }
 }
