@@ -1,8 +1,10 @@
 import { Suspense } from "preact/compat";
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useRef } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import TextEmbedEditor from "../../type_widgets/text/TextEmbedEditor";
+
+let editorStyleSheet: CSSStyleSheet | undefined;
 
 /**
  * Edits a text slide in place, inside the slide's frame in the shadow root, so that the slide's
@@ -10,11 +12,17 @@ import TextEmbedEditor from "../../type_widgets/text/TextEmbedEditor";
  * it.
  */
 export default function SlideEditor({ note, onFinish }: { note: FNote; onFinish(): void }) {
-    // This module imports the editor, so its stylesheets are in the document by now.
-    const [ editorStylesheet ] = useState(collectEditorStylesheet);
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    // A layout effect, so the editor's styles are in the shadow root before the editor paints.
+    useLayoutEffect(() => {
+        const root = rootRef.current?.getRootNode();
+        if (root instanceof ShadowRoot) return adoptEditorStyleSheet(root);
+    }, []);
 
     return (
         <div
+            ref={rootRef}
             className="slide-editor-root"
             onKeyDown={(e) => {
                 if (e.key === "Escape" && !e.defaultPrevented) {
@@ -23,12 +31,28 @@ export default function SlideEditor({ note, onFinish }: { note: FNote; onFinish(
                 }
             }}
         >
-            <style>{editorStylesheet}</style>
             <Suspense fallback={null}>
                 <TextEmbedEditor note={note} hasFixedToolbar={false} onClose={() => {}} />
             </Suspense>
         </div>
     );
+}
+
+/**
+ * Adds the editor's styles to `root` and returns the function that removes them. The stylesheet
+ * is built on the first edit and shared by every later one, so only the first edit collects and
+ * parses it. This module imports the editor, so its stylesheets are in the document by then.
+ */
+export function adoptEditorStyleSheet(root: ShadowRoot) {
+    if (!editorStyleSheet) {
+        editorStyleSheet = new CSSStyleSheet();
+        editorStyleSheet.replaceSync(collectEditorStylesheet());
+    }
+    const sheet = editorStyleSheet;
+    root.adoptedStyleSheets = [ ...root.adoptedStyleSheets, sheet ];
+    return () => {
+        root.adoptedStyleSheets = root.adoptedStyleSheets.filter((adopted) => adopted !== sheet);
+    };
 }
 
 /**

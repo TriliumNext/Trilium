@@ -1,6 +1,29 @@
 import { describe, expect, it } from "vitest";
 
-import { collectEditorStylesheet } from "./slide_editor";
+import { adoptEditorStyleSheet, collectEditorStylesheet } from "./slide_editor";
+
+describe("adoptEditorStyleSheet", () => {
+    it("shares one stylesheet between edits and removes only its own", () => {
+        const first = document.createElement("div").attachShadow({ mode: "open" });
+        const second = document.createElement("div").attachShadow({ mode: "open" });
+        const other = new CSSStyleSheet();
+        first.adoptedStyleSheets = [ other ];
+
+        const removeFirst = adoptEditorStyleSheet(first);
+        const removeSecond = adoptEditorStyleSheet(second);
+        const [ , sheet ] = first.adoptedStyleSheets;
+        expect(sheet).toBeInstanceOf(CSSStyleSheet);
+        expect(second.adoptedStyleSheets).toHaveLength(1);
+        expect(second.adoptedStyleSheets[0]).toBe(sheet);
+
+        removeFirst();
+        expect(first.adoptedStyleSheets).toHaveLength(1);
+        expect(first.adoptedStyleSheets[0]).toBe(other);
+        expect(second.adoptedStyleSheets[0]).toBe(sheet);
+        removeSecond();
+        expect(second.adoptedStyleSheets).toHaveLength(0);
+    });
+});
 
 describe("collectEditorStylesheet", () => {
     it("copies the editor's UI rules and leaves out the content rules", () => {
