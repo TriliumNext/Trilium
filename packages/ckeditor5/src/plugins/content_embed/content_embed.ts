@@ -29,13 +29,17 @@ import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
 import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
-import { encodeBlockParameter, parseBlockRange } from '@triliumnext/commons';
+import {
+	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, normalizeMimeTypeForCKEditor, parseBlockRange
+} from '@triliumnext/commons';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import { restoreRendererFocusOnInput } from '../widget_utils.js';
 import type { EmbedEdge } from './content_embed_caret.js';
 import EmbedHistory from './embed_history.js';
-import ContentEmbedInlineSource, { type InlineEmbedSource, isInlineSourceEmbed } from './inline_source.js';
+import ContentEmbedInlineSource, {
+	type InlineEmbedSource, isExtendedCodeBlock, isInlineSourceEmbed
+} from './inline_source.js';
 import './nested_editor_events.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
@@ -112,6 +116,7 @@ const CODE_VIEW_ATTRIBUTES = [
 
 /** The settings of `SetContentEmbedCodeViewCommand`. `null` removes a setting. */
 export interface ContentEmbedCodeView {
+	/** The language, as a MIME type. An extended code block saves it as its `language-…` class. */
 	language?: string | null;
 	tabWidth?: number | null;
 	indentWithTabs?: boolean | null;
@@ -364,7 +369,8 @@ class ContentEmbedUI extends Plugin {
 			// Shown only for content that has an editable mode.
 			if ( command ) {
 				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
-				buttonView.bind( 'isVisible' ).to( command, 'isEnabled' );
+				bindToolbarItemVisibility( editor, buttonView, command,
+					TOGGLE_EDITABLE_COMMAND_NAME );
 			}
 
 			this.listenTo( buttonView, 'execute', () => {
@@ -379,7 +385,7 @@ class ContentEmbedUI extends Plugin {
 			const separator = new ToolbarItemSeparatorView( locale );
 			separator.bind( 'isVisible' ).to(
 				editor.plugins.get( ContentEmbed ), 'selectedEmbedTools',
-				tools => !!tools?.hasEditableFlag && !!tools.hasDisplayModes );
+				tools => isEditableToggleShown( tools ) && !!tools?.hasDisplayModes );
 			return separator;
 		} );
 
@@ -612,8 +618,11 @@ class ContentEmbedEditing extends Plugin {
 
 				const boxSize = modelElement.getAttribute( 'boxSize' ) as string | undefined;
 
+				const extendedClass = isExtendedCodeBlock( editor, modelElement )
+					? ' ' + EXTENDED_CODE_BLOCK_CLASS
+					: '';
 				const figure = viewWriter.createContainerElement( 'figure', {
-					class: 'include-note box-size-' + boxSize,
+					class: 'include-note box-size-' + boxSize + extendedClass,
 					...getEmbeddedEntityAttributes( modelElement ),
 					'data-box-size': boxSize,
 					...getFlagAttributes( modelElement ),
@@ -677,9 +686,11 @@ class ContentEmbedEditing extends Plugin {
 
 			// Marks the view of the embed without drawing the content again. Content with an
 			// editable mode reads `data-editable` from the embed, content with display modes
-			// `data-display-mode`, and a code file the `data-code-*` attributes.
+			// `data-display-mode`, a code file the `data-code-*` attributes, and an extended code
+			// block `data-language`.
 			const markedAttributes = [
-				...FLAG_ATTRIBUTES, DISPLAY_MODE_ATTRIBUTE, ...CODE_VIEW_ATTRIBUTES
+				...FLAG_ATTRIBUTES, DISPLAY_MODE_ATTRIBUTE, ...CODE_VIEW_ATTRIBUTES,
+				[ 'language', 'data-language' ] as const
 			];
 			for ( const [ attribute, dataAttribute ] of markedAttributes ) {
 				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
@@ -971,7 +982,7 @@ export class SetContentEmbedCodeViewCommand extends Command {
 		const values = embed.getAttribute( 'noteId' ) ? {
 			codeLineNumbers: lineNumbers
 		} : {
-			codeLanguage: language,
+			...getLanguageAttribute( this.editor, embed, language ),
 			codeTabWidth: tabWidth,
 			codeIndentWithTabs: indentWithTabs,
 			codeWrapLines: wrapLines,
@@ -1018,6 +1029,20 @@ export class ContentEmbedDisplayModeCommand extends Command {
 
 		this.editor.model.change( writer => writer.setAttribute( 'displayMode', value, embed ) );
 	}
+}
+
+/**
+ * The model attribute to set for `language`, a MIME type: `language` for an extended code block,
+ * which always has one, otherwise `codeLanguage`, the language that a code file shows in.
+ */
+function getLanguageAttribute(
+	editor: Editor, embed: ModelElement, language: string | null | undefined
+): Record<string, string | null | undefined> {
+	if ( !isExtendedCodeBlock( editor, embed ) ) {
+		return { codeLanguage: language };
+	}
+
+	return language ? { language: normalizeMimeTypeForCKEditor( language ) } : {};
 }
 
 /** Sets the flag of the selected embed when it is off, and removes it when it is on. */
@@ -1329,6 +1354,12 @@ export function isToolbarItemHidden(
 	name: ContentEmbedToolbarItem
 ) {
 	return !!tools?.hiddenToolbarItems?.includes( name );
+}
+
+/** Whether the toolbar of the selected embed, whose buttons are `tools`, shows Editable. */
+export function isEditableToggleShown( tools: ContentEmbedToolProvider | null ) {
+	return !!tools?.hasEditableFlag
+		&& !isToolbarItemHidden( tools, TOGGLE_EDITABLE_COMMAND_NAME );
 }
 
 /**
@@ -1691,6 +1722,8 @@ export interface ContentEmbedHost {
 	): void;
 	/** Fills `wrapper` with the attachment. */
 	loadAttachment( attachmentId: string, wrapper: HTMLElement, boxSize: string | undefined ): void;
+	/** Writes into the note the changes to the sources of inline embeds that are not yet in it. */
+	flushInline(): void;
 	/** Fills `wrapper` with the source of an inline embed, focused if `isFocused`. */
 	loadInline(
 		source: InlineEmbedSource,

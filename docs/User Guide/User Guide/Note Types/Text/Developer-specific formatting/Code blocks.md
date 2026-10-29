@@ -77,3 +77,21 @@ Note that the list of languages is not immediately refreshed, you'd have to manu
 A different feature is _programming ligatures_, which is simply a display affordance which turns `!=` into `≠` or `->` as `→` . These come from the [font](../../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md). The underlying text is not actually changed, and copying it out gives you back `!=` and `->`.
 
 Ligatures can be disabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._
+
+## Extended code blocks
+
+> [!IMPORTANT]
+> Extended code blocks are experimental, and they change as they mature. To use them, turn on _Extended code blocks_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Advanced_ → _Experimental Options_.
+
+An extended code block is a code block that is edited with the code editor of a <a class="reference-link" href="../../Code.md">Code</a> note, inside the text. It has the same syntax highlighting and code folding as a code note, and it suits longer pieces of code.
+
+*   To insert one, open the <span class="tn-icon cke cke-plus"></span> _Insert_ menu of the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> and choose <span class="tn-icon bx bx-code-block"></span> _Extended code block_, after _Columns_. It is also available as _Extended code block_ in the <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>.
+*   A new block is empty and editable, in a _Full_ box, and takes the focus. Its language is the one set last on an extended code block, or _Plain text_.
+*   A click places the cursor in the code, as in a code block. Over a _Small_ or _Medium_ box, the mouse wheel scrolls the code.
+*   The block shows in a box like the one of an included code note, with the corners and the shadow of a code block. While the block is editable, its language shows in its top corner, as for a code block. While it is read-only, because _Editable_ is unchecked or the note is one of the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, that corner has a <span class="tn-icon bx bx-copy"></span> _Copy to clipboard_ button instead, as a code block of a read-only note does.
+*   Its toolbar has the _Change language mode_ and _Change tab width_ menus of an embedded code file, described in _Editing an include in place_ in <a class="reference-link" href="../Include%20Note.md">Include Note</a>, and the <span class="tn-icon cke cke-trilium-copy"></span> _Copy to clipboard_ button, which copies the code as the one of a code block does. Its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has _Editable_, which shows the code read-only once unchecked, the _Word wrap_ and _Line numbers_ submenus, and the _Size_ submenu, with _Small_, _Medium_ and _Full_.
+*   The changes made in the block are part of the undo history of the text note.
+
+The code stays in the note as a code block of its language. The Markdown export, [shared pages](../../../Advanced%20Usage/Sharing.md) and printing show it as a code block, and copying it into another application pastes a code block. Pasted into a text note, it becomes an extended code block again, with its settings.
+
+Turning _Extended code blocks_ off again removes them from the _Insert_ menu and the slash commands only: the extended code blocks already in notes keep working. A version of Trilium without this feature shows them as code blocks, and saves them back as code blocks, without their box size and other settings.

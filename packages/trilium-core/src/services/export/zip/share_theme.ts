@@ -2,8 +2,8 @@ import {
     getContentRendererGroup, getNoteContentType, getShareThemeGroupFiles, type ShareThemeManifest
 } from "@triliumnext/commons";
 import ejs from "ejs";
-import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
+import { parse } from "node-html-parser";
 
 import becca from "../../../becca/becca.js";
 import type BBranch from "../../../becca/entities/bbranch.js";
@@ -74,9 +74,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
         if (note) {
             // Prepare search index.
-            searchContent = typeof content === "string" ? convertToText(content, {
-                whitespaceCharacters: "\t\r\n\f​  "
-            }) : "";
+            searchContent = typeof content === "string" ? htmlToSearchText(content) : "";
 
             // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
             const getLink = (noteId: string) => (noteId === this.rootMeta?.noteId
@@ -327,3 +325,15 @@ export function hasMermaidDiagrams(note: BNote) {
 }
 
 const MARKDOWN_MERMAID_FENCE = /^ {0,3}(`{3,}|~{3,})\s*mermaid\b/m;
+
+/**
+ * The text of `html` for the static search index: block boundaries become spaces, every run of
+ * whitespace (zero-width spaces included) collapses to one, and scripts and styles are dropped.
+ */
+export function htmlToSearchText(html: string) {
+    const root = parse(html);
+    for (const element of root.querySelectorAll("script, style")) {
+        element.remove();
+    }
+    return root.structuredText.replace(/[\s​]+/g, " ").trim();
+}

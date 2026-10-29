@@ -127,7 +127,7 @@ describe("Markdown export", () => {
 
         // The fallback anchor is generated from the data attributes, so its href and title must be
         // HTML-escaped or a title like `A & B <x>` would break the exported markup. This escaping is
-        // done deterministically with escape-html, so it holds under both test environments.
+        // done deterministically with `escapeHtml()`, so it holds under both test environments.
         expect(exported).toContain('<a href="https://e.com/?a=1&amp;b=2">A &amp; B &lt;x&gt;</a>');
 
         // The section wrapper and its data attributes survive so the preview re-imports losslessly.

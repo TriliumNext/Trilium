@@ -81,6 +81,8 @@ export default function ContentEmbed({
     const isOpen = isExpanded || isRevealed;
     const focusContentAfterRender = useFocusAfterRender(contentRef);
     const isExpandable = boxSize === "expandable" && !!title && !!notePath;
+    const hasBackdrop = !isContentActive && !isDraggedOver
+        && !DIRECT_CONTENT_TYPES.has(contentType);
     const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
     const toggleExpanded = () => {
         setIsExpanded(!isOpen);
@@ -198,7 +200,7 @@ export default function ContentEmbed({
                         </div>
                     )}
                 </div>
-                {!isContentActive && !isDraggedOver && (
+                {hasBackdrop && (
                     <div
                         className="include-note-backdrop"
                         onClick={(e) => {
@@ -445,6 +447,9 @@ const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
 
 /** The content types whose rendered content "Search in note" searches. */
 const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
+
+/** The content types that take the first click themselves, with no backdrop over them. */
+const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock" ]);
 
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that

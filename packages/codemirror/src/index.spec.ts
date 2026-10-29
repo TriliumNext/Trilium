@@ -268,14 +268,19 @@ describe("CodeMirror", () => {
     });
 
     describe("configuration changes", () => {
-        it("swaps the theme", async () => {
+        it("swaps the theme, and names the one it shows", async () => {
             editor = build();
             const theme = getThemeById("abyss");
-            expect(theme).not.toBeNull();
-            if (!theme) return;
+            const otherTheme = getThemeById("github-light");
+            expect([ theme, otherTheme ]).not.toContain(null);
+            if (!theme || !otherTheme) return;
 
             await editor.setTheme(theme);
             expect(editor.getText()).toBe("");
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("abyss");
+
+            await editor.setTheme(otherTheme);
+            expect(editor.dom.getAttribute("data-theme-name")).toBe("github-light");
         });
 
         it("applies a theme it has loaded before without waiting", async () => {
@@ -354,6 +359,21 @@ describe("CodeMirror", () => {
 
             editor = build({ lineNumbers: false });
             expect(hasLineNumbers(editor)).toBe(false);
+        });
+
+        it("highlights the number of the active line while the line numbers show", () => {
+            const activeNumbers = (view: CodeMirror) => [
+                ...view.dom.querySelectorAll(".cm-lineNumbers .cm-activeLineGutter")
+            ].map((element) => element.textContent);
+            editor = build();
+            editor.loadText("one\ntwo\nthree");
+            editor.dispatch({ selection: { anchor: editor.state.doc.line(2).from } });
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
+
+            editor.setLineNumbers(false);
+            expect(editor.dom.querySelector(".cm-activeLineGutter")).toBeNull();
+            editor.setLineNumbers(true);
+            expect(activeNumbers(editor)).toEqual([ "2" ]);
         });
 
         it("blends an inset gutter into the code while the line numbers are off", async () => {

@@ -1,6 +1,5 @@
-import html from "html";
-
 import { escapeHtml } from "../../utils/index";
+import { formatHtml } from "../format_html.js";
 import { ZipExportProvider, ZipExportProviderData } from "./abstract_provider.js";
 import { NoteMeta } from "../../../meta";
 
@@ -71,16 +70,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
 </html>`;
             }
 
-            // Rewrite before pretty-printing: `html.prettyPrint` wraps at 70 columns and counts
-            // attribute text toward that budget, so printing first would place line breaks against
-            // hrefs that `rewriteFn` is about to replace. The same note then exports different
-            // line breaks depending on whether the editor last wrote a link as a full note path or
-            // an import wrote it as a bare ID.
-            content = this.rewriteFn(content, noteMeta);
-            if (content.length < 100_000) {
-                content = html.prettyPrint(content, { indent_size: 2 });
-            }
-            return content;
+            return formatHtml(this.rewriteFn(content, noteMeta));
         }
         return content;
 
@@ -138,9 +128,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
         <ul>${this.#saveNavigationInner(rootMeta, rootMeta)}</ul>
     </body>
     </html>`;
-        const prettyHtml = fullHtml.length < 100_000 ? html.prettyPrint(fullHtml, { indent_size: 2 }) : fullHtml;
-
-        this.archive.append(prettyHtml, { name: navigationMeta.dataFileName });
+        this.archive.append(formatHtml(fullHtml), { name: navigationMeta.dataFileName });
     }
 
     #saveIndex(rootMeta: NoteMeta, indexMeta: NoteMeta) {

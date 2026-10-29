@@ -730,6 +730,12 @@ describe("ContentEmbed", () => {
         expect(isActive()).toBe(true);
     });
 
+    it("leaves an extended code block without a backdrop, so its code takes the first click", () => {
+        renderBox({ title: undefined, notePath: undefined, contentType: "extendedCodeBlock" });
+        expect(contentBox().classList.contains("type-extendedCodeBlock")).toBe(true);
+        expect(container.querySelector(".include-note-backdrop")).toBeNull();
+    });
+
     it("runs the window shortcuts from its content, whose keys the editor keeps to itself", async () => {
         renderBox();
         const box = contentBox();

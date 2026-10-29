@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getMarkdownNameFromCKEditorLanguage, getMimeTypeFromFileName, getMimeTypeFromMarkdownName,
-    MIME_TYPE_AUTO, MIME_TYPES_DICT,
+    getMarkdownNameFromCKEditorLanguage, getMimeTypeFromCKEditorLanguage, getMimeTypeFromFileName,
+    getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, MIME_TYPES_DICT,
     normalizeMimeTypeForCKEditor, resolveEnabledMimeTypes, shouldSyntaxHighlight
 } from "./mime_type.js";
 
@@ -95,6 +95,22 @@ describe("getMimeTypeFromMarkdownName", () => {
         const first = getMimeTypeFromMarkdownName("css");
         const second = getMimeTypeFromMarkdownName("css");
         expect(second).toBe(first);
+    });
+});
+
+describe("getMimeTypeFromCKEditorLanguage", () => {
+    it("returns the MIME type of a code block language, for every MIME type", () => {
+        expect(getMimeTypeFromCKEditorLanguage("text-x-python")).toBe("text/x-python");
+        expect(getMimeTypeFromCKEditorLanguage("text-x-c-src")).toBe("text/x-c++src");
+        expect(getMimeTypeFromCKEditorLanguage("text-plain")).toBe("text/plain");
+        for (const { mime } of MIME_TYPES_DICT) {
+            expect(getMimeTypeFromCKEditorLanguage(normalizeMimeTypeForCKEditor(mime))).toBe(mime);
+        }
+    });
+
+    it("returns undefined for an unknown language and for auto-detection", () => {
+        expect(getMimeTypeFromCKEditorLanguage("text-x-not-a-language")).toBeUndefined();
+        expect(getMimeTypeFromCKEditorLanguage(MIME_TYPE_AUTO)).toBeUndefined();
     });
 });
 
