@@ -264,14 +264,11 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, onEditSlide, 
             setRevealApi(api);
             setApi(api);
             rewireLinks(container, api);
-            setViewportSize(container, api);
         });
 
         // Reveal.js listens only to window resizes, not to the note pane changing size.
         const resizeObserver = new ResizeObserver(() => {
-            if (!api.isReady()) return;
-            api.layout();
-            setViewportSize(container, api);
+            if (api.isReady()) api.layout();
         });
         resizeObserver.observe(container);
 
@@ -432,20 +429,6 @@ function measureOverflow(content: HTMLElement) {
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     if (!slide) return;
     return slide.dataset.noteId;
-}
-
-/**
- * Sets `--viewport-width` and `--viewport-height` on the `.reveal` element to its size in slide pixels.
- * Reveal.js fits the slide inside a margin and rounds the scale, so this is what a `<webview>` takes to
- * cover the whole viewport, as a background iframe does.
- */
-export function setViewportSize(container: HTMLElement, api: Pick<RevealApi, "getScale">) {
-    const scale = api.getScale();
-    if (!scale) return;
-    // `offsetWidth` and `offsetHeight` round to whole pixels, which can leave a sub-pixel seam at the edges.
-    const { width, height } = container.getBoundingClientRect();
-    container.style.setProperty("--viewport-width", `${width / scale}px`);
-    container.style.setProperty("--viewport-height", `${height / scale}px`);
 }
 
 function rewireLinks(container: HTMLElement, api: RevealApi) {

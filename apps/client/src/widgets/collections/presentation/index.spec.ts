@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createFitObserver, fitSlideContent, setViewportSize } from "./index";
+import { createFitObserver, fitSlideContent } from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -32,24 +32,6 @@ describe("fitSlideContent", () => {
         fitSlideContent(content);
         expect(Number(content.style.zoom)).toBeCloseTo(0.5);
         expect(Number(content.style.zoom) + 0.5).toBeLessThanOrEqual(1);
-    });
-});
-
-describe("setViewportSize", () => {
-    it("sizes the viewport in slide pixels from the scale that Reveal.js applied", () => {
-        const container = document.createElement("div");
-        // offsetHeight would round this to 619.
-        container.getBoundingClientRect = () => ({ width: 1100, height: 618.75 }) as DOMRect;
-
-        // 1100px less the 4% margin gives a scale of 0.825, which Reveal.js rounds to 0.83.
-        setViewportSize(container, { getScale: () => 0.83 });
-        expect(parseFloat(container.style.getPropertyValue("--viewport-width"))).toBeCloseTo(1100 / 0.83);
-        expect(parseFloat(container.style.getPropertyValue("--viewport-height"))).toBeCloseTo(618.75 / 0.83);
-
-        // Before the first layout there is no scale yet, and the CSS fallbacks stay.
-        const unscaled = document.createElement("div");
-        setViewportSize(unscaled, { getScale: () => 0 });
-        expect(unscaled.style.getPropertyValue("--viewport-width")).toBe("");
     });
 });
 
