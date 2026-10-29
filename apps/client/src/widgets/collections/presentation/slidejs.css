@@ -112,7 +112,7 @@ footer.file-footer {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: var(--viewport-width, 100%);
-    height: var(--viewport-height, 100cqh);
+    width: calc(var(--viewport-width, 100%) + 2px);
+    height: calc(var(--viewport-height, 100cqh) + 2px);
     transform: translate(-50%, -50%);
 }

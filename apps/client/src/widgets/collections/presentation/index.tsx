@@ -343,8 +343,10 @@ function getNoteIdFromSlide(slide: HTMLElement | undefined) {
 export function setViewportSize(container: HTMLElement, api: Pick<RevealApi, "getScale">) {
     const scale = api.getScale();
     if (!scale) return;
-    container.style.setProperty("--viewport-width", `${container.offsetWidth / scale}px`);
-    container.style.setProperty("--viewport-height", `${container.offsetHeight / scale}px`);
+    // `offsetWidth` and `offsetHeight` round to whole pixels, which can leave a sub-pixel seam at the edges.
+    const { width, height } = container.getBoundingClientRect();
+    container.style.setProperty("--viewport-width", `${width / scale}px`);
+    container.style.setProperty("--viewport-height", `${height / scale}px`);
 }
 
 function rewireLinks(container: HTMLElement, api: RevealApi) {

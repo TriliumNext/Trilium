@@ -38,8 +38,8 @@ describe("fitSlideContent", () => {
 describe("setViewportSize", () => {
     it("sizes the viewport in slide pixels from the scale that Reveal.js applied", () => {
         const container = document.createElement("div");
-        Object.defineProperty(container, "offsetWidth", { value: 1100 });
-        Object.defineProperty(container, "offsetHeight", { value: 618.75 });
+        // offsetHeight would round this to 619.
+        container.getBoundingClientRect = () => ({ width: 1100, height: 618.75 }) as DOMRect;
 
         // 1100px less the 4% margin gives a scale of 0.825, which Reveal.js rounds to 0.83.
         setViewportSize(container, { getScale: () => 0.83 });
