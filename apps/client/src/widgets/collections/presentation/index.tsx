@@ -180,22 +180,39 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
                 return true;
             },
         });
+        const container = containerRef.current;
+        const fit = () => {
+            fitSlides(container);
+            if (api.isReady()) api.layout();
+        };
+        const fitLoadedImage = (e: Event) => {
+            const content = (e.target as HTMLElement).closest<HTMLElement>(".slide-content");
+            if (!content) return;
+            fitSlideContent(content);
+            if (api.isReady()) api.layout();
+        };
+
+        // Reveal.js shows only the slides near the current one, so the others are fitted once they appear.
+        api.on("ready", fit);
+        api.on("slidechanged", fit);
+        api.on("overviewshown", fit);
+        container.addEventListener("load", fitLoadedImage, true);
+        document.fonts.ready.then(fit);
+
         api.initialize().then(() => {
             setRevealApi(api);
             setApi(api);
-
-            if (containerRef.current) {
-                rewireLinks(containerRef.current, api);
-            }
+            rewireLinks(container, api);
         });
 
         // Reveal.js listens only to window resizes, not to the note pane changing size.
         const resizeObserver = new ResizeObserver(() => {
             if (api.isReady()) api.layout();
         });
-        resizeObserver.observe(containerRef.current);
+        resizeObserver.observe(container);
 
         return () => {
+            container.removeEventListener("load", fitLoadedImage, true);
             resizeObserver.disconnect();
             api.destroy();
             setRevealApi(undefined);
@@ -204,7 +221,10 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
     }, []);
 
     useEffect(() => {
-        revealApi?.sync();
+        if (!revealApi || !containerRef.current) return;
+        revealApi.sync();
+        fitSlides(containerRef.current);
+        revealApi.layout();
     }, [ presentation, revealApi ]);
 
     return (
@@ -235,9 +255,28 @@ function Slide({ slide }: { slide: PresentationSlideBaseModel }) {
             data-note-id={slide.noteId}
             data-background-color={slide.backgroundColor}
             data-background-gradient={slide.backgroundGradient}
-            dangerouslySetInnerHTML={slide.content}
-        />
+        >
+            <div className="slide-content" dangerouslySetInnerHTML={slide.content} />
+        </section>
     );
+}
+
+function fitSlides(container: HTMLElement) {
+    for (const content of container.querySelectorAll<HTMLElement>(".slide-content")) {
+        fitSlideContent(content);
+    }
+}
+
+/**
+ * Zooms out the content of a slide that is larger than the slide, so that it fits. A hidden slide measures
+ * as empty and keeps no zoom until it is fitted again.
+ */
+export function fitSlideContent(content: HTMLElement) {
+    content.style.zoom = "";
+    const scale = Math.min(1, SLIDE_WIDTH / content.scrollWidth, SLIDE_HEIGHT / content.scrollHeight);
+    if (scale < 1) {
+        content.style.zoom = String(scale);
+    }
 }
 
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {

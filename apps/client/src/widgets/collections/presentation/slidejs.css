@@ -14,6 +14,10 @@
     container-type: size;
 }
 
+.slide-content {
+    display: flow-root;
+}
+
 .reveal figure.image {
     margin: 0 auto;
 }

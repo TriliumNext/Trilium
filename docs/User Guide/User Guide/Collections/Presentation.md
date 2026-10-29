@@ -14,6 +14,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 *   Unlike traditional presentation software, slides can be laid out both horizontally and vertically (see below for more information).
 *   Direct children will be laid out horizontally and the children of those will be laid out vertically. Children deeper than two levels of nesting are ignored.
 *   Slides have a fixed 16:9 shape (1280×720). The preview in the note is a scaled-down copy of what is shown in full-screen, so content that fits in the preview fits when presenting. When the window or the screen has a different shape, the slide is centered with bars around it.
+*   A slide whose content is larger than the slide is zoomed out until it fits, text included. To keep the text large, split the content over several slides.
 
 ## Interaction and navigation
 
