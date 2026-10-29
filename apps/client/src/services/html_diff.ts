@@ -1,18 +1,6 @@
 /**
- * Marks up the word-level difference between two HTML fragments: the new fragment, with each
- * deleted run of text in a `<del>` and each inserted one in an `<ins>`. A run that replaces another
- * gets the class `diffmod` on both marks, a plain insertion `diffins` and a plain deletion `diffdel`.
- *
- * It follows htmldiff (and its `htmldiff-js` port): the fragments are split into words, tags,
- * whitespace and punctuation, and aligned on the longest common run of those, then recursively on
- * the longest runs on either side of it. Aligning on long runs rather than on the shortest edit
- * keeps a reworded sentence readable, where a minimal diff would match every "a" and "the" in it;
- * {@link mergeShortUnchangedRuns} then folds what short matches remain into the changes around them.
- *
- * Tags are compared without their attributes, so a changed attribute alone is not marked; an
- * `<img>` counts as a word, attributes included, so a changed image is. A deleted formatting tag
- * (`<strong>`, `<em>`, …) is dropped from the output, which shows the formatting the new fragment
- * has.
+ * Returns `newHtml` with the words changed since `oldHtml` marked: deleted text in `<del>` and
+ * inserted text in `<ins>`, of class `diffmod` for a replacement, else `diffdel` or `diffins`.
  */
 export function diffHtml(oldHtml: string, newHtml: string): string {
     if (oldHtml === newHtml) {
@@ -67,11 +55,8 @@ interface Match {
 type Segment = { unchanged: string[] } | { deleted: string[]; inserted: string[] };
 
 /**
- * Folds each unchanged run between two changes into them when its text is no longer than the
- * larger side of the change on either side of it, which is the semantic cleanup of Google's
- * diff-match-patch. Without it a reworded phrase is aligned on the spaces and short words it
- * shares, and reads as the old and the new phrase interleaved a word at a time. A run that holds
- * a tag stays, so that no tag is emitted on both sides of a change.
+ * Folds each tagless unchanged run into the changes around it when its text is no longer than
+ * either of them, so a reworded phrase is marked whole rather than word by word.
  */
 function mergeShortUnchangedRuns(segments: Segment[]) {
     const merged = [ ...segments ];
