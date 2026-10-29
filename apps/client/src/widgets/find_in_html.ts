@@ -1,9 +1,8 @@
 // ck-find-result and ck-find-result_selected are the styles ck-editor
 // uses for highlighting matches, use the same one on CodeMirror
 // for consistency
-import type Mark from "mark.js";
-
 import { revealElement } from "../services/collapsible.js";
+import { highlightRegExp, highlightTerms, removeHighlights } from "../services/highlight_matches.js";
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
 import MergedFind, {
@@ -90,7 +89,6 @@ export default class FindInHtml {
 /** Searches rendered content, which it cannot change, by marking up its matches. */
 export class HtmlFindTarget implements FindTarget {
 
-    private mark: Mark | null = null;
     protected matches: HTMLElement[] = [];
     /** The elements that wrap the matches and the extra tokens, which `unmark()` removes. */
     private markElements: HTMLElement[] = [];
@@ -100,7 +98,6 @@ export class HtmlFindTarget implements FindTarget {
     constructor(readonly root: HTMLElement, private readonly exclude: string[] = []) {}
 
     async find(term: string, { matchCase, wholeWord }: FindOptions) {
-        const mark = await this.getMark();
         this.unmark();
         if (!term) {
             return 0;
@@ -111,13 +108,11 @@ export class HtmlFindTarget implements FindTarget {
             wholeWordChar + utils.escapeRegExp(term) + wholeWordChar,
             matchCase ? "g" : "gi"
         );
-        await new Promise<void>((done) => mark.markRegExp(regExp, {
-            element: "span",
+        this.matches = highlightRegExp(this.root, regExp, {
             className: FIND_RESULT_CSS_CLASSNAME,
-            exclude: this.exclude,
-            each: (element) => this.addMarkElement(element, this.matches),
-            done: () => done()
-        }));
+            exclude: this.exclude
+        });
+        this.markElements.push(...this.matches);
         return this.matches.length;
     }
 
@@ -159,49 +154,21 @@ export class HtmlFindTarget implements FindTarget {
 
     /**
      * Highlights `tokens` with the muted secondary style, which the primary matches keep
-     * cycling through. mark.js escapes each keyword, so a regex metacharacter cannot inject.
+     * cycling through. The tokens match literally, so a regex metacharacter cannot inject.
      */
     async highlightExtraTokens(tokens: string[]) {
-        const cleaned = tokens.filter((token) => token.length > 0);
-        if (!this.mark || cleaned.length === 0) {
-            return;
-        }
-
-        const { mark } = this;
-        await new Promise<void>((done) => mark.mark(cleaned, {
-            element: "span",
+        this.markElements.push(...highlightTerms(this.root, tokens, {
             className: FIND_RESULT_SECONDARY_CSS_CLASSNAME,
-            separateWordSearch: false,
-            exclude: this.exclude,
-            each: (element) => this.addMarkElement(element),
-            done: () => done()
+            exclude: this.exclude
         }));
     }
 
-    private async getMark() {
-        this.mark ??= new (await import("mark.js")).default(this.root);
-        return this.mark;
-    }
-
-    private addMarkElement(element: Element, list?: HTMLElement[]) {
-        if (element instanceof HTMLElement) {
-            this.markElements.push(element);
-            list?.push(element);
-        }
-    }
-
     /**
-     * Unwraps the elements of this target only. `Mark.unmark()` would remove the marks of every
-     * target in its root, such as those of the embeds in a note.
+     * Unwraps the elements of this target only, not those of the other targets in its root, such
+     * as the embeds in a note.
      */
     private unmark() {
-        for (const element of this.markElements) {
-            const parent = element.parentNode;
-            if (!parent) continue;
-
-            element.replaceWith(...element.childNodes);
-            parent.normalize();
-        }
+        removeHighlights(this.markElements);
         this.markElements = [];
         this.matches = [];
         this.current = null;

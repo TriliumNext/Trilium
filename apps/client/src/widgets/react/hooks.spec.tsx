@@ -27,39 +27,6 @@ import {
     useWhenShown
 } from "./hooks";
 
-/**
- * mark.js delegating to the real implementation, so marking still works, while recording the calls
- * `unmark()` receives — its DOM effect cannot be observed under happy-dom, where it removes nothing.
- */
-const markSpies = vi.hoisted(() => ({ unmark: vi.fn() }));
-
-vi.mock("mark.js", async (importOriginal) => {
-    const actual = await importOriginal<{ default: new (ctx: unknown) => Record<string, (...args: unknown[]) => unknown> }>();
-
-    return {
-        default: class {
-            private inner: Record<string, (...args: unknown[]) => unknown>;
-
-            constructor(ctx: unknown) {
-                this.inner = new actual.default(ctx);
-            }
-
-            mark(...args: unknown[]) {
-                return this.inner.mark(...args);
-            }
-
-            markRegExp(...args: unknown[]) {
-                return this.inner.markRegExp(...args);
-            }
-
-            unmark(...args: unknown[]) {
-                markSpies.unmark(...args);
-                return this.inner.unmark(...args);
-            }
-        }
-    };
-});
-
 let currentPhase: DelayedVisibilityPhase | undefined;
 
 function Probe({ active }: { active: boolean }) {
@@ -669,7 +636,7 @@ describe("useImperativeSearchHighlighlighting", () => {
         return null;
     }
 
-    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    /** Mounts a fresh hook instance and applies it to `target`. */
     function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
         target.innerHTML = html;
         render(null, container);
@@ -687,8 +654,8 @@ describe("useImperativeSearchHighlighlighting", () => {
 
     /**
      * Re-renders the *same* hook instance with new tokens, unlike {@link highlight}, which remounts.
-     * Keeping the instance alive is the point: its `Mark` has to survive into the next call for the
-     * clear-on-empty behaviour to be observable at all.
+     * Keeping the instance alive is the point: its highlights have to survive into the next call
+     * for the clear-on-empty behaviour to be observable at all.
      */
     async function remount(tokens: (string | HighlightedTokenInfo)[] | null | undefined) {
         await act(async () => {
@@ -709,6 +676,31 @@ describe("useImperativeSearchHighlighlighting", () => {
         expect(markedTexts(el)).toEqual(["ktorý"]);
     });
 
+    it("wraps an unaccented match when searching an accented token", () => {
+        const el = highlight(["ktorý"], "<p>Aky ktory</p>");
+        expect(markedTexts(el)).toEqual(["ktory"]);
+    });
+
+    it("keeps a decomposed accent inside the match it belongs to", () => {
+        const el = highlight(["ktory"], "<p>ktorý a</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
+    });
+
+    it("matches a multi-word token as one phrase across any whitespace, ignoring case", () => {
+        const el = highlight(["Foo bar"], "<p>foo   bar foo baz</p>");
+        expect(markedTexts(el)).toEqual(["foo   bar"]);
+    });
+
+    it("leaves the content of script and style elements alone", () => {
+        const el = highlight(["needle"], "<p>needle</p><style>.needle {}</style>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+    });
+
+    it("caps the matches of a regex token", () => {
+        const el = highlight([{ token: "a", type: "regex" }], `<p>${"a".repeat(600)}</p>`);
+        expect(markedTexts(el)).toHaveLength(500);
+    });
+
     it("wraps a CJK substring match inside a larger word", () => {
         const el = highlight(["笔记"], "<p>我的笔记本</p>");
         expect(markedTexts(el)).toEqual(["笔记"]);
@@ -717,31 +709,25 @@ describe("useImperativeSearchHighlighlighting", () => {
     it("clears previous highlights once the tokens are cleared", async () => {
         // Callers that keep the same element and merely drop the tokens — emptying a filter box —
         // rely on this, or the old highlights stay in the DOM for good.
-        //
-        // The removal itself is asserted through mark.js rather than the DOM: its `unmark()` is a
-        // no-op under happy-dom (it removes nothing even from a fresh instance), so only the call
-        // can be observed here.
         await remount([ "needle" ]);
         const el = content("<p>a needle here</p>");
         liveHighlight?.(el);
-        expect(el.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
-        markSpies.unmark.mockClear();
+        expect(markedTexts(el)).toEqual([ "needle" ]);
 
         await remount(null);
         liveHighlight?.(el);
 
-        expect(markSpies.unmark).toHaveBeenCalled();
+        expect(el.innerHTML).toBe("<p>a needle here</p>");
+        expect(el.querySelector("p")?.childNodes).toHaveLength(1);
         el.remove();
     });
 
     it("does not touch an element that was never highlighted", async () => {
         await remount(null);
         const el = content("<p>a needle here</p>");
-        markSpies.unmark.mockClear();
 
         liveHighlight?.(el);
 
-        expect(markSpies.unmark).not.toHaveBeenCalled();
         expect(el.innerHTML).toBe("<p>a needle here</p>");
         el.remove();
     });
@@ -754,6 +740,11 @@ describe("useImperativeSearchHighlighlighting", () => {
     it("skips an invalid regex token without throwing", () => {
         expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
         expect(markedTexts(target)).toEqual([]);
+    });
+
+    it("wraps only the non-empty matches of a regex that can match nothing", () => {
+        const el = highlight([{ token: "o*", type: "regex" }], "<p>foo bar</p>");
+        expect(markedTexts(el)).toEqual(["oo"]);
     });
 
     it("still highlights when given legacy string[] input", () => {

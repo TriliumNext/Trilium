@@ -309,9 +309,6 @@ importers:
       maplibre-gl:
         specifier: 6.16.0
         version: 6.16.0
-      mark.js:
-        specifier: 8.11.1
-        version: 8.11.1
       marked:
         specifier: 18.1.1
         version: 18.1.1
@@ -373,9 +370,6 @@ importers:
       '@types/jquery':
         specifier: 4.0.1
         version: 4.0.1
-      '@types/mark.js':
-        specifier: 8.11.12
-        version: 8.11.12
       '@types/tabulator-tables':
         specifier: 6.3.6
         version: 6.3.6
@@ -947,9 +941,6 @@ importers:
       maplibre-gl:
         specifier: 6.16.0
         version: 6.16.0
-      mark.js:
-        specifier: 8.11.1
-        version: 8.11.1
       marked:
         specifier: 18.1.1
         version: 18.1.1
@@ -1002,9 +993,6 @@ importers:
       '@types/jquery':
         specifier: 4.0.1
         version: 4.0.1
-      '@types/mark.js':
-        specifier: 8.11.12
-        version: 8.11.12
       '@types/reveal.js':
         specifier: 5.2.2
         version: 5.2.2
@@ -4895,9 +4883,6 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
-  '@types/mark.js@8.11.12':
-    resolution: {integrity: sha512-244ZnaIBpz4c6xutliAnYVZp6xJlmC569jZqnR3ElO1Y01ooYASSVQEqpd2x0A2UfrgVMs5V9/9tUAdZaDMytQ==}
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -8940,9 +8925,6 @@ packages:
   maplibre-gl@6.16.0:
     resolution: {integrity: sha512-gApO66EMtoDZuio680RUBvskR7ahFd/NNhLN4tBAs+Y7FeT4gQV8zVFgYVMRmFxQznOEzecW19w6xOd9XjZjiA==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
-
-  mark.js@8.11.1:
-    resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
   markdown-it@14.3.3:
     resolution: {integrity: sha512-L//tDAkjTjJCU6pBUSBTgs3Kg4InVaZuUZog/b6V12UKhcDQ7S78877ibbCanRExwPuYP1CZD7Gd2dxSy1GXRg==}
@@ -15906,10 +15888,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/mark.js@8.11.12':
-    dependencies:
-      '@types/jquery': 4.0.1
-
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
@@ -20957,8 +20935,6 @@ snapshots:
       potpack: 2.1.0
       quickselect: 3.0.0
       tinyqueue: 3.0.0
-
-  mark.js@8.11.1: {}
 
   markdown-it@14.3.3:
     dependencies:

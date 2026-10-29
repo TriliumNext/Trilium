@@ -567,7 +567,7 @@ body.mobile .board-view-container .board-add-column {
   display: block;
   padding-inline-start: calc(var(--card-title-inset) - var(--card-padding));
 
-  /* The spans mark.js wraps a filter's matched tokens in. Matches the search result cards. */
+  /* The spans `highlightTerms()` wraps a filter's matched tokens in. Matches the search result cards. */
   .ck-find-result {
     background: var(--note-list-view-search-result-highlight-background);
     color: var(--note-list-view-search-result-highlight-color);

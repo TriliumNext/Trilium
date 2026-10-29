@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 /**
- * Builds a FindInHtml wired to a real (happy-dom) content element, so mark.js can mutate it.
+ * Builds a FindInHtml wired to a real (happy-dom) content element, so the find can mutate it.
  */
 function setup(html: string) {
     const container = document.createElement("div");
@@ -85,7 +85,7 @@ describe("FindInHtml", () => {
         expect(container.innerHTML).toBe("<p>alpha beta gamma</p>");
     });
 
-    it("highlightExtraTokens is a no-op before a find has run (no mark instance yet)", async () => {
+    it("highlightExtraTokens is a no-op before a find has run", async () => {
         const { finder, container } = setup("<p>alpha beta</p>");
 
         await finder.highlightExtraTokens([ "beta" ]);

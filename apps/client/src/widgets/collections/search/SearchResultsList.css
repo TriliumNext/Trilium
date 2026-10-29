@@ -133,7 +133,7 @@
     }
 
     /* Style the server-injected <b> highlights (snippet + attribute badges) and the client-side
-       mark.js .ck-find-result spans (title) identically. */
+       .ck-find-result spans (title) identically. */
     .search-result-card-title .ck-find-result,
     .search-result-card-snippet b,
     .search-result-card-badges b {

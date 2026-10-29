@@ -40,7 +40,7 @@ export function getHtml(html: HTMLElementLike) {
 }
 
 /**
- * Renders plain text with search-match highlighting. The text is set imperatively so mark.js,
+ * Renders plain text with search-match highlighting. The text is set imperatively so the highlighting,
  * which injects `.ck-find-result` spans around matches, does not fight Preact's reconciliation
  * of a controlled text child.
  */
