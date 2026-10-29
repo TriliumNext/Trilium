@@ -41,7 +41,7 @@ Adding the relation several times places the new note in every target, as <a cl
 
 The default parent is used whenever a note is created from the template through the _Choose note type_ dialog:
 
-*   Via `@`\-completion in a <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note
+*   Via the _Create note_ option of the `@`\-completion in a <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note
 *   Via the _Create note_ or _Create child note_ options of the note search (new tab or <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>), but only if the dialog's _Location_ field is left empty.
 
 Creating an instance note from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> context menu (_Insert child note_, _Insert note after_) still creates it at the chosen place.

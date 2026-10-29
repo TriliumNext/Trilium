@@ -27,6 +27,7 @@ import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
 import diffAiResponse from "./ai_diff.js";
+import type { ChildNoteParent } from "./child_note.js";
 import { createColorMenuHost } from "./color_menu.js";
 import { buildFontColorConfig, buildTableColorConfig } from "./color_palette.js";
 import { createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view.js";
@@ -48,12 +49,16 @@ export interface BuildEditorOptions {
     contentLanguage: string | null;
     templates: SnippetDefinition[];
     /**
-     * Names the note the editor is open on, for the AI assistant to say where a run is writing and
-     * for the `@` list to create a child note under.
+     * Names the note the editor is open on, for the AI assistant to say where a run is writing.
      * A getter rather than the note itself: switching notes reuses the editor, so anything captured
      * here would name the note that happened to be open when it was built.
      */
     getNoteLocation?: AiNoteLocationProvider;
+    /**
+     * The note the editor is open on, for the `@` list to create a child note under. A getter for
+     * the same reason as `getNoteLocation`.
+     */
+    getChildNoteParent?: () => ChildNoteParent | undefined;
     /** The ID of the note the editor is open on. A getter for the same reason as `getNoteLocation`. */
     getNoteId?: () => string | undefined;
     /** The ID of the component that hosts the editor, which changes the editor makes are sent as. */
@@ -386,7 +391,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 allowSpaces: true,
                 list: () => createNoteMentionList({
                     allowCreatingNotes: true,
-                    getParentNotePath: () => opts.getNoteLocation?.()?.notePath
+                    getChildNoteParent: opts.getChildNoteParent
                 })
             }
         ] : []

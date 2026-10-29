@@ -296,6 +296,12 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
                 contentLanguage: contentLanguage ?? null,
                 templates: templatesRef.current,
                 getNoteLocation: () => noteLocationRef.current,
+                getChildNoteParent: () => {
+                    const parentNote = noteRef.current;
+                    const parentNotePath = noteLocationRef.current?.notePath;
+                    if (!parentNote || !parentNotePath) return undefined;
+                    return { notePath: parentNotePath, isProtected: parentNote.isProtected, ntxId };
+                },
                 getNoteId: () => noteRef.current?.noteId,
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),

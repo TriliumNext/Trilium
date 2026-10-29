@@ -452,7 +452,10 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
  * creation row: `onPick` then receives a promise, settling on `undefined` where the creation is
  * canceled.
  */
-export function NoteMentionList({ query, anchor, allowCreatingNotes, parentNotePath, preselect = true, onPick, handleRef, elementRef, onActiveDescendant }: {
+export function NoteMentionList({
+    query, anchor, allowCreatingNotes, parentNotePath, preselect = true, onPick, onPickChildNote,
+    handleRef, elementRef, onActiveDescendant
+}: {
     query: string;
     anchor: PopupProps["anchor"];
     allowCreatingNotes?: boolean;
@@ -461,6 +464,11 @@ export function NoteMentionList({ query, anchor, allowCreatingNotes, parentNoteP
     /** Opens the list with an entry highlighted, so that Enter takes it. */
     preselect?: boolean;
     onPick(notePath: string | Promise<string | undefined>): void;
+    /**
+     * Takes the pick of the row creating a child note, with the title typed, in place of `onPick`,
+     * for a host that creates the note itself.
+     */
+    onPickChildNote?(title: string): void;
     handleRef: RefObject<AutocompleteListHandle | null>;
     elementRef?: PopupProps["elementRef"];
     /** Called with the id of the highlighted entry's element, or `null` while none is highlighted. */
@@ -476,7 +484,9 @@ export function NoteMentionList({ query, anchor, allowCreatingNotes, parentNoteP
         query,
         source,
         onPick: (suggestion: Suggestion) => {
-            if (suggestion.action === "create-note" || suggestion.action === "create-child-note") {
+            if (suggestion.action === "create-child-note" && onPickChildNote) {
+                onPickChildNote(suggestion.noteTitle ?? "");
+            } else if (rowGroup(suggestion) === "create") {
                 onPick(createNoteFromSuggestion(suggestion, parentNotePath));
             } else if (suggestion.notePath) {
                 onPick(suggestion.notePath);

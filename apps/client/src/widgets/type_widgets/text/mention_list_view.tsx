@@ -4,6 +4,7 @@ import type { ComponentChildren } from "preact";
 
 import { AutocompleteList } from "../../react/FormAutocomplete";
 import { type CommandEntry, CommandMentionList, createHostedList, NoteMentionList } from "../../react/NoteAutocomplete";
+import { type ChildNoteParent, createChildNote, openChildNote } from "./child_note";
 
 /** The editor a list for a plugin's marker is created for. */
 type HostEditor = Parameters<NonNullable<SlashCommandConfig["list"]>>[0];
@@ -12,7 +13,9 @@ type HostEditor = Parameters<NonNullable<SlashCommandConfig["list"]>>[0];
  * Lists the notes for the query typed after `@` as the note autocomplete does, for the editor config's
  * `mention.hostedFeeds`, and mentions the note picked as a reference link.
  */
-export function createNoteMentionList({ allowCreatingNotes, preselect, getParentNotePath }: {
+export function createNoteMentionList({
+    allowCreatingNotes, preselect, getParentNotePath, getChildNoteParent
+}: {
     allowCreatingNotes?: boolean;
     preselect?: boolean;
     /**
@@ -20,19 +23,37 @@ export function createNoteMentionList({ allowCreatingNotes, preselect, getParent
      * notes reuses the editor.
      */
     getParentNotePath?(): string | null | undefined;
+    /**
+     * The note the editor is open on, in place of `getParentNotePath`: the child note row then
+     * creates the note without asking for its type, and opens it in Quick edit once linked.
+     */
+    getChildNoteParent?(): ChildNoteParent | undefined;
 } = {}): MentionHostedList {
-    return createHostedList<MentionHostedListState>((state, list) => (
-        <NoteMentionList
-            {...list}
-            query={state.query}
-            allowCreatingNotes={allowCreatingNotes}
-            parentNotePath={getParentNotePath?.()}
-            preselect={preselect}
-            onPick={(notePath) => state.commit(typeof notePath === "string"
-                ? toMention(notePath)
-                : notePath.then((path) => path ? toMention(path) : undefined))}
-        />
-    ));
+    return createHostedList<MentionHostedListState>((state, list) => {
+        const childNoteParent = getChildNoteParent?.();
+
+        return (
+            <NoteMentionList
+                {...list}
+                query={state.query}
+                allowCreatingNotes={allowCreatingNotes}
+                parentNotePath={getParentNotePath?.()}
+                preselect={preselect}
+                onPick={(notePath) => state.commit(typeof notePath === "string"
+                    ? toMention(notePath)
+                    : notePath.then(toMentionIfCreated))}
+                onPickChildNote={childNoteParent && ((title) => {
+                    const mention = createChildNote(childNoteParent, title)
+                        .then(toMentionIfCreated);
+                    state.commit(mention);
+                    // Runs after the commit inserts the link, which focuses the editor.
+                    void mention.then((created) => created && openChildNote(
+                        created.notePath, childNoteParent, { selectTitle: false }
+                    ));
+                })}
+            />
+        );
+    });
 }
 
 /**
@@ -132,4 +153,8 @@ function toEmojiEntry(suggestion: EmojiSuggestion): EmojiEntry {
 /** The mention `MentionCustomization` turns into a reference link to `notePath`. */
 function toMention(notePath: string) {
     return { id: `@${notePath}`, notePath };
+}
+
+function toMentionIfCreated(notePath: string | undefined) {
+    return notePath ? toMention(notePath) : undefined;
 }

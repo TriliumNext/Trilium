@@ -13,6 +13,13 @@ vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
     createNoteFromSuggestion
 }));
 
+const { createChildNote, openChildNote } = vi.hoisted(() => ({
+    createChildNote: vi.fn<(parent: object, title?: string) => Promise<string | undefined>>(),
+    openChildNote: vi.fn()
+}));
+
+vi.mock("./child_note", () => ({ createChildNote, openChildNote }));
+
 import { createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view";
 
 describe("createNoteMentionList", () => {
@@ -82,6 +89,51 @@ describe("createNoteMentionList", () => {
         list.handleKeyDown(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
         expect(createNoteFromSuggestion).toHaveBeenLastCalledWith(childRow, "root/second");
         list.destroy?.();
+    });
+
+    it("creates a child note without asking its type, and opens it once linked", async () => {
+        const childRow = {
+            action: "create-child-note", noteTitle: "al", highlightedNotePathTitle: "Create child"
+        };
+        getNoteSuggestions.mockResolvedValue([ childRow ] as never);
+        createNoteFromSuggestion.mockClear();
+        createChildNote.mockResolvedValueOnce("root/edited/al").mockResolvedValueOnce(undefined);
+        const parent = { notePath: "root/edited", isProtected: false, ntxId: "ntx" };
+        const order: string[] = [];
+        openChildNote.mockImplementation(() => order.push("open"));
+        const pick = async () => {
+            const list = createNoteMentionList({
+                allowCreatingNotes: true, getChildNoteParent: () => parent
+            });
+            // As the editor does, which inserts the link once the promised mention settles.
+            const commit = vi.fn<MentionHostedListState["commit"]>((item) => {
+                void Promise.resolve(item).then((mention) => order.push(mention ? "link" : "none"));
+            });
+            await act(async () => list.show({
+                query: "al", caretRect: () => new DOMRect(10, 10, 1, 16), editable: null,
+                commit, setActiveDescendant: vi.fn()
+            }));
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            list.handleKeyDown(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            list.destroy?.();
+            return commit;
+        };
+
+        const commit = await pick();
+        expect(createChildNote).toHaveBeenLastCalledWith(parent, "al");
+        expect(createNoteFromSuggestion).not.toHaveBeenCalled();
+        expect(await commit.mock.calls[0]?.[0])
+            .toEqual({ id: "@root/edited/al", notePath: "root/edited/al" });
+        expect(openChildNote)
+            .toHaveBeenCalledExactlyOnceWith("root/edited/al", parent, { selectTitle: false });
+        expect(order).toEqual([ "link", "open" ]);
+
+        // Nothing is linked or opened where the note is not created.
+        order.length = 0;
+        await pick();
+        expect(order).toEqual([ "none" ]);
+        expect(openChildNote).toHaveBeenCalledOnce();
     });
 });
 

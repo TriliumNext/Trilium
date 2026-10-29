@@ -30,9 +30,9 @@ import {
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
 } from "../../react/hooks";
 import { setEditorNoteId } from "../../react/NoteStore";
-import { POPUP_EDITOR_NTX_ID } from "../../react/react_utils";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
+import { insertChildNote } from "./child_note";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
 import type { ContentEmbedHandlers } from "./config";
 import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
@@ -268,7 +268,7 @@ export default function EditableText({
             if (!editor || !parentNote || !parentNotePath) return;
 
             await insertChildNote(editor, {
-                parentNotePath,
+                notePath: parentNotePath,
                 isProtected: parentNote.isProtected,
                 ntxId
             });
@@ -594,33 +594,6 @@ export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>):
             api.addLink(notePath, linkTitle, externalLink);
         }
     };
-}
-
-/**
- * Creates an empty child note of `parentNotePath`, links to it at the selection of `editor`, and
- * opens it in the quick edit popup with its title selected. An editor in that popup opens it in the
- * nested popup, over the note being edited.
- *
- * Exported for testing.
- */
-export async function insertChildNote(editor: CKTextEditor, {
-    parentNotePath, isProtected, ntxId
-}: {
-    parentNotePath: string;
-    isProtected: boolean;
-    ntxId: string | null | undefined;
-}) {
-    const { note } = await note_create.createNote(parentNotePath, { activate: false, isProtected });
-    if (!note) return;
-
-    const notePath = `${parentNotePath}/${note.noteId}`;
-    editor.execute("referenceLink", { href: `#${notePath}` });
-    const command = ntxId?.startsWith(POPUP_EDITOR_NTX_ID) ? "openInNestedPopup" : "openInPopup";
-    void appContext.triggerCommand(command, {
-        noteIdOrPath: notePath,
-        showNoteTypeSwitcher: true,
-        selectTitle: true
-    });
 }
 
 /**
