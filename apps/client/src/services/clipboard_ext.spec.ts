@@ -63,6 +63,42 @@ describe("copyText", () => {
         expect(document.querySelector("textarea")).toBeNull();
     });
 
+    it("keeps the fallback textarea inside an open modal that traps focus", () => {
+        setClipboard(undefined);
+
+        document.body.innerHTML = `
+            <input class="quick-search">
+            <div class="modal show" tabindex="-1"><input class="first"><button class="copy">Copy</button></div>`;
+        const modal = document.querySelector<HTMLElement>(".modal");
+        const first = document.querySelector<HTMLInputElement>(".first");
+        const button = document.querySelector<HTMLButtonElement>(".copy");
+        if (!modal || !first || !button) throw new Error("fixture missing");
+        // Bootstrap's `FocusTrap` pulls focus that lands outside the modal back into it.
+        const trap = (e: FocusEvent) => {
+            if (!modal.contains(e.target as Node)) {
+                first.focus();
+            }
+        };
+        document.addEventListener("focusin", trap);
+        button.focus();
+
+        let copiedValue: string | undefined;
+        (document as unknown as { execCommand: () => boolean }).execCommand = () => {
+            const active = document.activeElement;
+            copiedValue = active instanceof HTMLTextAreaElement ? active.value : undefined;
+            return true;
+        };
+
+        try {
+            expect(copyText("in-modal")).toBe(true);
+        } finally {
+            document.removeEventListener("focusin", trap);
+        }
+        expect(copiedValue).toBe("in-modal");
+        expect(document.querySelector("textarea")).toBeNull();
+        expect(document.activeElement).toBe(button);
+    });
+
     it("returns false and warns when the fallback throws", () => {
         setClipboard(undefined);
 
