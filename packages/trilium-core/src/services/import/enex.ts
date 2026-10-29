@@ -1,6 +1,8 @@
 import type { AttributeType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
+import { captureContentJobEnv } from "../content_jobs/env.js";
+import { getContentJobExecutor } from "../content_jobs/executor.js";
 import * as cls from "../context.js";
 import * as utils from "../utils/index.js";
 import imageService from "../image.js";
@@ -11,8 +13,17 @@ import type TaskContext from "../task_context.js";
 import { escapeHtml, md5 } from "../utils/index.js";
 import { decodeBase64 } from "../utils/binary.js";
 import type { File } from "./common.js";
-import { convertEnexContent, type EnexTask, rewriteEvernoteLinks } from "./enex_converter.js";
+import { type EnexTask, rewriteEvernoteLinks } from "./enex_converter.js";
 import { sanitizeHtml } from "../sanitizer.js";
+
+/** A parsed `<note>` waiting for its content job and its save. */
+type ParsedNote = Pick<Partial<Note>, "title" | "content" | "attributes" | "resources" | "tasks" | "utcDateCreated" | "utcDateModified">;
+
+/** A parsed note and its running content job, or `null` when the note lacks a title or content. */
+interface QueuedNote {
+    parsedNote: ParsedNote;
+    convertedContent: Promise<string> | null;
+}
 
 /**
  * date format is e.g. 20181121T193703Z or 2013-04-14T16:19:00.000Z (Mac evernote, see #3496)
@@ -58,6 +69,9 @@ let resource: Resource;
 let task: EnexTask;
 
 async function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote): Promise<BNote> {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     // Imported dynamically so sax's module initialization is deferred to the first ENEX import
     // rather than running at server startup (enex.ts is otherwise in the eager route graph).
     const sax = (await import("sax")).default;
@@ -72,65 +86,12 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
         content: "",
         type: "text",
         mime: "text/html",
-        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+        isProtected
     }).note;
 
     // Root created; keep the imported notes in their ENEX order under an inherited #newNotesOnTop (the root
     // above still floats to the top of the target). See cls.setImportOrderPreserved.
     cls.setImportOrderPreserved(true);
-
-    function extractContent(content: string, tasks: EnexTask[] = []) {
-        const openingNoteIndex = content.indexOf("<en-note>");
-
-        if (openingNoteIndex !== -1) {
-            content = content.substr(openingNoteIndex + 9);
-        }
-
-        const closingNoteIndex = content.lastIndexOf("</en-note>");
-
-        if (closingNoteIndex !== -1) {
-            content = content.substr(0, closingNoteIndex);
-        }
-
-        content = content.trim();
-
-        // Replace OneNote converted checkboxes with unicode ballot box based
-        // on known hash of checkboxes for regular, p1, and p2 checkboxes
-        content = content.replace(
-            /<en-media alt="To Do( priority [12])?" hash="(74de5d3d1286f01bac98d32a09f601d9|4a19d3041585e11643e808d68dd3e72f|8e17580123099ac6515c3634b1f6f9a1)"( type="[a-z\/]*"| width="\d+"| height="\d+")*\/>/g,
-            "\u2610 "
-        );
-        content = content.replace(
-            /<en-media alt="To Do( priority [12])?" hash="(5069b775461e471a47ce04ace6e1c6ae|7912ee9cec35fc3dba49edb63a9ed158|3a05f4f006a6eaf2627dae5ed8b8013b)"( type="[a-z\/]*"| width="\d+"| height="\d+")*\/>/g,
-            "\u2611 "
-        );
-
-        // Rewrite Evernote's richer blocks (code/math/mermaid/callouts/toggles/checkboxes) and inline the
-        // note's tasks. Runs BEFORE the list workarounds below: those match on closing tags alone (e.g.
-        // `</div></li>`) and would corrupt the attribute-tagged `--en-todo` checkbox lists; the converter has
-        // already rewritten those into clean todo-lists. Also runs before sanitization, which would strip the
-        // `--en-*` style markers the conversion keys off.
-        content = convertEnexContent(content, tasks);
-
-        // workaround for https://github.com/ckeditor/ckeditor5-list/issues/116
-        content = content.replace(/<li>\s*<div>/g, "<li>");
-        content = content.replace(/<\/div>\s*<\/li>/g, "</li>");
-
-        // workaround for https://github.com/ckeditor/ckeditor5-list/issues/115
-        content = content.replace(/<ul>\s*<ul>/g, "<ul><li><ul>");
-        content = content.replace(/<\/li>\s*<ul>/g, "<ul>");
-        content = content.replace(/<\/ul>\s*<\/ul>/g, "</ul></li></ul>");
-        content = content.replace(/<\/ul>\s*<li>/g, "</ul></li><li>");
-
-        content = content.replace(/<ol>\s*<ol>/g, "<ol><li><ol>");
-        content = content.replace(/<\/li>\s*<ol>/g, "<ol>");
-        content = content.replace(/<\/ol>\s*<\/ol>/g, "</ol></li></ol>");
-        content = content.replace(/<\/ol>\s*<li>/g, "</ol></li><li>");
-
-        content = sanitizeHtml(content);
-
-        return content;
-    }
 
     const path: string[] = [];
 
@@ -266,15 +227,53 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
     const noteIdByTitle = new Map<string, string | null>();
     const createdNotes: { note: BNote; content: string; utcDateCreated?: string; utcDateModified?: string }[] = [];
 
-    function saveNote() {
-        // make a copy because stream continues with the next call and note gets overwritten
-        let { title, content, attributes, resources, tasks, utcDateCreated, utcDateModified } = note;
+    const contentJobs = getContentJobExecutor();
+    const contentEnv = captureContentJobEnv();
 
-        if (!title || !content) {
+    // Each parsed note's content job starts when the note is queued, so the jobs of queued notes
+    // run concurrently. The notes are saved one at a time, in document order, by a chain of
+    // promises: each waits for the previous save and for its own content job. The parser pauses
+    // while too many wait.
+    const highWater = (contentJobs.concurrency ?? 4) * 4;
+    const queuedNotes: QueuedNote[] = [];
+    let saving: Promise<void> = Promise.resolve();
+    let saveFailure: { error: unknown } | null = null;
+    let onNoteSaved: (() => void) | null = null;
+
+    function queueNote(parsedNote: ParsedNote) {
+        const { title, content, tasks } = parsedNote;
+        const convertedContent = title && content
+            ? contentJobs.run({
+                kind: "enexNoteContent", content, tasks: tasks ?? [], env: contentEnv
+            })
+            : null;
+        // The save chain awaits it; until then a rejection is not unhandled.
+        convertedContent?.catch(() => {});
+        queuedNotes.push({ parsedNote, convertedContent });
+
+        saving = saving.then(async () => {
+            const next = queuedNotes.shift();
+            try {
+                if (next && !saveFailure) {
+                    await saveNote(next);
+                }
+            } catch (error) {
+                saveFailure = { error };
+            } finally {
+                onNoteSaved?.();
+                onNoteSaved = null;
+            }
+        });
+    }
+
+    async function saveNote({ parsedNote, convertedContent }: QueuedNote) {
+        let { title, attributes, resources, utcDateCreated, utcDateModified } = parsedNote;
+
+        if (!title || !convertedContent) {
             throw new Error("Missing title or content for note.");
         }
 
-        content = extractContent(content, tasks);
+        let content = await convertedContent;
 
         const noteEntity = noteService.createNewNote({
             parentNoteId: rootNote.noteId,
@@ -283,7 +282,7 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
             utcDateCreated,
             type: "text",
             mime: "text/html",
-            isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+            isProtected
         }).note;
 
         /* v8 ignore next -- the note object is created with an attributes array on <note>, so the [] fallback is unreachable */
@@ -395,7 +394,17 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
         path.pop();
 
         if (tag === "note") {
-            saveNote();
+            // A copy, because the parser keeps appending to the arrays of the note it last opened.
+            const { title, content, attributes, resources, tasks, utcDateCreated, utcDateModified } = note;
+            queueNote({
+                title,
+                content,
+                attributes: attributes && [ ...attributes ],
+                resources: resources && [ ...resources ],
+                tasks: tasks && [ ...tasks ],
+                utcDateCreated,
+                utcDateModified
+            });
         }
     };
 
@@ -414,13 +423,48 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
         taskContext.setTotalCount(totalNotes);
     }
 
+    // Each write ends at most one note, so the queue grows by at most one between checks.
     const CHUNK_SIZE = 64 * 1024;
-    for (let i = 0; i < content.length; i += CHUNK_SIZE) {
-        parser.write(content.slice(i, i + CHUNK_SIZE));
-        // Yield to the event loop between chunks to avoid blocking the server.
-        await new Promise((resolve) => setTimeout(resolve, 0));
+    let parseError: { error: unknown } | null = null;
+    try {
+        let position = 0;
+        let nextYield = CHUNK_SIZE;
+        // The end of the note being written, searched for again only once `position` reaches it.
+        let noteEnd = 0;
+        while (position < content.length && !saveFailure) {
+            if (noteEnd <= position) {
+                const found = content.indexOf("</note>", position);
+                noteEnd = found === -1 ? content.length : found + "</note>".length;
+            }
+            const end = Math.min(position + CHUNK_SIZE, noteEnd);
+            parser.write(content.slice(position, end));
+            position = end;
+
+            while (queuedNotes.length > highWater && !saveFailure) {
+                await new Promise<void>((resolve) => {
+                    onNoteSaved = resolve;
+                });
+            }
+
+            if (position >= nextYield) {
+                nextYield = position + CHUNK_SIZE;
+                // Yield to the event loop between chunks to avoid blocking the server.
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            }
+        }
+        if (!saveFailure) {
+            parser.close();
+        }
+    } catch (error) {
+        parseError = { error };
     }
-    parser.close();
+
+    await saving;
+    // A failed save comes earlier in the document than anything the parser reached after it.
+    const failure = saveFailure ?? parseError;
+    if (failure) {
+        throw failure.error;
+    }
 
     // Second pass: now that every imported note's title is known, resolve Evernote internal note links
     // (`evernote://view-note/<guid>`) to Trilium reference links. setContent re-stamps the modification

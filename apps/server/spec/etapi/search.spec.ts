@@ -1,6 +1,6 @@
-import { search as searchService } from "@triliumnext/core";
+import { initSearchExecutor, runSearchQuery, search as searchService, type SearchExecutor } from "@triliumnext/core";
 import { Application } from "express";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
@@ -111,7 +111,66 @@ describe("etapi/search", () => {
             expect(response.body.code).toStrictEqual("GENERIC");
         });
     });
+
+    describe("through the search executor", () => {
+        const QUERIES = [
+            () => `search=${content}`,
+            () => `search=${content}&fastSearch=true`,
+            () => `search=${encodeURIComponent("#capital=Vienna")}&debug=true`,
+            () => "search=root&ancestorNoteId=root&orderBy=title&orderDirection=desc&limit=3",
+            () => "search=note&ancestorDepth=lt3&includeArchivedNotes=true&debug=true"
+        ];
+        const kinds: string[] = [];
+
+        // Stands in for the search replica: the request and the answer cross a structured clone.
+        const replicaLike: SearchExecutor = {
+            run: async (kind, args) => {
+                kinds.push(kind);
+                return structuredClone(runSearchQuery(kind, structuredClone(args), { deferScripts: true }));
+            }
+        };
+
+        beforeAll(() => initSearchExecutor(replicaLike));
+        afterAll(() => initSearchExecutor());
+
+        it("answers every query exactly as the in-process search does", async () => {
+            for (const query of QUERIES) {
+                initSearchExecutor();
+                const expected = await search(query());
+                initSearchExecutor(replicaLike);
+                const actual = await search(query());
+
+                expect(actual.status).toBe(expected.status);
+                expect(actual.body).toStrictEqual(expected.body);
+            }
+            expect(kinds.filter((kind) => kind === "etapiSearch")).toHaveLength(QUERIES.length);
+        });
+
+        it("finds a note created just before the search", async () => {
+            const title = randomUUID();
+            const noteId = await createNote(app, token, title);
+
+            const response = await search(`search=${title}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.results.map((r: { noteId: string }) => r.noteId)).toStrictEqual([ noteId ]);
+        });
+
+        it("keeps validating parameters before the search runs", async () => {
+            const before = kinds.length;
+
+            expect((await search("search=root&limit=lots")).body.code).toStrictEqual("SEARCH_PARAM_VALIDATION_ERROR");
+            expect((await search("search=")).body.code).toStrictEqual("SEARCH_QUERY_PARAM_MANDATORY");
+            expect(kinds).toHaveLength(before);
+        });
+    });
 });
+
+function search(query: string) {
+    return supertest(app)
+        .get(`/etapi/notes?${query}`)
+        .auth(USER, token, { "type": "basic" });
+}
 
 async function createNoteWithLabel(app: Application, token: string, name: string, value: string) {
     const noteId = await createNote(app, token, randomUUID());

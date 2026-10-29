@@ -9,7 +9,7 @@ import escapeHtml from "escape-html";
 import { parse as parseHtml } from "node-html-parser";
 import Turnish, { type Rule } from "turnish";
 
-import { getTaskStates } from "../task_states.js";
+import { getDefaultTaskStates } from "../content_jobs/env.js";
 
 /** One converter per headerless-table mode, built lazily and reused across invocations. */
 const instances = new Map<HeaderlessTableMode, Turnish>();
@@ -26,6 +26,8 @@ export type HeaderlessTableMode = "keepHtml" | "emptyHeader";
 
 export interface ToMarkdownOptions {
     headerlessTables?: HeaderlessTableMode;
+    /** Defaults to the task states of the `_taskStates` subtree. */
+    taskStates?: TaskStateDef[];
 }
 
 export { ADMONITION_TYPE_MAPPINGS };
@@ -52,7 +54,7 @@ const fencedCodeBlockFilter: Rule = {
 };
 
 function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
-    currentTaskStates = getTaskStates();
+    currentTaskStates = options.taskStates ?? getDefaultTaskStates();
 
     const headerlessTables = options.headerlessTables ?? "keepHtml";
     let instance = instances.get(headerlessTables);

@@ -240,14 +240,14 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
-    apiRoute(GET, "/api/quick-search", searchRoute.quickSearch);
-    apiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
-    apiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
+    asyncApiRoute(GET, "/api/quick-search", searchRoute.quickSearch);
+    asyncApiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
+    asyncApiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
     apiRoute(PST, "/api/search-and-execute-note/:noteId", searchRoute.searchAndExecute);
-    apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
+    asyncApiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(PST, "/api/search/lint", searchRoute.lintSearchString);
     apiRoute(GET, "/api/search/note-mimes", searchRoute.getNoteMimes);
-    apiRoute(GET, "/api/search", searchRoute.search);
+    asyncApiRoute(GET, "/api/search", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
 
     // Streaming a chat is not here — it has no single form every runtime can serve.
@@ -259,7 +259,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
     apiRoute(PST, "/api/llm-chat/tool-approval", llmRoute.answerToolCall);
 
-    apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
+    asyncApiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
 
     apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
     apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);

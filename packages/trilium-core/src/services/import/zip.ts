@@ -20,12 +20,16 @@ import protectedSessionService from "../protected_session.js";
 import { getSql } from "../sql/index.js";
 import type TaskContext from "../task_context.js";
 import treeService from "../tree.js";
-import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
 import { AttachmentMeta, AttributeMeta, NoteMeta } from "../../meta.js";
+import { captureContentJobEnv } from "../content_jobs/env.js";
+import { getContentJobExecutor } from "../content_jobs/executor.js";
 import { isMarkdownCodeNote } from "../export/rewrite_links.js";
 import { sanitizeHtml } from "../sanitizer.js";
-import { extractFrontmatter, type FrontmatterAttribute } from "./frontmatter.js";
+import type { FrontmatterAttribute } from "./frontmatter.js";
+import { prepareNoteText, type PrepareNoteTextInput, type PreparedNoteText } from "./note_text.js";
+
+export { removeTriliumTags } from "./note_text.js";
 
 // Source mimes that import as editable spreadsheet notes (parsed to Univer workbook JSON),
 // mirroring the single-file importer. As resolved by `mime-types` from the entry extension.
@@ -39,10 +43,12 @@ const MARKDOWN_MIMES = ["text/markdown", "text/x-markdown", "text/mdx"];
 // A note entry whose content has been read (and any async conversion already applied), ready for the
 // synchronous saveNote() inside a batch transaction. `mimeOverride` is set when prepareEntry converted a
 // raw spreadsheet so saveNote stores it as a spreadsheet instead of re-detecting the raw CSV/XLSX mime.
+// `preparedText` is the result of the `prepareNoteText` content job for a text or Markdown entry.
 interface BatchEntry {
     filePath: string;
     content: string | Uint8Array;
     mimeOverride?: string;
+    preparedText?: PreparedNoteText;
 }
 
 // A buffered import operation, replayed in order inside one transaction. Directory entries carry no
@@ -73,6 +79,9 @@ interface ImportZipOpts {
 }
 
 async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSource, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     /** maps from original noteId (in ZIP file) to newly generated noteId */
     const noteIdMap: Record<string, string> = {};
     /** type maps from original attachmentId (in ZIP file) to newly generated attachmentId */
@@ -85,6 +94,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     let firstNote: BNote | null = null;
     let topLevelPath = "";
     const createdNoteIds = new Set<string>();
+    const contentJobs = getContentJobExecutor();
+    const contentEnv = captureContentJobEnv();
 
     // Records the first created note as the de-facto import root (its position is deliberately left to float
     // per any inherited #newNotesOnTop — see the notePosition logic below). Once it exists, order-preservation
@@ -335,7 +346,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             prefix: noteMeta?.prefix || "",
             isExpanded: !!noteMeta?.isExpanded,
             notePosition: noteMeta && firstNote ? noteMeta.notePosition : undefined,
-            isProtected: importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+            isProtected
         });
 
         createdNoteIds.add(note.noteId);
@@ -390,27 +401,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         };
     }
 
-    function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
+    /** Points the relative links of a text note, already put through `prepareNoteText`, at the imported notes. */
+    function processTextNoteContent(content: string, filePath: string, noteMeta?: NoteMeta) {
         function isUrlAbsolute(url: string) {
             return /^(?:[a-z]+:)?\/\//i.test(url);
         }
-
-        content = removeTriliumTags(content);
-
-        content = content.replace(/<h1>([^<]*)<\/h1>/gi, (match, text) => {
-            if (noteTitle.trim() === text.trim()) {
-                return ""; // remove whole H1 tag
-            }
-            return `<h2>${text}</h2>`;
-
-        });
-
-        if (taskContext.data?.safeImport) {
-            content = sanitizeHtml(content);
-        }
-
-        content = content.replace(/<html.*<body[^>]*>/gis, "");
-        content = content.replace(/<\/body>.*<\/html>/gis, "");
 
         // `data-image` and `data-favicon` are where a link preview (section.link-embed /
         // span.link-mention) keeps its two pictures, which the export rewrites to attachment files
@@ -502,18 +497,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         return content;
     }
 
-    function processNoteContent(noteMeta: NoteMeta | undefined, type: string, mime: string, content: string | Uint8Array, noteTitle: string, filePath: string) {
-        if ((noteMeta?.format === "markdown" || (!noteMeta && taskContext.data?.textImportedAsText && MARKDOWN_MIMES.includes(mime))) && typeof content === "string") {
-            content = markdownService.renderToHtml(content, noteTitle);
-        }
-
-        // `book` notes are rendered as rich HTML through the same `renderText()` path as
-        // `text` notes (see content_renderer), so their content must receive the same
-        // import processing — crucially the Safe Import HTML sanitization. Otherwise a
-        // malicious `book` note bypasses sanitization and achieves stored XSS/RCE when its
-        // content is previewed in a grid/list view.
+    function processNoteContent(noteMeta: NoteMeta | undefined, type: string, mime: string, content: string | Uint8Array, filePath: string) {
         if ((type === "text" || type === "book") && typeof content === "string") {
-            content = processTextNoteContent(content, noteTitle, filePath, noteMeta);
+            content = processTextNoteContent(content, filePath, noteMeta);
         }
 
         if (type === "code" && isMarkdownCodeNote(mime) && typeof content === "string") {
@@ -607,7 +593,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         return content;
     }
 
-    function saveNote(filePath: string, content: string | Uint8Array, mimeOverride?: string) {
+    function saveNote(filePath: string, content: string | Uint8Array, mimeOverride?: string, preparedText?: PreparedNoteText) {
         const { parentNoteMeta, noteMeta, attachmentMeta } = getMeta(filePath);
 
         if (noteMeta?.noImport) {
@@ -678,25 +664,23 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processStringOrBuffer(content);
         }
 
-        // A plain archive carries no metadata, so the detected mime stands in for it: getNoteTitle
-        // reads the mime to drop the extension of the types that record their format in the note's
-        // own mime (video, audio, fonts), which single-file import already does.
-        const noteTitle = getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta ?? { mime });
+        const noteTitle = getEntryTitle(filePath, noteMeta, mime);
 
-        // Generic Markdown (not a Trilium export, which carries its attributes in !!!meta.json) may begin
-        // with a YAML front matter block; lift it into labels and strip it before the body is rendered.
-        let frontmatterAttributes: FrontmatterAttribute[] = [];
-        if (!noteMeta && typeof content === "string" && taskContext.data?.textImportedAsText && MARKDOWN_MIMES.includes(mime)) {
-            const parsed = extractFrontmatter(content);
-            content = parsed.body;
-            frontmatterAttributes = parsed.attributes;
+        if (!preparedText && typeof content === "string") {
+            // Every note entry passes through prepareEntry; this keeps a text note sanitized regardless.
+            const input = getNoteTextInput(filePath, noteMeta, type, mime, content);
+            preparedText = input ? prepareNoteText(input, contentEnv) : undefined;
         }
 
-        content = processNoteContent(noteMeta, type, mime, content, noteTitle || "", filePath);
+        let frontmatterAttributes: FrontmatterAttribute[] = [];
+        if (preparedText) {
+            content = preparedText.content;
+            frontmatterAttributes = preparedText.frontmatterAttributes;
+        }
+
+        content = processNoteContent(noteMeta, type, mime, content, filePath);
 
         let note = becca.getNote(noteId);
-
-        const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
 
         if (note) {
             // only skeleton was created because of altered order of cloned notes in ZIP, we need to update
@@ -782,25 +766,73 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         }
     }
 
+    // A plain archive carries no metadata, so the detected mime stands in for it: getNoteTitle
+    // reads the mime to drop the extension of the types that record their format in the note's
+    // own mime (video, audio, fonts), which single-file import already does.
+    function getEntryTitle(filePath: string, noteMeta: NoteMeta | undefined, mime: string) {
+        return getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta ?? { mime }) || "";
+    }
+
     /**
-     * Runs the only asynchronous part of importing a note — converting a raw CSV/XLSX entry into the Univer
-     * workbook JSON a spreadsheet note stores — ahead of the synchronous {@link saveNote}. Keeping saveNote
-     * synchronous is what lets a whole batch of notes be written inside a single synchronous transaction.
-     * Returns the (possibly converted) content plus, when it converted, the mime saveNote should force.
+     * Runs the asynchronous part of importing a note ahead of the synchronous {@link saveNote}: converting a
+     * raw CSV/XLSX entry into the Univer workbook JSON a spreadsheet note stores, and the `prepareNoteText`
+     * content job of a text or Markdown entry. Keeping saveNote synchronous is what lets a whole batch of
+     * notes be written inside a single synchronous transaction. Returns the (possibly converted) content
+     * plus, when it converted, the mime saveNote should force.
      */
     async function prepareEntry(filePath: string, content: string | Uint8Array): Promise<BatchEntry> {
         const { noteMeta, attachmentMeta } = getMeta(filePath);
 
-        // Attachments, clones and skipped notes return from saveNote before the spreadsheet branch, so
-        // they never need conversion. Only an actual note whose mime resolves to a raw spreadsheet does.
-        if (!attachmentMeta && !noteMeta?.isClone && !noteMeta?.noImport) {
-            const { mime, type: detectedType } = noteMeta ? noteMeta : detectFileTypeAndMime(taskContext, filePath);
-            if (resolveNoteType(detectedType) === "spreadsheet" && (mime === CSV_MIME || mime === XLSX_MIME)) {
-                return { filePath, content: await convertSpreadsheetContent(mime, content), mimeOverride: SPREADSHEET_MIME };
-            }
+        // Attachments, clones and skipped notes return from saveNote before the content is processed, so
+        // they never need conversion.
+        if (attachmentMeta || noteMeta?.isClone || noteMeta?.noImport) {
+            return { filePath, content };
         }
 
-        return { filePath, content };
+        const { mime, type: detectedType } = noteMeta ? noteMeta : detectFileTypeAndMime(taskContext, filePath);
+        const type = resolveNoteType(detectedType);
+        if (type === "spreadsheet" && (mime === CSV_MIME || mime === XLSX_MIME)) {
+            return { filePath, content: await convertSpreadsheetContent(mime, content), mimeOverride: SPREADSHEET_MIME };
+        }
+
+        if (mime == null || type === "file" || type === "image") {
+            return { filePath, content };
+        }
+
+        const text = processStringOrBuffer(content);
+        const input = getNoteTextInput(filePath, noteMeta, type, mime, text);
+        if (!input) {
+            return { filePath, content: text };
+        }
+
+        const preparedText = await contentJobs.run({ kind: "prepareNoteText", input, env: contentEnv });
+        return { filePath, content: text, preparedText };
+    }
+
+    /** What `prepareNoteText` is asked to do for a note's content, or null when the note needs none of it. */
+    function getNoteTextInput(filePath: string, noteMeta: NoteMeta | undefined, type: NoteType, mime: string, content: string): PrepareNoteTextInput | null {
+        // Generic Markdown (not a Trilium export, which carries its attributes in !!!meta.json) may begin
+        // with a YAML front matter block, lifted into labels before the body is rendered.
+        const isGenericMarkdown = !noteMeta && !!taskContext.data?.textImportedAsText && MARKDOWN_MIMES.includes(mime);
+        const renderMarkdown = noteMeta?.format === "markdown" || isGenericMarkdown;
+        // `book` notes are rendered as rich HTML through the same `renderText()` path as
+        // `text` notes (see content_renderer), so their content must receive the same
+        // import processing — crucially the Safe Import HTML sanitization. Otherwise a
+        // malicious `book` note bypasses sanitization and achieves stored XSS/RCE when its
+        // content is previewed in a grid/list view.
+        const isTextLike = type === "text" || type === "book";
+        if (!renderMarkdown && !isTextLike) {
+            return null;
+        }
+
+        return {
+            content,
+            title: getEntryTitle(filePath, noteMeta, mime),
+            extractFrontmatter: isGenericMarkdown,
+            renderMarkdown,
+            isTextLike,
+            safeImport: !!taskContext.data?.safeImport
+        };
     }
 
     const zipProvider = getZipProvider();
@@ -875,21 +907,31 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     // transactions become cheap savepoints under the outer one). The flush MUST stay synchronous: holding
     // a transaction open across the async readContent() would let concurrent requests on the shared DB
     // connection interleave into the import's transaction. So all async work (reading entries and the
-    // spreadsheet conversion in prepareEntry) happens during accumulation, outside the transaction; the
-    // flush only replays already-prepared items. A byte cap keeps memory bounded so a multi-GB ZIP is
-    // never fully materialised, preserving the per-entry streaming the reader was built for.
+    // conversions in prepareEntry) happens during accumulation, outside the transaction; the flush awaits
+    // them and then only replays already-prepared items. The conversions of a batch run concurrently while
+    // the reader moves on, and are saved in archive order. A byte cap on the raw entries keeps memory
+    // bounded so a multi-GB ZIP is never fully materialised, preserving the per-entry streaming the reader
+    // was built for.
     const BATCH_MAX_COUNT = 200;
     const BATCH_MAX_BYTES = 50 * 1024 * 1024;
-    let batch: BatchItem[] = [];
+    let batch: Promise<BatchItem>[] = [];
     let batchBytes = 0;
 
-    const flushBatch = () => {
+    const flushBatch = async () => {
         if (batch.length === 0) {
             return;
         }
-        const items = batch;
+        const pending = batch;
         batch = [];
         batchBytes = 0;
+
+        // In order, so that the first failing entry of the archive is the one reported.
+        const waitStart = Date.now();
+        const items: BatchItem[] = [];
+        for (const item of pending) {
+            items.push(await item);
+        }
+        timing.read += Date.now() - waitStart;
 
         const saveStart = Date.now();
         getSql().transactional(() => {
@@ -897,7 +939,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 if (item.isDirectory) {
                     saveDirectory(item.filePath);
                 } else {
-                    saveNote(item.filePath, item.content, item.mimeOverride);
+                    saveNote(item.filePath, item.content, item.mimeOverride, item.preparedText);
                 }
             }
         });
@@ -912,25 +954,27 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         }
 
         if (/\/$/.test(entry.fileName)) {
-            batch.push({ isDirectory: true, filePath });
+            batch.push(Promise.resolve({ isDirectory: true, filePath }));
         } else if (filePath !== "!!!meta.json") {
             const readStart = Date.now();
             const content = await readContent();
-            const prepared = await prepareEntry(filePath, content);
             timing.read += Date.now() - readStart;
 
-            batch.push({ isDirectory: false, ...prepared });
-            batchBytes += prepared.content.length;
+            const prepared = prepareEntry(filePath, content).then((entry): BatchItem => ({ isDirectory: false, ...entry }));
+            // flushBatch awaits it; until then a rejection is not unhandled.
+            prepared.catch(() => {});
+            batch.push(prepared);
+            batchBytes += content.length;
 
             if (batch.length >= BATCH_MAX_COUNT || batchBytes >= BATCH_MAX_BYTES) {
-                flushBatch();
+                await flushBatch();
             }
         }
 
         taskContext.increaseProgressCount();
     }, filenameEncoding);
 
-    flushBatch();
+    await flushBatch();
 
     // Post-processing phase: increments progress once per created note (now known exactly). Reset the count
     // and re-seed the total with the note count so this phase renders its own clean 0→100% bar.
@@ -1035,23 +1079,6 @@ async function convertSpreadsheetContent(mime: string, content: string | Uint8Ar
 
     const { parseCsvToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_csv.js");
     return JSON.stringify(parseCsvToWorkbook(processStringOrBuffer(content)));
-}
-
-export function removeTriliumTags(content: string) {
-    const tagsToRemove = [
-        "<h1 data-trilium-h1>([^<]*)<\/h1>",
-        "<title data-trilium-title>([^<]*)<\/title>"
-    ];
-    for (const tag of tagsToRemove) {
-        const re = new RegExp(tag, "gi");
-        content = content.replace(re, "");
-    }
-
-    // Remove ckeditor tags
-    content = content.replace(/<div class="ck-content">(.*)<\/div>/gms, "$1");
-    content = content.replace(/<div class="content">(.*)<\/div>/gms, "$1");
-
-    return content;
 }
 
 export default {

@@ -83,6 +83,9 @@ const h = vi.hoisted(() => ({
     disableTray: false,
     mainWindow: null as FakeWindow | null,
     unregisterAll: vi.fn(),
+    coreExtensions: { contentJobs: { run: () => Promise.resolve("") }, search: { run: () => Promise.resolve({}) } },
+    applyPostInit: vi.fn(),
+    shutdownWorkers: vi.fn(),
     // Controllable server start so tests can simulate a slow/hanging server.
     startServer: (() => Promise.resolve({})) as () => Promise<unknown>
 }));
@@ -100,7 +103,8 @@ vi.mock("electron", () => {
         quit: (...a: unknown[]) => h.quit(...a),
         exit: (...a: unknown[]) => h.exit(...a),
         relaunch: (...a: unknown[]) => h.relaunch(...a),
-        requestSingleInstanceLock: () => h.isPrimaryInstance
+        requestSingleInstanceLock: () => h.isPrimaryInstance,
+        whenReady: () => Promise.resolve()
     };
     const BrowserWindow = {
         getAllWindows: () => h.allWindows
@@ -213,6 +217,11 @@ vi.mock("@triliumnext/server/src/services/config.js", () => ({
 vi.mock("@triliumnext/server/src/services/export/zip/factory.js", () => ({ serverZipExportProviderFactory: vi.fn() }));
 vi.mock("@triliumnext/server/src/services/i18n.js", () => ({ initializeTranslations: vi.fn() }));
 vi.mock("@triliumnext/server/src/services/image_provider.js", () => ({ serverImageProvider: {} }));
+vi.mock("@triliumnext/server/src/services/core_extensions.js", () => ({
+    createCoreExtensions: () => h.coreExtensions,
+    applyPostInit: (...a: unknown[]) => h.applyPostInit(...a),
+    shutdownWorkers: (...a: unknown[]) => h.shutdownWorkers(...a)
+}));
 vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => h.startServer()) }));
 
 vi.mock("./services/request", () => ({ default: class {}, setupResourceDownloads: vi.fn() }));
@@ -302,6 +311,7 @@ function resetState() {
     h.wasLaunchedHidden.mockReturnValue(false);
     h.disableTray = false;
     h.unregisterAll.mockClear();
+    h.applyPostInit.mockClear();
     h.startServer = () => Promise.resolve({});
 }
 
@@ -542,12 +552,13 @@ describe("app event handlers", () => {
         expect(h.quit).toHaveBeenCalledTimes(1);
     });
 
-    it("will-quit unregisters global shortcuts", async () => {
+    it("will-quit unregisters global shortcuts and stops the worker processes", async () => {
         await bootAndReady();
         const handler = h.appOn.get("will-quit");
         expect(handler).toBeDefined();
         handler?.();
         expect(h.unregisterAll).toHaveBeenCalled();
+        expect(h.shutdownWorkers).toHaveBeenCalledTimes(1);
     });
 
     describe("second-instance", () => {
@@ -807,6 +818,19 @@ describe("initializeCore dbConfig callbacks + getDemoArchive", () => {
         // getDemoArchive reads the demo zip.
         const archive = await getDemoArchive();
         expect(archive).toBeInstanceOf(Buffer);
+    });
+
+    it("hands core the extensions shared with the server boot, then applies them", async () => {
+        const { main } = await importMain();
+        await main();
+
+        expect(h.initConfig?.contentJobs).toBe(h.coreExtensions.contentJobs);
+        expect(h.initConfig?.search).toBe(h.coreExtensions.search);
+        expect(h.applyPostInit).toHaveBeenCalledWith(h.coreExtensions);
+
+        const { initializeCore } = await import("@triliumnext/core");
+        expect(vi.mocked(initializeCore).mock.invocationCallOrder.at(-1))
+            .toBeLessThan(h.applyPostInit.mock.invocationCallOrder.at(-1) ?? 0);
     });
 });
 

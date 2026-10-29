@@ -7,6 +7,7 @@ import protectedSessionService from "./protected_session.js";
 import syncMutexService from "./sync_mutex.js";
 import { getSql } from "./sql/index.js";
 import { getMessagingProvider, MessagingProvider } from "./messaging/index.js";
+import { feedCommit, getBeccaReplicaSink } from "./becca_replica_feed.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 
 let messagingProvider!: MessagingProvider;
@@ -141,14 +142,17 @@ function buildPingMessage(): WebSocketMessage {
     };
 }
 
-function buildFrontendUpdateMessage(entityChangeIds: number[]): WebSocketMessage | null {
-    if (entityChangeIds.length === 0) {
-        return buildPingMessage();
+/**
+ * @param entityChanges the rows of the transaction's entity changes, `[]` when it recorded none and
+ *     `null` when they could not be read.
+ */
+function buildFrontendUpdateMessage(entityChanges: EntityChange[] | null): WebSocketMessage | null {
+    if (entityChanges === null) {
+        return null;
     }
 
-    const entityChanges = getSql().getManyRows<EntityChange>(/*sql*/`SELECT * FROM entity_changes WHERE id IN (???)`, entityChangeIds);
-    if (!entityChanges) {
-        return null;
+    if (entityChanges.length === 0) {
+        return buildPingMessage();
     }
 
     // sort entity changes since froca expects "referential order", i.e. referenced entities should already exist
@@ -173,10 +177,27 @@ function buildFrontendUpdateMessage(entityChangeIds: number[]): WebSocketMessage
     };
 }
 
+/**
+ * Runs after every committed transaction: drains the transaction's entity change ids once, then sends
+ * them to the clients and to the becca replica sink, whichever of the two is set.
+ */
 function sendTransactionEntityChangesToAllClients() {
+    if (!messagingProvider && !getBeccaReplicaSink()) {
+        return;
+    }
+
+    const entityChangeIds = cls.getAndClearEntityChangeIds();
+    const entityChanges = entityChangeIds.length > 0
+        ? getSql().getManyRows<EntityChange>(
+            /*sql*/`SELECT * FROM entity_changes WHERE id IN (???)`, entityChangeIds) ?? null
+        : [];
+
+    feedCommit((entityChanges ?? []).map(({ entityName, entityId, isErased }) => ({
+        entityName, entityId, isErased: !!isErased
+    })));
+
     if (messagingProvider) {
-        const entityChangeIds = cls.getAndClearEntityChangeIds();
-        const message = buildFrontendUpdateMessage(entityChangeIds);
+        const message = buildFrontendUpdateMessage(entityChanges);
 
         if (message) {
             messagingProvider.sendMessageToAllClients(message);

@@ -4,6 +4,7 @@ import mimeTypes from "mime-types";
 import type BBranch from "../../../becca/entities/bbranch.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { ExportFormat, NoteMeta, NoteMetaFile } from "../../../meta.js";
+import { captureContentJobEnv, type ContentJobEnv } from "../../content_jobs/env.js";
 import type { ZipArchive } from "../../zip_provider.js";
 import { mapCodeMimeToExtension } from "../single.js";
 
@@ -48,6 +49,12 @@ export abstract class ZipExportProvider {
     archive: ZipArchive;
     zipExportOptions?: AdvancedExportOptions;
     rewriteFn: RewriteLinksFn;
+    /**
+     * Whether `prepareContent` can run for a note before the notes ahead of it in the archive are
+     * written, letting the export convert several siblings at once.
+     */
+    readonly concurrentPrepare: boolean = false;
+    #contentEnv?: ContentJobEnv;
 
     constructor(data: ZipExportProviderData) {
         this.branch = data.branch;
@@ -58,8 +65,14 @@ export abstract class ZipExportProvider {
     }
 
     abstract prepareMeta(metaFile: NoteMetaFile): void;
-    abstract prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Uint8Array;
+    abstract prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Uint8Array | Promise<string | Uint8Array>;
     abstract afterDone(rootMeta: NoteMeta): void;
+
+    /** The settings the content jobs of this export use, captured once on first use. */
+    protected get contentEnv(): ContentJobEnv {
+        this.#contentEnv ??= captureContentJobEnv();
+        return this.#contentEnv;
+    }
 
     /**
      * Determines the extension of the resulting file for a specific note type.

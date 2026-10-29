@@ -229,11 +229,12 @@ export class CoreApiTester {
 
         const asyncApiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
+                const mockRes = createMockResponse();
                 const result = await getContext().init(async () => {
                     seedContext(req);
-                    return await handler(req);
+                    return await handler(req, mockRes);
                 });
-                return formatApiResult(result);
+                return { ...formatApiResult(result), locals: mockRes.locals };
             });
 
         const buildRoute = (transactional: boolean) =>

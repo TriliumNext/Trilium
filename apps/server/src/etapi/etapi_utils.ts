@@ -65,14 +65,20 @@ function processRequest<P extends ParamsDictionary>(req: Request<P>, res: Respon
 
             return sql.transactional(cb);
         });
-    } catch (e: any) {
-        getLog().error(`${method} ${path} threw exception ${e.message} with stacktrace: ${e.stack}`);
+    } catch (e: unknown) {
+        handleRequestError(e, res, method, path);
+    }
+}
 
-        if (e instanceof EtapiError) {
-            sendError(res, e.statusCode, e.code, e.message);
-        } else {
-            sendError(res, 500, GENERIC_CODE, e.message);
-        }
+/** Logs a handler's error and answers with its ETAPI error code, or the generic one. */
+function handleRequestError(e: unknown, res: Response, method: string, path: string) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    getLog().error(`${method} ${path} threw exception ${error.message} with stacktrace: ${error.stack}`);
+
+    if (error instanceof EtapiError) {
+        sendError(res, error.statusCode, error.code, error.message);
+    } else {
+        sendError(res, 500, GENERIC_CODE, error.message);
     }
 }
 
@@ -157,6 +163,7 @@ function validateAndPatch(target: any, source: any, allowedProperties: Validator
 export default {
     EtapiError,
     sendError,
+    handleRequestError,
     route,
     NOT_AUTHENTICATED_ROUTE,
     GENERIC_CODE,

@@ -2625,6 +2625,40 @@
                             "format": "markdown",
                             "dataFileName": "Web Clipper.md",
                             "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "FMcGyFCnbemE",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "yeqU0zo0ZQ83",
+                                "FMcGyFCnbemE"
+                            ],
+                            "title": "Worker processes",
+                            "notePosition": 220,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "worker-processes",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-chip",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Worker processes.md",
+                            "attachments": []
                         }
                     ]
                 },

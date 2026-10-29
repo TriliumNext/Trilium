@@ -29,6 +29,8 @@ Trilium Notes is a hierarchical note-taking application built as a TypeScript mo
 
 Trilium follows a **client-server architecture** even in desktop mode, where Electron runs both the backend server and frontend client within the same process.
 
+On the server and in the desktop app, CPU-heavy conversions and the route-level searches run in child processes; see <a class="reference-link" href="Concepts/Worker%20processes.md">Worker processes</a>.
+
 ```
 graph TB
     subgraph Frontend

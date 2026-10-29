@@ -2,8 +2,15 @@ import type { CryptoProvider, ScryptOptions } from "@triliumnext/core";
 import { binary_utils } from "@triliumnext/core";
 import crypto from "crypto";
 import { generator } from "rand-token";
+import { promisify } from "util";
 
 const randtoken = generator({ source: "crypto" });
+const scryptAsync = promisify(crypto.scrypt) as (
+    password: crypto.BinaryLike,
+    salt: crypto.BinaryLike,
+    keyLength: number,
+    options: crypto.ScryptOptions
+) => Promise<Buffer>;
 
 export default class NodejsCryptoProvider implements CryptoProvider {
 
@@ -42,7 +49,8 @@ export default class NodejsCryptoProvider implements CryptoProvider {
         const { N = 16384, r = 8, p = 1 } = options;
         const passwordBytes = binary_utils.wrapStringOrBuffer(password);
         const saltBytes = binary_utils.wrapStringOrBuffer(salt);
-        return crypto.scryptSync(passwordBytes, saltBytes, keyLength, { N, r, p });
+        // The async variant runs on the libuv thread pool, so the event loop keeps serving.
+        return new Uint8Array(await scryptAsync(passwordBytes, saltBytes, keyLength, { N, r, p }));
     }
 
     constantTimeCompare(a: Uint8Array, b: Uint8Array): boolean {

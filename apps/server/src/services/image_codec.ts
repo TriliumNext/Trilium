@@ -450,14 +450,17 @@ export async function compressImageBytes(
  * for PNG/JPEG/GIF/BMP/TIFF only, so a WebP or an AVIF lands there, as does an error page served
  * where a picture should have been. Saying so is enough; what a preview does without its picture is
  * not this function's business.
+ *
+ * `budgetMb` caps what a JPEG decode may allocate, as in {@link decodeImage}.
  */
 export async function resizePreviewImage(
     bytes: Uint8Array,
     { maxEdge, jpegQuality }: PreviewResizeRequest,
-    log: CodecLog = () => {}
+    log: CodecLog = () => {},
+    budgetMb: number = DECODE_MEMORY_MB
 ): Promise<PreviewResizeOutcome> {
     try {
-        const image = await decodeImage(bytes);
+        const image = await decodeImage(bytes, budgetMb);
 
         // Only ever down: scaleToFit() would happily enlarge a smaller picture.
         if (image.bitmap.width > maxEdge || image.bitmap.height > maxEdge) {

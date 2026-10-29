@@ -19,7 +19,11 @@ import {
     planFromBytes,
     resizePreviewImage
 } from "./image_codec.js";
-import { compressInWorker, compressionConcurrency } from "./image_worker_pool.js";
+import {
+    compressInWorker,
+    compressionConcurrency,
+    resizePreviewInWorker
+} from "./image_worker_pool.js";
 
 /**
  * Lines the codec produced, written where the rest of the server's logging goes.
@@ -130,7 +134,28 @@ export const serverImageProvider: ImageProvider = {
 
     compressionConcurrency,
 
-    async resizeForPreview(bytes: Uint8Array, request: PreviewResizeRequest): Promise<PreviewResizeOutcome> {
-        return await resizePreviewImage(bytes, request, toBackendLog);
+    /**
+     * Resizes off-thread like {@link compressImage}, and here only when there are no workers.
+     *
+     * Whatever goes wrong in a worker answers `undecodable`, the same as a picture the codec cannot
+     * read, and the preview goes without its picture. It is not redone here: the source is at most
+     * 5 MB, but a small PNG can still declare a bitmap that exhausts the worker's heap. An
+     * exception from the in-process resize reaches the caller.
+     */
+    async resizeForPreview(
+        bytes: Uint8Array,
+        request: PreviewResizeRequest
+    ): Promise<PreviewResizeOutcome> {
+        let offThread: PreviewResizeOutcome | null;
+
+        try {
+            offThread = await resizePreviewInWorker(bytes, request);
+        } catch (e: unknown) {
+            toBackendLog(`Could not resize a link preview image in a worker: ${e}`);
+
+            return { resized: false, reason: "undecodable" };
+        }
+
+        return offThread ?? await resizePreviewImage(bytes, request, toBackendLog);
     }
 };

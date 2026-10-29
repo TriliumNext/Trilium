@@ -1,11 +1,12 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
+import { t } from "i18next";
 import events from "../events.js";
 import options from "../options.js";
 import protectedSessionService from "../protected_session.js";
 import { getSql } from "../sql/index.js";
 import scryptService from "./scrypt.js";
-import passwordEncryptionService from "./password_encryption.js";
-import { encodeBase64 } from "../utils/binary.js";
+import data_encryption from "./data_encryption.js";
+import { encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import { getCrypto } from "./crypto.js";
 import ws from "../ws.js";
 
@@ -28,6 +29,10 @@ export function isPasswordSet(): boolean {
 /**
  * Changes the password from currentPassword to newPassword.
  * Re-encrypts the data key with the new password and closes the protected session.
+ *
+ * Every key is derived from one snapshot of the password options and the result is written in one
+ * transaction, which fails the change when another one has committed since the snapshot. Without
+ * that, two overlapping changes can each store salts that belong to the other's hash.
  */
 export async function changePassword(
     currentPassword: string,
@@ -37,40 +42,48 @@ export async function changePassword(
         throw new Error("Password has not been set yet, so it cannot be changed. Use 'setPassword' instead.");
     }
 
-    if (!(await passwordEncryptionService.verifyPassword(currentPassword))) {
+    const stored = readPasswordOptions();
+    const currentHash = encodeBase64(
+        await scryptService.getScryptHash(currentPassword, stored.passwordVerificationSalt)
+    );
+
+    if (!getCrypto().constantTimeCompare(encodeUtf8(currentHash), encodeUtf8(stored.passwordVerificationHash))) {
         return {
             success: false,
             message: "Given current password doesn't match hash"
         };
     }
 
-    const sql = getSql();
-    const decryptedDataKey = await passwordEncryptionService.getDataKey(currentPassword);
+    const currentDerivedKey = await scryptService.getScryptHash(currentPassword, stored.passwordDerivedKeySalt);
+    const dataKey = data_encryption.decrypt(currentDerivedKey, stored.encryptedDataKey);
+    const next = await derivePasswordOptions(newPassword, dataKey || null, stored.encryptedDataKey);
 
-    sql.transactional(() => {
-        options.setOption("passwordVerificationSalt", randomSecureToken(32));
-        options.setOption("passwordDerivedKeySalt", randomSecureToken(32));
+    const result = getSql().transactional((): ChangePasswordResponse => {
+        const now = readPasswordOptions();
+
+        if (PASSWORD_OPTIONS.some((name) => now[name] !== stored[name])) {
+            return {
+                success: false,
+                message: t("password.changed-concurrently")
+            };
+        }
+
+        for (const name of PASSWORD_OPTIONS) {
+            options.setOption(name, next[name]);
+        }
+
+        return {
+            success: true
+        };
     });
 
-    const newPasswordVerificationKey = encodeBase64(
-        await scryptService.getVerificationHash(newPassword)
-    );
-
-    if (decryptedDataKey) {
-        await passwordEncryptionService.setDataKey(newPassword, decryptedDataKey);
-    }
-
-    options.setOption("passwordVerificationHash", newPasswordVerificationKey);
-
-    if (protectedSessionService.isProtectedSessionAvailable()) {
+    if (result.success && protectedSessionService.isProtectedSessionAvailable()) {
         protectedSessionService.resetDataKey();
         events.emit(events.LEAVE_PROTECTED_SESSION);
         ws.sendMessageToAllClients({ type: "protectedSessionLogout" });
     }
 
-    return {
-        success: true
-    };
+    return result;
 }
 
 /**
@@ -79,23 +92,22 @@ export async function changePassword(
  */
 export async function setPassword(password: string): Promise<ChangePasswordResponse> {
     if (isPasswordSet()) {
-        throw new Error("Password is set already. Either change it or perform 'reset password' first.");
+        throw new Error(PASSWORD_SET_ALREADY);
     }
 
-    options.createOption("passwordVerificationSalt", randomSecureToken(32), true);
-    options.createOption("passwordDerivedKeySalt", randomSecureToken(32), true);
-
-    const passwordVerificationKey = encodeBase64(
-        await scryptService.getVerificationHash(password)
-    );
-    options.createOption("passwordVerificationHash", passwordVerificationKey, true);
-
-    // passwordEncryptionService expects these options to already exist
-    options.createOption("encryptedDataKey", "", true);
-
     // Generate a random 16-byte data key and encrypt it with the password
-    const randomDataKey = getCrypto().randomBytes(16);
-    await passwordEncryptionService.setDataKey(password, randomDataKey);
+    const next = await derivePasswordOptions(password, getCrypto().randomBytes(16), "");
+
+    getSql().transactional(() => {
+        // Another request can have set a password while the keys were derived.
+        if (isPasswordSet()) {
+            throw new Error(PASSWORD_SET_ALREADY);
+        }
+
+        for (const name of PASSWORD_OPTIONS) {
+            options.createOption(name, next[name], true);
+        }
+    });
 
     return {
         success: true
@@ -118,6 +130,48 @@ export function resetPassword(): ChangePasswordResponse {
 
     return {
         success: true
+    };
+}
+
+const PASSWORD_OPTIONS = [
+    "passwordVerificationSalt",
+    "passwordDerivedKeySalt",
+    "passwordVerificationHash",
+    "encryptedDataKey"
+] as const;
+
+type PasswordOptions = Record<(typeof PASSWORD_OPTIONS)[number], string>;
+
+const PASSWORD_SET_ALREADY = "Password is set already. Either change it or perform 'reset password' first.";
+
+function readPasswordOptions(): PasswordOptions {
+    return {
+        passwordVerificationSalt: options.getOption("passwordVerificationSalt"),
+        passwordDerivedKeySalt: options.getOption("passwordDerivedKeySalt"),
+        passwordVerificationHash: options.getOption("passwordVerificationHash"),
+        encryptedDataKey: options.getOption("encryptedDataKey")
+    };
+}
+
+/**
+ * Derives the password options for `password` under fresh salts, from arguments alone. Without a
+ * data key, `encryptedDataKey` is kept as it is.
+ */
+async function derivePasswordOptions(
+    password: string,
+    dataKey: Uint8Array | null,
+    encryptedDataKey: string
+): Promise<PasswordOptions> {
+    const passwordVerificationSalt = randomSecureToken(32);
+    const passwordDerivedKeySalt = randomSecureToken(32);
+    const verificationHash = await scryptService.getScryptHash(password, passwordVerificationSalt);
+    const derivedKey = await scryptService.getScryptHash(password, passwordDerivedKeySalt);
+
+    return {
+        passwordVerificationSalt,
+        passwordDerivedKeySalt,
+        passwordVerificationHash: encodeBase64(verificationHash),
+        encryptedDataKey: dataKey ? data_encryption.encrypt(derivedKey, dataKey) : encryptedDataKey
     };
 }
 
