@@ -1,12 +1,14 @@
 import {
-    _setModelData as setModelData, ButtonView, ClassicEditor, Essentials, Paragraph, Widget
+    _setModelData as setModelData, ButtonView, ClassicEditor, Essentials, type ModelElement,
+    Paragraph, Widget
 } from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { CODE_VIEW_COMMAND_NAME } from "./content_embed.js";
 import ExtendedCodeBlock, {
-    EXTENDED_CODE_BLOCK_BUTTON, INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
+    EXTENDED_CODE_BLOCK_BUTTON, EXTENDED_CODE_BLOCK_COPY_BUTTON, INSERT_EXTENDED_CODE_BLOCK_COMMAND,
+    insertExtendedCodeBlock
 } from "./extended_code_block.js";
 import { INSERT_INLINE_EMBED_COMMAND } from "./inline_source.js";
 
@@ -17,8 +19,8 @@ describe("ExtendedCodeBlock", () => {
         });
     }
 
-    function createButton(editor: ClassicEditor) {
-        const button = editor.ui.componentFactory.create(EXTENDED_CODE_BLOCK_BUTTON);
+    function createButton(editor: ClassicEditor, name = EXTENDED_CODE_BLOCK_BUTTON) {
+        const button = editor.ui.componentFactory.create(name);
         if (!(button instanceof ButtonView)) throw new Error("Expected a button.");
         return button;
     }
@@ -59,5 +61,52 @@ describe("ExtendedCodeBlock", () => {
         insertExtendedCodeBlock(editor);
 
         expect(editor.getData()).toContain(`<code class="language-text-x-python"></code>`);
+    });
+
+    it("copies the code of the selected block as the code block copy button does", async () => {
+        const copy = vi.fn();
+        let flushInline = () => {};
+        const plugins = [ Essentials, Paragraph, Widget, ExtendedCodeBlock ];
+        const editor = await createTestEditor(plugins, {
+            clipboard: { copy },
+            contentEmbed: {
+                inlineLanguages: [ "mermaid" ],
+                loadInline: vi.fn(),
+                flushInline: () => flushInline()
+            }
+        });
+        editor.setData(`<pre class="extended-code-block">`
+            + `<code class="language-text-x-python">print(1)</code></pre>`
+            + `<pre><code class="language-mermaid">graph LR;</code></pre>`);
+        const root = editor.model.document.getRoot();
+        const [ codeBlock, diagram ] = Array.from(root?.getChildren() ?? []);
+        if (!codeBlock?.is("element") || !diagram?.is("element")) {
+            throw new Error("Expected embeds.");
+        }
+        const select = (embed: ModelElement) => {
+            editor.model.change((writer) => writer.setSelection(embed, "on"));
+            editor.ui.update();
+        };
+        const button = createButton(editor, EXTENDED_CODE_BLOCK_COPY_BUTTON);
+        const legacyButton = createButton(editor, "copyToClipboard");
+
+        select(codeBlock);
+        expect([ button.label, button.icon, button.isVisible ])
+            .toEqual([ legacyButton.label, legacyButton.icon, true ]);
+        // The host writes the code typed last when the copy asks for it.
+        flushInline = () => editor.model.change((writer) => {
+            writer.setAttribute("source", "print(2)", codeBlock);
+        });
+        button.fire("execute");
+        expect(copy).toHaveBeenCalledExactlyOnceWith("print(2)");
+
+        select(diagram);
+        expect(button.isVisible).toBe(false);
+
+        // An empty block copies nothing, as an empty code block does.
+        flushInline = () => {};
+        setModelData(editor.model, `[<contentEmbed language="text-x-python"></contentEmbed>]`);
+        button.fire("execute");
+        expect(copy).toHaveBeenCalledOnce();
     });
 });

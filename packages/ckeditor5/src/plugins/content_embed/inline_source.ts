@@ -245,6 +245,15 @@ export function isExtendedCodeBlock( editor: Editor, embed: ModelElement ) {
 	return typeof language === 'string' && !getInlineLanguages( editor ).includes( language );
 }
 
+/** The extended code block that the selection is on, or `null`. */
+export function getSelectedExtendedCodeBlock( editor: Editor ): ModelElement | null {
+	const embed = editor.model.document.selection.getSelectedElement();
+	if ( !embed?.is( 'element', 'contentEmbed' ) ) {
+		return null;
+	}
+	return isExtendedCodeBlock( editor, embed ) ? embed : null;
+}
+
 /** Saves an embed of a source as `<pre><code class="language-…">`. */
 function downcastData( editor: Editor, embed: ModelElement, api: DowncastConversionApi ) {
 	if ( !isInlineSourceEmbed( embed ) || !api.consumable.consume( embed, 'insert' ) ) {
