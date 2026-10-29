@@ -25,7 +25,15 @@ describe("experimental_features", () => {
     it("lists every feature", async () => {
         const { mod } = await freshModule([]);
         expect(mod.getAvailableExperimentalFeatures().map((f) => f.id))
-            .toEqual(["llm", "extendedCodeBlocks"]);
+            .toEqual(["llm", "extendedCodeBlocks", "sortSelection"]);
+    });
+
+    it("names and describes every feature before the translations load", async () => {
+        const { mod } = await freshModule([]);
+        for (const feature of mod.getAvailableExperimentalFeatures()) {
+            expect(feature.name, feature.id).toMatch(/\S/);
+            expect(feature.description, feature.id).toMatch(/\S/);
+        }
     });
 
     it("llm enablement is driven by the aiEnabled option", async () => {

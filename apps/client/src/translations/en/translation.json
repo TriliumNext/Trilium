@@ -1880,11 +1880,7 @@
   },
   "experimental_features": {
     "title": "Experimental Options",
-    "disclaimer": "These options are experimental and may cause instability. Use with caution.",
-    "llm_name": "AI / LLM Chat",
-    "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models.",
-    "extended_code_blocks_name": "Extended code blocks",
-    "extended_code_blocks_description": "A faster code block with a more advanced syntax highlighting engine and code folding."
+    "disclaimer": "These options are experimental and may cause instability. Use with caution."
   },
   "fonts": {
     "theme_defined": "Theme defined",
@@ -4932,6 +4928,13 @@
   "hide_keyboard_button": {
     "title": "Hide keyboard",
     "close_menu": "Close menu"
+  },
+  "sort_selection": {
+    "sort_blocks": "Sort blocks",
+    "sort_list_items": "Sort list items",
+    "sort_rows": "Sort rows",
+    "ascending": "Ascending",
+    "descending": "Descending"
   },
   "code_editor_context_menu": {
     "transform": "Transform",

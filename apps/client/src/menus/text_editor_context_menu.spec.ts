@@ -1,11 +1,19 @@
-import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup } from "@triliumnext/ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SortTargetKind
+} from "@triliumnext/ckeditor5";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
 
 import { setEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuCommandItem, MenuItem } from "./context_menu.js";
-import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
+import {
+    buildAiActionsMenuItem, buildSortSelectionMenuItem, getTextEditorAtSelection
+} from "./text_editor_context_menu.js";
 
 const GROUPS: AiQuickActionGroup[] = [
     {
@@ -272,5 +280,61 @@ describe("buildAiActionsMenuItem", () => {
 
         build({ hasPlugin: false });
         expect(await buildAiActionsMenuItem()).toBeNull();
+    });
+});
+
+describe("buildSortSelectionMenuItem", () => {
+    beforeEach(() => experimentalState.enabled.add("sortSelection"));
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** An editor whose sort commands are enabled for `kind`, over `blockCount` selected blocks. */
+    function sortEditor(kind: SortTargetKind | null = "blocks", blockCount = 2, isEnabled = true) {
+        const editor = {
+            commands: { get: () => ({ isEnabled, value: kind }) },
+            model: {
+                document: {
+                    selection: { getSelectedBlocks: () => Array.from({ length: blockCount }) }
+                }
+            },
+            editing: { view: { focus: vi.fn() } },
+            execute: vi.fn()
+        };
+        return editor as typeof editor & CKTextEditor;
+    }
+
+    it("names the submenu after what it sorts, and sorts either way", () => {
+        const titlesByKind = ([ "blocks", "listItems", "rows" ] as const).map((kind) =>
+            (buildSortSelectionMenuItem(sortEditor(kind)) as MenuCommandItem<string>).title);
+        expect(titlesByKind).toEqual([
+            "sort_selection.sort_blocks",
+            "sort_selection.sort_list_items",
+            "sort_selection.sort_rows"
+        ]);
+
+        const editor = sortEditor();
+        const item = buildSortSelectionMenuItem(editor) as MenuCommandItem<string>;
+        const rows = commandItems(item.items ?? []);
+        expect(rows.map((row) => row.title))
+            .toEqual([ "sort_selection.ascending", "sort_selection.descending" ]);
+
+        rows[1].handler?.(rows[1], null as never);
+        expect(editor.execute).toHaveBeenCalledWith("triliumSortSelectionDescending");
+        expect(editor.editing.view.focus).toHaveBeenCalled();
+        rows[0].handler?.(rows[0], null as never);
+        expect(editor.execute).toHaveBeenLastCalledWith("triliumSortSelectionAscending");
+
+        expect(buildSortSelectionMenuItem(sortEditor("listItems"), { isRowsExcluded: true }))
+            .toMatchObject({ title: "sort_selection.sort_list_items" });
+    });
+
+    it("is absent for one block, nothing to sort, excluded rows, no editor or feature", () => {
+        expect(buildSortSelectionMenuItem(sortEditor("blocks", 1))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor(null))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor("rows", 2, false))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor("rows"), { isRowsExcluded: true })).toBeNull();
+        expect(buildSortSelectionMenuItem(null)).toBeNull();
+
+        experimentalState.enabled.clear();
+        expect(buildSortSelectionMenuItem(sortEditor())).toBeNull();
     });
 });

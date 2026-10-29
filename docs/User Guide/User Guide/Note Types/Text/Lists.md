@@ -60,6 +60,10 @@ It possible to add content-level blocks such as headings, code blocks, tables wi
 
 The same principle applies to all three list types (bullet, numbered and to-do).
 
+## Sorting
+
+The items of a list can be sorted, nested items moving with the item they belong to. This is experimental, see <a class="reference-link" href="Sorting.md">Sorting</a>.
+
 ## Alignment
 
 A list item can be centered or aligned to the right, either with the text alignment button in the formatting toolbar or by aligning the <a class="reference-link" href="Tables.md">Tables</a> cell that contains the list. The bullet, number or checkbox then moves together with the text of the item.

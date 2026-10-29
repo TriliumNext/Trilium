@@ -11,7 +11,9 @@ import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import contextMenu, { type MenuItem } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
-import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
+import {
+    buildSortSelectionMenuItem, getTextEditorContaining
+} from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
 import { revealElement } from "./collapsible.js";
@@ -48,6 +50,8 @@ export interface BlockHandleMenuActions {
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
     copyShareLink?: () => void;
+    /** The _Sort_ submenu, shown last. */
+    sortItem?: MenuItem<CommandNames> | null;
 }
 
 /** The note a text editor is open on, which the references it copies point to. */
@@ -86,7 +90,8 @@ export function buildReferenceConfig(
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((editor) => copyBlockShareLink(editor, shareLink))
-                        : undefined
+                        : undefined,
+                    sortItem: buildSortSelectionMenuItem(source.getEditor())
                 });
             },
             copyReference: () => void copy(copyBlockReference)
@@ -101,7 +106,7 @@ export function buildReferenceConfig(
 export function openBlockHandleMenu(
     event: MouseEvent,
     count: number,
-    { copyReference, copyShareLink }: BlockHandleMenuActions
+    { copyReference, copyShareLink, sortItem }: BlockHandleMenuActions
 ) {
     const items = [ getCopyItem(count, copyReference) ];
     if (copyShareLink) {
@@ -110,6 +115,9 @@ export function openBlockHandleMenu(
             uiIcon: "bx bx-world",
             handler: copyShareLink
         });
+    }
+    if (sortItem) {
+        items.push({ kind: "separator" }, sortItem);
     }
 
     void contextMenu.show({

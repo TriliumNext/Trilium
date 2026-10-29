@@ -1,24 +1,12 @@
 import bxSortAlt2 from "boxicons/svg/regular/bx-sort-alt-2.svg?raw";
-import {
-    addListToDropdown,
-    Collection,
-    createDropdown,
-    IconTableColumn,
-    IconTableMergeCell,
-    Plugin,
-    SplitButtonView,
-    SwitchButtonView,
-    Table,
-    UIModel
-} from "ckeditor5";
-import type {
-    ButtonExecuteEvent,
-    Command,
-    DropdownView,
-    ListDropdownItemDefinition,
-    Locale
-} from "ckeditor5";
+import { IconTableColumn, IconTableMergeCell, Plugin, Table } from "ckeditor5";
 
+import {
+    buttonItem,
+    createCommandListDropdown,
+    SEPARATOR_ITEM,
+    switchItem
+} from "./command_list_dropdown.js";
 import TableContextMenu from "./table_context_menu.js";
 import TableSort from "./table_sort.js";
 
@@ -48,7 +36,7 @@ export default class TableToolbarDropdowns extends Plugin {
         const isContentLtr = editor.locale.contentLanguageDirection === "ltr";
 
         // Replaces the dropdowns of `TableUI`, which `Table` initializes before this plugin.
-        factory.add("tableColumn", (locale) => this.createDropdown(locale, {
+        factory.add("tableColumn", (locale) => createCommandListDropdown(this, locale, {
             label: t("Column"),
             icon: IconTableColumn,
             items: [
@@ -65,7 +53,7 @@ export default class TableToolbarDropdowns extends Plugin {
             ]
         }));
 
-        factory.add("mergeTableCells", (locale) => this.createDropdown(locale, {
+        factory.add("mergeTableCells", (locale) => createCommandListDropdown(this, locale, {
             label: t("Merge cells"),
             icon: IconTableMergeCell,
             splitButtonCommandName: "mergeTableCells",
@@ -84,7 +72,7 @@ export default class TableToolbarDropdowns extends Plugin {
             ]
         }));
 
-        factory.add("tableSort", (locale) => this.createDropdown(locale, {
+        factory.add("tableSort", (locale) => createCommandListDropdown(this, locale, {
             label: t("Sort"),
             icon: bxSortAlt2,
             items: [
@@ -94,90 +82,6 @@ export default class TableToolbarDropdowns extends Plugin {
         }));
     }
 
-    /**
-     * Creates a dropdown listing `items`, enabled while one of their commands is. With
-     * `splitButtonCommandName`, the main part of a split button runs that command.
-     */
-    private createDropdown(locale: Locale, options: TableDropdownOptions): DropdownView {
-        const editor = this.editor;
-        const { label, icon, items, splitButtonCommandName } = options;
-
-        const dropdownView = splitButtonCommandName
-            ? createDropdown(locale, SplitButtonView)
-            : createDropdown(locale);
-        dropdownView.buttonView.set({ label, icon, tooltip: true });
-
-        const commands: Command[] = [];
-        const definitions = new Collection<ListDropdownItemDefinition>();
-        for (const item of items) {
-            if (item.type === "separator") {
-                // A new object each time: `Collection#add()` gives it an `id`.
-                definitions.add({ type: "separator" });
-                continue;
-            }
-
-            // Skips an item whose command is not registered, e.g. after an upstream rename.
-            const command = editor.commands.get(item.commandName);
-            if (!command) {
-                continue;
-            }
-            commands.push(command);
-
-            const model = new UIModel({
-                commandName: item.commandName,
-                label: item.label,
-                withText: true
-            });
-            model.bind("isEnabled").to(command);
-            if (item.type === "switchbutton") {
-                model.bind("isOn").to(command, "value");
-            }
-            definitions.add({ type: item.type, model });
-        }
-        addListToDropdown(dropdownView, definitions);
-
-        dropdownView.bind("isEnabled").toMany(commands, "isEnabled",
-            (...areEnabled) => areEnabled.some((isEnabled) => isEnabled));
-
-        if (splitButtonCommandName) {
-            this.listenTo(dropdownView.buttonView, "execute", () => {
-                editor.execute(splitButtonCommandName);
-                editor.editing.view.focus();
-            });
-        }
-        this.listenTo<ButtonExecuteEvent>(dropdownView, "execute", (evt) => {
-            const source = evt.source as { commandName: string };
-            editor.execute(source.commandName);
-            // A switch keeps the dropdown open, so the focus stays in the list.
-            if (!(source instanceof SwitchButtonView)) {
-                editor.editing.view.focus();
-            }
-        });
-
-        return dropdownView;
-    }
-
-}
-
-type TableDropdownItem =
-    | { type: "button" | "switchbutton"; commandName: string; label: string }
-    | { type: "separator" };
-
-interface TableDropdownOptions {
-    label: string;
-    icon: string;
-    items: TableDropdownItem[];
-    splitButtonCommandName?: string;
-}
-
-const SEPARATOR_ITEM: TableDropdownItem = { type: "separator" };
-
-function buttonItem(commandName: string, label: string): TableDropdownItem {
-    return { type: "button", commandName, label };
-}
-
-function switchItem(commandName: string, label: string): TableDropdownItem {
-    return { type: "switchbutton", commandName, label };
 }
 
 declare module "ckeditor5" {
