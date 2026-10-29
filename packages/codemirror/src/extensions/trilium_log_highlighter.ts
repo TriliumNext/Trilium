@@ -31,6 +31,7 @@ import { decorateSearchQuery, searchHighlightTheme } from "./trilium_search_high
  *    request: the verb bolded, the query highlighted as search syntax and the count muted
  *  - `<ts> JS Error: …` and `<ts> ERROR: …` lines — coloured red, together with their following
  *    continuation lines (e.g. wrapped stack traces), which carry no timestamp of their own
+ *  - `<ts> WARNING: …` lines — coloured amber, with their continuation lines like errors
  *  - `<ts> JS Info: …` lines (and their continuation lines) — placeholder class, no colour yet
  */
 
@@ -45,6 +46,7 @@ const HTTP_REQUEST = /^\d{2}:\d{2}:\d{2}\.\d{3} (Slow )?(\d{3}) (GET|POST|PUT|PA
 /** Length of the `Slow` word itself (the capture group includes its trailing space). */
 const SLOW_LENGTH = 4;
 const ERROR_LINE = /^\d{2}:\d{2}:\d{2}\.\d{3} (?:JS Error|ERROR):/;
+const WARNING_LINE = /^\d{2}:\d{2}:\d{2}\.\d{3} WARNING:/;
 const INFO_LINE = /^\d{2}:\d{2}:\d{2}\.\d{3} JS Info:/;
 // Slow SQL queries (logged when a query takes >= 20ms). Two shapes:
 //   `Slow query took 78ms: SELECT …`      — the statement follows, whitespace-normalised to one line
@@ -77,6 +79,7 @@ const searchCountMark = Decoration.mark({ class: "cm-log-search-count" });
 const httpLine = Decoration.line({ class: "cm-log-http" });
 const queryLine = Decoration.line({ class: "cm-log-query" });
 const errorLine = Decoration.line({ class: "cm-log-error" });
+const warningLine = Decoration.line({ class: "cm-log-warning" });
 const infoLine = Decoration.line({ class: "cm-log-info" });
 const statusMarks: Record<string, Decoration> = {
     "2": Decoration.mark({ class: "cm-log-status cm-log-status-2xx" }),
@@ -117,6 +120,10 @@ const logHighlightTheme = EditorView.baseTheme({
         // Transparent by default — set `--log-error-line-background-color` to tint the whole line
         // the way `.cm-log-http` is.
         backgroundColor: "var(--log-error-line-background-color, transparent)"
+    },
+    ".cm-log-warning": {
+        color: "var(--log-warning-color, #d29922)",
+        backgroundColor: "var(--log-warning-line-background-color, transparent)"
     },
     // Placeholder: no colour yet — set `--log-info-color` to activate.
     ".cm-log-info": { color: "var(--log-info-color, inherit)" }
@@ -227,11 +234,12 @@ function sqlTokenMark(classes: string) {
 
 /**
  * Returns the line decoration a multi-line block entry applies to itself and its continuation lines
- * (e.g. `errorLine` for `JS Error:`/`ERROR:`, `infoLine` for `JS Info:`), or null for entries that
+ * (e.g. `errorLine` for `JS Error:`/`ERROR:`, `warningLine` for `WARNING:`, `infoLine` for `JS Info:`), or null for entries that
  * don't span lines. `null` for continuation lines, which carry no timestamp.
  */
 function blockLineFor(text: string): Decoration | null {
     if (ERROR_LINE.test(text)) return errorLine;
+    if (WARNING_LINE.test(text)) return warningLine;
     if (INFO_LINE.test(text)) return infoLine;
     return null;
 }

@@ -120,7 +120,7 @@ export function getIconPacks() {
             if (!iconPack) return false;
 
             if (usedPrefixes.has(iconPack.prefix)) {
-                getLog().info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
+                getLog().warn(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
                 return false;
             }
             usedPrefixes.add(iconPack.prefix);
@@ -251,7 +251,7 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
         if (skippedKeys.length) {
             const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
             const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
-            getLog().error(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
+            getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;

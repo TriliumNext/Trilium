@@ -289,6 +289,8 @@
     --log-search-count-color: #00000077;
     --log-error-color: #b32017;
     --log-error-line-background-color: #ff000017;
+    --log-warning-color: #9a6700;
+    --log-warning-line-background-color: #ffb30017;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
     /* Search query syntax (the search string of a saved search) */

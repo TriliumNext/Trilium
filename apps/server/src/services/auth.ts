@@ -271,7 +271,7 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
     const totpToken = req.headers["trilium-totp"];
     if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
         res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
-        getLog().info(`WARNING: Missing TOTP token from ${req.ip}, rejecting.`);
+        getLog().warn(`Missing TOTP token from ${req.ip}, rejecting.`);
         return;
     }
 
@@ -280,10 +280,10 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
     const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
     if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
-        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
     } else if (failedFactor === "totp") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
-        getLog().info(`WARNING: Wrong TOTP token from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong TOTP token from ${req.ip}, rejecting.`);
     } else {
         next();
     }
