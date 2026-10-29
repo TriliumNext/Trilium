@@ -75,6 +75,7 @@ import TableContextMenu from "./plugins/table_context_menu.js";
 import TableMove from "./plugins/table_move/table_move.js";
 import TablePasteRows from "./plugins/table_paste_rows.js";
 import TableSort from "./plugins/table_sort.js";
+import SortSelection from "./plugins/sort_selection/sort_selection.js";
 import TableInsertUI from "./plugins/table_insert/table_insert_ui.js";
 import TableToolbarDropdowns from "./plugins/table_toolbar_dropdowns.js";
 import TriliumTableScroll from "./plugins/table_scroll.js";
@@ -132,6 +133,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TableMove,
     TablePasteRows,
     TableSort,
+    SortSelection,
     TableInsertUI,
     TableToolbarDropdowns,
     TriliumTableScroll,

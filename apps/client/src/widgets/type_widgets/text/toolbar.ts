@@ -95,6 +95,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                 "indent",
                 "moveBlockUp",
                 "moveBlockDown",
+                ...getSortSelectionItems(),
                 ...(aiAssistant ? ["|", "aiAssistantMenu"] : [])
             ]
         },
@@ -130,7 +131,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
         // The row of the `contextToolbar` button in a list, as a list has no toolbar of its own. It
         // replaces the main row, so it repeats the indentation and the moves, used most in a list.
         listToolbar: [
-            "outdent", "indent", "moveBlockUp", "moveBlockDown",
+            "outdent", "indent", "moveBlockUp", "moveBlockDown", ...getSortSelectionItems(),
             "|",
             "listTypeMenu", "listStartAt", "listReversed"
         ],
@@ -190,6 +191,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 buildAlignmentToolbar(),
                 "outdent",
                 "indent",
+                ...getSortSelectionItems(),
                 "|",
                 "insertTemplate",
                 "markdownImport",
@@ -265,6 +267,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             buildAlignmentToolbar(),
             "outdent",
             "indent",
+            ...getSortSelectionItems(),
             "|",
             "insertTemplate",
             "markdownImport",
@@ -299,6 +302,11 @@ function buildInsertGroup() {
 /** The button that inserts an extended code block, while its experimental feature is on. */
 function getExtendedCodeBlockItems(): string[] {
     return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [ "extendedCodeBlock" ] : [];
+}
+
+/** The button that sorts the selection, while its experimental feature is on. */
+function getSortSelectionItems(): string[] {
+    return isExperimentalFeatureEnabled("sortSelection") ? [ "sortSelection" ] : [];
 }
 
 function buildAlignmentToolbar() {

@@ -107,6 +107,35 @@ describe("the extended code block", () => {
     });
 });
 
+describe("the sort selection button", () => {
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** The items each sort button follows: the indentation, or the block moves on a phone. */
+    function getPlacements() {
+        const mobile = buildMobileToolbar(true);
+        return [
+            [ buildClassicToolbar(false, true).toolbar.items, "indent" ],
+            [ buildFloatingToolbar(true).blockToolbar, "indent" ],
+            [ mobile.toolbar.items, "moveBlockDown" ],
+            [ mobile.listToolbar, "moveBlockDown" ]
+        ] as const;
+    }
+
+    it("follows the indentation or the block moves in every toolbar while it is on", () => {
+        experimentalState.enabled.add("sortSelection");
+        for (const [ items, previous ] of getPlacements()) {
+            const index = items.indexOf(previous);
+            expect(items.slice(index, index + 2)).toEqual([ previous, "sortSelection" ]);
+        }
+
+        experimentalState.enabled.clear();
+        for (const [ items, previous ] of getPlacements()) {
+            expect(items).toContain(previous);
+            expect(items).not.toContain("sortSelection");
+        }
+    });
+});
+
 describe("the attach menu", () => {
     it("replaces the image and file uploads on every toolbar, with the camera only on a phone", () => {
         const classic = buildClassicToolbar(false, true);

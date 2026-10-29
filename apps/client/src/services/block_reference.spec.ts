@@ -13,8 +13,9 @@ import type { ViewScope } from "./link.js";
 
 const {
     showError, showMessage, showMenu, copyHtmlWithToast, copyTextWithToast, getTextEditorContaining,
-    getNote, getNoteShareLink
+    getNote, getNoteShareLink, buildSortSelectionMenuItem
 } = vi.hoisted(() => ({
+    buildSortSelectionMenuItem: vi.fn(),
     getNoteShareLink: vi.fn(),
     showError: vi.fn(),
     showMessage: vi.fn(),
@@ -29,7 +30,9 @@ vi.mock("./i18n.js", () => ({
 }));
 vi.mock("./toast.js", () => ({ default: { showError, showMessage } }));
 vi.mock("../menus/context_menu.js", () => ({ default: { show: showMenu } }));
-vi.mock("../menus/text_editor_context_menu.js", () => ({ getTextEditorContaining }));
+vi.mock("../menus/text_editor_context_menu.js", () => ({
+    buildSortSelectionMenuItem, getTextEditorContaining
+}));
 vi.mock("./clipboard_ext.js", () => ({ copyHtmlWithToast, copyTextWithToast }));
 vi.mock("./froca.js", () => ({ default: { getNote } }));
 vi.mock("./content_renderer.js", () => ({
@@ -257,6 +260,7 @@ describe("openBlockHandleMenu", () => {
 
         openBlockHandleMenu(event, 3, { copyReference });
         openBlockHandleMenu(event, 3, { copyReference, copyShareLink });
+        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" } });
 
         expect(showMenu).toHaveBeenNthCalledWith(1, expect.objectContaining({
             x: event.pageX,
@@ -268,6 +272,9 @@ describe("openBlockHandleMenu", () => {
                 title: "block_reference.copy_share_link:3",
                 handler: copyShareLink
             }) ]
+        }));
+        expect(showMenu).toHaveBeenNthCalledWith(3, expect.objectContaining({
+            items: [ copyItem, { kind: "separator" }, { title: "SORT" } ]
         }));
     });
 });
@@ -313,7 +320,7 @@ describe("buildReferenceConfig", () => {
     });
 
     it("opens the block handle menu, which copies a reference or the public link", async () => {
-        const { config, save } = buildSource();
+        const { config, editor, save } = buildSource();
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
 
@@ -332,6 +339,11 @@ describe("buildReferenceConfig", () => {
         getNoteShareLink.mockReturnValue(null);
         config.blockReference?.openHandleMenu?.(event, 1);
         expect(showMenu.mock.calls[1][0].items).toHaveLength(1);
+
+        buildSortSelectionMenuItem.mockReturnValueOnce({ title: "SORT" });
+        config.blockReference?.openHandleMenu?.(event, 2);
+        expect(buildSortSelectionMenuItem).toHaveBeenCalledWith(editor);
+        expect(showMenu.mock.calls[2][0].items.at(-1)).toEqual({ title: "SORT" });
     });
 
     it("copies nothing before the editor or the note is there", async () => {
