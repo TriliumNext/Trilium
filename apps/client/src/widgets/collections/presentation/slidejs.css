@@ -22,8 +22,36 @@
     margin-inline: auto;
 }
 
+.reveal figure:is(.image-style-align-left, .image-style-align-right, .image-style-side) ~ :is(ul, ol, dl) {
+    display: block;
+}
+
 .reveal figure.image {
     margin-block: 0;
+    text-align: center;
+
+    &.image-style-align-left {
+        float: left;
+        margin-inline: 0 1em;
+    }
+
+    &.image-style-align-right,
+    &.image-style-side {
+        float: right;
+        margin-inline: 1em 0;
+    }
+
+    &.image-style-side {
+        max-width: 50%;
+    }
+
+    &.image-style-block-align-left {
+        margin-inline: 0 auto;
+    }
+
+    &.image-style-block-align-right {
+        margin-inline: auto 0;
+    }
 }
 
 .reveal figure img {
