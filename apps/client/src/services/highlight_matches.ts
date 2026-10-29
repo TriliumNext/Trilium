@@ -156,9 +156,9 @@ function findOffsets(regExp: RegExp, text: string) {
 }
 
 /**
- * Strips the diacritics of `text` and lowercases it, one code point at a time. `starts[i]` and
- * `ends[i]` are the bounds in `text` of the code point that produced `text[i]` of the result; a
- * combining mark that folds away joins the code point before it.
+ * Strips the diacritics of `text` and lowercases it, one code point at a time, with the final
+ * sigma ς as σ. `starts[i]` and `ends[i]` are the bounds in `text` of the code point that produced
+ * `text[i]` of the result; a combining mark that folds away joins the code point before it.
  */
 function fold(text: string) {
     let folded = "";
@@ -168,7 +168,8 @@ function fold(text: string) {
 
     for (const char of text) {
         const end = index + char.length;
-        const replacement = char.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+        const replacement = char.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
+            .replace("ς", "σ");
         if (replacement.length === 0 && ends.length > 0) {
             ends[ends.length - 1] = end;
         }

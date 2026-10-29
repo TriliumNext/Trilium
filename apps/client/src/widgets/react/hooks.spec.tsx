@@ -702,6 +702,11 @@ describe("useImperativeSearchHighlighlighting", () => {
         expect(markedTexts(el)).toHaveLength(500);
     });
 
+    it("matches a final sigma whatever the case of the text", () => {
+        const el = highlight(["ος"], "<p>ΛΟΓΟΣ λογος</p>");
+        expect(markedTexts(el)).toEqual(["ΟΣ", "ος"]);
+    });
+
     it("wraps a CJK substring match inside a larger word", () => {
         const el = highlight(["笔记"], "<p>我的笔记本</p>");
         expect(markedTexts(el)).toEqual(["笔记"]);
