@@ -7,7 +7,7 @@ import { CoreApiTester } from "../../test/api_tester";
 
 // The protected-session login does real scrypt (N=16384) password verification
 // and data-key derivation. Under the browser provider that runs in pure JS
-// (scrypt-js), ~10x slower with V8 coverage instrumentation than Node's native
+// (@noble/hashes), ~10x slower with V8 coverage instrumentation than Node's native
 // scryptSync — enough to blow the 5s default. Give the standalone
 // suite a larger timeout; the server suite keeps the strict default.
 const isBrowserRuntime = typeof self !== "undefined";

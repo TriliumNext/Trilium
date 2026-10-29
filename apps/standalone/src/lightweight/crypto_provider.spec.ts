@@ -1,6 +1,10 @@
-import { createHash as nodeCreateHash, createHmac as nodeCreateHmac } from "node:crypto";
+import {
+    createCipheriv as nodeCreateCipheriv,
+    createHash as nodeCreateHash,
+    createHmac as nodeCreateHmac,
+    scryptSync as nodeScrypt
+} from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import aesjs from "aes-js";
 
 import BrowserCryptoProvider from "./crypto_provider.js";
 
@@ -39,7 +43,7 @@ describe("BrowserCryptoProvider parity with the Node.js provider", () => {
 
     it("createHash matches node:crypto for strings and for (invalid-UTF-8) binary content", () => {
         for (const algorithm of ["md5", "sha1", "sha512"] as const) {
-            for (const content of [utf8String, allBytes, largeBinary]) {
+            for (const content of ["", new Uint8Array(0), utf8String, allBytes, largeBinary]) {
                 const expected = new Uint8Array(nodeCreateHash(algorithm).update(content).digest());
                 expect(provider.createHash(algorithm, content), `${algorithm} of ${typeof content === "string" ? "string" : `${content.length} bytes`}`).toEqual(expected);
             }
@@ -49,6 +53,8 @@ describe("BrowserCryptoProvider parity with the Node.js provider", () => {
     it("hmac matches node:crypto for string and binary secrets/values", () => {
         const cases: [string | Uint8Array, string | Uint8Array][] = [
             ["secret", "value"],
+            ["", ""],
+            [new Uint8Array(100).fill(1), "a secret longer than the block size is hashed first"],
             [allBytes, largeBinary],
             ["secret", allBytes]
         ];
@@ -56,6 +62,87 @@ describe("BrowserCryptoProvider parity with the Node.js provider", () => {
             const expected = nodeCreateHmac("sha256", secret).update(value).digest("base64");
             expect(provider.hmac(secret, value)).toBe(expected);
         }
+    });
+
+    it("scrypt matches node:crypto with the production parameters and with custom ones", async () => {
+        // N=16384, r=8, p=1 and a 32-byte key are what `scrypt.ts` in core passes.
+        expect(await provider.scrypt("pässword", "salt-string", 32, { N: 16384, r: 8, p: 1 }))
+            .toEqual(new Uint8Array(nodeScrypt("pässword", "salt-string", 32, { N: 16384, r: 8, p: 1 })));
+
+        const salt = largeBinary.subarray(0, 64);
+        expect(await provider.scrypt(allBytes, salt, 64, { N: 1024, r: 4, p: 2 }))
+            .toEqual(new Uint8Array(nodeScrypt(allBytes, salt, 64, { N: 1024, r: 4, p: 2 })));
+    });
+
+    it("scrypt defaults to N=16384, r=8, p=1", async () => {
+        const expected = new Uint8Array(nodeScrypt("password", "salt", 32, { N: 16384, r: 8, p: 1 }));
+        expect(await provider.scrypt("password", "salt", 32)).toEqual(expected);
+        expect(await provider.scrypt("password", "salt", 32, { N: 16384 })).toEqual(expected);
+    });
+
+    describe("aes-128-cbc", () => {
+        const key = Uint8Array.from({ length: 16 }, (_, i) => i * 13);
+        const iv = Uint8Array.from({ length: 16 }, (_, i) => 255 - i);
+        const lengths = [ 0, 1, 15, 16, 17, 31, 32, 33, 1000 ];
+
+        it("encrypts byte for byte like node:crypto, for every length around the block size", () => {
+            for (const length of lengths) {
+                const plain = largeBinary.subarray(0, length);
+
+                const cipher = provider.createCipheriv("aes-128-cbc", key, iv);
+                const encrypted = concat(cipher.update(plain), cipher.final());
+
+                expect(encrypted, `${length} bytes`).toEqual(nodeEncrypt(key, iv, plain));
+            }
+        });
+
+        it("decrypts what node:crypto encrypted, for every length around the block size", () => {
+            for (const length of lengths) {
+                const plain = largeBinary.subarray(0, length);
+
+                const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
+                const decrypted = concat(decipher.update(nodeEncrypt(key, iv, plain)), decipher.final());
+
+                expect(decrypted, `${length} bytes`).toEqual(new Uint8Array(plain));
+            }
+        });
+
+        it("joins the chunks passed to update() in order", () => {
+            const plain = largeBinary.subarray(0, 100);
+            const encrypted = nodeEncrypt(key, iv, plain);
+
+            const cipher = provider.createCipheriv("aes-128-cbc", key, iv);
+            expect(concat(
+                cipher.update(plain.subarray(0, 7)),
+                cipher.update(plain.subarray(7, 40)),
+                cipher.update(plain.subarray(40)),
+                cipher.final()
+            )).toEqual(encrypted);
+
+            const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
+            expect(concat(
+                decipher.update(encrypted.subarray(0, 5)),
+                decipher.update(encrypted.subarray(5)),
+                decipher.final()
+            )).toEqual(new Uint8Array(plain));
+        });
+
+        it("returns bytes rather than throwing when decrypting with a wrong key", () => {
+            // `data_encryption.decrypt()` detects a wrong key through its digest and returns false.
+            // Most wrong keys leave invalid padding, which must not throw before that check.
+            const encrypted = nodeEncrypt(key, iv, largeBinary.subarray(0, 50));
+            for (let i = 1; i <= 64; i++) {
+                const decipher = provider.createDecipheriv("aes-128-cbc", key.map((byte) => byte ^ i), iv);
+                decipher.update(encrypted);
+                expect(() => decipher.final(), `key xor ${i}`).not.toThrow();
+            }
+        });
+
+        it("throws for ciphertext that is not a whole number of blocks", () => {
+            const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
+            decipher.update(new Uint8Array(20));
+            expect(() => decipher.final()).toThrow();
+        });
     });
 });
 
@@ -128,21 +215,26 @@ describe("AesJsCipher (via createCipheriv/createDecipheriv)", () => {
         expect(() => cipher.final()).toThrow("Cipher has already been finalized");
     });
 
-    it("returns decrypted bytes unchanged when the trailing padding byte is invalid", () => {
-        // Craft a single raw block whose decrypted last byte is 0 (an invalid
-        // PKCS7 padding length), exercising the non-stripping branch in final().
-        const plain = new Uint8Array(16).fill(65);
-        plain[15] = 0;
-        const rawCipher = new Uint8Array(
-            new aesjs.ModeOfOperation.cbc(Array.from(key), Array.from(iv)).encrypt(plain)
-        );
+    it("returns decrypted bytes unchanged when the trailing padding byte is out of range", () => {
+        for (const last of [ 0, 17, 255 ]) {
+            const plain = new Uint8Array(32).fill(65);
+            plain[31] = last;
+
+            const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
+            decipher.update(nodeEncrypt(key, iv, plain, false));
+
+            expect(decipher.final(), `last byte ${last}`).toEqual(plain);
+        }
+    });
+
+    it("strips as many bytes as the trailing padding byte says, without checking the others", () => {
+        const plain = new Uint8Array(32).fill(65);
+        plain[31] = 3;
 
         const decipher = provider.createDecipheriv("aes-128-cbc", key, iv);
-        decipher.update(rawCipher);
-        const out = decipher.final();
+        decipher.update(nodeEncrypt(key, iv, plain, false));
 
-        expect(out).toHaveLength(16);
-        expect(out[15]).toBe(0);
+        expect(decipher.final()).toEqual(plain.subarray(0, 29));
     });
 });
 
@@ -341,3 +433,19 @@ describe("BrowserCryptoProvider base64", () => {
         });
     });
 });
+
+/** Encrypts `plain` with node:crypto, with PKCS#7 padding unless `autoPadding` is false. */
+function nodeEncrypt(key: Uint8Array, iv: Uint8Array, plain: Uint8Array, autoPadding = true) {
+    const cipher = nodeCreateCipheriv("aes-128-cbc", key, iv).setAutoPadding(autoPadding);
+    return concat(cipher.update(plain), cipher.final());
+}
+
+function concat(...parts: Uint8Array[]) {
+    const result = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+        result.set(part, offset);
+        offset += part.length;
+    }
+    return result;
+}
