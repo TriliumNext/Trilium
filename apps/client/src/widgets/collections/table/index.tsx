@@ -27,7 +27,7 @@ const TableEditing = lazy(() => import("./editing"));
 const VIEW_MODULES = [ SortModule, FormatModule, InteractionModule, ResizeColumnsModule, FrozenColumnsModule, PersistenceModule, MoveColumnsModule, DataTreeModule ];
 const EDITING_MODULES = [ ...VIEW_MODULES, EditModule, MoveRowsModule ];
 
-export default function TableView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<TableConfig>) {
+export default function TableView({ note, noteIds, viewConfig, saveConfig, isReadOnly: forcedReadOnly }: ViewModeProps<TableConfig>) {
     const tabulatorRef = useRef<VanillaTabulator>(null);
     const parentComponent = useContext(ParentComponent);
     // The scrolled area under the rows, where the "new row" strip is portaled — reached for anew
@@ -40,7 +40,7 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
     const [ handleColWidth, setHandleColWidth ] = useState(0);
 
     const { noteContext } = useNoteContext();
-    const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    const isReadOnly = useEffectiveReadOnly(note, noteContext) || !!forcedReadOnly;
     const canAddRows = !isReadOnly && note.type !== "search";
     const [ isEditingProperties, setIsEditingProperties ] = useState(false);
 

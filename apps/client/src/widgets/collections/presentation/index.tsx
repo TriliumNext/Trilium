@@ -123,6 +123,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     <CollectionSlides
                         presentation={presentation}
                         ntxId={noteContext?.ntxId}
+                        editedNoteId={editedNoteId}
                         onOpenNote={onOpenNote}
                     />,
                     shadowHost
@@ -164,6 +165,8 @@ function useElementOf<T extends HTMLElement>(ref: RefObject<T | null>) {
 interface CollectionSlidesProps {
     presentation: PresentationModel;
     ntxId: string | null | undefined;
+    /** The note of the slide being edited, whose collection alone can be changed and open its notes. */
+    editedNoteId: string | undefined;
     onOpenNote: ((noteId: string) => void) | undefined;
 }
 
@@ -172,22 +175,29 @@ interface CollectionSlidesProps {
  * host that its slide's `<slot>` shows. Outside the shadow root, the document's stylesheets style the
  * collection and the slide's theme does not; the collection is still drawn, scaled and moved with its slide.
  */
-export function CollectionSlides({ presentation, ntxId, onOpenNote }: CollectionSlidesProps) {
+export function CollectionSlides({ presentation, ntxId, editedNoteId, onOpenNote }: CollectionSlidesProps) {
     const slides = presentation.slides.flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ]);
     return (
         <>
             {slides.filter(slide => slide.isCollection).map(slide => {
                 const note = froca.getNoteFromCache(slide.noteId);
                 if (!note) return null;
+                const isEdited = slide.noteId === editedNoteId;
                 return (
-                    <div key={slide.noteId} slot={getCollectionSlotName(slide.noteId)} className="presentation-collection-slide">
+                    <div
+                        key={slide.noteId}
+                        slot={getCollectionSlotName(slide.noteId)}
+                        className={`presentation-collection-slide ${isEdited ? "is-edited" : ""}`}
+                    >
                         <Suspense fallback={null}>
                             <EmbeddedNoteList
                                 note={note}
                                 notePath={note.getBestNotePathString()}
                                 ntxId={ntxId}
                                 media="screen"
-                                onOpenNote={onOpenNote}
+                                isReadOnly={!isEdited}
+                                // Opening a note leaves the presentation, or opens a popup that full-screen hides.
+                                onOpenNote={isEdited ? onOpenNote : ignoreOpenNote}
                             />
                         </Suspense>
                     </div>
@@ -196,6 +206,8 @@ export function CollectionSlides({ presentation, ntxId, onOpenNote }: Collection
         </>
     );
 }
+
+function ignoreOpenNote() {}
 
 function getCollectionSlotName(noteId: string) {
     return `collection-${noteId}`;
@@ -297,7 +309,7 @@ interface PresentationProps {
     editedNoteId: string | undefined;
     /** Whether the editor of the edited slide holds its content. */
     isEditorReady: boolean;
-    /** Starts editing a text slide in place; left out when the presentation cannot be edited. */
+    /** Starts editing a text or collection slide in place; left out when the presentation cannot be edited. */
     onEditSlide: ((noteId: string) => void) | undefined;
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
@@ -371,13 +383,15 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady
     }, [ presentation, revealApi, editedNoteId ]);
 
     function renderSlide(slide: PresentationSlideBaseModel) {
-        const canEdit = onEditSlide && slide.type === "text";
+        const isEdited = slide.noteId === editedNoteId;
+        const canEdit = onEditSlide && !isEdited && (slide.type === "text" || slide.isCollection);
         return (
             <Slide
                 key={slide.noteId}
                 slide={slide}
                 ntxId={ntxId}
-                editorHostRef={slide.noteId === editedNoteId ? onEditorHost : undefined}
+                // A collection slide is edited in its own view, so it takes no editor.
+                editorHostRef={isEdited && !slide.isCollection ? onEditorHost : undefined}
                 isEditorReady={isEditorReady}
                 onEdit={canEdit ? () => {
                     if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);

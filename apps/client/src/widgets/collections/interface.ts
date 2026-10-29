@@ -54,4 +54,6 @@ export interface ViewModeProps<T extends object> {
     showTextRepresentation?: boolean;
     /** Opens a note the view selects, in place of the view's own way, such as the map's detail pane. */
     onOpenNote?: (noteId: string) => void;
+    /** Shows the collection read-only even when its note can be edited, such as on a slide that is not edited. */
+    isReadOnly?: boolean;
 }

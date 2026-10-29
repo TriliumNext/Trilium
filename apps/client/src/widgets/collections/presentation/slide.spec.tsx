@@ -58,9 +58,13 @@ describe("collection slides", () => {
         document.body.replaceChildren();
     });
 
-    it("shows each collection slide through its slot, with the app's note list", async () => {
+    it("shows each collection slide through its slot, read-only unless it is the edited slide", async () => {
+        const listProps = new Map<string, { isReadOnly?: boolean, onOpenNote?: (noteId: string) => void }>();
         vi.doMock("../NoteList", () => ({
-            EmbeddedNoteList: ({ note }: { note: { noteId: string } }) => <div className="mock-note-list">{note.noteId}</div>
+            EmbeddedNoteList: (props: { note: { noteId: string }, isReadOnly?: boolean, onOpenNote?: (noteId: string) => void }) => {
+                listProps.set(props.note.noteId, props);
+                return <div className="mock-note-list">{props.note.noteId}</div>;
+            }
         }));
         const { buildNote } = await import("../../../test/easy-froca");
         const { CollectionSlides, Slide } = await import("./index");
@@ -70,6 +74,7 @@ describe("collection slides", () => {
         const tableSlide: PresentationSlideBaseModel = { noteId: "table", type: "book", content: { __html: "" }, isCollection: true };
         const textSlide: PresentationSlideBaseModel = { noteId: "text", type: "text", content: { __html: "<p>Text</p>" } };
 
+        const onOpenNote = vi.fn();
         const slideContainer = document.createElement("div");
         render(<Slide slide={boardSlide} ntxId={undefined} />, slideContainer);
         const section = slideContainer.querySelector("section");
@@ -83,7 +88,8 @@ describe("collection slides", () => {
         render(<CollectionSlides
             presentation={{ slides: [ { ...textSlide, verticalSlides: [ boardSlide ] }, { ...tableSlide, verticalSlides: undefined } ] }}
             ntxId={undefined}
-            onOpenNote={undefined}
+            editedNoteId="table"
+            onOpenNote={onOpenNote}
         />, host);
         await vi.waitFor(() => expect(host.querySelectorAll(".mock-note-list")).toHaveLength(2));
         expect([ ...host.querySelectorAll(".presentation-collection-slide") ].map(wrapper => ({
@@ -93,6 +99,16 @@ describe("collection slides", () => {
             { slot: "collection-board", list: "board" },
             { slot: "collection-table", list: "table" }
         ]);
+
+        // Only the edited slide's collection can be changed, and only it opens the notes it selects.
+        expect(listProps.get("board")?.isReadOnly).toBe(true);
+        expect(listProps.get("table")?.isReadOnly).toBe(false);
+        listProps.get("board")?.onOpenNote?.("card");
+        expect(onOpenNote).not.toHaveBeenCalled();
+        listProps.get("table")?.onOpenNote?.("row");
+        expect(onOpenNote).toHaveBeenCalledWith("row");
+        expect(host.querySelector('[slot="collection-table"]')?.classList.contains("is-edited")).toBe(true);
+        expect(host.querySelector('[slot="collection-board"]')?.classList.contains("is-edited")).toBe(false);
     });
 
     it("leaves the keys of a field being typed in to the field", async () => {

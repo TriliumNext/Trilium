@@ -44,4 +44,9 @@
         flex: 1;
         min-height: 0;
     }
+
+    &.is-edited {
+        outline: 2px dashed var(--r-link-color);
+        outline-offset: -2px;
+    }
 }

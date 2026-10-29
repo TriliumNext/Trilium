@@ -164,7 +164,7 @@ const saved: BoardViewData[] = [];
  * config it was handed, so the `viewConfig` prop only changes identity if the caller passed a new
  * object. That is exactly the condition the board's refresh effect depends on.
  */
-function Harness({ note, noteIds, initialConfig }: { note: ReturnType<typeof buildNote>, noteIds: string[], initialConfig: BoardViewData }) {
+function Harness({ note, noteIds, initialConfig, isReadOnly }: { note: ReturnType<typeof buildNote>, noteIds: string[], initialConfig: BoardViewData, isReadOnly?: boolean }) {
     const [ state, setState ] = useState<{ config: BoardViewData }>({ config: initialConfig });
     const saveConfig = useCallback((config: BoardViewData) => {
         saved.push(config);
@@ -187,6 +187,7 @@ function Harness({ note, noteIds, initialConfig }: { note: ReturnType<typeof bui
             saveConfig={saveConfig}
             media="screen"
             onReady={() => {}}
+            isReadOnly={isReadOnly}
         />
     );
 }
@@ -5781,12 +5782,13 @@ describe("BoardView, read-only", () => {
         }
     });
 
-    async function setup(host = new Component()) {
+    /** `forced` makes the board read-only through `isReadOnly`, as a slide does, instead of `#readOnly`. */
+    async function setup(host = new Component(), { forced = false } = {}) {
         const note = buildNote({
             title: "Board",
             "#collection": "",
             "#viewType": "board",
-            "#readOnly": "",
+            ...(forced ? {} : { "#readOnly": "" }),
             children: [
                 { id: "roCard1", title: "First", "#status": "To Do" },
                 { id: "roCard2", title: "Second", "#status": "Done" }
@@ -5798,7 +5800,7 @@ describe("BoardView, read-only", () => {
         await act(async () => {
             render(
                 <ParentComponent.Provider value={host}>
-                    <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} />
+                    <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} isReadOnly={forced || undefined} />
                 </ParentComponent.Provider>,
                 mountPoint
             );
@@ -5811,6 +5813,14 @@ describe("BoardView, read-only", () => {
     const menuTitles = (show: { mock: { calls: unknown[][] } }) =>
         ((show.mock.calls.at(-1)?.[0] as { items: { title?: string }[] } | undefined)?.items ?? [])
             .map((item) => item.title);
+
+    it("is read-only through `isReadOnly` even when its note can be edited", async () => {
+        const board = await setup(new Component(), { forced: true });
+        expect(board.querySelector(".board-note")).not.toBeNull();
+        expect(board.querySelector(".board-new-item")).toBeNull();
+        expect(board.querySelector(".board-add-column")).toBeNull();
+        expect(board.querySelector(".board-note .edit-icon")).toBeNull();
+    });
 
     it("offers no way to add a card or a column, nor to rename either", async () => {
         vi.mocked(getNoteTypeOptions).mockClear();
