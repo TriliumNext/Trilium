@@ -288,9 +288,6 @@ importers:
       gridstack:
         specifier: 14.0.0
         version: 14.0.0
-      htmldiff-js:
-        specifier: 1.0.5
-        version: 1.0.5
       i18next:
         specifier: 26.5.11
         version: 26.5.11(typescript@6.0.3)
@@ -7968,9 +7965,6 @@ packages:
   html@1.0.0:
     resolution: {integrity: sha512-lw/7YsdKiP3kk5PnR1INY17iJuzdAtJewxr14ozKJWbbR97znovZ0mh+WEMZ8rjc3lgTK+ID/htTjuyGKB52Kw==}
     hasBin: true
-
-  htmldiff-js@1.0.5:
-    resolution: {integrity: sha512-rmow9353OK0elkub15Sbze8Nj7BYfduqoJJw4yEvHHjOcHeCazNPk0PoUbjE8SvxKgjymeRIFU/OnS8jtitRtA==}
 
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
@@ -19960,8 +19954,6 @@ snapshots:
   html@1.0.0(patch_hash=8acc288f8e9cde3c8a0c6e89f0b3796aeeb8251b88db9d1ba313e2352a591d68):
     dependencies:
       concat-stream: 1.6.2
-
-  htmldiff-js@1.0.5: {}
 
   htmlparser2@10.1.0:
     dependencies:
