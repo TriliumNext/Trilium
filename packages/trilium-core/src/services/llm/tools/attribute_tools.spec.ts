@@ -132,6 +132,32 @@ describe("attribute_tools", () => {
             expect(note.getOwnedLabels("tag")[0].isInheritable).toBe(false);
         });
 
+        it("stops child notes inheriting an attribute made non-inheritable", () => {
+            const parent = createNote("Inheritance parent");
+            const child = cls.init(() => noteService.createNewNote({
+                parentNoteId: parent.noteId, title: "Inheritance child", content: "", type: "text"
+            }).note);
+            cls.init(() => {
+                parent.addLabel("tag", "MCP", true);
+                parent.addLabel("status", "draft", true);
+            });
+            expect(child.getLabelValue("tag")).toBe("MCP");
+            expect(child.getLabelValue("status")).toBe("draft");
+
+            const attributeId = parent.getOwnedLabels("tag")[0].attributeId;
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: parent.noteId, type: "label", name: "tag", value: "MCP", attributeId, isInheritable: false
+            }));
+            cls.init(() => getTool("set_attribute").execute({
+                noteId: parent.noteId, type: "label", name: "status", value: "draft", isInheritable: false
+            }));
+
+            expect(child.getLabel("tag")).toBeNull();
+            expect(child.getLabel("status")).toBeNull();
+            expect(parent.getOwnedLabels("tag")).toMatchObject([ { value: "MCP", isInheritable: false } ]);
+            expect(parent.getOwnedLabels("status")).toMatchObject([ { value: "draft", isInheritable: false } ]);
+        });
+
         it("creates an inheritable attribute in add mode", () => {
             const note = createNote("Add inheritable host");
             cls.init(() => getTool("set_attribute").execute({
