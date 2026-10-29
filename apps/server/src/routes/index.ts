@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, icon_packs as iconPackService, options as optionService, password as passwordService, sql_init, task_states } from "@triliumnext/core";
+import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -153,7 +153,6 @@ export function bootstrap(req: Request, res: Response) {
 
     const options = optionService.getOptionMap();
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
-    const iconPacks = iconPackService.getIconPacks();
 
     // One-shot: consume the enrollment flag set by the OIDC afterCallback so the client toasts the
     // successful connection exactly once after the post-enrollment redirect.
@@ -182,16 +181,7 @@ export function bootstrap(req: Request, res: Response) {
             && isElectronRenderer
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
-        isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
-        iconPackCss: [
-            ...iconPacks
-                .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
-                    ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                    : `api/attachments/download/${p.fontAttachmentId}`)),
-            task_states.generateTaskStateCss(iconPacks)
-        ]
-            .filter(Boolean)
-            .join("\n\n"),
+        isMainWindow: view === "mobile" ? true : !req.query.extraWindow
     } satisfies BootstrapDefinition);
 }
 
