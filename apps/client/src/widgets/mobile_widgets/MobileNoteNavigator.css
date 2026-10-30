@@ -72,12 +72,15 @@
     font-size: 0.9em;
 }
 
-.mobile-navigator-back {
+.mobile-navigator-toolbar-button {
     display: flex;
+    flex: 0 1 auto;
     align-items: center;
     gap: 4px;
+    min-width: 0;
     min-height: 40px;
-    padding: 6px 10px 6px 4px;
+    padding-block: 6px;
+    padding-inline: 4px 10px;
     background: none;
     border: none;
     color: var(--main-text-color);
@@ -85,15 +88,19 @@
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    max-width: 100%;
 }
 
-.mobile-navigator-back:disabled {
+.mobile-navigator-toolbar-button:disabled {
     cursor: default;
     opacity: 0.6;
 }
 
-.mobile-navigator-back-icon {
+.mobile-navigator-forward {
+    margin-inline-start: auto;
+    padding-inline: 10px 4px;
+}
+
+.mobile-navigator-toolbar-icon {
     flex: 0 0 auto;
     font-size: 1.5em;
 }
@@ -103,7 +110,7 @@
     font-size: 1.2em;
 }
 
-.mobile-navigator-back-title {
+.mobile-navigator-toolbar-title {
     flex: 1 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;

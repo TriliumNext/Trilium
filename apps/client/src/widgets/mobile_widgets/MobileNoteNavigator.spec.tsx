@@ -12,7 +12,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, getChevronIcon, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -210,6 +210,31 @@ describe("UnhoistButton", () => {
         } finally {
             glob.isRtl = isRtl;
         }
+    });
+});
+
+describe("ForwardToNoteButton", () => {
+    it("shows the open note's title before a forward chevron, and brings the note back on a tap", () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "fwdFolder", title: "Folder", children: [ { id: "fwdLeaf", title: "Leaf" } ] }
+        ] });
+        const triggerCommand = vi.fn();
+        const parent = {
+            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}, triggerCommand
+        } as unknown as Component;
+
+        const button = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <ForwardToNoteButton notePath="root/fwdFolder/fwdLeaf" />
+            </ParentComponent.Provider>
+        ).querySelector("button");
+        expect(button?.getAttribute("aria-label")).toBe("mobile_note_navigator.forward");
+        expect(button?.textContent).toBe("Leaf");
+        // The chevron follows the title, pointing toward the trailing edge.
+        expect(button?.lastElementChild?.matches(".bx.bx-chevron-right")).toBe(true);
+
+        button?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "detail" });
     });
 });
 

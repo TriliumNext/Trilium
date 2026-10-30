@@ -12,6 +12,7 @@ Unlike the desktop version, the mobile version has a slightly different UI meant
 Here is a non-exhaustive list of differences between the desktop version and the mobile one:
 
 *   On a phone, the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> lies under the note. The <span class="tn-icon bx bx-chevron-left"></span> button in the top-left of the screen slides the note away to reveal the tree, and opening a note from the tree slides it back in.
+    *   To return to the note without opening it again, tap its title with the <span class="tn-icon bx bx-chevron-right"></span> icon in the top-right of the tree, whichever folder the tree is showing.
     *   A swipe from the left edge of the screen also reveals the tree, but the system's or the browser's back gesture can take it over, depending on the platform.
     *   Each tab remembers whether it was showing the tree or its note, and the folder its tree was showing. Switching tabs brings both back. Opening another note in the tab moves its tree to the folder holding that note.
     *   A new tab opens on the tree, at the root, with the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md">Workspaces</a> and the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a>, if there are any, listed above it. Tap a workspace to hoist the tab into it.

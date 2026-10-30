@@ -2864,6 +2864,7 @@
   },
   "mobile_note_navigator": {
     "back": "Go up one level",
+    "forward": "Return to the note",
     "loading": "Loading...",
     "empty": "This note has no children.",
     "current_note": "This note",

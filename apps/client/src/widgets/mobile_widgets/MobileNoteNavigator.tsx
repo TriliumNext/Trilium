@@ -242,7 +242,11 @@ export default function MobileNoteNavigator() {
 
     const isCurrentActive = !!activeNoteId && activeNoteId === currentParentId;
     const isHoisted = effectiveHoistedId !== "root";
-    const showToolbar = canGoBack || isHoisted;
+    // In tablet mode the note sits next to the tree, so there is nothing to bring back.
+    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
+    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
+    const canGoForward = isPhone && !!activeNotePath;
+    const showToolbar = canGoBack || isHoisted || canGoForward;
 
     const currentContextHandler = useMemo(
         () => buildNoteContextMenu(currentParentPath, parentComponent),
@@ -257,22 +261,23 @@ export default function MobileNoteNavigator() {
                     {canGoBack ? (
                         <button
                             type="button"
-                            className="mobile-navigator-back"
+                            className="mobile-navigator-toolbar-button mobile-navigator-back"
                             onClick={pendingPop ? undefined : goBack}
                             disabled={pendingPop}
                             aria-label={t("mobile_note_navigator.back")}
                         >
                             <Icon
                                 icon={pendingPop ? "bx bx-loader bx-spin" : getChevronIcon("back")}
-                                className="mobile-navigator-back-icon"
+                                className="mobile-navigator-toolbar-icon"
                             />
-                            <span className="mobile-navigator-back-title">
+                            <span className="mobile-navigator-toolbar-title">
                                 {backTargetTitle ?? ""}
                             </span>
                         </button>
-                    ) : (
+                    ) : isHoisted && (
                         <UnhoistButton hoistedNoteId={effectiveHoistedId} onUnhoist={unhoist} />
                     )}
+                    {canGoForward && activeNotePath && <ForwardToNoteButton notePath={activeNotePath} />}
                 </div>
             )}
 
@@ -472,7 +477,7 @@ export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: str
         <button
             type="button"
             className={clsx(
-                "mobile-navigator-back mobile-navigator-unhoist",
+                "mobile-navigator-toolbar-button mobile-navigator-unhoist",
                 cssClassManager.createClassForColor(workspaceColor ?? null)
             )}
             onClick={onUnhoist}
@@ -482,9 +487,33 @@ export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: str
                 icon="bx bx-exit"
                 className={clsx("mobile-navigator-unhoist-icon", !glob.isRtl && "bx-flip-horizontal")}
             />
-            <span className="mobile-navigator-back-title">
+            <span className="mobile-navigator-toolbar-title">
                 {hoistedTitle ?? hoistedNote?.title ?? ""}
             </span>
+        </button>
+    );
+}
+
+/**
+ * The button at the trailing end of the tree's toolbar that brings back the note at `notePath`,
+ * the one the tab shows, wherever the tree has moved: the note's title, then a chevron pointing
+ * forward, mirroring the back button.
+ */
+export function ForwardToNoteButton({ notePath }: { notePath: string }) {
+    const parentComponent = useContext(ParentComponent);
+    const noteIds = notePath.split("/");
+    const note = useNote(noteIds.at(-1));
+    const title = useNoteTitle(noteIds.at(-1), noteIds.at(-2));
+
+    return (
+        <button
+            type="button"
+            className="mobile-navigator-toolbar-button mobile-navigator-forward"
+            onClick={() => void parentComponent?.triggerCommand("setActiveScreen", { screen: "detail" })}
+            aria-label={t("mobile_note_navigator.forward")}
+        >
+            <span className="mobile-navigator-toolbar-title">{title ?? note?.title ?? ""}</span>
+            <Icon icon={getChevronIcon("forward")} className="mobile-navigator-toolbar-icon" />
         </button>
     );
 }
