@@ -18,6 +18,21 @@ import {
     type PresentationSlideBaseModel, renderSlideContent
 } from "./model";
 
+// The code languages enabled in the code note options, in their order.
+vi.mock("../../../services/mime_types", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../../services/mime_types")>();
+    return {
+        default: {
+            ...actual.default,
+            loadMimeTypes: () => {},
+            getEnabledMimeTypes: () => [
+                { mime: "text/plain", title: "Plain text" },
+                { mime: "text/x-python", title: "Python", icon: "bx bxl-python" }
+            ]
+        }
+    };
+});
+
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
     default: ({ messages }: { messages: { content: string }[] }) =>
         h("p", { class: "chat-preview" }, messages.map((message) => message.content).join(", "))
@@ -260,6 +275,14 @@ describe("getNewSlideTypes", () => {
                 ]
             ]);
     });
+
+    it("offers a code slide in each code language that the code note options enable", () => {
+        const code = getNewSlideTypes().flat().find(({ type }) => type === "code");
+        expect(code?.languages?.map(({ type, mime, title, icon }) => ({ type, mime, title, icon }))).toEqual([
+            { type: "code", mime: "text/plain", title: "Plain text", icon: "bx bx-code" },
+            { type: "code", mime: "text/x-python", title: "Python", icon: "bx bxl-python" }
+        ]);
+    });
 });
 
 describe("createSlide", () => {
@@ -291,6 +314,10 @@ describe("createSlide", () => {
         await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "code");
         expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
             type: "code", mime: "text/plain"
+        }));
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "code", "text/x-python");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "code", mime: "text/x-python"
         }));
         await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "mermaid");
         expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({

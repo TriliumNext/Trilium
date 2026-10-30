@@ -10,7 +10,7 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import ColorPicker from "../../react/ColorPicker";
-import { FormDropdownDivider, FormListItem } from "../../react/FormList";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen, useNoteLabel } from "../../react/hooks";
 import OverlayControlGroup, { OverlayControlButton, OverlayControlDropdown } from "../../react/OverlayControlGroup";
 import {
@@ -82,6 +82,7 @@ export default function PresentationControls({
                         title={isEditing ? t("presentation_view.finish-editing") : t("presentation_view.edit-slide")}
                         icon={isEditing ? "bx-check" : "bx-edit"}
                         active={isEditing}
+                        shortcut={isEditing ? "Escape" : undefined}
                         disabled={!isEditing && !slideToEdit.slide}
                         onClick={isEditing ? onFinishEditing : () => editSlide(slideToEdit)}
                     />}
@@ -93,6 +94,7 @@ export default function PresentationControls({
                 <OverlayControlButton
                     title={t("presentation_view.previous-slide")}
                     icon="bx-chevron-left"
+                    shortcut="Shift+Space"
                     disabled={index <= 0}
                     onClick={() => api?.prev()}
                 />
@@ -104,18 +106,21 @@ export default function PresentationControls({
                 <OverlayControlButton
                     title={t("presentation_view.next-slide")}
                     icon="bx-chevron-right"
+                    shortcut="Space"
                     disabled={index < 0 || index >= slideNoteIds.length - 1}
                     onClick={() => api?.next()}
                 />
                 <OverlayControlButton
                     title={t("presentation_view.slide-overview")}
                     icon="bx-grid-horizontal"
+                    shortcut="O"
                     active={isOverviewActive}
                     onClick={() => api?.toggleOverview()}
                 />
                 <OverlayControlButton
                     title={isFullscreen ? t("common.exit_fullscreen") : t("presentation_view.start-presentation")}
                     icon={isFullscreen ? "bx-exit-fullscreen" : "bx-fullscreen"}
+                    shortcut={isFullscreen ? "Escape" : "F"}
                     onClick={() => void toggleFullscreen()}
                 />
             </OverlayControlGroup>
@@ -137,13 +142,27 @@ function editSlide({ slide, onEditInPlace }: NonNullable<PresentationControlsPro
  * slides edited in place first.
  */
 export function NewSlideTypeItems({ onNewSlide }: { onNewSlide(type: NewSlideTypeOption): void }) {
-    return getNewSlideTypes().map((group, index) => [
-        index > 0 && <FormDropdownDivider key={`divider-${index}`} />,
-        ...group.map((option) => (
-            <FormListItem key={option.type} icon={option.icon} onClick={() => onNewSlide(option)}>
+    const renderOption = (option: NewSlideTypeOption) => (option.languages
+        ? (
+            <FormDropdownSubmenu key={option.type} icon={option.icon} title={option.title}>
+                {option.languages.map(renderOption)}
+                <FormDropdownDivider />
+                <FormListItem
+                    icon="bx bx-cog"
+                    onClick={() => void appContext.triggerCommand("showOptions", { section: "_optionsCodeNotes" })}
+                >
+                    {t("basic_properties.configure_code_notes")}
+                </FormListItem>
+            </FormDropdownSubmenu>
+        )
+        : (
+            <FormListItem key={option.mime ?? option.type} icon={option.icon} onClick={() => onNewSlide(option)}>
                 {option.title}
             </FormListItem>
-        ))
+        ));
+    return getNewSlideTypes().map((group, index) => [
+        index > 0 && <FormDropdownDivider key={`divider-${index}`} />,
+        ...group.map(renderOption)
     ]);
 }
 

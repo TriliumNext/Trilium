@@ -1,4 +1,4 @@
-import type { CommandNames } from "../../../components/app_context";
+import appContext, { type CommandNames } from "../../../components/app_context";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "../../../menus/context_menu";
 import link_context_menu from "../../../menus/link_context_menu";
 import { t } from "../../../services/i18n";
@@ -75,11 +75,16 @@ export function buildSlideMenuItems(
     const canHaveVerticalSlides = !isVertical && !slide.isCollection;
     const [ indentKey, outdentKey ] = isRtl ? [ "Alt+Left", "Alt+Right" ] : [ "Alt+Right", "Alt+Left" ];
 
-    const slideTypeItems = (add: (noteId: string, type: NewSlideTypeOption) => void) => joinGroups(
-        getNewSlideTypes().map(group => group.map(option => ({
-            title: option.title, uiIcon: option.icon, handler: () => add(noteId, option)
-        })))
-    );
+    const slideTypeItems = (add: (noteId: string, type: NewSlideTypeOption) => void) => {
+        const toItem = (option: NewSlideTypeOption): MenuItem<CommandNames> => (option.languages
+            ? {
+                title: option.title,
+                uiIcon: option.icon,
+                items: [ ...option.languages.map(toItem), { kind: "separator" }, getConfigureCodeNotesItem() ]
+            }
+            : { title: option.title, uiIcon: option.icon, handler: () => add(noteId, option) });
+        return joinGroups(getNewSlideTypes().map(group => group.map(toItem)));
+    };
 
     const moveItem = (title: string, uiIcon: string, shortcut: string, move: SlideMove | undefined) => ({
         title, uiIcon, shortcut,
@@ -133,6 +138,15 @@ export function buildSlideMenuItems(
     ];
 
     return joinGroups(groups);
+}
+
+/** The item that opens the code note options, where the code languages that the menus offer are picked. */
+function getConfigureCodeNotesItem(): MenuItem<CommandNames> {
+    return {
+        title: t("basic_properties.configure_code_notes"),
+        uiIcon: "bx bx-cog",
+        handler: () => void appContext.triggerCommand("showOptions", { section: "_optionsCodeNotes" })
+    };
 }
 
 /** Joins the groups of menu items that are not empty, with a separator between each two. */

@@ -1,11 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { CommandNames } from "../../../components/app_context";
+import appContext, { type CommandNames } from "../../../components/app_context";
 import type { MenuCommandItem, MenuItem } from "../../../menus/context_menu";
 import type { PresentationSlideBaseModel, SlideMove } from "./model";
 import { buildSlideMenuItems, type SlideMenuActions, type SlideMenuTarget } from "./slide_menu";
 
 // i18next is never initialized under test, so `t()` looks keys up in the English catalog itself.
+// The code languages enabled in the code note options, in their order.
+vi.mock("../../../services/mime_types", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../../services/mime_types")>();
+    return {
+        default: {
+            ...actual.default,
+            loadMimeTypes: () => {},
+            getEnabledMimeTypes: () => [
+                { mime: "text/plain", title: "Plain text" },
+                { mime: "text/x-python", title: "Python", icon: "bx bxl-python" }
+            ]
+        }
+    };
+});
+
 vi.mock("../../../services/i18n", async () => {
     const { default: english } = await import("../../../translations/en/translation.json");
     return {
@@ -101,6 +116,16 @@ describe("buildSlideMenuItems", () => {
         ];
         expect(describeMenu(findItem(items, "New slide after").items ?? [])).toEqual(slideTypes);
         expect(describeMenu(findItem(items, "New vertical slide").items ?? [])).toEqual(slideTypes);
+        // Code is created in a language, which a submenu of its own offers.
+        const codeItem = findItem(findItem(items, "New slide after").items ?? [], "Code");
+        expect(describeMenu(codeItem.items ?? [])).toEqual([ "Plain text", "Python", "-", "Configure code notes..." ]);
+        runItem(findItem(codeItem.items ?? [], "Python"));
+        expect(actions.changes.addSlideAfter)
+            .toHaveBeenLastCalledWith("s", expect.objectContaining({ type: "code", mime: "text/x-python" }));
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        runItem(findItem(codeItem.items ?? [], "Configure code notes..."));
+        expect(triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsCodeNotes" });
+        triggerCommand.mockRestore();
 
         run("Edit slide");
         runSubitem("New slide after", "Text");

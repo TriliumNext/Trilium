@@ -1,4 +1,4 @@
-import { NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
 
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
@@ -6,6 +6,7 @@ import contentRenderer, { snapshotAndDispose } from "../../../services/content_r
 import { renderTextContent } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import mimeTypes from "../../../services/mime_types";
 import note_create from "../../../services/note_create";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import server from "../../../services/server";
@@ -133,6 +134,10 @@ export interface NewSlideTypeOption {
      * Left out for a slide that is only shown.
      */
     startsEditing: "inPlace" | "quickEdit" | undefined;
+    /** The MIME type of the note, over the one that the type is created with. */
+    mime?: string;
+    /** The options that a slide of the type is created from instead, such as the code languages. */
+    languages?: NewSlideTypeOption[];
 }
 
 /**
@@ -157,7 +162,10 @@ export function getNewSlideTypes(): NewSlideTypeOption[][] {
                 type: "webView", title: t("note_types.web-view"), icon: NOTE_TYPE_ICONS.webView,
                 startsEditing: undefined
             },
-            { type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, startsEditing: undefined },
+            {
+                type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, startsEditing: undefined,
+                languages: getCodeLanguages()
+            },
             {
                 type: "spreadsheet", title: t("note_types.spreadsheet"), icon: NOTE_TYPE_ICONS.spreadsheet,
                 startsEditing: undefined
@@ -167,13 +175,33 @@ export function getNewSlideTypes(): NewSlideTypeOption[][] {
 }
 
 /**
- * Creates an empty slide of `type` at `position`, from `getNewSlidePosition()` or
- * `getNewVerticalSlidePosition()`. Returns the ID of the new note.
+ * Returns a code slide in each code language that the code note options enable, in their order, as
+ * the app's note type menus offer them. The options are read again each time, so a language enabled
+ * since the last menu is offered.
  */
-export async function createSlide({ parentNoteId, afterNoteId }: NewSlidePosition, type: NewSlideType = "text") {
+function getCodeLanguages(): NewSlideTypeOption[] {
+    mimeTypes.loadMimeTypes();
+    return mimeTypes.getEnabledMimeTypes().map((mimeType) => ({
+        type: "code",
+        title: mimeType.title,
+        icon: getCodeLanguageIcon(mimeType),
+        startsEditing: undefined,
+        mime: mimeType.mime
+    }));
+}
+
+/**
+ * Creates an empty slide of `type` at `position`, from `getNewSlidePosition()` or
+ * `getNewVerticalSlidePosition()`, with `mime` over the MIME type of the type. Returns the ID of
+ * the new note.
+ */
+export async function createSlide(
+    { parentNoteId, afterNoteId }: NewSlidePosition, type: NewSlideType = "text", mime?: string
+) {
     const targetBranchId = afterNoteId ? await froca.getBranchId(parentNoteId, afterNoteId) : null;
     const { note } = await note_create.createNote(parentNoteId, {
         ...NEW_SLIDE_NOTES[type],
+        ...(mime ? { mime } : {}),
         activate: false,
         isProtected: froca.getNoteFromCache(parentNoteId)?.isProtected,
         ...(targetBranchId ? { target: "after", targetBranchId } : {})

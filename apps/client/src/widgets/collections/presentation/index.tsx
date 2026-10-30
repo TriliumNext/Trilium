@@ -74,8 +74,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const canAddSlides = canEditSlides && note.type !== "search";
     const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
-    async function addSlide(position: NewSlidePosition, { type, startsEditing } = getNewSlideTypes()[0][0]) {
-        const noteId = await createSlide(position, type);
+    async function addSlide(position: NewSlidePosition, { type, mime, startsEditing } = getNewSlideTypes()[0][0]) {
+        const noteId = await createSlide(position, type, mime);
         if (noteId) setPendingSlide({ noteId, edit: startsEditing });
     }
 
