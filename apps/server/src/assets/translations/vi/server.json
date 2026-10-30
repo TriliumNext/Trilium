@@ -502,7 +502,8 @@
       "reserved-keyword": "\"{{- token}}\" Là một từ khóa được bảo lưu. Để tìm kiếm giá trị chính xác, hãy sử dụng dấu ngoặc kép: \"{{- token}}\"",
       "cannot-compare-with": "Không thể so sánh với \"{{- token}}\". Để tìm kiếm giá trị chính xác, hãy sử dụng dấu ngoặc kép: \"{{- token}}\"",
       "misplaced-expression": "Biểu thức đặt sai vị trí hoặc chưa hoàn chỉnh \"{{- token}}\"",
-      "fulltext-after-expression": "\"{{- token}}\" Không phải là một biểu thức hợp lệ. Để tìm kiếm văn bản, hãy đặt nó trước các bộ lọc thuộc tính (ví dụ: \"{{- token}} #label\" thay vì \"#label {{- token}}\")."
+      "fulltext-after-expression": "\"{{- token}}\" Không phải là một biểu thức hợp lệ. Để tìm kiếm văn bản, hãy đặt nó trước các bộ lọc thuộc tính (ví dụ: \"{{- token}} #label\" thay vì \"#label {{- token}}\").",
+      "regex-not-allowed": "Toán tử biểu thức chính quy \"%=\" không khả dụng ở đây."
     }
   },
   "backup-password-dialog": {
@@ -598,5 +599,8 @@
     "nothing-to-share": "Không có gì để chia sẻ: không nhận được văn bản, liên kết hoặc tệp nào.",
     "rejected": "Chia sẻ bị từ chối: {{- reason}}",
     "other-page": "Chỉ menu chia sẻ của hệ thống mới có thể gửi nội dung đến địa chỉ này."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium chạy dưới dạng Flatpak nên không thể khởi động các chương trình được cài đặt bên ngoài hộp cát (sandbox) của nó, chẳng hạn như {{- cli}}. Để sử dụng {{- cli}}:\n\n1. Cài đặt nó trên máy tính này và đăng nhập từ cửa sổ dòng lệnh (terminal).\n\n2. Cho phép Trilium khởi động các chương trình bên ngoài hộp cát bằng cách chạy lệnh sau trong dòng lệnh:\n\n{{- grantCommand}}\n\n3. Khởi động lại Trilium.\n\nThao tác này cấp cho Trilium quyền truy cập vào máy tính của bạn giống như một bản cài đặt thông thường bên ngoài Flatpak. Để thu hồi quyền đó, hãy chạy:\n\n{{- revokeCommand}}"
   }
 }
