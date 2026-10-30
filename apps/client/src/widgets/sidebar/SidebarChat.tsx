@@ -407,7 +407,7 @@ export default function SidebarChat() {
             {headerSlot && createPortal((
                 <>
                     {newChatButton}
-                    <Dropdown text={chatTitle} className="sidebar-chat-title-dropdown" noSelectButtonStyle {...historyProps}>
+                    <Dropdown text={<span className="sidebar-chat-title">{chatTitle}</span>} className="sidebar-chat-title-dropdown" noSelectButtonStyle {...historyProps}>
                         {historyItems}
                     </Dropdown>
                     {moreActions}

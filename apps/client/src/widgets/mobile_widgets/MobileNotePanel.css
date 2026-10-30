@@ -33,16 +33,27 @@ body.mobile .modal.mobile-note-panel {
         padding-inline-start: var(--note-panel-close-width, 0px);
 
         > button {
+            display: flex;
+            align-items: center;
             max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            min-width: 0;
             border: 0;
             background: transparent;
             box-shadow: none;
             color: var(--main-text-color);
             font-size: 1.1em;
             font-weight: 600;
+
+            &::after {
+                flex-shrink: 0;
+            }
+        }
+
+        .sidebar-chat-title {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     }
 
