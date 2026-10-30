@@ -6,6 +6,10 @@ body.mobile:has(.virtual-keyboard-opened) .modal.mobile-note-panel .modal-footer
     display: none;
 }
 
+body.mobile:not(.ios) .modal.mobile-note-panel :is(.tn-master-detail-header, .modal-header > .modal-title, .modal-header > .note-panel-header-slot) {
+    height: 36px;
+}
+
 body.mobile .modal.mobile-note-panel {
     .note-panel-header-slot {
         display: flex;
@@ -37,6 +41,7 @@ body.mobile .modal.mobile-note-panel {
             align-items: center;
             max-width: 100%;
             min-width: 0;
+            padding-block: 0;
             border: 0;
             background: transparent;
             box-shadow: none;
@@ -69,6 +74,7 @@ body.mobile .modal.mobile-note-panel {
     .mobile-note-panel-tabs {
         flex: 1;
         margin: 0;
+        overflow: visible;
 
         div.btn-group {
             flex: 1;
