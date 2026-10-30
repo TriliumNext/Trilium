@@ -55,6 +55,7 @@ export { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "./messages.js";
 export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
+import "./hosted_balloon.js";
 import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
 import "./plugins/child_note.js";

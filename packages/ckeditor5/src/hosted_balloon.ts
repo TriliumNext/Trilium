@@ -61,8 +61,10 @@ export default class HostedBalloon {
         clickOutsideHandler({
             emitter: view,
             activator: () => this.view === view,
-            /* v8 ignore next -- the balloon renders its panel as the editor starts up */
-            contextElements: this.balloon.view.element ? [ this.balloon.view.element ] : [],
+            // The balloon renders its panel as the editor starts up.
+            contextElements: () => [
+                this.balloon.view.element as HTMLElement, ...getHostLayers(editor, editorEl)
+            ],
             callback: () => this.hide()
         });
 
@@ -166,6 +168,19 @@ class HostedBalloonView extends View {
 
 }
 
+/**
+ * The elements matching `hostedBalloon.keepOpenSelector` that do not hold the editor, such as a
+ * list of suggestions that the host's content renders in the page's body.
+ */
+function getHostLayers(editor: Editor, editorEl: HTMLElement): Element[] {
+    const selector = editor.config.get("hostedBalloon")?.keepOpenSelector;
+    if (!selector) {
+        return [];
+    }
+
+    return [ ...document.querySelectorAll(selector) ].filter((layer) => !layer.contains(editorEl));
+}
+
 /** Where the balloon points: the caret, read again on every placement, as the emoji picker does. */
 function getBalloonPosition(editor: Editor, shownAt: ViewRange) {
     const view = editor.editing.view;
@@ -178,4 +193,17 @@ function getBalloonPosition(editor: Editor, shownAt: ViewRange) {
             return view.domConverter.viewRangeToDom(range);
         }
     };
+}
+
+declare module "ckeditor5" {
+    interface EditorConfig {
+        hostedBalloon?: {
+            /**
+             * Matches the host's floating layers, which render outside the balloon. A press in
+             * one keeps the balloon open, unless the layer holds the editor, as a dialog around it
+             * does.
+             */
+            keepOpenSelector: string;
+        };
+    }
 }

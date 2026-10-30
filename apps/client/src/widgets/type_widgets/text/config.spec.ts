@@ -6,6 +6,7 @@ import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
 import type { AddLinkOpts } from "../../dialogs/add_link.js";
+import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
@@ -446,6 +447,9 @@ describe("CK config - tables", () => {
             .toBe(release);
         expect(showLinkDialog).toHaveBeenCalledWith(request);
         expect((await buildConfig(baseOpts())).internalLink?.showDialog(request)).toBeNull();
+        // The note suggestions of the dialog render in the page's body.
+        expect((await buildConfig(baseOpts())).hostedBalloon)
+            .toStrictEqual({ keepOpenSelector: FLOATING_LAYER_SELECTOR });
     });
 
     it("copies block and tab references from the reference source, and none without one", async () => {

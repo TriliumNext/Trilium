@@ -15,7 +15,7 @@ An address without a scheme, such as `example.com`, gets `https://`. A URL paste
 To create a link with a custom text:
 
 *   First, type and select the text which will be turned into a link.
-*   Open the _Add link_ dialog as above (via the formatting toolbar, or <kbd>Ctrl</kbd>+<kbd>K</kbd>). The selected text becomes the text of the link.
+*   Open the _Add link_ dialog as above (via the formatting toolbar, or <kbd>Ctrl</kbd>+<kbd>K</kbd>). The selected text becomes the text of the link, so the dialog does not offer _Display as_.
 *   Alternatively, simply paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) over the selected text to turn it into a link.
 
 Once a link is inserted:

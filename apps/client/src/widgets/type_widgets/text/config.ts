@@ -27,6 +27,7 @@ import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
 import { formatDateTime, isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
+import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
@@ -265,6 +266,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
         internalLink: { showDialog: (request) => opts.showLinkDialog?.(request) ?? null },
+        // The link dialog's note suggestions render in the page's body.
+        hostedBalloon: { keepOpenSelector: FLOATING_LAYER_SELECTOR },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },

@@ -349,6 +349,19 @@ describe("AddLinkDialog", () => {
             "mailto:someone@example.com", "mailto:someone@example.com", true
         );
         expect(addLinkPreview).toHaveBeenCalledTimes(2);
+
+        // A link on a selection keeps the selected text, so it is never a preview.
+        await open({
+            target: "url", text: "some words", hasSelection: true, display: "card", addLinkPreview
+        });
+        expect(displaySelect()).toBeNull();
+        await type(field("url"), "https://example.com");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
+        await open({ text: video, hasSelection: true, addLinkPreview });
+        expect(field("url")?.value).toBe(video);
+        expect(displaySelect()).toBeNull();
+        expect(addLinkPreview).toHaveBeenCalledTimes(2);
     });
 
     it("turns an edited link into a preview with the page's own title unless it has a text", async () => {

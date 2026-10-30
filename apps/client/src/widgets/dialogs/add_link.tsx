@@ -102,8 +102,8 @@ export interface AddLinkOpts {
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     /**
      * Puts a preview of the web link in place of the link. A caller that can show previews passes
-     * it, and the dialog then offers the choice of how a web link is displayed. `title` replaces
-     * the page's own title.
+     * it, and the dialog then offers the choice of how a web link is displayed, except for a link
+     * on a selection. `title` replaces the page's own title.
      */
     addLinkPreview?(url: string, display: LinkDisplayMode, title: string | null): Promise<void>;
 }
@@ -396,7 +396,8 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         }
     }
 
-    const showsDisplay = target === "url" && !!opts?.addLinkPreview;
+    // A link on a selection keeps the selected text, which a preview would replace.
+    const showsDisplay = target === "url" && !!opts?.addLinkPreview && !opts.hasSelection;
     const shownDisplay = getShownDisplay(display, suggestion?.externalLink);
     const isPreview = showsDisplay && shownDisplay !== "plain";
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;

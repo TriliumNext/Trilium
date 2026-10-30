@@ -56,6 +56,40 @@ describe("InternalLinkPlugin", () => {
         expect(balloon.visibleView).toBeNull();
     });
 
+    it("stays open for a press in a host layer, unless that layer holds the editor", async () => {
+        const hostEditor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ], {
+            internalLink: { showDialog },
+            hostedBalloon: { keepOpenSelector: ".host-layer" }
+        });
+        setModelData(hostEditor.model, "<paragraph>foo[]</paragraph>");
+        const { release } = renderIntoBalloon();
+        const balloon = hostEditor.plugins.get(ContextualBalloon);
+        const suggestions = document.createElement("div");
+        suggestions.className = "host-layer";
+        const row = document.createElement("button");
+        suggestions.append(row);
+        const dialog = document.createElement("div");
+        dialog.className = "host-layer";
+        document.body.append(suggestions, dialog);
+
+        try {
+            hostEditor.execute(COMMAND_NAME);
+            row.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(release).not.toHaveBeenCalled();
+            expect(balloon.visibleView).not.toBeNull();
+
+            const editorEl = hostEditor.ui.element;
+            if (!editorEl) throw new Error("The editor has no element.");
+            dialog.append(editorEl);
+            dialog.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(release).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        } finally {
+            suggestions.remove();
+            dialog.remove();
+        }
+    });
+
     it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
         const plainEditor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
 
