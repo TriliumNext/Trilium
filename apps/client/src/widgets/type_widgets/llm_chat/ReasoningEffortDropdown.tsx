@@ -33,6 +33,7 @@ export default function ReasoningEffortDropdown({ model, value, onChange, disabl
             buttonClassName="llm-chat-model-select"
             className="llm-chat-reasoning-effort"
             disabled={disabled}
+            mobileBottomSheet
         >
             {(model.reasoningEfforts ?? []).map(level => (
                 <FormListItem key={level} checked={level === effective} onClick={() => onChange(level)}>

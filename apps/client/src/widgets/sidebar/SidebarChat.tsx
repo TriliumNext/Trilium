@@ -316,6 +316,7 @@ export default function SidebarChat() {
                         hideToggleArrow
                         dropdownRef={historyDropdownRef}
                         onShown={loadRecentChats}
+                        mobileBottomSheet
                     >
                         {recentChats.length === 0 ? (
                             <FormListItem disabled>
@@ -363,6 +364,7 @@ export default function SidebarChat() {
                         title={t("sidebar_chat.more_actions")}
                         iconAction
                         hideToggleArrow
+                        mobileBottomSheet
                     >
                         <FormListItem
                             icon="bx bx-save"

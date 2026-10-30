@@ -409,6 +409,7 @@ export default function ChatInputBar({
                             titlePosition="top"
                             buttonClassName="llm-chat-model-select"
                             className="llm-chat-model-dropdown"
+                            mobileBottomSheet
                         >
                             {chat.modelGroups.map(group => (
                                 <Fragment key={group.id}>
