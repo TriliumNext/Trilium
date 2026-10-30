@@ -114,10 +114,10 @@ When pasting, the attributes become owned attributes of the current note, even i
 
 ## Mobile
 
-On mobile, the attributes are the _Attributes_ tab of the note panel, which opens as a sheet at the bottom of the screen from the <span class="tn-icon bx bx-dock-bottom"></span> button beside the <a class="reference-link" href="../Note%20menu.md">Note menu</a>. Selecting _Attributes_ in the note menu, below _Backlinks_ and _Note paths_, opens the panel on that tab. Tapping an attribute opens it on a page of its own, with a <span class="tn-icon bx bx-chevron-left"></span> button to return to the list.
+On mobile, the attributes are the _Attributes_ tab of the note panel (see <a class="reference-link" href="../Right%20Sidebar.md">Right Sidebar</a>), which opens as a sheet at the bottom of the screen from the <span class="tn-icon bx bx-dock-bottom"></span> button beside the <a class="reference-link" href="../Note%20menu.md">Note menu</a>. Selecting _Attributes_ in the note menu, below _Backlinks_ and _Note paths_, opens the panel on that tab. Tapping an attribute opens it on a page of its own, with a <span class="tn-icon bx bx-chevron-left"></span> button to return to the list.
 
-On mobile, each section is displayed as a separate card:
+On mobile, the [toolbar](#toolbar) takes the place of the tab's name in the header of the sheet, and each section is displayed as a separate card:
 
-*   Attributes are added from the <span class="tn-icon bx bx-plus"></span> button in the toolbar, or from the <span class="tn-icon bx bx-plus"></span> button in the header of the _Definitions_ card.
+*   Attributes are added from the <span class="tn-icon bx bx-plus"></span> button in the header, or from the <span class="tn-icon bx bx-plus"></span> button above the _Definitions_ card.
 *   To select an attribute, press and hold it. Once an attribute is selected, tapping other attributes selects them as well.
-*   Copying, pasting and deleting work the same way as on desktop, from the toolbar.
+*   Copying, pasting and deleting work the same way as on desktop, from the header.
