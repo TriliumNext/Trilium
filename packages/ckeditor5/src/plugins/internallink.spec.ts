@@ -6,6 +6,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import { createLinkEmbedHost } from "../../test/link-embed-kit.js";
 import InternalLinkPlugin, {
     COMMAND_NAME, getAnchorNames, getLinkAtSelection, type LinkDialogRequest,
     replaceLinkAtSelection
@@ -88,6 +89,30 @@ describe("InternalLinkPlugin", () => {
             suggestions.remove();
             dialog.remove();
         }
+    });
+
+    it("closes for a press on another link, a link preview included", async () => {
+        const linkEditor = await createTestEditor(
+            [ Essentials, Paragraph, LinkEditing, LinkEmbedEditing, InternalLinkPlugin ],
+            { internalLink: { showDialog }, linkEmbed: createLinkEmbedHost() }
+        );
+        setModelData(linkEditor.model, "<paragraph>[]"
+            + "<$text linkHref=\"https://a.example\">a</$text>"
+            + "<linkMention url=\"https://b.example\"></linkMention></paragraph>");
+        const { release } = renderIntoBalloon();
+        const balloon = linkEditor.plugins.get(ContextualBalloon);
+        const root = linkEditor.editing.view.getDomRoot();
+
+        const links = [ root?.querySelector("a"), root?.querySelector(".link-mention-inner") ];
+        for (const link of links) {
+            if (!link) throw new Error("Expected the link and the preview to render.");
+            linkEditor.execute(COMMAND_NAME);
+            expect(balloon.visibleView).not.toBeNull();
+
+            link.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(release).toHaveBeenCalledTimes(2);
     });
 
     it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {

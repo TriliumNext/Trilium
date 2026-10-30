@@ -1,6 +1,5 @@
 import {
-    clickOutsideHandler, ContextualBalloon, type Editor, KeystrokeHandler, type Locale, View,
-    type ViewRange
+    ContextualBalloon, type Editor, KeystrokeHandler, type Locale, View, type ViewRange
 } from "ckeditor5";
 
 /**
@@ -57,16 +56,17 @@ export default class HostedBalloon {
         });
 
         // Wired per view rather than once: the handler listens through the view, so destroying
-        // the view on the way out stops it.
-        clickOutsideHandler({
-            emitter: view,
-            activator: () => this.view === view,
+        // the view on the way out stops it. It listens in the capture phase because link previews
+        // and content embeds stop presses from bubbling, to keep them from CKEditor.
+        view.listenTo(document, 'mousedown', (_evt, domEvent) => {
             // The balloon renders its panel as the editor starts up.
-            contextElements: () => [
+            const keepOpen = [
                 this.balloon.view.element as HTMLElement, ...getHostLayers(editor, editorEl)
-            ],
-            callback: () => this.hide()
-        });
+            ];
+            if (!keepOpen.some((element) => element.contains(domEvent.target as Node))) {
+                this.hide();
+            }
+        }, { useCapture: true });
 
         this.balloon.add({ view, position: getBalloonPosition(editor, shownAt) });
         this.view = view;
