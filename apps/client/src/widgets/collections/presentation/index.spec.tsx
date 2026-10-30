@@ -41,6 +41,12 @@ describe("an empty presentation", () => {
         expect(container.querySelector(".presentation-container")).toBeNull();
         expect(onReady).toHaveBeenCalled();
 
+        const toolbarButton = (icon: string) => container.querySelector<HTMLButtonElement>(`button.${icon}`);
+        for (const icon of [ "bx-edit", "bx-palette", "bx-grid-horizontal", "bx-fullscreen" ]) {
+            expect(toolbarButton(icon)?.disabled, icon).toBe(true);
+        }
+        expect(toolbarButton("bx-plus")?.disabled).toBe(false);
+
         const button = container.querySelector<HTMLButtonElement>(".no-items button");
         expect(button).not.toBeNull();
         await act(async () => button?.click());

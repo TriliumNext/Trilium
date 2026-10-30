@@ -15,6 +15,8 @@ import { getNoteIdFromSlide } from "./reveal";
 interface PresentationToolbarActionsProps {
     onStartPresentation(): void;
     api: RevealApi | undefined;
+    /** Whether there are slides; the buttons that act on one are disabled otherwise. */
+    hasSlides: boolean;
     isReadOnly: boolean;
     isEditing: boolean;
     onFinishEditing(): void;
@@ -26,7 +28,7 @@ interface PresentationToolbarActionsProps {
 
 /** The presentation's actions on the right of the collection's toolbar. */
 export default function PresentationToolbarActions({
-    onStartPresentation, api, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
+    onStartPresentation, api, hasSlides, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
 }: PresentationToolbarActionsProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
@@ -65,6 +67,7 @@ export default function PresentationToolbarActions({
                 <ActionButton
                     icon="bx bx-edit"
                     text={t("presentation_view.edit-slide")}
+                    disabled={!hasSlides}
                     onClick={e => {
                         const currentSlide = api?.getCurrentSlide();
                         const noteId = getNoteIdFromSlide(currentSlide);
@@ -83,6 +86,7 @@ export default function PresentationToolbarActions({
                 text={t("presentation_view.slide-overview")}
                 shortcut="O"
                 active={isOverviewActive}
+                disabled={!hasSlides}
                 onClick={() => api?.toggleOverview()}
             />
 
@@ -90,6 +94,7 @@ export default function PresentationToolbarActions({
                 icon="bx bx-fullscreen"
                 text={t("presentation_view.start-presentation")}
                 shortcut="F"
+                disabled={!hasSlides}
                 onClick={onStartPresentation}
             />
         </>

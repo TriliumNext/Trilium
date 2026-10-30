@@ -215,6 +215,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     rightChildren={<PresentationToolbarActions
                         onStartPresentation={startPresentation}
                         api={api}
+                        hasSlides={!isEmpty}
                         isReadOnly={isReadOnly}
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
