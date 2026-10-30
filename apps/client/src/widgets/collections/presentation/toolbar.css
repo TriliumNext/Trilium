@@ -8,7 +8,7 @@
         transition: opacity 0.3s;
     }
 
-    &.is-idle .tn-overlay-control-group:not(:hover, :focus-within) {
+    &.is-idle .tn-overlay-control-group:not(:hover, :has(:focus-visible)) {
         opacity: 0;
     }
 
