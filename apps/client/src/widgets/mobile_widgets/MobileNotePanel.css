@@ -152,13 +152,6 @@ body.mobile .modal.mobile-note-panel {
             }
         }
 
-        #sidebar-chat :is(.llm-chat-input-form, .llm-chat-no-provider) {
-            margin: 0;
-            border-width: 1px 0 0;
-            border-radius: var(--note-panel-group-radius, 10px) var(--note-panel-group-radius, 10px) 0 0;
-            outline-offset: -2px;
-        }
-
         > :is(#pdf-pages, #noteMap):not(.grow) .card-body {
             display: flex;
             flex-direction: column;
