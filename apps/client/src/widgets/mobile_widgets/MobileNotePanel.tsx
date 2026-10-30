@@ -51,7 +51,7 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent }: { shown: boo
                 mobile layout has no other element for. */}
             <div id="right-pane">
                 <NavigatedInNote.Provider value={onHidden}>
-                    <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} />
+                    <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} flat />
                 </NavigatedInNote.Provider>
             </div>
         </Modal>

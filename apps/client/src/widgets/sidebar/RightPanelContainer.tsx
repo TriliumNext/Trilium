@@ -29,7 +29,7 @@ import PdfAnnotations from "./pdf/PdfAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
-import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests } from "./RightPanelWidget";
+import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests, StackedWidgets } from "./RightPanelWidget";
 import RightPaneTabs, { RIGHT_PANE_TABS, RightPaneTabDefinition, RightPaneTabId } from "./RightPaneTabs";
 import TableOfContents from "./TableOfContents";
 
@@ -192,8 +192,11 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
  * first opened and kept mounted afterwards: switching back is instant and keeps its state (a chat in
  * progress), and a tab never opened costs nothing, which keeps the LLM chat's bundle out until it is
  * asked for.
+ *
+ * A `flat` tab scrolls as a whole, its widgets stacked at their content's height with nothing to
+ * collapse, as the mobile note panel lays it out.
  */
-export function RightPaneTabBodies({ tabs, activeTabId, expandRequest }: { tabs: RightPaneTabContents[]; activeTabId?: RightPaneTabId; expandRequest?: ExpandWidgetRequest | null }) {
+export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat }: { tabs: RightPaneTabContents[]; activeTabId?: RightPaneTabId; expandRequest?: ExpandWidgetRequest | null; flat?: boolean }) {
     const openedTabs = useRef(new Set<RightPaneTabId>());
     if (activeTabId) {
         openedTabs.current.add(activeTabId);
@@ -203,18 +206,20 @@ export function RightPaneTabBodies({ tabs, activeTabId, expandRequest }: { tabs:
         <div
             key={tab.id}
             role="tabpanel"
-            class={clsx("right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
+            class={clsx(flat ? "right-pane-flat-tab-body" : "right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
         >
             {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of one offers
                 no collapsing at all. */}
-            <CollapsibleWidgets.Provider value={tab.items.length > 1}>
-                <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
-                    {tab.items.length > 0 ? tab.items : (
-                        // A tab that stays for a note it has nothing to show
-                        // (see RightPaneTabDefinition.alwaysShown) says so.
-                        <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
-                    )}
-                </ExpandWidgetRequests.Provider>
+            <CollapsibleWidgets.Provider value={!flat && tab.items.length > 1}>
+                <StackedWidgets.Provider value={!!flat && tab.items.length > 1}>
+                    <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
+                        {tab.items.length > 0 ? tab.items : (
+                            // A tab that stays for a note it has nothing to show
+                            // (see RightPaneTabDefinition.alwaysShown) says so.
+                            <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
+                        )}
+                    </ExpandWidgetRequests.Provider>
+                </StackedWidgets.Provider>
             </CollapsibleWidgets.Provider>
         </div>
     ));

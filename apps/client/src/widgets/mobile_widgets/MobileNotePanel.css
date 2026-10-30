@@ -25,4 +25,30 @@ body.mobile .modal.mobile-note-panel {
         min-height: 0;
         background: transparent;
     }
+
+    #right-pane .right-pane-flat-tab-body {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+
+        > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
+            display: none;
+        }
+
+        > .card {
+            border-bottom: 1px solid var(--main-border-color);
+        }
+
+        > :is(#pdf-pages, #noteMap) {
+            order: 1;
+        }
+
+        > :is(#pdf-pages, #noteMap):not(.grow) .card-body {
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+        }
+    }
 }
