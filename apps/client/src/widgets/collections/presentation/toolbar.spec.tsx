@@ -14,7 +14,7 @@ import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker";
 import type { PresentationSlideBaseModel } from "./model";
-import { canPickSlideBackground, SlideBackgroundPicker } from "./slide_background";
+import { canPickSlideBackground, SlideBackgroundPicker } from "./toolbar";
 
 describe("SlideBackgroundPicker", () => {
     it("shows the slide's color and writes a pick or a reset to #slide:background", () => {

@@ -7,14 +7,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
 import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
-import { openInCurrentNoteContext } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
-import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
 import options from "../../../services/options";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import ActionButton from "../../react/ActionButton";
 import {
     useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
 } from "../../react/hooks";
@@ -24,15 +21,15 @@ import { useClosingSlides } from "./closing_slides";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
     getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
-    PresentationModel, PresentationSlideBaseModel, SlideMove
+    PresentationModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
-import SlideBackgroundAction from "./slide_background";
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { SlideMenuActions } from "./slide_menu";
 import { CollectionSlides, Presentation } from "./slides";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
+import PresentationToolbarActions, { SlideSidebarToggle } from "./toolbar";
 
 const SlideEditor = lazy(() => import("./slide_editor"));
 
@@ -198,13 +195,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
             <div class="presentation-view">
                 <CollectionProperties
                     note={note}
-                    leftChildren={<ActionButton
-                        icon="bx bx-sidebar"
-                        text={t("presentation_view.slide-sidebar")}
-                        active={isSidebarVisible}
-                        onClick={() => void setSidebarVisible(!isSidebarVisible)}
+                    leftChildren={<SlideSidebarToggle
+                        isVisible={isSidebarVisible}
+                        onToggle={() => void setSidebarVisible(!isSidebarVisible)}
                     />}
-                    rightChildren={<ButtonOverlay
+                    rightChildren={<PresentationToolbarActions
                         containerRef={containerRef}
                         api={api}
                         isReadOnly={isReadOnly}
@@ -306,85 +301,5 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     }, [ themeName ]);
 
     return stylesheets;
-}
-
-interface ButtonOverlayProps {
-    containerRef: RefObject<HTMLDivElement | null>;
-    api: RevealApi | undefined;
-    isReadOnly: boolean;
-    isEditing: boolean;
-    onFinishEditing(): void;
-    /** Adds a slide after the one being shown; left out when slides cannot be added. */
-    onNewSlide: (() => void) | undefined;
-    /** The slide being shown, for its background; left out when slides cannot be edited. */
-    backgroundSlide: { slide: PresentationSlideBaseModel | undefined } | undefined;
-}
-
-function ButtonOverlay({
-    containerRef, api, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
-}: ButtonOverlayProps) {
-    const [ isOverviewActive, setIsOverviewActive ] = useState(false);
-    useEffect(() => {
-        if (!api) return;
-        setIsOverviewActive(api.isOverview());
-        const onEnabled = () => setIsOverviewActive(true);
-        const onDisabled = () => setIsOverviewActive(false);
-        api.on("overviewshown", onEnabled);
-        api.on("overviewhidden", onDisabled);
-        return () => {
-            api.off("overviewshown", onEnabled);
-            api.off("overviewhidden", onDisabled);
-        };
-    }, [ api ]);
-
-    return (
-        <>
-            {onNewSlide && (
-                <ActionButton
-                    icon="bx bx-plus"
-                    text={t("presentation_view.new-slide")}
-                    onClick={onNewSlide}
-                />
-            )}
-
-            {isEditing && (
-                <ActionButton
-                    icon="bx bx-check"
-                    text={t("presentation_view.finish-editing")}
-                    onClick={onFinishEditing}
-                />
-            )}
-
-            {!isReadOnly && (
-                <ActionButton
-                    icon="bx bx-edit"
-                    text={t("presentation_view.edit-slide")}
-                    onClick={e => {
-                        const currentSlide = api?.getCurrentSlide();
-                        const noteId = getNoteIdFromSlide(currentSlide);
-
-                        if (noteId) {
-                            openInCurrentNoteContext(e, noteId);
-                        }
-                    }}
-                />
-            )}
-
-            {backgroundSlide && <SlideBackgroundAction slide={backgroundSlide.slide} />}
-
-            <ActionButton
-                icon="bx bx-grid-horizontal"
-                text={t("presentation_view.slide-overview")}
-                active={isOverviewActive}
-                onClick={() => api?.toggleOverview()}
-            />
-
-            <ActionButton
-                icon="bx bx-fullscreen"
-                text={t("presentation_view.start-presentation")}
-                onClick={() => containerRef.current?.requestFullscreen()}
-            />
-        </>
-    );
 }
 
