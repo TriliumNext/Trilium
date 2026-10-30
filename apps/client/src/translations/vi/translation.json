@@ -574,7 +574,8 @@
     "meeting_recording": "Đánh dấu ghi chú được tạo bởi nút \"Transcribe meeting\" trong thanh khởi chạy, chứa bản ghi chú của cuộc họp.",
     "exclude_from_llm": "Ẩn ghi chú này khỏi trò chuyện AI và server MCP. Đặt nhãn có thể kế thừa để ẩn luôn các ghi chú bên dưới nó.",
     "template_title_template": "Đặt trên một ghi chú mẫu: tiêu đề mặc định của các ghi chú được tạo từ mẫu, được sử dụng thay cho <code>#titleTemplate</code> của ghi chú cha. Được đánh giá tương tự <code>#titleTemplate</code>, với các biến <code>now</code> và <code>parentNote</code> được chèn vào, ví dụ: <code>Cuộc họp ${now.format('YYYY-MM-DD')}</code>.",
-    "calendar_hide_routine_events": "Ẩn các sự kiện theo giờ lặp lại {{days}} ngày trở lên mỗi tuần khỏi các chế độ xem Tháng, Năm và Danh sách. Áp dụng dù giá trị của nó là gì."
+    "calendar_hide_routine_events": "Ẩn các sự kiện theo giờ lặp lại {{days}} ngày trở lên mỗi tuần khỏi các chế độ xem Tháng, Năm và Danh sách. Áp dụng dù giá trị của nó là gì.",
+    "bookmark_open_mode": "Nơi cú nhấp vào nút của ghi chú trên thanh khởi chạy sẽ mở ghi chú đó: <code>currentTab</code> (mặc định), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> hoặc <code>quickEdit</code>. Áp dụng cho các dấu trang, các ghi chú được thả vào thanh khởi chạy và các ghi chú trong thư mục dấu trang."
   },
   "rename_note": {
     "rename_note": "Đổi tên ghi chú",
@@ -808,7 +809,8 @@
     "modal_title": "Chọn loại ghi chú",
     "templates": "Bản mẫu",
     "location": "Vị trí",
-    "location_placeholder": "Vị trí mặc định nếu để trống"
+    "location_placeholder": "Vị trí mặc định nếu để trống",
+    "manage_templates": "Quản lý mẫu trong Content Manager"
   },
   "password_not_set": {
     "title": "Mật khẩu chưa được thiết lập",
@@ -1178,7 +1180,8 @@
     "new-version-available": "Có bản cập nhật mới",
     "download-update": "Tải phiên bản {{latestVersion}}",
     "search_notes": "Tìm kiếm các ghi chú",
-    "theme": "Giao diện"
+    "theme": "Giao diện",
+    "fullscreen": "Toàn màn hình"
   },
   "zen_mode": {
     "button_exit": "Thoát chế độ Zen"
@@ -1561,7 +1564,8 @@
     "upload_attachments": "Tải lên tệp đính kèm",
     "no_attachments": "Ghi chú này không có tệp đính kèm.",
     "no_user_attachments": "Ghi chú này không có tệp đính kèm của riêng nó.\nNhững tệp do Trilium tạo cho nó nằm bên dưới.",
-    "system_group": "Được tạo bởi Trilium ({{amount}})"
+    "system_group": "Được tạo bởi Trilium ({{amount}})",
+    "drop_files": "Thả tệp vào đây để tải lên dưới dạng tệp đính kèm"
   },
   "book": {
     "no_children_help": "Bộ sưu tập này không có ghi chú con nào nên không có gì để hiển thị.",
@@ -1693,7 +1697,8 @@
     "protecting-finished-successfully": "Hoàn tất bảo vệ thành công.",
     "unprotecting-finished-successfully": "Hoàn tất bỏ bảo vệ thành công.",
     "protecting-in-progress": "Đang bảo vệ: {{count}}",
-    "unprotecting-in-progress-count": "Đang bỏ bảo vệ: {{count}}"
+    "unprotecting-in-progress-count": "Đang bỏ bảo vệ: {{count}}",
+    "locked_note_title": "Được bảo vệ"
   },
   "relation_map": {
     "remove_note": "Xóa ghi chú",
@@ -2073,7 +2078,12 @@
     "custom_url_label": "URL",
     "custom_url_description": "Sử dụng {keyword} như một từ thay thế cho từ khóa tìm kiếm.",
     "custom_url_placeholder": "URL công cụ tìm kiếm",
-    "save_button": "Lưu"
+    "save_button": "Lưu",
+    "engine_label": "Engine",
+    "brave": "Brave",
+    "yandex": "Yandex",
+    "none": "Không",
+    "custom": "Tùy chỉnh"
   },
   "desktop": {
     "web_placeholder": "Các tùy chọn này chỉ áp dụng cho các bản dựng desktop."
@@ -2501,7 +2511,10 @@
     "convert-to-attachment-confirm": "Bạn có chắc chắn muốn chuyển đổi các ghi chú đã chọn thành tệp đính kèm của ghi chú cha? Thao tác này chỉ áp dụng cho ghi chú Ảnh, các ghi chú khác sẽ bị bỏ qua.",
     "open-in-popup": "Chỉnh sửa nhanh",
     "clone": "Nhân bản",
-    "clone-tooltip": "Nhân bản, để có cùng một ghi chú ở hai vị trí cùng lúc"
+    "clone-tooltip": "Nhân bản, để có cùng một ghi chú ở hai vị trí cùng lúc",
+    "delete-short": "Xoá",
+    "paste-into-tooltip_other": "Dán vào ghi chú này\nCác ghi chú sẽ được dán dưới dạng bản sao, nghĩa là chúng chính là cùng một ghi chú (không phải bản sao chép), nhưng ở nhiều vị trí cùng một lúc.",
+    "paste-after-tooltip_other": "Dán vào sau ghi chú này\nCác ghi chú sẽ được dán dưới dạng bản sao, nghĩa là chúng chính là cùng một ghi chú (không phải bản sao chép), nhưng ở nhiều vị trí cùng một lúc."
   },
   "note_types": {
     "text": "Văn bản",
@@ -2795,7 +2808,11 @@
     "subtree-hidden-moved-title": "Đã thêm vào {{title}}",
     "subtree-hidden-moved-description-collection": "Bộ sưu tập này ẩn các ghi chú con trong cây.",
     "subtree-hidden-moved-description-other": "Các ghi chú con bị ẩn trong cây đối với ghi chú này.",
-    "show-all-notes": "Hiển thị tất cả ghi chú"
+    "show-all-notes": "Hiển thị tất cả ghi chú",
+    "back-to-tree": "Cây ghi chú",
+    "display-density": "Mật độ hiển thị",
+    "display-density-relaxed": "Rộng rãi",
+    "display-density-dense": "Thu gọn"
   },
   "mobile_note_navigator": {
     "back": "Lên một cấp",
@@ -2803,7 +2820,11 @@
     "empty": "Ghi chú này không có ghi chú con.",
     "children_count_other": "{{count}} Ghi chú",
     "add_child": "Thêm ghi chú con",
-    "more_actions": "Hành động khác"
+    "more_actions": "Hành động khác",
+    "current_note": "Ghi chú này",
+    "children_hidden": "Các ghi chú con bị ẩn khỏi cây ghi chú",
+    "workspaces": "Không gian làm việc",
+    "bookmarks": "Đánh dấu trang"
   },
   "title_bar_buttons": {
     "window-on-top": "Giữ cửa sổ ở trên cùng"
@@ -2868,7 +2889,10 @@
     "move_tab_to_new_window": "Chuyển tab này sang cửa sổ mới",
     "copy_tab_to_new_window": "Sao chép tab này sang cửa sổ mới",
     "new_tab": "Tab mới",
-    "leave_full_screen": "Thoát toàn màn hình"
+    "leave_full_screen": "Thoát toàn màn hình",
+    "add_new_tab_hint": "Nhấp chuột phải hoặc giữ để xem thêm tùy chọn.",
+    "show_all_recent_changes": "Tất cả thay đổi gần đây",
+    "recently_changed_notes": "Các ghi chú thay đổi gần đây"
   },
   "toc": {
     "table_of_contents": "Mục lục",
@@ -3365,7 +3389,12 @@
     "delete_column_confirmation": "Bạn có chắc chắn muốn xóa cột này không? Thuộc tính tương ứng sẽ bị xóa khỏi tất cả các ghi chú.",
     "delete-column": "Xóa cột",
     "properties": "Thuộc tính bảng...",
-    "properties-title": "Thuộc tính bảng"
+    "properties-title": "Thuộc tính bảng",
+    "column-note-id": "ID ghi chú",
+    "column-title": "Tiêu đề",
+    "column-date-created": "Đã tạo",
+    "column-date-modified": "Đã sửa đổi",
+    "open-note": "Mở"
   },
   "table_context_menu": {
     "sort": "Sắp xếp",
@@ -3888,7 +3917,8 @@
       "note_moved_from": "<Note/> Từ <From/> đến <To/>",
       "note_moved": "<Note/> Đến <To/>",
       "attachment_in_note": "<Title/> Trong <Note/>",
-      "search_in_subtree": "<Query/> Trong <Subtree/>"
+      "search_in_subtree": "<Query/> Trong <Subtree/>",
+      "add_attribute": "Thêm thuộc tính"
     },
     "enabled": "Tính năng AI",
     "enabled_description": "Thêm thanh bên trò chuyện AI và các ghi chú trò chuyện LLM, sử dụng các nhà cung cấp được cấu hình bên dưới.",
@@ -4220,7 +4250,14 @@
       "move-down": "Di chuyển xuống",
       "image-position": "Vị trí hình ảnh",
       "list": "Danh sách",
-      "list-type": "Kiểu danh sách"
+      "list-type": "Kiểu danh sách",
+      "use-headers": "Sử dụng tiêu đề",
+      "header-columns": "Cột tiêu đề",
+      "header-rows": "Hàng tiêu đề",
+      "enter-a-whole-number-between-0-and-0": "Nhập một số nguyên từ 0 đến %0.",
+      "insert-a-preview-of-a-web-page-or-a-video": "Chèn bản xem trước của trang web hoặc video",
+      "extended-code-block": "Khối code mở rộng",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Chèn một khối code được chỉnh sửa dưới dạng ghi chú code."
     },
     "toolbar-groups": {
       "insert": "Insert",
@@ -4280,7 +4317,8 @@
     "filter": "Lọc",
     "back": "Quay lại",
     "no_matches": "Không có kết quả phù hợp",
-    "filter_placeholder": "Nhập để lọc…"
+    "filter_placeholder": "Nhập để lọc…",
+    "clear_filter": "Xóa bộ lọc"
   },
   "hoisted_note": {
     "confirm_unhoisting": "Ghi chú '{{requestedNote}}' được yêu cầu nằm ngoài cây con của ghi chú đã đặt làm gốc '{{hoistedNote}}' và bạn phải hủy đặt làm gốc để truy cập ghi chú. Bạn có muốn tiếp tục với việc hủy đặt làm gốc không?"
@@ -4301,7 +4339,14 @@
     "remove_from_launch_bar": "Gỡ khỏi thanh khởi chạy",
     "configure_launch_bar": "Cấu hình thanh khởi chạy",
     "launch_bar_orientation": "Hướng thanh khởi chạy",
-    "will_reload_frontend": "(Sẽ tải lại ứng dụng)"
+    "will_reload_frontend": "(Sẽ tải lại ứng dụng)",
+    "show_as_folder": "Hiển thị như một thư mục",
+    "open_mode": "Chế độ mở",
+    "open_mode_current_tab": "Tab hiện tại",
+    "open_mode_new_tab": "Tab mới",
+    "open_mode_new_split": "Khung tách mới",
+    "open_mode_new_window": "Mở cửa sổ mới",
+    "open_mode_quick_edit": "Chỉnh sửa nhanh"
   },
   "highlighting": {
     "title": "Khối mã",
@@ -4821,5 +4866,16 @@
     "tomorrow": "Ngày mai",
     "next-week": "Tuần sau",
     "clear": "Xóa"
+  },
+  "sort_selection": {
+    "sort_blocks": "Sắp xếp các khối",
+    "sort_list_items": "Sắp xếp các mục danh sách",
+    "sort_rows": "Sắp xếp các hàng",
+    "ascending": "Tăng dần",
+    "descending": "Giảm dần"
+  },
+  "canvas": {
+    "thin_stroke": "Nét bút mảnh",
+    "thin_stroke_description": "Vẽ các nét bút mảnh hơn, phù hợp với chữ viết tay. Các nét đã vẽ vẫn giữ nguyên độ rộng."
   }
 }
