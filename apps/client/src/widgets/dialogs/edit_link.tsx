@@ -15,6 +15,7 @@ import { logError } from "../../services/ws";
 import Button from "../react/Button";
 import { Card, CardSection, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
+import FormTextArea from "../react/FormTextArea";
 import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
@@ -75,6 +76,8 @@ export interface EditLinkOpts {
      * and keeps this text until another note or anchor is picked.
      */
     currentTitle?: string;
+    /** The description of the link preview being edited. */
+    currentDescription?: string;
     /** The anchor within the note that the link being edited points at. */
     currentBookmark?: string;
     /**
@@ -103,9 +106,11 @@ export interface EditLinkOpts {
     /**
      * Puts a preview of the web link in place of the link. A caller that can show previews passes
      * it, and the dialog then offers the choice of how a web link is displayed, except for a link
-     * on a selection. `title` replaces the page's own title.
+     * on a selection. `title` and `description` replace the page's own.
      */
-    addLinkPreview?(url: string, display: LinkDisplayMode, title: string | null): Promise<void>;
+    addLinkPreview?(
+        url: string, display: LinkDisplayMode, title: string | null, description: string | null
+    ): Promise<void>;
 }
 
 export default function EditLinkDialog() {
@@ -190,6 +195,7 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
 /** The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. */
 function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ linkTitle, setLinkTitle ] = useState("");
+    const [ linkDescription, setLinkDescription ] = useState("");
     const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
@@ -207,6 +213,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const initialBookmarkRef = useRef("");
     // The title of the link preview being edited, while the title field still shows it.
     const previewTitleRef = useRef<string | null>(null);
+    // The description of the link preview being edited, while the description field still shows it.
+    const previewDescriptionRef = useRef<string | null>(null);
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
 
@@ -227,6 +235,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
         setLinkTitle(opts?.currentTitle ?? "");
+        previewDescriptionRef.current = opts?.currentDescription ?? null;
+        setLinkDescription(opts?.currentDescription ?? "");
 
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
@@ -239,11 +249,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setWebLink(text);
         const link = normalizeWebLink(text);
         setSuggestion(link ? { externalLink: link } : null);
-        // A preview's title is its page's, so another address takes the title of its own page.
+        // A preview's title and description are its page's, so another address takes those of its
+        // own page.
         if (previewTitleRef.current !== null && linkTitle === previewTitleRef.current) {
             setLinkTitle("");
         }
         previewTitleRef.current = null;
+        if (linkDescription === previewDescriptionRef.current) {
+            setLinkDescription("");
+        }
+        previewDescriptionRef.current = null;
     }
 
     function changeTarget(next: LinkTarget, text = "") {
@@ -251,6 +266,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setTarget(next);
         setNoteTitle("");
         setLinkTitle("");
+        setLinkDescription("");
         setLinkType(opts?.hasSelection ? "hyper-link" : "reference-link");
         setAnchor("");
         if (next === "url") {
@@ -403,6 +419,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     // A video player shows no title.
     const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embed");
+    // Only a card shows a description.
+    const showsDescription = showsTitle && showsDisplay && shownDisplay === "card";
 
     /** Applies the link picked, through `opts.addLink` or `opts.addLinkPreview`. */
     function applyLink() {
@@ -429,7 +447,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             if (isPreview && opts.addLinkPreview) {
                 // A text that only repeats the address leaves the page's own title.
                 const title = shownDisplay !== "embed" && text && text !== url ? text : null;
-                void opts.addLinkPreview(url, shownDisplay, title);
+                const description = showsDescription ? linkDescription.trim() || null : null;
+                void opts.addLinkPreview(url, shownDisplay, title, description);
                 return;
             }
             // An external link without a text of its own reads as its address.
@@ -551,6 +570,27 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                         </OptionCardSection>
 
                         {showsWebLinkTitle && titleSection}
+
+                        {showsDescription && (
+                            <OptionCardSection
+                                className="edit-link-description" name="link-description"
+                                label={t("add_link.description")}
+                            >
+                                <FormTextArea
+                                    rows={2}
+                                    currentValue={linkDescription}
+                                    placeholder={t("add_link.page_description")}
+                                    onChange={setLinkDescription}
+                                    onKeyDown={(e) => {
+                                        // A card shows its description as one paragraph, so
+                                        // Enter saves the link as in the other fields.
+                                        if (e.key !== "Enter" || e.isComposing) return;
+                                        e.preventDefault();
+                                        e.currentTarget.form?.requestSubmit();
+                                    }}
+                                />
+                            </OptionCardSection>
+                        )}
 
                         {showsDisplay && (
                             <OptionCardSection

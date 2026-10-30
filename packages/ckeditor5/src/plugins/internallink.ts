@@ -181,6 +181,8 @@ export interface LinkAtSelection {
     href: string;
     /** The whole text of a link, or the title of a preview. */
     text: string;
+    /** The description of a preview. A link has none. */
+    description?: string;
     display: LinkDisplayMode;
 }
 
@@ -191,6 +193,7 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
         return {
             href: preview.getAttribute('url') as string,
             text: (preview.getAttribute('title') as string | undefined) ?? '',
+            description: (preview.getAttribute('description') as string | undefined) ?? '',
             display: getLinkWidgetMode(preview)
         };
     }

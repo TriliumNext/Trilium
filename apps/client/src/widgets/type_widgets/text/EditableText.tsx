@@ -605,6 +605,7 @@ export function getEditLinkOpts(
             text: currentLink.text,
             hasSelection: false,
             currentTitle: currentLink.text,
+            currentDescription: currentLink.description,
             display: currentLink.display,
             anchors,
             ...parseLinkHref(currentLink.href, anchors),

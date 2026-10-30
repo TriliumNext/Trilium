@@ -76,6 +76,8 @@
     "display_card": "Card",
     "display_embed": "YouTube embed",
     "page_title": "Title of the web page",
+    "description": "Description",
+    "page_description": "Description of the web page",
     "anchors": "Anchors",
     "target_anchor": "Target anchor",
     "no_anchors": "No anchors available."

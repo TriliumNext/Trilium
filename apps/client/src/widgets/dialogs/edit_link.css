@@ -26,7 +26,7 @@
 
     /* Matches the 500px at which Card.css stacks a wide control under its label. */
     @container (min-width: 501px) {
-        :is(.edit-link-note, .edit-link-url, .edit-link-text) {
+        :is(.edit-link-note, .edit-link-url, .edit-link-text, .edit-link-description) {
             --edit-link-label-width: 8em;
 
             > .tn-card-option-label {
@@ -43,6 +43,10 @@
         .edit-link-text.tn-card-section-nested {
             --edit-link-label-width: calc(8em - var(--card-nested-section-indent));
         }
+    }
+
+    .edit-link-description textarea {
+        resize: none;
     }
 
     .edit-link-target {

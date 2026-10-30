@@ -59,26 +59,29 @@ export type MetaKey = (typeof META_KEYS)[number];
 /**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
  * is in, and turns it into a preview of the `mode` shape once the page's metadata arrives. `title`
- * replaces the page's own title, and is the text of a plain link.
+ * replaces the page's own title, and is the text of a plain link. `description` replaces the page's
+ * own description.
  *
- * A selected preview of `url` changes its shape and title from the metadata it stores, without
- * fetching the page again.
+ * A selected preview of `url` changes its shape, title and description from the metadata it
+ * stores, without fetching the page again.
  *
  * All the metadata is written onto the element whichever shape is chosen — an inline mention stores
  * the description and image it does not itself show — so that switching modes later, via the widget
  * toolbar's Display dropdown, never has to go back to the network.
  */
 export class InsertLinkEmbedCommand extends Command {
-    override async execute(
-        { url, mode, title }: { url: string; mode: LinkDisplayMode; title?: string }
-    ) {
+    override async execute({ url, mode, title, description }: {
+        url: string; mode: LinkDisplayMode; title?: string; description?: string;
+    }) {
         const editor = this.editor;
         const model = editor.model;
         const selection = model.document.selection;
         const selected = getSelectedLinkWidget(editor);
         if (selected && mode !== 'plain' && selected.getAttribute('url') === url) {
             model.change((writer) => {
-                writer.setSelection(rebuildLinkWidget(editor, writer, selected, mode, title), 'on');
+                writer.setSelection(
+                    rebuildLinkWidget(editor, writer, selected, mode, title, description), 'on'
+                );
             });
             return;
         }
@@ -99,7 +102,7 @@ export class InsertLinkEmbedCommand extends Command {
         });
 
         if (mode !== 'plain') {
-            await replaceLinkWithPreview(editor, linkRange, url, mode, title);
+            await replaceLinkWithPreview(editor, linkRange, url, mode, title, description);
         }
     }
 
@@ -209,7 +212,7 @@ export class ChangeLinkDisplayCommand extends Command {
         if (targetMode === 'plain') return;
 
         const range = findAttributeRange(position, 'linkHref', href, model);
-        await replaceLinkWithPreview(this.editor, range, href, targetMode, undefined);
+        await replaceLinkWithPreview(this.editor, range, href, targetMode);
     }
 
     /** Delegates to the host to avoid duplicating URL detection logic. */
@@ -240,7 +243,7 @@ export class RemoveLinkEmbedCommand extends Command {
 
 /**
  * Replaces the link to `href` in `range` with a preview of the `mode` shape, once the page's
- * metadata arrives, and selects it. `title` replaces the page's own title.
+ * metadata arrives, and selects it. `title` and `description` replace the page's own.
  *
  * The range is tracked as a live range while the metadata is fetched, so edits made meanwhile do
  * not shift what gets replaced. Nothing is replaced when the link is no longer in the range by
@@ -248,7 +251,7 @@ export class RemoveLinkEmbedCommand extends Command {
  */
 async function replaceLinkWithPreview(
     editor: Editor, range: ModelRange, href: string,
-    mode: Exclude<LinkDisplayMode, 'plain'>, title: string | undefined
+    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string, description?: string
 ) {
     const model = editor.model;
     const liveRange = ModelLiveRange.fromRange(range);
@@ -274,7 +277,7 @@ async function replaceLinkWithPreview(
                 : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
                 : metadata.embedType,
             title: title || metadata.title,
-            description: metadata.description,
+            description: description || metadata.description,
             favicon: metadata.favicon,
             siteName: metadata.siteName,
             image: metadata.image
@@ -288,11 +291,11 @@ async function replaceLinkWithPreview(
 
 /**
  * Replaces the link preview `element` with one of the `mode` shape, built from the metadata it
- * stores, and returns it. `title` replaces its title.
+ * stores, and returns it. `title` and `description` replace its own.
  */
 function rebuildLinkWidget(
     editor: Editor, writer: ModelWriter, element: ModelElement,
-    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string
+    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string, description?: string
 ) {
     const attrs: Record<string, unknown> = {};
     for (const key of META_KEYS) {
@@ -300,6 +303,7 @@ function rebuildLinkWidget(
         if (val != null) attrs[key] = val;
     }
     if (title) attrs.title = title;
+    if (description) attrs.description = description;
     if (mode !== 'inline') {
         // A card is an embed that declines to play.
         attrs.embedType = mode === 'card' ? 'opengraph'

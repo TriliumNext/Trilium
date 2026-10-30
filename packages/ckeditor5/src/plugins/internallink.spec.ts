@@ -213,14 +213,16 @@ describe("the link at the selection", () => {
 
     it("reads a selected link preview as a link titled by its title, shown as it is", () => {
         setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
-            + " title=\"A\"></linkMention>]</paragraph>");
-        expect(getLinkAtSelection(editor))
-            .toStrictEqual({ href: "https://a.example", text: "A", display: "inline" });
+            + " title=\"A\" description=\"About A\"></linkMention>]</paragraph>");
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "https://a.example", text: "A", description: "About A", display: "inline" }
+        );
 
         setModelData(editor.model,
             "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\"></linkEmbed>]");
-        expect(getLinkAtSelection(editor))
-            .toStrictEqual({ href: "https://a.example", text: "", display: "card" });
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "https://a.example", text: "", description: "", display: "card" }
+        );
     });
 
     it("replaces a selected link preview, in a paragraph of its own for a block one", async () => {

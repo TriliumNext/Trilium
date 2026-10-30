@@ -487,16 +487,18 @@ describe("getEditLinkOpts", () => {
         expect(api.updateLink).toHaveBeenCalledExactlyOnceWith("root/def", "Elsewhere", undefined);
         expect(api.addLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "card", "Example");
+        await opts.addLinkPreview?.("https://example.com", "card", "Example", "About");
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example");
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example", "About");
     });
 
     it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
-        const api = createApi({ href: "https://example.com", text: "Example", display: "card" });
+        const api = createApi({
+            href: "https://example.com", text: "Example", description: "About", display: "card"
+        });
         expect(getEditLinkOpts(api, ready, { display: "inline" })).toMatchObject({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example",
-            display: "card"
+            currentDescription: "About", display: "card"
         });
     });
 
@@ -510,9 +512,9 @@ describe("getEditLinkOpts", () => {
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "inline", null);
+        await opts.addLinkPreview?.("https://example.com", "inline", null, null);
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null);
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null, null);
     });
 
     it("offers the document's anchors, and edits a link to one of them as that anchor", () => {

@@ -75,22 +75,23 @@ describe("LinkEmbed commands", () => {
         expect(editor.getData()).toBe(`<p><a href="${url}">The article</a></p>`);
     });
 
-    it("shows the link at once, then the preview titled as asked once fetched", async () => {
+    it("shows the link at once, then the preview as titled and described", async () => {
         const url = "https://example.com/article";
         const { resolveFetch } = useDeferredFetch(fetchMetadata);
         setModelData(editor.model, "<paragraph>see []</paragraph>");
 
         const executed = editor.execute(LINK_EMBED_COMMAND, {
-            url, mode: "inline", title: "My title"
+            url, mode: "card", title: "My title", description: "My description"
         }) as unknown as Promise<void>;
         expect(editor.getData()).toBe(`<p>see <a href="${url}">My title</a></p>`);
         resolveFetch({ ...META, url });
         await executed;
 
-        const mention = findElement(editor, "linkMention");
-        expect(mention?.getAttribute("title")).toBe("My title");
-        expect(mention?.getAttribute("description")).toBe(META.description);
-        expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
+        const card = findElement(editor, "linkEmbed");
+        expect(card?.getAttribute("title")).toBe("My title");
+        expect(card?.getAttribute("description")).toBe("My description");
+        expect(card?.getAttribute("image")).toBe(META.image);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(card);
     });
 
     it("replaces the link the selection is in, which is the link being edited", async () => {
@@ -122,9 +123,14 @@ describe("LinkEmbed commands", () => {
         expect(card?.getAttribute("description")).toBe("About");
         expect(editor.model.document.selection.getSelectedElement()).toBe(card);
 
-        // Without a title, the stored one stays.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card", description: "My own" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("description")).toBe("My own");
+
+        // Without a title or a description, the stored ones stay.
         await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
-        expect(findElement(editor, "linkMention")?.getAttribute("title")).toBe("Mine");
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("title")).toBe("Mine");
+        expect(mention?.getAttribute("description")).toBe("My own");
     });
 
     it("replaces a selected preview of another address, or turned into a plain link", async () => {

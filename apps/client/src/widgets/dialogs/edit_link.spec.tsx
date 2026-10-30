@@ -112,6 +112,10 @@ describe("EditLinkDialog", () => {
         return container.querySelector<HTMLSelectElement>(".edit-link-display select");
     }
 
+    function description() {
+        return container.querySelector<HTMLTextAreaElement>(".edit-link-description textarea");
+    }
+
     function anchorRows() {
         return [ ...container.querySelectorAll<HTMLElement>(".edit-link-anchors .tn-card-choice") ];
     }
@@ -326,7 +330,7 @@ describe("EditLinkDialog", () => {
         await pickDisplay("card");
         await type(field("text"), "Never gonna");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "card", "Never gonna");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "card", "Never gonna", null);
         expect(addLink).not.toHaveBeenCalled();
 
         // A player shows no title.
@@ -334,7 +338,7 @@ describe("EditLinkDialog", () => {
         await type(field("url"), video);
         expect(field("text")).toBeNull();
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embed", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embed", null, null);
 
         // A plain link, and any address that is not a web page, stays a link.
         await open({ target: "url", addLinkPreview });
@@ -369,12 +373,12 @@ describe("EditLinkDialog", () => {
         await open({ currentLink: { externalLink: url }, currentTitle: url, addLinkPreview });
         await pickDisplay("inline");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", null, null);
 
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
         await pickDisplay("card");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
         expect(addLink).not.toHaveBeenCalled();
     });
 
@@ -389,7 +393,7 @@ describe("EditLinkDialog", () => {
             [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
         );
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
 
         await open({
             currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
@@ -400,12 +404,50 @@ describe("EditLinkDialog", () => {
         await type(field("url"), "https://example.com/third");
         expect(field("text")?.value).toBe("Mine");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith("https://example.com/third", "card", "Mine");
+        expect(addLinkPreview)
+            .toHaveBeenLastCalledWith("https://example.com/third", "card", "Mine", null);
 
         // A plain link keeps its text for another address.
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("Page");
+    });
+
+    it("edits a card's description, which another address takes from its page", async () => {
+        const url = "https://example.com/page";
+        const preview = {
+            currentLink: { externalLink: url }, currentTitle: "Page", currentDescription: "About",
+            addLinkPreview
+        };
+        await open({ ...preview, display: "inline" });
+        expect(description()).toBeNull();
+        await pickDisplay("card");
+        expect(description()?.value).toBe("About");
+        expect(description()?.getAttribute("rows")).toBe("2");
+        const order = ".edit-link-text + .edit-link-description + .edit-link-display";
+        expect(container.querySelector(order)).not.toBeNull();
+        await type(description(), " Mine ");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", "Mine");
+
+        // An emptied description leaves the stored one, and only a card shows one.
+        await open({ ...preview, display: "card" });
+        await type(description(), " ");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
+        await open({ ...preview, display: "card" });
+        await pickDisplay("inline");
+        expect(description()).toBeNull();
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", "Page", null);
+
+        await open({ ...preview, display: "card" });
+        await type(field("url"), "https://example.com/other");
+        expect(description()?.value).toBe("");
+        // Typed after the change, even the old description stays.
+        await type(description(), "About");
+        await type(field("url"), "https://example.com/third");
+        expect(description()?.value).toBe("About");
     });
 
     it("offers no web link when fixing a link to a missing note", async () => {
@@ -573,9 +615,33 @@ describe("EditLinkBalloon", () => {
         expect(onClose).toHaveBeenCalledTimes(2);
         expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
     });
+
+    it("applies a card on Enter in its description, but not mid-composition", async () => {
+        const addLinkPreview = vi.fn<NonNullable<EditLinkOpts["addLinkPreview"]>>(async () => {});
+        const form = await show({ target: "url", display: "card", addLinkPreview });
+        await type(form.querySelector<HTMLInputElement>(".edit-link-url input"), "example.com");
+        const textarea = form.querySelector<HTMLTextAreaElement>(".edit-link-description textarea");
+        await type(textarea, "About");
+
+        async function pressEnter(isComposing: boolean) {
+            const enter = new KeyboardEvent("keydown", {
+                key: "Enter", isComposing, bubbles: true, cancelable: true
+            });
+            await act(async () => {
+                textarea?.dispatchEvent(enter);
+            });
+            return enter.defaultPrevented;
+        }
+        expect(await pressEnter(true)).toBe(false);
+        expect(onClose).not.toHaveBeenCalled();
+        expect(await pressEnter(false)).toBe(true);
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(addLinkPreview)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", null, "About");
+    });
 });
 
-async function type(input: HTMLInputElement | null, value: string) {
+async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value: string) {
     if (!input) throw new Error("The field is not shown.");
     await act(async () => {
         input.value = value;

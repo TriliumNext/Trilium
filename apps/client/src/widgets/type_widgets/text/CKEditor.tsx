@@ -33,9 +33,11 @@ export interface CKEditorApi {
     updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     /**
      * Puts a preview of `url` in place of the link around the caret or the selected link preview,
-     * or at the selection. `title` replaces the page's own title.
+     * or at the selection. `title` and `description` replace the page's own.
      */
-    addLinkPreview(url: string, display: LinkDisplayMode, title: string | null): void;
+    addLinkPreview(
+        url: string, display: LinkDisplayMode, title: string | null, description: string | null
+    ): void;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
     addContentEmbed(noteId: string, boxSize?: BoxSize): void;
@@ -215,12 +217,14 @@ export default function CKEditor({
             const href = externalLink ? notePath : `#${notePath}`;
             await replaceLinkAtSelection(editor, href, linkTitle);
         },
-        addLinkPreview(url, display, title) {
+        addLinkPreview(url, display, title, description) {
             const editor = editorRef.current;
             if (!editor) return;
 
             editor.editing.view.focus();
-            void editor.execute("insertLinkEmbed", { url, mode: display, title: title ?? undefined });
+            void editor.execute("insertLinkEmbed", {
+                url, mode: display, title: title ?? undefined, description: description ?? undefined
+            });
         },
         addLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;
