@@ -2350,19 +2350,20 @@ body.electron.platform-darwin #tab-row-left-spacer {
 }
 
 /*
- * Keep the tab bar clear of the Window Controls Overlay. On Windows the controls are always on
- * the right, but on Linux their side follows the desktop's decoration layout (GNOME's
- * `button-layout`), so reserve space on whichever side(s) Chromium actually took.
+ * Keep the tab bar clear of the Window Controls Overlay. Its side follows the UI direction on
+ * Windows and the desktop's decoration layout (GNOME's `button-layout`) on Linux, so reserve space
+ * on whichever side(s) Chromium actually took. `titlebar-area-*` are physical coordinates, so the
+ * padding is physical too; logical padding swaps sides in a right-to-left locale.
  */
 body.electron:not(.platform-darwin) .tab-row-container {
-    padding-inline-start: env(titlebar-area-x, 0px);
-    padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+    padding-left: env(titlebar-area-x, 0px);
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
 }
 
 @media (display-mode: window-controls-overlay) {
     body:not(.electron) .tab-row-container {
-        padding-inline-start: env(titlebar-area-x, 0px);
-        padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+        padding-left: env(titlebar-area-x, 0px);
+        padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
     }
 }
 
