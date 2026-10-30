@@ -67,10 +67,10 @@ node -e 'const f=require("./apps/desktop/electron-forge/electron-locales.json");
 - **Found** (`da.pak`, `pt-BR.pak`): set `electronLocale` to that name with `_` for `-` (`da`, `pt_BR`;
   `en-US.pak` is `"en"`). The `electronLocale` union on `Locale` mirrors this list, so the name is already
   a member.
-- **Not found** — Chromium has no UI for the language. Point `electronLocale` at the closest locale
-  Chromium does ship; the precedent is Irish, `{ id: "ga", electronLocale: "en" }`. Chromium's own strings
-  (native menus, built-in dialogs) then show in that language, and Trilium's in the new one. Never add a
-  name to the union that the JSON does not list: the type would accept it and the packaging would throw.
+- **Not found** — Chromium has no UI for the language. Point `electronLocale` at a locale Chromium does
+  ship, so the language is still offered for formatting; the precedent is Irish,
+  `{ id: "ga", electronLocale: "en" }`. Never add a name to the union that the JSON does not list: the
+  type would accept it and the packaging would throw.
 
 Then prove it — the spec builds its fixtures from the real file lists, so a wrong name fails here
 instead of in a release build:
@@ -85,9 +85,10 @@ pnpm --filter desktop test trim-locales
   `pnpm chore:update-electron-locales` (network: a few hundred KB of range requests against the release
   zips) and commit the JSON in its own commit.
 
-`getElectronLocale()` (`apps/desktop/src/main.ts`) passes the Trilium id, or the formatting locale's id,
-to Chromium's `--lang`, not the `electronLocale`. When Chromium's name and the Trilium id can match,
-prefer the id that matches.
+`electronLocale` does **not** choose Chromium's language. `getElectronLocale()`
+(`apps/desktop/src/main.ts`) passes the Trilium id of the display language, or of the formatting locale,
+to Chromium's `--lang`, so a fallback `electronLocale` never reaches Chromium. When Chromium's name and
+the Trilium id can match, prefer the id that matches.
 
 ## 4. Verify
 
