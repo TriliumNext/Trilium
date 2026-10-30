@@ -341,18 +341,22 @@ body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
         border-radius: 0;
     }
 
+    .dropdown-item:has(.description) {
+        --dropdown-menu-padding-vertical: 0.45em;
+    }
+
     .dropdown-item:first-of-type,
-    .dropdown-divider + .dropdown-item,
+    :is(.dropdown-divider, li:has(> .dropdown-header)) + .dropdown-item,
     .dropdown-custom-item:first-of-type,
-    .dropdown-divider + .dropdown-custom-item {
+    :is(.dropdown-divider, li:has(> .dropdown-header)) + .dropdown-custom-item {
         border-top-left-radius: var(--mobile-menu-group-radius);
         border-top-right-radius: var(--mobile-menu-group-radius);
     }
 
     .dropdown-item:last-of-type,
-    .dropdown-item:has(+ .dropdown-divider),
+    .dropdown-item:has(+ .dropdown-divider, + li > .dropdown-header),
     .dropdown-custom-item:last-of-type,
-    .dropdown-custom-item:has(+ .dropdown-divider) {
+    .dropdown-custom-item:has(+ .dropdown-divider, + li > .dropdown-header) {
         border-bottom-left-radius: var(--mobile-menu-group-radius);
         border-bottom-right-radius: var(--mobile-menu-group-radius);
         border-bottom: 0 !important;
