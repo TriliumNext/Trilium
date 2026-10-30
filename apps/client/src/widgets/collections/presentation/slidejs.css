@@ -153,6 +153,13 @@ footer.file-footer {
     border: 0;
 }
 
+.slide-content > img:only-child {
+    display: block;
+    max-height: calc(100cqh - 2 * var(--r-block-margin));
+    margin-inline: auto;
+    object-fit: contain;
+}
+
 .reveal .slides section:is(.web-view-slide, .collection-slide, .edited-canvas-slide) {
     height: 100%;
 }
