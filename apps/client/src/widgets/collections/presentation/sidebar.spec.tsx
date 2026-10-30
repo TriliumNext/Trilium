@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getSlideMove, type PresentationModel, type SlideMove } from "./model";
+import { applySlideMove, getSlideMove, type PresentationModel, type SlideMove } from "./model";
 import SlideSidebar from "./sidebar";
 
 vi.mock("../../../services/froca", () => ({
@@ -157,6 +157,88 @@ describe("SlideSidebar", () => {
         getButton(sidebar, "first").focus();
         renderSidebar({ activeNoteId: "web", container });
         expect(document.activeElement).toBe(getButton(sidebar, "web"));
+    });
+});
+
+describe("moving slides with the keyboard", () => {
+    afterEach(() => {
+        document.body.replaceChildren();
+    });
+
+    /**
+     * Renders the sidebar whose moves follow `getSlideMove()` and render again with the moved model, as
+     * the presentation does; returns the moves made.
+     */
+    function renderMovableSidebar() {
+        const moves: SlideMove[] = [];
+        const container = document.createElement("div");
+        let model = presentation;
+        const renderModel = () => renderSidebar({
+            presentation: model,
+            container,
+            planSlideMove: (noteId, gap, levelShift) => (
+                getSlideMove(model, "deck", noteId, gap, levelShift, () => false)
+            ),
+            onMoveSlide: (move) => {
+                moves.push(move);
+                model = applySlideMove(model, move);
+                renderModel();
+            }
+        });
+        return { sidebar: renderModel(), moves };
+    }
+
+    function press(sidebar: HTMLElement, noteId: string, key: string) {
+        const button = getButton(sidebar, noteId);
+        button.focus();
+        const event = new KeyboardEvent("keydown", { key, altKey: true, bubbles: true, cancelable: true });
+        act(() => {
+            button.dispatchEvent(event);
+        });
+        return event;
+    }
+
+    it("moves the focused slide up or down past the slides at its level", () => {
+        const { sidebar, moves } = renderMovableSidebar();
+
+        // A top-level slide goes past a whole stack of vertical slides.
+        press(sidebar, "web", "ArrowUp");
+        expect(moves.at(-1)).toEqual({ noteId: "web", targetNoteId: "intro", position: "before" });
+        press(sidebar, "web", "ArrowDown");
+        expect(moves.at(-1)).toEqual({ noteId: "web", targetNoteId: "board", position: "before" });
+        expect(document.activeElement).toBe(getButton(sidebar, "web"));
+
+        press(sidebar, "second", "ArrowUp");
+        expect(moves.at(-1)).toEqual({ noteId: "second", targetNoteId: "first", position: "before" });
+    });
+
+    it("makes the focused slide vertical or top-level with Alt and the arrows to the side", () => {
+        const { sidebar, moves } = renderMovableSidebar();
+
+        press(sidebar, "web", "ArrowRight");
+        expect(moves.at(-1)).toEqual({ noteId: "web", targetNoteId: "second", position: "after" });
+        expect(document.activeElement).toBe(getButton(sidebar, "web"));
+
+        press(sidebar, "web", "ArrowLeft");
+        expect(moves.at(-1)).toEqual({ noteId: "web", targetNoteId: "board", position: "before" });
+    });
+
+    it("keeps Alt and the arrows from Reveal.js, even where the slide cannot go", () => {
+        const { sidebar, moves } = renderMovableSidebar();
+        const documentKeys: string[] = [];
+        const onDocumentKey = (e: KeyboardEvent) => documentKeys.push(e.key);
+        document.addEventListener("keydown", onDocumentKey);
+
+        expect(press(sidebar, "intro", "ArrowUp").defaultPrevented).toBe(true);
+        expect(press(sidebar, "intro", "ArrowRight").defaultPrevented).toBe(true);
+        expect(moves).toEqual([]);
+        expect(documentKeys).toEqual([]);
+        document.removeEventListener("keydown", onDocumentKey);
+    });
+
+    it("leaves Alt and the arrows alone when the slides cannot be moved", () => {
+        const sidebar = renderSidebar();
+        expect(press(sidebar, "web", "ArrowUp").defaultPrevented).toBe(false);
     });
 });
 
@@ -343,6 +425,7 @@ function buildSection(noteId: string) {
 const stylesheets = [ ":host { --r-main-color: black; }", ".reveal { color: var(--r-main-color); }" ];
 
 interface RenderOptions {
+    presentation?: PresentationModel;
     closingContents?: Record<string, { __html: string }>;
     activeNoteId?: string;
     onSelectSlide?: (noteId: string) => void;
@@ -353,14 +436,14 @@ interface RenderOptions {
 }
 
 function renderSidebar({
-    closingContents = {}, activeNoteId, onSelectSlide = () => {}, planSlideMove, onMoveSlide,
+    presentation: model = presentation, closingContents = {}, activeNoteId, onSelectSlide = () => {}, planSlideMove, onMoveSlide,
     container = document.createElement("div")
 }: RenderOptions = {}) {
     if (!container.isConnected) document.body.appendChild(container);
     act(() => {
         render(
             <SlideSidebar
-                presentation={presentation}
+                presentation={model}
                 stylesheets={stylesheets}
                 closingContents={closingContents}
                 activeNoteId={activeNoteId}

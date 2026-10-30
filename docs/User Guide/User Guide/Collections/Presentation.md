@@ -35,6 +35,7 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 *   Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides:
     *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
     *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.
+    *   Press <kbd>Alt</kbd>+<kbd>↑</kbd> and <kbd>Alt</kbd>+<kbd>↓</kbd> to move the slide up or down at its level, past a whole stack of vertical slides. Press <kbd>Alt</kbd>+<kbd>→</kbd> to make it a vertical slide where it stands, and <kbd>Alt</kbd>+<kbd>←</kbd> to make it a top-level slide (the other way around in right-to-left languages). The same limits apply as for dragging.
 *   To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings. Press it again to bring the sidebar back. Each device remembers the choice for every presentation.
 *   The sidebar is hidden when the note is too narrow to fit it.
 

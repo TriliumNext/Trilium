@@ -14,6 +14,7 @@ type SlideContent = PresentationSlideBaseModel["content"];
 
 /** The data type of a dragged thumbnail, which nothing outside the sidebar accepts. */
 const SLIDE_DRAG_TYPE = "application/x-trilium-slide";
+const ARROW_KEYS = [ "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight" ];
 /** How far a thumbnail is dragged to the side to make it a vertical or a top-level slide. */
 const LEVEL_SHIFT_DISTANCE = 24;
 
@@ -62,6 +63,7 @@ export default function SlideSidebar({
     const tabStopNoteId = activeNoteId && noteIds.includes(activeNoteId) ? activeNoteId : noteIds[0];
     const canDrag = !!planSlideMove && !!onMoveSlide;
     const [ drag, setDrag ] = useState<DragState>();
+    const movedNoteIdRef = useRef<string | undefined>(undefined);
 
     useEffect(() => {
         const list = listRef.current;
@@ -73,11 +75,37 @@ export default function SlideSidebar({
         }
     }, [ activeNoteId ]);
 
+    useEffect(() => {
+        const noteId = movedNoteIdRef.current;
+        if (!noteId) return;
+        movedNoteIdRef.current = undefined;
+        listRef.current?.querySelector<HTMLElement>(`li[data-slide-id="${noteId}"] > .slide-thumbnail-button`)?.focus();
+    }, [ presentation ]);
+
     function onKeyDown(e: KeyboardEvent) {
+        const list = listRef.current;
         const button = e.target instanceof Element ? e.target.closest(".slide-thumbnail-button") : null;
-        const buttons = [ ...listRef.current?.querySelectorAll(".slide-thumbnail-button") ?? [] ];
+        const buttons = [ ...list?.querySelectorAll(".slide-thumbnail-button") ?? [] ];
         const index = button ? buttons.indexOf(button) : -1;
-        if (index < 0) return;
+        if (!list || index < 0) return;
+
+        if (e.altKey && planSlideMove && onMoveSlide && ARROW_KEYS.includes(e.key)) {
+            // Reveal.js takes Alt and the arrows to move without fragments.
+            e.preventDefault();
+            e.stopPropagation();
+            const noteId = noteIds[index];
+            const move = findKeyboardMove(
+                (gap, levelShift) => planSlideMove(noteId, gap, levelShift),
+                e.key, index, buttons.length, isRightToLeft(list)
+            );
+            if (move) {
+                // The thumbnail goes into another place in the list, which takes the focus away from it.
+                movedNoteIdRef.current = noteId;
+                onMoveSlide(move);
+            }
+            return;
+        }
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
 
         const nextIndex = getNextIndex(e.key, index, noteIds.length);
         if (nextIndex === undefined) return;
@@ -98,7 +126,8 @@ export default function SlideSidebar({
             const { top, height } = button.getBoundingClientRect();
             return e.clientY < top + height / 2;
         });
-        const dx = e.clientX - drag.startX;
+        // Vertical slides are indented toward the end of the line, which is the left in right-to-left text.
+        const dx = (e.clientX - drag.startX) * (listRef.current && isRightToLeft(listRef.current) ? -1 : 1);
         const levelShift = dx >= LEVEL_SHIFT_DISTANCE ? 1 : dx <= -LEVEL_SHIFT_DISTANCE ? -1 : 0;
         return planSlideMove(drag.noteId, gap < 0 ? buttons.length : gap, levelShift);
     }
@@ -282,6 +311,35 @@ function getNextIndex(key: string, index: number, count: number) {
         case "End": return count - 1;
         default: return undefined;
     }
+}
+
+/**
+ * Returns the move of the slide at `index` for Alt and an arrow key: Up and Down take the nearest gap
+ * above or below where the slide can go at its level, so that a top-level slide passes a whole stack;
+ * the arrow toward the indent makes it a vertical slide where it stands, the other a top-level slide.
+ */
+function findKeyboardMove(
+    plan: (gap: number, levelShift: -1 | 0 | 1) => SlideMove | undefined,
+    key: string, index: number, count: number, isRtl: boolean
+) {
+    if (key === "ArrowUp") {
+        for (let gap = index - 1; gap >= 0; gap--) {
+            const move = plan(gap, 0);
+            if (move) return move;
+        }
+    } else if (key === "ArrowDown") {
+        for (let gap = index + 1; gap <= count; gap++) {
+            const move = plan(gap, 0);
+            if (move) return move;
+        }
+    } else {
+        const isTowardIndent = (key === "ArrowRight") !== isRtl;
+        return plan(index, isTowardIndent ? 1 : -1);
+    }
+}
+
+function isRightToLeft(element: Element) {
+    return getComputedStyle(element).direction === "rtl";
 }
 
 /** Creates the observer that zooms out thumbnails whose content is larger than the slide. */
