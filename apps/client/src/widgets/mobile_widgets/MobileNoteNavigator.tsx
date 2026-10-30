@@ -35,7 +35,7 @@ import {
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
-import { getLastSegment, getSpotlightedNoteId, getTreeStack, setTabTree } from "./tab_navigation";
+import { getLastSegment, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -201,6 +201,11 @@ export default function MobileNoteNavigator() {
         navigateTo(stack.slice(0, -1));
     }, [stack, navigateTo]);
 
+    const unhoist = useCallback(() => {
+        if (tabId) leaveHoistedNote(tabId, activeNotePath, effectiveHoistedId);
+        void hoisted_note.unhoist();
+    }, [tabId, activeNotePath, effectiveHoistedId]);
+
     // Registered once, so a menu or dialog opened over the tree later answers back first.
     const isTreeShown = useRef(false);
     useTriliumEvent("activeScreenChanged", ({ activeScreen }) => {
@@ -266,7 +271,7 @@ export default function MobileNoteNavigator() {
                             </span>
                         </button>
                     ) : (
-                        <UnhoistButton hoistedNoteId={effectiveHoistedId} />
+                        <UnhoistButton hoistedNoteId={effectiveHoistedId} onUnhoist={unhoist} />
                     )}
                 </div>
             )}
@@ -458,7 +463,7 @@ export function PreviewSlot({ note, shown, hideArchived, onReady }: {
  * as on the hoisted note's row in the desktop tree, then the hoisted note's icon and title.
  * Tapping it unhoists the tab.
  */
-export function UnhoistButton({ hoistedNoteId }: { hoistedNoteId: string }) {
+export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: string, onUnhoist: () => void }) {
     const hoistedNote = useNote(hoistedNoteId);
     const hoistedNoteIcon = useNoteIcon(hoistedNote);
     const hoistedTitle = useNoteTitle(hoistedNoteId, undefined);
@@ -469,7 +474,7 @@ export function UnhoistButton({ hoistedNoteId }: { hoistedNoteId: string }) {
         <button
             type="button"
             className="mobile-navigator-back mobile-navigator-unhoist"
-            onClick={() => hoisted_note.unhoist()}
+            onClick={onUnhoist}
             aria-label={t("note_tree.unhoist")}
         >
             <Icon icon="bx bx-door-open" className="mobile-navigator-back-icon" />

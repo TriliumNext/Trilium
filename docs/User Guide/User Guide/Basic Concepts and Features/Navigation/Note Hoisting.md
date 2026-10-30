@@ -9,6 +9,6 @@ In addition to showing only this subtree, this also narrows both full text searc
 
 While a note is hoisted, the desktop interface shows a _Show all notes_ button with the <span class="tn-icon bx bx-arrow-back"></span> icon above the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>. Click it to unhoist the note and see the whole tree again.
 
-On a phone, the back button at the top level of the hoisted tree turns into a <span class="tn-icon bx bx-door-open"></span> button, followed by the hoisted note's icon and title. Tap it to unhoist the note.
+On a phone, the back button at the top level of the hoisted tree turns into a <span class="tn-icon bx bx-door-open"></span> button, followed by the hoisted note's icon and title. Tap it to unhoist the note; the tree then shows the level holding the hoisted note, as one more step up.
 
 See also [Workspace](Workspaces.md) which extends this feature.

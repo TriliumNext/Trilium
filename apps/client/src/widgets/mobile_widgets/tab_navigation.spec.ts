@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, setTabScreen, setTabTree } from "./tab_navigation";
+import { forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -46,5 +46,15 @@ describe("tab navigation", () => {
         expect(getSpotlightedNoteId("folder", "root/folder/inner/leaf")).toBe("inner");
         expect(getSpotlightedNoteId("folder/inner", "root/folder/inner/leaf")).toBe("leaf");
         expect(getSpotlightedNoteId("folder/inner", "root/folder/page")).toBeUndefined();
+    });
+
+    it("leaves a hoisted note for the column holding it, whatever note the tab shows", () => {
+        const notePath = "root/folder/inner/leaf";
+        leaveHoistedNote("leaving", notePath, "inner");
+        expect(getTreeStack("leaving", notePath, "root")).toEqual([ "root", "root/folder" ]);
+
+        // A hoisted note right under the root leaves for the root.
+        leaveHoistedNote("leaving", notePath, "folder");
+        expect(getTreeStack("leaving", notePath, "root")).toEqual([ "root" ]);
     });
 });
