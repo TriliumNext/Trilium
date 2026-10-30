@@ -159,7 +159,7 @@ describe("WorkspaceCards", () => {
 describe("UnhoistButton", () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it("shows a door with the hoisted note's icon, title and workspace color, and unhoists on a tap", () => {
+    it("shows a door with the hoisted note's title in the workspace color, and unhoists on a tap", () => {
         const unhoist = vi.fn();
         const workspace = buildNote({
             title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#iconClass": "bx bx-folder",
@@ -169,8 +169,9 @@ describe("UnhoistButton", () => {
 
         const button = renderInto(<UnhoistButton hoistedNoteId={workspace.noteId} onUnhoist={unhoist} />).querySelector("button");
         expect(button?.getAttribute("aria-label")).toBe("note_tree.unhoist");
-        expect(button?.querySelector(".mobile-navigator-back-icon.bx-door-open")).not.toBeNull();
-        expect(button?.querySelector(".mobile-navigator-unhoist-icon.bx-briefcase")).not.toBeNull();
+        // The door alone: neither the workspace icon nor the note's own.
+        expect(button?.querySelectorAll(".bx").length).toBe(1);
+        expect(button?.querySelector(".bx.bx-door-open.mobile-navigator-unhoist-icon")).not.toBeNull();
         expect(button?.textContent).toBe("Work");
         // The color class limits the lightness per theme, as a note's `#color` does in the tree.
         expect(button?.classList.contains("use-note-color")).toBe(true);
@@ -180,7 +181,6 @@ describe("UnhoistButton", () => {
         expect(unhoist).toHaveBeenCalledTimes(1);
 
         const plainButton = renderInto(<UnhoistButton hoistedNoteId={plain.noteId} onUnhoist={unhoist} />).querySelector("button");
-        expect(plainButton?.querySelector(".mobile-navigator-unhoist-icon.bx-book")).not.toBeNull();
         expect(plainButton?.textContent).toBe("Plain");
         expect(plainButton?.classList.contains("use-note-color")).toBe(false);
     });
