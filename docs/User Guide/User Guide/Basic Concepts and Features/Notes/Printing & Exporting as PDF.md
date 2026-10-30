@@ -48,7 +48,18 @@ This feature allows printing of notes. It works on both the desktop client, but 
 
 To print a note, click the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print/export to PDF…_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
-On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
+### On iPhone and iPad
+
+Browsers on iPhone and iPad can only print the whole page, so printing works differently there. Your changes are saved first, then the note's print page replaces the app in the same tab and the system print sheet opens on its own. To save a PDF, use the share button in the print sheet.
+
+The print page has two buttons at the top, which do not appear on paper:
+
+*   _Back to the note_ returns to the app.
+*   _Print_ opens the print sheet again.
+
+If the note cannot be printed, or a collection leaves some of its notes out, the reason shows under these buttons. If a note has not finished saving, Trilium stays on the note and asks you to wait. A protected note prints only while its protected session is open.
+
+Page numbers and the top and bottom margins come from the system on these devices, so they cannot be set from Trilium.
 
 ## Reporting issues with the rendering
 

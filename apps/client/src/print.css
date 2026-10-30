@@ -435,3 +435,28 @@ details::details-content {
     display: none !important;
 }
 /* #endregion */
+
+.print-page-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + 8px) 12px 8px;
+    border-bottom: 1px solid #ddd;
+    background: white;
+}
+
+.print-page-report {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+@media print {
+    .print-page-toolbar {
+        display: none;
+    }
+}
