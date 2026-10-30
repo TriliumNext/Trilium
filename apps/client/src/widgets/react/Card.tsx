@@ -276,6 +276,47 @@ function holdsSmallControl(element: HTMLElement) {
 
 // #endregion
 
+// #region Choice Card Section
+
+export interface ChoiceCardSectionProps {
+    isChecked: boolean;
+    onCheck: () => void;
+    /** An icon class, `bx` prefix included, shown before the label. */
+    icon?: string;
+    className?: string;
+    children: ComponentChildren;
+}
+
+/**
+ * One segment of a card that lists exclusive choices. A click, Enter or Space checks it, and the
+ * checked segment shows a check mark.
+ */
+export function ChoiceCardSection(
+    { isChecked, onCheck, icon, className, children }: ChoiceCardSectionProps
+) {
+    return (
+        <section
+            className={clsx("tn-card-section tn-card-highlight-on-hover tn-card-choice", className)}
+            role="radio"
+            aria-checked={isChecked}
+            tabIndex={0}
+            onClick={onCheck}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onCheck();
+                }
+            }}
+        >
+            {icon && <Icon icon={icon} className="tn-card-choice-icon" />}
+            <span className="tn-card-choice-label">{children}</span>
+            {isChecked && <Icon icon="bx bx-check" className="tn-card-choice-check" />}
+        </section>
+    );
+}
+
+// #endregion
+
 // #region Item Creation Row
 
 interface ItemCreationRowButtonBase {

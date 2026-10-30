@@ -33,20 +33,24 @@ import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
-const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed } = vi.hoisted(() => {
+const {
+    watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed, loadUnknownEmbed
+} = vi.hoisted(() => {
     const stop = vi.fn();
     return {
         watchContentEmbeds: vi.fn(() => stop),
         stopWatchingEmbeds: stop,
         loadEmbeddedNote: vi.fn(async () => {}),
-        loadInlineEmbed: vi.fn(async () => {})
+        loadInlineEmbed: vi.fn(async () => {}),
+        loadUnknownEmbed: vi.fn(async () => {})
     };
 });
 vi.mock("./utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("./utils")>(),
     watchContentEmbeds,
     loadEmbeddedNote,
-    loadInlineEmbed
+    loadInlineEmbed,
+    loadUnknownEmbed
 }));
 
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
@@ -475,6 +479,30 @@ describe("ReadOnlyText embedded notes", () => {
             .toHaveBeenCalledWith("src1", expect.anything(), undefined, { block: "b1:b2" });
         await act(async () => render(null, harness.container));
         harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText embeds of an unknown kind", () => {
+    it("shows an error box instead of the content, which no other pass renders", async () => {
+        for (const mock of [ loadUnknownEmbed, loadEmbeddedNote, loadInlineEmbed ]) {
+            mock.mockClear();
+        }
+        const container = document.createElement("div");
+        document.body.append(container);
+        const html = `<section data-trilium-embed="note-card" data-note-id="n1"`
+            + ` data-box-size="small"><pre><code class="language-mermaid">graph TD;</code></pre>`
+            + `</section>`;
+
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+
+        const box = container.querySelector("section.include-note.unknown-content-embed");
+        expect(box).toBeInstanceOf(HTMLElement);
+        expect(box?.childElementCount).toBe(0);
+        expect(loadUnknownEmbed.mock.calls).toEqual([ [ box, "small" ] ]);
+        expect(loadEmbeddedNote).not.toHaveBeenCalled();
+        expect(loadInlineEmbed).not.toHaveBeenCalled();
+        await act(async () => render(null, container));
+        container.remove();
     });
 });
 

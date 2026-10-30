@@ -14,6 +14,7 @@ import { Badge } from "../../react/Badge";
 import { ButtonGroup } from "../../react/Button";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
 import { HtmlFindTarget } from "../../find_in_html";
 import ScrollableLabel from "../../react/ScrollableLabel";
@@ -238,6 +239,28 @@ export function TinyContentEmbed({
                 />
             ))}
             <MoreActionsButton notePath={notePath} viewScope={viewScope} />
+        </div>
+    );
+}
+
+interface ContentEmbedErrorProps {
+    boxSize?: string;
+    icon: string;
+    text: string;
+}
+
+/**
+ * The box of an embed that cannot show its content, such as a missing note or an embed of an
+ * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Tiny and
+ * Expandable boxes, which show only a row.
+ */
+export function ContentEmbedError({ boxSize, icon, text }: ContentEmbedErrorProps) {
+    const hasBoxHeight = boxSize !== "tiny" && boxSize !== "expandable";
+    const isRoomy = hasBoxHeight && boxSize !== "small";
+
+    return (
+        <div className={clsx("include-note-error", hasBoxHeight && "include-note-box-height")}>
+            <NoItems icon={icon} text={text} size={isRoomy ? "normal" : "small"} />
         </div>
     );
 }

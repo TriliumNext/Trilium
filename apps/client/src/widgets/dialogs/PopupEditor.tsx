@@ -49,13 +49,18 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
     const [ switchable, setSwitchable ] = useState(false);
+    const selectsTitleRef = useRef(false);
+    /** Set while a note opened in the popup already on show waits to render before taking focus. */
+    const focusesOnRenderRef = useRef(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
     useDetachedNoteContext(noteContext);
 
-    useTriliumEvent(openCommand, async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
+    useTriliumEvent(openCommand, async ({
+        noteIdOrPath, viewScope, showNoteTypeSwitcher, selectTitle
+    }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -70,6 +75,8 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
         const noteContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
         setSwitchable(!!showNoteTypeSwitcher);
+        selectsTitleRef.current = !!selectTitle;
+        focusesOnRenderRef.current = shown;
 
         const hasUserSetNoteReadOnly = note.hasLabel("readOnly");
         await noteContext.setNote(noteIdOrPath, {
@@ -87,6 +94,25 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
         setNoteContext(noteContext);
         setShown(true);
     });
+
+    function focusOpenedNote() {
+        const shownNtxId = noteContext.ntxId;
+        if (selectsTitleRef.current) {
+            parentComponent?.handleEvent("focusAndSelectTitle", {
+                isNewNote: true, ntxId: shownNtxId
+            });
+        } else {
+            parentComponent?.handleEvent("focusOnDetail", { ntxId: shownNtxId });
+        }
+    }
+
+    // The modal fires `shown` only as it opens, so a note opened in the popup already on show is
+    // focused once it renders.
+    useEffect(() => {
+        if (!focusesOnRenderRef.current) return;
+        focusesOnRenderRef.current = false;
+        focusOpenedNote();
+    }, [ noteContext ]);
 
     // Asked to stand aside by something within it that has sent the reader elsewhere — the note map,
     // whose nodes navigate the pane behind rather than the popup, which would otherwise be left covering
@@ -208,7 +234,7 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                     className="popup-editor-dialog"
                     size="lg"
                     show={shown}
-                    onShown={() => parentComponent?.handleEvent("focusOnDetail", { ntxId: noteContext.ntxId })}
+                    onShown={focusOpenedNote}
                     onHidden={() => setShown(false)}
                     keepInDom // needed for faster loading
                     noFocus // automatic focus breaks block popup

@@ -7,9 +7,11 @@ import {
     CKTextEditor,
     type FileUploadData,
     type FileUploadEvent,
+    type LinkDialogRequest,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
+import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -24,7 +26,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import type { AddLinkOpts } from "../../dialogs/add_link";
+import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
@@ -44,6 +46,7 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadInlineEmbed,
+    loadUnknownEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -234,6 +237,9 @@ export default function EditableText({
             });
         },
         flushInline: () => inlineSourceSaves.flush(),
+        loadUnknown(wrapper, boxSize) {
+            void loadUnknownEmbed(wrapper, boxSize);
+        },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
         },
@@ -243,11 +249,31 @@ export default function EditableText({
         enter: enterContentEmbed
     };
 
+    const [ linkDialog, setLinkDialog ] = useState<{
+        opts: EditLinkOpts;
+        request: LinkDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `EditLinkBalloon` renders into its container.
+    // On mobile, `showEditLinkDialog` opens the form in a modal instead.
+    function showLinkDialog(request: LinkDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, request);
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showEditLinkDialog", opts);
+            return null;
+        }
+
+        setLinkDialog({ opts, request });
+        return () => setLinkDialog(null);
+    }
+
     useLegacyImperativeHandlers({
-        addLinkToTextCommand() {
-            if (!editorApiRef.current) return;
-            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor);
-            parentComponent?.triggerCommand("showAddLinkDialog", opts);
+        // Keyboard shortcut
+        async addLinkToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertInternalLink");
         },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
@@ -351,6 +377,7 @@ export default function EditableText({
                 pendingAttachmentChangesRef
             );
         }
+        editor?.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
         if (editor?.plugins.has("ImageEditingSource")) {
             editor.plugins.get("ImageEditingSource").refresh();
         }
@@ -504,6 +531,7 @@ export default function EditableText({
                 onEditorError={(error) => reportEditorError(error, reloadEditor)}
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
+                showLinkDialog={showLinkDialog}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();
@@ -545,6 +573,10 @@ export default function EditableText({
                 }}
             />}
 
+            {linkDialog && createPortal(
+                <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
+                linkDialog.request.container
+            )}
         </>
     );
 }
@@ -554,39 +586,62 @@ export default function EditableText({
  * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
  */
 /**
- * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
- * link at the selection.
+ * What the edit link dialog opens on: the link around the caret or the selected link preview, which
+ * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
  */
-export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>): AddLinkOpts {
+export function getEditLinkOpts(
+    api: CKEditorApi, ready: () => Promise<unknown>,
+    { target, display }: Pick<EditLinkOpts, "target" | "display"> = {}
+): EditLinkOpts {
+    async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
+        await ready();
+        api.addLinkPreview(...args);
+    }
+
+    const anchors = api.getAnchors();
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         return {
             text: currentLink.text,
             hasSelection: false,
-            currentTitle: currentLink.text,
-            ...parseLinkHref(currentLink.href),
+            currentTitle: currentLink.isReference ? undefined : currentLink.text,
+            currentDescription: currentLink.description,
+            display: currentLink.display,
+            anchors,
+            ...parseLinkHref(currentLink.href, anchors),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
                 await api.updateLink(notePath, linkTitle, externalLink);
-            }
+            },
+            addLinkPreview
         };
     }
 
     return {
         text: api.getSelectedText(),
         hasSelection: api.hasSelection(),
+        target,
+        display,
+        anchors,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
-        }
+        },
+        addLinkPreview
     };
 }
 
 /**
- * What a link's `href` opens the Add link dialog on: the note, with the anchor it points at, or
- * the address.
+ * What a link's `href` opens the edit link dialog on: one of the document's `anchors`, the note
+ * with the anchor it points at, or the address.
  */
-export function parseLinkHref(href: string): Pick<AddLinkOpts, "currentLink" | "currentBookmark"> {
+export function parseLinkHref(
+    href: string, anchors: string[] = []
+): Pick<EditLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
+    if (href.startsWith("#") && anchors.includes(href.slice(1))) {
+        return { currentAnchor: href.slice(1) };
+    }
+
     if (!href.startsWith("#")) {
         return { currentLink: { externalLink: href }, currentBookmark: undefined };
     }

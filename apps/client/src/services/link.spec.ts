@@ -780,6 +780,39 @@ describe("goToLinkExt", () => {
         openSpy.mockRestore();
     });
 
+    it("leaves a plain left click on a note link in an editable text note to the link toolbar", () => {
+        const $editor = $("<div class='ck-content note-detail-editable-text-editor'>");
+        const $link = $("<a href='#root/aaaaaaaaaaaa'>");
+        const $embed = $("<div class='ck-content'>");
+        const $embeddedLink = $("<a href='#root/aaaaaaaaaaaa'>");
+        $editor.append($link, $embed.append($embeddedLink));
+
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $link);
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa?popup=1", $link);
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
+        expect(triggerCommand).not.toHaveBeenCalled();
+
+        // The modifiers still open the note, and a link in an embed still navigates.
+        goToLinkExt(leftClick({ ctrlKey: true }), "#root/aaaaaaaaaaaa", $link);
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
+        goToLinkExt(leftClick({ type: "dblclick" }), "#root/aaaaaaaaaaaa", $link);
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledTimes(2);
+        goToLinkExt(leftClick({ shiftKey: true }), "#root/aaaaaaaaaaaa", $link);
+        expect(triggerCommand).toHaveBeenCalledWith("openInWindow", expect.anything());
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $embeddedLink);
+        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+    });
+
+    it("opens a note in place from the preview button of the link toolbar", () => {
+        const $preview = $("<a class='ck-link-toolbar__preview' target='_blank'>");
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $preview);
+        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+        expect(openTabWithNoteWithHoisting).not.toHaveBeenCalled();
+
+        goToLinkExt(leftClick({ ctrlKey: true }), "#root/aaaaaaaaaaaa", $preview);
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
+    });
+
     it("does nothing when there is neither a note path nor an href", () => {
         const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
         expect(goToLinkExt(leftClick(), undefined)).toBe(true);

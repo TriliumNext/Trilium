@@ -140,6 +140,37 @@ describe("ReferenceLink", () => {
 
             expect(findReference(editor)).toBeUndefined();
         });
+
+        it("inserts at the position it is given instead of the selection", async () => {
+            setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph) {
+                throw new Error("The paragraph is missing.");
+            }
+
+            editor.execute("referenceLink", {
+                href: "#root/noteAbc", position: editor.model.createPositionAt(paragraph, 0)
+            });
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<paragraph><reference href=\"#root/noteAbc\"></reference>foobar</paragraph>"
+            );
+        });
+    });
+
+    it("titles a reference by its stored title, or else its address, without a host", async () => {
+        const hostless =
+            await createTestEditor([ Essentials, Paragraph, LinkEditing, ReferenceLink ]);
+        setModelData(hostless.model, "<paragraph>"
+            + "<reference href=\"#root/a\" storedTitle=\"Stored\"></reference>"
+            + "<reference href=\"#root/b\"></reference></paragraph>");
+
+        const anchors = hostless.editing.view.getDomRoot()?.querySelectorAll("a.reference-link");
+        expect([ ...anchors ?? [] ].map((anchor) => anchor.textContent))
+            .toEqual([ "Stored", "#root/b" ]);
     });
 
     it("is enabled where text is allowed and disabled where it is not", () => {
@@ -268,6 +299,47 @@ describe("ReferenceLink", () => {
 
         expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href, "a");
         expect(getModelData(editor.model)).toBe(before);
+    });
+
+    it("redraws the links to a renamed note without changing the document, and only those", () => {
+        const titles: Record<string, string> = {
+            "#root/renamed": "Old",
+            "#root/parent/renamed": "Old",
+            "#root/unchanged": "Same",
+            "#root/unlisted": "Old"
+        };
+        getReferenceLinkTitleSync.mockImplementation((href: string) => titles[href]);
+        editor.setData(
+            "<p><a class=\"reference-link\" href=\"#root/renamed\">a</a>"
+            + "<a class=\"reference-link\" href=\"#root/parent/renamed\">b</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unchanged\">c</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unlisted\">d</a></p>"
+            + "<p><a href=\"#root/renamed\">e</a></p>"
+        );
+        // Anchors that only look like references: a plain link to the renamed note, and one
+        // without an address.
+        const domRoot = editor.editing.view.getDomRoot();
+        domRoot?.querySelector("a:not(.reference-link)")?.classList.add("reference-link");
+        domRoot?.appendChild(document.createElement("a")).classList.add("reference-link");
+        const before = getModelData(editor.model);
+        const references = editor.plugins.get("ReferenceLinkEditing");
+        const redrawnHrefs = () =>
+            [ ...new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href)) ];
+
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        references.refreshNoteLinks([]);
+        expect(redrawnHrefs()).toEqual([]);
+
+        titles["#root/renamed"] = titles["#root/parent/renamed"] = titles["#root/unlisted"] = "New";
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        expect(redrawnHrefs()).toEqual([ "#root/renamed", "#root/parent/renamed" ]);
+        expect(getModelData(editor.model)).toBe(before);
+
+        // Drawn with the new title, so the next change of the note leaves them alone.
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed" ]);
+        expect(redrawnHrefs()).toEqual([]);
     });
 
     it("reads the attachment a link points to, and none from a note link or a missing href", () => {

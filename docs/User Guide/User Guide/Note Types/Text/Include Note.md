@@ -83,11 +83,19 @@ A _Tiny_ include has these buttons instead, followed by the same _More actions_ 
 
 To replace an include with a link to the included note, select it and press the <span class="tn-icon cke cke-link"></span> _Convert to link_ button in its toolbar, or choose _Convert to link_ at the end of its _More actions_ menu. An embedded attachment turns into a link to the attachment the same way.
 
+## Missing notes and attachments
+
+An include whose note or attachment no longer exists, for example because it was deleted, keeps its size and shows the <span class="tn-icon bx bx-error-alt"></span> icon in place of the content, with the ID of the missing note or attachment. To remove the include, select it and press <kbd>Delete</kbd>.
+
+Content added by a newer version of Trilium, which this version cannot show, appears the same way with the <span class="tn-icon bx bx-error"></span> icon. Editing the note keeps that content unchanged, so it shows again once Trilium is updated.
+
 ## Included notes in the share functionality
 
 If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
 
-For this to work, the included notes must also be shared, otherwise they will not be shown. However, the included notes can still be hidden from the note tree via `#shareHiddenFromTree`.
+For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
+
+An include whose note or attachment is missing or not shared shows _This content is not available_ in its place, and so does content added by a newer version of Trilium.
 
 ## Interactive notes
 

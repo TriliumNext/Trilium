@@ -108,6 +108,23 @@
     }
 }
 
+.tn-card-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    .tn-card-choice-label {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .tn-card-choice-check {
+        flex-shrink: 0;
+        margin-inline-start: auto;
+    }
+}
+
 .tn-card-section-link {
     display: flex;
     align-items: center;

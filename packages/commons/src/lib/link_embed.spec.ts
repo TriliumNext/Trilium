@@ -170,6 +170,19 @@ describe("linkPreviewImageName", () => {
         expect(linkPreviewImageName("https://example.com")).toBe(linkPreviewImageName("https://example.com/"));
     });
 
+    it("names a YouTube thumbnail by the video ID, whatever the address form", () => {
+        const addresses = [
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://www.youtube.com/shorts/dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42#comments"
+        ];
+
+        for (const address of addresses) {
+            expect(linkPreviewImageName(address), address).toBe("youtube-dQw4w9WgXcQ");
+        }
+    });
+
     it("stays a usable file name whatever the address looks like", () => {
         const names = [
             linkPreviewImageName("https://example.com/"),

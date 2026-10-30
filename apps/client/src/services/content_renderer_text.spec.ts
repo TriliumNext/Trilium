@@ -69,6 +69,7 @@ vi.mock("@triliumnext/commons/src/lib/scroll_fade.js", async (importOriginal) =>
 
 import renderText, {
     applyInlineMermaid,
+    emptyUnknownEmbeds,
     postProcessRichContent,
     renderChildrenList,
     renderTextContent,
@@ -574,6 +575,34 @@ describe("renderContentEmbeds via postProcessRichContent", () => {
         await postProcessRichContent(host, $rendered);
         // No data-note-id means it is skipped in both gather and render loops.
         expect($rendered.find("section.include-note").length).toBe(1);
+    });
+});
+
+describe("Embeds of an unknown kind", () => {
+    it("become empty include-note boxes, keeping only their kind, box size and block ID", () => {
+        const container = document.createElement("div");
+        container.innerHTML = `<section class="future" data-trilium-embed="note-card"`
+            + ` data-note-id="n1" data-box-size="small" data-trilium-block-id="b1"`
+            + ` style="color: red">`
+            + `<p>Fallback</p><section data-trilium-embed="nested"><p>Inner</p></section>`
+            + `</section><p>Text</p>`;
+
+        const boxes = emptyUnknownEmbeds(container);
+
+        expect(boxes).toEqual([ container.firstElementChild ]);
+        expect(container.innerHTML).toBe(`<section data-trilium-embed="note-card"`
+            + ` data-box-size="small" data-trilium-block-id="b1"`
+            + ` class="include-note unknown-content-embed"></section><p>Text</p>`);
+    });
+
+    it("show no fallback in rendered content", async () => {
+        const $rendered = $("<div>").append($('<div class="ck-content">').html(
+            `<section data-trilium-embed="note-card"><p>Fallback</p></section>`));
+
+        await postProcessRichContent(buildNote({ title: "Host" }), $rendered);
+
+        expect($rendered.find("section.include-note.unknown-content-embed").length).toBe(1);
+        expect($rendered.text()).not.toContain("Fallback");
     });
 });
 

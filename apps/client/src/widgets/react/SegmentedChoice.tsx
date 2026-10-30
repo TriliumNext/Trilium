@@ -14,6 +14,8 @@ export interface SegmentedChoiceOption<T extends string> {
     label?: string;
     /** An icon class without its `bx` prefix, e.g. `bx-square`. */
     icon?: string;
+    /** The SVG of an icon drawn in place of {@link icon}, such as a CKEditor toolbar item's. */
+    iconSvg?: string;
     /** What the option is called, for an option that shows as an icon alone. */
     title?: string;
     /**
@@ -68,7 +70,7 @@ export default function SegmentedChoice<T extends string>({ options, currentValu
 
     return (
         <ButtonGroup size="sm" className={clsx("tn-segmented-choice", className)}>
-            {options.map(({ value, label, icon, title, glyph, count }) => (
+            {options.map(({ value, label, icon, iconSvg, title, glyph, count }) => (
                 <Button
                     key={value}
                     // Name and count share one inline box, rather than being two children of the
@@ -83,6 +85,7 @@ export default function SegmentedChoice<T extends string>({ options, currentValu
                         </span>
                     ) : (label ?? ""))}
                     icon={icon}
+                    iconSvg={iconSvg}
                     title={title}
                     size="small"
                     disabled={disabled}

@@ -1,5 +1,6 @@
 import {
-    type CKEditorError, CKTextEditor, ClassicEditor, getLinkAtSelection, type IconPickerRequest,
+    type CKEditorError, CKTextEditor, ClassicEditor, getAnchorNames, getLinkAtSelection,
+    type IconPickerRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
     onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
@@ -20,11 +21,23 @@ export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
     hasSelection(): boolean;
     getSelectedText(): string;
-    /** The address and the whole text of the link around the caret, or `null` outside one. */
-    getCurrentLink(): { href: string; text: string } | null;
+    /** The link around the caret or the selected link preview, or `null` outside one. */
+    getCurrentLink(): LinkAtSelection | null;
+    /** The names of the anchors in the document. */
+    getAnchors(): string[];
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
-    /** Rewrites the link around the caret, as {@link addLink} would write a new one. */
+    /**
+     * Rewrites the link around the caret or the selected link preview, as {@link addLink} would
+     * write a new one.
+     */
     updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
+    /**
+     * Puts a preview of `url` in place of the link around the caret or the selected link preview,
+     * or at the selection. `title` and `description` replace the page's own.
+     */
+    addLinkPreview(
+        url: string, display: LinkDisplayMode, title: string | null, description: string | null
+    ): void;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
     addContentEmbed(noteId: string, boxSize?: BoxSize): void;
@@ -67,9 +80,16 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     containerRef?: RefObject<HTMLDivElement | null>;
     /** What renders the embeds of the editor and acts on them. Editors without embeds leave it out. */
     contentEmbedHandlers?: ContentEmbedHandlers;
+    /** Shows the link dialog, as `internalLink.showDialog` does. */
+    showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
 }
 
-export default function CKEditor({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError, onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers }: CKEditorProps) {
+export default function CKEditor({
+    containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
+    editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
+    onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
+    showLinkDialog
+}: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
     const stopReportingErrorsRef = useRef<() => void>(undefined);
@@ -139,6 +159,8 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
     noteRef.current = note;
     const contentEmbedHandlersRef = useRef(contentEmbedHandlers);
     contentEmbedHandlersRef.current = contentEmbedHandlers;
+    const showLinkDialogRef = useRef(showLinkDialog);
+    showLinkDialogRef.current = showLinkDialog;
     /** The open icon picker request and its balloon container, or `null` when none is open. */
     const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerRequest | null>(null);
 
@@ -183,6 +205,10 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
             const editor = editorRef.current;
             return editor ? getLinkAtSelection(editor) : null;
         },
+        getAnchors() {
+            const editor = editorRef.current;
+            return editor ? getAnchorNames(editor) : [];
+        },
         async updateLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;
             if (!editor) return;
@@ -190,6 +216,15 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
             editor.editing.view.focus();
             const href = externalLink ? notePath : `#${notePath}`;
             await replaceLinkAtSelection(editor, href, linkTitle);
+        },
+        addLinkPreview(url, display, title, description) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.editing.view.focus();
+            void editor.execute("insertLinkEmbed", {
+                url, mode: display, title: title ?? undefined, description: description ?? undefined
+            });
         },
         addLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;
@@ -296,6 +331,12 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
                 contentLanguage: contentLanguage ?? null,
                 templates: templatesRef.current,
                 getNoteLocation: () => noteLocationRef.current,
+                getChildNoteParent: () => {
+                    const parentNote = noteRef.current;
+                    const parentNotePath = noteLocationRef.current?.notePath;
+                    if (!parentNote || !parentNotePath) return undefined;
+                    return { notePath: parentNotePath, isProtected: parentNote.isProtected, ntxId };
+                },
                 getNoteId: () => noteRef.current?.noteId,
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
@@ -306,7 +347,8 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
                     getNotePath: () => noteLocationRef.current?.notePath,
                     save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
                 },
-                getContentEmbedHandlers: () => contentEmbedHandlersRef.current
+                getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
+                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null
             });
 
             if (isStale) {

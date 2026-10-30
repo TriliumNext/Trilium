@@ -880,20 +880,13 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
 
 /* forms.css draws the arrow as a background and dims the whole box when disabled. */
 :root .ck-labeled-field-view__input-wrapper > .ck-dropdown .ck-dropdown__arrow,
-:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow,
-:root .ck-link-embed-form__actions > .ck-dropdown .ck-dropdown__arrow {
+:root .ck-emoji__skin-tone > .ck-dropdown .ck-dropdown__arrow {
     display: none;
 }
 
 :root .ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
-    > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label,
-:root .ck-link-embed-form__actions > .ck.ck-dropdown
     > .ck-button.ck-dropdown__button.ck-disabled .ck-button__label {
     opacity: 1;
-}
-
-:root .ck.ck-link-embed-form__actions > .ck.ck-dropdown > button.ck.ck-dropdown__button {
-    padding-inline-start: var(--ck-spacing-padding);
 }
 
 /*

@@ -564,7 +564,7 @@ function buildImageShapeOptions() {
 /**
  * The link a node carries: a note, or a page outside Trilium — one field, a node carrying one link.
  *
- * What the field opens is the add-link dialog every other link in Trilium is picked through, asked
+ * What the field opens is the edit link dialog every other link in Trilium is picked through, asked
  * for the target alone (`targetOnly` among its options): a node reads as its own topic, so there is
  * no title to write beside it. A dialog rather than a menu hung off the field, which is where the
  * picker used to sit — the panel stands in the corner of the map, and a menu anchored there had a
@@ -586,7 +586,7 @@ function NodeLink({ currentValue, indeterminate, onChange }: {
                 className="mind-map-node-link"
                 text={<NodeLinkFace link={currentValue} indeterminate={indeterminate} />}
                 title={t("mind-map.choose-link")}
-                onClick={() => void appContext.triggerCommand("showAddLinkDialog", {
+                onClick={() => void appContext.triggerCommand("showEditLinkDialog", {
                     text: "",
                     hasSelection: false,
                     targetOnly: true,

@@ -36,6 +36,16 @@ export const EXTENDED_CODE_BLOCK_CLASS = "extended-code-block";
 /** The language of an extended code block that names none, as a CKEditor code block language. */
 export const EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE = "text-plain";
 
+/**
+ * The attribute that marks a `<section>` as a content embed and names its kind, for kinds added
+ * after include notes and source embeds. A version that does not know the kind keeps the section
+ * unchanged: its `class` and `data-*` attributes, and its content as a fallback for readers.
+ * A kind refers to a note with `data-note-id` on the section, and to an attachment with
+ * `data-attachment-id` on any element, so that older versions keep the backlink and the
+ * attachment.
+ */
+export const CONTENT_EMBED_KIND_ATTRIBUTE = "data-trilium-embed";
+
 const ENTITY_ID = /^[a-zA-Z0-9_]+$/;
 
 /** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */

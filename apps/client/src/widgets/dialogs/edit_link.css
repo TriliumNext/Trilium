@@ -1,0 +1,75 @@
+.edit-link-balloon {
+    padding: 8px;
+    /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
+    width: 34rem;
+    max-width: calc(100vw - 2rem);
+    /* Overrides the text styles inherited from CKEditor's `ck-reset_all`. */
+    font-size: var(--main-font-size);
+    line-height: var(--bs-body-line-height);
+    white-space: normal;
+    text-align: start;
+
+    .edit-link-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+:is(.modal.edit-link-dialog, .edit-link-balloon) {
+    .tn-card {
+        margin-bottom: 1rem;
+    }
+
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Matches the 500px at which Card.css stacks a wide control under its label. */
+    @container (min-width: 501px) {
+        :is(.edit-link-note, .edit-link-url, .edit-link-text, .edit-link-description) {
+            --edit-link-label-width: 8em;
+
+            > .tn-card-option-label {
+                flex: 0 0 var(--edit-link-label-width);
+                min-width: max-content;
+            }
+
+            > :is(.form-control, .input-group) {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+        }
+
+        .edit-link-text.tn-card-section-nested {
+            --edit-link-label-width: calc(8em - var(--card-nested-section-indent));
+        }
+    }
+
+    .edit-link-description textarea {
+        resize: none;
+    }
+
+    .edit-link-target {
+        display: flex;
+        width: fit-content;
+        margin: 0 auto 1rem;
+    }
+
+    .edit-link-anchors .tn-card-body {
+        border-radius: var(--card-border-radius);
+        height: 150px;
+        overflow-y: auto;
+
+        > .tn-card-section {
+            flex-shrink: 0;
+        }
+
+        > .tn-card-choice:focus-visible {
+            outline-offset: -2px;
+        }
+
+        > .edit-link-no-anchors {
+            flex-grow: 1;
+        }
+    }
+}

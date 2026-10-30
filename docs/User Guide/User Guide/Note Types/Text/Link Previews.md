@@ -9,7 +9,7 @@ A link preview can be displayed in one of three modes:
 *   **Card** — a block-level preview with thumbnail, title, description, and site name. Use this when the link is the focus of a paragraph.
 *   **Embed** — a block-level interactive embed.
     *   Currently supported for YouTube videos, which render interactively (via an `iframe`).
-    *   To prevent unwanted remote requests, the video is shown only after clicking on it first.
+    *   To prevent unwanted remote requests, the video is shown only after clicking on it first. Until then, the video's thumbnail is shown with a play button.
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1-1">
 <div class="trilium-multicolumn-column">
@@ -49,11 +49,18 @@ If the link is not accessible to the Trilium server (or the network request fail
 > [!NOTE]
 > A URL is only auto-converted when the pasted text _is_ the URL. Links with a display name (e.g. [Trilium Notes website](https://triliumnotes.org)) are left as plain links.
 
-### 2\. By using the "Link preview" toolbar button or slash command
+### 2\. From the link dialog
 
-Click _Link preview_ (<span class="tn-icon cke cke-trilium-link-preview"></span>) in the formatting toolbar to open the _Link preview_ popup. Paste the URL and choose the type of preview.
+Since v0.107.0, a link preview is created from the same _Add link_ dialog as any other link (see <a class="reference-link" href="Links/External%20links.md">External links</a>):
 
-Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_), which opens the same popup at the cursor.
+*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web link_.
+*   Type or paste the address, then pick the preview in _Display as_: _Inline_, _Card_ or, for a YouTube video, _YouTube embed_. _Plain link_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
+*   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
+*   Press <kbd>Enter</kbd> or _Add link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
+
+Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_). It opens the same dialog with a preview already picked: a _YouTube embed_ for a YouTube video, a _Card_ for any other page.
+
+To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 
 ### 3\. By saving browser tabs from the Web Clipper
 
@@ -66,20 +73,24 @@ When _Autogenerate link previews_ is turned off, the tabs are saved as a list of
 Click on an inserted link preview to select it, and a small toolbar will appear with the following options:
 
 *   The normal link operations (opening in a new tab, copying the link, unlinking).
-*   A button to edit the title of the link preview. This is especially useful if the title is hidden behind a login screen.
+*   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
 *   A way to switch between the link preview modes (Inline, Card or Embed) as well as to convert it to a normal link instead.
     *   The Embed option is only enabled when the URL points to a supported service (YouTube today).
 
 ## Where the preview data comes from
 
-When you insert a link preview, Trilium fetches metadata once and stores it inside the note's HTML:
+When you insert a link preview, Trilium fetches metadata once and stores it with the note:
 
-*   **YouTube URLs** — title, channel name, and thumbnail are fetched via YouTube's public oEmbed endpoint.
-*   **All other URLs** — Trilium fetches the page and reads OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`), falling back to the page's `<title>` and `<meta name="description">`. The site's favicon is downloaded and inlined.
+*   **YouTube URLs**: the title and channel name are fetched via YouTube's public oEmbed endpoint, and the video's thumbnail is downloaded at up to 1280×720.
+*   **All other URLs**: Trilium fetches the page and reads OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`), falling back to the page's `<title>` and `<meta name="description">`. The site's favicon and the page's image are downloaded as well.
+
+The text is kept in the note's HTML. The images are kept as system <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> of the note, listed under _Generated by Trilium_.
 
 Because the data is stored in the note itself, link previews continue to render correctly when you reopen the note, share/publish it, or export to HTML — without any further network requests.
 
 The metadata is captured **at insertion time** and is not automatically refreshed. If the linked page later changes its title or thumbnail, you'll need to re-insert the link to pick up the new values. To refresh a link, simply create it again.
+
+A YouTube embed inserted before v0.107.0 keeps its smaller thumbnail, shown blurred, until the link is inserted again.
 
 When accessing a <a class="reference-link" href="../../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>, the data is fetched from the remote URL by the server and not the client.
 

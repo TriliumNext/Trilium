@@ -19,15 +19,16 @@ function setupGlobalTooltip() {
     $(document).on("pointerenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);
     $(document).on("pointerenter", "[data-href]:not(.no-tooltip-preview)", mouseEnterHandler);
 
-    // close any note tooltip after click, this fixes the problem that sometimes tooltips remained on the screen
-    $(document).on("click", (e) => {
-        if ($(e.target).closest(".note-tooltip").length) {
+    // close any note tooltip after click, this fixes the problem that sometimes tooltips remained on the screen.
+    // Captured, as `goToLink()` stops the propagation of a click on a link.
+    document.addEventListener("click", (e) => {
+        if ($(e.target as Element).closest(".note-tooltip").length) {
             // click within the tooltip shouldn't close it
             return;
         }
 
         dismissAllTooltips();
-    });
+    }, true);
 }
 
 function dismissAllTooltips() {
@@ -52,15 +53,22 @@ function isContextMenuShown() {
     return document.body.classList.contains("context-menu-shown");
 }
 
+/**
+ * Whether the text editor shows the toolbar of a link: the link toolbar of CKEditor, or the widget
+ * toolbar of a reference link. A preview opens below a link, which is where that toolbar sits.
+ */
+function isLinkToolbarShown() {
+    return document.querySelector(
+        ".ck-balloon-panel_visible .ck-link-toolbar, .ck-balloon-panel_visible.reference-link-toolbar"
+    ) !== null;
+}
+
 export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
-    if (e.pointerType !== "mouse" || isContextMenuShown()) return;
+    if (e.pointerType !== "mouse" || isContextMenuShown() || isLinkToolbarShown()) return;
 
     const $link = $(this);
 
     if ($link.hasClass("no-tooltip-preview") || $link.hasClass("disabled")) {
-        return;
-    } else if ($link.closest(".ck-link-actions").length) {
-        // this is to avoid showing tooltip from inside the CKEditor link editor dialog
         return;
     } else if ($link.closest(".note-tooltip").length) {
         // don't show tooltip for links within tooltip
@@ -135,14 +143,16 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     // we need to check if we're still hovering over the element
     // since the operation to get tooltip content was async, it is possible that
     // we now create tooltip which won't close because it won't receive mouseleave event
-    // — or that a context menu was invoked in the meantime, which the preview must not cover.
+    // — or that a context menu or a link toolbar opened in the meantime, which the preview must
+    // not cover.
     //
     // The opt-out is re-read for the same reason: an element may take it on while its preview is
     // being fetched, which is how a surface that opens over the pointer says the preview is no
     // longer wanted — a calendar chip clicked gains it as the popover opens (see the class in
     // CalendarView's eventClassNames), and the pointer is still on the chip, so the hover test
     // alone would let the preview land on top of what the click just opened.
-    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !$link.hasClass("no-tooltip-preview")) {
+    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !isLinkToolbarShown()
+        && !$link.hasClass("no-tooltip-preview")) {
         $link.tooltip({
             container: "body",
             // https://github.com/zadam/trilium/issues/2794 https://github.com/zadam/trilium/issues/2988
@@ -181,8 +191,10 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // - once the user moves the cursor away from both link and the tooltip, hide the tooltip
         const checkTooltip = () => {
 
-            if (!$link.filter(":hover").length && !$(`.${linkId}:hover`).length) {
-                // cursor is neither over the link nor over the tooltip, user likely is not interested
+            if (isLinkToolbarShown()
+                || (!$link.filter(":hover").length && !$(`.${linkId}:hover`).length)) {
+                // a link toolbar opened under the tooltip, or the cursor is neither over the link nor
+                // over the tooltip, user likely is not interested
                 dismissAllTooltips();
             } else {
                 dismissTimer = setTimeout(checkTooltip, 1000);

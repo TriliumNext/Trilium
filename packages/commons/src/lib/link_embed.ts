@@ -115,8 +115,15 @@ export function safeHostname(url: string): string {
  *
  * The fragment is left out of both. It never reaches the server and never changes the picture, so
  * two links into different sections of one page share the cover they both showed anyway.
+ *
+ * A YouTube video is named by its ID instead, so all address forms of one video share a thumbnail.
  */
 export function linkPreviewImageName(url: string): string {
+    const videoId = extractYouTubeVideoId(url);
+    if (videoId) {
+        return `youtube-${videoId}`;
+    }
+
     let canonical = url;
     let readable = toFileNamePart(url);
 

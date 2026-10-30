@@ -259,6 +259,18 @@ describe("checkImageAttachments", () => {
             expect(att.save).not.toHaveBeenCalled();
         });
 
+        it("keeps an attachment alive that an embed of another kind refers to", () => {
+            const pdf = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const note = buildNote({ title: "Test", attachments: [ pdf ] });
+            mockAttachmentSaves(note);
+            const [ att ] = note.getAttachments();
+
+            checkImageAttachments(note, `<section data-trilium-embed="future-kind">`
+                + `<p data-attachment-id="${att.attachmentId}">Fallback</p></section>`);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
         it("points an embed of a foreign attachment at the note's own copy", () => {
             const report = { title: "report.pdf", role: "file", mime: "application/pdf" };
             const source = buildNote({
@@ -844,6 +856,22 @@ describe("saveLinks", () => {
         expect(figureLink.markAsDeleted).not.toHaveBeenCalled();
         expect(sectionLink.markAsDeleted).not.toHaveBeenCalled();
         expect(staleLink.markAsDeleted).toHaveBeenCalled();
+    });
+
+    it("keeps the includeNoteLink relation of another kind of embed, from its section", () => {
+        const note = buildNote({ title: "Test" });
+        const [ target, childTarget ] = [ "Target", "Child" ].map((title) => buildNote({ title }));
+        const [ link, childLink ] = [ target, childTarget ]
+            .map((linked) => makeLinkRelation(note.noteId, "includeNoteLink", linked.noteId));
+        note.getRelations = () => [ link, childLink ];
+        note.getAttachments = () => [];
+
+        saveLinks(note, `<section class="future" data-trilium-embed="future-kind"`
+            + ` data-note-id="${target.noteId}">`
+            + `<p data-note-id="${childTarget.noteId}">Fallback</p></section>`);
+
+        expect(link.markAsDeleted).not.toHaveBeenCalled();
+        expect(childLink.markAsDeleted).toHaveBeenCalled();
     });
 
     it("does not delete existing internalLink relations on markdown notes using #root links", () => {

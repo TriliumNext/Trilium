@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "../../menus/context_menu";
 import { renderInto } from "../../test/render";
-import { Card, CardFrame, CardSection, ItemCreationRow, OptionCardSection } from "./Card";
+import {
+    Card, CardFrame, CardSection, ChoiceCardSection, ItemCreationRow, OptionCardSection
+} from "./Card";
 import { FilterProvider } from "./filter";
 
 const menuState = vi.hoisted(() => ({ dismissedByLastPress: false }));
@@ -150,6 +152,40 @@ describe("OptionCardSection", () => {
             <OptionCardSection label="Density" inline><input type="text" /></OptionCardSection>
         );
         expect(draw(inline)).not.toContain("tn-card-option-wide");
+    });
+});
+
+describe("ChoiceCardSection", () => {
+    it("is a radio that a click, Enter or Space checks, with a check mark once checked", () => {
+        const onCheck = vi.fn();
+        const container = renderInto(
+            <Card>
+                <ChoiceCardSection isChecked={false} onCheck={onCheck} icon="bx bx-bookmark">
+                    intro
+                </ChoiceCardSection>
+                <ChoiceCardSection isChecked onCheck={vi.fn()}>outro</ChoiceCardSection>
+            </Card>
+        );
+        const [ unchecked, checked ] =
+            [ ...container.querySelectorAll<HTMLElement>(".tn-card-choice") ];
+        expect([ unchecked, checked ].map((section) => [
+            section?.getAttribute("role"),
+            section?.getAttribute("aria-checked"),
+            section?.tabIndex,
+            section?.textContent?.trim(),
+            !!section?.querySelector(".tn-card-choice-icon.bx-bookmark"),
+            !!section?.querySelector(".tn-card-choice-check.bx-check")
+        ])).toStrictEqual([
+            [ "radio", "false", 0, "intro", true, false ],
+            [ "radio", "true", 0, "outro", false, true ]
+        ]);
+
+        unchecked?.click();
+        const prevented = [ "Enter", " ", "a" ].map((key) => !unchecked?.dispatchEvent(
+            new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })
+        ));
+        expect(prevented).toStrictEqual([ true, true, false ]);
+        expect(onCheck).toHaveBeenCalledTimes(3);
     });
 });
 

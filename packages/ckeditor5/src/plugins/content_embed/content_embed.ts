@@ -41,6 +41,7 @@ import ContentEmbedInlineSource, {
 	type InlineEmbedSource, isExtendedCodeBlock, isInlineSourceEmbed
 } from './inline_source.js';
 import './nested_editor_events.js';
+import UnknownContentEmbed from './unknown_embed.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
@@ -187,7 +188,10 @@ export default class ContentEmbed extends Plugin {
 	declare public isSelectedEmbedInline: boolean;
 
 	static get requires() {
-		return [ ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource, EmbedHistory ];
+		return [
+			ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource, EmbedHistory,
+			UnknownContentEmbed
+		];
 	}
 
 	static get pluginName() {
@@ -1188,7 +1192,8 @@ export function getContentEmbedAt( editor: Editor, domElement: Element ) {
 		return null;
 	}
 
-	return editor.editing.mapper.toModelElement( viewElement ) ?? null;
+	const embed = editor.editing.mapper.toModelElement( viewElement ) ?? null;
+	return isContentEmbed( embed ) ? embed : null;
 }
 
 export function isContentEmbed(
@@ -1735,6 +1740,10 @@ export interface ContentEmbedHost {
 	focusAttachment( attachmentId: string ): void;
 	/** The href of a reference link to the attachment, or `null` once it is deleted. */
 	getAttachmentHref( attachmentId: string ): Promise<string | null>;
+	/** Sanitizes the content of an embed of an unknown kind, which the note saves unchanged. */
+	sanitizeHtml( html: string ): string;
+	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
+	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
 	/** Opens the context menu of what `embed` shows, below `anchor`. */
 	openMenu( embed: HTMLElement, anchor: HTMLElement ): void;
 	/** The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. */

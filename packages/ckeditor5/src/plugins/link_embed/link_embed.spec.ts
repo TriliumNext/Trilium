@@ -12,12 +12,12 @@ describe("LinkEmbed", () => {
         editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: createLinkEmbedHost() });
     });
 
-    it("loads the plugin, registers the commands and the toolbar button", () => {
+    it("loads the plugin and registers the commands, with no toolbar button of its own", () => {
         expect(editor.plugins.get(LinkEmbed)).toBeInstanceOf(LinkEmbed);
         expect(editor.commands.get(LINK_EMBED_COMMAND)).toBeDefined();
         expect(editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND)).toBeDefined();
         expect(editor.commands.get(REMOVE_LINK_EMBED_COMMAND)).toBeDefined();
-        expect(editor.ui.componentFactory.has("linkEmbed")).toBe(true);
+        expect(editor.ui.componentFactory.has("linkEmbed")).toBe(false);
     });
 
     it("shows previews as their title or URL, and inserts unresolved cards, without linkEmbed", async () => {

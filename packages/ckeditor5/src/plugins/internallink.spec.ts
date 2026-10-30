@@ -1,24 +1,39 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, Bold, ButtonView, ClassicEditor, CodeBlock,
-    ContextualBalloon, Essentials, Link, LinkEditing, LinkUI, Paragraph
+    _getModelData as getModelData, _setModelData as setModelData, Bold, Bookmark, ButtonView,
+    ClassicEditor, CodeBlock, ContextualBalloon, Essentials, keyCodes, type KeystrokeHandler,
+    Link, LinkEditing, LinkUI, Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import { createLinkEmbedHost } from "../../test/link-embed-kit.js";
 import InternalLinkPlugin, {
-    COMMAND_NAME, getLinkAtSelection, replaceLinkAtSelection
+    COMMAND_NAME, getAnchorNames, getLinkAtSelection, type LinkDialogRequest,
+    replaceLinkAtSelection
 } from "./internallink.js";
+import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
 
 describe("InternalLinkPlugin", () => {
     let editor: ClassicEditor;
-    let openDialog: ReturnType<typeof vi.fn>;
+    let showDialog: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        openDialog = vi.fn();
+        showDialog = vi.fn();
         editor = await createTestEditor([Essentials, Paragraph, CodeBlock, InternalLinkPlugin], {
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
     });
+
+    /** Has the host render into the balloon, answering with the request and the release. */
+    function renderIntoBalloon() {
+        const shown: { request?: LinkDialogRequest } = {};
+        const release = vi.fn();
+        showDialog.mockImplementation((request: LinkDialogRequest) => {
+            shown.request = request;
+            return release;
+        });
+        return { shown, release };
+    }
 
     it("loads the plugin and registers the command and toolbar button", () => {
         expect(editor.plugins.get(InternalLinkPlugin)).toBeInstanceOf(InternalLinkPlugin);
@@ -26,9 +41,102 @@ describe("InternalLinkPlugin", () => {
         expect(editor.ui.componentFactory.has("internalLink")).toBe(true);
     });
 
-    it("has the host open the Add link dialog when executed", () => {
+    it("opens the host's dialog in a balloon at the caret, until the host closes it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const { shown, release } = renderIntoBalloon();
+        const balloon = editor.plugins.get(ContextualBalloon);
+
+        editor.execute(COMMAND_NAME, { target: "url" });
+        const container = shown.request?.container;
+        expect(shown.request?.target).toBe("url");
+        expect(container?.classList.contains("edit-link-balloon")).toBe(true);
+        expect(container && balloon.view.element?.contains(container)).toBe(true);
+
+        shown.request?.close();
+        expect(release).toHaveBeenCalledOnce();
+        expect(balloon.visibleView).toBeNull();
+    });
+
+    it("stays open for a press in a host layer, unless that layer holds the editor", async () => {
+        const hostEditor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ], {
+            internalLink: { showDialog },
+            hostedBalloon: { keepOpenSelector: ".host-layer" }
+        });
+        setModelData(hostEditor.model, "<paragraph>foo[]</paragraph>");
+        const { release } = renderIntoBalloon();
+        const balloon = hostEditor.plugins.get(ContextualBalloon);
+        const suggestions = document.createElement("div");
+        suggestions.className = "host-layer";
+        const row = document.createElement("button");
+        suggestions.append(row);
+        const dialog = document.createElement("div");
+        dialog.className = "host-layer";
+        document.body.append(suggestions, dialog);
+
+        try {
+            hostEditor.execute(COMMAND_NAME);
+            row.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(release).not.toHaveBeenCalled();
+            expect(balloon.visibleView).not.toBeNull();
+
+            const editorEl = hostEditor.ui.element;
+            if (!editorEl) throw new Error("The editor has no element.");
+            dialog.append(editorEl);
+            dialog.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(release).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        } finally {
+            suggestions.remove();
+            dialog.remove();
+        }
+    });
+
+    it("closes for a press on another link, a link preview included", async () => {
+        const linkEditor = await createTestEditor(
+            [ Essentials, Paragraph, LinkEditing, LinkEmbedEditing, InternalLinkPlugin ],
+            { internalLink: { showDialog }, linkEmbed: createLinkEmbedHost() }
+        );
+        setModelData(linkEditor.model, "<paragraph>[]"
+            + "<$text linkHref=\"https://a.example\">a</$text>"
+            + "<linkMention url=\"https://b.example\"></linkMention></paragraph>");
+        const { release } = renderIntoBalloon();
+        const balloon = linkEditor.plugins.get(ContextualBalloon);
+        const root = linkEditor.editing.view.getDomRoot();
+
+        const links = [ root?.querySelector("a"), root?.querySelector(".link-mention-inner") ];
+        for (const link of links) {
+            if (!link) throw new Error("Expected the link and the preview to render.");
+            linkEditor.execute(COMMAND_NAME);
+            expect(balloon.visibleView).not.toBeNull();
+
+            link.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(release).toHaveBeenCalledTimes(2);
+    });
+
+    it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
+        const plainEditor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
+
+        for (const testEditor of [ editor, plainEditor ]) {
+            setModelData(testEditor.model, "<paragraph>foo[]</paragraph>");
+            const balloon = testEditor.plugins.get(ContextualBalloon);
+            const add = vi.spyOn(balloon, "add");
+
+            testEditor.execute(COMMAND_NAME);
+            expect(add).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(showDialog).toHaveBeenCalledOnce();
+    });
+
+    it("lets go of the dialog when the editor is torn down under it", async () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const { release } = renderIntoBalloon();
         editor.execute(COMMAND_NAME);
-        expect(openDialog).toHaveBeenCalledOnce();
+
+        await editor.destroy();
+        expect(release).toHaveBeenCalledOnce();
     });
 
     it("labels the button without the shortcut, leaving that to the keystroke", () => {
@@ -70,15 +178,36 @@ describe("InternalLinkPlugin", () => {
     });
 });
 
+describe("the anchors of the document", () => {
+    it("lists each name once, sorted, as anchors come and go", async () => {
+        const editor = await createTestEditor(
+            [ Essentials, Paragraph, Bookmark, InternalLinkPlugin ]
+        );
+        const zeta = "<bookmark bookmarkId=\"zeta\"></bookmark>";
+        setModelData(editor.model, `<paragraph>a${zeta}<bookmark bookmarkId="Alpha"></bookmark>`
+            + `[]b${zeta}</paragraph>`);
+        expect(getAnchorNames(editor)).toStrictEqual([ "Alpha", "zeta" ]);
+
+        setModelData(editor.model, `<paragraph>a${zeta}[]</paragraph>`);
+        expect(getAnchorNames(editor)).toStrictEqual([ "zeta" ]);
+    });
+
+    it("lists none in an editor without anchors", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
+        expect(getAnchorNames(editor)).toStrictEqual([]);
+    });
+});
+
 describe("the link at the selection", () => {
     let editor: ClassicEditor;
     let getTitle: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
         getTitle = vi.fn(async () => "Target");
-        editor = await createTestEditor([Essentials, Paragraph, Bold, LinkEditing, InternalLinkPlugin], {
-            referenceLink: { getTitle, getTitleSync: () => "Target" }
-        });
+        editor = await createTestEditor(
+            [Essentials, Paragraph, Bold, LinkEditing, LinkEmbedEditing, InternalLinkPlugin],
+            { referenceLink: { getTitle, getTitleSync: () => "Target" } }
+        );
     });
 
     const LINKED = "<paragraph>a <$text bold=\"true\" linkHref=\"https://a.example\">fo[]o</$text> b"
@@ -86,7 +215,8 @@ describe("the link at the selection", () => {
 
     it("reads the address and whole text of the link around the caret, and none outside", () => {
         setModelData(editor.model, LINKED);
-        expect(getLinkAtSelection(editor)).toStrictEqual({ href: "https://a.example", text: "foo" });
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "foo", display: "plain" });
 
         setModelData(editor.model,
             "<paragraph>a[] <$text linkHref=\"https://a.example\">foo</$text></paragraph>");
@@ -102,7 +232,58 @@ describe("the link at the selection", () => {
         setModelData(editor.model, "<paragraph><$text linkHref=\"https://a.example\">a[]b</$text>"
             + "<reference href=\"#root/abc\" linkHref=\"https://a.example\"></reference>"
             + "<$text linkHref=\"https://a.example\">c</$text></paragraph>");
-        expect(getLinkAtSelection(editor)).toStrictEqual({ href: "https://a.example", text: "abc" });
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "abc", display: "plain" });
+    });
+
+    it("reads a selected reference link, and replaces it with a link or a reference", async () => {
+        const data = () => getModelData(editor.model, { withoutSelection: true });
+        const SELECTED = "<paragraph>a [<reference href=\"#root/abc\"></reference>] b</paragraph>";
+        setModelData(editor.model, SELECTED);
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "#root/abc", text: "Target", display: "plain", isReference: true }
+        );
+
+        await replaceLinkAtSelection(editor, "#root/def", "See there");
+        expect(data()).toBe(
+            "<paragraph>a <$text linkHref=\"#root/def\">See there</$text> b</paragraph>"
+        );
+
+        setModelData(editor.model, SELECTED);
+        await replaceLinkAtSelection(editor, "#root/def", null);
+        expect(data()).toBe(
+            "<paragraph>a <reference href=\"#root/def\" storedTitle=\"Target\"></reference> b"
+            + "</paragraph>"
+        );
+    });
+
+    it("reads a selected link preview as a link titled by its title, shown as it is", () => {
+        setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
+            + " title=\"A\" description=\"About A\"></linkMention>]</paragraph>");
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "https://a.example", text: "A", description: "About A", display: "inline" }
+        );
+
+        setModelData(editor.model,
+            "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\"></linkEmbed>]");
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "https://a.example", text: "", description: "", display: "card" }
+        );
+    });
+
+    it("replaces a selected link preview, in a paragraph of its own for a block one", async () => {
+        const data = () => getModelData(editor.model, { withoutSelection: true });
+        setModelData(editor.model, "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\""
+            + " title=\"A\"></linkEmbed>]");
+        await replaceLinkAtSelection(editor, "https://b.example", "B");
+        expect(data())
+            .toBe("<paragraph><$text linkHref=\"https://b.example\">B</$text></paragraph>");
+
+        setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
+            + " title=\"A\"></linkMention>] b</paragraph>");
+        await replaceLinkAtSelection(editor, "#root/abc", null);
+        expect(data()).toContain("<paragraph>a <reference href=\"#root/abc\"");
+        expect(data()).not.toContain("linkMention");
     });
 
     it("replaces the address and the text of the whole link, keeping its formatting", () => {
@@ -166,12 +347,12 @@ describe("the link at the selection", () => {
 
 describe("the edit button of the link toolbar", () => {
     let editor: ClassicEditor;
-    let openDialog: ReturnType<typeof vi.fn>;
+    let showDialog: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        openDialog = vi.fn();
+        showDialog = vi.fn();
         editor = await createTestEditor([Essentials, Paragraph, Link, InternalLinkPlugin], {
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
     });
 
@@ -188,8 +369,101 @@ describe("the edit button of the link toolbar", () => {
         expect(edit).toBeInstanceOf(ButtonView);
         edit?.fire("execute");
 
-        expect(openDialog).toHaveBeenCalledOnce();
+        expect(showDialog).toHaveBeenCalledOnce();
         expect(toolbarView && balloon.hasView(toolbarView)).toBe(false);
         expect(linkUI.formView && balloon.hasView(linkUI.formView)).toBe(false);
+    });
+});
+
+describe("the link button and Ctrl+K", () => {
+    let editor: ClassicEditor;
+    let showDialog: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        showDialog = vi.fn();
+        editor = await createTestEditor([Essentials, Paragraph, Link, InternalLinkPlugin], {
+            internalLink: { showDialog }
+        });
+    });
+
+    const IN_LINK = "<paragraph><$text linkHref=\"https://a.example\">fo[]o</$text></paragraph>";
+
+    /** Presses Ctrl+K on `keystrokes`, reporting whether a handler took the key. */
+    function pressCtrlK(keystrokes: KeystrokeHandler) {
+        const preventDefault = vi.fn();
+        keystrokes.press({
+            keyCode: keyCodes.k, ctrlKey: true, shiftKey: false, altKey: false, metaKey: false,
+            preventDefault, stopPropagation: vi.fn()
+        } as unknown as KeyboardEvent);
+        return preventDefault.mock.calls.length > 0;
+    }
+
+    function isLinkFormShown() {
+        const formView = editor.plugins.get(LinkUI).formView;
+        return !!formView && editor.plugins.get(ContextualBalloon).hasView(formView);
+    }
+
+    it("opens the link dialog on the web link side from the Link button", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const button = editor.ui.componentFactory.create("link") as ButtonView;
+        expect(button.label).toBe("Link");
+        expect(button.keystroke).toBe("Ctrl+K");
+        expect(button.isOn).toBe(false);
+
+        button.fire("execute");
+        expect(showDialog)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: "url" }));
+        expect(isLinkFormShown()).toBe(false);
+
+        // The button shows as on in a link, and off where no link can be made.
+        setModelData(editor.model, IN_LINK);
+        expect(button.isOn).toBe(true);
+        editor.enableReadOnlyMode("test");
+        expect(button.isEnabled).toBe(false);
+    });
+
+    it("opens the link dialog on Ctrl+K in the text", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(pressCtrlK(editor.keystrokes)).toBe(true);
+        expect(showDialog)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: "url" }));
+        expect(isLinkFormShown()).toBe(false);
+    });
+
+    it("opens the link dialog once on Ctrl+K in the link toolbar, each time it shows", () => {
+        setModelData(editor.model, IN_LINK);
+        const linkUI = editor.plugins.get(LinkUI);
+        const balloon = editor.plugins.get(ContextualBalloon);
+        const add = vi.spyOn(balloon, "add");
+        const showToolbar = () => (linkUI as unknown as { _showUI(): void })._showUI();
+
+        for (let shown = 1; shown <= 2; shown++) {
+            showToolbar();
+            const element = linkUI.toolbarView?.element;
+            expect(element && balloon.hasView(linkUI.toolbarView)).toBe(true);
+            if (!element) return;
+
+            // A DOM event, which both the toolbar and `editor.keystrokes` listen for.
+            const keydown = new KeyboardEvent("keydown", {
+                keyCode: keyCodes.k, ctrlKey: true, bubbles: true, cancelable: true
+            });
+            element.dispatchEvent(keydown);
+            expect(keydown.defaultPrevented).toBe(true);
+            expect(showDialog).toHaveBeenCalledTimes(shown);
+            expect(balloon.hasView(linkUI.toolbarView)).toBe(false);
+        }
+        expect(linkUI.formView).not.toBeNull();
+        expect(add.mock.calls.map(([ { view } ]) => view)).not.toContain(linkUI.formView);
+    });
+
+    it("keeps the link form of CKEditor in an editor without the link dialog", async () => {
+        const plainEditor = await createTestEditor([
+            Essentials, Paragraph, Link, InternalLinkPlugin
+        ]);
+        setModelData(plainEditor.model, "<paragraph>foo[]</paragraph>");
+        plainEditor.ui.componentFactory.create("link").fire("execute");
+
+        const formView = plainEditor.plugins.get(LinkUI).formView;
+        expect(formView && plainEditor.plugins.get(ContextualBalloon).hasView(formView)).toBe(true);
     });
 });

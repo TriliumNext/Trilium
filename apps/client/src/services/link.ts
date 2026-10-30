@@ -562,13 +562,21 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     const isLeftClick = !evt || ("which" in evt && evt.which === 1);
     // Right click is handled separately.
     const isMiddleClick = evt && "which" in evt && evt.which === 2;
-    const targetIsBlank = ($link?.attr("target") === "_blank");
+    // The preview button of the text editor's link toolbar opens a note in place, as a link does.
+    const isLinkToolbarPreview = !!$link?.hasClass("ck-link-toolbar__preview");
+    const targetIsBlank = $link?.attr("target") === "_blank" && !isLinkToolbarPreview;
     const isDoubleClick = isLeftClick && evt?.type === "dblclick";
     const openInNewTab = (isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick;
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
+    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
 
     if (notePath) {
+        if (isPlainLeftClick && $link && isInEditableText($link)) {
+            // The text editor shows the link toolbar, whose preview button opens the note.
+            return true;
+        }
+
         if (isLeftClick && openInPopup) {
             appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath, viewScope });
         } else if (openInNewWindow) {
@@ -583,10 +591,9 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
             openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
-        const withinEditLink = $link?.hasClass("ck-link-actions__preview");
         const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
 
-        if (openInNewTab || openInNewWindow || (isLeftClick && (withinEditLink || outsideOfCKEditor))) {
+        if (openInNewTab || openInNewWindow || (isLeftClick && (isLinkToolbarPreview || outsideOfCKEditor))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
             } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
@@ -616,6 +623,11 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     }
 
     return true;
+}
+
+/** Whether `$link` is in the content of an editable text note, rather than in an embed in it. */
+function isInEditableText($link: JQuery<HTMLElement>) {
+    return $link.closest(".ck-content").hasClass("note-detail-editable-text-editor");
 }
 
 /**

@@ -29,7 +29,7 @@ import type { CompletionMatch, SlashCommand } from "../code/editor_completions";
 import { SLASH_COMMAND_REGEX } from "../code/snippets";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams";
 import {
-    insertDateTime, showAddLinkDialog, showIncludeNoteDialog, uploadImageAndInsert
+    insertDateTime, showEditLinkDialog, showIncludeNoteDialog, uploadImageAndInsert
 } from "./editor_utils";
 
 /** What the Markdown commands are built from, read again each time the list looks them up. */
@@ -122,7 +122,7 @@ export function buildMarkdownCommands(
             description: t("markdown_slash_commands.link"),
             aliases: [ "internal link", "trilium link", "reference link" ],
             iconSvg: internalLinkIcon
-        }, runAction(showAddLinkDialog)),
+        }, runAction(showEditLinkDialog)),
         command("math", {
             title: t("markdown_slash_commands.titles.math"),
             description: t("markdown_slash_commands.math"),

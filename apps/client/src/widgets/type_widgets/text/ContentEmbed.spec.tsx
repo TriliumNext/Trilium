@@ -44,6 +44,7 @@ import {
     getEmbedFindTarget, registerContentEmbedTools, revealContentEmbed
 } from "./content_embed_tools";
 import ContentEmbed, {
+    ContentEmbedError,
     getNoteActions,
     type ContentEmbedProps,
     TinyContentEmbed,
@@ -878,6 +879,34 @@ describe("TinyContentEmbed", () => {
     it("leaves out the description line when there is none", () => {
         renderTinyBox();
         expect(container.querySelector(".include-note-description")).toBeNull();
+    });
+});
+
+describe("ContentEmbedError", () => {
+    it("keeps the height of its box size around the placeholder", () => {
+        const cases = [
+            [ "medium", true, false ],
+            [ "full", true, false ],
+            [ undefined, true, false ],
+            [ "small", true, true ],
+            [ "tiny", false, true ],
+            [ "expandable", false, true ]
+        ] as const;
+
+        for (const [ boxSize, hasBoxHeight, isSmall ] of cases) {
+            act(() => render(
+                <ContentEmbedError boxSize={boxSize} icon="bx bx-error" text="Missing" />, container));
+
+            const box = container.querySelector(":scope > .include-note-error");
+            expect(box, boxSize).not.toBeNull();
+            expect(box?.classList.contains("include-note-box-height"), boxSize)
+                .toBe(hasBoxHeight);
+            const placeholder = box?.querySelector(":scope > .no-items");
+            expect(placeholder?.textContent, boxSize).toBe("Missing");
+            expect(placeholder?.classList.contains("no-items-small"), boxSize).toBe(isSmall);
+            expect(placeholder?.querySelector(":scope > .tn-icon.bx.bx-error"), boxSize)
+                .not.toBeNull();
+        }
     });
 });
 

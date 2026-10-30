@@ -1,6 +1,7 @@
 import {
-	ClickObserver, Command, type Editor, LinkEditing, ModelElement, ModelLivePosition, Plugin, toWidget,
-	type ViewDocumentClickEvent, ViewElement, viewToModelPositionOutsideModelElement, Widget
+	ClickObserver, Command, type Editor, LinkEditing, ModelElement, ModelLivePosition,
+	type ModelPosition, Plugin, toWidget, type ViewDocumentClickEvent, ViewElement,
+	viewToModelPositionOutsideModelElement, Widget
 } from "ckeditor5";
 
 export default class ReferenceLink extends Plugin {
@@ -12,9 +13,14 @@ export default class ReferenceLink extends Plugin {
 class ReferenceLinkCommand extends Command {
 
 	/**
-	 * Inserts a reference to `href` at the selection, or in place of the `replace` reference.
+	 * Inserts a reference to `href` at `position`, or at the selection, or in place of the `replace`
+	 * reference.
 	 */
-	override execute({ href, replace }: { href: string; replace?: ModelElement }) {
+	override execute({ href, replace, position }: {
+		href: string;
+		replace?: ModelElement;
+		position?: ModelPosition;
+	}) {
 		if (!href?.trim()) {
 			return;
 		}
@@ -38,7 +44,7 @@ class ReferenceLinkCommand extends Command {
 			return;
 		}
 
-		const selectionPosition = editor.model.document.selection.getFirstPosition();
+		const selectionPosition = position ?? editor.model.document.selection.getFirstPosition();
 		if (!selectionPosition) {
 			return;
 		}
@@ -100,6 +106,45 @@ export class ReferenceLinkEditing extends Plugin {
 
 	/** The title the data downcast last wrote for each reference. */
 	private readonly _savedTitles = new WeakMap<ModelElement, string>();
+
+	/** The title `getReferenceTitleSync()` read when the editing downcast drew each reference. */
+	private readonly _drawnTitles = new WeakMap<ModelElement, string>();
+
+	/**
+	 * Redraws the reference links to the notes in `noteIds` whose title changed since they were
+	 * drawn. Finds the links in the editing DOM rather than walking the model.
+	 */
+	refreshNoteLinks( noteIds: Iterable<string> ) {
+		const editor = this.editor;
+		const ids = new Set( noteIds );
+		const domRoot = editor.editing.view.getDomRoot();
+		if ( !ids.size || !domRoot ) {
+			return;
+		}
+
+		const changedLinks: ModelElement[] = [];
+		for ( const anchor of domRoot.querySelectorAll<HTMLAnchorElement>( 'a.reference-link' ) ) {
+			if ( !ids.has( getNoteId( anchor.getAttribute( 'href' ) ) ?? '' ) ) {
+				continue;
+			}
+
+			const reference = this._getReference( anchor );
+			if ( !reference ) {
+				continue;
+			}
+
+			const href = reference.getAttribute( 'href' ) as string;
+			const storedTitle = reference.getAttribute( 'storedTitle' ) as string | undefined;
+			const title = getReferenceTitleSync( editor, href, storedTitle );
+			if ( this._drawnTitles.get( reference ) !== title ) {
+				changedLinks.push( reference );
+			}
+		}
+
+		for ( const link of changedLinks ) {
+			editor.editing.reconvertItem( link );
+		}
+	}
 
 	/**
 	 * Redraws the links and embeds of changed attachments, so they show the current state, and
@@ -183,11 +228,8 @@ export class ReferenceLinkEditing extends Plugin {
 			return;
 		}
 
-		const viewElement = editor.editing.view.domConverter.mapDomToView( anchor );
-		const reference = viewElement?.is( 'element' )
-			? editor.editing.mapper.toModelElement( viewElement )
-			: undefined;
-		if ( !reference?.is( 'element', 'reference' ) ) {
+		const reference = this._getReference( anchor );
+		if ( !reference ) {
 			return;
 		}
 
@@ -196,6 +238,16 @@ export class ReferenceLinkEditing extends Plugin {
 			editor.execute( 'referenceLink', { href, replace: reference } );
 			editor.editing.view.focus();
 		} );
+	}
+
+	/** The `reference` the editing view draws as `anchor`, or `undefined` for any other link. */
+	private _getReference( anchor: HTMLAnchorElement ) {
+		const editor = this.editor;
+		const viewElement = editor.editing.view.domConverter.mapDomToView( anchor );
+		const reference = viewElement?.is( 'element' )
+			? editor.editing.mapper.toModelElement( viewElement )
+			: undefined;
+		return reference?.is( 'element', 'reference' ) ? reference : undefined;
 	}
 
 	_defineSchema() {
@@ -239,6 +291,8 @@ export class ReferenceLinkEditing extends Plugin {
 				const href = modelItem.getAttribute('href') as string;
 				const storedTitle = modelItem.getAttribute('storedTitle') as string | undefined;
 				const uploadFileName = String(modelItem.getAttribute('uploadFileName') ?? '');
+				const drawnTitle = getReferenceTitleSync( editor, href, storedTitle );
+				this._drawnTitles.set( modelItem, drawnTitle );
 
 				const referenceLinkView = viewWriter.createContainerElement( 'a', {
 						href,
@@ -316,6 +370,12 @@ export function getReferenceTitle( editor: Editor, href: string ): Promise<strin
 export function getReferenceTitleSync( editor: Editor, href: string, storedTitle?: string ): string {
 	const getTitleSync = editor.config.get( 'referenceLink' )?.getTitleSync;
 	return getTitleSync ? getTitleSync( href, storedTitle ) : storedTitle ?? href;
+}
+
+/** The selected reference link, or `null` when the selection holds none. */
+export function getSelectedReference( editor: Editor ): ModelElement | null {
+	const element = editor.model.document.selection.getSelectedElement();
+	return element?.is( 'element', 'reference' ) ? element : null;
 }
 
 /** The attributes of a `reference` to `href`, with `storedTitle` when there is one to keep. */

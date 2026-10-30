@@ -5,7 +5,6 @@ import "ckeditor5/ckeditor5.css";
 import "./theme/blockquote.css";
 import "./theme/content_colors.css";
 import "./theme/code_block_toolbar.css";
-import "./theme/link_embed_form.css";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
 import type { PasteTarget } from "./plugins/cuttonote.js";
@@ -29,7 +28,11 @@ export type {
 export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
 export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
-export { getLinkAtSelection, replaceLinkAtSelection } from "./plugins/internallink.js";
+export type { ChildNoteHost } from "./plugins/child_note.js";
+export {
+    getAnchorNames, getLinkAtSelection, replaceLinkAtSelection
+} from "./plugins/internallink.js";
+export type { LinkAtSelection, LinkDialogRequest } from "./plugins/internallink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
 export type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./plugins/mention/types.js";
@@ -37,7 +40,7 @@ export type { ToolbarGroupMenuEntry, ToolbarGroupMenuHost, ToolbarGroupMenuItem,
 export type { default as TextFormattingToolbar } from "./plugins/text_formatting_toolbar.js";
 export type { default as ContextToolbar } from "./plugins/context_toolbar.js";
 export type { default as MobileToolbarItems } from "./plugins/mobile_toolbar_items.js";
-export type { LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
+export type { LinkDisplayMode, LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
 export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
 export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
 export type { BlockReferenceHost } from "./plugins/block_reference/block_reference.js";
@@ -52,8 +55,10 @@ export { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "./messages.js";
 export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
+import "./hosted_balloon.js";
 import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
+import "./plugins/child_note.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/content_embed/content_embed_caret.js";
 import "./plugins/find_in_link_widgets.js";

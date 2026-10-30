@@ -108,6 +108,26 @@ describe("SegmentedChoice", () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 
+    it("draws an icon from its SVG source, with or without a label", () => {
+        const svg = "<svg viewBox=\"0 0 1 1\"></svg>";
+        render(
+            <SegmentedChoice
+                options={[
+                    { value: "named" as const, label: "Named", iconSvg: svg },
+                    { value: "bare" as const, title: "Bare", iconSvg: svg }
+                ]}
+                currentValue="named" onChange={() => {}}
+            />, container
+        );
+
+        const buttons = [ ...container.querySelectorAll("button") ];
+        expect(buttons.map((button) => !!button.querySelector(".tn-svg-icon svg")))
+            .toStrictEqual([ true, true ]);
+        expect(container.querySelector(".bx")).toBeNull();
+        expect(buttons.map((button) => button.classList.contains("tn-icon-only")))
+            .toStrictEqual([ false, true ]);
+    });
+
     describe("collapsed onto a narrow screen", () => {
         const iconOptions = [
             { value: "light" as const, label: "Light", icon: "bx-sun" },

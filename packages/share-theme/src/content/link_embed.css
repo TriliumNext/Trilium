@@ -67,12 +67,19 @@ html.theme-light .link-embed-favicon-light {
 /* ---------- Video embed (YouTube iframe) ---------- */
 
 .link-embed-video {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
     max-width: 640px;
     margin: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
+
+    & > iframe,
+    & > .link-embed-video-facade {
+        grid-area: 1 / 1;
+    }
 }
 
 .link-embed-video iframe {
@@ -97,11 +104,18 @@ html.theme-light .link-embed-favicon-light {
     cursor: pointer;
 }
 
+.link-embed-video-facade-loading {
+    cursor: progress;
+}
+
 .link-embed-video-thumbnail {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.link-embed-video-thumbnail-lowres {
     filter: blur(20px) brightness(0.65);
 }
 

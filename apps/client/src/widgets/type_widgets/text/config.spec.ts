@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
-import type { AddLinkOpts } from "../../dialogs/add_link.js";
+import type { EditLinkOpts } from "../../dialogs/edit_link.js";
+import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
@@ -415,8 +416,8 @@ describe("CK config - tables", () => {
     it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {
         const triggerHostCommand = vi.fn(async () => undefined);
         const config = await buildConfig(baseOpts({ triggerHostCommand }));
+
         const callbacks = [
-            [ config.internalLink?.openDialog, "addLinkToText" ],
             [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
             [ config.contentEmbed?.pickNote, "addIncludeNoteToText" ],
             [ config.cutToNote?.cut, "cutIntoNote" ],
@@ -438,6 +439,22 @@ describe("CK config - tables", () => {
         expect((await buildConfig(baseOpts({ showIconPicker }))).inlineIcon?.showPicker(request)).toBe(release);
         expect(showIconPicker).toHaveBeenCalledWith(request);
         expect((await buildConfig(baseOpts())).inlineIcon?.showPicker(request)).toBeNull();
+    });
+
+    it("shows the link dialog the editor asks for, and none without a host for it", async () => {
+        const release = vi.fn();
+        const showLinkDialog = vi.fn(() => release);
+        const request = {
+            container: document.createElement("div"), target: "url" as const, close: vi.fn()
+        };
+
+        expect((await buildConfig(baseOpts({ showLinkDialog }))).internalLink?.showDialog(request))
+            .toBe(release);
+        expect(showLinkDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).internalLink?.showDialog(request)).toBeNull();
+        // The note suggestions of the dialog render in the page's body.
+        expect((await buildConfig(baseOpts())).hostedBalloon)
+            .toStrictEqual({ keepOpenSelector: FLOATING_LAYER_SELECTOR });
     });
 
     it("copies block and tab references from the reference source, and none without one", async () => {
@@ -477,6 +494,7 @@ describe("CK config - tables", () => {
             loadAttachment: vi.fn(),
             loadInline: vi.fn(),
             flushInline: vi.fn(),
+            loadUnknown: vi.fn(),
             focusAttachment: vi.fn(),
             getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
             openMenu: vi.fn(),
@@ -498,6 +516,7 @@ describe("CK config - tables", () => {
         host?.loadAttachment?.("a1", wrapper, "medium");
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
         host?.flushInline?.();
+        host?.loadUnknown?.(wrapper, "small");
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -506,6 +525,7 @@ describe("CK config - tables", () => {
         expect(first.loadAttachment).toHaveBeenCalledWith("a1", wrapper, "medium");
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
         expect(first.flushInline).toHaveBeenCalledOnce();
+        expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");
@@ -547,10 +567,10 @@ describe("CK config - tables", () => {
 
         referenceLink?.fixLink?.("Gone", fix);
 
-        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showAddLinkDialog", expect.objectContaining({
+        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showEditLinkDialog", expect.objectContaining({
             text: "Gone", hasSelection: false, fixLink: true
         }));
-        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, AddLinkOpts ];
+        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, EditLinkOpts ];
         await dialog.addLink("root/n9", null);
         expect(fix).toHaveBeenCalledExactlyOnceWith("#root/n9");
     });

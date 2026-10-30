@@ -6,9 +6,9 @@ import {
     applyStickyTableHeaders
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
 import {
-    BLOCK_ID_ATTRIBUTE, type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey,
-    getNestedEmbedOptions, getNoteEmbedHref, KATEX_MACROS, resolveContentEmbed,
-    sliceToBlockReference
+    BLOCK_ID_ATTRIBUTE, CONTENT_EMBED_KIND_ATTRIBUTE, type ContentEmbedContext,
+    getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, KATEX_MACROS,
+    resolveContentEmbed, sliceToBlockReference
 } from "@triliumnext/commons";
 
 import FAttachment from "../entities/fattachment.js";
@@ -80,6 +80,7 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
     applyListItemAlignment($renderedContent[0]);
+    emptyUnknownEmbeds($renderedContent[0]);
     // Runs before the embeds render, as each embed draws its own diagrams.
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await applyInlineMermaid($renderedContent[0] as HTMLDivElement);
@@ -174,6 +175,36 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
         });
         replaceEmbedContent(embedEl, $renderedContent.toArray());
     }
+}
+
+/** The attributes that the box of an embed of an unknown kind keeps from its section. */
+const UNKNOWN_EMBED_ATTRIBUTES = [
+    CONTENT_EMBED_KIND_ATTRIBUTE, "data-box-size", BLOCK_ID_ATTRIBUTE
+];
+
+/**
+ * Turns each embed of a kind that this version does not know into an empty `.include-note` box,
+ * and returns the boxes. The content of the section is dropped, as it needs the renderer of its
+ * kind, and so are its other attributes, as `data-note-id` makes the include passes load it.
+ */
+export function emptyUnknownEmbeds(container: Element) {
+    const boxes: HTMLElement[] = [];
+    const sections = container.querySelectorAll<HTMLElement>(
+        `section[${CONTENT_EMBED_KIND_ATTRIBUTE}]`);
+    for (const section of sections) {
+        // Inside an embed emptied before it.
+        if (!container.contains(section)) continue;
+
+        for (const name of section.getAttributeNames()) {
+            if (!UNKNOWN_EMBED_ATTRIBUTES.includes(name)) {
+                section.removeAttribute(name);
+            }
+        }
+        section.className = "include-note unknown-content-embed";
+        section.replaceChildren();
+        boxes.push(section);
+    }
+    return boxes;
 }
 
 /** How `embedEl` shows a code file or a code note, by its `data-code-*` attributes. */

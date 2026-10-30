@@ -5,15 +5,23 @@ import { LINK_EMBED_CARD_IMAGE_PLACEHOLDER } from "./link_embed_markup.js";
 
 /**
  * Makes the link previews in `container`, as `renderLinkEmbedHtml()` and `renderLinkMentionHtml()`
- * draw them, behave: a video facade loads the player on click, a picture that fails to load gives
- * way to what stands in for a missing one, and a favicon gets the class that lets the page correct
- * an icon drawn for the other background.
+ * draw them, behave: a video facade loads the player on click, a low-resolution video thumbnail is
+ * marked for blurring, a picture that fails to load is replaced by a placeholder or removed, and a
+ * favicon gets the class that lets the page correct an icon drawn for the other background.
  */
 export function enhanceLinkPreviews(container: ParentNode) {
     const facades = container.querySelectorAll<HTMLButtonElement>(
         "button.link-embed-video-facade[data-video-id]");
     for (const facade of facades) {
         facade.addEventListener("click", () => playVideo(facade), { once: true });
+    }
+
+    const thumbnails = container.querySelectorAll<HTMLImageElement>(
+        "img.link-embed-video-thumbnail");
+    for (const thumbnail of thumbnails) {
+        // Checked now for a picture that is already loaded, and again on every load.
+        markLowResThumbnail(thumbnail);
+        thumbnail.addEventListener("load", () => markLowResThumbnail(thumbnail));
     }
 
     // An attachment can be erased under a preview that still references it, and a broken-image
@@ -32,9 +40,9 @@ export function enhanceLinkPreviews(container: ParentNode) {
 }
 
 /**
- * Replaces a video facade with the YouTube player. The click was the play command, hence
- * `autoplay=1`. `origin` is valid only for a web origin: YouTube rejects the desktop app's
- * `trilium-app://` one.
+ * Loads the YouTube player under a video facade, which fades out once the player has loaded. The
+ * click was the play command, hence `autoplay=1`. `origin` is valid only for a web origin: YouTube
+ * rejects the desktop app's `trilium-app://` one.
  */
 function playVideo(facade: HTMLButtonElement) {
     const videoId = encodeURIComponent(String(facade.dataset.videoId));
@@ -49,7 +57,39 @@ function playVideo(facade: HTMLButtonElement) {
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
     iframe.allowFullscreen = true;
     iframe.setAttribute("frameborder", "0");
-    facade.replaceWith(iframe);
+    iframe.addEventListener("load", () => revealPlayer(facade), { once: true });
+    facade.classList.add("link-embed-video-facade-loading");
+    facade.before(iframe);
+}
+
+/** How long a video facade takes to fade out over the player, in milliseconds. */
+const FACADE_FADE_DURATION = 300;
+
+/** Fades out `facade` over the player loaded under it, then removes it. */
+function revealPlayer(facade: HTMLButtonElement) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        facade.remove();
+        return;
+    }
+
+    const fade = facade.animate(
+        { opacity: [ 1, 0 ] },
+        { duration: FACADE_FADE_DURATION, easing: "ease-out", fill: "forwards" }
+    );
+    fade.addEventListener("finish", () => facade.remove(), { once: true });
+}
+
+/**
+ * Video thumbnails narrower than this are blurred. It matches YouTube's `hqdefault`, the smallest
+ * thumbnail `downloadYouTubeThumbnail()` in core keeps.
+ */
+const MIN_VIDEO_THUMBNAIL_WIDTH = 480;
+
+/** Sets the class the stylesheets blur a video thumbnail with, from its loaded width. */
+function markLowResThumbnail(thumbnail: HTMLImageElement) {
+    const width = thumbnail.naturalWidth;
+    thumbnail.classList.toggle("link-embed-video-thumbnail-lowres",
+        width > 0 && width < MIN_VIDEO_THUMBNAIL_WIDTH);
 }
 
 /**

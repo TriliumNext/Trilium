@@ -10,7 +10,7 @@ import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
 import Dropdown from "./Dropdown";
 import { useStaticTooltip } from "./hooks";
-import Icon from "./Icon";
+import Icon, { SvgIcon } from "./Icon";
 import { useCommandTrigger } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";
 
@@ -24,6 +24,8 @@ export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement
     text: string | ComponentChildren;
     className?: string;
     icon?: string;
+    /** The SVG of an icon drawn in place of {@link icon}, such as a CKEditor toolbar item's. */
+    iconSvg?: string;
     keyboardShortcut?: string;
     /**
      * Called when the button is clicked. If not set, the button will submit the form (if any).
@@ -45,15 +47,16 @@ export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement
     "aria-pressed"?: boolean;
 }
 
-function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, disabledTooltip, size, style, triggerCommand, ...restProps }: ButtonProps) {
+function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, iconSvg, kind, disabled, disabledTooltip, size, style, triggerCommand, ...restProps }: ButtonProps) {
     const triggerOwnCommand = useCommandTrigger(triggerCommand);
+    const hasIcon = !!icon || !!iconSvg;
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
 
         // Said here because a stylesheet cannot see it: the label is a text node, which no selector
         // reaches, so the spacing meant to part an icon from it has no way of knowing there is none.
-        if (icon && (text === undefined || text === null || text === "")) {
+        if (hasIcon && (text === undefined || text === null || text === "")) {
             classList.push("tn-icon-only");
         }
 
@@ -78,7 +81,7 @@ function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, i
             classList.push("btn-micro");
         }
         return classList.join(" ");
-    }, [kind, className, size, icon, text]);
+    }, [kind, className, size, hasIcon, text]);
 
     // Memoize keyboard shortcut rendering
     const shortcutElements = useMemo(() => {
@@ -97,7 +100,7 @@ function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, i
             style={style}
             {...restProps}
         >
-            {icon && <Icon icon={`bx ${icon}`} />}
+            {iconSvg ? <SvgIcon svg={iconSvg} /> : icon && <Icon icon={`bx ${icon}`} />}
             {text} {shortcutElements}
         </button>
     );
