@@ -10,7 +10,7 @@ import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
 import Button from "../react/Button";
-import { Card, CardSection, OptionCardSection } from "../react/Card";
+import { Card, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
@@ -408,22 +408,20 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         onShown: () => setIsShowPending(true),
         applyLink,
         reset,
-        body: (
-            <Card>
-                {!opts?.fixLink && (
-                    <CardSection>
-                        <SegmentedChoice<LinkTarget>
-                            className="add-link-target"
-                            options={[
-                                { value: "note", label: t("add_link.note"), icon: "bx-note" },
-                                { value: "url", label: t("add_link.web_link"), icon: "bx-globe" }
-                            ]}
-                            currentValue={target}
-                            onChange={(next) => changeTarget(next)}
-                        />
-                    </CardSection>
-                )}
+        body: (<>
+            {!opts?.fixLink && (
+                <SegmentedChoice<LinkTarget>
+                    className="add-link-target"
+                    options={[
+                        { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
+                        { value: "note", label: t("add_link.note"), icon: "bx-note" }
+                    ]}
+                    currentValue={target}
+                    onChange={(next) => changeTarget(next)}
+                />
+            )}
 
+            <Card>
                 {target === "url" ? (
                     <OptionCardSection
                         className="add-link-url" name="url" label={t("add_link.url")}
@@ -508,7 +506,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                     </>
                 )}
             </Card>
-        )
+        </>)
     };
 }
 

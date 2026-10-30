@@ -106,13 +106,16 @@ describe("AddLinkDialog", () => {
     it("inserts a typed web link, titled by its URL unless given a text", async () => {
         await open();
         expect(headings()).toStrictEqual([]);
-        expect(container.querySelector(".tn-card .tn-segmented-choice")).not.toBeNull();
+        const segmented = container.querySelector(".tn-segmented-choice");
+        expect(segmented).not.toBeNull();
+        expect(segmented?.closest(".tn-card")).toBeNull();
+        expect(segmented?.nextElementSibling?.classList.contains("tn-card")).toBe(true);
         expect(choice().map((button) => button.textContent?.trim()))
-            .toStrictEqual([ "add_link.note", "add_link.web_link" ]);
+            .toStrictEqual([ "add_link.web_link", "add_link.note" ]);
         expect(current()).toBe("add_link.note");
         expect(container.querySelector(".note-autocomplete")).not.toBeNull();
 
-        await act(async () => choice()[1]?.click());
+        await act(async () => choice()[0]?.click());
         expect(current()).toBe("add_link.web_link");
         expect(container.querySelector(".note-autocomplete")).toBeNull();
         expect(field("url")?.inputMode).toBe("url");
@@ -123,7 +126,7 @@ describe("AddLinkDialog", () => {
             .toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
 
         await open();
-        await act(async () => choice()[1]?.click());
+        await act(async () => choice()[0]?.click());
         await type(field("url"), "https://trilium.cc");
         expect(nested("text")).toBe(true);
         expect(stacked()).toStrictEqual([]);

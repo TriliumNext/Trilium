@@ -47,10 +47,7 @@
 
     .add-link-target {
         display: flex;
-        width: 100%;
-
-        .btn {
-            flex: 1;
-        }
+        width: fit-content;
+        margin: 0 auto 1rem;
     }
 }
