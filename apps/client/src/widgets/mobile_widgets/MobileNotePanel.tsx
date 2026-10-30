@@ -6,8 +6,8 @@ import { useState } from "preact/hooks";
 import type { WidgetsByParent } from "../../services/bundle";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext } from "../react/hooks";
-import Modal from "../react/Modal";
+import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { MasterDetailModal } from "../react/master_detail";
 import TabStrip from "../react/TabStrip";
 import NoteMap from "../sidebar/NoteMap";
 import PdfPages from "../sidebar/pdf/PdfPages";
@@ -17,11 +17,18 @@ import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 
 /**
  * The title-row button that opens the desktop right pane's tabs in a modal, for the mobile layout.
- * The attributes tab is left out, since the note menu already opens `NoteAttributesDialog`.
+ * `showNoteAttributes` opens it on the attributes tab.
  */
 export default function MobileNotePanel({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
     const [ shown, setShown ] = useState(false);
-    const { note } = useNoteContext();
+    const [ selectedTabId, setSelectedTabId ] = useState<RightPaneTabId>();
+    const { note, noteContext } = useNoteContext();
+
+    useTriliumEvent("showNoteAttributes", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId)) return;
+        setSelectedTabId("attributes");
+        setShown(true);
+    });
 
     return (
         <div className="mobile-note-panel-button">
@@ -30,23 +37,39 @@ export default function MobileNotePanel({ widgetsByParent }: { widgetsByParent: 
                 text={t("mobile_detail_menu.note_panel")}
                 onClick={() => setShown(true)}
             />}
-            {createPortal(<MobileNotePanelModal shown={shown} onHidden={() => setShown(false)} widgetsByParent={widgetsByParent} />, document.body)}
+            {createPortal((
+                <MobileNotePanelModal
+                    shown={shown} onHidden={() => setShown(false)} widgetsByParent={widgetsByParent}
+                    selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
+                />
+            ), document.body)}
         </div>
     );
 }
 
-function MobileNotePanelModal({ shown, onHidden, widgetsByParent }: { shown: boolean; onHidden: () => void; widgetsByParent: WidgetsByParent }) {
-    const tabs = useRightPaneTabs(shown, widgetsByParent)
-        .filter((tab) => tab.id !== "attributes")
-        .map(withFixedHeightWidgetsLast);
-    const [ selectedTabId, setSelectedTabId ] = useState<RightPaneTabId>();
+function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId, setSelectedTabId }: {
+    shown: boolean;
+    onHidden: () => void;
+    widgetsByParent: WidgetsByParent;
+    selectedTabId: RightPaneTabId | undefined;
+    setSelectedTabId: (tabId: RightPaneTabId) => void;
+}) {
+    const tabs = useRightPaneTabs(shown, widgetsByParent).map(withFixedHeightWidgetsLast);
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
 
     return (
-        <Modal
+        // A master-detail modal, so that editing an attribute is a page of its own, headed by a way
+        // back (see `useMasterDetailPage()` in AttributeList.tsx).
+        <MasterDetailModal
             className="mobile-note-panel"
             size="md"
-            title={<TabStrip labelled tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId} />}
+            // In `.modal-title`, which master_detail.css hides in favour of `MasterDetailHeader`.
+            title={(
+                <div className="modal-title">
+                    <TabStrip labelled tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId} />
+                </div>
+            )}
+            backTitle={t("attribute_list_panel.back")}
             ariaLabel={t("mobile_detail_menu.note_panel")}
             show={shown}
             onHidden={onHidden}
@@ -58,7 +81,7 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent }: { shown: boo
                     <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} flat />
                 </NavigatedInNote.Provider>
             </div>
-        </Modal>
+        </MasterDetailModal>
     );
 }
 

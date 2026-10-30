@@ -3,6 +3,22 @@
 }
 
 body.mobile .modal.mobile-note-panel {
+    &:not(.mobile-master-detail) .modal-header > .modal-title,
+    .tn-master-detail-title:has(> .modal-title) {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tn-master-detail-title:has(> .modal-title) {
+        color: var(--main-text-color);
+    }
+
+    .tn-master-detail-title > .modal-title {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+    }
     .modal-dialog {
         height: 85vh;
     }
@@ -105,5 +121,92 @@ body.mobile .modal.mobile-note-panel {
             flex-direction: column;
             height: 60vh;
         }
+
+        &[data-tab-id="attributes"] {
+            padding-inline: 16px;
+        }
+    }
+
+    /* The list and an attribute's page each scroll themselves and slide over each other, placed
+       against the tab body (see master_detail.css). */
+    &.mobile-master-detail #right-pane .right-pane-flat-tab-body[data-tab-id="attributes"] {
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+
+        .tn-master-pane,
+        .tn-detail-pane {
+            padding-inline: 16px;
+            padding-bottom: calc(var(--note-panel-group-spacing, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+        }
+    }
+
+    .options-section-card {
+        --options-card-padding: 0;
+
+        padding-block: 8px;
+        overflow: hidden;
+    }
+
+    /* The rows are menu items in a list that is not a menu: it sits in a card, so it keeps neither a
+       menu's fill nor its stacking. `z-index` must stay below the selection bar's sticky 1. */
+    .attribute-rows.dropdown-menu {
+        background: none !important;
+        box-shadow: none;
+        min-width: 0;
+        padding: 0;
+        z-index: auto !important;
+
+        .attribute-row {
+            background: transparent;
+            border-radius: 0;
+        }
+
+        /* Outweighs the menus' hover fill, which a touch screen leaves on the last row tapped. */
+        .attribute-row.selected {
+            background-color: var(--selection-background-color) !important;
+        }
+    }
+
+    .options-section-header {
+        justify-content: flex-start;
+        gap: 4px;
+
+        h4 {
+            margin: 0;
+            font-size: 0.95em;
+            font-weight: 600;
+            letter-spacing: normal;
+            text-transform: none;
+            color: var(--muted-text-color);
+        }
+    }
+
+    .attribute-toolbar {
+        --icon-button-size: 36px;
+
+        height: 48px;
+        border-bottom: 0;
+        background-color: var(--modal-background-color);
+
+        .form-checkbox label,
+        .attribute-selection-count,
+        .attribute-toolbar-read-only {
+            font-size: 1em;
+        }
+    }
+
+    .attribute-rows-divider {
+        margin: 0;
+        border-top-width: 3px;
+        border-top-color: var(--modal-background-color);
+        opacity: 1;
+    }
+}
+
+.attribute-detail-page {
+    .attr-detail-title,
+    .close-attr-detail-button {
+        display: none;
     }
 }

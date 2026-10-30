@@ -90,6 +90,17 @@ body.mobile.ios {
 
     .modal.mobile-note-panel {
         --modal-background-color: var(--grouped-background-color);
+
+        /* The tab strip fills the header up to the close button instead of being centred as a title. */
+        .modal-header :is(.modal-title, .tn-master-detail-header) {
+            padding-inline-start: 0;
+        }
+
+        &:not(.mobile-master-detail) .modal-header > .modal-title,
+        .modal-header .tn-master-detail-title > .modal-title {
+            display: flex;
+        }
+
         --note-panel-group-radius: var(--grouped-card-radius);
         --note-panel-group-spacing: 22px;
         --note-panel-group-background: var(--grouped-card-background-color);

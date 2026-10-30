@@ -1757,7 +1757,9 @@ export function useSyncedRef<T>(
 ): RefObject<T | null> {
     const ref = useRef<T>(initialValue);
 
-    useEffect(() => {
+    // A layout effect, so that the external ref holds the element before any parent's `useEffect`
+    // reads it, as a ref passed straight to the element would.
+    useLayoutEffect(() => {
         if (typeof externalRef === "function") {
             externalRef(ref.current);
         } else if (externalRef) {
