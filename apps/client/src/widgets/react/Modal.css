@@ -48,9 +48,10 @@
         opacity: 1;
         transition: background-color 200ms ease-in;
 
+        /* `translate` rather than `transform`, which each dialog sets for its horizontal placement. */
         .modal-dialog {
-            transform: translate(-50%, calc(100% + var(--mobile-sheet-margin, 0px)));
-            transition: transform 200ms cubic-bezier(0.4, 0, 1, 1);
+            translate: 0 calc(100% + var(--mobile-sheet-margin, 0px));
+            transition: translate 200ms cubic-bezier(0.4, 0, 1, 1);
         }
 
         &.show {
@@ -58,8 +59,8 @@
             transition-timing-function: ease-out;
 
             .modal-dialog {
-                transform: translateX(-50%);
-                transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+                translate: none;
+                transition: translate 300ms cubic-bezier(0.32, 0.72, 0, 1);
             }
         }
     }
