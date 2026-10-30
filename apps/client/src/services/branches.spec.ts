@@ -87,7 +87,7 @@ describe("moveBeforeBranch", () => {
         // virt- branches and root/hoisted branches are filtered out before the loop.
         makeBranch("rootBranch", "root");
 
-        await branches.moveBeforeBranch(["virt-x", "rootBranch", "a1"], "before1");
+        await expect(branches.moveBeforeBranch(["virt-x", "rootBranch", "a1"], "before1")).resolves.toBe(true);
         expect(server.put).toHaveBeenCalledTimes(1);
         expect(server.put).toHaveBeenCalledWith(`branches/a1/move-before/before1`);
         expect(beforeBranch.noteId).toBe(targetNote.noteId);
@@ -95,23 +95,23 @@ describe("moveBeforeBranch", () => {
 
         // server failure -> error toast and early return
         server.put = vi.fn(async () => ({ success: false, message: "nope" })) as typeof server.put;
-        await branches.moveBeforeBranch(["a1"], "before1");
+        await expect(branches.moveBeforeBranch(["a1"], "before1")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("nope");
     });
 
     it("returns early when before-branch is missing", async () => {
-        await branches.moveBeforeBranch(["a1"], "does-not-exist");
+        await expect(branches.moveBeforeBranch(["a1"], "does-not-exist")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving before root or launch bar config", async () => {
         makeBranch("rootDest", "root");
-        await branches.moveBeforeBranch(["a1"], "rootDest");
+        await expect(branches.moveBeforeBranch(["a1"], "rootDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
 
         const lbSpy = vi.spyOn(utils, "isLaunchBarConfig").mockReturnValue(true);
         makeBranch("lbDest", "_lbVisibleLaunchers");
-        await branches.moveBeforeBranch(["a1"], "lbDest");
+        await expect(branches.moveBeforeBranch(["a1"], "lbDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(2);
         lbSpy.mockRestore();
     });
@@ -126,26 +126,26 @@ describe("moveAfterBranch", () => {
         makeBranch("m1", n1.noteId);
         makeBranch("m2", n2.noteId);
 
-        await branches.moveAfterBranch(["m1", "m2"], "afterDest");
+        await expect(branches.moveAfterBranch(["m1", "m2"], "afterDest")).resolves.toBe(true);
         expect(server.put).toHaveBeenCalledTimes(2);
         // reversed order: m2 first, then m1
         expect((server.put as any).mock.calls[0][0]).toBe("branches/m2/move-after/afterDest");
         expect((server.put as any).mock.calls[1][0]).toBe("branches/m1/move-after/afterDest");
 
         server.put = vi.fn(async () => ({ success: false, message: "fail" })) as typeof server.put;
-        await branches.moveAfterBranch(["m1"], "afterDest");
+        await expect(branches.moveAfterBranch(["m1"], "afterDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("fail");
     });
 
     it("returns early when after-note is missing", async () => {
-        await branches.moveAfterBranch(["m1"], "missing");
+        await expect(branches.moveAfterBranch(["m1"], "missing")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving after a forbidden destination note", async () => {
         // dest note id "root" is in the forbidden list
         makeBranch("forbiddenDest", "root");
-        await branches.moveAfterBranch(["m1"], "forbiddenDest");
+        await expect(branches.moveAfterBranch(["m1"], "forbiddenDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
         expect(server.put).not.toHaveBeenCalled();
     });
@@ -153,13 +153,13 @@ describe("moveAfterBranch", () => {
 
 describe("moveToParentNote", () => {
     it("returns early when new parent branch is missing", async () => {
-        await branches.moveToParentNote(["m1"], "no-parent");
+        await expect(branches.moveToParentNote(["m1"], "no-parent")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving into _lbRoot", async () => {
         makeBranch("lbRootBranch", "_lbRoot");
-        await branches.moveToParentNote(["m1"], "lbRootBranch");
+        await expect(branches.moveToParentNote(["m1"], "lbRootBranch")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
         expect(server.put).not.toHaveBeenCalled();
     });
@@ -184,7 +184,8 @@ describe("moveToParentNote", () => {
         const hoisted = buildNote({ id: "hoistedId", title: "Hoisted" });
         makeBranch("hoistedBranch", hoisted.noteId, "root");
 
-        await branches.moveToParentNote(["missingBranch", "hoistedBranch", "regularBranch", "searchChildBranch", "regularBranch2"], "destParent", "comp-1");
+        await expect(branches.moveToParentNote(["missingBranch", "hoistedBranch", "regularBranch", "searchChildBranch", "regularBranch2"], "destParent", "comp-1"))
+            .resolves.toBe(true);
 
         expect(server.put).toHaveBeenCalledTimes(1);
         expect(server.put).toHaveBeenCalledWith("branches/move-to/destParent",
@@ -195,7 +196,7 @@ describe("moveToParentNote", () => {
         const parentNote = buildNote({ title: "Parent3" });
         makeBranch("destParent3", parentNote.noteId);
 
-        await branches.moveToParentNote(["missingBranch"], "destParent3");
+        await expect(branches.moveToParentNote(["missingBranch"], "destParent3")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
@@ -206,7 +207,7 @@ describe("moveToParentNote", () => {
         makeBranch("regularBranch2", regular.noteId, "root");
 
         server.put = vi.fn(async () => ({ success: false, message: "boom" })) as typeof server.put;
-        await branches.moveToParentNote(["regularBranch2"], "destParent2");
+        await expect(branches.moveToParentNote(["regularBranch2"], "destParent2")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("boom");
     });
 });

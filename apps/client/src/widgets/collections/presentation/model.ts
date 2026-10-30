@@ -391,8 +391,8 @@ export function isSlideRebuilt(before: PresentationModel, after: PresentationMod
 
 /**
  * Moves the branch of the slide's note next to the target's branch, under the target's parent, or under
- * the target for `into`. Returns whether it found both branches; a move the server refuses shows a
- * toast but still returns `true`.
+ * the target for `into`. Returns whether the move went through: `false` when a branch is missing or the
+ * move is refused, which shows a toast.
  */
 export async function moveSlideNote(presentation: PresentationModel, collectionNoteId: string, move: SlideMove) {
     const parentNoteId = getSlideParentNoteId(presentation, collectionNoteId, move.noteId);
@@ -404,14 +404,9 @@ export async function moveSlideNote(presentation: PresentationModel, collectionN
     ]);
     if (!branchId || !targetBranchId) return false;
 
-    if (move.position === "into") {
-        await branches.moveToParentNote([ branchId ], targetBranchId);
-    } else if (move.position === "before") {
-        await branches.moveBeforeBranch([ branchId ], targetBranchId);
-    } else {
-        await branches.moveAfterBranch([ branchId ], targetBranchId);
-    }
-    return true;
+    if (move.position === "into") return await branches.moveToParentNote([ branchId ], targetBranchId);
+    if (move.position === "before") return await branches.moveBeforeBranch([ branchId ], targetBranchId);
+    return await branches.moveAfterBranch([ branchId ], targetBranchId);
 }
 
 /** Returns the slides in sidebar order: each top-level slide, then its vertical slides. */

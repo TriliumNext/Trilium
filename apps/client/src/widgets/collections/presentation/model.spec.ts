@@ -361,7 +361,7 @@ describe("duplicating and deleting slides", () => {
         vi.spyOn(froca, "getBranchId").mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
         const post = vi.spyOn(server, "post").mockResolvedValue({ note: { noteId: "copy" }, branch: { branchId: "a_copy" } });
         vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockResolvedValue(undefined);
-        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(undefined);
+        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(true);
 
         await expect(duplicateSlide(model, "deck", "a1")).resolves.toBe("copy");
         expect(post).toHaveBeenCalledWith("notes/a1/duplicate/a");
@@ -477,9 +477,9 @@ describe("moving slides", () => {
     it("moves the slide's branch next to the target's, or under the target", async () => {
         const getBranchId = vi.spyOn(froca, "getBranchId")
             .mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
-        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(undefined);
-        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(undefined);
-        const moveTo = vi.spyOn(branches, "moveToParentNote").mockResolvedValue(undefined);
+        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(true);
+        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(true);
+        const moveTo = vi.spyOn(branches, "moveToParentNote").mockResolvedValue(true);
 
         await expect(moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a", position: "before" }))
             .resolves.toBe(true);
@@ -491,6 +491,11 @@ describe("moving slides", () => {
 
         await moveSlideNote(model, "deck", { noteId: "a1", targetNoteId: "b", position: "into" });
         expect(moveTo).toHaveBeenCalledWith([ "a_a1" ], "deck_b");
+
+        // A move that is refused, as into a parent that already holds a clone of the note.
+        moveBefore.mockResolvedValueOnce(false);
+        await expect(moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a", position: "before" }))
+            .resolves.toBe(false);
 
         // A branch that froca cannot find moves nothing.
         getBranchId.mockResolvedValue(null);

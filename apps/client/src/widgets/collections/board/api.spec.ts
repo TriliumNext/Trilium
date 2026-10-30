@@ -1032,7 +1032,7 @@ describe("BoardApi card operations", () => {
 
     it("sends a card to the head of its column, and leaves one already there alone", async () => {
         const { api, items } = createBoardWithCards();
-        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(undefined);
+        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(true);
 
         const last = items[items.length - 1];
         await api.moveToColumnStart(last.note.noteId, last.branch.branchId, "Done");
