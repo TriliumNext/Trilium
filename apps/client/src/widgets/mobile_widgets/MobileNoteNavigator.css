@@ -23,16 +23,6 @@
     background: var(--main-background-color);
 }
 
-.mobile-navigator-hoisted-badge {
-    flex: 0 1 auto;
-    min-width: 0;
-    margin-inline-start: auto;
-    margin-inline-end: 4px;
-    --badge-radius: 12px;
-    --color: var(--input-background-color);
-    color: var(--main-text-color);
-}
-
 .mobile-navigator-workspaces {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -82,26 +72,6 @@
     font-size: 0.9em;
 }
 
-.mobile-navigator-hoisted-badge .text {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-}
-
-.mobile-navigator-hoisted-title {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.mobile-navigator-hoisted-close {
-    flex: 0 0 auto;
-    font-size: 1.3em;
-    opacity: 0.6;
-}
-
 .mobile-navigator-back {
     display: flex;
     align-items: center;
@@ -123,13 +93,14 @@
     opacity: 0.6;
 }
 
-.mobile-navigator-back.invisible {
-    visibility: hidden;
-}
-
 .mobile-navigator-back-icon {
     flex: 0 0 auto;
     font-size: 1.5em;
+}
+
+.mobile-navigator-unhoist-icon {
+    flex: 0 0 auto;
+    font-size: 1.2em;
 }
 
 .mobile-navigator-back-title {

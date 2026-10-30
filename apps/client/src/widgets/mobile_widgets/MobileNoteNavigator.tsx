@@ -19,7 +19,6 @@ import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
 import { useShareState } from "../layout/NoteBadges";
-import { Badge } from "../react/Badge";
 import {
     useActiveNoteContext,
     useChildNotes,
@@ -250,22 +249,25 @@ export default function MobileNoteNavigator() {
         <div className="mobile-note-navigator">
             {showToolbar && (
                 <div className="mobile-navigator-toolbar">
-                    <button
-                        type="button"
-                        className={clsx("mobile-navigator-back", !canGoBack && "invisible")}
-                        onClick={canGoBack && !pendingPop ? goBack : undefined}
-                        disabled={!canGoBack || pendingPop}
-                        aria-label={t("mobile_note_navigator.back")}
-                    >
-                        <Icon
-                            icon={pendingPop ? "bx bx-loader bx-spin" : "bx bx-chevron-left"}
-                            className="mobile-navigator-back-icon"
-                        />
-                        <span className="mobile-navigator-back-title">
-                            {backTargetTitle ?? ""}
-                        </span>
-                    </button>
-                    <HoistedNoteBadge hoistedNoteId={effectiveHoistedId} />
+                    {canGoBack ? (
+                        <button
+                            type="button"
+                            className="mobile-navigator-back"
+                            onClick={pendingPop ? undefined : goBack}
+                            disabled={pendingPop}
+                            aria-label={t("mobile_note_navigator.back")}
+                        >
+                            <Icon
+                                icon={pendingPop ? "bx bx-loader bx-spin" : "bx bx-chevron-left"}
+                                className="mobile-navigator-back-icon"
+                            />
+                            <span className="mobile-navigator-back-title">
+                                {backTargetTitle ?? ""}
+                            </span>
+                        </button>
+                    ) : (
+                        <UnhoistButton hoistedNoteId={effectiveHoistedId} />
+                    )}
                 </div>
             )}
 
@@ -452,33 +454,33 @@ export function PreviewSlot({ note, shown, hideArchived, onReady }: {
 }
 
 /**
- * Hoisted-note badge (mirrors Breadcrumb.tsx): only shown when hoisted below
- * root; click anywhere on the badge (including the X) to unhoist. Respects
- * workspace icon/color overrides.
+ * The back button at the top of a hoisted tree, where there is no level left to go up to: a door,
+ * as on the hoisted note's row in the desktop tree, then the hoisted note's icon and title.
+ * Tapping it unhoists the tab.
  */
-function HoistedNoteBadge({ hoistedNoteId }: { hoistedNoteId: string }) {
-    const isHoisted = hoistedNoteId !== "root";
-    const hoistedNote = useNote(isHoisted ? hoistedNoteId : undefined);
+export function UnhoistButton({ hoistedNoteId }: { hoistedNoteId: string }) {
+    const hoistedNote = useNote(hoistedNoteId);
     const hoistedNoteIcon = useNoteIcon(hoistedNote);
-    const hoistedTitle = useNoteTitle(isHoisted ? hoistedNoteId : undefined, undefined);
-    const [isWorkspace] = useNoteLabelBoolean(hoistedNote, "workspace");
-    const [workspaceIconClass] = useNoteLabel(hoistedNote, "workspaceIconClass");
-    const [workspaceColor] = useNoteLabel(hoistedNote, "workspaceTabBackgroundColor");
-
-    if (!isHoisted || !hoistedNote) return null;
+    const hoistedTitle = useNoteTitle(hoistedNoteId, undefined);
+    const [ isWorkspace ] = useNoteLabelBoolean(hoistedNote, "workspace");
+    const [ workspaceIconClass ] = useNoteLabel(hoistedNote, "workspaceIconClass");
 
     return (
-        <Badge
-            className="mobile-navigator-hoisted-badge"
-            icon={isWorkspace ? (workspaceIconClass || hoistedNoteIcon) : "bx bxs-chevrons-up"}
-            text={<>
-                <span className="mobile-navigator-hoisted-title">{hoistedTitle ?? hoistedNote.title}</span>
-                <Icon icon="bx bx-x" className="mobile-navigator-hoisted-close" />
-            </>}
-            tooltip={t("breadcrumb.hoisted_badge_title")}
+        <button
+            type="button"
+            className="mobile-navigator-back mobile-navigator-unhoist"
             onClick={() => hoisted_note.unhoist()}
-            style={workspaceColorStyle(workspaceColor)}
-        />
+            aria-label={t("note_tree.unhoist")}
+        >
+            <Icon icon="bx bx-door-open" className="mobile-navigator-back-icon" />
+            <Icon
+                icon={(isWorkspace && workspaceIconClass) || hoistedNoteIcon || "bx bx-note"}
+                className="mobile-navigator-unhoist-icon"
+            />
+            <span className="mobile-navigator-back-title">
+                {hoistedTitle ?? hoistedNote?.title ?? ""}
+            </span>
+        </button>
     );
 }
 

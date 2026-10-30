@@ -7,12 +7,13 @@ import FBranch from "../../entities/fbranch";
 import type FNote from "../../entities/fnote";
 import content_renderer from "../../services/content_renderer";
 import froca from "../../services/froca";
+import hoisted_note from "../../services/hoisted_note";
 import type LoadResults from "../../services/load_results";
 import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -153,6 +154,28 @@ describe("WorkspaceCards", () => {
 
         (cards[0] as HTMLElement | undefined)?.click();
         expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
+    });
+});
+
+describe("UnhoistButton", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("shows a door with the hoisted note's icon and title, and unhoists the tab", () => {
+        const unhoist = vi.spyOn(hoisted_note, "unhoist").mockResolvedValue();
+        const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#iconClass": "bx bx-folder" });
+        const plain = buildNote({ title: "Plain", "#iconClass": "bx bx-book" });
+
+        const button = renderInto(<UnhoistButton hoistedNoteId={workspace.noteId} />).querySelector("button");
+        expect(button?.getAttribute("aria-label")).toBe("note_tree.unhoist");
+        expect(button?.querySelector(".mobile-navigator-back-icon.bx-door-open")).not.toBeNull();
+        expect(button?.querySelector(".mobile-navigator-unhoist-icon.bx-briefcase")).not.toBeNull();
+        expect(button?.textContent).toBe("Work");
+        button?.click();
+        expect(unhoist).toHaveBeenCalledTimes(1);
+
+        const plainButton = renderInto(<UnhoistButton hoistedNoteId={plain.noteId} />).querySelector("button");
+        expect(plainButton?.querySelector(".mobile-navigator-unhoist-icon.bx-book")).not.toBeNull();
+        expect(plainButton?.textContent).toBe("Plain");
     });
 });
 
