@@ -315,6 +315,10 @@
     color: var(--muted-text-color);
 }
 
+body.mobile .llm-chat-model-dropdown .dropdown-item {
+    white-space: normal;
+}
+
 /*
  * The model picker stays the theme's own combo box (`.select-button.dropdown-toggle.btn`
  * — its fill, its 6px radius, its caret, its focus outline), so it reads as the same
