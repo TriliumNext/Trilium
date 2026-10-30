@@ -459,9 +459,9 @@ export function PreviewSlot({ note, shown, hideArchived, onReady }: {
 }
 
 /**
- * The back button at the top of a hoisted tree, where there is no level left to go up to: a door,
- * as on the hoisted note's row in the desktop tree, then the hoisted note's title. Tapping it
- * unhoists the tab.
+ * The back button at the top of a hoisted tree, where there is no level left to go up to: an exit
+ * pointing toward the leading edge, as the back chevron does, then the hoisted note's title.
+ * Tapping it unhoists the tab.
  */
 export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: string, onUnhoist: () => void }) {
     const hoistedNote = useNote(hoistedNoteId);
@@ -478,7 +478,10 @@ export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: str
             onClick={onUnhoist}
             aria-label={t("note_tree.unhoist")}
         >
-            <Icon icon="bx bx-door-open" className="mobile-navigator-unhoist-icon" />
+            <Icon
+                icon="bx bx-exit"
+                className={clsx("mobile-navigator-unhoist-icon", !glob.isRtl && "bx-flip-horizontal")}
+            />
             <span className="mobile-navigator-back-title">
                 {hoistedTitle ?? hoistedNote?.title ?? ""}
             </span>

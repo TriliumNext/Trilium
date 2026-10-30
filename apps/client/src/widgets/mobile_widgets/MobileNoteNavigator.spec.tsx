@@ -159,7 +159,7 @@ describe("WorkspaceCards", () => {
 describe("UnhoistButton", () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it("shows a door with the hoisted note's title in the workspace color, and unhoists on a tap", () => {
+    it("shows an exit with the hoisted note's title in the workspace color, and unhoists on a tap", () => {
         const unhoist = vi.fn();
         const workspace = buildNote({
             title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#iconClass": "bx bx-folder",
@@ -169,9 +169,9 @@ describe("UnhoistButton", () => {
 
         const button = renderInto(<UnhoistButton hoistedNoteId={workspace.noteId} onUnhoist={unhoist} />).querySelector("button");
         expect(button?.getAttribute("aria-label")).toBe("note_tree.unhoist");
-        // The door alone: neither the workspace icon nor the note's own.
+        // The exit alone, its arrow toward the leading edge as the back chevron points.
         expect(button?.querySelectorAll(".bx").length).toBe(1);
-        expect(button?.querySelector(".bx.bx-door-open.mobile-navigator-unhoist-icon")).not.toBeNull();
+        expect(button?.querySelector(".bx.bx-exit.bx-flip-horizontal.mobile-navigator-unhoist-icon")).not.toBeNull();
         expect(button?.textContent).toBe("Work");
         // The color class limits the lightness per theme, as a note's `#color` does in the tree.
         expect(button?.classList.contains("use-note-color")).toBe(true);
@@ -183,6 +183,19 @@ describe("UnhoistButton", () => {
         const plainButton = renderInto(<UnhoistButton hoistedNoteId={plain.noteId} onUnhoist={unhoist} />).querySelector("button");
         expect(plainButton?.textContent).toBe("Plain");
         expect(plainButton?.classList.contains("use-note-color")).toBe(false);
+    });
+
+    it("points the exit toward the leading edge in a right-to-left language as well", () => {
+        const note = buildNote({ title: "Work" });
+        const { isRtl } = glob;
+        glob.isRtl = true;
+        try {
+            const icon = renderInto(<UnhoistButton hoistedNoteId={note.noteId} onUnhoist={() => {}} />).querySelector(".bx-exit");
+            expect(icon).not.toBeNull();
+            expect(icon?.classList.contains("bx-flip-horizontal")).toBe(false);
+        } finally {
+            glob.isRtl = isRtl;
+        }
     });
 });
 
