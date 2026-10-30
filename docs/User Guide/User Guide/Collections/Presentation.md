@@ -45,6 +45,7 @@ On the right of the toolbar above the slides:
 
 *   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
+*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button to show the presentation in full-screen.
 

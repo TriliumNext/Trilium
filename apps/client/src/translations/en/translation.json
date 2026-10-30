@@ -3848,7 +3848,8 @@
     "start-presentation": "Start presentation",
     "slide-overview": "Toggle an overview of the slides",
     "new-slide": "New slide",
-    "slide-sidebar": "Slide sidebar"
+    "slide-sidebar": "Slide sidebar",
+    "slide-background": "Slide background"
   },
   "calendar_view": {
     "delete_note": "Delete note...",

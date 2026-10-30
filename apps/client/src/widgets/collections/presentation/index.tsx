@@ -23,10 +23,11 @@ import { ViewModeMedia, ViewModeProps } from "../interface";
 import { useClosingSlides } from "./closing_slides";
 import {
     applySlideMove, buildPresentationModel, createSlide, getSlideMove, isSlideRebuilt, moveSlideNote,
-    PresentationModel, SlideMove
+    PresentationModel, PresentationSlideBaseModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
+import SlideBackgroundAction from "./slide_background";
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { CollectionSlides, Presentation } from "./slides";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
@@ -140,6 +141,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     }, [ api, presentation ]);
 
     if (!presentation || !stylesheets || !note.hasChildren()) return;
+    const activeSlide = presentation.slides
+        .flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ])
+        .find(slide => slide.noteId === activeNoteId);
     const content = (
         <>
             {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
@@ -176,6 +180,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
                         onNewSlide={canAddSlides ? () => void addSlide() : undefined}
+                        backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
                     />}
                 />
                 <div className="presentation-body">
@@ -274,9 +279,13 @@ interface ButtonOverlayProps {
     onFinishEditing(): void;
     /** Adds a slide after the one being shown; left out when slides cannot be added. */
     onNewSlide: (() => void) | undefined;
+    /** The slide being shown, for its background; left out when slides cannot be edited. */
+    backgroundSlide: { slide: PresentationSlideBaseModel | undefined } | undefined;
 }
 
-function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditing, onNewSlide }: ButtonOverlayProps) {
+function ButtonOverlay({
+    containerRef, api, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
+}: ButtonOverlayProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;
@@ -323,6 +332,8 @@ function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditi
                     }}
                 />
             )}
+
+            {backgroundSlide && <SlideBackgroundAction slide={backgroundSlide.slide} />}
 
             <ActionButton
                 icon="bx bx-grid-horizontal"
