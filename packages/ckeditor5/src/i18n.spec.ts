@@ -209,6 +209,7 @@ describe("getCkLocale", () => {
         [ "ar", "ar" ],
         [ "cn", "zh" ],
         [ "cs", "cs" ],
+        [ "da", "da" ],
         [ "de", "de" ],
         [ "es", "es" ],
         [ "fa", "fa" ],

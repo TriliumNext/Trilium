@@ -28,6 +28,9 @@ apps/desktop/
   electron-forge/                # packaging (forge.config.ts, icons, dmg, portable/safe-mode launchers)
                                  # flip-fuses.ts + trim-locales.ts are ALSO run as scripts by the
                                  # Flathub manifest — see the packaging-for-flathub skill before editing
+                                 # electron-locales.json: the pinned Electron's locale files, which
+                                 # trim-locales.spec.ts runs against; regenerate it on every Electron
+                                 # bump with `pnpm chore:update-electron-locales` (adding-a-display-language)
 ```
 
 ## Process and security model

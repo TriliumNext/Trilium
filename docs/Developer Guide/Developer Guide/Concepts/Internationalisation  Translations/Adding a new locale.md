@@ -13,6 +13,19 @@ To do so:
 
 Steps 1 to 6 are keyed by `DISPLAYABLE_LOCALE_IDS`, so `pnpm typecheck` reports each one still missing after step 1.
 
+## The Electron locale
+
+The `electronLocale` of the new entry names the Chromium locale the desktop application keeps for the language. When packaging, `trimElectronLocales` in `apps/desktop/electron-forge/trim-locales.ts` deletes every Chromium locale file no `electronLocale` names, and fails the build when one names a file Electron does not ship. The options page also lists a locale as a formatting locale only when it has an `electronLocale`.
+
+The locale files of the Electron version the desktop application pins are recorded in `apps/desktop/electron-forge/electron-locales.json`:
+
+*   If the language is listed there (for example `da.pak` or `pt-BR.pak`), set `electronLocale` to that name, with an underscore in place of the hyphen (`da`, `pt_BR`). `en-US.pak` is `"en"`.
+*   If it is not listed, Chromium has no translation for the language. Set `electronLocale` to a locale it does ship, as Irish does with `"en"`, so that the language is still offered as a formatting locale.
+
+`electronLocale` only decides which locale files the package keeps and which locales are offered for formatting. It does not choose Chromium's language: `getElectronLocale()` in `apps/desktop/src/main.ts` passes the id of the display language (or of the formatting locale) to Chromium's `--lang` switch.
+
+`pnpm --filter desktop test trim-locales` runs the trim against those files and fails with "Locale … was not found in the packaged app" when the name is wrong. The same spec fails when the file records another Electron version than the one pinned in `apps/desktop/package.json`; after an Electron update, regenerate it with `pnpm chore:update-electron-locales` and commit the result.
+
 ## The website
 
 The website tracks its own Weblate component and its own list, so a locale added to the application above is not offered on [triliumnotes.org](https://triliumnotes.org) until it is added there too.

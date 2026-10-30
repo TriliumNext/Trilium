@@ -15,7 +15,8 @@
     "**/*.ts",
     "electron-forge/**/*.mts",
     "../server/src/*.d.ts",
-    "package.json"
+    "package.json",
+    "electron-forge/electron-locales.json"
   ],
   "exclude": [
     "eslint.config.js",

@@ -34,6 +34,7 @@ export const DAYJS_LOADER: Record<DISPLAYABLE_LOCALE_IDS, () => Promise<typeof i
     "ar": () => import("dayjs/locale/ar.js"),
     "cn": () => import("dayjs/locale/zh-cn.js"),
     "cs": () => import("dayjs/locale/cs.js"),
+    "da": () => import("dayjs/locale/da.js"),
     "de": () => import("dayjs/locale/de.js"),
     "en": () => import("dayjs/locale/en.js"),
     "en-GB": () => import("dayjs/locale/en-gb.js"),

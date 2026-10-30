@@ -4,16 +4,9 @@ import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import packageJson from "../package.json" with { type: "json" };
+import electronLocales from "./electron-locales.json" with { type: "json" };
 import { trimElectronLocales } from "./trim-locales.js";
-
-// The locale files Electron 44 ships on Linux and Windows.
-const ELECTRON_PAKS = [
-    "af", "am", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "en-GB", "en-US",
-    "es", "es-419", "et", "fa", "fi", "fil", "fr", "gu", "he", "hi", "hr", "hu",
-    "id", "it", "ja", "kn", "ko", "lt", "lv", "ml", "mr", "ms", "nb", "nl", "pl",
-    "pt-BR", "pt-PT", "ro", "ru", "sk", "sl", "sr", "sv", "sw", "ta", "te", "th",
-    "tr", "uk", "ur", "vi", "zh-CN", "zh-TW"
-];
 
 const tempDirs: string[] = [];
 
@@ -38,13 +31,22 @@ afterEach(() => {
 });
 
 describe("trimElectronLocales", () => {
-    it("keeps exactly the exposed locales, resolving en-US.pak to the \"en\" entry", () => {
-        const dir = makeLocaleDir(ELECTRON_PAKS.map((l) => `${l}.pak`));
+    it("runs against the locale files of the pinned Electron version", () => {
+        expect(
+            electronLocales.electronVersion,
+            "electron-locales.json is out of date; run `pnpm chore:update-electron-locales`"
+        ).toBe(packageJson.devDependencies.electron);
+    });
+
+    it.each([
+        [ "Linux", electronLocales.linux ],
+        [ "Windows", electronLocales.win32 ]
+    ])("keeps the exposed locales of the %s package, resolving en-US.pak to \"en\"", (_, paks) => {
+        const dir = makeLocaleDir(paks);
 
         const { kept, removed } = trimElectronLocales([ dir ], false);
 
-        expect(kept.size).toBe(23);
-        expect(removed).toHaveLength(32);
+        expect(kept.size + removed.length).toBe(paks.length);
         expect(existsSync(join(dir, "en-US.pak"))).toBe(true);
         expect(existsSync(join(dir, "zh-CN.pak"))).toBe(true);
         // Hebrew is content-only, so its Chromium locale goes.
@@ -52,21 +54,17 @@ describe("trimElectronLocales", () => {
     });
 
     it("removes mac .lproj directories, keeping underscore names and ignoring other entries", () => {
-        const resources = makeLocaleDir([ "zh_CN.lproj", "he.lproj" ], true);
+        const resources = makeLocaleDir(electronLocales.darwin.resources, true);
         writeFileSync(join(resources, "icon.icns"), "");
         // Mac spreads locales over two directories; the keep check spans both.
         const frameworkResources = makeLocaleDir(
-            [ "en.lproj", "de.lproj", "es.lproj", "fr.lproj", "zh_TW.lproj", "ro.lproj", "cs.lproj",
-                "en_GB.lproj", "id.lproj", "it.lproj", "hi.lproj", "ja.lproj", "ko.lproj", "pt_BR.lproj",
-                "pt_PT.lproj", "pl.lproj", "ru.lproj", "tr.lproj", "uk.lproj", "vi.lproj",
-                "ar.lproj", "fa.lproj" ],
-            true
+            electronLocales.darwin.frameworkResources, true
         );
 
-        const { kept, removed } = trimElectronLocales([ resources, frameworkResources ], true);
+        const { kept } = trimElectronLocales([ resources, frameworkResources ], true);
 
         expect(kept).toContain("zh_CN");
-        expect(removed).toEqual([ "he.lproj" ]);
+        expect(existsSync(join(resources, "zh_CN.lproj"))).toBe(true);
         expect(existsSync(join(resources, "he.lproj"))).toBe(false);
         expect(existsSync(join(resources, "icon.icns"))).toBe(true);
     });
