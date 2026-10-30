@@ -8,14 +8,15 @@ import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import froca from "../services/froca";
+import toast from "../services/toast";
 
 // NoteDetail pulls in note_tree, which loads jquery.fancytree at import time and needs a `jQuery`
 // global the test env doesn't provide. The pure function under test never touches the tree, so stub it.
 vi.mock("./note_tree", () => ({ default: class {} }));
 
 import {
-    checkFillsPane, getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange,
-    useDeferredDetailFocus, useNoteInfo
+    checkFillsPane, getExtendedWidgetType, NoteDetailWrapper, printInThisTab,
+    shouldFocusOnNoteChange, useDeferredDetailFocus, useNoteInfo
 } from "./NoteDetail";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "./react/hooks";
 import {
@@ -72,6 +73,50 @@ describe("getExtendedWidgetType blob-stub routing", () => {
         const note = fakeNote({ type: "launcher", getBlob });
         expect(await getExtendedWidgetType(note, fakeContext())).toBe("doc");
         expect(getBlob).not.toHaveBeenCalled();
+    });
+});
+
+describe("printInThisTab", () => {
+    it("saves every open note before opening the print page in this tab", async () => {
+        const steps: string[] = [];
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getNoteContexts: () => [ { ntxId: "a" }, { ntxId: "b" }, { ntxId: null } ]
+        } as unknown as typeof appContext.tabManager;
+        const trigger = vi.spyOn(appContext, "triggerEvent")
+            .mockImplementation(async (name, data) => {
+                steps.push(`${name} ${JSON.stringify(data)}`);
+            });
+        const assign = vi.spyOn(window.location, "assign").mockImplementation((url) => {
+            steps.push(`assign ${String(url)}`);
+        });
+        const originalListeners = appContext.beforeUnloadListeners;
+        let saved = false;
+        appContext.beforeUnloadListeners = [];
+        appContext.addBeforeUnloadListener(() => saved);
+        const component = { componentId: "editor", beforeUnloadEvent: () => true };
+        appContext.addBeforeUnloadListener(component as never);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        try {
+            // A save that has not landed keeps the app open, with the usual message.
+            await printInThisTab("root/abc");
+            expect(steps).toEqual([ 'beforeNoteContextRemove {"ntxIds":["a","b"]}' ]);
+            expect(showMessage).toHaveBeenCalledOnce();
+
+            saved = true;
+            steps.length = 0;
+            await printInThisTab("root/abc");
+            expect(steps).toEqual([
+                'beforeNoteContextRemove {"ntxIds":["a","b"]}',
+                "assign ?print&autoprint#root/abc"
+            ]);
+        } finally {
+            trigger.mockRestore();
+            assign.mockRestore();
+            showMessage.mockRestore();
+            appContext.tabManager = originalTabManager;
+            appContext.beforeUnloadListeners = originalListeners;
+        }
     });
 });
 

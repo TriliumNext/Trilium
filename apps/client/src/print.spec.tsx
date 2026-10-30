@@ -24,9 +24,18 @@ vi.mock("./widgets/collections/NoteList", () => ({
     }
 }));
 
+// The page opened in place of the app loads the translation catalogue over HTTP; keep that offline.
+// `t()` returns the key, so a message reads the same without a loaded catalogue.
+vi.mock("./services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./services/i18n")>()),
+    initLocale: vi.fn(),
+    t: (key: string) => key
+}));
+
 import Component from "./components/component";
-import { App, Error404, loadCustomCss, main, SingleNoteRenderer } from "./print";
+import { App, Error404, loadCustomCss, main, PrintPageToolbar, SingleNoteRenderer } from "./print";
 import froca from "./services/froca";
+import { initLocale } from "./services/i18n";
 import { buildNote } from "./test/easy-froca";
 
 const containers: HTMLDivElement[] = [];
@@ -293,5 +302,135 @@ describe("main", () => {
 
         expect(countPageStyles()).toBe(before);
         expect(document.body.querySelectorAll("h1").length).toBeGreaterThan(0);
+    });
+});
+
+describe("printing in place of the app", () => {
+    afterEach(() => {
+        window.history.replaceState(null, "", "/");
+        vi.mocked(initLocale).mockClear();
+    });
+
+    /** happy-dom has no `window.print`, so each test installs its own. */
+    function stubPrint() {
+        const print = vi.fn();
+        Object.defineProperty(window, "print", {
+            value: print, configurable: true, writable: true
+        });
+        return print;
+    }
+
+    function renderAutoPrint(note: ReturnType<typeof buildNote>) {
+        return renderInto(
+            <App note={note} noteId={note.noteId} notePath={`root/${note.noteId}`} autoPrint />
+        );
+    }
+
+    it("shows the toolbar and opens the print sheet once per visit, once ready", async () => {
+        const print = stubPrint();
+        try {
+            const note = buildNote({ id: "auto-note", title: "Auto", type: "text" });
+            const container = renderAutoPrint(note);
+            expect(container.querySelectorAll(".print-page-toolbar button")).toHaveLength(2);
+            await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
+
+            // Coming back to the same page, as Back then Forward does, does not print again.
+            render(null, container);
+            window._noteReady = undefined;
+            renderAutoPrint(note);
+            await vi.waitFor(() => expect(window._noteReady).toBeDefined());
+            expect(print).toHaveBeenCalledOnce();
+        } finally {
+            delete (window as { print?: unknown }).print;
+        }
+    });
+
+    it("does not print a note that failed to render", async () => {
+        const print = stubPrint();
+        try {
+            h.getRenderedContent.mockRejectedValue(new Error("boom"));
+            renderAutoPrint(buildNote({ id: "auto-broken", title: "Broken", type: "text" }));
+            await vi.waitFor(() => expect(window._noteReady?.type).toBe("error"));
+            expect(print).not.toHaveBeenCalled();
+            // The failure shows on the page, outside the printed content.
+            const report = () => document.querySelector(".print-page-toolbar .print-page-report");
+            await vi.waitFor(() => expect(report()?.textContent).toContain("boom"));
+        } finally {
+            delete (window as { print?: unknown }).print;
+        }
+    });
+
+    it("refuses a protected note whose protected session is not open", async () => {
+        const print = stubPrint();
+        const glob = window.glob;
+        window.glob = { ...glob, isProtectedSessionAvailable: false };
+        try {
+            const note = buildNote({ id: "auto-locked", title: "Locked", type: "text" });
+            note.isProtected = true;
+            renderAutoPrint(note);
+            await vi.waitFor(() => expect(window._noteReady?.type).toBe("error"));
+            expect(h.getRenderedContent).not.toHaveBeenCalled();
+            expect(print).not.toHaveBeenCalled();
+        } finally {
+            window.glob = glob;
+            delete (window as { print?: unknown }).print;
+        }
+    });
+
+    it("lists the notes a collection left out, and its buttons go back and print", () => {
+        const print = stubPrint();
+        const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+        const assign = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+        const historyLength = vi.spyOn(window.history, "length", "get");
+        try {
+            const container = renderInto(<PrintPageToolbar
+                notePath="root/book"
+                report={{ type: "collection", ignoredNoteIds: [ "a", "b" ] }}
+            />);
+            expect(container.querySelector(".print-page-report")).toBeTruthy();
+            const [ backButton, printButton ] = container.querySelectorAll("button");
+
+            printButton.click();
+            expect(print).toHaveBeenCalledOnce();
+
+            // Back returns through the history the app left, or opens the note when there is none.
+            historyLength.mockReturnValue(2);
+            backButton.click();
+            expect(back).toHaveBeenCalledOnce();
+            historyLength.mockReturnValue(1);
+            backButton.click();
+            expect(assign).toHaveBeenCalledWith("./#root/book");
+
+            render(null, container);
+            const quiet = renderInto(
+                <PrintPageToolbar notePath="root/book" report={{ type: "single-note" }} />
+            );
+            expect(quiet.querySelector(".print-page-report")).toBeNull();
+        } finally {
+            back.mockRestore();
+            assign.mockRestore();
+            historyLength.mockRestore();
+            delete (window as { print?: unknown }).print;
+        }
+    });
+
+    it("loads the translations only for a page opened to print in place of the app", async () => {
+        const print = stubPrint();
+        try {
+            buildNote({ id: "main-plain", title: "Plain", type: "text" });
+            window.history.replaceState(null, "", "/?print#main-plain");
+            await main();
+            expect(initLocale).not.toHaveBeenCalled();
+            expect(document.body.querySelector(".print-page-toolbar")).toBeNull();
+
+            buildNote({ id: "main-auto", title: "Auto", type: "text" });
+            window.history.replaceState(null, "", "/?print&autoprint#main-auto");
+            await main();
+            expect(initLocale).toHaveBeenCalledOnce();
+            expect(document.body.querySelector(".print-page-toolbar")).toBeTruthy();
+            await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
+        } finally {
+            delete (window as { print?: unknown }).print;
+        }
     });
 });
