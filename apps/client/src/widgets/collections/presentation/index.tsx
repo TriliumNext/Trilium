@@ -13,7 +13,7 @@ import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
 import options from "../../../services/options";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import Button from "../../react/Button";
+import { SplitButton } from "../../react/Button";
 import {
     useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
 } from "../../react/hooks";
@@ -24,7 +24,7 @@ import { useClosingSlides } from "./closing_slides";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
     getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
-    PresentationModel, SlideMove
+    NewSlideType, PresentationModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
@@ -32,7 +32,7 @@ import slideCustomStylesheet from "./slidejs.css?raw";
 import { SlideMenuActions } from "./slide_menu";
 import { CollectionSlides, Presentation } from "./slides";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
-import PresentationToolbarActions, { SlideSidebarToggle } from "./toolbar";
+import PresentationToolbarActions, { NewSlideTypeItems, SlideSidebarToggle } from "./toolbar";
 
 const SlideEditor = lazy(() => import("./slide_editor"));
 
@@ -67,9 +67,10 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const canAddSlides = canEditSlides && note.type !== "search";
     const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
-    async function addSlide(position: NewSlidePosition) {
-        const noteId = await createSlide(position);
-        if (noteId) setPendingSlide({ noteId, edit: true });
+    async function addSlide(position: NewSlidePosition, type: NewSlideType = "text") {
+        const noteId = await createSlide(position, type);
+        // Only a text slide has an editor in place.
+        if (noteId) setPendingSlide({ noteId, edit: type === "text" });
     }
 
     function editSlide(noteId: string) {
@@ -80,11 +81,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     }
 
     const slideChanges: SlideMenuActions["changes"] = {
-        addSlideAfter(noteId) {
-            if (presentation) void addSlide(getNewSlidePosition(presentation, note.noteId, noteId));
+        addSlideAfter(noteId, type) {
+            if (presentation) void addSlide(getNewSlidePosition(presentation, note.noteId, noteId), type);
         },
-        addVerticalSlide(noteId) {
-            if (presentation) void addSlide(getNewVerticalSlidePosition(presentation, noteId));
+        addVerticalSlide(noteId, type) {
+            if (presentation) void addSlide(getNewVerticalSlidePosition(presentation, noteId), type);
         },
         async duplicate(noteId) {
             if (!presentation) return;
@@ -221,7 +222,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
                         onNewSlide={canAddSlides
-                            ? () => void addSlide(getNewSlidePosition(presentation, note.noteId, activeNoteId))
+                            ? (type) => void addSlide(
+                                getNewSlidePosition(presentation, note.noteId, activeNoteId), type
+                            )
                             : undefined}
                         backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
                     />}
@@ -245,12 +248,16 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     />}
                     {isEmpty ? (
                         <NoItems icon="bx bx-slideshow" text={t("presentation_view.no-slides")}>
-                            {canAddSlides && <Button
+                            {canAddSlides && <SplitButton
                                 text={t("presentation_view.new-slide")}
-                                icon="bx-plus"
+                                icon="bx bx-plus"
                                 kind="primary"
                                 onClick={() => void addSlide(getNewSlidePosition(presentation, note.noteId, undefined))}
-                            />}
+                            >
+                                <NewSlideTypeItems onNewSlide={(type) => (
+                                    void addSlide(getNewSlidePosition(presentation, note.noteId, undefined), type)
+                                )} />
+                            </SplitButton>}
                         </NoItems>
                     ) : (
                         <ShadowDom

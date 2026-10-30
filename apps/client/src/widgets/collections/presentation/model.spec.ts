@@ -235,7 +235,7 @@ describe("getNewSlidePosition", () => {
 });
 
 describe("createSlide", () => {
-    it("creates a text note after a slide under its parent, or at the end", async () => {
+    it("creates a text or canvas note after a slide under its parent, or at the end", async () => {
         buildNote({ id: "deck", title: "Deck", children: [ { id: "a", title: "A" } ] });
         const getBranchId = vi.spyOn(froca, "getBranchId").mockResolvedValue("deck_a");
         const createNote = vi.spyOn(note_create, "createNote")
@@ -249,6 +249,11 @@ describe("createSlide", () => {
 
         await createSlide({ parentNoteId: "deck", afterNoteId: undefined });
         expect(createNote.mock.lastCall?.[1]).not.toHaveProperty("targetBranchId");
+
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "canvas");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "canvas", mime: "application/json"
+        }));
 
         getBranchId.mockRestore();
         createNote.mockRestore();

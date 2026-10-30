@@ -2,7 +2,7 @@ import type { CommandNames } from "../../../components/app_context";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "../../../menus/context_menu";
 import link_context_menu from "../../../menus/link_context_menu";
 import { t } from "../../../services/i18n";
-import type { PresentationSlideBaseModel, SlideMove } from "./model";
+import { getNewSlideTypes, type NewSlideType, type PresentationSlideBaseModel, type SlideMove } from "./model";
 
 /** The moves that Alt and the arrows make on a slide, each left out where the slide cannot go. */
 export interface SlideMenuMoves {
@@ -26,8 +26,8 @@ export interface SlideMenuActions {
     onEdit?: (noteId: string) => void;
     /** Adds, duplicates and deletes slides; left out where the slides cannot be changed. */
     changes?: {
-        addSlideAfter(noteId: string): void;
-        addVerticalSlide(noteId: string): void;
+        addSlideAfter(noteId: string, type: NewSlideType): void;
+        addVerticalSlide(noteId: string, type: NewSlideType): void;
         duplicate(noteId: string): void;
         delete(noteId: string): void;
     };
@@ -74,6 +74,10 @@ export function buildSlideMenuItems(
     const canHaveVerticalSlides = !isVertical && !slide.isCollection;
     const [ indentKey, outdentKey ] = isRtl ? [ "Alt+Left", "Alt+Right" ] : [ "Alt+Right", "Alt+Left" ];
 
+    const slideTypeItems = (add: (noteId: string, type: NewSlideType) => void) => (
+        getNewSlideTypes().map(({ type, title, icon }) => ({ title, uiIcon: icon, handler: () => add(noteId, type) }))
+    );
+
     const moveItem = (title: string, uiIcon: string, shortcut: string, move: SlideMove | undefined) => ({
         title, uiIcon, shortcut,
         enabled: !!move,
@@ -94,12 +98,12 @@ export function buildSlideMenuItems(
             {
                 title: t("presentation_view.menu-new-slide-after"),
                 uiIcon: "bx bx-plus",
-                handler: () => changes.addSlideAfter(noteId)
+                items: slideTypeItems(changes.addSlideAfter)
             },
             ...(canHaveVerticalSlides ? [ {
                 title: t("presentation_view.menu-new-vertical-slide"),
                 uiIcon: "bx bx-subdirectory-right",
-                handler: () => changes.addVerticalSlide(noteId)
+                items: slideTypeItems(changes.addVerticalSlide)
             } ] : []),
             {
                 title: t("presentation_view.menu-duplicate"),

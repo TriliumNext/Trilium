@@ -1,9 +1,11 @@
-import { NoteType } from "@triliumnext/commons";
+import { NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
 import contentRenderer, { snapshotAndDispose } from "../../../services/content_renderer";
 import { renderTextContent } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import server from "../../../services/server";
@@ -100,14 +102,31 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
     }
 }
 
+/** The note types a new slide can have, with the MIME type each is created with. */
+const NEW_SLIDE_MIMES = {
+    text: "text/html",
+    canvas: "application/json"
+} as const;
+
+export type NewSlideType = keyof typeof NEW_SLIDE_MIMES;
+
+/** Returns the note types a new slide can have, as the menus that create slides list them. */
+export function getNewSlideTypes(): { type: NewSlideType; title: string; icon: string }[] {
+    return [
+        { type: "text", title: t("note_types.text"), icon: "bx bx-note" },
+        { type: "canvas", title: t("note_types.canvas"), icon: NOTE_TYPE_ICONS.canvas }
+    ];
+}
+
 /**
- * Creates an empty text slide at `position`, from `getNewSlidePosition()` or
+ * Creates an empty slide of `type` at `position`, from `getNewSlidePosition()` or
  * `getNewVerticalSlidePosition()`. Returns the ID of the new note.
  */
-export async function createSlide({ parentNoteId, afterNoteId }: NewSlidePosition) {
+export async function createSlide({ parentNoteId, afterNoteId }: NewSlidePosition, type: NewSlideType = "text") {
     const targetBranchId = afterNoteId ? await froca.getBranchId(parentNoteId, afterNoteId) : null;
     const { note } = await note_create.createNote(parentNoteId, {
-        type: "text",
+        type,
+        mime: NEW_SLIDE_MIMES[type],
         activate: false,
         isProtected: froca.getNoteFromCache(parentNoteId)?.isProtected,
         ...(targetBranchId ? { target: "after", targetBranchId } : {})

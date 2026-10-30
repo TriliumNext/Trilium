@@ -89,17 +89,24 @@ describe("buildSlideMenuItems", () => {
         const actions = buildActions();
         const onMove = vi.fn();
         const items = build({ moves: { down: move("b") } }, actions, onMove);
-        const run = (title: string) => findItem(items, title).handler?.({ title }, new MouseEvent("click"));
+        const runItem = (item: MenuCommandItem<CommandNames>) => item.handler?.(item, new MouseEvent("click"));
+        const run = (title: string) => runItem(findItem(items, title));
+        const runSubitem = (title: string, subtitle: string) => (
+            runItem(findItem(findItem(items, title).items ?? [], subtitle))
+        );
+
+        expect(describeMenu(findItem(items, "New slide after").items ?? [])).toEqual([ "Text", "Canvas" ]);
+        expect(describeMenu(findItem(items, "New vertical slide").items ?? [])).toEqual([ "Text", "Canvas" ]);
 
         run("Edit slide");
-        run("New slide after");
-        run("New vertical slide");
+        runSubitem("New slide after", "Text");
+        runSubitem("New vertical slide", "Canvas");
         run("Duplicate");
         run("Delete slide...");
         run("Move down");
         expect(actions.onEdit).toHaveBeenCalledWith("s");
-        expect(actions.changes.addSlideAfter).toHaveBeenCalledWith("s");
-        expect(actions.changes.addVerticalSlide).toHaveBeenCalledWith("s");
+        expect(actions.changes.addSlideAfter).toHaveBeenCalledWith("s", "text");
+        expect(actions.changes.addVerticalSlide).toHaveBeenCalledWith("s", "canvas");
         expect(actions.changes.duplicate).toHaveBeenCalledWith("s");
         expect(actions.changes.delete).toHaveBeenCalledWith("s");
         expect(onMove).toHaveBeenCalledWith(move("b"));

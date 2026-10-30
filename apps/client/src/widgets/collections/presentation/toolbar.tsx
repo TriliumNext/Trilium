@@ -7,9 +7,10 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import ColorPicker from "../../react/ColorPicker";
-import { DropdownPanel } from "../../react/Dropdown";
+import Dropdown, { DropdownPanel } from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { useNoteLabel } from "../../react/hooks";
-import type { PresentationSlideBaseModel } from "./model";
+import { getNewSlideTypes, type NewSlideType, type PresentationSlideBaseModel } from "./model";
 import { getNoteIdFromSlide } from "./reveal";
 
 interface PresentationToolbarActionsProps {
@@ -20,8 +21,8 @@ interface PresentationToolbarActionsProps {
     isReadOnly: boolean;
     isEditing: boolean;
     onFinishEditing(): void;
-    /** Adds a slide after the one being shown; left out when slides cannot be added. */
-    onNewSlide: (() => void) | undefined;
+    /** Adds a slide of a type after the one being shown; left out when slides cannot be added. */
+    onNewSlide: ((type: NewSlideType) => void) | undefined;
     /** The slide being shown, for its background; left out when slides cannot be edited. */
     backgroundSlide: { slide: PresentationSlideBaseModel | undefined } | undefined;
 }
@@ -47,11 +48,25 @@ export default function PresentationToolbarActions({
     return (
         <>
             {onNewSlide && (
-                <ActionButton
-                    icon="bx bx-plus"
-                    text={t("presentation_view.new-slide")}
-                    onClick={onNewSlide}
-                />
+                <div className="icon-action-split presentation-new-slide">
+                    <ActionButton
+                        icon="bx bx-plus"
+                        text={t("presentation_view.new-slide")}
+                        onClick={() => onNewSlide("text")}
+                    />
+                    <Dropdown
+                        buttonClassName="bx bx-chevron-down"
+                        buttonProps={{ "aria-label": t("split_button.more_actions") }}
+                        iconAction
+                        hideToggleArrow
+                        noSelectButtonStyle
+                        title={t("split_button.more_actions")}
+                        placement="bottom-end"
+                        mobileBottomSheet
+                    >
+                        <NewSlideTypeItems onNewSlide={onNewSlide} />
+                    </Dropdown>
+                </div>
             )}
 
             {isEditing && (
@@ -99,6 +114,13 @@ export default function PresentationToolbarActions({
             />
         </>
     );
+}
+
+/** The menu rows of the note types a new slide can have, each adding a slide of its type. */
+export function NewSlideTypeItems({ onNewSlide }: { onNewSlide(type: NewSlideType): void }) {
+    return getNewSlideTypes().map(({ type, title, icon }) => (
+        <FormListItem key={type} icon={icon} onClick={() => onNewSlide(type)}>{title}</FormListItem>
+    ));
 }
 
 /**

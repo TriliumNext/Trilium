@@ -11,6 +11,17 @@ import { renderInto } from "../../../test/render";
 import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import PresentationView from "./index";
 
+// i18next is never initialized under test, so `t()` looks keys up in the English catalog itself.
+vi.mock("../../../services/i18n", async (importOriginal) => {
+    const { default: english } = await import("../../../translations/en/translation.json");
+    return {
+        ...await importOriginal<typeof import("../../../services/i18n")>(),
+        t: (key: string) => key.split(".").reduce<unknown>(
+            (node, part) => (node as Record<string, unknown> | undefined)?.[part], english
+        )
+    };
+});
+
 vi.mock("./themes", async (importOriginal) => ({
     ...await importOriginal<typeof import("./themes")>(),
     loadPresentationTheme: async () => ""
@@ -50,6 +61,26 @@ describe("an empty presentation", () => {
         expect(button).not.toBeNull();
         await act(async () => button?.click());
         expect(createNote).toHaveBeenCalledWith(note.noteId, expect.objectContaining({ type: "text", activate: false }));
+    });
+
+    it("creates a canvas slide from the menu beside the toolbar's and the placeholder's new slide button", async () => {
+        const createNote = vi.spyOn(note_create, "createNote")
+            .mockResolvedValue({ note: { noteId: "first" } } as Awaited<ReturnType<typeof note_create.createNote>>);
+        const { note, container } = await renderEmpty();
+
+        for (const split of [ ".presentation-new-slide", ".no-items" ]) {
+            createNote.mockClear();
+            const toggle = container.querySelector<HTMLElement>(`${split} .dropdown button`);
+            expect(toggle, split).not.toBeNull();
+            await act(async () => toggle?.click());
+            const items = await vi.waitFor(() => {
+                const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
+                expect(found.map(item => item.textContent?.trim())).toEqual([ "Text", "Canvas" ]);
+                return found;
+            });
+            await act(async () => items[1].click());
+            expect(createNote).toHaveBeenCalledWith(note.noteId, expect.objectContaining({ type: "canvas" }));
+        }
     });
 
     it("offers no way to create a slide in a read-only presentation", async () => {
