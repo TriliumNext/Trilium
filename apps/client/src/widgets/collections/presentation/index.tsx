@@ -12,6 +12,7 @@ import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
+import options from "../../../services/options";
 import utils from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
@@ -51,6 +52,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         setReadyEditorNoteId(undefined);
     };
     const shadowHost = useElementOf(containerRef);
+    const canEditSlides = media === "screen" && !isReadOnly && !options.is("databaseReadonly");
 
     useEffect(() => {
         if (!api) return;
@@ -71,7 +73,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.getNoteIds().find(noteId => noteIds.includes(noteId)) ||
-            loadResults.getAttributeRows().find(attr => attr.noteId && attr.name?.startsWith("slide:") && noteIds.includes(attr.noteId))) {
+            loadResults.getAttributeRows().find(attr => attr.noteId && noteIds.includes(attr.noteId)
+                && (attr.name?.startsWith("slide:") || attr.name === "readOnly"))) {
             refresh();
         }
     });
@@ -96,7 +99,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 ntxId={noteContext?.ntxId}
                 editedNoteId={editedNoteId}
                 isEditorReady={!!editedNoteId && readyEditorNoteId === editedNoteId}
-                onEditSlide={media === "screen" && !isReadOnly ? startEditing : undefined}
+                onEditSlide={canEditSlides ? startEditing : undefined}
                 onEditorHost={setEditorHost}
             />
         </>
@@ -385,7 +388,8 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady
 
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;
-        const canEdit = onEditSlide && !isEdited && (slide.type === "text" || slide.isCollection);
+        const canEdit = onEditSlide && !isEdited && !slide.isReadOnly
+            && (slide.type === "text" || slide.isCollection);
         return (
             <Slide
                 key={slide.noteId}

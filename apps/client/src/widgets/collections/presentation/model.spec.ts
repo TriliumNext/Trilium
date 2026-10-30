@@ -169,3 +169,23 @@ describe("Presentation model with collections", () => {
         ]);
     });
 });
+
+describe("Presentation model with read-only slides", () => {
+    it("marks the slides of read-only notes", async () => {
+        const presentation = buildNote({
+            title: "Read-only",
+            "#viewType": "presentation",
+            children: [
+                { id: "lockedSlide", title: "Locked", content: "<p>Locked</p>", "#readOnly": "" },
+                { id: "openSlide", title: "Open", content: "<p>Open</p>" }
+            ]
+        });
+
+        const { slides } = await buildPresentationModel(presentation);
+
+        expect(slides.map(({ noteId, isReadOnly }) => ({ noteId, isReadOnly }))).toStrictEqual([
+            { noteId: "lockedSlide", isReadOnly: true },
+            { noteId: "openSlide", isReadOnly: undefined }
+        ]);
+    });
+});

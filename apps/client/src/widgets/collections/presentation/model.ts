@@ -22,6 +22,8 @@ export interface PresentationSlideBaseModel {
     webViewSrc?: string;
     /** Whether the slide shows its note's collection live, with the app's own view, across the whole slide. */
     isCollection?: boolean;
+    /** Whether the slide's note has `#readOnly`, so that it cannot be edited in place. */
+    isReadOnly?: boolean;
 }
 
 /**
@@ -86,6 +88,7 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
         type: note.type,
         content: isCollection ? { __html: "" } : await processContent(note),
         isCollection: isCollection || undefined,
+        isReadOnly: note.isLabelTruthy("readOnly") || undefined,
         backgroundColor: !isGradient ? slideBackground : undefined,
         backgroundGradient: isGradient ? slideBackground : undefined
     }
