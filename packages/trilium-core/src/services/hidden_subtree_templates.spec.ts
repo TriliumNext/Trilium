@@ -148,11 +148,14 @@ describe("buildHiddenSubtreeTemplates", () => {
             expect(attr?.value, id).toBe("false");
         }
 
-        // The board hides its subtree by default: the cards already list the children.
-        const board = childById(templates, "_template_board");
-        const boardAttr = board.attributes?.find((a) => a.name === "subtreeHidden");
-        expect(boardAttr?.type).toBe("label");
-        expect(boardAttr?.value ?? "").toBe("");
+        // The board and the presentation hide their subtree by default: the cards, or the slide
+        // sidebar, already list the children.
+        for (const id of ["_template_board", "_template_presentation"]) {
+            const item = childById(templates, id);
+            const attr = item.attributes?.find((a) => a.name === "subtreeHidden");
+            expect(attr?.type, id).toBe("label");
+            expect(attr?.value ?? "", id).toBe("");
+        }
 
         // The list/grid views intentionally do NOT hide their subtree.
         for (const id of ["_template_list_view", "_template_grid_view"]) {

@@ -350,6 +350,11 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "child:template",
                         type: "relation",
                         value: "_template_presentation_slide"
+                    },
+                    {
+                        // The slide sidebar lists the slides, so the tree would repeat them.
+                        name: "subtreeHidden",
+                        type: "label"
                     }
                 ],
                 children: [
