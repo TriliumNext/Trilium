@@ -1,0 +1,32 @@
+.component.mobile-note-panel-button {
+    contain: none;
+}
+
+body.mobile .modal.mobile-note-panel {
+    .modal-dialog {
+        height: 85vh;
+    }
+
+    .modal-content {
+        flex: 1;
+        min-height: 0;
+        padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+    }
+
+    .modal-header .tab-strip {
+        flex: 1;
+    }
+
+    .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        padding: 0;
+    }
+
+    #right-pane {
+        flex: 1;
+        min-height: 0;
+        background: transparent;
+    }
+}

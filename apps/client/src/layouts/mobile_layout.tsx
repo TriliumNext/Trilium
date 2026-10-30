@@ -16,6 +16,7 @@ import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
+import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
@@ -69,6 +70,7 @@ export default class MobileLayout {
                                                 .child(<NoteIconWidget />)
                                                 .child(<NoteTitleWidget />)
                                                 .child(<NoteBadges />)
+                                                .child(<MobileNotePanel />)
                                                 .child(<MobileDetailMenu />)
                                         )
                                         .child(

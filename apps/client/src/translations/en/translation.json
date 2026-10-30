@@ -1324,7 +1324,8 @@
     "backlinks": "Backlinks",
     "content_language_switcher": "Content language: {{language}}",
     "insert_child_note_short": "Child note",
-    "create_new_split_short": "New split"
+    "create_new_split_short": "New split",
+    "note_panel": "Note panel"
   },
   "note_icon": {
     "change_note_icon": "Change note icon",

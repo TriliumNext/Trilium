@@ -51,7 +51,7 @@ export interface RightPaneTabContents extends RightPaneTabDefinition {
 
 export default function RightPanelContainer({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
     const { mode, visible, mounted, togglePeek, toggleDocked, dock, close, dismiss } = usePaneMode("rightPaneVisible", "right");
-    const tabs = useItems(mounted, widgetsByParent);
+    const tabs = useRightPaneTabs(mounted, widgetsByParent);
     // This window's own choice, seeded from the option and written back for the next window to start
     // from — the same treatment usePaneMode gives the pane's visibility. Subscribing to the option
     // (useTriliumOption) would let a click in one window flip the strip in every other.
@@ -67,14 +67,6 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     // chat once AI is switched off), in which case the first one that does stands in — without
     // overwriting the choice, so it is back as soon as the note has that tab again.
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
-
-    // A tab's widgets are mounted when it is first opened and kept mounted afterwards: switching back
-    // is instant and stateful (a chat in progress survives it), while a tab never opened costs
-    // nothing — which is what keeps the LLM chat's bundle out of the pane until it is asked for.
-    const openedTabs = useRef(new Set<RightPaneTabId>());
-    if (activeTab) {
-        openedTabs.current.add(activeTab.id);
-    }
 
     // Legacy entry points (tab-row toggle, empty-state button) open/close the *docked* pane;
     // the keyboard shortcut peeks it (same as clicking the peek button).
@@ -172,25 +164,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                                 </div>
                             </div>
                             {tabs.length > 0 ? (
-                                tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
-                                    <div
-                                        key={tab.id}
-                                        role="tabpanel"
-                                        class={clsx("right-pane-tab-body", tab.id !== activeTab?.id && "hidden-ext")}
-                                    >
-                                        {/* Collapsing the only widget of a tab would leave the tab empty,
-                                            so a tab of one offers no collapsing at all. */}
-                                        <CollapsibleWidgets.Provider value={tab.items.length > 1}>
-                                            <ExpandWidgetRequests.Provider value={expandRequest}>
-                                                {tab.items.length > 0 ? tab.items : (
-                                                    // A tab that stays for a note it has nothing to show
-                                                    // (see RightPaneTabDefinition.alwaysShown) says so.
-                                                    <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
-                                                )}
-                                            </ExpandWidgetRequests.Provider>
-                                        </CollapsibleWidgets.Provider>
-                                    </div>
-                                ))
+                                <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} expandRequest={expandRequest} />
                             ) : (
                                 <NoItems
                                     icon="bx bx-sidebar"
@@ -213,7 +187,44 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     );
 }
 
-function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): RightPaneTabContents[] {
+/**
+ * The bodies of the pane's tabs, all but the active one hidden. A tab's widgets are mounted when it is
+ * first opened and kept mounted afterwards: switching back is instant and keeps its state (a chat in
+ * progress), and a tab never opened costs nothing, which keeps the LLM chat's bundle out until it is
+ * asked for.
+ */
+export function RightPaneTabBodies({ tabs, activeTabId, expandRequest }: { tabs: RightPaneTabContents[]; activeTabId?: RightPaneTabId; expandRequest?: ExpandWidgetRequest | null }) {
+    const openedTabs = useRef(new Set<RightPaneTabId>());
+    if (activeTabId) {
+        openedTabs.current.add(activeTabId);
+    }
+
+    return tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
+        <div
+            key={tab.id}
+            role="tabpanel"
+            class={clsx("right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
+        >
+            {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of one offers
+                no collapsing at all. */}
+            <CollapsibleWidgets.Provider value={tab.items.length > 1}>
+                <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
+                    {tab.items.length > 0 ? tab.items : (
+                        // A tab that stays for a note it has nothing to show
+                        // (see RightPaneTabDefinition.alwaysShown) says so.
+                        <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
+                    )}
+                </ExpandWidgetRequests.Provider>
+            </CollapsibleWidgets.Provider>
+        </div>
+    ));
+}
+
+/**
+ * The pane's tabs with the widgets enabled for the active note, or none while `rightPaneVisible` is
+ * false. Shared by the desktop pane and the mobile note panel.
+ */
+export function useRightPaneTabs(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): RightPaneTabContents[] {
     const { note } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
