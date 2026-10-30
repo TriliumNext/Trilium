@@ -10,7 +10,6 @@ body.mobile .modal.mobile-note-panel {
     .modal-content {
         flex: 1;
         min-height: 0;
-        padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
     }
 
     .modal-body {
@@ -32,17 +31,22 @@ body.mobile .modal.mobile-note-panel {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
+        padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+
+        &:has(#sidebar-chat) {
+            padding-bottom: 0;
+        }
 
         > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
             display: none;
         }
 
-        > .card {
-            border-bottom: 1px solid var(--main-border-color);
+        .card-header {
+            --icon-button-size: 32px;
         }
 
-        > :is(#pdf-pages, #noteMap) {
-            order: 1;
+        #sidebar-chat:not(.ios *) :is(.llm-chat-input-form, .llm-chat-no-provider) {
+            padding-bottom: calc(0.5rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
         }
 
         > :is(#pdf-pages, #noteMap):not(.grow) .card-body {

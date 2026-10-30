@@ -9,7 +9,9 @@ import ActionButton from "../react/ActionButton";
 import { useNoteContext } from "../react/hooks";
 import Modal from "../react/Modal";
 import TabStrip from "../react/TabStrip";
-import { RightPaneTabBodies, useRightPaneTabs } from "../sidebar/RightPanelContainer";
+import NoteMap from "../sidebar/NoteMap";
+import PdfPages from "../sidebar/pdf/PdfPages";
+import { RightPaneTabBodies, type RightPaneTabContents, useRightPaneTabs } from "../sidebar/RightPanelContainer";
 import { NavigatedInNote } from "../sidebar/RightPanelWidget";
 import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 
@@ -34,7 +36,9 @@ export default function MobileNotePanel({ widgetsByParent }: { widgetsByParent: 
 }
 
 function MobileNotePanelModal({ shown, onHidden, widgetsByParent }: { shown: boolean; onHidden: () => void; widgetsByParent: WidgetsByParent }) {
-    const tabs = useRightPaneTabs(shown, widgetsByParent).filter((tab) => tab.id !== "attributes");
+    const tabs = useRightPaneTabs(shown, widgetsByParent)
+        .filter((tab) => tab.id !== "attributes")
+        .map(withFixedHeightWidgetsLast);
     const [ selectedTabId, setSelectedTabId ] = useState<RightPaneTabId>();
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
 
@@ -56,4 +60,16 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent }: { shown: boo
             </div>
         </Modal>
     );
+}
+
+/**
+ * Moves `NoteMap` and `PdfPages` to the end of the tab: both are drawn to a fixed height, which in a
+ * tab that scrolls as a whole would sit between the sections around them.
+ */
+function withFixedHeightWidgetsLast(tab: RightPaneTabContents): RightPaneTabContents {
+    const isFixedHeight = (item: RightPaneTabContents["items"][number]) => item.type === NoteMap || item.type === PdfPages;
+    return {
+        ...tab,
+        items: [ ...tab.items.filter((item) => !isFixedHeight(item)), ...tab.items.filter(isFixedHeight) ]
+    };
 }
