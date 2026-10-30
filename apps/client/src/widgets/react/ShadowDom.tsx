@@ -25,5 +25,11 @@ export default function ShadowDom({ children, containerRef: externalContainerRef
         render(<>{children}</>, shadowRoot);
     }, [ shadowRoot, children ]);
 
+    // The shadow tree is a separate render, which unmounting this component does not unmount.
+    useLayoutEffect(() => {
+        if (!shadowRoot) return;
+        return () => render(null, shadowRoot);
+    }, [ shadowRoot ]);
+
     return <div ref={containerRef} {...containerProps} />
 }
