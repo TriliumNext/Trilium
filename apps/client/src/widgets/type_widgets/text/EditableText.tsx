@@ -598,6 +598,7 @@ export function getAddLinkOpts(
         api.addLinkPreview(...args);
     }
 
+    const anchors = api.getAnchors();
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         return {
@@ -605,7 +606,8 @@ export function getAddLinkOpts(
             hasSelection: false,
             currentTitle: currentLink.text,
             display: currentLink.display,
-            ...parseLinkHref(currentLink.href),
+            anchors,
+            ...parseLinkHref(currentLink.href, anchors),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
                 await api.updateLink(notePath, linkTitle, externalLink);
@@ -619,6 +621,7 @@ export function getAddLinkOpts(
         hasSelection: api.hasSelection(),
         target,
         display,
+        anchors,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
@@ -628,10 +631,16 @@ export function getAddLinkOpts(
 }
 
 /**
- * What a link's `href` opens the Add link dialog on: the note, with the anchor it points at, or
- * the address.
+ * What a link's `href` opens the Add link dialog on: one of the document's `anchors`, the note
+ * with the anchor it points at, or the address.
  */
-export function parseLinkHref(href: string): Pick<AddLinkOpts, "currentLink" | "currentBookmark"> {
+export function parseLinkHref(
+    href: string, anchors: string[] = []
+): Pick<AddLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
+    if (href.startsWith("#") && anchors.includes(href.slice(1))) {
+        return { currentAnchor: href.slice(1) };
+    }
+
     if (!href.startsWith("#")) {
         return { currentLink: { externalLink: href }, currentBookmark: undefined };
     }

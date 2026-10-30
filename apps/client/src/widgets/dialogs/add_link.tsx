@@ -13,21 +13,22 @@ import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
 import Button from "../react/Button";
-import { Card, OptionCardSection } from "../react/Card";
+import { Card, CardSection, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
+import NoItems from "../react/NoItems";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
-import SegmentedChoice from "../react/SegmentedChoice";
+import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 type LinkType = "reference-link" | "external-link" | "hyper-link";
 
-/** What the link points at: a note, or an address outside Trilium. */
-export type LinkTarget = "note" | "url";
+/** What the link points at: a note, an address outside Trilium, or an anchor in the document. */
+export type LinkTarget = "note" | "url" | "anchor";
 
 function findAnchorIds(content: string): string[] {
     const re = /<a\b([^>]*)>(<\/a>)?/g;
@@ -77,10 +78,17 @@ export interface AddLinkOpts {
     /** The anchor within the note that the link being edited points at. */
     currentBookmark?: string;
     /**
+     * The anchors in the document that the link goes into. When given, the dialog has an Anchors
+     * page that links to one of them.
+     */
+    anchors?: string[];
+    /** The anchor in `anchors` that the link being edited points at. */
+    currentAnchor?: string;
+    /**
      * The side a new link opens on, the note side by default. A selected URL opens on the web link
      * side.
      */
-    target?: LinkTarget;
+    target?: Exclude<LinkTarget, "anchor">;
     /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
@@ -190,8 +198,10 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     const [ target, setTarget ] = useState<LinkTarget>("note");
     const [ webLink, setWebLink ] = useState("");
     const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
+    const [ anchor, setAnchor ] = useState("");
     const [ isShowPending, setIsShowPending ] = useState(false);
     const webLinkRef = useRef<HTMLInputElement>(null);
+    const titleRef = useRef<HTMLInputElement>(null);
     // The text of the link being edited, while it stands in for the picked note's title.
     const keptTitleRef = useRef<string | null>(null);
     const initialBookmarkRef = useRef("");
@@ -208,9 +218,10 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         }
 
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
-        setTarget(initialWebLink !== null ? "url" : "note");
+        setTarget(getInitialTarget(opts, initialWebLink));
         setWebLink(initialWebLink ?? "");
         setDisplay(opts?.display ?? "plain");
+        setAnchor(opts?.currentAnchor ?? "");
         keptTitleRef.current = opts?.currentTitle ?? null;
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
             ? opts.currentTitle ?? null : null;
@@ -241,6 +252,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         setNoteTitle("");
         setLinkTitle("");
         setLinkType(opts?.hasSelection ? "hyper-link" : "reference-link");
+        setAnchor("");
         if (next === "url") {
             changeWebLink(text);
         } else {
@@ -253,6 +265,8 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         if (!autoFocus) return;
         if (target === "url") {
             webLinkRef.current?.focus();
+        } else if (target === "anchor") {
+            titleRef.current?.focus();
         } else {
             autocompleteRef.current?.focus();
         }
@@ -347,10 +361,11 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     }, [ isShowPending ]);
 
     async function fillAndFocus() {
-        if (target === "url") {
+        if (target === "url" || target === "anchor") {
+            const field = target === "url" ? webLinkRef.current : titleRef.current;
             if (autoFocus) {
-                webLinkRef.current?.focus();
-                webLinkRef.current?.select();
+                field?.focus();
+                field?.select();
             }
             return;
         }
@@ -390,7 +405,16 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
     /** Applies the link picked, through `opts.addLink` or `opts.addLinkPreview`. */
     function applyLink() {
-        if (!opts || !suggestion) return;
+        if (!opts) return;
+
+        if (target === "anchor") {
+            // An anchor link without a text of its own reads as the anchor's name. `true` keeps
+            // the href as it is.
+            if (anchor) opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
+            return;
+        }
+
+        if (!suggestion) return;
 
         if (suggestion.notePath) {
             // Handle note link, optionally with a bookmark anchor
@@ -421,23 +445,69 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
     const handleRef = useRef<NoteAutocompleteHandle>(null);
+    const isEditing = !!opts?.currentLink || !!opts?.currentAnchor;
     const title = opts?.fixLink ? t("add_link.fix_link")
-        : opts?.currentLink ? t("add_link.edit_link") : t("add_link.add_link");
+        : isEditing ? t("add_link.edit_link") : t("add_link.add_link");
     const buttonText = opts?.fixLink ? t("add_link.button_fix_link")
-        : opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link");
+        : isEditing ? t("add_link.button_edit_link") : t("add_link.button_add_link");
+
+    /** The text the link reads as while the title field is empty. */
+    function getTitlePlaceholder() {
+        if (target === "anchor") return anchor || undefined;
+        if (target !== "url") return undefined;
+        return isPreview ? t("add_link.page_title") : suggestion?.externalLink;
+    }
 
     const titleSection = (
         <OptionCardSection
             className="add-link-text" name="link-title" label={t("add_link.link_title")}
         >
             <FormTextBox
+                inputRef={titleRef}
                 currentValue={linkTitle}
-                placeholder={target !== "url" ? undefined
-                    : isPreview ? t("add_link.page_title") : suggestion?.externalLink}
+                placeholder={getTitlePlaceholder()}
                 onChange={setLinkTitle}
             />
         </OptionCardSection>
     );
+
+    const targets: SegmentedChoiceOption<LinkTarget>[] = [
+        { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
+        { value: "note", label: t("add_link.note"), iconSvg: internalLinkIcon }
+    ];
+    if (opts?.anchors) {
+        targets.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
+    }
+    const switcher = !opts?.fixLink && (
+        <SegmentedChoice<LinkTarget>
+            className="add-link-target"
+            options={targets}
+            currentValue={target}
+            onChange={(next) => changeTarget(next)}
+        />
+    );
+
+    const anchors = opts?.anchors ?? [];
+    const anchorPage = (<>
+        {showsTitle && <Card>{titleSection}</Card>}
+
+        <Card className="add-link-anchors" heading={t("add_link.target_anchor")}>
+            {anchors.length > 0 ? anchors.map((name) => (
+                <ChoiceCardSection
+                    key={name}
+                    icon="bx bx-bookmark"
+                    isChecked={name === anchor}
+                    onCheck={() => setAnchor(name)}
+                >
+                    {name}
+                </ChoiceCardSection>
+            )) : (
+                <CardSection className="add-link-no-anchors">
+                    <NoItems icon="bx bx-bookmark" text={t("add_link.no_anchors")} size="small" />
+                </CardSection>
+            )}
+        </Card>
+    </>);
     const displays = [
         { value: "plain", title: t("add_link.display_plain") },
         { value: "inline", title: t("add_link.display_inline") },
@@ -450,23 +520,16 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     return {
         title,
         buttonText,
-        hasLink: !!suggestion,
+        hasLink: target === "anchor" ? !!anchor : !!suggestion,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
         applyLink,
         reset,
-        body: (<>
-            {!opts?.fixLink && (
-                <SegmentedChoice<LinkTarget>
-                    className="add-link-target"
-                    options={[
-                        { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
-                        { value: "note", label: t("add_link.note"), iconSvg: internalLinkIcon }
-                    ]}
-                    currentValue={target}
-                    onChange={(next) => changeTarget(next)}
-                />
-            )}
+        body: target === "anchor" ? (<>
+            {switcher}
+            {anchorPage}
+        </>) : (<>
+            {switcher}
 
             <Card>
                 {target === "url" ? (
@@ -573,6 +636,17 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
             </Card>
         </>)
     };
+}
+
+/**
+ * The page the dialog opens on: Anchors for an edited anchor link, Web link when there is an
+ * `initialWebLink`, and Note otherwise.
+ */
+function getInitialTarget(
+    opts: AddLinkOpts | undefined, initialWebLink: string | null
+): LinkTarget {
+    if (opts?.currentAnchor) return "anchor";
+    return initialWebLink !== null ? "url" : "note";
 }
 
 /**

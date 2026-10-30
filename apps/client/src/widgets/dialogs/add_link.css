@@ -50,4 +50,22 @@
         width: fit-content;
         margin: 0 auto 1rem;
     }
+
+    .add-link-anchors .tn-card-body {
+        border-radius: var(--card-border-radius);
+        height: 150px;
+        overflow-y: auto;
+
+        > .tn-card-section {
+            flex-shrink: 0;
+        }
+
+        > .tn-card-choice:focus-visible {
+            outline-offset: -2px;
+        }
+
+        > .add-link-no-anchors {
+            flex-grow: 1;
+        }
+    }
 }

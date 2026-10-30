@@ -1,7 +1,7 @@
 import {
-    type CKEditorError, CKTextEditor, ClassicEditor, getLinkAtSelection, type IconPickerRequest,
-    type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode, onTextEditorError,
-    PopupEditor, replaceLinkAtSelection, SnippetDefinition
+    type CKEditorError, CKTextEditor, ClassicEditor, getAnchorNames, getLinkAtSelection,
+    type IconPickerRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
+    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -23,6 +23,8 @@ export interface CKEditorApi {
     getSelectedText(): string;
     /** The link around the caret or the selected link preview, or `null` outside one. */
     getCurrentLink(): LinkAtSelection | null;
+    /** The names of the anchors in the document. */
+    getAnchors(): string[];
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
     /**
      * Rewrites the link around the caret or the selected link preview, as {@link addLink} would
@@ -200,6 +202,10 @@ export default function CKEditor({
         getCurrentLink() {
             const editor = editorRef.current;
             return editor ? getLinkAtSelection(editor) : null;
+        },
+        getAnchors() {
+            const editor = editorRef.current;
+            return editor ? getAnchorNames(editor) : [];
         },
         async updateLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;

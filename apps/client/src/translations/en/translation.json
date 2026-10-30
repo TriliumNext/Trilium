@@ -75,7 +75,10 @@
     "display_inline": "Inline",
     "display_card": "Card",
     "display_embed": "YouTube embed",
-    "page_title": "Title of the web page"
+    "page_title": "Title of the web page",
+    "anchors": "Anchors",
+    "target_anchor": "Target anchor",
+    "no_anchors": "No anchors available."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",

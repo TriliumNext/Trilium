@@ -1,13 +1,14 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, Bold, ButtonView, ClassicEditor, CodeBlock,
-    ContextualBalloon, Essentials, keyCodes, type KeystrokeHandler, Link, LinkEditing, LinkUI,
-    Paragraph
+    _getModelData as getModelData, _setModelData as setModelData, Bold, Bookmark, ButtonView,
+    ClassicEditor, CodeBlock, ContextualBalloon, Essentials, keyCodes, type KeystrokeHandler,
+    Link, LinkEditing, LinkUI, Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import InternalLinkPlugin, {
-    COMMAND_NAME, getLinkAtSelection, type LinkDialogRequest, replaceLinkAtSelection
+    COMMAND_NAME, getAnchorNames, getLinkAtSelection, type LinkDialogRequest,
+    replaceLinkAtSelection
 } from "./internallink.js";
 import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
 
@@ -115,6 +116,26 @@ describe("InternalLinkPlugin", () => {
         editor.enableReadOnlyMode("test");
         expect(editor.commands.get(COMMAND_NAME)?.isEnabled).toBe(false);
         editor.disableReadOnlyMode("test");
+    });
+});
+
+describe("the anchors of the document", () => {
+    it("lists each name once, sorted, as anchors come and go", async () => {
+        const editor = await createTestEditor(
+            [ Essentials, Paragraph, Bookmark, InternalLinkPlugin ]
+        );
+        const zeta = "<bookmark bookmarkId=\"zeta\"></bookmark>";
+        setModelData(editor.model, `<paragraph>a${zeta}<bookmark bookmarkId="Alpha"></bookmark>`
+            + `[]b${zeta}</paragraph>`);
+        expect(getAnchorNames(editor)).toStrictEqual([ "Alpha", "zeta" ]);
+
+        setModelData(editor.model, `<paragraph>a${zeta}[]</paragraph>`);
+        expect(getAnchorNames(editor)).toStrictEqual([ "zeta" ]);
+    });
+
+    it("lists none in an editor without anchors", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
+        expect(getAnchorNames(editor)).toStrictEqual([]);
     });
 });
 

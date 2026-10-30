@@ -443,14 +443,25 @@ describe("parseLinkHref", () => {
             currentLink: { externalLink: "https://example.com/#top" }, currentBookmark: undefined
         });
     });
+
+    it("reads a link to one of the document's anchors as that anchor", () => {
+        expect(parseLinkHref("#intro", [ "intro" ])).toStrictEqual({ currentAnchor: "intro" });
+        expect(parseLinkHref("#intro", [ "outro" ])).toStrictEqual({
+            currentLink: { notePath: "intro" }, currentBookmark: undefined
+        });
+        expect(parseLinkHref("https://example.com/#intro", [ "intro" ])).toStrictEqual({
+            currentLink: { externalLink: "https://example.com/#intro" }, currentBookmark: undefined
+        });
+    });
 });
 
 describe("getAddLinkOpts", () => {
-    function createApi(currentLink: LinkAtSelection | null) {
+    function createApi(currentLink: LinkAtSelection | null, anchors: string[] = []) {
         return {
             hasSelection: vi.fn(() => true),
             getSelectedText: vi.fn(() => "chosen words"),
             getCurrentLink: vi.fn(() => currentLink),
+            getAnchors: vi.fn(() => anchors),
             addLink: vi.fn(),
             updateLink: vi.fn(),
             addLinkPreview: vi.fn(),
@@ -502,6 +513,19 @@ describe("getAddLinkOpts", () => {
         await opts.addLinkPreview?.("https://example.com", "inline", null);
         expect(api.addLinkPreview)
             .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null);
+    });
+
+    it("offers the document's anchors, and edits a link to one of them as that anchor", () => {
+        expect(getAddLinkOpts(createApi(null, [ "intro" ]), ready)).toMatchObject({
+            anchors: [ "intro" ]
+        });
+
+        const api = createApi({ href: "#intro", text: "Start", display: "plain" }, [ "intro" ]);
+        const opts = getAddLinkOpts(api, ready);
+        expect(opts).toMatchObject({
+            anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Start"
+        });
+        expect(opts.currentLink).toBeUndefined();
     });
 
     it("opens a new link on the side and with the display it is asked for", () => {

@@ -1,6 +1,6 @@
 import {
-    ButtonView, Command, ContextualBalloon, findAttributeRange, IconLink, IconPencil, LinkUI,
-    ModelLiveRange, Plugin
+    BookmarkEditing, ButtonView, Command, ContextualBalloon, findAttributeRange, IconLink,
+    IconPencil, LinkUI, ModelLiveRange, Plugin
 } from 'ckeditor5';
 import type { Editor, LinkCommand, ModelRange, View } from 'ckeditor5';
 import HostedBalloon from '../hosted_balloon.js';
@@ -260,6 +260,16 @@ export async function replaceLinkAtSelection(editor: Editor, href: string, text:
         const inserted = model.insertContent(writer.createText(text, attributes), found.range);
         writer.setSelection(inserted.end);
     });
+}
+
+/** The names of the anchors in the document, sorted as the anchor list of `LinkUI` sorts them. */
+export function getAnchorNames(editor: Editor): string[] {
+    if (!editor.plugins.has(BookmarkEditing)) {
+        return [];
+    }
+
+    const names = editor.plugins.get(BookmarkEditing).getAllBookmarkNames();
+    return [ ...names ].sort((a, b) => a.localeCompare(b));
 }
 
 function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange } | null {

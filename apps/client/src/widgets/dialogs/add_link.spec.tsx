@@ -112,6 +112,14 @@ describe("AddLinkDialog", () => {
         return container.querySelector<HTMLSelectElement>(".add-link-display select");
     }
 
+    function anchorRows() {
+        return [ ...container.querySelectorAll<HTMLElement>(".add-link-anchors .tn-card-choice") ];
+    }
+
+    function checkedAnchor() {
+        return anchorRows().find((row) => row.getAttribute("aria-checked") === "true")?.textContent;
+    }
+
     function displays() {
         return [ ...displaySelect()?.options ?? [] ].map((option) => option.textContent);
     }
@@ -392,6 +400,69 @@ describe("AddLinkDialog", () => {
         expect(choice()).toStrictEqual([]);
         expect(container.querySelector(".note-autocomplete")).not.toBeNull();
     });
+
+    it("links an anchor of the document, read as its name unless given a text", async () => {
+        await open({ anchors: [ "intro", "outro" ] });
+        expect(choice().map((button) => button.textContent?.trim()))
+            .toStrictEqual([ "add_link.web_link", "add_link.note", "add_link.anchors" ]);
+        expect(choice()[2]?.querySelector(".bx-bookmark")).not.toBeNull();
+        expect(current()).toBe("add_link.note");
+
+        await act(async () => choice()[2]?.click());
+        expect(current()).toBe("add_link.anchors");
+        expect(container.querySelector(".note-autocomplete")).toBeNull();
+        expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
+        const titleCard = field("text")?.closest(".tn-card");
+        expect(titleCard?.nextElementSibling?.classList.contains("add-link-anchors")).toBe(true);
+        expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
+        expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
+            .toBe(true);
+        expect(checkedAnchor()).toBeUndefined();
+
+        await act(async () => anchorRows()[1]?.click());
+        expect(checkedAnchor()).toBe("outro");
+        expect(field("text")?.placeholder).toBe("outro");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#outro", "outro", true);
+
+        await open({ anchors: [ "intro", "outro" ] });
+        await act(async () => choice()[2]?.click());
+        await act(async () => anchorRows()[0]?.click());
+        // Another page drops the checked anchor.
+        await act(async () => choice()[1]?.click());
+        await act(async () => choice()[2]?.click());
+        expect(checkedAnchor()).toBeUndefined();
+        await act(async () => anchorRows()[0]?.click());
+        await type(field("text"), "Read the intro");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "Read the intro", true);
+    });
+
+    it("opens an edited anchor link on its anchor; a selection hides the title", async () => {
+        await open({
+            anchors: [ "intro", "outro" ], currentAnchor: "outro", currentTitle: "See the end"
+        });
+        expect(container.querySelector(".modal-title")?.textContent).toBe("add_link.edit_link");
+        expect(current()).toBe("add_link.anchors");
+        expect(checkedAnchor()).toBe("outro");
+        expect(field("text")?.value).toBe("See the end");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#outro", "See the end", true);
+
+        await open({ text: "chosen words", hasSelection: true, anchors: [ "intro" ] });
+        await act(async () => choice()[2]?.click());
+        expect(field("text")).toBeNull();
+        expect(container.querySelectorAll(".tn-card")).toHaveLength(1);
+        await act(async () => anchorRows()[0]?.click());
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
+
+        await open({ anchors: [] });
+        await act(async () => choice()[2]?.click());
+        expect(anchorRows()).toStrictEqual([]);
+        expect(container.querySelector(".add-link-anchors .no-items")?.textContent)
+            .toBe("add_link.no_anchors");
+    });
 });
 
 describe("AddLinkBalloon", () => {
@@ -463,6 +534,31 @@ describe("AddLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink).toHaveBeenCalledExactlyOnceWith("https://example.com/page", "Page", true);
+    });
+
+    it("focuses the title of the Anchors page and applies once an anchor is checked", async () => {
+        const edited = await show({
+            anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Intro"
+        });
+        const title = edited.querySelector<HTMLInputElement>(".add-link-text input");
+        expect(document.activeElement).toBe(title);
+        expect([ title?.selectionStart, title?.selectionEnd ]).toStrictEqual([ 0, 5 ]);
+        await submit(edited);
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "Intro", true);
+        expect(onClose).toHaveBeenCalledOnce();
+
+        const form = await show({ anchors: [ "intro" ] });
+        const buttons = form.querySelectorAll<HTMLButtonElement>(".tn-segmented-choice button");
+        await act(async () => buttons[2]?.click());
+        expect(document.activeElement).toBe(form.querySelector(".add-link-text input"));
+        await submit(form);
+        expect(onClose).toHaveBeenCalledOnce();
+
+        const row = form.querySelector<HTMLElement>(".add-link-anchors .tn-card-choice");
+        await act(async () => row?.click());
+        await submit(form);
+        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
     });
 });
 

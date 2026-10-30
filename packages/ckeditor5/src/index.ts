@@ -29,7 +29,9 @@ export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js
 export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { ChildNoteHost } from "./plugins/child_note.js";
-export { getLinkAtSelection, replaceLinkAtSelection } from "./plugins/internallink.js";
+export {
+    getAnchorNames, getLinkAtSelection, replaceLinkAtSelection
+} from "./plugins/internallink.js";
 export type { LinkAtSelection, LinkDialogRequest } from "./plugins/internallink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
