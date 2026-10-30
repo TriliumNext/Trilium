@@ -2931,7 +2931,6 @@
       "download-image": "Bild herunterladen",
       "drag-to-reposition-the-collapsible-block": "Ziehen, um den einklappbaren Block zu verschieben",
       "edit-task-states": "Aufgabenzustände bearbeiten",
-      "edit-title": "Titel bearbeiten",
       "embed": "Einbetten",
       "inline": "Inline",
       "insert-a-0-mermaid-diagram-template": "Mermaid-Diagrammvorlage „%0“ einfügen",
@@ -2950,11 +2949,9 @@
       "select-collapsible-block": "Einklappbaren Block auswählen",
       "summary": "Zusammenfassung",
       "task-state": "Aufgabenstatus:",
-      "title": "Titel",
       "toggle-collapsible-block": "Einklappbaren Block umschalten",
       "type-the-content-here": "Inhalt hier eingeben...",
-      "undefined-custom-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand",
-      "url": "URL"
+      "undefined-custom-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand"
     }
   },
   "image_navigation": {
