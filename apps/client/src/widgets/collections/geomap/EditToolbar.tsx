@@ -1,5 +1,3 @@
-import "./EditToolbar.css";
-
 import { useContext } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -52,7 +50,6 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, on
                 title={placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title")}
                 icon="bx-pin"
                 text={placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
-                className="geo-add-marker-button"
                 active={placing}
                 disabled={isReadOnly}
                 onClick={onTogglePlacement}

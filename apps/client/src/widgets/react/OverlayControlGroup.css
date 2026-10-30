@@ -81,6 +81,15 @@
             height: var(--_overlay-height);
             min-width: 50px;
             font-size: var(--overlay-button-text-size, 14px);
+
+            &:has(> .bx) {
+                gap: 6px;
+                padding-inline: 12px;
+
+                > .bx {
+                    font-size: var(--overlay-button-icon-size, 16px);
+                }
+            }
         }
 
         &:first-child {
