@@ -116,6 +116,7 @@ const NEW_SLIDE_NOTES = {
     canvas: { type: "canvas", mime: "application/json" },
     board: { type: "book", templateNoteId: "_template_board" },
     table: { type: "book", templateNoteId: "_template_table" },
+    mermaid: { type: "mermaid", mime: "text/mermaid" },
     webView: { type: "webView", mime: "" },
     code: { type: "code", mime: "text/plain" },
     spreadsheet: { type: "spreadsheet", mime: "application/json" }
@@ -127,8 +128,11 @@ export interface NewSlideTypeOption {
     type: NewSlideType;
     title: string;
     icon: string;
-    /** Whether a new slide of the type starts editing in place, as `Slide` can edit it. */
-    isEditedInPlace: boolean;
+    /**
+     * How a new slide of the type starts editing: in place, as `Slide` edits it, or in quick edit.
+     * Left out for a slide that is only shown.
+     */
+    startsEditing: "inPlace" | "quickEdit" | undefined;
 }
 
 /**
@@ -138,17 +142,25 @@ export interface NewSlideTypeOption {
 export function getNewSlideTypes(): NewSlideTypeOption[][] {
     return [
         [
-            { type: "text", title: t("note_types.text"), icon: "bx bx-note", isEditedInPlace: true },
-            { type: "canvas", title: t("note_types.canvas"), icon: NOTE_TYPE_ICONS.canvas, isEditedInPlace: true }
+            { type: "text", title: t("note_types.text"), icon: "bx bx-note", startsEditing: "inPlace" },
+            { type: "canvas", title: t("note_types.canvas"), icon: NOTE_TYPE_ICONS.canvas, startsEditing: "inPlace" }
         ],
         [
-            { type: "board", title: t("book_properties.board"), icon: "bx bx-columns", isEditedInPlace: true },
-            { type: "table", title: t("book_properties.table"), icon: "bx bx-table", isEditedInPlace: true },
-            { type: "webView", title: t("note_types.web-view"), icon: NOTE_TYPE_ICONS.webView, isEditedInPlace: false },
-            { type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, isEditedInPlace: false },
+            { type: "board", title: t("book_properties.board"), icon: "bx bx-columns", startsEditing: "inPlace" },
+            { type: "table", title: t("book_properties.table"), icon: "bx bx-table", startsEditing: "inPlace" },
+            // A new diagram shows nothing, so its source is written at once.
+            {
+                type: "mermaid", title: t("note_types.mermaid-diagram"), icon: NOTE_TYPE_ICONS.mermaid,
+                startsEditing: "quickEdit"
+            },
+            {
+                type: "webView", title: t("note_types.web-view"), icon: NOTE_TYPE_ICONS.webView,
+                startsEditing: undefined
+            },
+            { type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, startsEditing: undefined },
             {
                 type: "spreadsheet", title: t("note_types.spreadsheet"), icon: NOTE_TYPE_ICONS.spreadsheet,
-                isEditedInPlace: false
+                startsEditing: undefined
             }
         ]
     ];

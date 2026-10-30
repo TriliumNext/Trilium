@@ -250,13 +250,13 @@ describe("canEditSlideInPlace", () => {
 });
 
 describe("getNewSlideTypes", () => {
-    it("lists first the slides edited in place, then the others that a slide shows", () => {
-        expect(getNewSlideTypes().map(group => group.map(({ type, isEditedInPlace }) => [ type, isEditedInPlace ])))
+    it("lists the slides edited in place, then the others that a slide shows, with how each starts editing", () => {
+        expect(getNewSlideTypes().map(group => group.map(({ type, startsEditing }) => [ type, startsEditing ])))
             .toEqual([
-                [ [ "text", true ], [ "canvas", true ] ],
+                [ [ "text", "inPlace" ], [ "canvas", "inPlace" ] ],
                 [
-                    [ "board", true ], [ "table", true ],
-                    [ "webView", false ], [ "code", false ], [ "spreadsheet", false ]
+                    [ "board", "inPlace" ], [ "table", "inPlace" ], [ "mermaid", "quickEdit" ],
+                    [ "webView", undefined ], [ "code", undefined ], [ "spreadsheet", undefined ]
                 ]
             ]);
     });
@@ -291,6 +291,10 @@ describe("createSlide", () => {
         await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "code");
         expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
             type: "code", mime: "text/plain"
+        }));
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "mermaid");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "mermaid", mime: "text/mermaid"
         }));
 
         getBranchId.mockRestore();

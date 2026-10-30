@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
 import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
+import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -24,7 +25,7 @@ import { useClosingSlides } from "./closing_slides";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
     getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
-    getNewSlideTypes, PresentationModel, SlideMove
+    getNewSlideTypes, NewSlideTypeOption, PresentationModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
@@ -64,13 +65,16 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const refreshIdRef = useRef(0);
     const activeNoteId = useActiveSlideNoteId(api);
     // A slide that the presentation goes to once the model has it, and starts editing for a new slide.
-    const [ pendingSlide, setPendingSlide ] = useState<{ noteId: string, edit: boolean }>();
+    const [ pendingSlide, setPendingSlide ] = useState<{
+        noteId: string;
+        edit: NewSlideTypeOption["startsEditing"];
+    }>();
     const canAddSlides = canEditSlides && note.type !== "search";
     const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
-    async function addSlide(position: NewSlidePosition, { type, isEditedInPlace } = getNewSlideTypes()[0][0]) {
+    async function addSlide(position: NewSlidePosition, { type, startsEditing } = getNewSlideTypes()[0][0]) {
         const noteId = await createSlide(position, type);
-        if (noteId) setPendingSlide({ noteId, edit: isEditedInPlace });
+        if (noteId) setPendingSlide({ noteId, edit: startsEditing });
     }
 
     function editSlide(noteId: string) {
@@ -90,7 +94,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         async duplicate(noteId) {
             if (!presentation) return;
             const copyNoteId = await duplicateSlide(presentation, note.noteId, noteId);
-            if (copyNoteId) setPendingSlide({ noteId: copyNoteId, edit: false });
+            if (copyNoteId) setPendingSlide({ noteId: copyNoteId, edit: undefined });
         },
         async delete(noteId) {
             if (!presentation || !await deleteSlide(presentation, note.noteId, noteId)) return;
@@ -119,7 +123,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     }
 
     function onPendingSlideShown(noteId: string) {
-        if (pendingSlide?.edit) startEditing(noteId);
+        if (pendingSlide?.edit === "inPlace") {
+            startEditing(noteId);
+        } else if (pendingSlide?.edit === "quickEdit") {
+            void appContext.triggerCommand("openInPopup", { noteIdOrPath: noteId });
+        }
         setPendingSlide(undefined);
     }
 

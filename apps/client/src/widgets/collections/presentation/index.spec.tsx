@@ -83,7 +83,7 @@ describe("an empty presentation", () => {
             const items = await vi.waitFor(() => {
                 const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
                 expect(found.map(item => item.textContent?.trim())).toEqual([
-                    "Text", "Canvas", "Board", "Table", "Web View", "Code", "Spreadsheet"
+                    "Text", "Canvas", "Board", "Table", "Mermaid Diagram", "Web View", "Code", "Spreadsheet"
                 ]);
                 // The slides edited in place come first, apart from the others.
                 expect(found[2].previousElementSibling?.classList.contains("dropdown-divider")).toBe(true);

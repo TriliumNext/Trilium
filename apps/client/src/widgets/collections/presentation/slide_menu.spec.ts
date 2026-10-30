@@ -96,7 +96,9 @@ describe("buildSlideMenuItems", () => {
             runItem(findItem(findItem(items, title).items ?? [], subtitle))
         );
 
-        const slideTypes = [ "Text", "Canvas", "-", "Board", "Table", "Web View", "Code", "Spreadsheet" ];
+        const slideTypes = [
+            "Text", "Canvas", "-", "Board", "Table", "Mermaid Diagram", "Web View", "Code", "Spreadsheet"
+        ];
         expect(describeMenu(findItem(items, "New slide after").items ?? [])).toEqual(slideTypes);
         expect(describeMenu(findItem(items, "New vertical slide").items ?? [])).toEqual(slideTypes);
 
