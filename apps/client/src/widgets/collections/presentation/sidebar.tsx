@@ -20,6 +20,8 @@ interface SlideSidebarProps {
     closingContents: Record<string, SlideContent>;
     /** The note of the slide that Reveal.js shows. */
     activeNoteId: string | undefined;
+    /** Moves to the slide of a clicked thumbnail. */
+    onSelectSlide: (noteId: string) => void;
 }
 
 /**
@@ -27,7 +29,9 @@ interface SlideSidebarProps {
  * Each thumbnail renders the slide's content in a shadow root of its own, styled by the presentation's
  * theme, at full slide size scaled down.
  */
-export default function SlideSidebar({ presentation, stylesheets, closingContents, activeNoteId }: SlideSidebarProps) {
+export default function SlideSidebar({
+    presentation, stylesheets, closingContents, activeNoteId, onSelectSlide
+}: SlideSidebarProps) {
     const sheets = useMemo(() => buildStyleSheets([ ...stylesheets, thumbnailStylesheet ]), [ stylesheets ]);
     const fitObserver = useFitObserver();
     const listRef = useRef<HTMLOListElement>(null);
@@ -38,13 +42,24 @@ export default function SlideSidebar({ presentation, stylesheets, closingContent
 
     function renderThumbnail(slide: PresentationSlideBaseModel) {
         const closingContent = closingContents[slide.noteId];
+        const isActive = slide.noteId === activeNoteId;
         return (
-            <SlideThumbnail
-                slide={closingContent ? { ...slide, content: closingContent } : slide}
-                isActive={slide.noteId === activeNoteId}
-                sheets={sheets}
-                fitObserver={fitObserver}
-            />
+            <button
+                type="button"
+                className="slide-thumbnail-button"
+                aria-label={froca.getNoteFromCache(slide.noteId)?.title}
+                aria-current={isActive ? "true" : undefined}
+                // Keeps the focus where it was, so that Space still moves through the slides.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onSelectSlide(slide.noteId)}
+            >
+                <SlideThumbnail
+                    slide={closingContent ? { ...slide, content: closingContent } : slide}
+                    isActive={isActive}
+                    sheets={sheets}
+                    fitObserver={fitObserver}
+                />
+            </button>
         );
     }
 
@@ -78,24 +93,19 @@ interface SlideThumbnailProps extends ThumbnailContentProps {
 
 function SlideThumbnail({ slide, isActive, sheets, fitObserver }: SlideThumbnailProps) {
     const className = clsx("slide-thumbnail", { active: isActive });
-    const ariaCurrent = isActive ? "true" : undefined;
 
     // A web view or a collection is live content, which a thumbnail does not load a second time.
     if (slide.webViewSrc || slide.isCollection) {
         const icon = slide.webViewSrc ? "bx bx-globe" : froca.getNoteFromCache(slide.noteId)?.getIcon();
         return (
-            <div
-                className={clsx(className, "slide-thumbnail-placeholder")}
-                data-note-id={slide.noteId}
-                aria-current={ariaCurrent}
-            >
+            <div className={clsx(className, "slide-thumbnail-placeholder")} data-note-id={slide.noteId}>
                 <Icon icon={icon} />
             </div>
         );
     }
 
     return (
-        <ShadowDom className={className} data-note-id={slide.noteId} aria-current={ariaCurrent}>
+        <ShadowDom className={className} data-note-id={slide.noteId}>
             <ThumbnailContent slide={slide} sheets={sheets} fitObserver={fitObserver} />
         </ShadowDom>
     );

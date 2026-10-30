@@ -138,6 +138,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         stylesheets={stylesheets}
                         closingContents={closingSlides.contents}
                         activeNoteId={activeNoteId}
+                        onSelectSlide={(noteId) => api && goToSlide(api, noteId)}
                     />
                     <ShadowDom
                         className="presentation-container"
@@ -438,7 +439,7 @@ function Presentation({
                     return false;
                 }
 
-                return !isTypingIn(event);
+                return !isTypingIn(event) && !isPressingButton(event);
             },
         });
         const container = containerRef.current;
@@ -582,6 +583,16 @@ export function isTypingIn(event: Event) {
     return target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
 }
 
+/**
+ * Whether a key press activates a focused button, such as a thumbnail in the sidebar. Reveal.js listens
+ * to the whole document, so it would otherwise also move to the next slide on the same Space.
+ */
+export function isPressingButton(event: KeyboardEvent) {
+    const target = event.composedPath()[0];
+    return (event.key === " " || event.key === "Enter")
+        && target instanceof Element && target.closest("button") !== null;
+}
+
 function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     if (!slide) return;
     return slide.dataset.noteId;
@@ -636,14 +647,21 @@ export function followSlideLinks(container: HTMLElement, api: RevealApi) {
         if (!link) return;
         const url = new URL(link.href);
         if (!url.hash.startsWith("#/slide-")) return;
-        const targetId = url.hash.substring(8);
-        const slide = container.querySelector<HTMLElement>(`#slide-${targetId}`);
-        if (!slide) return;
-
-        const { h, v, f } = api.getIndices(slide);
-        api.slide(h, v, f);
+        goToSlide(api, url.hash.substring(8));
     };
 
     container.addEventListener("click", onClick);
     return () => container.removeEventListener("click", onClick);
+}
+
+/**
+ * Moves to the slide of the note `noteId`, if it is a slide. The slide is looked up in the
+ * `.reveal` element, as `document.getElementById()` does not reach into the shadow root.
+ */
+export function goToSlide(api: RevealApi, noteId: string) {
+    const slide = api.getRevealElement()?.querySelector<HTMLElement>(`#slide-${noteId}`);
+    if (!slide) return;
+
+    const { h, v, f } = api.getIndices(slide);
+    api.slide(h, v, f);
 }

@@ -7,7 +7,7 @@ import type { PresentationModel } from "./model";
 import SlideSidebar from "./sidebar";
 
 vi.mock("../../../services/froca", () => ({
-    default: { getNoteFromCache: () => ({ getIcon: () => "bx bx-columns" }) }
+    default: { getNoteFromCache: (noteId: string) => ({ title: `Title of ${noteId}`, getIcon: () => "bx bx-columns" }) }
 }));
 
 const presentation: PresentationModel = {
@@ -79,20 +79,42 @@ describe("SlideSidebar", () => {
             .map(thumbnail => thumbnail.getAttribute("data-note-id"));
 
         expect(getActive()).toEqual([ "intro" ]);
-        expect(sidebar.querySelector("[data-note-id=intro]")?.getAttribute("aria-current")).toBe("true");
+        expect(getButton(sidebar, "intro").getAttribute("aria-current")).toBe("true");
         expect(scrollIntoView.mock.contexts.at(-1)).toBe(sidebar.querySelector("[data-note-id=intro]"));
 
         const container = sidebar.parentElement ?? undefined;
         renderSidebar({ activeNoteId: "second", container });
         expect(getActive()).toEqual([ "second" ]);
-        expect(sidebar.querySelector("[data-note-id=intro]")?.hasAttribute("aria-current")).toBe(false);
+        expect(getButton(sidebar, "intro").hasAttribute("aria-current")).toBe(false);
         expect(scrollIntoView.mock.contexts.at(-1)).toBe(sidebar.querySelector("[data-note-id=second]"));
 
         renderSidebar({ activeNoteId: "board", container });
         expect(getActive()).toEqual([ "board" ]);
         scrollIntoView.mockRestore();
     });
+
+    it("selects the slide of a clicked thumbnail, without taking the keyboard from the slides", () => {
+        const onSelectSlide = vi.fn();
+        const sidebar = renderSidebar({ onSelectSlide });
+
+        const button = getButton(sidebar, "second");
+        expect(button.getAttribute("type")).toBe("button");
+        expect(button.getAttribute("aria-label")).toBe("Title of second");
+        button.click();
+        getButton(sidebar, "web").click();
+        expect(onSelectSlide.mock.calls).toEqual([ [ "second" ], [ "web" ] ]);
+
+        const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        button.dispatchEvent(mouseDown);
+        expect(mouseDown.defaultPrevented).toBe(true);
+    });
 });
+
+function getButton(sidebar: HTMLElement, noteId: string) {
+    const button = sidebar.querySelector(`[data-note-id=${noteId}]`)?.closest("button");
+    if (!button) throw new Error(`The thumbnail of ${noteId} is not in a button.`);
+    return button;
+}
 
 describe("useActiveSlideNoteId", () => {
     it("follows the slide that Reveal.js shows", async () => {
@@ -136,11 +158,14 @@ const stylesheets = [ ":host { --r-main-color: black; }", ".reveal { color: var(
 interface RenderOptions {
     closingContents?: Record<string, { __html: string }>;
     activeNoteId?: string;
+    onSelectSlide?: (noteId: string) => void;
     /** Renders again into the container of an earlier render. */
     container?: HTMLElement;
 }
 
-function renderSidebar({ closingContents = {}, activeNoteId, container = document.createElement("div") }: RenderOptions = {}) {
+function renderSidebar({
+    closingContents = {}, activeNoteId, onSelectSlide = () => {}, container = document.createElement("div")
+}: RenderOptions = {}) {
     if (!container.isConnected) document.body.appendChild(container);
     act(() => {
         render(
@@ -149,6 +174,7 @@ function renderSidebar({ closingContents = {}, activeNoteId, container = documen
                 stylesheets={stylesheets}
                 closingContents={closingContents}
                 activeNoteId={activeNoteId}
+                onSelectSlide={onSelectSlide}
             />,
             container
         );

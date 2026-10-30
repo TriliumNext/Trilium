@@ -32,6 +32,15 @@
         }
     }
 
+    .slide-thumbnail-button {
+        display: block;
+        padding: 0;
+        border: 0;
+        border-radius: var(--bs-border-radius);
+        background: none;
+        cursor: pointer;
+    }
+
     .slide-thumbnail {
         position: relative;
         width: var(--thumbnail-width);

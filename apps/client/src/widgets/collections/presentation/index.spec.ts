@@ -2,7 +2,7 @@ import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createFitObserver, fitSlideContent } from "./fit";
-import { followSlideLinks, keepKeyboardInPresentation } from "./index";
+import { followSlideLinks, goToSlide, isPressingButton, keepKeyboardInPresentation } from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -153,6 +153,7 @@ describe("followSlideLinks", () => {
         target.id = "slide-target";
         container.append(target);
         const api = {
+            getRevealElement: () => container,
             getIndices: vi.fn(() => ({ h: 2, v: 1, f: undefined })),
             slide: vi.fn()
         };
@@ -176,5 +177,51 @@ describe("followSlideLinks", () => {
         stop();
         link.click();
         expect(api.slide).not.toHaveBeenCalled();
+    });
+});
+
+describe("goToSlide", () => {
+    it("moves to the slide of a note, and does nothing for a note that is not a slide", () => {
+        const container = document.createElement("div");
+        const target = document.createElement("section");
+        target.id = "slide-target";
+        container.append(target);
+        const api = {
+            getRevealElement: () => container,
+            getIndices: vi.fn(() => ({ h: 3, v: 2, f: undefined })),
+            slide: vi.fn()
+        };
+
+        goToSlide(api as unknown as RevealApi, "target");
+        expect(api.getIndices).toHaveBeenCalledWith(target);
+        expect(api.slide).toHaveBeenCalledWith(3, 2, undefined);
+
+        api.slide.mockClear();
+        goToSlide(api as unknown as RevealApi, "missing");
+        expect(api.slide).not.toHaveBeenCalled();
+    });
+});
+
+describe("isPressingButton", () => {
+    it("leaves Space and Enter on a focused button to the button, and every other key to Reveal.js", () => {
+        const button = document.createElement("button");
+        const icon = document.createElement("span");
+        button.append(icon);
+        const field = document.createElement("div");
+        document.body.append(button, field);
+        const press = (target: HTMLElement, key: string) => {
+            let pressing: boolean | undefined;
+            const listener = (e: Event) => { pressing = isPressingButton(e as KeyboardEvent); };
+            document.addEventListener("keydown", listener);
+            target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, composed: true }));
+            document.removeEventListener("keydown", listener);
+            return pressing;
+        };
+
+        expect(press(button, " ")).toBe(true);
+        expect(press(icon, "Enter")).toBe(true);
+        expect(press(button, "ArrowRight")).toBe(false);
+        expect(press(field, " ")).toBe(false);
+        document.body.replaceChildren();
     });
 });

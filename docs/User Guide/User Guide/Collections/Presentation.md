@@ -19,7 +19,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 ## Interaction and navigation
 
-A sidebar to the left of the slides shows a thumbnail of every slide in the presentation's theme, with vertical slides indented under the slide they belong to. The slide being shown is outlined, and the sidebar scrolls to keep it in view. Web view, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides are shown as an icon. The sidebar is hidden when the note is too narrow to fit it.
+A sidebar to the left of the slides shows a thumbnail of every slide in the presentation's theme, with vertical slides indented under the slide they belong to. The slide being shown is outlined, and the sidebar scrolls to keep it in view. Click a thumbnail to go to its slide. Web view, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides are shown as an icon. The sidebar is hidden when the note is too narrow to fit it.
 
 In the floating toolbar (top-right):
 
