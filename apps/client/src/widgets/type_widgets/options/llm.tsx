@@ -132,6 +132,7 @@ function ProviderSettings({ kind, allProviders, setAllProviders }: {
 
 function McpSettings() {
     const [mcpEnabled, setMcpEnabled] = useTriliumOptionBool("mcpEnabled");
+    const [mcpReadOnly, setMcpReadOnly] = useTriliumOptionBool("mcpReadOnly");
     const [networkInfo, setNetworkInfo] = useState<NetworkAddressesResponse | null>(null);
     const localUrl = useMemo(() => getMcpEndpointUrl(), []);
     const tokenPlaceholder = t("llm.mcp_config_token_placeholder");
@@ -185,6 +186,16 @@ function McpSettings() {
 
             {mcpServing && (
                 <>
+                    <OptionCardSection
+                        name="mcp-read-only"
+                        label={t("llm.mcp_read_only")}
+                        description={t("llm.mcp_read_only_description")}
+                    >
+                        <FormToggle
+                            currentValue={mcpReadOnly}
+                            onChange={setMcpReadOnly}
+                        />
+                    </OptionCardSection>
                     <OptionCardSection
                         name="mcp-endpoint"
                         label={t("llm.mcp_endpoint_title")}

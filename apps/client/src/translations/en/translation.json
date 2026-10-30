@@ -4356,6 +4356,8 @@
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP server",
     "mcp_enabled_description": "Expose a Model Context Protocol (MCP) endpoint so that AI coding assistants (e.g. Claude Code, GitHub Copilot) can read and modify your notes. Every request must be authenticated with an ETAPI token.",
+    "mcp_read_only": "Read-only mode",
+    "mcp_read_only_description": "Only expose read-only tools to the MCP client. Write operations will be disabled.",
     "mcp_unavailable_standalone": "Unavailable in the browser version: assistants would connect to Trilium over the network, but this build has no address to give them, since it runs entirely inside this page.",
     "mcp_endpoint_title": "Endpoint URL",
     "mcp_endpoint_description": "Add one of these URLs to your AI assistant's MCP configuration, using the HTTP (streamable) transport rather than SSE.",

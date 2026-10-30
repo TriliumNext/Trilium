@@ -364,6 +364,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     aiAssistantModel: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
     mcpEnabled: boolean;
+    /** Whether the MCP server runs in read-only mode (only read tools are available). */
+    mcpReadOnly: boolean;
 
     // OCR options
     ocrEnabled: boolean;
