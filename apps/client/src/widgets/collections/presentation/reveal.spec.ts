@@ -2,7 +2,7 @@ import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-    followSlideLinks, goToSlide, isPressingButton, keepKeyboardInPresentation, keepSlideShown
+    followSlideLinks, goToSlide, isKeyForPresentation, isPressingButton, keepKeyboardInPresentation, keepSlideShown
 } from "./reveal";
 
 describe("keepKeyboardInPresentation", () => {
@@ -132,6 +132,37 @@ describe("isPressingButton", () => {
         expect(press(icon, "Enter")).toBe(true);
         expect(press(button, "ArrowRight")).toBe(false);
         expect(press(field, " ")).toBe(false);
+        document.body.replaceChildren();
+    });
+});
+
+describe("isKeyForPresentation", () => {
+    it("takes keys pressed in the view, or with nothing focused while its note context is active", () => {
+        const view = document.createElement("div");
+        const thumbnail = document.createElement("button");
+        view.append(thumbnail);
+        const modal = document.createElement("div");
+        modal.tabIndex = -1;
+        modal.append(view);
+        const tree = document.createElement("div");
+        tree.tabIndex = -1;
+        document.body.append(modal, tree);
+        const press = (target: HTMLElement, isContextActive: boolean) => {
+            let isForPresentation: boolean | undefined;
+            const listener = (e: Event) => {
+                isForPresentation = isKeyForPresentation(e as KeyboardEvent, view, isContextActive);
+            };
+            document.addEventListener("keydown", listener);
+            target.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, composed: true }));
+            document.removeEventListener("keydown", listener);
+            return isForPresentation;
+        };
+
+        expect(press(thumbnail, false)).toBe(true);
+        expect(press(modal, false)).toBe(true);
+        expect(press(document.body, true)).toBe(true);
+        expect(press(document.body, false)).toBe(false);
+        expect(press(tree, true)).toBe(false);
         document.body.replaceChildren();
     });
 });

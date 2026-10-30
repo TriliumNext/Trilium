@@ -83,7 +83,7 @@ In full-screen, the editing buttons are hidden, and the other two groups fade ou
 
 ### Keyboard shortcuts
 
-The following keyboard shortcuts are supported:
+The following keyboard shortcuts work while the presentation is the active note: after clicking the slides or the sidebar, and in full-screen. Keys pressed in another split, the note tree or a field go there instead.
 
 *   Press <kbd>←</kbd> and <kbd>→</kbd> (or <kbd>H</kbd> and <kbd>L</kbd>) to go to the slide on the left or on the right (horizontal).
 *   Press <kbd>↑</kbd> and <kbd>↓</kbd>  (or <kbd>K</kbd> and <kbd>J</kbd>) to go to the upward or downward slide (vertical).

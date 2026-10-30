@@ -199,11 +199,17 @@ describe("Presentation keys", () => {
             target.dispatchEvent(new KeyboardEvent("keydown", { key: "f", bubbles: true, composed: true }));
             return allowed;
         };
+        const reveal = container.querySelector<HTMLElement>(".reveal");
+        expect(reveal).not.toBeNull();
         const slides = document.createElement("div");
         const field = document.createElement("input");
-        document.body.append(slides, field);
+        const outside = document.createElement("div");
+        outside.tabIndex = -1;
+        reveal?.append(slides, field);
+        document.body.append(outside);
         expect(press(slides)).toBe(true);
         expect(press(field)).toBe(false);
+        expect(press(outside)).toBe(false);
     });
 });
 

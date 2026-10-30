@@ -33,6 +33,19 @@ export function isPressingButton(event: KeyboardEvent) {
         && target instanceof Element && target.closest("button") !== null;
 }
 
+/**
+ * Whether a key press is meant for the presentation in `view`: pressed inside it or on an element that holds
+ * it, such as a dialog, or with nothing focused while its note context is the active one. Reveal.js listens
+ * to the whole document, so every open presentation, in another split or tab, would otherwise take the key.
+ */
+export function isKeyForPresentation(event: KeyboardEvent, view: Element, isContextActive: boolean) {
+    const path = event.composedPath();
+    if (path.includes(view)) return true;
+    const target = path[0];
+    if (target === document.body) return isContextActive;
+    return target instanceof Element && target.contains(view);
+}
+
 export function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     if (!slide) return;
     return slide.dataset.noteId;

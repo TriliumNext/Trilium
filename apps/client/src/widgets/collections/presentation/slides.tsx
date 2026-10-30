@@ -2,6 +2,7 @@ import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 import Reveal, { RevealApi } from "reveal.js";
 
+import appContext from "../../../components/app_context";
 import froca from "../../../services/froca";
 import utils from "../../../services/utils";
 import { DesktopWebView } from "../../type_widgets/WebView";
@@ -9,8 +10,8 @@ import { SlideContent } from "./closing_slides";
 import { createFitObserver } from "./fit";
 import { canEditSlideInPlace, PresentationModel, PresentationSlideBaseModel } from "./model";
 import {
-    followSlideLinks, getNoteIdFromSlide, goToSlide, isPressingButton, isTypingIn, keepKeyboardInPresentation,
-    keepSlideShown
+    followSlideLinks, getNoteIdFromSlide, goToSlide, isKeyForPresentation, isPressingButton, isTypingIn,
+    keepKeyboardInPresentation, keepSlideShown
 } from "./reveal";
 
 const SLIDE_WIDTH = 1280;
@@ -49,10 +50,20 @@ export function Presentation({
     const fitObserverRef = useRef<ResizeObserver>(null);
     const onStartPresentationRef = useRef(onStartPresentation);
     onStartPresentationRef.current = onStartPresentation;
+    const ntxIdRef = useRef(ntxId);
+    ntxIdRef.current = ntxId;
 
     useEffect(() => {
         if (!containerRef.current) return;
 
+        const isKeyForThisPresentation = (event: KeyboardEvent) => {
+            const root = containerRef.current?.getRootNode();
+            const stage = root instanceof ShadowRoot ? root.host : containerRef.current;
+            if (!stage) return false;
+            const ntxId = ntxIdRef.current;
+            const isContextActive = !ntxId || appContext.tabManager.getActiveContext()?.ntxId === ntxId;
+            return isKeyForPresentation(event, stage.closest(".presentation-view") ?? stage, isContextActive);
+        };
         const api = new Reveal(containerRef.current, {
             transition: "slide",
             embedded: true,
@@ -71,7 +82,7 @@ export function Presentation({
                 70: () => onStartPresentationRef.current?.()
             },
             keyboardCondition(event) {
-                return !isTypingIn(event) && !isPressingButton(event);
+                return isKeyForThisPresentation(event) && !isTypingIn(event) && !isPressingButton(event);
             },
         });
         const container = containerRef.current;
