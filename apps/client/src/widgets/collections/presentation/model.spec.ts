@@ -14,7 +14,8 @@ import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
-    getNewVerticalSlidePosition, getSlideMove, isSlideRebuilt, moveSlideNote, PresentationModel, renderSlideContent
+    getNewSlideTypes, getNewVerticalSlidePosition, getSlideMove, isSlideRebuilt, moveSlideNote, PresentationModel,
+    renderSlideContent
 } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
@@ -234,6 +235,19 @@ describe("getNewSlidePosition", () => {
     });
 });
 
+describe("getNewSlideTypes", () => {
+    it("lists first the slides edited in place, then the others that a slide shows", () => {
+        expect(getNewSlideTypes().map(group => group.map(({ type, isEditedInPlace }) => [ type, isEditedInPlace ])))
+            .toEqual([
+                [ [ "text", true ], [ "canvas", true ] ],
+                [
+                    [ "board", true ], [ "table", true ],
+                    [ "webView", false ], [ "code", false ], [ "spreadsheet", false ]
+                ]
+            ]);
+    });
+});
+
 describe("createSlide", () => {
     it("creates a text or canvas note after a slide under its parent, or at the end", async () => {
         buildNote({ id: "deck", title: "Deck", children: [ { id: "a", title: "A" } ] });
@@ -253,6 +267,16 @@ describe("createSlide", () => {
         await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "canvas");
         expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
             type: "canvas", mime: "application/json"
+        }));
+
+        // A board or a table is a collection made from its built-in template, as the app makes one.
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "board");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "book", templateNoteId: "_template_board"
+        }));
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined }, "code");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "code", mime: "text/plain"
         }));
 
         getBranchId.mockRestore();

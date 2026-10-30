@@ -7,7 +7,7 @@ The Presentation view allows the creation of slideshows directly from within Tri
 
 Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Presentation_.
 
-A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. The arrow beside it creates a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide instead. A read-only presentation shows only a message that it has no slides. Until there is a slide, the toolbar buttons that act on one (the slide sidebar, editing the slide, its background, the overview and starting the presentation) are disabled.
+A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. The arrow beside it creates a slide of another type instead, as described below. A read-only presentation shows only a message that it has no slides. Until there is a slide, the toolbar buttons that act on one (the slide sidebar, editing the slide, its background, the overview and starting the presentation) are disabled.
 
 ## How it works
 
@@ -41,7 +41,7 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 *   Right-click a thumbnail, or press <kbd>Shift</kbd>+<kbd>F10</kbd> or the <kbd>Menu</kbd> key on a focused one, to open its context menu. The thumbnail is outlined while the menu is open, and the slide being shown doesn't change:
     *   _Edit slide_ goes to the slide and edits it in place, as a double-click does. It's available for text, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides.
     *   _Open note_ opens the slide's note in a new tab, split or window.
-    *   _New slide after_ adds an empty slide after it, at its level, and _New vertical slide_ adds one at the end of its vertical slides. Each asks for the type of the slide, _Text_ or _Canvas_. The presentation goes to the new slide and starts editing it in place. _Duplicate_ copies the slide, with its vertical slides, right after it.
+    *   _New slide after_ adds an empty slide after it, at its level, and _New vertical slide_ adds one at the end of its vertical slides. Each asks for the type of the slide, from the same list as the arrow beside the _New slide_ button. The presentation goes to the new slide. _Duplicate_ copies the slide, with its vertical slides, right after it.
     *   _Move up_, _Move down_, _Make vertical slide_ and _Make top-level slide_ move the slide as <kbd>Alt</kbd> and the arrow keys do. An item is disabled where the slide can't go.
     *   _Delete slide..._ deletes the slide, with its vertical slides, after asking for confirmation.
     *   A read-only presentation offers only _Open note_. A search-based presentation can't add, move or delete slides.
@@ -52,7 +52,13 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 
 On the right of the toolbar above the slides:
 
-*   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. The <span class="tn-icon bx bx-chevron-down"></span> arrow beside it adds a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide instead, which the presentation also goes to and starts editing. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
+*   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. The <span class="tn-icon bx bx-chevron-down"></span> arrow beside it adds a slide of another type instead:
+    
+    *   _Text_ and <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> come first, as the slides that can be edited in place; the presentation starts editing the new slide.
+    *   <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> create a collection, from the same template as a new one elsewhere, which the presentation also starts editing.
+    *   _Web View_, _Code_ and _Spreadsheet_ create an empty note of that type. Its content is added from its note, with the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button.
+    
+    A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.

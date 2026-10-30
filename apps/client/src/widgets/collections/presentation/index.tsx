@@ -24,7 +24,7 @@ import { useClosingSlides } from "./closing_slides";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
     getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
-    NewSlideType, PresentationModel, SlideMove
+    getNewSlideTypes, PresentationModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
@@ -68,9 +68,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const canAddSlides = canEditSlides && note.type !== "search";
     const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
-    async function addSlide(position: NewSlidePosition, type: NewSlideType = "text") {
+    async function addSlide(position: NewSlidePosition, { type, isEditedInPlace } = getNewSlideTypes()[0][0]) {
         const noteId = await createSlide(position, type);
-        if (noteId) setPendingSlide({ noteId, edit: true });
+        if (noteId) setPendingSlide({ noteId, edit: isEditedInPlace });
     }
 
     function editSlide(noteId: string) {

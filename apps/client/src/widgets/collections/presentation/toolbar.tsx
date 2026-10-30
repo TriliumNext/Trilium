@@ -8,9 +8,9 @@ import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import ColorPicker from "../../react/ColorPicker";
 import Dropdown, { DropdownPanel } from "../../react/Dropdown";
-import { FormListItem } from "../../react/FormList";
+import { FormDropdownDivider, FormListItem } from "../../react/FormList";
 import { useNoteLabel } from "../../react/hooks";
-import { getNewSlideTypes, type NewSlideType, type PresentationSlideBaseModel } from "./model";
+import { getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel } from "./model";
 import { getNoteIdFromSlide } from "./reveal";
 
 interface PresentationToolbarActionsProps {
@@ -22,7 +22,7 @@ interface PresentationToolbarActionsProps {
     isEditing: boolean;
     onFinishEditing(): void;
     /** Adds a slide of a type after the one being shown; left out when slides cannot be added. */
-    onNewSlide: ((type: NewSlideType) => void) | undefined;
+    onNewSlide: ((type: NewSlideTypeOption) => void) | undefined;
     /** The slide being shown, for its background; left out when slides cannot be edited. */
     backgroundSlide: { slide: PresentationSlideBaseModel | undefined } | undefined;
 }
@@ -52,7 +52,7 @@ export default function PresentationToolbarActions({
                     <ActionButton
                         icon="bx bx-plus"
                         text={t("presentation_view.new-slide")}
-                        onClick={() => onNewSlide("text")}
+                        onClick={() => onNewSlide(getNewSlideTypes()[0][0])}
                     />
                     <Dropdown
                         buttonClassName="bx bx-chevron-down"
@@ -116,11 +116,19 @@ export default function PresentationToolbarActions({
     );
 }
 
-/** The menu rows of the note types a new slide can have, each adding a slide of its type. */
-export function NewSlideTypeItems({ onNewSlide }: { onNewSlide(type: NewSlideType): void }) {
-    return getNewSlideTypes().map(({ type, title, icon }) => (
-        <FormListItem key={type} icon={icon} onClick={() => onNewSlide(type)}>{title}</FormListItem>
-    ));
+/**
+ * The menu rows of the kinds of note a new slide can be, each adding a slide of its kind, with the
+ * slides edited in place first.
+ */
+export function NewSlideTypeItems({ onNewSlide }: { onNewSlide(type: NewSlideTypeOption): void }) {
+    return getNewSlideTypes().map((group, index) => [
+        index > 0 && <FormDropdownDivider key={`divider-${index}`} />,
+        ...group.map((option) => (
+            <FormListItem key={option.type} icon={option.icon} onClick={() => onNewSlide(option)}>
+                {option.title}
+            </FormListItem>
+        ))
+    ]);
 }
 
 /**

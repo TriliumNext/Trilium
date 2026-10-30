@@ -2,7 +2,9 @@ import type { CommandNames } from "../../../components/app_context";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "../../../menus/context_menu";
 import link_context_menu from "../../../menus/link_context_menu";
 import { t } from "../../../services/i18n";
-import { getNewSlideTypes, type NewSlideType, type PresentationSlideBaseModel, type SlideMove } from "./model";
+import {
+    getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel, type SlideMove
+} from "./model";
 
 /** The moves that Alt and the arrows make on a slide, each left out where the slide cannot go. */
 export interface SlideMenuMoves {
@@ -26,8 +28,8 @@ export interface SlideMenuActions {
     onEdit?: (noteId: string) => void;
     /** Adds, duplicates and deletes slides; left out where the slides cannot be changed. */
     changes?: {
-        addSlideAfter(noteId: string, type: NewSlideType): void;
-        addVerticalSlide(noteId: string, type: NewSlideType): void;
+        addSlideAfter(noteId: string, type: NewSlideTypeOption): void;
+        addVerticalSlide(noteId: string, type: NewSlideTypeOption): void;
         duplicate(noteId: string): void;
         delete(noteId: string): void;
     };
@@ -75,8 +77,10 @@ export function buildSlideMenuItems(
     const canHaveVerticalSlides = !isVertical && !slide.isCollection;
     const [ indentKey, outdentKey ] = isRtl ? [ "Alt+Left", "Alt+Right" ] : [ "Alt+Right", "Alt+Left" ];
 
-    const slideTypeItems = (add: (noteId: string, type: NewSlideType) => void) => (
-        getNewSlideTypes().map(({ type, title, icon }) => ({ title, uiIcon: icon, handler: () => add(noteId, type) }))
+    const slideTypeItems = (add: (noteId: string, type: NewSlideTypeOption) => void) => joinGroups(
+        getNewSlideTypes().map(group => group.map(option => ({
+            title: option.title, uiIcon: option.icon, handler: () => add(noteId, option)
+        })))
     );
 
     const moveItem = (title: string, uiIcon: string, shortcut: string, move: SlideMove | undefined) => ({
@@ -130,6 +134,11 @@ export function buildSlideMenuItems(
         } ] : []
     ];
 
+    return joinGroups(groups);
+}
+
+/** Joins the groups of menu items that are not empty, with a separator between each two. */
+function joinGroups(groups: MenuItem<CommandNames>[][]) {
     return groups
         .filter(group => group.length)
         .flatMap((group, index) => index ? [ { kind: "separator" } as MenuItem<CommandNames>, ...group ] : group);

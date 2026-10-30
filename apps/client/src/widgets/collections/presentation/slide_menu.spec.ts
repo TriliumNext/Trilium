@@ -96,8 +96,9 @@ describe("buildSlideMenuItems", () => {
             runItem(findItem(findItem(items, title).items ?? [], subtitle))
         );
 
-        expect(describeMenu(findItem(items, "New slide after").items ?? [])).toEqual([ "Text", "Canvas" ]);
-        expect(describeMenu(findItem(items, "New vertical slide").items ?? [])).toEqual([ "Text", "Canvas" ]);
+        const slideTypes = [ "Text", "Canvas", "-", "Board", "Table", "Web View", "Code", "Spreadsheet" ];
+        expect(describeMenu(findItem(items, "New slide after").items ?? [])).toEqual(slideTypes);
+        expect(describeMenu(findItem(items, "New vertical slide").items ?? [])).toEqual(slideTypes);
 
         run("Edit slide");
         runSubitem("New slide after", "Text");
@@ -106,8 +107,8 @@ describe("buildSlideMenuItems", () => {
         run("Delete slide...");
         run("Move down");
         expect(actions.onEdit).toHaveBeenCalledWith("s");
-        expect(actions.changes.addSlideAfter).toHaveBeenCalledWith("s", "text");
-        expect(actions.changes.addVerticalSlide).toHaveBeenCalledWith("s", "canvas");
+        expect(actions.changes.addSlideAfter).toHaveBeenCalledWith("s", expect.objectContaining({ type: "text" }));
+        expect(actions.changes.addVerticalSlide).toHaveBeenCalledWith("s", expect.objectContaining({ type: "canvas" }));
         expect(actions.changes.duplicate).toHaveBeenCalledWith("s");
         expect(actions.changes.delete).toHaveBeenCalledWith("s");
         expect(onMove).toHaveBeenCalledWith(move("b"));

@@ -102,19 +102,47 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
     }
 }
 
-/** The note types a new slide can have, with the MIME type each is created with. */
-const NEW_SLIDE_MIMES = {
-    text: "text/html",
-    canvas: "application/json"
-} as const;
+/** The kinds of note a new slide can be, with what each note is created with. */
+const NEW_SLIDE_NOTES = {
+    text: { type: "text", mime: "text/html" },
+    canvas: { type: "canvas", mime: "application/json" },
+    board: { type: "book", templateNoteId: "_template_board" },
+    table: { type: "book", templateNoteId: "_template_table" },
+    webView: { type: "webView", mime: "" },
+    code: { type: "code", mime: "text/plain" },
+    spreadsheet: { type: "spreadsheet", mime: "application/json" }
+} satisfies Record<string, { type: NoteType; mime?: string; templateNoteId?: string }>;
 
-export type NewSlideType = keyof typeof NEW_SLIDE_MIMES;
+export type NewSlideType = keyof typeof NEW_SLIDE_NOTES;
 
-/** Returns the note types a new slide can have, as the menus that create slides list them. */
-export function getNewSlideTypes(): { type: NewSlideType; title: string; icon: string }[] {
+export interface NewSlideTypeOption {
+    type: NewSlideType;
+    title: string;
+    icon: string;
+    /** Whether a new slide of the type starts editing in place, as `Slide` can edit it. */
+    isEditedInPlace: boolean;
+}
+
+/**
+ * Returns the kinds of note a new slide can be, in the groups that the menus which create slides
+ * show apart: the text and canvas slides edited in place, then the other kinds that a slide shows.
+ */
+export function getNewSlideTypes(): NewSlideTypeOption[][] {
     return [
-        { type: "text", title: t("note_types.text"), icon: "bx bx-note" },
-        { type: "canvas", title: t("note_types.canvas"), icon: NOTE_TYPE_ICONS.canvas }
+        [
+            { type: "text", title: t("note_types.text"), icon: "bx bx-note", isEditedInPlace: true },
+            { type: "canvas", title: t("note_types.canvas"), icon: NOTE_TYPE_ICONS.canvas, isEditedInPlace: true }
+        ],
+        [
+            { type: "board", title: t("book_properties.board"), icon: "bx bx-columns", isEditedInPlace: true },
+            { type: "table", title: t("book_properties.table"), icon: "bx bx-table", isEditedInPlace: true },
+            { type: "webView", title: t("note_types.web-view"), icon: NOTE_TYPE_ICONS.webView, isEditedInPlace: false },
+            { type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, isEditedInPlace: false },
+            {
+                type: "spreadsheet", title: t("note_types.spreadsheet"), icon: NOTE_TYPE_ICONS.spreadsheet,
+                isEditedInPlace: false
+            }
+        ]
     ];
 }
 
@@ -125,8 +153,7 @@ export function getNewSlideTypes(): { type: NewSlideType; title: string; icon: s
 export async function createSlide({ parentNoteId, afterNoteId }: NewSlidePosition, type: NewSlideType = "text") {
     const targetBranchId = afterNoteId ? await froca.getBranchId(parentNoteId, afterNoteId) : null;
     const { note } = await note_create.createNote(parentNoteId, {
-        type,
-        mime: NEW_SLIDE_MIMES[type],
+        ...NEW_SLIDE_NOTES[type],
         activate: false,
         isProtected: froca.getNoteFromCache(parentNoteId)?.isProtected,
         ...(targetBranchId ? { target: "after", targetBranchId } : {})
