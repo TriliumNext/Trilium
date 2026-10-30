@@ -5,10 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type FNote from "../../entities/fnote";
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
+const shownContext = vi.hoisted(() => ({ current: null as { isCommandTarget: (ntxId?: string | null) => boolean } | null }));
 vi.mock("../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../react/hooks")>()),
     useActiveNoteContext: () => ({ note: shownNote.current }),
-    useNoteContext: () => ({ note: shownNote.current, noteContext: null }),
+    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current }),
     useStaticTooltip: vi.fn()
 }));
 
@@ -82,6 +83,7 @@ describe("MobileNotePanel", () => {
     });
 
     afterEach(() => {
+        shownContext.current = null;
         act(() => render(null, container));
         container.remove();
         for (const stub of document.body.querySelectorAll(".modal-stub")) stub.remove();
@@ -89,15 +91,7 @@ describe("MobileNotePanel", () => {
 
     it("mounts the tabs on the first open and keeps them mounted once closed", () => {
         shownNote.current = buildNote({ title: "Read" });
-        const parent = { componentId: "cid", registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
-        const widgetsByParent = { getLegacyWidgets: () => [], getPreactWidgets: () => [] };
-        act(() => {
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <MobileNotePanel widgetsByParent={widgetsByParent as never} />
-                </ParentComponent.Provider>
-            ), container);
-        });
+        renderPanel();
         expect(document.body.querySelector(".toc-stub")).toBeNull();
 
         const button = container.querySelector("button");
@@ -108,4 +102,42 @@ describe("MobileNotePanel", () => {
         act(() => modal.onHidden?.());
         expect(document.body.querySelector(".toc-stub")).not.toBeNull();
     });
+
+    it("opens on the attributes tab when the attributes are asked for in its own note context only", () => {
+        shownNote.current = buildNote({ title: "Read" });
+        shownContext.current = { isCommandTarget: (ntxId) => ntxId === "ntx1" };
+        const handlers = renderPanel();
+        const showNoteAttributes = handlers.get("showNoteAttributes");
+        expect(showNoteAttributes).toBeDefined();
+
+        act(() => showNoteAttributes?.({ ntxId: "ntx2" }));
+        expect(document.body.querySelector(".modal-stub")).toBeNull();
+
+        act(() => showNoteAttributes?.({ ntxId: "ntx1" }));
+        const attributesTab = document.body.querySelector(".right-pane-flat-tab-body[data-tab-id='attributes']");
+        expect(attributesTab?.classList.contains("hidden-ext")).toBe(false);
+        expect(attributesTab?.querySelector(".attribute-list-stub")).not.toBeNull();
+        expect(document.body.querySelector(".toc-stub")).toBeNull();
+    });
+
+    /** Renders the panel, returning the event handlers it registers by event name. */
+    function renderPanel() {
+        const handlers = new Map<string, (data: unknown) => void>();
+        const parent = {
+            componentId: "cid",
+            registerHandler: (name: string, handler: (data: unknown) => void) => handlers.set(name, handler),
+            removeHandler: (name: string, handler: (data: unknown) => void) => {
+                if (handlers.get(name) === handler) handlers.delete(name);
+            }
+        } as unknown as Component;
+        const widgetsByParent = { getLegacyWidgets: () => [], getPreactWidgets: () => [] };
+        act(() => {
+            render((
+                <ParentComponent.Provider value={parent}>
+                    <MobileNotePanel widgetsByParent={widgetsByParent as never} />
+                </ParentComponent.Provider>
+            ), container);
+        });
+        return handlers;
+    }
 });

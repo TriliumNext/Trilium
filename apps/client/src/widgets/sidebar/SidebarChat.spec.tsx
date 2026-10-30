@@ -6,6 +6,8 @@ import { renderInto } from "../../test/render";
 /** The chat notes on the server, most recently modified first. */
 let serverChats: string[] = [];
 let createdCount = 0;
+/** The title of the open chat note. */
+let chatTitle: string | undefined;
 
 vi.mock("../../services/date_notes.js", () => ({
     default: {
@@ -57,7 +59,7 @@ vi.mock("../type_widgets/llm_chat/ChatInputBar.js", () => ({
 vi.mock("../react/hooks.js", () => ({
     useActiveNoteContext: () => ({ noteId: null, note: null }),
     useNote: () => null,
-    useNoteProperty: () => undefined,
+    useNoteProperty: () => chatTitle,
     useNoteLabelBoolean: () => [ false ],
     useSpacedUpdate: () => ({ scheduleUpdate: vi.fn(), updateNowIfNecessary: async () => undefined })
 }));
@@ -65,7 +67,7 @@ vi.mock("../react/ActionButton.js", () => ({
     default: ({ icon, onClick }: { icon: string; onClick: (e: MouseEvent) => void }) => <button data-icon={icon} onClick={onClick} />
 }));
 vi.mock("../react/Dropdown.js", () => ({
-    default: ({ children }: { children: ComponentChildren }) => <div>{children}</div>
+    default: ({ text, children }: { text?: ComponentChildren; children: ComponentChildren }) => <div>{text}{children}</div>
 }));
 vi.mock("../react/FormList.js", () => ({
     FormListItem: ({ icon, onClick, children }: { icon?: string; onClick?: () => void; children: ComponentChildren }) =>
@@ -87,6 +89,7 @@ describe("SidebarChat", () => {
     beforeEach(() => {
         serverChats = [ "chatOpen", "chatOlder" ];
         createdCount = 0;
+        chatTitle = undefined;
         fakeChat.chatNoteId = undefined;
         fakeChat.submittedTo = undefined;
     });
@@ -110,7 +113,8 @@ describe("SidebarChat", () => {
         expect(serverChats).toEqual([ "chatNew1", "chatOlder" ]);
     });
 
-    it("puts its controls in the host's header slot when there is one", async () => {
+    it("puts its controls in the host's header slot when there is one, titled by the conversation", async () => {
+        chatTitle = "Trip planning";
         const slot = document.createElement("div");
         document.body.appendChild(slot);
         const container = renderInto(
@@ -123,6 +127,7 @@ describe("SidebarChat", () => {
         expect(slot.querySelector("[data-icon='bx bx-plus']")).not.toBeNull();
         expect(slot.querySelector("li[data-icon='bx bx-trash']")).not.toBeNull();
         expect(container.querySelector("[data-icon='bx bx-plus']")).toBeNull();
+        expect(slot.querySelector(".sidebar-chat-title")?.textContent).toBe("Trip planning");
         slot.remove();
     });
 });
