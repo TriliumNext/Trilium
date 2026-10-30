@@ -56,10 +56,10 @@ On the right of the toolbar above the slides:
     
     *   _Text_ and <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> come first, as the slides that can be edited in place; the presentation starts editing the new slide.
     *   <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> create a collection, from the same template as a new one elsewhere, which the presentation also starts editing.
-    *   _Web View_, _Code_ and _Spreadsheet_ create an empty note of that type. Its content is added from its note, with the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button.
+    *   _Web View_, _Code_ and _Spreadsheet_ create an empty note of that type. Its content is added in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, with the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button.
     
     A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
-*   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
+*   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to edit the current slide: in place for a text, canvas, Kanban Board or Table slide, as a double-click does, and in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> for a slide of any other type, or where the slide can't be edited in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> to leave it.
@@ -84,7 +84,7 @@ A <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a clas
 
 Double-click a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide to draw on it in place. The canvas editor covers the presentation, with the same tools as in the canvas note, and opens on the drawing at the size and place that the slide shows it. The drawing is saved as you go. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-check"></span> _Finish editing_ button to finish.
 
-Slides of other note types, such as diagrams, are edited from their note, using the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place, and neither can a slide whose own note is read-only.
+Slides of other note types, such as diagrams, open in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> from the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place, and neither can a slide whose own note is read-only.
 
 ## Vertical slides and nesting
 

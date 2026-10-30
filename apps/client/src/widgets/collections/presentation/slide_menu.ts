@@ -3,7 +3,7 @@ import contextMenu, { type ContextMenuEvent, type MenuItem } from "../../../menu
 import link_context_menu from "../../../menus/link_context_menu";
 import { t } from "../../../services/i18n";
 import {
-    getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel, type SlideMove
+    canEditSlideInPlace, getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel, type SlideMove
 } from "./model";
 
 /** The moves that Alt and the arrows make on a slide, each left out where the slide cannot go. */
@@ -71,8 +71,6 @@ export function buildSlideMenuItems(
     const { slide, isVertical, moves, isRtl } = target;
     const { noteId } = slide;
     const { onEdit, changes } = actions;
-    const canEditInPlace = (slide.type === "text" || slide.type === "canvas" || !!slide.isCollection)
-        && !slide.isReadOnly;
     // A board or table shows its children itself, and a vertical slide can have none.
     const canHaveVerticalSlides = !isVertical && !slide.isCollection;
     const [ indentKey, outdentKey ] = isRtl ? [ "Alt+Left", "Alt+Right" ] : [ "Alt+Right", "Alt+Left" ];
@@ -94,7 +92,7 @@ export function buildSlideMenuItems(
             ...(onEdit ? [ {
                 title: t("presentation_view.menu-edit-slide"),
                 uiIcon: "bx bx-pencil",
-                enabled: canEditInPlace,
+                enabled: canEditSlideInPlace(slide),
                 handler: () => onEdit(noteId)
             } ] : []),
             openNoteItem

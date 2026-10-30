@@ -14,8 +14,8 @@ import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
 import {
     applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
-    getNewSlideTypes, getNewVerticalSlidePosition, getSlideMove, isSlideRebuilt, moveSlideNote, PresentationModel,
-    renderSlideContent
+    canEditSlideInPlace, getNewSlideTypes, getNewVerticalSlidePosition, getSlideMove, isSlideRebuilt, moveSlideNote, PresentationModel,
+    type PresentationSlideBaseModel, renderSlideContent
 } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
@@ -232,6 +232,20 @@ describe("getNewSlidePosition", () => {
         // At the end, when no slide is shown.
         expect(getNewSlidePosition(model, "deck", undefined)).toEqual({ parentNoteId: "deck", afterNoteId: undefined });
         expect(getNewSlidePosition(model, "deck", "gone")).toEqual({ parentNoteId: "deck", afterNoteId: undefined });
+    });
+});
+
+describe("canEditSlideInPlace", () => {
+    it("edits text, canvas and collection slides in place, unless their note is read-only", () => {
+        const slide = (props: Partial<PresentationSlideBaseModel>): PresentationSlideBaseModel => ({
+            noteId: "slide", type: "text", content: { __html: "" }, ...props
+        });
+        expect(canEditSlideInPlace(slide({}))).toBe(true);
+        expect(canEditSlideInPlace(slide({ type: "canvas" }))).toBe(true);
+        expect(canEditSlideInPlace(slide({ type: "book", isCollection: true }))).toBe(true);
+        expect(canEditSlideInPlace(slide({ type: "code" }))).toBe(false);
+        expect(canEditSlideInPlace(slide({ type: "webView", webViewSrc: "https://example.com/" }))).toBe(false);
+        expect(canEditSlideInPlace(slide({ isReadOnly: true }))).toBe(false);
     });
 });
 

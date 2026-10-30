@@ -102,6 +102,14 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
     }
 }
 
+/**
+ * Whether `slide` can be edited in place: a text or canvas slide in its editor on the slide, a board
+ * or table slide in its own view. A slide whose note is read-only cannot.
+ */
+export function canEditSlideInPlace(slide: PresentationSlideBaseModel) {
+    return (slide.type === "text" || slide.type === "canvas" || !!slide.isCollection) && !slide.isReadOnly;
+}
+
 /** The kinds of note a new slide can be, with what each note is created with. */
 const NEW_SLIDE_NOTES = {
     text: { type: "text", mime: "text/html" },

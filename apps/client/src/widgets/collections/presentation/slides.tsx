@@ -7,7 +7,7 @@ import utils from "../../../services/utils";
 import { DesktopWebView } from "../../type_widgets/WebView";
 import { SlideContent } from "./closing_slides";
 import { createFitObserver } from "./fit";
-import { PresentationModel, PresentationSlideBaseModel } from "./model";
+import { canEditSlideInPlace, PresentationModel, PresentationSlideBaseModel } from "./model";
 import {
     followSlideLinks, getNoteIdFromSlide, goToSlide, isPressingButton, isTypingIn, keepKeyboardInPresentation,
     keepSlideShown
@@ -125,8 +125,7 @@ export function Presentation({
 
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;
-        const canEdit = onEditSlide && !isEdited && !slide.isReadOnly
-            && (slide.type === "text" || slide.type === "canvas" || slide.isCollection);
+        const canEdit = onEditSlide && !isEdited && canEditSlideInPlace(slide);
         const closingContent = closingContents[slide.noteId];
         return (
             <Slide

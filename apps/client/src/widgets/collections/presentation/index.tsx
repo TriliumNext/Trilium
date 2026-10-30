@@ -220,7 +220,6 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         onStartPresentation={startPresentation}
                         api={api}
                         hasSlides={!isEmpty}
-                        isReadOnly={isReadOnly}
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
                         onNewSlide={canAddSlides
@@ -229,6 +228,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                             )
                             : undefined}
                         backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
+                        slideToEdit={!isReadOnly
+                            ? { slide: activeSlide, onEditInPlace: canEditSlides ? editSlide : undefined }
+                            : undefined}
                     />}
                 />
                 <div className="presentation-body">

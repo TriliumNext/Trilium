@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
 
-import { openInCurrentNoteContext } from "../../../components/note_context";
+import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -10,26 +10,34 @@ import ColorPicker from "../../react/ColorPicker";
 import Dropdown, { DropdownPanel } from "../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../react/FormList";
 import { useNoteLabel } from "../../react/hooks";
-import { getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel } from "./model";
-import { getNoteIdFromSlide } from "./reveal";
+import {
+    canEditSlideInPlace, getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel
+} from "./model";
 
 interface PresentationToolbarActionsProps {
     onStartPresentation(): void;
     api: RevealApi | undefined;
     /** Whether there are slides; the buttons that act on one are disabled otherwise. */
     hasSlides: boolean;
-    isReadOnly: boolean;
     isEditing: boolean;
     onFinishEditing(): void;
     /** Adds a slide of a type after the one being shown; left out when slides cannot be added. */
     onNewSlide: ((type: NewSlideTypeOption) => void) | undefined;
     /** The slide being shown, for its background; left out when slides cannot be edited. */
     backgroundSlide: { slide: PresentationSlideBaseModel | undefined } | undefined;
+    /**
+     * The slide being shown, for the edit button, which edits it in place with `onEditInPlace` where
+     * it can be, and in quick edit otherwise; left out when the presentation is read-only.
+     */
+    slideToEdit: {
+        slide: PresentationSlideBaseModel | undefined;
+        onEditInPlace: ((noteId: string) => void) | undefined;
+    } | undefined;
 }
 
 /** The presentation's actions on the right of the collection's toolbar. */
 export default function PresentationToolbarActions({
-    onStartPresentation, api, hasSlides, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
+    onStartPresentation, api, hasSlides, isEditing, onFinishEditing, onNewSlide, backgroundSlide, slideToEdit
 }: PresentationToolbarActionsProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
@@ -78,17 +86,18 @@ export default function PresentationToolbarActions({
                 />
             )}
 
-            {!isReadOnly && (
+            {slideToEdit && (
                 <ActionButton
                     icon="bx bx-edit"
                     text={t("presentation_view.edit-slide")}
                     disabled={!hasSlides}
-                    onClick={e => {
-                        const currentSlide = api?.getCurrentSlide();
-                        const noteId = getNoteIdFromSlide(currentSlide);
-
-                        if (noteId) {
-                            openInCurrentNoteContext(e, noteId);
+                    onClick={() => {
+                        const { slide, onEditInPlace } = slideToEdit;
+                        if (!slide) return;
+                        if (onEditInPlace && canEditSlideInPlace(slide)) {
+                            onEditInPlace(slide.noteId);
+                        } else {
+                            void appContext.triggerCommand("openInPopup", { noteIdOrPath: slide.noteId });
                         }
                     }}
                 />

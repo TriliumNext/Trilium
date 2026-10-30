@@ -10,11 +10,12 @@ vi.mock("../../../services/attributes", () => ({
     }
 }));
 
+import appContext from "../../../components/app_context";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker";
 import type { PresentationSlideBaseModel } from "./model";
-import { canPickSlideBackground, SlideBackgroundPicker } from "./toolbar";
+import PresentationToolbarActions, { canPickSlideBackground, SlideBackgroundPicker } from "./toolbar";
 
 describe("SlideBackgroundPicker", () => {
     it("shows the slide's color and writes a pick or a reset to #slide:background", () => {
@@ -37,6 +38,43 @@ describe("SlideBackgroundPicker", () => {
         const container = renderPicker(note);
 
         expect(container.querySelectorAll(".color-cell.selected")).toHaveLength(0);
+    });
+});
+
+describe("the edit button", () => {
+    function clickEdit(slide: PresentationSlideBaseModel, onEditInPlace: ((noteId: string) => void) | undefined) {
+        const container = renderInto(<PresentationToolbarActions
+            onStartPresentation={vi.fn()}
+            api={undefined}
+            hasSlides
+            isEditing={false}
+            onFinishEditing={vi.fn()}
+            onNewSlide={undefined}
+            backgroundSlide={undefined}
+            slideToEdit={{ slide, onEditInPlace }}
+        />);
+        const button = container.querySelector<HTMLButtonElement>("button.bx-edit");
+        expect(button).not.toBeNull();
+        act(() => button?.click());
+    }
+
+    it("edits a text or canvas slide in place, and opens any other in quick edit", () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        const onEditInPlace = vi.fn();
+
+        clickEdit({ noteId: "text", type: "text", content: { __html: "" } }, onEditInPlace);
+        clickEdit({ noteId: "drawing", type: "canvas", content: { __html: "" } }, onEditInPlace);
+        expect(onEditInPlace.mock.calls).toEqual([ [ "text" ], [ "drawing" ] ]);
+        expect(triggerCommand).not.toHaveBeenCalled();
+
+        clickEdit({ noteId: "snippet", type: "code", content: { __html: "" } }, onEditInPlace);
+        expect(triggerCommand).toHaveBeenLastCalledWith("openInPopup", { noteIdOrPath: "snippet" });
+        // Where slides cannot be edited in place, as in a read-only database, every slide opens in quick edit.
+        clickEdit({ noteId: "text", type: "text", content: { __html: "" } }, undefined);
+        expect(triggerCommand).toHaveBeenLastCalledWith("openInPopup", { noteIdOrPath: "text" });
+        expect(onEditInPlace).toHaveBeenCalledTimes(2);
+
+        triggerCommand.mockRestore();
     });
 });
 
