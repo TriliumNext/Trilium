@@ -39,7 +39,7 @@ export default class InternalLinkPlugin extends Plugin {
         return [ ReferenceLink, ContextualBalloon ];
     }
 
-    private dialog = new HostedBalloon(this.editor, 'add-link-balloon');
+    private dialog = new HostedBalloon(this.editor, 'edit-link-balloon');
 
 	init() {
 		const editor = this.editor;

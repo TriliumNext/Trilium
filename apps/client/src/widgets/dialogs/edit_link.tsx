@@ -1,4 +1,4 @@
-import "./add_link.css";
+import "./edit_link.css";
 
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
@@ -49,7 +49,7 @@ function findAnchorIds(content: string): string[] {
     return ids;
 }
 
-export interface AddLinkOpts {
+export interface EditLinkOpts {
     text: string;
     hasSelection: boolean;
     /**
@@ -108,20 +108,20 @@ export interface AddLinkOpts {
     addLinkPreview?(url: string, display: LinkDisplayMode, title: string | null): Promise<void>;
 }
 
-export default function AddLinkDialog() {
-    const [ opts, setOpts ] = useState<AddLinkOpts>();
+export default function EditLinkDialog() {
+    const [ opts, setOpts ] = useState<EditLinkOpts>();
     const [ shown, setShown ] = useState(false);
     const hasSubmittedRef = useRef(false);
-    const form = useAddLinkForm(opts);
+    const form = useEditLinkForm(opts);
 
-    useTriliumEvent("showAddLinkDialog", opts => {
+    useTriliumEvent("showEditLinkDialog", opts => {
         setOpts(opts);
         setShown(true);
     });
 
     function onSubmit() {
         if (!form.hasLink) {
-            logError("No link to add.");
+            logError("No link to apply.");
             return;
         }
 
@@ -132,7 +132,7 @@ export default function AddLinkDialog() {
 
     return (
         <Modal
-            className="add-link-dialog"
+            className="edit-link-dialog"
             size="lg"
             title={form.title}
             helpPageId="QEAPj01N5f7w"
@@ -159,11 +159,11 @@ export default function AddLinkDialog() {
  * The form of the link dialog in the balloon that the text editor places at the caret. `onClose`
  * closes the balloon.
  */
-export function AddLinkBalloon({ opts, onClose }: { opts: AddLinkOpts; onClose(): void }) {
+export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose(): void }) {
     // Lets the fields take focus inside a modal, such as the quick edit popup. Runs before the
-    // effects of `useAddLinkForm()`, which focus the fields.
+    // effects of `useEditLinkForm()`, which focus the fields.
     useEffect(() => suspendModalFocusTraps(), []);
-    const form = useAddLinkForm(opts);
+    const form = useEditLinkForm(opts);
 
     useEffect(() => {
         form.onShown();
@@ -180,7 +180,7 @@ export function AddLinkBalloon({ opts, onClose }: { opts: AddLinkOpts; onClose()
             }}
         >
             {form.body}
-            <div className="add-link-actions">
+            <div className="edit-link-actions">
                 <Button text={form.buttonText} keyboardShortcut="Enter" />
             </div>
         </form>
@@ -188,7 +188,7 @@ export function AddLinkBalloon({ opts, onClose }: { opts: AddLinkOpts; onClose()
 }
 
 /** The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. */
-function useAddLinkForm(opts: AddLinkOpts | undefined) {
+function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ linkTitle, setLinkTitle ] = useState("");
     const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
@@ -461,7 +461,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
     const titleSection = (
         <OptionCardSection
-            className="add-link-text" name="link-title" label={t("add_link.link_title")}
+            className="edit-link-text" name="link-title" label={t("add_link.link_title")}
         >
             <FormTextBox
                 inputRef={titleRef}
@@ -481,7 +481,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     }
     const switcher = !opts?.fixLink && (
         <SegmentedChoice<LinkTarget>
-            className="add-link-target"
+            className="edit-link-target"
             options={targets}
             currentValue={target}
             onChange={(next) => changeTarget(next)}
@@ -492,7 +492,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     const anchorPage = (<>
         {showsTitle && <Card>{titleSection}</Card>}
 
-        <Card className="add-link-anchors" heading={t("add_link.target_anchor")}>
+        <Card className="edit-link-anchors" heading={t("add_link.target_anchor")}>
             {anchors.length > 0 ? anchors.map((name) => (
                 <ChoiceCardSection
                     key={name}
@@ -503,7 +503,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                     {name}
                 </ChoiceCardSection>
             )) : (
-                <CardSection className="add-link-no-anchors">
+                <CardSection className="edit-link-no-anchors">
                     <NoItems icon="bx bx-bookmark" text={t("add_link.no_anchors")} size="small" />
                 </CardSection>
             )}
@@ -536,7 +536,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                 {target === "url" ? (
                     <>
                         <OptionCardSection
-                            className="add-link-url" name="url" label={t("add_link.url")}
+                            className="edit-link-url" name="url" label={t("add_link.url")}
                         >
                             <FormTextBox
                                 inputRef={webLinkRef}
@@ -554,7 +554,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
                         {showsDisplay && (
                             <OptionCardSection
-                                className="add-link-display" name="display"
+                                className="edit-link-display" name="display"
                                 label={t("add_link.display_as")}
                             >
                                 <FormSelect
@@ -571,7 +571,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                 ) : (
                     <>
                         <OptionCardSection
-                            className="add-link-note" name="note" label={t("add_link.note")}
+                            className="edit-link-note" name="note" label={t("add_link.note")}
                         >
                             <NoteAutocomplete
                                 inputRef={autocompleteRef}
@@ -617,7 +617,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
                         {showsTitle && (
                             <OptionCardSection
-                                className="add-link-mirror"
+                                className="edit-link-mirror"
                                 name="mirror-title"
                                 label={t("add_link.mirror_title")}
                                 description={t("add_link.mirror_title_description")}
@@ -644,7 +644,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
  * `initialWebLink`, and Note otherwise.
  */
 function getInitialTarget(
-    opts: AddLinkOpts | undefined, initialWebLink: string | null
+    opts: EditLinkOpts | undefined, initialWebLink: string | null
 ): LinkTarget {
     if (opts?.currentAnchor) return "anchor";
     return initialWebLink !== null ? "url" : "note";
@@ -655,7 +655,7 @@ function getInitialTarget(
  * selected text that is a URL, or an empty one for `target: "url"`. `null` opens it on the note
  * side.
  */
-function getInitialWebLink(opts: AddLinkOpts): string | null {
+function getInitialWebLink(opts: EditLinkOpts): string | null {
     if (opts.fixLink) return null;
     if (opts.currentLink) return opts.currentLink.externalLink ?? null;
     const text = opts.text.trim();

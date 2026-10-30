@@ -18,10 +18,10 @@ import toast from "../services/toast.js";
 import utils, { reuseAcrossHotReloads } from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
-import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import { EditLinkOpts } from "../widgets/dialogs/edit_link.jsx";
 import { IconPickerOpts } from "../widgets/dialogs/icon_picker.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { ResourceDownloadDialogOptions } from "../widgets/dialogs/resource_download.jsx";
@@ -281,7 +281,7 @@ export type CommandMappings = {
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showContentEmbedDialog: CommandData & ContentEmbedOpts;
-    showAddLinkDialog: CommandData & AddLinkOpts;
+    showEditLinkDialog: CommandData & EditLinkOpts;
     showIconPickerDialog: CommandData & IconPickerOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
@@ -596,7 +596,7 @@ type EventMappings = {
     noteTypeMimeChanged: { noteId: string };
     zenModeChanged: { isEnabled: boolean };
     activeNoteChanged: {ntxId: string | null | undefined};
-    showAddLinkDialog: AddLinkOpts;
+    showEditLinkDialog: EditLinkOpts;
     showContentEmbedDialog: ContentEmbedOpts;
     openBulkActionsDialog: {
         selectedOrActiveNoteIds: string[];

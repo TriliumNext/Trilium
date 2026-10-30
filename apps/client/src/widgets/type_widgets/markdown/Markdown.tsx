@@ -25,7 +25,7 @@ import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
 import {
-    insertDateTime, insertText, replaceSelection, showAddLinkDialog, showIncludeNoteDialog,
+    insertDateTime, insertText, replaceSelection, showEditLinkDialog, showIncludeNoteDialog,
     uploadImageAndInsert
 } from "./editor_utils";
 
@@ -85,7 +85,7 @@ export default function Markdown(props: TypeWidgetProps) {
     const [ previewEl, setPreviewEl ] = useState<HTMLDivElement | null>(null);
     const { html, headings, highlights } = useMemo(() => renderWithSourceLines(content), [ content ]);
 
-    // Bind text-detail shortcuts (e.g. Ctrl+L for add link) to CodeMirror's contentDOM,
+    // Bind text-detail shortcuts (e.g. Ctrl+L for the edit link dialog) to CodeMirror's contentDOM,
     // since the outer `dom` only receives events after CodeMirror has already handled them.
     useEffect(() => {
         if (!editorView || !props.parentComponent) return;
@@ -366,13 +366,13 @@ export function findActiveBlock(blocks: ArrayLike<HTMLElement>, activeLine: numb
 //#region Text commands
 /**
  * Handles text-detail commands for the Markdown editor:
- * - Add Link (Ctrl+L): opens the add-link dialog, inserts markdown link syntax
+ * - Add Link (Ctrl+L): opens the edit link dialog, inserts markdown link syntax
  * - Insert Date/Time (Alt+T): inserts a formatted date/time string
  */
 function useTextCommands(editorView: VanillaCodeMirror | null) {
     useLegacyImperativeHandlers({
         addLinkToTextCommand() {
-            if (editorView) showAddLinkDialog(editorView);
+            if (editorView) showEditLinkDialog(editorView);
         },
 
         insertDateTimeToTextCommand() {

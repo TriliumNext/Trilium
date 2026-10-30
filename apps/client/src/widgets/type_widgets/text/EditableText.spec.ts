@@ -43,7 +43,7 @@ vi.mock("./utils", async (importOriginal) => ({
 
 const {
     applyPendingAttachmentChanges,
-    getAddLinkOpts,
+    getEditLinkOpts,
     getBlockData,
     isCaretInFocus,
     notifyAttachmentChanges,
@@ -455,7 +455,7 @@ describe("parseLinkHref", () => {
     });
 });
 
-describe("getAddLinkOpts", () => {
+describe("getEditLinkOpts", () => {
     function createApi(currentLink: LinkAtSelection | null, anchors: string[] = []) {
         return {
             hasSelection: vi.fn(() => true),
@@ -477,7 +477,7 @@ describe("getAddLinkOpts", () => {
         const api = createApi({
             href: "#root/abc?bookmark=part", text: "See there", display: "plain"
         });
-        const opts = getAddLinkOpts(api, ready);
+        const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             text: "See there", hasSelection: false, currentTitle: "See there",
             currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "plain"
@@ -494,7 +494,7 @@ describe("getAddLinkOpts", () => {
 
     it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
         const api = createApi({ href: "https://example.com", text: "Example", display: "card" });
-        expect(getAddLinkOpts(api, ready, { display: "inline" })).toMatchObject({
+        expect(getEditLinkOpts(api, ready, { display: "inline" })).toMatchObject({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example",
             display: "card"
         });
@@ -502,7 +502,7 @@ describe("getAddLinkOpts", () => {
 
     it("adds a link from the selection outside one", async () => {
         const api = createApi(null);
-        const opts = getAddLinkOpts(api, ready);
+        const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({ text: "chosen words", hasSelection: true });
         expect(opts.currentLink).toBeUndefined();
 
@@ -516,12 +516,12 @@ describe("getAddLinkOpts", () => {
     });
 
     it("offers the document's anchors, and edits a link to one of them as that anchor", () => {
-        expect(getAddLinkOpts(createApi(null, [ "intro" ]), ready)).toMatchObject({
+        expect(getEditLinkOpts(createApi(null, [ "intro" ]), ready)).toMatchObject({
             anchors: [ "intro" ]
         });
 
         const api = createApi({ href: "#intro", text: "Start", display: "plain" }, [ "intro" ]);
-        const opts = getAddLinkOpts(api, ready);
+        const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Start"
         });
@@ -529,9 +529,9 @@ describe("getAddLinkOpts", () => {
     });
 
     it("opens a new link on the side and with the display it is asked for", () => {
-        const opts = getAddLinkOpts(createApi(null), ready, { target: "url", display: "embed" });
+        const opts = getEditLinkOpts(createApi(null), ready, { target: "url", display: "embed" });
         expect(opts).toMatchObject({ target: "url", display: "embed" });
-        expect(getAddLinkOpts(createApi(null), ready)).toMatchObject({
+        expect(getEditLinkOpts(createApi(null), ready)).toMatchObject({
             target: undefined, display: undefined
         });
     });

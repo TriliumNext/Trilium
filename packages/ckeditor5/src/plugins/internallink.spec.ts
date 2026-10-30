@@ -48,7 +48,7 @@ describe("InternalLinkPlugin", () => {
         editor.execute(COMMAND_NAME, { target: "url" });
         const container = shown.request?.container;
         expect(shown.request?.target).toBe("url");
-        expect(container?.classList.contains("add-link-balloon")).toBe(true);
+        expect(container?.classList.contains("edit-link-balloon")).toBe(true);
         expect(container && balloon.view.element?.contains(container)).toBe(true);
 
         shown.request?.close();

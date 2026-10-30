@@ -12,7 +12,7 @@ import App from "../../../packages/trilium-e2e/src/support/app";
 //
 // Dispatching both Enter keydowns in a single synchronous task makes the race
 // deterministic: no render can run between them.
-test("fast double-Enter in add-link dialog is not consumed by a stale suggestion", async ({ page, context }) => {
+test("fast double-Enter in the edit link dialog is not consumed by a stale suggestion", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
 
@@ -23,7 +23,7 @@ test("fast double-Enter in add-link dialog is not consumed by a stale suggestion
     await editor.click();
     await page.keyboard.press("Control+l");
 
-    const dialog = page.locator(".add-link-dialog");
+    const dialog = page.locator(".edit-link-dialog");
     await expect(dialog).toBeVisible();
 
     const input = dialog.locator("input.note-autocomplete");
@@ -40,7 +40,7 @@ test("fast double-Enter in add-link dialog is not consumed by a stale suggestion
     // Fire both Enters in one synchronous task — zero timers can interleave —
     // and record what each one did.
     const result = await page.evaluate(() => {
-        const el = document.querySelector<HTMLInputElement>(".add-link-dialog input.note-autocomplete");
+        const el = document.querySelector<HTMLInputElement>(".edit-link-dialog input.note-autocomplete");
         if (!el) throw new Error("autocomplete input not found");
 
         const fire = () => {

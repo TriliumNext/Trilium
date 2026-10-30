@@ -8,9 +8,9 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
 import { ParentComponent } from "../react/react_utils";
-import AddLinkDialog, {
-    AddLinkBalloon, type AddLinkOpts, getShownDisplay, normalizeWebLink
-} from "./add_link";
+import EditLinkDialog, {
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, normalizeWebLink
+} from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
@@ -53,11 +53,11 @@ describe("getShownDisplay", () => {
     });
 });
 
-describe("AddLinkDialog", () => {
+describe("EditLinkDialog", () => {
     let host: Component;
     let container: HTMLElement;
-    const addLink = vi.fn<AddLinkOpts["addLink"]>(async () => {});
-    const addLinkPreview = vi.fn<NonNullable<AddLinkOpts["addLinkPreview"]>>(async () => {});
+    const addLink = vi.fn<EditLinkOpts["addLink"]>(async () => {});
+    const addLinkPreview = vi.fn<NonNullable<EditLinkOpts["addLinkPreview"]>>(async () => {});
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -65,14 +65,14 @@ describe("AddLinkDialog", () => {
         host = new Component();
         container = renderInto(
             <ParentComponent.Provider value={host}>
-                <AddLinkDialog />
+                <EditLinkDialog />
             </ParentComponent.Provider>
         );
     });
 
-    async function open(opts: Partial<AddLinkOpts> = {}) {
+    async function open(opts: Partial<EditLinkOpts> = {}) {
         await act(async () => {
-            void host.handleEventInChildren("showAddLinkDialog", {
+            void host.handleEventInChildren("showEditLinkDialog", {
                 text: "", hasSelection: false, addLink, ...opts
             });
         });
@@ -91,12 +91,12 @@ describe("AddLinkDialog", () => {
     }
 
     function mirrorToggle() {
-        return container.querySelector<HTMLInputElement>(".add-link-mirror input.switch-toggle");
+        return container.querySelector<HTMLInputElement>(".edit-link-mirror input.switch-toggle");
     }
 
     /** Whether the row of the field is indented under the row it depends on. */
     function nested(name: "url" | "text") {
-        return container.querySelector(`.add-link-${name}`)?.classList.contains("tn-card-section-nested");
+        return container.querySelector(`.edit-link-${name}`)?.classList.contains("tn-card-section-nested");
     }
 
     /** The rows that put their control under the label rather than beside it. */
@@ -105,15 +105,15 @@ describe("AddLinkDialog", () => {
     }
 
     function field(name: "url" | "text") {
-        return container.querySelector<HTMLInputElement>(`.add-link-${name} input`);
+        return container.querySelector<HTMLInputElement>(`.edit-link-${name} input`);
     }
 
     function displaySelect() {
-        return container.querySelector<HTMLSelectElement>(".add-link-display select");
+        return container.querySelector<HTMLSelectElement>(".edit-link-display select");
     }
 
     function anchorRows() {
-        return [ ...container.querySelectorAll<HTMLElement>(".add-link-anchors .tn-card-choice") ];
+        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-anchors .tn-card-choice") ];
     }
 
     function checkedAnchor() {
@@ -171,7 +171,7 @@ describe("AddLinkDialog", () => {
         await act(async () => choice()[0]?.click());
         await type(field("url"), "https://trilium.cc");
         expect(nested("text")).toBe(false);
-        expect(container.querySelector(".add-link-url + .add-link-text")).not.toBeNull();
+        expect(container.querySelector(".edit-link-url + .edit-link-text")).not.toBeNull();
         expect(stacked()).toStrictEqual([]);
         await type(field("text"), "Trilium");
         await submit();
@@ -294,7 +294,7 @@ describe("AddLinkDialog", () => {
             host = new Component();
             container = renderInto(
                 <ParentComponent.Provider value={host}>
-                    <AddLinkDialog />
+                    <EditLinkDialog />
                 </ParentComponent.Provider>
             );
             const mobilePicker = await openAndShow();
@@ -426,7 +426,7 @@ describe("AddLinkDialog", () => {
         expect(container.querySelector(".note-autocomplete")).toBeNull();
         expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
         const titleCard = field("text")?.closest(".tn-card");
-        expect(titleCard?.nextElementSibling?.classList.contains("add-link-anchors")).toBe(true);
+        expect(titleCard?.nextElementSibling?.classList.contains("edit-link-anchors")).toBe(true);
         expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
         expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
             .toBe(true);
@@ -473,24 +473,24 @@ describe("AddLinkDialog", () => {
         await open({ anchors: [] });
         await act(async () => choice()[2]?.click());
         expect(anchorRows()).toStrictEqual([]);
-        expect(container.querySelector(".add-link-anchors .no-items")?.textContent)
+        expect(container.querySelector(".edit-link-anchors .no-items")?.textContent)
             .toBe("add_link.no_anchors");
     });
 });
 
-describe("AddLinkBalloon", () => {
-    const addLink = vi.fn<AddLinkOpts["addLink"]>(async () => {});
+describe("EditLinkBalloon", () => {
+    const addLink = vi.fn<EditLinkOpts["addLink"]>(async () => {});
     const onClose = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    async function show(opts: Partial<AddLinkOpts> = {}) {
+    async function show(opts: Partial<EditLinkOpts> = {}) {
         const rendered: { container?: HTMLElement } = {};
         await act(async () => {
             rendered.container = renderInto(
-                <AddLinkBalloon
+                <EditLinkBalloon
                     opts={{ text: "", hasSelection: false, addLink, ...opts }}
                     onClose={onClose}
                 />
@@ -512,7 +512,7 @@ describe("AddLinkBalloon", () => {
         expect(document.activeElement).toBe(noteForm.querySelector(".note-autocomplete"));
 
         const form = await show({ target: "url" });
-        const url = form.querySelector<HTMLInputElement>(".add-link-url input");
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
         expect(url).not.toBeNull();
         expect(document.activeElement).toBe(url);
 
@@ -533,14 +533,14 @@ describe("AddLinkBalloon", () => {
         await vi.waitFor(() => expect(document.querySelector(".host-modal.show")).not.toBeNull());
 
         const form = await show({ target: "url" });
-        expect(document.activeElement).toBe(form.querySelector(".add-link-url input"));
+        expect(document.activeElement).toBe(form.querySelector(".edit-link-url input"));
     });
 
     it("opens on an edited link with its address selected, and applies it left alone", async () => {
         const form = await show({
             currentLink: { externalLink: "https://example.com/page" }, currentTitle: "Page"
         });
-        const url = form.querySelector<HTMLInputElement>(".add-link-url input");
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
         expect(url?.value).toBe("https://example.com/page");
         expect([ url?.selectionStart, url?.selectionEnd ]).toStrictEqual([ 0, url?.value.length ]);
 
@@ -553,7 +553,7 @@ describe("AddLinkBalloon", () => {
         const edited = await show({
             anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Intro"
         });
-        const title = edited.querySelector<HTMLInputElement>(".add-link-text input");
+        const title = edited.querySelector<HTMLInputElement>(".edit-link-text input");
         expect(document.activeElement).toBe(title);
         expect([ title?.selectionStart, title?.selectionEnd ]).toStrictEqual([ 0, 5 ]);
         await submit(edited);
@@ -563,11 +563,11 @@ describe("AddLinkBalloon", () => {
         const form = await show({ anchors: [ "intro" ] });
         const buttons = form.querySelectorAll<HTMLButtonElement>(".tn-segmented-choice button");
         await act(async () => buttons[2]?.click());
-        expect(document.activeElement).toBe(form.querySelector(".add-link-text input"));
+        expect(document.activeElement).toBe(form.querySelector(".edit-link-text input"));
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
 
-        const row = form.querySelector<HTMLElement>(".add-link-anchors .tn-card-choice");
+        const row = form.querySelector<HTMLElement>(".edit-link-anchors .tn-card-choice");
         await act(async () => row?.click());
         await submit(form);
         expect(onClose).toHaveBeenCalledTimes(2);

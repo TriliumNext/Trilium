@@ -6,7 +6,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 import appContext from "../../../components/app_context";
 import { buildNotes } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
-import type { AddLinkOpts } from "../../dialogs/add_link";
+import type { EditLinkOpts } from "../../dialogs/edit_link";
 import { uploadNodeImage } from "./images";
 import NodePanel, { applyTagTexts, DEFAULT_FONT_SIZE, gatherTags, getCommonValue, MIXED, NODE_BACKGROUND_COLORS, NODE_COLORS, withIconAt } from "./NodePanel";
 
@@ -773,7 +773,7 @@ describe("NodePanel", () => {
         await vi.waitFor(() => expect(linkLabel(note)).toBe("Linked note"));
     });
 
-    it("picks a link through the add-link dialog, asked for the target alone", async () => {
+    it("picks a link through the edit link dialog, asked for the target alone", async () => {
         const nodes = [buildNode({ id: "a" }), buildNode({ id: "b" })];
         const { mind, reshapeNode } = buildMind(nodes);
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
@@ -784,12 +784,12 @@ describe("NodePanel", () => {
 
         // A node reads as its own topic, so the dialog is asked for what is pointed at and nothing
         // else — no title to write beside it.
-        expect(triggerCommand).toHaveBeenCalledWith("showAddLinkDialog",
+        expect(triggerCommand).toHaveBeenCalledWith("showEditLinkDialog",
             expect.objectContaining({ targetOnly: true, hasSelection: false }));
 
         // What comes back is stored the way the map stores it: a note as an in-app address, an
         // address as one we could follow. Every node the panel was handed takes it.
-        const opts = triggerCommand.mock.calls[0][1] as AddLinkOpts;
+        const opts = triggerCommand.mock.calls[0][1] as EditLinkOpts;
         await opts.addLink("root/abc123", "Linked note");
         expect(reshapeNode).toHaveBeenNthCalledWith(1, mind.currentNodes[0], { hyperLink: "#root/abc123" });
         expect(reshapeNode).toHaveBeenNthCalledWith(2, mind.currentNodes[1], { hyperLink: "#root/abc123" });
@@ -810,7 +810,7 @@ describe("NodePanel", () => {
 
         const openOn = (...nodes: NodeObj[]) => {
             linkField(renderInto(<NodePanel mind={buildMind(nodes).mind} noteId="mapNote" nodes={nodes} />))?.click();
-            return (triggerCommand.mock.lastCall?.[1] as AddLinkOpts).currentLink;
+            return (triggerCommand.mock.lastCall?.[1] as EditLinkOpts).currentLink;
         };
 
         // Handed over as the pick it was, so that the dialog opens on it and offers to change it.

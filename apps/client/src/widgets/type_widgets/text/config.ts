@@ -252,7 +252,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 void linkService.loadReferenceLinkTitle($(element), href, opts.getNoteId?.(), storedTitle);
             },
             fixLink: (storedTitle, fix) => {
-                void opts.triggerHostCommand?.("showAddLinkDialog", {
+                void opts.triggerHostCommand?.("showEditLinkDialog", {
                     text: storedTitle,
                     hasSelection: false,
                     fixLink: true,

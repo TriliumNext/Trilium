@@ -16,7 +16,7 @@ import {
 const editorUtils = vi.hoisted(() => ({
     uploadImageAndInsert: vi.fn(),
     insertDateTime: vi.fn(),
-    showAddLinkDialog: vi.fn(),
+    showEditLinkDialog: vi.fn(),
     showIncludeNoteDialog: vi.fn()
 }));
 vi.mock("./editor_utils", async (importOriginal) => ({
@@ -318,8 +318,8 @@ describe("buildMarkdownCommands", () => {
         expect(run("date", "On /date")).toBe("On ");
         expect(run("link", "See /link")).toBe("See ");
         expect(run("include", "/include")).toBe("");
-        const { insertDateTime, showAddLinkDialog, showIncludeNoteDialog } = editorUtils;
-        for (const action of [ insertDateTime, showAddLinkDialog, showIncludeNoteDialog ]) {
+        const { insertDateTime, showEditLinkDialog, showIncludeNoteDialog } = editorUtils;
+        for (const action of [ insertDateTime, showEditLinkDialog, showIncludeNoteDialog ]) {
             expect(action).toHaveBeenCalledExactlyOnceWith(editor);
         }
     });

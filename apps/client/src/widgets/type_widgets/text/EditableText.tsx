@@ -26,7 +26,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { AddLinkBalloon, type AddLinkOpts } from "../../dialogs/add_link";
+import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
@@ -250,18 +250,18 @@ export default function EditableText({
     };
 
     const [ linkDialog, setLinkDialog ] = useState<{
-        opts: AddLinkOpts;
+        opts: EditLinkOpts;
         request: LinkDialogRequest;
     } | null>(null);
 
-    // CKEditor places the balloon at the caret; `AddLinkBalloon` renders into its container.
-    // On mobile, `showAddLinkDialog` opens the form in a modal instead.
+    // CKEditor places the balloon at the caret; `EditLinkBalloon` renders into its container.
+    // On mobile, `showEditLinkDialog` opens the form in a modal instead.
     function showLinkDialog(request: LinkDialogRequest) {
         if (!editorApiRef.current) return null;
 
-        const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, request);
+        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, request);
         if (isMobile()) {
-            parentComponent?.triggerCommand("showAddLinkDialog", opts);
+            parentComponent?.triggerCommand("showEditLinkDialog", opts);
             return null;
         }
 
@@ -574,7 +574,7 @@ export default function EditableText({
             />}
 
             {linkDialog && createPortal(
-                <AddLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
+                <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
                 linkDialog.request.container
             )}
         </>
@@ -586,13 +586,13 @@ export default function EditableText({
  * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
  */
 /**
- * What the Add link dialog opens on: the link around the caret or the selected link preview, which
+ * What the edit link dialog opens on: the link around the caret or the selected link preview, which
  * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
  */
-export function getAddLinkOpts(
+export function getEditLinkOpts(
     api: CKEditorApi, ready: () => Promise<unknown>,
-    { target, display }: Pick<AddLinkOpts, "target" | "display"> = {}
-): AddLinkOpts {
+    { target, display }: Pick<EditLinkOpts, "target" | "display"> = {}
+): EditLinkOpts {
     async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
         await ready();
         api.addLinkPreview(...args);
@@ -631,12 +631,12 @@ export function getAddLinkOpts(
 }
 
 /**
- * What a link's `href` opens the Add link dialog on: one of the document's `anchors`, the note
+ * What a link's `href` opens the edit link dialog on: one of the document's `anchors`, the note
  * with the anchor it points at, or the address.
  */
 export function parseLinkHref(
     href: string, anchors: string[] = []
-): Pick<AddLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
+): Pick<EditLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
     if (href.startsWith("#") && anchors.includes(href.slice(1))) {
         return { currentAnchor: href.slice(1) };
     }

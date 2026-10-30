@@ -52,12 +52,12 @@ export async function uploadImageAndInsert(view: VanillaCodeMirror, note: FNote,
     toast.showError(detail ? `${base} ${detail}` : base);
 }
 
-/** Opens the add link dialog, then puts the link picked in place of the selection of `view`. */
-export function showAddLinkDialog(view: VanillaCodeMirror) {
+/** Opens the edit link dialog, then puts the link picked in place of the selection of `view`. */
+export function showEditLinkDialog(view: VanillaCodeMirror) {
     const { from, to } = view.state.selection.main;
     const selectedText = view.state.sliceDoc(from, to);
 
-    void appContext.triggerCommand("showAddLinkDialog", {
+    void appContext.triggerCommand("showEditLinkDialog", {
         text: selectedText,
         hasSelection: from !== to,
         async addLink(notePath: string, linkTitle: string | null, externalLink?: boolean) {

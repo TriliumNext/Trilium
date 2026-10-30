@@ -1,4 +1,4 @@
-.add-link-balloon {
+.edit-link-balloon {
     padding: 8px;
     /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
     width: 34rem;
@@ -9,13 +9,13 @@
     white-space: normal;
     text-align: start;
 
-    .add-link-actions {
+    .edit-link-actions {
         display: flex;
         justify-content: flex-end;
     }
 }
 
-:is(.modal.add-link-dialog, .add-link-balloon) {
+:is(.modal.edit-link-dialog, .edit-link-balloon) {
     .tn-card {
         margin-bottom: 1rem;
     }
@@ -26,11 +26,11 @@
 
     /* Matches the 500px at which Card.css stacks a wide control under its label. */
     @container (min-width: 501px) {
-        :is(.add-link-note, .add-link-url, .add-link-text) {
-            --add-link-label-width: 8em;
+        :is(.edit-link-note, .edit-link-url, .edit-link-text) {
+            --edit-link-label-width: 8em;
 
             > .tn-card-option-label {
-                flex: 0 0 var(--add-link-label-width);
+                flex: 0 0 var(--edit-link-label-width);
                 min-width: max-content;
             }
 
@@ -40,18 +40,18 @@
             }
         }
 
-        .add-link-text.tn-card-section-nested {
-            --add-link-label-width: calc(8em - var(--card-nested-section-indent));
+        .edit-link-text.tn-card-section-nested {
+            --edit-link-label-width: calc(8em - var(--card-nested-section-indent));
         }
     }
 
-    .add-link-target {
+    .edit-link-target {
         display: flex;
         width: fit-content;
         margin: 0 auto 1rem;
     }
 
-    .add-link-anchors .tn-card-body {
+    .edit-link-anchors .tn-card-body {
         border-radius: var(--card-border-radius);
         height: 150px;
         overflow-y: auto;
@@ -64,7 +64,7 @@
             outline-offset: -2px;
         }
 
-        > .add-link-no-anchors {
+        > .edit-link-no-anchors {
             flex-grow: 1;
         }
     }

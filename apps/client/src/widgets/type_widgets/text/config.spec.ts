@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
-import type { AddLinkOpts } from "../../dialogs/add_link.js";
+import type { EditLinkOpts } from "../../dialogs/edit_link.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
@@ -562,10 +562,10 @@ describe("CK config - tables", () => {
 
         referenceLink?.fixLink?.("Gone", fix);
 
-        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showAddLinkDialog", expect.objectContaining({
+        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showEditLinkDialog", expect.objectContaining({
             text: "Gone", hasSelection: false, fixLink: true
         }));
-        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, AddLinkOpts ];
+        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, EditLinkOpts ];
         await dialog.addLink("root/n9", null);
         expect(fix).toHaveBeenCalledExactlyOnceWith("#root/n9");
     });
