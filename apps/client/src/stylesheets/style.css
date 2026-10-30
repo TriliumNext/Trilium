@@ -79,7 +79,8 @@ html {
 }
 
 /* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
-   the first rotation (WebKit bug 301108); the large viewport is the screen's height from the start. */
+   the first rotation (WebKit bug 301108); the large viewport is the screen's height from the start.
+   `bootstrap()` sets the class only when the page runs under the status bar. */
 html.ios-web-app,
 html.ios-web-app body,
 html.ios-web-app #root-widget {
