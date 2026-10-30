@@ -166,43 +166,64 @@ describe("dragging slides", () => {
         document.body.replaceChildren();
     });
 
-    it("drops a slide before or after a slide at its level, marking where it goes", () => {
+    it("drops a slide dragged straight at its level, marking where it goes", () => {
         const onMoveSlide = vi.fn();
         const sidebar = renderDraggableSidebar(onMoveSlide);
         const drag = startDrag(sidebar, "board");
 
-        // The upper half of a thumbnail puts the slide before it.
+        // The upper half of a thumbnail is the gap above it.
         expect(drag.over("web", 10)).toBe(true);
         expect(getDropMarks(sidebar)).toEqual([ "web drop-before" ]);
         expect(getItem(sidebar, "board").classList.contains("dragging")).toBe(true);
 
-        // Over a vertical slide, a top-level slide goes after the whole stack.
+        // Over vertical slides, a top-level slide goes past the whole stack.
         expect(drag.over("second", 10)).toBe(true);
-        expect(getDropMarks(sidebar)).toEqual([ "intro drop-after" ]);
+        expect(getDropMarks(sidebar)).toEqual([ "web drop-before" ]);
 
         drag.over("web", 10);
         drag.drop("web");
         expect(onMoveSlide).toHaveBeenCalledExactlyOnceWith({ noteId: "board", targetNoteId: "web", position: "before" });
         expect(getDropMarks(sidebar)).toEqual([]);
         expect(getItem(sidebar, "board").classList.contains("dragging")).toBe(false);
+
+        // A vertical slide dragged below a slide without vertical slides becomes its first.
+        const vertical = startDrag(sidebar, "first");
+        expect(vertical.over("web", 90)).toBe(true);
+        expect(getDropMarks(sidebar)).toEqual([ "web drop-into" ]);
     });
 
-    it("refuses a drop at another level, or where the slide already is", () => {
+    it("changes the level of a slide dragged sideways", () => {
+        const onMoveSlide = vi.fn();
+        const sidebar = renderDraggableSidebar(onMoveSlide);
+
+        // To the right, a top-level slide becomes a vertical slide.
+        const topLevel = startDrag(sidebar, "board");
+        expect(topLevel.over("web", 10, 30)).toBe(true);
+        expect(getDropMarks(sidebar)).toEqual([ "second drop-after" ]);
+        topLevel.drop("web");
+        expect(onMoveSlide).toHaveBeenLastCalledWith({ noteId: "board", targetNoteId: "second", position: "after" });
+
+        // To the left, a vertical slide becomes a top-level slide.
+        const vertical = startDrag(sidebar, "first");
+        expect(vertical.over("board", 90, -30)).toBe(true);
+        expect(getDropMarks(sidebar)).toEqual([ "board drop-after" ]);
+    });
+
+    it("refuses a drop that changes nothing or that the slides cannot take", () => {
         const onMoveSlide = vi.fn();
         const sidebar = renderDraggableSidebar(onMoveSlide);
 
         const vertical = startDrag(sidebar, "second");
         expect(vertical.over("web", 10)).toBe(false);
         expect(getDropMarks(sidebar)).toEqual([]);
-        expect(vertical.over("first", 90)).toBe(false);
-        vertical.drop("first");
+        vertical.drop("web");
         expect(onMoveSlide).not.toHaveBeenCalled();
 
-        // A refused position clears the mark of an allowed one.
-        const topLevel = startDrag(sidebar, "board");
+        // Under a board, and a refused position clearing the mark of an allowed one.
+        const topLevel = startDrag(sidebar, "web");
         topLevel.over("intro", 10);
         expect(getDropMarks(sidebar)).toEqual([ "intro drop-before" ]);
-        expect(topLevel.over("web", 90)).toBe(false);
+        expect(topLevel.over("board", 90, 30)).toBe(false);
         expect(getDropMarks(sidebar)).toEqual([]);
     });
 
@@ -213,32 +234,49 @@ describe("dragging slides", () => {
     });
 });
 
-/** Renders the sidebar with thumbnails 100px tall, whose moves follow `getSlideMove()`. */
+const THUMBNAIL_HEIGHT = 100;
+const THUMBNAIL_PITCH = 110;
+const DRAG_START_X = 50;
+
+/** Renders the sidebar with its thumbnails stacked 100px tall, whose moves follow `getSlideMove()`. */
 function renderDraggableSidebar(onMoveSlide: (move: SlideMove) => void) {
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 160, 100));
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+        return new DOMRect(0, getThumbnailIndex(this) * THUMBNAIL_PITCH, 160, THUMBNAIL_HEIGHT);
+    });
     return renderSidebar({
-        planSlideMove: (noteId, targetNoteId, position) => (
-            getSlideMove(presentation, "deck", noteId, targetNoteId, position, () => false)
+        planSlideMove: (noteId, gap, levelShift) => (
+            getSlideMove(presentation, "deck", noteId, gap, levelShift, () => false)
         ),
         onMoveSlide
     });
 }
 
+function getThumbnailIndex(element: HTMLElement) {
+    return [ ...document.querySelectorAll(".slide-thumbnail-button") ].indexOf(element);
+}
+
 function startDrag(sidebar: HTMLElement, noteId: string) {
-    dispatchDrag(getButton(sidebar, noteId), "dragstart", 0);
+    dispatchDrag(getButton(sidebar, noteId), "dragstart", DRAG_START_X, 0);
     return {
-        /** Drags over the thumbnail of `targetNoteId`, `y` pixels from its top; returns whether a drop is allowed there. */
-        over: (targetNoteId: string, y: number) => dispatchDrag(getButton(sidebar, targetNoteId), "dragover", y).defaultPrevented,
+        /**
+         * Drags over the thumbnail of `targetNoteId`, `y` pixels from its top and `dx` pixels to the side
+         * of where the drag started; returns whether a drop is allowed there.
+         */
+        over: (targetNoteId: string, y: number, dx = 0) => {
+            const button = getButton(sidebar, targetNoteId);
+            const clientY = getThumbnailIndex(button) * THUMBNAIL_PITCH + y;
+            return dispatchDrag(button, "dragover", DRAG_START_X + dx, clientY).defaultPrevented;
+        },
         drop: (targetNoteId: string) => {
-            dispatchDrag(getButton(sidebar, targetNoteId), "drop", 0);
-            dispatchDrag(getButton(sidebar, noteId), "dragend", 0);
+            dispatchDrag(getButton(sidebar, targetNoteId), "drop", 0, 0);
+            dispatchDrag(getButton(sidebar, noteId), "dragend", 0, 0);
         }
     };
 }
 
-function dispatchDrag(target: HTMLElement, type: string, clientY: number) {
+function dispatchDrag(target: HTMLElement, type: string, clientX: number, clientY: number) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { clientY, dataTransfer: { setData: () => {}, effectAllowed: "", dropEffect: "" } });
+    Object.assign(event, { clientX, clientY, dataTransfer: { setData: () => {}, effectAllowed: "", dropEffect: "" } });
     act(() => {
         target.dispatchEvent(event);
     });
@@ -252,8 +290,11 @@ function getItem(sidebar: HTMLElement, noteId: string) {
 }
 
 function getDropMarks(sidebar: HTMLElement) {
-    return [ ...sidebar.querySelectorAll<HTMLElement>("li.drop-before, li.drop-after") ]
-        .map(item => `${item.dataset.slideId} ${item.classList.contains("drop-before") ? "drop-before" : "drop-after"}`);
+    return [ ...sidebar.querySelectorAll<HTMLElement>("li.drop-before, li.drop-after, li.drop-into") ]
+        .map(item => {
+            const mark = [ "drop-before", "drop-after", "drop-into" ].find(name => item.classList.contains(name));
+            return `${item.dataset.slideId} ${mark}`;
+        });
 }
 
 function getButton(sidebar: HTMLElement, noteId: string) {
@@ -305,7 +346,7 @@ interface RenderOptions {
     closingContents?: Record<string, { __html: string }>;
     activeNoteId?: string;
     onSelectSlide?: (noteId: string) => void;
-    planSlideMove?: (noteId: string, targetNoteId: string, position: SlideMove["position"]) => SlideMove | undefined;
+    planSlideMove?: (noteId: string, gap: number, levelShift: -1 | 0 | 1) => SlideMove | undefined;
     onMoveSlide?: (move: SlideMove) => void;
     /** Renders again into the container of an earlier render. */
     container?: HTMLElement;

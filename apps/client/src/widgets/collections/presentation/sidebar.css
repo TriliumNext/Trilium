@@ -28,7 +28,8 @@
         }
 
         &.drop-before::before,
-        &.drop-after::after {
+        &.drop-after::after,
+        &.drop-into::after {
             content: "";
             position: absolute;
             inset-inline-start: 0;
@@ -43,8 +44,13 @@
             top: -6px;
         }
 
-        &.drop-after::after {
+        &.drop-after::after,
+        &.drop-into::after {
             bottom: -6px;
+        }
+
+        &.drop-into::after {
+            inset-inline-start: var(--vertical-slide-indent);
         }
     }
 

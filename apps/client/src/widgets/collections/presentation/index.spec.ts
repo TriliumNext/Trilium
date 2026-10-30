@@ -243,8 +243,10 @@ describe("keepSlideShown", () => {
         moved.id = "slide-moved";
         container.append(moved);
         let current = { h: 0, v: 0 };
+        let currentSlide: HTMLElement = document.createElement("section");
         const api = {
             getRevealElement: () => container,
+            getCurrentSlide: () => currentSlide,
             getIndices: vi.fn((slide?: HTMLElement) => slide ? { h: 2, v: 1 } : current),
             slide: vi.fn()
         };
@@ -255,8 +257,14 @@ describe("keepSlideShown", () => {
         // Already shown where it is, or no longer a slide.
         api.slide.mockClear();
         current = { h: 2, v: 1 };
+        currentSlide = moved;
         keepSlideShown(api as unknown as RevealApi, "moved");
         keepSlideShown(api as unknown as RevealApi, "gone");
         expect(api.slide).not.toHaveBeenCalled();
+
+        // At the same position, but in a section built anew for a change of level.
+        currentSlide = document.createElement("section");
+        keepSlideShown(api as unknown as RevealApi, "moved");
+        expect(api.slide).toHaveBeenCalledExactlyOnceWith(2, 1);
     });
 });

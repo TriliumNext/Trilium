@@ -131,64 +131,145 @@ export function getNewSlidePosition(presentation: PresentationModel, collectionN
     return { parentNoteId: collectionNoteId, afterNoteId: undefined };
 }
 
-/** A slide dropped before or after another slide at its level. */
+/**
+ * A slide dropped next to another slide, or as the first vertical slide of a top-level slide without any.
+ * A slide next to a slide under another parent moves to that parent, so a move can change its level.
+ */
 export interface SlideMove {
     noteId: string;
     targetNoteId: string;
-    position: "before" | "after";
+    position: "before" | "after" | "into";
+}
+
+/** A slide in sidebar order, with the top-level slide whose vertical slide it is. */
+interface OrderedSlide {
+    slide: PresentationSlideModel | PresentationSlideBaseModel;
+    stack?: PresentationSlideModel;
 }
 
 /**
- * Returns the move of the slide `noteId` before or after the slide `targetNoteId`, if both have the
- * same parent, the move changes the order, and the parent's children are not sorted by `#sorted`.
+ * Returns the move of the slide `noteId` dropped into the gap before the slide at `gap` in sidebar
+ * order (the end past the last). The slide keeps its level unless `levelShift` makes it a vertical slide
+ * (`1`) or a top-level one (`-1`). A top-level slide goes before the next top-level slide, past any
+ * vertical slides; a vertical slide goes after the slide above the gap, or becomes the first vertical
+ * slide of a top-level slide without any.
+ *
+ * Returns nothing for a drop that changes nothing, a slide with vertical slides of its own made vertical,
+ * a slide placed under a board or table slide, or under a note whose children are sorted by `#sorted`.
  */
 export function getSlideMove(
-    presentation: PresentationModel, collectionNoteId: string, noteId: string, targetNoteId: string,
-    position: SlideMove["position"], isSorted: (parentNoteId: string) => boolean
+    presentation: PresentationModel, collectionNoteId: string, noteId: string, gap: number,
+    levelShift: -1 | 0 | 1, isSorted: (parentNoteId: string) => boolean
 ): SlideMove | undefined {
-    const level = findSlideLevel(presentation, collectionNoteId, noteId);
-    if (!level || noteId === targetNoteId || isSorted(level.parentNoteId)) return;
+    const order = getSlideOrder(presentation);
+    const dragged = order.find(({ slide }) => slide.noteId === noteId);
+    if (!dragged) return;
+    const toVertical = levelShift > 0 || (levelShift === 0 && !!dragged.stack);
 
-    const from = level.slides.findIndex(slide => slide.noteId === noteId);
-    const to = level.slides.findIndex(slide => slide.noteId === targetNoteId);
-    if (to < 0) return;
-    const insertion = position === "before" ? to : to + 1;
-    if (insertion === from || insertion === from + 1) return;
-    return { noteId, targetNoteId, position };
+    let move: SlideMove | undefined;
+    let parentNoteId = collectionNoteId;
+    if (toVertical) {
+        if (!dragged.stack && (dragged.slide as PresentationSlideModel).verticalSlides) return;
+        const above = order[gap - 1];
+        const below = order[gap];
+        if (!above) return;
+        if (above.stack) {
+            move = { noteId, targetNoteId: above.slide.noteId, position: "after" };
+            parentNoteId = above.stack.noteId;
+        } else if (below?.stack === above.slide) {
+            move = { noteId, targetNoteId: below.slide.noteId, position: "before" };
+            parentNoteId = above.slide.noteId;
+        } else {
+            if (above.slide.isCollection) return;
+            move = { noteId, targetNoteId: above.slide.noteId, position: "into" };
+            parentNoteId = above.slide.noteId;
+        }
+    } else {
+        const next = order.slice(gap).find(({ stack }) => !stack);
+        const last = presentation.slides.at(-1);
+        if (next) {
+            move = { noteId, targetNoteId: next.slide.noteId, position: "before" };
+        } else if (last) {
+            move = { noteId, targetNoteId: last.noteId, position: "after" };
+        }
+    }
+
+    if (!move || move.targetNoteId === noteId || isSorted(parentNoteId)) return;
+    if (describeOrder(applySlideMove(presentation, move)) === describeOrder(presentation)) return;
+    return move;
 }
 
 /** Returns the model with `move` applied, so that the sidebar and the slides show it before the server does. */
 export function applySlideMove(presentation: PresentationModel, move: SlideMove): PresentationModel {
-    function reorder<T extends PresentationSlideBaseModel>(slides: T[]) {
-        const moved = slides.find(slide => slide.noteId === move.noteId);
-        if (!moved || !slides.some(slide => slide.noteId === move.targetNoteId)) return slides;
-        const rest = slides.filter(slide => slide !== moved);
-        const target = rest.findIndex(slide => slide.noteId === move.targetNoteId);
-        rest.splice(move.position === "before" ? target : target + 1, 0, moved);
-        return rest;
+    let moved: PresentationSlideModel | PresentationSlideBaseModel | undefined;
+    const slides: PresentationSlideModel[] = [];
+    for (const slide of presentation.slides) {
+        const movedVertical = slide.verticalSlides?.find(verticalSlide => verticalSlide.noteId === move.noteId);
+        if (slide.noteId === move.noteId) {
+            moved = slide;
+        } else if (slide.verticalSlides && movedVertical) {
+            moved = movedVertical;
+            const verticalSlides = slide.verticalSlides.filter(verticalSlide => verticalSlide !== movedVertical);
+            slides.push({ ...slide, verticalSlides: verticalSlides.length ? verticalSlides : undefined });
+        } else {
+            slides.push(slide);
+        }
     }
+    if (!moved) return presentation;
 
-    return {
-        slides: reorder(presentation.slides).map(slide => (
-            slide.verticalSlides ? { ...slide, verticalSlides: reorder(slide.verticalSlides) } : slide
-        ))
-    };
+    const topLevelIndex = slides.findIndex(slide => slide.noteId === move.targetNoteId);
+    if (move.position === "into") {
+        const target = slides[topLevelIndex];
+        if (!target) return presentation;
+        slides[topLevelIndex] = { ...target, verticalSlides: [ ...target.verticalSlides ?? [], toVerticalSlide(moved) ] };
+    } else if (topLevelIndex >= 0) {
+        const topLevel = { ...moved, verticalSlides: (moved as PresentationSlideModel).verticalSlides };
+        slides.splice(move.position === "before" ? topLevelIndex : topLevelIndex + 1, 0, topLevel);
+    } else {
+        const stackIndex = slides.findIndex(slide => (
+            slide.verticalSlides?.some(verticalSlide => verticalSlide.noteId === move.targetNoteId)
+        ));
+        const stack = slides[stackIndex];
+        if (!stack?.verticalSlides) return presentation;
+        const verticalSlides = [ ...stack.verticalSlides ];
+        const index = verticalSlides.findIndex(verticalSlide => verticalSlide.noteId === move.targetNoteId);
+        verticalSlides.splice(move.position === "before" ? index : index + 1, 0, toVerticalSlide(moved));
+        slides[stackIndex] = { ...stack, verticalSlides };
+    }
+    return { slides };
 }
 
 /**
- * Moves the branch of the slide's note before or after the target's branch, under their parent. Returns
- * whether it found both branches; a move the server refuses shows a toast but still returns `true`.
+ * Whether the move from `before` to `after` puts the slide `noteId` in a new `<section>`: it changes
+ * parent, or gains or loses its vertical slides, so that an editor in its section goes away.
+ */
+export function isSlideRebuilt(before: PresentationModel, after: PresentationModel, noteId: string) {
+    return describeSlide(before, noteId) !== describeSlide(after, noteId);
+}
+
+/**
+ * Moves the branch of the slide's note next to the target's branch, under the target's parent, or under
+ * the target for `into`. Returns whether it found both branches; a move the server refuses shows a
+ * toast but still returns `true`.
  */
 export async function moveSlideNote(presentation: PresentationModel, collectionNoteId: string, move: SlideMove) {
-    const level = findSlideLevel(presentation, collectionNoteId, move.noteId);
-    if (!level) return false;
+    const order = getSlideOrder(presentation);
+    const parentOf = (noteId: string) => {
+        const ordered = order.find(({ slide }) => slide.noteId === noteId);
+        return ordered && (ordered.stack?.noteId ?? collectionNoteId);
+    };
+    const parentNoteId = parentOf(move.noteId);
+    const targetParentNoteId = parentOf(move.targetNoteId);
+    if (!parentNoteId || !targetParentNoteId) return false;
     const [ branchId, targetBranchId ] = await Promise.all([
-        froca.getBranchId(level.parentNoteId, move.noteId),
-        froca.getBranchId(level.parentNoteId, move.targetNoteId)
+        froca.getBranchId(parentNoteId, move.noteId),
+        froca.getBranchId(targetParentNoteId, move.targetNoteId)
     ]);
     if (!branchId || !targetBranchId) return false;
 
-    if (move.position === "before") {
+    if (move.position === "into") {
+        await branches.moveToParentNote([ branchId ], targetBranchId);
+    } else if (move.position === "before") {
         await branches.moveBeforeBranch([ branchId ], targetBranchId);
     } else {
         await branches.moveAfterBranch([ branchId ], targetBranchId);
@@ -196,16 +277,31 @@ export async function moveSlideNote(presentation: PresentationModel, collectionN
     return true;
 }
 
-/** Returns the slides at the level of the slide `noteId`, with the note they are children of. */
-function findSlideLevel(presentation: PresentationModel, collectionNoteId: string, noteId: string) {
-    if (presentation.slides.some(slide => slide.noteId === noteId)) {
-        return { parentNoteId: collectionNoteId, slides: presentation.slides as PresentationSlideBaseModel[] };
-    }
-    for (const slide of presentation.slides) {
-        if (slide.verticalSlides?.some(verticalSlide => verticalSlide.noteId === noteId)) {
-            return { parentNoteId: slide.noteId, slides: slide.verticalSlides };
-        }
-    }
+/** Returns the slides in sidebar order: each top-level slide, then its vertical slides. */
+function getSlideOrder(presentation: PresentationModel): OrderedSlide[] {
+    return presentation.slides.flatMap(slide => [
+        { slide },
+        ...slide.verticalSlides?.map(verticalSlide => ({ slide: verticalSlide, stack: slide })) ?? []
+    ]);
+}
+
+function describeOrder(presentation: PresentationModel) {
+    return presentation.slides.map(slide => [
+        slide.noteId, ...slide.verticalSlides?.map(verticalSlide => verticalSlide.noteId) ?? []
+    ].join(" ")).join("|");
+}
+
+function describeSlide(presentation: PresentationModel, noteId: string) {
+    const ordered = getSlideOrder(presentation).find(({ slide }) => slide.noteId === noteId);
+    if (!ordered) return;
+    const hasStack = !ordered.stack && !!(ordered.slide as PresentationSlideModel).verticalSlides;
+    return `${ordered.stack?.noteId ?? ""}/${hasStack}`;
+}
+
+function toVerticalSlide(slide: PresentationSlideModel | PresentationSlideBaseModel): PresentationSlideBaseModel {
+    const verticalSlide: Partial<PresentationSlideModel> = { ...slide };
+    delete verticalSlide.verticalSlides;
+    return verticalSlide as PresentationSlideBaseModel;
 }
 
 /** Whether `note` is a collection that its slide shows live, see {@link COLLECTION_SLIDE_VIEW_TYPES}. */

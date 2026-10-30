@@ -26,7 +26,12 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 
 *   The slide being shown is outlined, and the sidebar scrolls to keep it in view.
 *   Click a thumbnail to go to its slide.
-*   To reorder the slides, drag a thumbnail before or after another slide at the same level; a line shows where it goes. A slide takes its vertical slides with it, and dragging it over another slide's vertical slides places it after that whole stack. A vertical slide moves only among the vertical slides of its own slide. Slides can't be dragged in a read-only or search-based presentation, or where the parent note sorts its children with `#sorted`.
+*   To move a slide, drag its thumbnail; a line shows where it goes. Dragged straight up or down, a slide keeps its level:
+    *   A top-level slide takes its vertical slides with it, and dragged over another slide's vertical slides it goes after that whole stack.
+    *   A vertical slide can go among the vertical slides of any slide. Dropped below a slide that has none, it becomes that slide's first vertical slide, and the line is indented.
+*   To change a slide's level, drag it to the side as well: to the right to make it a vertical slide, to the left to make it a top-level slide. The line's indent shows the level it will have.
+    *   A slide that has vertical slides of its own can't become a vertical slide, and a <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> slide can't take vertical slides.
+*   Slides can't be dragged in a read-only or search-based presentation, or into a note that sorts its children with `#sorted`.
 *   Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides:
     *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
     *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.

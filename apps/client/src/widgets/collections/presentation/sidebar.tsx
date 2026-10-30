@@ -14,6 +14,8 @@ type SlideContent = PresentationSlideBaseModel["content"];
 
 /** The data type of a dragged thumbnail, which nothing outside the sidebar accepts. */
 const SLIDE_DRAG_TYPE = "application/x-trilium-slide";
+/** How far a thumbnail is dragged to the side to make it a vertical or a top-level slide. */
+const LEVEL_SHIFT_DISTANCE = 24;
 
 interface SlideSidebarProps {
     presentation: PresentationModel;
@@ -25,8 +27,11 @@ interface SlideSidebarProps {
     activeNoteId: string | undefined;
     /** Moves to the slide of a clicked thumbnail. */
     onSelectSlide: (noteId: string) => void;
-    /** Returns the move of a slide dropped before or after another, or nothing where it cannot go. */
-    planSlideMove?: (noteId: string, targetNoteId: string, position: SlideMove["position"]) => SlideMove | undefined;
+    /**
+     * Returns the move of a slide dropped into the gap before the thumbnail at `gap`, made vertical or
+     * top-level by `levelShift`, or nothing where it cannot go.
+     */
+    planSlideMove?: (noteId: string, gap: number, levelShift: -1 | 0 | 1) => SlideMove | undefined;
     /** Moves a dropped slide; left out when the slides cannot be moved, which leaves the thumbnails undraggable. */
     onMoveSlide?: (move: SlideMove) => void;
 }
@@ -34,6 +39,8 @@ interface SlideSidebarProps {
 /** The thumbnail being dragged, and where it would go if dropped now. */
 interface DragState {
     noteId: string;
+    /** Where the drag started, to tell how far it went to the side. */
+    startX: number;
     drop?: SlideMove;
 }
 
@@ -81,25 +88,19 @@ export default function SlideSidebar({
     }
 
     /**
-     * Returns where the dragged slide goes, from the closest thumbnail at its level: before it over its
-     * upper half, after it otherwise. Over a vertical slide, a top-level slide goes after the whole stack.
+     * Returns where the dragged slide goes: into the gap above the first thumbnail whose middle is below
+     * the pointer, at the level that dragging to the side picks.
      */
     function findDrop(e: DragEvent) {
         if (!drag || !planSlideMove) return;
-        let item = e.target instanceof Element ? e.target.closest<HTMLElement>("li[data-slide-id]") : null;
-        let isInStack = false;
-        while (item) {
-            const targetNoteId = item.dataset.slideId;
-            const button = item.querySelector(":scope > .slide-thumbnail-button");
-            if (targetNoteId && button) {
-                const { top, height } = button.getBoundingClientRect();
-                const position = !isInStack && e.clientY < top + height / 2 ? "before" : "after";
-                const move = planSlideMove(drag.noteId, targetNoteId, position);
-                if (move) return move;
-            }
-            item = item.parentElement?.closest<HTMLElement>("li[data-slide-id]") ?? null;
-            isInStack = true;
-        }
+        const buttons = [ ...listRef.current?.querySelectorAll(".slide-thumbnail-button") ?? [] ];
+        const gap = buttons.findIndex(button => {
+            const { top, height } = button.getBoundingClientRect();
+            return e.clientY < top + height / 2;
+        });
+        const dx = e.clientX - drag.startX;
+        const levelShift = dx >= LEVEL_SHIFT_DISTANCE ? 1 : dx <= -LEVEL_SHIFT_DISTANCE ? -1 : 0;
+        return planSlideMove(drag.noteId, gap < 0 ? buttons.length : gap, levelShift);
     }
 
     function onDragOver(e: DragEvent) {
@@ -124,7 +125,7 @@ export default function SlideSidebar({
     function onDragLeave(e: DragEvent) {
         const list = listRef.current;
         if (drag?.drop && list && !(e.relatedTarget instanceof Node && list.contains(e.relatedTarget))) {
-            setDrag({ noteId: drag.noteId });
+            setDrag({ noteId: drag.noteId, startX: drag.startX });
         }
     }
 
@@ -145,7 +146,7 @@ export default function SlideSidebar({
                         e.dataTransfer.effectAllowed = "move";
                         e.dataTransfer.setData(SLIDE_DRAG_TYPE, slide.noteId);
                     }
-                    setDrag({ noteId: slide.noteId });
+                    setDrag({ noteId: slide.noteId, startX: e.clientX });
                 } : undefined}
                 onDragEnd={() => setDrag(undefined)}
             >
@@ -186,7 +187,10 @@ export default function SlideSidebar({
     );
 }
 
-/** The note ID of a thumbnail's list item, and the classes that mark it as dragged or as where a drop goes. */
+/**
+ * The note ID of a thumbnail's list item, and the classes that mark it as dragged or as where a drop goes:
+ * above it, below it (past its vertical slides), or below it as its first vertical slide.
+ */
 function getItemProps(noteId: string, drag: DragState | undefined) {
     const drop = drag?.drop?.targetNoteId === noteId ? drag.drop.position : undefined;
     return {
@@ -194,7 +198,8 @@ function getItemProps(noteId: string, drag: DragState | undefined) {
         className: clsx({
             dragging: drag?.noteId === noteId,
             "drop-before": drop === "before",
-            "drop-after": drop === "after"
+            "drop-after": drop === "after",
+            "drop-into": drop === "into"
         }) || undefined
     };
 }

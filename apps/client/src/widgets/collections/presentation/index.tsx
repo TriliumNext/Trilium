@@ -24,8 +24,8 @@ import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { createFitObserver } from "./fit";
 import {
-    applySlideMove, buildPresentationModel, createSlide, getSlideMove, moveSlideNote, PresentationModel,
-    PresentationSlideBaseModel, renderSlideContent, SlideMove
+    applySlideMove, buildPresentationModel, createSlide, getSlideMove, isSlideRebuilt, moveSlideNote,
+    PresentationModel, PresentationSlideBaseModel, renderSlideContent, SlideMove
 } from "./model";
 import SlideSidebar from "./sidebar";
 import slideCustomStylesheet from "./slidejs.css?raw";
@@ -75,8 +75,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     // Shown at once, before the server confirms; the model rebuilt after the move replaces it.
     async function moveSlide(move: SlideMove) {
         if (!presentation) return;
+        const moved = applySlideMove(presentation, move);
+        // A section built anew drops the editor that was in it.
+        if (editedNoteId && isSlideRebuilt(presentation, moved, editedNoteId)) finishEditing();
         ++refreshIdRef.current;
-        setPresentation(applySlideMove(presentation, move));
+        setPresentation(moved);
         try {
             if (await moveSlideNote(presentation, note.noteId, move)) return;
         } catch (e) {
@@ -186,8 +189,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         closingContents={closingSlides.contents}
                         activeNoteId={activeNoteId}
                         onSelectSlide={(noteId) => api && goToSlide(api, noteId)}
-                        planSlideMove={canAddSlides ? (noteId, targetNoteId, position) => getSlideMove(
-                            presentation, note.noteId, noteId, targetNoteId, position,
+                        planSlideMove={canAddSlides ? (noteId, gap, levelShift) => getSlideMove(
+                            presentation, note.noteId, noteId, gap, levelShift,
                             (parentNoteId) => !!froca.getNoteFromCache(parentNoteId)?.hasLabel("sorted")
                         ) : undefined}
                         onMoveSlide={canAddSlides ? (move) => void moveSlide(move) : undefined}
@@ -732,14 +735,16 @@ export function followSlideLinks(container: HTMLElement, api: RevealApi) {
 
 /**
  * Shows the slide of the note `noteId` again after the slides were reordered, as Reveal.js keeps the
- * position of the slide it showed rather than the slide.
+ * position of the slide it showed rather than the slide, and points Reveal.js at the slide's section
+ * when a change of level built it anew.
  */
 export function keepSlideShown(api: RevealApi, noteId: string) {
     const slide = api.getRevealElement()?.querySelector<HTMLElement>(`#slide-${noteId}`);
     if (!slide) return;
     const { h, v } = api.getIndices(slide);
     const current = api.getIndices();
-    if (h !== current.h || v !== current.v) api.slide(h, v);
+    // `sync()` does not update the current slide that `getCurrentSlide()` returns, but `slide()` does.
+    if (h !== current.h || v !== current.v || api.getCurrentSlide() !== slide) api.slide(h, v);
 }
 
 /**

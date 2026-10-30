@@ -11,8 +11,8 @@ import froca from "../../../services/froca";
 import note_create from "../../../services/note_create";
 import { buildNote } from "../../../test/easy-froca";
 import {
-    applySlideMove, buildPresentationModel, createSlide, getNewSlidePosition, getSlideMove, moveSlideNote,
-    PresentationModel, renderSlideContent
+    applySlideMove, buildPresentationModel, createSlide, getNewSlidePosition, getSlideMove, isSlideRebuilt,
+    moveSlideNote, PresentationModel, renderSlideContent
 } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
@@ -257,62 +257,110 @@ describe("createSlide", () => {
 });
 
 describe("moving slides", () => {
-    const slide = (noteId: string) => ({ noteId, type: "text" as const, content: { __html: "" } });
+    const slide = (noteId: string, extra = {}) => ({ noteId, type: "text" as const, content: { __html: "" }, ...extra });
+    // In sidebar order: a, a1, a2, a3, b, c, board.
     const model: PresentationModel = {
         slides: [
             { ...slide("a"), verticalSlides: [ slide("a1"), slide("a2"), slide("a3") ] },
             { ...slide("b"), verticalSlides: undefined },
-            { ...slide("c"), verticalSlides: undefined }
+            { ...slide("c"), verticalSlides: undefined },
+            { ...slide("board", { isCollection: true }), verticalSlides: undefined }
         ]
     };
     const unsorted = () => false;
+    const move = (
+        noteId: string, gap: number, levelShift: -1 | 0 | 1 = 0,
+        isSorted: (parentNoteId: string) => boolean = unsorted
+    ) => (
+        getSlideMove(model, "deck", noteId, gap, levelShift, isSorted)
+    );
 
-    it("moves a slide only among the slides at its level", () => {
-        expect(getSlideMove(model, "deck", "c", "a", "before", unsorted))
-            .toEqual({ noteId: "c", targetNoteId: "a", position: "before" });
-        expect(getSlideMove(model, "deck", "a3", "a1", "after", unsorted))
-            .toEqual({ noteId: "a3", targetNoteId: "a1", position: "after" });
-        // Between levels, and into another stack.
-        expect(getSlideMove(model, "deck", "b", "a1", "after", unsorted)).toBeUndefined();
-        expect(getSlideMove(model, "deck", "a1", "b", "before", unsorted)).toBeUndefined();
+    it("keeps the level of a slide dragged straight", () => {
+        // A top-level slide goes before the next top-level slide, past a stack it is over.
+        expect(move("c", 0)).toEqual({ noteId: "c", targetNoteId: "a", position: "before" });
+        expect(move("c", 2)).toEqual({ noteId: "c", targetNoteId: "b", position: "before" });
+        expect(move("a", 7)).toEqual({ noteId: "a", targetNoteId: "board", position: "after" });
+        // A vertical slide stays vertical: after the slide above the gap, or as the first vertical slide
+        // of a top-level slide without any.
+        expect(move("a3", 2)).toEqual({ noteId: "a3", targetNoteId: "a1", position: "after" });
+        expect(move("a1", 5)).toEqual({ noteId: "a1", targetNoteId: "b", position: "into" });
     });
 
-    it("leaves out a drop that changes nothing, and a parent whose children are sorted", () => {
-        expect(getSlideMove(model, "deck", "b", "b", "after", unsorted)).toBeUndefined();
-        expect(getSlideMove(model, "deck", "b", "a", "after", unsorted)).toBeUndefined();
-        expect(getSlideMove(model, "deck", "b", "c", "before", unsorted)).toBeUndefined();
-        expect(getSlideMove(model, "deck", "a1", "a2", "before", unsorted)).toBeUndefined();
-
-        const isSorted = (parentNoteId: string) => parentNoteId === "a";
-        expect(getSlideMove(model, "deck", "a3", "a1", "before", isSorted)).toBeUndefined();
-        expect(getSlideMove(model, "deck", "c", "a", "before", isSorted)).not.toBeUndefined();
+    it("changes the level of a slide dragged sideways", () => {
+        expect(move("c", 4, 1)).toEqual({ noteId: "c", targetNoteId: "a3", position: "after" });
+        expect(move("c", 1, 1)).toEqual({ noteId: "c", targetNoteId: "a1", position: "before" });
+        expect(move("c", 5, 1)).toEqual({ noteId: "c", targetNoteId: "b", position: "into" });
+        expect(move("a2", 4, -1)).toEqual({ noteId: "a2", targetNoteId: "b", position: "before" });
+        expect(move("a2", 2, -1)).toEqual({ noteId: "a2", targetNoteId: "b", position: "before" });
     });
 
-    it("reorders the model as the move does, keeping a slide's vertical slides with it", () => {
+    it("refuses a drop that changes nothing, breaks the two levels, or goes where order is not kept", () => {
+        // No change.
+        expect(move("b", 4)).toBeUndefined();
+        expect(move("b", 5)).toBeUndefined();
+        expect(move("a2", 2)).toBeUndefined();
+        expect(move("a2", 3)).toBeUndefined();
+        expect(move("a1", 1)).toBeUndefined();
+        // Into itself.
+        expect(move("b", 5, 1)).toBeUndefined();
+        // A slide with vertical slides of its own stays top-level.
+        expect(move("a", 7, 1)).toBeUndefined();
+        // A board or table slide shows its own children.
+        expect(move("c", 7, 1)).toBeUndefined();
+        // Above the first slide there is no slide to be vertical under.
+        expect(move("a2", 0)).toBeUndefined();
+        // The children of a #sorted note.
+        expect(move("a3", 1, 0, (parentNoteId) => parentNoteId === "a")).toBeUndefined();
+        expect(move("c", 4, 1, (parentNoteId) => parentNoteId === "a")).toBeUndefined();
+        expect(move("c", 0, 0, (parentNoteId) => parentNoteId === "a")).not.toBeUndefined();
+    });
+
+    it("applies a move to the model, keeping a slide's vertical slides with it", () => {
         const order = (presentation: PresentationModel) => presentation.slides.map(s => [
             s.noteId, ...s.verticalSlides?.map(v => v.noteId) ?? []
         ].join(" "));
 
         expect(order(applySlideMove(model, { noteId: "a", targetNoteId: "c", position: "after" })))
-            .toEqual([ "b", "c", "a a1 a2 a3" ]);
+            .toEqual([ "b", "c", "a a1 a2 a3", "board" ]);
         expect(order(applySlideMove(model, { noteId: "a3", targetNoteId: "a1", position: "before" })))
-            .toEqual([ "a a3 a1 a2", "b", "c" ]);
+            .toEqual([ "a a3 a1 a2", "b", "c", "board" ]);
+        // Between levels: a stack loses its last slide, or a slide gains its first.
+        expect(order(applySlideMove(applySlideMove(model, { noteId: "c", targetNoteId: "b", position: "into" }),
+            { noteId: "b", targetNoteId: "a", position: "before" }))).toEqual([ "b c", "a a1 a2 a3", "board" ]);
+        expect(order(applySlideMove(applySlideMove(model, { noteId: "c", targetNoteId: "b", position: "into" }),
+            { noteId: "c", targetNoteId: "board", position: "before" }))).toEqual([ "a a1 a2 a3", "b", "c", "board" ]);
+        expect(applySlideMove(model, { noteId: "a2", targetNoteId: "b", position: "before" }).slides[1])
+            .toEqual({ ...slide("a2"), verticalSlides: undefined });
         // The model it was given stays as it was.
-        expect(order(model)).toEqual([ "a a1 a2 a3", "b", "c" ]);
+        expect(order(model)).toEqual([ "a a1 a2 a3", "b", "c", "board" ]);
     });
 
-    it("moves the slide's branch before or after the target's, under their parent", async () => {
+    it("tells whether a move rebuilds the section of a slide", () => {
+        const into = applySlideMove(model, { noteId: "c", targetNoteId: "b", position: "into" });
+        expect(isSlideRebuilt(model, into, "c")).toBe(true);
+        expect(isSlideRebuilt(model, into, "b")).toBe(true);
+        expect(isSlideRebuilt(model, into, "a")).toBe(false);
+        const reordered = applySlideMove(model, { noteId: "a3", targetNoteId: "a1", position: "before" });
+        expect(isSlideRebuilt(model, reordered, "a3")).toBe(false);
+    });
+
+    it("moves the slide's branch next to the target's, or under the target", async () => {
         const getBranchId = vi.spyOn(froca, "getBranchId")
             .mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
         const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(undefined);
         const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(undefined);
+        const moveTo = vi.spyOn(branches, "moveToParentNote").mockResolvedValue(undefined);
 
         await expect(moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a", position: "before" }))
             .resolves.toBe(true);
         expect(moveBefore).toHaveBeenCalledWith([ "deck_c" ], "deck_a");
 
-        await moveSlideNote(model, "deck", { noteId: "a1", targetNoteId: "a3", position: "after" });
-        expect(moveAfter).toHaveBeenCalledWith([ "a_a1" ], "a_a3");
+        // To another level, next to a slide under another parent.
+        await moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a3", position: "after" });
+        expect(moveAfter).toHaveBeenCalledWith([ "deck_c" ], "a_a3");
+
+        await moveSlideNote(model, "deck", { noteId: "a1", targetNoteId: "b", position: "into" });
+        expect(moveTo).toHaveBeenCalledWith([ "a_a1" ], "deck_b");
 
         // A branch that froca cannot find moves nothing.
         getBranchId.mockResolvedValue(null);
@@ -321,8 +369,6 @@ describe("moving slides", () => {
             .resolves.toBe(false);
         expect(moveBefore).not.toHaveBeenCalled();
 
-        getBranchId.mockRestore();
-        moveBefore.mockRestore();
-        moveAfter.mockRestore();
+        vi.restoreAllMocks();
     });
 });
