@@ -7,7 +7,7 @@ The Presentation view allows the creation of slideshows directly from within Tri
 
 Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Presentation_.
 
-A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. The arrow beside it creates a slide of another type instead, as described below. A read-only presentation shows only a message that it has no slides. Until there is a slide, the toolbar buttons that act on one (the slide sidebar, editing the slide, its background, the overview and starting the presentation) are disabled.
+A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. The arrow beside it creates a slide of another type instead, as described below. A read-only presentation shows only a message that it has no slides. Until there is a slide, the _Slide sidebar_ button is disabled and the controls below the slides are not shown.
 
 ## How it works
 
@@ -48,9 +48,9 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 *   To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings. Press it again to bring the sidebar back. Each device remembers the choice for every presentation.
 *   The sidebar is hidden when the note is too narrow to fit it.
 
-### Toolbar
+### Controls below the slides
 
-On the right of the toolbar above the slides:
+Below the slides are two groups of buttons. The group on the left edits the presentation:
 
 *   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. The <span class="tn-icon bx bx-chevron-down"></span> arrow beside it adds a slide of another type instead:
     
@@ -60,10 +60,13 @@ On the right of the toolbar above the slides:
     *   _Web View_, _Code_ and _Spreadsheet_ create an empty note of that type. Its content is added in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, with the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button.
     
     A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
-*   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to edit the current slide: in place for a text, canvas, Kanban Board or Table slide, as a double-click does, and in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> for a slide of any other type, or where the slide can't be edited in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
-*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
+*   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to edit the current slide: in place for a text, canvas, Kanban Board or Table slide, as a double-click does, and in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> for a slide of any other type, or where the slide can't be edited in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it. While a slide is edited in place, the button becomes the <span class="tn-icon bx bx-check"></span> _Finish editing_ button.
+*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label. The group on the right moves through the presentation:
+*   The <span class="tn-icon bx bx-chevron-left"></span> _Previous slide_ and <span class="tn-icon bx bx-chevron-right"></span> _Next slide_ buttons go through every slide in order, vertical slides included, as <kbd>Shift</kbd>+<kbd>Space</kbd> and <kbd>Space</kbd> do. Between them is the number of the slide being shown, out of the number of slides.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
-*   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> to leave it.
+*   Press the <span class="tn-icon bx bx-fullscreen"></span> _Start presentation_ button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-exit-fullscreen"></span> _Exit fullscreen_ button to leave it.
+
+In full-screen, only the group on the right is shown, and it fades out while the mouse rests. Move the mouse to bring it back.
 
 ### Keyboard shortcuts
 
@@ -79,7 +82,7 @@ The following keyboard shortcuts are supported:
 
 Double-click a slide made from a text note to edit it directly on the slide, in the presentation's theme. A dashed outline marks the slide being edited, and the formatting toolbar appears next to the selected text. Changes are saved as you type, as in any text note, and a slide that grows past the edge of the slide is zoomed out to fit.
 
-To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button in the floating toolbar or go to another slide. Starting the presentation in full-screen also finishes editing, and slides can't be edited in full-screen.
+To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button below the slides or go to another slide. Starting the presentation in full-screen also finishes editing, and slides can't be edited in full-screen.
 
 A <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> slide is read-only until it is edited, so that a card or a cell can't be changed by accident while presenting, and clicking a card or a row opens nothing. Double-click it to edit it on the slide as in its note, then press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button or go to another slide to finish.
 
@@ -96,7 +99,7 @@ This horizontal/vertical organization affects transitions (especially on the “
 *   Pressing <kbd>←</kbd> and <kbd>→</kbd> will navigate through slides horizontally, thus skipping vertical notes under the current slide. This is useful to skip entire chapters/related slides.
 *   Pressing <kbd>↑</kbd> and <kbd>↓</kbd> will navigate through the vertical slides at the current level.
 *   Pressing <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> will go to the next/previous slide in order, regardless of the direction. This is generally the key combination to use when presenting.
-*   The arrows on the bottom-right of the slide will also reflect this navigation scheme.
+*   The _Previous slide_ and _Next slide_ buttons below the slides go in order, as <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> do.
 
 <figure class="image image-style-align-right image_resized" style="width:55.57%;"><img style="aspect-ratio:890/569;" src="1_Presentation_image.png" width="890" height="569"></figure>
 
@@ -131,6 +134,7 @@ At slide level:
 *   Text notes generally respect the formatting (bold, italic, foreground and background colors) and font size. Code blocks and tables also work.
 *   Try using more than just text notes, the presentation uses the same mechanism as [shared notes](../Advanced%20Usage/Sharing.md) and <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> so it should be able to display <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> and <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> in full-screen (without the interactivity).
     *   A <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> takes on the light or dark style of the theme, or of the slide's own background color.
+    *   A <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note fills the width of the slide, highlighted as in the note. With the code theme following the app's, the slide uses the light or the dark code theme to match the presentation's theme. Long code is zoomed out to fit the slide.
     *   For <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, some of them have a predefined background which can be changed via the frontmatter. For example, for XY-charts:
         
         ```

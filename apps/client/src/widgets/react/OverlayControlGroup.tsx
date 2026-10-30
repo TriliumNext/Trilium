@@ -6,6 +6,7 @@ import { useContext, useMemo, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import type { ActionButtonProps } from "./ActionButton";
+import Dropdown, { DropdownPanel, type DropdownProps } from "./Dropdown";
 import { useStaticTooltip } from "./hooks";
 
 /**
@@ -146,6 +147,38 @@ export function OverlayControlButton(props: OverlayControlButtonProps) {
             {hasText && icon && <span className={clsx("bx", icon)} aria-hidden="true" />}
             {text}
         </button>
+    );
+}
+
+interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "disabled" | "mobileBottomSheet"> {
+    /** What the button opens, said on hover; it is also the button's name. */
+    title: string;
+    /** The boxicons name of the mark it wears (`bx-palette`). */
+    icon: string;
+    /** Opens a {@link DropdownPanel}, for a picker or a form, instead of a menu. */
+    panel?: boolean;
+}
+
+/**
+ * A button on such a group that opens a menu, or a panel with `panel`. The popup and the tooltip open
+ * away from the edge that the group is pinned to.
+ */
+export function OverlayControlDropdown({ title, icon, panel, ...props }: OverlayControlDropdownProps) {
+    const direction = useContext(TooltipDirection);
+    const Toggle = panel ? DropdownPanel : Dropdown;
+    return (
+        <Toggle
+            {...props}
+            className="tn-overlay-control-dropdown"
+            buttonClassName={clsx("tn-overlay-icon-button bx", icon)}
+            buttonProps={{ "aria-label": title }}
+            title={title}
+            titlePosition={direction}
+            placement={direction}
+            hideToggleArrow
+            noSelectButtonStyle
+            bareButton
+        />
     );
 }
 

@@ -1,5 +1,20 @@
+import { render as preactRender } from "preact";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import type { RevealApi } from "reveal.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// i18next is never initialized under test, so `t()` looks keys up in the English catalog itself.
+vi.mock("../../../services/i18n", async () => {
+    const { default: english } = await import("../../../translations/en/translation.json");
+    return {
+        t: (key: string, args: Record<string, unknown> = {}) => {
+            const text = key.split(".").reduce<unknown>(
+                (node, part) => (node as Record<string, unknown> | undefined)?.[part], english
+            );
+            return String(text).replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(args[name]));
+        }
+    };
+});
 
 const setLabelMock = vi.fn();
 const removeOwnedLabelByNameMock = vi.fn();
@@ -15,7 +30,7 @@ import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker";
 import type { PresentationSlideBaseModel } from "./model";
-import PresentationToolbarActions, { canPickSlideBackground, SlideBackgroundPicker } from "./toolbar";
+import PresentationControls, { canPickSlideBackground, SlideBackgroundPicker } from "./toolbar";
 
 describe("SlideBackgroundPicker", () => {
     it("shows the slide's color and writes a pick or a reset to #slide:background", () => {
@@ -43,16 +58,7 @@ describe("SlideBackgroundPicker", () => {
 
 describe("the edit button", () => {
     function clickEdit(slide: PresentationSlideBaseModel, onEditInPlace: ((noteId: string) => void) | undefined) {
-        const container = renderInto(<PresentationToolbarActions
-            onStartPresentation={vi.fn()}
-            api={undefined}
-            hasSlides
-            isEditing={false}
-            onFinishEditing={vi.fn()}
-            onNewSlide={undefined}
-            backgroundSlide={undefined}
-            slideToEdit={{ slide, onEditInPlace }}
-        />);
+        const { container } = renderControls({ slideToEdit: { slide, onEditInPlace } });
         const button = container.querySelector<HTMLButtonElement>("button.bx-edit");
         expect(button).not.toBeNull();
         act(() => button?.click());
@@ -76,6 +82,94 @@ describe("the edit button", () => {
 
         triggerCommand.mockRestore();
     });
+
+    it("finishes the edit in progress, held down while it lasts", () => {
+        const onFinishEditing = vi.fn();
+        const { container } = renderControls({
+            isEditing: true,
+            onFinishEditing,
+            slideToEdit: { slide: undefined, onEditInPlace: vi.fn() }
+        });
+
+        expect(container.querySelector("button.bx-edit")).toBeNull();
+        const finish = container.querySelector<HTMLButtonElement>("button.bx-check");
+        expect(finish?.classList.contains("active")).toBe(true);
+        expect(finish?.getAttribute("aria-label")).toBe("Finish editing");
+        act(() => finish?.click());
+        expect(onFinishEditing).toHaveBeenCalledOnce();
+    });
+});
+
+describe("PresentationControls", () => {
+    afterEach(() => {
+        Object.defineProperty(document, "fullscreenElement", { value: null, configurable: true });
+        vi.useRealTimers();
+    });
+
+    it("counts the slides and steps through them, stopping at either end", () => {
+        const { container, api, rerender } = renderControls({ activeNoteId: "first" });
+        const button = (icon: string) => container.querySelector<HTMLButtonElement>(`button.${icon}`);
+
+        expect(container.querySelector(".presentation-slide-counter")?.textContent).toBe("1 / 3");
+        expect(button("bx-chevron-left")?.disabled).toBe(true);
+        act(() => button("bx-chevron-right")?.click());
+        expect(api.next).toHaveBeenCalledOnce();
+
+        rerender({ activeNoteId: "last" });
+        expect(container.querySelector(".presentation-slide-counter")?.textContent).toBe("3 / 3");
+        expect(button("bx-chevron-right")?.disabled).toBe(true);
+        act(() => button("bx-chevron-left")?.click());
+        expect(api.prev).toHaveBeenCalledOnce();
+
+        act(() => button("bx-grid-horizontal")?.click());
+        expect(api.toggleOverview).toHaveBeenCalledOnce();
+    });
+
+    it("offers the kinds of new slide in a menu beside the new slide button", async () => {
+        const onNewSlide = vi.fn();
+        const { container } = renderControls({ onNewSlide });
+
+        act(() => container.querySelector<HTMLButtonElement>(".presentation-new-slide")?.click());
+        expect(onNewSlide).toHaveBeenLastCalledWith(expect.objectContaining({ type: "text" }));
+
+        const toggle = container.querySelector<HTMLButtonElement>(".tn-overlay-control-dropdown button.bx-chevron-down");
+        expect(toggle).not.toBeNull();
+        await act(async () => toggle?.click());
+        const items = await vi.waitFor(() => {
+            const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
+            expect(found.length).toBeGreaterThan(1);
+            return found;
+        });
+        await act(async () => items[1].click());
+        expect(onNewSlide).toHaveBeenLastCalledWith(expect.objectContaining({ type: "canvas" }));
+    });
+
+    it("leaves only the navigation in full-screen, and fades it out while the pointer rests", () => {
+        vi.useFakeTimers();
+        const { container, stage } = renderControls({
+            onNewSlide: vi.fn(),
+            slideToEdit: { slide: undefined, onEditInPlace: undefined }
+        });
+        const controls = () => container.querySelector(".presentation-controls");
+        expect(container.querySelector(".presentation-edit-controls")).not.toBeNull();
+
+        Object.defineProperty(document, "fullscreenElement", { value: stage, configurable: true });
+        act(() => { document.dispatchEvent(new Event("fullscreenchange")); });
+        expect(container.querySelector(".presentation-edit-controls")).toBeNull();
+        expect(container.querySelector("button.bx-exit-fullscreen")).not.toBeNull();
+        expect(controls()?.classList.contains("is-idle")).toBe(false);
+
+        act(() => { vi.advanceTimersByTime(3000); });
+        expect(controls()?.classList.contains("is-idle")).toBe(true);
+        act(() => { stage.dispatchEvent(new Event("pointermove")); });
+        expect(controls()?.classList.contains("is-idle")).toBe(false);
+
+        Object.defineProperty(document, "fullscreenElement", { value: null, configurable: true });
+        act(() => { document.dispatchEvent(new Event("fullscreenchange")); });
+        act(() => { vi.advanceTimersByTime(3000); });
+        expect(controls()?.classList.contains("is-idle")).toBe(false);
+        expect(container.querySelector(".presentation-edit-controls")).not.toBeNull();
+    });
 });
 
 describe("canPickSlideBackground", () => {
@@ -92,6 +186,38 @@ describe("canPickSlideBackground", () => {
         expect(canPickSlideBackground(slide({ isReadOnly: true }))).toBe(false);
     });
 });
+
+type ControlsProps = Parameters<typeof PresentationControls>[0];
+
+function renderControls(props: Partial<ControlsProps> = {}) {
+    const stage = document.createElement("div");
+    document.body.appendChild(stage);
+    const api = {
+        prev: vi.fn(), next: vi.fn(), toggleOverview: vi.fn(), isOverview: () => false, on: vi.fn(), off: vi.fn()
+    };
+    const controls = (overrides: Partial<ControlsProps>) => <PresentationControls
+        api={api as unknown as RevealApi}
+        stage={stage}
+        slideNoteIds={[ "first", "middle", "last" ]}
+        activeNoteId="middle"
+        isEditing={false}
+        onFinishEditing={vi.fn()}
+        onNewSlide={undefined}
+        backgroundSlide={undefined}
+        slideToEdit={undefined}
+        {...overrides}
+    />;
+    let container: HTMLElement | undefined;
+    act(() => {
+        container = renderInto(controls(props));
+    });
+    if (!container) throw new Error("The controls did not render.");
+    const target = container;
+    const rerender = (overrides: Partial<ControlsProps>) => act(() => {
+        preactRender(controls({ ...props, ...overrides }), target);
+    });
+    return { container: target, stage, api, rerender };
+}
 
 function renderPicker(note: ReturnType<typeof buildNote>) {
     let container: HTMLElement | undefined;

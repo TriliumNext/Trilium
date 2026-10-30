@@ -57,12 +57,11 @@ describe("an empty presentation", () => {
         expect(container.querySelector(".presentation-container")).toBeNull();
         expect(onReady).toHaveBeenCalled();
 
-        const toolbarButton = (icon: string) => container.querySelector<HTMLButtonElement>(`button.${icon}`);
-        for (const icon of [ "bx-sidebar", "bx-edit", "bx-palette", "bx-grid-horizontal", "bx-fullscreen" ]) {
-            expect(toolbarButton(icon)?.disabled, icon).toBe(true);
-        }
-        expect(toolbarButton("bx-sidebar")?.classList.contains("active")).toBe(false);
-        expect(toolbarButton("bx-plus")?.disabled).toBe(false);
+        // The controls stand on the stage, which an empty presentation has none of.
+        expect(container.querySelector(".presentation-controls")).toBeNull();
+        const sidebarToggle = container.querySelector<HTMLButtonElement>("button.bx-sidebar");
+        expect(sidebarToggle?.disabled).toBe(true);
+        expect(sidebarToggle?.classList.contains("active")).toBe(false);
 
         const button = container.querySelector<HTMLButtonElement>(".no-items button");
         expect(button).not.toBeNull();
@@ -70,28 +69,25 @@ describe("an empty presentation", () => {
         expect(createNote).toHaveBeenCalledWith(note.noteId, expect.objectContaining({ type: "text", activate: false }));
     });
 
-    it("creates a canvas slide from the menu beside the toolbar's and the placeholder's new slide button", async () => {
+    it("creates a canvas slide from the menu beside the placeholder's new slide button", async () => {
         const createNote = vi.spyOn(note_create, "createNote")
             .mockResolvedValue({ note: { noteId: "first" } } as Awaited<ReturnType<typeof note_create.createNote>>);
         const { note, container } = await renderEmpty();
 
-        for (const split of [ ".presentation-new-slide", ".no-items" ]) {
-            createNote.mockClear();
-            const toggle = container.querySelector<HTMLElement>(`${split} .dropdown button`);
-            expect(toggle, split).not.toBeNull();
-            await act(async () => toggle?.click());
-            const items = await vi.waitFor(() => {
-                const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
-                expect(found.map(item => item.textContent?.trim())).toEqual([
-                    "Text", "Canvas", "Board", "Table", "Mermaid Diagram", "Web View", "Code", "Spreadsheet"
-                ]);
-                // The slides edited in place come first, apart from the others.
-                expect(found[2].previousElementSibling?.classList.contains("dropdown-divider")).toBe(true);
-                return found;
-            });
-            await act(async () => items[1].click());
-            expect(createNote).toHaveBeenCalledWith(note.noteId, expect.objectContaining({ type: "canvas" }));
-        }
+        const toggle = container.querySelector<HTMLElement>(".no-items .dropdown button");
+        expect(toggle).not.toBeNull();
+        await act(async () => toggle?.click());
+        const items = await vi.waitFor(() => {
+            const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
+            expect(found.map(item => item.textContent?.trim())).toEqual([
+                "Text", "Canvas", "Board", "Table", "Mermaid Diagram", "Web View", "Code", "Spreadsheet"
+            ]);
+            // The slides edited in place come first, apart from the others.
+            expect(found[2].previousElementSibling?.classList.contains("dropdown-divider")).toBe(true);
+            return found;
+        });
+        await act(async () => items[1].click());
+        expect(createNote).toHaveBeenCalledWith(note.noteId, expect.objectContaining({ type: "canvas" }));
     });
 
     it("offers no way to create a slide in a read-only presentation", async () => {

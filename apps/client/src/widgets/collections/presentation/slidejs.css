@@ -14,7 +14,7 @@
 :host::before {
     content: "";
     position: absolute;
-    inset: 0;
+    inset: 0 0 var(--presentation-controls-strip, 0px);
     width: min(100cqw, 100cqh * 16 / 9);
     height: min(100cqw * 9 / 16, 100cqh);
     margin: auto;
@@ -158,6 +158,19 @@ footer.file-footer {
     max-height: calc(100cqh - 2 * var(--r-block-margin));
     margin-inline: auto;
     object-fit: contain;
+}
+
+.slide-content > pre.code-preview:only-child {
+    width: auto;
+    margin: 0;
+    border-radius: var(--bs-border-radius);
+    box-shadow: none;
+    font-size: 0.6em;
+
+    > .code-preview-content {
+        max-height: none;
+        overflow: visible;
+    }
 }
 
 .reveal .slides section:is(.web-view-slide, .collection-slide, .edited-canvas-slide) {

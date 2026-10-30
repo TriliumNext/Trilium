@@ -3859,7 +3859,10 @@
     "menu-make-top-level": "Make top-level slide",
     "menu-delete": "Delete slide...",
     "slide-background": "Slide background",
-    "no-slides": "This presentation has no slides."
+    "no-slides": "This presentation has no slides.",
+    "previous-slide": "Previous slide",
+    "next-slide": "Next slide",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "calendar_view": {
     "delete_note": "Delete note...",

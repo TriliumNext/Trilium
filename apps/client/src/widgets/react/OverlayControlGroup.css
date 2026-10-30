@@ -105,7 +105,17 @@
         }
     }
 
-    > :where(:not(button)) {
+    > .tn-overlay-control-dropdown {
+        &:not(:first-child) > button {
+            --_start-border-radius: 0;
+        }
+
+        &:not(:last-child) > button {
+            --_end-border-radius: 0;
+        }
+    }
+
+    > :where(:not(button, .tn-overlay-control-dropdown)) {
         display: flex;
         align-items: center;
         height: var(--_overlay-height);

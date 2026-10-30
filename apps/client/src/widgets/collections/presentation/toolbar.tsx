@@ -1,3 +1,6 @@
+import "./toolbar.css";
+
+import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
 
@@ -7,18 +10,26 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import ColorPicker from "../../react/ColorPicker";
-import Dropdown, { DropdownPanel } from "../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../react/FormList";
-import { useNoteLabel } from "../../react/hooks";
+import { useFullscreen, useNoteLabel } from "../../react/hooks";
+import OverlayControlGroup, { OverlayControlButton, OverlayControlDropdown } from "../../react/OverlayControlGroup";
 import {
     canEditSlideInPlace, getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel
 } from "./model";
 
-interface PresentationToolbarActionsProps {
-    onStartPresentation(): void;
+/** The name of the `<slot>` in the stage's shadow tree that shows {@link PresentationControls}. */
+export const CONTROLS_SLOT_NAME = "presentation-controls";
+
+/** How long the pointer rests in full-screen before the controls fade out, in milliseconds. */
+const IDLE_DELAY = 3000;
+
+interface PresentationControlsProps {
     api: RevealApi | undefined;
-    /** Whether there are slides; the buttons that act on one are disabled otherwise. */
-    hasSlides: boolean;
+    /** The shadow host that holds the slides; it is the element that goes full-screen. */
+    stage: HTMLElement;
+    /** Every slide, vertical ones after their parent, in the order that previous and next follow. */
+    slideNoteIds: string[];
+    activeNoteId: string | undefined;
     isEditing: boolean;
     onFinishEditing(): void;
     /** Adds a slide of a type after the one being shown; left out when slides cannot be added. */
@@ -35,94 +46,90 @@ interface PresentationToolbarActionsProps {
     } | undefined;
 }
 
-/** The presentation's actions on the right of the collection's toolbar. */
-export default function PresentationToolbarActions({
-    onStartPresentation, api, hasSlides, isEditing, onFinishEditing, onNewSlide, backgroundSlide, slideToEdit
-}: PresentationToolbarActionsProps) {
-    const [ isOverviewActive, setIsOverviewActive ] = useState(false);
-    useEffect(() => {
-        if (!api) return;
-        setIsOverviewActive(api.isOverview());
-        const onEnabled = () => setIsOverviewActive(true);
-        const onDisabled = () => setIsOverviewActive(false);
-        api.on("overviewshown", onEnabled);
-        api.on("overviewhidden", onDisabled);
-        return () => {
-            api.off("overviewshown", onEnabled);
-            api.off("overviewhidden", onDisabled);
-        };
-    }, [ api ]);
+/**
+ * The controls at the foot of the stage, rendered into the stage's {@link CONTROLS_SLOT_NAME} slot so
+ * that they go full-screen with it: the editing controls at the start, and the navigation at the end.
+ * Full-screen shows the navigation alone, and fades it out while the pointer rests.
+ */
+export default function PresentationControls({
+    api, stage, slideNoteIds, activeNoteId, isEditing, onFinishEditing, onNewSlide, backgroundSlide, slideToEdit
+}: PresentationControlsProps) {
+    const [ isFullscreen, toggleFullscreen ] = useFullscreen(stage);
+    const isIdle = useIsPointerIdle(isFullscreen ? stage : null);
+    const isOverviewActive = useIsOverviewActive(api);
+    const index = activeNoteId ? slideNoteIds.indexOf(activeNoteId) : -1;
 
     return (
-        <>
-            {onNewSlide && (
-                <div className="icon-action-split presentation-new-slide">
-                    <ActionButton
-                        icon="bx bx-plus"
-                        text={t("presentation_view.new-slide")}
-                        onClick={() => onNewSlide(getNewSlideTypes()[0][0])}
-                    />
-                    <Dropdown
-                        buttonClassName="bx bx-chevron-down"
-                        buttonProps={{ "aria-label": t("split_button.more_actions") }}
-                        iconAction
-                        hideToggleArrow
-                        noSelectButtonStyle
-                        title={t("split_button.more_actions")}
-                        placement="bottom-end"
-                        mobileBottomSheet
-                    >
-                        <NewSlideTypeItems onNewSlide={onNewSlide} />
-                    </Dropdown>
-                </div>
+        <div slot={CONTROLS_SLOT_NAME} className={clsx("presentation-controls", isIdle && "is-idle")}>
+            {!isFullscreen && (onNewSlide || slideToEdit || backgroundSlide) && (
+                <OverlayControlGroup className="presentation-edit-controls" placement="bottom-start">
+                    {onNewSlide && <>
+                        <OverlayControlButton
+                            icon="bx-plus"
+                            text={t("presentation_view.new-slide")}
+                            className="presentation-new-slide"
+                            onClick={() => onNewSlide(getNewSlideTypes()[0][0])}
+                        />
+                        <OverlayControlDropdown
+                            title={t("split_button.more_actions")}
+                            icon="bx-chevron-down"
+                            mobileBottomSheet
+                        >
+                            <NewSlideTypeItems onNewSlide={onNewSlide} />
+                        </OverlayControlDropdown>
+                    </>}
+                    {slideToEdit && <OverlayControlButton
+                        title={isEditing ? t("presentation_view.finish-editing") : t("presentation_view.edit-slide")}
+                        icon={isEditing ? "bx-check" : "bx-edit"}
+                        active={isEditing}
+                        disabled={!isEditing && !slideToEdit.slide}
+                        onClick={isEditing ? onFinishEditing : () => editSlide(slideToEdit)}
+                    />}
+                    {backgroundSlide && <SlideBackgroundAction slide={backgroundSlide.slide} />}
+                </OverlayControlGroup>
             )}
 
-            {isEditing && (
-                <ActionButton
-                    icon="bx bx-check"
-                    text={t("presentation_view.finish-editing")}
-                    shortcut="Escape"
-                    onClick={onFinishEditing}
+            <OverlayControlGroup className="presentation-navigation" placement="bottom-end">
+                <OverlayControlButton
+                    title={t("presentation_view.previous-slide")}
+                    icon="bx-chevron-left"
+                    disabled={index <= 0}
+                    onClick={() => api?.prev()}
                 />
-            )}
-
-            {slideToEdit && (
-                <ActionButton
-                    icon="bx bx-edit"
-                    text={t("presentation_view.edit-slide")}
-                    disabled={!hasSlides}
-                    onClick={() => {
-                        const { slide, onEditInPlace } = slideToEdit;
-                        if (!slide) return;
-                        if (onEditInPlace && canEditSlideInPlace(slide)) {
-                            onEditInPlace(slide.noteId);
-                        } else {
-                            void appContext.triggerCommand("openInPopup", { noteIdOrPath: slide.noteId });
-                        }
-                    }}
+                <span className="presentation-slide-counter">
+                    {index >= 0 && t("presentation_view.slide-counter", {
+                        current: index + 1, total: slideNoteIds.length
+                    })}
+                </span>
+                <OverlayControlButton
+                    title={t("presentation_view.next-slide")}
+                    icon="bx-chevron-right"
+                    disabled={index < 0 || index >= slideNoteIds.length - 1}
+                    onClick={() => api?.next()}
                 />
-            )}
-
-            {backgroundSlide && <SlideBackgroundAction slide={backgroundSlide.slide} />}
-
-            <ActionButton
-                icon="bx bx-grid-horizontal"
-                text={t("presentation_view.slide-overview")}
-                shortcut="O"
-                active={isOverviewActive}
-                disabled={!hasSlides}
-                onClick={() => api?.toggleOverview()}
-            />
-
-            <ActionButton
-                icon="bx bx-fullscreen"
-                text={t("presentation_view.start-presentation")}
-                shortcut="F"
-                disabled={!hasSlides}
-                onClick={onStartPresentation}
-            />
-        </>
+                <OverlayControlButton
+                    title={t("presentation_view.slide-overview")}
+                    icon="bx-grid-horizontal"
+                    active={isOverviewActive}
+                    onClick={() => api?.toggleOverview()}
+                />
+                <OverlayControlButton
+                    title={isFullscreen ? t("common.exit_fullscreen") : t("presentation_view.start-presentation")}
+                    icon={isFullscreen ? "bx-exit-fullscreen" : "bx-fullscreen"}
+                    onClick={() => void toggleFullscreen()}
+                />
+            </OverlayControlGroup>
+        </div>
     );
+}
+
+function editSlide({ slide, onEditInPlace }: NonNullable<PresentationControlsProps["slideToEdit"]>) {
+    if (!slide) return;
+    if (onEditInPlace && canEditSlideInPlace(slide)) {
+        onEditInPlace(slide.noteId);
+    } else {
+        void appContext.triggerCommand("openInPopup", { noteIdOrPath: slide.noteId });
+    }
 }
 
 /**
@@ -167,15 +174,14 @@ export function SlideSidebarToggle({ isVisible, hasSlides, onToggle }: {
 function SlideBackgroundAction({ slide }: { slide: PresentationSlideBaseModel | undefined }) {
     const note = slide && canPickSlideBackground(slide) ? froca.getNoteFromCache(slide.noteId) : undefined;
     return (
-        <DropdownPanel
-            buttonClassName="bx bx-palette"
+        <OverlayControlDropdown
             title={t("presentation_view.slide-background")}
-            iconAction
-            hideToggleArrow
+            icon="bx-palette"
+            panel
             disabled={!note}
         >
             {note && <SlideBackgroundPicker note={note} />}
-        </DropdownPanel>
+        </OverlayControlDropdown>
     );
 }
 
@@ -198,4 +204,45 @@ export function SlideBackgroundPicker({ note }: { note: FNote }) {
  */
 export function canPickSlideBackground(slide: PresentationSlideBaseModel | undefined) {
     return !!slide && !slide.webViewSrc && !slide.isCollection && !slide.isReadOnly;
+}
+
+function useIsOverviewActive(api: RevealApi | undefined) {
+    const [ isOverviewActive, setIsOverviewActive ] = useState(false);
+    useEffect(() => {
+        if (!api) return;
+        setIsOverviewActive(api.isOverview());
+        const onEnabled = () => setIsOverviewActive(true);
+        const onDisabled = () => setIsOverviewActive(false);
+        api.on("overviewshown", onEnabled);
+        api.on("overviewhidden", onDisabled);
+        return () => {
+            api.off("overviewshown", onEnabled);
+            api.off("overviewhidden", onDisabled);
+        };
+    }, [ api ]);
+    return isOverviewActive;
+}
+
+/**
+ * Whether the pointer has rested over `element` for {@link IDLE_DELAY}. A move over it resets the
+ * wait; a `null` element is never idle.
+ */
+export function useIsPointerIdle(element: HTMLElement | null) {
+    const [ isIdle, setIsIdle ] = useState(false);
+    useEffect(() => {
+        setIsIdle(false);
+        if (!element) return;
+        let timeout = setTimeout(() => setIsIdle(true), IDLE_DELAY);
+        const onPointerMove = () => {
+            setIsIdle(false);
+            clearTimeout(timeout);
+            timeout = setTimeout(() => setIsIdle(true), IDLE_DELAY);
+        };
+        element.addEventListener("pointermove", onPointerMove);
+        return () => {
+            clearTimeout(timeout);
+            element.removeEventListener("pointermove", onPointerMove);
+        };
+    }, [ element ]);
+    return isIdle;
 }

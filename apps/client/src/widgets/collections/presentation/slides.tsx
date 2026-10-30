@@ -56,6 +56,9 @@ export function Presentation({
         const api = new Reveal(containerRef.current, {
             transition: "slide",
             embedded: true,
+            // `PresentationControls` navigates instead, outside the slide.
+            controls: false,
+            progress: false,
             // Must match the aspect ratio of `.reveal` in slidejs.css.
             width: SLIDE_WIDTH,
             height: SLIDE_HEIGHT,

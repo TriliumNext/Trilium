@@ -18,7 +18,11 @@
     justify-content: center;
     min-width: 0;
     min-height: 0;
-    padding: 1em;
+    --presentation-stage-padding: 1em;
+    /* The height of `.presentation-controls` and its gap to the slide; slidejs.css reads it too. */
+    --presentation-controls-strip: calc(var(--overlay-button-height, 28px) + var(--presentation-stage-padding));
+    padding: var(--presentation-stage-padding);
+    padding-bottom: calc(var(--presentation-stage-padding) + var(--presentation-controls-strip));
     container-type: size;
 
     &:fullscreen {

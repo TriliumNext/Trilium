@@ -1,6 +1,7 @@
 import "./index.css";
 
 import multicolumnStylesheet from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
+import codePreviewStylesheet from "@triliumnext/codemirror/src/code_preview.css?raw";
 import { createPortal, RefObject } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -9,6 +10,7 @@ import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { getCodePreviewThemeCss } from "../../../services/code_note_preview";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
@@ -32,8 +34,8 @@ import SlideSidebar from "./sidebar";
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { SlideMenuActions } from "./slide_menu";
 import { CollectionSlides, Presentation } from "./slides";
-import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
-import PresentationToolbarActions, { NewSlideTypeItems, SlideSidebarToggle } from "./toolbar";
+import { DEFAULT_THEME, isPresentationThemeDark, loadPresentationTheme } from "./themes";
+import PresentationControls, { CONTROLS_SLOT_NAME, NewSlideTypeItems, SlideSidebarToggle } from "./toolbar";
 
 const SlideEditor = lazy(() => import("./slide_editor"));
 const SlideCanvasEditor = lazy(() => import("./slide_canvas_editor"));
@@ -192,9 +194,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     if (!presentation || !stylesheets) return;
     const isEmpty = !presentation.slides.length;
     if (isEmpty && media !== "screen") return;
-    const activeSlide = presentation.slides
-        .flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ])
-        .find(slide => slide.noteId === activeNoteId);
+    const allSlides = presentation.slides.flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ]);
+    const activeSlide = allSlides.find(slide => slide.noteId === activeNoteId);
     const content = (
         <>
             {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
@@ -223,22 +224,6 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         isVisible={isSidebarVisible}
                         hasSlides={!isEmpty}
                         onToggle={() => void setSidebarVisible(!isSidebarVisible)}
-                    />}
-                    rightChildren={<PresentationToolbarActions
-                        onStartPresentation={startPresentation}
-                        api={api}
-                        hasSlides={!isEmpty}
-                        isEditing={!!editedNoteId}
-                        onFinishEditing={finishEditing}
-                        onNewSlide={canAddSlides
-                            ? (type) => void addSlide(
-                                getNewSlidePosition(presentation, note.noteId, activeNoteId), type
-                            )
-                            : undefined}
-                        backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
-                        slideToEdit={!isReadOnly
-                            ? { slide: activeSlide, onEditInPlace: canEditSlides ? editSlide : undefined }
-                            : undefined}
                     />}
                 />
                 <div className="presentation-body">
@@ -275,9 +260,32 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         <ShadowDom
                             className="presentation-container"
                             containerRef={containerRef}
-                        >{content}</ShadowDom>
+                        >
+                            {content}
+                            <slot name={CONTROLS_SLOT_NAME} />
+                        </ShadowDom>
                     )}
                 </div>
+                {shadowHost && createPortal(
+                    <PresentationControls
+                        api={api}
+                        stage={shadowHost}
+                        slideNoteIds={allSlides.map(slide => slide.noteId)}
+                        activeNoteId={activeNoteId}
+                        isEditing={!!editedNoteId}
+                        onFinishEditing={finishEditing}
+                        onNewSlide={canAddSlides
+                            ? (type) => void addSlide(
+                                getNewSlidePosition(presentation, note.noteId, activeNoteId), type
+                            )
+                            : undefined}
+                        backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
+                        slideToEdit={!isReadOnly
+                            ? { slide: activeSlide, onEditInPlace: canEditSlides ? editSlide : undefined }
+                            : undefined}
+                    />,
+                    shadowHost
+                )}
                 {shadowHost && createPortal(
                     <CollectionSlides
                         presentation={presentation}
@@ -335,12 +343,17 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     const [ stylesheets, setStylesheets ] = useState<string[]>();
 
     useLayoutEffect(() => {
-        loadPresentationTheme(themeName).then((themeStylesheet) => {
+        Promise.all([
+            loadPresentationTheme(themeName),
+            getCodePreviewThemeCss(isPresentationThemeDark(themeName))
+        ]).then(([ themeStylesheet, codeThemeStylesheet ]) => {
             let stylesheets = [
                 slideBaseStylesheet,
                 themeStylesheet,
                 katexStylesheet,
                 multicolumnStylesheet,
+                codePreviewStylesheet,
+                codeThemeStylesheet,
                 slideCustomStylesheet
             ];
             if (media === "screen") {
