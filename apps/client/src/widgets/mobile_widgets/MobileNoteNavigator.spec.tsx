@@ -139,19 +139,19 @@ describe("TitleWithIndicators", () => {
 });
 
 describe("WorkspaceCards", () => {
-    it("lists the workspaces and hoists the tab into the one tapped", async () => {
+    it("lists the workspaces and enters the one tapped", async () => {
         const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase" });
         const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace ]);
-        const triggerCommand = vi.fn();
+        const onEnter = vi.fn();
         const parent = {
-            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}, triggerCommand
+            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}
         } as unknown as Component;
 
         let container = document.body;
         await act(async () => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <WorkspaceCards />
+                    <WorkspaceCards onEnter={onEnter} />
                 </ParentComponent.Provider>
             );
         });
@@ -166,7 +166,7 @@ describe("WorkspaceCards", () => {
         expect(cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase")).not.toBeNull();
 
         (cards[0] as HTMLElement | undefined)?.click();
-        expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
+        expect(onEnter).toHaveBeenCalledWith(workspace.noteId);
     });
 });
 

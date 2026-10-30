@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
+import { enterHoistedNote, forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -56,5 +56,11 @@ describe("tab navigation", () => {
         // A hoisted note right under the root leaves for the root.
         leaveHoistedNote("leaving", notePath, "folder");
         expect(getTreeStack("leaving", notePath, "root")).toEqual([ "root" ]);
+    });
+
+    it("enters a hoisted note on its own column, even with a note deep inside it open", () => {
+        const notePath = "root/folder/inner/leaf";
+        enterHoistedNote("entering", notePath, "folder");
+        expect(getTreeStack("entering", notePath, "folder")).toEqual([ "folder" ]);
     });
 });

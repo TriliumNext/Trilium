@@ -35,7 +35,7 @@ import {
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
-import { getLastSegment, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
+import { enterHoistedNote, getLastSegment, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -206,6 +206,11 @@ export default function MobileNoteNavigator() {
         void hoisted_note.unhoist();
     }, [tabId, activeNotePath, effectiveHoistedId]);
 
+    const enterWorkspace = useCallback((noteId: string) => {
+        if (tabId) enterHoistedNote(tabId, activeNotePath, noteId);
+        void parentComponent?.triggerCommand("hoistNote", { noteId });
+    }, [tabId, activeNotePath, parentComponent]);
+
     // Registered once, so a menu or dialog opened over the tree later answers back first.
     const isTreeShown = useRef(false);
     useTriliumEvent("activeScreenChanged", ({ activeScreen }) => {
@@ -283,7 +288,7 @@ export default function MobileNoteNavigator() {
 
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
-                    {!isHoisted && currentParentId === "root" && <WorkspaceCards />}
+                    {!isHoisted && currentParentId === "root" && <WorkspaceCards onEnter={enterWorkspace} />}
                     {!isHoisted && currentParentId === "root" && (
                         <BookmarkList
                             renderRow={({ note, notePath, parentNoteId }) => (
@@ -521,11 +526,10 @@ export function ForwardToNoteButton({ notePath }: { notePath: string }) {
 /**
  * The workspace notes, as the empty tab lists them, for the root column of a tab that is not
  * hoisted: a heading and a grid of cards, each with the workspace's icon over its title.
- * Tapping one hoists the tab into it.
+ * Tapping one calls `onEnter` with its note ID.
  */
-export function WorkspaceCards() {
+export function WorkspaceCards({ onEnter }: { onEnter: (noteId: string) => void }) {
     const [ workspaceNotes, setWorkspaceNotes ] = useState<FNote[]>([]);
-    const parentComponent = useContext(ParentComponent);
 
     const refresh = useCallback(() => {
         search.searchForNotes("#workspace #!template").then(setWorkspaceNotes);
@@ -547,7 +551,7 @@ export function WorkspaceCards() {
                     <WorkspaceCard
                         key={workspaceNote.noteId}
                         note={workspaceNote}
-                        onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
+                        onClick={() => onEnter(workspaceNote.noteId)}
                     />
                 ))}
             </div>
