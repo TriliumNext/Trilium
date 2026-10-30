@@ -51,6 +51,28 @@ export function getTreeStack(tabId: string | null | undefined, notePath: string 
 }
 
 /**
+ * Leaves the tree of `tabId` on the column holding `hoistedNoteId` once the tab unhoists, as a step
+ * up out of the hoisted note, instead of the column of the note the tab shows. Runs before the
+ * unhoisting, which keeps `notePath` open.
+ */
+export function leaveHoistedNote(tabId: string, notePath: string | null | undefined, hoistedNoteId: string) {
+    const segments = notePath?.split("/") ?? [];
+    const parentSegments = segments.slice(0, Math.max(segments.indexOf(hoistedNoteId), 1));
+    const stack = parentSegments.map((_, index) => parentSegments.slice(0, index + 1).join("/"));
+    setTabTree(tabId, { notePath, hoistedNoteId: "root", stack: stack.length ? stack : [ "root" ] });
+}
+
+/**
+ * Leaves the tree of `tabId` on the column of `hoistedNoteId` once the tab hoists it, as entering a
+ * folder does, instead of the column of a note inside it that the tab shows. Runs before the
+ * hoisting; when `notePath` lies outside the hoisted note, the hoisting opens the hoisted note
+ * itself, whose tree starts on that column anyway.
+ */
+export function enterHoistedNote(tabId: string, notePath: string | null | undefined, hoistedNoteId: string) {
+    setTabTree(tabId, { notePath, hoistedNoteId, stack: [ hoistedNoteId ] });
+}
+
+/**
  * The child of the column at `columnPath` that leads to `notePath`, which a column with
  * `#subtreeHidden` still lists, as the desktop tree's spotlight does. A hoisted tree's `columnPath`
  * starts at the hoisted note, so it can match the middle of `notePath`.

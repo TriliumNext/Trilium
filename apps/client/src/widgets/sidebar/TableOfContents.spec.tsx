@@ -11,6 +11,7 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
+import { NavigatedInNote } from "./RightPanelWidget";
 import TableOfContents, { useActiveHeading } from "./TableOfContents";
 
 // `TableOfContents` loads `attributeChangeAffectsHeading` through a lazy `import()`. Pulling the
@@ -190,7 +191,20 @@ describe("TableOfContents while an auto-read-only note is temporarily editable",
     });
 });
 
-async function setupUnlockScenario() {
+describe("TableOfContents in a host that covers the note", () => {
+    it("tells the host once a heading is pressed, so that it can close over the heading", async () => {
+        const onNavigated = vi.fn();
+        const toc = await setupUnlockScenario({ onNavigated });
+        const heading = toc.container.querySelector<HTMLElement>(".toc .item-content");
+        expect(heading?.textContent).toBe("Current");
+
+        await act(async () => heading?.click());
+
+        expect(onNavigated).toHaveBeenCalledOnce();
+    });
+});
+
+async function setupUnlockScenario({ onNavigated }: { onNavigated?: () => void } = {}) {
     options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
 
     const note = buildNote({ id: "bignote", title: "Big note", type: "text", content: "<h2>Current</h2>" });
@@ -222,7 +236,9 @@ async function setupUnlockScenario() {
     await act(async () => {
         container = renderInto(
             <ParentComponent.Provider value={parent}>
-                <TableOfContents />
+                <NavigatedInNote.Provider value={onNavigated ?? null}>
+                    <TableOfContents />
+                </NavigatedInNote.Provider>
             </ParentComponent.Provider>
         );
     });
@@ -231,6 +247,7 @@ async function setupUnlockScenario() {
     return {
         noteId: note.noteId,
         editor,
+        container,
         headings: () => [ ...container.querySelectorAll(".toc .item-content") ].map((el) => el.textContent),
         rows: () => [ ...container.querySelectorAll(".toc li") ],
         async unlock({ rounds }: { rounds?: number } = {}) {

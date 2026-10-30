@@ -23,16 +23,6 @@
     background: var(--main-background-color);
 }
 
-.mobile-navigator-hoisted-badge {
-    flex: 0 1 auto;
-    min-width: 0;
-    margin-inline-start: auto;
-    margin-inline-end: 4px;
-    --badge-radius: 12px;
-    --color: var(--input-background-color);
-    color: var(--main-text-color);
-}
-
 .mobile-navigator-workspaces {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -66,12 +56,7 @@
     place-items: center;
     width: 52px;
     height: 52px;
-    border-radius: 14px;
     font-size: 2.2em;
-
-    .has-color & {
-        background: var(--color);
-    }
 }
 
 .mobile-navigator-workspace-title {
@@ -82,32 +67,15 @@
     font-size: 0.9em;
 }
 
-.mobile-navigator-hoisted-badge .text {
+.mobile-navigator-toolbar-button {
     display: flex;
+    flex: 0 1 auto;
     align-items: center;
     gap: 4px;
     min-width: 0;
-}
-
-.mobile-navigator-hoisted-title {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.mobile-navigator-hoisted-close {
-    flex: 0 0 auto;
-    font-size: 1.3em;
-    opacity: 0.6;
-}
-
-.mobile-navigator-back {
-    display: flex;
-    align-items: center;
-    gap: 4px;
     min-height: 40px;
-    padding: 6px 10px 6px 4px;
+    padding-block: 6px;
+    padding-inline: 4px 10px;
     background: none;
     border: none;
     color: var(--main-text-color);
@@ -115,24 +83,29 @@
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    max-width: 100%;
 }
 
-.mobile-navigator-back:disabled {
+.mobile-navigator-toolbar-button:disabled {
     cursor: default;
     opacity: 0.6;
 }
 
-.mobile-navigator-back.invisible {
-    visibility: hidden;
+.mobile-navigator-forward {
+    margin-inline-start: auto;
+    padding-inline: 10px 4px;
 }
 
-.mobile-navigator-back-icon {
+.mobile-navigator-toolbar-icon {
     flex: 0 0 auto;
     font-size: 1.5em;
 }
 
-.mobile-navigator-back-title {
+.mobile-navigator-unhoist-icon {
+    flex: 0 0 auto;
+    font-size: 1.2em;
+}
+
+.mobile-navigator-toolbar-title {
     flex: 1 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -372,6 +345,8 @@
 
 /* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
    (see css_class_manager.createClassForColor). Apply it to the title/icon. */
+.mobile-navigator-unhoist.use-note-color,
+.mobile-navigator-workspace-icon.use-note-color,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-title,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-icon,
 .mobile-navigator-current-tile.use-note-color .mobile-navigator-current-title,
@@ -386,6 +361,35 @@
 .mobile-navigator-row-icon {
     flex: 0 0 auto;
     font-size: 1.2em;
+}
+
+.mobile-navigator-row-icon.is-protected,
+.mobile-navigator-current-icon.is-protected {
+    position: relative;
+
+    &::after {
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline-end: 0;
+        font-family: "boxicons";
+        font-size: 0.7em;
+        content: "\eb4a";
+        transform: translateX(25%);
+        color: var(--quick-search-result-highlight-color);
+        background:
+            linear-gradient(var(--navigator-group-background) 0 0),
+            var(--navigator-backdrop, var(--main-background-color));
+        border-radius: 50%;
+    }
+}
+
+body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is-protected::after {
+    transform: translateX(-25%);
+}
+
+.mobile-navigator-title-group .is-locked {
+    font-style: italic;
+    opacity: 0.75;
 }
 
 .mobile-navigator-row-title {

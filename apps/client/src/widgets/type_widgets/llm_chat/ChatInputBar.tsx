@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
 import options from "../../../services/options.js";
+import { isMobile } from "../../../services/utils.js";
 import ActionButton from "../../react/ActionButton.js";
 import Button from "../../react/Button.js";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
@@ -409,6 +410,7 @@ export default function ChatInputBar({
                             titlePosition="top"
                             buttonClassName="llm-chat-model-select"
                             className="llm-chat-model-dropdown"
+                            mobileBottomSheet
                         >
                             {chat.modelGroups.map(group => (
                                 <Fragment key={group.id}>
@@ -425,9 +427,10 @@ export default function ChatInputBar({
                                             key={`${model.providerId ?? model.provider}:${model.id}`}
                                             onClick={() => handleModelSelect(model)}
                                             checked={isSelectedModel(model)}
+                                            description={IS_MOBILE ? model.costDescription : undefined}
                                         >
                                             <Icon icon={providerIcon(model.provider)} className="llm-chat-model-icon" />
-                                            {shortModelName(model.name, model.provider)}{model.costDescription && <> <small>({model.costDescription})</small></>}
+                                            {shortModelName(model.name, model.provider)}{!IS_MOBILE && model.costDescription && <> <small>({model.costDescription})</small></>}
                                         </FormListItem>
                                     )) : (
                                     // Provider configured before model selection existed (or with
@@ -638,3 +641,5 @@ function CapabilityToggle({ icon, label, active, onToggle, disabled }: {
     );
 }
 
+/** On a phone the model's cost goes under its name, since a row cannot fit both side by side. */
+const IS_MOBILE = isMobile();

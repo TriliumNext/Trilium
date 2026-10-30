@@ -50,6 +50,7 @@ export default function ChatToolsDropdown({ enableNoteTools, onNoteToolsChange, 
             titlePosition="top"
             placement="top-start"
             disabled={disabled}
+            mobileBottomSheet
         >
             <FormListToggleableItem
                 icon="bx bx-note"

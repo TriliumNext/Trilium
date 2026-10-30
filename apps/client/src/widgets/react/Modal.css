@@ -40,3 +40,35 @@
 .script-modal-host {
     display: contents;
 }
+
+@media (max-width: 991px) {
+    /* Bootstrap times the hide on the `.modal` element's first transition duration, so it matches
+       the dialog's. */
+    body.mobile .modal.fade {
+        opacity: 1;
+        transition: background-color 200ms ease-in;
+
+        /* `translate` rather than `transform`, which each dialog sets for its horizontal placement. */
+        .modal-dialog {
+            translate: 0 calc(100% + var(--mobile-sheet-margin, 0px));
+            transition: translate 200ms cubic-bezier(0.4, 0, 1, 1);
+        }
+
+        &.show {
+            transition-duration: 300ms;
+            transition-timing-function: ease-out;
+
+            .modal-dialog {
+                translate: none;
+                transition: translate 300ms cubic-bezier(0.32, 0.72, 0, 1);
+            }
+        }
+    }
+}
+
+@media (max-width: 991px) and (prefers-reduced-motion: reduce) {
+    body.mobile .modal.fade .modal-dialog,
+    body.mobile .modal.fade.show .modal-dialog {
+        transition: none;
+    }
+}

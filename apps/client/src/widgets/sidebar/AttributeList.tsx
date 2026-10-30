@@ -36,7 +36,7 @@ import { ParentComponent } from "../react/react_utils";
 import OptionsSection from "../type_widgets/options/components/OptionsSection";
 import AttributeCreationEditor from "./AttributeCreationEditor";
 import AttributeValueEditor, { resolveValueField } from "./AttributeValueEditor";
-import RightPanelWidget, { CollapsibleWidgets } from "./RightPanelWidget";
+import RightPanelWidget, { CollapsibleWidgets, TabHeaderSlot } from "./RightPanelWidget";
 import SidebarHelp from "./SidebarHelp";
 
 /**
@@ -56,6 +56,7 @@ export default function AttributeList() {
     const { note } = useActiveNoteContext();
     const canEdit = !!note && note.isContentWritable;
     const { isMasterDetail } = useMasterDetail();
+    const headerSlot = useContext(TabHeaderSlot);
     const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const [ detail, setDetail ] = useState<AttributeDetailOpts | null>(null);
@@ -814,7 +815,7 @@ export default function AttributeList() {
     // A card per run. With a single card, there is nothing to collapse it in favor of.
     const sectionList = (
         <CollapsibleWidgets.Provider value={runs.length > 1}>
-            {toolbar}
+            {toolbar && headerSlot ? createPortal(toolbar, headerSlot) : toolbar}
 
             {runs.map((run, index) => (
                 <AttributeSection

@@ -12,7 +12,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -56,6 +56,20 @@ describe("getListedChildCount", () => {
     });
 });
 
+describe("getChevronIcon", () => {
+    it("points back toward the leading edge and forward toward the trailing one", () => {
+        const { isRtl } = glob;
+        try {
+            glob.isRtl = false;
+            expect([ getChevronIcon("back"), getChevronIcon("forward") ]).toEqual([ "bx bx-chevron-left", "bx bx-chevron-right" ]);
+            glob.isRtl = true;
+            expect([ getChevronIcon("back"), getChevronIcon("forward") ]).toEqual([ "bx bx-chevron-right", "bx bx-chevron-left" ]);
+        } finally {
+            glob.isRtl = isRtl;
+        }
+    });
+});
+
 describe("getPreviewNoteIds", () => {
     it("keeps the previews of the columns shown last, and the one about to be shown", () => {
         expect(getPreviewNoteIds([], "a")).toEqual([ "a" ]);
@@ -77,7 +91,7 @@ describe("TitleWithIndicators", () => {
     }
 
     /** Renders the title under a parent component that collects the reload handlers. */
-    function mount(note: FNote) {
+    function mount(note: FNote, parentNoteId?: string) {
         const handlers: ((data: unknown) => void)[] = [];
         const parent = {
             componentId: "cid",
@@ -90,7 +104,7 @@ describe("TitleWithIndicators", () => {
         act(() => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <TitleWithIndicators note={note} title={note.title} className="title" />
+                    <TitleWithIndicators note={note} parentNoteId={parentNoteId} title={note.title} className="title" />
                 </ParentComponent.Provider>
             );
         });
@@ -122,22 +136,51 @@ describe("TitleWithIndicators", () => {
         expect(clone?.getAttribute("aria-label")).toContain("Second");
         expect(container.querySelector(".shared-indicator")).not.toBeNull();
     });
+
+    it("replaces a protected note's title but not its prefix while the protected session is closed", () => {
+        buildNote({ id: "vault", title: "Vault", children: [ { id: "secret", title: "Secret" } ] });
+        const note = froca.notes["secret"];
+        const branch = froca.branches[note?.parentToBranch["vault"] ?? ""];
+        if (!note || !branch) throw new Error("expected the note and its branch");
+        note.isProtected = true;
+        const { isProtectedSessionAvailable } = glob;
+        try {
+            glob.isProtectedSessionAvailable = false;
+            const locked = mount(note).container.querySelector(".title");
+            expect(locked?.textContent).toBe("protected_session.locked_note_title");
+            expect(locked?.querySelector(".is-locked")).not.toBeNull();
+
+            branch.prefix = "2024";
+            expect(mount(note, "vault").container.querySelector(".title")?.textContent)
+                .toBe("2024 - protected_session.locked_note_title");
+
+            glob.isProtectedSessionAvailable = true;
+            const unlocked = mount(note).container.querySelector(".title");
+            expect(unlocked?.textContent).toBe("Secret");
+            expect(unlocked?.querySelector(".is-locked")).toBeNull();
+        } finally {
+            glob.isProtectedSessionAvailable = isProtectedSessionAvailable;
+        }
+    });
 });
 
 describe("WorkspaceCards", () => {
-    it("lists the workspaces and hoists the tab into the one tapped", async () => {
-        const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase" });
-        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace ]);
-        const triggerCommand = vi.fn();
+    it("lists the workspaces and enters the one tapped", async () => {
+        const workspace = buildNote({
+            title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#workspaceTabBackgroundColor": "#1e3a8a"
+        });
+        const plain = buildNote({ title: "Plain", "#workspace": "" });
+        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace, plain ]);
+        const onEnter = vi.fn();
         const parent = {
-            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}, triggerCommand
+            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}
         } as unknown as Component;
 
         let container = document.body;
         await act(async () => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <WorkspaceCards />
+                    <WorkspaceCards onEnter={onEnter} />
                 </ParentComponent.Provider>
             );
         });
@@ -147,12 +190,85 @@ describe("WorkspaceCards", () => {
         expect(searchForNotes).toHaveBeenCalledWith("#workspace #!template");
         expect(container.querySelector(".mobile-navigator-workspaces-label")?.textContent).toBe("mobile_note_navigator.workspaces");
         const cards = [ ...container.querySelectorAll(".mobile-navigator-workspaces .mobile-navigator-workspace") ];
-        expect(cards.map((card) => card.textContent)).toEqual([ "Work" ]);
+        expect(cards.map((card) => card.textContent)).toEqual([ "Work", "Plain" ]);
         expect(cards[0]?.tagName).toBe("BUTTON");
-        expect(cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase")).not.toBeNull();
+        // The workspace color tints the icon, with its lightness limited per theme, and fills nothing.
+        const icon = cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase");
+        expect(icon?.classList.contains("use-note-color")).toBe(true);
+        expect(icon?.classList.contains("color-1E3A8A")).toBe(true);
+        expect(icon?.getAttribute("style")).toBeNull();
+        expect(cards[1]?.querySelector(".mobile-navigator-workspace-icon")?.classList.contains("use-note-color")).toBe(false);
 
         (cards[0] as HTMLElement | undefined)?.click();
-        expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
+        expect(onEnter).toHaveBeenCalledWith(workspace.noteId);
+    });
+});
+
+describe("UnhoistButton", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("shows an exit with the hoisted note's title in the workspace color, and unhoists on a tap", () => {
+        const unhoist = vi.fn();
+        const workspace = buildNote({
+            title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#iconClass": "bx bx-folder",
+            "#workspaceTabBackgroundColor": "#1e3a8a"
+        });
+        const plain = buildNote({ title: "Plain", "#iconClass": "bx bx-book" });
+
+        const button = renderInto(<UnhoistButton hoistedNoteId={workspace.noteId} onUnhoist={unhoist} />).querySelector("button");
+        expect(button?.getAttribute("aria-label")).toBe("note_tree.unhoist");
+        // The exit alone, its arrow toward the leading edge as the back chevron points.
+        expect(button?.querySelectorAll(".bx").length).toBe(1);
+        expect(button?.querySelector(".bx.bx-exit.bx-flip-horizontal.mobile-navigator-unhoist-icon")).not.toBeNull();
+        expect(button?.textContent).toBe("Work");
+        // The color class limits the lightness per theme, as a note's `#color` does in the tree.
+        expect(button?.classList.contains("use-note-color")).toBe(true);
+        expect(button?.classList.contains("color-1E3A8A")).toBe(true);
+        expect(button?.getAttribute("style")).toBeNull();
+        button?.click();
+        expect(unhoist).toHaveBeenCalledTimes(1);
+
+        const plainButton = renderInto(<UnhoistButton hoistedNoteId={plain.noteId} onUnhoist={unhoist} />).querySelector("button");
+        expect(plainButton?.textContent).toBe("Plain");
+        expect(plainButton?.classList.contains("use-note-color")).toBe(false);
+    });
+
+    it("points the exit toward the leading edge in a right-to-left language as well", () => {
+        const note = buildNote({ title: "Work" });
+        const { isRtl } = glob;
+        glob.isRtl = true;
+        try {
+            const icon = renderInto(<UnhoistButton hoistedNoteId={note.noteId} onUnhoist={() => {}} />).querySelector(".bx-exit");
+            expect(icon).not.toBeNull();
+            expect(icon?.classList.contains("bx-flip-horizontal")).toBe(false);
+        } finally {
+            glob.isRtl = isRtl;
+        }
+    });
+});
+
+describe("ForwardToNoteButton", () => {
+    it("shows the open note's title before a forward chevron, and brings the note back on a tap", () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "fwdFolder", title: "Folder", children: [ { id: "fwdLeaf", title: "Leaf" } ] }
+        ] });
+        const triggerCommand = vi.fn();
+        const parent = {
+            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}, triggerCommand
+        } as unknown as Component;
+
+        const button = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <ForwardToNoteButton notePath="root/fwdFolder/fwdLeaf" />
+            </ParentComponent.Provider>
+        ).querySelector("button");
+        expect(button?.getAttribute("aria-label")).toBe("mobile_note_navigator.forward");
+        expect(button?.textContent).toBe("Leaf");
+        // The chevron follows the title, pointing toward the trailing edge.
+        expect(button?.lastElementChild?.matches(".bx.bx-chevron-right")).toBe(true);
+
+        button?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "detail" });
     });
 });
 
