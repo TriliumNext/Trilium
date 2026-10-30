@@ -10,7 +10,7 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { bookPropertiesConfig } from "./collection-properties-config";
-import CollectionProperties from "./CollectionProperties";
+import CollectionProperties, { CollectionControls } from "./CollectionProperties";
 
 describe("CollectionProperties", () => {
     it("leaves the nesting depth to the properties dialogs, out of every settings dropdown", () => {
@@ -32,6 +32,29 @@ describe("CollectionProperties", () => {
         const left = container.querySelector(".left-container");
         expect(left?.children.length).toBeGreaterThan(1);
         expect(left?.lastElementChild?.className).toBe("view-control");
+    });
+
+    it("leaves out the view type switcher and the settings where `CollectionControls` says so", () => {
+        const note = buildNote({ title: "Collection", type: "book" });
+        const render = (controls: { viewTypeSwitcher: boolean; viewOptions: boolean }) => renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <CollectionControls.Provider value={controls}>
+                    <CollectionProperties note={note} leftChildren={<span className="view-control" />} />
+                </CollectionControls.Provider>
+            </ParentComponent.Provider>
+        );
+        const shown = (container: HTMLElement) => ({
+            switcher: !!container.querySelector(".left-container .dropdown-toggle:not(.bx-cog)"),
+            settings: !!container.querySelector(".left-container .bx-cog")
+        });
+
+        expect(shown(render({ viewTypeSwitcher: true, viewOptions: true })))
+            .toStrictEqual({ switcher: true, settings: true });
+        expect(shown(render({ viewTypeSwitcher: false, viewOptions: true })))
+            .toStrictEqual({ switcher: false, settings: true });
+        const neither = render({ viewTypeSwitcher: false, viewOptions: false });
+        expect(shown(neither)).toStrictEqual({ switcher: false, settings: false });
+        expect(neither.querySelector(".left-container .view-control")).not.toBeNull();
     });
 
     it("focuses the view type switcher on its shortcut only for its own note context", async () => {

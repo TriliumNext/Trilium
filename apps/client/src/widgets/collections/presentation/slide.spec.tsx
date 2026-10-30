@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -82,10 +83,11 @@ describe("collection slides", () => {
     });
 
     it("shows each collection slide through its slot, read-only unless it is the edited slide", async () => {
-        const listProps = new Map<string, { isReadOnly?: boolean, onOpenNote?: (noteId: string) => void }>();
+        const listProps = new Map<string, { isReadOnly?: boolean, onOpenNote?: (noteId: string) => void ; controls?: unknown }>();
+        const { CollectionControls } = await import("../../note_bars/CollectionProperties");
         vi.doMock("../NoteList", () => ({
             EmbeddedNoteList: (props: { note: { noteId: string }, isReadOnly?: boolean, onOpenNote?: (noteId: string) => void }) => {
-                listProps.set(props.note.noteId, props);
+                listProps.set(props.note.noteId, { ...props, controls: useContext(CollectionControls) });
                 return <div className="mock-note-list">{props.note.noteId}</div>;
             }
         }));
@@ -132,6 +134,10 @@ describe("collection slides", () => {
         expect(onOpenNote).toHaveBeenCalledWith("row");
         expect(host.querySelector('[slot="collection-table"]')?.classList.contains("is-edited")).toBe(true);
         expect(host.querySelector('[slot="collection-board"]')?.classList.contains("is-edited")).toBe(false);
+
+        // The view type never changes on a slide, and only the edited collection offers its settings.
+        expect(listProps.get("board")?.controls).toStrictEqual({ viewTypeSwitcher: false, viewOptions: false });
+        expect(listProps.get("table")?.controls).toStrictEqual({ viewTypeSwitcher: false, viewOptions: true });
     });
 
     it("leaves the keys of a field being typed in to the field", async () => {

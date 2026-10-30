@@ -5,6 +5,7 @@ import Reveal, { RevealApi } from "reveal.js";
 import appContext from "../../../components/app_context";
 import froca from "../../../services/froca";
 import utils from "../../../services/utils";
+import { CollectionControls } from "../../note_bars/CollectionProperties";
 import { DesktopWebView } from "../../type_widgets/WebView";
 import { SlideContent } from "./closing_slides";
 import { createFitObserver } from "./fit";
@@ -278,17 +279,19 @@ export function CollectionSlides({ presentation, ntxId, editedNoteId, onOpenNote
                         slot={getCollectionSlotName(slide.noteId)}
                         className={`presentation-collection-slide ${isEdited ? "is-edited" : ""}`}
                     >
-                        <Suspense fallback={null}>
-                            <EmbeddedNoteList
-                                note={note}
-                                notePath={note.getBestNotePathString()}
-                                ntxId={ntxId}
-                                media="screen"
-                                isReadOnly={!isEdited}
-                                // Opening a note leaves the presentation, or opens a popup that full-screen hides.
-                                onOpenNote={isEdited ? onOpenNote : ignoreOpenNote}
-                            />
-                        </Suspense>
+                        <CollectionControls.Provider value={{ viewTypeSwitcher: false, viewOptions: isEdited }}>
+                            <Suspense fallback={null}>
+                                <EmbeddedNoteList
+                                    note={note}
+                                    notePath={note.getBestNotePathString()}
+                                    ntxId={ntxId}
+                                    media="screen"
+                                    isReadOnly={!isEdited}
+                                    // Opening a note leaves the presentation, or opens a popup that full-screen hides.
+                                    onOpenNote={isEdited ? onOpenNote : ignoreOpenNote}
+                                />
+                            </Suspense>
+                        </CollectionControls.Provider>
                     </div>
                 );
             })}
