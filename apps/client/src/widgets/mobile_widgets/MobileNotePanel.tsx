@@ -25,7 +25,7 @@ export default function MobileNotePanel() {
     return (
         <div className="mobile-note-panel-button">
             {note && <ActionButton
-                icon="bx bx-sidebar"
+                icon="bx bx-dock-bottom"
                 text={t("mobile_detail_menu.note_panel")}
                 onClick={() => setShown(true)}
             />}
