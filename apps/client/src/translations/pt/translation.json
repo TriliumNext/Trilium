@@ -1051,7 +1051,6 @@
   "search_engine": {
     "title": "Motor de Pesquisa",
     "custom_search_engine_info": "O motor de pesquisa personalizado requer que sejam definidos um nome e uma URL. Se um destes não estiver definido, o DuckDuckGo será usado como o motor de pesquisa padrão.",
-    "predefined_templates_label": "Modelos de motor de pesquisa predefinidos",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

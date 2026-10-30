@@ -4,9 +4,9 @@
     "version_label": "نسخه:",
     "version": "{{appVersion}} (پایگاه‌داده: {{dbVersion}}، پروتکل همگام‌سازی: {{syncVersion}})",
     "build_info": "ساخت: {{buildDate}}، بازنگری: <buildRevision />",
-    "contributors_label": "مشارکت کنندگان:",
+    "contributors_label": "همکاران:",
     "contributor_roles": {
-      "lead-dev": "توسعه دهنده ارشد",
+      "lead-dev": "توسعه‌دهندهٔ اصلی",
       "original-dev": "توسعه‌دهندهٔ اولیه"
     },
     "role_brief_history": {
@@ -792,7 +792,7 @@
     "board_sort_columns_descending": "برای مجموعه‌های تخته‌ای، ترتیب <code>#board:sortColumns</code> را برعکس اجرا می‌کند.",
     "calendar_view": "تقویم در کدام نمایش باز می‌شود: <code>timeGridDay</code>، <code>timeGridWeek</code>، <code>dayGridMonth</code>، <code>multiMonthYear</code> یا <code>listMonth</code>.",
     "calendar_initial_date": "تاریخی که تقویم در آن باز می‌شود. در صورت تنظی نشدن، امروز باز می‌شود.",
-    "calendar_hide_weekends": "شنبه و یکشنبه را از تقویم پنهان می‌کند. صرف‌نظر از مقدار اعمال می‌شود.",
+    "calendar_hide_weekends": "جمعه و یکشنبه را از تقویم پنهان می‌کند. صرف‌نظر از مقدار اعمال می‌شود.",
     "calendar_week_numbers": "شمارهٔ هفته را در تقویم نمایش می‌دهد. صرف‌نظر از مقدار اعمال می‌شود.",
     "calendar_slot_duration": "مدت هر بازهٔ زمانی تقویم، به صورت <code>HH:MM:SS</code>. پیش‌فرض 15 دقیقه.",
     "calendar_slot_label_interval": "دورهٔ برچسب‌گذاری بازه‌های زمانی تقویم، به صورت <code>HH:MM:SS</code>. پیش‌فرض یک ساعت.",
@@ -1849,9 +1849,7 @@
   },
   "experimental_features": {
     "title": "گزینه‌های تجربی",
-    "disclaimer": "این گزینه‌ها تجربی هستند و ممکن است باعث بی‌ثباتی شوند. با احتیاط استفاده کنید.",
-    "llm_name": "هوش مصنوعی / گفتگوی LLM",
-    "llm_description": "نوار کناری گفتگوی هوش مصنوعی و یادداشت‌های گفتگوی LLM قدرت‌گرفته از مدل‌های زبانی بزرگ را فعال کنید."
+    "disclaimer": "این گزینه‌ها تجربی هستند و ممکن است باعث بی‌ثباتی شوند. با احتیاط استفاده کنید."
   },
   "fonts": {
     "theme_defined": "تعریف‌شده توسط پوسته",
@@ -2056,7 +2054,6 @@
   "search_engine": {
     "title": "موتور جستجو",
     "custom_search_engine_info": "هنگام جستجوی وب برای متن انتخاب‌شده استفاده می‌شود. اگر پیکربندی نشده باشد، DuckDuckGo استفاده خواهد شد.",
-    "predefined_templates_label": "قالب‌های از پیش تعریف‌شده",
     "bing": "بینگ",
     "baidu": "بایدو",
     "duckduckgo": "داک‌داک‌گو",

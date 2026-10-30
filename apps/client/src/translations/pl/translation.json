@@ -1295,7 +1295,6 @@
   "search_engine": {
     "title": "Wyszukiwarka",
     "custom_search_engine_info": "Niestandardowa wyszukiwarka wymaga ustawienia zarówno nazwy, jak i adresu URL. Jeśli którykolwiek z nich nie zostanie ustawiony, jako domyślna wyszukiwarka zostanie użyte DuckDuckGo.",
-    "predefined_templates_label": "Predefiniowane szablony wyszukiwarek",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

@@ -1230,7 +1230,6 @@
   "search_engine": {
     "title": "搜尋引擎",
     "custom_search_engine_info": "用於在網路上搜尋選取的文字。若未設定，將使用 DuckDuckGo。",
-    "predefined_templates_label": "模板",
     "bing": "Bing",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",
@@ -2042,9 +2041,7 @@
   },
   "experimental_features": {
     "title": "實驗性選項",
-    "disclaimer": "這些選項屬實驗性質，可能導致系統不穩定。請謹慎使用。",
-    "llm_name": "AI / LLM 對話",
-    "llm_description": "啟用由大語言模型驅動的 AI 聊天側邊欄及 LLM 聊天筆記。"
+    "disclaimer": "這些選項屬實驗性質，可能導致系統不穩定。請謹慎使用。"
   },
   "server": {
     "unknown_http_error_title": "與伺服器通訊錯誤",

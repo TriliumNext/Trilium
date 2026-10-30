@@ -820,7 +820,8 @@
     "meeting_recording": "Обозначает заметку, созданную с помощью кнопки \"Стенограмма встречи\" на панели запуска, в которой хранится стенограмма встречи.",
     "template_title_template": "Для шаблонов заметок: заголовок по умолчанию для заметок, созданных на основе шаблона, используется вместо родительского <code>#titleTemplate</code>. Вычисляется как <code>#titleTemplate</code> с подставленными переменными <code>now</code> и <code>parentNote</code>, например <code>Встреча ${now.format('YYYY-MM-DD')}</code>.",
     "calendar_hide_routine_events": "Скрывает мероприятия, повторяющиеся по {{days}} или более дней в неделю, из представлений Месяц, Год и Список. Применяется независимо от значения.",
-    "exclude_from_llm": "Скрывает эту заметку от чата c ИИ и MCP сервера. Сделайте метку наследуемой, чтобы также скрыть заметки под ней."
+    "exclude_from_llm": "Скрывает эту заметку от чата c ИИ и MCP сервера. Сделайте метку наследуемой, чтобы также скрыть заметки под ней.",
+    "bookmark_open_mode": "Где она открывается при нажатии на кнопку заметки на панели запуска: <code>currentTab</code> (по умолчанию), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> или <code>quickEdit</code>. Применяется к закладкам, заметкам, помещенным на панель запуска, и заметкам в папке с закладками."
   },
   "command_palette": {
     "configure_launch_bar_description": "Откройте конфигурацию панели запуска, чтобы добавить или удалить элементы.",
@@ -1357,7 +1358,10 @@
     "follow-active-note": "Следовать за активной заметкой",
     "follow-active-note-title": "Прокручивает дерево и разворачивает родительские узлы, чтобы отобразить активную заметку. Если этот параметр отключен, дерево остается на месте, обновляется только подсветка.",
     "show-all-notes": "Показать все заметки",
-    "back-to-tree": "Дерево заметок"
+    "back-to-tree": "Дерево заметок",
+    "display-density": "Плотность дерева",
+    "display-density-relaxed": "Обычное",
+    "display-density-dense": "Компактное"
   },
   "quick-search": {
     "no-results": "Результаты не найдены",
@@ -1949,12 +1953,16 @@
     "save_button": "Сохранить",
     "title": "Поисковый движок",
     "custom_url_label": "URL",
-    "custom_search_engine_info": "Используется при поиске в интернете выделенного текста. Если не настроено, будет использоваться DuckDuckGo.",
-    "predefined_templates_label": "Предустановки",
+    "custom_search_engine_info": "Используется для поиска в Интернете выделенного текста в заметке.",
     "custom_name_label": "Название",
     "custom_name_placeholder": "Название поисковой системы",
     "custom_url_placeholder": "URL поисковой системы",
-    "custom_url_description": "Используйте {keyword} в качестве заполнителя для поискового запроса."
+    "custom_url_description": "Используйте {keyword} в качестве заполнителя для поискового запроса.",
+    "engine_label": "Движок",
+    "brave": "Brave",
+    "yandex": "Яндекс",
+    "none": "Отсутствует",
+    "custom": "Пользовательский"
   },
   "heading_style": {
     "plain": "Обычный",
@@ -3004,9 +3012,7 @@
   },
   "experimental_features": {
     "title": "Экспериментальные параметры",
-    "disclaimer": "Эти параметры экспериментальные и могут повлиять на стабильность. Используйте с осторожностью.",
-    "llm_name": "ИИ / LLM чат",
-    "llm_description": "Включить боковую панель чата с ИИ и заметки, созданные на основе больших языковых моделей (LLM)."
+    "disclaimer": "Эти параметры экспериментальные и могут повлиять на стабильность. Используйте с осторожностью."
   },
   "popup-editor": {
     "maximize": "Переключить на полный редактор",
@@ -3697,18 +3703,28 @@
     "back": "На уровень выше",
     "loading": "Загрузка...",
     "empty": "У этой заметки нет дочерних заметок.",
-    "children_count_one": "{{count}} заметка",
-    "children_count_few": "{{count}} заметки",
-    "children_count_many": "{{count}} заметок",
+    "children_count_one": "{{count}} дочерняя заметка",
+    "children_count_few": "{{count}} дочерние заметки",
+    "children_count_many": "{{count}} дочерних заметок",
     "add_child": "Добавить дочернюю заметку",
-    "more_actions": "Другие действия"
+    "more_actions": "Другие действия",
+    "current_note": "Эта заметка",
+    "children_hidden": "Дочерние заметки скрыты из дерева",
+    "workspaces": "Рабочие пространства",
+    "bookmarks": "Закладки"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Убрать с панели запуска",
     "will_reload_frontend": "(перезагрузит приложение)",
     "configure_launch_bar": "Настроить панель запуска...",
     "launch_bar_orientation": "Ориентация панели запуска",
-    "show_as_folder": "Папка"
+    "show_as_folder": "Отобразить как папку",
+    "open_mode": "Режим открытия",
+    "open_mode_current_tab": "Текущая вкладка",
+    "open_mode_new_tab": "Новая вкладка",
+    "open_mode_new_split": "Новое разделение",
+    "open_mode_new_window": "Новое окно",
+    "open_mode_quick_edit": "Быстрое редактирование"
   },
   "link": {
     "failed_to_open": "Не удалось открыть ссылку '{{- href}}': {{- message}}"
@@ -4040,7 +4056,13 @@
       "image-position": "Положение изображения",
       "list": "Список",
       "list-type": "Тип списка",
-      "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео"
+      "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео",
+      "use-headers": "Использовать заголовки",
+      "header-columns": "Заголовки столбцов",
+      "header-rows": "Заголовки строк",
+      "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0.",
+      "extended-code-block": "Расширенный блок кода",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Вставить блок кода, который редактируется как заметка с кодом."
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -5020,5 +5042,16 @@
     "remove_diacritics": "Удалить диакритические знаки",
     "to_sentence_case": "Регистр как в предложении",
     "to_title_case": "Заголовочный регистр"
+  },
+  "canvas": {
+    "thin_stroke": "Тонкий штрих пера",
+    "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину."
+  },
+  "sort_selection": {
+    "sort_blocks": "Сортировать блоки",
+    "sort_list_items": "Сортировать элементы списка",
+    "sort_rows": "Сортировать строки",
+    "ascending": "По возрастанию",
+    "descending": "По убыванию"
   }
 }

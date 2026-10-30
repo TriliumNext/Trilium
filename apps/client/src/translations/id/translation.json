@@ -1458,9 +1458,7 @@
   },
   "experimental_features": {
     "title": "Opsi Eksperimental",
-    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati.",
-    "llm_name": "Chat AI / LLM",
-    "llm_description": "Aktifkan panel samping chat AI dan catatan chat LLM yang didukung oleh large language model."
+    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati."
   },
   "fonts": {
     "theme_defined": "Tema ditentukan",
@@ -1664,7 +1662,6 @@
   "search_engine": {
     "title": "Mesin Pencari",
     "custom_search_engine_info": "Digunakan saat mencari di web untuk teks yang dipilih. Jika tidak dikonfigurasi, DuckDuckGo akan digunakan.",
-    "predefined_templates_label": "Preset",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

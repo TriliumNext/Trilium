@@ -999,9 +999,7 @@
   },
   "experimental_features": {
     "title": "Experimentální Nastavení",
-    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností.",
-    "llm_name": "AI / LLM Chat",
-    "llm_description": "Povolte postranní panel AI chatu a poznámky LLM chatu poháněné velkými jazykovými modely."
+    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností."
   },
   "fonts": {
     "theme_defined": "Definované téma",
@@ -1143,7 +1141,6 @@
   "search_engine": {
     "title": "Vyhledávač",
     "custom_search_engine_info": "Vlastní vyhledávač vyžaduje nastavení jak názvu, tak URL. Pokud některý z nich není nastaven, bude použit DuckDuckGo jako výchozí vyhledávač.",
-    "predefined_templates_label": "Předdefinované šablony vyhledávačů",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",

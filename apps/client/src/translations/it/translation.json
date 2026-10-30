@@ -802,7 +802,6 @@
     "save_button": "Salva",
     "title": "Motore di ricerca",
     "custom_search_engine_info": "Da utilizzare per effettuare ricerche sul web in base al testo selezionato. Se non viene configurato, verrà utilizzato DuckDuckGo.",
-    "predefined_templates_label": "Impostazioni predefinite",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2664,9 +2663,7 @@
   },
   "experimental_features": {
     "title": "Opzioni sperimentali",
-    "disclaimer": "Queste opzioni sono sperimentali e potrebbero causare instabilità. Usare con cautela.",
-    "llm_name": "Chat con IA / LLM",
-    "llm_description": "Attiva la barra laterale della chat con IA e le note della chat LLM basate su modelli linguistici di grandi dimensioni."
+    "disclaimer": "Queste opzioni sono sperimentali e potrebbero causare instabilità. Usare con cautela."
   },
   "server": {
     "unknown_http_error_title": "Errore di comunicazione con il server",

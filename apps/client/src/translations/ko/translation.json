@@ -1775,9 +1775,7 @@
   },
   "experimental_features": {
     "title": "실험적 옵션",
-    "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요.",
-    "llm_name": "AI / LLM 채팅",
-    "llm_description": "AI 채팅 사이드바와 대형 언어 모델이 지원하는 LLM 채팅 노트를 활성화하세요."
+    "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요."
   },
   "fonts": {
     "theme_defined": "테마 지정",
@@ -1992,8 +1990,7 @@
   },
   "search_engine": {
     "title": "검색 엔진",
-    "custom_search_engine_info": "웹에서 선택된 텍스트를 검색할 때 사용됩니다. 설정하지 않으면 DuckDuckGo가 사용됩니다.",
-    "predefined_templates_label": "프리셋",
+    "custom_search_engine_info": "노트에서 선택한 텍스트를 웹에서 검색할 때 사용됩니다.",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2003,7 +2000,12 @@
     "custom_url_label": "URL",
     "custom_url_description": "검색어의 자리 표시자로 {keyword}를 사용하세요.",
     "custom_url_placeholder": "검색 엔진 URL",
-    "save_button": "저장"
+    "save_button": "저장",
+    "engine_label": "검색 엔진",
+    "brave": "Brave",
+    "yandex": "Yandex",
+    "none": "없음",
+    "custom": "사용자 지정"
   },
   "desktop": {
     "web_placeholder": "이 옵션들은 데스크톱 빌드에만 적용됩니다."
@@ -2664,15 +2666,22 @@
     "subtree-hidden-moved-description-collection": "이 컬렉션은 트리에 하위 노트를 숨깁니다.",
     "subtree-hidden-moved-description-other": "이 노트의 트리에는 하위 노트가 숨겨져 있습니다.",
     "show-all-notes": "모든 노트 표시",
-    "back-to-tree": "노트 트리"
+    "back-to-tree": "노트 트리",
+    "display-density": "표시 밀도",
+    "display-density-relaxed": "여유롭게",
+    "display-density-dense": "촘촘하게"
   },
   "mobile_note_navigator": {
     "back": "한 단계 위로",
     "loading": "로딩 중...",
     "empty": "이 노트에는 하위 노트가 없습니다.",
-    "children_count_other": "노트 {{count}}개",
+    "children_count_other": "하위 노트 {{count}}개",
     "add_child": "하위 노트 추가",
-    "more_actions": "추가 작업"
+    "more_actions": "추가 작업",
+    "current_note": "이 노트",
+    "children_hidden": "하위 노트가 트리에서 숨겨져 있습니다",
+    "workspaces": "작업 공간",
+    "bookmarks": "북마크"
   },
   "title_bar_buttons": {
     "window-on-top": "항상 위에 표시"
@@ -4357,7 +4366,11 @@
       "image-position": "이미지 위치",
       "list": "목록",
       "list-type": "목록 유형",
-      "insert-a-preview-of-a-web-page-or-a-video": "웹 페이지 또는 동영상 미리보기 삽입"
+      "insert-a-preview-of-a-web-page-or-a-video": "웹 페이지 또는 동영상 미리보기 삽입",
+      "use-headers": "헤더 사용",
+      "header-columns": "헤더 열",
+      "header-rows": "헤더 행",
+      "enter-a-whole-number-between-0-and-0": "0에서 %0 사이의 정수를 입력하세요."
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",

@@ -1200,8 +1200,7 @@
   },
   "search_engine": {
     "title": "検索エンジン",
-    "custom_search_engine_info": "選択したテキストをウェブ上で検索する際に使用します。設定されていない場合は、DuckDuckGo が使用されます。",
-    "predefined_templates_label": "プリセット",
+    "custom_search_engine_info": "ノート内で選択したテキストをウェブで検索するために使用します。",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1211,7 +1210,12 @@
     "custom_url_label": "URL",
     "custom_url_placeholder": "検索エンジンの URL",
     "save_button": "保存",
-    "custom_url_description": "検索語句の代わりに {keyword} を使用してください。"
+    "custom_url_description": "検索語句の代わりに {keyword} を使用してください。",
+    "engine_label": "検索エンジン",
+    "brave": "Brave",
+    "yandex": "Yandex",
+    "none": "なし",
+    "custom": "カスタム"
   },
   "tray": {
     "title": "システムトレイ",
@@ -1675,7 +1679,8 @@
     "meeting_recording": "ランチャーバーの \"ミーティングの文字起こし\" ボタンから作成されたノートを示します。このノートには、ミーティングの文字起こし内容が記録されます。",
     "template_title_template": "テンプレートノートに設定: このテンプレートから作成されるノートのデフォルトタイトルとして使用され、親ノート <code>#titleTemplate</code> の代わりに使用されます。<code>#titleTemplate</code> と同様に評価（変換）され、<code>now</code> と <code>parentNote</code> の変数が利用可能です。例: <code>Meeting ${now.format('YYYY-MM-DD')}</code>。",
     "calendar_hide_routine_events": "週に {{days}} 日以上繰り返される予定を、月、年、リスト、の各表示から非表示にします。設定した値に応じて適用されます。",
-    "exclude_from_llm": "このノートを AI チャットおよび MCP サーバーから非表示にします。ラベルに継承設定を適用することで、その下にあるノートもまとめて非表示にできます。"
+    "exclude_from_llm": "このノートを AI チャットおよび MCP サーバーから非表示にします。ラベルに継承設定を適用することで、その下にあるノートもまとめて非表示にできます。",
+    "bookmark_open_mode": "ランチャーバー上のノートのボタンをクリックした際の動作を指定します: <code>currentTab</code>（デフォルト）,<code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> または <code>quickEdit</code>。これはブックマーク、ランチャーバーにドロップされたノート、およびブックマークフォルダ内のノートに適用されます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -1758,7 +1763,10 @@
     "follow-active-note": "アクティブなノートに追従",
     "follow-active-note-title": "ツリーをスクロールし、親ノードを展開してアクティブなノートを表示します。無効にすると、ツリーは固定されたままとなり、背景のハイライトのみが更新されます。",
     "show-all-notes": "すべてのノートを表示",
-    "back-to-tree": "ノートツリー"
+    "back-to-tree": "ノートツリー",
+    "display-density": "表示密度",
+    "display-density-relaxed": "ゆったり",
+    "display-density-dense": "コンパクト"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -2850,9 +2858,7 @@
   },
   "experimental_features": {
     "title": "実験オプション",
-    "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。",
-    "llm_name": "AI / LLM チャット",
-    "llm_description": "大規模言語モデルを活用した AI チャットサイドバーと LLM チャットノートを有効にします。"
+    "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。"
   },
   "breadcrumb_badges": {
     "read_only_explicit": "読み取り専用",
@@ -3595,7 +3601,13 @@
     "configure_launch_bar": "ランチャーバーの設定...",
     "launch_bar_orientation": "ランチャーバーの向き",
     "will_reload_frontend": "（アプリが再読み込みされます）",
-    "show_as_folder": "フォルダー"
+    "show_as_folder": "フォルダーとして表示",
+    "open_mode": "開き方",
+    "open_mode_current_tab": "現在のタブ",
+    "open_mode_new_tab": "新しいタブ",
+    "open_mode_new_split": "新しい分割画面",
+    "open_mode_new_window": "新しいウィンドウ",
+    "open_mode_quick_edit": "クイック編集"
   },
   "display_mode": {
     "source": "ソースビュー",
@@ -3671,9 +3683,13 @@
     "back": "1つ上の階層へ移動",
     "loading": "読み込み中...",
     "empty": "このノートには子ノートがありません。",
-    "children_count_other": "{{count}} ノート",
+    "children_count_other": "{{count}} 件の子ノート",
     "add_child": "子ノートを追加",
-    "more_actions": "その他の操作"
+    "more_actions": "その他の操作",
+    "current_note": "このノート",
+    "children_hidden": "子ノートはツリー上で非表示になっています",
+    "workspaces": "ワークスペース",
+    "bookmarks": "ブックマーク"
   },
   "text-editor": {
     "validation-errors": {
@@ -3932,7 +3948,13 @@
       "image-position": "画像の位置",
       "list": "リスト",
       "list-type": "リストタイプ",
-      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入"
+      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入",
+      "use-headers": "ヘッダーを使用",
+      "header-columns": "ヘッダー列",
+      "header-rows": "ヘッダー行",
+      "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。",
+      "extended-code-block": "拡張コードブロック",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "コードノートとして編集可能なコードブロックを挿入します。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4844,5 +4866,16 @@
     "tomorrow": "明日",
     "next-week": "来週",
     "clear": "クリア"
+  },
+  "canvas": {
+    "thin_stroke": "細いペン先",
+    "thin_stroke_description": "手書きに適した、より細い線を描きます。すでに描かれた線の幅はそのまま維持されます。"
+  },
+  "sort_selection": {
+    "sort_blocks": "ブロックを並べ替え",
+    "sort_list_items": "リスト項目を並べ替え",
+    "sort_rows": "行を並べ替え",
+    "ascending": "昇順",
+    "descending": "降順"
   }
 }

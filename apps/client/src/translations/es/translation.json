@@ -1557,7 +1557,6 @@
   "search_engine": {
     "title": "Motor de búsqueda",
     "custom_search_engine_info": "Utilizado al buscar la web para el texto seleccionado. Si no está configurado, DuckDuckGo será utilizado.",
-    "predefined_templates_label": "Valores predeterminados",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2886,9 +2885,7 @@
   },
   "experimental_features": {
     "title": "Opciones experimentales",
-    "disclaimer": "Estas opciones son experimentales y pueden causar inestabilidad. Úselas con precaución.",
-    "llm_name": "Chat de IA / LLM",
-    "llm_description": "Habilitar la barra lateral de chat de IA y las notas de chat LLM alimentadas por grandes modelos de lenguaje."
+    "disclaimer": "Estas opciones son experimentales y pueden causar inestabilidad. Úselas con precaución."
   },
   "popup-editor": {
     "maximize": "Cambiar a editor completo",

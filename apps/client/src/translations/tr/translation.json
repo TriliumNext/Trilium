@@ -1891,9 +1891,7 @@
   },
   "experimental_features": {
     "title": "Deneysel Seçenekler",
-    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın.",
-    "llm_name": "Yapay Zeka / LLM Sohbeti",
-    "llm_description": "Büyük dil modelleri tarafından desteklenen yapay zeka sohbet kenar çubuğunu ve LLM sohbet notlarını etkinleştirir."
+    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın."
   },
   "fonts": {
     "theme_defined": "Tema tarafından tanımlanır",
@@ -2086,7 +2084,6 @@
   "search_engine": {
     "title": "Arama Motoru",
     "custom_search_engine_info": "Seçili metin için web'de arama yapılırken kullanılır. Yapılandırılmamışsa DuckDuckGo kullanılır.",
-    "predefined_templates_label": "Ön ayarlar",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
