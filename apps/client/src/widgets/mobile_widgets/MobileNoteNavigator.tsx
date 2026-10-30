@@ -8,7 +8,7 @@ import type Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
 import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
-import { getReadableTextColor } from "../../services/css_class_manager";
+import cssClassManager, { getReadableTextColor } from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
@@ -469,11 +469,15 @@ export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: str
     const hoistedTitle = useNoteTitle(hoistedNoteId, undefined);
     const [ isWorkspace ] = useNoteLabelBoolean(hoistedNote, "workspace");
     const [ workspaceIconClass ] = useNoteLabel(hoistedNote, "workspaceIconClass");
+    const [ workspaceColor ] = useNoteLabel(hoistedNote, "workspaceTabBackgroundColor");
 
     return (
         <button
             type="button"
-            className="mobile-navigator-back mobile-navigator-unhoist"
+            className={clsx(
+                "mobile-navigator-back mobile-navigator-unhoist",
+                cssClassManager.createClassForColor(workspaceColor ?? null)
+            )}
             onClick={onUnhoist}
             aria-label={t("note_tree.unhoist")}
         >

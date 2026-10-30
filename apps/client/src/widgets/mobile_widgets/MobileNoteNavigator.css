@@ -343,6 +343,7 @@
 
 /* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
    (see css_class_manager.createClassForColor). Apply it to the title/icon. */
+.mobile-navigator-unhoist.use-note-color,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-title,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-icon,
 .mobile-navigator-current-tile.use-note-color .mobile-navigator-current-title,
