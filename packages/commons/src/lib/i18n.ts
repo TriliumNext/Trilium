@@ -26,6 +26,7 @@ const UNSORTED_LOCALES = [
     { id: "id", name: "Bahasa Indonesia", electronLocale: "id", tesseractCode: "ind" },
     { id: "it", name: "Italiano", electronLocale: "it", tesseractCode: "ita" },
     { id: "hi", name: "हिन्दी", electronLocale: "hi", tesseractCode: "hin" },
+    { id: "hu", name: "Magyar", electronLocale: "hu" },
     { id: "ja", name: "日本語", electronLocale: "ja", tesseractCode: "jpn" },
     { id: "ko", name: "한국어", electronLocale: "ko", tesseractCode: "kor" },
     { id: "pt_br", name: "Português (Brasil)", electronLocale: "pt_BR", tesseractCode: "por" },

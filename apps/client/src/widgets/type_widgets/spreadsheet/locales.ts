@@ -134,6 +134,7 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
     id: null,
     it: null,
     hi: null,
+    hu: null,
     ja: {
         type: LocaleType.JA_JP,
         load: () => Promise.all([
