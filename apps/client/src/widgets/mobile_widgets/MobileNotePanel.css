@@ -37,31 +37,17 @@ body.mobile .modal.mobile-note-panel {
             padding-bottom: 0;
         }
 
-        > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
+        &:not([data-tab-id="widgets"]) > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
             display: none;
         }
 
-        > .card:not(#sidebar-chat):first-child > .card-header {
-            padding-top: 0;
-        }
-
-        .card-header {
+        .card > .card-header {
             --icon-button-size: 32px;
-        }
 
-        .card:not(#sidebar-chat) {
-            margin: 0;
+            width: auto;
+            padding: var(--note-panel-group-spacing, 16px) 16px 6px;
             border: 0;
-            border-radius: 0;
             background: transparent;
-            overflow: visible;
-
-            > .card-header {
-                width: auto;
-                padding: var(--note-panel-group-spacing, 16px) 16px 6px;
-                border: 0;
-                background: transparent;
-            }
 
             .card-header-title {
                 margin: 0;
@@ -71,6 +57,19 @@ body.mobile .modal.mobile-note-panel {
                 text-transform: none;
                 color: var(--muted-text-color);
             }
+        }
+
+        > :first-child > .card-header,
+        > :first-child > .card:first-child > .card-header {
+            padding-top: 0;
+        }
+
+        .card:not(#sidebar-chat) {
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            overflow: visible;
 
             > .body-wrapper {
                 margin-inline: 16px;

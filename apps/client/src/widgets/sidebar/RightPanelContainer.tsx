@@ -206,6 +206,7 @@ export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat }: {
         <div
             key={tab.id}
             role="tabpanel"
+            data-tab-id={tab.id}
             class={clsx(flat ? "right-pane-flat-tab-body" : "right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
         >
             {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of one offers
