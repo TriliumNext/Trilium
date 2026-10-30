@@ -35,6 +35,8 @@ interface NoteListProps {
     onProgressChanged?(progress: number): void;
     showTextRepresentation?: boolean;
     onOpenNote?: (noteId: string) => void;
+    /** Shows the collection read-only even when its note can be edited. */
+    isReadOnly?: boolean;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);

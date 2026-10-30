@@ -687,7 +687,7 @@ export async function exportDrawingPicture(
 
     return exportToSvg({
         elements,
-        appState: { ...scene.appState, exportBackground: true, exportWithDarkMode: isDark },
+        appState: { ...scene.appState, exportBackground: false, exportWithDarkMode: isDark },
         files,
         exportPadding: 5
     });
@@ -749,11 +749,7 @@ export async function saveDrawingPicture(
             false
         );
         if (picture) {
-            const style = picture.ownerDocument.createElementNS(picture.namespaceURI, "style");
-            style.textContent = SAVED_PICTURE_STYLE;
-            picture.classList.add(SAVED_PICTURE_CLASS);
-            picture.prepend(style);
-            markBitmaps(picture);
+            followColorScheme(picture);
         }
 
         await queuePictureWrite(attachmentId, async () => {
@@ -788,6 +784,15 @@ async function queuePictureWrite(attachmentId: string, write: () => Promise<void
             pictureWrites.delete(attachmentId);
         }
     }
+}
+
+/** Adds `SAVED_PICTURE_STYLE` to `picture`, so that it follows the color scheme of its page. */
+function followColorScheme(picture: SVGSVGElement) {
+    const style = picture.ownerDocument.createElementNS(picture.namespaceURI, "style");
+    style.textContent = SAVED_PICTURE_STYLE;
+    picture.classList.add(SAVED_PICTURE_CLASS);
+    picture.prepend(style);
+    markBitmaps(picture);
 }
 
 /**
@@ -888,6 +893,9 @@ function scheduleNotePicture(noteId: string, scene: PictureScene, files: BinaryF
 async function saveNotePicture(noteId: string, scene: PictureScene, files: BinaryFiles) {
     try {
         const picture = await exportDrawingPicture(scene, files, false);
+        if (picture) {
+            followColorScheme(picture);
+        }
         await server.post(`notes/${noteId}/attachments?matchBy=title`, {
             role: IMAGE_ROLE,
             mime: "image/svg+xml",

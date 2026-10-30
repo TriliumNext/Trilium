@@ -3,6 +3,7 @@ import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import server from "../../../services/server";
 import type { SplitEditorProps } from "./SplitEditor";
 import SvgSplitEditor from "./SvgSplitEditor";
 
@@ -51,8 +52,11 @@ vi.mock("react-zoom-pan-pinch", async () => {
 // SplitEditor pulls in CodeMirror, Split.js and a Bootstrap ribbon that have nothing to do with
 // the pan/zoom behavior under test; stub it down to just the preview pane and the controls over it,
 // and fire the same `onContentChanged` callback the real editor would once content arrives.
+// `loadContent` stands for the editor loading content, as it does when the note is saved elsewhere.
+const editor = vi.hoisted(() => ({ loadContent: undefined as ((content: string) => void) | undefined }));
 vi.mock("./SplitEditor", () => ({
     default: ({ previewContent, previewButtons, onContentChanged }: SplitEditorProps) => {
+        editor.loadContent = onContentChanged;
         useEffect(() => {
             onContentChanged?.("gantt\nsection Test\nTask: 2024-01-01, 1d");
         }, []);
@@ -150,6 +154,46 @@ describe("SvgSplitEditor", () => {
 
         unmount();
         container.remove();
+    });
+
+    it("saves the picture of content that the note gets from elsewhere, and of no content at all", async () => {
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        const props = {
+            ...svgSplitEditorProps(SVG_MARKUP),
+            renderSvg: async (content: string) => (
+                content.trim() ? `<svg data-source="${content.split("\n")[0]}"/>` : ""
+            )
+        };
+        props.note.getAttachments = async () => [ { title: "gantt-export.svg" } ] as never;
+
+        await act(async () => {
+            render(<SvgSplitEditor {...props} />, container);
+        });
+        await vi.waitFor(() => expect(container.querySelector("svg[data-source='gantt']")).not.toBeNull());
+        // The picture of the content that the note opened with is the one it already has.
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        expect(post).not.toHaveBeenCalled();
+
+        // A sample diagram is written to the note without the editor, which loads it.
+        await act(async () => editor.loadContent?.("flowchart LR\nA --> B"));
+        await vi.waitFor(() => expect(post).toHaveBeenLastCalledWith(
+            "notes/note1/attachments?matchBy=title",
+            expect.objectContaining({ title: "gantt-export.svg", content: `<svg data-source="flowchart LR"/>` })
+        ));
+
+        // Without content, the picture is empty rather than the last diagram.
+        await act(async () => editor.loadContent?.(""));
+        await vi.waitFor(() => expect(post).toHaveBeenLastCalledWith(
+            "notes/note1/attachments?matchBy=title",
+            expect.objectContaining({ content: expect.stringMatching(/^<svg [^>]*><\/svg>$/) })
+        ));
+        expect(post).toHaveBeenCalledTimes(2);
+
+        act(() => render(null, container));
+        container.remove();
+        post.mockRestore();
     });
 });
 

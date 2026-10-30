@@ -268,6 +268,14 @@ describe("Dropdown", () => {
         expect(disabledToggle?.disabled).toBe(true);
     });
 
+    it("draws a disabled icon toggle muted, as an icon button", () => {
+        renderDropdown({ iconAction: true, disabled: true });
+        expect(host.querySelector("button")?.classList.contains("disabled")).toBe(true);
+
+        renderDropdown({ iconAction: true });
+        expect(host.querySelector("button")?.classList.contains("disabled")).toBe(false);
+    });
+
     describe("content", () => {
         const items = <>
             <li className="dropdown-item" tabIndex={0}>By title</li>

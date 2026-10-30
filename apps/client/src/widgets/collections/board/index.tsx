@@ -362,7 +362,7 @@ const READ_ONLY_BOARD_HINTS: ShortcutHintDefinition = [
  */
 export default function BoardView(props: ViewModeProps<BoardViewData>) {
     const { noteContext } = useNoteContext();
-    const isReadOnly = useEffectiveReadOnly(props.note, noteContext);
+    const isReadOnly = useEffectiveReadOnly(props.note, noteContext) || !!props.isReadOnly;
     const editing = useBoardEditing(!isReadOnly);
     const [ waitsForEditing ] = useState(!isReadOnly && editing === undefined);
     if (waitsForEditing && editing === undefined) {

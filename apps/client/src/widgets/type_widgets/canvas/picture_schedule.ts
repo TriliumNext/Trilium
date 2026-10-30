@@ -57,8 +57,11 @@ function drawWhenIdle(key: string) {
     }
 }
 
-/** Starts the draw of `key` that waits, once the running draw of `key` ends. */
-function drawPicture(key: string) {
+/**
+ * Starts the draw of `key` that waits, once the running draw of `key` ends, without waiting for
+ * its delay or for the user to idle.
+ */
+export function drawPicture(key: string) {
     const pending = pendingPictures.get(key);
     if (!pending) return;
     pendingPictures.delete(key);

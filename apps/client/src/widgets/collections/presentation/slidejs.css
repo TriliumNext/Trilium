@@ -1,6 +1,130 @@
-figure img {
-    aspect-ratio: unset !important;
+:host {
+    position: relative;
+}
+
+:host .reveal {
+    flex: none;
+    width: min(100cqw, 100cqh * 16 / 9);
+    height: auto;
+    aspect-ratio: 16 / 9;
+    clip-path: inset(0 round var(--bs-border-radius));
+}
+
+/* The shadow of `.reveal`, which its own `clip-path` would cut off. */
+:host::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 var(--presentation-controls-strip, 0px);
+    width: min(100cqw, 100cqh * 16 / 9);
+    height: min(100cqw * 9 / 16, 100cqh);
+    margin: auto;
+    border-radius: var(--bs-border-radius);
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity) * 0.5)),
+        0 8px 24px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity) * 0.75));
+}
+
+:host(:fullscreen) .reveal {
+    clip-path: none;
+}
+
+:host(:fullscreen)::before {
+    content: none;
+}
+
+:host .reveal .slides {
+    container-type: size;
+}
+
+.slide-content {
+    display: flow-root;
+}
+
+.slide-editor .ck.ck-editor__editable_inline {
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+    cursor: text;
+    text-align: inherit;
+
+    &.ck-focused:not(.ck-editor__nested-editable) {
+        border: 0;
+        box-shadow: none;
+    }
+}
+
+.slide-editor {
+    outline: 2px dashed var(--r-link-color);
+    outline-offset: 8px;
+}
+
+.slide-editor-pending {
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+.reveal .slides section.has-dark-background {
+    color-scheme: dark;
+}
+
+.reveal .slides section.has-light-background {
+    color-scheme: light;
+}
+
+.reveal figure {
+    margin-inline: auto;
+}
+
+.reveal figure:is(.image-style-align-left, .image-style-align-right, .image-style-side) {
+    & ~ ul,
+    & ~ ol,
+    & ~ dl {
+        display: block;
+    }
+}
+
+.reveal figure.image {
+    margin-block: 0;
+    text-align: center;
+
+    &.image-style-align-left {
+        float: left;
+        margin-inline: 0 1em;
+    }
+
+    &.image-style-align-right,
+    &.image-style-side {
+        float: right;
+        margin-inline: 1em 0;
+    }
+
+    &.image-style-side {
+        max-width: 50%;
+    }
+
+    &.image-style-block-align-left {
+        margin-inline: 0 auto;
+    }
+
+    &.image-style-block-align-right {
+        margin-inline: auto 0;
+    }
+}
+
+.reveal figure img {
+    width: auto !important;
     height: auto !important;
+    aspect-ratio: unset !important;
+    max-height: 50cqh;
+}
+
+.reveal figcaption {
+    font-size: 0.6em;
 }
 
 p:has(span.text-tiny),
@@ -22,4 +146,50 @@ footer.file-footer {
 .reveal video {
     max-width: unset;
     max-height: unset;
+}
+
+.reveal .slide-background-content iframe {
+    display: block;
+    border: 0;
+}
+
+.slide-content > img:only-child {
+    display: block;
+    max-height: calc(100cqh - 2 * var(--r-block-margin));
+    margin-inline: auto;
+    object-fit: contain;
+}
+
+.slide-content > pre.code-preview:only-child {
+    width: auto;
+    margin: 0;
+    border-radius: var(--bs-border-radius);
+    box-shadow: none;
+    font-size: 0.6em;
+
+    > .code-preview-content {
+        max-height: none;
+        overflow: visible;
+    }
+}
+
+.reveal .slides section:is(.web-view-slide, .collection-slide, .edited-canvas-slide) {
+    height: 100%;
+}
+
+/* The whole viewport in slide pixels, for content that covers it as a background does; a pixel more on
+   each side covers the rounding of the viewport size. Reveal.js sets the variables on each layout. */
+.reveal {
+    --full-bleed-width: calc(var(--viewport-width, 1280px) / var(--slide-scale, 1) + 2px);
+    --full-bleed-height: calc(var(--viewport-height, 720px) / var(--slide-scale, 1) + 2px);
+}
+
+.reveal webview {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--full-bleed-width);
+    height: var(--full-bleed-height);
+    transform: translate(-50%, -50%);
 }

@@ -3844,8 +3844,25 @@
   },
   "presentation_view": {
     "edit-slide": "Edit this slide",
+    "finish-editing": "Finish editing",
     "start-presentation": "Start presentation",
-    "slide-overview": "Toggle an overview of the slides"
+    "slide-overview": "Toggle an overview of the slides",
+    "new-slide": "New slide",
+    "slide-sidebar": "Slide sidebar",
+    "menu-edit-slide": "Edit slide",
+    "menu-new-slide-after": "New slide after",
+    "menu-new-vertical-slide": "New vertical slide",
+    "menu-duplicate": "Duplicate",
+    "menu-move-up": "Move up",
+    "menu-move-down": "Move down",
+    "menu-make-vertical": "Make vertical slide",
+    "menu-make-top-level": "Make top-level slide",
+    "menu-delete": "Delete slide...",
+    "slide-background": "Slide background",
+    "no-slides": "This presentation has no slides.",
+    "previous-slide": "Previous slide",
+    "next-slide": "Next slide",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "calendar_view": {
     "delete_note": "Delete note...",

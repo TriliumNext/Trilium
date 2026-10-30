@@ -225,6 +225,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     transcriptionKeepRecordings: boolean;
     leftPaneVisible: boolean;
     rightPaneVisible: boolean;
+    /** Whether a presentation shows its slide sidebar. Not synced, as the room for it differs by device. */
+    presentationSidebarVisible: boolean;
     nativeTitleBarVisible: boolean;
     hideArchivedNotes_main: boolean;
     debugModeEnabled: boolean;

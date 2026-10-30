@@ -262,6 +262,8 @@
 .llm-chat-input-form .llm-chat-capability.icon-action.active {
     --icon-button-color: var(--link-color);
     --icon-button-hover-color: var(--link-color);
+    --icon-button-hover-background: inherit;
+    background: none;
 }
 
 /*

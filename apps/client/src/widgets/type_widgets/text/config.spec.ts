@@ -199,6 +199,11 @@ describe("CK config", () => {
         }
     }, 20_000);
 
+    it("mounts the floating UI in the document body, even for an editor in a shadow root", async () => {
+        const config = await buildConfig(baseOpts());
+        expect(config.ui?.overlayContainer).toBe(document.body);
+    });
+
     // With "auto", a pasted image goes inline in a list item or after text, and on its own line in an
     // empty paragraph; CKEditor's fallback inserts every image as a block.
     it("inserts images inline or as a block depending on where the cursor is", async () => {

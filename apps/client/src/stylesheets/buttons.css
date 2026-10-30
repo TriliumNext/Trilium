@@ -10,6 +10,21 @@
     border-radius: var(--button-border-radius);
 }
 
+.icon-action-split {
+    display: inline-flex;
+    align-items: center;
+
+    > .icon-action {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+
+    > .dropdown .icon-action {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+}
+
 .icon-action-always-border {
     border-color: var(--button-border-color);
 }
@@ -22,6 +37,16 @@
 /* An action that takes something away, marked as such the way destructive menu items are. */
 .icon-action.destructive-action-icon {
     color: var(--dropdown-item-icon-destructive-color);
+}
+
+/* A toggle that is on, held through a hover. The Next theme colors icon buttons through these
+   variables, so the button sets them as well as its own colors. */
+.icon-action.active {
+    --icon-button-color: var(--active-item-text-color);
+    --icon-button-hover-color: var(--active-item-text-color);
+    --icon-button-hover-background: var(--active-item-background-color);
+    color: var(--active-item-text-color);
+    background: var(--active-item-background-color);
 }
 
 .icon-action.disabled {

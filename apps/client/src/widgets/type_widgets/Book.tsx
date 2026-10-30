@@ -9,7 +9,7 @@ import { useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import { TypeWidgetProps } from "./type_widget";
 
-const VIEW_TYPES: ViewTypeOptions[] = [ "list", "grid", "presentation" ];
+const VIEW_TYPES: ViewTypeOptions[] = [ "list", "grid" ];
 
 export default function Book({ note }: TypeWidgetProps) {
     const [ viewType ] = useNoteLabelWithDefault(note, "viewType", "grid");

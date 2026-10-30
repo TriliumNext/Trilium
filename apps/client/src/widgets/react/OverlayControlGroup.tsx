@@ -5,7 +5,9 @@ import { type ComponentChildren, createContext, type HTMLAttributes } from "prea
 import { useContext, useMemo, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import type { ActionButtonProps } from "./ActionButton";
+import Dropdown, { DropdownPanel, type DropdownProps } from "./Dropdown";
 import { useStaticTooltip } from "./hooks";
 
 /**
@@ -103,6 +105,8 @@ interface OverlayControlButtonProps extends Pick<HTMLAttributes<HTMLButtonElemen
     disabled?: boolean;
     /** Overrides the direction the group hands down, for a button placed unlike its neighbours. */
     titlePosition?: ActionButtonProps["titlePosition"];
+    /** A key that does what the button does, as `formatShortcut()` reads it, named after the title. */
+    shortcut?: string;
 }
 
 /**
@@ -117,18 +121,23 @@ interface OverlayControlButtonProps extends Pick<HTMLAttributes<HTMLButtonElemen
  * plain `aria-label`.
  *
  * Its tooltip opens the way the group it stands on says, so that a group at the foot of the content
- * does not open its tooltips off the bottom edge.
+ * does not open its tooltips off the bottom edge, and never flips to a side, where it would cover the
+ * neighbouring buttons. A `shortcut` follows the title in the tooltip only.
  */
 export function OverlayControlButton(props: OverlayControlButtonProps) {
-    const { title, icon, text, className, active, disabled, titlePosition, ...restProps } = props;
+    const { title, icon, text, className, active, disabled, titlePosition, shortcut, ...restProps } = props;
     const buttonRef = useRef<HTMLButtonElement>(null);
     const groupDirection = useContext(TooltipDirection);
     const placement = titlePosition ?? groupDirection;
     const hasText = "text" in props;
+    const tooltip = title && shortcut ? `${title} (${joinShortcut(formatShortcut(shortcut))})` : title;
 
     // Memoized so the tooltip is only rebuilt when what it says (or where it opens) actually changes,
     // rather than on every render of the group.
-    const tooltipConfig = useMemo(() => ({ title, placement }), [ title, placement ]);
+    const tooltipConfig = useMemo(
+        () => ({ title: tooltip, placement, fallbackPlacements: placement && [ placement ] }),
+        [ tooltip, placement ]
+    );
     useStaticTooltip(buttonRef, tooltipConfig);
 
     return (
@@ -146,6 +155,40 @@ export function OverlayControlButton(props: OverlayControlButtonProps) {
             {hasText && icon && <span className={clsx("bx", icon)} aria-hidden="true" />}
             {text}
         </button>
+    );
+}
+
+interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "disabled" | "mobileBottomSheet"> {
+    /** What the button opens, said on hover; it is also the button's name. */
+    title: string;
+    /** The boxicons name of the mark it wears (`bx-palette`). */
+    icon: string;
+    /** Opens a {@link DropdownPanel}, for a picker or a form, instead of a menu. */
+    panel?: boolean;
+}
+
+/**
+ * A button on such a group that opens a menu, or a panel with `panel`. The popup and the tooltip open
+ * away from the edge that the group is pinned to, and the tooltip never flips to a side.
+ */
+export function OverlayControlDropdown({ title, icon, panel, ...props }: OverlayControlDropdownProps) {
+    const direction = useContext(TooltipDirection);
+    const titleOptions = useMemo(() => ({ fallbackPlacements: direction && [ direction ] }), [ direction ]);
+    const Toggle = panel ? DropdownPanel : Dropdown;
+    return (
+        <Toggle
+            {...props}
+            className="tn-overlay-control-dropdown"
+            buttonClassName={clsx("tn-overlay-icon-button bx", icon)}
+            buttonProps={{ "aria-label": title }}
+            title={title}
+            titlePosition={direction}
+            titleOptions={titleOptions}
+            placement={direction}
+            hideToggleArrow
+            noSelectButtonStyle
+            bareButton
+        />
     );
 }
 
