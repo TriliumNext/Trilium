@@ -1,9 +1,8 @@
 import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-    createFitObserver, fitSlideContent, followSlideLinks, keepKeyboardInPresentation
-} from "./index";
+import { createFitObserver, fitSlideContent } from "./fit";
+import { followSlideLinks, keepKeyboardInPresentation } from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
