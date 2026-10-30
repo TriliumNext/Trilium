@@ -58,7 +58,7 @@ export default class HostedBalloon {
         // Wired per view rather than once: the handler listens through the view, so destroying
         // the view on the way out stops it. It listens in the capture phase because link previews
         // and content embeds stop presses from bubbling, to keep them from CKEditor.
-        view.listenTo(document, 'mousedown', (_evt, domEvent) => {
+        view.listenTo(document, "mousedown", (_evt, domEvent) => {
             // The balloon renders its panel as the editor starts up.
             const keepOpen = [
                 this.balloon.view.element as HTMLElement, ...getHostLayers(editor, editorEl)
