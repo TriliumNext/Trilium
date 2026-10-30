@@ -88,6 +88,14 @@ body.mobile.ios {
         }
     }
 
+    .modal.mobile-note-panel {
+        --modal-background-color: var(--grouped-background-color);
+        --note-panel-group-radius: var(--grouped-card-radius);
+        --note-panel-group-spacing: 22px;
+        --note-panel-group-background: var(--grouped-card-background-color);
+        --note-panel-card-padding: 12px 16px;
+    }
+
     .modal.options-dialog {
         --modal-background-color: var(--grouped-background-color);
 

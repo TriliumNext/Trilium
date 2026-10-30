@@ -31,18 +31,68 @@ body.mobile .modal.mobile-note-panel {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        padding-bottom: calc(var(--note-panel-group-spacing, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 
         &:has(#sidebar-chat) {
             padding-bottom: 0;
         }
 
-        > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
-            display: none;
+        > .card:only-child:has(> .card-header > .card-header-buttons:empty) {
+            > .card-header {
+                display: none;
+            }
+
+            > .body-wrapper {
+                margin-top: var(--note-panel-group-spacing, 16px);
+            }
         }
 
         .card-header {
             --icon-button-size: 32px;
+        }
+
+        .card:not(#sidebar-chat) {
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            overflow: visible;
+
+            > .card-header {
+                width: auto;
+                padding: var(--note-panel-group-spacing, 16px) 16px 6px;
+                border: 0;
+                background: transparent;
+            }
+
+            .card-header-title {
+                margin: 0;
+                font-size: 0.95em;
+                font-weight: 600;
+                letter-spacing: normal;
+                text-transform: none;
+                color: var(--muted-text-color);
+            }
+
+            > .body-wrapper {
+                margin-inline: 16px;
+                border-radius: var(--note-panel-group-radius, 6px);
+                background: var(--note-panel-group-background, var(--card-background-color));
+                overflow: hidden;
+            }
+
+            .card-body:not(.no-padding) {
+                padding: var(--note-panel-card-padding, 8px);
+            }
+
+            .toc > ol {
+                margin: 0;
+            }
+
+            .highlights-list ol {
+                margin: 0;
+                padding-inline-start: 1.5em;
+            }
         }
 
         #sidebar-chat:not(.ios *) :is(.llm-chat-input-form, .llm-chat-no-provider) {
