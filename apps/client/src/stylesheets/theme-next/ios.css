@@ -105,6 +105,9 @@ body.mobile.ios {
         --note-panel-group-spacing: 22px;
         --note-panel-group-background: var(--grouped-card-background-color);
         --note-panel-card-padding: 12px 16px;
+        --note-panel-separator-color: var(--main-border-color);
+        /* Starts under the attribute's name: the row's padding, the 1.1em kind icon and the 6px gap. */
+        --note-panel-separator-inset: calc(16px + 1.1em + 6px);
     }
 
     .modal.options-dialog {

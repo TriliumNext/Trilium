@@ -10,12 +10,9 @@ body.mobile .modal.mobile-note-panel {
         min-width: 0;
     }
 
-    .tn-master-detail-title:has(> .modal-title) {
-        color: var(--main-text-color);
-    }
-
     .tn-master-detail-title > .modal-title {
         display: flex;
+        color: var(--main-text-color);
         flex: 1;
         min-width: 0;
     }
@@ -141,10 +138,22 @@ body.mobile .modal.mobile-note-panel {
         }
     }
 
+    .options-section {
+        margin: 0;
+
+        + .options-section > .options-section-header {
+            padding-top: var(--note-panel-group-spacing, 16px);
+        }
+    }
+
     .options-section-card {
         --options-card-padding: 0;
 
-        padding-block: 8px;
+        padding-block: 4px;
+        border: 0;
+        border-radius: var(--note-panel-group-radius, 6px);
+        background: var(--note-panel-group-background, var(--card-background-color));
+        box-shadow: none;
         overflow: hidden;
     }
 
@@ -158,8 +167,20 @@ body.mobile .modal.mobile-note-panel {
         z-index: auto !important;
 
         .attribute-row {
+            --attribute-kind-cutout: var(--note-panel-group-background, var(--card-background-color));
+
+            border-bottom: 0 !important;
             background: transparent;
             border-radius: 0;
+
+            &:has(+ .attribute-row)::after {
+                content: "";
+                position: absolute;
+                inset-block-end: 0;
+                inset-inline: var(--note-panel-separator-inset, 0px) 0;
+                height: 1px;
+                background: var(--note-panel-separator-color, var(--menu-item-delimiter-color));
+            }
         }
 
         /* Outweighs the menus' hover fill, which a touch screen leaves on the last row tapped. */
@@ -171,6 +192,7 @@ body.mobile .modal.mobile-note-panel {
     .options-section-header {
         justify-content: flex-start;
         gap: 4px;
+        margin-bottom: 6px;
 
         h4 {
             margin: 0;
