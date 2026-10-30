@@ -13,10 +13,6 @@ body.mobile .modal.mobile-note-panel {
         padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
     }
 
-    .modal-header .tab-strip {
-        flex: 1;
-    }
-
     .modal-body {
         flex: 1 1 auto;
         min-height: 0;

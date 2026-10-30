@@ -8,8 +8,9 @@ import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import { useNoteContext } from "../react/hooks";
 import Modal from "../react/Modal";
+import TabStrip from "../react/TabStrip";
 import { RightPaneTabBodies, useRightPaneTabs } from "../sidebar/RightPanelContainer";
-import RightPaneTabs, { RightPaneTabId } from "../sidebar/RightPaneTabs";
+import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 
 /** The mobile layout loads no script widgets for the right pane. */
 const NO_CUSTOM_WIDGETS = new WidgetsByParent();
@@ -43,7 +44,7 @@ function MobileNotePanelModal({ shown, onHidden }: { shown: boolean; onHidden: (
         <Modal
             className="mobile-note-panel"
             size="md"
-            title={<RightPaneTabs tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId} />}
+            title={<TabStrip labelled tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId} />}
             ariaLabel={t("mobile_detail_menu.note_panel")}
             show={shown}
             onHidden={onHidden}

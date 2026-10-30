@@ -56,3 +56,21 @@
         line-height: 1;
     }
 }
+
+.tab-strip.tab-strip-labelled {
+    flex: 1;
+    justify-content: stretch;
+
+    div.btn-group {
+        flex: 1;
+
+        button.tab-strip-tab {
+            flex: 1 1 0;
+            width: auto;
+            height: 36px;
+            padding-inline: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+    }
+}
