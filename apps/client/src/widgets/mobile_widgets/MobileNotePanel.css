@@ -37,14 +37,12 @@ body.mobile .modal.mobile-note-panel {
             padding-bottom: 0;
         }
 
-        > .card:only-child:has(> .card-header > .card-header-buttons:empty) {
-            > .card-header {
-                display: none;
-            }
+        > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
+            display: none;
+        }
 
-            > .body-wrapper {
-                margin-top: var(--note-panel-group-spacing, 16px);
-            }
+        > .card:not(#sidebar-chat):first-child > .card-header {
+            padding-top: 0;
         }
 
         .card-header {
