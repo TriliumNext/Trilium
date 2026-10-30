@@ -94,6 +94,43 @@ describe("LinkEmbed commands", () => {
         expect(editor.model.document.selection.getSelectedElement()).toBe(card);
     });
 
+    it("leaves the caret where the user moved it while the metadata loads", async () => {
+        const url = "https://example.com/article";
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
+        const selection = editor.model.document.selection;
+        const moveCaretToSecondParagraph = () => editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(1);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            writer.setSelection(paragraph, "end");
+            return paragraph;
+        });
+
+        setModelData(editor.model, "<paragraph>see []</paragraph><paragraph>elsewhere</paragraph>");
+        const inserted = editor.execute(LINK_EMBED_COMMAND, {
+            url, mode: "card"
+        }) as unknown as Promise<void>;
+        let elsewhere = moveCaretToSecondParagraph();
+        resolveFetch({ ...META, url });
+        await inserted;
+
+        expect(findElement(editor, "linkEmbed")).toBeDefined();
+        expect(selection.getFirstPosition()?.parent).toBe(elsewhere);
+        expect(selection.getFirstPosition()?.offset).toBe(9);
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">the []article</$text>`
+            + "</paragraph><paragraph>elsewhere</paragraph>");
+        const converted = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, {
+            value: "inline"
+        }) as unknown as Promise<void>;
+        elsewhere = moveCaretToSecondParagraph();
+        resolveFetch({ ...META, url });
+        await converted;
+
+        expect(findElement(editor, "linkMention")).toBeDefined();
+        expect(selection.getFirstPosition()?.parent).toBe(elsewhere);
+        expect(selection.getFirstPosition()?.offset).toBe(9);
+    });
+
     it("replaces the link the selection is in, which is the link being edited", async () => {
         const url = "https://example.com/new";
         setModelData(editor.model, '<paragraph>see '

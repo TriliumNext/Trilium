@@ -243,7 +243,8 @@ export class RemoveLinkEmbedCommand extends Command {
 
 /**
  * Replaces the link to `href` in `range` with a preview of the `mode` shape, once the page's
- * metadata arrives, and selects it. `title` and `description` replace the page's own.
+ * metadata arrives, and selects it unless the user has moved the selection in the meantime.
+ * `title` and `description` replace the page's own.
  *
  * The range is tracked as a live range while the metadata is fetched, so edits made meanwhile do
  * not shift what gets replaced. Nothing is replaced when the link is no longer in the range by
@@ -255,38 +256,50 @@ async function replaceLinkWithPreview(
 ) {
     const model = editor.model;
     const liveRange = ModelLiveRange.fromRange(range);
-    const metadata = await getLinkEmbedHost(editor).fetchMetadata(href);
-    const currentRange = liveRange.toRange();
-    liveRange.detach();
+    const selection = model.document.selection;
+    let selectionMoved = false;
+    const onSelectionChange = (_event: unknown, data: { directChange: boolean }) => {
+        selectionMoved = data.directChange || selectionMoved;
+    };
+    selection.on('change:range', onSelectionChange);
+    try {
+        const metadata = await getLinkEmbedHost(editor).fetchMetadata(href);
+        const currentRange = liveRange.toRange();
 
-    model.change(writer => {
-        let linkStillThere = false;
-        for (const { item } of currentRange.getWalker()) {
-            if (item.is('$textProxy') && item.getAttribute('linkHref') === href) {
-                linkStillThere = true;
-                break;
+        model.change(writer => {
+            let linkStillThere = false;
+            for (const { item } of currentRange.getWalker()) {
+                if (item.is('$textProxy') && item.getAttribute('linkHref') === href) {
+                    linkStillThere = true;
+                    break;
+                }
             }
-        }
-        if (!linkStillThere) return;
+            if (!linkStillThere) return;
 
-        const element = writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
-            url: metadata.url,
-            // A card is an embed that declines to play: forcing "opengraph" is what tells the
-            // renderer to draw the static card rather than the provider's player.
-            embedType: mode === 'card' ? 'opengraph'
-                : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
-                : metadata.embedType,
-            title: title || metadata.title,
-            description: description || metadata.description,
-            favicon: metadata.favicon,
-            siteName: metadata.siteName,
-            image: metadata.image
+            const element = writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
+                url: metadata.url,
+                // A card is an embed that declines to play: forcing "opengraph" is what tells the
+                // renderer to draw the static card rather than the provider's player.
+                embedType: mode === 'card' ? 'opengraph'
+                    : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
+                    : metadata.embedType,
+                title: title || metadata.title,
+                description: description || metadata.description,
+                favicon: metadata.favicon,
+                siteName: metadata.siteName,
+                image: metadata.image
+            });
+
+            model.insertContent(element, currentRange);
+            // The widget toolbar, with its Display dropdown, takes over from the link balloon.
+            if (!selectionMoved) {
+                writer.setSelection(element, 'on');
+            }
         });
-
-        model.insertContent(element, currentRange);
-        // The widget toolbar, with its Display dropdown, takes over from the link balloon.
-        writer.setSelection(element, 'on');
-    });
+    } finally {
+        selection.off('change:range', onSelectionChange);
+        liveRange.detach();
+    }
 }
 
 /**
