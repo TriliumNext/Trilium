@@ -80,4 +80,15 @@ describe("ActionButton", () => {
         expect(document.querySelector(".tooltip")).toBeNull();
         expect(onClick).toHaveBeenCalledOnce();
     });
+
+    it("names a literal shortcut in its tooltip, for a key that is no configurable action", async () => {
+        await act(async () => render(
+            <ActionButton icon="bx bx-fullscreen" text="Start presentation" shortcut="F" />, container));
+        const button = container.querySelector("button");
+        act(() => {
+            if (button) Tooltip.getInstance(button)?.show();
+        });
+
+        expect(document.querySelector(".tooltip-inner")?.textContent).toBe("Start presentation (F)");
+    });
 });

@@ -56,6 +56,7 @@ export default function PresentationToolbarActions({
                 <ActionButton
                     icon="bx bx-check"
                     text={t("presentation_view.finish-editing")}
+                    shortcut="Escape"
                     onClick={onFinishEditing}
                 />
             )}
@@ -80,6 +81,7 @@ export default function PresentationToolbarActions({
             <ActionButton
                 icon="bx bx-grid-horizontal"
                 text={t("presentation_view.slide-overview")}
+                shortcut="O"
                 active={isOverviewActive}
                 onClick={() => api?.toggleOverview()}
             />
@@ -87,6 +89,7 @@ export default function PresentationToolbarActions({
             <ActionButton
                 icon="bx bx-fullscreen"
                 text={t("presentation_view.start-presentation")}
+                shortcut="F"
                 onClick={onStartPresentation}
             />
         </>
