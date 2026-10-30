@@ -282,8 +282,15 @@ body.mobile.ios {
             }
         }
 
+        /* WebKit tints the status bar from a fixed or sticky element at the top edge and blurs the
+           page under it otherwise. Neither parent scrolls, so `sticky` leaves the layout as is. */
+        .quick-search,
         .note-split:not(.options) > .title-row {
-            position: relative;
+            position: sticky;
+            top: 0;
+        }
+
+        .note-split:not(.options) > .title-row {
             z-index: 999;
             isolation: isolate;
             margin-bottom: calc(-1 * var(--mobile-title-row-height));
