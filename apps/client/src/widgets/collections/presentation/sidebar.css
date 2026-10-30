@@ -41,8 +41,8 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity) * 0.5));
 
         &.active {
-            outline: 2px solid var(--main-text-color);
-            outline-offset: 2px;
+            outline: 3px solid var(--input-focus-outline-color);
+            outline-offset: 3px;
         }
     }
 
