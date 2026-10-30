@@ -2,7 +2,7 @@ import "./TableOfContents.css";
 
 import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import { revealElement } from "../../services/collapsible";
 import { t } from "../../services/i18n";
@@ -11,7 +11,7 @@ import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteRe
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
 import RawHtml from "../react/RawHtml";
-import RightPanelWidget from "./RightPanelWidget";
+import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 
 //#region Generic impl.
 interface RawHeading {
@@ -93,6 +93,7 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
     activeHeadingId?: string | null;
 }) {
     const [ collapsed, setCollapsed ] = useState(false);
+    const onNavigated = useContext(NavigatedInNote);
     const isActive = heading.id === activeHeadingId;
     const contentRef = useRef<HTMLElement>(null);
 
@@ -111,7 +112,10 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
                 <RawHtml
                     containerRef={contentRef}
                     className="item-content"
-                    onClick={() => scrollToHeading(heading)}
+                    onClick={() => {
+                        scrollToHeading(heading);
+                        onNavigated?.();
+                    }}
                     html={heading.text}
                 />
             </li>

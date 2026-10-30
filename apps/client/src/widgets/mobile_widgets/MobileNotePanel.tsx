@@ -10,6 +10,7 @@ import { useNoteContext } from "../react/hooks";
 import Modal from "../react/Modal";
 import TabStrip from "../react/TabStrip";
 import { RightPaneTabBodies, useRightPaneTabs } from "../sidebar/RightPanelContainer";
+import { NavigatedInNote } from "../sidebar/RightPanelWidget";
 import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 
 /** The mobile layout loads no script widgets for the right pane. */
@@ -52,7 +53,9 @@ function MobileNotePanelModal({ shown, onHidden }: { shown: boolean; onHidden: (
             {/* The widgets' card, TOC and highlight styles are scoped to `#right-pane`, which the
                 mobile layout has no other element for. */}
             <div id="right-pane">
-                <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} />
+                <NavigatedInNote.Provider value={onHidden}>
+                    <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} />
+                </NavigatedInNote.Provider>
             </div>
         </Modal>
     );

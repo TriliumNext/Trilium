@@ -1,12 +1,13 @@
 import "./PdfAnnotations.css";
 
 import clsx from "clsx";
+import { useContext } from "preact/hooks";
 
 import contextMenu from "../../../menus/context_menu";
 import { t } from "../../../services/i18n";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
-import RightPanelWidget from "../RightPanelWidget";
+import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
 
 const TYPE_ICONS: Record<string, string> = {
     text: "bx bxs-comment-detail",
@@ -62,6 +63,7 @@ function PdfAnnotationItem({
     // A drawing has no text of its own, and a highlight only gets one where the page has
     // extractable glyphs under it — name those by what they are so the row stays clickable.
     const hasText = !!(annotation.highlightedText || annotation.contents);
+    const onNavigated = useContext(NavigatedInNote);
 
     return (
         <div
@@ -70,7 +72,10 @@ function PdfAnnotationItem({
                 annotation.color && "tinted",
                 isDark(annotation.color) && "tinted-dark"
             )}
-            onClick={() => onNavigate(annotation.id, annotation.pageNumber)}
+            onClick={() => {
+                onNavigate(annotation.id, annotation.pageNumber);
+                onNavigated?.();
+            }}
             onContextMenu={(e) => showCopyReferenceMenu(e, () => onCopyReference(annotation.id, annotation.pageNumber))}
             style={annotation.color ? { backgroundColor: annotation.color } : undefined}
         >

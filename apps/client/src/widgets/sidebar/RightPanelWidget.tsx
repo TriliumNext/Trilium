@@ -26,6 +26,12 @@ export interface ExpandWidgetRequest {
 /** The pending {@link ExpandWidgetRequest}, set by whoever lays the widgets out. */
 export const ExpandWidgetRequests = createContext<ExpandWidgetRequest | null>(null);
 
+/**
+ * Called after a widget scrolls the note to a place in it (a heading, a PDF page), set by a host that
+ * covers the note, such as the mobile note panel, so that it can close and show that place.
+ */
+export const NavigatedInNote = createContext<(() => void) | null>(null);
+
 interface RightPanelWidgetProps {
     id: string;
     title: ComponentChildren;
