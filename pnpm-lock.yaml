@@ -767,8 +767,8 @@ importers:
         specifier: 7.0.0
         version: 7.0.0
       is-animated:
-        specifier: 3.0.13
-        version: 3.0.13
+        specifier: 3.0.15
+        version: 3.0.15
       is-svg:
         specifier: 6.1.0
         version: 6.1.0
@@ -8054,8 +8054,8 @@ packages:
     resolution: {integrity: sha512-aq+t5NAc+cS6rZQQVWC2x98CPqGtKKTMDd4Gaodv0wShnItdKg/51djkGJ1hqH+Oy0ivDftCbSLCQob8zso01w==}
     engines: {node: '>= 10'}
 
-  is-animated@3.0.13:
-    resolution: {integrity: sha512-ndWkm2cT6gjnW7uPss1QQTwdUwoG+ofrgwtVzPDegV//qqUR+qyjQWf4X1CfGwl04Mi4VnkB969hZmtTmUc4cw==}
+  is-animated@3.0.15:
+    resolution: {integrity: sha512-e/lBdDXDXFvf2I7OuEHhuXfCeoQWdZNhyYw177be7F/fKtEnrHR4oDn/MEQ/8Q3qQ+gyTD9emZmj80beNN5JaQ==}
     engines: {node: '>=20.0.0'}
 
   is-array-buffer@3.0.5:
@@ -19981,7 +19981,7 @@ snapshots:
 
   ipaddr.js@2.5.0: {}
 
-  is-animated@3.0.13: {}
+  is-animated@3.0.15: {}
 
   is-array-buffer@3.0.5:
     dependencies:
