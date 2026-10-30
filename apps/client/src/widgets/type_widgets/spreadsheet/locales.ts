@@ -83,6 +83,7 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
         ])
     },
     cs: null,
+    da: null,
     de: null,
     en: null,
     "en-GB": null,

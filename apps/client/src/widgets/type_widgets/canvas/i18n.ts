@@ -5,6 +5,7 @@ export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] 
     ar: "ar-SA",
     cn: "zh-CN",
     cs: "cs-CZ",
+    da: "da-DK",
     de: "de-DE",
     en: "en",
     "en-GB": "en",
