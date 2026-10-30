@@ -67,7 +67,7 @@
     "button_edit_link": "Save link",
     "button_fix_link": "Fix link",
     "web_link": "Web link",
-    "url": "URL",
+    "url": "Address (URL)",
     "mirror_title": "Mirror the note's title",
     "mirror_title_description": "The link shows the note's current title, and changes when the note is renamed.",
     "display_as": "Display as",

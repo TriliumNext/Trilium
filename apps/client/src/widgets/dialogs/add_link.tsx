@@ -1,6 +1,7 @@
 import "./add_link.css";
 
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
+import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -460,7 +461,7 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                     className="add-link-target"
                     options={[
                         { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
-                        { value: "note", label: t("add_link.note"), icon: "bx-note" }
+                        { value: "note", label: t("add_link.note"), iconSvg: internalLinkIcon }
                     ]}
                     currentValue={target}
                     onChange={(next) => changeTarget(next)}
@@ -472,8 +473,6 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                     <>
                         <OptionCardSection
                             className="add-link-url" name="url" label={t("add_link.url")}
-                            subSectionsVisible={showsWebLinkTitle}
-                            subSections={titleSection}
                         >
                             <FormTextBox
                                 inputRef={webLinkRef}
@@ -486,6 +485,8 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                                 onChange={changeWebLink}
                             />
                         </OptionCardSection>
+
+                        {showsWebLinkTitle && titleSection}
 
                         {showsDisplay && (
                             <OptionCardSection

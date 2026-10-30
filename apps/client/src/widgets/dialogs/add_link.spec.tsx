@@ -144,6 +144,8 @@ describe("AddLinkDialog", () => {
         expect(segmented?.nextElementSibling?.classList.contains("tn-card")).toBe(true);
         expect(choice().map((button) => button.textContent?.trim()))
             .toStrictEqual([ "add_link.web_link", "add_link.note" ]);
+        expect(choice()[1]?.querySelector(".tn-svg-icon svg")).not.toBeNull();
+        expect(choice()[1]?.querySelector(".bx")).toBeNull();
         expect(current()).toBe("add_link.note");
         expect(container.querySelector(".note-autocomplete")).not.toBeNull();
 
@@ -160,7 +162,8 @@ describe("AddLinkDialog", () => {
         await open();
         await act(async () => choice()[0]?.click());
         await type(field("url"), "https://trilium.cc");
-        expect(nested("text")).toBe(true);
+        expect(nested("text")).toBe(false);
+        expect(container.querySelector(".add-link-url + .add-link-text")).not.toBeNull();
         expect(stacked()).toStrictEqual([]);
         await type(field("text"), "Trilium");
         await submit();
