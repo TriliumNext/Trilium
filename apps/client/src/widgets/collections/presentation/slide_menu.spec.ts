@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import appContext, { type CommandNames } from "../../../components/app_context";
-import type { MenuCommandItem, MenuItem } from "../../../menus/context_menu";
+import contextMenu, { type ContextMenuEvent, type MenuCommandItem, type MenuItem } from "../../../menus/context_menu";
+import link_context_menu from "../../../menus/link_context_menu";
 import type { PresentationSlideBaseModel, SlideMove } from "./model";
-import { buildSlideMenuItems, type SlideMenuActions, type SlideMenuTarget } from "./slide_menu";
+import { buildSlideMenuItems, openSlideMenu, type SlideMenuActions, type SlideMenuTarget } from "./slide_menu";
 
 // i18next is never initialized under test, so `t()` looks keys up in the English catalog itself.
 // The code languages enabled in the code note options, in their order.
@@ -139,5 +140,38 @@ describe("buildSlideMenuItems", () => {
         expect(actions.changes.duplicate).toHaveBeenCalledWith("s");
         expect(actions.changes.delete).toHaveBeenCalledWith("s");
         expect(onMove).toHaveBeenCalledWith(move("b"));
+    });
+});
+
+describe("openSlideMenu", () => {
+    it("opens beside the pointer for a right-click, and below the thumbnail from the keyboard", () => {
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+        const handleItem = vi.spyOn(link_context_menu, "handleLinkContextMenuItem").mockReturnValue(true);
+        vi.spyOn(link_context_menu, "getOpenNoteItem").mockReturnValue(openNoteItem);
+        const thumbnail = document.createElement("button");
+        vi.spyOn(thumbnail, "getBoundingClientRect").mockReturnValue(new DOMRect(10, 20, 100, 50));
+        const target: SlideMenuTarget = { slide: textSlide, isVertical: false, moves: undefined, isRtl: false };
+        const onHide = vi.fn();
+        const open = (e: Partial<ContextMenuEvent>) => {
+            show.mockClear();
+            openSlideMenu(e as ContextMenuEvent, thumbnail, target, {}, vi.fn(), onHide);
+            const options = show.mock.calls[0]?.[0];
+            expect(options).toBeDefined();
+            return options;
+        };
+
+        const onPointer = open({ clientX: 30, clientY: 40, pageX: 130, pageY: 140 });
+        expect(onPointer).toMatchObject({ x: 130, y: 140, onHide });
+        expect(onPointer).not.toHaveProperty("anchor");
+        expect(onPointer?.items.length).toBeGreaterThan(0);
+
+        // Shift+F10 and the Menu key report no place, or one off the thumbnail.
+        expect(open({ clientX: 0, clientY: 0 })).toMatchObject({ anchor: thumbnail });
+        expect(open({})).toMatchObject({ anchor: thumbnail });
+        expect(open({ clientX: 500, clientY: 40, pageX: 500, pageY: 40 })).toMatchObject({ anchor: thumbnail });
+
+        onPointer?.selectMenuItemHandler({ command: "openNoteInNewTab" } as MenuCommandItem<unknown>, {} as MouseEvent);
+        expect(handleItem).toHaveBeenCalledWith("openNoteInNewTab", { target: thumbnail }, "s");
+        vi.restoreAllMocks();
     });
 });

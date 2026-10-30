@@ -3,7 +3,7 @@ import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PresentationSlideBaseModel } from "./model";
+import type { PresentationModel, PresentationSlideBaseModel } from "./model";
 
 const webViewSlide: PresentationSlideBaseModel = {
     noteId: "web",
@@ -289,5 +289,65 @@ describe("Presentation double-click", () => {
         reveal.currentNoteId = "web";
         dblclick(container.querySelector(".reveal"));
         expect(onEditSlide).toHaveBeenCalledTimes(2);
+    });
+
+    it("goes to a pending slide once it is rendered, and lets Reveal.js go when it unmounts", async () => {
+        const slide = vi.fn();
+        const destroy = vi.fn();
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                element: HTMLElement;
+                constructor(element: HTMLElement) { this.element = element; }
+                initialize() { return Promise.resolve(); }
+                destroy = destroy;
+                isReady() { return true; }
+                layout() {}
+                sync() {}
+                slide = slide;
+                on() {}
+                off() {}
+                getIndices(section?: HTMLElement) { return { h: section?.id === "slide-added" ? 1 : 0, v: 0 }; }
+                getRevealElement() { return this.element; }
+                getCurrentSlide() { return this.element.querySelector("#slide-first"); }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const setApi = vi.fn();
+        const onPendingSlideShown = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        const first: PresentationModel["slides"][number] = {
+            noteId: "first", type: "text", content: { __html: "" },
+            verticalSlides: [ { noteId: "below", type: "text", content: { __html: "" } } ]
+        };
+        const show = (slides: PresentationModel["slides"]) => act(async () => render(
+            <Presentation
+                presentation={{ slides }}
+                setApi={setApi}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={undefined}
+                onEditorHost={() => {}}
+                pendingNoteId="added"
+                onPendingSlideShown={onPendingSlideShown}
+                onStartPresentation={undefined}
+            />,
+            container
+        ));
+
+        await show([ first ]);
+        await vi.waitFor(() => expect(setApi).toHaveBeenCalledWith(expect.anything()));
+        expect(container.querySelector(":scope .slides > section > #slide-below")).not.toBeNull();
+        expect(onPendingSlideShown).not.toHaveBeenCalled();
+
+        await show([ first, { noteId: "added", type: "text", content: { __html: "" }, verticalSlides: undefined } ]);
+        expect(slide).toHaveBeenLastCalledWith(1, 0, undefined);
+        expect(onPendingSlideShown).toHaveBeenCalledExactlyOnceWith("added");
+
+        await act(async () => render(null, container));
+        expect(destroy).toHaveBeenCalledOnce();
+        expect(setApi).toHaveBeenLastCalledWith(undefined);
     });
 });

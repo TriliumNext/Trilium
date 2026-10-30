@@ -1,7 +1,13 @@
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
-import { adoptEditorStyleSheet, collectEditorStylesheet, whenEditorHoldsContent } from "./slide_editor";
+import SlideEditor, { adoptEditorStyleSheet, collectEditorStylesheet, whenEditorHoldsContent } from "./slide_editor";
+
+vi.mock("../../type_widgets/text/TextEmbedEditor", () => ({
+    default: () => h("div", { className: "text-embed-editor" })
+}));
 
 describe("whenEditorHoldsContent", () => {
     function setUp(noteContent: string) {
@@ -142,5 +148,38 @@ describe("collectEditorStylesheet", () => {
         sheet.replaceSync(".ck-toolbar { color: red; }");
 
         expect(collectEditorStylesheet([ crossOrigin, sheet ])).toContain(".ck-toolbar");
+    });
+});
+
+describe("SlideEditor", () => {
+    it("styles the editor in the slide's shadow root, and finishes on an Escape the editor left alone", async () => {
+        const host = document.createElement("div");
+        document.body.append(host);
+        const shadowRoot = host.attachShadow({ mode: "open" });
+        const note = { noteId: "slide", getContent: async () => "" } as unknown as FNote;
+        const onFinish = vi.fn();
+        await act(async () => render(
+            h(SlideEditor, { note, onReady: vi.fn(), onFinish, onClose: vi.fn() }),
+            shadowRoot
+        ));
+        expect(shadowRoot.adoptedStyleSheets).toHaveLength(1);
+        const root = shadowRoot.querySelector(".slide-editor-root");
+        expect(root?.querySelector(".text-embed-editor")).not.toBeNull();
+
+        const press = (key: string, isHandled = false) => {
+            const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+            if (isHandled) event.preventDefault();
+            root?.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        expect(press("Escape", true)).toBe(true);
+        expect(press("a")).toBe(false);
+        expect(onFinish).not.toHaveBeenCalled();
+        expect(press("Escape")).toBe(true);
+        expect(onFinish).toHaveBeenCalledOnce();
+
+        await act(async () => render(null, shadowRoot));
+        expect(shadowRoot.adoptedStyleSheets).toHaveLength(0);
+        host.remove();
     });
 });
