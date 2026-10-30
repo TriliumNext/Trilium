@@ -31,13 +31,10 @@ jobs:
 
       - name: Check version consistency
         run: pnpm tsx ${{ github.workspace }}/scripts/check-version-consistency.ts ${{ github.ref_name }}
-  sherpa-onnx-win-arm64:
-    uses: ./.github/workflows/sherpa-onnx-win-arm64.yml
   make-electron:
     name: Make Electron
     needs:
       - sanity-check
-      - sherpa-onnx-win-arm64
     strategy:
       fail-fast: false
       matrix:
@@ -86,15 +83,10 @@ jobs:
           node-version: 24
           cache: 'pnpm'
       - name: Install dependencies
-        # The arm64 macOS runner also packages darwin-x64, which needs that architecture's native
-        # optional dependencies (sherpa-onnx-darwin-x64) beside the host's.
-        run: pnpm install --frozen-lockfile ${{ matrix.os.name == 'macos' && '--cpu=x64,arm64' || '' }}
-      - name: Add sherpa-onnx for Windows arm64
-        if: ${{ matrix.os.name == 'windows' && matrix.arch == 'arm64' }}
-        uses: actions/download-artifact@v8
-        with:
-          name: sherpa-onnx-win-arm64
-          path: node_modules/sherpa-onnx-win-arm64
+        # The macOS and Windows runners each package both architectures, which needs the other
+        # architecture's native optional dependencies (sherpa-onnx-darwin-x64,
+        # sherpa-onnx-win-arm64) beside the host's.
+        run: pnpm install --frozen-lockfile ${{ (matrix.os.name == 'macos' || matrix.os.name == 'windows') && '--cpu=x64,arm64' || '' }}
       - name: Run the build
         uses: ./.github/actions/build-electron
         with:

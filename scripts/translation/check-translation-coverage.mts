@@ -1,6 +1,8 @@
 import { LOCALES as WEBSITE_LOCALES } from "../../apps/website/src/locales.ts";
 import { LOCALES as APP_LOCALES } from "../../packages/commons/src/lib/i18n.ts";
-import { getLanguageStats, type WeblateProject } from "./utils.mts";
+import {
+    findUnofferedLanguages, getLanguageStats, type OfferedLocale, type WeblateProject
+} from "./utils.mts";
 
 /**
  * Coverage above which a language must be offered, rather than sitting
@@ -12,37 +14,38 @@ interface GatedProject {
     project: WeblateProject;
     /** Names the list a maintainer has to add the locale to, quoted in the failure. */
     listDescription: string;
-    localeIds: string[];
+    locales: OfferedLocale[];
 }
 
 const GATED_PROJECTS: GatedProject[] = [
     {
         project: "client",
         listDescription: "LOCALES in packages/commons/src/lib/i18n.ts",
-        localeIds: APP_LOCALES.map(l => l.id)
+        locales: APP_LOCALES
     },
     {
         project: "website",
         listDescription: "LOCALES in apps/website/src/locales.ts",
-        localeIds: WEBSITE_LOCALES.map(l => l.id)
+        locales: WEBSITE_LOCALES
     }
 ];
 
 async function main() {
     const failures: string[] = [];
 
-    for (const { project, listDescription, localeIds } of GATED_PROJECTS) {
+    for (const { project, listDescription, locales } of GATED_PROJECTS) {
         const languageStats = await getLanguageStats(project);
-        for (const localeData of languageStats.results) {
+        const unoffered = findUnofferedLanguages(
+            languageStats.results, locales, MINIMUM_COVERAGE_PERCENT);
+        for (const localeData of unoffered) {
             const localeId = localeData.language_code;
+            const reason = locales.some(l => l.id === localeId)
+                ? `is marked \`contentOnly\` in ${listDescription}`
+                : `is missing from ${listDescription}`;
             const percentage = localeData.translated_percent;
-            if (percentage <= MINIMUM_COVERAGE_PERCENT || localeIds.includes(localeId)) {
-                continue;
-            }
-
             failures.push(
                 `❌ ${localeData.language.name} (${localeId}) is ${percentage}% translated `
-                + `in '${project}', but is missing from ${listDescription}.`);
+                + `in '${project}', but ${reason}.`);
         }
     }
 

@@ -64,6 +64,10 @@
             &::before {
                 opacity: .75;
             }
+
+            body[dir=rtl] & .tn-icon {
+                transform: scaleX(-1);
+            }
         }
     }
 
