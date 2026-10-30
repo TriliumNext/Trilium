@@ -3968,7 +3968,9 @@
       "use-headers": "使用表头",
       "header-columns": "表头列",
       "header-rows": "表头行",
-      "enter-a-whole-number-between-0-and-0": "请输入介于 0 和 %0 之间的整数。"
+      "enter-a-whole-number-between-0-and-0": "请输入介于 0 和 %0 之间的整数。",
+      "extended-code-block": "扩展代码块",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "插入一个以代码笔记方式编辑的代码块。"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4868,5 +4870,12 @@
   "canvas": {
     "thin_stroke": "细笔触",
     "thin_stroke_description": "绘制更细的笔触，适合手写。已绘制的笔触保持原有宽度。"
+  },
+  "sort_selection": {
+    "sort_blocks": "排序块",
+    "sort_list_items": "排序列表项",
+    "sort_rows": "排序行",
+    "ascending": "升序",
+    "descending": "降序"
   }
 }
