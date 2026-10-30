@@ -199,38 +199,28 @@ describe("buildHiddenSubtreeTemplates", () => {
         }
     });
 
-    it("wires the presentation template to its slide template via a child:template relation", () => {
+    it("gives the slides of a presentation no template of their own", () => {
         const templates = buildHiddenSubtreeTemplates();
         const presentation = childById(templates, "_template_presentation");
 
-        const childTemplate = presentation.attributes?.find((a) => a.name === "child:template");
-        expect(childTemplate?.type).toBe("relation");
-        expect(childTemplate?.value).toBe("_template_presentation_slide");
-
-        const slideChildIds = (presentation.children ?? []).map((c) => c.id);
-        expect(slideChildIds).toEqual([
+        expect(presentation.attributes?.some((a) => a.name === "child:template")).toBe(false);
+        expect((presentation.children ?? []).map((c) => c.id)).toEqual([
             "_template_presentation_first",
             "_template_presentation_second"
         ]);
-
         for (const slide of presentation.children ?? []) {
-            expect(slide.type).toBe("text");
-            const templateRelation = slide.attributes?.find((a) => a.name === "template");
-            expect(templateRelation?.type, slide.id).toBe("relation");
-            expect(templateRelation?.value, slide.id).toBe("_template_presentation_slide");
+            expect(slide.type, slide.id).toBe("text");
+            expect(slide.attributes?.some((a) => a.name === "template") ?? false, slide.id).toBe(false);
         }
     });
 
-    it("exposes the presentation slide template with a promoted background color attribute", () => {
+    it("keeps the former slide template as a bare note, for the slides that still link to it", () => {
         const templates = buildHiddenSubtreeTemplates();
         const slide = childById(templates, "_template_presentation_slide");
 
         expect(slide.type).toBe("text");
-        expect(slide.attributes?.some((a) => a.name === "slide")).toBe(true);
-
-        const background = slide.attributes?.find((a) => a.name === "label:slide:background");
-        expect(background?.type).toBe("label");
-        expect(background?.value).toContain("color");
+        expect(slide.attributes ?? []).toEqual([]);
+        expect(slide.icon).toBeUndefined();
     });
 
     it("returns a fresh independent structure on each invocation", () => {

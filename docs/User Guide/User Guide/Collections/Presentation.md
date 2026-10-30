@@ -114,7 +114,7 @@ At collection level, it's possible to adjust:
 
 At slide level:
 
-*   It's possible to adjust the background color of a slide by using the [predefined promoted attribute](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) for the color or manually setting `#slide:background` to a hex color.
+*   To change the background color of a slide, go to it and use the <span class="tn-icon bx bx-palette"></span> _Slide background_ button in the toolbar, or set `#slide:background` on its note to a hex color.
 *   More complex backgrounds can be achieved via gradients. There's no UI for it; it has to be set via `#slide:background` to a CSS gradient definition such as: `linear-gradient(to bottom, #283b95, #17b2c3)`.
 
 ## Tips and tricks
