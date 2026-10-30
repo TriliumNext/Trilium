@@ -91,7 +91,7 @@ describe("TitleWithIndicators", () => {
     }
 
     /** Renders the title under a parent component that collects the reload handlers. */
-    function mount(note: FNote) {
+    function mount(note: FNote, parentNoteId?: string) {
         const handlers: ((data: unknown) => void)[] = [];
         const parent = {
             componentId: "cid",
@@ -104,7 +104,7 @@ describe("TitleWithIndicators", () => {
         act(() => {
             container = renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <TitleWithIndicators note={note} title={note.title} className="title" />
+                    <TitleWithIndicators note={note} parentNoteId={parentNoteId} title={note.title} className="title" />
                 </ParentComponent.Provider>
             );
         });
@@ -135,6 +135,32 @@ describe("TitleWithIndicators", () => {
         expect(clone).not.toBeNull();
         expect(clone?.getAttribute("aria-label")).toContain("Second");
         expect(container.querySelector(".shared-indicator")).not.toBeNull();
+    });
+
+    it("replaces a protected note's title but not its prefix while the protected session is closed", () => {
+        buildNote({ id: "vault", title: "Vault", children: [ { id: "secret", title: "Secret" } ] });
+        const note = froca.notes["secret"];
+        const branch = froca.branches[note?.parentToBranch["vault"] ?? ""];
+        if (!note || !branch) throw new Error("expected the note and its branch");
+        note.isProtected = true;
+        const { isProtectedSessionAvailable } = glob;
+        try {
+            glob.isProtectedSessionAvailable = false;
+            const locked = mount(note).container.querySelector(".title");
+            expect(locked?.textContent).toBe("protected_session.locked_note_title");
+            expect(locked?.querySelector(".is-locked")).not.toBeNull();
+
+            branch.prefix = "2024";
+            expect(mount(note, "vault").container.querySelector(".title")?.textContent)
+                .toBe("2024 - protected_session.locked_note_title");
+
+            glob.isProtectedSessionAvailable = true;
+            const unlocked = mount(note).container.querySelector(".title");
+            expect(unlocked?.textContent).toBe("Secret");
+            expect(unlocked?.querySelector(".is-locked")).toBeNull();
+        } finally {
+            glob.isProtectedSessionAvailable = isProtectedSessionAvailable;
+        }
     });
 });
 

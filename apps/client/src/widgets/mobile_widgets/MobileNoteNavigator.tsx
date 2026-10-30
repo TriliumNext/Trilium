@@ -325,8 +325,11 @@ export default function MobileNoteNavigator() {
                             {...currentContextProps}
                         >
                             <div className="mobile-navigator-current-header">
-                                <Icon icon={parentIcon ?? "bx bx-folder"} className="mobile-navigator-current-icon" />
-                                <TitleWithIndicators note={parentNote} title={parentTitle ?? parentNote.title} className="mobile-navigator-current-title" />
+                                <Icon
+                                    icon={parentIcon ?? "bx bx-folder"}
+                                    className={clsx("mobile-navigator-current-icon", parentNote.isProtected && "is-protected")}
+                                />
+                                <TitleWithIndicators note={parentNote} parentNoteId={grandparentId} title={parentTitle ?? parentNote.title} className="mobile-navigator-current-title" />
                                 <button
                                     type="button"
                                     className="mobile-navigator-current-action"
@@ -671,8 +674,11 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             onClick={isPending ? undefined : () => (hasChildren ? onDrill(childNotePath) : onOpen(childNotePath))}
             {...contextProps}
         >
-            <Icon icon={icon ?? "bx bx-note"} className="mobile-navigator-row-icon" />
-            <TitleWithIndicators note={note} title={title} className="mobile-navigator-row-title" />
+            <Icon
+                icon={icon ?? "bx bx-note"}
+                className={clsx("mobile-navigator-row-icon", note.isProtected && "is-protected")}
+            />
+            <TitleWithIndicators note={note} parentNoteId={parentNoteId} title={title} className="mobile-navigator-row-title" />
             {showHiddenBadge && (
                 <span
                     className="mobile-navigator-row-hidden-badge"
@@ -695,15 +701,23 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
 
 /**
  * A note's title followed by the clone and share icons the desktop tree shows. The title
- * shortens with an ellipsis, so the icons stay visible next to it.
+ * shortens with an ellipsis, so the icons stay visible next to it. Until the protected session
+ * starts, a protected note shows a placeholder after its branch prefix instead of its title.
  */
-export function TitleWithIndicators({ note, title, className }: { note: FNote, title: string, className: string }) {
+export function TitleWithIndicators({ note, parentNoteId, title, className }: {
+    note: FNote,
+    parentNoteId: string | undefined,
+    title: string,
+    className: string
+}) {
     const [ isShared ] = useShareState(note);
     const realParents = useRealParentNotes(note);
 
     return (
         <span className="mobile-navigator-title-group">
-            <span className={className}>{title}</span>
+            <span className={className}>
+                {note.isContentAvailable() ? title : <LockedTitle note={note} parentNoteId={parentNoteId} />}
+            </span>
             {realParents.length > 1 && (
                 <Icon
                     icon="bx bxs-directions"
@@ -721,6 +735,16 @@ export function TitleWithIndicators({ note, title, className }: { note: FNote, t
                 />
             )}
         </span>
+    );
+}
+
+function LockedTitle({ note, parentNoteId }: { note: FNote, parentNoteId: string | undefined }) {
+    const prefix = parentNoteId ? froca.getBranch(note.parentToBranch[parentNoteId], true)?.prefix : undefined;
+    return (
+        <>
+            {prefix && `${prefix} - `}
+            <span className="is-locked">{t("protected_session.locked_note_title")}</span>
+        </>
     );
 }
 

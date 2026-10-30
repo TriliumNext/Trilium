@@ -363,6 +363,35 @@
     font-size: 1.2em;
 }
 
+.mobile-navigator-row-icon.is-protected,
+.mobile-navigator-current-icon.is-protected {
+    position: relative;
+
+    &::after {
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline-end: 0;
+        font-family: "boxicons";
+        font-size: 0.7em;
+        content: "\eb4a";
+        transform: translateX(25%);
+        color: var(--quick-search-result-highlight-color);
+        background:
+            linear-gradient(var(--navigator-group-background) 0 0),
+            var(--navigator-backdrop, var(--main-background-color));
+        border-radius: 50%;
+    }
+}
+
+body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is-protected::after {
+    transform: translateX(-25%);
+}
+
+.mobile-navigator-title-group .is-locked {
+    font-style: italic;
+    opacity: 0.75;
+}
+
 .mobile-navigator-row-title {
     flex: 0 1 auto;
     overflow: hidden;

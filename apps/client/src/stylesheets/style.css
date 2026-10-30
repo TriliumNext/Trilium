@@ -2140,8 +2140,9 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     }
 
     #mobile-sidebar-wrapper {
+        --navigator-backdrop: var(--left-pane-background-color);
         transform: none !important;
-        background-color: var(--left-pane-background-color) !important;
+        background-color: var(--navigator-backdrop) !important;
     }
 
     #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
