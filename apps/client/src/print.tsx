@@ -8,6 +8,7 @@ import froca from "./services/froca";
 import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
+import { ParentComponent } from "./widgets/react/react_utils";
 
 interface RendererProps {
     note: FNote;
@@ -185,6 +186,8 @@ export function CollectionRenderer({ note, onReady, onProgressChanged }: Rendere
     const viewType = useNoteViewType(note);
     // A saved search holds its results as virtual children only once it has run server-side.
     const [ ready, setReady ] = useState(note.type !== "search");
+    // The print page has no component tree, so the view's hooks get a bare root `Component`.
+    const [ rootComponent ] = useState(() => new Component());
 
     useEffect(() => {
         if (note.type !== "search") {
@@ -224,21 +227,25 @@ export function CollectionRenderer({ note, onReady, onProgressChanged }: Rendere
 
     if (!ready) return null;
 
-    return <CustomNoteList
-        viewType={viewType}
-        isEnabled
-        note={note}
-        notePath={note.getBestNotePath().join("/")}
-        ntxId="print"
-        highlightedTokens={null}
-        media="print"
-        onReady={async (data: PrintReport) => {
-            await loadCustomCss(note);
-            await document.fonts.ready;
-            onReady(data);
-        }}
-        onProgressChanged={onProgressChanged}
-    />;
+    return (
+        <ParentComponent.Provider value={rootComponent}>
+            <CustomNoteList
+                viewType={viewType}
+                isEnabled
+                note={note}
+                notePath={note.getBestNotePath().join("/")}
+                ntxId="print"
+                highlightedTokens={null}
+                media="print"
+                onReady={async (data: PrintReport) => {
+                    await loadCustomCss(note);
+                    await document.fonts.ready;
+                    onReady(data);
+                }}
+                onProgressChanged={onProgressChanged}
+            />
+        </ParentComponent.Provider>
+    );
 }
 
 export function Error404({ noteId }: { noteId: string }) {
