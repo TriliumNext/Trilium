@@ -482,4 +482,9 @@ describe("getAddLinkOpts", () => {
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
     });
+
+    it("opens a new link on the side it is asked for", () => {
+        expect(getAddLinkOpts(createApi(null), ready, "url").target).toBe("url");
+        expect(getAddLinkOpts(createApi(null), ready).target).toBeUndefined();
+    });
 });

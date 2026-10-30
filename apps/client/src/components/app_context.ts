@@ -383,7 +383,7 @@ export type CommandMappings = {
     showCheatsheet: CommandData;
     showShortcutHints: CommandData;
     showHelp: CommandData;
-    addLinkToText: CommandData;
+    addLinkToText: CommandData & Pick<AddLinkOpts, "target">;
     followLinkUnderCursor: CommandData;
     insertDateTimeToText: CommandData;
     pasteMarkdownIntoText: CommandData;

@@ -258,7 +258,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         linkEmbed: buildLinkEmbedHost(opts.getNoteId),
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
-        internalLink: { openDialog: bindHostCommand(opts, "addLinkToText") },
+        internalLink: {
+            openDialog: async (options) => {
+                await opts.triggerHostCommand?.("addLinkToText", options);
+            }
+        },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },

@@ -1,6 +1,7 @@
 import {
     _getModelData as getModelData, _setModelData as setModelData, Bold, ButtonView, ClassicEditor, CodeBlock,
-    ContextualBalloon, Essentials, Link, LinkEditing, LinkUI, Paragraph
+    ContextualBalloon, Essentials, keyCodes, type KeystrokeHandler, Link, LinkEditing, LinkUI,
+    Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -191,5 +192,96 @@ describe("the edit button of the link toolbar", () => {
         expect(openDialog).toHaveBeenCalledOnce();
         expect(toolbarView && balloon.hasView(toolbarView)).toBe(false);
         expect(linkUI.formView && balloon.hasView(linkUI.formView)).toBe(false);
+    });
+});
+
+describe("the link button and Ctrl+K", () => {
+    let editor: ClassicEditor;
+    let openDialog: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        openDialog = vi.fn();
+        editor = await createTestEditor([Essentials, Paragraph, Link, InternalLinkPlugin], {
+            internalLink: { openDialog }
+        });
+    });
+
+    const IN_LINK = "<paragraph><$text linkHref=\"https://a.example\">fo[]o</$text></paragraph>";
+
+    /** Presses Ctrl+K on `keystrokes`, reporting whether a handler took the key. */
+    function pressCtrlK(keystrokes: KeystrokeHandler) {
+        const preventDefault = vi.fn();
+        keystrokes.press({
+            keyCode: keyCodes.k, ctrlKey: true, shiftKey: false, altKey: false, metaKey: false,
+            preventDefault, stopPropagation: vi.fn()
+        } as unknown as KeyboardEvent);
+        return preventDefault.mock.calls.length > 0;
+    }
+
+    function isLinkFormShown() {
+        const formView = editor.plugins.get(LinkUI).formView;
+        return !!formView && editor.plugins.get(ContextualBalloon).hasView(formView);
+    }
+
+    it("opens the link dialog on the web link side from the Link button", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const button = editor.ui.componentFactory.create("link") as ButtonView;
+        expect(button.label).toBe("Link");
+        expect(button.keystroke).toBe("Ctrl+K");
+        expect(button.isOn).toBe(false);
+
+        button.fire("execute");
+        expect(openDialog).toHaveBeenCalledExactlyOnceWith({ target: "url" });
+        expect(isLinkFormShown()).toBe(false);
+
+        // The button shows as on in a link, and off where no link can be made.
+        setModelData(editor.model, IN_LINK);
+        expect(button.isOn).toBe(true);
+        editor.enableReadOnlyMode("test");
+        expect(button.isEnabled).toBe(false);
+    });
+
+    it("opens the link dialog on Ctrl+K in the text", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(pressCtrlK(editor.keystrokes)).toBe(true);
+        expect(openDialog).toHaveBeenCalledExactlyOnceWith({ target: "url" });
+        expect(isLinkFormShown()).toBe(false);
+    });
+
+    it("opens the link dialog once on Ctrl+K in the link toolbar, each time it shows", () => {
+        setModelData(editor.model, IN_LINK);
+        const linkUI = editor.plugins.get(LinkUI);
+        const balloon = editor.plugins.get(ContextualBalloon);
+        const add = vi.spyOn(balloon, "add");
+        const showToolbar = () => (linkUI as unknown as { _showUI(): void })._showUI();
+
+        for (let shown = 1; shown <= 2; shown++) {
+            showToolbar();
+            const element = linkUI.toolbarView?.element;
+            expect(element && balloon.hasView(linkUI.toolbarView)).toBe(true);
+            if (!element) return;
+
+            // A DOM event, which both the toolbar and `editor.keystrokes` listen for.
+            const keydown = new KeyboardEvent("keydown", {
+                keyCode: keyCodes.k, ctrlKey: true, bubbles: true, cancelable: true
+            });
+            element.dispatchEvent(keydown);
+            expect(keydown.defaultPrevented).toBe(true);
+            expect(openDialog).toHaveBeenCalledTimes(shown);
+            expect(balloon.hasView(linkUI.toolbarView)).toBe(false);
+        }
+        expect(linkUI.formView).not.toBeNull();
+        expect(add.mock.calls.map(([ { view } ]) => view)).not.toContain(linkUI.formView);
+    });
+
+    it("keeps the link form of CKEditor in an editor without the link dialog", async () => {
+        const plainEditor = await createTestEditor([
+            Essentials, Paragraph, Link, InternalLinkPlugin
+        ]);
+        setModelData(plainEditor.model, "<paragraph>foo[]</paragraph>");
+        plainEditor.ui.componentFactory.create("link").fire("execute");
+
+        const formView = plainEditor.plugins.get(LinkUI).formView;
+        expect(formView && plainEditor.plugins.get(ContextualBalloon).hasView(formView)).toBe(true);
     });
 });

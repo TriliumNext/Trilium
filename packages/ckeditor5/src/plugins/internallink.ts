@@ -1,11 +1,20 @@
 import {
-    ButtonView, Command, findAttributeRange, IconPencil, LinkUI, ModelLiveRange, Plugin
+    ButtonView, Command, ContextualBalloon, findAttributeRange, IconLink, IconPencil, LinkUI,
+    ModelLiveRange, Plugin
 } from 'ckeditor5';
-import type { Editor, ModelRange } from 'ckeditor5';
+import type { Editor, LinkCommand, ModelRange, View } from 'ckeditor5';
 import internalLinkIcon from '../icons/trilium.svg?raw';
 import ReferenceLink, { getReferenceTitle, referenceAttributes } from './referencelink';
 
 export const COMMAND_NAME = 'insertInternalLink';
+
+/** The keystroke of `LinkUI`, which opens its link form. */
+const LINK_KEYSTROKE = 'Ctrl+K';
+
+export interface InternalLinkDialogOptions {
+    /** The side the dialog opens on for a new link: a note, or a web address. */
+    target?: 'note' | 'url';
+}
 
 export default class InternalLinkPlugin extends Plugin {
 
@@ -43,17 +52,42 @@ export default class InternalLinkPlugin extends Plugin {
 		});
 	}
 
-    /** Replaces the `editLink` button of `LinkUI`, which opens the link form in the balloon. */
+    /**
+     * Opens the link dialog from every place `LinkUI` opens its link form: the `link` and
+     * `editLink` buttons, Ctrl+K in the text and Ctrl+K in the link toolbar. A new link opens on
+     * the web link side.
+     */
     afterInit() {
         const editor = this.editor;
         const t = editor.t;
         const command = editor.commands.get(COMMAND_NAME);
-        if (!editor.plugins.has(LinkUI) || !command) {
+        if (!editor.plugins.has(LinkUI) || !command || !editor.config.get('internalLink')) {
             return;
         }
 
-        // `_hideUI()` is private, and the only way to close the toolbar together with its listeners.
-        const linkUI = editor.plugins.get(LinkUI) as unknown as { _hideUI(updateFocus?: boolean): void };
+        const linkUI = editor.plugins.get(LinkUI);
+        const openLinkDialog = () => {
+            // `_hideUI()` is private, and the only way to close the toolbar with its listeners.
+            (linkUI as unknown as { _hideUI(updateFocus?: boolean): void })._hideUI(false);
+            editor.execute(COMMAND_NAME, { target: 'url' });
+        };
+
+        editor.ui.componentFactory.add('link', locale => {
+            const linkCommand = editor.commands.get('link') as LinkCommand;
+            const button = new ButtonView(locale);
+            button.set({
+                label: t('Link'),
+                icon: IconLink,
+                keystroke: LINK_KEYSTROKE,
+                isToggleable: true,
+                tooltip: true
+            });
+            button.bind('isEnabled').to(command, 'isEnabled');
+            button.bind('isOn').to(linkCommand, 'value', value => !!value);
+            this.listenTo(button, 'execute', openLinkDialog);
+            return button;
+        });
+
         editor.ui.componentFactory.add('editLink', locale => {
             const button = new ButtonView(locale);
             button.set({
@@ -62,11 +96,29 @@ export default class InternalLinkPlugin extends Plugin {
                 tooltip: true
             });
             button.bind('isEnabled').to(command, 'isEnabled');
-            this.listenTo(button, 'execute', () => {
-                linkUI._hideUI(false);
-                editor.execute(COMMAND_NAME);
-            });
+            this.listenTo(button, 'execute', openLinkDialog);
             return button;
+        });
+
+        // Ahead of the keystroke of `LinkUI`, which opens the link form.
+        editor.keystrokes.set(LINK_KEYSTROKE, (_data, cancel) => {
+            cancel();
+            openLinkDialog();
+        }, { priority: 'high' });
+
+        // `LinkUI` creates its toolbar the first time it shows, with a Ctrl+K that opens the link
+        // form. `editor.keystrokes` also listens on the toolbar, and opens the dialog.
+        let isToolbarKeystrokeSet = false;
+        const balloon = editor.plugins.get(ContextualBalloon);
+        this.listenTo(balloon, 'change:visibleView', (_evt, _name, view: View | null) => {
+            const toolbarView = linkUI.toolbarView;
+            if (isToolbarKeystrokeSet || !toolbarView || view !== toolbarView) {
+                return;
+            }
+            toolbarView.keystrokes.set(LINK_KEYSTROKE, (_data, cancel) => cancel(), {
+                priority: 'high'
+            });
+            isToolbarKeystrokeSet = true;
         });
     }
 }
@@ -81,8 +133,8 @@ class InsertInternalLinkCommand extends Command {
         this.isEnabled = !this.editor.isReadOnly && !isInCodeBlock;
     }
 
-    execute() {
-        this.editor.config.get('internalLink')?.openDialog();
+    execute(options?: InternalLinkDialogOptions) {
+        this.editor.config.get('internalLink')?.openDialog(options);
     }
 }
 
@@ -171,8 +223,8 @@ function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange 
 declare module 'ckeditor5' {
     interface EditorConfig {
         internalLink?: {
-            /** Opens the dialog that adds a link to a note at the selection, or edits the link there. */
-            openDialog(): void;
+            /** Opens the dialog that adds a link at the selection, or edits the link there. */
+            openDialog(options?: InternalLinkDialogOptions): void;
         };
     }
 }

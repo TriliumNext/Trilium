@@ -23,7 +23,7 @@ import SegmentedChoice from "../react/SegmentedChoice";
 type LinkType = "reference-link" | "external-link" | "hyper-link";
 
 /** What the link points at: a note, or an address outside Trilium. */
-type LinkTarget = "note" | "url";
+export type LinkTarget = "note" | "url";
 
 function findAnchorIds(content: string): string[] {
     const re = /<a\b([^>]*)>(<\/a>)?/g;
@@ -72,6 +72,11 @@ export interface AddLinkOpts {
     currentTitle?: string;
     /** The anchor within the note that the link being edited points at. */
     currentBookmark?: string;
+    /**
+     * The side a new link opens on, the note side by default. A selected URL opens on the web link
+     * side.
+     */
+    target?: LinkTarget;
     /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
@@ -440,14 +445,16 @@ export default function AddLinkDialog() {
 }
 
 /**
- * The address the dialog opens on, on the web link side: the external link being edited, or a
- * selected text that is a URL. `null` opens it on the note side.
+ * The address the dialog opens on, on the web link side: the external link being edited, a
+ * selected text that is a URL, or an empty one for `target: "url"`. `null` opens it on the note
+ * side.
  */
 function getInitialWebLink(opts: AddLinkOpts): string | null {
     if (opts.fixLink) return null;
     if (opts.currentLink) return opts.currentLink.externalLink ?? null;
     const text = opts.text.trim();
-    return opts.hasSelection && hasScheme(text) ? text : null;
+    if (opts.hasSelection && hasScheme(text)) return text;
+    return opts.target === "url" ? "" : null;
 }
 
 /** Whether `text` is a whole URL with a scheme, the way the note search tells URLs apart. */

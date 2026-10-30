@@ -178,6 +178,24 @@ describe("AddLinkDialog", () => {
         expect(current()).toBe("add_link.note");
     });
 
+    it("opens a new link on the side asked for, and an edited one on its own side", async () => {
+        await open({ target: "url" });
+        expect(current()).toBe("add_link.web_link");
+        expect(field("url")?.value).toBe("");
+        expect(field("text")).not.toBeNull();
+
+        await open({ target: "url", text: "some words", hasSelection: true });
+        expect(current()).toBe("add_link.web_link");
+        expect(field("text")).toBeNull();
+        await type(field("url"), "example.com");
+        await submit();
+        expect(addLink)
+            .toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
+
+        await open({ target: "url", currentLink: { notePath: "root/abc" } });
+        expect(current()).toBe("add_link.note");
+    });
+
     it("edits a link with its own text, keeping that text and its anchor", async () => {
         const note = buildNote({ title: "Target", "#internalBookmark": "part" });
         await open({

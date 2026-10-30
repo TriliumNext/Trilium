@@ -12,7 +12,7 @@ import {
 import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import appContext from "../../../components/app_context";
+import appContext, { type CommandListenerData } from "../../../components/app_context";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import dialog from "../../../services/dialog";
@@ -248,9 +248,9 @@ export default function EditableText({
     };
 
     useLegacyImperativeHandlers({
-        addLinkToTextCommand() {
+        addLinkToTextCommand({ target }: CommandListenerData<"addLinkToText"> = {}) {
             if (!editorApiRef.current) return;
-            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor);
+            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, target);
             parentComponent?.triggerCommand("showAddLinkDialog", opts);
         },
         pasteMarkdownIntoTextCommand() {
@@ -560,9 +560,11 @@ export default function EditableText({
  */
 /**
  * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
- * link at the selection.
+ * link at the selection, on the `target` side.
  */
-export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>): AddLinkOpts {
+export function getAddLinkOpts(
+    api: CKEditorApi, ready: () => Promise<unknown>, target?: AddLinkOpts["target"]
+): AddLinkOpts {
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         return {
@@ -580,6 +582,7 @@ export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>):
     return {
         text: api.getSelectedText(),
         hasSelection: api.hasSelection(),
+        target,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
