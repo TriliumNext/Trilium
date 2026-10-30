@@ -24,6 +24,16 @@
     color: var(--dropdown-item-icon-destructive-color);
 }
 
+/* A toggle that is on, held through a hover. The Next theme colors icon buttons through these
+   variables, so the button sets them as well as its own colors. */
+.icon-action.active {
+    --icon-button-color: var(--active-item-text-color);
+    --icon-button-hover-color: var(--active-item-text-color);
+    --icon-button-hover-background: var(--active-item-background-color);
+    color: var(--active-item-text-color);
+    background: var(--active-item-background-color);
+}
+
 .icon-action.disabled {
     color: var(--muted-text-color) !important;
     cursor: not-allowed;
