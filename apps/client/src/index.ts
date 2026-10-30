@@ -4,6 +4,7 @@
 import "./content.css";
 
 import { requestCatalogues } from "./services/catalogue_requests";
+import { resolveDevice } from "./services/device";
 import { loadIconPackGlyphs } from "./services/icon_pack_glyphs";
 import { createFontPreloadLink, createFontStylesheet } from "./services/font";
 import { hideSplash, reportSplashPhase, showStartupFailure } from "./services/splash";
@@ -110,7 +111,7 @@ async function setupGlob() {
     window.glob = {
         ...json,
         activeDialog: null,
-        device: json.device || getDevice()
+        device: resolveDevice(json)
     };
     window.glob.getThemeStyle = getThemeStyle;
 }
@@ -140,32 +141,6 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
         );
         promise.then(resolve, reject).finally(() => clearTimeout(timer));
     });
-}
-
-function getDevice() {
-    // Respect user's manual override via URL.
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("print")) {
-        return "print";
-    } else if (urlParams.has("desktop")) {
-        return "desktop";
-    } else if (urlParams.has("mobile")) {
-        return "mobile";
-    }
-
-    const deviceCookie = document.cookie.split("; ").find(row => row.startsWith("trilium-device="))?.split("=")[1];
-    if (deviceCookie === "desktop" || deviceCookie === "mobile") return deviceCookie;
-    return isMobile() ? "mobile" : "desktop";
-}
-
-// https://stackoverflow.com/a/73731646/944162
-function isMobile() {
-    const mQ = matchMedia?.("(pointer:coarse)");
-    if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
-
-    if ("orientation" in window) return true;
-    const userAgentsRegEx = /\b(Android|iPhone|iPad|iPod|Windows Phone|BlackBerry|webOS|IEMobile)\b/i;
-    return userAgentsRegEx.test(navigator.userAgent);
 }
 
 async function loadBootstrapCss() {

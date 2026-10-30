@@ -133,6 +133,7 @@
 /src/services/custom_fonts.ts
 /src/services/date_notes.ts
 /src/services/debounce.ts
+/src/services/device.ts
 /src/services/dialog.ts
 /src/services/doc_renderer.ts
 /src/services/experimental_features.ts
