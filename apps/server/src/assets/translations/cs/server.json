@@ -336,8 +336,7 @@
     "presentation": "Prezentace",
     "presentation_slide": "Prezentace snímku",
     "presentation_slide_first": "První snímek",
-    "presentation_slide_second": "Druhý snímek",
-    "background": "Pozadí"
+    "presentation_slide_second": "Druhý snímek"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB není inicializována, postupujte podle pokynů na obrazovce.",
