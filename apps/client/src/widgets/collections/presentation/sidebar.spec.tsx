@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { applySlideMove, getSlideMove, type PresentationModel, type SlideMove } from "./model";
 import SlideSidebar from "./sidebar";
+import { openSlideMenu, type SlideMenuActions } from "./slide_menu";
+
+vi.mock("./slide_menu", () => ({ openSlideMenu: vi.fn() }));
 
 vi.mock("../../../services/froca", () => ({
     default: { getNoteFromCache: (noteId: string) => ({ title: `Title of ${noteId}`, getIcon: () => "bx bx-columns" }) }
@@ -242,6 +245,71 @@ describe("moving slides with the keyboard", () => {
     });
 });
 
+describe("the context menu of a thumbnail", () => {
+    afterEach(() => {
+        vi.mocked(openSlideMenu).mockClear();
+        document.body.replaceChildren();
+    });
+
+    function openMenu(sidebar: HTMLElement, noteId: string) {
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            getButton(sidebar, noteId).dispatchEvent(event);
+        });
+        const call = vi.mocked(openSlideMenu).mock.lastCall;
+        if (!call) throw new Error("No menu was opened.");
+        const [ , thumbnail, target, actions, onMove, onHide ] = call;
+        return { event, thumbnail, target, actions, onMove, onHide };
+    }
+
+    it("opens the menu of the slide with the moves that Alt and the arrows make", () => {
+        const onMoveSlide = vi.fn();
+        const slideMenuActions = { onEdit: vi.fn() };
+        const sidebar = renderSidebar({
+            planSlideMove: (noteId, gap, levelShift) => (
+                getSlideMove(presentation, "deck", noteId, gap, levelShift, () => false)
+            ),
+            onMoveSlide,
+            slideMenuActions
+        });
+
+        const menu = openMenu(sidebar, "web");
+        expect(menu.event.defaultPrevented).toBe(true);
+        expect(menu.thumbnail).toBe(getButton(sidebar, "web"));
+        expect(menu.actions).toBe(slideMenuActions);
+        expect(menu.target).toEqual({
+            slide: presentation.slides[1],
+            isVertical: false,
+            isRtl: false,
+            moves: {
+                up: { noteId: "web", targetNoteId: "intro", position: "before" },
+                down: { noteId: "web", targetNoteId: "board", position: "after" },
+                toVertical: { noteId: "web", targetNoteId: "second", position: "after" },
+                toTopLevel: undefined
+            }
+        });
+        expect(openMenu(sidebar, "second").target.isVertical).toBe(true);
+
+        menu.onMove({ noteId: "web", targetNoteId: "intro", position: "before" });
+        expect(onMoveSlide).toHaveBeenCalledWith({ noteId: "web", targetNoteId: "intro", position: "before" });
+    });
+
+    it("marks the thumbnail whose menu is open, until the menu closes", () => {
+        const sidebar = renderSidebar();
+        const menu = openMenu(sidebar, "web");
+        expect(getItem(sidebar, "web").classList.contains("menu-target")).toBe(true);
+
+        act(() => menu.onHide());
+        expect(getItem(sidebar, "web").classList.contains("menu-target")).toBe(false);
+    });
+
+    it("leaves out the moves where the slides cannot be moved", () => {
+        const menu = openMenu(renderSidebar(), "web");
+        expect(menu.target.moves).toBeUndefined();
+        expect(menu.actions).toEqual({});
+    });
+});
+
 describe("dragging slides", () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -431,13 +499,14 @@ interface RenderOptions {
     onSelectSlide?: (noteId: string) => void;
     planSlideMove?: (noteId: string, gap: number, levelShift: -1 | 0 | 1) => SlideMove | undefined;
     onMoveSlide?: (move: SlideMove) => void;
+    slideMenuActions?: SlideMenuActions;
     /** Renders again into the container of an earlier render. */
     container?: HTMLElement;
 }
 
 function renderSidebar({
     presentation: model = presentation, closingContents = {}, activeNoteId, onSelectSlide = () => {}, planSlideMove, onMoveSlide,
-    container = document.createElement("div")
+    slideMenuActions, container = document.createElement("div")
 }: RenderOptions = {}) {
     if (!container.isConnected) document.body.appendChild(container);
     act(() => {
@@ -450,6 +519,7 @@ function renderSidebar({
                 onSelectSlide={onSelectSlide}
                 planSlideMove={planSlideMove}
                 onMoveSlide={onMoveSlide}
+                slideMenuActions={slideMenuActions}
             />,
             container
         );

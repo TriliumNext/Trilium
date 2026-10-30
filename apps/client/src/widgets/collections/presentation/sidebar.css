@@ -27,6 +27,11 @@
             opacity: 0.4;
         }
 
+        &.menu-target > .slide-thumbnail-button .slide-thumbnail:not(.active) {
+            outline: 1px solid var(--main-border-color);
+            outline-offset: 3px;
+        }
+
         &.drop-before::before,
         &.drop-after::after,
         &.drop-into::after {

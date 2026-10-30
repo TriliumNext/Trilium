@@ -22,13 +22,15 @@ import ShadowDom from "../../react/ShadowDom";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { useClosingSlides } from "./closing_slides";
 import {
-    applySlideMove, buildPresentationModel, createSlide, getSlideMove, isSlideRebuilt, moveSlideNote,
+    applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
+    getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
     PresentationModel, PresentationSlideBaseModel, SlideMove
 } from "./model";
 import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
 import SlideSidebar from "./sidebar";
 import SlideBackgroundAction from "./slide_background";
 import slideCustomStylesheet from "./slidejs.css?raw";
+import { SlideMenuActions } from "./slide_menu";
 import { CollectionSlides, Presentation } from "./slides";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 
@@ -59,15 +61,44 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const closingSlides = useClosingSlides(refresh);
     const refreshIdRef = useRef(0);
     const activeNoteId = useActiveSlideNoteId(api);
-    const [ newSlideNoteId, setNewSlideNoteId ] = useState<string>();
+    // A slide that the presentation goes to once the model has it, and starts editing for a new slide.
+    const [ pendingSlide, setPendingSlide ] = useState<{ noteId: string, edit: boolean }>();
     const canAddSlides = canEditSlides && note.type !== "search";
     const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
-    async function addSlide() {
-        if (!presentation) return;
-        const noteId = await createSlide(presentation, note.noteId, activeNoteId);
-        if (noteId) setNewSlideNoteId(noteId);
+    async function addSlide(position: NewSlidePosition) {
+        const noteId = await createSlide(position);
+        if (noteId) setPendingSlide({ noteId, edit: true });
     }
+
+    function editSlide(noteId: string) {
+        if (!api) return;
+        if (api.isOverview()) api.toggleOverview(false);
+        goToSlide(api, noteId);
+        startEditing(noteId);
+    }
+
+    const slideChanges: SlideMenuActions["changes"] = {
+        addSlideAfter(noteId) {
+            if (presentation) void addSlide(getNewSlidePosition(presentation, note.noteId, noteId));
+        },
+        addVerticalSlide(noteId) {
+            if (presentation) void addSlide(getNewVerticalSlidePosition(presentation, noteId));
+        },
+        async duplicate(noteId) {
+            if (!presentation) return;
+            const copyNoteId = await duplicateSlide(presentation, note.noteId, noteId);
+            if (copyNoteId) setPendingSlide({ noteId: copyNoteId, edit: false });
+        },
+        async delete(noteId) {
+            if (!presentation || !await deleteSlide(presentation, note.noteId, noteId)) return;
+            // The editor of a deleted slide, or of one of its vertical slides, goes away with it.
+            if (editedNoteId === noteId
+                || (editedNoteId && getSlideParentNoteId(presentation, note.noteId, editedNoteId) === noteId)) {
+                finishEditing();
+            }
+        }
+    };
 
     // Shown at once, before the server confirms; the model rebuilt after the move replaces it.
     async function moveSlide(move: SlideMove) {
@@ -85,9 +116,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         refresh();
     }
 
-    function onNewSlideShown(noteId: string) {
-        setNewSlideNoteId(undefined);
-        startEditing(noteId);
+    function onPendingSlideShown(noteId: string) {
+        if (pendingSlide?.edit) startEditing(noteId);
+        setPendingSlide(undefined);
     }
 
     const editedNoteIdRef = useRef(editedNoteId);
@@ -156,8 +187,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 closingContents={closingSlides.contents}
                 onEditSlide={canEditSlides ? startEditing : undefined}
                 onEditorHost={setEditorHost}
-                newSlideNoteId={newSlideNoteId}
-                onNewSlideShown={onNewSlideShown}
+                pendingNoteId={pendingSlide?.noteId}
+                onPendingSlideShown={onPendingSlideShown}
             />
         </>
     );
@@ -179,7 +210,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         isReadOnly={isReadOnly}
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
-                        onNewSlide={canAddSlides ? () => void addSlide() : undefined}
+                        onNewSlide={canAddSlides
+                            ? () => void addSlide(getNewSlidePosition(presentation, note.noteId, activeNoteId))
+                            : undefined}
                         backgroundSlide={canEditSlides ? { slide: activeSlide } : undefined}
                     />}
                 />
@@ -195,6 +228,10 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                             (parentNoteId) => !!froca.getNoteFromCache(parentNoteId)?.hasLabel("sorted")
                         ) : undefined}
                         onMoveSlide={canAddSlides ? (move) => void moveSlide(move) : undefined}
+                        slideMenuActions={{
+                            onEdit: canEditSlides ? editSlide : undefined,
+                            changes: canAddSlides ? slideChanges : undefined
+                        }}
                     />}
                     <ShadowDom
                         className="presentation-container"

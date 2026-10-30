@@ -36,6 +36,13 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
     *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
     *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.
     *   Press <kbd>Alt</kbd>+<kbd>↑</kbd> and <kbd>Alt</kbd>+<kbd>↓</kbd> to move the slide up or down at its level, past a whole stack of vertical slides. Press <kbd>Alt</kbd>+<kbd>→</kbd> to make it a vertical slide where it stands, and <kbd>Alt</kbd>+<kbd>←</kbd> to make it a top-level slide (the other way around in right-to-left languages). The same limits apply as for dragging.
+*   Right-click a thumbnail, or press <kbd>Shift</kbd>+<kbd>F10</kbd> or the <kbd>Menu</kbd> key on a focused one, to open its context menu. The thumbnail is outlined while the menu is open, and the slide being shown doesn't change:
+    *   _Edit slide_ goes to the slide and edits it in place, as a double-click does. It's available for text, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides.
+    *   _Open note_ opens the slide's note in a new tab, split or window.
+    *   _New slide after_ adds an empty text slide after it, at its level, and _New vertical slide_ adds one at the end of its vertical slides; the presentation goes to the new slide and starts editing it. _Duplicate_ copies the slide, with its vertical slides, right after it.
+    *   _Move up_, _Move down_, _Make vertical slide_ and _Make top-level slide_ move the slide as <kbd>Alt</kbd> and the arrow keys do. An item is disabled where the slide can't go.
+    *   _Delete slide..._ deletes the slide, with its vertical slides, after asking for confirmation.
+    *   A read-only presentation offers only _Open note_. A search-based presentation can't add, move or delete slides.
 *   To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings. Press it again to bring the sidebar back. Each device remembers the choice for every presentation.
 *   The sidebar is hidden when the note is too narrow to fit it.
 

@@ -9,6 +9,7 @@ import ShadowDom from "../../react/ShadowDom";
 import { createFitObserver } from "./fit";
 import { PresentationModel, PresentationSlideBaseModel, SlideMove } from "./model";
 import thumbnailStylesheet from "./sidebar_thumbnail.css?raw";
+import { openSlideMenu, SlideMenuActions } from "./slide_menu";
 
 type SlideContent = PresentationSlideBaseModel["content"];
 
@@ -35,6 +36,8 @@ interface SlideSidebarProps {
     planSlideMove?: (noteId: string, gap: number, levelShift: -1 | 0 | 1) => SlideMove | undefined;
     /** Moves a dropped slide; left out when the slides cannot be moved, which leaves the thumbnails undraggable. */
     onMoveSlide?: (move: SlideMove) => void;
+    /** What the context menu of a thumbnail offers beyond opening the note; empty in a read-only presentation. */
+    slideMenuActions?: SlideMenuActions;
 }
 
 /** The thumbnail being dragged, and where it would go if dropped now. */
@@ -51,7 +54,8 @@ interface DragState {
  * theme, at full slide size scaled down.
  */
 export default function SlideSidebar({
-    presentation, stylesheets, closingContents, activeNoteId, onSelectSlide, planSlideMove, onMoveSlide
+    presentation, stylesheets, closingContents, activeNoteId, onSelectSlide, planSlideMove, onMoveSlide,
+    slideMenuActions = {}
 }: SlideSidebarProps) {
     const sheets = useMemo(() => buildStyleSheets([ ...stylesheets, thumbnailStylesheet ]), [ stylesheets ]);
     const fitObserver = useFitObserver();
@@ -64,6 +68,7 @@ export default function SlideSidebar({
     const canDrag = !!planSlideMove && !!onMoveSlide;
     const [ drag, setDrag ] = useState<DragState>();
     const movedNoteIdRef = useRef<string | undefined>(undefined);
+    const [ menuNoteId, setMenuNoteId ] = useState<string>();
 
     useEffect(() => {
         const list = listRef.current;
@@ -158,7 +163,37 @@ export default function SlideSidebar({
         }
     }
 
-    function renderThumbnail(slide: PresentationSlideBaseModel) {
+    /** Opens the context menu of a thumbnail, with the moves that Alt and the arrows would make on it. */
+    function onThumbnailContextMenu(e: MouseEvent, slide: PresentationSlideBaseModel, isVertical: boolean) {
+        const list = listRef.current;
+        const button = e.currentTarget;
+        if (!list || !(button instanceof HTMLElement)) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const buttons = [ ...list.querySelectorAll(".slide-thumbnail-button") ];
+        const index = buttons.indexOf(button);
+        const isRtl = isRightToLeft(list);
+        const plan = planSlideMove && onMoveSlide
+            ? (gap: number, levelShift: -1 | 0 | 1) => planSlideMove(slide.noteId, gap, levelShift)
+            : undefined;
+        const moves = plan && {
+            up: findKeyboardMove(plan, "ArrowUp", index, buttons.length, isRtl),
+            down: findKeyboardMove(plan, "ArrowDown", index, buttons.length, isRtl),
+            toVertical: plan(index, 1),
+            toTopLevel: plan(index, -1)
+        };
+        // The menu gives the focus back to the thumbnail it came from, which a change of level replaces.
+        const hadFocus = document.activeElement === button;
+
+        setMenuNoteId(slide.noteId);
+        openSlideMenu(e, button, { slide, isVertical, moves, isRtl }, slideMenuActions, (move) => {
+            if (hadFocus) movedNoteIdRef.current = slide.noteId;
+            onMoveSlide?.(move);
+        }, () => setMenuNoteId(undefined));
+    }
+
+    function renderThumbnail(slide: PresentationSlideBaseModel, isVertical: boolean) {
         const closingContent = closingContents[slide.noteId];
         const isActive = slide.noteId === activeNoteId;
         return (
@@ -178,6 +213,7 @@ export default function SlideSidebar({
                     setDrag({ noteId: slide.noteId, startX: e.clientX });
                 } : undefined}
                 onDragEnd={() => setDrag(undefined)}
+                onContextMenu={(e) => onThumbnailContextMenu(e, slide, isVertical)}
             >
                 <SlideThumbnail
                     slide={closingContent ? { ...slide, content: closingContent } : slide}
@@ -199,13 +235,16 @@ export default function SlideSidebar({
             onDragLeave={onDragLeave}
         >
             {presentation.slides.map(slide => (
-                <li key={slide.noteId} {...getItemProps(slide.noteId, drag)}>
-                    {renderThumbnail(slide)}
+                <li key={slide.noteId} {...getItemProps(slide.noteId, drag, menuNoteId)}>
+                    {renderThumbnail(slide, false)}
                     {slide.verticalSlides && (
                         <ol className="presentation-sidebar-vertical-slides">
                             {slide.verticalSlides.map(verticalSlide => (
-                                <li key={verticalSlide.noteId} {...getItemProps(verticalSlide.noteId, drag)}>
-                                    {renderThumbnail(verticalSlide)}
+                                <li
+                                    key={verticalSlide.noteId}
+                                    {...getItemProps(verticalSlide.noteId, drag, menuNoteId)}
+                                >
+                                    {renderThumbnail(verticalSlide, true)}
                                 </li>
                             ))}
                         </ol>
@@ -217,10 +256,11 @@ export default function SlideSidebar({
 }
 
 /**
- * The note ID of a thumbnail's list item, and the classes that mark it as dragged or as where a drop goes:
- * above it, below it (past its vertical slides), or below it as its first vertical slide.
+ * The note ID of a thumbnail's list item, and the classes that mark it as dragged, as where a drop goes
+ * (above it, below it past its vertical slides, or below it as its first vertical slide), or as the
+ * slide whose context menu is open.
  */
-function getItemProps(noteId: string, drag: DragState | undefined) {
+function getItemProps(noteId: string, drag: DragState | undefined, menuNoteId: string | undefined) {
     const drop = drag?.drop?.targetNoteId === noteId ? drag.drop.position : undefined;
     return {
         "data-slide-id": noteId,
@@ -228,7 +268,8 @@ function getItemProps(noteId: string, drag: DragState | undefined) {
             dragging: drag?.noteId === noteId,
             "drop-before": drop === "before",
             "drop-after": drop === "after",
-            "drop-into": drop === "into"
+            "drop-into": drop === "into",
+            "menu-target": menuNoteId === noteId
         }) || undefined
     };
 }

@@ -6,6 +6,8 @@ import { renderTextContent } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
 import note_create from "../../../services/note_create";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
+import server from "../../../services/server";
+import ws from "../../../services/ws";
 import { ProgressChangedFn } from "../interface";
 
 type DangerouslySetInnerHTML = { __html: string; };
@@ -99,11 +101,10 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
 }
 
 /**
- * Creates an empty text slide after the slide of `currentNoteId`, at its level, or as the last slide
- * when no slide is shown. Returns the ID of the new note.
+ * Creates an empty text slide at `position`, from `getNewSlidePosition()` or
+ * `getNewVerticalSlidePosition()`. Returns the ID of the new note.
  */
-export async function createSlide(presentation: PresentationModel, collectionNoteId: string, currentNoteId: string | undefined) {
-    const { parentNoteId, afterNoteId } = getNewSlidePosition(presentation, collectionNoteId, currentNoteId);
+export async function createSlide({ parentNoteId, afterNoteId }: NewSlidePosition) {
     const targetBranchId = afterNoteId ? await froca.getBranchId(parentNoteId, afterNoteId) : null;
     const { note } = await note_create.createNote(parentNoteId, {
         type: "text",
@@ -119,7 +120,9 @@ export async function createSlide(presentation: PresentationModel, collectionNot
  * or after the vertical slide `currentNoteId` among its siblings. Without a current slide, the new
  * slide goes at the end of the presentation.
  */
-export function getNewSlidePosition(presentation: PresentationModel, collectionNoteId: string, currentNoteId: string | undefined) {
+export function getNewSlidePosition(
+    presentation: PresentationModel, collectionNoteId: string, currentNoteId: string | undefined
+): NewSlidePosition {
     for (const slide of presentation.slides) {
         if (slide.noteId === currentNoteId) {
             return { parentNoteId: collectionNoteId, afterNoteId: currentNoteId };
@@ -129,6 +132,51 @@ export function getNewSlidePosition(presentation: PresentationModel, collectionN
         }
     }
     return { parentNoteId: collectionNoteId, afterNoteId: undefined };
+}
+
+/** Where a new slide goes: under `parentNoteId`, after `afterNoteId` or as its last child. */
+export interface NewSlidePosition {
+    parentNoteId: string;
+    afterNoteId: string | undefined;
+}
+
+/** Returns where a new vertical slide of the top-level slide `noteId` goes: after its last vertical slide. */
+export function getNewVerticalSlidePosition(presentation: PresentationModel, noteId: string): NewSlidePosition {
+    const slide = presentation.slides.find(topLevel => topLevel.noteId === noteId);
+    return { parentNoteId: noteId, afterNoteId: slide?.verticalSlides?.at(-1)?.noteId };
+}
+
+/**
+ * Duplicates the slide `noteId` with its vertical slides, and places the copy right after it. Unlike
+ * `note_create.duplicateSubtree()`, it does not open the copy, which would leave the presentation.
+ * Returns the ID of the copy.
+ */
+export async function duplicateSlide(presentation: PresentationModel, collectionNoteId: string, noteId: string) {
+    const parentNoteId = getSlideParentNoteId(presentation, collectionNoteId, noteId);
+    const branchId = parentNoteId && await froca.getBranchId(parentNoteId, noteId);
+    if (!parentNoteId || !branchId) return;
+
+    const { note, branch } = await server.post<{ note: { noteId: string }, branch: { branchId: string } }>(
+        `notes/${noteId}/duplicate/${parentNoteId}`);
+    await ws.waitForMaxKnownEntityChangeId();
+    await branches.moveAfterBranch([ branch.branchId ], branchId);
+    return note.noteId;
+}
+
+/**
+ * Deletes the slide `noteId` through the delete dialog, without leaving the presentation. Returns
+ * whether the slide was deleted, rather than the dialog canceled.
+ */
+export async function deleteSlide(presentation: PresentationModel, collectionNoteId: string, noteId: string) {
+    const parentNoteId = getSlideParentNoteId(presentation, collectionNoteId, noteId);
+    const branchId = parentNoteId && await froca.getBranchId(parentNoteId, noteId);
+    return branchId ? await branches.deleteNotes([ branchId ], false, false) : false;
+}
+
+/** Returns the note that the slide `noteId` is a child of: the collection, or its top-level slide. */
+export function getSlideParentNoteId(presentation: PresentationModel, collectionNoteId: string, noteId: string) {
+    const ordered = getSlideOrder(presentation).find(({ slide }) => slide.noteId === noteId);
+    return ordered && (ordered.stack?.noteId ?? collectionNoteId);
 }
 
 /**
@@ -253,13 +301,8 @@ export function isSlideRebuilt(before: PresentationModel, after: PresentationMod
  * toast but still returns `true`.
  */
 export async function moveSlideNote(presentation: PresentationModel, collectionNoteId: string, move: SlideMove) {
-    const order = getSlideOrder(presentation);
-    const parentOf = (noteId: string) => {
-        const ordered = order.find(({ slide }) => slide.noteId === noteId);
-        return ordered && (ordered.stack?.noteId ?? collectionNoteId);
-    };
-    const parentNoteId = parentOf(move.noteId);
-    const targetParentNoteId = parentOf(move.targetNoteId);
+    const parentNoteId = getSlideParentNoteId(presentation, collectionNoteId, move.noteId);
+    const targetParentNoteId = getSlideParentNoteId(presentation, collectionNoteId, move.targetNoteId);
     if (!parentNoteId || !targetParentNoteId) return false;
     const [ branchId, targetBranchId ] = await Promise.all([
         froca.getBranchId(parentNoteId, move.noteId),

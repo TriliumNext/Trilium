@@ -3849,6 +3849,15 @@
     "slide-overview": "Toggle an overview of the slides",
     "new-slide": "New slide",
     "slide-sidebar": "Slide sidebar",
+    "menu-edit-slide": "Edit slide",
+    "menu-new-slide-after": "New slide after",
+    "menu-new-vertical-slide": "New vertical slide",
+    "menu-duplicate": "Duplicate",
+    "menu-move-up": "Move up",
+    "menu-move-down": "Move down",
+    "menu-make-vertical": "Make vertical slide",
+    "menu-make-top-level": "Make top-level slide",
+    "menu-delete": "Delete slide...",
     "slide-background": "Slide background"
   },
   "calendar_view": {

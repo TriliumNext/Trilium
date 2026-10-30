@@ -33,14 +33,14 @@ interface PresentationProps {
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
     /** The note of a slide just added, to go to once Reveal.js has it. */
-    newSlideNoteId: string | undefined;
-    /** Called once the presentation shows the slide of `newSlideNoteId`. */
-    onNewSlideShown: (noteId: string) => void;
+    pendingNoteId: string | undefined;
+    /** Called once the presentation shows the slide of `pendingNoteId`. */
+    onPendingSlideShown: (noteId: string) => void;
 }
 
 export function Presentation({
     presentation, setApi, ntxId, editedNoteId, isEditorReady, closingContents, onEditSlide,
-    onEditorHost, newSlideNoteId, onNewSlideShown
+    onEditorHost, pendingNoteId, onPendingSlideShown
 }: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
@@ -113,11 +113,11 @@ export function Presentation({
 
     // After the effect above, so that Reveal.js has synced the new slide.
     useEffect(() => {
-        if (!revealApi || !newSlideNoteId) return;
-        if (!containerRef.current?.querySelector(`#slide-${newSlideNoteId}`)) return;
-        goToSlide(revealApi, newSlideNoteId);
-        onNewSlideShown(newSlideNoteId);
-    }, [ presentation, revealApi, newSlideNoteId ]);
+        if (!revealApi || !pendingNoteId) return;
+        if (!containerRef.current?.querySelector(`#slide-${pendingNoteId}`)) return;
+        goToSlide(revealApi, pendingNoteId);
+        onPendingSlideShown(pendingNoteId);
+    }, [ presentation, revealApi, pendingNoteId ]);
 
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;

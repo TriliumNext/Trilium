@@ -9,10 +9,12 @@ import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import note_create from "../../../services/note_create";
+import server from "../../../services/server";
+import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
 import {
-    applySlideMove, buildPresentationModel, createSlide, getNewSlidePosition, getSlideMove, isSlideRebuilt,
-    moveSlideNote, PresentationModel, renderSlideContent
+    applySlideMove, buildPresentationModel, createSlide, deleteSlide, duplicateSlide, getNewSlidePosition,
+    getNewVerticalSlidePosition, getSlideMove, isSlideRebuilt, moveSlideNote, PresentationModel, renderSlideContent
 } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
@@ -233,26 +235,77 @@ describe("getNewSlidePosition", () => {
 });
 
 describe("createSlide", () => {
-    it("creates a text note after the slide being shown, or at the end", async () => {
+    it("creates a text note after a slide under its parent, or at the end", async () => {
         buildNote({ id: "deck", title: "Deck", children: [ { id: "a", title: "A" } ] });
         const getBranchId = vi.spyOn(froca, "getBranchId").mockResolvedValue("deck_a");
         const createNote = vi.spyOn(note_create, "createNote")
             .mockResolvedValue({ note: { noteId: "created" } } as Awaited<ReturnType<typeof note_create.createNote>>);
-        const model: PresentationModel = {
-            slides: [ { noteId: "a", type: "text", content: { __html: "" }, verticalSlides: undefined } ]
-        };
 
-        await expect(createSlide(model, "deck", "a")).resolves.toBe("created");
+        await expect(createSlide({ parentNoteId: "deck", afterNoteId: "a" })).resolves.toBe("created");
         expect(getBranchId).toHaveBeenCalledWith("deck", "a");
         expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
             type: "text", activate: false, target: "after", targetBranchId: "deck_a"
         }));
 
-        await createSlide(model, "deck", undefined);
+        await createSlide({ parentNoteId: "deck", afterNoteId: undefined });
         expect(createNote.mock.lastCall?.[1]).not.toHaveProperty("targetBranchId");
 
         getBranchId.mockRestore();
         createNote.mockRestore();
+    });
+});
+
+describe("getNewVerticalSlidePosition", () => {
+    it("places a new vertical slide after the last vertical slide of a slide, or as its first", () => {
+        const model: PresentationModel = {
+            slides: [
+                { noteId: "a", type: "text", content: { __html: "" }, verticalSlides: [
+                    { noteId: "a1", type: "text", content: { __html: "" } },
+                    { noteId: "a2", type: "text", content: { __html: "" } }
+                ] },
+                { noteId: "b", type: "text", content: { __html: "" }, verticalSlides: undefined }
+            ]
+        };
+        expect(getNewVerticalSlidePosition(model, "a")).toEqual({ parentNoteId: "a", afterNoteId: "a2" });
+        expect(getNewVerticalSlidePosition(model, "b")).toEqual({ parentNoteId: "b", afterNoteId: undefined });
+    });
+});
+
+describe("duplicating and deleting slides", () => {
+    const model: PresentationModel = {
+        slides: [
+            { noteId: "a", type: "text", content: { __html: "" }, verticalSlides: [
+                { noteId: "a1", type: "text", content: { __html: "" } }
+            ] }
+        ]
+    };
+
+    it("duplicates a slide with its vertical slides, right after it, without opening the copy", async () => {
+        vi.spyOn(froca, "getBranchId").mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
+        const post = vi.spyOn(server, "post").mockResolvedValue({ note: { noteId: "copy" }, branch: { branchId: "a_copy" } });
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockResolvedValue(undefined);
+        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(undefined);
+
+        await expect(duplicateSlide(model, "deck", "a1")).resolves.toBe("copy");
+        expect(post).toHaveBeenCalledWith("notes/a1/duplicate/a");
+        expect(moveAfter).toHaveBeenCalledWith([ "a_copy" ], "a_a1");
+
+        await expect(duplicateSlide(model, "deck", "gone")).resolves.toBeUndefined();
+        expect(post).toHaveBeenCalledOnce();
+        vi.restoreAllMocks();
+    });
+
+    it("deletes a slide's branch through the delete dialog, staying in the presentation", async () => {
+        vi.spyOn(froca, "getBranchId").mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
+        const deleteNotes = vi.spyOn(branches, "deleteNotes").mockResolvedValue(true);
+
+        await expect(deleteSlide(model, "deck", "a")).resolves.toBe(true);
+        expect(deleteNotes).toHaveBeenCalledWith([ "deck_a" ], false, false);
+
+        // A canceled dialog.
+        deleteNotes.mockResolvedValue(false);
+        await expect(deleteSlide(model, "deck", "a")).resolves.toBe(false);
+        vi.restoreAllMocks();
     });
 });
 
