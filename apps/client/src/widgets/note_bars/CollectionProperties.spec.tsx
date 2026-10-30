@@ -21,6 +21,19 @@ describe("CollectionProperties", () => {
         }
     });
 
+    it("puts the view's left controls after the view type switcher and the settings", () => {
+        const note = buildNote({ title: "Collection", type: "book" });
+        const container = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <CollectionProperties note={note} leftChildren={<span className="view-control" />} />
+            </ParentComponent.Provider>
+        );
+
+        const left = container.querySelector(".left-container");
+        expect(left?.children.length).toBeGreaterThan(1);
+        expect(left?.lastElementChild?.className).toBe("view-control");
+    });
+
     it("focuses the view type switcher on its shortcut only for its own note context", async () => {
         const note = buildNote({ title: "Collection", type: "book" });
         const noteContext = new NoteContext("ntx-split-2");

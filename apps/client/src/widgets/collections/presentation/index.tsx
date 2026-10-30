@@ -16,7 +16,9 @@ import options from "../../../services/options";
 import utils from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
-import { useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
+import {
+    useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
+} from "../../react/hooks";
 import ShadowDom from "../../react/ShadowDom";
 import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
@@ -61,6 +63,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const activeNoteId = useActiveSlideNoteId(api);
     const [ newSlideNoteId, setNewSlideNoteId ] = useState<string>();
     const canAddSlides = canEditSlides && note.type !== "search";
+    const [ isSidebarVisible, setSidebarVisible ] = useTriliumOptionBool("presentationSidebarVisible");
 
     async function addSlide() {
         if (!presentation) return;
@@ -139,6 +142,12 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
             <div class="presentation-view">
                 <CollectionProperties
                     note={note}
+                    leftChildren={<ActionButton
+                        icon="bx bx-sidebar"
+                        text={t("presentation_view.slide-sidebar")}
+                        active={isSidebarVisible}
+                        onClick={() => void setSidebarVisible(!isSidebarVisible)}
+                    />}
                     rightChildren={<ButtonOverlay
                         containerRef={containerRef}
                         api={api}
@@ -149,13 +158,13 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     />}
                 />
                 <div className="presentation-body">
-                    <SlideSidebar
+                    {isSidebarVisible && <SlideSidebar
                         presentation={presentation}
                         stylesheets={stylesheets}
                         closingContents={closingSlides.contents}
                         activeNoteId={activeNoteId}
                         onSelectSlide={(noteId) => api && goToSlide(api, noteId)}
-                    />
+                    />}
                     <ShadowDom
                         className="presentation-container"
                         containerRef={containerRef}

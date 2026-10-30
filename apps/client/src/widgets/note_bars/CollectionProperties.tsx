@@ -75,6 +75,8 @@ export const MAX_NESTING_DEPTH_PROPERTY: NumberProperty & PropertyHelp = {
 
 interface CollectionPropertiesProps {
     note: FNote;
+    /** The view's controls on the left of the bar, after the view type switcher and the settings. */
+    leftChildren?: ComponentChildren;
     centerChildren?: ComponentChildren;
     rightChildren?: ComponentChildren;
     /** Entries appended below a divider at the end of the settings dropdown. */
@@ -87,13 +89,14 @@ interface CollectionPropertiesProps {
  * visitor cannot change the note, and has no bar for a view without any.
  */
 export default function CollectionProperties(props: CollectionPropertiesProps) {
-    return isShare && !props.centerChildren && !props.rightChildren
+    return isShare && !props.leftChildren && !props.centerChildren && !props.rightChildren
         ? null
         : <CollectionPropertiesBar {...props} />;
 }
 
 function CollectionPropertiesBar({
     note,
+    leftChildren,
     centerChildren,
     rightChildren,
     optionsChildren
@@ -109,6 +112,7 @@ function CollectionPropertiesBar({
                     <ViewTypeSwitcher noteType={noteType} viewType={viewType} setViewType={setViewType} />
                     <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
                 </>}
+                {leftChildren}
             </div>
             <div className="center-container">
                 {centerChildren}
