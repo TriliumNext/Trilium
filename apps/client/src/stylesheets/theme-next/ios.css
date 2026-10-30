@@ -317,6 +317,10 @@ body.mobile.ios {
                     scale: 0.92;
                 }
             }
+
+            .mobile-note-panel-button {
+                margin-inline-end: 8px;
+            }
         }
 
         .note-split:not(.options) > .title-row + .scrolling-container {
