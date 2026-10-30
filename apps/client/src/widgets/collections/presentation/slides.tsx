@@ -126,9 +126,16 @@ export function Presentation({
         onPendingSlideShown(pendingNoteId);
     }, [ presentation, revealApi, pendingNoteId ]);
 
+    /** Starts editing `slide` on a double-click, where it can be edited in place and is not edited yet. */
+    function getEditHandler(slide: PresentationSlideBaseModel | undefined) {
+        if (!slide || !onEditSlide || slide.noteId === editedNoteId || !canEditSlideInPlace(slide)) return;
+        return () => {
+            if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);
+        };
+    }
+
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;
-        const canEdit = onEditSlide && !isEdited && canEditSlideInPlace(slide);
         const closingContent = closingContents[slide.noteId];
         return (
             <Slide
@@ -139,15 +146,27 @@ export function Presentation({
                 editorHostRef={isEdited && slide.type === "text" ? onEditorHost : undefined}
                 isCanvasEdited={isEdited && slide.type === "canvas"}
                 isEditorReady={isEditorReady}
-                onEdit={canEdit ? () => {
-                    if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);
-                } : undefined}
+                onEdit={getEditHandler(slide)}
             />
         );
     }
 
+    // Reveal.js sizes the section of a slide to its content, to center it, so a double-click beside
+    // the content, or anywhere on an empty slide, edits the slide shown. Its section handles one on it.
+    function onSlideAreaDblClick(e: MouseEvent) {
+        const isOnSlide = e.composedPath().some((target) => (
+            target instanceof HTMLElement && target.matches("section[data-note-id]")
+        ));
+        if (isOnSlide) return;
+        const noteId = getNoteIdFromSlide(revealApi?.getCurrentSlide());
+        const slide = presentation.slides
+            .flatMap((topLevelSlide) => [ topLevelSlide, ...topLevelSlide.verticalSlides ?? [] ])
+            .find((candidate) => candidate.noteId === noteId);
+        getEditHandler(slide)?.();
+    }
+
     return (
-        <div ref={containerRef} className="reveal">
+        <div ref={containerRef} className="reveal" onDblClick={onSlideAreaDblClick}>
             <div className="slides">
                 {presentation.slides?.map(slide => {
                     if (!slide.verticalSlides) {

@@ -206,3 +206,76 @@ describe("Presentation keys", () => {
         expect(press(field)).toBe(false);
     });
 });
+
+describe("Presentation double-click", () => {
+    afterEach(() => {
+        vi.doUnmock("reveal.js");
+        vi.resetModules();
+        document.body.replaceChildren();
+    });
+
+    it("edits the slide shown on a double-click beside its content, as an empty slide has none", async () => {
+        const reveal = { currentNoteId: "empty" };
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                element: HTMLElement;
+                constructor(element: HTMLElement) { this.element = element; }
+                initialize() { return Promise.resolve(); }
+                destroy() {}
+                isReady() { return true; }
+                layout() {}
+                sync() {}
+                slide() {}
+                on() {}
+                off() {}
+                isOverview() { return false; }
+                getIndices() { return { h: 0, v: 0 }; }
+                getRevealElement() { return this.element; }
+                getCurrentSlide() { return this.element.querySelector(`#slide-${reveal.currentNoteId}`); }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const onEditSlide = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(
+            <Presentation
+                presentation={{ slides: [
+                    { noteId: "empty", type: "text", content: { __html: "" }, verticalSlides: undefined },
+                    { noteId: "web", type: "webView", content: { __html: "" }, verticalSlides: undefined }
+                ] }}
+                setApi={() => {}}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={onEditSlide}
+                onEditorHost={() => {}}
+                pendingNoteId={undefined}
+                onPendingSlideShown={() => {}}
+                onStartPresentation={undefined}
+            />,
+            container
+        ));
+        const dblclick = (target: Element | null) => {
+            expect(target).not.toBeNull();
+            act(() => {
+                target?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, composed: true }));
+            });
+        };
+
+        // Reveal.js sizes a slide to its content to center it, so the slide area around it is not the slide.
+        await vi.waitFor(() => {
+            dblclick(container.querySelector(".slides"));
+            expect(onEditSlide.mock.calls).toEqual([ [ "empty" ] ]);
+        });
+        // A double-click on the slide itself edits it once.
+        dblclick(container.querySelector("#slide-empty"));
+        expect(onEditSlide.mock.calls).toEqual([ [ "empty" ], [ "empty" ] ]);
+
+        // A slide that cannot be edited in place stays as it is.
+        reveal.currentNoteId = "web";
+        dblclick(container.querySelector(".reveal"));
+        expect(onEditSlide).toHaveBeenCalledTimes(2);
+    });
+});
