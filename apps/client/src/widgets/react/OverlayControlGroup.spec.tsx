@@ -175,9 +175,22 @@ describe("OverlayControlGroup", () => {
             </OverlayControlGroup>
         );
 
-        expect(tooltipFor("Zoom out")).toEqual({ title: "Zoom out", placement: "bottom" });
+        // Never flipped to a side, where the tooltip would cover the neighbouring buttons.
+        expect(tooltipFor("Zoom out")).toEqual({ title: "Zoom out", placement: "bottom", fallbackPlacements: [ "bottom" ] });
         // A button placed unlike its neighbours overrides what the group hands down.
-        expect(tooltipFor("Elsewhere")).toEqual({ title: "Elsewhere", placement: "left" });
+        expect(tooltipFor("Elsewhere")).toEqual({ title: "Elsewhere", placement: "left", fallbackPlacements: [ "left" ] });
+    });
+
+    it("names its shortcut in the tooltip, but not in the button's name", () => {
+        mount(
+            <OverlayControlGroup>
+                <OverlayControlButton title="Overview" icon="bx-grid-horizontal" shortcut="O" />
+                <OverlayControlButton title="Next slide" icon="bx-chevron-right" shortcut="Space" />
+            </OverlayControlGroup>
+        );
+
+        expect(tooltipFor("Overview")?.title).toBe("Overview (O)");
+        expect(tooltipFor("Next slide")?.title).toMatch(/^Next slide \(.+\)$/);
     });
 
     it("opens tooltips away from the bottom edge unless told otherwise", () => {
