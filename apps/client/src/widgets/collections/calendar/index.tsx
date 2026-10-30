@@ -87,6 +87,7 @@ const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
 export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
     de: () => import("fullcalendar/locales/de"),
     es: () => import("fullcalendar/locales/es"),
+    fa: () => import("fullcalendar/locales/fa"),
     fr: () => import("fullcalendar/locales/fr"),
     it: () => import("fullcalendar/locales/it"),
     hi: () => import("fullcalendar/locales/hi"),

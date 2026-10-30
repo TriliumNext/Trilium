@@ -9,6 +9,32 @@ export type WeblateProject = "readme" | "client" | "website";
 /** How long a `.language-stats-*.json` cache file is reused before Weblate is queried again. */
 export const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+/** One language of a Weblate component, as `/api/components/…/translations/` lists it. */
+export interface LanguageStat {
+    language_code: string;
+    translated_percent: number;
+    language: { name: string };
+}
+
+/** A locale as the app or the website lists it. */
+export interface OfferedLocale {
+    id: string;
+    contentOnly?: boolean;
+}
+
+/**
+ * Lists the languages translated above `minimumPercent` that `locales` does not offer.
+ *
+ * A `contentOnly` locale counts as not offered: it can be set as a note's language, but
+ * not selected as the UI language.
+ */
+export function findUnofferedLanguages(
+    stats: LanguageStat[], locales: OfferedLocale[], minimumPercent: number) {
+    const offeredIds = locales.filter(l => !l.contentOnly).map(l => l.id);
+    return stats.filter(stat => stat.translated_percent > minimumPercent
+        && !offeredIds.includes(stat.language_code));
+}
+
 export async function getLanguageStats(project: WeblateProject) {
     const cacheFile = join(scriptDir, `.language-stats-${project}.json`);
 
