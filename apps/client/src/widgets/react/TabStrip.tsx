@@ -20,6 +20,8 @@ interface TabStripProps<T extends string> {
     className?: string;
     /** Name each tab in text across the full width instead of an icon, for touch screens with no tooltips. */
     labelled?: boolean;
+    /** With `labelled`, show the icon above the name, as a bottom tab bar does. */
+    withIcons?: boolean;
 }
 
 /**
@@ -30,10 +32,10 @@ interface TabStripProps<T extends string> {
  * track with the one on show raised out of it. The theme dresses the class; all the strip does is
  * size it to a header row, and leave the row itself to whoever it heads (see {@link className}).
  */
-export default function TabStrip<T extends string>({ tabs, activeTabId, onSelect, className, labelled }: TabStripProps<T>) {
+export default function TabStrip<T extends string>({ tabs, activeTabId, onSelect, className, labelled, withIcons }: TabStripProps<T>) {
     return (
         // Centred in the row rather than run up against its start (see TabStrip.css).
-        <div class={clsx("tab-strip", labelled && "tab-strip-labelled", className)}>
+        <div class={clsx("tab-strip", labelled && "tab-strip-labelled", labelled && withIcons && "tab-strip-with-icons", className)}>
             <div class="btn-group tab-strip-group" role="tablist">
                 {tabs.map((tab) => (
                     <TabStripTab
@@ -41,6 +43,7 @@ export default function TabStrip<T extends string>({ tabs, activeTabId, onSelect
                         tab={tab}
                         active={tab.id === activeTabId}
                         labelled={labelled}
+                        withIcons={withIcons}
                         onSelect={() => onSelect(tab.id)}
                     />
                 ))}
@@ -49,7 +52,7 @@ export default function TabStrip<T extends string>({ tabs, activeTabId, onSelect
     );
 }
 
-function TabStripTab<T extends string>({ tab, active, labelled, onSelect }: { tab: TabStripTabDefinition<T>; active: boolean; labelled?: boolean; onSelect: () => void }) {
+function TabStripTab<T extends string>({ tab, active, labelled, withIcons, onSelect }: { tab: TabStripTabDefinition<T>; active: boolean; labelled?: boolean; withIcons?: boolean; onSelect: () => void }) {
     const buttonRef = useRef<HTMLButtonElement>(null);
     // Unless `labelled`, no tab is named in the strip, the selected one included: every tab is the
     // same icon-sized segment, which keeps a whole group inside a panel narrow enough to only fit the
@@ -73,7 +76,8 @@ function TabStripTab<T extends string>({ tab, active, labelled, onSelect }: { ta
             class={clsx("tab-strip-tab icon-action", active && "active")}
             onClick={onSelect}
         >
-            {labelled ? tab.title : <span class={clsx("tab-strip-tab-icon tn-icon", tab.icon)} />}
+            {(!labelled || withIcons) && <span class={clsx("tab-strip-tab-icon tn-icon", tab.icon)} />}
+            {labelled && <span class="tab-strip-tab-label">{tab.title}</span>}
         </button>
     );
 }

@@ -2,19 +2,57 @@
     contain: none;
 }
 
+body.mobile:has(.virtual-keyboard-opened) .modal.mobile-note-panel .modal-footer {
+    display: none;
+}
+
 body.mobile .modal.mobile-note-panel {
-    &:not(.mobile-master-detail) .modal-header > .modal-title,
-    .tn-master-detail-title:has(> .modal-title) {
-        display: flex;
-        flex: 1;
-        min-width: 0;
+    .modal-footer {
+        padding: 4px 8px calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 8px));
+        border-top: 1px solid var(--main-border-color);
     }
 
-    .tn-master-detail-title > .modal-title {
-        display: flex;
-        color: var(--main-text-color);
+    &.mobile-view-page .modal-footer {
+        display: none;
+    }
+
+    .mobile-note-panel-tabs {
         flex: 1;
-        min-width: 0;
+
+        div.btn-group {
+            flex: 1;
+            gap: 0;
+            padding: 0;
+            background: transparent;
+
+            button.tab-strip-tab {
+                flex: 1 1 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                width: auto;
+                height: 52px;
+                padding-inline: 2px;
+                color: var(--muted-text-color);
+
+                &.active {
+                    color: var(--main-text-color);
+                }
+            }
+        }
+
+        .tab-strip-tab-icon {
+            font-size: 1.45em;
+        }
+
+        .tab-strip-tab-label {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.7rem;
+        }
     }
     .modal-dialog {
         height: 85vh;
@@ -44,14 +82,23 @@ body.mobile .modal.mobile-note-panel {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        padding-bottom: calc(var(--note-panel-group-spacing, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+        padding-bottom: var(--note-panel-group-spacing, 16px);
 
         &:has(#sidebar-chat) {
             padding-bottom: 0;
         }
 
-        &:not([data-tab-id="widgets"]) > .card:only-child > .card-header:has(> .card-header-buttons:empty) {
-            display: none;
+        /* The header names the tab, so a lone section keeps only its buttons. The chat is wrapped in a
+           `.lazy-component`. */
+        &:not([data-tab-id="widgets"]) > .card:only-child > .card-header,
+        &:not([data-tab-id="widgets"]) > :only-child > .card:only-child > .card-header {
+            &:has(> .card-header-buttons:empty) {
+                display: none;
+            }
+
+            > .card-header-title {
+                visibility: hidden;
+            }
         }
 
         .card > .card-header {
@@ -110,7 +157,6 @@ body.mobile .modal.mobile-note-panel {
             border-width: 1px 0 0;
             border-radius: var(--note-panel-group-radius, 10px) var(--note-panel-group-radius, 10px) 0 0;
             outline-offset: -2px;
-            padding-bottom: calc(0.5rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
         }
 
         > :is(#pdf-pages, #noteMap):not(.grow) .card-body {
@@ -134,6 +180,10 @@ body.mobile .modal.mobile-note-panel {
         .tn-master-pane,
         .tn-detail-pane {
             padding-inline: 16px;
+            padding-bottom: var(--note-panel-group-spacing, 16px);
+        }
+
+        .tn-detail-pane {
             padding-bottom: calc(var(--note-panel-group-spacing, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
         }
     }

@@ -63,11 +63,12 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
         <MasterDetailModal
             className="mobile-note-panel"
             size="md"
-            // In `.modal-title`, which master_detail.css hides in favour of `MasterDetailHeader`.
-            title={(
-                <div className="modal-title">
-                    <TabStrip labelled tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId} />
-                </div>
+            title={activeTab?.title}
+            footer={(
+                <TabStrip
+                    className="mobile-note-panel-tabs" labelled withIcons
+                    tabs={tabs} activeTabId={activeTab?.id} onSelect={setSelectedTabId}
+                />
             )}
             backTitle={t("attribute_list_panel.back")}
             ariaLabel={t("mobile_detail_menu.note_panel")}
