@@ -83,6 +83,10 @@ A _Tiny_ include has these buttons instead, followed by the same _More actions_ 
 
 To replace an include with a link to the included note, select it and press the <span class="tn-icon cke cke-link"></span> _Convert to link_ button in its toolbar, or choose _Convert to link_ at the end of its _More actions_ menu. An embedded attachment turns into a link to the attachment the same way.
 
+## Missing notes and attachments
+
+An include whose note or attachment no longer exists, for example because it was deleted, keeps its size and shows the <span class="tn-icon bx bx-error-alt"></span> icon in place of the content, with the ID of the missing note or attachment. To remove the include, select it and press <kbd>Delete</kbd>.
+
 ## Included notes in the share functionality
 
 If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.

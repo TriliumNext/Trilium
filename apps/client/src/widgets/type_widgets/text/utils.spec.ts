@@ -24,7 +24,12 @@ vi.mock("../../../services/content_renderer", () => ({
 vi.mock("./ContentEmbed", () => ({
     default: () => null,
     TinyContentEmbed: () => null,
+    MissingContentEmbed: () => null,
     getNoteActions: vi.fn()
+}));
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string, options?: object) => `${key} ${JSON.stringify(options)}`
 }));
 vi.mock("../../../services/attachment_actions", () => ({
     getOpenExternallyAction: vi.fn(),
@@ -45,6 +50,7 @@ import link from "../../../services/link";
 import { registerContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
     getNoteActions,
+    MissingContentEmbed,
     type ContentEmbedAction,
     type ContentEmbedProps,
     TinyContentEmbed,
@@ -145,13 +151,22 @@ describe("loadEmbeddedNote", () => {
         });
     });
 
-    it("leaves the box alone for a note that no longer exists", async () => {
+    it("mounts a box that tells a note no longer exists", async () => {
         vi.mocked(froca.getNote).mockResolvedValue(null);
+        const wrapper = createWrapper();
 
-        await loadEmbeddedNote("noteY", $(createWrapper()), "small");
+        await loadEmbeddedNote("noteY", $(wrapper), "small");
 
+        expect(froca.getNote).toHaveBeenCalledWith("noteY", true);
         expect(link.createLink).not.toHaveBeenCalled();
-        expect(content_renderer.mountInteractiveWidget).not.toHaveBeenCalled();
+        expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
+        const mount = lastMount();
+        expect(mount.type).toBe(MissingContentEmbed);
+        expect(mount.container).toBe(wrapper);
+        expect(mount.props).toEqual({
+            boxSize: "small",
+            text: 'include_note.missing_note {"noteId":"noteY"}'
+        });
     });
 
     it("mounts a tiny box with the note's path, without the note or a caption", async () => {
@@ -331,13 +346,21 @@ describe("loadEmbeddedAttachment", () => {
         expect(showsAttachmentSave(container, drawing)).toBe(false);
     });
 
-    it("leaves the box alone for a deleted attachment", async () => {
+    it("mounts a box that tells an attachment no longer exists, at any box size", async () => {
         vi.mocked(froca.getAttachment).mockResolvedValue(null);
+        const wrapper = createWrapper();
 
-        await loadEmbeddedAttachment("att1", $(createWrapper()), "small");
+        await loadEmbeddedAttachment("att1", $(wrapper), "tiny");
 
         expect(link.createLink).not.toHaveBeenCalled();
-        expect(content_renderer.mountInteractiveWidget).not.toHaveBeenCalled();
+        expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
+        const mount = lastMount();
+        expect(mount.type).toBe(MissingContentEmbed);
+        expect(mount.container).toBe(wrapper);
+        expect(mount.props).toEqual({
+            boxSize: "tiny",
+            text: 'include_note.missing_attachment {"attachmentId":"att1"}'
+        });
     });
 
     it("mounts a tiny box with the size of the attachment, and its file actions", async () => {

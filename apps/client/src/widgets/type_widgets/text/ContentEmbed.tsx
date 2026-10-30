@@ -14,6 +14,7 @@ import { Badge } from "../../react/Badge";
 import { ButtonGroup } from "../../react/Button";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
 import { HtmlFindTarget } from "../../find_in_html";
 import ScrollableLabel from "../../react/ScrollableLabel";
@@ -238,6 +239,21 @@ export function TinyContentEmbed({
                 />
             ))}
             <MoreActionsButton notePath={notePath} viewScope={viewScope} />
+        </div>
+    );
+}
+
+/**
+ * The box of an embed whose note or attachment no longer exists: `text` in a placeholder at the
+ * height of the box size, or a small one in Tiny and Expandable boxes, which show only a row.
+ */
+export function MissingContentEmbed({ boxSize, text }: { boxSize?: string; text: string }) {
+    const hasBoxHeight = boxSize !== "tiny" && boxSize !== "expandable";
+    const isRoomy = hasBoxHeight && boxSize !== "small";
+
+    return (
+        <div className={clsx("include-note-missing", hasBoxHeight && "include-note-box-height")}>
+            <NoItems icon="bx bx-error-alt" text={text} size={isRoomy ? "normal" : "small"} />
         </div>
     );
 }

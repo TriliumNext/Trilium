@@ -10,12 +10,15 @@ import content_renderer, {
 } from "../../../services/content_renderer";
 import { getEmbedCaption, getEmbedCodeView } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import link, { ViewScope } from "../../../services/link";
 import { getInlineEmbedType } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
-import ContentEmbed, { getNoteActions, TinyContentEmbed } from "./ContentEmbed";
+import ContentEmbed, {
+    getNoteActions, MissingContentEmbed, TinyContentEmbed
+} from "./ContentEmbed";
 import type EmbedHistories from "./embed_history";
 
 interface EmbeddedNoteOptions {
@@ -36,8 +39,8 @@ interface EmbeddedNoteOptions {
 const selfUpdatingBoxes = new WeakMap<HTMLElement, { title: string; type: string }>();
 
 /**
- * Fills an embed box with a note. Without a box size of its own, the box takes the one of its
- * embed.
+ * Fills an embed box with a note, or with a placeholder once the note no longer exists. Without a
+ * box size of its own, the box takes the one of its embed.
  */
 export async function loadEmbeddedNote(
     noteId: string,
@@ -45,11 +48,15 @@ export async function loadEmbeddedNote(
     boxSize?: string,
     { noteEditor, histories, block, onBlockChange }: EmbeddedNoteOptions = {}
 ) {
-    const note = await froca.getNote(noteId);
-    if (!note) return;
-
+    const note = await froca.getNote(noteId, true);
     const el = $el[0];
     const size = boxSize ?? getEmbedBoxSize(el);
+    if (!note) {
+        const text = t("include_note.missing_note", { noteId });
+        await mountEmbedBox(el, h(MissingContentEmbed, { boxSize: size, text }));
+        return;
+    }
+
     const viewScope: ViewScope | undefined = block ? { block } : undefined;
     const isExcerpt = !!block;
     if (size === "tiny") {
@@ -111,8 +118,9 @@ interface EmbeddedAttachmentOptions {
 }
 
 /**
- * Fills an embed box with an embedded attachment, under a title linking to it. Without a box
- * size of its own, the box takes the one of its embed.
+ * Fills an embed box with an embedded attachment, under a title linking to it, or with a
+ * placeholder once the attachment no longer exists. Without a box size of its own, the box takes
+ * the one of its embed.
  */
 export async function loadEmbeddedAttachment(
     attachmentId: string,
@@ -121,11 +129,15 @@ export async function loadEmbeddedAttachment(
     { attachmentEditor, histories, isFocused }: EmbeddedAttachmentOptions = {}
 ) {
     const attachment = await froca.getAttachment(attachmentId, true);
-    if (!attachment) return;
-
     const el = $el[0];
     selfUpdatingBoxes.delete(el);
     const size = boxSize ?? getEmbedBoxSize(el);
+    if (!attachment) {
+        const text = t("include_note.missing_attachment", { attachmentId });
+        await mountEmbedBox(el, h(MissingContentEmbed, { boxSize: size, text }));
+        return;
+    }
+
     const viewScope: ViewScope = { viewMode: "attachments", attachmentId };
     if (size === "tiny") {
         // `attachment_actions` is imported on demand: it imports the image compression dialog.

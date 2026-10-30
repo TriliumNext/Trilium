@@ -378,7 +378,9 @@
     "inserted_as_image": "This note is inserted as an image.",
     "size_hint": "The size can be changed later.",
     "image_size_hint": "The image can be resized later.",
-    "button_include": "Include note"
+    "button_include": "Include note",
+    "missing_note": "The note with the ID {{noteId}} is missing.",
+    "missing_attachment": "The attachment with the ID {{attachmentId}} is missing."
   },
   "info": {
     "modalTitle": "Info message",
