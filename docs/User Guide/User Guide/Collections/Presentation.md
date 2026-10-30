@@ -7,7 +7,7 @@ The Presentation view allows the creation of slideshows directly from within Tri
 
 Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Presentation_.
 
-A presentation without slides shows an empty slide sidebar and, in place of the slides, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. A read-only presentation shows only a message that it has no slides. Until there is a slide, the toolbar buttons that act on one (editing the slide, its background, the overview and starting the presentation) are disabled.
+A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. A read-only presentation shows only a message that it has no slides. Until there is a slide, the toolbar buttons that act on one (the slide sidebar, editing the slide, its background, the overview and starting the presentation) are disabled.
 
 ## How it works
 

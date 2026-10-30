@@ -101,13 +101,21 @@ export default function PresentationToolbarActions({
     );
 }
 
-/** The toggle of the slide sidebar, on the left of the collection's toolbar. */
-export function SlideSidebarToggle({ isVisible, onToggle }: { isVisible: boolean; onToggle(): void }) {
+/**
+ * The toggle of the slide sidebar, on the left of the collection's toolbar. It is disabled, and shows
+ * the sidebar as hidden, while there are no slides to list.
+ */
+export function SlideSidebarToggle({ isVisible, hasSlides, onToggle }: {
+    isVisible: boolean;
+    hasSlides: boolean;
+    onToggle(): void;
+}) {
     return (
         <ActionButton
             icon="bx bx-sidebar"
             text={t("presentation_view.slide-sidebar")}
-            active={isVisible}
+            active={isVisible && hasSlides}
+            disabled={!hasSlides}
             onClick={onToggle}
         />
     );

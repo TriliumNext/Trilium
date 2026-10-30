@@ -30,21 +30,20 @@ describe("an empty presentation", () => {
         return { note, container, onReady };
     }
 
-    it("shows an empty slide sidebar and, in place of the slides, a way to create the first", async () => {
+    it("shows, in place of the slides and their sidebar, a way to create the first", async () => {
         const createNote = vi.spyOn(note_create, "createNote")
             .mockResolvedValue({ note: { noteId: "first" } } as Awaited<ReturnType<typeof note_create.createNote>>);
         const { note, container, onReady } = await renderEmpty();
 
-        const sidebar = container.querySelector(".presentation-sidebar");
-        expect(sidebar).not.toBeNull();
-        expect(sidebar?.querySelectorAll("li")).toHaveLength(0);
+        expect(container.querySelector(".presentation-sidebar")).toBeNull();
         expect(container.querySelector(".presentation-container")).toBeNull();
         expect(onReady).toHaveBeenCalled();
 
         const toolbarButton = (icon: string) => container.querySelector<HTMLButtonElement>(`button.${icon}`);
-        for (const icon of [ "bx-edit", "bx-palette", "bx-grid-horizontal", "bx-fullscreen" ]) {
+        for (const icon of [ "bx-sidebar", "bx-edit", "bx-palette", "bx-grid-horizontal", "bx-fullscreen" ]) {
             expect(toolbarButton(icon)?.disabled, icon).toBe(true);
         }
+        expect(toolbarButton("bx-sidebar")?.classList.contains("active")).toBe(false);
         expect(toolbarButton("bx-plus")?.disabled).toBe(false);
 
         const button = container.querySelector<HTMLButtonElement>(".no-items button");

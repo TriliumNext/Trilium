@@ -210,6 +210,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     note={note}
                     leftChildren={<SlideSidebarToggle
                         isVisible={isSidebarVisible}
+                        hasSlides={!isEmpty}
                         onToggle={() => void setSidebarVisible(!isSidebarVisible)}
                     />}
                     rightChildren={<PresentationToolbarActions
@@ -226,7 +227,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                     />}
                 />
                 <div className="presentation-body">
-                    {isSidebarVisible && <SlideSidebar
+                    {isSidebarVisible && !isEmpty && <SlideSidebar
                         presentation={presentation}
                         stylesheets={stylesheets}
                         closingContents={closingSlides.contents}
