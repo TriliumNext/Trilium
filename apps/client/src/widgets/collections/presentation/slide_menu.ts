@@ -69,7 +69,8 @@ export function buildSlideMenuItems(
     const { slide, isVertical, moves, isRtl } = target;
     const { noteId } = slide;
     const { onEdit, changes } = actions;
-    const canEditInPlace = (slide.type === "text" || !!slide.isCollection) && !slide.isReadOnly;
+    const canEditInPlace = (slide.type === "text" || slide.type === "canvas" || !!slide.isCollection)
+        && !slide.isReadOnly;
     // A board or table shows its children itself, and a vertical slide can have none.
     const canHaveVerticalSlides = !isVertical && !slide.isCollection;
     const [ indentKey, outdentKey ] = isRtl ? [ "Alt+Left", "Alt+Right" ] : [ "Alt+Right", "Alt+Left" ];

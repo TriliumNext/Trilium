@@ -28,7 +28,7 @@ interface PresentationProps {
     isEditorReady: boolean;
     /** The content of each text slide whose editor closed, by note ID, shown over the model's. */
     closingContents: Record<string, SlideContent>;
-    /** Starts editing a text or collection slide in place; left out when the presentation cannot be edited. */
+    /** Starts editing a text, canvas or collection slide in place; left out when the presentation cannot be edited. */
     onEditSlide: ((noteId: string) => void) | undefined;
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
@@ -126,15 +126,16 @@ export function Presentation({
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;
         const canEdit = onEditSlide && !isEdited && !slide.isReadOnly
-            && (slide.type === "text" || slide.isCollection);
+            && (slide.type === "text" || slide.type === "canvas" || slide.isCollection);
         const closingContent = closingContents[slide.noteId];
         return (
             <Slide
                 key={slide.noteId}
                 slide={closingContent ? { ...slide, content: closingContent } : slide}
                 ntxId={ntxId}
-                // A collection slide is edited in its own view, so it takes no editor.
-                editorHostRef={isEdited && !slide.isCollection ? onEditorHost : undefined}
+                // A collection slide is edited in its own view, and a canvas one by `SlideCanvasEditor`.
+                editorHostRef={isEdited && slide.type === "text" ? onEditorHost : undefined}
+                isCanvasEdited={isEdited && slide.type === "canvas"}
                 isEditorReady={isEditorReady}
                 onEdit={canEdit ? () => {
                     if (!revealApi?.isOverview() && !document.fullscreenElement) onEditSlide(slide.noteId);
@@ -171,11 +172,13 @@ interface SlideProps {
     editorHostRef?: (element: HTMLElement | null) => void;
     /** Whether the editor of the slide holds its content, so that it replaces the rendered content. */
     isEditorReady?: boolean;
+    /** Whether the canvas of the slide is edited in place, by the editor that its `<slot>` shows. */
+    isCanvasEdited?: boolean;
     /** Starts editing the slide in place, on a double-click. */
     onEdit?: () => void;
 }
 
-export function Slide({ slide, ntxId, editorHostRef, isEditorReady, onEdit }: SlideProps) {
+export function Slide({ slide, ntxId, editorHostRef, isEditorReady, isCanvasEdited, onEdit }: SlideProps) {
     // On desktop a web view goes in an Electron `<webview>`, whose own session keeps the page away
     // from the app; elsewhere Reveal.js frames it in the slide's background.
     const desktopWebViewSrc = isElectron ? slide.webViewSrc : undefined;
@@ -184,6 +187,7 @@ export function Slide({ slide, ntxId, editorHostRef, isEditorReady, onEdit }: Sl
     function renderContent() {
         if (desktopWebViewSrc) return <DesktopWebView src={desktopWebViewSrc} ntxId={ntxId} />;
         if (slide.isCollection) return <slot name={getCollectionSlotName(slide.noteId)} />;
+        if (isCanvasEdited) return <slot name={getCanvasEditorSlotName(slide.noteId)} />;
         // The rendered content stays, with its zoom, until the editor that loads hidden beside it
         // holds the slide; then one render swaps them. The keys keep the two elements apart.
         return [
@@ -201,12 +205,14 @@ export function Slide({ slide, ntxId, editorHostRef, isEditorReady, onEdit }: Sl
         <section
             id={`slide-${slide.noteId}`}
             data-note-id={slide.noteId}
-            className={desktopWebViewSrc ? "web-view-slide" : slide.isCollection ? "collection-slide" : undefined}
+            className={desktopWebViewSrc ? "web-view-slide"
+                : slide.isCollection ? "collection-slide"
+                : isCanvasEdited ? "edited-canvas-slide" : undefined}
             data-background-color={slide.backgroundColor}
             data-background-gradient={slide.backgroundGradient}
             data-background-iframe={backgroundIframe}
             data-background-interactive={backgroundIframe ? "" : undefined}
-            onDblClick={editorHostRef ? undefined : onEdit}
+            onDblClick={editorHostRef || isCanvasEdited ? undefined : onEdit}
         >
             {renderContent()}
         </section>
@@ -262,4 +268,8 @@ function ignoreOpenNote() {}
 
 function getCollectionSlotName(noteId: string) {
     return `collection-${noteId}`;
+}
+
+export function getCanvasEditorSlotName(noteId: string) {
+    return `canvas-editor-${noteId}`;
 }

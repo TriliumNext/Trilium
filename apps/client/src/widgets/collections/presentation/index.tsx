@@ -35,6 +35,7 @@ import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 import PresentationToolbarActions, { NewSlideTypeItems, SlideSidebarToggle } from "./toolbar";
 
 const SlideEditor = lazy(() => import("./slide_editor"));
+const SlideCanvasEditor = lazy(() => import("./slide_canvas_editor"));
 
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged, onOpenNote }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
@@ -69,8 +70,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
 
     async function addSlide(position: NewSlidePosition, type: NewSlideType = "text") {
         const noteId = await createSlide(position, type);
-        // Only a text slide has an editor in place.
-        if (noteId) setPendingSlide({ noteId, edit: type === "text" });
+        if (noteId) setPendingSlide({ noteId, edit: true });
     }
 
     function editSlide(noteId: string) {
@@ -273,6 +273,12 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         editedNoteId={editedNoteId}
                         onOpenNote={onOpenNote}
                     />,
+                    shadowHost
+                )}
+                {editedNote?.type === "canvas" && shadowHost && createPortal(
+                    <Suspense fallback={null}>
+                        <SlideCanvasEditor note={editedNote} onFinish={finishEditing} />
+                    </Suspense>,
                     shadowHost
                 )}
                 {/* A portal keeps the editor in this tree, whose contexts the shadow root's tree lacks. */}

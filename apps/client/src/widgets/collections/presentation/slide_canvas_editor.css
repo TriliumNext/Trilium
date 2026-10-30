@@ -1,0 +1,20 @@
+/* `--slide-scale` and `--full-bleed-*` come from `.reveal` in slidejs.css. Excalidraw maps the
+   pointer to an unscaled editor, so the editor undoes the scale of the slide. */
+.presentation-canvas-slide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--full-bleed-width) * var(--slide-scale, 1));
+    height: calc(var(--full-bleed-height) * var(--slide-scale, 1));
+    transform: translate(-50%, -50%) scale(calc(1 / var(--slide-scale, 1)));
+    background-color: var(--main-background-color);
+    color: var(--main-text-color);
+    font-family: var(--main-font-family);
+    font-size: 1rem;
+    line-height: normal;
+    text-align: start;
+
+    > .canvas-render {
+        height: 100%;
+    }
+}

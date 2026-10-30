@@ -52,6 +52,28 @@ async function renderSlide({ isElectron }: { isElectron: boolean }) {
     return section;
 }
 
+describe("canvas slides", () => {
+    it("shows the editor of an edited canvas slide through its slot, and edits one on a double-click", async () => {
+        const { Slide } = await import("./slides");
+        const canvasSlide: PresentationSlideBaseModel = { noteId: "drawing", type: "canvas", content: { __html: "<img>" } };
+        const onEdit = vi.fn();
+        const container = document.createElement("div");
+
+        render(<Slide slide={canvasSlide} ntxId={undefined} onEdit={onEdit} />, container);
+        const section = container.querySelector("section");
+        expect(section?.querySelector(".slide-content")).not.toBeNull();
+        section?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+        expect(onEdit).toHaveBeenCalledOnce();
+
+        render(<Slide slide={canvasSlide} ntxId={undefined} isCanvasEdited onEdit={onEdit} />, container);
+        expect(section?.classList.contains("edited-canvas-slide")).toBe(true);
+        expect(section?.querySelector("slot")?.getAttribute("name")).toBe("canvas-editor-drawing");
+        expect(section?.querySelector(".slide-content")).toBeNull();
+        section?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+        expect(onEdit).toHaveBeenCalledOnce();
+    });
+});
+
 describe("collection slides", () => {
     afterEach(() => {
         vi.doUnmock("../NoteList");

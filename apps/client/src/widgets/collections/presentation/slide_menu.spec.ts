@@ -72,6 +72,7 @@ describe("buildSlideMenuItems", () => {
     it("edits in place only the slides that can be, and gives a board or table no vertical slides", () => {
         expect(describeMenu(build({ slide: { ...textSlide, type: "webView" } }))[0]).toBe("!Edit slide");
         expect(describeMenu(build({ slide: { ...textSlide, isReadOnly: true } }))[0]).toBe("!Edit slide");
+        expect(describeMenu(build({ slide: { ...textSlide, type: "canvas" } }))[0]).toBe("Edit slide");
 
         const collection = describeMenu(build({ slide: { ...textSlide, type: "book", isCollection: true } }));
         expect(collection[0]).toBe("Edit slide");

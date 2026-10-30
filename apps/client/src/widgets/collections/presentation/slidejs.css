@@ -153,7 +153,7 @@ footer.file-footer {
     border: 0;
 }
 
-.reveal .slides section:is(.web-view-slide, .collection-slide) {
+.reveal .slides section:is(.web-view-slide, .collection-slide, .edited-canvas-slide) {
     height: 100%;
 }
 
