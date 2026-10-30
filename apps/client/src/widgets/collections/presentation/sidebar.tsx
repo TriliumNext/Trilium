@@ -1,5 +1,6 @@
 import "./sidebar.css";
 
+import clsx from "clsx";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../../services/froca";
@@ -17,6 +18,8 @@ interface SlideSidebarProps {
     stylesheets: string[];
     /** The content of each text slide whose editor closed, by note ID, shown over the model's. */
     closingContents: Record<string, SlideContent>;
+    /** The note of the slide that Reveal.js shows. */
+    activeNoteId: string | undefined;
 }
 
 /**
@@ -24,15 +27,21 @@ interface SlideSidebarProps {
  * Each thumbnail renders the slide's content in a shadow root of its own, styled by the presentation's
  * theme, at full slide size scaled down.
  */
-export default function SlideSidebar({ presentation, stylesheets, closingContents }: SlideSidebarProps) {
+export default function SlideSidebar({ presentation, stylesheets, closingContents, activeNoteId }: SlideSidebarProps) {
     const sheets = useMemo(() => buildStyleSheets([ ...stylesheets, thumbnailStylesheet ]), [ stylesheets ]);
     const fitObserver = useFitObserver();
+    const listRef = useRef<HTMLOListElement>(null);
+
+    useEffect(() => {
+        listRef.current?.querySelector(".slide-thumbnail.active")?.scrollIntoView({ block: "nearest" });
+    }, [ activeNoteId ]);
 
     function renderThumbnail(slide: PresentationSlideBaseModel) {
         const closingContent = closingContents[slide.noteId];
         return (
             <SlideThumbnail
                 slide={closingContent ? { ...slide, content: closingContent } : slide}
+                isActive={slide.noteId === activeNoteId}
                 sheets={sheets}
                 fitObserver={fitObserver}
             />
@@ -40,7 +49,7 @@ export default function SlideSidebar({ presentation, stylesheets, closingContent
     }
 
     return (
-        <ol className="presentation-sidebar">
+        <ol ref={listRef} className="presentation-sidebar">
             {presentation.slides.map(slide => (
                 <li key={slide.noteId}>
                     {renderThumbnail(slide)}
@@ -57,31 +66,42 @@ export default function SlideSidebar({ presentation, stylesheets, closingContent
     );
 }
 
-interface SlideThumbnailProps {
+interface ThumbnailContentProps {
     slide: PresentationSlideBaseModel;
     sheets: CSSStyleSheet[];
     fitObserver: ResizeObserver | undefined;
 }
 
-function SlideThumbnail({ slide, sheets, fitObserver }: SlideThumbnailProps) {
+interface SlideThumbnailProps extends ThumbnailContentProps {
+    isActive: boolean;
+}
+
+function SlideThumbnail({ slide, isActive, sheets, fitObserver }: SlideThumbnailProps) {
+    const className = clsx("slide-thumbnail", { active: isActive });
+    const ariaCurrent = isActive ? "true" : undefined;
+
     // A web view or a collection is live content, which a thumbnail does not load a second time.
     if (slide.webViewSrc || slide.isCollection) {
         const icon = slide.webViewSrc ? "bx bx-globe" : froca.getNoteFromCache(slide.noteId)?.getIcon();
         return (
-            <div className="slide-thumbnail slide-thumbnail-placeholder" data-note-id={slide.noteId}>
+            <div
+                className={clsx(className, "slide-thumbnail-placeholder")}
+                data-note-id={slide.noteId}
+                aria-current={ariaCurrent}
+            >
                 <Icon icon={icon} />
             </div>
         );
     }
 
     return (
-        <ShadowDom className="slide-thumbnail" data-note-id={slide.noteId}>
+        <ShadowDom className={className} data-note-id={slide.noteId} aria-current={ariaCurrent}>
             <ThumbnailContent slide={slide} sheets={sheets} fitObserver={fitObserver} />
         </ShadowDom>
     );
 }
 
-function ThumbnailContent({ slide, sheets, fitObserver }: SlideThumbnailProps) {
+function ThumbnailContent({ slide, sheets, fitObserver }: ThumbnailContentProps) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 

@@ -58,6 +58,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const canEditSlides = media === "screen" && !isReadOnly && !options.is("databaseReadonly");
     const closingSlides = useClosingSlides(refresh);
     const refreshIdRef = useRef(0);
+    const activeNoteId = useActiveSlideNoteId(api);
 
     useEffect(() => {
         if (!api) return;
@@ -136,6 +137,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         presentation={presentation}
                         stylesheets={stylesheets}
                         closingContents={closingSlides.contents}
+                        activeNoteId={activeNoteId}
                     />
                     <ShadowDom
                         className="presentation-container"
@@ -186,6 +188,19 @@ function useElementOf<T extends HTMLElement>(ref: RefObject<T | null>) {
         if (ref.current !== element) setElement(ref.current);
     });
     return element;
+}
+
+/** Returns the note ID of the slide that Reveal.js shows. */
+export function useActiveSlideNoteId(api: RevealApi | undefined) {
+    const [ activeNoteId, setActiveNoteId ] = useState<string>();
+    useEffect(() => {
+        if (!api) return;
+        const update = () => setActiveNoteId(getNoteIdFromSlide(api.getCurrentSlide()));
+        update();
+        api.on("slidechanged", update);
+        return () => api.off("slidechanged", update);
+    }, [ api ]);
+    return activeNoteId;
 }
 
 type SlideContent = PresentationSlideBaseModel["content"];

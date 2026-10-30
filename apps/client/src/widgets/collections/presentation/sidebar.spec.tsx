@@ -1,5 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
+import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PresentationModel } from "./model";
@@ -65,22 +66,89 @@ describe("SlideSidebar", () => {
     });
 
     it("shows the content of a slide whose editor just closed", () => {
-        const sidebar = renderSidebar({ first: { __html: "<p>Edited</p>" } });
+        const sidebar = renderSidebar({ closingContents: { first: { __html: "<p>Edited</p>" } } });
 
         const root = sidebar.querySelector<HTMLElement>(".slide-thumbnail[data-note-id=first]")?.shadowRoot;
         expect(root?.querySelector(".slide-content")?.innerHTML).toBe("<p>Edited</p>");
     });
+
+    it("marks the active slide and scrolls it into view as it changes", () => {
+        const scrollIntoView = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+        const sidebar = renderSidebar({ activeNoteId: "intro" });
+        const getActive = () => [ ...sidebar.querySelectorAll(".slide-thumbnail.active") ]
+            .map(thumbnail => thumbnail.getAttribute("data-note-id"));
+
+        expect(getActive()).toEqual([ "intro" ]);
+        expect(sidebar.querySelector("[data-note-id=intro]")?.getAttribute("aria-current")).toBe("true");
+        expect(scrollIntoView.mock.contexts.at(-1)).toBe(sidebar.querySelector("[data-note-id=intro]"));
+
+        const container = sidebar.parentElement ?? undefined;
+        renderSidebar({ activeNoteId: "second", container });
+        expect(getActive()).toEqual([ "second" ]);
+        expect(sidebar.querySelector("[data-note-id=intro]")?.hasAttribute("aria-current")).toBe(false);
+        expect(scrollIntoView.mock.contexts.at(-1)).toBe(sidebar.querySelector("[data-note-id=second]"));
+
+        renderSidebar({ activeNoteId: "board", container });
+        expect(getActive()).toEqual([ "board" ]);
+        scrollIntoView.mockRestore();
+    });
 });
 
-function renderSidebar(closingContents = {}) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
+describe("useActiveSlideNoteId", () => {
+    it("follows the slide that Reveal.js shows", async () => {
+        const { useActiveSlideNoteId } = await import("./index");
+        const listeners: (() => void)[] = [];
+        let current = buildSection("intro");
+        const api = {
+            getCurrentSlide: () => current,
+            on: (_event: string, listener: () => void) => listeners.push(listener),
+            off: (_event: string, listener: () => void) => listeners.splice(listeners.indexOf(listener), 1)
+        } as unknown as RevealApi;
+
+        let activeNoteId: string | undefined;
+        function Probe() {
+            activeNoteId = useActiveSlideNoteId(api);
+            return null;
+        }
+        const container = document.createElement("div");
+        act(() => render(<Probe />, container));
+        expect(activeNoteId).toBe("intro");
+
+        current = buildSection("second");
+        act(() => {
+            for (const listener of listeners) listener();
+        });
+        expect(activeNoteId).toBe("second");
+
+        act(() => render(null, container));
+        expect(listeners).toHaveLength(0);
+    });
+});
+
+function buildSection(noteId: string) {
+    const section = document.createElement("section");
+    section.dataset.noteId = noteId;
+    return section;
+}
+
+const stylesheets = [ ":host { --r-main-color: black; }", ".reveal { color: var(--r-main-color); }" ];
+
+interface RenderOptions {
+    closingContents?: Record<string, { __html: string }>;
+    activeNoteId?: string;
+    /** Renders again into the container of an earlier render. */
+    container?: HTMLElement;
+}
+
+function renderSidebar({ closingContents = {}, activeNoteId, container = document.createElement("div") }: RenderOptions = {}) {
+    if (!container.isConnected) document.body.appendChild(container);
     act(() => {
         render(
             <SlideSidebar
                 presentation={presentation}
-                stylesheets={[ ":host { --r-main-color: black; }", ".reveal { color: var(--r-main-color); }" ]}
+                stylesheets={stylesheets}
                 closingContents={closingContents}
+                activeNoteId={activeNoteId}
             />,
             container
         );
