@@ -94,6 +94,8 @@ body.mobile.ios {
         --note-panel-group-spacing: 22px;
         --note-panel-group-background: var(--grouped-card-background-color);
         --note-panel-card-padding: 12px 16px;
+        /* The close button's 44px and the 8px gap before it. */
+        --note-panel-close-width: 52px;
         --note-panel-separator-color: var(--main-border-color);
         /* Starts under the attribute's name: the row's padding, the 1.1em kind icon and the 6px gap. */
         --note-panel-separator-inset: calc(16px + 1.1em + 6px);
@@ -405,11 +407,11 @@ body.mobile.ios {
             .tn-master-detail-header {
                 padding-inline-start: 52px;
 
-                &:has(> button.icon-action) {
+                &:has(> button.icon-action, > .note-panel-header-slot:not([hidden], :empty)) {
                     padding-inline-start: 0;
                 }
 
-                > button.icon-action {
+                button.icon-action {
                     --icon-button-size: 44px;
                     --icon-button-icon-ratio: 0.55;
                     --icon-button-color: var(--main-text-color);

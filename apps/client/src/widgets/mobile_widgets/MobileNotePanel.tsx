@@ -1,7 +1,7 @@
 import "./MobileNotePanel.css";
 
 import { createPortal } from "preact";
-import { useState } from "preact/hooks";
+import { useCallback, useRef, useState } from "preact/hooks";
 
 import type { WidgetsByParent } from "../../services/bundle";
 import { t } from "../../services/i18n";
@@ -56,6 +56,16 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
 }) {
     const tabs = useRightPaneTabs(shown, widgetsByParent).map(withFixedHeightWidgetsLast);
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
+    const [ headerSlots, setHeaderSlotRef ] = useHeaderSlots();
+    // One slot per tab, only the active one shown; a tab that fills its slot replaces the title.
+    const headerSlotElements = tabs.map((tab) => (
+        <div
+            key={tab.id}
+            className="note-panel-header-slot"
+            hidden={tab.id !== activeTab?.id}
+            ref={setHeaderSlotRef(tab.id)}
+        />
+    ));
 
     return (
         // A master-detail modal, so that editing an attribute is a page of its own, headed by a way
@@ -64,6 +74,8 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
             className="mobile-note-panel"
             size="md"
             title={activeTab?.title}
+            header={headerSlotElements}
+            listActions={headerSlotElements}
             footer={(
                 <TabStrip
                     className="mobile-note-panel-tabs" labelled withIcons
@@ -79,11 +91,28 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
                 mobile layout has no other element for. */}
             <div id="right-pane">
                 <NavigatedInNote.Provider value={onHidden}>
-                    <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} flat />
+                    <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} headerSlots={headerSlots} flat />
                 </NavigatedInNote.Provider>
             </div>
         </MasterDetailModal>
     );
+}
+
+/** The header slot of each tab, with a stable ref callback per tab to collect them. */
+function useHeaderSlots() {
+    const [ slots, setSlots ] = useState<Partial<Record<RightPaneTabId, HTMLElement | null>>>({});
+    const callbacks = useRef(new Map<RightPaneTabId, (element: HTMLElement | null) => void>());
+
+    const refFor = useCallback((tabId: RightPaneTabId) => {
+        let callback = callbacks.current.get(tabId);
+        if (!callback) {
+            callback = (element) => setSlots((prev) => prev[tabId] === element ? prev : { ...prev, [tabId]: element });
+            callbacks.current.set(tabId, callback);
+        }
+        return callback;
+    }, []);
+
+    return [ slots, refFor ] as const;
 }
 
 /**

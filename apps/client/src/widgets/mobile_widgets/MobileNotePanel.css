@@ -7,6 +7,45 @@ body.mobile:has(.virtual-keyboard-opened) .modal.mobile-note-panel .modal-footer
 }
 
 body.mobile .modal.mobile-note-panel {
+    .note-panel-header-slot {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+
+        &[hidden],
+        &:empty {
+            display: none;
+        }
+    }
+
+    :is(.modal-header, .tn-master-detail-header):has(> .note-panel-header-slot:not([hidden], :empty)) > :is(.modal-title, .tn-master-detail-title) {
+        display: none;
+    }
+
+    /* Centred on the sheet: the close button after the slot is offset by the same width before it. */
+    .note-panel-header-slot .sidebar-chat-title-dropdown {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        justify-content: center;
+        padding-inline-start: var(--note-panel-close-width, 0px);
+
+        > button {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+            color: var(--main-text-color);
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+    }
+
     .modal-footer {
         padding: 4px 8px calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 8px));
         border-top: 1px solid var(--main-border-color);
@@ -250,9 +289,13 @@ body.mobile .modal.mobile-note-panel {
     .attribute-toolbar {
         --icon-button-size: 36px;
 
-        height: 48px;
+        position: static;
+        flex: 1;
+        min-width: 0;
+        height: auto;
+        padding: 0;
         border-bottom: 0;
-        background-color: var(--modal-background-color);
+        background: transparent;
 
         .form-checkbox label,
         .attribute-selection-count,

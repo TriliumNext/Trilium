@@ -29,7 +29,7 @@ import PdfAnnotations from "./pdf/PdfAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
-import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests, StackedWidgets } from "./RightPanelWidget";
+import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests, StackedWidgets, TabHeaderSlot } from "./RightPanelWidget";
 import RightPaneTabs, { RIGHT_PANE_TABS, RightPaneTabDefinition, RightPaneTabId } from "./RightPaneTabs";
 import TableOfContents from "./TableOfContents";
 
@@ -196,7 +196,14 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
  * A `flat` tab scrolls as a whole, its widgets stacked at their content's height with nothing to
  * collapse, as the mobile note panel lays it out.
  */
-export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat }: { tabs: RightPaneTabContents[]; activeTabId?: RightPaneTabId; expandRequest?: ExpandWidgetRequest | null; flat?: boolean }) {
+export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat, headerSlots }: {
+    tabs: RightPaneTabContents[];
+    activeTabId?: RightPaneTabId;
+    expandRequest?: ExpandWidgetRequest | null;
+    flat?: boolean;
+    /** Per tab, the host's header element its widgets put their controls in (see `TabHeaderSlot`). */
+    headerSlots?: Partial<Record<RightPaneTabId, HTMLElement | null>>;
+}) {
     const openedTabs = useRef(new Set<RightPaneTabId>());
     if (activeTabId) {
         openedTabs.current.add(activeTabId);
@@ -214,11 +221,13 @@ export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat }: {
             <CollapsibleWidgets.Provider value={!flat && tab.items.length > 1}>
                 <StackedWidgets.Provider value={!!flat && tab.items.length > 1}>
                     <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
-                        {tab.items.length > 0 ? tab.items : (
-                            // A tab that stays for a note it has nothing to show
-                            // (see RightPaneTabDefinition.alwaysShown) says so.
-                            <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
-                        )}
+                        <TabHeaderSlot.Provider value={headerSlots?.[tab.id] ?? null}>
+                            {tab.items.length > 0 ? tab.items : (
+                                // A tab that stays for a note it has nothing to show
+                                // (see RightPaneTabDefinition.alwaysShown) says so.
+                                <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
+                            )}
+                        </TabHeaderSlot.Provider>
                     </ExpandWidgetRequests.Provider>
                 </StackedWidgets.Provider>
             </CollapsibleWidgets.Provider>

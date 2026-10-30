@@ -33,6 +33,12 @@ export const ExpandWidgetRequests = createContext<ExpandWidgetRequest | null>(nu
 export const StackedWidgets = createContext(false);
 
 /**
+ * An element in the host's header where the widgets of a tab put their controls instead of their own
+ * header. Set per tab by the mobile note panel, `null` elsewhere.
+ */
+export const TabHeaderSlot = createContext<HTMLElement | null>(null);
+
+/**
  * Called after a widget scrolls the note to a place in it (a heading, a PDF page), set by a host that
  * covers the note, such as the mobile note panel, so that it can close and show that place.
  */

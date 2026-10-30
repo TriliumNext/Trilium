@@ -72,10 +72,15 @@ vi.mock("../react/FormList.js", () => ({
         <li data-icon={icon} onClick={onClick}>{children}</li>,
     FormDropdownDivider: () => null
 }));
-vi.mock("./RightPanelWidget.js", () => ({
-    default: ({ buttons, children }: { buttons: ComponentChildren; children: ComponentChildren }) => <div>{buttons}{children}</div>
-}));
+vi.mock("./RightPanelWidget.js", async () => {
+    const { createContext } = await import("preact");
+    return {
+        default: ({ buttons, children }: { buttons: ComponentChildren; children: ComponentChildren }) => <div>{buttons}{children}</div>,
+        TabHeaderSlot: createContext<HTMLElement | null>(null)
+    };
+});
 
+import { TabHeaderSlot } from "./RightPanelWidget.js";
 import SidebarChat from "./SidebarChat";
 
 describe("SidebarChat", () => {
@@ -103,6 +108,22 @@ describe("SidebarChat", () => {
 
         expect(fakeChat.submittedTo).toBe("chatNew1");
         expect(serverChats).toEqual([ "chatNew1", "chatOlder" ]);
+    });
+
+    it("puts its controls in the host's header slot when there is one", async () => {
+        const slot = document.createElement("div");
+        document.body.appendChild(slot);
+        const container = renderInto(
+            <TabHeaderSlot.Provider value={slot}>
+                <SidebarChat />
+            </TabHeaderSlot.Provider>
+        );
+        await vi.waitFor(() => expect(fakeChat.chatNoteId).toBe("chatOpen"));
+
+        expect(slot.querySelector("[data-icon='bx bx-plus']")).not.toBeNull();
+        expect(slot.querySelector("li[data-icon='bx bx-trash']")).not.toBeNull();
+        expect(container.querySelector("[data-icon='bx bx-plus']")).toBeNull();
+        slot.remove();
     });
 });
 
