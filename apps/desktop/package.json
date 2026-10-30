@@ -35,7 +35,7 @@
     "better-sqlite3": "13.0.3",
     "electron-debug": "5.0.0",
     "electron-dl": "5.0.0",
-    "sherpa-onnx-node": "1.13.8"
+    "sherpa-onnx-node": "2.0.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "8.0.1",

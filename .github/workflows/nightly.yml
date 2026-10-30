@@ -12,7 +12,6 @@ on:
     paths:
       - .github/actions/build-electron/*
       - .github/workflows/nightly.yml
-      - .github/workflows/sherpa-onnx-win-arm64.yml
       - forge.config.ts
 
 concurrency:
@@ -32,13 +31,8 @@ permissions:
   contents: write
 
 jobs:
-  sherpa-onnx-win-arm64:
-    if: ${{ github.repository == vars.REPO_MAIN }}
-    uses: ./.github/workflows/sherpa-onnx-win-arm64.yml
   nightly-electron:
     if: ${{ github.repository == vars.REPO_MAIN }}
-    needs:
-      - sherpa-onnx-win-arm64
     name: Deploy nightly
     strategy:
       fail-fast: false
@@ -103,15 +97,10 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
-        # The arm64 macOS runner also packages darwin-x64, which needs that architecture's native
-        # optional dependencies (sherpa-onnx-darwin-x64) beside the host's.
-        run: pnpm install --frozen-lockfile ${{ matrix.os.name == 'macos' && '--cpu=x64,arm64' || '' }}
-      - name: Add sherpa-onnx for Windows arm64
-        if: ${{ matrix.os.name == 'windows' && matrix.arch == 'arm64' }}
-        uses: actions/download-artifact@v8
-        with:
-          name: sherpa-onnx-win-arm64
-          path: node_modules/sherpa-onnx-win-arm64
+        # The macOS and Windows runners each package both architectures, which needs the other
+        # architecture's native optional dependencies (sherpa-onnx-darwin-x64,
+        # sherpa-onnx-win-arm64) beside the host's.
+        run: pnpm install --frozen-lockfile ${{ (matrix.os.name == 'macos' || matrix.os.name == 'windows') && '--cpu=x64,arm64' || '' }}
       - name: Update nightly version
         run: pnpm run chore:ci-update-nightly-version
       - name: Run the build
