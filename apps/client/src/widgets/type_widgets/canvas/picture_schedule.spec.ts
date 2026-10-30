@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 describe("schedulePicture", () => {
     let schedulePicture: typeof import("./picture_schedule").schedulePicture;
     let watchPictures: typeof import("./picture_schedule").watchPictures;
+    let drawPicture: typeof import("./picture_schedule").drawPicture;
 
     beforeEach(async () => {
         vi.useFakeTimers();
         // A new module, without the input and the pictures of the other tests.
         vi.resetModules();
-        ({ schedulePicture, watchPictures } = await import("./picture_schedule"));
+        ({ schedulePicture, watchPictures, drawPicture } = await import("./picture_schedule"));
     });
 
     afterEach(() => {
@@ -31,6 +32,18 @@ describe("schedulePicture", () => {
         await vi.advanceTimersByTimeAsync(400);
         expect(second).toHaveBeenCalledOnce();
         expect(first).not.toHaveBeenCalled();
+    });
+
+    it("draws a waiting picture at once when asked to, as when its editor closes", async () => {
+        const draw = vi.fn(async () => {});
+        schedulePicture("d1", draw, 5000);
+        drawPicture("d1");
+        drawPicture("nothing waits");
+        await vi.advanceTimersByTimeAsync(0);
+        expect(draw).toHaveBeenCalledOnce();
+
+        await vi.advanceTimersByTimeAsync(10000);
+        expect(draw).toHaveBeenCalledOnce();
     });
 
     it("waits until the user gives no input for a while, as during panning", async () => {

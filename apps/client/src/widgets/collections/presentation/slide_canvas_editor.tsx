@@ -6,6 +6,7 @@ import FNote from "../../../entities/fnote";
 import { announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext } from "../../EmbeddedNotePane";
 import { useNoteContext } from "../../react/hooks";
 import Canvas from "../../type_widgets/canvas/Canvas";
+import { drawPicture } from "../../type_widgets/canvas/picture_schedule";
 import { getCanvasEditorSlotName } from "./slides";
 
 interface SlideCanvasEditorProps {
@@ -24,8 +25,14 @@ interface SlideCanvasEditorProps {
 export default function SlideCanvasEditor({ note, onFinish }: SlideCanvasEditorProps) {
     const { noteContext, component, ntxId } = useEmbeddedNoteContext(note, "_slide", { skipRecentNotes: true });
 
-    // A layout cleanup runs while Excalidraw is still mounted, so it saves what is left.
-    useLayoutEffect(() => () => void announceEmbeddedNoteClosing(component, ntxId), [ component, ntxId ]);
+    // A layout cleanup runs while Excalidraw is still mounted, so it saves what is left. The slide
+    // shows the picture of the canvas, which the save schedules, so it is drawn at once.
+    useLayoutEffect(() => () => {
+        void (async () => {
+            await announceEmbeddedNoteClosing(component, ntxId);
+            drawPicture(note.noteId);
+        })();
+    }, [ component, ntxId ]);
 
     return (
         <div

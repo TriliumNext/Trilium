@@ -4,12 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Component from "../../../components/component";
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import PresentationView from "./index";
+import { buildPresentationModel } from "./model";
 
 // i18next is never initialized under test, so `t()` looks keys up in the English catalog itself.
 vi.mock("../../../services/i18n", async (importOriginal) => {
@@ -20,6 +22,11 @@ vi.mock("../../../services/i18n", async (importOriginal) => {
             (node, part) => (node as Record<string, unknown> | undefined)?.[part], english
         )
     };
+});
+
+vi.mock("./model", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./model")>();
+    return { ...actual, buildPresentationModel: vi.fn(actual.buildPresentationModel) };
 });
 
 vi.mock("./themes", async (importOriginal) => ({
@@ -89,16 +96,46 @@ describe("an empty presentation", () => {
     });
 });
 
-function renderPresentation(note: FNote, onReady: () => void) {
+describe("reloading the presentation", () => {
+    it("builds the slides again when an attachment of a slide changes, as a canvas's picture does", async () => {
+        const note = buildNote({ title: "Deck", type: "book", "#viewType": "presentation" });
+        const parent = new Component();
+        const container = renderPresentation(note, vi.fn(), { parent, noteIds: [ "drawing" ] });
+        await vi.waitFor(() => expect(container.querySelector(".no-items")).not.toBeNull());
+        const builds = vi.mocked(buildPresentationModel).mock.calls.length;
+
+        const attachmentChanged = (ownerId: string) => {
+            const loadResults = new LoadResults([]);
+            loadResults.addAttachmentRow({
+                attachmentId: `picture-of-${ownerId}`, ownerId, role: "image", mime: "image/svg+xml", title: "canvas-export.svg"
+            });
+            return loadResults;
+        };
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: attachmentChanged("elsewhere") });
+        });
+        expect(buildPresentationModel).toHaveBeenCalledTimes(builds);
+
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: attachmentChanged("drawing") });
+        });
+        expect(buildPresentationModel).toHaveBeenCalledTimes(builds + 1);
+    });
+});
+
+function renderPresentation(
+    note: FNote, onReady: () => void,
+    { parent = new Component(), noteIds = [] }: { parent?: Component; noteIds?: string[] } = {}
+) {
     const noteContext = new NoteContext("ntx-presentation");
     noteContext.noteId = note.noteId;
     return renderInto(
-        <ParentComponent.Provider value={new Component()}>
+        <ParentComponent.Provider value={parent}>
             <NoteContextContext.Provider value={noteContext}>
                 <PresentationView
                     note={note}
                     notePath={note.noteId}
-                    noteIds={[]}
+                    noteIds={noteIds}
                     highlightedTokens={undefined}
                     viewConfig={undefined}
                     saveConfig={() => {}}

@@ -2,7 +2,12 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
-const announceClosing = vi.hoisted(() => vi.fn());
+const announceClosing = vi.hoisted(() => vi.fn(async () => {}));
+const drawPicture = vi.hoisted(() => vi.fn());
+vi.mock("../../type_widgets/canvas/picture_schedule", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../type_widgets/canvas/picture_schedule")>(),
+    drawPicture
+}));
 vi.mock("../../EmbeddedNotePane", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../EmbeddedNotePane")>(),
     announceEmbeddedNoteClosing: announceClosing
@@ -63,6 +68,8 @@ describe("SlideCanvasEditor", () => {
         expect(announceClosing).not.toHaveBeenCalled();
         act(() => render(null, container));
         expect(announceClosing).toHaveBeenCalledOnce();
+        // The slide shows the picture of the canvas, which is drawn at once rather than once the user idles.
+        await vi.waitFor(() => expect(drawPicture).toHaveBeenCalledWith("drawing"));
         container.remove();
         (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
     });

@@ -156,7 +156,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     }
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        // A canvas slide shows the picture that its note keeps as an attachment.
         if (loadResults.getNoteIds().find(noteId => noteIds.includes(noteId)) ||
+            loadResults.getAttachmentRows().some(({ ownerId }) => ownerId && noteIds.includes(ownerId)) ||
             loadResults.getAttributeRows().find(attr => attr.noteId && noteIds.includes(attr.noteId)
                 && (attr.name?.startsWith("slide:") || attr.name === "readOnly"))) {
             refresh();
