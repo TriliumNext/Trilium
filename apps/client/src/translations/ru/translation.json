@@ -4060,7 +4060,9 @@
       "use-headers": "Использовать заголовки",
       "header-columns": "Заголовки столбцов",
       "header-rows": "Заголовки строк",
-      "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0."
+      "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0.",
+      "extended-code-block": "Расширенный блок кода",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Вставить блок кода, который редактируется как заметка с кодом."
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -5044,5 +5046,12 @@
   "canvas": {
     "thin_stroke": "Тонкий штрих пера",
     "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину."
+  },
+  "sort_selection": {
+    "sort_blocks": "Сортировать блоки",
+    "sort_list_items": "Сортировать элементы списка",
+    "sort_rows": "Сортировать строки",
+    "ascending": "По возрастанию",
+    "descending": "По убыванию"
   }
 }
