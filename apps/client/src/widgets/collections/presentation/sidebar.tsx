@@ -75,8 +75,6 @@ export default function SlideSidebar({
                 tabIndex={slide.noteId === tabStopNoteId ? 0 : -1}
                 aria-label={froca.getNoteFromCache(slide.noteId)?.title}
                 aria-current={isActive ? "true" : undefined}
-                // Keeps the focus where it was, so that Space still moves through the slides.
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onSelectSlide(slide.noteId)}
             >
                 <SlideThumbnail

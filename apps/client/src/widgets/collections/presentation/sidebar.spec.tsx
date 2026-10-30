@@ -93,7 +93,7 @@ describe("SlideSidebar", () => {
         scrollIntoView.mockRestore();
     });
 
-    it("selects the slide of a clicked thumbnail, without taking the keyboard from the slides", () => {
+    it("selects the slide of a clicked thumbnail, and lets the click focus it for the arrow keys", () => {
         const onSelectSlide = vi.fn();
         const sidebar = renderSidebar({ onSelectSlide });
 
@@ -106,7 +106,7 @@ describe("SlideSidebar", () => {
 
         const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
         button.dispatchEvent(mouseDown);
-        expect(mouseDown.defaultPrevented).toBe(true);
+        expect(mouseDown.defaultPrevented).toBe(false);
     });
 
     it("takes one tab stop, on the active slide or else the first", () => {
