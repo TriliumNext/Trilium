@@ -35,10 +35,35 @@ export default function SlideSidebar({
     const sheets = useMemo(() => buildStyleSheets([ ...stylesheets, thumbnailStylesheet ]), [ stylesheets ]);
     const fitObserver = useFitObserver();
     const listRef = useRef<HTMLOListElement>(null);
+    // In the order of the thumbnails, vertical slides included.
+    const noteIds = presentation.slides.flatMap(slide => [
+        slide.noteId, ...slide.verticalSlides?.map(verticalSlide => verticalSlide.noteId) ?? []
+    ]);
+    const tabStopNoteId = activeNoteId && noteIds.includes(activeNoteId) ? activeNoteId : noteIds[0];
 
     useEffect(() => {
-        listRef.current?.querySelector(".slide-thumbnail.active")?.scrollIntoView({ block: "nearest" });
+        const list = listRef.current;
+        if (!list) return;
+        list.querySelector(".slide-thumbnail.active")?.scrollIntoView({ block: "nearest" });
+        // The focus follows the slide only once it is in the sidebar, so that it stays in the slides otherwise.
+        if (list.contains(document.activeElement)) {
+            list.querySelector<HTMLElement>(".slide-thumbnail-button[aria-current]")?.focus();
+        }
     }, [ activeNoteId ]);
+
+    function onKeyDown(e: KeyboardEvent) {
+        const button = e.target instanceof Element ? e.target.closest(".slide-thumbnail-button") : null;
+        const buttons = [ ...listRef.current?.querySelectorAll(".slide-thumbnail-button") ?? [] ];
+        const index = button ? buttons.indexOf(button) : -1;
+        if (index < 0) return;
+
+        const nextIndex = getNextIndex(e.key, index, noteIds.length);
+        if (nextIndex === undefined) return;
+        // Reveal.js listens to the whole document, and would move by the same key too.
+        e.preventDefault();
+        e.stopPropagation();
+        if (nextIndex !== index) onSelectSlide(noteIds[nextIndex]);
+    }
 
     function renderThumbnail(slide: PresentationSlideBaseModel) {
         const closingContent = closingContents[slide.noteId];
@@ -47,6 +72,7 @@ export default function SlideSidebar({
             <button
                 type="button"
                 className="slide-thumbnail-button"
+                tabIndex={slide.noteId === tabStopNoteId ? 0 : -1}
                 aria-label={froca.getNoteFromCache(slide.noteId)?.title}
                 aria-current={isActive ? "true" : undefined}
                 // Keeps the focus where it was, so that Space still moves through the slides.
@@ -64,7 +90,7 @@ export default function SlideSidebar({
     }
 
     return (
-        <ol ref={listRef} className="presentation-sidebar">
+        <ol ref={listRef} className="presentation-sidebar" onKeyDown={onKeyDown}>
             {presentation.slides.map(slide => (
                 <li key={slide.noteId}>
                     {renderThumbnail(slide)}
@@ -145,6 +171,20 @@ function ThumbnailContent({ slide, sheets, fitObserver }: ThumbnailContentProps)
             </div>
         </div>
     );
+}
+
+/**
+ * Returns the index of the thumbnail that `key` moves to from the one at `index`, or `undefined` for
+ * a key the sidebar leaves alone. At either end, the arrow keys stay where they are.
+ */
+function getNextIndex(key: string, index: number, count: number) {
+    switch (key) {
+        case "ArrowUp": return Math.max(index - 1, 0);
+        case "ArrowDown": return Math.min(index + 1, count - 1);
+        case "Home": return 0;
+        case "End": return count - 1;
+        default: return undefined;
+    }
 }
 
 /** Creates the observer that zooms out thumbnails whose content is larger than the slide. */

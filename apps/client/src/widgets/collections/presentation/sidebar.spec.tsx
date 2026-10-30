@@ -108,6 +108,56 @@ describe("SlideSidebar", () => {
         button.dispatchEvent(mouseDown);
         expect(mouseDown.defaultPrevented).toBe(true);
     });
+
+    it("takes one tab stop, on the active slide or else the first", () => {
+        const sidebar = renderSidebar({ activeNoteId: "second" });
+        const getTabStops = () => [ ...sidebar.querySelectorAll<HTMLButtonElement>(".slide-thumbnail-button") ]
+            .filter(button => button.tabIndex === 0)
+            .map(button => button.querySelector("[data-note-id]")?.getAttribute("data-note-id"));
+        expect(getTabStops()).toEqual([ "second" ]);
+
+        renderSidebar({ activeNoteId: undefined, container: sidebar.parentElement ?? undefined });
+        expect(getTabStops()).toEqual([ "intro" ]);
+    });
+
+    it("moves through the slides in order with the arrow keys, Home and End, keeping them from Reveal.js", () => {
+        const onSelectSlide = vi.fn();
+        const sidebar = renderSidebar({ onSelectSlide });
+        const documentKeys: string[] = [];
+        const onDocumentKey = (e: KeyboardEvent) => documentKeys.push(e.key);
+        document.addEventListener("keydown", onDocumentKey);
+        const press = (noteId: string, key: string) => {
+            const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+            getButton(sidebar, noteId).dispatchEvent(event);
+            return event;
+        };
+
+        expect(press("intro", "ArrowDown").defaultPrevented).toBe(true);
+        press("second", "ArrowDown");
+        press("first", "ArrowUp");
+        press("first", "End");
+        press("web", "Home");
+        press("board", "ArrowDown");
+        press("intro", "ArrowUp");
+        expect(onSelectSlide.mock.calls).toEqual([ [ "first" ], [ "web" ], [ "intro" ], [ "board" ], [ "intro" ] ]);
+
+        // Other keys still reach Reveal.js.
+        expect(press("intro", "ArrowRight").defaultPrevented).toBe(false);
+        expect(documentKeys).toEqual([ "ArrowRight" ]);
+        document.removeEventListener("keydown", onDocumentKey);
+    });
+
+    it("moves the focus with the active slide, but only while the focus is in the sidebar", () => {
+        const sidebar = renderSidebar({ activeNoteId: "intro" });
+        const container = sidebar.parentElement ?? undefined;
+
+        renderSidebar({ activeNoteId: "first", container });
+        expect(document.activeElement).not.toBe(getButton(sidebar, "first"));
+
+        getButton(sidebar, "first").focus();
+        renderSidebar({ activeNoteId: "web", container });
+        expect(document.activeElement).toBe(getButton(sidebar, "web"));
+    });
 });
 
 function getButton(sidebar: HTMLElement, noteId: string) {
