@@ -3,6 +3,8 @@ import { join as pathJoin, resolve as pathResolve } from "node:path";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import electronLocales from "../electron-forge/electron-locales.json" with { type: "json" };
+
 type Handler = (...args: unknown[]) => unknown;
 
 interface FakeWindow {
@@ -64,7 +66,7 @@ const h = vi.hoisted(() => ({
     entityChangeIds: [] as string[],
     locale: null as string | null,
     formattingLocale: null as string | null,
-    locales: [] as Array<{ id: string; rtl: boolean }>,
+    locales: [] as Array<{ id: string; rtl?: boolean; electronLocale?: string }>,
     // Capture the config object passed to initializeCore.
     initConfig: undefined as undefined | Record<string, unknown>,
     // Captured mocked fns we assert on.
@@ -460,14 +462,14 @@ describe("main() bootstrap", () => {
     // Regression for #10559 (sibling of the smooth-scroll bug): the --lang switch is set
     // before core init from the same provider, so it must reflect the configured locale
     // instead of always falling back to "en".
-    it("sets the --lang switch to the configured locale read from the DB", async () => {
+    it("sets the --lang switch to the Chromium locale of the configured locale", async () => {
         setPlatform("darwin");
-        h.locale = "de";
+        h.locale = "cn";
         h.formattingLocale = null;
-        h.locales = [{ id: "de", rtl: false }];
+        h.locales = [{ id: "cn", electronLocale: "zh_CN" }];
         const { main } = await importMain();
         await main();
-        expect(h.appendSwitch).toHaveBeenCalledWith("lang", "de");
+        expect(h.appendSwitch).toHaveBeenCalledWith("lang", "zh-CN");
     });
 
     it("hands a Squirrel installer event to Update.exe and exits", async () => {
@@ -876,36 +878,58 @@ describe("getUserData()", () => {
 
 describe("getElectronLocale()", () => {
     // The locale options are read from the shared provider (core options are not wired up
-    // before `ready`), so each test drives them through a mocked provider instance.
-    it("returns the formatting locale when its corresponding UI locale is not RTL", async () => {
-        h.locale = "en";
-        h.formattingLocale = "de";
-        h.locales = [{ id: "en", rtl: false }];
-        const { getElectronLocale } = await importMain();
-        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("de");
+    // before `ready`), so each test drives them through a mocked provider instance, against
+    // the real `LOCALES` list.
+    beforeEach(async () => {
+        const commons = await vi.importActual<typeof import("../../../packages/commons/src")>(
+            "../../../packages/commons/src"
+        );
+        h.locales = [ ...commons.LOCALES ];
     });
 
-    it("falls back to the UI locale when the corresponding locale is RTL", async () => {
-        h.locale = "ar";
-        h.formattingLocale = "de";
-        h.locales = [{ id: "ar", rtl: true }];
+    async function resolveLang(locale: string | null, formattingLocale: string | null) {
+        h.locale = locale;
+        h.formattingLocale = formattingLocale;
         const { getElectronLocale } = await importMain();
-        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("ar");
+        return getElectronLocale(new BetterSqlite3Provider());
+    }
+
+    it.each([
+        // Trilium ids that differ from Chromium's locale names.
+        [ "cn", null, "zh-CN" ],
+        [ "tw", null, "zh-TW" ],
+        [ "pt_br", null, "pt-BR" ],
+        [ "pt", null, "pt-PT" ],
+        [ "en-GB", null, "en-GB" ],
+        // Irish has no Chromium locale and falls back to English.
+        [ "ga", null, "en" ],
+        [ "da", null, "da" ],
+        // The formatting locale wins over a left-to-right UI locale...
+        [ "de", "cn", "zh-CN" ],
+        [ "en", "pt_br", "pt-BR" ],
+        // ...but not over a right-to-left one, which aligns the window buttons.
+        [ "ar", "de", "ar" ],
+        [ "en_rtl", "de", "en" ],
+        // Unknown ids, such as one from a newer version, are skipped.
+        [ "de", "xx", "de" ],
+        [ "xx", null, "en" ],
+        [ null, null, "en" ]
+    ])("resolves locale %s with formatting locale %s to %s", async (locale, formatting, lang) => {
+        expect(await resolveLang(locale, formatting)).toBe(lang);
     });
 
-    it("returns the UI locale when there is no formatting locale", async () => {
-        h.locale = "fr";
-        h.formattingLocale = null;
-        h.locales = [{ id: "fr", rtl: false }];
-        const { getElectronLocale } = await importMain();
-        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("fr");
-    });
+    it("resolves every locale offered in the options to a locale file Electron ships", async () => {
+        const shipped = new Set(electronLocales.linux.map((pak) => pak.replace(/\.pak$/, "")));
+        const offered = h.locales.filter((locale) => locale.electronLocale);
+        expect(offered.length).toBeGreaterThan(0);
 
-    it("defaults to 'en' when neither locale is set", async () => {
-        h.locale = null;
-        h.formattingLocale = null;
-        h.locales = [];
-        const { getElectronLocale } = await importMain();
-        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("en");
+        for (const { id } of offered) {
+            for (const [ locale, formatting ] of [ [ id, null ], [ "en", id ] ]) {
+                const chromiumLocale = await resolveLang(locale, formatting);
+                // Chromium answers `en` from `en-US.pak`.
+                expect(shipped, `${locale} / ${formatting} → ${chromiumLocale}`)
+                    .toContain(chromiumLocale === "en" ? "en-US" : chromiumLocale);
+            }
+        }
     });
 });

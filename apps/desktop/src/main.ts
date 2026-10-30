@@ -426,15 +426,24 @@ async function onReady() {
     await windowService.registerGlobalShortcuts();
 }
 
+/**
+ * The Chromium locale to pass to `--lang`: the `electronLocale` of the formatting locale, or of
+ * the UI locale, hyphenated the way Chromium names its locales (`zh_CN` → `zh-CN`). The options
+ * hold Trilium locale ids (`cn`), which Chromium does not recognize and answers in English.
+ */
 export function getElectronLocale(provider: BetterSqlite3Provider) {
-    const uiLocale = readDbOption(provider, "locale");
-    const formattingLocale = readDbOption(provider, "formattingLocale");
-    const correspondingLocale = LOCALES.find(l => l.id === uiLocale);
+    const uiLocale = findLocale(readDbOption(provider, "locale"));
+    const formattingLocale = findLocale(readDbOption(provider, "formattingLocale"));
 
     // For RTL, we have to force the UI locale to align the window buttons properly.
-    if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
+    const useFormatting = formattingLocale?.electronLocale && !uiLocale?.rtl;
+    const locale = useFormatting ? formattingLocale : uiLocale;
 
-    return uiLocale || "en";
+    return locale?.electronLocale?.replace("_", "-") ?? "en";
+}
+
+function findLocale(id: string | null) {
+    return LOCALES.find(l => l.id === id);
 }
 
 /* v8 ignore next 3 -- auto-start guard; unit tests import and invoke main() explicitly */
