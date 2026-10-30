@@ -80,8 +80,12 @@
     margin-inline: auto;
 }
 
-.reveal figure:is(.image-style-align-left, .image-style-align-right, .image-style-side) ~ :is(ul, ol, dl) {
-    display: block;
+.reveal figure:is(.image-style-align-left, .image-style-align-right, .image-style-side) {
+    & ~ ul,
+    & ~ ol,
+    & ~ dl {
+        display: block;
+    }
 }
 
 .reveal figure.image {
