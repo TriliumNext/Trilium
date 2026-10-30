@@ -1,6 +1,7 @@
 import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
+import type { WidgetsByParent } from "../services/bundle.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
@@ -31,6 +32,12 @@ import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_tool
 import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
+    private customWidgets: WidgetsByParent;
+
+    constructor(customWidgets: WidgetsByParent) {
+        this.customWidgets = customWidgets;
+    }
+
     getRootWidget(appContext: typeof AppContext) {
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
@@ -70,7 +77,7 @@ export default class MobileLayout {
                                                 .child(<NoteIconWidget />)
                                                 .child(<NoteTitleWidget />)
                                                 .child(<NoteBadges />)
-                                                .child(<MobileNotePanel />)
+                                                .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                                 .child(<MobileDetailMenu />)
                                         )
                                         .child(
