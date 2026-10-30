@@ -354,6 +354,7 @@
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed.",
     "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here.",
+    "content-not-available": "This content is not available.",
     "broken-block-reference": "Broken reference",
     "play-video": "Play video"
   },

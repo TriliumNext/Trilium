@@ -1,6 +1,7 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    CANVAS_ATTACHMENT_MIME, getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey,
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE,
+    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey,
     getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
     type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml,
     renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
@@ -618,6 +619,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         return;
     }
 
+    // The content of an embed of an unknown kind needs the renderer of its kind.
+    for (const embedEl of document.querySelectorAll(`section[${CONTENT_EMBED_KIND_ATTRIBUTE}]`)) {
+        replaceWithUnavailable(embedEl, parseOpts);
+    }
+
     // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
     // them. The share theme adds the click-to-play behavior of a video.
     const previewOptions = { playVideoLabel: t("content_renderer.play-video") };
@@ -658,7 +664,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         if (embed.kind === "attachment") {
             const attachment = getAttachment(embed.attachmentId);
             if (!attachment) {
-                embedEl.remove();
+                replaceWithUnavailable(embedEl, parseOpts);
             } else if (embed.asLink) {
                 const link = renderAttachmentLink(embed.attachmentId, attachment);
                 embedEl.replaceWith(...parse(link, parseOpts).childNodes);
@@ -670,7 +676,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         }
 
         const embeddedNote = shaca.getNote(embed.noteId);
-        if (!embeddedNote) continue;
+        if (!embeddedNote) {
+            replaceWithUnavailable(embedEl, parseOpts);
+            continue;
+        }
 
         // An embed must not disclose what a direct request for the same note would refuse: a note
         // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
@@ -748,6 +757,21 @@ function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
     const caption = embedEl.childNodes.find((child) =>
         child instanceof HTMLElement && child.tagName === "FIGCAPTION");
     embedEl.set_content(caption ? [ ...content, caption ] : content);
+}
+
+/**
+ * Replaces an embed that cannot show its content with a message that tells nothing about it: the
+ * page is public, and a note that is not shared counts as missing. The block ID stays, for links
+ * to the block.
+ */
+function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options>) {
+    const message = utils.escapeHtml(t("content_renderer.content-not-available"));
+    const blockId = embedEl.getAttribute(BLOCK_ID_ATTRIBUTE);
+    const blockAttribute = blockId
+        ? ` ${BLOCK_ID_ATTRIBUTE}="${utils.escapeHtml(blockId)}"`
+        : "";
+    const html = `<div class="include-note-unavailable"${blockAttribute}>${message}</div>`;
+    embedEl.replaceWith(...parse(html, parseOpts).childNodes);
 }
 
 /**

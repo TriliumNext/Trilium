@@ -24,7 +24,9 @@ import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
+import {
+    applyInlineMermaid, emptyUnknownEmbeds, rewriteMermaidDiagramsInContainer
+} from "../../../services/content_renderer_text";
 import { t } from "../../../services/i18n";
 import { applyNoteImageVersions } from "../../../services/image_urls";
 import { applyLinkEmbeds } from "../../../services/link_embed";
@@ -46,6 +48,7 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadInlineEmbed,
+    loadUnknownEmbed,
     refreshEmbeddedNote,
     setupImageOpening,
     watchContentEmbeds
@@ -160,6 +163,8 @@ export function ReadOnlyTextContent({
         // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
         // them, so the work is registered rather than dropped on the floor.
         trackPendingRender(container, Promise.all([
+            // First, so that no other pass renders the content of these embeds.
+            applyUnknownEmbeds(container),
             ...(hasDiagramEmbeds
                 ? [ applySourceEmbeds(container) ]
                 : [ rewriteMermaidDiagramsInContainer(container), applyInlineMermaid(container) ]),
@@ -254,6 +259,12 @@ function applyContentEmbeds(container: HTMLDivElement) {
         }
     }
     return Promise.all(loaded);
+}
+
+/** Shows each embed of a kind that this version does not know as the editor does: an error box. */
+function applyUnknownEmbeds(container: HTMLDivElement) {
+    return Promise.all(emptyUnknownEmbeds(container)
+        .map((box) => loadUnknownEmbed(box, box.dataset.boxSize)));
 }
 
 /**

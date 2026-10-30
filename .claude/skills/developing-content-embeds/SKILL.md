@@ -78,6 +78,14 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   - The content is a static fallback (a link, a picture, the source in a `<pre>`): old read-only
     views, share pages and Markdown export show it.
 
+  Read-only views never show the fallback either: `emptyUnknownEmbeds()`
+  (`content_renderer_text.ts`) empties each section into an `.include-note` box, keeping only
+  the kind, `data-box-size` and the block ID. `ReadOnlyText` then mounts the same error box
+  (`loadUnknownEmbed()`), and `postProcessRichContent()` leaves the box empty, as it leaves a
+  missing note's. Share pages replace the section, and an include of a missing or unshared note
+  or attachment, with `<div class="include-note-unavailable">` and a generic message
+  (`replaceWithUnavailable()` in core's `share/content_renderer.ts`), as the page is public.
+
   The version that adds a kind registers its converter above `high`. If that converter needs the
   section's children, narrow `ENVELOPE` in `unknown_embed.ts` to leave the kind out: the raw
   matcher removes the children before any converter runs.

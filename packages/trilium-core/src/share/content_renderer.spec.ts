@@ -595,17 +595,26 @@ describe("content_renderer", () => {
             expect(page).toMatch(/<img src="plain.png" alt="[^"]+" loading="lazy">/);
         });
 
-        it("leaves an include-note section untouched when the referenced note is missing", () => {
+        it("replaces a missing note or attachment, or an unknown kind, with a public message", () => {
             const note = buildShareNote({
                 id: "missingRefHost",
-                content: `<p>host</p><section class="include-note" data-note-id="ghostNote" data-box-size="medium">&nbsp;</section>`
+                content: `<p>host</p>`
+                    + `<section class="include-note" data-note-id="ghostNote"`
+                    + ` data-box-size="medium">&nbsp;</section>`
+                    + `<figure class="include-note" data-attachment-id="ghostAtt"`
+                    + ` data-trilium-block-id="b1"></figure>`
+                    + `<section data-trilium-embed="note-card" data-note-id="ghostNote"`
+                    + ` data-trilium-block-id="b2"><p>Fallback</p>`
+                    + `<section data-trilium-embed="nested"><p>Inner</p></section></section>`
             });
-            const result = getContent(note);
-            if (typeof result.content !== "string") throw new Error("expected string content");
-            // The missing note is skipped: the section stays, nothing is expanded or reference-linked.
-            expect(result.content).toContain("host");
-            expect(result.content).toContain(`data-note-id="ghostNote"`);
-            expect(result.content).not.toContain("reference-link");
+
+            const content = getContent(note).content;
+
+            const message = t("content_renderer.content-not-available");
+            expect(content).toBe(`<p>host</p>`
+                + `<div class="include-note-unavailable">${message}</div>`
+                + `<div class="include-note-unavailable" data-trilium-block-id="b1">${message}</div>`
+                + `<div class="include-note-unavailable" data-trilium-block-id="b2">${message}</div>`);
         });
 
         it("renders an embedded large code note without hanging or re-parsing it as HTML (#9717)", () => {

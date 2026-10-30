@@ -396,8 +396,9 @@ describe("loadEmbeddedAttachment", () => {
 });
 
 describe("loadUnknownEmbed", () => {
-    it("mounts an error box, even before the wrapper is in the page", async () => {
+    it("mounts an error box in the editor's wrapper, even before it is in the page", async () => {
         const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
 
         await loadUnknownEmbed(wrapper, "small");
 
@@ -409,6 +410,18 @@ describe("loadUnknownEmbed", () => {
             icon: "bx bx-error",
             text: "include_note.unknown_kind undefined"
         });
+    });
+
+    it("mounts it in a wrapper of its own in a read-only box", async () => {
+        const box = inPage(document.createElement("section"));
+        box.className = "include-note";
+
+        await loadUnknownEmbed(box, undefined);
+
+        const { type, container } = lastMount();
+        expect(type).toBe(ContentEmbedError);
+        expect(container.parentElement).toBe(box);
+        expect(container.className).toBe("include-note-wrapper");
     });
 });
 

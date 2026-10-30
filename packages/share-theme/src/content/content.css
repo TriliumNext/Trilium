@@ -356,6 +356,14 @@ body:not(.math-loaded) .math-tex {
     text-align: center;
 }
 
+.ck-content .include-note-unavailable {
+    margin-block: 1em;
+    border: 1px solid var(--background-active);
+    border-radius: 10px;
+    padding-block: 4em;
+    text-align: center;
+}
+
 .ck-content .trilium-tabs {
     --card-background-color: var(--background-secondary);
     --main-text-color: var(--text-primary);

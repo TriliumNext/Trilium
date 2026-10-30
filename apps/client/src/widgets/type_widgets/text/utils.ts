@@ -245,11 +245,11 @@ export async function loadInlineEmbed(
 }
 
 /** Fills an embed box with the error of an embed of an unknown kind. */
-export async function loadUnknownEmbed(wrapper: HTMLElement, boxSize: string | undefined) {
+export async function loadUnknownEmbed(el: HTMLElement, boxSize: string | undefined) {
     const text = t("include_note.unknown_kind");
-    // The editor calls this before the wrapper is in the page, which `mountEmbedBox()` skips.
+    // The editor calls this before the box is in the page, which `mountEmbedBox()` skips.
     await content_renderer.mountInteractiveWidget(
-        h(ContentEmbedError, { boxSize, icon: "bx bx-error", text }), wrapper);
+        h(ContentEmbedError, { boxSize, icon: "bx bx-error", text }), getWrapper(el));
 }
 
 /**
