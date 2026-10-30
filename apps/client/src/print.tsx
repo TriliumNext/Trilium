@@ -1,3 +1,4 @@
+import type { LOCALE_IDS } from "@triliumnext/commons";
 import { render } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
@@ -5,9 +6,12 @@ import Component from "./components/component";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
 import froca from "./services/froca";
+import { initLocale, t } from "./services/i18n";
 import { waitForPendingRenders } from "./services/pending_renders";
+import protected_session_holder from "./services/protected_session_holder";
 import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
+import Button from "./widgets/react/Button";
 
 interface RendererProps {
     note: FNote;
@@ -48,6 +52,12 @@ export async function main() {
     fontLink.href = "api/fonts";
     document.head.appendChild(fontLink);
 
+    // Only the page opened in place of the app shows text of its own, in its toolbar.
+    const autoPrint = isAutoPrintPage();
+    if (autoPrint) {
+        await initLocale((window.glob?.currentLocale?.id ?? "en") as LOCALE_IDS);
+    }
+
     const note = await froca.getNote(noteId);
     console.debug("[print] Note loaded:", noteId, note?.type);
 
@@ -61,12 +71,25 @@ export async function main() {
     }
 
     const bodyWrapper = document.createElement("div");
-    render(<App note={note} noteId={noteId} />, bodyWrapper);
+    render(
+        <App note={note} noteId={noteId} notePath={notePath} autoPrint={autoPrint} />,
+        bodyWrapper
+    );
     document.body.appendChild(bodyWrapper);
 }
 
-export function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {
+/**
+ * The print page. With `autoPrint`, it stands in place of the app, as it does on iPhone and iPad:
+ * it shows a toolbar and opens the print sheet once the note has rendered.
+ */
+export function App({ note, noteId, notePath, autoPrint }: {
+    note: FNote | null | undefined;
+    noteId: string;
+    notePath?: string;
+    autoPrint?: boolean;
+}) {
     const sentReadyEvent = useRef(false);
+    const [ report, setReport ] = useState<PrintReport>();
     const onProgressChanged = useCallback((progress: number) => {
         if (window.electronApi) {
             window.electronApi.printing.sendPrintProgress(progress);
@@ -81,7 +104,14 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
         }));
         window._noteReady = printReport;
         sentReadyEvent.current = true;
-    }, []);
+
+        if (autoPrint) {
+            setReport(printReport);
+            if (printReport.type !== "error") {
+                printOncePerVisit();
+            }
+        }
+    }, [ autoPrint ]);
     const props: RendererProps | undefined | null = note && { note, onReady, onProgressChanged };
 
     // Keep this hook above the early return so hook order stays stable across renders.
@@ -91,15 +121,43 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
         }
     }, [ note ]);
 
-    if (!note || !props) return <Error404 noteId={noteId} />;
+    const toolbar = autoPrint && notePath
+        && <PrintPageToolbar notePath={notePath} report={report} />;
+
+    if (!note || !props) return <>{toolbar}<Error404 noteId={noteId} /></>;
 
     return (
         <>
+            {toolbar}
             {note.type === "book" || note.type === "search"
                 ? <CollectionRenderer {...props} />
                 : <SingleNoteRenderer {...props} />
             }
         </>
+    );
+}
+
+/**
+ * Back to the note, Print to open the print sheet again, and what the render reported, such as a
+ * failure or the notes a collection left out; hidden on paper.
+ */
+export function PrintPageToolbar({ notePath, report }: { notePath: string; report?: PrintReport }) {
+    const message = getReportMessage(report);
+    return (
+        <div className="print-page-toolbar">
+            <Button
+                text={t("note_detail.print_page_back")}
+                icon="bx bx-arrow-back"
+                onClick={() => leavePrintPage(notePath)}
+            />
+            <Button
+                text={t("note_detail.print_page_print")}
+                icon="bx bx-printer"
+                kind="primary"
+                onClick={() => window.print()}
+            />
+            {message && <p className="print-page-report">{message}</p>}
+        </div>
     );
 }
 
@@ -111,6 +169,11 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             const container = containerRef.current;
             /* v8 ignore next -- @preserve: ref is always attached by the time this layout effect runs */
             if (!container) return;
+
+            // Without its protected session, the renderer would print the password notice instead.
+            if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
+                throw new Error(t("note_detail.print_protected_locked"));
+            }
 
             if (note.type === "spreadsheet") {
                 // Render spreadsheet as HTML tables instead of an image.
@@ -293,4 +356,38 @@ function reportPrintError(error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
     window.dispatchEvent(new CustomEvent("note-ready", { detail: { type: "error", message, stack } }));
+}
+
+/** Whether this page stands in place of the app (`?print&autoprint`) rather than in a frame. */
+function isAutoPrintPage() {
+    return window.top === window
+        && !isElectron()
+        && new URLSearchParams(window.location.search).has("autoprint");
+}
+
+/** Opens the print sheet, unless it already opened for this history entry. */
+function printOncePerVisit() {
+    const state = window.history.state as { printed?: boolean } | null;
+    if (state?.printed) return;
+    window.history.replaceState({ ...state, printed: true }, "");
+    window.print();
+}
+
+function getReportMessage(report: PrintReport | undefined) {
+    if (report?.type === "error") {
+        return `${t("note_detail.print_report_error_title")}: ${report.message}`;
+    }
+    if (report?.type === "collection" && report.ignoredNoteIds.length > 0) {
+        const count = report.ignoredNoteIds.length;
+        return t("note_detail.print_report_collection_content", { count });
+    }
+    return undefined;
+}
+
+function leavePrintPage(notePath: string) {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.location.assign(`./#${notePath}`);
+    }
 }

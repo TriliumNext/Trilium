@@ -20,7 +20,7 @@ import { endLivePrint, getLivePrintTarget, printLiveInBrowser } from "../service
 import { stopBackgroundMedia } from "../services/media_playback";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
-import { isElectron, isMobile } from "../services/utils";
+import { isAppleTouchDevice, isElectron, isMobile, isMobileApp } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import Button from "./react/Button";
 import {
@@ -197,6 +197,13 @@ export default function NoteDetail() {
 
         if (liveTarget) {
             void printLiveInBrowser(note, liveTarget);
+            return;
+        }
+
+        // Every browser on iOS prints the whole tab rather than the frame that asks, so the print
+        // page takes over the tab instead of printing from a hidden frame.
+        if (isAppleTouchDevice() && !isMobileApp() && noteContext.notePath) {
+            void printInThisTab(noteContext.notePath);
             return;
         }
 
@@ -597,6 +604,26 @@ export function checkFillsPane(
     noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined
 ) {
     return type === "contentWidget" && noteContext?.noteId === "_spaceUsage";
+}
+
+/**
+ * Saves every open note, then opens the print page of `notePath` in this tab, which opens the print
+ * sheet itself once the note has rendered. Stays in the app while a save has not landed.
+ */
+export async function printInThisTab(notePath: string) {
+    const ntxIds = appContext.tabManager.getNoteContexts()
+        .map((noteContext) => noteContext.ntxId)
+        .filter((ntxId): ntxId is string => !!ntxId);
+    await appContext.triggerEvent("beforeNoteContextRemove", { ntxIds });
+
+    // `triggerEvent()` logs a failed save instead of throwing, and iOS browsers never ask before
+    // leaving a page, so leaving now would drop the changes still queued.
+    if (!appContext.isAllSaved()) {
+        toast.showMessage(t("app_context.please_wait_for_save"), 10000);
+        return;
+    }
+
+    window.location.assign(`?print&autoprint#${notePath}`);
 }
 
 function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {

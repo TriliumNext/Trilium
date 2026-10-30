@@ -345,6 +345,11 @@ export function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
+/** An iPhone, iPod or iPad, including an iPad whose browser asks for desktop sites as a Mac. */
+export function isAppleTouchDevice() {
+    return isIOS() || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+}
+
 /**
  * The `accept` value for a file input, widened to every file on Android and iOS: both turn `accept`
  * into a MIME filter (`Intent.EXTRA_MIME_TYPES`, UTIs) whose tables lack `.gpx`, `.enex` and
