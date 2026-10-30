@@ -6,8 +6,9 @@ import Component from "../../components/component";
 import type { Suggestion } from "../../services/note_autocomplete";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
+import Modal from "../react/Modal";
 import { ParentComponent } from "../react/react_utils";
-import AddLinkDialog, { type AddLinkOpts, normalizeWebLink } from "./add_link";
+import AddLinkDialog, { AddLinkBalloon, type AddLinkOpts, normalizeWebLink } from "./add_link";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
@@ -90,14 +91,6 @@ describe("AddLinkDialog", () => {
 
     function field(name: "url" | "text") {
         return container.querySelector<HTMLInputElement>(`.add-link-${name} input`);
-    }
-
-    async function type(input: HTMLInputElement | null, value: string) {
-        if (!input) throw new Error("The field is not shown.");
-        await act(async () => {
-            input.value = value;
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-        });
     }
 
     async function submit() {
@@ -192,7 +185,8 @@ describe("AddLinkDialog", () => {
         expect(addLink)
             .toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
 
-        await open({ target: "url", currentLink: { notePath: "root/abc" } });
+        const note = buildNote({ title: "Target" });
+        await open({ target: "url", currentLink: { notePath: `root/${note.noteId}` } });
         expect(current()).toBe("add_link.note");
     });
 
@@ -277,3 +271,83 @@ describe("AddLinkDialog", () => {
         expect(container.querySelector(".note-autocomplete")).not.toBeNull();
     });
 });
+
+describe("AddLinkBalloon", () => {
+    const addLink = vi.fn<AddLinkOpts["addLink"]>(async () => {});
+    const onClose = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    async function show(opts: Partial<AddLinkOpts> = {}) {
+        const rendered: { container?: HTMLElement } = {};
+        await act(async () => {
+            rendered.container = renderInto(
+                <AddLinkBalloon
+                    opts={{ text: "", hasSelection: false, addLink, ...opts }}
+                    onClose={onClose}
+                />
+            );
+        });
+        const form = rendered.container?.querySelector("form");
+        if (!form) throw new Error("The balloon has no form.");
+        return form;
+    }
+
+    async function submit(form: HTMLFormElement) {
+        await act(async () => {
+            form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+    }
+
+    it("focuses the field of the side it opens on, and closes once a link is applied", async () => {
+        const noteForm = await show();
+        expect(document.activeElement).toBe(noteForm.querySelector(".note-autocomplete"));
+
+        const form = await show({ target: "url" });
+        const url = form.querySelector<HTMLInputElement>(".add-link-url input");
+        expect(url).not.toBeNull();
+        expect(document.activeElement).toBe(url);
+
+        await submit(form);
+        expect(onClose).not.toHaveBeenCalled();
+
+        await type(url, "example.com");
+        await submit(form);
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "https://example.com", true);
+    });
+
+    it("takes the focus from a modal around the editor", async () => {
+        renderInto(
+            <Modal className="host-modal" size="md" show onHidden={() => {}}><input /></Modal>
+        );
+        await vi.waitFor(() => expect(document.querySelector(".host-modal.show")).not.toBeNull());
+
+        const form = await show({ target: "url" });
+        expect(document.activeElement).toBe(form.querySelector(".add-link-url input"));
+    });
+
+    it("opens on an edited link with its address selected, and applies it left alone", async () => {
+        const form = await show({
+            currentLink: { externalLink: "https://example.com/page" }, currentTitle: "Page"
+        });
+        const url = form.querySelector<HTMLInputElement>(".add-link-url input");
+        expect(url?.value).toBe("https://example.com/page");
+        expect([ url?.selectionStart, url?.selectionEnd ]).toStrictEqual([ 0, url?.value.length ]);
+
+        await submit(form);
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith("https://example.com/page", "Page", true);
+    });
+});
+
+async function type(input: HTMLInputElement | null, value: string) {
+    if (!input) throw new Error("The field is not shown.");
+    await act(async () => {
+        input.value = value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}

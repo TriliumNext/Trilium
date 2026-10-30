@@ -1,4 +1,8 @@
-import { type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale, type IconPickerRequest, type LinkEmbedHost, SnippetDefinition, type TextTransformationConfig } from "@triliumnext/ckeditor5";
+import {
+    type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale,
+    type IconPickerRequest, type LinkDialogRequest, type LinkEmbedHost, SnippetDefinition,
+    type TextTransformationConfig
+} from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import i18next from "i18next";
@@ -69,6 +73,8 @@ export interface BuildEditorOptions {
     ) => Promise<unknown> | undefined | null;
     /** Shows the icon picker the editor asks for, as `inlineIcon.showPicker` does. */
     showIconPicker?: (request: IconPickerRequest) => (() => void) | null;
+    /** Shows the link dialog, as `internalLink.showDialog` does. */
+    showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
     /** The note that the block and tab references the editor copies point to. */
     referenceSource?: ReferenceSource;
     /**
@@ -258,11 +264,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         linkEmbed: buildLinkEmbedHost(opts.getNoteId),
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
-        internalLink: {
-            openDialog: async (options) => {
-                await opts.triggerHostCommand?.("addLinkToText", options);
-            }
-        },
+        internalLink: { showDialog: (request) => opts.showLinkDialog?.(request) ?? null },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },

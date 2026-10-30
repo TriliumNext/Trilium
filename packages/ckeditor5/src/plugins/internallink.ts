@@ -3,6 +3,7 @@ import {
     ModelLiveRange, Plugin
 } from 'ckeditor5';
 import type { Editor, LinkCommand, ModelRange, View } from 'ckeditor5';
+import HostedBalloon from '../hosted_balloon.js';
 import internalLinkIcon from '../icons/trilium.svg?raw';
 import ReferenceLink, { getReferenceTitle, referenceAttributes } from './referencelink';
 
@@ -16,11 +17,21 @@ export interface InternalLinkDialogOptions {
     target?: 'note' | 'url';
 }
 
+/** The request that the editor passes to the host's link dialog. */
+export interface LinkDialogRequest extends InternalLinkDialogOptions {
+    /** The element to render the dialog into, which the editor owns and places at the caret. */
+    container: HTMLElement;
+    /** Closes the balloon. The host calls it once the link is applied. */
+    close(): void;
+}
+
 export default class InternalLinkPlugin extends Plugin {
 
     static get requires() {
-        return [ ReferenceLink ];
+        return [ ReferenceLink, ContextualBalloon ];
     }
+
+    private dialog = new HostedBalloon(this.editor, 'add-link-balloon');
 
 	init() {
 		const editor = this.editor;
@@ -121,6 +132,25 @@ export default class InternalLinkPlugin extends Plugin {
             isToolbarKeystrokeSet = true;
         });
     }
+
+    override destroy() {
+        this.dialog.hide();
+        super.destroy();
+    }
+
+    /**
+     * Opens the link dialog in a balloon at the caret. A host that shows the dialog its own way
+     * leaves the balloon empty, which closes it again.
+     */
+    showDialog(options: InternalLinkDialogOptions = {}) {
+        const editor = this.editor;
+
+        this.dialog.show(container => editor.config.get('internalLink')?.showDialog({
+            ...options,
+            container,
+            close: () => this.dialog.hide()
+        }) ?? null);
+    }
 }
 
 class InsertInternalLinkCommand extends Command {
@@ -134,7 +164,7 @@ class InsertInternalLinkCommand extends Command {
     }
 
     execute(options?: InternalLinkDialogOptions) {
-        this.editor.config.get('internalLink')?.openDialog(options);
+        this.editor.plugins.get(InternalLinkPlugin).showDialog(options);
     }
 }
 
@@ -223,8 +253,13 @@ function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange 
 declare module 'ckeditor5' {
     interface EditorConfig {
         internalLink?: {
-            /** Opens the dialog that adds a link at the selection, or edits the link there. */
-            openDialog(options?: InternalLinkDialogOptions): void;
+            /**
+             * Renders the dialog that adds a link at the selection, or edits the link there, into
+             * `request.container`, and returns the function that removes it. A host that shows the
+             * dialog somewhere else (a phone, which has no room for a balloon) leaves the container
+             * alone and returns `null`.
+             */
+            showDialog(request: LinkDialogRequest): (() => void) | null;
         };
     }
 }

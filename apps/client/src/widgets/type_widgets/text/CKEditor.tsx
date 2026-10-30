@@ -1,6 +1,7 @@
 import {
     type CKEditorError, CKTextEditor, ClassicEditor, getLinkAtSelection, type IconPickerRequest,
-    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
+    type LinkDialogRequest, onTextEditorError, PopupEditor, replaceLinkAtSelection,
+    SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -67,9 +68,16 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     containerRef?: RefObject<HTMLDivElement | null>;
     /** What renders the embeds of the editor and acts on them. Editors without embeds leave it out. */
     contentEmbedHandlers?: ContentEmbedHandlers;
+    /** Shows the link dialog, as `internalLink.showDialog` does. */
+    showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
 }
 
-export default function CKEditor({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError, onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers }: CKEditorProps) {
+export default function CKEditor({
+    containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
+    editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
+    onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
+    showLinkDialog
+}: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
     const stopReportingErrorsRef = useRef<() => void>(undefined);
@@ -139,6 +147,8 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
     noteRef.current = note;
     const contentEmbedHandlersRef = useRef(contentEmbedHandlers);
     contentEmbedHandlersRef.current = contentEmbedHandlers;
+    const showLinkDialogRef = useRef(showLinkDialog);
+    showLinkDialogRef.current = showLinkDialog;
     /** The open icon picker request and its balloon container, or `null` when none is open. */
     const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerRequest | null>(null);
 
@@ -312,7 +322,8 @@ export default function CKEditor({ containerRef: externalContainerRef, contentLa
                     getNotePath: () => noteLocationRef.current?.notePath,
                     save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
                 },
-                getContentEmbedHandlers: () => contentEmbedHandlersRef.current
+                getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
+                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null
             });
 
             if (isStale) {

@@ -410,8 +410,6 @@ describe("CK config - tables", () => {
     it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {
         const triggerHostCommand = vi.fn(async () => undefined);
         const config = await buildConfig(baseOpts({ triggerHostCommand }));
-        await config.internalLink?.openDialog({ target: "url" });
-        expect(triggerHostCommand).toHaveBeenLastCalledWith("addLinkToText", { target: "url" });
 
         const callbacks = [
             [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
@@ -424,7 +422,7 @@ describe("CK config - tables", () => {
             await callback?.();
             expect(triggerHostCommand).toHaveBeenLastCalledWith(command);
         }
-        expect(triggerHostCommand).toHaveBeenCalledTimes(callbacks.length + 1);
+        expect(triggerHostCommand).toHaveBeenCalledTimes(callbacks.length);
     });
 
     it("shows the icon picker the editor asks for, and none without a host for it", async () => {
@@ -435,6 +433,19 @@ describe("CK config - tables", () => {
         expect((await buildConfig(baseOpts({ showIconPicker }))).inlineIcon?.showPicker(request)).toBe(release);
         expect(showIconPicker).toHaveBeenCalledWith(request);
         expect((await buildConfig(baseOpts())).inlineIcon?.showPicker(request)).toBeNull();
+    });
+
+    it("shows the link dialog the editor asks for, and none without a host for it", async () => {
+        const release = vi.fn();
+        const showLinkDialog = vi.fn(() => release);
+        const request = {
+            container: document.createElement("div"), target: "url" as const, close: vi.fn()
+        };
+
+        expect((await buildConfig(baseOpts({ showLinkDialog }))).internalLink?.showDialog(request))
+            .toBe(release);
+        expect(showLinkDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).internalLink?.showDialog(request)).toBeNull();
     });
 
     it("copies block and tab references from the reference source, and none without one", async () => {

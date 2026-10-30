@@ -7,19 +7,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import InternalLinkPlugin, {
-    COMMAND_NAME, getLinkAtSelection, replaceLinkAtSelection
+    COMMAND_NAME, getLinkAtSelection, type LinkDialogRequest, replaceLinkAtSelection
 } from "./internallink.js";
 
 describe("InternalLinkPlugin", () => {
     let editor: ClassicEditor;
-    let openDialog: ReturnType<typeof vi.fn>;
+    let showDialog: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        openDialog = vi.fn();
+        showDialog = vi.fn();
         editor = await createTestEditor([Essentials, Paragraph, CodeBlock, InternalLinkPlugin], {
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
     });
+
+    /** Has the host render into the balloon, answering with the request and the release. */
+    function renderIntoBalloon() {
+        const shown: { request?: LinkDialogRequest } = {};
+        const release = vi.fn();
+        showDialog.mockImplementation((request: LinkDialogRequest) => {
+            shown.request = request;
+            return release;
+        });
+        return { shown, release };
+    }
 
     it("loads the plugin and registers the command and toolbar button", () => {
         expect(editor.plugins.get(InternalLinkPlugin)).toBeInstanceOf(InternalLinkPlugin);
@@ -27,9 +38,44 @@ describe("InternalLinkPlugin", () => {
         expect(editor.ui.componentFactory.has("internalLink")).toBe(true);
     });
 
-    it("has the host open the Add link dialog when executed", () => {
+    it("opens the host's dialog in a balloon at the caret, until the host closes it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const { shown, release } = renderIntoBalloon();
+        const balloon = editor.plugins.get(ContextualBalloon);
+
+        editor.execute(COMMAND_NAME, { target: "url" });
+        const container = shown.request?.container;
+        expect(shown.request?.target).toBe("url");
+        expect(container?.classList.contains("add-link-balloon")).toBe(true);
+        expect(container && balloon.view.element?.contains(container)).toBe(true);
+
+        shown.request?.close();
+        expect(release).toHaveBeenCalledOnce();
+        expect(balloon.visibleView).toBeNull();
+    });
+
+    it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
+        const plainEditor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
+
+        for (const testEditor of [ editor, plainEditor ]) {
+            setModelData(testEditor.model, "<paragraph>foo[]</paragraph>");
+            const balloon = testEditor.plugins.get(ContextualBalloon);
+            const add = vi.spyOn(balloon, "add");
+
+            testEditor.execute(COMMAND_NAME);
+            expect(add).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(showDialog).toHaveBeenCalledOnce();
+    });
+
+    it("lets go of the dialog when the editor is torn down under it", async () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const { release } = renderIntoBalloon();
         editor.execute(COMMAND_NAME);
-        expect(openDialog).toHaveBeenCalledOnce();
+
+        await editor.destroy();
+        expect(release).toHaveBeenCalledOnce();
     });
 
     it("labels the button without the shortcut, leaving that to the keystroke", () => {
@@ -167,12 +213,12 @@ describe("the link at the selection", () => {
 
 describe("the edit button of the link toolbar", () => {
     let editor: ClassicEditor;
-    let openDialog: ReturnType<typeof vi.fn>;
+    let showDialog: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        openDialog = vi.fn();
+        showDialog = vi.fn();
         editor = await createTestEditor([Essentials, Paragraph, Link, InternalLinkPlugin], {
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
     });
 
@@ -189,7 +235,7 @@ describe("the edit button of the link toolbar", () => {
         expect(edit).toBeInstanceOf(ButtonView);
         edit?.fire("execute");
 
-        expect(openDialog).toHaveBeenCalledOnce();
+        expect(showDialog).toHaveBeenCalledOnce();
         expect(toolbarView && balloon.hasView(toolbarView)).toBe(false);
         expect(linkUI.formView && balloon.hasView(linkUI.formView)).toBe(false);
     });
@@ -197,12 +243,12 @@ describe("the edit button of the link toolbar", () => {
 
 describe("the link button and Ctrl+K", () => {
     let editor: ClassicEditor;
-    let openDialog: ReturnType<typeof vi.fn>;
+    let showDialog: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        openDialog = vi.fn();
+        showDialog = vi.fn();
         editor = await createTestEditor([Essentials, Paragraph, Link, InternalLinkPlugin], {
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
     });
 
@@ -231,7 +277,8 @@ describe("the link button and Ctrl+K", () => {
         expect(button.isOn).toBe(false);
 
         button.fire("execute");
-        expect(openDialog).toHaveBeenCalledExactlyOnceWith({ target: "url" });
+        expect(showDialog)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: "url" }));
         expect(isLinkFormShown()).toBe(false);
 
         // The button shows as on in a link, and off where no link can be made.
@@ -244,7 +291,8 @@ describe("the link button and Ctrl+K", () => {
     it("opens the link dialog on Ctrl+K in the text", () => {
         setModelData(editor.model, "<paragraph>foo[]</paragraph>");
         expect(pressCtrlK(editor.keystrokes)).toBe(true);
-        expect(openDialog).toHaveBeenCalledExactlyOnceWith({ target: "url" });
+        expect(showDialog)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: "url" }));
         expect(isLinkFormShown()).toBe(false);
     });
 
@@ -267,7 +315,7 @@ describe("the link button and Ctrl+K", () => {
             });
             element.dispatchEvent(keydown);
             expect(keydown.defaultPrevented).toBe(true);
-            expect(openDialog).toHaveBeenCalledTimes(shown);
+            expect(showDialog).toHaveBeenCalledTimes(shown);
             expect(balloon.hasView(linkUI.toolbarView)).toBe(false);
         }
         expect(linkUI.formView).not.toBeNull();

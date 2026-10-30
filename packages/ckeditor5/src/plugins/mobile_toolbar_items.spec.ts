@@ -301,10 +301,10 @@ describe("MobileToolbarItems", () => {
 
 describe("addLink", () => {
     it("opens the link dialog of the internal link button, under the link icon", async () => {
-        const openDialog = vi.fn();
+        const showDialog = vi.fn();
         const editor = await createTestEditor([Essentials, Paragraph, InternalLinkPlugin, MobileToolbarItems], {
             toolbar: ["addLink"],
-            internalLink: { openDialog }
+            internalLink: { showDialog }
         });
         setModelData(editor.model, "<paragraph>foo[]</paragraph>");
 
@@ -313,7 +313,7 @@ describe("addLink", () => {
         };
         expect([button.label, button.icon, button.isEnabled]).toStrictEqual(["Link", IconLink, true]);
         button.fire("execute");
-        expect(openDialog).toHaveBeenCalledOnce();
+        expect(showDialog).toHaveBeenCalledOnce();
 
         editor.enableReadOnlyMode("spec");
         expect(button.isEnabled).toBe(false);

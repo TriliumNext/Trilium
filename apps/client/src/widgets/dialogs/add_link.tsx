@@ -16,6 +16,7 @@ import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
+import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
 import SegmentedChoice from "../react/SegmentedChoice";
@@ -87,27 +88,100 @@ export interface AddLinkOpts {
 
 export default function AddLinkDialog() {
     const [ opts, setOpts ] = useState<AddLinkOpts>();
+    const [ shown, setShown ] = useState(false);
+    const hasSubmittedRef = useRef(false);
+    const form = useAddLinkForm(opts);
+
+    useTriliumEvent("showAddLinkDialog", opts => {
+        setOpts(opts);
+        setShown(true);
+    });
+
+    function onSubmit() {
+        if (!form.hasLink) {
+            logError("No link to add.");
+            return;
+        }
+
+        hasSubmittedRef.current = true;
+        // Insertion logic in onHidden because it needs focus.
+        setShown(false);
+    }
+
+    return (
+        <Modal
+            className="add-link-dialog"
+            size="lg"
+            title={form.title}
+            helpPageId="QEAPj01N5f7w"
+            footer={<Button text={form.buttonText} keyboardShortcut="Enter" />}
+            onSubmit={onSubmit}
+            onShown={form.onShown}
+            onHidden={() => {
+                if (hasSubmittedRef.current) {
+                    hasSubmittedRef.current = false;
+                    form.applyLink();
+                }
+
+                form.reset();
+                setShown(false);
+            }}
+            show={shown}
+        >
+            {form.body}
+        </Modal>
+    );
+}
+
+/**
+ * The form of the link dialog in the balloon that the text editor places at the caret. `onClose`
+ * closes the balloon.
+ */
+export function AddLinkBalloon({ opts, onClose }: { opts: AddLinkOpts; onClose(): void }) {
+    // Lets the fields take focus inside a modal, such as the quick edit popup. Runs before the
+    // effects of `useAddLinkForm()`, which focus the fields.
+    useEffect(() => suspendModalFocusTraps(), []);
+    const form = useAddLinkForm(opts);
+
+    useEffect(() => {
+        form.onShown();
+    }, []);
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                if (!form.hasLink) return;
+
+                onClose();
+                form.applyLink();
+            }}
+        >
+            {form.body}
+            <div className="add-link-actions">
+                <Button text={form.buttonText} keyboardShortcut="Enter" />
+            </div>
+        </form>
+    );
+}
+
+/** The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. */
+function useAddLinkForm(opts: AddLinkOpts | undefined) {
     const [ linkTitle, setLinkTitle ] = useState("");
     const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
     const [ noteTitle, setNoteTitle ] = useState("");
-    const [ shown, setShown ] = useState(false);
     const [ target, setTarget ] = useState<LinkTarget>("note");
     const [ webLink, setWebLink ] = useState("");
-    const hasSubmittedRef = useRef(false);
+    const [ isShowPending, setIsShowPending ] = useState(false);
     const webLinkRef = useRef<HTMLInputElement>(null);
     // The text of the link being edited, while it stands in for the picked note's title.
     const keptTitleRef = useRef<string | null>(null);
     const initialBookmarkRef = useRef("");
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
-
-    useTriliumEvent("showAddLinkDialog", opts => {
-        setOpts(opts);
-        setShown(true);
-    });
 
     useEffect(() => {
         if (opts?.hasSelection || opts?.currentTitle !== undefined) {
@@ -240,7 +314,14 @@ export default function AddLinkDialog() {
         }
     }, [selectedBookmark, noteTitle]);
 
-    async function onShown() {
+    // Runs one render after `onShown`, so `fillAndFocus()` reads the state set from `opts`.
+    useEffect(() => {
+        if (!isShowPending) return;
+        setIsShowPending(false);
+        void fillAndFocus();
+    }, [ isShowPending ]);
+
+    async function fillAndFocus() {
         if (target === "url") {
             if (autoFocus) {
                 webLinkRef.current?.focus();
@@ -275,15 +356,28 @@ export default function AddLinkDialog() {
         }
     }
 
-    function onSubmit() {
-        hasSubmittedRef.current = true;
+    /** Applies the link picked, through `opts.addLink`. */
+    function applyLink() {
+        if (!opts || !suggestion) return;
 
-        if (suggestion) {
-            // Insertion logic in onHidden because it needs focus.
-            setShown(false);
-        } else {
-            logError("No link to add.");
+        if (suggestion.notePath) {
+            // Handle note link, optionally with a bookmark anchor
+            const path = selectedBookmark
+                ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
+                : suggestion.notePath;
+            opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
+        } else if (suggestion.externalLink) {
+            // An external link without a text of its own reads as its address.
+            const text = linkTitle.trim() || suggestion.externalLink;
+            opts.addLink(suggestion.externalLink, text, true);
         }
+    }
+
+    function reset() {
+        setSuggestion(null);
+        setBookmarks([]);
+        setSelectedBookmark("");
+        setNoteTitle("");
     }
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
@@ -306,41 +400,15 @@ export default function AddLinkDialog() {
         </OptionCardSection>
     );
 
-    return (
-        <Modal
-            className="add-link-dialog"
-            size="lg"
-            title={title}
-            helpPageId="QEAPj01N5f7w"
-            footer={<Button text={buttonText} keyboardShortcut="Enter" />}
-            onSubmit={onSubmit}
-            onShown={onShown}
-            onHidden={() => {
-                // Insert the link.
-                if (hasSubmittedRef.current && suggestion && opts) {
-                    hasSubmittedRef.current = false;
-
-                    if (suggestion.notePath) {
-                        // Handle note link, optionally with a bookmark anchor
-                        const path = selectedBookmark
-                            ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
-                            : suggestion.notePath;
-                        opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
-                    } else if (suggestion.externalLink) {
-                        // An external link without a text of its own reads as its address.
-                        const text = linkTitle.trim() || suggestion.externalLink;
-                        opts.addLink(suggestion.externalLink, text, true);
-                    }
-                }
-
-                setSuggestion(null);
-                setBookmarks([]);
-                setSelectedBookmark("");
-                setNoteTitle("");
-                setShown(false);
-            }}
-            show={shown}
-        >
+    return {
+        title,
+        buttonText,
+        hasLink: !!suggestion,
+        /** Fills and focuses the fields, once the form is on screen. */
+        onShown: () => setIsShowPending(true),
+        applyLink,
+        reset,
+        body: (
             <Card>
                 {!opts?.fixLink && (
                     <CardSection>
@@ -440,8 +508,8 @@ export default function AddLinkDialog() {
                     </>
                 )}
             </Card>
-        </Modal>
-    );
+        )
+    };
 }
 
 /**

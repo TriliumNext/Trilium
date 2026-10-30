@@ -7,12 +7,14 @@ import {
     CKTextEditor,
     type FileUploadData,
     type FileUploadEvent,
+    type LinkDialogRequest,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
+import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import appContext, { type CommandListenerData } from "../../../components/app_context";
+import appContext from "../../../components/app_context";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import dialog from "../../../services/dialog";
@@ -24,7 +26,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import type { AddLinkOpts } from "../../dialogs/add_link";
+import { AddLinkBalloon, type AddLinkOpts } from "../../dialogs/add_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
@@ -247,11 +249,31 @@ export default function EditableText({
         enter: enterContentEmbed
     };
 
-    useLegacyImperativeHandlers({
-        addLinkToTextCommand({ target }: CommandListenerData<"addLinkToText"> = {}) {
-            if (!editorApiRef.current) return;
-            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, target);
+    const [ linkDialog, setLinkDialog ] = useState<{
+        opts: AddLinkOpts;
+        request: LinkDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `AddLinkBalloon` renders into its container.
+    // On mobile, `showAddLinkDialog` opens the form in a modal instead.
+    function showLinkDialog(request: LinkDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, request.target);
+        if (isMobile()) {
             parentComponent?.triggerCommand("showAddLinkDialog", opts);
+            return null;
+        }
+
+        setLinkDialog({ opts, request });
+        return () => setLinkDialog(null);
+    }
+
+    useLegacyImperativeHandlers({
+        // Keyboard shortcut
+        async addLinkToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertInternalLink");
         },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
@@ -509,6 +531,7 @@ export default function EditableText({
                 onEditorError={(error) => reportEditorError(error, reloadEditor)}
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
+                showLinkDialog={showLinkDialog}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();
@@ -550,6 +573,10 @@ export default function EditableText({
                 }}
             />}
 
+            {linkDialog && createPortal(
+                <AddLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
+                linkDialog.request.container
+            )}
         </>
     );
 }

@@ -4,7 +4,7 @@ An external link is a standard web link targeting for example a website. For exa
 To create a link without a custom text:
 
 *   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>:
-    *   Since v0.107.0, the _Add link_ dialog opens on _Web link_. Type or paste the address, and optionally a _Link title_; without one, the link shows its address.
+    *   Since v0.107.0, the _Add link_ dialog opens on _Web link_, in a popup next to the cursor on desktop. Type or paste the address, and optionally a _Link title_; without one, the link shows its address.
     *   Press <kbd>Enter</kbd> or _Add link_ to confirm.
 *   A simpler way is to paste the raw link and press space to turn it automatically into a link.
 *   The <span class="tn-icon cke cke-trilium"></span> button and <kbd>Ctrl</kbd>+<kbd>L</kbd> of <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> open the same dialog on _Note_. Select _Web link_ at the top of the dialog to create an external link from there.
