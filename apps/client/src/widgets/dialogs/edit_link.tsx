@@ -475,7 +475,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     function getTitlePlaceholder() {
         if (target === "anchor") return anchor || undefined;
         if (target !== "url") return undefined;
-        return isPreview ? t("add_link.page_title") : suggestion?.externalLink;
+        return isPreview ? t("add_link.page_title")
+            : suggestion?.externalLink ?? t("add_link.title_from_url");
     }
 
     const titleSection = (

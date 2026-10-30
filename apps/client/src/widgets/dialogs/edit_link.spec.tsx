@@ -165,6 +165,7 @@ describe("EditLinkDialog", () => {
         expect(current()).toBe("add_link.web_link");
         expect(container.querySelector(".note-autocomplete")).toBeNull();
         expect(field("url")?.inputMode).toBe("url");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_url");
 
         await type(field("url"), "example.com");
         await submit();
@@ -174,6 +175,7 @@ describe("EditLinkDialog", () => {
         await open();
         await act(async () => choice()[0]?.click());
         await type(field("url"), "https://trilium.cc");
+        expect(field("text")?.placeholder).toBe("https://trilium.cc");
         expect(nested("text")).toBe(false);
         expect(container.querySelector(".edit-link-url + .edit-link-text")).not.toBeNull();
         expect(stacked()).toStrictEqual([]);
