@@ -105,8 +105,17 @@ export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<H
             return this.props.children;
         }
     };
-    const el = h(UserErrorBoundary, {}, h(result as () => VNode, {}));
+    // The tree replaces the container `render()` scoped the note's styles to, so it brings its own:
+    // `keepStylesScoped()` watches it and the `@scope` rules are rooted at it.
+    const el = h("div", { className: RENDER_SCOPE_CLASS, ref: scopeStyles },
+        h(UserErrorBoundary, {}, h(result as () => VNode, {})));
     renderReactWidgetAtElement(closestComponent, el, $el[0]);
+}
+
+function scopeStyles(container: HTMLDivElement | null) {
+    if (container) {
+        keepStylesScoped(container);
+    }
 }
 
 export default {

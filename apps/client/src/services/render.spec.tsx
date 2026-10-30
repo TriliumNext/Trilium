@@ -266,6 +266,48 @@ describe("render", () => {
         expect(renderAtElementMock.mock.calls[0][2]).toBe($el[0]);
     });
 
+    it("mounts a JSX render note inside the container its stylesheet is scoped to", async () => {
+        const actual = await vi.importActual<typeof import("../widgets/react/react_utils.jsx")>(
+            "../widgets/react/react_utils.jsx");
+        (glob as any).getComponentByEl = vi.fn(() => ({ fake: "component" }));
+
+        // A `div` root is the element Preact used to take over the container with, dropping its
+        // class; any other root left the container, and the observer scoping its styles, detached.
+        for (const Root of [ "div", "section" ] as const) {
+            const target = buildNote({ title: `Styled target ${Root}`, type: "code" });
+            const jsxNote = buildNote({ id: `jsxStyled${Root}`, title: "JSX root" });
+            jsxNote.mime = "text/jsx";
+            const note = buildNote({ title: `Styled host ${Root}`, "~renderNote": target.noteId });
+            server.postWithSilentInternalServerError = vi.fn(async () => ({
+                script: "",
+                html: "",
+                noteId: jsxNote.noteId,
+                allNoteIds: []
+            })) as typeof server.postWithSilentInternalServerError;
+            executeMock.mockResolvedValueOnce(() => (
+                <Root className="own-root">
+                    <style>{".probe { color: red; }"}</style>
+                    <p className="probe">styled</p>
+                </Root>
+            ));
+            renderAtElementMock.mockImplementationOnce(actual.renderReactWidgetAtElement);
+
+            const $el = $("<div class='component'>");
+            await render(note, $el, vi.fn());
+            await waitForPendingRenders($el[0]);
+            await flush();
+
+            const probe = $el[0].querySelector(".probe");
+            expect(probe).not.toBeNull();
+            expect(probe?.closest(`.${RENDER_SCOPE_CLASS}`)).not.toBeNull();
+            expect($el[0].querySelector(".own-root")?.tagName).toBe(Root.toUpperCase());
+            expect($el[0].querySelector("style")?.textContent)
+                .toContain(`@scope (.${RENDER_SCOPE_CLASS})`);
+
+            actual.disposeReactWidget($el[0]);
+        }
+    });
+
     it("mounts nothing once its signal is aborted", async () => {
         const target = buildNote({ title: "Target9", type: "code" });
         const jsxNote = buildNote({ id: "jsxRoot9", title: "JSX root" });
@@ -366,7 +408,7 @@ describe("renderIfJsx", () => {
         expect(renderAtElementMock).not.toHaveBeenCalled();
     });
 
-    it("renders the user component wrapped in an error boundary", async () => {
+    it("renders the user component in an error boundary, inside a scope container", async () => {
         const note = buildNote({ title: "Jsx ok" });
         note.mime = "text/jsx";
         const closest = { id: "c" };
@@ -379,9 +421,9 @@ describe("renderIfJsx", () => {
         const [parentComp, vnode, container] = renderAtElementMock.mock.calls[0];
         expect(parentComp).toBe(closest);
         expect(container).toBe($el[0]);
-        // The vnode is the UserErrorBoundary wrapping the user component.
-        expect(typeof vnode.type).toBe("function");
-        expect(vnode.type.name).toBe("UserErrorBoundary");
+        expect(vnode.type).toBe("div");
+        expect(vnode.props.className).toBe(RENDER_SCOPE_CLASS);
+        expect(vnode.props.children.type.name).toBe("UserErrorBoundary");
     });
 
     it("error boundary renders children normally and swallows errors via componentDidCatch", async () => {
@@ -393,7 +435,7 @@ describe("renderIfJsx", () => {
 
         await renderIfJsx(bundleFor(note.noteId), () => null, $("<div class='component'>"), onError);
 
-        const vnode = renderAtElementMock.mock.calls[0][1];
+        const vnode = renderAtElementMock.mock.calls[0][1].props.children;
         const Boundary = vnode.type as new (props: object) => {
             state: { error: unknown };
             props: { children?: unknown };
