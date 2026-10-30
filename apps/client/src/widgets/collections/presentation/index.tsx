@@ -279,7 +279,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 )}
                 {editedNote?.type === "canvas" && shadowHost && createPortal(
                     <Suspense fallback={null}>
-                        <SlideCanvasEditor note={editedNote} onFinish={finishEditing} />
+                        <SlideCanvasEditor note={editedNote} scale={api?.getScale() ?? 1} onFinish={finishEditing} />
                     </Suspense>,
                     shadowHost
                 )}

@@ -76,7 +76,7 @@ To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-ch
 
 A <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> slide is read-only until it is edited, so that a card or a cell can't be changed by accident while presenting, and clicking a card or a row opens nothing. Double-click it to edit it on the slide as in its note, then press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button or go to another slide to finish.
 
-Double-click a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide to draw on it in place. The canvas editor covers the presentation, with the same tools as in the canvas note, and the drawing is saved as you go. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-check"></span> _Finish editing_ button to finish.
+Double-click a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide to draw on it in place. The canvas editor covers the presentation, with the same tools as in the canvas note, and opens on the drawing at the size and place that the slide shows it. The drawing is saved as you go. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-check"></span> _Finish editing_ button to finish.
 
 Slides of other note types, such as diagrams, are edited from their note, using the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place, and neither can a slide whose own note is read-only.
 

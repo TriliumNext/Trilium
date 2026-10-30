@@ -13,8 +13,34 @@ vi.mock("../../EmbeddedNotePane", async (importOriginal) => ({
     announceEmbeddedNoteClosing: announceClosing
 }));
 // Excalidraw does not run under happy-dom.
-vi.mock("../../type_widgets/canvas/Canvas", () => ({
-    default: ({ note }: { note: { noteId: string } }) => <div className="mock-canvas">{note.noteId}</div>
+interface Box { x: number; y: number; width: number; height: number }
+vi.mock("@excalidraw/excalidraw", () => ({
+    getCommonBounds: (elements: Box[]) => [
+        Math.min(...elements.map(({ x }) => x)),
+        Math.min(...elements.map(({ y }) => y)),
+        Math.max(...elements.map(({ x, width }) => x + width)),
+        Math.max(...elements.map(({ y, height }) => y + height))
+    ]
+}));
+const editorProps = vi.hoisted(() => ({ initialData: undefined as unknown }));
+vi.mock("../../type_widgets/canvas/Canvas", async () => {
+    const { useNoteContext } = await import("../../react/hooks");
+    return {
+        CanvasEditor: ({ persistence }: { persistence: { initialData: unknown } }) => {
+            editorProps.initialData = persistence.initialData;
+            return <div className="mock-canvas">{useNoteContext().note?.noteId}</div>;
+        }
+    };
+});
+vi.mock("../../type_widgets/canvas/CanvasDrawingMenu", () => ({ CanvasNoteMenu: () => null }));
+// A rectangle centered on (200, 100).
+vi.mock("../../type_widgets/canvas/persistence", () => ({
+    default: () => ({
+        initialData: Promise.resolve({
+            elements: [ { id: "r", type: "rectangle", x: 100, y: 50, width: 200, height: 100, isDeleted: false } ],
+            appState: { gridModeEnabled: true }
+        })
+    })
 }));
 
 import appContext from "../../../components/app_context";
@@ -37,13 +63,15 @@ describe("SlideCanvasEditor", () => {
         const onFinish = vi.fn();
         const container = document.createElement("div");
         document.body.append(container);
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(1000);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(600);
         const presentationKeys = vi.fn();
         container.addEventListener("keydown", presentationKeys);
 
         act(() => {
             render(
                 <ParentComponent.Provider value={new Component()}>
-                    <SlideCanvasEditor note={note} onFinish={onFinish} />
+                    <SlideCanvasEditor note={note} scale={0.5} onFinish={onFinish} />
                 </ParentComponent.Provider>,
                 container
             );
@@ -51,6 +79,11 @@ describe("SlideCanvasEditor", () => {
         const editor = container.querySelector<HTMLElement>(".presentation-canvas-slide");
         expect(editor?.getAttribute("slot")).toBe("canvas-editor-drawing");
         await vi.waitFor(() => expect(editor?.querySelector(".mock-canvas")?.textContent).toBe("drawing"));
+
+        // It opens on the drawing at the scale of the slides, centered in the editor as on the slide.
+        await expect(editorProps.initialData).resolves.toMatchObject({
+            appState: { gridModeEnabled: true, zoom: { value: 0.5 }, scrollX: 800, scrollY: 500 }
+        });
 
         const canvas = editor?.querySelector(".mock-canvas");
         canvas?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
@@ -74,3 +107,4 @@ describe("SlideCanvasEditor", () => {
         (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
     });
 });
+
