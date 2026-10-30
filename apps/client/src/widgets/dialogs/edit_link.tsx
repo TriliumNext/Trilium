@@ -31,25 +31,6 @@ type LinkType = "reference-link" | "external-link" | "hyper-link";
 /** What the link points at: a note, an address outside Trilium, or an anchor in the document. */
 export type LinkTarget = "note" | "url" | "anchor";
 
-function findAnchorIds(content: string): string[] {
-    const re = /<a\b([^>]*)>(<\/a>)?/g;
-    const ids: string[] = [];
-    let match;
-
-    while ((match = re.exec(content))) {
-        const attrs = match[1];
-        if (/\bhref\s*=/.test(attrs)) continue;
-
-        const idMatch = /\bid\s*=\s*"([^"]+)"/.exec(attrs) ?? /\bid\s*=\s*'([^']+)'/.exec(attrs);
-        if (!idMatch) continue;
-
-        const id = idMatch[1];
-        if (!ids.includes(id)) ids.push(id);
-    }
-
-    return ids;
-}
-
 export interface EditLinkOpts {
     text: string;
     hasSelection: boolean;
@@ -702,6 +683,26 @@ function getInitialWebLink(opts: EditLinkOpts): string | null {
     const text = opts.text.trim();
     if (opts.hasSelection && hasScheme(text)) return text;
     return opts.target === "url" ? "" : null;
+}
+
+/** The `id`s of the anchors in the HTML `content`, which are `<a>` elements without an `href`. */
+function findAnchorIds(content: string): string[] {
+    const re = /<a\b([^>]*)>(<\/a>)?/g;
+    const ids: string[] = [];
+    let match;
+
+    while ((match = re.exec(content))) {
+        const attrs = match[1];
+        if (/\bhref\s*=/.test(attrs)) continue;
+
+        const idMatch = /\bid\s*=\s*"([^"]+)"/.exec(attrs) ?? /\bid\s*=\s*'([^']+)'/.exec(attrs);
+        if (!idMatch) continue;
+
+        const id = idMatch[1];
+        if (!ids.includes(id)) ids.push(id);
+    }
+
+    return ids;
 }
 
 /**
