@@ -67,7 +67,7 @@ async function bootstrap() {
  */
 function extendsUnderStatusBar() {
     const probe = document.createElement("div");
-    probe.style.cssText = "position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)";
+    probe.style.cssText = "position:fixed;visibility:hidden;padding-top:var(--safe-area-inset-top, env(safe-area-inset-top))";
     document.documentElement.append(probe);
     const insetTop = parseFloat(getComputedStyle(probe).paddingTop);
     probe.remove();
