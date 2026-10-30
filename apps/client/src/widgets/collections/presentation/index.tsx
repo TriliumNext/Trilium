@@ -350,7 +350,6 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady
         api.initialize().then(() => {
             setRevealApi(api);
             setApi(api);
-            rewireLinks(container, api);
         });
 
         // Reveal.js listens only to window resizes, not to the note pane changing size.
@@ -359,8 +358,10 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady
         });
         resizeObserver.observe(container);
         const releaseKeyboard = keepKeyboardInPresentation(container);
+        const stopFollowingLinks = followSlideLinks(container, api);
 
         return () => {
+            stopFollowingLinks();
             releaseKeyboard();
             fitObserver.disconnect();
             fitObserverRef.current = null;
@@ -577,22 +578,29 @@ export function keepKeyboardInPresentation(container: HTMLElement) {
     };
 }
 
-function rewireLinks(container: HTMLElement, api: RevealApi) {
-    const links = container.querySelectorAll<HTMLLinkElement>("a.reference-link");
-    for (const link of links) {
-        link.addEventListener("click", () => {
-            /**
-             * Reveal.js has built-in navigation by either index or ID. However, the ID-based navigation doesn't work because it tries to look
-             * outside the shadom DOM (via document.getElementById).
-             */
-            const url = new URL(link.href);
-            if (!url.hash.startsWith("#/slide-")) return;
-            const targetId = url.hash.substring(8);
-            const slide = container.querySelector<HTMLElement>(`#slide-${targetId}`);
-            if (!slide) return;
+/**
+ * Moves to the slide that a clicked link in `container` points at, including the links of content
+ * rendered after this starts. Returns the function that stops it.
+ *
+ * Reveal.js navigates by slide ID on its own, but looks the slide up with
+ * `document.getElementById()`, which does not find it inside the shadow root.
+ */
+export function followSlideLinks(container: HTMLElement, api: RevealApi) {
+    const onClick = (e: MouseEvent) => {
+        const link = e.target instanceof Element
+            ? e.target.closest<HTMLAnchorElement>("a.reference-link")
+            : null;
+        if (!link) return;
+        const url = new URL(link.href);
+        if (!url.hash.startsWith("#/slide-")) return;
+        const targetId = url.hash.substring(8);
+        const slide = container.querySelector<HTMLElement>(`#slide-${targetId}`);
+        if (!slide) return;
 
-            const { h, v, f } = api.getIndices(slide);
-            api.slide(h, v, f);
-        });
-    }
+        const { h, v, f } = api.getIndices(slide);
+        api.slide(h, v, f);
+    };
+
+    container.addEventListener("click", onClick);
+    return () => container.removeEventListener("click", onClick);
 }

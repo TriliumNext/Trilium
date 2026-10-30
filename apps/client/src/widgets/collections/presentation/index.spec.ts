@@ -1,6 +1,9 @@
+import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createFitObserver, fitSlideContent, keepKeyboardInPresentation } from "./index";
+import {
+    createFitObserver, fitSlideContent, followSlideLinks, keepKeyboardInPresentation
+} from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -143,3 +146,36 @@ function buildFrame(tag: string) {
     container.append(frame);
     return { container, frame };
 }
+
+describe("followSlideLinks", () => {
+    it("moves to the slide a link points at, for links added after it starts", () => {
+        const container = document.createElement("div");
+        const target = document.createElement("section");
+        target.id = "slide-target";
+        container.append(target);
+        const api = {
+            getIndices: vi.fn(() => ({ h: 2, v: 1, f: undefined })),
+            slide: vi.fn()
+        };
+        const stop = followSlideLinks(container, api as unknown as RevealApi);
+
+        const link = document.createElement("a");
+        link.className = "reference-link";
+        link.href = "#/slide-target";
+        const label = document.createElement("span");
+        link.append(label);
+        container.append(link);
+        label.click();
+        expect(api.getIndices).toHaveBeenCalledWith(target);
+        expect(api.slide).toHaveBeenCalledWith(2, 1, undefined);
+
+        // A link to a note that is not a slide, or a link after stopping, does not move.
+        api.slide.mockClear();
+        link.href = "#/slide-missing";
+        link.click();
+        link.href = "#/slide-target";
+        stop();
+        link.click();
+        expect(api.slide).not.toHaveBeenCalled();
+    });
+});
