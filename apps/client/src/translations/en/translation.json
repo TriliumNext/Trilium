@@ -3846,7 +3846,8 @@
     "edit-slide": "Edit this slide",
     "finish-editing": "Finish editing",
     "start-presentation": "Start presentation",
-    "slide-overview": "Toggle an overview of the slides"
+    "slide-overview": "Toggle an overview of the slides",
+    "new-slide": "New slide"
   },
   "calendar_view": {
     "delete_note": "Delete note...",

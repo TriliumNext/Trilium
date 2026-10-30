@@ -6,8 +6,12 @@ import { h } from "preact";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../../entities/fnote";
+import froca from "../../../services/froca";
+import note_create from "../../../services/note_create";
 import { buildNote } from "../../../test/easy-froca";
-import { buildPresentationModel, PresentationModel, renderSlideContent } from "./model";
+import {
+    buildPresentationModel, createSlide, getNewSlidePosition, PresentationModel, renderSlideContent
+} from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
     default: ({ messages }: { messages: { content: string }[] }) =>
@@ -200,5 +204,52 @@ describe("renderSlideContent", () => {
         expect(content.__html).toContain("Typed");
         expect(content.__html).not.toContain("Saved");
         expect(content.__html).toContain(`href="#/slide-slide1"`);
+    });
+});
+
+describe("getNewSlidePosition", () => {
+    const model: PresentationModel = {
+        slides: [
+            { noteId: "a", type: "text", content: { __html: "" }, verticalSlides: [
+                { noteId: "a1", type: "text", content: { __html: "" } },
+                { noteId: "a2", type: "text", content: { __html: "" } }
+            ] },
+            { noteId: "b", type: "text", content: { __html: "" }, verticalSlides: undefined }
+        ]
+    };
+
+    it("places a new slide after the slide being shown, at its level", () => {
+        // After a top-level slide, past its vertical slides.
+        expect(getNewSlidePosition(model, "deck", "a")).toEqual({ parentNoteId: "deck", afterNoteId: "a" });
+        expect(getNewSlidePosition(model, "deck", "b")).toEqual({ parentNoteId: "deck", afterNoteId: "b" });
+        // Among the vertical slides of a slide.
+        expect(getNewSlidePosition(model, "deck", "a1")).toEqual({ parentNoteId: "a", afterNoteId: "a1" });
+        // At the end, when no slide is shown.
+        expect(getNewSlidePosition(model, "deck", undefined)).toEqual({ parentNoteId: "deck", afterNoteId: undefined });
+        expect(getNewSlidePosition(model, "deck", "gone")).toEqual({ parentNoteId: "deck", afterNoteId: undefined });
+    });
+});
+
+describe("createSlide", () => {
+    it("creates a text note after the slide being shown, or at the end", async () => {
+        buildNote({ id: "deck", title: "Deck", children: [ { id: "a", title: "A" } ] });
+        const getBranchId = vi.spyOn(froca, "getBranchId").mockResolvedValue("deck_a");
+        const createNote = vi.spyOn(note_create, "createNote")
+            .mockResolvedValue({ note: { noteId: "created" } } as Awaited<ReturnType<typeof note_create.createNote>>);
+        const model: PresentationModel = {
+            slides: [ { noteId: "a", type: "text", content: { __html: "" }, verticalSlides: undefined } ]
+        };
+
+        await expect(createSlide(model, "deck", "a")).resolves.toBe("created");
+        expect(getBranchId).toHaveBeenCalledWith("deck", "a");
+        expect(createNote).toHaveBeenLastCalledWith("deck", expect.objectContaining({
+            type: "text", activate: false, target: "after", targetBranchId: "deck_a"
+        }));
+
+        await createSlide(model, "deck", undefined);
+        expect(createNote.mock.lastCall?.[1]).not.toHaveProperty("targetBranchId");
+
+        getBranchId.mockRestore();
+        createNote.mockRestore();
     });
 });

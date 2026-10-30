@@ -22,7 +22,7 @@ import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { createFitObserver } from "./fit";
 import {
-    buildPresentationModel, PresentationModel, PresentationSlideBaseModel, renderSlideContent
+    buildPresentationModel, createSlide, PresentationModel, PresentationSlideBaseModel, renderSlideContent
 } from "./model";
 import SlideSidebar from "./sidebar";
 import slideCustomStylesheet from "./slidejs.css?raw";
@@ -59,6 +59,19 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const closingSlides = useClosingSlides(refresh);
     const refreshIdRef = useRef(0);
     const activeNoteId = useActiveSlideNoteId(api);
+    const [ newSlideNoteId, setNewSlideNoteId ] = useState<string>();
+    const canAddSlides = canEditSlides && note.type !== "search";
+
+    async function addSlide() {
+        if (!presentation) return;
+        const noteId = await createSlide(presentation, note.noteId, activeNoteId);
+        if (noteId) setNewSlideNoteId(noteId);
+    }
+
+    function onNewSlideShown(noteId: string) {
+        setNewSlideNoteId(undefined);
+        startEditing(noteId);
+    }
 
     useEffect(() => {
         if (!api) return;
@@ -115,6 +128,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 closingContents={closingSlides.contents}
                 onEditSlide={canEditSlides ? startEditing : undefined}
                 onEditorHost={setEditorHost}
+                newSlideNoteId={newSlideNoteId}
+                onNewSlideShown={onNewSlideShown}
             />
         </>
     );
@@ -130,6 +145,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         isReadOnly={isReadOnly}
                         isEditing={!!editedNoteId}
                         onFinishEditing={finishEditing}
+                        onNewSlide={canAddSlides ? () => void addSlide() : undefined}
                     />}
                 />
                 <div className="presentation-body">
@@ -339,9 +355,11 @@ interface ButtonOverlayProps {
     isReadOnly: boolean;
     isEditing: boolean;
     onFinishEditing(): void;
+    /** Adds a slide after the one being shown; left out when slides cannot be added. */
+    onNewSlide: (() => void) | undefined;
 }
 
-function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditing }: ButtonOverlayProps) {
+function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditing, onNewSlide }: ButtonOverlayProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;
@@ -358,6 +376,14 @@ function ButtonOverlay({ containerRef, api, isReadOnly, isEditing, onFinishEditi
 
     return (
         <>
+            {onNewSlide && (
+                <ActionButton
+                    icon="bx bx-plus"
+                    text={t("presentation_view.new-slide")}
+                    onClick={onNewSlide}
+                />
+            )}
+
             {isEditing && (
                 <ActionButton
                     icon="bx bx-check"
@@ -411,11 +437,15 @@ interface PresentationProps {
     onEditSlide: ((noteId: string) => void) | undefined;
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
+    /** The note of a slide just added, to go to once Reveal.js has it. */
+    newSlideNoteId: string | undefined;
+    /** Called once the presentation shows the slide of `newSlideNoteId`. */
+    onNewSlideShown: (noteId: string) => void;
 }
 
 function Presentation({
     presentation, setApi, ntxId, editedNoteId, isEditorReady, closingContents, onEditSlide,
-    onEditorHost
+    onEditorHost, newSlideNoteId, onNewSlideShown
 }: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
@@ -483,6 +513,14 @@ function Presentation({
             fitObserver.observe(content);
         }
     }, [ presentation, revealApi, editedNoteId ]);
+
+    // After the effect above, so that Reveal.js has synced the new slide.
+    useEffect(() => {
+        if (!revealApi || !newSlideNoteId) return;
+        if (!containerRef.current?.querySelector(`#slide-${newSlideNoteId}`)) return;
+        goToSlide(revealApi, newSlideNoteId);
+        onNewSlideShown(newSlideNoteId);
+    }, [ presentation, revealApi, newSlideNoteId ]);
 
     function renderSlide(slide: PresentationSlideBaseModel) {
         const isEdited = slide.noteId === editedNoteId;

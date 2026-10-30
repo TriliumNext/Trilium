@@ -2,6 +2,8 @@ import { NoteType } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
 import contentRenderer, { snapshotAndDispose } from "../../../services/content_renderer";
 import { renderTextContent } from "../../../services/content_renderer_text";
+import froca from "../../../services/froca";
+import note_create from "../../../services/note_create";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { ProgressChangedFn } from "../interface";
 
@@ -93,6 +95,39 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
         backgroundColor: !isGradient ? slideBackground : undefined,
         backgroundGradient: isGradient ? slideBackground : undefined
     }
+}
+
+/**
+ * Creates an empty text slide after the slide of `currentNoteId`, at its level, or as the last slide
+ * when no slide is shown. Returns the ID of the new note.
+ */
+export async function createSlide(presentation: PresentationModel, collectionNoteId: string, currentNoteId: string | undefined) {
+    const { parentNoteId, afterNoteId } = getNewSlidePosition(presentation, collectionNoteId, currentNoteId);
+    const targetBranchId = afterNoteId ? await froca.getBranchId(parentNoteId, afterNoteId) : null;
+    const { note } = await note_create.createNote(parentNoteId, {
+        type: "text",
+        activate: false,
+        isProtected: froca.getNoteFromCache(parentNoteId)?.isProtected,
+        ...(targetBranchId ? { target: "after", targetBranchId } : {})
+    });
+    return note?.noteId;
+}
+
+/**
+ * Returns where a new slide goes: after the top-level slide `currentNoteId`, past its vertical slides,
+ * or after the vertical slide `currentNoteId` among its siblings. Without a current slide, the new
+ * slide goes at the end of the presentation.
+ */
+export function getNewSlidePosition(presentation: PresentationModel, collectionNoteId: string, currentNoteId: string | undefined) {
+    for (const slide of presentation.slides) {
+        if (slide.noteId === currentNoteId) {
+            return { parentNoteId: collectionNoteId, afterNoteId: currentNoteId };
+        }
+        if (slide.verticalSlides?.some(verticalSlide => verticalSlide.noteId === currentNoteId)) {
+            return { parentNoteId: slide.noteId, afterNoteId: currentNoteId };
+        }
+    }
+    return { parentNoteId: collectionNoteId, afterNoteId: undefined };
 }
 
 /** Whether `note` is a collection that its slide shows live, see {@link COLLECTION_SLIDE_VIEW_TYPES}. */

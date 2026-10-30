@@ -23,6 +23,7 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 
 In the floating toolbar (top-right):
 
+*   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button to show the presentation in full-screen.
