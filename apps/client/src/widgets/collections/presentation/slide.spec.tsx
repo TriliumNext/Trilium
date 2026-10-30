@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PresentationSlideBaseModel } from "./model";
@@ -126,5 +127,60 @@ describe("collection slides", () => {
         expect([ "input", "textarea", "select" ].map(tag => keyFrom(document.createElement(tag)))).toStrictEqual([ true, true, true ]);
         expect(keyFrom(editable)).toBe(true);
         expect(keyFrom(document.createElement("div"))).toBe(false);
+    });
+});
+
+describe("Presentation keys", () => {
+    afterEach(() => {
+        vi.doUnmock("reveal.js");
+        vi.resetModules();
+        document.body.replaceChildren();
+    });
+
+    it("starts the presentation on F, but leaves F to a field being typed in", async () => {
+        let config: { keyboard?: Record<number, () => void>; keyboardCondition?: (e: KeyboardEvent) => boolean } = {};
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                constructor(_element: HTMLElement, options: typeof config) { config = options; }
+                initialize() { return new Promise(() => {}); }
+                destroy() {}
+                isReady() { return false; }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const onStartPresentation = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        act(() => render(
+            <Presentation
+                presentation={{ slides: [] }}
+                setApi={() => {}}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={undefined}
+                onEditorHost={() => {}}
+                pendingNoteId={undefined}
+                onPendingSlideShown={() => {}}
+                onStartPresentation={onStartPresentation}
+            />,
+            container
+        ));
+
+        config.keyboard?.[70]();
+        expect(onStartPresentation).toHaveBeenCalledTimes(1);
+
+        const press = (target: HTMLElement) => {
+            let allowed: boolean | undefined;
+            target.addEventListener("keydown", (e) => { allowed = config.keyboardCondition?.(e); });
+            target.dispatchEvent(new KeyboardEvent("keydown", { key: "f", bubbles: true, composed: true }));
+            return allowed;
+        };
+        const slides = document.createElement("div");
+        const field = document.createElement("input");
+        document.body.append(slides, field);
+        expect(press(slides)).toBe(true);
+        expect(press(field)).toBe(false);
     });
 });

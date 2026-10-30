@@ -54,7 +54,7 @@ On the right of the toolbar above the slides:
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
-*   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button to show the presentation in full-screen.
+*   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> to leave it.
 
 ### Keyboard shortcuts
 
@@ -63,6 +63,7 @@ The following keyboard shortcuts are supported:
 *   Press <kbd>←</kbd> and <kbd>→</kbd> (or <kbd>H</kbd> and <kbd>L</kbd>) to go to the slide on the left or on the right (horizontal).
 *   Press <kbd>↑</kbd> and <kbd>↓</kbd>  (or <kbd>K</kbd> and <kbd>J</kbd>) to go to the upward or downward slide (vertical).
 *   Press <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> to go to the next/previous slide in order.
+*   Press <kbd>F</kbd> to start the presentation in full-screen.
 *   And a few more, press <kbd>?</kbd> to display a popup with all the supported keyboard combinations.
 
 ## Editing a slide in place

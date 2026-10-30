@@ -54,6 +54,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         setReadyEditorNoteId(undefined);
     };
     const shadowHost = useElementOf(containerRef);
+    const startPresentation = () => void containerRef.current?.requestFullscreen();
     const canEditSlides = media === "screen" && !isReadOnly && !options.is("databaseReadonly");
     const closingSlides = useClosingSlides(refresh);
     const refreshIdRef = useRef(0);
@@ -186,6 +187,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 onEditorHost={setEditorHost}
                 pendingNoteId={pendingSlide?.noteId}
                 onPendingSlideShown={onPendingSlideShown}
+                onStartPresentation={media === "screen" ? startPresentation : undefined}
             />
         </>
     );
@@ -200,7 +202,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         onToggle={() => void setSidebarVisible(!isSidebarVisible)}
                     />}
                     rightChildren={<PresentationToolbarActions
-                        containerRef={containerRef}
+                        onStartPresentation={startPresentation}
                         api={api}
                         isReadOnly={isReadOnly}
                         isEditing={!!editedNoteId}

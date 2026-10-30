@@ -36,15 +36,19 @@ interface PresentationProps {
     pendingNoteId: string | undefined;
     /** Called once the presentation shows the slide of `pendingNoteId`. */
     onPendingSlideShown: (noteId: string) => void;
+    /** Shows the presentation in full-screen, on F; left out where it cannot be. */
+    onStartPresentation: (() => void) | undefined;
 }
 
 export function Presentation({
     presentation, setApi, ntxId, editedNoteId, isEditorReady, closingContents, onEditSlide,
-    onEditorHost, pendingNoteId, onPendingSlideShown
+    onEditorHost, pendingNoteId, onPendingSlideShown, onStartPresentation
 }: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
     const fitObserverRef = useRef<ResizeObserver>(null);
+    const onStartPresentationRef = useRef(onStartPresentation);
+    onStartPresentationRef.current = onStartPresentation;
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -58,12 +62,12 @@ export function Presentation({
             minScale: 0,
             maxScale: Infinity,
             pdfMaxPagesPerSlide: 1,
+            // Reveal.js's own F puts its viewport in full-screen, which in the shadow root is not an
+            // element, so F does what the "Start presentation" button does instead.
+            keyboard: {
+                70: () => onStartPresentationRef.current?.()
+            },
             keyboardCondition(event) {
-                // Full-screen requests sometimes fail, we rely on the UI button instead.
-                if (event.key === "f") {
-                    return false;
-                }
-
                 return !isTypingIn(event) && !isPressingButton(event);
             },
         });

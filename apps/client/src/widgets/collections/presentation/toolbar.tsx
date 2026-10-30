@@ -1,4 +1,3 @@
-import { RefObject } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
 
@@ -14,7 +13,7 @@ import type { PresentationSlideBaseModel } from "./model";
 import { getNoteIdFromSlide } from "./reveal";
 
 interface PresentationToolbarActionsProps {
-    containerRef: RefObject<HTMLDivElement | null>;
+    onStartPresentation(): void;
     api: RevealApi | undefined;
     isReadOnly: boolean;
     isEditing: boolean;
@@ -27,7 +26,7 @@ interface PresentationToolbarActionsProps {
 
 /** The presentation's actions on the right of the collection's toolbar. */
 export default function PresentationToolbarActions({
-    containerRef, api, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
+    onStartPresentation, api, isReadOnly, isEditing, onFinishEditing, onNewSlide, backgroundSlide
 }: PresentationToolbarActionsProps) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
@@ -88,7 +87,7 @@ export default function PresentationToolbarActions({
             <ActionButton
                 icon="bx bx-fullscreen"
                 text={t("presentation_view.start-presentation")}
-                onClick={() => containerRef.current?.requestFullscreen()}
+                onClick={onStartPresentation}
             />
         </>
     );
