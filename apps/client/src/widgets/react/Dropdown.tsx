@@ -307,6 +307,8 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
                 {...buttonProps}
                 className={clsx(
                     iconAction ? "icon-action" : "btn",
+                    // `.icon-action` styles its disabled state by class, as `ActionButton` sets it.
+                    iconAction && disabled && "disabled",
                     !noSelectButtonStyle && "select-button",
                     buttonClassName,
                     !hideToggleArrow && "dropdown-toggle",
