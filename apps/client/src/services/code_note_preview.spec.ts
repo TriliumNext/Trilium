@@ -48,6 +48,17 @@ describe("renderCodeNotePreview", () => {
             .toMatch(/^\.code-preview\[data-code-theme-t="monokai"\]/);
     });
 
+    it("gives the colors of the code theme for a light or a dark background, unscoped, for a slide", async () => {
+        const matching = await freshModule({ codeNoteThemeMatchesApp: "true" });
+        expect(await matching.getCodePreviewThemeCss(false))
+            .toMatch(/^\.code-preview\[data-code-theme-l="vs-code-light"\]/);
+        expect(await matching.getCodePreviewThemeCss(true))
+            .toMatch(/^\.code-preview\[data-code-theme-d="vs-code-dark"\]/);
+
+        const single = await freshModule({ codeNoteThemeMatchesApp: "false" });
+        expect(await single.getCodePreviewThemeCss(true)).toMatch(/^\.code-preview\[data-code-theme-t="monokai"\]/);
+    });
+
     it("falls back to the default style for a theme that is not a built-in one", async () => {
         const { renderCodeNotePreview } = await freshModule({
             codeNoteThemeMatchesApp: "false", codeNoteTheme: "custom"

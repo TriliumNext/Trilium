@@ -23,8 +23,9 @@ describe("Presentation themes", () => {
 
     it("sets the color scheme that matches the background of each theme", async () => {
         const darkThemes = [ "black", "black-contrast", "blood", "dracula", "league", "moon", "night" ];
-        for (const { id } of getPresentationThemes()) {
+        for (const { id, isDark } of getPresentationThemes()) {
             const scheme = darkThemes.includes(id) ? "dark" : "light";
+            expect(isDark, id).toBe(scheme === "dark");
             expect(await loadPresentationTheme(id), id).toMatch(
                 new RegExp(String.raw`\.reveal\s*\{[^}]*color-scheme:\s*${scheme};`));
         }
