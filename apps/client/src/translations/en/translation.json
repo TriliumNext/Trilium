@@ -3858,7 +3858,8 @@
     "menu-make-vertical": "Make vertical slide",
     "menu-make-top-level": "Make top-level slide",
     "menu-delete": "Delete slide...",
-    "slide-background": "Slide background"
+    "slide-background": "Slide background",
+    "no-slides": "This presentation has no slides."
   },
   "calendar_view": {
     "delete_note": "Delete note...",

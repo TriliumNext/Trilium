@@ -9,12 +9,15 @@ import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import katexStylesheet from "../../../services/katex.scss?inline";
 import options from "../../../services/options";
 import CollectionProperties from "../../note_bars/CollectionProperties";
+import Button from "../../react/Button";
 import {
     useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
 } from "../../react/hooks";
+import NoItems from "../../react/NoItems";
 import ShadowDom from "../../react/ShadowDom";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { useClosingSlides } from "./closing_slides";
@@ -162,14 +165,22 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     useLayoutEffect(refresh, [ note, noteIds ]);
 
     useEffect(() => {
+        // An empty presentation has no Reveal.js to wait for.
+        if (presentation && !presentation.slides.length) {
+            setTimeout(onReady);
+            // The editor went away with the slide it was in.
+            finishEditing();
+        }
         // We need to wait for Reveal.js to initialize (by setting api) and for the presentation to become available.
-        if (api && presentation) {
+        else if (api && presentation) {
             // Timeout is necessary because it otherwise can cause flakiness by rendering only the first slide.
             setTimeout(onReady, 200);
         }
     }, [ api, presentation ]);
 
-    if (!presentation || !stylesheets || !note.hasChildren()) return;
+    if (!presentation || !stylesheets) return;
+    const isEmpty = !presentation.slides.length;
+    if (isEmpty && media !== "screen") return;
     const activeSlide = presentation.slides
         .flatMap(slide => [ slide, ...slide.verticalSlides ?? [] ])
         .find(slide => slide.noteId === activeNoteId);
@@ -230,10 +241,21 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                             changes: canAddSlides ? slideChanges : undefined
                         }}
                     />}
-                    <ShadowDom
-                        className="presentation-container"
-                        containerRef={containerRef}
-                    >{content}</ShadowDom>
+                    {isEmpty ? (
+                        <NoItems icon="bx bx-slideshow" text={t("presentation_view.no-slides")}>
+                            {canAddSlides && <Button
+                                text={t("presentation_view.new-slide")}
+                                icon="bx-plus"
+                                kind="primary"
+                                onClick={() => void addSlide(getNewSlidePosition(presentation, note.noteId, undefined))}
+                            />}
+                        </NoItems>
+                    ) : (
+                        <ShadowDom
+                            className="presentation-container"
+                            containerRef={containerRef}
+                        >{content}</ShadowDom>
+                    )}
                 </div>
                 {shadowHost && createPortal(
                     <CollectionSlides
