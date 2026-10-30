@@ -598,6 +598,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                             <NoteAutocomplete
                                 inputRef={autocompleteRef}
                                 handleRef={handleRef}
+                                isListAsWideAsField
                                 // A URL picked from the search belongs on the web link side.
                                 onChange={(picked) => {
                                     if (picked?.externalLink) {
