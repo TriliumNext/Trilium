@@ -153,7 +153,7 @@ export function getNewSlideTypes(): NewSlideTypeOption[][] {
         [
             { type: "board", title: t("book_properties.board"), icon: "bx bx-columns", startsEditing: "inPlace" },
             { type: "table", title: t("book_properties.table"), icon: "bx bx-table", startsEditing: "inPlace" },
-            // A new diagram shows nothing, so its source is written at once.
+            // A new diagram or code shows nothing, so its source is written at once.
             {
                 type: "mermaid", title: t("note_types.mermaid-diagram"), icon: NOTE_TYPE_ICONS.mermaid,
                 startsEditing: "quickEdit"
@@ -163,7 +163,7 @@ export function getNewSlideTypes(): NewSlideTypeOption[][] {
                 startsEditing: undefined
             },
             {
-                type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, startsEditing: undefined,
+                type: "code", title: t("note_types.code"), icon: NOTE_TYPE_ICONS.code, startsEditing: "quickEdit",
                 languages: getCodeLanguages()
             },
             {
@@ -185,7 +185,7 @@ function getCodeLanguages(): NewSlideTypeOption[] {
         type: "code",
         title: mimeType.title,
         icon: getCodeLanguageIcon(mimeType),
-        startsEditing: undefined,
+        startsEditing: "quickEdit",
         mime: mimeType.mime
     }));
 }

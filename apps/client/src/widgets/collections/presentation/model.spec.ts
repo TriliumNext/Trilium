@@ -271,16 +271,19 @@ describe("getNewSlideTypes", () => {
                 [ [ "text", "inPlace" ], [ "canvas", "inPlace" ] ],
                 [
                     [ "board", "inPlace" ], [ "table", "inPlace" ], [ "mermaid", "quickEdit" ],
-                    [ "webView", undefined ], [ "code", undefined ], [ "spreadsheet", undefined ]
+                    [ "webView", undefined ], [ "code", "quickEdit" ], [ "spreadsheet", undefined ]
                 ]
             ]);
     });
 
     it("offers a code slide in each code language that the code note options enable", () => {
         const code = getNewSlideTypes().flat().find(({ type }) => type === "code");
-        expect(code?.languages?.map(({ type, mime, title, icon }) => ({ type, mime, title, icon }))).toEqual([
-            { type: "code", mime: "text/plain", title: "Plain text", icon: "bx bx-code" },
-            { type: "code", mime: "text/x-python", title: "Python", icon: "bx bxl-python" }
+        const languages = code?.languages?.map(({ type, mime, title, icon, startsEditing }) => (
+            { type, mime, title, icon, startsEditing }
+        ));
+        expect(languages).toEqual([
+            { type: "code", mime: "text/plain", title: "Plain text", icon: "bx bx-code", startsEditing: "quickEdit" },
+            { type: "code", mime: "text/x-python", title: "Python", icon: "bx bxl-python", startsEditing: "quickEdit" }
         ]);
     });
 });
