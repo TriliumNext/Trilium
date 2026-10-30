@@ -48,9 +48,12 @@ runtime:
 
 ## 3. The Electron locale
 
-`electronLocale` names the **Chromium locale** the desktop build keeps for the language. Two things read
-it:
+`electronLocale` names the **Chromium locale** of the language on desktop. Three things read it:
 
+- `getElectronLocale()` (`apps/desktop/src/main.ts`) passes the `electronLocale` of the formatting
+  locale, or of the UI locale, to Chromium's `--lang`, hyphenated (`zh_CN` → `zh-CN`). It sets Chromium's
+  own strings and what pages see in `navigator.language` and `Intl`. The options store Trilium ids
+  (`cn`), which Chromium does not recognize and answers in `en-US` — so never pass an id there.
 - `trimElectronLocales` (`apps/desktop/electron-forge/trim-locales.ts`) deletes every Chromium locale
   file not named by an `electronLocale`, and **throws** — failing the packaging — when one names a file
   Electron does not ship. It runs in the forge `postPackage` hook and in the Flathub manifest.
@@ -67,10 +70,10 @@ node -e 'const f=require("./apps/desktop/electron-forge/electron-locales.json");
 - **Found** (`da.pak`, `pt-BR.pak`): set `electronLocale` to that name with `_` for `-` (`da`, `pt_BR`;
   `en-US.pak` is `"en"`). The `electronLocale` union on `Locale` mirrors this list, so the name is already
   a member.
-- **Not found** — Chromium has no UI for the language. Point `electronLocale` at a locale Chromium does
-  ship, so the language is still offered for formatting; the precedent is Irish,
-  `{ id: "ga", electronLocale: "en" }`. Never add a name to the union that the JSON does not list: the
-  type would accept it and the packaging would throw.
+- **Not found** — Chromium has no UI for the language. Point `electronLocale` at the closest locale
+  Chromium does ship; the precedent is Irish, `{ id: "ga", electronLocale: "en" }`. Chromium's strings
+  and `Intl` formatting then use that locale, and Trilium's strings the new language. Never add a name
+  to the union that the JSON does not list: the type would accept it and the packaging would throw.
 
 Then prove it — the spec builds its fixtures from the real file lists, so a wrong name fails here
 instead of in a release build:
@@ -85,10 +88,12 @@ pnpm --filter desktop test trim-locales
   `pnpm chore:update-electron-locales` (network: a few hundred KB of range requests against the release
   zips) and commit the JSON in its own commit.
 
-`electronLocale` does **not** choose Chromium's language. `getElectronLocale()`
-(`apps/desktop/src/main.ts`) passes the Trilium id of the display language, or of the formatting locale,
-to Chromium's `--lang`, so a fallback `electronLocale` never reaches Chromium. When Chromium's name and
-the Trilium id can match, prefer the id that matches.
+`pnpm --filter desktop test src/main.spec` checks that every locale with an `electronLocale` resolves,
+through `getElectronLocale()`, to a locale file in `electron-locales.json`.
+
+A wrong `--lang` does not crash Electron: probed on Windows with Electron 45, an unknown value, or one
+whose file the trim removed, falls back to `en-US` (an empty `app.getLocale()` when `en-US.pak` is gone
+too). The strictness guards the packaging and the language users get, not startup.
 
 ## 4. Verify
 
@@ -96,7 +101,7 @@ the Trilium id can match, prefer the id that matches.
 pnpm typecheck
 pnpm --filter client test canvas/i18n spreadsheet/locales collections/calendar services/i18n utils/formatters
 pnpm --filter @triliumnext/ckeditor5 test src/i18n.spec   # browser mode: Chromium via Playwright
-pnpm --filter desktop test trim-locales
+pnpm --filter desktop test trim-locales src/main.spec
 ```
 
 ## 5. Commit

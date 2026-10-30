@@ -20,9 +20,9 @@ The `electronLocale` of the new entry names the Chromium locale the desktop appl
 The locale files of the Electron version the desktop application pins are recorded in `apps/desktop/electron-forge/electron-locales.json`:
 
 *   If the language is listed there (for example `da.pak` or `pt-BR.pak`), set `electronLocale` to that name, with an underscore in place of the hyphen (`da`, `pt_BR`). `en-US.pak` is `"en"`.
-*   If it is not listed, Chromium has no translation for the language. Set `electronLocale` to a locale it does ship, as Irish does with `"en"`, so that the language is still offered as a formatting locale.
+*   If it is not listed, Chromium has no translation for the language. Set `electronLocale` to the closest locale it does ship, as Irish does with `"en"`.
 
-`electronLocale` only decides which locale files the package keeps and which locales are offered for formatting. It does not choose Chromium's language: `getElectronLocale()` in `apps/desktop/src/main.ts` passes the id of the display language (or of the formatting locale) to Chromium's `--lang` switch.
+`electronLocale` is also the language Chromium runs in: `getElectronLocale()` in `apps/desktop/src/main.ts` passes the `electronLocale` of the formatting locale (or of the display language) to Chromium's `--lang` switch, with a hyphen in place of the underscore. It sets Chromium's own strings and the locale web pages see in `navigator.language` and `Intl`, so with a fallback, these appear in the fallback language.
 
 `pnpm --filter desktop test trim-locales` runs the trim against those files and fails with "Locale … was not found in the packaged app" when the name is wrong. The same spec fails when the file records another Electron version than the one pinned in `apps/desktop/package.json`; after an Electron update, regenerate it with `pnpm chore:update-electron-locales` and commit the result.
 
