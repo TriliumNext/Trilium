@@ -241,8 +241,7 @@ body.mobile.ios {
 
         .modal.mobile-note-panel #right-pane .right-pane-flat-tab-body #sidebar-chat :is(.llm-chat-input-form, .llm-chat-no-provider) {
             margin: 0 var(--mobile-sheet-margin) var(--mobile-sheet-margin);
-            border-end-start-radius: var(--mobile-sheet-corner-radius);
-            border-end-end-radius: var(--mobile-sheet-corner-radius);
+            border-radius: var(--mobile-sheet-corner-radius);
         }
 
         #mobile-bottom-bar {
