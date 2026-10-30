@@ -1,5 +1,6 @@
 import { NoteType } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
+import branches from "../../../services/branches";
 import contentRenderer, { snapshotAndDispose } from "../../../services/content_renderer";
 import { renderTextContent } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
@@ -128,6 +129,83 @@ export function getNewSlidePosition(presentation: PresentationModel, collectionN
         }
     }
     return { parentNoteId: collectionNoteId, afterNoteId: undefined };
+}
+
+/** A slide dropped before or after another slide at its level. */
+export interface SlideMove {
+    noteId: string;
+    targetNoteId: string;
+    position: "before" | "after";
+}
+
+/**
+ * Returns the move of the slide `noteId` before or after the slide `targetNoteId`, if both have the
+ * same parent, the move changes the order, and the parent's children are not sorted by `#sorted`.
+ */
+export function getSlideMove(
+    presentation: PresentationModel, collectionNoteId: string, noteId: string, targetNoteId: string,
+    position: SlideMove["position"], isSorted: (parentNoteId: string) => boolean
+): SlideMove | undefined {
+    const level = findSlideLevel(presentation, collectionNoteId, noteId);
+    if (!level || noteId === targetNoteId || isSorted(level.parentNoteId)) return;
+
+    const from = level.slides.findIndex(slide => slide.noteId === noteId);
+    const to = level.slides.findIndex(slide => slide.noteId === targetNoteId);
+    if (to < 0) return;
+    const insertion = position === "before" ? to : to + 1;
+    if (insertion === from || insertion === from + 1) return;
+    return { noteId, targetNoteId, position };
+}
+
+/** Returns the model with `move` applied, so that the sidebar and the slides show it before the server does. */
+export function applySlideMove(presentation: PresentationModel, move: SlideMove): PresentationModel {
+    function reorder<T extends PresentationSlideBaseModel>(slides: T[]) {
+        const moved = slides.find(slide => slide.noteId === move.noteId);
+        if (!moved || !slides.some(slide => slide.noteId === move.targetNoteId)) return slides;
+        const rest = slides.filter(slide => slide !== moved);
+        const target = rest.findIndex(slide => slide.noteId === move.targetNoteId);
+        rest.splice(move.position === "before" ? target : target + 1, 0, moved);
+        return rest;
+    }
+
+    return {
+        slides: reorder(presentation.slides).map(slide => (
+            slide.verticalSlides ? { ...slide, verticalSlides: reorder(slide.verticalSlides) } : slide
+        ))
+    };
+}
+
+/**
+ * Moves the branch of the slide's note before or after the target's branch, under their parent. Returns
+ * whether it found both branches; a move the server refuses shows a toast but still returns `true`.
+ */
+export async function moveSlideNote(presentation: PresentationModel, collectionNoteId: string, move: SlideMove) {
+    const level = findSlideLevel(presentation, collectionNoteId, move.noteId);
+    if (!level) return false;
+    const [ branchId, targetBranchId ] = await Promise.all([
+        froca.getBranchId(level.parentNoteId, move.noteId),
+        froca.getBranchId(level.parentNoteId, move.targetNoteId)
+    ]);
+    if (!branchId || !targetBranchId) return false;
+
+    if (move.position === "before") {
+        await branches.moveBeforeBranch([ branchId ], targetBranchId);
+    } else {
+        await branches.moveAfterBranch([ branchId ], targetBranchId);
+    }
+    return true;
+}
+
+/** Returns the slides at the level of the slide `noteId`, with the note they are children of. */
+function findSlideLevel(presentation: PresentationModel, collectionNoteId: string, noteId: string) {
+    if (presentation.slides.some(slide => slide.noteId === noteId)) {
+        return { parentNoteId: collectionNoteId, slides: presentation.slides as PresentationSlideBaseModel[] };
+    }
+    for (const slide of presentation.slides) {
+        if (slide.verticalSlides?.some(verticalSlide => verticalSlide.noteId === noteId)) {
+            return { parentNoteId: slide.noteId, slides: slide.verticalSlides };
+        }
+    }
 }
 
 /** Whether `note` is a collection that its slide shows live, see {@link COLLECTION_SLIDE_VIEW_TYPES}. */

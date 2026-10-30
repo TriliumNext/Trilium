@@ -6,11 +6,13 @@ import { h } from "preact";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../../entities/fnote";
+import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import note_create from "../../../services/note_create";
 import { buildNote } from "../../../test/easy-froca";
 import {
-    buildPresentationModel, createSlide, getNewSlidePosition, PresentationModel, renderSlideContent
+    applySlideMove, buildPresentationModel, createSlide, getNewSlidePosition, getSlideMove, moveSlideNote,
+    PresentationModel, renderSlideContent
 } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
@@ -251,5 +253,76 @@ describe("createSlide", () => {
 
         getBranchId.mockRestore();
         createNote.mockRestore();
+    });
+});
+
+describe("moving slides", () => {
+    const slide = (noteId: string) => ({ noteId, type: "text" as const, content: { __html: "" } });
+    const model: PresentationModel = {
+        slides: [
+            { ...slide("a"), verticalSlides: [ slide("a1"), slide("a2"), slide("a3") ] },
+            { ...slide("b"), verticalSlides: undefined },
+            { ...slide("c"), verticalSlides: undefined }
+        ]
+    };
+    const unsorted = () => false;
+
+    it("moves a slide only among the slides at its level", () => {
+        expect(getSlideMove(model, "deck", "c", "a", "before", unsorted))
+            .toEqual({ noteId: "c", targetNoteId: "a", position: "before" });
+        expect(getSlideMove(model, "deck", "a3", "a1", "after", unsorted))
+            .toEqual({ noteId: "a3", targetNoteId: "a1", position: "after" });
+        // Between levels, and into another stack.
+        expect(getSlideMove(model, "deck", "b", "a1", "after", unsorted)).toBeUndefined();
+        expect(getSlideMove(model, "deck", "a1", "b", "before", unsorted)).toBeUndefined();
+    });
+
+    it("leaves out a drop that changes nothing, and a parent whose children are sorted", () => {
+        expect(getSlideMove(model, "deck", "b", "b", "after", unsorted)).toBeUndefined();
+        expect(getSlideMove(model, "deck", "b", "a", "after", unsorted)).toBeUndefined();
+        expect(getSlideMove(model, "deck", "b", "c", "before", unsorted)).toBeUndefined();
+        expect(getSlideMove(model, "deck", "a1", "a2", "before", unsorted)).toBeUndefined();
+
+        const isSorted = (parentNoteId: string) => parentNoteId === "a";
+        expect(getSlideMove(model, "deck", "a3", "a1", "before", isSorted)).toBeUndefined();
+        expect(getSlideMove(model, "deck", "c", "a", "before", isSorted)).not.toBeUndefined();
+    });
+
+    it("reorders the model as the move does, keeping a slide's vertical slides with it", () => {
+        const order = (presentation: PresentationModel) => presentation.slides.map(s => [
+            s.noteId, ...s.verticalSlides?.map(v => v.noteId) ?? []
+        ].join(" "));
+
+        expect(order(applySlideMove(model, { noteId: "a", targetNoteId: "c", position: "after" })))
+            .toEqual([ "b", "c", "a a1 a2 a3" ]);
+        expect(order(applySlideMove(model, { noteId: "a3", targetNoteId: "a1", position: "before" })))
+            .toEqual([ "a a3 a1 a2", "b", "c" ]);
+        // The model it was given stays as it was.
+        expect(order(model)).toEqual([ "a a1 a2 a3", "b", "c" ]);
+    });
+
+    it("moves the slide's branch before or after the target's, under their parent", async () => {
+        const getBranchId = vi.spyOn(froca, "getBranchId")
+            .mockImplementation(async (parentNoteId, childNoteId) => `${parentNoteId}_${childNoteId}`);
+        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(undefined);
+        const moveAfter = vi.spyOn(branches, "moveAfterBranch").mockResolvedValue(undefined);
+
+        await expect(moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a", position: "before" }))
+            .resolves.toBe(true);
+        expect(moveBefore).toHaveBeenCalledWith([ "deck_c" ], "deck_a");
+
+        await moveSlideNote(model, "deck", { noteId: "a1", targetNoteId: "a3", position: "after" });
+        expect(moveAfter).toHaveBeenCalledWith([ "a_a1" ], "a_a3");
+
+        // A branch that froca cannot find moves nothing.
+        getBranchId.mockResolvedValue(null);
+        moveBefore.mockClear();
+        await expect(moveSlideNote(model, "deck", { noteId: "c", targetNoteId: "a", position: "before" }))
+            .resolves.toBe(false);
+        expect(moveBefore).not.toHaveBeenCalled();
+
+        getBranchId.mockRestore();
+        moveBefore.mockRestore();
+        moveAfter.mockRestore();
     });
 });

@@ -20,7 +20,32 @@
     }
 
     li {
+        position: relative;
         margin-block-end: 10px;
+
+        &.dragging > .slide-thumbnail-button {
+            opacity: 0.4;
+        }
+
+        &.drop-before::before,
+        &.drop-after::after {
+            content: "";
+            position: absolute;
+            inset-inline-start: 0;
+            width: var(--thumbnail-width);
+            height: 2px;
+            border-radius: 1px;
+            background-color: var(--main-text-color);
+            pointer-events: none;
+        }
+
+        &.drop-before::before {
+            top: -6px;
+        }
+
+        &.drop-after::after {
+            bottom: -6px;
+        }
     }
 
     .presentation-sidebar-vertical-slides {

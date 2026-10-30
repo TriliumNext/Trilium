@@ -7,10 +7,13 @@ import froca from "../../../services/froca";
 import Icon from "../../react/Icon";
 import ShadowDom from "../../react/ShadowDom";
 import { createFitObserver } from "./fit";
-import { PresentationModel, PresentationSlideBaseModel } from "./model";
+import { PresentationModel, PresentationSlideBaseModel, SlideMove } from "./model";
 import thumbnailStylesheet from "./sidebar_thumbnail.css?raw";
 
 type SlideContent = PresentationSlideBaseModel["content"];
+
+/** The data type of a dragged thumbnail, which nothing outside the sidebar accepts. */
+const SLIDE_DRAG_TYPE = "application/x-trilium-slide";
 
 interface SlideSidebarProps {
     presentation: PresentationModel;
@@ -22,6 +25,16 @@ interface SlideSidebarProps {
     activeNoteId: string | undefined;
     /** Moves to the slide of a clicked thumbnail. */
     onSelectSlide: (noteId: string) => void;
+    /** Returns the move of a slide dropped before or after another, or nothing where it cannot go. */
+    planSlideMove?: (noteId: string, targetNoteId: string, position: SlideMove["position"]) => SlideMove | undefined;
+    /** Moves a dropped slide; left out when the slides cannot be moved, which leaves the thumbnails undraggable. */
+    onMoveSlide?: (move: SlideMove) => void;
+}
+
+/** The thumbnail being dragged, and where it would go if dropped now. */
+interface DragState {
+    noteId: string;
+    drop?: SlideMove;
 }
 
 /**
@@ -30,7 +43,7 @@ interface SlideSidebarProps {
  * theme, at full slide size scaled down.
  */
 export default function SlideSidebar({
-    presentation, stylesheets, closingContents, activeNoteId, onSelectSlide
+    presentation, stylesheets, closingContents, activeNoteId, onSelectSlide, planSlideMove, onMoveSlide
 }: SlideSidebarProps) {
     const sheets = useMemo(() => buildStyleSheets([ ...stylesheets, thumbnailStylesheet ]), [ stylesheets ]);
     const fitObserver = useFitObserver();
@@ -40,6 +53,8 @@ export default function SlideSidebar({
         slide.noteId, ...slide.verticalSlides?.map(verticalSlide => verticalSlide.noteId) ?? []
     ]);
     const tabStopNoteId = activeNoteId && noteIds.includes(activeNoteId) ? activeNoteId : noteIds[0];
+    const canDrag = !!planSlideMove && !!onMoveSlide;
+    const [ drag, setDrag ] = useState<DragState>();
 
     useEffect(() => {
         const list = listRef.current;
@@ -65,6 +80,54 @@ export default function SlideSidebar({
         if (nextIndex !== index) onSelectSlide(noteIds[nextIndex]);
     }
 
+    /**
+     * Returns where the dragged slide goes, from the closest thumbnail at its level: before it over its
+     * upper half, after it otherwise. Over a vertical slide, a top-level slide goes after the whole stack.
+     */
+    function findDrop(e: DragEvent) {
+        if (!drag || !planSlideMove) return;
+        let item = e.target instanceof Element ? e.target.closest<HTMLElement>("li[data-slide-id]") : null;
+        let isInStack = false;
+        while (item) {
+            const targetNoteId = item.dataset.slideId;
+            const button = item.querySelector(":scope > .slide-thumbnail-button");
+            if (targetNoteId && button) {
+                const { top, height } = button.getBoundingClientRect();
+                const position = !isInStack && e.clientY < top + height / 2 ? "before" : "after";
+                const move = planSlideMove(drag.noteId, targetNoteId, position);
+                if (move) return move;
+            }
+            item = item.parentElement?.closest<HTMLElement>("li[data-slide-id]") ?? null;
+            isInStack = true;
+        }
+    }
+
+    function onDragOver(e: DragEvent) {
+        if (!drag) return;
+        const drop = findDrop(e);
+        if (drop) {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        }
+        if (drop?.targetNoteId !== drag.drop?.targetNoteId || drop?.position !== drag.drop?.position) {
+            setDrag({ ...drag, drop });
+        }
+    }
+
+    function onDrop(e: DragEvent) {
+        if (!drag) return;
+        e.preventDefault();
+        if (drag.drop) onMoveSlide?.(drag.drop);
+        setDrag(undefined);
+    }
+
+    function onDragLeave(e: DragEvent) {
+        const list = listRef.current;
+        if (drag?.drop && list && !(e.relatedTarget instanceof Node && list.contains(e.relatedTarget))) {
+            setDrag({ noteId: drag.noteId });
+        }
+    }
+
     function renderThumbnail(slide: PresentationSlideBaseModel) {
         const closingContent = closingContents[slide.noteId];
         const isActive = slide.noteId === activeNoteId;
@@ -76,6 +139,15 @@ export default function SlideSidebar({
                 aria-label={froca.getNoteFromCache(slide.noteId)?.title}
                 aria-current={isActive ? "true" : undefined}
                 onClick={() => onSelectSlide(slide.noteId)}
+                draggable={canDrag}
+                onDragStart={canDrag ? (e) => {
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData(SLIDE_DRAG_TYPE, slide.noteId);
+                    }
+                    setDrag({ noteId: slide.noteId });
+                } : undefined}
+                onDragEnd={() => setDrag(undefined)}
             >
                 <SlideThumbnail
                     slide={closingContent ? { ...slide, content: closingContent } : slide}
@@ -88,14 +160,23 @@ export default function SlideSidebar({
     }
 
     return (
-        <ol ref={listRef} className="presentation-sidebar" onKeyDown={onKeyDown}>
+        <ol
+            ref={listRef}
+            className="presentation-sidebar"
+            onKeyDown={onKeyDown}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onDragLeave={onDragLeave}
+        >
             {presentation.slides.map(slide => (
-                <li key={slide.noteId}>
+                <li key={slide.noteId} {...getItemProps(slide.noteId, drag)}>
                     {renderThumbnail(slide)}
                     {slide.verticalSlides && (
                         <ol className="presentation-sidebar-vertical-slides">
                             {slide.verticalSlides.map(verticalSlide => (
-                                <li key={verticalSlide.noteId}>{renderThumbnail(verticalSlide)}</li>
+                                <li key={verticalSlide.noteId} {...getItemProps(verticalSlide.noteId, drag)}>
+                                    {renderThumbnail(verticalSlide)}
+                                </li>
                             ))}
                         </ol>
                     )}
@@ -103,6 +184,19 @@ export default function SlideSidebar({
             ))}
         </ol>
     );
+}
+
+/** The note ID of a thumbnail's list item, and the classes that mark it as dragged or as where a drop goes. */
+function getItemProps(noteId: string, drag: DragState | undefined) {
+    const drop = drag?.drop?.targetNoteId === noteId ? drag.drop.position : undefined;
+    return {
+        "data-slide-id": noteId,
+        className: clsx({
+            dragging: drag?.noteId === noteId,
+            "drop-before": drop === "before",
+            "drop-after": drop === "after"
+        }) || undefined
+    };
 }
 
 interface ThumbnailContentProps {

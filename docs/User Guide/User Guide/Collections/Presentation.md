@@ -10,6 +10,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 ## How it works
 
 *   Each slide is a child note of the collection.
+*   The slides are not shown in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> by default, since the slide sidebar already lists them (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Hiding%20the%20subtree.md">Hiding the subtree</a>). To show them, open the collection's <span class="tn-icon bx bx-cog"></span> settings and turn off _Hide child notes in tree_.
 *   The order of the child notes determines the order of the slides.
 *   Unlike traditional presentation software, slides can be laid out both horizontally and vertically (see below for more information).
 *   Direct children will be laid out horizontally and the children of those will be laid out vertically. Children deeper than two levels of nesting are ignored.
@@ -25,6 +26,7 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 
 *   The slide being shown is outlined, and the sidebar scrolls to keep it in view.
 *   Click a thumbnail to go to its slide.
+*   To reorder the slides, drag a thumbnail before or after another slide at the same level; a line shows where it goes. A slide takes its vertical slides with it, and dragging it over another slide's vertical slides places it after that whole stack. A vertical slide moves only among the vertical slides of its own slide. Slides can't be dragged in a read-only or search-based presentation, or where the parent note sorts its children with `#sorted`.
 *   Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides:
     *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
     *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.

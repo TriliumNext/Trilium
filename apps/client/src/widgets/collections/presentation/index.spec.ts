@@ -2,7 +2,9 @@ import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createFitObserver, fitSlideContent } from "./fit";
-import { followSlideLinks, goToSlide, isPressingButton, keepKeyboardInPresentation } from "./index";
+import {
+    followSlideLinks, goToSlide, isPressingButton, keepKeyboardInPresentation, keepSlideShown
+} from "./index";
 
 describe("fitSlideContent", () => {
     it("zooms out only the content that is larger than the slide", () => {
@@ -231,5 +233,30 @@ describe("isPressingButton", () => {
         expect(press(button, "ArrowRight")).toBe(false);
         expect(press(field, " ")).toBe(false);
         document.body.replaceChildren();
+    });
+});
+
+describe("keepSlideShown", () => {
+    it("goes back to the slide of a note that moved, and stays put otherwise", () => {
+        const container = document.createElement("div");
+        const moved = document.createElement("section");
+        moved.id = "slide-moved";
+        container.append(moved);
+        let current = { h: 0, v: 0 };
+        const api = {
+            getRevealElement: () => container,
+            getIndices: vi.fn((slide?: HTMLElement) => slide ? { h: 2, v: 1 } : current),
+            slide: vi.fn()
+        };
+
+        keepSlideShown(api as unknown as RevealApi, "moved");
+        expect(api.slide).toHaveBeenCalledExactlyOnceWith(2, 1);
+
+        // Already shown where it is, or no longer a slide.
+        api.slide.mockClear();
+        current = { h: 2, v: 1 };
+        keepSlideShown(api as unknown as RevealApi, "moved");
+        keepSlideShown(api as unknown as RevealApi, "gone");
+        expect(api.slide).not.toHaveBeenCalled();
     });
 });

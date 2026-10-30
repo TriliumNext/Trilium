@@ -24,7 +24,8 @@ import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { createFitObserver } from "./fit";
 import {
-    buildPresentationModel, createSlide, PresentationModel, PresentationSlideBaseModel, renderSlideContent
+    applySlideMove, buildPresentationModel, createSlide, getSlideMove, moveSlideNote, PresentationModel,
+    PresentationSlideBaseModel, renderSlideContent, SlideMove
 } from "./model";
 import SlideSidebar from "./sidebar";
 import slideCustomStylesheet from "./slidejs.css?raw";
@@ -71,19 +72,40 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         if (noteId) setNewSlideNoteId(noteId);
     }
 
+    // Shown at once, before the server confirms; the model rebuilt after the move replaces it.
+    async function moveSlide(move: SlideMove) {
+        if (!presentation) return;
+        ++refreshIdRef.current;
+        setPresentation(applySlideMove(presentation, move));
+        try {
+            if (await moveSlideNote(presentation, note.noteId, move)) return;
+        } catch (e) {
+            console.error(e);
+        }
+        refresh();
+    }
+
     function onNewSlideShown(noteId: string) {
         setNewSlideNoteId(undefined);
         startEditing(noteId);
     }
 
+    const editedNoteIdRef = useRef(editedNoteId);
+    editedNoteIdRef.current = editedNoteId;
+
     useEffect(() => {
         if (!api) return;
-        api.on("slidechanged", finishEditing);
+        // A moved slide keeps its edit, as `keepSlideShown()` changes only its position.
+        const onSlideChanged = (e: Event) => {
+            const currentSlide = (e as Event & { currentSlide?: HTMLElement }).currentSlide;
+            if (getNoteIdFromSlide(currentSlide) !== editedNoteIdRef.current) finishEditing();
+        };
+        api.on("slidechanged", onSlideChanged);
         api.on("overviewshown", finishEditing);
         // The editor's toolbars are in `document.body`, which full-screen hides.
         document.addEventListener("fullscreenchange", finishEditing);
         return () => {
-            api.off("slidechanged", finishEditing);
+            api.off("slidechanged", onSlideChanged);
             api.off("overviewshown", finishEditing);
             document.removeEventListener("fullscreenchange", finishEditing);
         };
@@ -164,6 +186,11 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                         closingContents={closingSlides.contents}
                         activeNoteId={activeNoteId}
                         onSelectSlide={(noteId) => api && goToSlide(api, noteId)}
+                        planSlideMove={canAddSlides ? (noteId, targetNoteId, position) => getSlideMove(
+                            presentation, note.noteId, noteId, targetNoteId, position,
+                            (parentNoteId) => !!froca.getNoteFromCache(parentNoteId)?.hasLabel("sorted")
+                        ) : undefined}
+                        onMoveSlide={canAddSlides ? (move) => void moveSlide(move) : undefined}
                     />}
                     <ShadowDom
                         className="presentation-container"
@@ -515,7 +542,9 @@ function Presentation({
     useEffect(() => {
         const fitObserver = fitObserverRef.current;
         if (!revealApi || !containerRef.current || !fitObserver) return;
+        const currentNoteId = getNoteIdFromSlide(revealApi.getCurrentSlide());
         revealApi.sync();
+        if (currentNoteId) keepSlideShown(revealApi, currentNoteId);
 
         fitObserver.disconnect();
         for (const content of containerRef.current.querySelectorAll(".slide-content")) {
@@ -559,7 +588,7 @@ function Presentation({
                         return renderSlide(slide);
                     }
                     return (
-                        <section>
+                        <section key={`stack-${slide.noteId}`}>
                             {renderSlide(slide)}
                             {slide.verticalSlides.map(renderSlide)}
                         </section>
@@ -699,6 +728,18 @@ export function followSlideLinks(container: HTMLElement, api: RevealApi) {
 
     container.addEventListener("click", onClick);
     return () => container.removeEventListener("click", onClick);
+}
+
+/**
+ * Shows the slide of the note `noteId` again after the slides were reordered, as Reveal.js keeps the
+ * position of the slide it showed rather than the slide.
+ */
+export function keepSlideShown(api: RevealApi, noteId: string) {
+    const slide = api.getRevealElement()?.querySelector<HTMLElement>(`#slide-${noteId}`);
+    if (!slide) return;
+    const { h, v } = api.getIndices(slide);
+    const current = api.getIndices();
+    if (h !== current.h || v !== current.v) api.slide(h, v);
 }
 
 /**

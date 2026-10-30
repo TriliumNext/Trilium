@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PresentationModel } from "./model";
+import { getSlideMove, type PresentationModel, type SlideMove } from "./model";
 import SlideSidebar from "./sidebar";
 
 vi.mock("../../../services/froca", () => ({
@@ -160,6 +160,102 @@ describe("SlideSidebar", () => {
     });
 });
 
+describe("dragging slides", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        document.body.replaceChildren();
+    });
+
+    it("drops a slide before or after a slide at its level, marking where it goes", () => {
+        const onMoveSlide = vi.fn();
+        const sidebar = renderDraggableSidebar(onMoveSlide);
+        const drag = startDrag(sidebar, "board");
+
+        // The upper half of a thumbnail puts the slide before it.
+        expect(drag.over("web", 10)).toBe(true);
+        expect(getDropMarks(sidebar)).toEqual([ "web drop-before" ]);
+        expect(getItem(sidebar, "board").classList.contains("dragging")).toBe(true);
+
+        // Over a vertical slide, a top-level slide goes after the whole stack.
+        expect(drag.over("second", 10)).toBe(true);
+        expect(getDropMarks(sidebar)).toEqual([ "intro drop-after" ]);
+
+        drag.over("web", 10);
+        drag.drop("web");
+        expect(onMoveSlide).toHaveBeenCalledExactlyOnceWith({ noteId: "board", targetNoteId: "web", position: "before" });
+        expect(getDropMarks(sidebar)).toEqual([]);
+        expect(getItem(sidebar, "board").classList.contains("dragging")).toBe(false);
+    });
+
+    it("refuses a drop at another level, or where the slide already is", () => {
+        const onMoveSlide = vi.fn();
+        const sidebar = renderDraggableSidebar(onMoveSlide);
+
+        const vertical = startDrag(sidebar, "second");
+        expect(vertical.over("web", 10)).toBe(false);
+        expect(getDropMarks(sidebar)).toEqual([]);
+        expect(vertical.over("first", 90)).toBe(false);
+        vertical.drop("first");
+        expect(onMoveSlide).not.toHaveBeenCalled();
+
+        // A refused position clears the mark of an allowed one.
+        const topLevel = startDrag(sidebar, "board");
+        topLevel.over("intro", 10);
+        expect(getDropMarks(sidebar)).toEqual([ "intro drop-before" ]);
+        expect(topLevel.over("web", 90)).toBe(false);
+        expect(getDropMarks(sidebar)).toEqual([]);
+    });
+
+    it("lets no thumbnail be dragged when the slides cannot be moved", () => {
+        const sidebar = renderSidebar();
+        expect(getButton(sidebar, "intro").getAttribute("draggable")).not.toBe("true");
+        expect(getButton(renderDraggableSidebar(vi.fn()), "intro").getAttribute("draggable")).toBe("true");
+    });
+});
+
+/** Renders the sidebar with thumbnails 100px tall, whose moves follow `getSlideMove()`. */
+function renderDraggableSidebar(onMoveSlide: (move: SlideMove) => void) {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 160, 100));
+    return renderSidebar({
+        planSlideMove: (noteId, targetNoteId, position) => (
+            getSlideMove(presentation, "deck", noteId, targetNoteId, position, () => false)
+        ),
+        onMoveSlide
+    });
+}
+
+function startDrag(sidebar: HTMLElement, noteId: string) {
+    dispatchDrag(getButton(sidebar, noteId), "dragstart", 0);
+    return {
+        /** Drags over the thumbnail of `targetNoteId`, `y` pixels from its top; returns whether a drop is allowed there. */
+        over: (targetNoteId: string, y: number) => dispatchDrag(getButton(sidebar, targetNoteId), "dragover", y).defaultPrevented,
+        drop: (targetNoteId: string) => {
+            dispatchDrag(getButton(sidebar, targetNoteId), "drop", 0);
+            dispatchDrag(getButton(sidebar, noteId), "dragend", 0);
+        }
+    };
+}
+
+function dispatchDrag(target: HTMLElement, type: string, clientY: number) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.assign(event, { clientY, dataTransfer: { setData: () => {}, effectAllowed: "", dropEffect: "" } });
+    act(() => {
+        target.dispatchEvent(event);
+    });
+    return event;
+}
+
+function getItem(sidebar: HTMLElement, noteId: string) {
+    const item = sidebar.querySelector<HTMLElement>(`li[data-slide-id=${noteId}]`);
+    if (!item) throw new Error(`No list item for ${noteId}.`);
+    return item;
+}
+
+function getDropMarks(sidebar: HTMLElement) {
+    return [ ...sidebar.querySelectorAll<HTMLElement>("li.drop-before, li.drop-after") ]
+        .map(item => `${item.dataset.slideId} ${item.classList.contains("drop-before") ? "drop-before" : "drop-after"}`);
+}
+
 function getButton(sidebar: HTMLElement, noteId: string) {
     const button = sidebar.querySelector(`[data-note-id=${noteId}]`)?.closest("button");
     if (!button) throw new Error(`The thumbnail of ${noteId} is not in a button.`);
@@ -209,12 +305,15 @@ interface RenderOptions {
     closingContents?: Record<string, { __html: string }>;
     activeNoteId?: string;
     onSelectSlide?: (noteId: string) => void;
+    planSlideMove?: (noteId: string, targetNoteId: string, position: SlideMove["position"]) => SlideMove | undefined;
+    onMoveSlide?: (move: SlideMove) => void;
     /** Renders again into the container of an earlier render. */
     container?: HTMLElement;
 }
 
 function renderSidebar({
-    closingContents = {}, activeNoteId, onSelectSlide = () => {}, container = document.createElement("div")
+    closingContents = {}, activeNoteId, onSelectSlide = () => {}, planSlideMove, onMoveSlide,
+    container = document.createElement("div")
 }: RenderOptions = {}) {
     if (!container.isConnected) document.body.appendChild(container);
     act(() => {
@@ -225,6 +324,8 @@ function renderSidebar({
                 closingContents={closingContents}
                 activeNoteId={activeNoteId}
                 onSelectSlide={onSelectSlide}
+                planSlideMove={planSlideMove}
+                onMoveSlide={onMoveSlide}
             />,
             container
         );
