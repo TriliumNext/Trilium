@@ -12,7 +12,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, getChevronIcon, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -53,6 +53,20 @@ describe("getListedChildCount", () => {
 
         expect(getListedChildCount(parent, true)).toBe(2);
         expect(getListedChildCount(parent, false)).toBe(3);
+    });
+});
+
+describe("getChevronIcon", () => {
+    it("points back toward the leading edge and forward toward the trailing one", () => {
+        const { isRtl } = glob;
+        try {
+            glob.isRtl = false;
+            expect([ getChevronIcon("back"), getChevronIcon("forward") ]).toEqual([ "bx bx-chevron-left", "bx bx-chevron-right" ]);
+            glob.isRtl = true;
+            expect([ getChevronIcon("back"), getChevronIcon("forward") ]).toEqual([ "bx bx-chevron-right", "bx bx-chevron-left" ]);
+        } finally {
+            glob.isRtl = isRtl;
+        }
     });
 });
 

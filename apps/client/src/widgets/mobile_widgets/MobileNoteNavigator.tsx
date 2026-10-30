@@ -263,7 +263,7 @@ export default function MobileNoteNavigator() {
                             aria-label={t("mobile_note_navigator.back")}
                         >
                             <Icon
-                                icon={pendingPop ? "bx bx-loader bx-spin" : "bx bx-chevron-left"}
+                                icon={pendingPop ? "bx bx-loader bx-spin" : getChevronIcon("back")}
                                 className="mobile-navigator-back-icon"
                             />
                             <span className="mobile-navigator-back-title">
@@ -662,7 +662,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
             {isPending ? (
                 <Icon icon="bx bx-loader bx-spin" className="mobile-navigator-row-chevron" />
             ) : hasChildren ? (
-                <Icon icon="bx bx-chevron-right" className="mobile-navigator-row-chevron" />
+                <Icon icon={getChevronIcon("forward")} className="mobile-navigator-row-chevron" />
             ) : null}
         </div>
     );
@@ -827,4 +827,13 @@ function buildNoteContextMenu(notePath: string, parentComponent: Component | nul
             selectMenuItemHandler: (item) => handleTreeContextMenuSelect(item, ctx)
         });
     };
+}
+
+/**
+ * The chevron pointing `back` toward the leading edge of the reading direction, or `forward`
+ * toward the trailing one.
+ */
+export function getChevronIcon(direction: "back" | "forward") {
+    const pointsLeft = (direction === "back") !== !!glob.isRtl;
+    return pointsLeft ? "bx bx-chevron-left" : "bx bx-chevron-right";
 }
