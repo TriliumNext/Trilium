@@ -4870,5 +4870,12 @@
   "canvas": {
     "thin_stroke": "細いペン先",
     "thin_stroke_description": "手書きに適した、より細い線を描きます。すでに描かれた線の幅はそのまま維持されます。"
+  },
+  "sort_selection": {
+    "sort_blocks": "ブロックを並べ替え",
+    "sort_list_items": "リスト項目を並べ替え",
+    "sort_rows": "行を並べ替え",
+    "ascending": "昇順",
+    "descending": "降順"
   }
 }
