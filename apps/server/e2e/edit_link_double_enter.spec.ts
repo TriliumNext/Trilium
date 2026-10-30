@@ -23,16 +23,18 @@ test("fast double-Enter in the edit link dialog is not consumed by a stale sugge
     await editor.click();
     await page.keyboard.press("Control+l");
 
-    const dialog = page.locator(".edit-link-dialog");
-    await expect(dialog).toBeVisible();
+    const balloon = page.locator(".edit-link-balloon");
+    await expect(balloon).toBeVisible();
 
-    const input = dialog.locator("input.note-autocomplete");
+    const input = balloon.locator("input.note-autocomplete");
     await input.pressSequentially("Highlights");
 
     // The list opens on its first note, the search and creation rows coming after
-    // the notes. Looked up in the dialog, where the popup renders: a hidden Empty
-    // tab keeps a list with the same classes in the page.
-    const highlighted = dialog.locator(".note-autocomplete-menu .dropdown-item.tn-menu-active");
+    // the notes. The popup renders in the body; `tn-dropdown-menu` tells it apart
+    // from the inline list with the same classes that a hidden Empty tab keeps.
+    const highlighted = page.locator(
+        ".note-autocomplete-menu.tn-dropdown-menu .dropdown-item.tn-menu-active"
+    );
     await expect(highlighted).toBeVisible();
     await expect(highlighted.locator(".bx-search, .bx-plus, .bx-subdirectory-right")).toHaveCount(0);
     await page.waitForTimeout(300);
@@ -40,7 +42,9 @@ test("fast double-Enter in the edit link dialog is not consumed by a stale sugge
     // Fire both Enters in one synchronous task — zero timers can interleave —
     // and record what each one did.
     const result = await page.evaluate(() => {
-        const el = document.querySelector<HTMLInputElement>(".edit-link-dialog input.note-autocomplete");
+        const el = document.querySelector<HTMLInputElement>(
+            ".edit-link-balloon input.note-autocomplete"
+        );
         if (!el) throw new Error("autocomplete input not found");
 
         const fire = () => {
