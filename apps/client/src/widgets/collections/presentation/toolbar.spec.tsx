@@ -106,6 +106,28 @@ describe("PresentationControls", () => {
         vi.useRealTimers();
     });
 
+    it("puts the navigation at the start, the editing in the middle and the view at the end", () => {
+        const { container } = renderControls({
+            onNewSlide: vi.fn(),
+            slideToEdit: { slide: undefined, onEditInPlace: undefined },
+            backgroundSlide: { slide: undefined }
+        });
+        const groupOf = (selector: string) => container.querySelector(selector)?.closest(".tn-overlay-control-group");
+
+        for (const [ selector, placement ] of [
+            [ "button.bx-chevron-left", "bottom-start" ],
+            [ ".presentation-slide-counter", "bottom-start" ],
+            [ "button.bx-chevron-right", "bottom-start" ],
+            [ ".presentation-new-slide", "bottom-center" ],
+            [ "button.bx-edit", "bottom-center" ],
+            [ "button.bx-palette", "bottom-center" ],
+            [ "button.bx-grid-horizontal", "bottom-end" ],
+            [ "button.bx-fullscreen", "bottom-end" ]
+        ]) {
+            expect(groupOf(selector)?.getAttribute("data-placement"), selector).toBe(placement);
+        }
+    });
+
     it("counts the slides and steps through them, stopping at either end", () => {
         const { container, api, rerender } = renderControls({ activeNoteId: "first" });
         const button = (icon: string) => container.querySelector<HTMLButtonElement>(`button.${icon}`);

@@ -48,8 +48,8 @@ interface PresentationControlsProps {
 
 /**
  * The controls at the foot of the stage, rendered into the stage's {@link CONTROLS_SLOT_NAME} slot so
- * that they go full-screen with it: the editing controls at the start, and the navigation at the end.
- * Full-screen shows the navigation alone, and fades it out while the pointer rests.
+ * that they go full-screen with it: the navigation at the start, the editing in the middle and the
+ * view at the end. Full-screen leaves out the editing, and fades the rest out while the pointer rests.
  */
 export default function PresentationControls({
     api, stage, slideNoteIds, activeNoteId, isEditing, onFinishEditing, onNewSlide, backgroundSlide, slideToEdit
@@ -61,8 +61,30 @@ export default function PresentationControls({
 
     return (
         <div slot={CONTROLS_SLOT_NAME} className={clsx("presentation-controls", isIdle && "is-idle")}>
+            <OverlayControlGroup className="presentation-navigation" placement="bottom-start">
+                <OverlayControlButton
+                    title={t("presentation_view.previous-slide")}
+                    icon="bx-chevron-left"
+                    shortcut="Shift+Space"
+                    disabled={index <= 0}
+                    onClick={() => api?.prev()}
+                />
+                <span className="presentation-slide-counter">
+                    {index >= 0 && t("presentation_view.slide-counter", {
+                        current: index + 1, total: slideNoteIds.length
+                    })}
+                </span>
+                <OverlayControlButton
+                    title={t("presentation_view.next-slide")}
+                    icon="bx-chevron-right"
+                    shortcut="Space"
+                    disabled={index < 0 || index >= slideNoteIds.length - 1}
+                    onClick={() => api?.next()}
+                />
+            </OverlayControlGroup>
+
             {!isFullscreen && (onNewSlide || slideToEdit || backgroundSlide) && (
-                <OverlayControlGroup className="presentation-edit-controls" placement="bottom-start">
+                <OverlayControlGroup className="presentation-edit-controls" placement="bottom-center">
                     {onNewSlide && <>
                         <OverlayControlButton
                             icon="bx-plus"
@@ -90,26 +112,7 @@ export default function PresentationControls({
                 </OverlayControlGroup>
             )}
 
-            <OverlayControlGroup className="presentation-navigation" placement="bottom-end">
-                <OverlayControlButton
-                    title={t("presentation_view.previous-slide")}
-                    icon="bx-chevron-left"
-                    shortcut="Shift+Space"
-                    disabled={index <= 0}
-                    onClick={() => api?.prev()}
-                />
-                <span className="presentation-slide-counter">
-                    {index >= 0 && t("presentation_view.slide-counter", {
-                        current: index + 1, total: slideNoteIds.length
-                    })}
-                </span>
-                <OverlayControlButton
-                    title={t("presentation_view.next-slide")}
-                    icon="bx-chevron-right"
-                    shortcut="Space"
-                    disabled={index < 0 || index >= slideNoteIds.length - 1}
-                    onClick={() => api?.next()}
-                />
+            <OverlayControlGroup className="presentation-view-controls" placement="bottom-end">
                 <OverlayControlButton
                     title={t("presentation_view.slide-overview")}
                     icon="bx-grid-horizontal"

@@ -50,7 +50,15 @@ A sidebar to the left of the slides shows a thumbnail of every slide in the pres
 
 ### Controls below the slides
 
-Below the slides are two groups of buttons. The group on the left edits the presentation:
+Below the slides are three groups of buttons.
+
+#### Moving between slides
+
+On the left, the <span class="tn-icon bx bx-chevron-left"></span> _Previous slide_ and <span class="tn-icon bx bx-chevron-right"></span> _Next slide_ buttons go through every slide in order, vertical slides included, as <kbd>Shift</kbd>+<kbd>Space</kbd> and <kbd>Space</kbd> do. Between them is the number of the slide being shown, out of the number of slides.
+
+#### Editing
+
+In the middle:
 
 *   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. The <span class="tn-icon bx bx-chevron-down"></span> arrow beside it adds a slide of another type instead:
     
@@ -62,12 +70,16 @@ Below the slides are two groups of buttons. The group on the left edits the pres
     
     A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to edit the current slide: in place for a text, canvas, Kanban Board or Table slide, as a double-click does, and in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> for a slide of any other type, or where the slide can't be edited in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it. While a slide is edited in place, the button becomes the <span class="tn-icon bx bx-check"></span> _Finish editing_ button.
-*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label. The group on the right moves through the presentation:
-*   The <span class="tn-icon bx bx-chevron-left"></span> _Previous slide_ and <span class="tn-icon bx bx-chevron-right"></span> _Next slide_ buttons go through every slide in order, vertical slides included, as <kbd>Shift</kbd>+<kbd>Space</kbd> and <kbd>Space</kbd> do. Between them is the number of the slide being shown, out of the number of slides.
+*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
+
+#### Viewing
+
+On the right:
+
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the <span class="tn-icon bx bx-fullscreen"></span> _Start presentation_ button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-exit-fullscreen"></span> _Exit fullscreen_ button to leave it.
 
-In full-screen, only the group on the right is shown, and it fades out while the mouse rests. Move the mouse to bring it back.
+In full-screen, the editing buttons are hidden, and the other two groups fade out while the mouse rests. Move the mouse to bring it back.
 
 ### Keyboard shortcuts
 
