@@ -156,7 +156,9 @@ describe("renderEmbedPreview", () => {
         expect(iframe?.getAttribute("src")).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");
         // The click was the play command, so the player starts straight away.
         expect(iframe?.getAttribute("src")).toContain("autoplay=1");
-        expect(root.querySelector("button.link-embed-video-facade")).toBeNull();
+        // The facade covers the player until it loads; `link_embed_dom.spec.ts` covers the fade.
+        expect(iframe?.nextElementSibling).toBe(facade);
+        expect(facade?.classList.contains("link-embed-video-facade-loading")).toBe(true);
     });
 
     it("omits the player's origin param when not served from a web origin (desktop custom protocol)", async () => {
