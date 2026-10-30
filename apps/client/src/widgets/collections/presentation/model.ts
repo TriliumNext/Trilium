@@ -1,6 +1,7 @@
 import { NoteType } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
 import contentRenderer, { snapshotAndDispose } from "../../../services/content_renderer";
+import { renderTextContent } from "../../../services/content_renderer_text";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { ProgressChangedFn } from "../interface";
 
@@ -116,19 +117,41 @@ function getWebViewSrc(note: FNote) {
 }
 
 async function processContent(note: FNote): Promise<DangerouslySetInnerHTML> {
-    const { $renderedContent } = await contentRenderer.getRenderedContent(note, {
-        noChildrenList: true,
-        mediaEnvironment: "native"
-    });
+    const { $renderedContent } =
+        await contentRenderer.getRenderedContent(note, SLIDE_RENDER_OPTIONS);
     return { __html: sanitizeNoteContentHtml(snapshotAndDispose($renderedContent)) };
+}
+
+const SLIDE_RENDER_OPTIONS = {
+    noChildrenList: true,
+    mediaEnvironment: "native"
+} as const;
+
+/**
+ * Renders `content`, the HTML of the text slide `note`, which can differ from the saved content,
+ * as the editor of the slide holds it when it closes.
+ */
+export async function renderSlideContent(
+    note: FNote,
+    content: string
+): Promise<DangerouslySetInnerHTML> {
+    const $renderedContent = $("<div>");
+    await renderTextContent(note, content, $renderedContent, SLIDE_RENDER_OPTIONS);
+    const html = sanitizeNoteContentHtml(snapshotAndDispose($renderedContent));
+    return { __html: rewriteSlideLinks(html) };
 }
 
 async function postProcessSlides(slides: (PresentationSlideModel | PresentationSlideBaseModel)[]) {
     for (const slide of slides) {
         if (slide.type !== "text") continue;
-        slide.content.__html = slide.content.__html.replaceAll(/href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)[^"]*"/g, `href="#/slide-$1"`);
+        slide.content.__html = rewriteSlideLinks(slide.content.__html);
         if ("verticalSlides" in slide && slide.verticalSlides) {
             postProcessSlides(slide.verticalSlides);
         }
     }
+}
+
+/** Points the links in `html` at the slides of the notes they link to. */
+function rewriteSlideLinks(html: string) {
+    return html.replaceAll(/href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)[^"]*"/g, `href="#/slide-$1"`);
 }

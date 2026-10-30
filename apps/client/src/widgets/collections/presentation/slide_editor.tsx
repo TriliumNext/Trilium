@@ -18,6 +18,8 @@ interface SlideEditorProps {
     /** Called once the editor holds the slide's content and can replace the rendered slide. */
     onReady(): void;
     onFinish(): void;
+    /** Receives the content of the editor as it goes away, and the save of what is left. */
+    onClose(content: string, save: Promise<boolean>): void;
 }
 
 /**
@@ -25,7 +27,7 @@ interface SlideEditorProps {
  * theme styles the text being edited. Escape finishes editing, unless the editor already handled
  * it.
  */
-export default function SlideEditor({ note, onReady, onFinish }: SlideEditorProps) {
+export default function SlideEditor({ note, onReady, onFinish, onClose }: SlideEditorProps) {
     const rootRef = useRef<HTMLDivElement>(null);
     const onReadyRef = useRef(onReady);
     onReadyRef.current = onReady;
@@ -54,7 +56,7 @@ export default function SlideEditor({ note, onReady, onFinish }: SlideEditorProp
             }}
         >
             <Suspense fallback={null}>
-                <TextEmbedEditor note={note} hasFixedToolbar={false} onClose={() => {}} />
+                <TextEmbedEditor note={note} hasFixedToolbar={false} onClose={onClose} />
             </Suspense>
         </div>
     );

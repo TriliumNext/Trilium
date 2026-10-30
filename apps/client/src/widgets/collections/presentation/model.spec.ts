@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../../entities/fnote";
 import { buildNote } from "../../../test/easy-froca";
-import { buildPresentationModel, PresentationModel } from "./model";
+import { buildPresentationModel, PresentationModel, renderSlideContent } from "./model";
 
 vi.mock("../../type_widgets/llm_chat/ChatPreview", () => ({
     default: ({ messages }: { messages: { content: string }[] }) =>
@@ -187,5 +187,18 @@ describe("Presentation model with read-only slides", () => {
             { noteId: "lockedSlide", isReadOnly: true },
             { noteId: "openSlide", isReadOnly: undefined }
         ]);
+    });
+});
+
+describe("renderSlideContent", () => {
+    it("renders the content an editor held, with its links pointing at slides", async () => {
+        const note = buildNote({ id: "editedSlide", title: "Edited", content: "<p>Saved</p>" });
+
+        const link = `<a class="reference-link" href="#root/presentation/slide1">Link</a>`;
+        const content = await renderSlideContent(note, `<p>Typed&nbsp;${link}</p>`);
+
+        expect(content.__html).toContain("Typed");
+        expect(content.__html).not.toContain("Saved");
+        expect(content.__html).toContain(`href="#/slide-slide1"`);
     });
 });

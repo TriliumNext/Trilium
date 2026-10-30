@@ -20,7 +20,9 @@ import { useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTrili
 import ShadowDom from "../../react/ShadowDom";
 import { DesktopWebView } from "../../type_widgets/WebView";
 import { ViewModeMedia, ViewModeProps } from "../interface";
-import { buildPresentationModel, PresentationModel, PresentationSlideBaseModel } from "./model";
+import {
+    buildPresentationModel, PresentationModel, PresentationSlideBaseModel, renderSlideContent
+} from "./model";
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 
@@ -53,6 +55,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     };
     const shadowHost = useElementOf(containerRef);
     const canEditSlides = media === "screen" && !isReadOnly && !options.is("databaseReadonly");
+    const closingSlides = useClosingSlides(refresh);
+    const refreshIdRef = useRef(0);
 
     useEffect(() => {
         if (!api) return;
@@ -67,8 +71,15 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
         };
     }, [ api ]);
 
+    // Only the latest model applies, as an earlier one can land later.
     function refresh() {
-        buildPresentationModel(note, onProgressChanged).then(setPresentation);
+        const refreshId = ++refreshIdRef.current;
+        const savedSlides = closingSlides.getSaved();
+        buildPresentationModel(note, onProgressChanged).then((model) => {
+            if (refreshId !== refreshIdRef.current) return;
+            setPresentation(model);
+            closingSlides.release(savedSlides);
+        });
     }
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
@@ -99,6 +110,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                 ntxId={noteContext?.ntxId}
                 editedNoteId={editedNoteId}
                 isEditorReady={!!editedNoteId && readyEditorNoteId === editedNoteId}
+                closingContents={closingSlides.contents}
                 onEditSlide={canEditSlides ? startEditing : undefined}
                 onEditorHost={setEditorHost}
             />
@@ -139,6 +151,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
                             note={editedNote}
                             onReady={() => setReadyEditorNoteId(editedNote.noteId)}
                             onFinish={finishEditing}
+                            onClose={(content, save) => (
+                                closingSlides.onEditorClose(editedNote, content, save)
+                            )}
                         />
                     </Suspense>,
                     editorHost
@@ -163,6 +178,60 @@ function useElementOf<T extends HTMLElement>(ref: RefObject<T | null>) {
         if (ref.current !== element) setElement(ref.current);
     });
     return element;
+}
+
+type SlideContent = PresentationSlideBaseModel["content"];
+
+/** An editor of a text slide that went away, while its last save runs. */
+interface ClosingSlide {
+    isSaving: boolean;
+}
+
+/**
+ * Keeps the content of each text slide as its editor held it when it closed, rendered, until a
+ * model built after the last save of the editor holds what the save stored. After a failed save,
+ * the content stays until the next model. `refresh` builds the model again once a save succeeds.
+ */
+function useClosingSlides(refresh: () => void) {
+    const [ contents, setContents ] = useState<Record<string, SlideContent>>({});
+    const closingRef = useRef(new Map<string, ClosingSlide>());
+
+    function onEditorClose(slideNote: FNote, content: string, save: Promise<boolean>) {
+        const { noteId } = slideNote;
+        const closing: ClosingSlide = { isSaving: true };
+        closingRef.current.set(noteId, closing);
+        void renderSlideContent(slideNote, content).then((rendered) => {
+            if (closingRef.current.get(noteId) === closing) {
+                setContents((current) => ({ ...current, [noteId]: rendered }));
+            }
+        });
+        void save.then((isSaved) => {
+            if (closingRef.current.get(noteId) !== closing) return;
+            closing.isSaving = false;
+            if (isSaved) refresh();
+        });
+    }
+
+    /** Returns the closed editors whose save has landed, which a model built from now reflects. */
+    function getSaved() {
+        return [ ...closingRef.current ].filter(([ , closing ]) => !closing.isSaving);
+    }
+
+    /** Drops the content of the editors that `getSaved()` returned, once a later model applies. */
+    function release(saved: [string, ClosingSlide][]) {
+        const released = saved.filter(([ noteId, closing ]) => (
+            closingRef.current.get(noteId) === closing
+        ));
+        if (!released.length) return;
+        for (const [ noteId ] of released) closingRef.current.delete(noteId);
+        setContents((current) => {
+            const next = { ...current };
+            for (const [ noteId ] of released) delete next[noteId];
+            return next;
+        });
+    }
+
+    return { contents, onEditorClose, getSaved, release };
 }
 
 interface CollectionSlidesProps {
@@ -312,13 +381,18 @@ interface PresentationProps {
     editedNoteId: string | undefined;
     /** Whether the editor of the edited slide holds its content. */
     isEditorReady: boolean;
+    /** The content of each text slide whose editor closed, by note ID, shown over the model's. */
+    closingContents: Record<string, SlideContent>;
     /** Starts editing a text or collection slide in place; left out when the presentation cannot be edited. */
     onEditSlide: ((noteId: string) => void) | undefined;
     /** Receives the element that the editor of the edited slide goes into. */
     onEditorHost: (element: HTMLElement | null) => void;
 }
 
-function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady, onEditSlide, onEditorHost }: PresentationProps) {
+function Presentation({
+    presentation, setApi, ntxId, editedNoteId, isEditorReady, closingContents, onEditSlide,
+    onEditorHost
+}: PresentationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealApi, setRevealApi] = useState<RevealApi>();
     const fitObserverRef = useRef<ResizeObserver>(null);
@@ -390,10 +464,11 @@ function Presentation({ presentation, setApi, ntxId, editedNoteId, isEditorReady
         const isEdited = slide.noteId === editedNoteId;
         const canEdit = onEditSlide && !isEdited && !slide.isReadOnly
             && (slide.type === "text" || slide.isCollection);
+        const closingContent = closingContents[slide.noteId];
         return (
             <Slide
                 key={slide.noteId}
-                slide={slide}
+                slide={closingContent ? { ...slide, content: closingContent } : slide}
                 ntxId={ntxId}
                 // A collection slide is edited in its own view, so it takes no editor.
                 editorHostRef={isEdited && !slide.isCollection ? onEditorHost : undefined}
