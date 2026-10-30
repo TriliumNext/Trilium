@@ -19,20 +19,34 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 ## Interaction and navigation
 
-A sidebar to the left of the slides shows a thumbnail of every slide in the presentation's theme, with vertical slides indented under the slide they belong to. The slide being shown is outlined, and the sidebar scrolls to keep it in view. Click a thumbnail to go to its slide. Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides: press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included, or <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide. Web view, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides are shown as an icon. To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings; press it again to bring the sidebar back. Each device remembers the choice for every presentation. The sidebar is also hidden when the note is too narrow to fit it.
+### Slide sidebar
 
-In the floating toolbar (top-right):
+A sidebar to the left of the slides shows a thumbnail of every slide in the presentation's theme, with vertical slides indented under the slide they belong to. Web view, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides are shown as an icon.
+
+*   The slide being shown is outlined, and the sidebar scrolls to keep it in view.
+*   Click a thumbnail to go to its slide.
+*   Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides:
+    *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
+    *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.
+*   To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings. Press it again to bring the sidebar back. Each device remembers the choice for every presentation.
+*   The sidebar is hidden when the note is too narrow to fit it.
+
+### Toolbar
+
+On the right of the toolbar above the slides:
 
 *   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
 *   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the <span class="tn-icon bx bx-fullscreen"></span> “Start presentation” button to show the presentation in full-screen.
 
+### Keyboard shortcuts
+
 The following keyboard shortcuts are supported:
 
 *   Press <kbd>←</kbd> and <kbd>→</kbd> (or <kbd>H</kbd> and <kbd>L</kbd>) to go to the slide on the left or on the right (horizontal).
 *   Press <kbd>↑</kbd> and <kbd>↓</kbd>  (or <kbd>K</kbd> and <kbd>J</kbd>) to go to the upward or downward slide (vertical).
-*   Press <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> or  to go to the next/previous slide in order.
+*   Press <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> to go to the next/previous slide in order.
 *   And a few more, press <kbd>?</kbd> to display a popup with all the supported keyboard combinations.
 
 ## Editing a slide in place
