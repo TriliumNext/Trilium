@@ -54,7 +54,11 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
     selectedTabId: RightPaneTabId | undefined;
     setSelectedTabId: (tabId: RightPaneTabId) => void;
 }) {
-    const tabs = useRightPaneTabs(shown, widgetsByParent).map(withFixedHeightWidgetsLast);
+    // The tabs stay mounted once opened, so that closing the panel to read the note keeps the chat's
+    // draft and the reply it is receiving.
+    const opened = useRef(false);
+    opened.current ||= shown;
+    const tabs = useRightPaneTabs(opened.current, widgetsByParent).map(withFixedHeightWidgetsLast);
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
     const [ headerSlots, setHeaderSlotRef ] = useHeaderSlots();
     // One slot per tab, only the active one shown; a tab that fills its slot replaces the title.
@@ -85,6 +89,7 @@ function MobileNotePanelModal({ shown, onHidden, widgetsByParent, selectedTabId,
             backTitle={t("attribute_list_panel.back")}
             ariaLabel={t("mobile_detail_menu.note_panel")}
             show={shown}
+            keepInDom={opened.current}
             onHidden={onHidden}
         >
             {/* The widgets' card, TOC and highlight styles are scoped to `#right-pane`, which the
@@ -119,7 +124,7 @@ function useHeaderSlots() {
  * Moves `NoteMap` and `PdfPages` to the end of the tab: both are drawn to a fixed height, which in a
  * tab that scrolls as a whole would sit between the sections around them.
  */
-function withFixedHeightWidgetsLast(tab: RightPaneTabContents): RightPaneTabContents {
+export function withFixedHeightWidgetsLast(tab: RightPaneTabContents): RightPaneTabContents {
     const isFixedHeight = (item: RightPaneTabContents["items"][number]) => item.type === NoteMap || item.type === PdfPages;
     return {
         ...tab,
