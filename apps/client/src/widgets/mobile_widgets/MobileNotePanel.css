@@ -47,7 +47,7 @@ body.mobile .modal.mobile-note-panel {
     }
 
     .modal-footer {
-        padding: 4px 8px calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 8px));
+        padding: 4px 8px max(var(--mobile-bottom-offset), 8px);
         border-top: 1px solid var(--main-border-color);
     }
 
@@ -57,6 +57,7 @@ body.mobile .modal.mobile-note-panel {
 
     .mobile-note-panel-tabs {
         flex: 1;
+        margin: 0;
 
         div.btn-group {
             flex: 1;
