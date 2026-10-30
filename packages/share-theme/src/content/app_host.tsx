@@ -1,6 +1,7 @@
 import appContext from "@triliumnext/client/src/components/app_context.js";
 import Component from "@triliumnext/client/src/components/component.js";
 import TabManager from "@triliumnext/client/src/components/tab_manager.js";
+import type { FBlobRow } from "@triliumnext/client/src/entities/fblob.js";
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import linkContextMenu from "@triliumnext/client/src/menus/link_context_menu.js";
 import froca from "@triliumnext/client/src/services/froca.js";
@@ -28,6 +29,11 @@ export interface AppPayload extends ShareFrocaRows {
      * `../`, under which the notes the views read are files instead of the share's API.
      */
     exportBasePath?: string;
+    /**
+     * The content of notes the page already holds, by note ID, which froca reads instead of the
+     * share's: the note a guest edits, as of the version its first save names.
+     */
+    blobs?: Record<string, FBlobRow>;
 }
 
 export interface HostedApp {
@@ -46,6 +52,10 @@ export interface HostedApp {
 interface ShareAppHostProps {
     noteId: string;
     payload: AppPayload;
+    /** Whether the views leave out their editing controls, which they do unless the page edits the note. */
+    readOnly?: boolean;
+    /** The component the views mount under, for a page that reaches their commands through it. */
+    component?: Component;
     children(app: HostedApp): ComponentChildren;
 }
 
@@ -57,9 +67,11 @@ interface ShareAppHostProps {
  * note of the export, so a collection a view draws has its children. A click on a link into the note tree the views render,
  * which the app's link handler opens in the app, opens the note's shared page.
  */
-export default function ShareAppHost({ noteId, payload, children }: ShareAppHostProps) {
-    const [ app ] = useState(() => loadPayload(noteId, payload));
-    const [ component ] = useState(() => new Component());
+export default function ShareAppHost({
+    noteId, payload, readOnly = true, component: hostComponent, children
+}: ShareAppHostProps) {
+    const [ app ] = useState(() => loadPayload(noteId, payload, readOnly));
+    const [ component ] = useState(() => hostComponent ?? new Component());
     const [ isLoaded, setLoaded ] = useState(!app?.staticSource);
 
     useLayoutEffect(() => {
@@ -90,20 +102,20 @@ export default function ShareAppHost({ noteId, payload, children }: ShareAppHost
     );
 }
 
-function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
-    const { options: optionValues, links, ...rows } = payload;
+function loadPayload(noteId: string, payload: AppPayload, readOnly: boolean): HostedApp | null {
+    const { options: optionValues, links, blobs, ...rows } = payload;
     options.load(Object.fromEntries(Object.entries(optionValues)
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
     const staticSource = payload.exportBasePath === undefined
         ? undefined : createStaticFrocaSource(links, payload.exportBasePath);
-    const source = staticSource ?? createShareFrocaSource(links);
+    const source = staticSource ?? createShareFrocaSource(links, blobs);
     froca.setSource(withRootAnchors(source));
     setImageUrlResolver(staticSource?.getImageUrl);
     linkContextMenu.setShareLinkResolver(source.getNoteLink);
     froca.addResp({
         ...anchorAtRoot(rows),
-        attributes: [ ...rows.attributes, {
+        attributes: readOnly ? [ ...rows.attributes, {
             attributeId: `${noteId}-share-readOnly`,
             noteId,
             type: "label",
@@ -111,7 +123,7 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
             value: "",
             position: 0,
             isInheritable: false
-        } ]
+        } ] : rows.attributes
     });
 
     const note = froca.getNoteFromCache(noteId);

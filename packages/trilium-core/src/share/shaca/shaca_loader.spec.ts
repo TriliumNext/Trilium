@@ -6,9 +6,9 @@ import shacaLoader from "./shaca_loader.js";
 
 const ROWS: Record<string, unknown[][]> = {
     notes: [
-        [ "_share", "Shared", "text", "text/html", "blob1", "2025-01-01", false ],
-        [ "open", "Open", "text", "text/html", "blob2", "2025-01-01", false ],
-        [ "locked", "Secret", "text", "text/html", "blob3", "2025-01-01", true ]
+        [ "_share", "Shared", "text", "text/html", "blob1", "2024-12-31", "2025-01-01", false ],
+        [ "open", "Open", "text", "text/html", "blob2", "2024-12-31", "2025-01-01", false ],
+        [ "locked", "Secret", "text", "text/html", "blob3", "2024-12-31", "2025-01-01", true ]
     ],
     branches: [
         [ "_share_open", "open", "_share", "", false, "2025-01-01" ],

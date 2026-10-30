@@ -32,9 +32,11 @@ describe("SNote", () => {
 
     it("reads its content as text, bytes or JSON", () => {
         const note = (id: string, type: string, mime: string, blobId = id) =>
-            new SNote([ id, id, type, mime, blobId, "2025-01-01", false ]);
+            new SNote([ id, id, type, mime, blobId, "2024-12-31", "2025-01-01", false ]);
 
         const json = note("json", "code", "application/json");
+        expect(json.utcDateCreated).toBe("2024-12-31");
+        expect(json.utcDateModified).toBe("2025-01-01");
         expect(json.hasStringContent()).toBe(true);
         expect(json.getContent()).toBe("{ \"a\": 1 }");
         expect(json.getJsonContent()).toEqual({ a: 1 });
@@ -131,12 +133,18 @@ describe("SNote", () => {
         const related = addAttribute("related", "note", "relation", "related", "target");
         const credentials =
             addAttribute("credentials", "note", "label", "shareCredentials", "user:pass");
+        addAttribute("editPassword", "parent", "label", "shareEditPassword", "salt$hash", true);
 
         expect(note.getAttributes()).toEqual([ color, color2, enabled, related, archived ]);
         expect(note.getAttributes("label")).toEqual([ color, color2, enabled, archived ]);
         expect(note.getAttributes(undefined, "color")).toEqual([ color, color2 ]);
         expect(note.getAttributes("label", "shareCredentials")).toEqual([]);
+        expect(note.getAttributes(undefined, "shareEditPassword")).toEqual([]);
         expect(note.getCredentials()).toEqual([ credentials ]);
+        expect(note.getSecretLabelValue("shareEditPassword")).toBe("salt$hash");
+        expect(note.getSecretLabelValue("shareCredentials")).toBe("user:pass");
+        expect(note.getSecretLabelValue("color")).toBeNull();
+        expect(parent.getSecretLabelValue("shareCredentials")).toBeNull();
 
         expect(note.hasLabel("archived")).toBe(true);
         expect(note.hasOwnedLabel("archived")).toBe(false);

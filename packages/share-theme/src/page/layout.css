@@ -2,21 +2,11 @@ html {
     --page-top-spacing: 2rem;
 }
 
-/* Past 90rem the navigation pane widens into the space beside the layout, up to 24rem, and the
-   layout widens by twice as much to keep the content centered. The pane spans the full width and
-   centers the layout with its start padding; `#toc-pane` fills the space after the layout. */
 #split-pane {
     --left-pane-width: clamp(min(18rem, 25vw), 18rem + (100vw - 90rem) / 2, 24rem);
-    --left-pane-growth: max(0rem, var(--left-pane-width) - 18rem);
-    --layout-width: calc(90rem + 2 * var(--left-pane-growth));
 
     display: flex;
     flex-direction: row;
-    padding-inline-start: max(0px, (100% - var(--layout-width)) / 2);
-}
-
-#split-pane:has(#content.full-content-width) {
-    padding-inline-start: 0;
 }
 
 #left-pane {
@@ -52,8 +42,26 @@ html {
     min-width: 0;
     position: relative;
     display: flex;
+    flex-direction: column;
+}
+
+#right-pane-body {
+    display: flex;
     flex-direction: row;
     align-items: flex-start;
+}
+
+@media screen and (width > 48em) {
+    #right-pane:has(> #scrolling-container) {
+        height: 100vh;
+    }
+
+    #scrolling-container {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        scroll-padding-top: calc(var(--top-bar-scrolled-height) - var(--top-bar-height));
+    }
 }
 
 #main {
@@ -71,20 +79,13 @@ html {
     }
 }
 
-/* A text note reads at a limited width, as in the app, unless it has `#fullContentWidth`. */
-#content.ck-content:not(.full-content-width),
-#content.ck-content:not(.full-content-width) ~ * {
-    max-width: 48rem;
-    margin-inline: auto;
-}
-
 #mobile-backdrop {
     display: none;
 }
 
 @media (max-width: 48em) {
     html {
-        scroll-padding-top: var(--header-height);
+        scroll-padding-top: calc(var(--header-height) + var(--top-bar-scrolled-height));
     }
 
     body:is(.menu-open, .toc-open) {

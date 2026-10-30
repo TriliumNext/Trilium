@@ -2,7 +2,7 @@ import type { StandaloneApi } from "@triliumnext/commons";
 
 import { t } from "./i18n.js";
 import { getSetupAuthToken } from "./setup_auth.js";
-import utils, { isShare } from "./utils.js";
+import utils, { isShare, isShareEditing } from "./utils.js";
 import ValidationError from "./validation_error.js";
 
 type Headers = Record<string, string | null | undefined>;
@@ -17,7 +17,8 @@ export interface StandardResponse {
 }
 
 async function getHeaders(headers?: Headers) {
-    if (isShare) {
+    // A visitor of a shared page sends nothing of the app's, unless the page is editing its note.
+    if (isShare && !isShareEditing()) {
         return {};
     }
 
@@ -86,6 +87,15 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
 
 async function put<T>(url: string, data?: unknown, componentId?: string) {
     return await call<T>("PUT", url, componentId, { data });
+}
+
+/**
+ * A PUT whose caller handles the server's refusal itself: a 409 for a save over an older version,
+ * a 401 for one whose access ended, as a guest's save on a shared page meets.
+ */
+async function putWithSilentRefusal<T>(url: string, data?: unknown, componentId?: string) {
+    return await call<T>("PUT", url, componentId,
+        { data, silentConflict: true, silentUnauthorized: true });
 }
 
 async function patch<T>(url: string, data: unknown, componentId?: string) {
@@ -239,7 +249,8 @@ async function refreshCsrfToken(): Promise<void> {
 
     csrfRefreshInProgress = (async () => {
         try {
-            const response = await fetch(`./bootstrap${window.location.search}`, { cache: "no-store" });
+            const url = glob.csrfRefreshUrl ?? `./bootstrap${window.location.search}`;
+            const response = await fetch(url, { cache: "no-store" });
             if (response.ok) {
                 const json = await response.json();
                 glob.csrfToken = json.csrfToken;
@@ -273,6 +284,8 @@ interface CallOptions {
     /** Suppresses the generic error toast for a 401, for callers that present the failure themselves
      *  (e.g. the OneNote import dialog showing an expired connection inline, with the server's reason). */
     silentUnauthorized?: boolean;
+    /** Suppresses the error toast for a 409, for a caller that resolves the conflict itself. */
+    silentConflict?: boolean;
     // If `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
     raw?: boolean;
     /** Used internally to prevent infinite retry loops on CSRF refresh. */
@@ -388,6 +401,8 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                     // report nothing
                 } else if (opts.silentBadRequest && jqXhr.status === 400) {
                     // report nothing
+                } else if (opts.silentConflict && jqXhr.status === 409) {
+                    // report nothing
                 } else {
                     try {
                         await reportError(method, url, jqXhr.status, jqXhr.responseText);
@@ -484,7 +499,8 @@ async function localAjax(
         const silenced = (opts.silentNotFound && resp.status === 404)
             || (opts.silentInternalServerError && resp.status === 500)
             || (opts.silentUnauthorized && resp.status === 401)
-            || (opts.silentBadRequest && resp.status === 400);
+            || (opts.silentBadRequest && resp.status === 400)
+            || (opts.silentConflict && resp.status === 409);
 
         if (!silenced) {
             try {
@@ -551,6 +567,7 @@ export default {
     postWithSilentInternalServerError,
     postWithTimeout,
     put,
+    putWithSilentRefusal,
     patch,
     remove,
     upload,

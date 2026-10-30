@@ -792,8 +792,9 @@ function getReferenceLinkTitleSync(href: string, storedTitle?: string) {
     }
 
     if (viewScope?.viewMode === "attachments" && viewScope?.attachmentId) {
+        // A save can run before the attachments arrive; the content keeps the title it holds.
         if (!note.attachments) {
-            return "[loading title...]";
+            return storedTitle || "[loading title...]";
         }
 
         const attachment = note.attachments.find((att) => att.attachmentId === viewScope.attachmentId);

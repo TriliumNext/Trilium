@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig, usesClassicToolbar } from "./toolbar.js";
+import {
+    buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig,
+    usesClassicToolbar, withoutItems
+} from "./toolbar.js";
 
 type ToolbarConfig = string | "|" | { items: ToolbarConfig[] };
 
@@ -19,6 +22,13 @@ vi.mock("../../../services/experimental_features.js", () => ({
 // The group labels are translated when the toolbar is built (CKEditor renders a nested dropdown's
 // `label` verbatim), so echo the key back to make the lookup visible to the assertions below.
 vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => key }));
+
+// `isShare` is settled when the module loads, so a shared page's editing is stubbed instead.
+const shareState = vi.hoisted(() => ({ editing: false }));
+vi.mock("../../../services/utils.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/utils.js")>()),
+    isShareEditing: () => shareState.editing
+}));
 
 function setDevice(device: "mobile" | "desktop") {
     (window as unknown as { glob?: { device?: string } }).glob = { device };
@@ -330,6 +340,55 @@ describe("buildMobileToolbar", () => {
             }
         }
     });
+});
+
+describe("a shared page's editor", () => {
+    beforeEach(() => {
+        shareState.editing = true;
+    });
+
+    afterEach(() => {
+        shareState.editing = false;
+        delete (window as unknown as { glob?: unknown }).glob;
+    });
+
+    it("gets the classic toolbar without what reaches beyond the note, uploads if allowed", () => {
+        const items = (config: { toolbar: { items: unknown[] } }) => flatten(config.toolbar.items);
+        setShareEdit({ attachments: false });
+        const locked = items(buildToolbarConfig(false, true));
+        for (const item of [
+            "aiAssistant", "linkEmbed", "internallink", "contentEmbed", "insertIcon",
+            "drawingCanvas", "insertTemplate", "markdownImport", "cuttonote", "attachMenu"
+        ]) {
+            expect(locked).not.toContain(item);
+        }
+        expect(locked)
+            .toEqual(expect.arrayContaining([ "bold", "link", "bookmark", "mermaid", "undo" ]));
+
+        setShareEdit({ attachments: true });
+        const uploading = items(buildToolbarConfig(false, true));
+        expect(uploading).toContain("attachMenu");
+        expect(uploading).not.toContain("aiAssistant");
+    });
+
+    it("drops the named items at the top level and inside the groups", () => {
+        const config = {
+            toolbar: { items: [ "a", "|", { label: "g", items: [ "b", "c" ] }, "c" ], extra: true }
+        };
+        expect(withoutItems(config, new Set([ "c" ]))).toEqual({
+            toolbar: { items: [ "a", "|", { label: "g", items: [ "b" ] } ], extra: true }
+        });
+    });
+
+    function setShareEdit(shareEdit: { attachments: boolean }) {
+        (window as unknown as { glob: unknown }).glob = { isShare: true, shareEdit };
+    }
+
+    function flatten(items: unknown[]): string[] {
+        return items.flatMap((item) => (typeof item === "string"
+            ? [ item ]
+            : flatten((item as { items: unknown[] }).items)));
+    }
 });
 
 describe("buildToolbarConfig dispatch", () => {

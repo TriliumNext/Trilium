@@ -32,7 +32,7 @@ function load() {
     const noteIdStr = noteIds.map((noteId) => `'${noteId}'`).join(",");
 
     const rawNoteRows = sql.getRawRows<SNoteRow>(`
-        SELECT noteId, title, type, mime, blobId, utcDateModified, isProtected
+        SELECT noteId, title, type, mime, blobId, utcDateCreated, utcDateModified, isProtected
         FROM notes
         WHERE isDeleted = 0
         AND noteId IN (${noteIdStr})`);

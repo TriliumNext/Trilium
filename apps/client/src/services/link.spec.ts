@@ -878,10 +878,13 @@ describe("getReferenceLinkTitle / getReferenceLinkTitleSync", () => {
         // bookmark suffix
         expect(linkService.getReferenceLinkTitleSync(`#root/${note.noteId}?bookmark=Heading`)).toBe("SyncNote - Heading");
 
-        // attachments without loaded attachments => loading placeholder
+        // attachments without loaded attachments => the stored title, else a loading placeholder
         const note2 = buildNote({ title: "SyncNote2" });
         (note2 as any).attachments = undefined;
         expect(linkService.getReferenceLinkTitleSync(`#root/${note2.noteId}?viewMode=attachments&attachmentId=a1`)).toBe("[loading title...]");
+        const attachmentHref = `#root/${note2.noteId}?viewMode=attachments&attachmentId=a1`;
+        expect(linkService.getReferenceLinkTitleSync(attachmentHref, "notes.txt"))
+            .toBe("notes.txt");
 
         // attachments loaded but not matching
         (note2 as any).attachments = [{ attachmentId: "other", title: "Other" }];

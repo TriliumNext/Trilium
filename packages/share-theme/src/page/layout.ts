@@ -13,6 +13,8 @@ export default function setupLayout() {
     window.addEventListener("pageshow", e => {
         if (e.persisted) closeMobileMenus();
     });
+
+    keepNoteScroll();
 }
 
 export function closeMobileMenus() {
@@ -26,4 +28,50 @@ function setupToggle(buttonId: string, openClass: string, otherOpenClass: string
         document.body.classList.toggle(openClass);
         document.body.classList.remove(otherOpenClass);
     });
+}
+
+const NOTE_SCROLL_KEY = "share-note-scroll";
+/** The most pages whose place `keepNoteScroll` keeps. */
+const MAX_NOTE_SCROLLS = 50;
+
+/**
+ * Keeps the note's place per page across a reload and a history return, as the browser does for
+ * the window: on a wide screen the note scrolls in `#scrolling-container` instead.
+ */
+function keepNoteScroll() {
+    const container = document.getElementById("scrolling-container");
+    if (!container) {
+        return;
+    }
+
+    const page = location.pathname + location.search;
+    const timing = performance.getEntriesByType("navigation")[0] as
+        PerformanceNavigationTiming | undefined;
+    const places = readNoteScrolls();
+    if (timing?.type === "reload" || timing?.type === "back_forward") {
+        container.scrollTop = places[page] ?? 0;
+    }
+
+    window.addEventListener("pagehide", () => {
+        const kept = Object.entries(readNoteScrolls()).filter(([ key ]) => key !== page);
+        kept.push([ page, container.scrollTop ]);
+        try {
+            sessionStorage.setItem(NOTE_SCROLL_KEY,
+                JSON.stringify(Object.fromEntries(kept.slice(-MAX_NOTE_SCROLLS))));
+        } catch {
+            // The page then opens at the top.
+        }
+    });
+}
+
+function readNoteScrolls(): Record<string, number> {
+    try {
+        const stored = JSON.parse(sessionStorage.getItem(NOTE_SCROLL_KEY) ?? "{}") as unknown;
+        return stored && typeof stored === "object" && !Array.isArray(stored)
+            ? Object.fromEntries(Object.entries(stored)
+                .filter((entry): entry is [ string, number ] => typeof entry[1] === "number"))
+            : {};
+    } catch {
+        return {};
+    }
 }

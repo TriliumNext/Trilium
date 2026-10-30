@@ -298,7 +298,9 @@ const SHARE_THEME_TARGET = "chrome96";
 const LAZY_IMPORTERS: Record<string, string[]> = {
     mermaid: [ join(SHARE_THEME_SRC, "content/mermaid.ts") ],
     scripting: [ join(CLIENT_SRC, "services/script_context.ts") ],
-    app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
+    app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ],
+    // The editor a visitor unlocks on a text page, which the static export never offers.
+    edit: [ join(SHARE_THEME_SRC, "page/share_edit.ts") ]
 };
 
 /**

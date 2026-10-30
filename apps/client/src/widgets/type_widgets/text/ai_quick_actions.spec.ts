@@ -4,6 +4,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../services/search.js", () => ({ default: { searchForNotes: vi.fn() } }));
+// `isShare` is settled when the module loads, so a shared page is stubbed instead.
+const shareState = vi.hoisted(() => ({ isShare: false }));
+vi.mock("../../../services/utils.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/utils.js")>()),
+    get isShare() {
+        return shareState.isShare;
+    }
+}));
 vi.mock("../../../services/froca.js", () => ({ default: { getNotes: vi.fn() } }));
 // `getAvailableLocales` is reached through the built-in groups, which come along for the ride.
 vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => key, getAvailableLocales: () => [] }));
@@ -135,5 +143,17 @@ describe("custom AI quick actions", () => {
 
             expect(setQuickActions).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe("on a shared page", () => {
+    it("builds the quick actions without searching the host's notes", async () => {
+        shareState.isShare = true;
+        try {
+            await buildQuickActions();
+            expect(search.searchForNotes).not.toHaveBeenCalled();
+        } finally {
+            shareState.isShare = false;
+        }
     });
 });

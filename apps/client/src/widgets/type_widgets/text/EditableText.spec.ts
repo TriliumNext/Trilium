@@ -50,9 +50,32 @@ const {
     onNotificationWarning,
     reportEditorError,
     revealLinkTargetWhenReady,
+    saveNow,
     showFileUploadProgress,
     watchEditorBlocks
 } = await import("./EditableText");
+
+describe("saveNow", () => {
+    it("resolves once the save is stored, and on a failed one, which is retried", async () => {
+        let finish: () => void = () => {};
+        const stored = new Promise<void>((resolve) => {
+            finish = resolve;
+        });
+        let done = false;
+        const saving = saveNow({ updateNowIfNecessary: () => stored }).then(() => {
+            done = true;
+        });
+        await Promise.resolve();
+        expect(done).toBe(false);
+        finish();
+        await saving;
+        expect(done).toBe(true);
+
+        const offline = () => Promise.reject(new Error("offline"));
+        const failed = saveNow({ updateNowIfNecessary: offline });
+        await expect(failed).resolves.toBeUndefined();
+    });
+});
 
 describe("reportEditorError", () => {
     it("shows a toast that reloads the editor or opens the details, leaving the log to the global handler", () => {

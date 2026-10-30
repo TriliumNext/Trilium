@@ -3,6 +3,8 @@
 import "./base.css";
 import setupLayout from "./page/layout.js";
 import "./page/header.css";
+import setupNoteTabs from "./page/note_tabs.js";
+import setupTitleRow from "./page/title_row.js";
 import setupExpanders from "./page/navigation.js";
 import setupThemeSelector from "./page/theme_switch.js";
 import setupSearch from "./page/search.js";
@@ -10,6 +12,7 @@ import setupToC from "./page/toc.js";
 import "./page/child_links.css";
 import setupFooter from "./page/footer.js";
 import setupSpeculation, { whenActivated } from "./page/speculation.js";
+import setupShareEdit from "./page/share_edit.js";
 import "./content/content.css";
 import "./content/footnotes.css";
 import "./content/external_links.css";
@@ -73,6 +76,8 @@ whenActivated(() => $try(setupThemeSelector));
 $try(setupToC);
 $try(setupExpanders);
 $try(setupLayout);
+$try(setupTitleRow);
+$try(setupNoteTabs);
 $try(setupSearch);
 $try(setupFooter);
 $try(setupSpeculation);
@@ -87,6 +92,7 @@ function setupTextNote() {
     $try(setupStickyTableHeaders);
     $try(setupListItemAlignment);
     $try(setupTabs);
+    $try(setupShareEdit);
     return diagrams;
 }
 

@@ -1655,8 +1655,10 @@ describe("content_renderer", () => {
                 contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
+                noteHeader: null,
                 showTitle: true,
-                titleIcon: null,
+                titleIcon: "bx bx-note",
+                siteHref: "./site",
                 headings: [],
                 toc: [],
                 isPageInNavigation: false
@@ -1886,24 +1888,55 @@ describe("content_renderer pages", () => {
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
     });
 
-    it("titles full-height content with its icon in a row of its own, and other pages with a heading", () => {
+    it("titles full-height content in the title row itself, and a scrolling page in a note header", () => {
         const appPage = parse(String(renderNoteContent(buildSitePage({
             type: "image", title: "A <picture>", content: "", "#iconClass": "bx bx-rocket"
         }))));
-        expect(appPage.querySelector("#content > #title-row > .tn-icon")?.classList.contains("bx-rocket"))
+        expect(appPage.querySelector("#top-bar > #title-row > .title-row-note > .tn-icon")?.classList.contains("bx-rocket"))
             .toBe(true);
-        expect(appPage.querySelector("#title-row > h1#title")?.textContent).toBe("A <picture>");
+        expect(appPage.querySelector("#scrolling-container > #right-pane-body > #main > #content")).not.toBeNull();
+        expect(appPage.querySelector("#title-row > .title-row-note > h1#title")?.textContent).toBe("A <picture>");
+        expect(appPage.querySelector("#title-row")?.classList.contains("hide-title")).toBe(false);
+        expect(appPage.querySelector("#title-row")?.classList.contains("floating")).toBe(false);
+        expect(appPage.querySelector("#note-header")).toBeNull();
 
         const pdfPage = parse(String(renderNoteContent(buildSitePage({
             type: "file", mime: "application/pdf", title: "Manual", content: ""
         }))));
         expect(pdfPage.querySelector("#content")?.classList.contains("full-height")).toBe(true);
         expect(pdfPage.querySelector("#content")?.classList.contains("app-view")).toBe(false);
-        expect(pdfPage.querySelector("#title-row > h1#title")?.textContent).toBe("Manual");
+        expect(pdfPage.querySelector("#title-row > .title-row-note > h1#title")?.textContent).toBe("Manual");
 
-        const textPage = parse(String(renderNoteContent(buildSitePage({ content: "<p>a</p>" }))));
-        expect(textPage.querySelector("#title-row") === null).toBe(true);
-        expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
+        const textPage = parse(String(renderNoteContent(buildSitePage({
+            id: "notesPage", title: "Notes", content: "<p>a</p>", "#iconClass": "bx bx-rocket",
+            utcDateCreated: "2026-10-09 12:00:00.000Z", utcDateModified: "2026-10-11 08:00:00.000Z"
+        }))));
+        // The title row floats at the top of the scrolling note, hidden while the note header is in
+        // view; the bar keeps only the tabs.
+        expect(textPage.querySelector("#scrolling-container > #title-row.floating + #right-pane-body"))
+            .not.toBeNull();
+        expect(textPage.querySelector("#top-bar > #title-row")).toBeNull();
+        expect(textPage.querySelector("#title-row")?.classList.contains("hide-title")).toBe(true);
+        expect(textPage.querySelector("#title-row > .title-row-note > .tn-icon")?.classList.contains("bx-rocket"))
+            .toBe(true);
+        expect(textPage.querySelector("#title-row .title-row-title")?.textContent).toBe("Notes");
+        expect(textPage.querySelector("#title-row h1")).toBeNull();
+        const header = textPage.querySelector("#content > #note-header");
+        expect(header?.querySelector(":scope > .tn-icon")?.classList.contains("bx-rocket")).toBe(true);
+        expect(header?.querySelector(".note-header-caption > h1#title")?.textContent).toBe("Notes");
+        expect(header?.querySelectorAll(".title-details > span").map((item) => item.textContent.trim()))
+            .toEqual([ "Created on Oct 9, 2026", "Modified on Oct 11, 2026" ]);
+        expect(header?.querySelectorAll(".title-details time").map((time) => time.getAttribute("datetime")))
+            .toEqual([ "2026-10-09T12:00:00.000Z", "2026-10-11T08:00:00.000Z" ]);
+        expect(header?.querySelector(":scope > #note-header-actions")).not.toBeNull();
+        expect(textPage.querySelector("#tab-row > nav#note-tabs")).not.toBeNull();
+        expect(textPage.querySelector("#tab-row > a#new-tab")?.getAttribute("href")).toBe("./notesPageSite");
+
+        const undatedPage = parse(String(renderNoteContent(buildSitePage({
+            content: "<p>a</p>", utcDateCreated: "never", utcDateModified: "never"
+        }))));
+        expect(undatedPage.querySelector("#note-header > .note-header-caption > h1#title")).not.toBeNull();
+        expect(undatedPage.querySelector("#note-header .title-details")).toBeNull();
     });
 
     it("embeds in a hosted view neither the credentials nor the notes the visitor has not presented them for", () => {

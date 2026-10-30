@@ -550,7 +550,9 @@
     "source_description_etapi": "Created via the External Trilium API",
     "source_description_llm": "Created by the AI assistant",
     "source_description_restore": "Saved before restoring a previous revision",
-    "source_description_unknown": "Source not available"
+    "source_description_unknown": "Source not available",
+    "source_collab": "Guest edit",
+    "source_description_collab": "Saved before a guest changed the note on its shared page"
   },
   "sort_child_notes": {
     "sort_children_by": "Sort children by...",
@@ -867,6 +869,9 @@
     "share_logo": "An image note used as the logo of the shared page. It has to sit inside the shared subtree.",
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
     "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
+    "share_edit": "Visitors of the shared page can edit this note and the notes below it; \"false\" closes a branch below an editable note. Set from the Shared badge's menu.",
+    "share_edit_password": "The hashed password that unlocks editing on the shared page, empty to open a branch below a password-protected note. Set from the Shared badge's menu, not by hand.",
+    "share_attachments": "Guests who edit the shared page can upload images and files into the notes.",
     "meeting_recording": "Marks a note created by the \"Transcribe meeting\" button in the launch bar, which holds the transcript of a meeting.",
     "template_title_template": "Set on a template note: default title of notes created from the template, used instead of the parent's <code>#titleTemplate</code>. Evaluated like <code>#titleTemplate</code>, with the injected <code>now</code> and <code>parentNote</code> variables, e.g. <code>Meeting ${now.format('YYYY-MM-DD')}</code>.",
     "calendar_hide_routine_events": "Hides timed events that repeat on {{days}} or more days a week from the Month, Year and List views. Applies whatever its value."
@@ -2856,6 +2861,7 @@
     "subtree-hidden-moved-title": "Added to {{title}}",
     "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
     "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note.",
+    "shared-edit-indicator-tooltip-with-url": "This note is shared, and guests can edit it, at: {{- url}}",
     "show-all-notes": "Show all notes",
     "back-to-tree": "Note tree",
     "display-density": "Display density",
@@ -4039,6 +4045,12 @@
     "shared_preview_description": "Only this browser can open the shared page, and only while Trilium is open in it. To publish it, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server.",
     "shared_export_only": "Not published",
     "shared_export_only_description": "The mobile app cannot open shared pages. To publish this note, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server.",
+    "shared_guests_can_edit": "Guests can edit",
+    "shared_guests_can_edit_description": "Visitors of the shared page change this note and the notes below it with the app's editor. Their changes are kept in revisions as yours are.",
+    "shared_allow_attachments": "Allow attachments",
+    "shared_allow_attachments_description": "Guests who edit can upload images and files into the notes.",
+    "shared_set_password": "Set a password…",
+    "shared_change_password": "Change the password…",
     "template": "Template",
     "template_description": "This note is a template. Notes created from it inherit its attributes, so changing them here changes every one of those notes.",
     "template_scope_global": "Available everywhere",
@@ -4823,6 +4835,25 @@
     "excerpt": "Excerpt",
     "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
     "edit_excerpt": "Edit excerpt"
+  },
+  "share_edit": {
+    "title": "Let guests edit",
+    "description": "Anyone who opens the shared page can change this note and the notes below it, with the app's own text editor. Their changes are kept in the note's revisions the way your own are.",
+    "with_password": "With a password",
+    "open": "Anyone with the link",
+    "open_warning": "Anyone who finds the link can change these notes, including search engines and the people they lead here. Prefer a password for a page that is linked from anywhere public.",
+    "password_hint": "Guests enter it on the shared page. It needs at least 4 characters.",
+    "save": "Save",
+    "saved": "Guests can now edit this note.",
+    "disabled": "Guests can no longer edit this note.",
+    "status_unsaved": "Unsaved changes",
+    "status_saving": "Saving…",
+    "status_saved": "Saved",
+    "status_error": "Could not save. Trying again…",
+    "status_not_saved": "Not saved",
+    "conflict": "This note changed on the server while you were editing it.",
+    "conflict_reload": "Reload the page",
+    "conflict_keep": "Keep my version"
   },
   "record_meeting": {
     "note_title": "Meeting {{date}}",

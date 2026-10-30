@@ -3,6 +3,7 @@ import type CodeMirror from "@triliumnext/codemirror";
 import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
 import { ColumnComponent } from "tabulator-tables";
 
+import type FNote from "../entities/fnote.js";
 import type { Attribute } from "../services/attribute_parser.js";
 import bundleService from "../services/bundle.js";
 import froca from "../services/froca.js";
@@ -165,6 +166,8 @@ export type CommandMappings = {
         isNewNote?: boolean;
     };
     showPromptDialog: PromptDialogOptions;
+    /** Opens the dialog that lets guests of the note's shared page edit it. */
+    showShareEditDialog: { note: FNote };
     showItemPickerDialog: ItemPickerDialogOptions;
     showNotePickerDialog: NotePickerDialogOptions;
     showInfoDialog: InfoProps;

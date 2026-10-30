@@ -1239,9 +1239,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     #processAttributeRows(attributeRows: AttributeRow[], refreshCtx: RefreshContext) {
         for (const attrRow of attributeRows) {
             // `geolocation`, `mapPosition` and `startDate` decide the icon of a note that has none
-            // of its own (see getNoteIcon).
+            // of its own (see getNoteIcon); `shareEdit` decides the share indicator's icon.
             const dirtyingLabels = ["iconClass", "cssClass", "workspace", "workspaceIconClass",
-                "color", GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, "startDate"];
+                "color", "shareEdit", GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, "startDate"];
 
             if (attrRow.type === "label" && dirtyingLabels.includes(attrRow.name ?? "") && attrRow.noteId) {
                 if (attrRow.isInheritable) {
@@ -1899,9 +1899,13 @@ function buildEnhanceTitle() {
             // Pass no sync host to preserve this tooltip's prior local-origin behavior; the helper
             // still substitutes the loopback origin for the trilium-app:// desktop renderer (#10589).
             const shareUrl = buildShareLink(shareId, undefined);
-            const tooltipText = t("note_tree.shared-indicator-tooltip-with-url", { url: shareUrl });
+            const guestsEdit = note.isLabelTruthy("shareEdit");
+            const tooltipText = guestsEdit
+                ? t("note_tree.shared-edit-indicator-tooltip-with-url", { url: shareUrl })
+                : t("note_tree.shared-indicator-tooltip-with-url", { url: shareUrl });
 
             const $sharedIndicator = $(`<span class="note-indicator-icon shared-indicator"></span>`);
+            $sharedIndicator.toggleClass("shared-edit-indicator", guestsEdit);
             $sharedIndicator.attr("title", tooltipText);
             $span.find(".fancytree-title").append($sharedIndicator);
         }

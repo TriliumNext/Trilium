@@ -70,16 +70,55 @@
         </div>
     </div>
     <div id="right-pane">
+        <% if (showTitle) { %>
+            <div id="top-bar">
+                <div id="tab-row" data-close-tab="<%= t("share_theme.close-tab") %>">
+                    <button type="button" class="header-button" id="history-back" aria-label="<%= t("share_theme.go-back") %>" title="<%= t("share_theme.go-back") %>" disabled><span class="tn-icon bx bx-left-arrow-alt" aria-hidden="true"></span></button>
+                    <button type="button" class="header-button" id="history-forward" aria-label="<%= t("share_theme.go-forward") %>" title="<%= t("share_theme.go-forward") %>" disabled><span class="tn-icon bx bx-right-arrow-alt" aria-hidden="true"></span></button>
+                    <nav id="note-tabs" aria-label="<%= t("share_theme.open-notes") %>"></nav>
+                    <a href="<%= siteHref %>" class="header-button no-arrow" id="new-tab" aria-label="<%= t("share_theme.new-tab") %>" title="<%= t("share_theme.new-tab") %>"><span class="tn-icon bx bx-plus" aria-hidden="true"></span></a>
+                </div>
+                <% if (!noteHeader) { %>
+                    <div id="title-row">
+                        <div class="title-row-note">
+                            <span class="tn-icon <%= titleIcon %>" aria-hidden="true"></span>
+                            <h1 id="title"><%= note.title %></h1>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        <% } %>
+        <div id="scrolling-container">
+        <% if (showTitle && noteHeader) { %>
+            <div id="title-row" class="floating hide-title">
+                <div class="title-row-note">
+                    <span class="tn-icon <%= titleIcon %>" aria-hidden="true"></span>
+                    <span class="title-row-title"><%= note.title %></span>
+                </div>
+            </div>
+        <% } %>
+        <div id="right-pane-body">
         <div id="main">
             <div id="content" class="<%= contentClasses %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>" data-tab-previous-label="<%= t("share_theme.previous-tabs") %>" data-tab-next-label="<%= t("share_theme.next-tabs") %>" data-copy-code-label="<%= t("share_theme.copy-code") %>">
                 <%- snippets["content:start"] %>
-                <% if (showTitle && titleIcon) { %>
-                    <div id="title-row">
+                <% if (showTitle && noteHeader) { %>
+                    <header id="note-header">
                         <span class="tn-icon <%= titleIcon %>" aria-hidden="true"></span>
-                        <h1 id="title"><%= note.title %></h1>
-                    </div>
-                <% } else if (showTitle) { %>
-                    <h1 id="title"><%= note.title %></h1>
+                        <div class="note-header-caption">
+                            <h1 id="title"><%= note.title %></h1>
+                            <% if (noteHeader.created || noteHeader.modified) { %>
+                                <div class="title-details">
+                                    <% if (noteHeader.created) { %>
+                                        <span><%- t("share_theme.created-on", { date: `<time datetime="${noteHeader.created.iso}">${noteHeader.created.text}</time>` }) %></span>
+                                    <% } %>
+                                    <% if (noteHeader.modified) { %>
+                                        <span><%- t("share_theme.modified-on", { date: `<time datetime="${noteHeader.modified.iso}">${noteHeader.modified.text}</time>` }) %></span>
+                                    <% } %>
+                                </div>
+                            <% } %>
+                        </div>
+                        <div id="note-header-actions"></div>
+                    </header>
                 <% } %>
                 <% if (isEmpty && !childLinks.length && note.type !== "book") { %>
                     <p><%= t("share_page.no-content") %></p>
@@ -146,6 +185,8 @@
         <% } else { %>
             <div id="toc-pane"></div>
         <% } %>
+        </div>
+        </div>
     </div>
 </div>
 <div id="mobile-backdrop"></div>

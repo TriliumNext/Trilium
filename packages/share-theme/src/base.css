@@ -75,6 +75,12 @@ html.theme-light {
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
     --input-focus-outline-color: #00000063;
+    /* The editor toolbar's colors in `theme-next-light.css`. */
+    --classic-toolbar-background-color: #ffffffa1;
+    --ck-editor-toolbar-button-on-background: #00000030;
+    --ck-editor-toolbar-button-on-color: black;
+    --ck-editor-toolbar-button-on-shadow: none;
+    --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
     --modal-backdrop-color: #7c7c7c;
     --muted-text-color: #666;
     --card-background-color: #0000000d;
@@ -179,6 +185,12 @@ html.theme-dark {
     --badge-background-color: #ffffff1a;
     --badge-text-color: var(--muted-text-color);
     --input-focus-outline-color: #ffffff57;
+    /* The editor toolbar's colors in `theme-next-dark.css`. */
+    --classic-toolbar-background-color: #ffffff0d;
+    --ck-editor-toolbar-button-on-background: #ffffff3b;
+    --ck-editor-toolbar-button-on-color: white;
+    --ck-editor-toolbar-button-on-shadow: 1px 1px 2px rgba(0, 0, 0, .75);
+    --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
     --modal-backdrop-color: #000;
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
@@ -227,6 +239,8 @@ html.theme-dark {
 
 /* The page's colors under the names the styles shared with the app read them by. */
 :root {
+    /* The app's editor reads its font from this name too (`ckeditor-theme.css`). */
+    --main-font-family: "Inter", system-ui, sans-serif;
     --main-background-color: var(--background-primary);
     --main-text-color: var(--text-primary);
     /* The frosting of `theme-next/shell.css` behind the translucent menus. */
@@ -264,7 +278,7 @@ html.theme-dark {
 
 body {
     background: var(--background-primary);
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: var(--main-font-family);
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0;

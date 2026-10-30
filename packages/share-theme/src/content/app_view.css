@@ -27,7 +27,7 @@
     }
 }
 
-#content.app-view:has(.collection-properties) > #title-row {
+#right-pane:has(#content.app-view .collection-properties) #title-row {
     border-bottom: 0;
 }
 

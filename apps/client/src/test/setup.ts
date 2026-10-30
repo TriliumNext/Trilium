@@ -155,6 +155,8 @@ function mockServer() {
             // these; without them the write rejects and surfaces as an unhandled rejection rather
             // than as whatever the test was actually asserting.
             async put(_url: string, _data?: object) {},
+            // A shared page's guest saves through this variant, which leaves the refusals to it.
+            async putWithSilentRefusal(_url: string, _data?: object) {},
             async remove(_url: string) {}
         }
     };

@@ -10,8 +10,8 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
-    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getNoteHeader, getPageHead,
+    getPageLanguages, getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
     type NavigationItem, type PageHeading, type ShareNote
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
@@ -284,7 +284,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
         canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
     });
-    const titleIcon = isFullHeight ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
+    const titleIcon = note.getIcon(renderArgs.iconPackSupportedPrefixes);
     const opts = {
         note,
         header,
@@ -310,11 +310,13 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
         lastUpdated: isFullHeight ? null : getLastUpdated(note, displayLanguage),
+        noteHeader: isFullHeight ? null : getNoteHeader(note, displayLanguage),
         showTitle: true,
         titleIcon,
+        siteHref: getShareLink(siteRoot, sanitize.sanitizeUrl).href,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
             logo.icon,
-            ...(titleIcon ? [ titleIcon ] : []),
+            titleIcon,
             ...getNavigationIcons(navigation),
             ...childLinks.flatMap((child) => [ child.icon, ...child.children.map((grandchild) => grandchild.icon) ])
         ]),
@@ -1095,9 +1097,7 @@ function hostInAppView(
         options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
         // The app's assets, such as its translations: the export's `assets/`, else those of the
         // app from a page directly below `/share/`.
-        assetPath: exportHosting
-            ? `${exportHosting.basePath}assets`
-            : `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
+        assetPath: exportHosting ? `${exportHosting.basePath}assets` : getAppAssetPath(),
         // The note the app would show the note below, such as the root of a note map note's map.
         parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null,
         // On a page of the export, the views read their notes from the files under `data/`.
@@ -1126,12 +1126,17 @@ function buildExportRows(note: BNote, exportHosting: ExportHosting | undefined) 
  * The options the app's views read to draw a note as the app does, which a shared page receives. Only
  * display options: the rest of the options can hold secrets, such as API keys.
  */
-const SHARED_OPTIONS = [
+export const SHARED_OPTIONS = [
     "locale", "formattingLocale", "firstDayOfWeek",
     "codeNoteTheme", "codeNoteThemeLight", "codeNoteThemeDark", "codeNoteThemeMatchesApp",
     "codeLineWrapEnabled", "codeLineNumbersEnabled", "codeNoteTabWidth",
     "codeNoteIndentWithTabs", "splitEditorOrientation"
 ] as const;
+
+/** The app's assets, such as its translations, from a page directly below `/share/`. */
+export function getAppAssetPath() {
+    return `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`;
+}
 
 function renderImage(result: Result, note: SNote | BNote) {
     result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;

@@ -6,6 +6,7 @@ import setupToC from "./toc.js";
 describe("setupToC", () => {
     afterEach(() => {
         document.body.innerHTML = "";
+        document.documentElement.removeAttribute("style");
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         vi.useRealTimers();
@@ -24,10 +25,19 @@ describe("setupToC", () => {
         expect(activeEntry()).toBe("more");
     });
 
+    it("counts a heading as scrolled past once it is under the sticky top bar", () => {
+        const scrollTo = renderPage([ [ 2, "intro", 100 ], [ 2, "details", 500 ] ], 90);
+
+        scrollTo(340);
+        expect(activeEntry()).toBe("intro");
+        scrollTo(380);
+        expect(activeEntry()).toBe("details");
+    });
+
     it("scrolls the ToC pane to center the marked entry once it leaves the pane", () => {
         // A pane 100px tall whose entries are 20px tall and 40px apart.
         const headings = Array.from({ length: 10 }, (_, i): [ number, string, number ] => [ 2, `h${i}`, 100 + i * 400 ]);
-        const scrollTo = renderPage(headings, (pane) => {
+        const scrollTo = renderPage(headings, 0, (pane) => {
             Object.defineProperty(pane, "clientHeight", { value: 100 });
             pane.getBoundingClientRect = () => DOMRect.fromRect({ y: 0, height: 100 });
             for (const [ index, entry ] of [ ...pane.querySelectorAll("a") ].entries()) {
@@ -220,6 +230,7 @@ describe("setupToC", () => {
  */
 function renderPage(
     headings: [ level: number, slug: string, offsetTop: number ][],
+    topBarHeight = 0,
     prepareTocPane?: (pane: HTMLElement) => void
 ) {
     const link = (slug: string) => `<a href="#${encodeURIComponent(slug)}">${slug}</a>`;
@@ -239,6 +250,10 @@ function renderPage(
             </nav>
         </div>
     `;
+    if (topBarHeight) {
+        document.documentElement.style
+            .setProperty("--top-bar-scrolled-height", `${topBarHeight}px`);
+    }
     let scrolled = 0;
     for (const [ , slug, offsetTop ] of headings) {
         const heading = document.getElementById(slug);
@@ -255,7 +270,8 @@ function renderPage(
     setupToC();
     return (y: number) => {
         scrolled = y;
-        window.dispatchEvent(new Event("scroll"));
+        // The note's own container scrolls, and its scroll does not bubble.
+        document.getElementById("content")?.dispatchEvent(new Event("scroll"));
     };
 }
 

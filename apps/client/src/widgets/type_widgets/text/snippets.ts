@@ -4,6 +4,7 @@ import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
 import type { SnippetDefinition } from "@triliumnext/ckeditor5";
 import type FNote from "../../../entities/fnote.js";
+import { isShare } from "../../../services/utils.js";
 
 interface TemplateData {
     title: string;
@@ -20,6 +21,11 @@ const debouncedHandleContentUpdate = debounce(handleContentUpdate, 1000);
  * @returns the list of templates.
  */
 export default async function getTemplates() {
+    // A shared page has no snippets to offer: the search would reach the share's API for nothing.
+    if (isShare) {
+        return [];
+    }
+
     try {
         // Text snippets carry the legacy `#textSnippet` label; the unified `#snippet` notes also
         // cover Markdown/Code. Restrict to text notes so only HTML/rich-text snippets reach the

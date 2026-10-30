@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink, type RevisionSource } from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -1217,7 +1217,8 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
     return { forceFrontendReload, content };
 }
 
-function saveRevisionIfNeeded(note: BNote) {
+/** Keeps the note as it is before a change, as a revision of `source`, unless one is recent. */
+function saveRevisionIfNeeded(note: BNote, source: RevisionSource = "auto") {
     // files and images are versioned separately
     if (note.type === "file" || note.type === "image" || note.isLabelTruthy("disableVersioning")) {
         return;
@@ -1233,7 +1234,7 @@ function saveRevisionIfNeeded(note: BNote) {
     const msSinceDateCreated = now.getTime() - date_utils.parseDateTime(note.utcDateCreated).getTime();
 
     if (!existingRevisionId && msSinceDateCreated >= revisionSnapshotTimeInterval * 1000) {
-        note.saveRevision();
+        note.saveRevision({ source });
     }
 }
 

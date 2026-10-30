@@ -1,6 +1,7 @@
 import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
 import type { ViteHotContext } from "vite/types/hot.js";
 
+import type { SaveState } from "../components/note_context";
 import FNote from "../entities/fnote";
 import { getNoteImageUrl } from "./image_urls.js";
 import type { ViewMode, ViewScope } from "./link.js";
@@ -8,6 +9,37 @@ import type { ViewMode, ViewScope } from "./link.js";
 const SVG_MIME = "image/svg+xml";
 
 export const isShare = !window.glob || !!window.glob.isShare;
+
+/** What a shared page sets while a visitor edits its note through the share's guest API. */
+export interface ShareEditGlobals {
+    /** The `blobId` the content was loaded from, which a save names so a stale one is refused. */
+    version: string;
+    /** Whether the host lets guests upload images and files into the note. */
+    attachments: boolean;
+    onSaveState(state: SaveState): void;
+    /**
+     * Reports a save the server refused as stale; `retry` sends the editor's content again over
+     * the newer version.
+     */
+    onConflict(stale: { blobId: string }, retry: () => void): void;
+    /** The newer version a refused save named, until the visitor keeps their own content. */
+    stale?: { blobId: string };
+    /**
+     * Reports a save refused because the visitor's access ended, such as by a new password;
+     * `resume` sends the editor's content again once the page unlocked the note again.
+     */
+    onLocked(resume: () => void): void;
+    /** Set while the visitor's access is lost, until the page unlocked the note again. */
+    locked?: boolean;
+}
+
+/**
+ * Whether a shared page is editing its note, as its edit view sets `glob.shareEdit` on unlocking.
+ * A function, as the page sets it after the modules have loaded.
+ */
+export function isShareEditing(): boolean {
+    return isShare && !!window.glob?.shareEdit;
+}
 
 /**
  * True when the client is showing a *pre-auth* SPA screen — the login screen (`loggedIn: false`),

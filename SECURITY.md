@@ -61,6 +61,8 @@ Reports that reduce to "a note's own HTML or JavaScript executes for visitors to
 
 What crosses out of the published page remains **in scope**: disclosing notes that were never shared, bypassing `#shareCredentials` or `#shareHiddenFromTree`, or reaching the authenticated session of someone who merely visited. So does a defect in how the share renderer itself builds markup, such as a value escaping the attribute it was placed in; we fix those as correctness bugs even where the value was the publisher's own.
 
+A shared note whose owner turned on guest editing (`#shareEdit`) accepts changes from visitors of its page, by design. What guests can do there is bounded, and crossing those bounds is **in scope**: editing a note outside the opened subtree or one marked `#readOnly`, changing a note's type, adding or deleting notes, unlocking a password-protected subtree without its password, storing content that the server-side sanitizer should have stripped, uploading where `#shareAttachments` is off, or acting on a guest's behalf from another site (the guest routes are CSRF-protected and rate-limited). Content a guest was allowed to write is published content as above.
+
 #### Electron Architecture
 The desktop application follows the Electron security checklist: `nodeIntegration` is disabled, `contextIsolation` is enabled, and the renderer can only reach the main process through a whitelisted `contextBridge` API (`window.electronApi`). Embedded web content (Web View notes) is isolated in a dedicated session partition with deny-by-default permission handlers, `<webview>` attach requests are vetted in the main process, and window-open/navigation requests are checked against a scheme allowlist. Electron fuses additionally prevent external abuse.
 

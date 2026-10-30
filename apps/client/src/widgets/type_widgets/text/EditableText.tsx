@@ -22,6 +22,7 @@ import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../serv
 import type LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
+import type SpacedUpdate from "../../../services/spaced_update";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
 import type { AddLinkOpts } from "../../dialogs/add_link";
@@ -323,8 +324,9 @@ export default function EditableText({
             });
         },
         async saveNoteDetailNowCommand() {
-            // Used by `cutToNote` and by the block and tab references the editor copies.
-            spacedUpdate.updateNowIfNecessary();
+            // Used by `cutToNote`, by the block and tab references the editor copies, and by a
+            // shared page leaving its editor.
+            await saveNow(spacedUpdate);
         }
     });
 
@@ -550,9 +552,17 @@ export default function EditableText({
 }
 
 /**
- * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
- * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ * Saves the pending change of `spacedUpdate` at once, and resolves once it is stored. It resolves
+ * on a failed save too: the spaced update logs it, reports the error state and tries again.
  */
+export async function saveNow(spacedUpdate: Pick<SpacedUpdate<unknown>, "updateNowIfNecessary">) {
+    try {
+        await spacedUpdate.updateNowIfNecessary();
+    } catch {
+        // Logged and retried by the spaced update.
+    }
+}
+
 /**
  * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
  * link at the selection.
@@ -600,6 +610,10 @@ export function parseLinkHref(href: string): Pick<AddLinkOpts, "currentLink" | "
     return { currentLink: { notePath }, currentBookmark: bookmark };
 }
 
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
 export function getBlockData(editor: CKTextEditor, block: string) {
     return {
         content: editor.getData({ trim: "none" }),

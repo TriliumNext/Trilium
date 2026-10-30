@@ -1,0 +1,103 @@
+#tab-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 46px;
+    padding: 6px 8px 0;
+    background: var(--background-secondary);
+
+    > .header-button {
+        flex-shrink: 0;
+        margin-bottom: 6px;
+        text-decoration: none;
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+            background: none;
+        }
+    }
+}
+
+#note-tabs {
+    display: flex;
+    flex: 1;
+    align-self: stretch;
+    gap: 4px;
+    min-width: 0;
+    margin-inline-start: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.note-tab {
+    display: flex;
+    flex: 0 1 240px;
+    align-items: center;
+    min-width: 120px;
+    height: 36px;
+    margin-top: auto;
+    border-radius: 8px 8px 0 0;
+    color: var(--text-menu);
+    transition: background-color 75ms ease-in;
+
+    &:hover {
+        background: var(--tree-item-hover-background);
+        transition: none;
+    }
+
+    &.active {
+        background: var(--background-primary);
+        color: var(--text-primary);
+    }
+
+    > .note-tab-link {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        height: 100%;
+        padding: 0 6px 0 11px;
+        color: inherit;
+        text-decoration: none;
+
+        &:focus-visible {
+            outline: 2px solid var(--link-focus-outline-color);
+            outline-offset: -2px;
+            border-radius: 8px 8px 0 0;
+        }
+    }
+
+    .note-tab-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 0.95rem;
+    }
+
+    > .note-tab-close {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        margin-inline-end: 5px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: none;
+        color: inherit;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 75ms ease-out, color 75ms ease-out;
+
+        &:hover {
+            background: #c95a5a;
+            color: white;
+        }
+    }
+}

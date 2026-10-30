@@ -34,6 +34,10 @@ export default class LinkEmbedToolbar extends Plugin {
         return [WidgetToolbarRepository, LinkEmbed, LinkEmbedLinkButton, LinkEmbedCopyUrlButton, LinkEmbedEditTitleButton, LinkEmbedUnlinkButton, LinkEmbedDisplayDropdown] as const;
     }
 
+    static get pluginName() {
+        return "LinkEmbedToolbar" as const;
+    }
+
     afterInit() {
         const widgetToolbarRepository = this.editor.plugins.get(WidgetToolbarRepository);
 

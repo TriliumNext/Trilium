@@ -3,32 +3,20 @@
     flex-direction: column;
     height: fit-content;
     position: sticky;
-    top: 0;
+    top: var(--title-row-height);
     order: 3;
     width: 250px;
     flex-shrink: 0;
-    max-height: 100vh;
+    max-height: calc(100vh - var(--top-bar-height) - var(--title-row-height));
+    transition: top 200ms ease-in, max-height 200ms ease-in;
     overflow-y: auto;
     padding-top: var(--page-top-spacing);
     z-index: 1;
     background: var(--background-primary);
 }
 
-#split-pane:has(#content.full-content-width) #toc-pane:empty {
+#toc-pane:empty {
     display: none;
-}
-
-/* The pane reaches the edge of the window, so its scrollbar sits there, and pads its entries back
-   to the edge of the layout. `100%` is the width of `#right-pane`, and the space after the layout
-   is what `#right-pane` has beyond the layout, plus the growth that keeps the content centered. */
-@media not all and (max-width: 48em) {
-    #split-pane:not(:has(#content.full-content-width)) #toc-pane {
-        --toc-pane-overhang: calc(max(0px, 100% + var(--left-pane-width) - var(--layout-width))
-                                  + var(--left-pane-growth));
-
-        width: calc(250px + var(--toc-pane-overhang));
-        padding-inline-end: var(--toc-pane-overhang);
-    }
 }
 
 #toc-pane h3,
@@ -154,6 +142,7 @@
         right: 0;
         width: 80%;
         max-width: 300px;
+        max-height: none;
         padding: 20px;
         background: var(--background-secondary);
         transform: translateX(100%);

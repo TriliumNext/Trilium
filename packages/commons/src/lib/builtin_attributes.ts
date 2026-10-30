@@ -187,6 +187,10 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "shareDisallowRobotIndexing", valueType: "boolean" },
     { type: "label", name: "shareCredentials", valueType: "text", hasUserValue: true },
     { type: "label", name: "shareIndex", valueType: "boolean" },
+    // Editing on the shared page; see `collab/share_edit.ts` in core.
+    { type: "label", name: "shareEdit", valueType: "boolean" },
+    { type: "label", name: "shareEditPassword", valueType: "text", hasUserValue: true },
+    { type: "label", name: "shareAttachments", valueType: "boolean" },
     // Where a `~shareHtml` snippet is injected into the shared page. A bare `head`/`body`/`content` is
     // read as its `:end`, but the full spellings are what the theme documents and what is offered.
     { type: "label", name: "shareHtmlLocation", valueType: "select", selectOptions: [

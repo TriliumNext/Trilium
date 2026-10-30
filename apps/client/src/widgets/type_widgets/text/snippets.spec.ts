@@ -6,6 +6,14 @@ vi.mock("../../../services/search.js", () => ({
     default: { searchForNotes: vi.fn() }
 }));
 
+const shareState = vi.hoisted(() => ({ isShare: false }));
+vi.mock("../../../services/utils.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/utils.js")>(),
+    get isShare() {
+        return shareState.isShare;
+    }
+}));
+
 import search from "../../../services/search.js";
 import getTemplates, { buildContentPreview } from "./snippets.js";
 
@@ -43,6 +51,16 @@ describe("getTemplates (text snippets)", () => {
         vi.mocked(search.searchForNotes).mockReset();
         logErrorMock.mockReset();
         vi.stubGlobal("logError", logErrorMock);
+    });
+
+    it("offers nothing on a shared page, without searching", async () => {
+        shareState.isShare = true;
+        try {
+            expect(await getTemplates()).toEqual([]);
+            expect(search.searchForNotes).not.toHaveBeenCalled();
+        } finally {
+            shareState.isShare = false;
+        }
     });
 
     it("includes only available, non-archived text notes", async () => {

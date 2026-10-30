@@ -10,7 +10,10 @@ export {
     assetUrlFragment, ensureShareHighlighting, readShareTemplate, renderNoteContent,
     renderNoteForExport
 } from "./content_renderer.js";
-export { getShareRoute, getShareRoutes, handleShareRequest, isVisibleInShareTree, type ShareReply, type ShareRequest, type ShareRoute } from "./handlers.js";
+export {
+    getShareRoute, getShareRoutes, handleShareRequest, isShareNoteReadable, isVisibleInShareTree,
+    type ShareReply, type ShareRequest, type ShareRoute
+} from "./handlers.js";
 export { SHARE_PAGE_PATHS, SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 export { initShare, isShareReady, type ShareProvider, type ShareSql } from "./share_provider.js";
 export { default as shareRoot } from "./share_root.js";

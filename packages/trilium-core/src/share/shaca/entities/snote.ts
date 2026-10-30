@@ -15,6 +15,14 @@ const LABEL = "label";
 const RELATION = "relation";
 const CREDENTIALS = "shareCredentials";
 
+/**
+ * The labels that hold a secret: the share's credentials and the hash of the password that
+ * unlocks editing. `getAttributes()` leaves them out of what a visitor reads.
+ */
+export const SHARE_SECRET_LABELS: ReadonlySet<string> =
+    new Set([ CREDENTIALS, "shareEditPassword" ]);
+
+const isSecret = (attr: SAttribute) => attr.type === "label" && SHARE_SECRET_LABELS.has(attr.name);
 const isCredentials = (attr: SAttribute) => attr.type === "label" && attr.name === CREDENTIALS;
 
 class SNote extends AbstractShacaEntity {
@@ -23,6 +31,7 @@ class SNote extends AbstractShacaEntity {
     type: NoteType;
     mime: string;
     private blobId: string;
+    utcDateCreated: string;
     utcDateModified: string;
     isProtected: boolean;
     parentBranches: SBranch[];
@@ -33,14 +42,19 @@ class SNote extends AbstractShacaEntity {
     targetRelations: SAttribute[];
     attachments: SAttachment[];
 
-    constructor([noteId, title, type, mime, blobId, utcDateModified, isProtected]: SNoteRow) {
+    constructor(row: SNoteRow) {
         super();
+
+        const [
+            noteId, title, type, mime, blobId, utcDateCreated, utcDateModified, isProtected
+        ] = row;
 
         this.noteId = noteId;
         this.title = isProtected ? "[protected]" : title;
         this.type = type as NoteType;
         this.mime = mime;
         this.blobId = blobId;
+        this.utcDateCreated = utcDateCreated;
         this.utcDateModified = utcDateModified; // used for caching of images
         this.isProtected = isProtected;
 
@@ -128,17 +142,27 @@ class SNote extends AbstractShacaEntity {
         }
 
         if (type && name) {
-            return attributeCache.filter((attr) => attr.type === type && attr.name === name && !isCredentials(attr));
+            return attributeCache.filter((attr) => attr.type === type && attr.name === name && !isSecret(attr));
         } else if (type) {
-            return attributeCache.filter((attr) => attr.type === type && !isCredentials(attr));
+            return attributeCache.filter((attr) => attr.type === type && !isSecret(attr));
         } else if (name) {
-            return attributeCache.filter((attr) => attr.name === name && !isCredentials(attr));
+            return attributeCache.filter((attr) => attr.name === name && !isSecret(attr));
         }
-        return attributeCache.filter((attr) => !isCredentials(attr));
+        return attributeCache.filter((attr) => !isSecret(attr));
     }
 
     getCredentials() {
         return this.__getAttributes([]).filter(isCredentials);
+    }
+
+    /** The value of the nearest secret label `name`, owned or inherited, or `null` without one. */
+    getSecretLabelValue(name: string): string | null {
+        if (!SHARE_SECRET_LABELS.has(name)) {
+            return null;
+        }
+
+        const label = this.__getAttributes([]).find((attr) => attr.type === "label" && attr.name === name);
+        return label?.value ?? null;
     }
 
     __getAttributes(path: string[]) {

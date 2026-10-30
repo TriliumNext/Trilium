@@ -61,3 +61,17 @@ describe("hosted view data", () => {
         expect(buildVisibleRelationMap(map.noteId, "{}", () => true).noteTitles).toEqual({});
     });
 });
+
+describe("secret labels", () => {
+    it("leaves the share's credentials and the edit password out of the rows", () => {
+        shaca.reset();
+        const note = buildShareNote({
+            "id": "guarded", "#shareCredentials": "user:pass", "#shareEditPassword": "salt$hash",
+            "#shareEdit": "", "#color": "red"
+        });
+
+        const rows = buildFrocaPayload(note);
+
+        expect(rows.attributes.map((row) => row.name)).toEqual([ "shareEdit", "color" ]);
+    });
+});

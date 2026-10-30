@@ -7,6 +7,7 @@ import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
+import { isShare } from "../../../services/utils.js";
 import { useTriliumEvent, useTriliumOption } from "../../react/hooks.jsx";
 import { buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
 import { buildAiModelPicker } from "./ai_model_picker.js";
@@ -84,6 +85,11 @@ export async function buildQuickActions(): Promise<AiQuickActionGroup[]> {
  * else.
  */
 async function getCustomQuickActions(): Promise<AiQuickAction[]> {
+    // A shared page has no assistant, and no notes of the host's to search.
+    if (isShare) {
+        return [];
+    }
+
     try {
         // Type is filtered here rather than in the query: a query starting with "(" trips the
         // search lexer (see `snippets.ts`, which works around the same thing).

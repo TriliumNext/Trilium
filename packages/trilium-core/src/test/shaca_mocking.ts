@@ -26,6 +26,8 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     children?: NoteDefinition[];
     attachments?: AttachementDefinition[];
     isProtected?: boolean;
+    utcDateCreated?: string;
+    utcDateModified?: string;
 }
 
 /**
@@ -61,7 +63,8 @@ export function buildShareNote(noteDef: NoteDefinition) {
         noteDef.type ?? "text",
         noteDef.mime ?? "text/html",
         blobId,
-        new Date().toUTCString(),   // utcDateModified
+        noteDef.utcDateCreated ?? new Date().toUTCString(),
+        noteDef.utcDateModified ?? new Date().toUTCString(),
         !!noteDef.isProtected
     ]);
     shaca.notes[note.noteId] = note;

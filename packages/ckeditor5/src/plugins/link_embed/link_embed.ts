@@ -29,4 +29,8 @@ export default class LinkEmbed extends Plugin {
     static get requires() {
         return [LinkEmbedEditing, LinkEmbedUI, AutoLinkToMention];
     }
+
+    static get pluginName() {
+        return "LinkEmbed" as const;
+    }
 }

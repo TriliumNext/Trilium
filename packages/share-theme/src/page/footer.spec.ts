@@ -12,6 +12,10 @@ describe("setupFooter", () => {
     it("writes the dates out in the page's language, in the visitor's time zone", () => {
         document.documentElement.lang = "de";
         document.body.innerHTML = `
+            <header id="note-header">
+                <time datetime="2026-10-09T12:00:00.000Z">09.10.2026</time>
+                <time datetime="not a date">kept too</time>
+            </header>
             <footer id="content-footer">
                 <time datetime="2026-10-09T12:00:00.000Z">9. Oktober 2026</time>
                 <time datetime="not a date">kept</time>
@@ -20,7 +24,11 @@ describe("setupFooter", () => {
 
         setupFooter();
 
-        const [ valid, invalid ] = document.querySelectorAll("time");
+        const [ header, invalidHeader, valid, invalid ] = document.querySelectorAll("time");
+        expect(header.textContent).toBe(new Intl.DateTimeFormat("de", { dateStyle: "medium" })
+            .format(new Date("2026-10-09T12:00:00.000Z")));
+        expect(header.textContent).toMatch(/^09\.10\.2026$/);
+        expect(invalidHeader.textContent).toBe("kept too");
         expect(valid.textContent).toBe(new Intl.DateTimeFormat("de", { dateStyle: "long" })
             .format(new Date("2026-10-09T12:00:00.000Z")));
         expect(valid.textContent).toMatch(/Oktober 2026$/);

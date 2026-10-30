@@ -4,6 +4,7 @@ import { isOfficeMimeType, safeHostname } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import type { SaveState } from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -19,7 +20,7 @@ import {
 import sync from "../../services/sync";
 import { isElectron, isMobileApp, isStandalone } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
-import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { FormDropdownDivider, FormListItem, FormListToggleableItem } from "../react/FormList";
 import {
     useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
     useTriliumEvent, useTriliumOption
@@ -104,11 +105,12 @@ function ShareBadge() {
     const { note } = useNoteContext();
     const [ , switchShareState ] = useShareState(note);
     const { scope, linkHref } = useShareInfo(note);
+    const shareEdit = useShareEditState(note);
     const badge = SHARE_BADGES[scope];
 
     return (linkHref &&
         <BadgeWithDropdown
-            icon={badge.icon}
+            icon={shareEdit.canEdit ? "bx bx-group" : badge.icon}
             text={t(badge.text)}
             tooltip={badge.tooltip && t(badge.tooltip, { format: t("export.format_share_name") })}
             className="share-badge"
@@ -124,12 +126,71 @@ function ShareBadge() {
                 >{t("breadcrumb_badges.shared_open_in_browser")}</FormListItem>
                 <FormDropdownDivider />
             </>}
+            {note && (scope === "public" || scope === "local") && <>
+                <FormListToggleableItem
+                    icon="bx bx-group"
+                    title={t("breadcrumb_badges.shared_guests_can_edit")}
+                    helpTooltip={t("breadcrumb_badges.shared_guests_can_edit_description")}
+                    currentValue={shareEdit.canEdit}
+                    onChange={(enabled) =>
+                        toggleShareEdit(note, enabled, shareEdit.reopensFromParent)}
+                />
+                {shareEdit.canEdit && <>
+                    <FormListToggleableItem
+                        icon="bx bx-paperclip"
+                        title={t("breadcrumb_badges.shared_allow_attachments")}
+                        helpTooltip={t("breadcrumb_badges.shared_allow_attachments_description")}
+                        currentValue={shareEdit.attachments}
+                        onChange={async (attachments) => {
+                            await setShareEdit(note, { enabled: true, attachments });
+                        }}
+                    />
+                    <FormListItem
+                        icon="bx bx-key"
+                        onClick={() => appContext.triggerCommand("showShareEditDialog", { note })}
+                    >{shareEdit.needsPassword
+                        ? t("breadcrumb_badges.shared_change_password")
+                        : t("breadcrumb_badges.shared_set_password")}</FormListItem>
+                </>}
+                <FormDropdownDivider />
+            </>}
             <FormListItem
                 icon="bx bx-unlink"
                 onClick={() => switchShareState(false)}
             >{t("breadcrumb_badges.shared_unshare")}</FormListItem>
         </BadgeWithDropdown>
     );
+}
+
+/**
+ * Whether guests of the note's shared page can edit it, read from the labels the host set, and
+ * whether the note closes a branch below an ancestor whose editing it can go back to.
+ */
+export function useShareEditState(note: FNote | null | undefined) {
+    const [ canEdit ] = useNoteLabelBoolean(note, "shareEdit");
+    const [ attachments ] = useNoteLabelBoolean(note, "shareAttachments");
+    const [ passwordHash ] = useNoteLabel(note, "shareEditPassword");
+    const reopensFromParent = !canEdit && note?.getOwnedLabelValue("shareEdit") === "false"
+        && note.getParentNotes().some((parent) => parent.isLabelTruthy("shareEdit"));
+    return { canEdit, attachments, needsPassword: !!passwordHash, reopensFromParent };
+}
+
+/**
+ * Turns guest editing of `note` on or off from the Shared badge's menu. A branch closed below an
+ * editable ancestor goes back to the ancestor's editing; any other note opens the dialog.
+ */
+export async function toggleShareEdit(note: FNote, enabled: boolean, reopensFromParent: boolean) {
+    if (!enabled) {
+        await setShareEdit(note, { enabled: false });
+    } else if (reopensFromParent) {
+        await setShareEdit(note, { enabled: true });
+    } else {
+        await appContext.triggerCommand("showShareEditDialog", { note });
+    }
+}
+
+async function setShareEdit(note: FNote, settings: { enabled: boolean; attachments?: boolean }) {
+    await server.put(`notes/${note.noteId}/share-edit`, settings);
 }
 
 const SHARE_BADGES: Record<ShareScope, { icon: string; text: string; tooltip?: string }> = {

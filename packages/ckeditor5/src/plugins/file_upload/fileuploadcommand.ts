@@ -93,10 +93,14 @@ export default class FileUploadCommand extends Command {
     }
 }
 
-/** Inserts the link `FileUploadEditing` completes once the upload ends, and a space after it. */
+/**
+ * Inserts the link `FileUploadEditing` completes once the upload ends, and a space after it. The
+ * file name is the link's stored title, which a save keeps until the attachment's title is loaded.
+ */
 function insertPlaceholder(writer: ModelWriter, model: Model, uploadId: string, fileName: string) {
     const placeholder = writer.createElement("reference", {
         href: "",
+        storedTitle: fileName,
         uploadId,
         uploadFileName: fileName
     });

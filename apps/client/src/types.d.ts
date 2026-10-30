@@ -8,7 +8,7 @@ import type { lint } from "./services/eslint";
 import type { Froca } from "./services/froca-interface";
 import { Library } from "./services/library_loader";
 import server from "./services/server";
-import utils from "./services/utils";
+import utils, { type ShareEditGlobals } from "./services/utils";
 
 interface ElectronProcess {
     type: string;
@@ -16,6 +16,9 @@ interface ElectronProcess {
 }
 
 interface CustomGlobals extends BootstrapDefinition {
+    /** Where `services/server.ts` fetches a fresh CSRF token from; `./bootstrap` in the app. */
+    csrfRefreshUrl?: string;
+    shareEdit?: ShareEditGlobals;
     isDesktop: typeof utils.isDesktop;
     isMobile: typeof utils.isMobile;
     getComponentByEl: typeof appContext.getComponentByEl;

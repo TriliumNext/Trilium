@@ -1,0 +1,241 @@
+.share-edit-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 1em;
+
+    > [hidden],
+    > form[hidden] {
+        display: none;
+    }
+}
+
+#note-header-actions > .share-edit-bar {
+    justify-content: flex-end;
+    margin: 0;
+
+    > .share-edit-error {
+        width: auto;
+        font-size: 0.85rem;
+    }
+}
+
+.share-edit-login {
+    display: flex;
+    gap: 8px;
+}
+
+.share-edit-password {
+    padding: 4px 8px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    background: var(--main-background-color);
+    color: inherit;
+    font: inherit;
+}
+
+.share-edit-button {
+    padding: 4px 12px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-menu);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 200ms ease;
+
+    &:hover {
+        background-color: var(--background-highlight);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--link-focus-outline-color);
+        outline-offset: 1px;
+    }
+}
+
+.share-edit-error {
+    width: 100%;
+    margin: 0;
+    color: var(--error-color, #c33);
+}
+
+/* Read by the app's `ckeditor-theme.css`, from `body`. */
+body:has(#content.share-editing) {
+    --main-background-color: var(--background-primary);
+    --main-text-color: var(--text-primary);
+    --link-color: var(--text-link);
+
+    --ck-color-base-foreground: var(--background-secondary);
+    --ck-color-toolbar-background: var(--background-secondary);
+    --ck-color-toolbar-border: var(--main-border-color);
+    --ck-color-button-default-background: var(--background-secondary);
+    --ck-color-button-default-hover-background: var(--background-highlight);
+    --ck-color-button-default-active-background: var(--background-highlight);
+    --ck-color-button-default-active-shadow: var(--background-highlight);
+    --ck-color-button-on-background: var(--background-highlight);
+    --ck-color-button-on-hover-background: var(--background-highlight);
+    --ck-color-button-on-active-background: var(--background-highlight);
+    --ck-color-button-on-active-shadow: var(--background-highlight);
+    --ck-color-button-action-background: var(--background-secondary);
+    --ck-color-button-action-hover-background: var(--background-highlight);
+    --ck-color-button-action-active-background: var(--background-highlight);
+    --ck-color-split-button-hover-background: var(--background-highlight);
+    --ck-color-dropdown-panel-background: var(--background-secondary);
+    --ck-color-panel-background: var(--background-secondary);
+    --ck-color-list-background: var(--background-secondary);
+    --ck-color-list-button-hover-background: var(--background-highlight);
+    --ck-color-input-background: var(--background-primary);
+    --ck-color-labeled-field-label-background: var(--background-secondary);
+    --ck-color-tooltip-background: var(--tooltip-background-color);
+    --ck-color-tooltip-text: var(--tooltip-foreground-color);
+}
+
+.ck-powered-by-balloon {
+    display: none !important;
+}
+
+#right-pane:has(#content.share-editing) #toc-pane {
+    display: none;
+}
+
+body:has(#content.share-editing) .ck.ck-button.ck-block-toolbar-button {
+    --share-edit-handle-hover-surface:
+        linear-gradient(var(--hover-item-background-color), var(--hover-item-background-color)),
+        var(--background-primary);
+
+    --ck-color-block-toolbar-button: var(--muted-text-color);
+    --ck-color-button-default-background: var(--background-primary);
+    --ck-color-button-on-background: var(--background-primary);
+    --ck-color-button-default-hover-background: var(--share-edit-handle-hover-surface);
+    --ck-color-button-on-hover-background: var(--share-edit-handle-hover-surface);
+    min-width: 0;
+    padding: 0;
+    color: var(--muted-text-color);
+    transform: translateX(7px);
+    translate: -40% 0;
+    /* Under `#top-bar`, `#title-row.floating` and `#header` (z-index 1). */
+    z-index: 0;
+
+    &:active {
+        background: var(--share-edit-handle-hover-surface);
+    }
+}
+
+.share-edit-view {
+    > .note-detail-editable-text {
+        height: auto;
+
+        > .note-detail-editable-text-editor {
+            overflow: unset;
+            margin-inline: 4px;
+        }
+    }
+
+    .share-edit-toolbar {
+        margin: 0 0 8px;
+
+        &:empty {
+            display: none;
+        }
+
+        .ck.ck-toolbar {
+            border-radius: 8px;
+        }
+    }
+
+    > .share-edit-status {
+        display: block;
+        margin: 0 0 8px;
+        font-size: 0.9em;
+        color: var(--muted-text-color);
+    }
+
+    .share-edit-conflict {
+        margin: 0 0 8px;
+    }
+}
+
+/* The values of the app's `FormattingToolbar.css` and `theme-next/notes/text.css`. */
+#top-bar > .share-edit-toolbar-slot > .share-edit-toolbar {
+    min-height: 39px;
+    background:
+        linear-gradient(var(--classic-toolbar-background-color), var(--classic-toolbar-background-color)),
+        var(--background-secondary);
+
+    &:empty {
+        display: none;
+    }
+
+    .ck.ck-toolbar {
+        --ck-color-toolbar-background: transparent;
+        --ck-color-button-default-background: transparent;
+        --ck-color-button-default-hover-background: var(--hover-item-background-color);
+        --ck-color-button-default-active-background: var(--hover-item-background-color);
+        --ck-color-button-default-disabled-background: transparent;
+        --ck-color-button-on-background: transparent;
+        --ck-color-button-on-hover-background: var(--hover-item-background-color);
+        --ck-color-split-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
+        --ck-focus-ring: 1px solid transparent;
+        --ck-color-focus-border: var(--input-focus-outline-color);
+        --ck-focus-outer-shadow: none;
+        --ck-focus-disabled-outer-shadow: none;
+        --ck-border-radius: 6px;
+
+        border: none;
+        border-radius: 0;
+    }
+
+    .ck.ck-toolbar .ck-button.ck-on:not(.ck-dropdown__button):not(.ck-list-item-button):not(.ck-button_with-text) {
+        --ck-color-button-on-background: var(--ck-editor-toolbar-button-on-background);
+        --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
+        box-shadow: var(--ck-editor-toolbar-button-on-shadow);
+    }
+
+    .ck.ck-toolbar .ck-button.ck-dropdown__button {
+        --ck-color-button-on-background: var(--ck-editor-toolbar-dropdown-button-open-background);
+        --ck-color-button-on-color: currentColor;
+    }
+
+    .ck.ck-toolbar .ck-button:not(.ck-disabled):active {
+        background-color: var(--hover-item-background-color);
+    }
+
+    .ck.ck-toolbar .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow) {
+        transform: scale(.8);
+    }
+
+    .ck.ck-button.ck-disabled {
+        opacity: .75;
+    }
+
+    .ck.ck-toolbar .ck-button:focus-visible {
+        --ck-focus-ring: 1px solid var(--input-focus-outline-color);
+    }
+
+    .ck.ck-splitbutton:hover > .ck-splitbutton__arrow:not(.ck-disabled)::after {
+        visibility: collapse;
+    }
+
+    .ck.ck-toolbar .ck.ck-toolbar__separator {
+        background: transparent;
+        border-inline-start: 1px solid var(--ck-color-toolbar-border);
+    }
+}
+
+#content-footer .updated .share-edit-status-slot {
+    margin-inline-end: 0.75em;
+    color: var(--muted-text-color);
+}
+
+#title[contenteditable] {
+    outline: none;
+    cursor: text;
+
+    &:focus-visible {
+        outline: 2px solid var(--link-focus-outline-color);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+}

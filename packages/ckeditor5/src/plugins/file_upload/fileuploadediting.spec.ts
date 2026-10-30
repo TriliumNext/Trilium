@@ -215,8 +215,9 @@ describe("FileUploadEditing", () => {
         // Long enough for any delayed step of the upload chain.
         await new Promise((res) => setTimeout(res, 250));
 
-        expect(getModelData(editor.model))
-            .toBe("<paragraph><reference href=\"#root/abc\"></reference> []</paragraph>");
+        expect(getModelData(editor.model)).toBe(
+            "<paragraph><reference href=\"#root/abc\" storedTitle=\"x.txt\"></reference> []</paragraph>"
+        );
         expect(setDataSpy).not.toHaveBeenCalled();
 
         // Undo takes back the inserted link, not the completion of its upload.
@@ -561,7 +562,7 @@ class ReferenceSchema extends Plugin {
             allowWhere: "$text",
             isInline: true,
             isObject: true,
-            allowAttributes: ["href", "uploadId", "uploadStatus", "uploadFileName"]
+            allowAttributes: ["href", "storedTitle", "uploadId", "uploadStatus", "uploadFileName"]
         });
 
         conversion.for("editingDowncast").elementToElement({

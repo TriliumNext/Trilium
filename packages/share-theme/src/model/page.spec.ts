@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
-    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getNoteHeader, getPageHead,
+    getPageLanguages, getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
     type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
 
@@ -452,6 +452,24 @@ describe("getLastUpdated", () => {
         expect(getLastUpdated(modified("2026-10-09 12:00:00.000Z"), "en_rtl")?.text).toBe("October 9, 2026");
         expect(getLastUpdated(modified(undefined), "en")).toBeNull();
         expect(getLastUpdated(modified("never"), "en")).toBeNull();
+    });
+});
+
+describe("getNoteHeader", () => {
+    it("gives the creation and modification dates in the medium style, each null when invalid", () => {
+        const dated = (utcDateCreated?: string, utcDateModified?: string) =>
+            ({ ...fakeNote({ noteId: "page" }), utcDateCreated, utcDateModified });
+
+        expect(getNoteHeader(dated("2026-10-09 12:00:00.000Z", "2026-10-11 08:00:00.000Z"), "en"))
+            .toStrictEqual({
+                created: { iso: "2026-10-09T12:00:00.000Z", text: "Oct 9, 2026" },
+                modified: { iso: "2026-10-11T08:00:00.000Z", text: "Oct 11, 2026" }
+            });
+        expect(getNoteHeader(dated("2026-10-09 12:00:00.000Z", "never"), "de")).toStrictEqual({
+            created: { iso: "2026-10-09T12:00:00.000Z", text: "09.10.2026" },
+            modified: null
+        });
+        expect(getNoteHeader(dated(), "en")).toStrictEqual({ created: null, modified: null });
     });
 });
 

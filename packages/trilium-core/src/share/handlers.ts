@@ -228,7 +228,8 @@ function getNoteMap(req: ShareRequest): ShareReply {
     return jsonReply(200, buildVisibleNoteMap(mapRoot, mapType, {
         excludeRelations: toNames(req.query.excludeRelation),
         includeRelations: toNames(req.query.includeRelation)
-    }, (noteId) => isReadable(noteId, req) && (mapType === "link" || isListedInShareTree(noteId))));
+    }, (noteId) => isShareNoteReadable(noteId, req)
+        && (mapType === "link" || isListedInShareTree(noteId))));
 }
 
 /**
@@ -238,7 +239,7 @@ function getNoteMap(req: ShareRequest): ShareReply {
 function getRelationMap(req: ShareRequest): ShareReply {
     const mapNote = checkNoteContentAccess(req.params.noteId ?? "", req);
     return jsonReply(200, buildVisibleRelationMap(mapNote.noteId, mapNote.getContent(),
-        (noteId) => isReadable(noteId, req)));
+        (noteId) => isShareNoteReadable(noteId, req)));
 }
 
 /**
@@ -249,14 +250,15 @@ function getRelationMap(req: ShareRequest): ShareReply {
 function getScriptBundle(req: ShareRequest): ShareReply {
     const scriptNote = checkNoteContentAccess(req.params.noteId ?? "", req);
     const note = becca.getNote(scriptNote.noteId);
-    const bundle = note && buildVisibleScriptBundle(note, (noteId) => isReadable(noteId, req));
+    const bundle = note
+        && buildVisibleScriptBundle(note, (noteId) => isShareNoteReadable(noteId, req));
     return bundle
         ? jsonReply(200, bundle)
         : jsonReply(404, { message: `Note '${scriptNote.noteId}' has no script to run.` });
 }
 
 /** Whether the shared note `noteId` is one the caller can read. */
-function isReadable(noteId: string, req: ShareRequest) {
+export function isShareNoteReadable(noteId: string, req: Pick<ShareRequest, "getHeader">) {
     const note = shaca.getNote(noteId);
     return !!note && !note.isProtected && hasCredentialAccess(note, req);
 }
@@ -589,7 +591,7 @@ function rejectProtected(note: SNote, message: string) {
  * inherited attributes) carries no shareCredentials, or the request presents matching HTTP Basic
  * credentials. Pure predicate — it raises nothing, so it can also filter search results.
  */
-function hasCredentialAccess(note: SNote, req: ShareRequest) {
+function hasCredentialAccess(note: SNote, req: Pick<ShareRequest, "getHeader">) {
     const credentials = note.getCredentials();
 
     if (credentials.length === 0) {

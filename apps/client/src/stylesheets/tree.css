@@ -198,6 +198,10 @@ span.fancytree-node.protected > span.fancytree-custom-icon {
     content: "\ec03"; /* bx-share-alt */
 }
 
+.note-indicator-icon.shared-indicator.shared-edit-indicator::before {
+    content: "\eaff"; /* bx-group */
+}
+
 span.fancytree-node.fancytree-active-clone:not(.fancytree-active) .fancytree-title {
     font-weight: bold;
 }

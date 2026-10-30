@@ -13,7 +13,7 @@ import scriptService from "../services/script.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SAttribute from "./shaca/entities/sattribute.js";
 import type SBranch from "./shaca/entities/sbranch.js";
-import type SNote from "./shaca/entities/snote.js";
+import SNote, { SHARE_SECRET_LABELS } from "./shaca/entities/snote.js";
 
 /**
  * Notes as the rows the client's `froca.addResp()` takes, so that a shared page builds the same
@@ -103,7 +103,8 @@ export function buildFrocaRows<T extends PayloadNote>(
             }
         }
         for (const attribute of included.ownedAttributes) {
-            if (attribute.name === "shareCredentials") {
+            // `#shareCredentials` and `#shareEditPassword`.
+            if (attribute.type === "label" && SHARE_SECRET_LABELS.has(attribute.name)) {
                 continue;
             }
             if (attribute.type === "label" || notes.has(attribute.value) || templates.has(attribute.value)) {

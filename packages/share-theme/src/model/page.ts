@@ -13,7 +13,9 @@ export interface ShareNote {
     noteId: string;
     shareId: string;
     title: string;
-    /** When the note was last changed, as Trilium stores it (`2026-10-09 12:00:00.000Z`). */
+    /** When the note was created, as Trilium stores it (`2026-10-09 12:00:00.000Z`). */
+    utcDateCreated?: string;
+    /** When the note was last changed, in the same form. */
     utcDateModified?: string;
     getLabelValue(name: string): string | null | undefined;
     hasLabel(name: string): boolean;
@@ -216,18 +218,48 @@ function toPageLanguage(localeId: string): PageLanguage {
     return { lang: toLanguageTag(localeId), dir: isRightToLeftLanguage(localeId) ? "rtl" : "ltr" };
 }
 
+/** A date of the note: an ISO date for a `<time>` element, and the date written out. */
+export interface PageDate {
+    iso: string;
+    /** The date in the display language, in the visitor's time zone once `footer.ts` runs. */
+    text: string;
+}
+
+/** The dates the note header shows under the title; `null` for one the note does not have. */
+export interface NoteHeader {
+    created: PageDate | null;
+    modified: PageDate | null;
+}
+
 /**
- * Returns when `note` was last changed, as an ISO date for a `<time>` element and as a date
- * written out in the display language, or `null` when the note has no valid date.
+ * Returns when `note` was last changed, written out in the long style of the display language,
+ * or `null` when the note has no valid date.
  */
 export function getLastUpdated(note: ShareNote, displayLanguage: string) {
-    const date = new Date(note.utcDateModified ?? Number.NaN);
+    return formatPageDate(note.utcDateModified, displayLanguage, "long");
+}
+
+/**
+ * Returns the dates the note header shows under the title, written out in the medium style of
+ * the display language as the app's title shows them.
+ */
+export function getNoteHeader(note: ShareNote, displayLanguage: string): NoteHeader {
+    return {
+        created: formatPageDate(note.utcDateCreated, displayLanguage, "medium"),
+        modified: formatPageDate(note.utcDateModified, displayLanguage, "medium")
+    };
+}
+
+function formatPageDate(
+    value: string | undefined, displayLanguage: string, dateStyle: "long" | "medium"
+): PageDate | null {
+    const date = new Date(value ?? Number.NaN);
     if (Number.isNaN(date.getTime())) {
         return null;
     }
     return {
         iso: date.toISOString(),
-        text: new Intl.DateTimeFormat(toLanguageTag(displayLanguage), { dateStyle: "long" }).format(date)
+        text: new Intl.DateTimeFormat(toLanguageTag(displayLanguage), { dateStyle }).format(date)
     };
 }
 

@@ -38,6 +38,11 @@ export declare module "express-session" {
         /** Set during /bootstrap to mark the session as modified so express-session persists it and sends the cookie. */
         csrfInitialized?: true;
         /**
+         * What a shared page's visitor unlocked, by the note whose `#shareEdit` opens the subtree.
+         * A grant holds only while its `key` is the policy's `grantKey`.
+         */
+        shareEdit?: Record<string, { guestId: string; since: string; key: string }>;
+        /**
          * One-shot SSO rejection reason set by the OIDC afterCallback when a login is refused (wrong account,
          * or an attempt before enrollment). Read and cleared by the login page so the message shows once.
          */

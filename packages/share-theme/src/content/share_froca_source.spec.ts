@@ -38,6 +38,13 @@ describe("createShareFrocaSource", () => {
             { excludeRelations: [ "template" ], includeRelations: [ "author" ] });
         await source.getRelationMap("rel 1", []);
         await source.getScriptBundle("script 1");
+        const held = {
+            blobId: "blob1", content: "<p>Held</p>", contentLength: 11,
+            dateModified: "", utcDateModified: ""
+        };
+        const holding = createShareFrocaSource({}, { edited: held });
+        expect(await holding.getBlob("notes", "edited")).toBe(held);
+        await holding.getBlob("attachments", "edited");
 
         expect(fetch.mock.calls.map(([ url ]) => url)).toEqual([
             "api/attachments/att%201/all",
@@ -49,7 +56,8 @@ describe("createShareFrocaSource", () => {
             "api/search/lint?searchString=%23done",
             "api/note-map/map%201/link?excludeRelation=template&includeRelation=author",
             "api/relation-map/rel%201",
-            "api/script/bundle/script%201"
+            "api/script/bundle/script%201",
+            "api/attachments/edited/blob"
         ]);
     });
 });

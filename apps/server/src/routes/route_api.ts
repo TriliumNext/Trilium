@@ -191,9 +191,13 @@ function baseMulterOptions(): multer.Options {
     };
 }
 
-export function createUploadMiddleware(): RequestHandler {
-    // In-memory storage: small uploads (images, single files) that downstream handlers read as `file.buffer`.
-    return multer(baseMulterOptions()).single("upload");
+/**
+ * In-memory storage: small uploads (images, single files) that downstream handlers read as
+ * `file.buffer`. `limits` adds to the common ones, such as a size cap for an untrusted caller.
+ */
+export function createUploadMiddleware(limits?: multer.Options["limits"]): RequestHandler {
+    const options = baseMulterOptions();
+    return multer({ ...options, limits: { ...options.limits, ...limits } }).single("upload");
 }
 
 export function createImportUploadMiddleware(): RequestHandler {

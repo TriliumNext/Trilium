@@ -20,12 +20,7 @@ export default async function setupAppView(container: string, load: () => Promis
     }
 }
 
-/**
- * Mounts the app view from the payload core embeds beside `container`. The view brings the app's
- * context along, which expects jQuery as a global, so `app_globals.ts` loads first.
- * `app_context.ts` then loads before the view's module, as in the app's entry: the modules it
- * reaches depend on that order, such as `tree.ts`, which uses `ws.ts` as it loads.
- */
+/** Mounts the app view from the payload core embeds beside `container`. */
 async function mountAppView(container: string, load: () => Promise<AppViewModule>) {
     const element = document.querySelector<HTMLElement>(`#content ${container}`);
     const data = document.querySelector("#content .share-froca");
@@ -34,6 +29,16 @@ async function mountAppView(container: string, load: () => Promise<AppViewModule
     }
 
     const payload = JSON.parse(data.textContent) as AppPayload;
+    await prepareAppHost(payload);
+    const { default: mount } = await load();
+    await mount(element, payload);
+}
+
+/**
+ * Readies the page for an app view: jQuery as a global first (`app_globals.ts`), then
+ * `app_context.ts` before the view's module, the order of the app's entry its modules rely on.
+ */
+export async function prepareAppHost(payload: AppPayload) {
     // The views behave as on desktop, `isMobile()` being false on a shared page, and the app's
     // stylesheets draw them so from this class.
     document.body.classList.add("desktop");
@@ -46,7 +51,4 @@ async function mountAppView(container: string, load: () => Promise<AppViewModule
     }
     const { initLocale } = await import("@triliumnext/client/src/services/i18n.js");
     await initLocale((payload.options.locale as LOCALE_IDS | null) ?? "en");
-
-    const { default: mount } = await load();
-    await mount(element, payload);
 }

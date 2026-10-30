@@ -4,7 +4,7 @@ import { ALLOWED_NOTE_TYPES, isNoteType, REVISION_SOURCES } from "./rows.js";
 
 describe("REVISION_SOURCES", () => {
     it("contains the expected revision source values in order", () => {
-        expect(REVISION_SOURCES).toEqual(["auto", "manual", "etapi", "llm", "restore"]);
+        expect(REVISION_SOURCES).toEqual(["auto", "manual", "etapi", "llm", "restore", "collab"]);
     });
 });
 

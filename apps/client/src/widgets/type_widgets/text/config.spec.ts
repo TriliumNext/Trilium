@@ -1,4 +1,8 @@
-import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
+import {
+    BlockReferenceEditing, type EditorConfig, type InlineEmbedSource, InlineIconEditing,
+    LinkEmbedEditing
+} from "@triliumnext/ckeditor5";
+import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
@@ -6,7 +10,10 @@ import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
 import type { AddLinkOpts } from "../../dialogs/add_link.js";
-import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
+import {
+    buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY, SHARE_EDIT_DISABLED_PLUGINS,
+    SHARE_EDIT_UPLOAD_PLUGINS
+} from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
 const optionsState = vi.hoisted(() => ({
@@ -24,6 +31,13 @@ const catalogState = vi.hoisted(() => ({
     bundle: undefined as Record<string, unknown> | undefined,
     entries: {} as Record<string, string>
 }));
+// `isShare` is settled when the module loads, so a shared page's editing is stubbed instead.
+const shareState = vi.hoisted(() => ({ editing: false }));
+vi.mock("../../../services/utils.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/utils.js")>()),
+    isShareEditing: () => shareState.editing
+}));
+
 vi.mock("../../../services/i18n.js", () => ({
     t: (key: string) => catalogState.entries[key] ?? key,
     // Read while the AI assistant's Translate submenu is built, which every config goes through.
@@ -717,17 +731,12 @@ describe("CK config - language & emoji", () => {
         ]);
     });
 
-    it("prefixes the emoji definitions URL with the page origin in dev mode", async () => {
-        const prod = await buildConfig(baseOpts());
-        window.glob.isDev = true;
-        const dev = await buildConfig(baseOpts());
+    it("names the emoji definitions by an absolute URL, from the page's base", async () => {
+        const config = await buildConfig(baseOpts());
+        const { definitionsUrl } = config.emoji as { definitionsUrl: string };
 
-        const prodUrl = (prod.emoji as { definitionsUrl: string }).definitionsUrl;
-        const devUrl = (dev.emoji as { definitionsUrl: string }).definitionsUrl;
-        expect(typeof devUrl).toBe("string");
-        // Dev mode prepends the origin, so the dev URL ends with the plain (prod) one.
-        expect(devUrl.endsWith(prodUrl)).toBe(true);
-        expect(devUrl.length).toBeGreaterThanOrEqual(prodUrl.length);
+        expect(() => new URL(definitionsUrl)).not.toThrow();
+        expect(definitionsUrl).toBe(new URL(emojiDefinitionsUrl, document.baseURI).href);
     });
 });
 
@@ -893,6 +902,42 @@ describe("CK config - disabled plugins", () => {
         const enabled = await buildConfig(baseOpts());
         expect(enabled.removePlugins).not.toContain("TriliumEmojiMention");
         expect(enabled.removePlugins).not.toContain("TriliumSlashCommands");
+    });
+
+    it("removes what reaches beyond a shared note from its editor, and uploads", async () => {
+        const glob = window.glob as unknown as Record<string, unknown>;
+        try {
+            shareState.editing = true;
+            glob.shareEdit = { version: "blob1", attachments: false };
+            const locked = await buildConfig(baseOpts());
+            expect(locked.removePlugins).toEqual(expect.arrayContaining([
+                ...SHARE_EDIT_DISABLED_PLUGINS, ...SHARE_EDIT_UPLOAD_PLUGINS
+            ]));
+            // Link previews fetch their metadata through the host's server; the note's existing
+            // previews, block ids and icons still need the schema and converters that keep them
+            // through a save.
+            expect(locked.removePlugins)
+                .toEqual(expect.arrayContaining([ "LinkEmbed", "LinkEmbedToolbar" ]));
+            expect(locked.extraPlugins)
+                .toEqual([ LinkEmbedEditing, BlockReferenceEditing, InlineIconEditing ]);
+            expect(locked.link?.toolbar).not.toContain("linkEmbedDisplayDropdown");
+
+            glob.shareEdit = { version: "blob1", attachments: true };
+            const uploading = await buildConfig(baseOpts());
+            expect(uploading.removePlugins)
+                .toEqual(expect.arrayContaining(SHARE_EDIT_DISABLED_PLUGINS));
+            expect(uploading.removePlugins).not.toContain("UploadimagePlugin");
+
+            shareState.editing = false;
+            delete glob.shareEdit;
+            const plain = await buildConfig(baseOpts());
+            expect(plain.removePlugins).not.toContain("CutToNotePlugin");
+            expect(plain.extraPlugins).toBeUndefined();
+            expect(plain.link?.toolbar).toContain("linkEmbedDisplayDropdown");
+        } finally {
+            shareState.editing = false;
+            delete glob.shareEdit;
+        }
     });
 
     it("hands the toolbar's group menus and the color menu to the app's own menu", async () => {

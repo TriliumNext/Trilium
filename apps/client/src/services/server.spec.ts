@@ -14,7 +14,8 @@ vi.mock("./utils.js", async (orig) => {
         },
         get isShare() {
             return isShareValue;
-        }
+        },
+        isShareEditing: () => isShareValue && !!(window as any).glob?.shareEdit
     };
 });
 
@@ -96,6 +97,17 @@ describe("getHeaders", () => {
         isShareValue = true;
         const headers = await server.getHeaders({ "x-extra": "value" });
         expect(headers).toEqual({});
+    });
+
+    it("sends the component id and the CSRF token when a shared page edits its note", async () => {
+        isShareValue = true;
+        (window as any).glob.shareEdit = { version: "blob1", attachments: false };
+        const headers = await server.getHeaders();
+        expect(headers).toMatchObject({
+            "trilium-component-id": "comp-glob",
+            "x-csrf-token": "csrf-1"
+        });
+        delete (window as any).glob.shareEdit;
     });
 });
 
@@ -216,6 +228,21 @@ describe("ajax error handling", () => {
         expect((window as any).logError).not.toHaveBeenCalled();
     });
 
+    it("stays silent on 409 and 401 for a caller handling the refusal, and rejects", async () => {
+        for (const [ status, body ] of [
+            [ 409, JSON.stringify({ stale: { blobId: "newer" } }) ],
+            [ 401, JSON.stringify({ locked: true }) ]
+        ] as const) {
+            (window as any).$.ajax = (opts: AjaxOptions) => {
+                opts.error({ status, responseText: body });
+            };
+            await expect(server.putWithSilentRefusal("url", {})).rejects.toBe(body);
+        }
+        expect(toastMock.showError).not.toHaveBeenCalled();
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
+        expect((window as any).logError).not.toHaveBeenCalled();
+    });
+
     it("stays silent on 400 when silentBadRequest is set, still rejecting with the body", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             opts.error({ status: 400, responseText: JSON.stringify({ message: "CLI not found" }) });
@@ -298,6 +325,31 @@ describe("CSRF token handling", () => {
         expect(fetchMock).toHaveBeenCalledWith("./bootstrap?x=1", { cache: "no-store" });
         expect((window as any).glob.csrfToken).toBe("fresh-token");
         expect(attempt).toBe(2);
+    });
+
+    it("refreshes the token from the page's own URL, where a shared page names one", async () => {
+        const fetchMock = vi.fn(async () => ({
+            ok: true,
+            json: async () => ({ csrfToken: "share-token" })
+        }));
+        (window as any).fetch = fetchMock;
+        (window as any).glob.csrfRefreshUrl = "api/edit/session?noteId=note";
+        let attempt = 0;
+        const csrfFailure = JSON.stringify({ message: "Invalid CSRF token" });
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            attempt++;
+            if (attempt === 1) {
+                opts.error({ status: 403, responseText: csrfFailure });
+            } else {
+                opts.success({ retried: true }, "success", fakeJqXhr(""));
+            }
+        };
+
+        await server.get("retry/url");
+        expect(fetchMock).toHaveBeenCalledWith(
+            "api/edit/session?noteId=note", { cache: "no-store" });
+        expect((window as any).glob.csrfToken).toBe("share-token");
+        delete (window as any).glob.csrfRefreshUrl;
     });
 
     it("does not retry when the 403 is not a csrf error (bad json / wrong message)", async () => {

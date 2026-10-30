@@ -123,9 +123,40 @@ To use the sharing feature, you must have a <a class="reference-link" href="../
 
 When you share a note, you actually share the entire subtree of notes beneath it. If the note has child notes, they will also be included in the shared content. For example, sharing the "Formatting" subtree will display a page with basic navigation for exploring all the notes within that subtree.
 
+### The shared page
+
+A shared page is laid out like the application: the navigation tree of the subtree on the left, and a tab bar above the note. The note starts with its icon, its title and the dates it was created and last modified; once the title scrolls out of view, a title bar under the tab bar shows the icon and the title, as the application's does.
+
+The tab bar keeps the notes a visitor opened during their browser session, so they can switch between them. <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on macOS) or a middle click on a note in the tree opens it in a tab behind the open one, the <span class="tn-icon bx bx-plus"></span> button opens the site's start page in a new tab, and the <span class="tn-icon bx bx-left-arrow-alt"></span> and <span class="tn-icon bx bx-right-arrow-alt"></span> buttons go back and forward through the pages seen. The tabs are kept by the browser for that session only; they are not shared between visitors.
+
 ## Viewing and managing shared notes
 
 You can view a list of all shared notes by clicking on _Advanced_ → _Shared notes_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. This allows you to manage and navigate through all the notes you have made public.
+
+## Letting guests edit
+
+A shared text note can be opened to editing by its visitors, without accounts. Open the Shared badge's menu and turn on _Guests can edit_; the dialog asks how the page is unlocked:
+
+*   **With a password**, which guests enter on the page. One password covers the note and every note below it.
+*   **Anyone with the link**, which needs no password at all. Prefer a password for a page that is linked from anywhere public.
+
+A visitor of the page then sees an _Edit_ button at the right of the note's header, where the password field appears when one is needed. Once unlocked, the page hosts Trilium's own text editor, with its toolbar above the note, and saves as the visitor types; the title can be edited as well. _Stop editing_ brings the rendered page back, and _Log out_ ends the visitor's access on a password-protected page; when the server cannot be reached, the editor stays open so that the visitor can log out again.
+
+*   Guests edit text notes only, and never one with the `#readOnly` label. They cannot add, move or delete notes, nor change a note's type.
+*   Guest changes go into the note's revisions under the same rules as the host's own edits: a snapshot of the note is saved at most once per revision interval, and never for a note with `#disableVersioning`. These revisions are marked _Guest edit_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Note Revisions</a> dialog, so the host can review and restore them.
+*   The editor leaves out what reaches the host's other notes: snippets, included notes, internal links, link previews and the AI assistant. A guest's content goes through the same sanitizer as imported HTML.
+*   _Allow attachments_, in the same menu, lets guests upload images and files into the notes they edit.
+*   When the note changed on the server while a guest was editing it, the page says so and lets the guest reload or keep their version. Until the guest chooses, their changes stay unsaved, and _Stop editing_ keeps the editor open.
+*   A new password ends the editing of guests who unlocked the page with the old one. The page then asks them for the new password and keeps what they typed meanwhile, which it saves once they enter it. Where editing was opened to anyone instead, the page unlocks again on its own, and when it cannot reach the server it offers _Unlock editing_ to try again.
+*   When a guest's changes cannot be saved for over a minute, whatever the reason, the page logs the guest out of editing and brings the rendered page back, saying why. The changes not saved by then are lost. That minute also runs while the page waits for the guest to keep their version or to enter a new password.
+
+The settings hold for the note they are changed on and for the notes below it. On a note that inherits them from an ancestor:
+
+*   Turning off _Guests can edit_ closes that note and the notes below it only, with `#shareEdit=false`. Turning it back on hands them back to the ancestor's settings.
+*   _Allow attachments_ applies to that note and the notes below it, overriding what the ancestor allows.
+*   Setting a password, or opening editing to anyone, gives that note and the notes below it settings of their own, unlocked separately from the ancestor's.
+
+In the note tree, a shared note guests can edit shows a <span class="tn-icon bx bx-group"></span> icon in place of the share icon. Editing is offered by a server installation and by the desktop app on its local network; the standalone and mobile apps, which serve no pages, do not offer it.
 
 ## Security considerations
 
@@ -279,6 +310,10 @@ The URL must be absolute and include the scheme (e.g. `https://`).
         <tr>
             <td><code>#shareCredentials</code></td>
             <td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td>
+        </tr>
+        <tr>
+            <td><code>#shareEdit</code></td>
+            <td>visitors of the shared page can edit this note and the notes below it; <code>#shareEdit=false</code> closes a branch below an editable note. Set from the Shared badge's menu, which also writes <code>#shareEditPassword</code>, the hashed password that unlocks editing (empty to open a branch below a password-protected note), and <code>#shareAttachments</code>, which lets guests upload images and files.</td>
         </tr>
         <tr>
             <td><code>#shareIndex</code></td>
