@@ -2273,7 +2273,7 @@
     "open_note_in_other_split": "在另一个分屏中打开笔记",
     "open_note": "打开笔记",
     "convert_link_to_embed": "将链接转换为嵌入",
-    "convert_link_to_included_note": "将链接转换为包含的笔记",
+    "convert_link_to_included_note": "将链接转换为嵌入笔记",
     "convert_embed_to_link": "转换为链接",
     "include_size": "尺寸",
     "show_title": "显示标题",
