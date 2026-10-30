@@ -35,6 +35,14 @@ describe("fitSlideContent", () => {
         expect(Number(content.style.zoom)).toBeCloseTo(0.5);
         expect(Number(content.style.zoom) + 0.5).toBeLessThanOrEqual(1);
     });
+
+    it("stops zooming out when the zoom barely shrinks the overflow", () => {
+        // A table editor's column resizer, 3px past a full-width table, overflows by the same share at
+        // any zoom; the secant step would place the fit at a zoom of almost nothing.
+        const content = buildContent({ width: zoom => 1 + 0.00234 * zoom });
+        fitSlideContent(content);
+        expect(Number(content.style.zoom)).toBeGreaterThan(0.99);
+    });
 });
 
 describe("createFitObserver", () => {

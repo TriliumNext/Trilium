@@ -1,4 +1,9 @@
 const MAX_FIT_ATTEMPTS = 8;
+/**
+ * The least share of a proportional shrink that a zoom step must take off the overflow. Below it the
+ * overflow holds about the same share of the slide at any zoom, and no zoom makes the content fit.
+ */
+const MIN_RELATIVE_SLOPE = 0.1;
 
 /**
  * Fits each observed slide content again whenever its size changes: an image or a font loads, the theme
@@ -29,6 +34,8 @@ function measureSize(element: HTMLElement) {
  *
  * Some lengths (percentages, container query units) do not scale with `zoom`, so the content is measured
  * again after each zoom. The overflow is close to linear in the zoom, so each next zoom is a secant step.
+ * Zooming stops when it barely shrinks the overflow, as for the UI of a table widget, which reaches past a
+ * full-width table by the same share at any zoom.
  */
 export function fitSlideContent(content: HTMLElement) {
     content.style.zoom = "";
@@ -42,9 +49,10 @@ export function fitSlideContent(content: HTMLElement) {
         if (overflow <= 1) break;
 
         const slope = (previous.overflow - overflow) / (previous.scale - scale);
+        if (slope < MIN_RELATIVE_SLOPE * overflow / scale) break;
         const next = scale - (overflow - 1) / slope;
         previous = { scale, overflow };
-        scale = slope > 0 && next > 0 ? next : scale / overflow;
+        scale = next > 0 ? next : scale / overflow;
     }
 }
 
