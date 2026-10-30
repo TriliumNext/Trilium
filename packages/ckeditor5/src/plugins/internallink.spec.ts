@@ -211,6 +211,27 @@ describe("the link at the selection", () => {
             .toStrictEqual({ href: "https://a.example", text: "abc", display: "plain" });
     });
 
+    it("reads a selected reference link, and replaces it with a link or a reference", async () => {
+        const data = () => getModelData(editor.model, { withoutSelection: true });
+        const SELECTED = "<paragraph>a [<reference href=\"#root/abc\"></reference>] b</paragraph>";
+        setModelData(editor.model, SELECTED);
+        expect(getLinkAtSelection(editor)).toStrictEqual(
+            { href: "#root/abc", text: "Target", display: "plain", isReference: true }
+        );
+
+        await replaceLinkAtSelection(editor, "#root/def", "See there");
+        expect(data()).toBe(
+            "<paragraph>a <$text linkHref=\"#root/def\">See there</$text> b</paragraph>"
+        );
+
+        setModelData(editor.model, SELECTED);
+        await replaceLinkAtSelection(editor, "#root/def", null);
+        expect(data()).toBe(
+            "<paragraph>a <reference href=\"#root/def\" storedTitle=\"Target\"></reference> b"
+            + "</paragraph>"
+        );
+    });
+
     it("reads a selected link preview as a link titled by its title, shown as it is", () => {
         setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
             + " title=\"A\" description=\"About A\"></linkMention>]</paragraph>");

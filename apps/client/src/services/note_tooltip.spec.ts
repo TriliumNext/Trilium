@@ -106,6 +106,7 @@ afterEach(() => {
     // Clear any tracked tooltip elements while the .tooltip stub is still installed.
     dismissAllTooltips();
     document.body.classList.remove("context-menu-shown");
+    $(".ck-balloon-panel").remove();
     $.fn.filter = origFilter;
     $.fn.is = origIs;
     delete ($.fn as any).tooltip;
@@ -351,16 +352,42 @@ describe("mouseEnterHandler", () => {
         expect(parseNavigationStateFromUrl).not.toHaveBeenCalled();
     });
 
-    it("ignores links opted out via class, CK link actions, or inside a tooltip", async () => {
+    it("ignores links opted out via class, or inside a tooltip", async () => {
         const $a = makeLink('<a class="no-tooltip-preview" href="#root/a">a</a>');
-        const $b = makeLink('<div class="ck-link-actions"><a href="#root/b">b</a></div>').find("a");
         const $c = makeLink('<div class="note-tooltip"><a href="#root/c">c</a></div>').find("a");
 
         await mouseEnterHandler.call($a[0], eventFor($a));
-        await mouseEnterHandler.call($b[0], eventFor($b));
         await mouseEnterHandler.call($c[0], eventFor($c));
 
         expect(parseNavigationStateFromUrl).not.toHaveBeenCalled();
+    });
+
+    it("stays off a link toolbar of the text editor, whether already shown or opened mid-flight", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a data-href="#root/abc">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });
+        froca.getNote = vi.fn(async () => fakeNote({ noteId: "abc", bestPath: "root/abc" })) as unknown as typeof froca.getNote;
+        hoverActive = true;
+        const linkToolbar = makeLink(
+            '<div class="ck-balloon-panel ck-balloon-panel_visible"><div class="ck-toolbar ck-link-toolbar"></div></div>');
+        const referenceToolbar = makeLink(
+            '<div class="ck-balloon-panel ck-balloon-panel_visible reference-link-toolbar"></div>');
+
+        // Shown when the pointer arrives, as when it moves to the toolbar's "Open note" button.
+        await mouseEnterHandler.call($link[0], eventFor($link));
+        linkToolbar.remove();
+        await mouseEnterHandler.call($link[0], eventFor($link));
+        expect(parseNavigationStateFromUrl).not.toHaveBeenCalled();
+
+        // Opened while the delayed preview was in flight, as a click on the link opens it.
+        referenceToolbar.removeClass("ck-balloon-panel_visible");
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        referenceToolbar.addClass("ck-balloon-panel_visible");
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(parseNavigationStateFromUrl).toHaveBeenCalled();
+        expect($.fn.tooltip as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
     });
 
     it("ignores footnote back-reference links (#fnref...)", async () => {
@@ -401,6 +428,25 @@ describe("mouseEnterHandler", () => {
 
         expect(parseNavigationStateFromUrl).toHaveBeenCalled();
         expect($.fn.tooltip as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    });
+
+    it("dismisses an open preview once a link toolbar opens without a click", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a href="#root/abc">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });
+        froca.getNote = vi.fn(async () => fakeNote({ noteId: "abc", bestPath: "root/abc" })) as unknown as typeof froca.getNote;
+        hoverActive = true;
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+        const tooltip = $.fn.tooltip as unknown as ReturnType<typeof vi.fn>;
+        expect(tooltip).toHaveBeenCalledWith("show");
+
+        // A reference link selected with the keyboard shows its toolbar while the pointer stays.
+        makeLink('<div class="ck-balloon-panel ck-balloon-panel_visible reference-link-toolbar"></div>');
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(tooltip).toHaveBeenCalledWith("dispose");
     });
 
     it("shows nothing for a link that takes the opt-out while its preview is in flight", async () => {
@@ -730,8 +776,6 @@ describe("setup helpers and dismissAllTooltips", () => {
         const pointerSelectors = calls.filter((c) => c[0] === "pointerenter").map((c) => c[1]);
         expect(pointerSelectors).toContain("a:not(.no-tooltip-preview)");
         expect(pointerSelectors).toContain("[data-href]:not(.no-tooltip-preview)");
-        // a global click handler is also registered (no delegation selector)
-        expect(calls.some((c) => c[0] === "click")).toBe(true);
         onSpy.mockRestore();
     });
 
@@ -744,11 +788,15 @@ describe("setup helpers and dismissAllTooltips", () => {
         // Click inside a .note-tooltip -> handler returns early, no dispose.
         const $inside = $('<div class="note-tooltip"><span class="target">hi</span></div>');
         $("body").append($inside);
-        $(document).trigger($.Event("click", { target: $inside.find(".target")[0] }));
+        $inside.find(".target")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
         expect(($tracked as any).tooltip).not.toHaveBeenCalledWith("dispose");
 
-        // Click outside -> dismissAllTooltips disposes the tracked element.
-        $(document).trigger($.Event("click", { target: document.body }));
+        // A click on the link dismisses it, though its handler stops the propagation as
+        // `goToLink()` does, which is how a click opens the link toolbar of the text editor.
+        const stopAtLink = (e: JQuery.ClickEvent) => e.stopPropagation();
+        $(document).on("click", "a", stopAtLink);
+        $tracked[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        $(document).off("click", "a", stopAtLink);
         expect(($tracked as any).tooltip).toHaveBeenCalledWith("dispose");
     });
 

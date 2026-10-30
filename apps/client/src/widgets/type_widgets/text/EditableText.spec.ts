@@ -492,6 +492,15 @@ describe("getEditLinkOpts", () => {
             .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example", "About");
     });
 
+    it("edits a selected reference link with its title still mirroring the note's", () => {
+        const api = createApi({
+            href: "#root/abc", text: "Target", display: "plain", isReference: true
+        });
+        const opts = getEditLinkOpts(api, ready);
+        expect(opts).toMatchObject({ text: "Target", currentLink: { notePath: "root/abc" } });
+        expect(opts.currentTitle).toBeUndefined();
+    });
+
     it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
         const api = createApi({
             href: "https://example.com", text: "Example", description: "About", display: "card"

@@ -372,6 +372,12 @@ export function getReferenceTitleSync( editor: Editor, href: string, storedTitle
 	return getTitleSync ? getTitleSync( href, storedTitle ) : storedTitle ?? href;
 }
 
+/** The selected reference link, or `null` when the selection holds none. */
+export function getSelectedReference( editor: Editor ): ModelElement | null {
+	const element = editor.model.document.selection.getSelectedElement();
+	return element?.is( 'element', 'reference' ) ? element : null;
+}
+
 /** The attributes of a `reference` to `href`, with `storedTitle` when there is one to keep. */
 export function referenceAttributes( href: string | undefined, storedTitle: string | undefined ) {
 	return storedTitle ? { href, storedTitle } : { href };

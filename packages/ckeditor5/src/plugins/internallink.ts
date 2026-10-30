@@ -8,7 +8,9 @@ import internalLinkIcon from '../icons/trilium.svg?raw';
 import {
     getLinkWidgetMode, getSelectedLinkWidget, type LinkDisplayMode
 } from './link_embed/link_embed_commands.js';
-import ReferenceLink, { getReferenceTitle, referenceAttributes } from './referencelink';
+import ReferenceLink, {
+    getReferenceTitle, getReferenceTitleSync, getSelectedReference, referenceAttributes
+} from './referencelink';
 
 export const COMMAND_NAME = 'insertInternalLink';
 
@@ -176,18 +178,35 @@ class InsertInternalLinkCommand extends Command {
     }
 }
 
-/** A link in the text, or a link preview, as the link dialog edits it. */
+/** A link in the text, a reference link or a link preview, as the link dialog edits it. */
 export interface LinkAtSelection {
     href: string;
-    /** The whole text of a link, or the title of a preview. */
+    /** The whole text of a link, or the title of a reference link or a preview. */
     text: string;
     /** The description of a preview. A link has none. */
     description?: string;
     display: LinkDisplayMode;
+    /** Whether the link is a reference link, whose text follows the title of its note. */
+    isReference?: boolean;
 }
 
-/** The link around the selection or the selected link preview, or `null` outside one. */
+/**
+ * The link around the selection, or the selected reference link or link preview, or `null`
+ * outside one.
+ */
 export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
+    const reference = getSelectedReference(editor);
+    if (reference) {
+        const href = reference.getAttribute('href') as string;
+        const storedTitle = reference.getAttribute('storedTitle') as string | undefined;
+        return {
+            href,
+            text: getReferenceTitleSync(editor, href, storedTitle),
+            display: 'plain',
+            isReference: true
+        };
+    }
+
     const preview = getSelectedLinkWidget(editor);
     if (preview) {
         return {
@@ -213,9 +232,9 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
 }
 
 /**
- * Replaces the link around the selection or the selected link preview with `text` linking to
- * `href`, keeping the formatting of the link's start, or with a reference to the note at `href`
- * when `text` is `null`. A reference replaces
+ * Replaces the link around the selection, or the selected reference link or link preview, with
+ * `text` linking to `href`, keeping the formatting of the link's start, or with a reference to the
+ * note at `href` when `text` is `null`. A reference replaces
  * the link once `getReferenceTitle()` resolves, in one undo step with the removal, and
  * takes the caret along only if the user has not moved it in the meantime.
  */
@@ -277,6 +296,11 @@ export function getAnchorNames(editor: Editor): string[] {
 
 function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange } | null {
     const model = editor.model;
+    const reference = getSelectedReference(editor);
+    if (reference) {
+        return { href: reference.getAttribute('href') as string, range: model.createRangeOn(reference) };
+    }
+
     const preview = getSelectedLinkWidget(editor);
     if (preview) {
         return { href: preview.getAttribute('url') as string, range: model.createRangeOn(preview) };

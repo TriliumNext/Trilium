@@ -604,7 +604,7 @@ export function getEditLinkOpts(
         return {
             text: currentLink.text,
             hasSelection: false,
-            currentTitle: currentLink.text,
+            currentTitle: currentLink.isReference ? undefined : currentLink.text,
             currentDescription: currentLink.description,
             display: currentLink.display,
             anchors,

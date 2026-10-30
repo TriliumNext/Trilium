@@ -3,6 +3,15 @@ Internal links are links to other notes within Trilium.
 
 You can open an internal link by clicking it. You can also see a read-only preview of an internal link's contents by hovering over it.
 
+Since v0.107.0, clicking an internal link while editing a text note shows its popup instead, as clicking an external link does:
+
+*   _Open note_ opens the linked note, or _Open attachment_ for a link to an attachment.
+*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_ copies the address of the link.
+*   <span class="tn-icon cke cke-pencil"></span> _Edit link_ changes the link, as described below.
+*   <span class="tn-icon cke cke-unlink"></span> _Unlink_ turns the link into plain text.
+
+To open the note in a new tab without the popup, <kbd>Ctrl</kbd>+click or double-click the link. The preview does not show while the popup is open.
+
 ## Inserting internal links
 
 Internal links can be created at the current position in a text note by:
@@ -20,7 +29,7 @@ There are two link types, chosen with the _Mirror the note's title_ switch of th
 2.  With the switch off, the link has a title of its own, typed in the _Link title_ field.
     1.  This will create a traditional hyperlink, where the text of the link can be different from the note title.
 
-Since v0.107.0, to change a link whose title does not mirror the note's, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup, or place the cursor inside it and press <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button. The _Edit link_ dialog opens on the linked note, with its anchor and the link's text; _Save link_ changes the whole link. Turning _Mirror the note's title_ on there turns it into a link that mirrors the title.
+Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link whose title does not mirror the note's, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Turning _Mirror the note's title_ on or off there switches between the two link types.
 
 ## In-place linking
 

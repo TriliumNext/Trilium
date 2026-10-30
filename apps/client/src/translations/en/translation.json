@@ -4699,7 +4699,9 @@
       "insert-a-code-block-that-is-edited-as-a-code-note": "Insert a code block that is edited as a code note.",
       "new-child-note": "New child note",
       "create-a-new-child-note": "Create a new child note",
-      "create-a-new-child-note-and-insert-a-link-to-it": "Create a new child note and insert a link to it"
+      "create-a-new-child-note-and-insert-a-link-to-it": "Create a new child note and insert a link to it",
+      "open-note": "Open note",
+      "open-attachment": "Open attachment"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

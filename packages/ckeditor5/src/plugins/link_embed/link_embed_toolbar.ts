@@ -277,7 +277,7 @@ class LinkEmbedEditLinkButton extends Plugin {
  * URL in a new tab. Reuses CKEditor's `ck-link-toolbar__preview` styling for
  * visual parity with the built-in link toolbar.
  */
-class LinkEmbedPreviewButtonView extends ButtonView {
+export class LinkEmbedPreviewButtonView extends ButtonView {
     declare href: string | undefined;
 
     constructor(locale: Locale) {
