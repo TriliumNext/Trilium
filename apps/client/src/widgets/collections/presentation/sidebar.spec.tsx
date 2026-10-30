@@ -387,7 +387,7 @@ function getButton(sidebar: HTMLElement, noteId: string) {
 
 describe("useActiveSlideNoteId", () => {
     it("follows the slide that Reveal.js shows", async () => {
-        const { useActiveSlideNoteId } = await import("./index");
+        const { useActiveSlideNoteId } = await import("./reveal");
         const listeners: (() => void)[] = [];
         let current = buildSection("intro");
         const api = {

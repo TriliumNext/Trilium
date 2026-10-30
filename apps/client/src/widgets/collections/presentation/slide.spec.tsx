@@ -42,7 +42,7 @@ async function renderSlide({ isElectron }: { isElectron: boolean }) {
         const actual = await importOriginal<typeof import("../../../services/utils")>();
         return { ...actual, default: { ...actual.default, isElectron: () => isElectron }, isElectron: () => isElectron };
     });
-    const { Slide } = await import("./index");
+    const { Slide } = await import("./slides");
 
     const container = document.createElement("div");
     render(<Slide slide={webViewSlide} ntxId={undefined} />, container);
@@ -67,7 +67,7 @@ describe("collection slides", () => {
             }
         }));
         const { buildNote } = await import("../../../test/easy-froca");
-        const { CollectionSlides, Slide } = await import("./index");
+        const { CollectionSlides, Slide } = await import("./slides");
         buildNote({ id: "board", title: "Board", type: "book", "#viewType": "board" });
         buildNote({ id: "table", title: "Table", type: "book", "#viewType": "table" });
         const boardSlide: PresentationSlideBaseModel = { noteId: "board", type: "book", content: { __html: "" }, isCollection: true };
@@ -112,7 +112,7 @@ describe("collection slides", () => {
     });
 
     it("leaves the keys of a field being typed in to the field", async () => {
-        const { isTypingIn } = await import("./index");
+        const { isTypingIn } = await import("./reveal");
         const keyFrom = (element: HTMLElement) => {
             let typing: boolean | undefined;
             element.addEventListener("keydown", (e) => { typing = isTypingIn(e); });
