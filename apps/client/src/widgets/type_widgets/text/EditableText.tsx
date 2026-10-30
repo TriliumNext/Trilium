@@ -259,7 +259,7 @@ export default function EditableText({
     function showLinkDialog(request: LinkDialogRequest) {
         if (!editorApiRef.current) return null;
 
-        const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, request.target);
+        const opts = getAddLinkOpts(editorApiRef.current, waitForEditor, request);
         if (isMobile()) {
             parentComponent?.triggerCommand("showAddLinkDialog", opts);
             return null;
@@ -586,23 +586,31 @@ export default function EditableText({
  * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
  */
 /**
- * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
- * link at the selection, on the `target` side.
+ * What the Add link dialog opens on: the link around the caret or the selected link preview, which
+ * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
  */
 export function getAddLinkOpts(
-    api: CKEditorApi, ready: () => Promise<unknown>, target?: AddLinkOpts["target"]
+    api: CKEditorApi, ready: () => Promise<unknown>,
+    { target, display }: Pick<AddLinkOpts, "target" | "display"> = {}
 ): AddLinkOpts {
+    async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
+        await ready();
+        api.addLinkPreview(...args);
+    }
+
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         return {
             text: currentLink.text,
             hasSelection: false,
             currentTitle: currentLink.text,
+            display: currentLink.display,
             ...parseLinkHref(currentLink.href),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
                 await api.updateLink(notePath, linkTitle, externalLink);
-            }
+            },
+            addLinkPreview
         };
     }
 
@@ -610,10 +618,12 @@ export function getAddLinkOpts(
         text: api.getSelectedText(),
         hasSelection: api.hasSelection(),
         target,
+        display,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
-        }
+        },
+        addLinkPreview
     };
 }
 

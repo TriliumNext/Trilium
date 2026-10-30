@@ -1,11 +1,9 @@
 import { Plugin } from 'ckeditor5';
 import AutoLinkToMention from './link_embed_autodetect.js';
 import LinkEmbedEditing from './link_embed_editing.js';
-import LinkEmbedUI from './link_embed_ui.js';
 
 export {
     CHANGE_LINK_DISPLAY_COMMAND,
-    CHANGE_LINK_PREVIEW_TITLE_COMMAND,
     getLinkDisplayModeLabel,
     LINK_DISPLAY_MODES,
     LINK_EMBED_COMMAND,
@@ -20,13 +18,14 @@ export {
  *
  * The feature is assembled from:
  *   - {@link LinkEmbedEditing} — schema, converters and the commands ({@link module:link_embed_commands});
- *   - {@link LinkEmbedUI} — the toolbar button and its balloon form;
  *   - {@link AutoLinkToMention} — auto-conversion of typed/pasted URLs;
  *   - LinkEmbedToolbar (loaded separately by the host) — the widget toolbar, whose Display dropdown
  *     also serves the native link balloon.
+ *
+ * The host's link dialog inserts previews through `LINK_EMBED_COMMAND`.
  */
 export default class LinkEmbed extends Plugin {
     static get requires() {
-        return [LinkEmbedEditing, LinkEmbedUI, AutoLinkToMention];
+        return [LinkEmbedEditing, AutoLinkToMention];
     }
 }

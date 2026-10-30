@@ -5,7 +5,6 @@ import "ckeditor5/ckeditor5.css";
 import "./theme/blockquote.css";
 import "./theme/content_colors.css";
 import "./theme/code_block_toolbar.css";
-import "./theme/link_embed_form.css";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
 import type { PasteTarget } from "./plugins/cuttonote.js";
@@ -31,7 +30,7 @@ export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js"
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { ChildNoteHost } from "./plugins/child_note.js";
 export { getLinkAtSelection, replaceLinkAtSelection } from "./plugins/internallink.js";
-export type { LinkDialogRequest } from "./plugins/internallink.js";
+export type { LinkAtSelection, LinkDialogRequest } from "./plugins/internallink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
 export type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./plugins/mention/types.js";
@@ -39,7 +38,7 @@ export type { ToolbarGroupMenuEntry, ToolbarGroupMenuHost, ToolbarGroupMenuItem,
 export type { default as TextFormattingToolbar } from "./plugins/text_formatting_toolbar.js";
 export type { default as ContextToolbar } from "./plugins/context_toolbar.js";
 export type { default as MobileToolbarItems } from "./plugins/mobile_toolbar_items.js";
-export type { LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
+export type { LinkDisplayMode, LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
 export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
 export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
 export type { BlockReferenceHost } from "./plugins/block_reference/block_reference.js";

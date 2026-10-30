@@ -6,7 +6,9 @@
  * crash and restarted the editor, which reverted the note to its last saved content — the images
  * being uploaded flickered and vanished instead of a "cannot upload" toast appearing.
  */
-import type { CKEditorError, CKTextEditor, FileUploadData } from "@triliumnext/ckeditor5";
+import type {
+    CKEditorError, CKTextEditor, FileUploadData, LinkAtSelection
+} from "@triliumnext/ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FAttachment from "../../../entities/fattachment";
@@ -444,13 +446,14 @@ describe("parseLinkHref", () => {
 });
 
 describe("getAddLinkOpts", () => {
-    function createApi(currentLink: { href: string; text: string } | null) {
+    function createApi(currentLink: LinkAtSelection | null) {
         return {
             hasSelection: vi.fn(() => true),
             getSelectedText: vi.fn(() => "chosen words"),
             getCurrentLink: vi.fn(() => currentLink),
             addLink: vi.fn(),
             updateLink: vi.fn(),
+            addLinkPreview: vi.fn(),
             addLinkToEditor: vi.fn(),
             addHtmlToEditor: vi.fn(),
             addContentEmbed: vi.fn(),
@@ -460,16 +463,30 @@ describe("getAddLinkOpts", () => {
     const ready = async () => {};
 
     it("edits the link at the caret, rewriting it on save", async () => {
-        const api = createApi({ href: "#root/abc?bookmark=part", text: "See there" });
+        const api = createApi({
+            href: "#root/abc?bookmark=part", text: "See there", display: "plain"
+        });
         const opts = getAddLinkOpts(api, ready);
         expect(opts).toMatchObject({
             text: "See there", hasSelection: false, currentTitle: "See there",
-            currentLink: { notePath: "root/abc" }, currentBookmark: "part"
+            currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "plain"
         });
 
         await opts.addLink("root/def", "Elsewhere");
         expect(api.updateLink).toHaveBeenCalledExactlyOnceWith("root/def", "Elsewhere", undefined);
         expect(api.addLink).not.toHaveBeenCalled();
+
+        await opts.addLinkPreview?.("https://example.com", "card", "Example");
+        expect(api.addLinkPreview)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example");
+    });
+
+    it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
+        const api = createApi({ href: "https://example.com", text: "Example", display: "card" });
+        expect(getAddLinkOpts(api, ready, { display: "inline" })).toMatchObject({
+            currentLink: { externalLink: "https://example.com" }, currentTitle: "Example",
+            display: "card"
+        });
     });
 
     it("adds a link from the selection outside one", async () => {
@@ -481,10 +498,17 @@ describe("getAddLinkOpts", () => {
         await opts.addLink("https://example.com", "Example", true);
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
+
+        await opts.addLinkPreview?.("https://example.com", "inline", null);
+        expect(api.addLinkPreview)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null);
     });
 
-    it("opens a new link on the side it is asked for", () => {
-        expect(getAddLinkOpts(createApi(null), ready, "url").target).toBe("url");
-        expect(getAddLinkOpts(createApi(null), ready).target).toBeUndefined();
+    it("opens a new link on the side and with the display it is asked for", () => {
+        const opts = getAddLinkOpts(createApi(null), ready, { target: "url", display: "embed" });
+        expect(opts).toMatchObject({ target: "url", display: "embed" });
+        expect(getAddLinkOpts(createApi(null), ready)).toMatchObject({
+            target: undefined, display: undefined
+        });
     });
 });

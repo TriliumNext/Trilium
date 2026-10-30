@@ -1,10 +1,12 @@
 import { isHttpUrl } from '@triliumnext/commons';
-import { Command, type Editor, findAttributeRange, ModelLiveRange } from 'ckeditor5';
+import {
+    Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
+    type ModelWriter
+} from 'ckeditor5';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
 export const REMOVE_LINK_EMBED_COMMAND = 'removeLinkEmbed';
-export const CHANGE_LINK_PREVIEW_TITLE_COMMAND = 'changeLinkPreviewTitle';
 
 export const LINK_DISPLAY_MODES = [
     'inline',
@@ -18,8 +20,7 @@ export const LINK_DISPLAY_MODES = [
 export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number];
 
 /**
- * The user-facing name of a display mode, as shown by the insert form's dropdown and the widget
- * toolbar's.
+ * The user-facing name of a display mode, as shown by the widget toolbar's Display dropdown.
  *
  * A switch rather than a table of labels, so that each one is written as a literal argument of a
  * `t()` call: that is how the messages this package owns are discovered (see `messages.ts`) and a
@@ -56,40 +57,50 @@ export const META_KEYS = ['url', 'embedType', 'title', 'description', 'favicon',
 export type MetaKey = (typeof META_KEYS)[number];
 
 /**
- * Inserts a preview for a URL: fetches its metadata through the host, then puts the widget in.
+ * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
+ * is in, and turns it into a preview of the `mode` shape once the page's metadata arrives. `title`
+ * replaces the page's own title, and is the text of a plain link.
+ *
+ * A selected preview of `url` changes its shape and title from the metadata it stores, without
+ * fetching the page again.
  *
  * All the metadata is written onto the element whichever shape is chosen — an inline mention stores
  * the description and image it does not itself show — so that switching modes later, via the widget
  * toolbar's Display dropdown, never has to go back to the network.
  */
 export class InsertLinkEmbedCommand extends Command {
-    override async execute({ url, mode }: { url: string; mode: LinkDisplayMode }) {
+    override async execute(
+        { url, mode, title }: { url: string; mode: LinkDisplayMode; title?: string }
+    ) {
         const editor = this.editor;
-
-        // A plain link is not a preview at all, so no metadata is fetched: the URL becomes an
-        // ordinary link, exactly as the editor's own link balloon would have inserted it.
-        if (mode === 'plain') {
-            editor.model.change((writer) => {
-                editor.model.insertContent(writer.createText(url, { linkHref: url }));
+        const model = editor.model;
+        const selection = model.document.selection;
+        const selected = getSelectedLinkWidget(editor);
+        if (selected && mode !== 'plain' && selected.getAttribute('url') === url) {
+            model.change((writer) => {
+                writer.setSelection(rebuildLinkWidget(editor, writer, selected, mode, title), 'on');
             });
             return;
         }
 
-        const metadata = await getLinkEmbedHost(editor).fetchMetadata(url);
+        const href = selection.getAttribute('linkHref');
+        const position = selection.getFirstPosition();
+        const target = typeof href === 'string' && position
+            ? findAttributeRange(position, 'linkHref', href, model)
+            : selection;
 
-        editor.model.change((writer) => {
-            editor.model.insertContent(writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
-                url: metadata.url,
-                // A card is an embed that declines to play: forcing "opengraph" is what tells the
-                // renderer to draw the static card rather than the provider's player.
-                embedType: mode === 'card' ? 'opengraph' : metadata.embedType,
-                title: metadata.title,
-                description: metadata.description,
-                favicon: metadata.favicon,
-                siteName: metadata.siteName,
-                image: metadata.image
-            }));
+        // The plain link shows at once; the metadata fetch reads the page server-side and can take
+        // seconds.
+        const linkRange = model.change((writer) => {
+            const link = writer.createText(title || url, { linkHref: url });
+            const range = model.insertContent(link, target);
+            writer.setSelection(range.end);
+            return range;
         });
+
+        if (mode !== 'plain') {
+            await replaceLinkWithPreview(editor, linkRange, url, mode, title);
+        }
     }
 
     override refresh() {
@@ -126,17 +137,10 @@ export class ChangeLinkDisplayCommand extends Command {
         }
 
         const targetMode = options.value;
-        const currentMode = this._getMode(selected);
+        const currentMode = getLinkWidgetMode(selected);
         if (targetMode === currentMode) return;
 
-        // Collect all metadata from the current element.
-        const attrs: Record<string, unknown> = {};
-        for (const key of META_KEYS) {
-            const val = selected.getAttribute(key);
-            if (val != null) attrs[key] = val;
-        }
-
-        const url = attrs.url as string;
+        const url = selected.getAttribute('url') as string;
 
         // "Plain link" leaves the preview system: the widget becomes an ordinary link whose text is
         // the URL. Inserted as new content (not an attribute change), so AutoLinkToMention does not
@@ -150,19 +154,8 @@ export class ChangeLinkDisplayCommand extends Command {
             return;
         }
 
-        // Detect the actual embed type from the URL via the client service.
-        const detectedType = this._detectEmbedType(url);
-
         model.change(writer => {
-            if (targetMode === 'inline') {
-                const mention = writer.createElement('linkMention', attrs);
-                model.insertContent(mention, writer.createRangeOn(selected));
-            } else {
-                // 'card' forces opengraph; 'embed' uses detected type.
-                attrs.embedType = targetMode === 'card' ? 'opengraph' : detectedType;
-                const embed = writer.createElement('linkEmbed', attrs);
-                model.insertContent(embed, writer.createRangeOn(selected));
-            }
+            rebuildLinkWidget(this.editor, writer, selected, targetMode);
         });
     }
 
@@ -171,7 +164,7 @@ export class ChangeLinkDisplayCommand extends Command {
 
         if (selected) {
             this.isEnabled = true;
-            this.value = this._getMode(selected);
+            this.value = getLinkWidgetMode(selected);
             const url = selected.getAttribute('url') as string;
             this.embedAvailable = this._detectEmbedType(url) !== 'opengraph';
             // Only ever hand out an http(s) URL. `url` comes from the stored `data-url`, which the
@@ -207,8 +200,7 @@ export class ChangeLinkDisplayCommand extends Command {
      * text is replaced by the preview.
      */
     private async _convertNativeLink(targetMode: LinkDisplayMode) {
-        const editor = this.editor;
-        const model = editor.model;
+        const model = this.editor.model;
         const position = model.document.selection.getFirstPosition();
         const href = model.document.selection.getAttribute('linkHref');
         /* v8 ignore next -- refresh() disables the command unless the selection carries a linkHref */
@@ -216,48 +208,8 @@ export class ChangeLinkDisplayCommand extends Command {
         // The link already is one.
         if (targetMode === 'plain') return;
 
-        // The linked text is tracked as a live range: the metadata fetch reads the page server-side
-        // and can take seconds, and edits made meanwhile must not shift what gets replaced.
-        const liveRange = ModelLiveRange.fromRange(findAttributeRange(position, 'linkHref', href, model));
-        const metadata = await getLinkEmbedHost(editor).fetchMetadata(href);
-        const range = liveRange.toRange();
-        liveRange.detach();
-
-        model.change(writer => {
-            // The link may have been edited away while the fetch was in flight.
-            let linkStillThere = false;
-            for (const { item } of range.getWalker()) {
-                if (item.is('$textProxy') && item.getAttribute('linkHref') === href) {
-                    linkStillThere = true;
-                    break;
-                }
-            }
-            if (!linkStillThere) return;
-
-            const element = writer.createElement(targetMode === 'inline' ? 'linkMention' : 'linkEmbed', {
-                url: metadata.url,
-                // Same rule as the widget path above: a card is an embed that declines to play.
-                embedType: targetMode === 'card' ? 'opengraph'
-                    : targetMode === 'embed' ? this._detectEmbedType(href)
-                    : metadata.embedType,
-                title: metadata.title,
-                description: metadata.description,
-                favicon: metadata.favicon,
-                siteName: metadata.siteName,
-                image: metadata.image
-            });
-
-            model.insertContent(element, range);
-            // Leave the new widget selected, so its toolbar — this same dropdown included — takes
-            // over from the link balloon.
-            writer.setSelection(element, 'on');
-        });
-    }
-
-    private _getMode(element: any): LinkDisplayMode {
-        if (element.name === 'linkMention') return 'inline';
-        const embedType = element.getAttribute('embedType') as string;
-        return embedType === 'opengraph' ? 'card' : 'embed';
+        const range = findAttributeRange(position, 'linkHref', href, model);
+        await replaceLinkWithPreview(this.editor, range, href, targetMode, undefined);
     }
 
     /** Delegates to the host to avoid duplicating URL detection logic. */
@@ -287,69 +239,89 @@ export class RemoveLinkEmbedCommand extends Command {
 }
 
 /**
- * Edits the title a link preview displays — the pill text of a mention, the heading of a card.
- * The preview counterpart of the "Displayed text" field the editor's own link form offers for
- * native links: the fetched title is often noisy ("Article | Site | Section"), and converting a
- * labeled link replaces the user's wording, so both need a way back to words of the user's choosing.
+ * Replaces the link to `href` in `range` with a preview of the `mode` shape, once the page's
+ * metadata arrives, and selects it. `title` replaces the page's own title.
  *
- * `value` is what the preview currently shows (the stored title, or the hostname the renderers
- * fall back to), for the edit form to prefill. As in the official form, saving it back unchanged —
- * or blank — changes nothing.
+ * The range is tracked as a live range while the metadata is fetched, so edits made meanwhile do
+ * not shift what gets replaced. Nothing is replaced when the link is no longer in the range by
+ * then.
  */
-export class ChangeLinkPreviewTitleCommand extends Command {
-    declare value: string | null;
+async function replaceLinkWithPreview(
+    editor: Editor, range: ModelRange, href: string,
+    mode: Exclude<LinkDisplayMode, 'plain'>, title: string | undefined
+) {
+    const model = editor.model;
+    const liveRange = ModelLiveRange.fromRange(range);
+    const metadata = await getLinkEmbedHost(editor).fetchMetadata(href);
+    const currentRange = liveRange.toRange();
+    liveRange.detach();
 
-    override execute({ title }: { title: string }) {
-        const model = this.editor.model;
-        const selected = getSelectedLinkWidget(this.editor);
-        if (!selected) return;
-
-        const newTitle = title.trim();
-        if (!newTitle || newTitle === effectiveTitle(selected)) return;
-
-        model.change(writer => {
-            const attrs: Record<string, unknown> = {};
-            for (const key of META_KEYS) {
-                const val = selected.getAttribute(key);
-                if (val != null) attrs[key] = val;
+    model.change(writer => {
+        let linkStillThere = false;
+        for (const { item } of currentRange.getWalker()) {
+            if (item.is('$textProxy') && item.getAttribute('linkHref') === href) {
+                linkStillThere = true;
+                break;
             }
-            attrs.title = newTitle;
+        }
+        if (!linkStillThere) return;
 
-            // Clone-replace rather than setAttribute: the editing downcast is elementToElement,
-            // which does not re-render on attribute changes — replacing does (and it is how mode
-            // switching already works). The widget stays selected, so its toolbar stays up.
-            const replacement = writer.createElement(selected.name, attrs);
-            model.insertContent(replacement, writer.createRangeOn(selected));
-            writer.setSelection(replacement, 'on');
+        const element = writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
+            url: metadata.url,
+            // A card is an embed that declines to play: forcing "opengraph" is what tells the
+            // renderer to draw the static card rather than the provider's player.
+            embedType: mode === 'card' ? 'opengraph'
+                : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
+                : metadata.embedType,
+            title: title || metadata.title,
+            description: metadata.description,
+            favicon: metadata.favicon,
+            siteName: metadata.siteName,
+            image: metadata.image
         });
-    }
 
-    override refresh() {
-        const selected = getSelectedLinkWidget(this.editor);
-        this.isEnabled = !!selected;
-        this.value = selected ? effectiveTitle(selected) : null;
-    }
+        model.insertContent(element, currentRange);
+        // The widget toolbar, with its Display dropdown, takes over from the link balloon.
+        writer.setSelection(element, 'on');
+    });
 }
 
 /**
- * The title a preview currently displays: its stored title, or — mirroring the renderers'
- * fallback (see MentionPreview in the client) — the hostname of its URL.
+ * Replaces the link preview `element` with one of the `mode` shape, built from the metadata it
+ * stores, and returns it. `title` replaces its title.
  */
-function effectiveTitle(element: any): string {
-    const title = element.getAttribute('title') as string | undefined;
-    if (title) return title;
-
-    /* v8 ignore next -- every linkEmbed/linkMention is created with a url attribute (a widget without one does not even render), so the fallback arm is unreachable */
-    const url = (element.getAttribute('url') ?? '') as string;
-    try {
-        return new URL(url).hostname;
-    } catch {
-        return url;
+function rebuildLinkWidget(
+    editor: Editor, writer: ModelWriter, element: ModelElement,
+    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string
+) {
+    const attrs: Record<string, unknown> = {};
+    for (const key of META_KEYS) {
+        const val = element.getAttribute(key);
+        if (val != null) attrs[key] = val;
     }
+    if (title) attrs.title = title;
+    if (mode !== 'inline') {
+        // A card is an embed that declines to play.
+        attrs.embedType = mode === 'card' ? 'opengraph'
+            : getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
+    }
+
+    // Replaced rather than given new attributes: the editing downcast is elementToElement, which
+    // does not re-render on attribute changes.
+    const name = mode === 'inline' ? 'linkMention' : 'linkEmbed';
+    const replacement = writer.createElement(name, attrs);
+    editor.model.insertContent(replacement, writer.createRangeOn(element));
+    return replacement;
+}
+
+/** The display mode of the link preview `element`. */
+export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMode, 'plain'> {
+    if (element.name === 'linkMention') return 'inline';
+    return element.getAttribute('embedType') === 'opengraph' ? 'card' : 'embed';
 }
 
 /** Returns the currently selected linkEmbed/linkMention element, or null. */
-function getSelectedLinkWidget(editor: any) {
+export function getSelectedLinkWidget(editor: Editor): ModelElement | null {
     const selected = editor.model.document.selection.getSelectedElement();
     if (selected && (selected.name === 'linkMention' || selected.name === 'linkEmbed')) {
         return selected;

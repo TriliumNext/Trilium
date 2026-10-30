@@ -8,9 +8,12 @@ import {
     findElement,
     LINK_EMBED_TEST_PLUGINS,
     META,
-    type LinkEmbedHostMocks
+    type LinkEmbedHostMocks,
+    useDeferredFetch
 } from "../../../test/link-embed-kit.js";
-import { CHANGE_LINK_DISPLAY_COMMAND, CHANGE_LINK_PREVIEW_TITLE_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND } from "./link_embed_commands.js";
+import {
+    CHANGE_LINK_DISPLAY_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND
+} from "./link_embed_commands.js";
 
 describe("LinkEmbed commands", () => {
     let editor: ClassicEditor;
@@ -66,6 +69,77 @@ describe("LinkEmbed commands", () => {
         expect(findElement(editor, "linkMention")).toBeUndefined();
         expect(findElement(editor, "linkEmbed")).toBeUndefined();
         expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain", title: "The article" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">The article</a></p>`);
+    });
+
+    it("shows the link at once, then the preview titled as asked once fetched", async () => {
+        const url = "https://example.com/article";
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
+        setModelData(editor.model, "<paragraph>see []</paragraph>");
+
+        const executed = editor.execute(LINK_EMBED_COMMAND, {
+            url, mode: "inline", title: "My title"
+        }) as unknown as Promise<void>;
+        expect(editor.getData()).toBe(`<p>see <a href="${url}">My title</a></p>`);
+        resolveFetch({ ...META, url });
+        await executed;
+
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("title")).toBe("My title");
+        expect(mention?.getAttribute("description")).toBe(META.description);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
+    });
+
+    it("replaces the link the selection is in, which is the link being edited", async () => {
+        const url = "https://example.com/new";
+        setModelData(editor.model, '<paragraph>see '
+            + '<$text linkHref="https://example.com/old">the []old one</$text> here</paragraph>');
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+
+        const embed = findElement(editor, "linkEmbed");
+        expect(embed?.getAttribute("url")).toBe(url);
+        expect(embed?.getAttribute("title")).toBe(META.title);
+        expect(editor.getData()).not.toContain("example.com/old");
+        expect(editor.getData()).not.toContain("old one");
+    });
+
+    it("reshapes and retitles a selected preview of the same address unfetched", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, `<paragraph>[<linkMention url="${url}" embedType="opengraph"`
+            + ` title="Page" description="About"></linkMention>]</paragraph>`);
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card", title: "Mine" });
+
+        const card = findElement(editor, "linkEmbed");
+        expect(fetchMetadata).not.toHaveBeenCalled();
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(card?.getAttribute("embedType")).toBe("opengraph");
+        expect(card?.getAttribute("title")).toBe("Mine");
+        expect(card?.getAttribute("description")).toBe("About");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(card);
+
+        // Without a title, the stored one stays.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+        expect(findElement(editor, "linkMention")?.getAttribute("title")).toBe("Mine");
+    });
+
+    it("replaces a selected preview of another address, or turned into a plain link", async () => {
+        const url = "https://example.com/new";
+        setModelData(editor.model, '[<linkEmbed url="https://example.com/old" embedType="opengraph"'
+            + ' title="Old"></linkEmbed>]');
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+
+        expect(fetchMetadata).toHaveBeenCalledExactlyOnceWith(url);
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(url);
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain", title: "New" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">New</a></p>`);
     });
 
     it("is enabled in a paragraph and disabled when read-only", () => {
@@ -234,67 +308,6 @@ describe("LinkEmbed commands", () => {
         }
         command?.execute();
 
-        expect(editor.getData()).toBe(before);
-    });
-
-    // -----------------------------------------------------------------------
-    // ChangeLinkPreviewTitleCommand (the widget toolbar's Edit title button)
-    // -----------------------------------------------------------------------
-
-    it("edits the displayed title, keeping every other attribute and the selection", () => {
-        setModelData(
-            editor.model,
-            '<paragraph>[<linkMention url="https://e.com/page" embedType="opengraph" title="Old | Site | Blog" favicon="F"></linkMention>]</paragraph>'
-        );
-        const command = editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND);
-        expect(command?.isEnabled).toBe(true);
-        // The stored title is what the edit form prefills with.
-        expect(command?.value).toBe("Old | Site | Blog");
-
-        editor.execute(CHANGE_LINK_PREVIEW_TITLE_COMMAND, { title: "My own words" });
-
-        const mention = findElement(editor, "linkMention");
-        expect(mention?.getAttribute("title")).toBe("My own words");
-        expect(mention?.getAttribute("url")).toBe("https://e.com/page");
-        expect(mention?.getAttribute("favicon")).toBe("F");
-        // The widget stays selected, so its toolbar stays up after the edit.
-        expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
-
-        // A block card edits the same way — it is the same attribute.
-        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph" title="T"></linkEmbed>]');
-        editor.execute(CHANGE_LINK_PREVIEW_TITLE_COMMAND, { title: "Card title" });
-        expect(findElement(editor, "linkEmbed")?.getAttribute("title")).toBe("Card title");
-    });
-
-    it("reports the renderers' hostname fallback when no title is stored, and the raw URL when it cannot parse", () => {
-        setModelData(editor.model, '[<linkEmbed url="https://e.com/page" embedType="opengraph"></linkEmbed>]');
-        expect(editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND)?.value).toBe("e.com");
-
-        setModelData(editor.model, '[<linkEmbed url="not-a-url" embedType="opengraph"></linkEmbed>]');
-        expect(editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND)?.value).toBe("not-a-url");
-    });
-
-    it("treats an unchanged or blank title as a no-op, and is disabled without a widget", () => {
-        setModelData(editor.model, '<paragraph>[<linkMention url="https://e.com/" title="T"></linkMention>]</paragraph>');
-        const original = findElement(editor, "linkMention");
-
-        // Saving the prefilled value back, or a blank one, must not even replace the element.
-        editor.execute(CHANGE_LINK_PREVIEW_TITLE_COMMAND, { title: "T" });
-        expect(findElement(editor, "linkMention")).toBe(original);
-        editor.execute(CHANGE_LINK_PREVIEW_TITLE_COMMAND, { title: "   " });
-        expect(findElement(editor, "linkMention")).toBe(original);
-
-        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
-        const command = editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND);
-        expect(command?.isEnabled).toBe(false);
-        expect(command?.value).toBeNull();
-
-        // Command swallows execute() while disabled, so force it enabled to exercise the early return.
-        const before = editor.getData();
-        if (command) {
-            command.isEnabled = true;
-        }
-        command?.execute({ title: "anything" });
         expect(editor.getData()).toBe(before);
     });
 

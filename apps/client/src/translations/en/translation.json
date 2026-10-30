@@ -69,7 +69,13 @@
     "web_link": "Web link",
     "url": "URL",
     "mirror_title": "Mirror the note's title",
-    "mirror_title_description": "The link shows the note's current title, and changes when the note is renamed."
+    "mirror_title_description": "The link shows the note's current title, and changes when the note is renamed.",
+    "display_as": "Display as",
+    "display_plain": "Plain link",
+    "display_inline": "Inline",
+    "display_card": "Card",
+    "display_embed": "YouTube embed",
+    "page_title": "Title of the web page"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -4490,7 +4496,6 @@
       "drag-to-reposition-the-collapsible-block": "Drag to reposition the collapsible block",
       "edit-anchor": "Edit anchor",
       "edit-task-states": "Edit task states",
-      "edit-title": "Edit title",
       "embed": "Embed",
       "enter-caption": "Enter caption",
       "enter-the-anchor-name-without-spaces": "Enter the anchor name without spaces.",
@@ -4569,7 +4574,6 @@
       "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "The file is too large to be uploaded (HTTP 413). If Trilium is behind a reverse proxy, raise its request body size limit.",
       "the-server-responded-with-http-0": "The server responded with HTTP %0.",
       "tip": "Tip",
-      "title": "Title",
       "to-do-list": "To-do list",
       "toggle-collapsible-block": "Toggle collapsible block",
       "tokens": "tokens",
@@ -4579,7 +4583,6 @@
       "type-the-content-here": "Type the content here...",
       "undefined-custom-task-state": "Undefined custom task state",
       "unknown-embed-widget": "unknown embed widget",
-      "url": "URL",
       "upload-an-image-from-your-device": "Upload an image from your device.",
       "upload-files-as-attachments-and-insert-embeds": "Upload files as attachments and insert embeds.",
       "upload-files-as-attachments-and-insert-links": "Upload files as attachments and insert links.",

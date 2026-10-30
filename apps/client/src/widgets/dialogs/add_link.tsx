@@ -1,10 +1,12 @@
 import "./add_link.css";
 
-import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
+import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import { detectEmbedType } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
@@ -83,7 +85,18 @@ export interface AddLinkOpts {
      * `text`, and offers only notes, always as a reference link.
      */
     fixLink?: boolean;
+    /**
+     * How the web link is displayed: a plain link by default, or as the link preview being edited.
+     * `embed` falls back to a card for an address without a player.
+     */
+    display?: LinkDisplayMode;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
+    /**
+     * Puts a preview of the web link in place of the link. A caller that can show previews passes
+     * it, and the dialog then offers the choice of how a web link is displayed. `title` replaces
+     * the page's own title.
+     */
+    addLinkPreview?(url: string, display: LinkDisplayMode, title: string | null): Promise<void>;
 }
 
 export default function AddLinkDialog() {
@@ -175,11 +188,14 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     const [ noteTitle, setNoteTitle ] = useState("");
     const [ target, setTarget ] = useState<LinkTarget>("note");
     const [ webLink, setWebLink ] = useState("");
+    const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
     const [ isShowPending, setIsShowPending ] = useState(false);
     const webLinkRef = useRef<HTMLInputElement>(null);
     // The text of the link being edited, while it stands in for the picked note's title.
     const keptTitleRef = useRef<string | null>(null);
     const initialBookmarkRef = useRef("");
+    // The title of the link preview being edited, while the title field still shows it.
+    const previewTitleRef = useRef<string | null>(null);
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
 
@@ -193,7 +209,10 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
         setTarget(initialWebLink !== null ? "url" : "note");
         setWebLink(initialWebLink ?? "");
+        setDisplay(opts?.display ?? "plain");
         keptTitleRef.current = opts?.currentTitle ?? null;
+        previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
+            ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
         setLinkTitle(opts?.currentTitle ?? "");
 
@@ -208,6 +227,11 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         setWebLink(text);
         const link = normalizeWebLink(text);
         setSuggestion(link ? { externalLink: link } : null);
+        // A preview's title is its page's, so another address takes the title of its own page.
+        if (previewTitleRef.current !== null && linkTitle === previewTitleRef.current) {
+            setLinkTitle("");
+        }
+        previewTitleRef.current = null;
     }
 
     function changeTarget(next: LinkTarget, text = "") {
@@ -356,7 +380,14 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
         }
     }
 
-    /** Applies the link picked, through `opts.addLink`. */
+    const showsDisplay = target === "url" && !!opts?.addLinkPreview;
+    const shownDisplay = getShownDisplay(display, suggestion?.externalLink);
+    const isPreview = showsDisplay && shownDisplay !== "plain";
+    const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
+    // A video player shows no title.
+    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embed");
+
+    /** Applies the link picked, through `opts.addLink` or `opts.addLinkPreview`. */
     function applyLink() {
         if (!opts || !suggestion) return;
 
@@ -367,9 +398,16 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
                 : suggestion.notePath;
             opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
         } else if (suggestion.externalLink) {
+            const url = suggestion.externalLink;
+            const text = linkTitle.trim();
+            if (isPreview && opts.addLinkPreview) {
+                // A text that only repeats the address leaves the page's own title.
+                const title = shownDisplay !== "embed" && text && text !== url ? text : null;
+                void opts.addLinkPreview(url, shownDisplay, title);
+                return;
+            }
             // An external link without a text of its own reads as its address.
-            const text = linkTitle.trim() || suggestion.externalLink;
-            opts.addLink(suggestion.externalLink, text, true);
+            opts.addLink(url, text || url, true);
         }
     }
 
@@ -387,18 +425,26 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
     const buttonText = opts?.fixLink ? t("add_link.button_fix_link")
         : opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link");
 
-    const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     const titleSection = (
         <OptionCardSection
             className="add-link-text" name="link-title" label={t("add_link.link_title")}
         >
             <FormTextBox
                 currentValue={linkTitle}
-                placeholder={target === "url" ? suggestion?.externalLink : undefined}
+                placeholder={target !== "url" ? undefined
+                    : isPreview ? t("add_link.page_title") : suggestion?.externalLink}
                 onChange={setLinkTitle}
             />
         </OptionCardSection>
     );
+    const displays = [
+        { value: "plain", title: t("add_link.display_plain") },
+        { value: "inline", title: t("add_link.display_inline") },
+        { value: "card", title: t("add_link.display_card") },
+        ...(hasPlayer(suggestion?.externalLink)
+            ? [ { value: "embed", title: t("add_link.display_embed") } ]
+            : [])
+    ];
 
     return {
         title,
@@ -423,22 +469,40 @@ function useAddLinkForm(opts: AddLinkOpts | undefined) {
 
             <Card>
                 {target === "url" ? (
-                    <OptionCardSection
-                        className="add-link-url" name="url" label={t("add_link.url")}
-                        subSectionsVisible={showsTitle}
-                        subSections={titleSection}
-                    >
-                        <FormTextBox
-                            inputRef={webLinkRef}
-                            inputMode="url"
-                            autoCapitalize="off"
-                            autoCorrect="off"
-                            spellcheck={false}
-                            placeholder="https://"
-                            currentValue={webLink}
-                            onChange={changeWebLink}
-                        />
-                    </OptionCardSection>
+                    <>
+                        <OptionCardSection
+                            className="add-link-url" name="url" label={t("add_link.url")}
+                            subSectionsVisible={showsWebLinkTitle}
+                            subSections={titleSection}
+                        >
+                            <FormTextBox
+                                inputRef={webLinkRef}
+                                inputMode="url"
+                                autoCapitalize="off"
+                                autoCorrect="off"
+                                spellcheck={false}
+                                placeholder="https://"
+                                currentValue={webLink}
+                                onChange={changeWebLink}
+                            />
+                        </OptionCardSection>
+
+                        {showsDisplay && (
+                            <OptionCardSection
+                                className="add-link-display" name="display"
+                                label={t("add_link.display_as")}
+                            >
+                                <FormSelect
+                                    values={displays}
+                                    keyProperty="value"
+                                    titleProperty="title"
+                                    currentValue={shownDisplay}
+                                    disabled={!canPreview(suggestion?.externalLink)}
+                                    onChange={(next) => setDisplay(next as LinkDisplayMode)}
+                                />
+                            </OptionCardSection>
+                        )}
+                    </>
                 ) : (
                     <>
                         <OptionCardSection
@@ -521,6 +585,27 @@ function getInitialWebLink(opts: AddLinkOpts): string | null {
     const text = opts.text.trim();
     if (opts.hasSelection && hasScheme(text)) return text;
     return opts.target === "url" ? "" : null;
+}
+
+/**
+ * How the web link to `url` is displayed when `display` is picked: as a plain link when the address
+ * is not a web page, and as a card in place of a player that the address does not have.
+ *
+ * Exported for testing.
+ */
+export function getShownDisplay(display: LinkDisplayMode, url: string | undefined): LinkDisplayMode {
+    if (!canPreview(url)) return "plain";
+    return display === "embed" && !hasPlayer(url) ? "card" : display;
+}
+
+/** Whether a web link to `url` can be a preview: a web page, or no address typed yet. */
+function canPreview(url: string | undefined) {
+    return !url || isHttpUrl(url);
+}
+
+/** Whether `url` has a video player to embed. */
+function hasPlayer(url: string | undefined) {
+    return !!url && detectEmbedType(url) !== "opengraph";
 }
 
 /** Whether `text` is a whole URL with a scheme, the way the note search tells URLs apart. */

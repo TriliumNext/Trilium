@@ -241,7 +241,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "math", "drawingCanvas", "mermaid",
                 "|",
-                "bookmark", "linkEmbed", "childNote", "contentEmbed",
+                "bookmark", "childNote", "contentEmbed",
                 "|",
                 "specialCharacters", "emoji", "insertIcon",
                 "|",

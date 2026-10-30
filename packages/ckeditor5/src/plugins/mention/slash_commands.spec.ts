@@ -23,8 +23,6 @@ import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TIME_PRESETS } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
-import { LINK_EMBED_COMMAND } from "../link_embed/link_embed_commands.js";
-import LinkEmbedUI from "../link_embed/link_embed_ui.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
 import {
@@ -591,7 +589,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "collapsible", "Collapsible block", "collapsible" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
         [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
-        [ "link-preview", "Link preview", LINK_EMBED_COMMAND ],
+        [ "link-preview", "Link preview", INTERNAL_LINK_COMMAND ],
         [ "attach-file", "Attach file as a link", "fileUpload" ],
         [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
         [ "drawing-canvas", "Drawing canvas", "fileUpload" ],
@@ -839,6 +837,16 @@ describe("buildTriliumSlashCommands", () => {
         }
     });
 
+    it("opens the link dialog for a web link displayed as a preview", () => {
+        const { fake, executeSpy } = makeFakeEditor();
+
+        definition("link-preview").execute?.(fake);
+
+        expect(executeSpy).toHaveBeenCalledExactlyOnceWith(
+            INTERNAL_LINK_COMMAND, { target: "url", display: "embed" }
+        );
+    });
+
     it("opens the math balloon rather than running a command", () => {
         const { fake, pluginInstances } = makeFakeEditor();
         const showUI = vi.fn();
@@ -853,8 +861,7 @@ describe("buildTriliumSlashCommands", () => {
     // finished its own DOM and selection cleanup.
     it.each([
         [ "anchor", BookmarkUI, "_showFormView" ],
-        [ "icon", InlineIconUI, "showPicker" ],
-        [ "link-preview", LinkEmbedUI, "showForm" ]
+        [ "icon", InlineIconUI, "showPicker" ]
     ] as const)("defers the %s entry's balloon to the next tick", (id, plugin, method) => {
         vi.useFakeTimers();
         try {

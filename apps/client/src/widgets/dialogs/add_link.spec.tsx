@@ -8,7 +8,9 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
 import { ParentComponent } from "../react/react_utils";
-import AddLinkDialog, { AddLinkBalloon, type AddLinkOpts, normalizeWebLink } from "./add_link";
+import AddLinkDialog, {
+    AddLinkBalloon, type AddLinkOpts, getShownDisplay, normalizeWebLink
+} from "./add_link";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
@@ -39,10 +41,23 @@ describe("normalizeWebLink", () => {
     });
 });
 
+describe("getShownDisplay", () => {
+    it("shows the display picked, a card for a player the address lacks, a plain link off the web", () => {
+        const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        expect(getShownDisplay("inline", "https://example.com")).toBe("inline");
+        expect(getShownDisplay("embed", video)).toBe("embed");
+        expect(getShownDisplay("card", video)).toBe("card");
+        expect(getShownDisplay("embed", "https://example.com")).toBe("card");
+        expect(getShownDisplay("embed", undefined)).toBe("card");
+        expect(getShownDisplay("card", "mailto:someone@example.com")).toBe("plain");
+    });
+});
+
 describe("AddLinkDialog", () => {
     let host: Component;
     let container: HTMLElement;
     const addLink = vi.fn<AddLinkOpts["addLink"]>(async () => {});
+    const addLinkPreview = vi.fn<NonNullable<AddLinkOpts["addLinkPreview"]>>(async () => {});
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -91,6 +106,23 @@ describe("AddLinkDialog", () => {
 
     function field(name: "url" | "text") {
         return container.querySelector<HTMLInputElement>(`.add-link-${name} input`);
+    }
+
+    function displaySelect() {
+        return container.querySelector<HTMLSelectElement>(".add-link-display select");
+    }
+
+    function displays() {
+        return [ ...displaySelect()?.options ?? [] ].map((option) => option.textContent);
+    }
+
+    async function pickDisplay(value: string) {
+        const select = displaySelect();
+        if (!select) throw new Error("The dialog offers no display.");
+        await act(async () => {
+            select.value = value;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+        });
     }
 
     async function submit() {
@@ -266,6 +298,90 @@ describe("AddLinkDialog", () => {
         } finally {
             window.glob.device = "desktop";
         }
+    });
+
+    it("offers how a web link is displayed to a caller that shows previews, and applies a preview", async () => {
+        await open({ target: "url" });
+        expect(displaySelect()).toBeNull();
+
+        await open({ target: "url", addLinkPreview });
+        expect(headings()).toStrictEqual([]);
+        expect(displays()).toStrictEqual(
+            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
+        );
+        const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        await type(field("url"), video);
+        expect(displays()).toContain("add_link.display_embed");
+        await pickDisplay("card");
+        await type(field("text"), "Never gonna");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "card", "Never gonna");
+        expect(addLink).not.toHaveBeenCalled();
+
+        // A player shows no title.
+        await open({ target: "url", display: "embed", addLinkPreview });
+        await type(field("url"), video);
+        expect(field("text")).toBeNull();
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embed", null);
+
+        // A plain link, and any address that is not a web page, stays a link.
+        await open({ target: "url", addLinkPreview });
+        await type(field("url"), "example.com");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
+        await open({ target: "url", display: "card", addLinkPreview });
+        await type(field("url"), "mailto:someone@example.com");
+        expect(displaySelect()?.disabled).toBe(true);
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(
+            "mailto:someone@example.com", "mailto:someone@example.com", true
+        );
+        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+    });
+
+    it("turns an edited link into a preview with the page's own title unless it has a text", async () => {
+        const url = "https://example.com/page";
+        await open({ currentLink: { externalLink: url }, currentTitle: url, addLinkPreview });
+        await pickDisplay("inline");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", null);
+
+        await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
+        await pickDisplay("card");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page");
+        expect(addLink).not.toHaveBeenCalled();
+    });
+
+    it("edits a link preview, giving another address the title of its own page", async () => {
+        const url = "https://example.com/page";
+        await open({
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+        });
+        expect(field("url")?.value).toBe(url);
+        expect(field("text")?.value).toBe("Page");
+        expect(displays()).toStrictEqual(
+            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
+        );
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page");
+
+        await open({
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+        });
+        await type(field("url"), "https://example.com/other");
+        expect(field("text")?.value).toBe("");
+        await type(field("text"), "Mine");
+        await type(field("url"), "https://example.com/third");
+        expect(field("text")?.value).toBe("Mine");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith("https://example.com/third", "card", "Mine");
+
+        // A plain link keeps its text for another address.
+        await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
+        await type(field("url"), "https://example.com/other");
+        expect(field("text")?.value).toBe("Page");
     });
 
     it("offers no web link when fixing a link to a missing note", async () => {

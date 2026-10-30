@@ -3,9 +3,7 @@ import {
     WidgetToolbarRepository,
     isWidget,
     type ViewElement,
-    clickOutsideHandler,
     Collection,
-    ContextualBalloon,
     ViewModel,
     createDropdown,
     addListToDropdown,
@@ -17,28 +15,33 @@ import {
     type Locale,
     type Command
 } from "ckeditor5";
+import { COMMAND_NAME as LINK_DIALOG_COMMAND } from "../internallink.js";
 import LinkEmbed, {
     CHANGE_LINK_DISPLAY_COMMAND,
-    CHANGE_LINK_PREVIEW_TITLE_COMMAND,
     getLinkDisplayModeLabel,
     LINK_DISPLAY_MODES,
     REMOVE_LINK_EMBED_COMMAND,
     type LinkDisplayMode
 } from "./link_embed.js";
-import LinkEmbedTitleFormView from "./link_embed_title_form.js";
 import { createCopyUrlButton } from "../copy_link_url.js";
 
 export default class LinkEmbedToolbar extends Plugin {
 
     static get requires() {
-        return [WidgetToolbarRepository, LinkEmbed, LinkEmbedLinkButton, LinkEmbedCopyUrlButton, LinkEmbedEditTitleButton, LinkEmbedUnlinkButton, LinkEmbedDisplayDropdown] as const;
+        return [
+            WidgetToolbarRepository, LinkEmbed, LinkEmbedLinkButton, LinkEmbedCopyUrlButton,
+            LinkEmbedEditLinkButton, LinkEmbedUnlinkButton, LinkEmbedDisplayDropdown
+        ] as const;
     }
 
     afterInit() {
         const widgetToolbarRepository = this.editor.plugins.get(WidgetToolbarRepository);
 
         widgetToolbarRepository.register("linkEmbed", {
-            items: ["linkEmbedLink", "linkEmbedCopyUrl", "linkEmbedEditTitle", "linkEmbedUnlink", "|", "linkEmbedDisplayDropdown"],
+            items: [
+                "linkEmbedLink", "linkEmbedCopyUrl", "linkEmbedEditLink", "linkEmbedUnlink", "|",
+                "linkEmbedDisplayDropdown"
+            ],
             balloonClassName: "ck-toolbar-container link-embed-toolbar",
             getRelatedElement(selection) {
                 const selectedElement = selection.getSelectedElement();
@@ -235,109 +238,37 @@ class LinkEmbedUnlinkButton extends Plugin {
 }
 
 /**
- * Registers the `linkEmbedEditTitle` toolbar item: a pencil button opening a balloon form that
- * edits the title the selected preview displays — the widget counterpart of the "Displayed text"
- * field the editor's own link form offers for native links.
+ * Registers the `linkEmbedEditLink` toolbar item: opens the host's link dialog on the selected
+ * preview, as the `editLink` button of the link toolbar does on a native link. The dialog edits its
+ * address, title and display.
  */
-class LinkEmbedEditTitleButton extends Plugin {
+class LinkEmbedEditLinkButton extends Plugin {
 
     static get requires() {
-        return [LinkEmbed, ContextualBalloon] as const;
+        return [LinkEmbed] as const;
     }
-
-    private _formView: LinkEmbedTitleFormView | null = null;
 
     public init() {
         const editor = this.editor;
 
-        editor.ui.componentFactory.add("linkEmbedEditTitle", (locale) => {
-            const command = editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND);
+        editor.ui.componentFactory.add("linkEmbedEditLink", (locale) => {
+            const command = editor.commands.get(LINK_DIALOG_COMMAND);
             const button = new ButtonView(locale);
 
             button.set({
-                label: editor.t("Edit title"),
+                label: editor.t("Edit link"),
                 icon: IconPencil,
-                tooltip: true
+                tooltip: true,
+                isEnabled: false
             });
 
-            /* v8 ignore next -- LinkEmbedEditing always registers CHANGE_LINK_PREVIEW_TITLE_COMMAND (this plugin requires LinkEmbed), so the no-command branch is unreachable */
             if (command) {
                 button.bind("isEnabled").to(command, "isEnabled");
             }
 
-            button.on("execute", () => this._showForm());
+            button.on("execute", () => editor.execute(LINK_DIALOG_COMMAND));
             return button;
         });
-    }
-
-    public override destroy() {
-        super.destroy();
-        this._formView?.destroy();
-    }
-
-    private _showForm() {
-        const editor = this.editor;
-        const balloon = editor.plugins.get(ContextualBalloon);
-        const form = this._getFormView();
-
-        if (balloon.hasView(form)) return;
-
-        // Prefill with what the preview currently shows, so a save without edits changes nothing.
-        // The command always exists: LinkEmbedEditing registers it and this plugin requires LinkEmbed.
-        const command = editor.commands.get(CHANGE_LINK_PREVIEW_TITLE_COMMAND) as Command & { value: string | null };
-        form.reset(command.value ?? "");
-
-        balloon.add({
-            view: form,
-            position: {
-                target: () => {
-                    const view = editor.editing.view;
-                    const range = view.document.selection.getFirstRange();
-                    /* v8 ignore next -- the editing view's selection always has a range while a widget is selected */
-                    if (!range) return editor.ui.getEditableElement() as HTMLElement;
-                    return view.domConverter.viewRangeToDom(range);
-                }
-            }
-        });
-        form.focus();
-    }
-
-    private _hideForm() {
-        const balloon = this.editor.plugins.get(ContextualBalloon);
-        const form = this._formView;
-
-        /* v8 ignore next -- the form is only ever hidden from its own handlers, so by then it exists and is shown */
-        if (!form || !balloon.hasView(form)) return;
-
-        balloon.remove(form);
-        this.editor.editing.view.focus();
-    }
-
-    private _getFormView(): LinkEmbedTitleFormView {
-        if (this._formView) return this._formView;
-
-        const editor = this.editor;
-        const form = new LinkEmbedTitleFormView(editor.locale, editor.t);
-        this._formView = form;
-
-        form.on("submit", () => {
-            editor.execute(CHANGE_LINK_PREVIEW_TITLE_COMMAND, { title: form.title });
-            this._hideForm();
-        });
-
-        // Esc and clicking away dismiss the form, exactly as they do for the insert form.
-        form.keystrokes.set("Esc", (_data, cancel) => {
-            this._hideForm();
-            cancel();
-        });
-        clickOutsideHandler({
-            emitter: form,
-            activator: () => this.editor.plugins.get(ContextualBalloon).hasView(form),
-            contextElements: () => [this.editor.plugins.get(ContextualBalloon).view.element as HTMLElement],
-            callback: () => this._hideForm()
-        });
-
-        return form;
     }
 }
 

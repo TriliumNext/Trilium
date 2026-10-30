@@ -76,7 +76,7 @@ export default class AutoLinkToMention extends Plugin {
      * URL rather than once at startup, so the host can supply a getter and have the option apply to
      * already-open editors. A plain boolean is honoured too, and an absent config means enabled.
      *
-     * Only auto-detection is gated: inserting a preview from the toolbar dialog goes through
+     * Only auto-detection is gated: inserting a preview from the link dialog goes through
      * InsertLinkEmbedCommand and stays available either way.
      */
     private _autoDetectEnabled(): boolean {

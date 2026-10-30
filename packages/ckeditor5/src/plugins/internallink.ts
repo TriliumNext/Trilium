@@ -5,6 +5,9 @@ import {
 import type { Editor, LinkCommand, ModelRange, View } from 'ckeditor5';
 import HostedBalloon from '../hosted_balloon.js';
 import internalLinkIcon from '../icons/trilium.svg?raw';
+import {
+    getLinkWidgetMode, getSelectedLinkWidget, type LinkDisplayMode
+} from './link_embed/link_embed_commands.js';
 import ReferenceLink, { getReferenceTitle, referenceAttributes } from './referencelink';
 
 export const COMMAND_NAME = 'insertInternalLink';
@@ -15,6 +18,11 @@ const LINK_KEYSTROKE = 'Ctrl+K';
 export interface InternalLinkDialogOptions {
     /** The side the dialog opens on for a new link: a note, or a web address. */
     target?: 'note' | 'url';
+    /**
+     * How a new web link is displayed. `embed` falls back to a card for an address without a
+     * player.
+     */
+    display?: LinkDisplayMode;
 }
 
 /** The request that the editor passes to the host's link dialog. */
@@ -168,8 +176,25 @@ class InsertInternalLinkCommand extends Command {
     }
 }
 
-/** The address and the whole text of the link around the selection, or `null` outside one. */
-export function getLinkAtSelection(editor: Editor): { href: string; text: string } | null {
+/** A link in the text, or a link preview, as the link dialog edits it. */
+export interface LinkAtSelection {
+    href: string;
+    /** The whole text of a link, or the title of a preview. */
+    text: string;
+    display: LinkDisplayMode;
+}
+
+/** The link around the selection or the selected link preview, or `null` outside one. */
+export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
+    const preview = getSelectedLinkWidget(editor);
+    if (preview) {
+        return {
+            href: preview.getAttribute('url') as string,
+            text: (preview.getAttribute('title') as string | undefined) ?? '',
+            display: getLinkWidgetMode(preview)
+        };
+    }
+
     const found = findLinkAtSelection(editor);
     if (!found) {
         return null;
@@ -181,12 +206,13 @@ export function getLinkAtSelection(editor: Editor): { href: string; text: string
             text += item.data;
         }
     }
-    return { href: found.href, text };
+    return { href: found.href, text, display: 'plain' };
 }
 
 /**
- * Replaces the link around the selection with `text` linking to `href`, keeping the formatting of
- * its start, or with a reference to the note at `href` when `text` is `null`. A reference replaces
+ * Replaces the link around the selection or the selected link preview with `text` linking to
+ * `href`, keeping the formatting of the link's start, or with a reference to the note at `href`
+ * when `text` is `null`. A reference replaces
  * the link once `getReferenceTitle()` resolves, in one undo step with the removal, and
  * takes the caret along only if the user has not moved it in the meantime.
  */
@@ -213,9 +239,8 @@ export async function replaceLinkAtSelection(editor: Editor, href: string, text:
             model.change((writer) => {
                 const attributes = referenceAttributes(href, title);
                 const reference = writer.createElement('reference', attributes);
-                const start = range.start;
-                writer.remove(range);
-                writer.insert(reference, start);
+                // `insertContent()` puts a paragraph around it in place of a block preview.
+                model.insertContent(reference, range);
                 if (!selectionMoved) {
                     writer.setSelection(reference, 'after');
                 }
@@ -229,17 +254,21 @@ export async function replaceLinkAtSelection(editor: Editor, href: string, text:
 
     model.change((writer) => {
         // A link ends where its attribute does, so its range starts at the boundary of a node.
-        const start = found.range.start;
-        const attributes = new Map(start.nodeAfter?.getAttributes());
-        writer.remove(found.range);
+        const first = found.range.start.nodeAfter;
+        const attributes = new Map(first?.is('$text') ? first.getAttributes() : []);
         attributes.set('linkHref', href);
-        writer.insertText(text, attributes, start);
-        writer.setSelection(start.getShiftedBy(text.length));
+        const inserted = model.insertContent(writer.createText(text, attributes), found.range);
+        writer.setSelection(inserted.end);
     });
 }
 
 function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange } | null {
     const model = editor.model;
+    const preview = getSelectedLinkWidget(editor);
+    if (preview) {
+        return { href: preview.getAttribute('url') as string, range: model.createRangeOn(preview) };
+    }
+
     const selection = model.document.selection;
     const href = selection.getAttribute('linkHref');
     const position = selection.getFirstPosition();

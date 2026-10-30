@@ -1,7 +1,7 @@
 import {
     type CKEditorError, CKTextEditor, ClassicEditor, getLinkAtSelection, type IconPickerRequest,
-    type LinkDialogRequest, onTextEditorError, PopupEditor, replaceLinkAtSelection,
-    SnippetDefinition
+    type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode, onTextEditorError,
+    PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -21,11 +21,19 @@ export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
     hasSelection(): boolean;
     getSelectedText(): string;
-    /** The address and the whole text of the link around the caret, or `null` outside one. */
-    getCurrentLink(): { href: string; text: string } | null;
+    /** The link around the caret or the selected link preview, or `null` outside one. */
+    getCurrentLink(): LinkAtSelection | null;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
-    /** Rewrites the link around the caret, as {@link addLink} would write a new one. */
+    /**
+     * Rewrites the link around the caret or the selected link preview, as {@link addLink} would
+     * write a new one.
+     */
     updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
+    /**
+     * Puts a preview of `url` in place of the link around the caret or the selected link preview,
+     * or at the selection. `title` replaces the page's own title.
+     */
+    addLinkPreview(url: string, display: LinkDisplayMode, title: string | null): void;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
     addContentEmbed(noteId: string, boxSize?: BoxSize): void;
@@ -200,6 +208,13 @@ export default function CKEditor({
             editor.editing.view.focus();
             const href = externalLink ? notePath : `#${notePath}`;
             await replaceLinkAtSelection(editor, href, linkTitle);
+        },
+        addLinkPreview(url, display, title) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.editing.view.focus();
+            void editor.execute("insertLinkEmbed", { url, mode: display, title: title ?? undefined });
         },
         addLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;

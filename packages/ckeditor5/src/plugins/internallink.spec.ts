@@ -9,6 +9,7 @@ import { createTestEditor } from "../../test/editor-kit.js";
 import InternalLinkPlugin, {
     COMMAND_NAME, getLinkAtSelection, type LinkDialogRequest, replaceLinkAtSelection
 } from "./internallink.js";
+import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
 
 describe("InternalLinkPlugin", () => {
     let editor: ClassicEditor;
@@ -123,9 +124,10 @@ describe("the link at the selection", () => {
 
     beforeEach(async () => {
         getTitle = vi.fn(async () => "Target");
-        editor = await createTestEditor([Essentials, Paragraph, Bold, LinkEditing, InternalLinkPlugin], {
-            referenceLink: { getTitle, getTitleSync: () => "Target" }
-        });
+        editor = await createTestEditor(
+            [Essentials, Paragraph, Bold, LinkEditing, LinkEmbedEditing, InternalLinkPlugin],
+            { referenceLink: { getTitle, getTitleSync: () => "Target" } }
+        );
     });
 
     const LINKED = "<paragraph>a <$text bold=\"true\" linkHref=\"https://a.example\">fo[]o</$text> b"
@@ -133,7 +135,8 @@ describe("the link at the selection", () => {
 
     it("reads the address and whole text of the link around the caret, and none outside", () => {
         setModelData(editor.model, LINKED);
-        expect(getLinkAtSelection(editor)).toStrictEqual({ href: "https://a.example", text: "foo" });
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "foo", display: "plain" });
 
         setModelData(editor.model,
             "<paragraph>a[] <$text linkHref=\"https://a.example\">foo</$text></paragraph>");
@@ -149,7 +152,35 @@ describe("the link at the selection", () => {
         setModelData(editor.model, "<paragraph><$text linkHref=\"https://a.example\">a[]b</$text>"
             + "<reference href=\"#root/abc\" linkHref=\"https://a.example\"></reference>"
             + "<$text linkHref=\"https://a.example\">c</$text></paragraph>");
-        expect(getLinkAtSelection(editor)).toStrictEqual({ href: "https://a.example", text: "abc" });
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "abc", display: "plain" });
+    });
+
+    it("reads a selected link preview as a link titled by its title, shown as it is", () => {
+        setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
+            + " title=\"A\"></linkMention>]</paragraph>");
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "A", display: "inline" });
+
+        setModelData(editor.model,
+            "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\"></linkEmbed>]");
+        expect(getLinkAtSelection(editor))
+            .toStrictEqual({ href: "https://a.example", text: "", display: "card" });
+    });
+
+    it("replaces a selected link preview, in a paragraph of its own for a block one", async () => {
+        const data = () => getModelData(editor.model, { withoutSelection: true });
+        setModelData(editor.model, "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\""
+            + " title=\"A\"></linkEmbed>]");
+        await replaceLinkAtSelection(editor, "https://b.example", "B");
+        expect(data())
+            .toBe("<paragraph><$text linkHref=\"https://b.example\">B</$text></paragraph>");
+
+        setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
+            + " title=\"A\"></linkMention>] b</paragraph>");
+        await replaceLinkAtSelection(editor, "#root/abc", null);
+        expect(data()).toContain("<paragraph>a <reference href=\"#root/abc\"");
+        expect(data()).not.toContain("linkMention");
     });
 
     it("replaces the address and the text of the whole link, keeping its formatting", () => {
