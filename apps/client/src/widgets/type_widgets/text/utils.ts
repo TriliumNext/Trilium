@@ -17,7 +17,7 @@ import utils from "../../../services/utils";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
-    getNoteActions, MissingContentEmbed, TinyContentEmbed
+    ContentEmbedError, getNoteActions, TinyContentEmbed
 } from "./ContentEmbed";
 import type EmbedHistories from "./embed_history";
 
@@ -53,7 +53,9 @@ export async function loadEmbeddedNote(
     const size = boxSize ?? getEmbedBoxSize(el);
     if (!note) {
         const text = t("include_note.missing_note", { noteId });
-        await mountEmbedBox(el, h(MissingContentEmbed, { boxSize: size, text }));
+        await mountEmbedBox(el, h(ContentEmbedError, {
+            boxSize: size, icon: "bx bx-error-alt", text
+        }));
         return;
     }
 
@@ -134,7 +136,9 @@ export async function loadEmbeddedAttachment(
     const size = boxSize ?? getEmbedBoxSize(el);
     if (!attachment) {
         const text = t("include_note.missing_attachment", { attachmentId });
-        await mountEmbedBox(el, h(MissingContentEmbed, { boxSize: size, text }));
+        await mountEmbedBox(el, h(ContentEmbedError, {
+            boxSize: size, icon: "bx bx-error-alt", text
+        }));
         return;
     }
 
@@ -238,6 +242,14 @@ export async function loadInlineEmbed(
         ...(isFocused ? { isFocusedOnMount: true } : {})
     });
     await mountEmbedBox(el, box, $renderedContent);
+}
+
+/** Fills an embed box with the error of an embed of an unknown kind. */
+export async function loadUnknownEmbed(wrapper: HTMLElement, boxSize: string | undefined) {
+    const text = t("include_note.unknown_kind");
+    // The editor calls this before the wrapper is in the page, which `mountEmbedBox()` skips.
+    await content_renderer.mountInteractiveWidget(
+        h(ContentEmbedError, { boxSize, icon: "bx bx-error", text }), wrapper);
 }
 
 /**

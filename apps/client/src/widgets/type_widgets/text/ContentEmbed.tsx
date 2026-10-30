@@ -243,17 +243,24 @@ export function TinyContentEmbed({
     );
 }
 
+interface ContentEmbedErrorProps {
+    boxSize?: string;
+    icon: string;
+    text: string;
+}
+
 /**
- * The box of an embed whose note or attachment no longer exists: `text` in a placeholder at the
- * height of the box size, or a small one in Tiny and Expandable boxes, which show only a row.
+ * The box of an embed that cannot show its content, such as a missing note or an embed of an
+ * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Tiny and
+ * Expandable boxes, which show only a row.
  */
-export function MissingContentEmbed({ boxSize, text }: { boxSize?: string; text: string }) {
+export function ContentEmbedError({ boxSize, icon, text }: ContentEmbedErrorProps) {
     const hasBoxHeight = boxSize !== "tiny" && boxSize !== "expandable";
     const isRoomy = hasBoxHeight && boxSize !== "small";
 
     return (
-        <div className={clsx("include-note-missing", hasBoxHeight && "include-note-box-height")}>
-            <NoItems icon="bx bx-error-alt" text={text} size={isRoomy ? "normal" : "small"} />
+        <div className={clsx("include-note-error", hasBoxHeight && "include-note-box-height")}>
+            <NoItems icon={icon} text={text} size={isRoomy ? "normal" : "small"} />
         </div>
     );
 }

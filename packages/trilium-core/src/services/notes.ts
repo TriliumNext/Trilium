@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -1009,6 +1009,15 @@ function findIncludeNoteLinks(content: string, foundLinks: FoundLink[]) {
             name: "includeNoteLink",
             value: match[1]
         });
+    }
+
+    // Embeds of other kinds, with the attributes in any order.
+    const embedRe = new RegExp(`<section[^>]*\\s${CONTENT_EMBED_KIND_ATTRIBUTE}="[^>]*>`, "g");
+    while ((match = embedRe.exec(content))) {
+        const noteId = /\sdata-note-id="([a-zA-Z0-9_]+)"/.exec(match[0])?.[1];
+        if (noteId) {
+            foundLinks.push({ name: "includeNoteLink", value: noteId });
+        }
     }
 
     return content;

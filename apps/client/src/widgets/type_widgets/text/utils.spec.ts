@@ -24,7 +24,7 @@ vi.mock("../../../services/content_renderer", () => ({
 vi.mock("./ContentEmbed", () => ({
     default: () => null,
     TinyContentEmbed: () => null,
-    MissingContentEmbed: () => null,
+    ContentEmbedError: () => null,
     getNoteActions: vi.fn()
 }));
 vi.mock("../../../services/i18n", async (importOriginal) => ({
@@ -49,8 +49,8 @@ import froca from "../../../services/froca";
 import link from "../../../services/link";
 import { registerContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
+    ContentEmbedError,
     getNoteActions,
-    MissingContentEmbed,
     type ContentEmbedAction,
     type ContentEmbedProps,
     TinyContentEmbed,
@@ -61,6 +61,7 @@ import {
     getAttachmentHref,
     loadEmbeddedAttachment,
     loadEmbeddedNote,
+    loadUnknownEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupTodoCheckboxTaps,
@@ -161,10 +162,11 @@ describe("loadEmbeddedNote", () => {
         expect(link.createLink).not.toHaveBeenCalled();
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
         const mount = lastMount();
-        expect(mount.type).toBe(MissingContentEmbed);
+        expect(mount.type).toBe(ContentEmbedError);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
             boxSize: "small",
+            icon: "bx bx-error-alt",
             text: 'include_note.missing_note {"noteId":"noteY"}'
         });
     });
@@ -355,10 +357,11 @@ describe("loadEmbeddedAttachment", () => {
         expect(link.createLink).not.toHaveBeenCalled();
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
         const mount = lastMount();
-        expect(mount.type).toBe(MissingContentEmbed);
+        expect(mount.type).toBe(ContentEmbedError);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
             boxSize: "tiny",
+            icon: "bx bx-error-alt",
             text: 'include_note.missing_attachment {"attachmentId":"att1"}'
         });
     });
@@ -388,6 +391,23 @@ describe("loadEmbeddedAttachment", () => {
             notePath: "owner",
             viewScope: ATTACHMENT_SCOPE,
             actions: [ openExternally, download ]
+        });
+    });
+});
+
+describe("loadUnknownEmbed", () => {
+    it("mounts an error box, even before the wrapper is in the page", async () => {
+        const wrapper = document.createElement("div");
+
+        await loadUnknownEmbed(wrapper, "small");
+
+        const mount = lastMount();
+        expect(mount.type).toBe(ContentEmbedError);
+        expect(mount.container).toBe(wrapper);
+        expect(mount.props).toEqual({
+            boxSize: "small",
+            icon: "bx bx-error",
+            text: "include_note.unknown_kind undefined"
         });
     });
 });

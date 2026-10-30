@@ -380,7 +380,8 @@
     "image_size_hint": "The image can be resized later.",
     "button_include": "Include note",
     "missing_note": "The note with the ID {{noteId}} is missing.",
-    "missing_attachment": "The attachment with the ID {{attachmentId}} is missing."
+    "missing_attachment": "The attachment with the ID {{attachmentId}} is missing.",
+    "unknown_kind": "This content requires a newer version of Trilium."
   },
   "info": {
     "modalTitle": "Info message",
@@ -4577,6 +4578,7 @@
       "turn-the-current-block-into-a-paragraph": "Turn the current block into a paragraph.",
       "type-the-content-here": "Type the content here...",
       "undefined-custom-task-state": "Undefined custom task state",
+      "unknown-embed-widget": "unknown embed widget",
       "url": "URL",
       "upload-an-image-from-your-device": "Upload an image from your device.",
       "upload-files-as-attachments-and-insert-embeds": "Upload files as attachments and insert embeds.",

@@ -40,6 +40,7 @@ What the text note saves, and what the editor model holds (`contentEmbed` elemen
 | Included note | `<figure class="include-note" data-note-id="…" [data-block="…"]>` | `noteId`, `block` |
 | Attachment | `<figure class="include-note" data-attachment-id="…">` | `attachmentId` |
 | Inline source | `<pre data-box-size=… [data-display-mode=…] data-hide-title data-editable><code class="language-mermaid">…</code></pre>` | `language`, `source` |
+| Later kind | `<section data-trilium-embed="<kind>" …>fallback</section>` | `unknownContentEmbed`: `embedAttributes`, `embedContent` |
 
 All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-size`,
 `data-hide-title`, `data-editable`, `data-display-mode`) and the resized size as
@@ -57,6 +58,29 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
 - **Legacy blocks** — a `<pre>` without `data-box-size` predates the embed (the old Mermaid
   plugin). `getModeOfSavedView()` loads it editable, in the view of its
   `data-trilium-display-mode` or split, at Medium. A saved embed keeps exactly what it has.
+- **Later kind** (`CONTENT_EMBED_KIND_ATTRIBUTE` in `packages/commons/src/lib/content_embeds.ts`)
+  is the form for any new kind that is neither a note/attachment reference nor a code block, so
+  that an older version keeps it instead of dropping it on save, without a sync version bump.
+  `UnknownContentEmbed` (`unknown_embed.ts`) keeps the section raw through
+  `registerRawContentMatcher()`, renders it as an `.include-note` box that the host fills through
+  `contentEmbed.loadUnknown()` (`ContentEmbedError`, the box of a missing note, with the
+  `bx-error` icon), and writes it back with its `class` and
+  `data-*` attributes (anything else, `style` included, is dropped) and its content, sanitized by
+  the host's `contentEmbed.sanitizeHtml`. Its upcast runs at `high`, before General HTML Support.
+  A new kind must follow the contract older versions rely on:
+  - Settings go in `data-*` attributes on the section, never in `style` (the import sanitizer
+    allows `--include-note-*` only on `figure` and `pre`).
+  - A note reference is `data-note-id` on the section itself, which `findIncludeNoteLinks()`
+    turns into the `includeNoteLink` backlink.
+  - An attachment reference is `data-attachment-id` on any element (or an
+    `api/attachments/<id>/image` URL), which `checkImageAttachments()` keeps from erasure and
+    rewrites when the attachment is copied.
+  - The content is a static fallback (a link, a picture, the source in a `<pre>`): old read-only
+    views, share pages and Markdown export show it.
+
+  The version that adds a kind registers its converter above `high`. If that converter needs the
+  section's children, narrow `ENVELOPE` in `unknown_embed.ts` to leave the kind out: the raw
+  matcher removes the children before any converter runs.
 - **Attachment** suits large or binary content and content with its own save cycle (Excalidraw).
   The attachment's content type comes from `getFileContentType()` in
   `packages/commons/src/lib/notes.ts` (`canvasDrawing`, `mermaidDiagram`), which
@@ -73,10 +97,10 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
    view renders an `.include-note-wrapper` and asks the **host** to fill it.
 2. **Host contract** (`ContentEmbedHost` in `content_embed.ts`, read from the editor config
    as `contentEmbed`): `loadNote()`, `loadAttachment()`,
-   `loadInline(source, wrapper, boxSize, { isFocused })`, `focusAttachment()`, `openMenu()`,
-   `getTools()`, `enter()` and `getAttachmentHref()`. `EditableText.tsx` implements them as
-   `contentEmbedHandlers`, which `CKEditor.tsx` hands to `buildConfig()` through a getter. The
-   plugin never imports client code.
+   `loadInline(source, wrapper, boxSize, { isFocused })`, `loadUnknown()`, `focusAttachment()`,
+   `openMenu()`, `getTools()`, `enter()` and `getAttachmentHref()`. `EditableText.tsx` implements
+   them as `contentEmbedHandlers`, which `CKEditor.tsx` hands to `buildConfig()` through a getter.
+   `sanitizeHtml()` is set in `buildConfig()` itself. The plugin never imports client code.
 3. **Box** (`text/utils.ts`). `loadEmbeddedAttachment()` / `loadInlineEmbed()` render the content
    with `content_renderer`, wrap it in `ContentEmbed` (`text/ContentEmbed.tsx`: title row,
    fullscreen, exit-fullscreen overlay) and `mountEmbedBox()`. Content that left the page while it

@@ -472,6 +472,7 @@ describe("CK config - tables", () => {
             loadAttachment: vi.fn(),
             loadInline: vi.fn(),
             flushInline: vi.fn(),
+            loadUnknown: vi.fn(),
             focusAttachment: vi.fn(),
             getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
             openMenu: vi.fn(),
@@ -493,6 +494,7 @@ describe("CK config - tables", () => {
         host?.loadAttachment?.("a1", wrapper, "medium");
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
         host?.flushInline?.();
+        host?.loadUnknown?.(wrapper, "small");
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -501,6 +503,7 @@ describe("CK config - tables", () => {
         expect(first.loadAttachment).toHaveBeenCalledWith("a1", wrapper, "medium");
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
         expect(first.flushInline).toHaveBeenCalledOnce();
+        expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");

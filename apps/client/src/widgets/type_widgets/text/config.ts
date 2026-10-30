@@ -80,7 +80,7 @@ export interface BuildEditorOptions {
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
 export type ContentEmbedHandlers =
-    Omit<ContentEmbedHost, "pickNote" | "inlineLanguages" | "renderInlinePreview">;
+    Omit<ContentEmbedHost, "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
@@ -114,6 +114,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             renderInlinePreview: (language, source, container) => {
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
+            sanitizeHtml: sanitizeNoteContentHtml,
             ...bindContentEmbedHandlers(opts.getContentEmbedHandlers)
         },
         image: {
@@ -418,6 +419,7 @@ function bindContentEmbedHandlers(
         loadAttachment: (...args) => getHandlers()?.loadAttachment(...args),
         loadInline: (...args) => getHandlers()?.loadInline(...args),
         flushInline: () => getHandlers()?.flushInline(),
+        loadUnknown: (...args) => getHandlers()?.loadUnknown(...args),
         focusAttachment: (attachmentId) => getHandlers()?.focusAttachment(attachmentId),
         getAttachmentHref: async (attachmentId) =>
             (await getHandlers()?.getAttachmentHref(attachmentId)) ?? null,

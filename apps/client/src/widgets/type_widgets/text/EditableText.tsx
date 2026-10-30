@@ -44,6 +44,7 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadInlineEmbed,
+    loadUnknownEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -234,6 +235,9 @@ export default function EditableText({
             });
         },
         flushInline: () => inlineSourceSaves.flush(),
+        loadUnknown(wrapper, boxSize) {
+            void loadUnknownEmbed(wrapper, boxSize);
+        },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
         },
