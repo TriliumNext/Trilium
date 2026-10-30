@@ -37,6 +37,7 @@
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
+    "chore:update-electron-locales": "tsx ./scripts/update-electron-locales.ts",
     "chore:update-flake-electron": "tsx ./scripts/update-flake-electron.ts",
     "chore:update-version": "tsx ./scripts/update-version.ts",
     "chore:wipe-node-modules": "node --experimental-strip-types ./scripts/wipe-node-modules.mts",
