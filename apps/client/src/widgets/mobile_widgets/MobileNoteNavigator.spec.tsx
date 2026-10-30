@@ -140,8 +140,11 @@ describe("TitleWithIndicators", () => {
 
 describe("WorkspaceCards", () => {
     it("lists the workspaces and enters the one tapped", async () => {
-        const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase" });
-        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace ]);
+        const workspace = buildNote({
+            title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase", "#workspaceTabBackgroundColor": "#1e3a8a"
+        });
+        const plain = buildNote({ title: "Plain", "#workspace": "" });
+        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace, plain ]);
         const onEnter = vi.fn();
         const parent = {
             componentId: "cid", registerHandler: () => {}, removeHandler: () => {}
@@ -161,9 +164,14 @@ describe("WorkspaceCards", () => {
         expect(searchForNotes).toHaveBeenCalledWith("#workspace #!template");
         expect(container.querySelector(".mobile-navigator-workspaces-label")?.textContent).toBe("mobile_note_navigator.workspaces");
         const cards = [ ...container.querySelectorAll(".mobile-navigator-workspaces .mobile-navigator-workspace") ];
-        expect(cards.map((card) => card.textContent)).toEqual([ "Work" ]);
+        expect(cards.map((card) => card.textContent)).toEqual([ "Work", "Plain" ]);
         expect(cards[0]?.tagName).toBe("BUTTON");
-        expect(cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase")).not.toBeNull();
+        // The workspace color tints the icon, with its lightness limited per theme, and fills nothing.
+        const icon = cards[0]?.querySelector(".mobile-navigator-workspace-icon.bx-briefcase");
+        expect(icon?.classList.contains("use-note-color")).toBe(true);
+        expect(icon?.classList.contains("color-1E3A8A")).toBe(true);
+        expect(icon?.getAttribute("style")).toBeNull();
+        expect(cards[1]?.querySelector(".mobile-navigator-workspace-icon")?.classList.contains("use-note-color")).toBe(false);
 
         (cards[0] as HTMLElement | undefined)?.click();
         expect(onEnter).toHaveBeenCalledWith(workspace.noteId);

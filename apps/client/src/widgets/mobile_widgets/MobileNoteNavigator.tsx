@@ -8,7 +8,7 @@ import type Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
 import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
-import cssClassManager, { getReadableTextColor } from "../../services/css_class_manager";
+import cssClassManager from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
@@ -614,25 +614,17 @@ function WorkspaceCard({ note, onClick }: { note: FNote, onClick: () => void }) 
     const title = useNoteTitle(note.noteId, undefined);
 
     return (
-        <button
-            type="button"
-            className={clsx("mobile-navigator-workspace", { "has-color": !!workspaceColor })}
-            onClick={onClick}
-        >
+        <button type="button" className="mobile-navigator-workspace" onClick={onClick}>
             <Icon
                 icon={workspaceIconClass || icon}
-                className="mobile-navigator-workspace-icon"
-                style={workspaceColorStyle(workspaceColor)}
+                className={clsx(
+                    "mobile-navigator-workspace-icon",
+                    cssClassManager.createClassForColor(workspaceColor ?? null)
+                )}
             />
             <span className="mobile-navigator-workspace-title">{title ?? note.title}</span>
         </button>
     );
-}
-
-/** Paints an element in the workspace's `#workspaceTabBackgroundColor`, with a text color readable on it. */
-function workspaceColorStyle(workspaceColor: string | null | undefined) {
-    if (!workspaceColor) return undefined;
-    return { "--color": workspaceColor, "color": getReadableTextColor(workspaceColor) } as Record<string, string>;
 }
 
 interface NavigatorRowProps {

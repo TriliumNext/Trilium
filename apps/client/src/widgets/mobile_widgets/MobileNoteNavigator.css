@@ -56,12 +56,7 @@
     place-items: center;
     width: 52px;
     height: 52px;
-    border-radius: 14px;
     font-size: 2.2em;
-
-    .has-color & {
-        background: var(--color);
-    }
 }
 
 .mobile-navigator-workspace-title {
@@ -351,6 +346,7 @@
 /* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
    (see css_class_manager.createClassForColor). Apply it to the title/icon. */
 .mobile-navigator-unhoist.use-note-color,
+.mobile-navigator-workspace-icon.use-note-color,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-title,
 .mobile-navigator-row.use-note-color .mobile-navigator-row-icon,
 .mobile-navigator-current-tile.use-note-color .mobile-navigator-current-title,
