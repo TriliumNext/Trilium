@@ -56,6 +56,8 @@ Below the slides are three groups of buttons.
 
 On the left, the <span class="tn-icon bx bx-chevron-left"></span> _Previous slide_ and <span class="tn-icon bx bx-chevron-right"></span> _Next slide_ buttons go through every slide in order, vertical slides included, as <kbd>Shift</kbd>+<kbd>Space</kbd> and <kbd>Space</kbd> do. Between them is the number of the slide being shown, out of the number of slides.
 
+A presentation opens on the slide it showed last, also on another device after a sync, unless that slide was deleted. A read-only presentation doesn't remember its slide and opens on the one that was saved, or on the first.
+
 #### Editing
 
 In the middle:

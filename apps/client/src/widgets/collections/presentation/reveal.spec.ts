@@ -1,8 +1,11 @@
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
 import type { RevealApi } from "reveal.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-    followSlideLinks, goToSlide, isKeyForPresentation, isPressingButton, keepKeyboardInPresentation, keepSlideShown
+    followSlideLinks, goToSlide, isKeyForPresentation, isPressingButton, keepKeyboardInPresentation, keepSlideShown,
+    type PresentationConfig, useRememberedSlide
 } from "./reveal";
 
 describe("keepKeyboardInPresentation", () => {
@@ -197,5 +200,70 @@ describe("keepSlideShown", () => {
         currentSlide = document.createElement("section");
         keepSlideShown(api as unknown as RevealApi, "moved");
         expect(api.slide).toHaveBeenCalledExactlyOnceWith(2, 1);
+    });
+});
+
+describe("useRememberedSlide", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        document.body.replaceChildren();
+    });
+
+    it("goes back to the remembered slide, and remembers the slide shown a few seconds after it changes", async () => {
+        vi.useFakeTimers();
+        const slides = document.createElement("div");
+        for (const noteId of [ "first", "remembered", "next" ]) {
+            const section = document.createElement("section");
+            section.id = `slide-${noteId}`;
+            slides.append(section);
+        }
+        const api = {
+            getRevealElement: () => slides,
+            getIndices: (slide: HTMLElement) => ({ h: [ ...slides.children ].indexOf(slide), v: 0, f: undefined }),
+            slide: vi.fn()
+        } as unknown as RevealApi;
+        let viewConfig: PresentationConfig | undefined = { currentSlideNoteId: "remembered" };
+        const saveConfig = vi.fn((config: PresentationConfig) => { viewConfig = config; });
+        const Probe = ({ activeNoteId }: { activeNoteId: string }) => {
+            useRememberedSlide(api, activeNoteId, viewConfig, saveConfig);
+            return null;
+        };
+        const container = document.createElement("div");
+        document.body.append(container);
+        const show = (activeNoteId: string) => act(() => render(h(Probe, { activeNoteId }), container));
+
+        // Reveal.js reports the first slide before it goes to the remembered one.
+        show("first");
+        expect(api.slide).toHaveBeenCalledExactlyOnceWith(1, 0, undefined);
+        show("remembered");
+        await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+        expect(saveConfig).not.toHaveBeenCalled();
+
+        show("next");
+        await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
+        expect(saveConfig).not.toHaveBeenCalled();
+        await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+        expect(saveConfig).toHaveBeenCalledExactlyOnceWith({ currentSlideNoteId: "next" });
+
+        // A change still waiting is saved when the presentation closes.
+        saveConfig.mockClear();
+        show("first");
+        await act(async () => render(null, container));
+        expect(saveConfig).toHaveBeenCalledExactlyOnceWith({ currentSlideNoteId: "first" });
+    });
+
+    it("remembers nothing without `saveConfig`", async () => {
+        vi.useFakeTimers();
+        const api = { getRevealElement: () => document.createElement("div") } as unknown as RevealApi;
+        const Probe = ({ activeNoteId }: { activeNoteId: string }) => {
+            useRememberedSlide(api, activeNoteId, undefined, undefined);
+            return null;
+        };
+        const container = document.createElement("div");
+        expect(() => {
+            act(() => render(h(Probe, { activeNoteId: "a" }), container));
+            act(() => render(h(Probe, { activeNoteId: "b" }), container));
+            act(() => render(null, container));
+        }).not.toThrow();
     });
 });

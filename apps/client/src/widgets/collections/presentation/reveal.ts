@@ -1,5 +1,16 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
+
+import { useSpacedUpdate } from "../../react/hooks";
+
+/** The view config of a presentation, kept in its `presentation.json` attachment. */
+export interface PresentationConfig {
+    /** The note of the slide shown last, which the presentation opens on. */
+    currentSlideNoteId?: string;
+}
+
+/** How long the slide shown stays the same before it is saved, in milliseconds. */
+const SAVE_SLIDE_INTERVAL = 5000;
 
 /** Returns the note ID of the slide that Reveal.js shows. */
 export function useActiveSlideNoteId(api: RevealApi | undefined) {
@@ -12,6 +23,37 @@ export function useActiveSlideNoteId(api: RevealApi | undefined) {
         return () => api.off("slidechanged", update);
     }, [ api ]);
     return activeNoteId;
+}
+
+/**
+ * Goes to the slide that `viewConfig` remembers once Reveal.js is ready, and saves the slide shown with
+ * `saveConfig` once it stays the same for {@link SAVE_SLIDE_INTERVAL}, or when the presentation closes.
+ * Without `saveConfig`, the slide shown is not saved.
+ */
+export function useRememberedSlide(
+    api: RevealApi | undefined,
+    activeNoteId: string | undefined,
+    viewConfig: PresentationConfig | undefined,
+    saveConfig: ((config: PresentationConfig) => void) | undefined
+) {
+    const latest = useRef({ activeNoteId, viewConfig, saveConfig });
+    latest.current = { activeNoteId, viewConfig, saveConfig };
+    const spacedUpdate = useSpacedUpdate(() => {
+        const { activeNoteId, viewConfig, saveConfig } = latest.current;
+        if (!activeNoteId || !saveConfig || activeNoteId === viewConfig?.currentSlideNoteId) return;
+        saveConfig({ ...viewConfig, currentSlideNoteId: activeNoteId });
+    }, SAVE_SLIDE_INTERVAL);
+
+    useEffect(() => {
+        const noteId = latest.current.viewConfig?.currentSlideNoteId;
+        if (api && noteId) goToSlide(api, noteId);
+    }, [ api ]);
+
+    useEffect(() => {
+        if (api && activeNoteId && saveConfig) spacedUpdate.scheduleUpdate();
+    }, [ api, activeNoteId ]);
+
+    useEffect(() => () => void spacedUpdate.updateNowIfNecessary(), []);
 }
 
 /**

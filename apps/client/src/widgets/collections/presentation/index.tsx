@@ -29,7 +29,9 @@ import {
     getNewVerticalSlidePosition, getSlideMove, getSlideParentNoteId, isSlideRebuilt, moveSlideNote, NewSlidePosition,
     getNewSlideTypes, NewSlideTypeOption, PresentationModel, SlideMove
 } from "./model";
-import { getNoteIdFromSlide, goToSlide, useActiveSlideNoteId } from "./reveal";
+import {
+    getNoteIdFromSlide, goToSlide, type PresentationConfig, useActiveSlideNoteId, useRememberedSlide
+} from "./reveal";
 import SlideSidebar from "./sidebar";
 import slideCustomStylesheet from "./slidejs.css?raw";
 import { SlideMenuActions } from "./slide_menu";
@@ -40,7 +42,9 @@ import PresentationControls, { CONTROLS_SLOT_NAME, NewSlideTypeItems, SlideSideb
 const SlideEditor = lazy(() => import("./slide_editor"));
 const SlideCanvasEditor = lazy(() => import("./slide_canvas_editor"));
 
-export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged, onOpenNote }: ViewModeProps<{}>) {
+export default function PresentationView({
+    note, noteIds, media, viewConfig, saveConfig, onReady, onProgressChanged, onOpenNote
+}: ViewModeProps<PresentationConfig>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [ api, setApi ] = useState<RevealApi>();
@@ -66,6 +70,9 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const closingSlides = useClosingSlides(refresh);
     const refreshIdRef = useRef(0);
     const activeNoteId = useActiveSlideNoteId(api);
+    useRememberedSlide(
+        api, activeNoteId, media === "screen" ? viewConfig : undefined, canEditSlides ? saveConfig : undefined
+    );
     // A slide that the presentation goes to once the model has it, and starts editing for a new slide.
     const [ pendingSlide, setPendingSlide ] = useState<{
         noteId: string;
