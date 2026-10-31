@@ -155,10 +155,12 @@ async function removeOwnedRelationByName(note: FNote, relationName: string) {
 /**
  * Sets the labels of one name on a note to exactly `values`, for a field holding a set of them.
  *
- * The labels already there are reused in order, so taking a value out of the middle of a set renames
- * the ones after it rather than deleting and recreating the lot — which keeps their positions, and
- * with them the order the set reads in. Only owned labels are touched: an inherited one belongs to
- * the note it is written on.
+ * Writes as few labels as it can while keeping the order the set reads in: a value that stays
+ * keeps its label untouched, a removed value deletes its own label, and a replaced value rewrites
+ * the label in its place. A new label is always created after the others, so a value inserted
+ * before a kept one rewrites the labels that follow it. Each write runs `runOnAttributeChange` on
+ * the label it touches. Only owned labels are touched: an inherited one belongs to the note it is
+ * written on.
  */
 export async function setLabelValues(note: FNote, name: string, values: string[], componentId?: string) {
     await setAttributeValues(note, "label", name, values, componentId);
@@ -175,22 +177,71 @@ export async function setRelationValues(note: FNote, name: string, values: strin
 async function setAttributeValues(note: FNote, type: "label" | "relation", name: string, values: string[], componentId?: string) {
     const existing = type === "label" ? note.getOwnedLabels(name) : note.getOwnedRelations(name);
 
-    for (const [ index, value ] of values.entries()) {
-        const attributeId = existing[index]?.attributeId;
-        if (existing[index]?.value === value) {
-            continue;
+    for (const write of planValueWrites(existing.map((attr) => attr.value), values)) {
+        const attributeId = write.index !== undefined
+            ? existing[write.index].attributeId
+            : undefined;
+        if (write.kind === "remove") {
+            await server.remove(`notes/${note.noteId}/attributes/${attributeId}`, componentId);
+        } else {
+            await server.put(
+                `notes/${note.noteId}/attribute`,
+                { attributeId, type, name, value: write.value },
+                componentId
+            );
         }
-        await server.put(
-            `notes/${note.noteId}/attribute`,
-            { attributeId, type, name, value },
-            componentId
-        );
+    }
+}
+
+type ValueWrite =
+    | { kind: "remove"; index: number }
+    | { kind: "put"; index: number | undefined; value: string };
+
+/**
+ * Lists the fewest writes that turn the attribute values `current` into `wanted`, in order.
+ *
+ * Each existing attribute either keeps its value, is rewritten or is removed, and the attributes
+ * it keeps hold the start of `wanted` in order. The rest of `wanted` is created, since the server
+ * adds a new attribute after the note's other attributes. `cost[i][j]` counts the writes for
+ * `current[i..]` and `wanted[j..]`.
+ */
+function planValueWrites(current: string[], wanted: string[]): ValueWrite[] {
+    const cost = Array.from(
+        { length: current.length + 1 },
+        () => new Array<number>(wanted.length + 1).fill(0)
+    );
+    for (let i = current.length; i >= 0; i--) {
+        for (let j = wanted.length; j >= 0; j--) {
+            if (i === current.length) {
+                cost[i][j] = wanted.length - j;
+            } else if (j === wanted.length) {
+                cost[i][j] = 1 + cost[i + 1][j];
+            } else {
+                const pair = (current[i] === wanted[j] ? 0 : 1) + cost[i + 1][j + 1];
+                cost[i][j] = Math.min(pair, 1 + cost[i + 1][j]);
+            }
+        }
     }
 
-    // Whatever the new set did not fill is no longer held.
-    for (const spare of existing.slice(values.length)) {
-        await server.remove(`notes/${note.noteId}/attributes/${spare.attributeId}`, componentId);
+    const writes: ValueWrite[] = [];
+    let i = 0;
+    let j = 0;
+    while (i < current.length) {
+        const isEqual = current[i] === wanted[j];
+        if (j < wanted.length && cost[i][j] === (isEqual ? 0 : 1) + cost[i + 1][j + 1]) {
+            if (!isEqual) {
+                writes.push({ kind: "put", index: i, value: wanted[j] });
+            }
+            j++;
+        } else {
+            writes.push({ kind: "remove", index: i });
+        }
+        i++;
     }
+    for (const value of wanted.slice(j)) {
+        writes.push({ kind: "put", index: undefined, value });
+    }
+    return writes;
 }
 
 /**

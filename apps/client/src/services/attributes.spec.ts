@@ -418,6 +418,41 @@ describe("setLabelValues", () => {
         await attributeService.setLabelValues(note, "tags", []);
         expect(server.remove).toHaveBeenCalledTimes(3);
     });
+
+    it("removes only the label of a value taken out of the middle (#12382)", async () => {
+        const note = noteHolding("a", "b", "c", "d");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d" ]);
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+
+        // Removing one value and appending another leaves the kept labels alone.
+        vi.clearAllMocks();
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d", "e" ]);
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ [
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "e" },
+            undefined
+        ] ]);
+    });
+
+    it("rewrites the labels after a value inserted mid-set, as a new one goes last", async () => {
+        const note = noteHolding("a", "c");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "b", "c" ]);
+
+        expect(server.remove).not.toHaveBeenCalled();
+        expect(vi.mocked(server.put).mock.calls.map(([ , body ]) => body)).toEqual([
+            { attributeId: "attr-1", type: "label", name: "tags", value: "b" },
+            { attributeId: undefined, type: "label", name: "tags", value: "c" }
+        ]);
+    });
 });
 
 describe("setRelationValues", () => {
@@ -446,6 +481,24 @@ describe("setRelationValues", () => {
         vi.clearAllMocks();
         await attributeService.setRelationValues(note, "crew", [ "aaa" ], "comp-1");
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/rel-1`, "comp-1");
+    });
+
+    it("removes only the relation of a target taken out of the middle (#12382)", async () => {
+        const note = buildNote({ title: "N" });
+        for (const [ index, value ] of [ "aaa", "bbb", "ccc" ].entries()) {
+            note.attributes.push(`rel-${index}`);
+            froca.attributes[`rel-${index}`] = {
+                attributeId: `rel-${index}`, noteId: note.noteId, type: "relation",
+                name: "crew", value, position: index, isInheritable: false
+            } as never;
+        }
+
+        await attributeService.setRelationValues(note, "crew", [ "aaa", "ccc" ], "comp-1");
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/rel-1`, "comp-1" ]
+        ]);
     });
 });
 
