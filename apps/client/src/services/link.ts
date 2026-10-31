@@ -726,15 +726,17 @@ function linkContextMenu(e: PointerEvent) {
 /**
  * Fills `$el` with the label of the reference link to `href`. A link to blocks of `hostNoteId`, the
  * note the link is in, shows only the text of the blocks, read from `content` when it holds them,
- * as an editor does. A link to a note that does not exist shows `storedTitle`, the title the
- * content holds for it.
+ * as an editor does. When `isExcerpt`, `content` holds only some blocks of the note, and the others
+ * are read from the saved note. A link to a note that does not exist shows `storedTitle`, the title
+ * the content holds for it.
  */
 async function loadReferenceLinkTitle(
     $el: JQuery<HTMLElement>,
     href: string | null | undefined = null,
     hostNoteId?: string,
     storedTitle?: string,
-    content?: ParentNode | null
+    content?: ParentNode | null,
+    isExcerpt = false
 ) {
     const $link = $el[0].tagName === "A" ? $el : $el.find("a");
 
@@ -758,9 +760,7 @@ async function loadReferenceLinkTitle(
 
     if (viewScope?.block && note && (content || noteId === hostNoteId)) {
         const liveLabel = content ? getBlockReferenceLabel(content, viewScope.block) : null;
-        // The editor of an excerpt holds only some blocks of the note, so the others are read
-        // from the saved note.
-        const label = liveLabel && !liveLabel.isBroken
+        const label = liveLabel && !(liveLabel.isBroken && isExcerpt)
             ? liveLabel
             : await loadBlockReferenceLabel(note, viewScope.block) ?? liveLabel;
         if (label) {
@@ -851,10 +851,11 @@ async function getReferenceLinkTitle(href: string) {
 /**
  * The label of the reference link to `href`, from the notes already in froca. A link to a note that
  * is not there gets `storedTitle`, the title the content holds for it. A link to blocks of
- * `content`, the content the link is in, gets their text.
+ * `content`, the content the link is in, gets their text. When `isExcerpt`, `content` holds only
+ * some blocks of the note, and the others are read from the saved note.
  */
 function getReferenceLinkTitleSync(
-    href: string, storedTitle?: string, content?: ParentNode | null
+    href: string, storedTitle?: string, content?: ParentNode | null, isExcerpt = false
 ) {
     const { noteId, viewScope } = parseNavigationStateFromUrl(href);
     if (!noteId) {
@@ -864,8 +865,7 @@ function getReferenceLinkTitleSync(
     const note = froca.getNoteFromCache(viewScope?.card || noteId);
     if (content && viewScope?.block) {
         const label = getBlockReferenceLabel(content, viewScope.block);
-        // As in `loadReferenceLinkTitle()`, blocks outside an excerpt are read from the saved note.
-        const savedLabel = label.isBroken && note
+        const savedLabel = label.isBroken && isExcerpt && note
             ? getCachedBlockReferenceLabel(note, viewScope.block)
             : null;
         return (savedLabel ?? label).text;

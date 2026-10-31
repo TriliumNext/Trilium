@@ -1346,14 +1346,21 @@ describe("block references", () => {
         expect(linkService.getReferenceLinkTitleSync(href("gone"), "Stored", live))
             .toBe("block_reference.broken");
 
-        // The editor of an excerpt holds only some blocks; the others are read from the note.
-        const excerpt = document.createElement("div");
-        excerpt.innerHTML = content;
-        const $outside = $("<span>");
-        await linkService.loadReferenceLinkTitle($outside, href("h"), undefined, undefined, excerpt);
-        expect($outside.html()).toBe("Saved");
-        expect($outside.hasClass("block-reference-broken")).toBe(false);
-        expect(linkService.getReferenceLinkTitleSync(href("h"), "Stored", excerpt)).toBe("Saved");
+        // The editor of an excerpt holds only some blocks, and the others are read from the note.
+        // In an editor of the whole note, a block missing from it is gone, whatever the note saved.
+        const partial = document.createElement("div");
+        partial.innerHTML = content;
+        const $excerpt = $("<span>");
+        const $whole = $("<span>");
+        await linkService.loadReferenceLinkTitle(
+            $excerpt, href("h"), undefined, undefined, partial, true);
+        await linkService.loadReferenceLinkTitle($whole, href("h"), undefined, undefined, partial);
+        expect([ $excerpt, $whole ].map(($el) => [
+            $el.text(), $el.hasClass("block-reference-broken")
+        ])).toStrictEqual([ [ "Saved", false ], [ "block_reference.broken", true ] ]);
+        expect([ true, false ].map((isExcerpt) =>
+            linkService.getReferenceLinkTitleSync(href("h"), "Stored", partial, isExcerpt)))
+            .toStrictEqual([ "Saved", "block_reference.broken" ]);
     });
 
     it("adds no label to a reference to the blocks of a note that cannot be read", async () => {

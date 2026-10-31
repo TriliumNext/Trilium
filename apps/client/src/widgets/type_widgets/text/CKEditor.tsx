@@ -90,13 +90,15 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     contentEmbedHandlers?: ContentEmbedHandlers;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
+    isExcerpt?: boolean;
 }
 
 export default function CKEditor({
     containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
     editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
     onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
-    showLinkDialog
+    showLinkDialog, isExcerpt
 }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
@@ -169,6 +171,8 @@ export default function CKEditor({
     contentEmbedHandlersRef.current = contentEmbedHandlers;
     const showLinkDialogRef = useRef(showLinkDialog);
     showLinkDialogRef.current = showLinkDialog;
+    const isExcerptRef = useRef(isExcerpt);
+    isExcerptRef.current = isExcerpt;
     /** The open icon picker request and its balloon container, or `null` when none is open. */
     const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerRequest | null>(null);
 
@@ -354,6 +358,7 @@ export default function CKEditor({
                     return { notePath: parentNotePath, isProtected: parentNote.isProtected, ntxId };
                 },
                 getNoteId: () => noteRef.current?.noteId,
+                isExcerpt: () => !!isExcerptRef.current,
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
                 showIconPicker,

@@ -192,13 +192,15 @@ describe("CKEditor", () => {
         await vi.waitFor(() => expect(buildConfig).toHaveBeenCalled());
         const opts = vi.mocked(buildConfig).mock.lastCall?.[0];
         expect(opts?.getNoteId?.()).toBe("host1");
+        expect(opts?.isExcerpt?.()).toBe(false);
 
         mocks.note = { noteId: "host2", title: "Other" };
         await act(async () => {
-            render(<CKEditor {...props} className="force-rerender" />, host);
+            render(<CKEditor {...props} className="force-rerender" isExcerpt />, host);
         });
 
         expect(opts?.getNoteId?.()).toBe("host2");
+        expect(opts?.isExcerpt?.()).toBe(true);
     });
 
     it("lists the headings of its editor and gives one a block id, while it has one", async () => {

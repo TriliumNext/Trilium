@@ -538,6 +538,7 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 showLinkDialog={showLinkDialog}
+                isExcerpt={block !== undefined}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();
