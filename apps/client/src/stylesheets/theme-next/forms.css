@@ -233,24 +233,6 @@ input::selection,
     font-style: italic;
 }
 
-/*
-    Numeric input with measurement unit as a sufix
-
-    <label class="input-group tn-number-unit-pair">
-        <input ... >
-        <span class="input-group-text">meters</span>
-    </label>
-*/
-
-label.input-group.tn-number-unit-pair {
-    width: fit-content;
-}
-
-label.input-group.tn-number-unit-pair input {
-    width: 120px !important;
-    padding-inline-end: 0;
-}
-
 :root .input-group > pre[aria-hidden="true"] {
     margin: 0;
     padding: 0;
