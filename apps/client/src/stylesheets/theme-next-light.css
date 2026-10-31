@@ -221,18 +221,6 @@
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
 
-    --badge-temporaraily-editable-background-color: #35a64c;
-    --badge-read-only-background-color: #c8302c;
-    --badge-office-preview-background-color: #566d87;
-    --badge-share-background-color: #6b6b6b;
-    --badge-snippet-background-color: #6b6b6b;
-    --badge-template-background-color: #ece0c0;
-    --badge-template-text-color: #5a4a26;
-    --badge-clipped-note-background-color: #2284c0;
-    --badge-doc-url-background-color: #2e7d5e;
-    --badge-execute-background-color: #7b47af;
-    --badge-active-content-background-color: rgb(27, 164, 168);
-
     --note-icon-background-color: #4f4f4f;
     --note-icon-color: white;
     --note-icon-hover-background-color: #737373;
