@@ -116,9 +116,9 @@ search:
 
 SearXNG doesn't use API keys, so leave the API key empty. Fill it in only if your instance sits behind a proxy that requires a token; Trilium sends it as a bearer token in the `Authorization` header.
 
-Whether web search is on is kept per chat; the search source is shared by all chats. A choice the current model can't use stays in the menu, disabled; hover the <span class="tn-icon bx bx-info-circle"></span>icon next to it to see why. Claude Code, GitHub Copilot, Google Antigravity and OpenAI Codex run their own tools, so they can't use a search provider.
+Whether web search is on is kept per chat; the search source is shared by all chats. A choice the current model can't use stays in the menu, disabled; hover the <span class="tn-icon bx bx-info-circle"></span> icon next to it to see why. Claude Code, GitHub Copilot, Google Antigravity and OpenAI Codex run their own tools, so they can't use a search provider.
 
-In the chat, a search run through a search provider shows that provider's logo at the start of its line instead of the <span class="tn-icon bx bx-search"></span>magnifier; hover the logo to see the provider's name.
+In the chat, a search run through a search provider shows that provider's logo at the start of its line instead of the <span class="tn-icon bx bx-search"></span> magnifier; hover the logo to see the provider's name.
 
 With a search provider, the model can also read the pages it finds, or a link you give it, as text: Trilium fetches the page itself and hands the model up to its first 20,000 characters. Addresses on your own machine or network are refused. In the browser version most sites don't allow being read this way, so reading a page there usually fails.
 
@@ -129,7 +129,7 @@ Some models reason before they answer. While the model is thinking, its reasonin
 How much a model thinks is set per chat, in one of two ways depending on the model:
 
 *   Most models have an <span class="tn-icon bx bx-brain"></span>_Extended thinking_ button, next to the <span class="tn-icon bx bx-shield-quarter"></span>_Tools_ button.
-*   Models that offer several levels of reasoning (DeepSeek V4, OpenRouter models that reason, OpenAI Codex, Antigravity) have a <span class="tn-icon bx bx-brain"></span>reasoning effort dropdown next to the model selector instead. _None_, where offered, turns thinking off; higher levels give better answers to hard questions, but take longer and cost more.
+*   Models that offer several levels of reasoning (DeepSeek V4, OpenRouter models that reason, OpenAI Codex, Antigravity) have a <span class="tn-icon bx bx-brain"></span> reasoning effort dropdown next to the model selector instead. _None_, where offered, turns thinking off; higher levels give better answers to hard questions, but take longer and cost more.
 
 > [!NOTE]
 > The effort dropdown only appears once Trilium knows the model's levels. For a DeepSeek provider set up with an earlier version of Trilium, edit the provider in the model selection box and press _Save_ once.
@@ -166,13 +166,13 @@ Here are a few tools that Trilium provides for the LLM:
     *   Get the content of an attachment.
 *   Skills (see the dedicated section).
 
-Each tool the AI uses appears in the chat as a single line naming the tool and the note or query it worked on; a renamed note shows its previous title struck through, a deleted note its title struck through, a moved note where it was moved from and to, an attribute the AI read, set, added or deleted as a pill (struck through once deleted), an attachment by its title, note and size, and a web page the AI read as a link. A line folds open only when there is something to read inline: the notes a search found, the pages a web search found, the icons an icon search found, the type, attributes or start of the content of a note the AI read, all the attributes of a note, the text of an attachment or of a web page, the User Guide pages the AI looked up or its table of contents (both open in the help panel), the children or the whole subtree of a note, what the AI wrote into a note it created, rewrote or added to, the changes of an edit, or the reason a tool failed. A search names on its line the part of the tree it is confined to, if any, and also shows how many notes it found and how many of the matches the AI asked for; each note it lists opens with a click. To see exactly what the AI sent to a tool and what it got back, hover the line and press the <span class="tn-icon bx bx-code-alt"></span>button next to it; on touch screens the button is always shown.
+Each tool the AI uses appears in the chat as a single line naming the tool and the note or query it worked on; a renamed note shows its previous title struck through, a deleted note its title struck through, a moved note where it was moved from and to, an attribute the AI read, set, added or deleted as a pill (struck through once deleted), an attachment by its title, note and size, and a web page the AI read as a link. A line folds open only when there is something to read inline: the notes a search found, the pages a web search found, the icons an icon search found, the type, attributes or start of the content of a note the AI read, all the attributes of a note, the text of an attachment or of a web page, the User Guide pages the AI looked up or its table of contents (both open in the help panel), the children or the whole subtree of a note, what the AI wrote into a note it created, rewrote or added to, the changes of an edit, or the reason a tool failed. A search names on its line the part of the tree it is confined to, if any, and also shows how many notes it found and how many of the matches the AI asked for; each note it lists opens with a click. To see exactly what the AI sent to a tool and what it got back, hover the line and press the <span class="tn-icon bx bx-code-alt"></span> button next to it; on touch screens the button is always shown.
 
 When the reply stops moving for a couple of seconds while the AI is still at work, for example while it reads what a tool returned, a _Still working…_ line appears under it until the next part of the reply arrives.
 
 #### Approving tool calls
 
-Before the AI runs a tool, the chat asks whether to allow it. The tool's line is marked with a <span class="tn-icon bx bxs-hand"></span>icon and has _Allow_ and _Deny_ buttons below it. When the call would write to a note, the line opens on the text it would write or the changes of an edit. The reply waits until you answer.
+Before the AI runs a tool, the chat asks whether to allow it. The tool's line is marked with a <span class="tn-icon bx bxs-hand"></span> icon and has _Allow_ and _Deny_ buttons below it. When the call would write to a note, the line opens on the text it would write or the changes of an edit. The reply waits until you answer.
 
 *   To let the call run, press _Allow_.
 *   To stop asking about a tool for the rest of the chat, open the menu next to _Allow_ and choose to always allow that tool for this chat. The call runs, and so do the other calls of that tool still waiting and every later one in this chat. Other tools keep asking, and a new chat asks again.
@@ -212,7 +212,7 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 Not every model reads every kind of attachment: DeepSeek reads no PDFs, and images only with its vision models; OpenAI Codex, GitHub Copilot and Google Antigravity read images but no PDFs. For such a model:
 
 *   The attach button offers only the kinds the model reads, and a pasted or dropped file it can't read is not attached.
-*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span>warning, and the message can't be sent until the attachment is removed or another model is selected.
+*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span> warning, and the message can't be sent until the attachment is removed or another model is selected.
 *   An attachment sent in an earlier message reaches the model as its name only, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content.
 
 To upload an attachment:
