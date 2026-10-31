@@ -88,6 +88,9 @@ html {
     --scrollbar-thumb-color: color-mix(in srgb, var(--main-text-color) 36%, transparent);
     --scrollbar-thumb-hover-color: color-mix(in srgb, var(--main-text-color) 40%, transparent);
     --scrollbar-background-color: transparent;
+
+    --card-background-color: color-mix(in srgb, var(--main-text-color) 6%, transparent);
+    --card-background-hover-color: color-mix(in srgb, var(--main-text-color) 11%, transparent);
     --selection-background-color: #3399FF70;
     --tooltip-background-color: #f8f8f8;
     --link-color: blue;
