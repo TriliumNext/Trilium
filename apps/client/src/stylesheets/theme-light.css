@@ -83,8 +83,9 @@ html {
     --inactive-tab-hover-background-color: #e3e3e3;
     --inactive-tab-text-color: #666;
 
-    --scrollbar-border-color: #ddd;
-    --scrollbar-background-color: #ddd;
+    --scrollbar-thumb-color: color-mix(in srgb, var(--main-text-color) 36%, transparent);
+    --scrollbar-thumb-hover-color: color-mix(in srgb, var(--main-text-color) 40%, transparent);
+    --scrollbar-background-color: transparent;
     --selection-background-color: #3399FF70;
     --tooltip-background-color: #f8f8f8;
     --link-color: blue;

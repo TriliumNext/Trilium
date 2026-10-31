@@ -1777,20 +1777,96 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     transform: rotate(-90deg);
 }
 
+/*
+ * WebKit scrollbars
+ */
+
+:root {
+    --scrollbar-thickness: 10px;
+    --scrollbar-thumb-thickness: 3px;
+    --scrollbar-thumb-hover-thickness: 6px;
+    --scrollbar-start-end-gap: 8px;
+}
+
+/* Scrollbar's body */
+
 @supports (-webkit-box-reflect: below) {
     ::-webkit-scrollbar {
         width: 12px;
     }
 }
 
-::-webkit-scrollbar-thumb {
-    border-radius: 5px;
-    border: 1px solid var(--scrollbar-border-color);
+::-webkit-scrollbar-track {
     background-color: var(--scrollbar-background-color);
 }
 
-::-webkit-scrollbar-button {
-    display: none;
+::-webkit-scrollbar:vertical {
+    width: var(--scrollbar-thickness) !important;
+}
+
+::-webkit-scrollbar:horizontal {
+    height: var(--scrollbar-thickness) !important;
+}
+
+/* Scrollbar's thumb */
+
+::-webkit-scrollbar-thumb {
+    --s-thumb-thickness: var(--scrollbar-thumb-thickness);
+    --s-thumb-color: var(--scrollbar-thumb-color);
+
+    --s-gradient-angle: 90deg;
+    --s-gradient-p1: calc((var(--scrollbar-thickness) - var(--s-thumb-thickness)) / 2);
+    --s-gradient-p2: calc(var(--s-gradient-p1) + var(--s-thumb-thickness));
+
+    border: none !important;
+    background: linear-gradient(var(--s-gradient-angle),
+                                transparent, transparent var(--s-gradient-p1),
+                                var(--s-thumb-color) 0px, var(--s-thumb-color) var(--s-gradient-p2),
+                                transparent 0) !important;
+
+    border-radius: calc(var(--scrollbar-thickness) / 2) !important;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+    --s-gradient-angle: 0deg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    --s-thumb-thickness: var(--scrollbar-thumb-hover-thickness);
+    --s-thumb-color: var(--scrollbar-thumb-hover-color);
+}
+
+/* Scrollbar's increment/decrement buttons (repurposed as a scrollbar start/end gap).
+ * This gap is useful also to avoid breaking the rounded corners of a container when a
+ * custom scrollbar background color is used. */
+
+::-webkit-scrollbar-button:vertical {
+    height: var(--scrollbar-start-end-gap);
+}
+
+::-webkit-scrollbar-button:horizontal {
+    width: var(--scrollbar-start-end-gap);
+}
+
+/*
+ * Firefox scrollbars
+ *
+ * Unsupported features: --scrollbar-thumb-thickness, --scrollbar-thumb-hover-thickness,
+ *                       --scrollbar-start-end-gap, --scrollbar-thumb-hover-color.
+ */
+
+:root {
+    scrollbar-color: var(--scrollbar-thumb-color) transparent;
+    scrollbar-width: var(--scrollbar-thickness);
+}
+
+@supports (-webkit-box-reflect: below) {
+    /* Prevent the scrollbar-color and scrollbar-width properties to override the custom styles
+     * defined using ::-webkit-scrollbar. */
+    :root {
+        scrollbar-color: unset;
+        scrollbar-width: unset;
+    }
 }
 
 ::-webkit-scrollbar-corner {
