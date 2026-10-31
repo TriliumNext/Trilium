@@ -862,7 +862,8 @@ describe("content_renderer", () => {
                         + `<a class="reference-link" href="#root/headingLink1?block=h">Intro</a></h2>`
                         + `<p><a class="reference-link" href="#root/headingLink1?block=h">a</a>`
                         + `<a class="reference-link" href="#root/headingLink1?block=p">b</a>`
-                        + `<a class="reference-link" href="#root/headingLink1?block=gone">c</a></p>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=gone">c</a>`
+                        + `<a class="reference-link" href="#root/headingLink1">d</a></p>`
                         + `<p data-trilium-block-id="p">Text</p>`
                 });
 
@@ -870,8 +871,8 @@ describe("content_renderer", () => {
 
                 expect(content).toContain(`<a class="reference-link type-text"`
                     + ` href="./headingLink1?block=h"><span>Lists &amp; more</span></a>`);
-                // A link to another block, or to one that is gone, shows the note.
-                expect(content.match(/<span class="tn-icon bx bx-note"><\/span>/g)).toHaveLength(2);
+                // A link to another block, to one that is gone or to the whole note shows the note.
+                expect(content.match(/<span class="tn-icon bx bx-note"><\/span>/g)).toHaveLength(3);
             });
 
             it("names a heading without text, inside an included note too", () => {

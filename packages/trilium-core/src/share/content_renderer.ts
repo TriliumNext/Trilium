@@ -879,15 +879,8 @@ function cleanUpReferenceLinks(
 
     // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
     let noteId = "";
-    // The link of an included note was rewritten already, to `./shareId` and its parameters.
     if (linkEl.hasAttribute("href")) {
-        if (href.startsWith("#")) {
-            noteId = getNoteIdFromLink(href);
-        } else if (href.startsWith("./")) {
-            noteId = getNoteIdFromLink(href.slice(2));
-        } else {
-            noteId = href.slice(href.lastIndexOf("/") + 1);
-        }
+        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : href.slice(href.lastIndexOf("/") + 1);
     }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
