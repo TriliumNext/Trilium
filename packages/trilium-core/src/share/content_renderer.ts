@@ -658,6 +658,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         embedsAsReferenceLinks: options.embedsAsReferenceLinks,
         expandNestedEmbeds: options.expandNestedEmbeds
     };
+    // The links of an embedded note, which `getContent()` processed with that note as their host.
+    const embeddedLinks = new Set<HTMLElement>();
     for (const embedEl of document.querySelectorAll(".include-note")) {
         const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
         if (!embed) continue;
@@ -707,7 +709,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         });
         if (typeof embeddedResult.content !== "string") continue;
 
-        replaceEmbedContent(embedEl, parse(embeddedResult.content, parseOpts).childNodes);
+        const embeddedContent = parse(embeddedResult.content, parseOpts);
+        for (const linkEl of embeddedContent.querySelectorAll("a")) {
+            embeddedLinks.add(linkEl);
+        }
+        replaceEmbedContent(embedEl, embeddedContent.childNodes);
     }
 
     result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
@@ -715,6 +721,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     if (!result.isEmpty) {
         // Process attachment links.
         for (const linkEl of document.querySelectorAll("a")) {
+            if (embeddedLinks.has(linkEl)) {
+                continue;
+            }
+
             const href = linkEl.getAttribute("href");
 
             // Preserve in-page anchors (footnotes, bookmarks): a link to a note starts with `#root`.
@@ -899,7 +909,8 @@ function cleanUpReferenceLinks(
 
 /**
  * The text of the heading in `content` whose block `href` links to, or `null`. The labels of the
- * block references in the heading are left out, as in the app.
+ * block references in the heading are left out, and a heading without text reads as "Block", as
+ * in the app.
  */
 function getLinkedHeadingText(content: HTMLElement, href: string) {
     const block = new URLSearchParams(href.split("?")[1]).get("block");
@@ -916,7 +927,7 @@ function getLinkedHeadingText(content: HTMLElement, href: string) {
     for (const link of heading.querySelectorAll(`a.reference-link[href*="block="]`)) {
         link.remove();
     }
-    return heading.textContent.replace(/\s+/g, " ").trim();
+    return heading.textContent.replace(/\s+/g, " ").trim() || t("content_renderer.untitled-block");
 }
 
 /** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */

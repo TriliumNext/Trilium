@@ -239,6 +239,20 @@ describe("ChoiceCardSection", () => {
         expect(collapsed.querySelector(".tn-card-choice-expander.bx-chevron-right")).not.toBeNull();
         collapsed.querySelector<HTMLElement>(".tn-card-choice-expander")?.click();
         expect(onExpandedChange).toHaveBeenLastCalledWith(true);
+
+        // The arrow that the expander points to expands the choice, and the other collapses it.
+        onExpandedChange.mockClear();
+        const press = (section: Element | null | undefined, key: string) => !section?.dispatchEvent(
+            new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+        const collapsedParent = collapsed.querySelector(".tn-card-choice");
+        expect([ collapsedParent, parent, leaf ].map((section) =>
+            section?.getAttribute("aria-expanded"))).toStrictEqual([ "false", "true", null ]);
+        expect([
+            press(collapsedParent, "ArrowLeft"), press(collapsedParent, "ArrowRight"),
+            press(parent, "ArrowRight"), press(parent, "ArrowLeft"), press(leaf, "ArrowLeft")
+        ]).toStrictEqual([ false, true, false, true, false ]);
+        expect(onExpandedChange.mock.calls).toStrictEqual([ [ true ], [ false ] ]);
+        expect(onCheck).toHaveBeenCalledOnce();
     });
 });
 

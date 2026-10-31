@@ -179,9 +179,16 @@ function getLinkedAnchor(editor: Editor, href: string) {
 
 /**
  * Scrolls to the block or the anchor of the note that `href` links to and flashes it, as a link
- * within a page does. Returns whether `href` links into the note.
+ * within a page does. Returns whether it does. A click with Ctrl, Cmd or Shift is left to the
+ * host, which opens the link in a new tab or window.
  */
 function jumpInNote(editor: Editor, href: string) {
+    // The `navigate` event of `LinkUI` does not pass the click, so it is read from `window`.
+    const click = window.event;
+    if (click instanceof MouseEvent && (click.ctrlKey || click.metaKey || click.shiftKey)) {
+        return false;
+    }
+
     const root = editor.editing.view.getDomRoot() as HTMLElement;
     const block = getLinkedBlock(editor, href);
     if (block) {

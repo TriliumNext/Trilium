@@ -874,6 +874,27 @@ describe("content_renderer", () => {
                 expect(content.match(/<span class="tn-icon bx bx-note"><\/span>/g)).toHaveLength(2);
             });
 
+            it("names a heading without text, inside an included note too", () => {
+                buildShareNote({
+                    id: "includedHead",
+                    title: "Included",
+                    content: `<h2 data-trilium-block-id="i">Inner heading</h2>`
+                        + `<p><a class="reference-link" href="#root/includedHead?block=i">x</a></p>`
+                });
+                const note = buildShareNote({
+                    id: "emptyHeading",
+                    content: `<h2 data-trilium-block-id="e"> </h2>`
+                        + `<p><a class="reference-link" href="#root/emptyHeading?block=e">x</a></p>`
+                        + `<section class="include-note" data-note-id="includedHead"></section>`
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+                expect(links.map((link) => link.innerHTML)).toStrictEqual([
+                    `<span>${t("content_renderer.untitled-block")}</span>`,
+                    "<span>Inner heading</span>"
+                ]);
+            });
+
             it("does not treat an external URL's query string as a note ID", () => {
                 const target = buildShareNote({ id: "extIdTarget1", title: "Target" });
                 const href = `https://example.com/${target.noteId}?x=1`;

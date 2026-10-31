@@ -321,10 +321,18 @@ export function getHeadings(editor: Editor): DocumentHeading[] {
             continue;
         }
 
-        // An inline element, such as a soft break, separates words.
+        // A reference link reads as its title, as the editor shows it. Another inline element, such
+        // as a soft break, separates words.
         let text = '';
         for (const child of model.createRangeIn(item).getItems()) {
-            text += child.is('$textProxy') ? child.data : ' ';
+            if (child.is('$textProxy')) {
+                text += child.data;
+            } else if (child.is('element', 'reference')) {
+                text += getReferenceTitleSync(editor, child.getAttribute('href') as string,
+                    child.getAttribute('storedTitle') as string | undefined);
+            } else {
+                text += ' ';
+            }
         }
 
         text = text.replace(/\s+/g, ' ').trim();

@@ -175,20 +175,37 @@ describe("links within the note", () => {
         linkTo("#root/def?block=h");
         expect(navigate("#root/def?block=h")).toEqual([ 0, [] ]);
 
+        const click = (element: HTMLElement | null | undefined, init: MouseEventInit = {}) => {
+            let isCanceled = false;
+            const record = (event: Event) => {
+                isCanceled = event.defaultPrevented;
+                // A click left to the host would open the address in the test page.
+                event.preventDefault();
+            };
+            element?.addEventListener("click", record);
+            element?.dispatchEvent(new MouseEvent("click", { cancelable: true, ...init }));
+            element?.removeEventListener("click", record);
+            return [ isCanceled, takeFlashed(editor) ];
+        };
+        const modifiers = [ { ctrlKey: true }, { metaKey: true }, { shiftKey: true } ];
+        // A click with Ctrl, Cmd or Shift is left to the host, which opens a tab or a window.
+        preview.render();
+        linkTo("#root/x/abc?block=h");
+        expect(click(preview.element)).toEqual([ true, [ "Intro" ] ]);
+        expect(modifiers.map((init) => click(preview.element, init)))
+            .toEqual([ [ false, [] ], [ false, [] ], [ false, [] ] ]);
+
         const referencePreview =
             editor.ui.componentFactory.create("referenceLinkPreview") as ButtonView;
         referencePreview.render();
-        const click = () => {
-            const event = new MouseEvent("click", { cancelable: true });
-            referencePreview.element?.dispatchEvent(event);
-            return [ event.defaultPrevented, takeFlashed(editor) ];
-        };
         // Without a reference, the button has no address to follow.
-        expect(click()).toEqual([ false, [] ]);
+        expect(click(referencePreview.element)).toEqual([ false, [] ]);
         setModelData(editor.model, content.replace("[]", "")
             + "<paragraph>[<reference href=\"#root/abc?block=h\"></reference>]</paragraph>");
         expect(referencePreview.label).toBe("Jump to heading");
-        expect(click()).toEqual([ true, [ "Intro" ] ]);
+        expect(click(referencePreview.element)).toEqual([ true, [ "Intro" ] ]);
+        expect(modifiers.map((init) => click(referencePreview.element, init)))
+            .toEqual([ [ false, [] ], [ false, [] ], [ false, [] ] ]);
         const cancel = vi.fn();
         referencePreview.fire("navigate", "#root/def", cancel);
         expect(cancel).not.toHaveBeenCalled();

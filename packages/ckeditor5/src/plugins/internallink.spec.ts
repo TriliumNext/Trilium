@@ -221,6 +221,20 @@ describe("the headings of the document", () => {
             { element: root?.getChild(4), level: 3, text: "Deep down", blockId: undefined }
         ]);
     });
+
+    it("reads a reference link in a heading as its title", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, Heading, InternalLinkPlugin ], {
+            referenceLink: {
+                getTitle: async () => "Target",
+                getTitleSync: (href, storedTitle) => storedTitle ?? `Title of ${href}`
+            }
+        });
+        setModelData(editor.model, "<heading1>See <reference href=\"#root/a\"></reference>.</heading1>"
+            + "<heading2>[]<reference href=\"#root/b\" storedTitle=\"Stored\"></reference></heading2>");
+
+        expect(getHeadings(editor).map((heading) => heading.text))
+            .toStrictEqual([ "See Title of #root/a.", "Stored" ]);
+    });
 });
 
 describe("the link at the selection", () => {

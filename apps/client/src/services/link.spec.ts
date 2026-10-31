@@ -792,6 +792,11 @@ describe("goToLinkExt", () => {
         click("#root/abcdefghijkl?block=h", undefined, { shiftKey: true });
         expect(openInCurrentNoteContext).toHaveBeenCalledTimes(4);
         expect(triggerCommand).toHaveBeenCalledOnce();
+        // So does a link that asks for a popup or a new tab.
+        click("#root/abcdefghijkl?block=h&popup");
+        click("#root/abcdefghijkl?block=h", $("<a target='_blank'>").appendTo(content));
+        expect(triggerCommand).toHaveBeenLastCalledWith("openInPopup", expect.anything());
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
         expect(showBlockReference).toHaveBeenCalledOnce();
         split.remove();
     });
@@ -1340,6 +1345,15 @@ describe("block references", () => {
             .toBe("Live heading");
         expect(linkService.getReferenceLinkTitleSync(href("gone"), "Stored", live))
             .toBe("block_reference.broken");
+
+        // The editor of an excerpt holds only some blocks; the others are read from the note.
+        const excerpt = document.createElement("div");
+        excerpt.innerHTML = content;
+        const $outside = $("<span>");
+        await linkService.loadReferenceLinkTitle($outside, href("h"), undefined, undefined, excerpt);
+        expect($outside.html()).toBe("Saved");
+        expect($outside.hasClass("block-reference-broken")).toBe(false);
+        expect(linkService.getReferenceLinkTitleSync(href("h"), "Stored", excerpt)).toBe("Saved");
     });
 
     it("adds no label to a reference to the blocks of a note that cannot be read", async () => {

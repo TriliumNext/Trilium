@@ -319,12 +319,22 @@ export function ChoiceCardSection({
             style={style}
             role="radio"
             aria-checked={isChecked}
+            aria-expanded={onExpandedChange && isExpandable ? isExpanded : undefined}
             tabIndex={0}
             onClick={onCheck}
             onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     onCheck();
+                    return;
+                }
+
+                // As in a tree, the arrow that the expander points to expands the choice.
+                const isArrow = event.key === "ArrowRight" || event.key === "ArrowLeft";
+                const shouldExpand = (event.key === "ArrowRight") !== !!glob.isRtl;
+                if (onExpandedChange && isExpandable && isArrow && shouldExpand !== isExpanded) {
+                    event.preventDefault();
+                    onExpandedChange(shouldExpand);
                 }
             }}
         >

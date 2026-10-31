@@ -589,7 +589,7 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         }
 
         // A link to blocks of the note it is in acts as a link within a page.
-        if (isPlainLeftClick && $link && viewScope?.block
+        if (isPlainLeftClick && !openInPopup && !targetIsBlank && $link && viewScope?.block
             && showBlocksInPlace($link, noteId, viewScope.block)) {
             return true;
         }
@@ -757,9 +757,12 @@ async function loadReferenceLinkTitle(
     const note = subjectId ? await froca.getNote(subjectId, true) : null;
 
     if (viewScope?.block && note && (content || noteId === hostNoteId)) {
-        const label = content
-            ? getBlockReferenceLabel(content, viewScope.block)
-            : await loadBlockReferenceLabel(note, viewScope.block);
+        const liveLabel = content ? getBlockReferenceLabel(content, viewScope.block) : null;
+        // The editor of an excerpt holds only some blocks of the note, so the others are read
+        // from the saved note.
+        const label = liveLabel && !liveLabel.isBroken
+            ? liveLabel
+            : await loadBlockReferenceLabel(note, viewScope.block) ?? liveLabel;
         if (label) {
             $el.text(label.text).toggleClass("block-reference-broken", label.isBroken);
             if (!label.isHeading) {
@@ -858,11 +861,16 @@ function getReferenceLinkTitleSync(
         return storedTitle || MISSING_NOTE_TITLE;
     }
 
+    const note = froca.getNoteFromCache(viewScope?.card || noteId);
     if (content && viewScope?.block) {
-        return getBlockReferenceLabel(content, viewScope.block).text;
+        const label = getBlockReferenceLabel(content, viewScope.block);
+        // As in `loadReferenceLinkTitle()`, blocks outside an excerpt are read from the saved note.
+        const savedLabel = label.isBroken && note
+            ? getCachedBlockReferenceLabel(note, viewScope.block)
+            : null;
+        return (savedLabel ?? label).text;
     }
 
-    const note = froca.getNoteFromCache(viewScope?.card || noteId);
     if (!note) {
         return storedTitle || MISSING_NOTE_TITLE;
     }

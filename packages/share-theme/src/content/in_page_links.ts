@@ -1,11 +1,5 @@
 import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
 
-/** Loads the module, shared with the app, that scrolls to blocks and anchors and flashes them. */
-const loadBlockJump = () =>
-    import("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
-
-type BlockJump = Awaited<ReturnType<typeof loadBlockJump>>;
-
 /**
  * Makes a link to blocks of the page, or to an element of it by `id` such as an anchor, scroll to
  * its target and flash it, as the app does. The address changes as for a link within the page.
@@ -28,6 +22,13 @@ export default function setupInPageLinks() {
         }
     });
 }
+
+/** Loads the module, shared with the app, that scrolls to blocks and anchors and flashes them. */
+function loadBlockJump() {
+    return import("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
+}
+
+type BlockJump = Awaited<ReturnType<typeof loadBlockJump>>;
 
 /** What shows the target of `link` when it is on this page, or `null`. */
 function getInPageTarget(link: HTMLAnchorElement): ((jump: BlockJump) => unknown) | null {
