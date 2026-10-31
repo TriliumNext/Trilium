@@ -253,8 +253,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         referenceLink: {
             getTitle: linkService.getReferenceLinkTitle,
             getTitleSync: linkService.getReferenceLinkTitleSync,
-            renderTitle: (element, href, storedTitle) => {
-                void linkService.loadReferenceLinkTitle($(element), href, opts.getNoteId?.(), storedTitle);
+            renderTitle: (element, href, storedTitle, content) => {
+                void linkService.loadReferenceLinkTitle(
+                    $(element), href, opts.getNoteId?.(), storedTitle, content
+                );
             },
             fixLink: (storedTitle, fix) => {
                 void opts.triggerHostCommand?.("showEditLinkDialog", {

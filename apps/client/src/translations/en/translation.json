@@ -68,8 +68,6 @@
     "button_fix_link": "Fix link",
     "web_link": "Web link",
     "url": "Address (URL)",
-    "mirror_title": "Mirror the note's title",
-    "mirror_title_description": "The link shows the note's current title, and changes when the note is renamed.",
     "display_as": "Display as",
     "display_plain": "Plain link",
     "display_inline": "Inline",
@@ -77,11 +75,14 @@
     "display_embed": "YouTube embed",
     "page_title": "Title of the web page",
     "title_from_url": "Same as the URL",
+    "title_from_note": "If not set, will always reflect the note's title",
     "description": "Description",
     "page_description": "Description of the web page",
-    "anchors": "Anchors",
-    "target_anchor": "Target anchor",
-    "no_anchors": "No anchors available."
+    "anchors": "Headings & anchors",
+    "target_anchor": "Anchors",
+    "headings": "Headings",
+    "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
+    "title_from_heading": "If not set, will always reflect the heading's text"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -4722,7 +4723,9 @@
       "create-a-new-child-note": "Create a new child note",
       "create-a-new-child-note-and-insert-a-link-to-it": "Create a new child note and insert a link to it",
       "open-note": "Open note",
-      "open-attachment": "Open attachment"
+      "open-attachment": "Open attachment",
+      "jump-to-heading": "Jump to heading",
+      "jump-to-anchor": "Jump to anchor"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

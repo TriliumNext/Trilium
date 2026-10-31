@@ -2,9 +2,10 @@ import {
     BookmarkEditing, ButtonView, Command, ContextualBalloon, findAttributeRange, IconLink,
     IconPencil, LinkUI, ModelLiveRange, Plugin
 } from 'ckeditor5';
-import type { Editor, LinkCommand, ModelRange, View } from 'ckeditor5';
+import type { Editor, LinkCommand, ModelElement, ModelRange, View } from 'ckeditor5';
 import HostedBalloon from '../hosted_balloon.js';
 import internalLinkIcon from '../icons/trilium.svg?raw';
+import { BLOCK_ID } from './block_reference/block_reference_editing.js';
 import {
     getLinkWidgetMode, getSelectedLinkWidget, type LinkDisplayMode
 } from './link_embed/link_embed_commands.js';
@@ -25,6 +26,16 @@ export interface InternalLinkDialogOptions {
      * player.
      */
     display?: LinkDisplayMode;
+}
+
+/** A heading of the document. */
+export interface DocumentHeading {
+    element: ModelElement;
+    /** 1 for `heading1`, up to 6 for `heading6`. */
+    level: number;
+    text: string;
+    /** The block id of the heading, if it has one. */
+    blockId?: string;
 }
 
 /** The request that the editor passes to the host's link dialog. */
@@ -292,6 +303,42 @@ export function getAnchorNames(editor: Editor): string[] {
 
     const names = editor.plugins.get(BookmarkEditing).getAllBookmarkNames();
     return [ ...names ].sort((a, b) => a.localeCompare(b));
+}
+
+/** The headings of the document that have text, in document order. */
+export function getHeadings(editor: Editor): DocumentHeading[] {
+    const model = editor.model;
+    const root = model.document.getRoot() as ModelElement;
+    const headings: DocumentHeading[] = [];
+
+    for (const item of model.createRangeIn(root).getItems()) {
+        if (!item.is('element')) {
+            continue;
+        }
+
+        const level = /^heading([1-6])$/.exec(item.name)?.[1];
+        if (!level) {
+            continue;
+        }
+
+        // An inline element, such as a soft break, separates words.
+        let text = '';
+        for (const child of model.createRangeIn(item).getItems()) {
+            text += child.is('$textProxy') ? child.data : ' ';
+        }
+
+        text = text.replace(/\s+/g, ' ').trim();
+        if (text) {
+            headings.push({
+                element: item,
+                level: Number(level),
+                text,
+                blockId: item.getAttribute(BLOCK_ID) as string | undefined
+            });
+        }
+    }
+
+    return headings;
 }
 
 function findLinkAtSelection(editor: Editor): { href: string; range: ModelRange } | null {

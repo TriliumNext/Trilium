@@ -275,7 +275,8 @@ class LinkEmbedEditLinkButton extends Plugin {
 /**
  * A {@link ButtonView} rendered as an `<a target="_blank">` so a click opens the
  * URL in a new tab. Reuses CKEditor's `ck-link-toolbar__preview` styling for
- * visual parity with the built-in link toolbar.
+ * visual parity with the built-in link toolbar. Like CKEditor's preview button, it fires
+ * `navigate` on a click, whose listener can cancel opening the URL.
  */
 export class LinkEmbedPreviewButtonView extends ButtonView {
     declare href: string | undefined;
@@ -293,6 +294,14 @@ export class LinkEmbedPreviewButtonView extends ButtonView {
                 href: bind.to("href"),
                 target: "_blank",
                 rel: "noopener noreferrer"
+            },
+            on: {
+                click: bind.to((event) => {
+                    if (this.href) {
+                        this.fire<LinkEmbedPreviewNavigateEvent>("navigate", this.href,
+                            () => event.preventDefault());
+                    }
+                })
             }
         });
 
@@ -302,3 +311,12 @@ export class LinkEmbedPreviewButtonView extends ButtonView {
         }
     }
 }
+
+/**
+ * Fired by a click on a `LinkEmbedPreviewButtonView`, with its `href` and a function that cancels
+ * opening it.
+ */
+export type LinkEmbedPreviewNavigateEvent = {
+    name: "navigate";
+    args: [ href: string, cancel: () => void ];
+};

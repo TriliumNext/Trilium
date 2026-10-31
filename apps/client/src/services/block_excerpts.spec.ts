@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
 import {
-    getBlockExcerpt, getCachedBlockReferenceLabel, loadBlockReferenceLabel
+    getBlockExcerpt, getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
 } from "./block_excerpts.js";
 
 vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
@@ -10,7 +10,7 @@ vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
 const CONTENT = "<p data-trilium-block-id=\"a\">First   block\n text</p>"
     + "<ul><li><p data-trilium-block-id=\"b\">Second</p></li></ul>"
     + "<figure class=\"image\" data-trilium-block-id=\"img\"><img src=\"x.png\"></figure>";
-const FIRST_LABEL = { text: "First block text", isBroken: false };
+const FIRST_LABEL = { text: "First block text", isBroken: false, isHeading: false };
 
 describe("loadBlockReferenceLabel", () => {
     it("labels blocks by their text, and a missing block as broken", async () => {
@@ -19,15 +19,18 @@ describe("loadBlockReferenceLabel", () => {
         expect(await loadBlockReferenceLabel(note, "a")).toEqual(FIRST_LABEL);
         expect(await loadBlockReferenceLabel(note, "a:b")).toEqual({
             text: "First block text … Second",
-            isBroken: false
+            isBroken: false,
+            isHeading: false
         });
         expect(await loadBlockReferenceLabel(note, "img")).toEqual({
             text: "block_reference.untitled",
-            isBroken: false
+            isBroken: false,
+            isHeading: false
         });
         expect(await loadBlockReferenceLabel(note, "a:gone")).toEqual({
             text: "block_reference.broken",
-            isBroken: true
+            isBroken: true,
+            isHeading: false
         });
     });
 
@@ -76,6 +79,49 @@ describe("loadBlockReferenceLabel", () => {
 
         expect(getCachedBlockReferenceLabel(notes[0], "a")).toBeNull();
         expect(getCachedBlockReferenceLabel(notes[20], "a")).not.toBeNull();
+    });
+});
+
+describe("getBlockReferenceLabel", () => {
+    it("labels the blocks of a content as it is, and a heading by all of its text", () => {
+        const root = document.createElement("div");
+        const long = "A heading " + "word ".repeat(20).trimEnd();
+        root.innerHTML = `<h2 data-trilium-block-id="h">${long}</h2>`
+            + "<p data-trilium-block-id=\"p\">Text</p><h3 data-trilium-block-id=\"empty\"></h3>";
+
+        expect(getBlockReferenceLabel(root, "h")).toEqual({
+            text: long, isBroken: false, isHeading: true
+        });
+        expect(getBlockReferenceLabel(root, "empty")).toEqual({
+            text: "block_reference.untitled", isBroken: false, isHeading: true
+        });
+        // A range reads in document order, however its ends are written.
+        const range = getBlockReferenceLabel(root, "p:h");
+        expect(range).toEqual(getBlockReferenceLabel(root, "h:p"));
+        expect(range).toMatchObject({ isBroken: false, isHeading: false });
+        expect(range.text.endsWith("… … Text")).toBe(true);
+        for (const block of [ "gone", "h:gone", "" ]) {
+            expect(getBlockReferenceLabel(root, block)).toEqual({
+                text: "block_reference.broken", isBroken: true, isHeading: false
+            });
+        }
+
+        root.querySelector("h2")?.append(" renamed");
+        expect(getBlockReferenceLabel(root, "h").text).toBe(`${long} renamed`);
+    });
+
+    it("leaves out the labels of block references, which can repeat the text itself", () => {
+        const root = document.createElement("div");
+        root.innerHTML = "<h2 data-trilium-block-id=\"a\">See "
+            + "<a class=\"reference-link\" href=\"#root/n?block=a\">See Other</a> and "
+            + "<a class=\"reference-link\" href=\"#root/n?block=b\">Other</a> in "
+            + "<a class=\"reference-link\" href=\"#root/m\">Note</a></h2>"
+            + "<h2 data-trilium-block-id=\"b\">Other "
+            + "<a class=\"reference-link\" href=\"#root/n?block=a\">See and in Note</a></h2>";
+
+        expect(getBlockReferenceLabel(root, "a").text).toBe("See and in Note");
+        expect(getBlockReferenceLabel(root, "b").text).toBe("Other");
+        expect(root.querySelectorAll("a")).toHaveLength(4);
     });
 });
 

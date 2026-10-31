@@ -1,11 +1,12 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, ButtonView, type ClassicEditor,
-    ContextualBalloon, Essentials, Link, LinkUI, Paragraph, type ToolbarView,
-    WidgetToolbarRepository
+    _getModelData as getModelData, _setModelData as setModelData, Bookmark, ButtonView,
+    type ClassicEditor, ContextualBalloon, Essentials, Heading, Link, LinkUI, Paragraph,
+    type ToolbarView, WidgetToolbarRepository
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import BlockReferenceEditing from "./block_reference/block_reference_editing.js";
 import { LinkEmbedPreviewButtonView } from "./link_embed/link_embed_toolbar.js";
 import NoteLinkToolbar, { UNLINK_REFERENCE_COMMAND } from "./note_link_toolbar.js";
 
@@ -44,6 +45,9 @@ describe("NoteLinkToolbar", () => {
         expect(preview.tooltip).toBe(false);
         linkTo(ATTACHMENT);
         expect(preview.label).toBe("Open attachment");
+        // An editor that names no note has no heading of its own to jump to.
+        linkTo(`${NOTE}?block=x`);
+        expect(preview.label).toBe("Open note");
 
         for (const href of [ "https://a.example", "#rootless", "#anchor" ]) {
             linkTo(href);
@@ -127,6 +131,79 @@ describe("NoteLinkToolbar", () => {
         });
     });
 });
+
+describe("links within the note", () => {
+    it("jumps to an anchor, and reads Jump to heading for a heading of the same note", async () => {
+        const editor = await createTestEditor([
+            Essentials, Paragraph, Heading, Bookmark, Link, BlockReferenceEditing, NoteLinkToolbar
+        ], {
+            getNoteId: () => "abc",
+            referenceLink: { getTitle: async () => "Target", getTitleSync: () => "Target" }
+        });
+        const preview = editor.ui.componentFactory.create("linkPreview") as ButtonView;
+        const content = "<heading1 blockId=\"h\">[]Intro</heading1>"
+            + "<paragraph blockId=\"p\"><bookmark bookmarkId=\"top\"></bookmark>text</paragraph>";
+        // The caret enters the link after the content is loaded, so the anchors are known.
+        const linkTo = (href: string) => {
+            setModelData(editor.model,
+                `${content}<paragraph><$text linkHref="${href}">foo</$text></paragraph>`);
+            editor.model.change((writer) => {
+                const link = editor.model.document.getRoot()?.getChild(2);
+                if (link) writer.setSelection(link, 1);
+            });
+            return preview.label;
+        };
+
+        expect([
+            "#root/x/abc?block=h", "#root/def?block=h", "#root/abc?block=p",
+            "#root/abc?block=gone", "#top", "#gone", "https://a.example/#top"
+        ].map(linkTo)).toStrictEqual([
+            "Jump to heading", "Open note", "Open note", "Open note", "Jump to anchor", "#gone",
+            "https://a.example/#top"
+        ]);
+
+        // The editor follows a link into the note in place, flashing what it links to.
+        const navigate = (href: string) => {
+            const cancel = vi.fn();
+            preview.fire("navigate", href, cancel);
+            return [ cancel.mock.calls.length, takeFlashed(editor) ];
+        };
+        linkTo("#top");
+        expect(navigate("#top")).toEqual([ 1, [ "text" ] ]);
+        linkTo("#root/x/abc?block=h");
+        expect(navigate("#root/x/abc?block=h")).toEqual([ 1, [ "Intro" ] ]);
+        linkTo("#root/def?block=h");
+        expect(navigate("#root/def?block=h")).toEqual([ 0, [] ]);
+
+        const referencePreview =
+            editor.ui.componentFactory.create("referenceLinkPreview") as ButtonView;
+        referencePreview.render();
+        const click = () => {
+            const event = new MouseEvent("click", { cancelable: true });
+            referencePreview.element?.dispatchEvent(event);
+            return [ event.defaultPrevented, takeFlashed(editor) ];
+        };
+        // Without a reference, the button has no address to follow.
+        expect(click()).toEqual([ false, [] ]);
+        setModelData(editor.model, content.replace("[]", "")
+            + "<paragraph>[<reference href=\"#root/abc?block=h\"></reference>]</paragraph>");
+        expect(referencePreview.label).toBe("Jump to heading");
+        expect(click()).toEqual([ true, [ "Intro" ] ]);
+        const cancel = vi.fn();
+        referencePreview.fire("navigate", "#root/def", cancel);
+        expect(cancel).not.toHaveBeenCalled();
+    });
+});
+
+/** The text of the blocks that flash in `editor`, which stop flashing. */
+function takeFlashed(editor: ClassicEditor) {
+    const flashed = [ ...editor.editing.view.getDomRoot()?.querySelectorAll(
+        ".block-reference-flash") ?? [] ];
+    for (const element of flashed) {
+        element.classList.remove("block-reference-flash");
+    }
+    return flashed.map((element) => element.textContent);
+}
 
 describe("the provider of note links", () => {
     afterEach(() => {

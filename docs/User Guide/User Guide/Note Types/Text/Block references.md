@@ -10,9 +10,9 @@ Block references are [links](Links.md) to a block of a text note, such as a para
 
 Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy link to tab_ instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
 
-The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text.
+The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text, and a link to a heading of the same note shows the whole heading.
 
-If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link to this block_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them.
+If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link to this block_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them. On a shared page, a link to blocks of another shared note does the same.
 
 The _Paste_ submenu of the context menu offers two more ways to insert a copied reference:
 
@@ -21,9 +21,24 @@ The _Paste_ submenu of the context menu offers two more ways to insert a copied 
 
 In a browser, the context menu of the text editor opens only when right-clicking selected text. Elsewhere the browser shows its own menu.
 
+## Linking to a heading
+
+Since v0.107.0, a link to a heading of the same note can be created from the _Add link_ dialog:
+
+*   Place the cursor at the desired position of the link, or select the text to turn into a link.
+*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the dialog.
+*   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading, which can be collapsed. Optionally, type a _Link title_.
+*   Press <kbd>Enter</kbd> or _Add link_ to confirm.
+
+When the link title is not set, the link displays the text of the heading. If the heading gets changed, the link is renamed automatically to the new text, shortly after you stop typing. A link with a title of its own keeps that title.
+
+The link is a block reference to the heading, so it keeps working when the heading is moved. To change the link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> works too. The dialog opens on _Headings & anchors_, with the heading checked. Emptying the _Link title_ there makes the link display the text of the heading again.
+
 ## Following a reference
 
 Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown instead, along with the blocks of the range that still exist.
+
+A link to blocks of the note it is in, such as a link to a heading, scrolls to them and flashes them without leaving the note, as a link within a web page does. This works in read-only notes and on shared pages too. While editing, clicking the link shows its popup: press _Jump to heading_ there, or _Open note_ for other blocks.
 
 ## Including the referenced blocks
 

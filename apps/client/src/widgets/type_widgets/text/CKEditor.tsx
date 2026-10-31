@@ -1,7 +1,8 @@
 import {
-    type CKEditorError, CKTextEditor, ClassicEditor, getAnchorNames, getLinkAtSelection,
-    type IconPickerRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
-    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
+    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor, type DocumentHeading,
+    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
+    type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
+    replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -25,6 +26,13 @@ export interface CKEditorApi {
     getCurrentLink(): LinkAtSelection | null;
     /** The names of the anchors in the document. */
     getAnchors(): string[];
+    /** The headings of the document that have text, in document order. */
+    getHeadings(): DocumentHeading[];
+    /**
+     * The block id of `heading`, which gets a new id first if it has none. `undefined` once the
+     * editor is gone.
+     */
+    assignBlockId(heading: DocumentHeading): string | undefined;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
     /**
      * Rewrites the link around the caret or the selected link preview, as {@link addLink} would
@@ -208,6 +216,14 @@ export default function CKEditor({
         getAnchors() {
             const editor = editorRef.current;
             return editor ? getAnchorNames(editor) : [];
+        },
+        getHeadings() {
+            const editor = editorRef.current;
+            return editor ? getHeadings(editor) : [];
+        },
+        assignBlockId(heading) {
+            const model = editorRef.current?.model;
+            return model && assignBlockId(model, heading.element);
         },
         async updateLink(notePath, linkTitle, externalLink) {
             const editor = editorRef.current;

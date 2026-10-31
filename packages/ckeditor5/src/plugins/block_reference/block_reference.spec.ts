@@ -3,12 +3,13 @@ import {
     BlockToolbar, type ClassicEditor, CodeBlock, Essentials, Heading, List, type ModelNode,
     Paragraph, Table
 } from "ckeditor5";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
 import BlockDragHandle from "../block_drag_handle.js";
 import Multicolumn from "../multicolumn/multicolumn.js";
 import BlockReference from "./block_reference.js";
+import { assignBlockId, type LinkedBlockChangedEvent } from "./block_reference_editing.js";
 
 const PLUGINS = [
     Essentials, Paragraph, Heading, BlockQuote, CodeBlock, List, Table, BlockReference
@@ -171,6 +172,26 @@ describe("BlockReference", () => {
         });
     });
 
+    describe("assignBlockId", () => {
+        it("gives a block a new id outside the undo history, and returns an id it has", async () => {
+            const editor = await createTestEditor(PLUGINS);
+            setModelData(editor.model,
+                "<paragraph>one[]</paragraph><heading1 blockId=\"a\">two</heading1>");
+            editor.execute("insertText", { text: "!" });
+
+            const id = assignBlockId(editor.model, getBlock(editor, 0));
+            expect(id).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(getBlock(editor, 0).getAttribute("blockId")).toBe(id);
+            expect(assignBlockId(editor.model, getBlock(editor, 0))).toBe(id);
+            expect(assignBlockId(editor.model, getBlock(editor, 1))).toBe("a");
+
+            // The first undo takes back the typing, not the id.
+            editor.execute("undo");
+            expect(editor.getData()).toBe(
+                `<p data-trilium-block-id="${id}">one</p><h2 data-trilium-block-id="a">two</h2>`);
+        });
+    });
+
     describe("duplicate ids", () => {
         it("removes the id from a pasted copy", async () => {
             const editor = await createTestEditor(PLUGINS);
@@ -236,6 +257,118 @@ describe("BlockReference", () => {
             );
 
             expect(editor.getData()).toBe("<p data-trilium-block-id=\"a\">one</p><p>two</p>");
+        });
+    });
+
+    describe("linkedBlockChanged", () => {
+        const CONTENT = "<heading1 blockId=\"h\">Intro[]</heading1>"
+            + "<blockQuote blockId=\"q\"><paragraph>Quote</paragraph></blockQuote>"
+            + "<paragraph>Plain</paragraph>";
+
+        /** An editor with `modelData`, and the ids each `linkedBlockChanged` reports since. */
+        async function watch(modelData = CONTENT) {
+            const editor = await createTestEditor(PLUGINS);
+            vi.useFakeTimers();
+            onTestFinished(() => {
+                vi.useRealTimers();
+            });
+            setModelData(editor.model, modelData);
+            const reports: (string[] | null)[] = [];
+            editor.plugins.get("BlockReferenceEditing").on<LinkedBlockChangedEvent>(
+                "linkedBlockChanged",
+                (_evt, blockIds) => reports.push(blockIds && [ ...blockIds ].sort())
+            );
+            vi.runAllTimers();
+            reports.length = 0;
+            return { editor, reports };
+        }
+
+        function type(editor: ClassicEditor, block: ModelNode) {
+            editor.model.change((writer) => writer.setSelection(block, "end"));
+            editor.execute("insertText", { text: "!" });
+        }
+
+        it("reports the blocks with an id whose text changed once editing pauses", async () => {
+            const { editor, reports } = await watch();
+
+            editor.execute("insertText", { text: "!" });
+            vi.advanceTimersByTime(299);
+            editor.execute("insertText", { text: "?" });
+            vi.advanceTimersByTime(299);
+            expect(reports).toStrictEqual([]);
+            vi.advanceTimersByTime(1);
+            expect(reports).toStrictEqual([ [ "h" ] ]);
+
+            // A block counts for the blocks around it, and a pause reports all of them at once.
+            type(editor, getBlock(editor, 1).getChild(0) as ModelNode);
+            type(editor, getBlock(editor, 0));
+            vi.runAllTimers();
+            expect(reports).toStrictEqual([ [ "h" ], [ "h", "q" ] ]);
+        });
+
+        it("reports nothing for blocks without an id, for formatting or for a redraw", async () => {
+            const { editor, reports } = await watch();
+
+            type(editor, getBlock(editor, 2));
+            editor.execute("enter");
+            editor.execute("insertTable", { rows: 1, columns: 1 });
+            editor.model.change((writer) => writer.setAttribute(
+                "bold", true, writer.createRangeIn(getBlock(editor, 0))
+            ));
+            editor.editing.reconvertItem(getBlock(editor, 0));
+            vi.runAllTimers();
+            expect(reports).toStrictEqual([]);
+
+            type(editor, getBlock(editor, 0));
+            vi.runAllTimers();
+            expect(reports).toStrictEqual([ [ "h" ] ]);
+        });
+
+        it("reports a block that gets or loses its id, or that is removed", async () => {
+            const { editor, reports } = await watch(
+                "<heading1 blockId=\"h\">Intro</heading1><paragraph blockId=\"p\">Text</paragraph>"
+            );
+            const report = (change: Parameters<typeof editor.model.change>[0]) => {
+                editor.model.change(change);
+                vi.runAllTimers();
+                return reports.at(-1);
+            };
+
+            expect(report((writer) => writer.setAttribute("blockId", "n", getBlock(editor, 1))))
+                .toStrictEqual([ "n", "p" ]);
+            expect(report((writer) => writer.removeAttribute("blockId", getBlock(editor, 1))))
+                .toStrictEqual([ "n" ]);
+            expect(report((writer) => writer.remove(getBlock(editor, 0)))).toStrictEqual([ "h" ]);
+        });
+
+        it("reports any block once a block that holds others is inserted or removed", async () => {
+            const { editor, reports } = await watch();
+
+            type(editor, getBlock(editor, 0));
+            editor.model.change((writer) => writer.remove(getBlock(editor, 1)));
+            vi.runAllTimers();
+            editor.model.change((writer) => writer.setSelection(getBlock(editor, 1), "end"));
+            editor.execute("blockQuote");
+            type(editor, getBlock(editor, 0));
+            vi.runAllTimers();
+
+            expect(reports).toStrictEqual([ null, null ]);
+        });
+
+        it("reports nothing once it is destroyed", async () => {
+            const { editor } = await watch();
+            const plugin = editor.plugins.get("BlockReferenceEditing");
+            // `destroy()` also removes the listeners, so the report is caught where it is fired.
+            const fire = vi.spyOn(plugin, "fire");
+
+            editor.execute("insertText", { text: "!" });
+            vi.runAllTimers();
+            expect(fire).toHaveBeenCalledExactlyOnceWith("linkedBlockChanged", new Set([ "h" ]));
+            editor.execute("insertText", { text: "!" });
+            plugin.destroy();
+            vi.runAllTimers();
+
+            expect(fire).toHaveBeenCalledExactlyOnceWith("linkedBlockChanged", new Set([ "h" ]));
         });
     });
 

@@ -3,7 +3,7 @@ import "./edit_link.css";
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
@@ -13,11 +13,10 @@ import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
 import Button from "../react/Button";
-import { Card, CardSection, ChoiceCardSection, OptionCardSection } from "../react/Card";
+import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
 import FormTextBox from "../react/FormTextBox";
-import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
@@ -26,10 +25,22 @@ import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAuto
 import { refToJQuerySelector } from "../react/react_utils";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
-type LinkType = "reference-link" | "external-link" | "hyper-link";
-
-/** What the link points at: a note, an address outside Trilium, or an anchor in the document. */
+/**
+ * What the link points at: a note, an address outside Trilium, or a heading or an anchor in the
+ * document.
+ */
 export type LinkTarget = "note" | "url" | "anchor";
+
+/** A heading of the document that the link goes into. */
+export interface LinkHeading {
+    title: string;
+    /** 1 for `<h1>`, up to 6 for `<h6>`. */
+    level: number;
+    /** The block id of the heading, if it has one. */
+    blockId?: string;
+    /** Gives the heading a block id if it has none, and returns the note path of a link to it. */
+    createLinkPath(): string;
+}
 
 export interface EditLinkOpts {
     text: string;
@@ -53,8 +64,8 @@ export interface EditLinkOpts {
      */
     currentLink?: Suggestion;
     /**
-     * The text of the link being edited. The dialog opens with the title not mirroring the note's,
-     * and keeps this text until another note or anchor is picked.
+     * The text of the link being edited, which the title field opens with and keeps until another
+     * note is picked. Without it, a link to a note mirrors the note's title.
      */
     currentTitle?: string;
     /** The description of the link preview being edited. */
@@ -62,12 +73,19 @@ export interface EditLinkOpts {
     /** The anchor within the note that the link being edited points at. */
     currentBookmark?: string;
     /**
-     * The anchors in the document that the link goes into. When given, the dialog has an Anchors
-     * page that links to one of them.
+     * The anchors in the document that the link goes into. When given, the dialog has a Headings
+     * & anchors page that links to one of them.
      */
     anchors?: string[];
     /** The anchor in `anchors` that the link being edited points at. */
     currentAnchor?: string;
+    /**
+     * The headings of the document that the link goes into, in document order. When given, the
+     * Headings & anchors page lists them.
+     */
+    headings?: LinkHeading[];
+    /** The heading in `headings` that the link being edited points at. */
+    currentHeading?: LinkHeading;
     /**
      * The side a new link opens on, the note side by default. A selected URL opens on the web link
      * side.
@@ -177,7 +195,6 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
 function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ linkTitle, setLinkTitle ] = useState("");
     const [ linkDescription, setLinkDescription ] = useState("");
-    const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
@@ -186,11 +203,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ webLink, setWebLink ] = useState("");
     const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
     const [ anchor, setAnchor ] = useState("");
+    const [ heading, setHeading ] = useState<LinkHeading | null>(null);
+    const [ collapsedHeadings, setCollapsedHeadings ] = useState<ReadonlySet<LinkHeading>>(
+        new Set()
+    );
     const [ isShowPending, setIsShowPending ] = useState(false);
     const webLinkRef = useRef<HTMLInputElement>(null);
     const titleRef = useRef<HTMLInputElement>(null);
-    // The text of the link being edited, while it stands in for the picked note's title.
-    const keptTitleRef = useRef<string | null>(null);
+    // The scrolling box around the Headings and Anchors cards.
+    const linkTargetsRef = useRef<HTMLDivElement>(null);
+    const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
     const initialBookmarkRef = useRef("");
     // The title of the link preview being edited, while the title field still shows it.
     const previewTitleRef = useRef<string | null>(null);
@@ -200,18 +222,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const autoFocus = !isMobile();
 
     useEffect(() => {
-        if (opts?.hasSelection || opts?.currentTitle !== undefined) {
-            setLinkType("hyper-link");
-        } else {
-            setLinkType("reference-link");
-        }
-
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
         setTarget(getInitialTarget(opts, initialWebLink));
         setWebLink(initialWebLink ?? "");
         setDisplay(opts?.display ?? "plain");
         setAnchor(opts?.currentAnchor ?? "");
-        keptTitleRef.current = opts?.currentTitle ?? null;
+        setHeading(opts?.currentHeading ?? null);
+        setCollapsedHeadings(new Set());
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
@@ -243,13 +260,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     }
 
     function changeTarget(next: LinkTarget, text = "") {
-        keptTitleRef.current = null;
         setTarget(next);
         setNoteTitle("");
         setLinkTitle("");
         setLinkDescription("");
-        setLinkType(opts?.hasSelection ? "hyper-link" : "reference-link");
         setAnchor("");
+        setHeading(null);
         if (next === "url") {
             changeWebLink(text);
         } else {
@@ -259,6 +275,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     }
 
     useEffect(() => {
+        if (target === "anchor") {
+            scrollToCheckedChoice(linkTargetsRef.current);
+        }
+
         if (!autoFocus) return;
         if (target === "url") {
             webLinkRef.current?.focus();
@@ -285,20 +305,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         return () => input.removeEventListener("paste", onPaste);
     }, [ target, opts ]);
 
-    async function setDefaultLinkTitle(noteId: string) {
-        const title = await tree.getNoteTitle(noteId);
-        setNoteTitle(title);
-        if (keptTitleRef.current === null) {
-            setLinkTitle(title);
-        }
-    }
-
     useEffect(() => {
-        const resetExternalLink = () =>
-            setLinkType((prev) => prev === "external-link" ? "reference-link" : prev);
-
         if (!suggestion) {
-            resetExternalLink();
             setBookmarks([]);
             setSelectedBookmark("");
             return;
@@ -309,7 +317,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (suggestion.notePath) {
             const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
             if (noteId) {
-                setDefaultLinkTitle(noteId);
+                void tree.getNoteTitle(noteId).then(setNoteTitle);
                 (async () => {
                     const note = await froca.getNote(noteId);
                     if (cancelled || !note) return;
@@ -331,24 +339,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     initialBookmarkRef.current = "";
                 })();
             }
-            resetExternalLink();
-        }
-
-        if (suggestion.externalLink) {
-            setLinkType("external-link");
         }
 
         return () => { cancelled = true; };
     }, [suggestion]);
-
-    useEffect(() => {
-        if (keptTitleRef.current !== null) return;
-        if (selectedBookmark) {
-            setLinkTitle(`${noteTitle} - ${selectedBookmark}`);
-        } else {
-            setLinkTitle(noteTitle);
-        }
-    }, [selectedBookmark, noteTitle]);
 
     // Runs one render after `onShown`, so `fillAndFocus()` reads the state set from `opts`.
     useEffect(() => {
@@ -358,6 +352,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     }, [ isShowPending ]);
 
     async function fillAndFocus() {
+        if (target === "anchor") {
+            scrollToCheckedChoice(linkTargetsRef.current);
+        }
+
         if (target === "url" || target === "anchor") {
             const field = target === "url" ? webLinkRef.current : titleRef.current;
             if (autoFocus) {
@@ -408,9 +406,17 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (!opts) return;
 
         if (target === "anchor") {
-            // An anchor link without a text of its own reads as the anchor's name. `true` keeps
-            // the href as it is.
-            if (anchor) opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
+            if (heading) {
+                // `null` makes a reference link, which shows the current text of the heading.
+                const title = opts.hasSelection
+                    ? opts.text || heading.title
+                    : linkTitle.trim() || null;
+                opts.addLink(heading.createLinkPath(), title);
+            } else if (anchor) {
+                // A link without a text of its own reads as the anchor's name. `true` keeps the
+                // href of an anchor link as it is.
+                opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
+            }
             return;
         }
 
@@ -421,7 +427,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             const path = selectedBookmark
                 ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
                 : suggestion.notePath;
-            opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
+            // `null` makes a reference link, which shows the note's current title. A selection
+            // keeps its own text, but `addLink()` needs a title to link it rather than replace it.
+            const title = opts.hasSelection ? opts.text || noteTitle : linkTitle.trim() || null;
+            opts.addLink(path, title);
         } else if (suggestion.externalLink) {
             const url = suggestion.externalLink;
             const text = linkTitle.trim();
@@ -446,7 +455,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
     const handleRef = useRef<NoteAutocompleteHandle>(null);
-    const isEditing = !!opts?.currentLink || !!opts?.currentAnchor;
+    const isEditing = !!opts?.currentLink || !!opts?.currentAnchor || !!opts?.currentHeading;
     const title = opts?.fixLink ? t("add_link.fix_link")
         : isEditing ? t("add_link.edit_link") : t("add_link.add_link");
     const buttonText = opts?.fixLink ? t("add_link.button_fix_link")
@@ -454,8 +463,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     /** The text the link reads as while the title field is empty. */
     function getTitlePlaceholder() {
-        if (target === "anchor") return anchor || undefined;
-        if (target !== "url") return undefined;
+        if (target === "anchor") {
+            return heading ? t("add_link.title_from_heading") : anchor || undefined;
+        }
+        if (target === "note") return t("add_link.title_from_note");
         return isPreview ? t("add_link.page_title")
             : suggestion?.externalLink ?? t("add_link.title_from_url");
     }
@@ -477,7 +488,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
         { value: "note", label: t("add_link.note"), iconSvg: internalLinkIcon }
     ];
-    if (opts?.anchors) {
+    if (opts?.anchors || opts?.headings) {
         targets.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
     }
     const switcher = !opts?.fixLink && (
@@ -489,27 +500,68 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         />
     );
 
+    /** The choice of `item` on the Headings & anchors page, with the headings under it. */
+    function renderHeadingChoice(item: LinkHeading, index: number) {
+        const children = headingTree.get(item) ?? [];
+        return (
+            <ChoiceCardSection
+                key={index}
+                icon="bx bx-heading"
+                isChecked={item === heading}
+                onCheck={() => {
+                    setHeading(item);
+                    setAnchor("");
+                }}
+                subSections={children.map(renderHeadingChoice)}
+                isExpanded={!collapsedHeadings.has(item)}
+                onExpandedChange={(isExpanded) => setCollapsedHeadings((collapsed) => {
+                    const next = new Set(collapsed);
+                    if (isExpanded) {
+                        next.delete(item);
+                    } else {
+                        next.add(item);
+                    }
+                    return next;
+                })}
+            >
+                {item.title}
+            </ChoiceCardSection>
+        );
+    }
+
     const anchors = opts?.anchors ?? [];
-    const anchorPage = (<>
+    const topHeadings = headingTree.get(null) ?? [];
+    const anchorPage = topHeadings.length > 0 || anchors.length > 0 ? (<>
         {showsTitle && <Card>{titleSection}</Card>}
 
-        <Card className="edit-link-anchors" heading={t("add_link.target_anchor")}>
-            {anchors.length > 0 ? anchors.map((name) => (
-                <ChoiceCardSection
-                    key={name}
-                    icon="bx bx-bookmark"
-                    isChecked={name === anchor}
-                    onCheck={() => setAnchor(name)}
-                >
-                    {name}
-                </ChoiceCardSection>
-            )) : (
-                <CardSection className="edit-link-no-anchors">
-                    <NoItems icon="bx bx-bookmark" text={t("add_link.no_anchors")} size="small" />
-                </CardSection>
+        <div ref={linkTargetsRef} className="edit-link-targets">
+            {topHeadings.length > 0 && (
+                <Card className="edit-link-headings" heading={t("add_link.headings")}>
+                    {topHeadings.map(renderHeadingChoice)}
+                </Card>
             )}
-        </Card>
-    </>);
+
+            {anchors.length > 0 && (
+                <Card className="edit-link-anchors" heading={t("add_link.target_anchor")}>
+                    {anchors.map((name) => (
+                        <ChoiceCardSection
+                            key={name}
+                            icon="bx bx-bookmark"
+                            isChecked={name === anchor}
+                            onCheck={() => {
+                                setAnchor(name);
+                                setHeading(null);
+                            }}
+                        >
+                            {name}
+                        </ChoiceCardSection>
+                    ))}
+                </Card>
+            )}
+        </div>
+    </>) : (
+        <NoItems icon="bx bx-heading" text={t("add_link.no_headings_or_anchors")} />
+    );
     const displays = [
         { value: "plain", title: t("add_link.display_plain") },
         { value: "inline", title: t("add_link.display_inline") },
@@ -522,7 +574,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     return {
         title,
         buttonText,
-        hasLink: target === "anchor" ? !!anchor : !!suggestion,
+        hasLink: target === "anchor" ? !!heading || !!anchor : !!suggestion,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
         applyLink,
@@ -598,15 +650,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                             <NoteAutocomplete
                                 inputRef={autocompleteRef}
                                 handleRef={handleRef}
+                                isListAsWideAsField
                                 // A URL picked from the search belongs on the web link side.
                                 onChange={(picked) => {
                                     if (picked?.externalLink) {
                                         changeTarget("url", picked.externalLink);
                                         return;
                                     }
-                                    // Another note takes its own title over the edited link's text.
+                                    // Another note drops the text, so the link mirrors its title.
                                     if (picked?.notePath !== suggestion?.notePath) {
-                                        keptTitleRef.current = null;
+                                        setLinkTitle("");
                                     }
                                     setSuggestion(picked);
                                 }}
@@ -629,31 +682,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                     keyProperty="value"
                                     titleProperty="title"
                                     currentValue={selectedBookmark}
-                                    onChange={(bookmark) => {
-                                        keptTitleRef.current = null;
-                                        setSelectedBookmark(bookmark);
-                                    }}
+                                    onChange={setSelectedBookmark}
                                 />
                             </OptionCardSection>
                         )}
 
-                        {showsTitle && (
-                            <OptionCardSection
-                                className="edit-link-mirror"
-                                name="mirror-title"
-                                label={t("add_link.mirror_title")}
-                                description={t("add_link.mirror_title_description")}
-                                subSectionsVisible={linkType === "hyper-link"}
-                                subSections={titleSection}
-                            >
-                                <FormToggle
-                                    currentValue={linkType === "reference-link"}
-                                    onChange={(mirror) => {
-                                        setLinkType(mirror ? "reference-link" : "hyper-link");
-                                    }}
-                                />
-                            </OptionCardSection>
-                        )}
+                        {showsTitle && titleSection}
                     </>
                 )}
             </Card>
@@ -662,14 +696,43 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 }
 
 /**
- * The page the dialog opens on: Anchors for an edited anchor link, Web link when there is an
- * `initialWebLink`, and Note otherwise.
+ * The page the dialog opens on: Headings & anchors for an edited link to a heading or an anchor,
+ * Web link when there is an `initialWebLink`, and Note otherwise.
  */
 function getInitialTarget(
     opts: EditLinkOpts | undefined, initialWebLink: string | null
 ): LinkTarget {
-    if (opts?.currentAnchor) return "anchor";
+    if (opts?.currentAnchor || opts?.currentHeading) return "anchor";
     return initialWebLink !== null ? "url" : "note";
+}
+
+/**
+ * The headings nested under each heading of `headings`, with the top level under `null`. A heading
+ * nests under the closest heading before it with a lower level.
+ */
+function nestHeadings(headings: LinkHeading[]) {
+    const tree = new Map<LinkHeading | null, LinkHeading[]>();
+    const ancestors: LinkHeading[] = [];
+    for (const heading of headings) {
+        while ((ancestors.at(-1)?.level ?? 0) >= heading.level) {
+            ancestors.pop();
+        }
+
+        const parent = ancestors.at(-1) ?? null;
+        tree.set(parent, [ ...(tree.get(parent) ?? []), heading ]);
+        ancestors.push(heading);
+    }
+
+    return tree;
+}
+
+/** Scrolls the checked choice in `container` to the middle of it, if there is one. */
+function scrollToCheckedChoice(container: HTMLElement | null) {
+    const choice = container?.querySelector<HTMLElement>("[aria-checked=\"true\"]");
+    if (!container || !choice) return;
+
+    const offset = choice.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    container.scrollTop += offset - (container.clientHeight - choice.offsetHeight) / 2;
 }
 
 /**

@@ -285,18 +285,38 @@ export interface ChoiceCardSectionProps {
     icon?: string;
     className?: string;
     children: ComponentChildren;
+    /** The choices nested under this one, as more `ChoiceCardSection`s. */
+    subSections?: JSX.Element[];
+    /** Whether `subSections` are shown. Defaults to `true`. */
+    isExpanded?: boolean;
+    /**
+     * Adds an expander before the icon, which calls this with the new `isExpanded`. Pass it to
+     * every choice of a tree: a choice without `subSections` keeps the space of its hidden
+     * expander, so the labels line up.
+     */
+    onExpandedChange?: (isExpanded: boolean) => void;
 }
 
 /**
  * One segment of a card that lists exclusive choices. A click, Enter or Space checks it, and the
  * checked segment shows a check mark.
  */
-export function ChoiceCardSection(
-    { isChecked, onCheck, icon, className, children }: ChoiceCardSectionProps
-) {
-    return (
+export function ChoiceCardSection({
+    isChecked, onCheck, icon, className, children, subSections, isExpanded = true,
+    onExpandedChange
+}: ChoiceCardSectionProps) {
+    const parentContext = useContext(CardSectionContext);
+    const nestingLevel = parentContext ? parentContext.nestingLevel + 1 : 0;
+    const style = { "--tn-card-section-nesting-level": nestingLevel || null };
+    const isExpandable = !!subSections?.length;
+
+    return <>
         <section
-            className={clsx("tn-card-section tn-card-highlight-on-hover tn-card-choice", className)}
+            className={clsx(
+                "tn-card-section tn-card-highlight-on-hover tn-card-choice", className,
+                { "tn-card-section-nested": nestingLevel > 0 }
+            )}
+            style={style}
             role="radio"
             aria-checked={isChecked}
             tabIndex={0}
@@ -308,11 +328,30 @@ export function ChoiceCardSection(
                 }
             }}
         >
+            {onExpandedChange && (
+                <Icon
+                    icon={isExpanded ? "bx bx-chevron-down" : "bx bx-chevron-right"}
+                    className={clsx("tn-card-choice-expander", {
+                        "tn-card-choice-expander-empty": !isExpandable
+                    })}
+                    onClick={isExpandable ? (event) => {
+                        // Expanding does not check the choice.
+                        event.stopPropagation();
+                        onExpandedChange(!isExpanded);
+                    } : undefined}
+                />
+            )}
             {icon && <Icon icon={icon} className="tn-card-choice-icon" />}
             <span className="tn-card-choice-label">{children}</span>
             {isChecked && <Icon icon="bx bx-check" className="tn-card-choice-check" />}
         </section>
-    );
+
+        {isExpandable && isExpanded && (
+            <CardSectionContext.Provider value={{ nestingLevel }}>
+                {subSections}
+            </CardSectionContext.Provider>
+        )}
+    </>;
 }
 
 // #endregion

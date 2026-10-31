@@ -7,7 +7,7 @@
  * being uploaded flickered and vanished instead of a "cannot upload" toast appearing.
  */
 import type {
-    CKEditorError, CKTextEditor, FileUploadData, LinkAtSelection
+    CKEditorError, CKTextEditor, DocumentHeading, FileUploadData, LinkAtSelection, ModelElement
 } from "@triliumnext/ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -456,12 +456,17 @@ describe("parseLinkHref", () => {
 });
 
 describe("getEditLinkOpts", () => {
-    function createApi(currentLink: LinkAtSelection | null, anchors: string[] = []) {
+    function createApi(
+        currentLink: LinkAtSelection | null, anchors: string[] = [],
+        headings: DocumentHeading[] = []
+    ) {
         return {
             hasSelection: vi.fn(() => true),
             getSelectedText: vi.fn(() => "chosen words"),
             getCurrentLink: vi.fn(() => currentLink),
             getAnchors: vi.fn(() => anchors),
+            getHeadings: vi.fn(() => headings),
+            assignBlockId: vi.fn<(heading: DocumentHeading) => string | undefined>(() => "new"),
             addLink: vi.fn(),
             updateLink: vi.fn(),
             addLinkPreview: vi.fn(),
@@ -537,6 +542,52 @@ describe("getEditLinkOpts", () => {
             anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Start"
         });
         expect(opts.currentLink).toBeUndefined();
+    });
+
+    it("offers the headings of the note, which link to their blocks", () => {
+        const heading = { element: {} as ModelElement, level: 2, text: "Intro" };
+        const api = createApi(null, [], [ heading ]);
+        expect(getEditLinkOpts(api, ready).headings).toBeUndefined();
+
+        const headings = getEditLinkOpts(api, ready, { notePath: "root/abc" }).headings;
+        expect(headings).toMatchObject([ { title: "Intro", level: 2, blockId: undefined } ]);
+        expect(api.assignBlockId).not.toHaveBeenCalled();
+        expect(headings?.[0]?.createLinkPath()).toBe("root/abc?block=new");
+        expect(api.assignBlockId).toHaveBeenCalledExactlyOnceWith(heading);
+        api.assignBlockId.mockReturnValueOnce("a b");
+        expect(headings?.[0]?.createLinkPath()).toBe("root/abc?block=a%20b");
+        // Without an editor, the link goes to the note.
+        api.assignBlockId.mockReturnValueOnce(undefined);
+        expect(headings?.[0]?.createLinkPath()).toBe("root/abc");
+    });
+
+    it("edits a link to a heading of the note as that heading", () => {
+        const intro = { element: {} as ModelElement, level: 2, text: "Intro", blockId: "a" };
+        const edit = (href: string, isReference?: boolean) => getEditLinkOpts(
+            createApi({ href, text: "See intro", display: "plain", isReference }, [], [ intro ]),
+            ready, { notePath: "root/abc" }
+        );
+
+        const opts = edit("#root/other/abc?block=a");
+        expect(opts).toMatchObject({ currentTitle: "See intro", currentHeading: { title: "Intro" } });
+        expect(opts.currentHeading).toBe(opts.headings?.[0]);
+        expect(opts.currentLink).toBeUndefined();
+
+        // A reference link has no title of its own, so that it keeps showing the heading.
+        const reference = edit("#root/abc?block=a", true);
+        expect(reference.currentHeading).toBe(reference.headings?.[0]);
+        expect(reference.currentTitle).toBeUndefined();
+
+        // A link to another note, to a range of blocks or to a block that is not a heading keeps
+        // the Note page.
+        for (const href of [
+            "#root/def?block=a", "#root/abc?block=a:b", "#root/abc?block=b", "#root/abc"
+        ]) {
+            const other = edit(href);
+            expect(other.currentHeading).toBeUndefined();
+            expect(other.currentLink?.notePath).toMatch(/^root\/(abc|def)/);
+        }
+        expect(edit("https://example.com/abc?block=a").currentHeading).toBeUndefined();
     });
 
     it("opens a new link on the side and with the display it is asked for", () => {

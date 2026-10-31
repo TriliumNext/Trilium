@@ -547,16 +547,17 @@ describe("CK config - tables", () => {
         let noteId = "n1";
         const referenceLink = (await buildConfig(baseOpts({ getNoteId: () => noteId }))).referenceLink;
         const element = document.createElement("span");
+        const content = document.createElement("div");
 
-        referenceLink?.renderTitle?.(element, "#root/n2", "Stored");
+        referenceLink?.renderTitle?.(element, "#root/n2", "Stored", content);
         noteId = "n3";
         referenceLink?.renderTitle?.(element, "#root/n2");
 
         expect(referenceLink?.getTitle).toBe(linkService.getReferenceLinkTitle);
         expect(referenceLink?.getTitleSync).toBe(linkService.getReferenceLinkTitleSync);
         expect(loadTitle.mock.calls.map(([ $el, ...rest ]) => [ $el[0], ...rest ])).toEqual([
-            [ element, "#root/n2", "n1", "Stored" ],
-            [ element, "#root/n2", "n3", undefined ]
+            [ element, "#root/n2", "n1", "Stored", content ],
+            [ element, "#root/n2", "n3", undefined, undefined ]
         ]);
     });
 

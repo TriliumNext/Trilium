@@ -1,17 +1,21 @@
 import "./block_reference.css";
 
-import { resolveBlockReference } from "@triliumnext/commons";
+import { BLOCK_ID_ATTRIBUTE, parseBlockRange } from "@triliumnext/commons";
 
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
 
 const MAX_CACHED_NOTES = 20;
 const EXCERPT_LENGTH = 60;
+const HEADING_TAG = /^H[1-6]$/;
+const BLOCK_LINK = "a.reference-link[href*=\"block=\"]";
 
 /** What a reference link shows for the blocks it points at. */
 export interface BlockReferenceLabel {
     text: string;
     isBroken: boolean;
+    /** Whether the blocks are one heading, whose whole text the label holds. */
+    isHeading: boolean;
 }
 
 interface CachedContent {
@@ -28,7 +32,7 @@ const cache = new Map<string, CachedContent>();
  */
 export async function loadBlockReferenceLabel(note: FNote, block: string) {
     const content = await loadContent(note);
-    return content ? getLabel(content, block) : null;
+    return content ? getBlockReferenceLabel(content, block) : null;
 }
 
 /** The label of {@link loadBlockReferenceLabel}, if the content of `note` is loaded already. */
@@ -38,7 +42,7 @@ export function getCachedBlockReferenceLabel(note: FNote, block: string) {
         return null;
     }
 
-    return getLabel(cached.content, block);
+    return getBlockReferenceLabel(cached.content, block);
 }
 
 /** A short text of the blocks from `start` to `end`. */
@@ -52,13 +56,46 @@ export function getBlockExcerpt(start: Element, end: Element) {
     return texts.join(" … ") || t("block_reference.untitled");
 }
 
-function getLabel(content: Document, block: string): BlockReferenceLabel {
-    const { start, end } = resolveBlockReference<Element>(content.body, block);
-    if (!start || !end) {
-        return { text: t("block_reference.broken"), isBroken: true };
+/**
+ * The label of a reference to `block`, a `block` link parameter, of the blocks under `root`, such
+ * as the content of an editor.
+ */
+export function getBlockReferenceLabel(root: ParentNode, block: string): BlockReferenceLabel {
+    const blocks = findBlocks(root, block);
+    if (!blocks) {
+        return { text: t("block_reference.broken"), isBroken: true, isHeading: false };
     }
 
-    return { text: getBlockExcerpt(start, end), isBroken: false };
+    const [ start, end ] = blocks;
+    if (start === end && HEADING_TAG.test(start.tagName)) {
+        const text = getText(start) || t("block_reference.untitled");
+        return { text, isBroken: false, isHeading: true };
+    }
+
+    return { text: getBlockExcerpt(start, end), isBroken: false, isHeading: false };
+}
+
+/**
+ * The first and the last block that `block` points at under `root`, in document order, as
+ * `resolveBlockReference()` finds them. A selector reaches the blocks with an id without a walk
+ * through every node.
+ */
+function findBlocks(root: ParentNode, block: string): [ Element, Element ] | null {
+    const range = parseBlockRange(block);
+    if (!range) {
+        return null;
+    }
+
+    const blocks = [ ...root.querySelectorAll(`[${BLOCK_ID_ATTRIBUTE}]`) ];
+    const indexOf = (id: string) =>
+        blocks.findIndex((element) => element.getAttribute(BLOCK_ID_ATTRIBUTE) === id);
+    const start = indexOf(range.startId);
+    const end = indexOf(range.endId);
+    if (start < 0 || end < 0) {
+        return null;
+    }
+
+    return [ blocks[Math.min(start, end)], blocks[Math.max(start, end)] ];
 }
 
 function loadContent(note: FNote) {
@@ -97,12 +134,23 @@ function loadContent(note: FNote) {
     return entry.loaded;
 }
 
-/** The text of `element`; a tab is named by its title. */
+/**
+ * The text of `element`; a tab is named by its title. The labels of the block references in it are
+ * left out, since they hold the text of a block, which can be this one.
+ */
 function getText(element: Element) {
     const title = element.matches(".trilium-tab")
         ? element.querySelector(":scope > .trilium-tab-title")
         : null;
-    return ((title ?? element).textContent ?? "").replace(/\s+/g, " ").trim();
+    let source = title ?? element;
+    if (source.querySelector(BLOCK_LINK)) {
+        source = source.cloneNode(true) as Element;
+        for (const link of source.querySelectorAll(BLOCK_LINK)) {
+            link.remove();
+        }
+    }
+
+    return (source.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
 function truncate(text: string, maxLength: number) {
