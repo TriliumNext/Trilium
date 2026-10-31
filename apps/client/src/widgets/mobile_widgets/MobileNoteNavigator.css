@@ -236,6 +236,15 @@
     background: var(--hover-item-background-color);
 }
 
+.mobile-navigator-current-open {
+    display: flex;
+    align-items: center;
+    align-self: flex-end;
+    gap: 2px;
+    color: var(--main-text-color);
+    font-weight: 500;
+}
+
 .mobile-navigator-current-preview {
     position: relative;
     font-size: 0.92em;

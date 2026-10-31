@@ -374,6 +374,7 @@ export default function MobileNoteNavigator() {
                                     />
                                 ))}
                             </div>
+                            {isPhone && <OpenNoteFooter />}
                         </div>
                     )}
 
@@ -507,6 +508,19 @@ export function UnhoistButton({ hoistedNoteId, onUnhoist }: { hoistedNoteId: str
                 {hoistedTitle ?? hoistedNote?.title ?? ""}
             </span>
         </button>
+    );
+}
+
+/**
+ * The label at the foot of the column's tile, which tells that a tap on the tile opens its note. The
+ * tile itself runs the tap, so the label is not a button of its own.
+ */
+export function OpenNoteFooter() {
+    return (
+        <span className="mobile-navigator-current-open">
+            {t("mobile_note_navigator.open")}
+            <Icon icon={getChevronIcon("forward")} />
+        </span>
     );
 }
 

@@ -2885,6 +2885,7 @@
     "loading": "Loading...",
     "empty": "This note has no children.",
     "current_note": "This note",
+    "open": "Open",
     "children_count_one": "{{count}} child note",
     "children_count_other": "{{count}} child notes",
     "children_hidden": "Child notes are hidden from the tree",

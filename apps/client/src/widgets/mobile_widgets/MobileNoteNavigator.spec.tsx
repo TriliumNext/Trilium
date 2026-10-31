@@ -12,7 +12,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, OpenNoteFooter, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -269,6 +269,14 @@ describe("ForwardToNoteButton", () => {
 
         button?.click();
         expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "detail" });
+    });
+});
+
+describe("OpenNoteFooter", () => {
+    it("labels the tile as opening its note, with a forward chevron after the label", () => {
+        const footer = renderInto(<OpenNoteFooter />).querySelector(".mobile-navigator-current-open");
+        expect(footer?.textContent).toBe("mobile_note_navigator.open");
+        expect(footer?.lastElementChild?.matches(".bx.bx-chevron-right")).toBe(true);
     });
 });
 
