@@ -28,10 +28,24 @@
   --board-muted-text-color: var(--muted-text-color);
   /* Saturation and lightness of the text colors of a card with a hue. Only the hue comes from the
      note's color, and the theme sets the lightness, so a colored card is as readable as a plain one. */
-  --board-text-saturation: 30%;
-  --board-text-lightness: 8%;
+  --board-text-saturation: 50%;
+  --board-text-lightness: 22%;
   --board-muted-text-saturation: 20%;
   --board-muted-text-lightness: 40%;
+}
+
+/* The same defaults for a dark theme. On `:root` so that a theme's own `:root` rule overrides them. */
+:where(:root:has(> body.dark-theme)) {
+  --board-item-background-saturation: 21%;
+  --board-item-background-lightness: 32%;
+
+  --board-item-hover-background-saturation: 25%;
+  --board-item-hover-background-lightness: 35%;
+
+  --board-text-saturation: 25%;
+  --board-text-lightness: 80%;
+  --board-muted-text-saturation: 18%;
+  --board-muted-text-lightness: 73%;
 }
 
 :where(.tn-note-card) {
