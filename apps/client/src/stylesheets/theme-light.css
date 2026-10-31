@@ -49,6 +49,8 @@ html {
     --hover-item-background-color: transparent;
     --hover-item-border-color: #ccc;
 
+    --menu-item-arrow-color: #00000080;
+
     --active-item-text-color: black;
     --active-item-background-color: #ddd;
     --active-item-border-color: transparent;

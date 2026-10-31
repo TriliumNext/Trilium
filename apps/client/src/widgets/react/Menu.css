@@ -137,7 +137,7 @@ body[dir="rtl"] .dropdown-menu.tn-menu {
 }
 
 body.desktop .dropdown-item.dropdown-submenu.tn-menu-split {
-    /* The box of the arrow `.dropdown-toggle::after` draws in theme-next/base.css. */
+    /* The box of the arrow `.dropdown-toggle::after` draws in FormList.css. */
     --tn-menu-split-toggle-width: calc(1.2em + 8px);
     --menu-item-end-padding: calc(var(--tn-menu-split-toggle-width) + 10px);
 
