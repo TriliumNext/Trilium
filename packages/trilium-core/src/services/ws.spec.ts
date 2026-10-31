@@ -48,6 +48,10 @@ function existingEntityChangeId(entityName: string, entityId: string): number {
     return id;
 }
 
+function lastMessageTo(clientId: string): WebSocketMessage | undefined {
+    return sentToClient.filter((sent) => sent.clientId === clientId).at(-1)?.message;
+}
+
 // All entity-change ids we drive through buildFrontendUpdateMessage.
 const ecIds: number[] = [];
 
@@ -150,6 +154,54 @@ describe("ws service (real DB)", () => {
         }
 
         expect(sentToClient).toContainEqual({ clientId: "client-2", message: { type: "ping", protectedSessionAvailable: true } });
+    });
+
+    it("brings a connection up to date on its first ping, with the changes it missed", async () => {
+        const handler = clientHandler;
+        if (!handler) throw new Error("handler not registered");
+
+        const lastSeen = insertEntityChange("notes", "wsSeenNote");
+        const missed = insertEntityChange("notes", "wsMissedNote");
+        await handler("woken-1", { type: "ping", lastEntityChangeId: lastSeen });
+
+        const reply = lastMessageTo("woken-1");
+        if (reply?.type !== "frontend-update") throw new Error(`expected a frontend-update, got ${reply?.type}`);
+        expect(reply.data.entityChanges.map((entityChange) => entityChange.id)).toEqual([ missed ]);
+    });
+
+    it("answers a connection's later pings plainly, its changes being broadcast anyway", async () => {
+        const handler = clientHandler;
+        if (!handler) throw new Error("handler not registered");
+
+        const lastSeen = insertEntityChange("notes", "wsSeenNote2");
+        await handler("woken-2", { type: "ping", lastEntityChangeId: lastSeen });
+        insertEntityChange("notes", "wsBroadcastNote");
+        await handler("woken-2", { type: "ping", lastEntityChangeId: lastSeen });
+
+        expect(lastMessageTo("woken-2")).toEqual({ type: "ping", protectedSessionAvailable: false });
+    });
+
+    it("answers a connection that has seen every change plainly", async () => {
+        const handler = clientHandler;
+        if (!handler) throw new Error("handler not registered");
+
+        const latest = insertEntityChange("notes", "wsLatestNote");
+        await handler("up-to-date", { type: "ping", lastEntityChangeId: latest });
+
+        expect(lastMessageTo("up-to-date")).toEqual({ type: "ping", protectedSessionAvailable: false });
+    });
+
+    it("tells a connection too far behind to reload rather than replay everything", async () => {
+        const handler = clientHandler;
+        if (!handler) throw new Error("handler not registered");
+
+        const lastSeen = insertEntityChange("notes", "wsLongAgoNote");
+        for (let i = 0; i < 2001; i++) {
+            insertEntityChange("notes", `wsBulk${i}`);
+        }
+        await handler("asleep-for-ages", { type: "ping", lastEntityChangeId: lastSeen });
+
+        expect(lastMessageTo("asleep-for-ages")?.type).toBe("reload-frontend");
     });
 
     it("sync status helpers broadcast the matching message types with lastSyncedPush", () => {
