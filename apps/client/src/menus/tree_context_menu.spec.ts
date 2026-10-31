@@ -19,7 +19,7 @@ vi.mock("../services/i18n", () => ({
 
 describe("buildTreeContextMenuItems", () => {
     /** The menu for a child note, with the note type data the insert submenus read stubbed. */
-    function setUp() {
+    function setUp(target?: "mobile") {
         vi.spyOn(noteTypesService, "loadNoteTypeData")
             .mockResolvedValue({ builtInTemplateNotes: [], userTemplateNotes: [], newTemplates: new Set() });
         const parent = buildNote({ title: "Parent", children: [ { title: "Child" } ] });
@@ -28,7 +28,7 @@ describe("buildTreeContextMenuItems", () => {
         if (!child || !branch) throw new Error("expected the child and its branch");
 
         const build = () => buildTreeContextMenuItems({
-            note: child, branch, notePath: `${parent.noteId}/${child.noteId}`, component: {} as Component
+            note: child, branch, notePath: `${parent.noteId}/${child.noteId}`, component: {} as Component, target
         });
         return { child, build };
     }
@@ -80,6 +80,19 @@ describe("buildTreeContextMenuItems", () => {
         expect(open.items?.map((item) => "command" in item && item.command))
             .toStrictEqual([ "openInTab", "openNoteInSplit", "openNoteInWindow" ]);
         expect(quickEdit.command).toBe("openNoteInPopup");
+    });
+
+    it("lists a new tab and a new split as rows of their own on mobile, without a new window", async () => {
+        const { build } = setUp("mobile");
+        const items = await build();
+        const separator = items.findIndex((item) => "kind" in item && item.kind === "separator");
+        const rows = items.slice(separator + 1, separator + 4);
+
+        expect(rows.map((item) => !("kind" in item) && [ item.command, item.items ])).toStrictEqual([
+            [ "openInTab", undefined ],
+            [ "openNoteInSplit", undefined ],
+            [ "openNoteInPopup", undefined ]
+        ]);
     });
 
     it("ends with Advanced, right after Search in subtree", async () => {

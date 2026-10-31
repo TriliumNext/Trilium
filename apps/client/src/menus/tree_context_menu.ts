@@ -195,8 +195,12 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
 
         { kind: "separator" },
 
-        // As the link context menu has it: the row opens a new tab, its arrow the other places.
-        {
+        // As the link context menu has it: the row opens a new tab, its arrow the other places. A
+        // mobile menu runs no action of a submenu's row, so there the places are rows of their own.
+        ...(isMobileTarget ? [
+            { title: t("tree-context-menu.open-in-a-new-tab"), command: "openInTab", uiIcon: "bx bx-link-external", enabled: noSelectedNotes },
+            { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right", enabled: noSelectedNotes }
+        ] satisfies MenuItem<TreeCommandNames>[] : [ {
             title: t("link_context_menu.open_note"),
             command: "openInTab",
             uiIcon: "bx bx-link-external",
@@ -206,7 +210,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                 { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right" },
                 { title: t("tree-context-menu.open-in-a-new-window"), command: "openNoteInWindow", uiIcon: "bx bx-window-open" }
             ]
-        },
+        } satisfies MenuItem<TreeCommandNames> ]),
         { title: t("tree-context-menu.open-in-popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit", enabled: noSelectedNotes },
 
         isHoisted
