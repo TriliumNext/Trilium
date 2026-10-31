@@ -437,7 +437,8 @@
     "note-cannot-be-displayed": "Этот тип заметки не может быть отображен.",
     "included-note-requires-credentials": "Это заметка защищена паролем и не может быть отображена здесь.",
     "broken-block-reference": "Поврежденная ссылка",
-    "play-video": "Воспроизвести видео"
+    "play-video": "Воспроизвести видео",
+    "content-not-available": "Это содержимое недоступно."
   },
   "sql_init": {
     "db_not_initialized_desktop": "База данных не инициализирована, следуйте инструкциям на экране.",
