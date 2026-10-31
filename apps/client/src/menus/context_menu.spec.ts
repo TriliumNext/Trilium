@@ -117,6 +117,21 @@ describe("contextMenu", () => {
         expect(onHide).toHaveBeenCalledTimes(1);
     });
 
+    it("hides for `closeOpenPopups()`, as a keyboard shortcut opening a dialog calls it", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const onHide = vi.fn();
+
+        await contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onHide });
+        closeOpenPopups();
+        await vi.waitFor(() => expect(menuElement()).toBeNull());
+        expect(contextMenu.isShown).toBe(false);
+
+        closeOpenPopups();
+        expect(onHide).toHaveBeenCalledTimes(1);
+    });
+
     it("shows only the last of two menus asked for while `Menu` still loads, and hides it", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();

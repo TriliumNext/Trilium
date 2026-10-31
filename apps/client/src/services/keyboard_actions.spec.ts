@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
+import { closeOpenPopups } from "../widgets/react/Popup";
 
 // `appContext` pulls in a very large dependency graph (CKEditor, CodeMirror,
 // Tabulator, …) and at module-load `keyboard_actions.ts` only needs
@@ -12,6 +13,8 @@ vi.mock("../components/app_context.js", () => ({
         tabManager: { activeNtxId: "ntx-active" }
     }
 }));
+
+vi.mock("../widgets/react/Popup", () => ({ closeOpenPopups: vi.fn() }));
 
 // `updateDisplayedShortcuts` formats shortcuts via keyboard_shortcut_display, which resolves each key
 // label through i18n. Stub `t` to resolve the shortcut-key labels the way the translation files do.
@@ -135,7 +138,13 @@ describe("keyboard_actions", () => {
         const boundShortcuts = spy!.mock.calls.map((c) => c[0]);
         expect(boundShortcuts).toEqual(["ctrl+1", "ctrl+2"]);
 
-        // The bound handler routes to appContext.triggerCommand with the active ntx id.
+        // The bound handler closes open menus, then routes to appContext.triggerCommand with the
+        // active ntx id.
+        vi.mocked(closeOpenPopups).mockClear();
+        vi.mocked(appContext.triggerCommand).mockImplementationOnce(() => {
+            expect(closeOpenPopups).toHaveBeenCalledTimes(1);
+            return Promise.resolve();
+        });
         const handler = spy!.mock.calls[0][1] as () => void;
         handler();
         expect(appContext.triggerCommand).toHaveBeenCalledWith("winA", { ntxId: "ntx-active" });
