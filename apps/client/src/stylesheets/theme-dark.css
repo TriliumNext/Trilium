@@ -105,10 +105,6 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
 }
 
-.btn-close {
-    filter: invert(1);
-}
-
 .ck-content pre {
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6) !important;
 }

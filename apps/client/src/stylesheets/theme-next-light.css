@@ -121,11 +121,6 @@
     --modal-border-color: #797979;
     --modal-background-color: white;
     --modal-title-color: gray;
-    --modal-control-button-background: #0000001a;
-    --modal-control-button-color: #737373;
-    --modal-control-button-hover-color: white;
-    --modal-control-button-hover-background: gray;
-    --modal-close-button-hover-background: var(--tab-close-button-hover-background);
     --modal-footer-background: #00000008;
     --modal-footer-color: #00000085;
 

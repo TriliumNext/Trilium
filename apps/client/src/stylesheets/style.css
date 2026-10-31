@@ -63,6 +63,7 @@ body#trilium-app.backdrop-effects-disabled *::after {
 
 :root {
     --submenu-opening-delay: 250ms;
+    --modal-control-button-size: 22px;
     --launcher-pane-size: 53px;
     --bs-body-color: var(--main-text-color);
     /* What a menu, the sidebar or a dialog dims the page behind it with in the phone layout. */
@@ -327,11 +328,6 @@ button.close {
 
 button.close:hover {
     color: var(--hover-item-text-color);
-}
-
-button.custom-title-bar-button {
-    background: transparent;
-    border: unset;
 }
 
 .modal-content {
@@ -832,19 +828,6 @@ table.promoted-attributes-in-tooltip th {
     float: inline-end;
 }
 
-.help-button,
-.custom-title-bar-button {
-    float: inline-end;
-    background: none;
-    font-weight: 900;
-    border: 0;
-    cursor: pointer;
-}
-
-.help-button {
-    color: orange;
-}
-
 /* this is because bootstrap (?) sets code color to red for some reason */
 code {
     color: inherit !important;
@@ -1014,10 +997,82 @@ svg.ck-icon.note-icon {
     padding: 0.5rem 1rem 0.5rem 1rem !important; /* make modal header padding slightly smaller */
 }
 
-.modal-header .help-button,
-.modal-header .custom-title-bar-button {
-    padding: 6px;
-    margin: 0 12px;
+/* Modal and toast control buttons (close and help) */
+
+.modal .modal-header .btn-close,
+.modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button,
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-inline-start: 8px;
+    border: 0;
+    border-radius: 50%;
+    padding: 0;
+    width: var(--modal-control-button-size);
+    height: var(--modal-control-button-size);
+    background: var(--modal-control-button-background);
+    font-size: var(--modal-control-button-size);
+    line-height: normal;
+    font-weight: normal;
+    color: var(--modal-control-button-color);
+    opacity: 1;
+    cursor: default;
+}
+
+.modal .modal-header .btn-close,
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
+    --modal-control-button-hover-background: var(--modal-close-button-hover-background);
+}
+
+.modal .modal-header .btn-close::after,
+#toast-container .toast .toast-header .btn-close::after,
+#toast-container .toast .toast-close .btn-close::after {
+    content: "\ec8d";
+    font-family: boxicons;
+}
+
+.modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button {
+    margin-inline-end: 0;
+    font-size: calc(var(--modal-control-button-size) * .70);
+    font-family: unset;
+    font-weight: bold;
+}
+
+.modal .modal-header .btn-close:hover,
+.modal .modal-header .help-button:hover,
+.modal .modal-header .custom-title-bar-button:hover,
+#toast-container .toast .toast-header .btn-close:hover,
+#toast-container .toast .toast-close .btn-close:hover {
+    background: var(--modal-control-button-hover-background);
+    color: var(--modal-control-button-hover-color);
+}
+
+.modal .modal-header .btn-close:active,
+.modal .modal-header .help-button:active,
+.modal .modal-header .custom-title-bar-button:active,
+#toast-container .toast .toast-header .btn-close:active,
+#toast-container .toast .toast-close .btn-close:active {
+    transform: scale(.85);
+}
+
+.modal .modal-header .btn-close:focus,
+.modal .modal-header .help-button:focus,
+#toast-container .toast .toast-header .btn-close:focus,
+#toast-container .toast .toast-close .btn-close:focus {
+    box-shadow: none !important;
+}
+
+.modal .modal-header .btn-close:focus-visible,
+.modal .modal-header .help-button:focus-visible,
+#toast-container .toast .toast-header .btn-close:focus-visible,
+#toast-container .toast .toast-close .btn-close:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
 }
 
 .modal-content-with-sidebar {

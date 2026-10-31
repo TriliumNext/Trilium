@@ -53,6 +53,12 @@ html {
 
     --menu-item-arrow-color: #00000080;
 
+    --modal-control-button-background: #0000001a;
+    --modal-control-button-color: #737373;
+    --modal-control-button-hover-color: white;
+    --modal-control-button-hover-background: gray;
+    --modal-close-button-hover-background: var(--tab-close-button-hover-background);
+
     --active-item-text-color: black;
     --active-item-background-color: #ddd;
     --active-item-border-color: transparent;
