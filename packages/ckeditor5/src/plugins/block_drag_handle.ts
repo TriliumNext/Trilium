@@ -424,7 +424,7 @@ function clamp(value: number, min: number, max: number) {
  * The range that the handle drags: the selected blocks, widened over the limit elements and the
  * containers that they cover whole.
  */
-function getDraggedRange(model: Model) {
+export function getDraggedRange(model: Model) {
     const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
     const firstBlock = blocks.at(0);
     // The outermost block that holds the last one, so that a collapsible moves whole even when

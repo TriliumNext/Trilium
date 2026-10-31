@@ -249,7 +249,7 @@ describe("copyBlockShareLink", () => {
 });
 
 describe("openBlockHandleMenu", () => {
-    it("offers to copy a reference to the selected blocks, and a public link if shared", () => {
+    it("offers the copy items, then the sort and the delete item after separators", () => {
         const event = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
         const copyReference = vi.fn();
         const copyShareLink = vi.fn();
@@ -258,9 +258,17 @@ describe("openBlockHandleMenu", () => {
             handler: copyReference
         });
 
+        const deleteBlocks = vi.fn();
+        const deleteItem = expect.objectContaining({
+            title: "block_reference.delete:3",
+            handler: deleteBlocks
+        });
+
         openBlockHandleMenu(event, 3, { copyReference });
         openBlockHandleMenu(event, 3, { copyReference, copyShareLink });
         openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" } });
+        openBlockHandleMenu(event, 3, { copyReference, deleteBlocks });
+        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" }, deleteBlocks });
 
         expect(showMenu).toHaveBeenNthCalledWith(1, expect.objectContaining({
             x: event.pageX,
@@ -275,6 +283,15 @@ describe("openBlockHandleMenu", () => {
         }));
         expect(showMenu).toHaveBeenNthCalledWith(3, expect.objectContaining({
             items: [ copyItem, { kind: "separator" }, { title: "SORT" } ]
+        }));
+        expect(showMenu).toHaveBeenNthCalledWith(4, expect.objectContaining({
+            items: [ copyItem, { kind: "separator" }, deleteItem ]
+        }));
+        expect(showMenu).toHaveBeenNthCalledWith(5, expect.objectContaining({
+            items: [
+                copyItem, { kind: "separator" }, { title: "SORT" }, { kind: "separator" },
+                deleteItem
+            ]
         }));
     });
 });
@@ -319,7 +336,7 @@ describe("buildReferenceConfig", () => {
             .toBeLessThan(save.mock.invocationCallOrder[0]);
     });
 
-    it("opens the block handle menu, which copies a reference or the public link", async () => {
+    it("opens the block handle menu, which copies references or deletes the blocks", async () => {
         const { config, editor, save } = buildSource();
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
@@ -344,6 +361,15 @@ describe("buildReferenceConfig", () => {
         config.blockReference?.openHandleMenu?.(event, 2);
         expect(buildSortSelectionMenuItem).toHaveBeenCalledWith(editor);
         expect(showMenu.mock.calls[2][0].items.at(-1)).toEqual({ title: "SORT" });
+
+        vi.mocked(editor.commands.get).mockReturnValue({ isEnabled: true } as never);
+        config.blockReference?.openHandleMenu?.(event, 2);
+        const deleteItem = showMenu.mock.calls[3][0].items.at(-1);
+        expect(deleteItem).toMatchObject({ title: "block_reference.delete:2" });
+        runItem(deleteItem);
+        expect(editor.commands.get).toHaveBeenCalledWith("deleteBlocks");
+        expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks");
+        expect(editor.editing.view.focus).toHaveBeenCalledOnce();
     });
 
     it("copies nothing before the editor or the note is there", async () => {
@@ -576,6 +602,7 @@ function stubRect(element: Element, top: number, bottom: number) {
 function buildEditor(root: HTMLElement, target: unknown) {
     return {
         execute: vi.fn(() => target),
-        editing: { view: { getDomRoot: () => root } }
+        commands: { get: vi.fn() },
+        editing: { view: { getDomRoot: () => root, focus: vi.fn() } }
     } as unknown as CKTextEditor;
 }

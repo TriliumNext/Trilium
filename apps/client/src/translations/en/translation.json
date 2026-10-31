@@ -4863,7 +4863,9 @@
     "untitled": "Block",
     "excerpt": "Excerpt",
     "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
-    "edit_excerpt": "Edit excerpt"
+    "edit_excerpt": "Edit excerpt",
+    "delete_one": "Delete block",
+    "delete_other": "Delete {{count}} blocks"
   },
   "record_meeting": {
     "note_title": "Meeting {{date}}",
