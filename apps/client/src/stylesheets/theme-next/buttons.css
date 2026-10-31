@@ -115,22 +115,6 @@ button.btn.btn-success kbd {
 }
 
 /*
- * Low profile buttons
- */
-
-button.tn-low-profile {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: inherit;
-}
-
-button.tn-low-profile:hover {
-    background-color: var(--icon-button-hover-background);
-}
-
-/*
  * Icon buttons
  */
 

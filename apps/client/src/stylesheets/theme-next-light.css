@@ -75,10 +75,6 @@
     --input-action-button-color: #575757;
     --input-action-button-hover: black;
 
-    --radio-checkbox-background: #0000002e;
-    --radio-checkbox-hover-background: #0000004f;
-    --radio-checkbox-indicator-color: black;
-
     --select-focus-background: white;
     --select-focus-text-color: var(--input-text-color);
     --select-dropdown-text-color: var(--input-text-color);
@@ -121,11 +117,6 @@
     --modal-border-color: #797979;
     --modal-background-color: white;
     --modal-title-color: gray;
-    --modal-control-button-background: #0000001a;
-    --modal-control-button-color: #737373;
-    --modal-control-button-hover-color: white;
-    --modal-control-button-hover-background: gray;
-    --modal-close-button-hover-background: var(--tab-close-button-hover-background);
     --modal-footer-background: #00000008;
     --modal-footer-color: #00000085;
 
@@ -220,18 +211,6 @@
 
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
-
-    --badge-temporaraily-editable-background-color: #35a64c;
-    --badge-read-only-background-color: #c8302c;
-    --badge-office-preview-background-color: #566d87;
-    --badge-share-background-color: #6b6b6b;
-    --badge-snippet-background-color: #6b6b6b;
-    --badge-template-background-color: #ece0c0;
-    --badge-template-text-color: #5a4a26;
-    --badge-clipped-note-background-color: #2284c0;
-    --badge-doc-url-background-color: #2e7d5e;
-    --badge-execute-background-color: #7b47af;
-    --badge-active-content-background-color: rgb(27, 164, 168);
 
     --note-icon-background-color: #4f4f4f;
     --note-icon-color: white;
@@ -413,34 +392,6 @@
 
     --space-usage-donut-hover-saturation: 57%;
     --space-usage-donut-hover-lightness: 68%;
-
-    --board-limit-exceeded-background: #c62828;
-    --board-limit-exceeded-outline: #c6282880;
-    --board-column-background: #e7e7e7;
-    --board-column-background-saturation: 26%;
-    --board-column-background-lightness: 86%;
-
-    --board-item-background-saturation: 100%;
-    --board-item-background-lightness: 96%;
-
-    --board-item-hover-background-saturation: 100%;
-    --board-item-hover-background-lightness: 98.5%;
-
-    --board-drop-hint-background-saturation: 50%;
-    --board-drop-hint-background-lightness: 75%;
-    --board-drop-hint-color: #000000bf;
-
-    --board-text-saturation: 50%;
-    --board-text-lightness: 22%;
-    --board-muted-text-saturation: 20%;
-    --board-muted-text-lightness: 40%;
-    --board-column-header-text-saturation: 40%;
-    --board-column-header-text-lightness: 28%;
-    --board-column-header-muted-text-saturation: 20%;
-    --board-column-header-muted-text-lightness: 40%;
-
-    --board-focus-outline-saturation: 50%;
-    --board-focus-outline-lightness: 34%;
 
     --space-usage-donut-selected-saturation: 35%;
     --space-usage-donut-selected-lightness: 45%;

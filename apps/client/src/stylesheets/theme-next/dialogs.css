@@ -9,94 +9,10 @@
     background: var(--modal-background-color);
 }
 
-/* Modal header */
-.modal .modal-header {
-    border-bottom: unset;
-    user-select: none;
-}
-
 .modal .modal-header .modal-title {
     flex-grow: 1;
     font-size: 1.2em;
     color: var(--modal-title-color);
-}
-
-/* Modal and toast control buttons (close and help) */
-
-.modal .modal-header .btn-close,
-.modal .modal-header .help-button,
-.modal .modal-header .custom-title-bar-button,
-#toast-container .toast .toast-header .btn-close,
-#toast-container .toast .toast-close .btn-close {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-inline-start: 8px;
-    border: 0;
-    border-radius: 50%;
-    padding: 0;
-    width: var(--modal-control-button-size);
-    height: var(--modal-control-button-size);
-    background: var(--modal-control-button-background);
-    font-size: var(--modal-control-button-size);
-    line-height: normal;
-    font-weight: normal;
-    color: var(--modal-control-button-color);
-    opacity: 1;
-    cursor: default;
-}
-
-.modal .modal-header .btn-close,
-#toast-container .toast .toast-header .btn-close,
-#toast-container .toast .toast-close .btn-close {
-    --modal-control-button-hover-background: var(--modal-close-button-hover-background);
-}
-
-.modal .modal-header .btn-close::after,
-#toast-container .toast .toast-header .btn-close::after,
-#toast-container .toast .toast-close .btn-close::after {
-    content: "\ec8d";
-    font-family: boxicons;
-}
-
-.modal .modal-header .help-button,
-.modal .modal-header .custom-title-bar-button {
-    margin-inline-end: 0;
-    font-size: calc(var(--modal-control-button-size) * .70);
-    font-family: unset;
-    font-weight: bold;
-}
-
-.modal .modal-header .btn-close:hover,
-.modal .modal-header .help-button:hover,
-.modal .modal-header .custom-title-bar-button:hover,
-#toast-container .toast .toast-header .btn-close:hover,
-#toast-container .toast .toast-close .btn-close:hover {
-    background: var(--modal-control-button-hover-background);
-    color: var(--modal-control-button-hover-color);
-}
-
-.modal .modal-header .btn-close:active,
-.modal .modal-header .help-button:active,
-.modal .modal-header .custom-title-bar-button:active,
-#toast-container .toast .toast-header .btn-close:active,
-#toast-container .toast .toast-close .btn-close:active {
-    transform: scale(.85);
-}
-
-.modal .modal-header .btn-close:focus,
-.modal .modal-header .help-button:focus,
-#toast-container .toast .toast-header .btn-close:focus,
-#toast-container .toast .toast-close .btn-close:focus {
-    box-shadow: none !important;
-}
-
-.modal .modal-header .btn-close:focus-visible,
-.modal .modal-header .help-button:focus-visible,
-#toast-container .toast .toast-header .btn-close:focus-visible,
-#toast-container .toast .toast-close .btn-close:focus-visible {
-    outline: 2px solid var(--input-focus-outline-color);
-    outline-offset: 2px;
 }
 
 /* Modal footer */

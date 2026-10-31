@@ -7,6 +7,7 @@ import type { NotePresetId } from "../services/note_presets.js";
 import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
+import { registerOpenPopup } from "../widgets/react/Popup";
 
 /**
  * Where the menu opens: beside a point, towards the right unless `orientation` says otherwise, or
@@ -166,6 +167,8 @@ class ContextMenu {
     private stopFollowingLayout?: () => void;
     /** Stops closing the menu on the system back gesture. */
     private stopAnsweringBack?: () => void;
+    /** Stops closing the menu for `closeOpenPopups()`. */
+    private unregisterOpenPopup?: () => void;
 
     constructor() {
         this.cover = utils.isMobile() ? document.getElementById("context-menu-cover") : null;
@@ -224,6 +227,7 @@ class ContextMenu {
             void this.hide();
             return true;
         });
+        this.unregisterOpenPopup = registerOpenPopup(() => void this.hide());
         // A mobile menu is a sheet or placed at the press depending on the layout, decided here,
         // so it closes when a tablet turns past that width.
         if (utils.isMobile() && !options.forcePositionOnMobile) {
@@ -278,6 +282,8 @@ class ContextMenu {
         this.stopFollowingLayout = undefined;
         this.stopAnsweringBack?.();
         this.stopAnsweringBack = undefined;
+        this.unregisterOpenPopup?.();
+        this.unregisterOpenPopup = undefined;
         this.cover?.classList.remove("show");
         document.body.classList.remove("context-menu-shown");
 

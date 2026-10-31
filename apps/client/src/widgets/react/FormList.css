@@ -33,7 +33,7 @@
 }
 
 /* Ends the switch where a submenu row's arrow ends (see `.dropdown-submenu .dropdown-toggle::after`
-   in theme-next/menus.css), rather than at the padding kept for that arrow. */
+   below), rather than at the padding kept for that arrow. */
 .dropdown-item.tn-menu-toggle {
     --menu-item-end-padding: 10px;
 }
@@ -72,4 +72,33 @@
             font-size: calc(var(--icon-button-size) * 0.65);
         }
     }
+}
+
+/* A submenu row's arrow, pinned to the row's end. */
+body.mobile .dropdown-submenu .dropdown-toggle::after,
+body.desktop .dropdown-submenu .dropdown-toggle::after {
+    content: "\ed3b" !important;
+    position: absolute;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    height: 100%;
+    inset-inline-end: 0;
+    margin: unset !important;
+    border: unset !important;
+    padding: 0 4px;
+    font-family: boxicons;
+    font-size: 1.2em;
+    color: var(--menu-item-arrow-color) !important;
+}
+
+/* Right to left, the end side is the left, so the arrow points the other way. */
+body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
+    content: "\ea4d" !important;
+}
+
+/* The width of the arrow's box. The Next theme sets its own padding on the row and the toggle. */
+.dropdown-item.dropdown-submenu {
+    padding-inline-end: calc(1.2em + 8px);
 }

@@ -1,3 +1,5 @@
+import "./FormTextBox.css";
+
 import type { InputHTMLAttributes, LooseInputHTMLAttributes, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 

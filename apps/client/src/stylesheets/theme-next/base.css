@@ -106,8 +106,6 @@
 
     --opaque-icon-button-backdrop-filter: blur(32px) saturate(1000%);
 
-    --modal-control-button-size: 22px;
-
     /* Theme capabilities */
     --tab-note-icons: true;
     --allow-background-effects: true;

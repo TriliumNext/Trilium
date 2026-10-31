@@ -198,6 +198,7 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
         dismiss.current("escape");
         return true;
     }), []);
+    useLayoutEffect(() => registerOpenPopup(() => dismiss.current?.("escape")), []);
 
     // Out of any ancestor that would clip it or, with a transform or a filter, place its fixed
     // position against itself. A browser showing an element fullscreen paints only that element.
@@ -218,6 +219,25 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
     </>;
     return createPortal(portalClassName ? <div className={portalClassName}>{drawn}</div> : drawn,
         container ?? document.fullscreenElement ?? document.body);
+}
+
+/** The functions that close the popups and menus open now; see {@link closeOpenPopups}. */
+const openPopups = new Set<() => void>();
+
+/** Registers `close` for {@link closeOpenPopups} until the returned function runs. */
+export function registerOpenPopup(close: () => void) {
+    openPopups.add(close);
+    return () => {
+        openPopups.delete(close);
+    };
+}
+
+/**
+ * Closes every open popup and the context menu, for something that takes over the screen, such as
+ * a dialog opened by a keyboard shortcut.
+ */
+export function closeOpenPopups() {
+    for (const close of [ ...openPopups ]) close();
 }
 
 /**

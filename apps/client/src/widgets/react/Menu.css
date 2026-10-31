@@ -53,7 +53,6 @@ body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
 
 .tn-menu-page,
 .tn-menu-filterable {
-    --tn-popup-padding: var(--padding, var(--menu-padding-size));
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -137,7 +136,7 @@ body[dir="rtl"] .dropdown-menu.tn-menu {
 }
 
 body.desktop .dropdown-item.dropdown-submenu.tn-menu-split {
-    /* The box of the arrow `.dropdown-toggle::after` draws in theme-next/base.css. */
+    /* The box of the arrow `.dropdown-toggle::after` draws in FormList.css. */
     --tn-menu-split-toggle-width: calc(1.2em + 8px);
     --menu-item-end-padding: calc(var(--tn-menu-split-toggle-width) + 10px);
 
@@ -180,6 +179,8 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
 .dropdown-item.tn-menu-active:not(.disabled) {
     color: var(--hover-item-text-color);
     background-color: var(--hover-item-background-color);
+    /* `!important` outranks the transparent border menus.css gives every `.dropdown-item`. */
+    border-color: var(--hover-item-border-color) !important;
 }
 
 /*

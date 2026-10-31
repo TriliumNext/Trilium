@@ -7,7 +7,7 @@ To create a table, simply press the table button and select with the mouse the d
 
 Since v0.107.0, the same menu starts with an _Insert table…_ item, for a table larger than the grid or to type its size instead:
 
-1.  Click the <span class="tn-icon cke cke-table"></span>button and select _Insert table…_. A small form opens at the cursor.
+1.  Click the <span class="tn-icon cke cke-table"></span> button and select _Insert table…_. A small form opens at the cursor.
 2.  Enter the number of _Columns_ (up to 100) and _Rows_ (up to 1000). The table can have at most 5000 cells in total, for example 1000 rows of 5 columns.
 3.  Optionally, turn on _Use headers_ and enter the number of _Header columns_ and _Header rows_. A table cannot have more header columns or rows than it has columns or rows.
 4.  Press _Insert_ or <kbd>Enter</kbd>.
@@ -48,7 +48,7 @@ Since v0.106.0, right-clicking anywhere inside a table opens a context menu with
 *   _Sort_, below the clipboard section, sorts the rows by the column of the current cell, in _Ascending_ or _Descending_ order. See [Sorting rows](#sorting-rows).
 *   _Delete row_ and _Delete column_, below _Sort_, remove every row or column the selection touches, even when only some of their cells are selected.
 *   _Delete table_ removes the whole table and leaves an empty paragraph in its place. In a table nested inside another, only the inner table is removed.
-*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span>button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
+*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
 
 Right-clicking a cell that is not part of the current selection moves the cursor there first, so the menu always applies to the cell under the pointer.
 
@@ -73,7 +73,7 @@ Right-clicking a cell that is not part of the current selection moves the cursor
 ## Resizing cells
 
 *   Columns can be resized by hovering the mouse over the border of two adjacent cells and dragging it.
-*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span>button of the formatting toolbar or from the [context menu](#context-menu).
+*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span> button of the formatting toolbar or from the [context menu](#context-menu).
 *   By default, the row height is not adjustable using the mouse, but it can be configured from the cell settings (see below).
 *   To adjust exactly the width (in pixels or percentages) of a cell, select the <span class="tn-icon cke cke-table-cell-properties"></span> button.
 
@@ -139,7 +139,7 @@ Outside of tables, <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right<
 
 Since v0.107.0, the rows of a table can be sorted by the values of one column:
 
-*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span>button of the formatting toolbar.
+*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.
 *   To sort only some of the rows, select their cells in the column to sort by, then sort the same way. Sorting is not available while the selection spans more than one column.
 
 Header rows always stay at the top of the table and are never sorted. A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.

@@ -4,6 +4,7 @@ import { formatShortcut, joinShortcut } from "./keyboard_shortcut_display.js";
 import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 import { isPreAuthScreen, isShare } from "./utils.js";
 import type Component from "../components/component.js";
+import { closeOpenPopups } from "../widgets/react/Popup";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 
 const keyboardActionRepo: Record<string, ActionKeyboardShortcut> = {};
@@ -94,6 +95,8 @@ async function setupWindowShortcutsForElement($el: JQuery<HTMLElement>) {
 }
 
 function runWindowAction(actionName: ActionKeyboardShortcut["actionName"]) {
+    // Otherwise an open menu stays over a dialog that the action opens.
+    closeOpenPopups();
     return appContext.triggerCommand(actionName, { ntxId: appContext.tabManager.activeNtxId });
 }
 

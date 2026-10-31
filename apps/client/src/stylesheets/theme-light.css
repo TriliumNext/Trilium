@@ -28,6 +28,8 @@ html {
     --accented-background-color: #f5f5f5;
     --more-accented-background-color: #ddd;
 
+    --icon-button-hover-background: var(--accented-background-color);
+
     --button-background-color: transparent;
     --button-border-color: #ddd;
     --button-text-color: black;
@@ -43,10 +45,22 @@ html {
 
     --input-text-color: black;
     --input-background-color: transparent;
+    --input-focus-outline-color: #00000063;
+    --radio-checkbox-background: color-mix(in srgb, var(--main-text-color) 18%, transparent);
+    --radio-checkbox-hover-background: color-mix(in srgb, var(--main-text-color) 31%, transparent);
+    --radio-checkbox-indicator-color: var(--main-text-color);
 
     --hover-item-text-color: black;
     --hover-item-background-color: transparent;
     --hover-item-border-color: #ccc;
+
+    --menu-item-arrow-color: #00000080;
+
+    --modal-control-button-background: #0000001a;
+    --modal-control-button-color: #737373;
+    --modal-control-button-hover-color: white;
+    --modal-control-button-hover-background: gray;
+    --modal-close-button-hover-background: var(--tab-close-button-hover-background);
 
     --active-item-text-color: black;
     --active-item-background-color: #ddd;
@@ -80,8 +94,12 @@ html {
     --inactive-tab-hover-background-color: #e3e3e3;
     --inactive-tab-text-color: #666;
 
-    --scrollbar-border-color: #ddd;
-    --scrollbar-background-color: #ddd;
+    --scrollbar-thumb-color: color-mix(in srgb, var(--main-text-color) 36%, transparent);
+    --scrollbar-thumb-hover-color: color-mix(in srgb, var(--main-text-color) 40%, transparent);
+    --scrollbar-background-color: transparent;
+
+    --card-background-color: color-mix(in srgb, var(--main-text-color) 6%, transparent);
+    --card-background-hover-color: color-mix(in srgb, var(--main-text-color) 11%, transparent);
     --selection-background-color: #3399FF70;
     --tooltip-background-color: #f8f8f8;
     --link-color: blue;

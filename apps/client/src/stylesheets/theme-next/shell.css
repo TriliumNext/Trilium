@@ -285,12 +285,6 @@ body.layout-horizontal > .horizontal {
         box-shadow 100ms ease-in;
 }
 
-#launcher-pane div.launcher-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 #launcher-pane .launcher-button {
     font-size: var(--launcher-pane-icon-size) !important;
 }
