@@ -9,10 +9,10 @@ import {
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu, { type MenuItem } from "../menus/context_menu.js";
+import contextMenu, { type ContextMenuOptions, type MenuItem } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import {
-    buildSortSelectionMenuItem, getTextEditorContaining
+    buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
@@ -85,17 +85,18 @@ export function buildReferenceConfig(
 
     return {
         blockReference: {
-            openHandleMenu(event, count) {
+            openHandleMenu(event, count, onClose) {
+                const editor = source.getEditor();
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(event, count, {
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
-                        ? () => void copy((editor) => copyBlockShareLink(editor, shareLink))
+                        ? () => void copy((target) => copyBlockShareLink(target, shareLink))
                         : undefined,
-                    sortItem: buildSortSelectionMenuItem(source.getEditor()),
-                    deleteBlocks: getDeleteBlocksAction(source.getEditor())
-                });
+                    sortItem: buildSortSelectionMenuItem(editor),
+                    deleteBlocks: getDeleteBlocksAction(editor)
+                }, editor, onClose);
             },
             copyReference: () => void copy(copyBlockReference)
         },
@@ -105,11 +106,17 @@ export function buildReferenceConfig(
     };
 }
 
-/** Opens the menu of the block handle at `event`, for `count` selected blocks. */
+/**
+ * Opens the menu of the block handle at `event`, for `count` selected blocks, and calls `onClose`
+ * once the menu is closed. `editor` stays focused while the menu is up, so that its handle stays
+ * shown.
+ */
 export function openBlockHandleMenu(
     event: MouseEvent,
     count: number,
-    { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions
+    { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
+    editor?: CKTextEditor | null,
+    onClose?: () => void
 ) {
     const items = [ getCopyItem(count, copyReference) ];
     if (copyShareLink) {
@@ -130,11 +137,19 @@ export function openBlockHandleMenu(
         });
     }
 
+    const editorFocus: Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> = editor
+        ? keepEditorFocused(editor)
+        : {};
     void contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items,
-        selectMenuItemHandler: () => {}
+        selectMenuItemHandler: () => {},
+        onShow: editorFocus.onShow,
+        onHide: () => {
+            editorFocus.onHide?.();
+            onClose?.();
+        }
     });
 }
 

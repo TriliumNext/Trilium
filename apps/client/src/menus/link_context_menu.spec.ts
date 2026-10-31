@@ -24,8 +24,13 @@ const mocks = vi.hoisted(() => ({
     getEmbedBoxSize: vi.fn()
 }));
 
-vi.mock("./text_editor_context_menu", () => ({
+vi.mock("./text_editor_context_menu", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./text_editor_context_menu")>(),
     getTextEditorContaining: mocks.getTextEditorContaining
+}));
+// `text_editor_context_menu` imports `options`, which fails against the partial `utils` mock.
+vi.mock("../services/experimental_features", () => ({
+    isExperimentalFeatureEnabled: () => false
 }));
 
 vi.mock("../services/content_renderer", () => ({

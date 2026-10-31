@@ -8,7 +8,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
 import BlockDragHandle from "../block_drag_handle.js";
 import Multicolumn from "../multicolumn/multicolumn.js";
-import BlockReference from "./block_reference.js";
+import BlockReference, { type BlockReferenceHost } from "./block_reference.js";
 import { assignBlockId, type LinkedBlockChangedEvent } from "./block_reference_editing.js";
 
 const PLUGINS = [
@@ -454,15 +454,39 @@ describe("BlockReference", () => {
             expect(rightDown.defaultPrevented).toBe(true);
             expect(leftDown.defaultPrevented).toBe(false);
             expect(contextMenu.defaultPrevented).toBe(true);
-            expect(openHandleMenu).toHaveBeenCalledWith(contextMenu, 2);
+            expect(openHandleMenu).toHaveBeenCalledWith(contextMenu, 2, expect.any(Function));
 
             editor.enableReadOnlyMode("spec");
             handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
             expect(openHandleMenu).toHaveBeenCalledTimes(1);
         });
 
+        it("tints the blocks that the menu acts on until the host closes it", async () => {
+            const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
+            const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
+                blockReference: { openHandleMenu }
+            });
+            setModelData(editor.model, "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>");
+            editor.editing.view.focus();
+            await expect.poll(() => editor.ui.focusTracker.isFocused).toBe(true);
+            editor.ui.update();
+            const handle = getHandle(editor.plugins.get(BlockDragHandle).buttonView?.element);
+            const getTinted = () => Array.from(
+                getEditable(editor).querySelectorAll(".block-drag-handle-target"),
+                (element) => element.textContent
+            );
+
+            handle.dispatchEvent(new MouseEvent("mouseenter"));
+            handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
+            handle.dispatchEvent(new MouseEvent("mouseleave"));
+            expect(getTinted()).toEqual([ "two" ]);
+
+            openHandleMenu.mock.calls[0][2]();
+            expect(getTinted()).toEqual([]);
+        });
+
         it("uses the button of the block toolbar in the floating toolbar editor", async () => {
-            const openHandleMenu = vi.fn();
+            const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
             const editor = await createTestEditorOf(BalloonEditor, [ ...PLUGINS, BlockToolbar ], {
                 blockToolbar: [ "heading" ],
                 blockReference: { openHandleMenu }
@@ -472,7 +496,10 @@ describe("BlockReference", () => {
             getHandle(editor.plugins.get(BlockToolbar).buttonView.element)
                 .dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
 
-            expect(openHandleMenu).toHaveBeenCalledWith(expect.any(MouseEvent), 1);
+            expect(openHandleMenu).toHaveBeenCalledWith(
+                expect.any(MouseEvent), 1, expect.any(Function));
+            // Without `BlockDragHandle`, closing the menu has no tint to clear.
+            expect(() => openHandleMenu.mock.calls[0][2]()).not.toThrow();
         });
 
         it("keeps the browser menu away without a host for the menu", async () => {
