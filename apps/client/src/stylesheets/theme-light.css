@@ -43,6 +43,7 @@ html {
 
     --input-text-color: black;
     --input-background-color: transparent;
+    --input-focus-outline-color: #00000063;
 
     --hover-item-text-color: black;
     --hover-item-background-color: transparent;
