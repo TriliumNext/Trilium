@@ -47,7 +47,15 @@ export function getTreeStack(tabId: string | null | undefined, notePath: string 
     if (saved && saved.notePath === notePath && saved.hoistedNoteId === hoistedNoteId) {
         return saved.stack;
     }
-    return buildStackForActiveNote(notePath, hoistedNoteId);
+    return buildStackForActiveNote(notePath, hoistedNoteId, true);
+}
+
+/**
+ * The stack of the column that lists the note at `notePath`, which a phone's tree goes back to from
+ * the note, even when the note has children.
+ */
+export function getParentStack(notePath: string | null | undefined, hoistedNoteId: string) {
+    return buildStackForActiveNote(notePath, hoistedNoteId, false);
 }
 
 /**
@@ -91,21 +99,21 @@ export function getLastSegment(notePath: string): string {
     return idx >= 0 ? notePath.slice(idx + 1) : notePath;
 }
 
-function buildStackForActiveNote(activeNotePath: string | null | undefined, hoistedId: string): string[] {
+function buildStackForActiveNote(activeNotePath: string | null | undefined, hoistedId: string, openFolder: boolean): string[] {
     if (!activeNotePath) return [hoistedId];
 
     const segments = activeNotePath.split("/");
     const activeNoteId = segments[segments.length - 1];
     const activeNote = froca.getNoteFromCache(activeNoteId);
 
-    // If the active note is a folder, show its own children; otherwise show its parent's.
+    // With `openFolder`, a folder shows its own children; otherwise the note shows its parent's.
     // Notes marked with `#subtreeHidden` hide their children (e.g. options), so we
     // treat them like leaves and land on the parent column instead of an empty one.
-    const treatAsFolder = !!activeNote?.hasChildren() && !activeNote.isLabelTruthy("subtreeHidden");
+    const treatAsFolder = openFolder && !!activeNote?.hasChildren() && !activeNote.isLabelTruthy("subtreeHidden");
     const parentSegments = treatAsFolder ? segments : segments.slice(0, -1);
 
     // Clamp to the hoisted root.
-    let start = parentSegments.indexOf(hoistedId);
+    let start = segments.indexOf(hoistedId);
     if (start < 0) start = 0;
     const clamped = parentSegments.slice(start);
     if (clamped.length === 0) {

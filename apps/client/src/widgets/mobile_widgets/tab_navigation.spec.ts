@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { enterHoistedNote, forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
+import { enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -22,6 +22,16 @@ describe("tab navigation", () => {
         // A tab whose tree never moved: the column of its note, or a folder's own column.
         expect(getTreeStack("other", "root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
         expect(getTreeStack("other", "root/folder/inner", "root")).toEqual(drilled);
+    });
+
+    it("goes back from a note to the column listing it, even when the note has children", () => {
+        expect(getParentStack("root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
+        expect(getParentStack("root/folder/inner", "root")).toEqual([ "root", "root/folder" ]);
+        expect(getParentStack("root/folder", "root")).toEqual([ "root" ]);
+        // A hoisted tree goes no higher than the hoisted note.
+        expect(getParentStack("root/folder/inner/leaf", "folder")).toEqual([ "folder", "folder/inner" ]);
+        expect(getParentStack("root/folder", "folder")).toEqual([ "folder" ]);
+        expect(getParentStack(null, "root")).toEqual([ "root" ]);
     });
 
     it("keeps a tab's screen beside its tree and forgets both once the tab closes", () => {

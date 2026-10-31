@@ -5,6 +5,7 @@ import type { ComponentChildren } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type Component from "../../components/component";
+import type { Screen } from "../../components/mobile_screen_switcher";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
 import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
@@ -35,7 +36,7 @@ import {
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
-import { enterHoistedNote, getLastSegment, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
+import { enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -55,7 +56,10 @@ export default function MobileNoteNavigator() {
     // so there's no placeholder flash.
     const [nextStack, setNextStack] = useState<string[] | null>(null);
 
-    // Each tab keeps the column its tree was left on, until the tab opens another note or hoists.
+    // Each tab keeps the column its tree was left on, until the tab opens another note or hoists. A
+    // phone reaches the tree back from the note, so while the note shows, the tree stands on the
+    // column listing it.
+    const [activeScreen, setActiveScreen] = useState<Screen>();
     const tabId = noteContext?.getMainContext().ntxId;
     const treeOwnerRef = useRef({ tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId });
     treeOwnerRef.current = { tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId };
@@ -66,9 +70,12 @@ export default function MobileNoteNavigator() {
     }, []);
 
     useEffect(() => {
-        commitStack(getTreeStack(tabId, activeNotePath, effectiveHoistedId));
+        const isNoteShown = utils.isNarrowLayout() && activeScreen !== "tree";
+        commitStack(isNoteShown
+            ? getParentStack(activeNotePath, effectiveHoistedId)
+            : getTreeStack(tabId, activeNotePath, effectiveHoistedId));
         setNextStack(null);
-    }, [tabId, activeNotePath, effectiveHoistedId, commitStack]);
+    }, [tabId, activeNotePath, effectiveHoistedId, activeScreen, commitStack]);
 
     // Rebuild when Froca reports structural changes that could affect the current column.
     // `useNavigatorChildren` is responsible for loading any newly-added child notes asynchronously.
@@ -215,6 +222,7 @@ export default function MobileNoteNavigator() {
     const isTreeShown = useRef(false);
     useTriliumEvent("activeScreenChanged", ({ activeScreen }) => {
         isTreeShown.current = activeScreen === "tree";
+        setActiveScreen(activeScreen);
     });
     const goBackOnSystemBack = useRef<SystemBackHandler>(() => false);
     goBackOnSystemBack.current = () => {
