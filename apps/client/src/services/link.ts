@@ -5,7 +5,9 @@ import {
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
 import linkContextMenuService from "../menus/link_context_menu.js";
-import { getCachedBlockReferenceLabel, loadBlockReferenceLabel } from "./block_excerpts.js";
+import {
+    getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
+} from "./block_excerpts.js";
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -723,14 +725,16 @@ function linkContextMenu(e: PointerEvent) {
 
 /**
  * Fills `$el` with the label of the reference link to `href`. A link to blocks of `hostNoteId`, the
- * note the link is in, shows only the text of the blocks. A link to a note that does not exist
- * shows `storedTitle`, the title the content holds for it.
+ * note the link is in, shows only the text of the blocks, read from `content` when it holds them,
+ * as an editor does. A link to a note that does not exist shows `storedTitle`, the title the
+ * content holds for it.
  */
 async function loadReferenceLinkTitle(
     $el: JQuery<HTMLElement>,
     href: string | null | undefined = null,
     hostNoteId?: string,
-    storedTitle?: string
+    storedTitle?: string,
+    content?: ParentNode | null
 ) {
     const $link = $el[0].tagName === "A" ? $el : $el.find("a");
 
@@ -752,12 +756,15 @@ async function loadReferenceLinkTitle(
     const subjectId = viewScope?.card || noteId;
     const note = subjectId ? await froca.getNote(subjectId, true) : null;
 
-    if (viewScope?.block && note && noteId === hostNoteId) {
-        const label = await loadBlockReferenceLabel(note, viewScope.block);
+    if (viewScope?.block && note && (content || noteId === hostNoteId)) {
+        const label = content
+            ? getBlockReferenceLabel(content, viewScope.block)
+            : await loadBlockReferenceLabel(note, viewScope.block);
         if (label) {
-            $el.text(label.text)
-                .toggleClass("block-reference-broken", label.isBroken)
-                .prepend($("<span>").addClass("tn-icon bx bx-paragraph"));
+            $el.text(label.text).toggleClass("block-reference-broken", label.isBroken);
+            if (!label.isHeading) {
+                $el.prepend($("<span>").addClass("tn-icon bx bx-paragraph"));
+            }
             return;
         }
     }
@@ -840,12 +847,19 @@ async function getReferenceLinkTitle(href: string) {
 
 /**
  * The label of the reference link to `href`, from the notes already in froca. A link to a note that
- * is not there gets `storedTitle`, the title the content holds for it.
+ * is not there gets `storedTitle`, the title the content holds for it. A link to blocks of
+ * `content`, the content the link is in, gets their text.
  */
-function getReferenceLinkTitleSync(href: string, storedTitle?: string) {
+function getReferenceLinkTitleSync(
+    href: string, storedTitle?: string, content?: ParentNode | null
+) {
     const { noteId, viewScope } = parseNavigationStateFromUrl(href);
     if (!noteId) {
         return storedTitle || MISSING_NOTE_TITLE;
+    }
+
+    if (content && viewScope?.block) {
+        return getBlockReferenceLabel(content, viewScope.block).text;
     }
 
     const note = froca.getNoteFromCache(viewScope?.card || noteId);

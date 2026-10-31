@@ -81,7 +81,8 @@
     "anchors": "Headings & anchors",
     "target_anchor": "Anchors",
     "headings": "Headings",
-    "no_headings_or_anchors": "This note doesn't contain any headings or anchors."
+    "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
+    "title_from_heading": "If not set, will always reflect the heading's text"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",

@@ -573,13 +573,17 @@ describe("getEditLinkOpts", () => {
         expect(opts.currentHeading).toBe(opts.headings?.[0]);
         expect(opts.currentLink).toBeUndefined();
 
-        // A reference link keeps the Note page, as does a link to another note, to a range of
-        // blocks or to a block that is not a heading.
-        for (const [ href, isReference ] of [
-            [ "#root/abc?block=a", true ], [ "#root/def?block=a", false ],
-            [ "#root/abc?block=a:b", false ], [ "#root/abc?block=b", false ], [ "#root/abc", false ]
-        ] as const) {
-            const other = edit(href, isReference);
+        // A reference link has no title of its own, so that it keeps showing the heading.
+        const reference = edit("#root/abc?block=a", true);
+        expect(reference.currentHeading).toBe(reference.headings?.[0]);
+        expect(reference.currentTitle).toBeUndefined();
+
+        // A link to another note, to a range of blocks or to a block that is not a heading keeps
+        // the Note page.
+        for (const href of [
+            "#root/def?block=a", "#root/abc?block=a:b", "#root/abc?block=b", "#root/abc"
+        ]) {
+            const other = edit(href);
             expect(other.currentHeading).toBeUndefined();
             expect(other.currentLink?.notePath).toMatch(/^root\/(abc|def)/);
         }

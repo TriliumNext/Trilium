@@ -855,6 +855,25 @@ describe("content_renderer", () => {
                 expect(content).toStrictEqual("<p>Foo</p>");
             });
 
+            it("shows a link to a heading of the note it is in as the text of the heading", () => {
+                const note = buildShareNote({
+                    id: "headingLink1",
+                    content: `<h2 data-trilium-block-id="h">Lists &amp;\n  <em>more</em>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=h">Intro</a></h2>`
+                        + `<p><a class="reference-link" href="#root/headingLink1?block=h">a</a>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=p">b</a>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=gone">c</a></p>`
+                        + `<p data-trilium-block-id="p">Text</p>`
+                });
+
+                const content = getContent(note).content as string;
+
+                expect(content).toContain(`<a class="reference-link type-text"`
+                    + ` href="./headingLink1?block=h"><span>Lists &amp; more</span></a>`);
+                // A link to another block, or to one that is gone, shows the note.
+                expect(content.match(/<span class="tn-icon bx bx-note"><\/span>/g)).toHaveLength(2);
+            });
+
             it("does not treat an external URL's query string as a note ID", () => {
                 const target = buildShareNote({ id: "extIdTarget1", title: "Target" });
                 const href = `https://example.com/${target.noteId}?x=1`;

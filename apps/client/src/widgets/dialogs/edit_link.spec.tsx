@@ -565,7 +565,7 @@ describe("EditLinkDialog", () => {
             .toBe("add_link.no_headings_or_anchors");
     });
 
-    it("lists the headings as a tree above the anchors, and links one by its title", async () => {
+    it("lists the headings as a tree above the anchors, and links one mirroring it", async () => {
         const intro = createHeading("Intro", 2);
         const linux = createHeading("Linux", 4);
         await open({
@@ -596,7 +596,7 @@ describe("EditLinkDialog", () => {
 
         await act(async () => headingRows()[2]?.click());
         expect(checkedHeading()).toBe("Linux");
-        expect(field("text")?.placeholder).toBe("Linux");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_heading");
         // A heading and an anchor are one choice.
         await act(async () => anchorRows()[0]?.click());
         expect([ checkedHeading(), checkedAnchor() ]).toStrictEqual([ undefined, "top" ]);
@@ -605,14 +605,23 @@ describe("EditLinkDialog", () => {
         expect(linux.createLinkPath).not.toHaveBeenCalled();
         await submit();
         expect(linux.createLinkPath).toHaveBeenCalledOnce();
-        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Linux", "Linux");
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Linux", null);
 
         await open({ headings: [ intro ] });
         await act(async () => choice()[2]?.click());
         await act(async () => headingRows()[0]?.click());
-        await type(field("text"), "Read the intro");
+        await type(field("text"), " Read the intro ");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("root/note?block=Intro", "Read the intro");
+
+        // A selection keeps its text, and a selection without one takes the heading's.
+        for (const [ text, title ] of [ [ "some words", "some words" ], [ "", "Intro" ] ]) {
+            await open({ text, hasSelection: true, headings: [ intro ] });
+            await act(async () => choice()[2]?.click());
+            await act(async () => headingRows()[0]?.click());
+            await submit();
+            expect(addLink).toHaveBeenLastCalledWith("root/note?block=Intro", title);
+        }
     });
 
     it("opens an edited heading link on its heading, scrolled to the middle of the list", async () => {
@@ -644,6 +653,12 @@ describe("EditLinkDialog", () => {
         expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", "See usage");
+
+        // A link that mirrors its heading opens with no title, and keeps mirroring it.
+        await open({ anchors: [], headings: [ usage ], currentHeading: usage });
+        expect(field("text")?.value).toBe("");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", null);
     });
 });
 

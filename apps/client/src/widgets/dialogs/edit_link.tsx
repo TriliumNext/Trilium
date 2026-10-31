@@ -406,11 +406,15 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (!opts) return;
 
         if (target === "anchor") {
-            // A link without a text of its own reads as the heading or the anchor's name. `true`
-            // keeps the href of an anchor link as it is.
             if (heading) {
-                opts.addLink(heading.createLinkPath(), linkTitle.trim() || heading.title);
+                // `null` makes a reference link, which shows the current text of the heading.
+                const title = opts.hasSelection
+                    ? opts.text || heading.title
+                    : linkTitle.trim() || null;
+                opts.addLink(heading.createLinkPath(), title);
             } else if (anchor) {
+                // A link without a text of its own reads as the anchor's name. `true` keeps the
+                // href of an anchor link as it is.
                 opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
             }
             return;
@@ -459,7 +463,9 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     /** The text the link reads as while the title field is empty. */
     function getTitlePlaceholder() {
-        if (target === "anchor") return heading?.title || anchor || undefined;
+        if (target === "anchor") {
+            return heading ? t("add_link.title_from_heading") : anchor || undefined;
+        }
         if (target === "note") return t("add_link.title_from_note");
         return isPreview ? t("add_link.page_title")
             : suggestion?.externalLink ?? t("add_link.title_from_url");

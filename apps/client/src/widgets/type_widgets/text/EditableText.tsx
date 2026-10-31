@@ -614,8 +614,7 @@ export function getEditLinkOpts(
     const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
     const currentLink = api.getCurrentLink();
     if (currentLink) {
-        // A reference link opens on the Note page, which keeps it mirroring the heading.
-        const currentHeading = notePath && headings && !currentLink.isReference
+        const currentHeading = notePath && headings
             ? findLinkedHeading(currentLink.href, headings, notePath)
             : undefined;
         return {

@@ -1316,6 +1316,32 @@ describe("block references", () => {
         expect($elsewhere.find("small").text()).toBe("First block");
     });
 
+    it("labels a reference to blocks of the content it is in from that content", async () => {
+        const note = buildNote({
+            title: "Source", content: "<h2 data-trilium-block-id=\"h\">Saved</h2>" + content
+        });
+        const live = document.createElement("div");
+        live.innerHTML = "<h2 data-trilium-block-id=\"h\">Live heading</h2>" + content;
+        const href = (block: string) => `#root/${note.noteId}?block=${block}`;
+        const $heading = $("<span>");
+        const $paragraph = $("<span>");
+        const $saved = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($heading, href("h"), undefined, undefined, live);
+        await linkService.loadReferenceLinkTitle($paragraph, href("b1"), undefined, undefined, live);
+        await linkService.loadReferenceLinkTitle($saved, href("h"), note.noteId);
+
+        // A heading reads as its text alone, without an icon.
+        expect($heading.html()).toBe("Live heading");
+        expect($paragraph.text()).toBe("First block");
+        expect($paragraph.children("span.tn-icon.bx.bx-paragraph")).toHaveLength(1);
+        expect($saved.html()).toBe("Saved");
+        expect(linkService.getReferenceLinkTitleSync(href("h"), "Stored", live))
+            .toBe("Live heading");
+        expect(linkService.getReferenceLinkTitleSync(href("gone"), "Stored", live))
+            .toBe("block_reference.broken");
+    });
+
     it("adds no label to a reference to the blocks of a note that cannot be read", async () => {
         const note = buildNote({ title: "Code", type: "code", content });
         const $el = $("<span>");

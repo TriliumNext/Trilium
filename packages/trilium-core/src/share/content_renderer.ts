@@ -5,7 +5,8 @@ import {
     getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
     type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml,
     renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
-    SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight, sliceToBlockReference
+    resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
+    sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -726,7 +727,9 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, href ?? "", getNote);
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote, {
+                    noteId: note.noteId, content: document
+                });
             }
         }
 
@@ -846,7 +849,15 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  * @param linkEl the <a> element to process.
  * @param href the `href` stored in the note; `handleAttachmentLink()` rewrites the attribute.
  */
-function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNoteFunction) {
+/** The note whose `content` holds a reference link. */
+interface ReferenceLinkHost {
+    noteId: string;
+    content: HTMLElement;
+}
+
+function cleanUpReferenceLinks(
+    linkEl: HTMLElement, href: string, getNote: GetNoteFunction, host?: ReferenceLinkHost
+) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
 
     // Handle attachment reference links
@@ -875,8 +886,37 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${utils.escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
+        // A link to a heading of the note it is in shows the text of the heading, as in the app.
+        const heading = host && note.noteId === host.noteId
+            ? getLinkedHeadingText(host.content, href)
+            : null;
+        const icon = `<span class="${utils.escapeHtml(note.getIcon())}"></span>`;
+        linkEl.innerHTML = heading !== null
+            ? `<span>${utils.escapeHtml(heading)}</span>`
+            : `<span>${icon}${utils.escapeHtml(note.title)}</span>`;
     }
+}
+
+/**
+ * The text of the heading in `content` whose block `href` links to, or `null`. The labels of the
+ * block references in the heading are left out, as in the app.
+ */
+function getLinkedHeadingText(content: HTMLElement, href: string) {
+    const block = new URLSearchParams(href.split("?")[1]).get("block");
+    if (!block) {
+        return null;
+    }
+
+    const { start, end } = resolveBlockReference<HTMLElement>(content, block);
+    if (!start || start !== end || !/^H[1-6]$/.test(start.tagName)) {
+        return null;
+    }
+
+    const heading = start.clone() as HTMLElement;
+    for (const link of heading.querySelectorAll(`a.reference-link[href*="block="]`)) {
+        link.remove();
+    }
+    return heading.textContent.replace(/\s+/g, " ").trim();
 }
 
 /** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
