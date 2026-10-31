@@ -206,7 +206,7 @@
   "set_password": {
     "title": "パスワードの設定",
     "heading": "パスワードの設定",
-    "description": "ウェブから Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
+    "description": "web から Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
     "password": "パスワード",
     "button": "パスワードを設定",
     "password-confirmation": "パスワードの確認"
@@ -336,7 +336,8 @@
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
     "broken-block-reference": "参照が壊れています",
-    "play-video": "動画を再生"
+    "play-video": "動画を再生",
+    "content-not-available": "このコンテンツは利用できません。"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
