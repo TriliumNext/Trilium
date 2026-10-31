@@ -68,6 +68,12 @@
             "enabled": false
         },
         {
+            "description": "The minimatch@<3.1.4 override in pnpm-workspace.yaml is a security floor for consumers of the v3 API (glob@7, @electron/asar@3, multimatch@6, eslint-plugin-react), so it stays on ^3. glob@7 throws on every wildcard pattern under minimatch@10+, which breaks the deb, rpm and flatpak makers in electron-forge make, which only the nightly runs",
+            "matchPackageNames": ["minimatch"],
+            "matchUpdateTypes": ["major"],
+            "enabled": false
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },
