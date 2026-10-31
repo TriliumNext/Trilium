@@ -180,6 +180,8 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
 .dropdown-item.tn-menu-active:not(.disabled) {
     color: var(--hover-item-text-color);
     background-color: var(--hover-item-background-color);
+    /* `!important` outranks the transparent border menus.css gives every `.dropdown-item`. */
+    border-color: var(--hover-item-border-color) !important;
 }
 
 /*
