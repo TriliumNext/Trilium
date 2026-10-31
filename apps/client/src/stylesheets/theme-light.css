@@ -46,6 +46,9 @@ html {
     --input-text-color: black;
     --input-background-color: transparent;
     --input-focus-outline-color: #00000063;
+    --radio-checkbox-background: color-mix(in srgb, var(--main-text-color) 18%, transparent);
+    --radio-checkbox-hover-background: color-mix(in srgb, var(--main-text-color) 31%, transparent);
+    --radio-checkbox-indicator-color: var(--main-text-color);
 
     --hover-item-text-color: black;
     --hover-item-background-color: transparent;

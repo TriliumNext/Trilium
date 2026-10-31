@@ -244,9 +244,150 @@ label.tn-checkbox + label.tn-checkbox {
     margin-inline-start: 12px;
 }
 
-label.tn-radio input[type="radio"],
-label.tn-checkbox input[type="checkbox"] {
-    margin-inline-end: .5em;
+/* Check boxes and radio buttons */
+
+@supports selector(label:has(*)) {
+    /* Check box & radio button commons */
+
+    /* The parent label */
+    label.tn-radio,
+    label.tn-checkbox {
+        --box-size: 1em;
+        --box-label-gap: 0.5em;
+
+        position: relative;
+        padding-inline-start: calc(var(--box-size) + var(--box-label-gap)) !important;
+        user-select: none;
+    }
+
+    /* The original input */
+    label.tn-radio > input[type="radio"],
+    label.tn-checkbox > input[type="checkbox"] {
+        position: absolute;
+        top: 0;
+        inset-inline-start: 0;
+        width: var(--box-size);
+        height: 100%;
+        margin: unset;
+        opacity: 0 !important;
+    }
+
+    label.tn-radio::before,
+    label.tn-radio::after,
+    label.tn-checkbox::before,
+    label.tn-checkbox::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        inset-inline-start: 0;
+        translate: 0 -50%;
+        width: var(--box-size);
+        height: var(--box-size);
+    }
+
+    label.tn-radio:has(> input[type="radio"]:focus-visible)::before,
+    label.tn-checkbox:has(> input[type="checkbox"]:focus-visible)::before {
+        outline: 2px solid var(--input-focus-outline-color);
+    }
+
+    /* Check boxes */
+
+    /* The check box background */
+    label.tn-checkbox::before {
+        border-radius: 3px;
+        background: var(--radio-checkbox-background);
+    }
+
+    label.tn-checkbox:has(> input[type="checkbox"]:not(:disabled)):hover:before {
+        background: var(--radio-checkbox-hover-background);
+    }
+
+    @keyframes checkbox-checked {
+        from {
+            transform: scale(2);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+
+    /* The tick mark */
+    label.tn-checkbox::after {
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ctitle%3echeck-bold%3c/title%3e%3cpath d='M9%2c20.42L2.79%2c14.21L5.62%2c11.38L9%2c14.77L18.88%2c4.88L21.71%2c7.71L9%2c20.42Z' /%3e%3c/svg%3e");
+        mask-position: center center;
+        mask-size: 0.95em;
+        background-color: var(--radio-checkbox-indicator-color);
+        transform: scale(0);
+        opacity: 0;
+        transition:
+            transform 300ms ease-out,
+            opacity 300ms linear;
+    }
+
+    label.tn-checkbox:has(> input[type="checkbox"]:checked)::after {
+        opacity: 1;
+        transform: scale(1);
+        transition: opacity 100ms ease-in-out;
+        animation: checkbox-checked 150ms ease-out;
+    }
+
+    /* The mixed state of a box whose items are partly checked, such as a select-all box. */
+    label.tn-checkbox:has(> input[type="checkbox"]:indeterminate)::after {
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M4 10.5h16v3H4z' /%3e%3c/svg%3e");
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Radio buttons */
+
+    label.tn-radio::before,
+    label.tn-radio::after {
+        border-radius: 50%;
+    }
+
+    /* The outer circle */
+    label.tn-radio::before {
+        background: var(--radio-checkbox-background);
+    }
+
+    label.tn-radio:has(> input[type="radio"]:not(:disabled)):hover::before {
+        background: var(--radio-checkbox-hover-background);
+    }
+
+    @keyframes radio-checked {
+        from {
+            transform: scale(1.5);
+        }
+        to {
+            transform: scale(0.5);
+        }
+    }
+
+    /* The inner circle */
+    label.tn-radio::after {
+        background: var(--radio-checkbox-indicator-color);
+        transform: scale(0);
+        opacity: 0;
+        transition:
+            opacity 300ms linear,
+            transform 300ms ease-in;
+    }
+
+    label.tn-radio:has(> input[type="radio"]:checked)::after {
+        transform: scale(0.5);
+        opacity: 1;
+        transition: opacity 150ms linear;
+        animation: radio-checked 200ms ease-out;
+    }
+
+    /* Disabled check boxes and radio buttons */
+
+    label.tn-radio:has(> input[type="radio"]:disabled)::before,
+    label.tn-radio:has(> input[type="radio"]:disabled)::after,
+    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::before,
+    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::after {
+        opacity: 0.5;
+    }
 }
 
 #left-pane input,
