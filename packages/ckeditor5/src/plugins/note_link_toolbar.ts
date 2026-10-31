@@ -1,13 +1,11 @@
-import {
-    parseBlockRange, resolveBlockReference
-} from '@triliumnext/commons/src/lib/block_reference.js';
+import { parseBlockRange } from '@triliumnext/commons/src/lib/block_reference.js';
 import {
     BookmarkEditing, ButtonView, Command, type Editor, IconUnlink, LinkUI, type ModelElement,
-    Plugin, WidgetToolbarRepository
+    Plugin, type ViewElement, WidgetToolbarRepository
 } from 'ckeditor5';
 
 import { BLOCK_ID } from './block_reference/block_reference_editing.js';
-import { showAnchor, showBlockReference } from './block_reference/block_reference_read_only.js';
+import { showAnchorElement, showBlocks } from './block_reference/block_reference_read_only.js';
 import { createCopyUrlButton } from './copy_link_url.js';
 import InternalLinkPlugin from './internallink.js';
 import {
@@ -155,11 +153,8 @@ function getOpenLinkLabel(editor: Editor, href: string) {
 
     const target = getInNoteTarget(editor, href);
     if (target?.block) {
-        const range = parseBlockRange(target.block);
-        const block = range && range.startId === range.endId
-            ? findBlock(editor, range.startId)
-            : null;
-        return block && /^heading[1-6]$/.test(block.name)
+        const [ first, last ] = findBlockRange(editor, target.block) ?? [];
+        return first && first === last && /^heading[1-6]$/.test(first.name)
             ? editor.t('Jump to heading')
             : editor.t('Jump to block');
     }
@@ -181,6 +176,21 @@ function getInNoteTarget(editor: Editor, href: string) {
     return { block: params.get('block'), bookmark: params.get('bookmark') };
 }
 
+/**
+ * The first and the last block of the note in the editor that `value`, a `block` link parameter,
+ * points at, in document order, or `null` when one is missing.
+ */
+function findBlockRange(editor: Editor, value: string): [ ModelElement, ModelElement ] | null {
+    const range = parseBlockRange(value);
+    const start = range && findBlock(editor, range.startId);
+    const end = range && range.endId !== range.startId ? findBlock(editor, range.endId) : start;
+    if (!start || !end) {
+        return null;
+    }
+
+    return end.isBefore(start) ? [ end, start ] : [ start, end ];
+}
+
 /** The block of the note in the editor whose block id is `blockId`, or `null`. */
 function findBlock(editor: Editor, blockId: string) {
     const root = editor.model.document.getRoot() as ModelElement;
@@ -195,17 +205,30 @@ function findBlock(editor: Editor, blockId: string) {
 
 /** The anchor of the document that `href` links to, or `null`. */
 function getLinkedAnchor(editor: Editor, href: string) {
-    if (!href.startsWith('#') || !editor.plugins.has(BookmarkEditing)) {
-        return null;
-    }
+    return href.startsWith('#') ? findAnchor(editor, href.slice(1)) : null;
+}
 
-    return editor.plugins.get(BookmarkEditing).getElementForBookmarkId(href.slice(1));
+/** The anchor of the note in the editor named `name`, or `null`. */
+function findAnchor(editor: Editor, name: string) {
+    return editor.plugins.has(BookmarkEditing)
+        ? editor.plugins.get(BookmarkEditing).getElementForBookmarkId(name)
+        : null;
+}
+
+/** The element of the editing view's DOM that renders `element` of the model. */
+function toDomElement(editor: Editor, element: ModelElement) {
+    // Every element in the model document has a view element.
+    const viewElement = editor.editing.mapper.toViewElement(element) as ViewElement;
+    return editor.editing.view.domConverter.mapViewToDom(viewElement);
 }
 
 /**
  * Scrolls to the blocks or the anchor of the note that `href` links to and flashes them, as a link
  * within a page does. Returns whether it does. A click with Ctrl, Cmd or Shift is left to the
  * host, which opens the link in a new tab or window.
+ *
+ * The targets are found in the model, as the editing view also renders the content of included
+ * notes, with block ids and anchor names of their own.
  */
 function jumpInNote(editor: Editor, href: string) {
     // The `navigate` event of `LinkUI` does not pass the click, so it is read from `window`.
@@ -214,16 +237,25 @@ function jumpInNote(editor: Editor, href: string) {
         return false;
     }
 
-    const root = editor.editing.view.getDomRoot() as HTMLElement;
     const target = getInNoteTarget(editor, href);
     if (target?.block) {
         // The host opens a broken range in the note context, which shows the error.
-        const { start, end } = resolveBlockReference(root, target.block);
-        return !!start && !!end && showBlockReference(root, target.block);
+        const [ first, last ] = (findBlockRange(editor, target.block) ?? [])
+            .map(block => toDomElement(editor, block));
+        if (first && last) {
+            showBlocks(first, last);
+        }
+        return !!first && !!last;
     }
 
-    const anchor = target?.bookmark ?? (getLinkedAnchor(editor, href) ? href.slice(1) : null);
-    return !!anchor && showAnchor(root, anchor);
+    const anchor = target?.bookmark
+        ? findAnchor(editor, target.bookmark)
+        : getLinkedAnchor(editor, href);
+    const element = anchor && toDomElement(editor, anchor);
+    if (element) {
+        showAnchorElement(element);
+    }
+    return !!element;
 }
 
 declare module 'ckeditor5' {

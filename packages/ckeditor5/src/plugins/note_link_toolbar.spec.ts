@@ -156,13 +156,15 @@ describe("links within the note", () => {
 
         expect([
             "#root/x/abc?block=h", "#root/abc?block=p", "#root/abc?block=h:p",
-            "#root/abc?block=gone", "#root/x/abc?bookmark=top", "#root/abc?bookmark=gone",
+            "#root/abc?block=gone", "#root/abc?block=a:b:c", "#root/x/abc?bookmark=top",
+            "#root/abc?bookmark=gone",
             "#root/abc", "#root/def?block=h", "#root/def?bookmark=top",
             "#root/abc?viewMode=attachments&amp;attachmentId=def&amp;block=h",
             "#top", "#gone", "https://a.example/#top"
         ].map(linkTo)).toStrictEqual([
             "Jump to heading", "Jump to block", "Jump to block",
-            "Jump to block", "Jump to anchor", "Jump to anchor",
+            "Jump to block", "Jump to block", "Jump to anchor",
+            "Jump to anchor",
             "Open note", "Open note", "Open note",
             "Open attachment",
             "Jump to anchor", "#gone", "https://a.example/#top"
@@ -176,14 +178,30 @@ describe("links within the note", () => {
             return [ cancel.mock.calls.length, takeFlashed(editor) ];
         };
         expect([
-            "#top", "#root/x/abc?block=h", "#root/abc?block=h:p", "#root/x/abc?bookmark=top",
+            "#top", "#root/x/abc?block=h", "#root/abc?block=h:p", "#root/abc?block=p:h",
+            "#root/x/abc?bookmark=top",
             "#root/def?block=h", "#root/def?bookmark=top", "#root/abc?block=h:gone",
-            "#root/abc?bookmark=gone"
+            "#root/abc?block=a:b:c", "#root/abc?bookmark=gone"
         ].map(navigate)).toEqual([
-            [ 1, [ "text" ] ], [ 1, [ "Intro" ] ], [ 1, [ "Intro", "text" ] ], [ 1, [ "text" ] ],
+            [ 1, [ "text" ] ], [ 1, [ "Intro" ] ], [ 1, [ "Intro", "text" ] ],
+            [ 1, [ "Intro", "text" ] ], [ 1, [ "text" ] ],
             [ 0, [] ], [ 0, [] ], [ 0, [] ],
-            [ 0, [] ]
+            [ 0, [] ], [ 0, [] ]
         ]);
+
+        // The content of an included note, such as a copy of this note, renders in the editor
+        // with the same block ids and anchor names.
+        const copy = document.createElement("div");
+        copy.innerHTML = "<h2 data-trilium-block-id=\"h\">Copy</h2>"
+            + "<p data-trilium-block-id=\"gone\"><a id=\"top\"></a><a id=\"gone\"></a>Copy</p>";
+        editor.editing.view.getDomRoot()?.prepend(copy);
+        expect([
+            "#root/abc?block=h", "#root/abc?block=gone", "#top", "#root/abc?bookmark=top",
+            "#root/abc?bookmark=gone", "#gone"
+        ].map(navigate)).toEqual([
+            [ 1, [ "Intro" ] ], [ 0, [] ], [ 1, [ "text" ] ], [ 1, [ "text" ] ], [ 0, [] ], [ 0, [] ]
+        ]);
+        copy.remove();
 
         const click = (element: HTMLElement | null | undefined, init: MouseEventInit = {}) => {
             let isCanceled = false;

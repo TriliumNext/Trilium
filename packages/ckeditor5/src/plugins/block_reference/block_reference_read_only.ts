@@ -23,15 +23,22 @@ export function showBlockReference(container: Element, value: string) {
     const { start, end } = resolveBlockReference<HTMLElement>(container, value);
     const first = start ?? end;
     if (first) {
-        const last = start && end ? end : first;
-        // `first` is revealed last, so it stays shown when both are in different tabs of a block.
-        reveal(last);
-        reveal(first);
-        scrollToBlocks(first, last);
-        flashBlocks(getBlockRangeElements(first, last));
+        showBlocks(first, start && end ? end : first);
     }
 
     return !!start && !!end;
+}
+
+/**
+ * Scrolls to the blocks from `first` to `last`, in document order, and flashes them, as
+ * {@link showBlockReference} does.
+ */
+export function showBlocks(first: Element, last: Element) {
+    // `first` is revealed last, so it stays shown when both are in different tabs of a block.
+    reveal(last);
+    reveal(first);
+    scrollToBlocks(first, last);
+    flashBlocks(getBlockRangeElements(first, last));
 }
 
 /**
@@ -42,15 +49,19 @@ export function showAnchor(container: Element, name: string) {
     // Exact comparison: an anchor name can hold characters that a CSS selector does not allow.
     const anchor = Array.from(container.querySelectorAll("[id]"))
         .find((element) => element.id === name);
-    if (!anchor) {
-        return false;
+    if (anchor) {
+        showAnchorElement(anchor);
     }
 
+    return !!anchor;
+}
+
+/** Scrolls to the block that holds `anchor` and flashes it, as {@link showAnchor} does. */
+export function showAnchorElement(anchor: Element) {
     const block = anchor.closest(ANCHOR_BLOCKS) ?? anchor;
     reveal(block);
     scrollToBlocks(block, block);
     flashBlocks([ block ]);
-    return true;
 }
 
 /** Flashes `elements` for a moment. */
