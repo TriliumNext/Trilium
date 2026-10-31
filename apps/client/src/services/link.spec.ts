@@ -25,13 +25,22 @@ vi.mock("./ws.js", () => {
 // (via note_context) and let us assert on the navigation commands link.ts dispatches.
 const triggerCommand = vi.fn();
 const openTabWithNoteWithHoisting = vi.fn();
+const getNoteContextById = vi.fn((_ntxId: string) => ({ noteId: "abcdefghijkl" }));
 vi.mock("../components/app_context.js", () => ({
     default: {
         triggerCommand: (...args: unknown[]) => triggerCommand(...args),
         tabManager: {
-            openTabWithNoteWithHoisting: (...args: unknown[]) => openTabWithNoteWithHoisting(...args)
+            openTabWithNoteWithHoisting: (...args: unknown[]) => openTabWithNoteWithHoisting(...args),
+            getNoteContextById: (ntxId: string) => getNoteContextById(ntxId)
         }
     }
+}));
+
+const showAnchor = vi.fn();
+const showBlockReference = vi.fn();
+vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => ({
+    showAnchor: (...args: unknown[]) => showAnchor(...args),
+    showBlockReference: (...args: unknown[]) => showBlockReference(...args)
 }));
 
 const openInCurrentNoteContext = vi.fn();
@@ -743,22 +752,64 @@ describe("goToLinkExt", () => {
         openSpy.mockRestore();
     });
 
-    it("scrolls to an in-page anchor for non-root hash links", () => {
-        const target = document.createElement("p");
-        target.id = "fn1";
+    it("scrolls to an in-page anchor for non-root hash links, and flashes its block", async () => {
         const content = document.createElement("div");
         content.className = "ck-content";
-        content.appendChild(target);
+        content.innerHTML = "<p id=\"fn1\">note</p><p><a id=\"a&quot;b\"></a>held</p>";
         document.body.appendChild(content);
-        target.scrollIntoView = vi.fn();
 
-        const $link = $("<a id='ref'>").attr("href", "#fn1");
-        content.appendChild($link[0]);
-
-        const handled = goToLinkExt(leftClick(), "#fn1", $link);
-        expect(handled).toBe(true);
-        expect(target.scrollIntoView).toHaveBeenCalled();
+        // One at a time: concurrent imports of a mocked module can each resolve differently.
+        for (const name of [ "fn1", "a\"b" ]) {
+            const $link = $("<a>").attr("href", `#${name}`);
+            content.appendChild($link[0]);
+            expect(goToLinkExt(leftClick(), `#${name}`, $link)).toBe(true);
+            await vi.waitFor(() => expect(showAnchor).toHaveBeenLastCalledWith(content, name));
+        }
+        expect(showAnchor).toHaveBeenCalledTimes(2);
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
         document.body.removeChild(content);
+    });
+
+    it("follows a link to blocks of the note it is in within the page", async () => {
+        const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
+            + "<h2 data-trilium-block-id='h'>Intro</h2></div></div>").appendTo(document.body);
+        const content = split.find(".ck-content")[0];
+        const click = (href: string, $link = $("<a>").appendTo(content), extra = {}) => {
+            goToLinkExt(leftClick(extra), href, $link);
+        };
+
+        click("#root/abcdefghijkl?block=h");
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenCalledExactlyOnceWith(
+            content, "h"));
+        expect(getNoteContextById).toHaveBeenCalledWith("ntx1");
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
+
+        // Another note, a broken range, content outside a note context, or a modifier navigates.
+        click("#root/bcdefghijklm?block=h");
+        click("#root/abcdefghijkl?block=h:gone");
+        click("#root/abcdefghijkl?block=h", $("<a>"));
+        click("#root/abcdefghijkl?block=h", $("<a>").appendTo($("<div class='ck-content'>")));
+        click("#root/abcdefghijkl?block=h", undefined, { shiftKey: true });
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(4);
+        expect(triggerCommand).toHaveBeenCalledOnce();
+        expect(showBlockReference).toHaveBeenCalledOnce();
+        split.remove();
+    });
+
+    it("leaves a jump of the link toolbar's preview button to the editor", () => {
+        const $preview = $("<a class='ck-link-toolbar__preview' target='_blank'>");
+        const handled = leftClick({ isDefaultPrevented: () => true });
+        expect(goToLinkExt(handled, "#root/aaaaaaaaaaaa?block=h", $preview)).toBe(true);
+        expect(handled.preventDefault).not.toHaveBeenCalled();
+        // A double click is two clicks of the button.
+        goToLinkExt(leftClick({ type: "dblclick" }), "#root/aaaaaaaaaaaa", $preview);
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
+        expect(openTabWithNoteWithHoisting).not.toHaveBeenCalled();
+        // A native event, as the canvas hands over, is read the same way.
+        const native = new MouseEvent("click", { cancelable: true });
+        native.preventDefault();
+        expect(goToLinkExt(native, "#intro", $preview)).toBe(true);
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
     });
 
     it("does nothing for an unhandled external link without a protocol match", () => {

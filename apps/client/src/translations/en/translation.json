@@ -79,9 +79,10 @@
     "title_from_url": "Same as the URL",
     "description": "Description",
     "page_description": "Description of the web page",
-    "anchors": "Anchors",
-    "target_anchor": "Target anchor",
-    "no_anchors": "No anchors available."
+    "anchors": "Headings & anchors",
+    "target_anchor": "Anchors",
+    "headings": "Headings",
+    "no_headings_or_anchors": "This note doesn't contain any headings or anchors."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -4718,7 +4719,9 @@
       "create-a-new-child-note": "Create a new child note",
       "create-a-new-child-note-and-insert-a-link-to-it": "Create a new child note and insert a link to it",
       "open-note": "Open note",
-      "open-attachment": "Open attachment"
+      "open-attachment": "Open attachment",
+      "jump-to-heading": "Jump to heading",
+      "jump-to-anchor": "Jump to anchor"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

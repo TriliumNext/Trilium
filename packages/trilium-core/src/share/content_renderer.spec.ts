@@ -228,7 +228,7 @@ describe("content_renderer", () => {
             const nested = getContent(note, { embedsAsReferenceLinks: true }).content as string;
 
             expect(content.match(/Top/g)).toHaveLength(2);
-            expect(nested).toContain(`href="./blkSelf"`);
+            expect(nested).toContain(`href="./blkSelf?block=top"`);
             expect(nested).not.toContain("include-note");
         });
 
@@ -923,6 +923,35 @@ describe("content_renderer", () => {
                 expect(externalLink.getAttribute("target")).toBe("_blank");
                 expect(externalLink.getAttribute("rel")).toBe("noopener noreferrer");
                 expect(externalLink.text).toBe("Ext");
+            });
+
+            it("keeps the blocks that a link points at, inside an included note too", () => {
+                buildShareNote({ id: "blockTarget1", title: "Target" });
+                buildShareNote({
+                    id: "extBlocks001",
+                    title: "Ext",
+                    "#shareExternalLink": "https://example.com/page"
+                });
+                buildShareNote({
+                    id: "includedNote",
+                    content: "<p><a class=\"reference-link\" href=\"#root/blockTarget1?block=c\">"
+                        + "Old</a></p>"
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: "<p><a href=\"#root/x/blockTarget1?block=a:b%20c\">range</a>"
+                        + "<a href=\"#root/extBlocks001?block=a\">ext</a>"
+                        + "<a href=\"#root/blockTarget1?viewMode=source\">plain</a></p>"
+                        + "<section class=\"include-note\" data-note-id=\"includedNote\"></section>"
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+                expect(links.map((link) => [ link.getAttribute("href"), link.text ])).toEqual([
+                    [ "./blockTarget1?block=a:b%20c", "range" ],
+                    [ "https://example.com/page", "ext" ],
+                    [ "./blockTarget1", "plain" ],
+                    [ "./blockTarget1?block=c", "Target" ]
+                ]);
             });
 
             it("links a note with either external link label out, as the navigation does", () => {

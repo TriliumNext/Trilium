@@ -1,6 +1,6 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE,
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
     getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey,
     getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
     type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml,
@@ -823,7 +823,11 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
-            linkEl.setAttribute("href", link.href);
+            // A link to blocks keeps them, which the page of the note scrolls to and flashes.
+            const block = new URLSearchParams(href.split("?")[1]).get("block");
+            linkEl.setAttribute("href", block && !link.isExternal
+                ? `${link.href}?block=${encodeBlockParameter(block)}`
+                : link.href);
             if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
@@ -854,8 +858,15 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
 
     // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
     let noteId = "";
+    // The link of an included note was rewritten already, to `./shareId` and its parameters.
     if (linkEl.hasAttribute("href")) {
-        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : href.slice(href.lastIndexOf("/") + 1);
+        if (href.startsWith("#")) {
+            noteId = getNoteIdFromLink(href);
+        } else if (href.startsWith("./")) {
+            noteId = getNoteIdFromLink(href.slice(2));
+        } else {
+            noteId = href.slice(href.lastIndexOf("/") + 1);
+        }
     }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {

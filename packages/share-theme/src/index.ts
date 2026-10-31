@@ -19,6 +19,7 @@ import "./content/link_embed.css";
 import "./content/full_height.css";
 import "./content/app_view.css";
 import setupCodeCopy from "./content/code_copy.js";
+import setupInPageLinks from "./content/in_page_links.js";
 import setupMath from "./content/math.js";
 import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
@@ -82,6 +83,7 @@ function setupTextNote() {
     const diagrams = $try(setupMermaid);
     $try(setupMath);
     $try(setupCodeCopy);
+    $try(setupInPageLinks);
     $try(() => enhanceLinkPreviews(document.body));
     $try(setupTableScroll);
     $try(setupStickyTableHeaders);

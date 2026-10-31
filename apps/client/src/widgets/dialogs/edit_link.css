@@ -55,21 +55,22 @@
         margin: 0 auto 1rem;
     }
 
-    .edit-link-anchors .tn-card-body {
-        border-radius: var(--card-border-radius);
-        height: 150px;
+    .edit-link-targets {
+        height: 240px;
         overflow-y: auto;
 
-        > .tn-card-section {
-            flex-shrink: 0;
-        }
-
-        > .tn-card-choice:focus-visible {
+        .tn-card-choice:focus-visible {
             outline-offset: -2px;
         }
+    }
 
-        > .edit-link-no-anchors {
-            flex-grow: 1;
+    .edit-link-headings {
+        --card-nested-section-indent: 24px;
+
+        .tn-card-choice-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     }
 }

@@ -240,6 +240,21 @@ function getBlocksById(model: Model, excluded: Set<ModelElement>) {
     return blocks;
 }
 
+/** The id of `block`, which gets a new id first if it has none. */
+export function assignBlockId(model: Model, block: ModelElement): string {
+    const id = block.getAttribute(BLOCK_ID);
+    if (typeof id === "string") {
+        return id;
+    }
+
+    const newId = generateBlockId();
+    // Not an undo step: the id is invisible, so undoing it would seem to do nothing.
+    model.enqueueChange({ isUndoable: false }, (writer) => {
+        writer.setAttribute(BLOCK_ID, newId, block);
+    });
+    return newId;
+}
+
 /** A new random block id. */
 export function generateBlockId() {
     const bytes = crypto.getRandomValues(new Uint8Array(BLOCK_ID_LENGTH));

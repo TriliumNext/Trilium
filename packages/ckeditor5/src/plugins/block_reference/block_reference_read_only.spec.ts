@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 import { applyTabs, getTabTitle } from "../tabs/tabs_read_only.js";
-import { getBlockRangeElements, showBlockReference } from "./block_reference_read_only.js";
+import {
+    getBlockRangeElements, showAnchor, showBlockReference
+} from "./block_reference_read_only.js";
 
 const SPACER = "<div style=\"height: 1000px\"></div>";
 
@@ -153,6 +155,28 @@ describe("showBlockReference", () => {
         expect(showBlockReference(container, "gone:b")).toBe(false);
         expect(scrollBy).toHaveBeenCalledOnce();
         expect(getFlashed(container)).toEqual([ "B" ]);
+    });
+});
+
+describe("showAnchor", () => {
+    it("centers and flashes the block that holds an anchor, or the anchor itself", () => {
+        const scroller = mountScroller(SPACER
+            + "<details><summary>s</summary><p style=\"height: 100px\">"
+            + "<strong><a id=\"a&quot;b\"></a>held</strong></p></details>"
+            + SPACER + "<span id=\"loose\">loose</span>" + SPACER);
+
+        expect(showAnchor(scroller, "a\"b")).toBe(true);
+        expect(scroller.querySelector("details")?.open).toBe(true);
+        const paragraph = scroller.querySelector("p");
+        expect(paragraph?.getBoundingClientRect().top)
+            .toBeCloseTo(scroller.getBoundingClientRect().top + 150);
+        expect(getFlashed(scroller)).toEqual([ "held" ]);
+
+        expect(showAnchor(scroller, "loose")).toBe(true);
+        expect(getFlashed(scroller)).toEqual([ "held", "loose" ]);
+
+        expect(showAnchor(scroller, "missing")).toBe(false);
+        expect(scrollBy).toHaveBeenCalledTimes(2);
     });
 });
 

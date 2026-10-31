@@ -9,6 +9,7 @@ import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.j
 import BlockDragHandle from "../block_drag_handle.js";
 import Multicolumn from "../multicolumn/multicolumn.js";
 import BlockReference from "./block_reference.js";
+import { assignBlockId } from "./block_reference_editing.js";
 
 const PLUGINS = [
     Essentials, Paragraph, Heading, BlockQuote, CodeBlock, List, Table, BlockReference
@@ -168,6 +169,26 @@ describe("BlockReference", () => {
                 isEnabled: false,
                 value: 0
             });
+        });
+    });
+
+    describe("assignBlockId", () => {
+        it("gives a block a new id outside the undo history, and returns an id it has", async () => {
+            const editor = await createTestEditor(PLUGINS);
+            setModelData(editor.model,
+                "<paragraph>one[]</paragraph><heading1 blockId=\"a\">two</heading1>");
+            editor.execute("insertText", { text: "!" });
+
+            const id = assignBlockId(editor.model, getBlock(editor, 0));
+            expect(id).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(getBlock(editor, 0).getAttribute("blockId")).toBe(id);
+            expect(assignBlockId(editor.model, getBlock(editor, 0))).toBe(id);
+            expect(assignBlockId(editor.model, getBlock(editor, 1))).toBe("a");
+
+            // The first undo takes back the typing, not the id.
+            editor.execute("undo");
+            expect(editor.getData()).toBe(
+                `<p data-trilium-block-id="${id}">one</p><h2 data-trilium-block-id="a">two</h2>`);
         });
     });
 
