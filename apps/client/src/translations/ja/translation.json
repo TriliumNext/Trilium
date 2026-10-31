@@ -67,9 +67,21 @@
     "fix_link": "リンクを修正",
     "button_fix_link": "リンクを修正",
     "web_link": "Web リンク",
-    "url": "URL",
+    "url": "アドレス (URL)",
     "mirror_title": "ノートのタイトルを反映",
-    "mirror_title_description": "リンクにはノートの現在のタイトルが表示され、ノートの名前が変更されるとタイトルも変わります。"
+    "mirror_title_description": "リンクにはノートの現在のタイトルが表示され、ノートの名前が変更されるとタイトルも変わります。",
+    "display_as": "表示形式",
+    "display_plain": "プレーンリンク",
+    "display_inline": "インライン",
+    "display_card": "カード",
+    "display_embed": "YouTube 埋め込み",
+    "page_title": "web ページのタイトル",
+    "title_from_url": "URL と同じ",
+    "description": "説明",
+    "page_description": "web ページの説明",
+    "anchors": "アンカー",
+    "target_anchor": "対象のアンカー",
+    "no_anchors": "利用可能なアンカーはありません。"
   },
   "branch_prefix": {
     "save": "保存",
@@ -381,7 +393,7 @@
     "recommended": "推奨",
     "result_subtree_html": "テキストノートを HTML 形式で保存した ZIP アーカイブ。コード、画像、その他のファイルは元の形式が保持されます。",
     "result_subtree_markdown": "テキストノートをマークダウン形式で保存した ZIP アーカイブ。コード、画像、その他のファイルは元の形式が保持されます。",
-    "result_share": "共有ノートテーマを使用した、公開可能な静的ウェブサイトを含む ZIP アーカイブ。",
+    "result_share": "共有ノートテーマを使用した、公開可能な静的 web サイトを含む ZIP アーカイブ。",
     "result_opml": "単一の OPML アウトラインファイル。ノートのタイトルとテキストは含まれますが、画像、コードファイル、添付ファイルは含まれません。",
     "result_single_html": "単一の HTML ファイル。画像や添付ファイルが埋め込まれます。",
     "result_single_markdown": "単一のマークダウン (.md) ファイル。",
@@ -1051,7 +1063,10 @@
     "size_expandable_description": "展開されるまではタイトルのみを表示。",
     "inserted_as_image": "このノートは画像として挿入されます。",
     "size_hint": "サイズは後から変更可能です。",
-    "image_size_hint": "画像のサイズは後から変更可能です。"
+    "image_size_hint": "画像のサイズは後から変更可能です。",
+    "missing_note": "ID {{noteId}} のノートが見つかりません。",
+    "missing_attachment": "ID {{attachmentId}} の添付ファイルが見つかりません。",
+    "unknown_kind": "このコンテンツを表示するには、より新しいバージョンの Trilium が必要です。"
   },
   "ancestor": {
     "placeholder": "ノート名で検索",
@@ -1200,7 +1215,7 @@
   },
   "search_engine": {
     "title": "検索エンジン",
-    "custom_search_engine_info": "ノート内で選択したテキストをウェブで検索するために使用します。",
+    "custom_search_engine_info": "ノート内で選択したテキストを web で検索するために使用します。",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1957,7 +1972,7 @@
     "content_hints_enabled": "コンテンツのヒント",
     "content_hints_description": "エディターの右下隅に、カーソルまたはポインターの下にある要素の操作方法を説明する短いヒントを表示します。",
     "auto_link_previews_enabled": "リンクプレビューを自動生成",
-    "auto_link_previews_description": "検出されたリンクを、Web ページのタイトル、説明、画像を含むプレビューに自動的に変換し、Web クリッパーから送信されたタブをインラインプレビューとして保存します。ツールバーからのプレビュー挿入は、この設定に関係なく常に機能します。",
+    "auto_link_previews_description": "検出されたリンクを、web ページのタイトル、説明、画像を含むプレビューに自動的に変換し、Web クリッパーから送信されたタブをインラインプレビューとして保存します。ツールバーからのプレビュー挿入は、この設定に関係なく常に機能します。",
     "html_support_enabled": "サポートされていない HTML タグを保持する",
     "html_support_description": "「オプション」→「その他」→「HTMLインポートタグ」に記載されている、エディタが独自機能を持たないHTMLタグを保持します。これらは直接編集できないブロックとして表示されますが、認識されないタグは編集画面上で全く表示されない場合もあります。この設定を無効にすると、該当するタグは、ノートを最初に編集・保存した時点で削除されます（インポート処理自体には影響しません）。",
     "mathlive_enabled": "MathLive ビジュアルエディター",
@@ -2066,7 +2081,8 @@
     "backlinks": "バックリンク",
     "content_language_switcher": "コンテンツの言語: {{language}}",
     "insert_child_note_short": "子ノート",
-    "create_new_split_short": "新しい分割表示"
+    "create_new_split_short": "新しい分割表示",
+    "note_panel": "ノートパネル"
   },
   "inherited_attribute_list": {
     "title": "継承属性",
@@ -2805,7 +2821,24 @@
   "presentation_view": {
     "edit-slide": "このスライドを編集",
     "start-presentation": "プレゼンテーションを開始",
-    "slide-overview": "スライドの概要を切り替え"
+    "slide-overview": "スライドの概要を切り替え",
+    "finish-editing": "編集を終了",
+    "new-slide": "新しいスライド",
+    "slide-sidebar": "スライドサイドバー",
+    "menu-edit-slide": "スライドを編集",
+    "menu-new-slide-after": "後ろに新しいスライドを追加",
+    "menu-new-vertical-slide": "新しい縦型スライド",
+    "menu-duplicate": "複製",
+    "menu-move-up": "上に移動",
+    "menu-move-down": "下に移動",
+    "menu-make-vertical": "縦型スライドに変更",
+    "menu-make-top-level": "トップレベルのスライドに変更",
+    "menu-delete": "スライドを削除...",
+    "slide-background": "スライドの背景",
+    "no-slides": "このプレゼンテーションにはスライドがありません。",
+    "previous-slide": "前のスライド",
+    "next-slide": "次のスライド",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "calendar_view": {
     "delete_note": "ノートを削除...",
@@ -2890,10 +2923,10 @@
     "office_preview": "プレビュー",
     "office_preview_description": "このドキュメントは読み取り専用のプレビューとして表示されているため、ここでは編集できません。\n\n編集を行うには、ファイルをダウンロードし、外部アプリケーションで編集してから、新しいリビジョン(更新版)としてアップロードしてください。",
     "shared_preview": "共有プレビュー",
-    "shared_preview_description": "共有ページを開けるのはこのブラウザのみであり、かつ Trilium がそのブラウザで開かれている間だけです。公開するには、サブツリーを \"{{- format}}\" としてエクスポートし、任意の Web サーバーでファイルをホストするか、Trilium サーバーを使用してください。",
+    "shared_preview_description": "共有ページを開けるのはこのブラウザのみであり、かつ Trilium がそのブラウザで開かれている間だけです。公開するには、サブツリーを \"{{- format}}\" としてエクスポートし、任意の web サーバーでファイルをホストするか、Trilium サーバーを使用してください。",
     "shared_export_only": "未公開",
-    "shared_export_only_description": "モバイルアプリでは共有ページを開くことができません。このノートを公開するには、サブツリーを \"{{- format}}\" としてエクスポートし、任意の Web サーバーでファイルをホストするか、Trilium サーバーを使用してください。",
-    "clipped_note_details": "このノートは Web ページから作成されました。クリックすると、ページの説明、作成者、日付を確認できます。",
+    "shared_export_only_description": "モバイルアプリでは共有ページを開くことができません。このノートを公開するには、サブツリーを \"{{- format}}\" としてエクスポートし、任意の web サーバーでファイルをホストするか、Trilium サーバーを使用してください。",
+    "clipped_note_details": "このノートは web ページから作成されました。クリックすると、ページの説明、作成者、日付を確認できます。",
     "clipped_note_author": "作成者",
     "clipped_note_published": "公開日",
     "clipped_note_modified": "更新日",
@@ -2992,13 +3025,13 @@
     "bookmarks": "ブックマーク"
   },
   "web_view_setup": {
-    "title": "Trilium に直接 Web ページのライブビューを作成",
-    "url_placeholder": "Web サイトのアドレスを入力または貼り付けて下さい。 例: https://triliumnotes.org",
+    "title": "Trilium に直接 web ページのライブビューを作成",
+    "url_placeholder": "web サイトのアドレスを入力または貼り付けて下さい。 例: https://triliumnotes.org",
     "create_button": "Web ビューを作成",
     "invalid_url_title": "無効なアドレス",
-    "invalid_url_message": "有効な Web アドレスを入力してください。 例: https://triliumnotes.org。",
-    "disabled_description": "この Web ビューは外部ソースからインポートされました。フィッシングや悪意のあるコンテンツから保護するため、自動的には読み込まれません。ソースを信頼できる場合は、有効にすることができます。",
-    "disabled_button_enable": "Web ビューを有効"
+    "invalid_url_message": "有効な web アドレスを入力してください。 例: https://triliumnotes.org。",
+    "disabled_description": "この web ビューは外部ソースからインポートされました。フィッシングや悪意のあるコンテンツから保護するため、自動的には読み込まれません。ソースを信頼できる場合は、有効にすることができます。",
+    "disabled_button_enable": "web ビューを有効"
   },
   "render": {
     "setup_title": "このノート内にカスタム HTML または Preact JSX を表示",
@@ -3121,8 +3154,8 @@
     "send": "送信",
     "sending": "送信中...",
     "empty_state": "下記にメッセージを入力して会話を始めましょう。",
-    "searching_web": "ウェブ検索中…",
-    "web_search": "ウェブ検索",
+    "searching_web": "web 検索中…",
+    "web_search": "Web 検索",
     "note_tools": "ノートへのアクセス",
     "sources": "ソース",
     "extended_thinking": "思考を拡張",
@@ -3226,8 +3259,8 @@
     "web_search_disabled": "無効",
     "web_search_builtin": "モデルに組み込まれた検索機能を使用",
     "manage_search_providers": "検索プロバイダーの管理…",
-    "web_search_builtin_unsupported": "このモデルには組み込みのウェブ検索機能がありません。代わりに検索プロバイダーを選択してください。",
-    "web_search_provider_unsupported": "このモデルのプロバイダーは、独自のツールを使用してウェブ検索を行います。",
+    "web_search_builtin_unsupported": "このモデルには組み込みの web 検索機能がありません。代わりに検索プロバイダーを選択してください。",
+    "web_search_provider_unsupported": "このモデルのプロバイダーは、独自のツールを使用して web 検索を行います。",
     "searched_with": "{{name}} で検索しました",
     "tool_approval_prompt": "このツール呼び出しを許可しますか？",
     "tool_approval_allow": "許可",
@@ -3364,7 +3397,7 @@
       "search_icons": "アイコンを検索",
       "search_help": "ユーザーガイドを検索",
       "get_help_toc": "ユーザーガイドの目次を取得",
-      "read_web_page": "Web ページの読み込み",
+      "read_web_page": "web ページの読み込み",
       "note_moved_from": "<Note/> from <From/> to <To/>",
       "note_moved": "<Note/> to <To/>",
       "attachment_in_note": "<Title/> in <Note/>",
@@ -3438,7 +3471,7 @@
     "add_model_provider": "モデルプロバイダーを追加",
     "no_model_providers_configured": "モデルプロバイダーはまだ設定されていません。",
     "provider_no_models": "モデルが選択されていないため、チャットでは利用できません。",
-    "search_provider_unavailable_standalone": "ブラウザ版では利用不可: このサービスはウェブページからのリクエストを拒否するため、デスクトップ版またはサーバー版からのみ使用可能です。"
+    "search_provider_unavailable_standalone": "ブラウザ版では利用不可: このサービスは web ページからのリクエストを拒否するため、デスクトップ版またはサーバー版からのみ使用可能です。"
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",
@@ -3689,7 +3722,8 @@
     "current_note": "このノート",
     "children_hidden": "子ノートはツリー上で非表示になっています",
     "workspaces": "ワークスペース",
-    "bookmarks": "ブックマーク"
+    "bookmarks": "ブックマーク",
+    "forward": "ノートに戻る"
   },
   "text-editor": {
     "validation-errors": {
@@ -3945,13 +3979,19 @@
       "image-position": "画像の位置",
       "list": "リスト",
       "list-type": "リストタイプ",
-      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入",
+      "insert-a-preview-of-a-web-page-or-a-video": "web ページや動画のプレビューを挿入",
       "use-headers": "ヘッダーを使用",
       "header-columns": "ヘッダー列",
       "header-rows": "ヘッダー行",
       "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。",
       "extended-code-block": "拡張コードブロック",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "コードノートとして編集可能なコードブロックを挿入します。"
+      "insert-a-code-block-that-is-edited-as-a-code-note": "コードノートとして編集可能なコードブロックを挿入します。",
+      "unknown-embed-widget": "不明な埋め込みウィジェット",
+      "new-child-note": "新しい子ノート",
+      "create-a-new-child-note": "新しい子ノートを作成",
+      "create-a-new-child-note-and-insert-a-link-to-it": "新しい子ノートを作成し、そのリンクを挿入",
+      "open-note": "ノートを開く",
+      "open-attachment": "添付ファイルを開く"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -3982,7 +4022,7 @@
     "restart_now": "今すぐアプリケーションを再起動する",
     "lan_access_title": "ネットワークアクセス",
     "lan_access_section_description": "デフォルトでは、デスクトップアプリはスタンドアロン（自己完結）で動作します。アプリや共有ノートがネットワーク上に公開されることはなく、このコンピューターからのローカル連携（Web クリッパー、MCP、ETAPI など）のみがアクセス可能です。これを有効にすると、ブラウザでアプリや共有ノートを開けるようになり、他のデバイスからの接続（同期など）が可能になります。信頼できるネットワーク上でのみ有効にしてください。",
-    "lan_access_label": "Web およびネットワークアクセスを許可",
+    "lan_access_label": "web およびネットワークアクセスを許可",
     "lan_access_description": "HTTP 経由でアプリ、共有ノート、ライブアップデートを提供します — このコンピュータ上のブラウザや、ネットワーク上の他のデバイスからアクセス可能です。無効にすると、ローカルでの連携機能（Web クリッパー、MCP、ETAPI）のみが利用可能となります。",
     "standalone": {
       "backend_scripting_section_description": "バックエンドスクリプトはこのブラウザ内で実行され、ノート、設定、同期用認証情報への完全なアクセス権を持ちます。これらは、同期やインポート、あるいは実行可能な属性を含むコンテンツによって、ユーザーがノートを開かなくても実行される可能性があります。フロントエンドスクリプトは常に有効ですが、その動作範囲はアプリの機能の範囲内に限定されます。",
