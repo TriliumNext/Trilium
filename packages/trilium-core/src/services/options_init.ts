@@ -380,6 +380,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "llmPermissionMode", value: "ask_before_changes", isSynced: true },
     { name: "aiAssistantModel", value: "", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
+    { name: "mcpReadOnly", value: "false", isSynced: false },
 
     // OCR options
     { name: "ocrAutoProcessImages", value: "false", isSynced: true },

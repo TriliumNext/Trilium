@@ -50,8 +50,10 @@ function registerTool(server: McpServer, name: string, def: ToolDefinition, tool
 /**
  * Build Trilium's MCP server. An in-chat agent's server sets `toolHints: false`: the chat's
  * approvals decide its calls, and Codex runs a tool marked read-only without asking.
+ * `readOnly` keeps mutating tools off the server entirely (the `mcpReadOnly` option of the
+ * external `/mcp` endpoint), so a client cannot call them even if it ignores the annotations.
  */
-export async function createMcpServer({ toolHints = true }: { toolHints?: boolean } = {}): Promise<McpServer> {
+export async function createMcpServer({ toolHints = true, readOnly = false }: { toolHints?: boolean; readOnly?: boolean } = {}): Promise<McpServer> {
     // Host-registered registries (the User Guide tools) load lazily; the array
     // is complete only after this resolves.
     await resolveToolRegistries();
@@ -63,6 +65,10 @@ export async function createMcpServer({ toolHints = true }: { toolHints?: boolea
 
     for (const registry of allToolRegistries) {
         for (const [name, def] of registry) {
+            if (readOnly && def.mutates) {
+                continue;
+            }
+
             registerTool(server, name, def, toolHints);
         }
     }
