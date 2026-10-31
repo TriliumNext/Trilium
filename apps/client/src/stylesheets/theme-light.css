@@ -28,6 +28,8 @@ html {
     --accented-background-color: #f5f5f5;
     --more-accented-background-color: #ddd;
 
+    --icon-button-hover-background: var(--accented-background-color);
+
     --button-background-color: transparent;
     --button-border-color: #ddd;
     --button-text-color: black;
