@@ -1,4 +1,7 @@
 import {
+    parseBlockRange, resolveBlockReference
+} from '@triliumnext/commons/src/lib/block_reference.js';
+import {
     BookmarkEditing, ButtonView, Command, type Editor, IconUnlink, LinkUI, type ModelElement,
     Plugin, WidgetToolbarRepository
 } from 'ckeditor5';
@@ -19,8 +22,8 @@ export const UNLINK_REFERENCE_COMMAND = 'unlinkReference';
 /**
  * The toolbar of a link to a note. A link in the text shows the link toolbar of `LinkUI`, and a
  * reference link shows a widget toolbar with the same buttons. In both, the first button reads
- * "Open note" instead of the address, or "Jump to heading" for a heading of the same note. An
- * anchor link reads "Jump to anchor".
+ * "Open note" instead of the address. A link into the same note reads "Jump to heading", "Jump to
+ * block" or "Jump to anchor", as does an anchor link.
  */
 export default class NoteLinkToolbar extends Plugin {
 
@@ -141,23 +144,45 @@ class UnlinkReferenceCommand extends Command {
 /** A link to a note or to an attachment of one, as opposed to a web address or an anchor. */
 const NOTE_LINK = /^#root(?:[/?]|$)/;
 
-/** The text of the button that follows the link `href` to a note, an attachment or a heading. */
+/**
+ * The text of the button that follows the link `href` to a note, an attachment, or blocks or an
+ * anchor of the note in the editor.
+ */
 function getOpenLinkLabel(editor: Editor, href: string) {
-    const block = getLinkedBlock(editor, href);
-    if (block && /^heading[1-6]$/.test(block.name)) {
-        return editor.t('Jump to heading');
+    if (getAttachmentId(href)) {
+        return editor.t('Open attachment');
     }
 
-    return getAttachmentId(href) ? editor.t('Open attachment') : editor.t('Open note');
+    const target = getInNoteTarget(editor, href);
+    if (target?.block) {
+        const range = parseBlockRange(target.block);
+        const block = range && range.startId === range.endId
+            ? findBlock(editor, range.startId)
+            : null;
+        return block && /^heading[1-6]$/.test(block.name)
+            ? editor.t('Jump to heading')
+            : editor.t('Jump to block');
+    }
+
+    return target?.bookmark ? editor.t('Jump to anchor') : editor.t('Open note');
 }
 
-/** The block of the note in the editor that `href` links to by its block id, or `null`. */
-function getLinkedBlock(editor: Editor, href: string) {
-    const blockId = new URLSearchParams(href.split('?')[1]).get('block');
-    if (!blockId || getNoteId(href) !== editor.config.get('getNoteId')?.()) {
+/**
+ * The `block` and `bookmark` parameters of `href` when it links to the note in the editor, or
+ * `null` for a link elsewhere.
+ */
+function getInNoteTarget(editor: Editor, href: string) {
+    const noteId = editor.config.get('getNoteId')?.();
+    if (!noteId || !NOTE_LINK.test(href) || getNoteId(href) !== noteId) {
         return null;
     }
 
+    const params = new URLSearchParams(href.split('?')[1]);
+    return { block: params.get('block'), bookmark: params.get('bookmark') };
+}
+
+/** The block of the note in the editor whose block id is `blockId`, or `null`. */
+function findBlock(editor: Editor, blockId: string) {
     const root = editor.model.document.getRoot() as ModelElement;
     for (const item of editor.model.createRangeIn(root).getItems()) {
         if (item.is('element') && item.getAttribute(BLOCK_ID) === blockId) {
@@ -178,7 +203,7 @@ function getLinkedAnchor(editor: Editor, href: string) {
 }
 
 /**
- * Scrolls to the block or the anchor of the note that `href` links to and flashes it, as a link
+ * Scrolls to the blocks or the anchor of the note that `href` links to and flashes them, as a link
  * within a page does. Returns whether it does. A click with Ctrl, Cmd or Shift is left to the
  * host, which opens the link in a new tab or window.
  */
@@ -190,12 +215,15 @@ function jumpInNote(editor: Editor, href: string) {
     }
 
     const root = editor.editing.view.getDomRoot() as HTMLElement;
-    const block = getLinkedBlock(editor, href);
-    if (block) {
-        return showBlockReference(root, block.getAttribute(BLOCK_ID) as string);
+    const target = getInNoteTarget(editor, href);
+    if (target?.block) {
+        // The host opens a broken range in the note context, which shows the error.
+        const { start, end } = resolveBlockReference(root, target.block);
+        return !!start && !!end && showBlockReference(root, target.block);
     }
 
-    return !!getLinkedAnchor(editor, href) && showAnchor(root, href.slice(1));
+    const anchor = target?.bookmark ?? (getLinkedAnchor(editor, href) ? href.slice(1) : null);
+    return !!anchor && showAnchor(root, anchor);
 }
 
 declare module 'ckeditor5' {

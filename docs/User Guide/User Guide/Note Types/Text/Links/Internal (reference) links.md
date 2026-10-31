@@ -5,7 +5,7 @@ You can open an internal link by clicking it. You can also see a read-only previ
 
 Since v0.107.0, clicking an internal link while editing a text note shows its popup instead, as clicking an external link does:
 
-*   _Open note_ opens the linked note, or _Open attachment_ for a link to an attachment. A link to a heading of the same note reads _Jump to heading_ instead.
+*   _Open note_ opens the linked note, or _Open attachment_ for a link to an attachment. A link into the same note reads _Jump to heading_, _Jump to block_ or _Jump to anchor_ instead, and scrolls to it without leaving the note.
 *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_ copies the address of the link.
 *   <span class="tn-icon cke cke-pencil"></span> _Edit link_ changes the link, as described below.
 *   <span class="tn-icon cke cke-unlink"></span> _Unlink_ turns the link into plain text.

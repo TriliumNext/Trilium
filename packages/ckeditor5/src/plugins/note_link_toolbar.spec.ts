@@ -133,7 +133,7 @@ describe("NoteLinkToolbar", () => {
 });
 
 describe("links within the note", () => {
-    it("jumps to an anchor, and reads Jump to heading for a heading of the same note", async () => {
+    it("reads and jumps to the heading, the blocks or the anchor of the same note", async () => {
         const editor = await createTestEditor([
             Essentials, Paragraph, Heading, Bookmark, Link, BlockReferenceEditing, NoteLinkToolbar
         ], {
@@ -155,25 +155,35 @@ describe("links within the note", () => {
         };
 
         expect([
-            "#root/x/abc?block=h", "#root/def?block=h", "#root/abc?block=p",
-            "#root/abc?block=gone", "#top", "#gone", "https://a.example/#top"
+            "#root/x/abc?block=h", "#root/abc?block=p", "#root/abc?block=h:p",
+            "#root/abc?block=gone", "#root/x/abc?bookmark=top", "#root/abc?bookmark=gone",
+            "#root/abc", "#root/def?block=h", "#root/def?bookmark=top",
+            "#root/abc?viewMode=attachments&amp;attachmentId=def&amp;block=h",
+            "#top", "#gone", "https://a.example/#top"
         ].map(linkTo)).toStrictEqual([
-            "Jump to heading", "Open note", "Open note", "Open note", "Jump to anchor", "#gone",
-            "https://a.example/#top"
+            "Jump to heading", "Jump to block", "Jump to block",
+            "Jump to block", "Jump to anchor", "Jump to anchor",
+            "Open note", "Open note", "Open note",
+            "Open attachment",
+            "Jump to anchor", "#gone", "https://a.example/#top"
         ]);
 
-        // The editor follows a link into the note in place, flashing what it links to.
+        // The editor follows a link into the note in place, flashing what it links to. A link to
+        // a block or an anchor it cannot find is left to the host.
         const navigate = (href: string) => {
             const cancel = vi.fn();
             preview.fire("navigate", href, cancel);
             return [ cancel.mock.calls.length, takeFlashed(editor) ];
         };
-        linkTo("#top");
-        expect(navigate("#top")).toEqual([ 1, [ "text" ] ]);
-        linkTo("#root/x/abc?block=h");
-        expect(navigate("#root/x/abc?block=h")).toEqual([ 1, [ "Intro" ] ]);
-        linkTo("#root/def?block=h");
-        expect(navigate("#root/def?block=h")).toEqual([ 0, [] ]);
+        expect([
+            "#top", "#root/x/abc?block=h", "#root/abc?block=h:p", "#root/x/abc?bookmark=top",
+            "#root/def?block=h", "#root/def?bookmark=top", "#root/abc?block=h:gone",
+            "#root/abc?bookmark=gone"
+        ].map(navigate)).toEqual([
+            [ 1, [ "text" ] ], [ 1, [ "Intro" ] ], [ 1, [ "Intro", "text" ] ], [ 1, [ "text" ] ],
+            [ 0, [] ], [ 0, [] ], [ 0, [] ],
+            [ 0, [] ]
+        ]);
 
         const click = (element: HTMLElement | null | undefined, init: MouseEventInit = {}) => {
             let isCanceled = false;

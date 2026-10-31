@@ -38,7 +38,7 @@ The link is a block reference to the heading, so it keeps working when the headi
 
 Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown instead, along with the blocks of the range that still exist.
 
-A link to blocks of the note it is in, such as a link to a heading, scrolls to them and flashes them without leaving the note, as a link within a web page does. This works in read-only notes and on shared pages too. While editing, clicking the link shows its popup: press _Jump to heading_ there, or _Open note_ for other blocks.
+A link to blocks of the note it is in, such as a link to a heading, scrolls to them and flashes them without leaving the note, as a link within a web page does. This works in read-only notes and on shared pages too. While editing, clicking the link shows its popup: press _Jump to heading_ there, or _Jump to block_ for other blocks.
 
 ## Including the referenced blocks
 

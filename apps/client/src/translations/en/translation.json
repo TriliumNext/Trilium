@@ -4723,7 +4723,8 @@
       "open-note": "Open note",
       "open-attachment": "Open attachment",
       "jump-to-heading": "Jump to heading",
-      "jump-to-anchor": "Jump to anchor"
+      "jump-to-anchor": "Jump to anchor",
+      "jump-to-block": "Jump to block"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
