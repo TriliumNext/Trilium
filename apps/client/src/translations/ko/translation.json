@@ -68,8 +68,6 @@
     "button_fix_link": "링크 수정",
     "web_link": "웹 링크",
     "url": "주소(URL)",
-    "mirror_title": "노트 제목과 동기화",
-    "mirror_title_description": "링크에 노트의 현재 제목이 표시되며, 노트 이름을 변경하면 링크의 제목도 변경됩니다.",
     "display_as": "표시 형식",
     "display_plain": "일반 링크",
     "display_inline": "인라인",
@@ -80,8 +78,7 @@
     "description": "설명",
     "page_description": "웹페이지 설명",
     "anchors": "앵커",
-    "target_anchor": "대상 앵커",
-    "no_anchors": "사용 가능한 앵커가 없습니다."
+    "target_anchor": "대상 앵커"
   },
   "branch_prefix": {
     "save": "저장",

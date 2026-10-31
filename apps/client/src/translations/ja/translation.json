@@ -68,8 +68,6 @@
     "button_fix_link": "リンクを修正",
     "web_link": "Web リンク",
     "url": "アドレス (URL)",
-    "mirror_title": "ノートのタイトルを反映",
-    "mirror_title_description": "リンクにはノートの現在のタイトルが表示され、ノートの名前が変更されるとタイトルも変わります。",
     "display_as": "表示形式",
     "display_plain": "プレーンリンク",
     "display_inline": "インライン",
@@ -80,8 +78,7 @@
     "description": "説明",
     "page_description": "web ページの説明",
     "anchors": "アンカー",
-    "target_anchor": "対象のアンカー",
-    "no_anchors": "利用可能なアンカーはありません。"
+    "target_anchor": "対象のアンカー"
   },
   "branch_prefix": {
     "save": "保存",

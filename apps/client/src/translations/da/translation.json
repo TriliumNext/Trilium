@@ -67,9 +67,7 @@
     "button_edit_link": "Gem link",
     "button_fix_link": "Ret link",
     "web_link": "Weblink",
-    "url": "URL",
-    "mirror_title": "Spejl notens titel",
-    "mirror_title_description": "Linket viser notens aktuelle titel og ændrer sig, når noten omdøbes."
+    "url": "URL"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Rediger grenpræfiks",

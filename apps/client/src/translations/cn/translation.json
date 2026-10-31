@@ -67,9 +67,7 @@
     "fix_link": "修复链接",
     "button_fix_link": "修复链接",
     "web_link": "网页链接",
-    "url": "URL",
-    "mirror_title": "跟随笔记标题",
-    "mirror_title_description": "链接显示笔记当前的标题，笔记重命名时会随之变化。"
+    "url": "URL"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
