@@ -497,6 +497,8 @@ export default class TabManager extends Component {
             await noteContext.setNote(notePath, {
                 // if activate is false, then send normal noteSwitched event
                 triggerSwitchEvent: !activate,
+                // A tab opened in the background leaves the mobile layout on the tab the user is in.
+                keepScreen: !activate,
                 viewScope: viewScope
             });
         }
