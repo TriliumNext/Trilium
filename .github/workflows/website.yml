@@ -33,7 +33,7 @@ jobs:
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Install dependencies
         run: pnpm install --filter website --frozen-lockfile --ignore-scripts
