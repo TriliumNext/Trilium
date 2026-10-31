@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "preact/hooks";
 import type { CommandNames } from "../../../components/app_context";
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "../../../menus/context_menu";
 import linkContextMenu from "../../../menus/link_context_menu";
+import { keepEditorFocused } from "../../../menus/text_editor_context_menu";
 import {
     type ContentEmbedTool, type ContentEmbedToolbarItem, type ContentEmbedToolProvider,
     registerContentEmbedTools
@@ -115,7 +116,7 @@ export class ContentEmbedMenus implements ContentEmbedToolProvider {
 
         const editor = findTextEditorAround(this.rootRef.current);
         const editorFocus: Pick<ContextMenuOptions<unknown>, "onShow" | "onHide"> = editor
-            ? linkContextMenu.keepEditorFocused(editor)
+            ? keepEditorFocused(editor)
             : {};
         const { pageX, pageY } = linkContextMenu.getOriginBelow(anchor);
         void contextMenu.show({

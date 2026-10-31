@@ -66,6 +66,11 @@ export interface BuildEditorOptions {
     getChildNoteParent?: () => ChildNoteParent | undefined;
     /** The ID of the note the editor is open on. A getter for the same reason as `getNoteLocation`. */
     getNoteId?: () => string | undefined;
+    /**
+     * Whether the editor holds only some blocks of its note, as the editor of an excerpt does. A
+     * getter for the same reason as `getNoteLocation`.
+     */
+    isExcerpt?: () => boolean;
     /** The ID of the component that hosts the editor, which changes the editor makes are sent as. */
     getComponentId?: () => string | undefined;
     /** Triggers `command` with `data` on the component that hosts the editor. */
@@ -252,9 +257,13 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         formatDateTime: (date, format) => formatDateTime(date, format ?? options.get("customDateTimeFormat")),
         referenceLink: {
             getTitle: linkService.getReferenceLinkTitle,
-            getTitleSync: linkService.getReferenceLinkTitleSync,
-            renderTitle: (element, href, storedTitle) => {
-                void linkService.loadReferenceLinkTitle($(element), href, opts.getNoteId?.(), storedTitle);
+            getTitleSync: (href, storedTitle, content) => linkService.getReferenceLinkTitleSync(
+                href, storedTitle, content, opts.isExcerpt?.()
+            ),
+            renderTitle: (element, href, storedTitle, content) => {
+                void linkService.loadReferenceLinkTitle(
+                    $(element), href, opts.getNoteId?.(), storedTitle, content, opts.isExcerpt?.()
+                );
             },
             fixLink: (storedTitle, fix) => {
                 void opts.triggerHostCommand?.("showEditLinkDialog", {

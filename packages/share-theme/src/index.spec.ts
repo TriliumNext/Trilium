@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     whenActivated: vi.fn((callback: () => void) => callback()),
     setupMath: vi.fn(),
     setupMermaid: vi.fn(),
+    setupInPageLinks: vi.fn(),
     applyTableScroll: vi.fn(),
     applyStickyTableHeaders: vi.fn(),
     applyListItemAlignment: vi.fn(),
@@ -36,6 +37,7 @@ vi.mock("./page/speculation.js", () => ({
 }));
 vi.mock("./content/math.js", () => ({ default: mocks.setupMath }));
 vi.mock("./content/mermaid.js", () => ({ default: mocks.setupMermaid }));
+vi.mock("./content/in_page_links.js", () => ({ default: mocks.setupInPageLinks }));
 vi.mock("./content/app_view.js", () => ({ default: mocks.setupAppView }));
 vi.mock("./content/note_view.js", () => ({ default: "mountNoteView" }));
 vi.mock("./content/collection_view.js", () => ({ default: "mountCollection" }));
@@ -118,6 +120,7 @@ describe("share theme entry", () => {
         const content = document.getElementById("content");
         expect(mocks.setupMermaid).toHaveBeenCalledOnce();
         expect(mocks.setupMath).toHaveBeenCalledOnce();
+        expect(mocks.setupInPageLinks).toHaveBeenCalledOnce();
         expect(mocks.enhanceLinkPreviews).toHaveBeenCalledWith(document.body);
         expect(mocks.applyTableScroll.mock.calls)
             .toEqual([ [ content ], [ content?.querySelector(".include-note") ] ]);

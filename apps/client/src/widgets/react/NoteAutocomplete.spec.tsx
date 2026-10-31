@@ -1074,6 +1074,18 @@ describe("NoteAutocomplete's suggestion list", () => {
         expect(document.querySelector<HTMLElement>(".note-autocomplete-menu")?.style.width).toBe("640px");
     });
 
+    it("keeps the list as wide as a narrow field when asked to", async () => {
+        const input = await mount({ isListAsWideAsField: true });
+        const group = input.closest(".input-group");
+        if (!group) throw new Error("no input group rendered");
+        group.getBoundingClientRect = () => DOMRect.fromRect({ width: 320, height: 30 });
+        await type(input, "a");
+
+        const menu = document.querySelector<HTMLElement>(".note-autocomplete-menu");
+        expect(menu).not.toBeNull();
+        expect(menu?.style.width).toBe("320px");
+    });
+
     it("picks a clicked note", async () => {
         const noteIdChanged = vi.fn();
         const input = await mount({ noteIdChanged });

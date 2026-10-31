@@ -72,6 +72,8 @@ export interface NoteAutocompleteProps {
      * Note does.
      */
     searchFooter?: boolean;
+    /** Keeps the list as wide as the field, rather than widening it past a narrow one. */
+    isListAsWideAsField?: boolean;
     /** Called with the suggestion the list highlights, or `undefined` while it highlights none. */
     onHighlight?: (suggestion: Suggestion | undefined) => void;
 }
@@ -91,7 +93,11 @@ export interface NoteAutocompleteHandle {
     clear(): void;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, container, containerStyle, opts, onChange, onTextChange, onKeyDown, onBlur, noteIdChanged, noteId, filter, readOnly, required, tabIndex, handleRef, anchorRef, searchFooter, onHighlight }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({
+    id, inputRef: externalInputRef, text, placeholder, container, containerStyle, opts, onChange,
+    onTextChange, onKeyDown, onBlur, noteIdChanged, noteId, filter, readOnly, required, tabIndex,
+    handleRef, anchorRef, searchFooter, isListAsWideAsField, onHighlight
+}: NoteAutocompleteProps) {
     const inputRef = useSyncedRef<HTMLInputElement>(externalInputRef);
     const groupRef = useRef<HTMLDivElement>(null);
     const [ value, setValue ] = useState("");
@@ -429,8 +435,7 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                         // Rendered in the field's modal so the list stacks above it: the note picker
                         // raises its modal (2000) over `.tn-popup` in the body (1200).
                         container={anchor.closest<HTMLElement>(".modal") ?? undefined}
-                        // The list spans the whole field, buttons included, and widens past a narrow one.
-                        style={{ width: `${Math.max(anchor.getBoundingClientRect().width, DROPDOWN_MIN_WIDTH)}px` }}
+                        style={{ width: `${getListWidth(anchor, !!isListAsWideAsField)}px` }}
                         escapeDismisses={false}
                         onDismiss={autocomplete.close}
                     >
@@ -696,6 +701,15 @@ function NoteSuggestionPopup({ className, ...props }: PopupProps) {
             className={clsx("dropdown-menu show tn-dropdown-menu tn-menu-keyboard note-autocomplete-menu", className)}
         />
     );
+}
+
+/**
+ * The width of the list that hangs from `anchor`, the whole field with its buttons: the field's
+ * width, widened to `DROPDOWN_MIN_WIDTH` for a narrow field unless `isAsWideAsField`.
+ */
+function getListWidth(anchor: Element, isAsWideAsField: boolean) {
+    const fieldWidth = anchor.getBoundingClientRect().width;
+    return isAsWideAsField ? fieldWidth : Math.max(fieldWidth, DROPDOWN_MIN_WIDTH);
 }
 
 /**

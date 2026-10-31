@@ -1,6 +1,6 @@
 import type { RefObject } from "preact";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../components/component";
 import type { Suggestion } from "../../services/note_autocomplete";
@@ -9,7 +9,7 @@ import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
-    EditLinkBalloon, type EditLinkOpts, getShownDisplay, normalizeWebLink
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, type LinkHeading, normalizeWebLink
 } from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
@@ -90,10 +90,6 @@ describe("EditLinkDialog", () => {
         return [ ...container.querySelectorAll(".tn-card-heading") ].map((heading) => heading.textContent);
     }
 
-    function mirrorToggle() {
-        return container.querySelector<HTMLInputElement>(".edit-link-mirror input.switch-toggle");
-    }
-
     /** Whether the row of the field is indented under the row it depends on. */
     function nested(name: "url" | "text") {
         return container.querySelector(`.edit-link-${name}`)?.classList.contains("tn-card-section-nested");
@@ -122,6 +118,20 @@ describe("EditLinkDialog", () => {
 
     function checkedAnchor() {
         return anchorRows().find((row) => row.getAttribute("aria-checked") === "true")?.textContent;
+    }
+
+    function headingRows() {
+        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-headings .tn-card-choice") ];
+    }
+
+    function checkedHeading() {
+        return headingRows().find((row) => row.getAttribute("aria-checked") === "true")?.textContent;
+    }
+
+    async function toggleHeading(index: number) {
+        const expander = headingRows()[index]?.querySelector<HTMLElement>(".tn-card-choice-expander");
+        if (!expander) throw new Error(`The heading ${index} has no expander.`);
+        await act(async () => expander.click());
     }
 
     function displays() {
@@ -184,28 +194,46 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://trilium.cc", "Trilium", true);
     });
 
-    it("links a note by its title, or by a text of its own once the title stops mirroring it", async () => {
+    it("links a note mirroring its title, or by a text of its own", async () => {
         const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
         await open();
-        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
-        expect(mirrorToggle()?.checked).toBe(true);
-        expect(field("text")).toBeNull();
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        expect(container.querySelector(".edit-link-mirror")).toBeNull();
+        expect(field("text")?.value).toBe("");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_note");
+        expect(container.querySelector(".edit-link-note + .edit-link-text")).not.toBeNull();
+        expect(nested("text")).toBe(false);
+        expect(stacked()).toStrictEqual([]);
         await submit();
-        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, null);
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
 
         await open();
-        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
-        const toggle = mirrorToggle();
-        if (!toggle) throw new Error("No toggle to mirror the note's title.");
-        await act(async () => {
-            toggle.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-        await vi.waitFor(() => expect(field("text")?.value).toBe("Target"));
-        expect(nested("text")).toBe(true);
-        expect(stacked()).toStrictEqual([]);
-        await type(field("text"), "See there");
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await type(field("text"), "  ");
         await submit();
-        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, "See there");
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+
+        await open();
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await type(field("text"), " See there ");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "See there");
+    });
+
+    it("links a selection by its text, or by the note's title if it has none", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        await open({ text: "some words", hasSelection: true });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        expect(field("text")).toBeNull();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "some words");
+
+        await open({ text: "", hasSelection: true });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "Target");
     });
 
     it("opens on the web link side for an edited external link or a selected URL", async () => {
@@ -244,16 +272,28 @@ describe("EditLinkDialog", () => {
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {
         const note = buildNote({ title: "Target", "#internalBookmark": "part" });
-        await open({
-            currentLink: { notePath: `root/${note.noteId}` },
-            currentTitle: "See there",
-            currentBookmark: "part"
-        });
-        expect(mirrorToggle()?.checked).toBe(false);
+        const edited = {
+            currentLink: { notePath: `root/${note.noteId}` }, currentTitle: "See there"
+        };
+        await open({ ...edited, currentBookmark: "part" });
         await vi.waitFor(() => expect(container.querySelector("select")?.value).toBe("part"));
         expect(field("text")?.value).toBe("See there");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}?bookmark=part`, "See there");
+
+        // An emptied title turns it into a link that mirrors the note's title.
+        await open(edited);
+        await type(field("text"), "");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, null);
+
+        // Another note drops the text, and the link mirrors that note's title.
+        const other = buildNote({ title: "Other" });
+        await open(edited);
+        await act(async () => autocomplete.onChange?.({ notePath: `root/${other.noteId}` }));
+        expect(field("text")?.value).toBe("");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`root/${other.noteId}`, null);
 
         await open({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example"
@@ -470,7 +510,9 @@ describe("EditLinkDialog", () => {
         expect(container.querySelector(".note-autocomplete")).toBeNull();
         expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
         const titleCard = field("text")?.closest(".tn-card");
-        expect(titleCard?.nextElementSibling?.classList.contains("edit-link-anchors")).toBe(true);
+        expect(titleCard?.nextElementSibling?.matches(".edit-link-targets")).toBe(true);
+        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".edit-link-anchors"))
+            .toBe(true);
         expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
         expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
             .toBe(true);
@@ -514,11 +556,109 @@ describe("EditLinkDialog", () => {
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
 
-        await open({ anchors: [] });
+        // With neither headings nor anchors, a placeholder takes the place of the page.
+        await open({ anchors: [], headings: [] });
         await act(async () => choice()[2]?.click());
-        expect(anchorRows()).toStrictEqual([]);
-        expect(container.querySelector(".edit-link-anchors .no-items")?.textContent)
-            .toBe("add_link.no_anchors");
+        expect(headings()).toStrictEqual([]);
+        expect(field("text")).toBeNull();
+        expect(container.querySelector(".no-items")?.textContent)
+            .toBe("add_link.no_headings_or_anchors");
+    });
+
+    it("lists the headings as a tree above the anchors, and links one mirroring it", async () => {
+        const intro = createHeading("Intro", 2);
+        const linux = createHeading("Linux", 4);
+        await open({
+            anchors: [ "top" ],
+            headings: [ intro, createHeading("Setup", 3), linux, createHeading("Usage", 2) ]
+        });
+        await act(async () => choice()[2]?.click());
+        expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
+        expect(container.querySelector(".edit-link-targets")?.firstElementChild
+            ?.matches(".edit-link-headings")).toBe(true);
+        expect(headingRows().map((row) => [
+            row.textContent,
+            row.getAttribute("style") ?? "",
+            !!row.querySelector(".tn-card-choice-icon.bx-heading"),
+            row.querySelector(".tn-card-choice-expander-empty") !== null
+        ])).toStrictEqual([
+            [ "Intro", "", true, false ],
+            [ "Setup", "--tn-card-section-nesting-level: 1;", true, false ],
+            [ "Linux", "--tn-card-section-nesting-level: 2;", true, true ],
+            [ "Usage", "", true, true ]
+        ]);
+
+        await toggleHeading(0);
+        expect(headingRows().map((row) => row.textContent)).toStrictEqual([ "Intro", "Usage" ]);
+        expect(checkedHeading()).toBeUndefined();
+        await toggleHeading(0);
+        expect(headingRows()).toHaveLength(4);
+
+        await act(async () => headingRows()[2]?.click());
+        expect(checkedHeading()).toBe("Linux");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_heading");
+        // A heading and an anchor are one choice.
+        await act(async () => anchorRows()[0]?.click());
+        expect([ checkedHeading(), checkedAnchor() ]).toStrictEqual([ undefined, "top" ]);
+        await act(async () => headingRows()[2]?.click());
+        expect([ checkedHeading(), checkedAnchor() ]).toStrictEqual([ "Linux", undefined ]);
+        expect(linux.createLinkPath).not.toHaveBeenCalled();
+        await submit();
+        expect(linux.createLinkPath).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Linux", null);
+
+        await open({ headings: [ intro ] });
+        await act(async () => choice()[2]?.click());
+        await act(async () => headingRows()[0]?.click());
+        await type(field("text"), " Read the intro ");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Intro", "Read the intro");
+
+        // A selection keeps its text, and a selection without one takes the heading's.
+        for (const [ text, title ] of [ [ "some words", "some words" ], [ "", "Intro" ] ]) {
+            await open({ text, hasSelection: true, headings: [ intro ] });
+            await act(async () => choice()[2]?.click());
+            await act(async () => headingRows()[0]?.click());
+            await submit();
+            expect(addLink).toHaveBeenLastCalledWith("root/note?block=Intro", title);
+        }
+    });
+
+    it("opens an edited heading link on its heading, scrolled to the middle of the list", async () => {
+        // The checked row is 400px below the top of the list until the list scrolls.
+        vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (
+            this: Element
+        ) {
+            const list = this.closest(".edit-link-targets");
+            const isChecked = this.getAttribute("aria-checked") === "true";
+            return { top: isChecked ? 400 - (list?.scrollTop ?? 0) : 0 } as DOMRect;
+        });
+        vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(240);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(40);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+
+        const usage = createHeading("Usage", 2);
+        await open({
+            anchors: [], headings: [ createHeading("Intro", 2), usage ], currentHeading: usage,
+            currentTitle: "See usage"
+        });
+        expect(container.querySelector(".modal-title")?.textContent).toBe("add_link.edit_link");
+        expect(current()).toBe("add_link.anchors");
+        // A list without items has no card.
+        expect(headings()).toStrictEqual([ "add_link.headings" ]);
+        expect(checkedHeading()).toBe("Usage");
+        expect(field("text")?.value).toBe("See usage");
+        expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", "See usage");
+
+        // A link that mirrors its heading opens with no title, and keeps mirroring it.
+        await open({ anchors: [], headings: [ usage ], currentHeading: usage });
+        expect(field("text")?.value).toBe("");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", null);
     });
 });
 
@@ -642,6 +782,14 @@ describe("EditLinkBalloon", () => {
             .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", null, "About");
     });
 });
+
+function createHeading(title: string, level: number) {
+    return {
+        title,
+        level,
+        createLinkPath: vi.fn(() => `root/note?block=${title}`)
+    } satisfies LinkHeading;
+}
 
 async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value: string) {
     if (!input) throw new Error("The field is not shown.");

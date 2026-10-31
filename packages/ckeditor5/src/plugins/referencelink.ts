@@ -4,6 +4,8 @@ import {
 	viewToModelPositionOutsideModelElement, Widget
 } from "ckeditor5";
 
+import type { LinkedBlockChangedEvent } from "./block_reference/block_reference_editing.js";
+
 export default class ReferenceLink extends Plugin {
 	static get requires() {
 		return [ ReferenceLinkEditing ];
@@ -95,6 +97,12 @@ export interface AttachmentLinkChange {
 	isDeleted: boolean;
 }
 
+/** The title of a link to blocks of the note in the editor, as `renderTitle()` drew it. */
+interface BlockLinkTitle {
+	blockIds: string[];
+	redraw(): void;
+}
+
 export class ReferenceLinkEditing extends Plugin {
 	static get requires() {
 		return [ Widget, LinkEditing ];
@@ -109,6 +117,9 @@ export class ReferenceLinkEditing extends Plugin {
 
 	/** The title `getReferenceTitleSync()` read when the editing downcast drew each reference. */
 	private readonly _drawnTitles = new WeakMap<ModelElement, string>();
+
+	/** The title of each reference to blocks of the note in the editor. */
+	private readonly _blockLinkTitles = new WeakMap<ModelElement, BlockLinkTitle>();
 
 	/**
 	 * Redraws the reference links to the notes in `noteIds` whose title changed since they were
@@ -129,7 +140,8 @@ export class ReferenceLinkEditing extends Plugin {
 			}
 
 			const reference = this._getReference( anchor );
-			if ( !reference ) {
+			// `_redrawBlockLinks()` draws a link to blocks of this note.
+			if ( !reference || this._blockLinkTitles.has( reference ) ) {
 				continue;
 			}
 
@@ -217,6 +229,31 @@ export class ReferenceLinkEditing extends Plugin {
 		} );
 	}
 
+	afterInit() {
+		const plugins = this.editor.plugins;
+		if ( plugins.has( 'BlockReferenceEditing' ) ) {
+			this.listenTo<LinkedBlockChangedEvent>(
+				plugins.get( 'BlockReferenceEditing' ), 'linkedBlockChanged',
+				( _evt, blockIds ) => this._redrawBlockLinks( blockIds )
+			);
+		}
+	}
+
+	/**
+	 * Draws the title of the links to `blockIds` of this note again, or of all the links to its
+	 * blocks for `null`. Changes the DOM of the titles only, so the note is not saved again.
+	 */
+	private _redrawBlockLinks( blockIds: ReadonlySet<string> | null ) {
+		const domRoot = this.editor.editing.view.getDomRoot() as HTMLElement;
+		for ( const anchor of domRoot.querySelectorAll<HTMLAnchorElement>( 'a.reference-link' ) ) {
+			const reference = this._getReference( anchor );
+			const title = reference && this._blockLinkTitles.get( reference );
+			if ( title && ( !blockIds || title.blockIds.some( id => blockIds.has( id ) ) ) ) {
+				title.redraw();
+			}
+		}
+	}
+
 	/**
 	 * Asks the editor component to fix the reference link around `domTarget` when
 	 * `loadReferenceLinkTitle()` rendered it as one to a missing note.
@@ -293,6 +330,7 @@ export class ReferenceLinkEditing extends Plugin {
 				const uploadFileName = String(modelItem.getAttribute('uploadFileName') ?? '');
 				const drawnTitle = getReferenceTitleSync( editor, href, storedTitle );
 				this._drawnTitles.set( modelItem, drawnTitle );
+				const blockLinkTitles = this._blockLinkTitles;
 
 				const referenceLinkView = viewWriter.createContainerElement( 'a', {
 						href,
@@ -314,7 +352,13 @@ export class ReferenceLinkEditing extends Plugin {
 
 					const renderTitle = editor.config.get( 'referenceLink' )?.renderTitle;
 					if ( renderTitle ) {
-						renderTitle( domElement, href, storedTitle );
+						const blockIds = getOwnBlockIds( editor, href );
+						const content = blockIds ? editor.editing.view.getDomRoot() : undefined;
+						const draw = () => renderTitle( domElement, href, storedTitle, content );
+						draw();
+						if ( blockIds ) {
+							blockLinkTitles.set( modelItem, { blockIds, redraw: draw } );
+						}
 					} else {
 						domElement.textContent = getReferenceTitleSync( editor, href, storedTitle );
 					}
@@ -369,7 +413,20 @@ export function getReferenceTitle( editor: Editor, href: string ): Promise<strin
  */
 export function getReferenceTitleSync( editor: Editor, href: string, storedTitle?: string ): string {
 	const getTitleSync = editor.config.get( 'referenceLink' )?.getTitleSync;
-	return getTitleSync ? getTitleSync( href, storedTitle ) : storedTitle ?? href;
+	if ( !getTitleSync ) {
+		return storedTitle ?? href;
+	}
+
+	const content = getOwnBlockIds( editor, href ) ? editor.editing.view.getDomRoot() : undefined;
+	return getTitleSync( href, storedTitle, content );
+}
+
+/** The ids of the blocks of the note in `editor` that `href` links to, or else `null`. */
+function getOwnBlockIds( editor: Editor, href: string ) {
+	const block = new URLSearchParams( href.split( '?' )[ 1 ] ).get( 'block' );
+	return block && getNoteId( href ) === editor.config.get( 'getNoteId' )?.()
+		? block.split( ':' )
+		: null;
 }
 
 /** The selected reference link, or `null` when the selection holds none. */
@@ -419,13 +476,21 @@ declare module "ckeditor5" {
 			/**
 			 * The title of the note or attachment `href` points to, from what is already loaded.
 			 * `storedTitle` is the title the saved content holds, for a note that is not loaded.
+			 * For a link to blocks of the note in the editor, `content` is the editing view's
+			 * content, which holds their current text.
 			 */
-			getTitleSync?( href: string, storedTitle?: string ): string;
+			getTitleSync?(
+				href: string, storedTitle?: string, content?: HTMLElement | null
+			): string;
 			/**
-			 * Fills `element` with the label of the link to `href`, which the host can load.
-			 * Without it, the link shows what `getTitleSync()` reads.
+			 * Fills `element` with the label of the link to `href`, which the host can load, and
+			 * with `content` as `getTitleSync()` takes it. Without it, the link shows what
+			 * `getTitleSync()` reads.
 			 */
-			renderTitle?( element: HTMLElement, href: string, storedTitle?: string ): void;
+			renderTitle?(
+				element: HTMLElement, href: string, storedTitle?: string,
+				content?: HTMLElement | null
+			): void;
 			/**
 			 * Lets the user pick the note a reference link to a missing note should point at
 			 * instead, starting from `storedTitle`, and calls `fix()` with the new href.

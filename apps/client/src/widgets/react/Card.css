@@ -123,6 +123,19 @@
         flex-shrink: 0;
         margin-inline-start: auto;
     }
+
+    .tn-card-choice-expander {
+        flex-shrink: 0;
+        font-size: 1.25em;
+    }
+
+    .tn-card-choice-expander-empty {
+        visibility: hidden;
+    }
+}
+
+body[dir=rtl] .tn-card-choice-expander {
+    transform: scaleX(-1);
 }
 
 .tn-card-section-link {

@@ -543,20 +543,35 @@ describe("CK config - tables", () => {
 
     it("titles reference links through the link service, in the note open at the time", async () => {
         const loadTitle = vi.spyOn(linkService, "loadReferenceLinkTitle").mockResolvedValue();
-        onTestFinished(() => loadTitle.mockRestore());
+        const getTitleSync = vi.spyOn(linkService, "getReferenceLinkTitleSync")
+            .mockReturnValue("Title");
+        onTestFinished(() => {
+            loadTitle.mockRestore();
+            getTitleSync.mockRestore();
+        });
         let noteId = "n1";
-        const referenceLink = (await buildConfig(baseOpts({ getNoteId: () => noteId }))).referenceLink;
+        let isExcerpt = false;
+        const referenceLink = (await buildConfig(baseOpts({
+            getNoteId: () => noteId, isExcerpt: () => isExcerpt
+        }))).referenceLink;
         const element = document.createElement("span");
+        const content = document.createElement("div");
 
-        referenceLink?.renderTitle?.(element, "#root/n2", "Stored");
+        referenceLink?.renderTitle?.(element, "#root/n2", "Stored", content);
+        expect(referenceLink?.getTitleSync?.("#root/n2", "Stored", content)).toBe("Title");
         noteId = "n3";
+        isExcerpt = true;
         referenceLink?.renderTitle?.(element, "#root/n2");
+        referenceLink?.getTitleSync?.("#root/n2");
 
         expect(referenceLink?.getTitle).toBe(linkService.getReferenceLinkTitle);
-        expect(referenceLink?.getTitleSync).toBe(linkService.getReferenceLinkTitleSync);
         expect(loadTitle.mock.calls.map(([ $el, ...rest ]) => [ $el[0], ...rest ])).toEqual([
-            [ element, "#root/n2", "n1", "Stored" ],
-            [ element, "#root/n2", "n3", undefined ]
+            [ element, "#root/n2", "n1", "Stored", content, false ],
+            [ element, "#root/n2", "n3", undefined, undefined, true ]
+        ]);
+        expect(getTitleSync.mock.calls).toEqual([
+            [ "#root/n2", "Stored", content, false ],
+            [ "#root/n2", undefined, undefined, true ]
         ]);
     });
 

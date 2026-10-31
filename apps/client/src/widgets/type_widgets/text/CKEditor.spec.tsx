@@ -1,4 +1,6 @@
-import type { CKEditorError, CKTextEditor } from "@triliumnext/ckeditor5";
+import type {
+    CKEditorError, CKTextEditor, DocumentHeading, ModelElement
+} from "@triliumnext/ckeditor5";
 import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -14,7 +16,9 @@ const mocks = vi.hoisted(() => ({
     stopReportingErrors: vi.fn(),
     reportError: undefined as ((error: Error) => void) | undefined,
     reportingEditor: undefined as unknown,
-    note: undefined as { noteId: string; title: string } | undefined
+    note: undefined as { noteId: string; title: string } | undefined,
+    getHeadings: vi.fn((_editor: unknown): DocumentHeading[] => []),
+    assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new")
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
@@ -36,6 +40,8 @@ vi.mock("@triliumnext/ckeditor5", () => {
         CKTextEditor: class {},
         ClassicEditor: MockEditor,
         PopupEditor: MockEditor,
+        getHeadings: mocks.getHeadings,
+        assignBlockId: mocks.assignBlockId,
         onTextEditorError: (editor: unknown, callback: (error: Error) => void) => {
             mocks.reportingEditor = editor;
             mocks.reportError = callback;
@@ -74,6 +80,8 @@ beforeEach(() => {
     mocks.stopReportingErrors.mockClear();
     mocks.reportError = undefined;
     mocks.reportingEditor = undefined;
+    mocks.getHeadings.mockReset();
+    mocks.assignBlockId.mockReset();
     host = document.body.appendChild(document.createElement("div"));
 });
 
@@ -184,12 +192,43 @@ describe("CKEditor", () => {
         await vi.waitFor(() => expect(buildConfig).toHaveBeenCalled());
         const opts = vi.mocked(buildConfig).mock.lastCall?.[0];
         expect(opts?.getNoteId?.()).toBe("host1");
+        expect(opts?.isExcerpt?.()).toBe(false);
 
         mocks.note = { noteId: "host2", title: "Other" };
         await act(async () => {
-            render(<CKEditor {...props} className="force-rerender" />, host);
+            render(<CKEditor {...props} className="force-rerender" isExcerpt />, host);
         });
 
         expect(opts?.getNoteId?.()).toBe("host2");
+        expect(opts?.isExcerpt?.()).toBe(true);
+    });
+
+    it("lists the headings of its editor and gives one a block id, while it has one", async () => {
+        const props = {
+            contentLanguage: null,
+            editorRef: createRef<CKTextEditor>(),
+            onChange: vi.fn(),
+            editorApi: createRef<CKEditorApi>(),
+            templates: []
+        };
+        await act(async () => {
+            render(<CKEditor {...props} />, host);
+        });
+        await vi.waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
+        const api = props.editorApi.current;
+        const editor = props.editorRef.current;
+        const heading = { element: {} as ModelElement, level: 2, text: "Intro" };
+        mocks.getHeadings.mockReturnValue([ heading ]);
+
+        expect(api?.getHeadings()).toEqual([ heading ]);
+        expect(mocks.getHeadings).toHaveBeenCalledExactlyOnceWith(editor);
+        expect(api?.assignBlockId(heading)).toBe("new");
+        expect(mocks.assignBlockId)
+            .toHaveBeenCalledExactlyOnceWith(editor?.model, heading.element);
+
+        await act(async () => render(null, host));
+        await vi.waitFor(() => expect(mocks.destroy).toHaveBeenCalledOnce());
+        expect(api?.getHeadings()).toEqual([]);
+        expect(api?.assignBlockId(heading)).toBeUndefined();
     });
 });

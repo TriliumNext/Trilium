@@ -1,22 +1,76 @@
 :where(:root) {
     --ck-table-insert-form-error-color: var(--ck-color-base-error);
+    --ck-table-insert-form-segment-background: var(--card-background-color,
+        var(--ck-color-base-foreground));
+    --ck-table-insert-form-segment-border-color: var(--card-border-color,
+        var(--main-border-color, var(--ck-color-base-border)));
 }
 
 .ck.ck-table-insert-form {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    row-gap: var(--ck-spacing-standard, var(--ck-spacing-base));
-    column-gap: var(--ck-spacing-large, var(--ck-spacing-lg));
+    display: flex;
+    flex-direction: column;
+    gap: var(--ck-spacing-large, var(--ck-spacing-lg));
     padding: var(--ck-spacing-large, var(--ck-spacing-lg));
-    min-width: 250px;
+    min-width: 350px;
 
     &:focus {
         outline: none;
     }
 
+    .ck-table-insert-form__card-heading {
+        margin-bottom: 10px;
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: .4pt;
+        text-transform: uppercase;
+    }
+
+    .ck-table-insert-form__card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .ck-table-insert-form__segment {
+        border: 1px solid var(--ck-table-insert-form-segment-border-color);
+        padding: 8px 12px;
+        background: var(--ck-table-insert-form-segment-background);
+
+        &:first-child {
+            border-start-start-radius: 8px;
+            border-start-end-radius: 8px;
+        }
+
+        /* The switch is the last segment shown while the header fields are hidden. */
+        &:last-child,
+        &.ck-table-insert-form__switch:not(.ck-on) {
+            border-end-start-radius: 8px;
+            border-end-end-radius: 8px;
+        }
+
+        &.ck-table-insert-form__switch {
+            padding: 0;
+        }
+    }
+
+    .ck-table-insert-form__switch .ck.ck-switchbutton {
+        display: flex;
+        border: 0;
+        border-radius: inherit;
+        padding: 8px 12px;
+        width: 100%;
+    }
+
     .ck-table-insert-form__field {
-        display: contents;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        row-gap: var(--ck-spacing-small, var(--ck-spacing-sm));
+        column-gap: var(--ck-spacing-standard, var(--ck-spacing-base));
+
+        .ck-table-insert-form__error {
+            grid-column: 2 / -1;
+        }
     }
 
     .ck.ck-label {
@@ -28,18 +82,8 @@
         width: 5em;
     }
 
-    /* Aligns the label and the toggle with the fields. */
-    .ck.ck-switchbutton {
-        grid-column: 1 / -1;
-        margin-inline: calc(-1 * var(--ck-spacing-small, var(--ck-spacing-sm)));
-        padding-inline: calc(
-            var(--ck-spacing-small, var(--ck-spacing-sm)) - var(--ck-border-width-control)
-        );
-    }
-
     /* `width: 0` keeps the message from widening the form; it wraps instead. */
     .ck-table-insert-form__error {
-        grid-column: 1 / -1;
         min-width: 100%;
         width: 0;
         color: var(--ck-table-insert-form-error-color);
@@ -48,7 +92,6 @@
     }
 
     .ck.ck-button-action {
-        grid-column: 1 / -1;
-        justify-self: end;
+        align-self: flex-end;
     }
 }

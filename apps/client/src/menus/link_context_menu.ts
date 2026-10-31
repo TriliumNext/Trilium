@@ -12,9 +12,9 @@ import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
 import { DISPLAY_MODE_OPTIONS } from "../widgets/type_widgets/helpers/split_editor_mode.js";
 import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools.js";
 import { getClosestNtxId } from "../widgets/widget_utils.js";
-import contextMenu, { type ContextMenuOptions, type MenuItem } from "./context_menu.js";
+import contextMenu, { type MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
-import { getTextEditorContaining } from "./text_editor_context_menu.js";
+import { getTextEditorContaining, keepEditorFocused } from "./text_editor_context_menu.js";
 
 /**
  * Where a link menu opens, and the element it is opened from. A mouse event is one; a control
@@ -83,28 +83,6 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
-}
-
-/**
- * Menu options adding the menu to the focus tracker of `editor`, so that the editor stays focused
- * while the menu is up.
- */
-function keepEditorFocused(
-    editor: CKTextEditor
-): Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> {
-    let menuContainer: HTMLElement | null = null;
-
-    return {
-        onShow: (container) => {
-            menuContainer = container;
-            editor.ui.focusTracker.add(container);
-        },
-        onHide: () => {
-            if (menuContainer) {
-                editor.ui.focusTracker.remove(menuContainer);
-            }
-        }
-    };
 }
 
 /** The origin of a menu that opens below `anchor` and acts from `target`. */
@@ -469,7 +447,6 @@ export default {
     getQuickEditItem,
     getOpenNoteItem,
     handleLinkContextMenuItem,
-    keepEditorFocused,
     openContextMenu,
     openEmbedContextMenu,
     setShareLinkResolver

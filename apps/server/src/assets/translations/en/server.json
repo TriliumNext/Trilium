@@ -356,6 +356,7 @@
     "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here.",
     "content-not-available": "This content is not available.",
     "broken-block-reference": "Broken reference",
+    "untitled-block": "Block",
     "play-video": "Play video"
   },
   "onenote_import": {

@@ -1,7 +1,11 @@
-import { _getModelData as getModelData, _getViewData as getViewData, _setModelData as setModelData, ClassicEditor, Essentials, LinkEditing, Paragraph } from "ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    _getModelData as getModelData, _getViewData as getViewData, _setModelData as setModelData,
+    BlockQuote, ClassicEditor, Essentials, Heading, LinkEditing, type ModelElement, Paragraph
+} from "ckeditor5";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import BlockReference from "./block_reference/block_reference.js";
 import ReferenceLink, { getAttachmentId, getNoteId } from "./referencelink.js";
 
 describe("ReferenceLink", () => {
@@ -225,7 +229,8 @@ describe("ReferenceLink", () => {
 
         const anchor = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
         expect(anchor?.textContent).toBe("Synced title");
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc", "Stored");
+        expect(getReferenceLinkTitleSync)
+            .toHaveBeenCalledWith("#root/noteAbc", "Stored", undefined);
         expect(loadReferenceLinkTitle).not.toHaveBeenCalled();
     });
 
@@ -254,7 +259,8 @@ describe("ReferenceLink", () => {
 
         expect(findAnchor()?.getAttribute("href")).toBe("#root/abc");
         expect(findAnchor()?.querySelector(".bx-spin")).toBeNull();
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc", undefined);
+        expect(loadReferenceLinkTitle)
+            .toHaveBeenCalledWith(expect.anything(), "#root/abc", undefined, undefined);
     });
 
     it("redraws the links to a changed attachment and removes those to a deleted one", () => {
@@ -297,7 +303,8 @@ describe("ReferenceLink", () => {
             { attachmentId: "renamed", isDeleted: false }
         ]);
 
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href, "a");
+        expect(loadReferenceLinkTitle)
+            .toHaveBeenCalledWith(expect.anything(), href, "a", undefined);
         expect(getModelData(editor.model)).toBe(before);
     });
 
@@ -342,6 +349,102 @@ describe("ReferenceLink", () => {
         expect(redrawnHrefs()).toEqual([]);
     });
 
+    describe("links to blocks of the note in the editor", () => {
+        const LINKS = "<p><a class=\"reference-link\" href=\"#root/abc?block=h\">a</a>"
+            + "<a class=\"reference-link\" href=\"#root/parent/abc?block=p:h\">b</a>"
+            + "<a class=\"reference-link\" href=\"#root/def?block=h\">c</a>"
+            + "<a class=\"reference-link\" href=\"#root/abc\">d</a></p>";
+        const OWN_LINKS = [ "#root/abc?block=h", "#root/parent/abc?block=p:h" ];
+
+        /** An editor on the note `abc`, with or without the block ids of `BlockReference`. */
+        function createNoteEditor(plugins = [ BlockQuote, Heading, BlockReference ]) {
+            const allPlugins = [ Essentials, Paragraph, LinkEditing, ReferenceLink, ...plugins ];
+            return createTestEditor(allPlugins, {
+                getNoteId: () => "abc",
+                referenceLink: {
+                    getTitle: getReferenceLinkTitle,
+                    getTitleSync: getReferenceLinkTitleSync,
+                    renderTitle: loadReferenceLinkTitle
+                }
+            });
+        }
+
+        it("gives the host the content of the editor to read their text from", async () => {
+            const noteEditor = await createNoteEditor([]);
+            const domRoot = noteEditor.editing.view.getDomRoot();
+            const expected = [ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ],
+                [ "#root/def?block=h", false ], [ "#root/abc", false ] ];
+
+            noteEditor.setData(LINKS);
+            expect(loadReferenceLinkTitle.mock.calls.map(([ , href, , content ]) =>
+                [ href, content === domRoot ])).toStrictEqual(expected);
+            getReferenceLinkTitleSync.mockClear();
+            noteEditor.getData();
+            expect(getReferenceLinkTitleSync.mock.calls.map(([ href, , content ]) =>
+                [ href, content === domRoot ])).toStrictEqual(expected);
+
+            // An editor that does not name its note has no links to blocks of its own.
+            loadReferenceLinkTitle.mockClear();
+            editor.setData(LINKS);
+            expect(loadReferenceLinkTitle.mock.calls.map((args) => args[3]))
+                .toStrictEqual([ undefined, undefined, undefined, undefined ]);
+        });
+
+        it("redraws the links to blocks whose text changed, but not the document", async () => {
+            const noteEditor = await createNoteEditor();
+            vi.useFakeTimers();
+            onTestFinished(() => {
+                vi.useRealTimers();
+            });
+            noteEditor.setData("<h2 data-trilium-block-id=\"h\">Intro</h2>"
+                + "<p data-trilium-block-id=\"p\">Text</p>" + LINKS
+                + "<blockquote><p>Quote</p></blockquote>");
+            const domRoot = noteEditor.editing.view.getDomRoot();
+            // An anchor that only looks like a reference.
+            domRoot?.appendChild(document.createElement("a")).classList.add("reference-link");
+            vi.runAllTimers();
+            const dataChanges = vi.fn();
+            noteEditor.model.document.on("change:data", dataChanges);
+            const getBlock = (index: number) =>
+                noteEditor.model.document.getRoot()?.getChild(index) as ModelElement;
+            const type = (index: number) => {
+                noteEditor.model.change((writer) => writer.setSelection(getBlock(index), "end"));
+                noteEditor.execute("insertText", { text: "!" });
+            };
+            // The href of each title drawn again, and whether it is the title of that link,
+            // drawn from the content of the editor.
+            const redrawn = () => {
+                const calls = loadReferenceLinkTitle.mock.calls.map(([ title, href, , dom ]) => {
+                    const linkTitle = domRoot?.querySelector(`a[href="${href}"] > span`);
+                    return [ href, title === linkTitle && dom === domRoot ];
+                });
+                loadReferenceLinkTitle.mockClear();
+                return calls;
+            };
+
+            loadReferenceLinkTitle.mockClear();
+            type(0);
+            expect(redrawn()).toStrictEqual([]);
+            vi.advanceTimersByTime(300);
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ] ]);
+
+            type(1);
+            vi.runAllTimers();
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[1], true ] ]);
+
+            noteEditor.model.change((writer) => writer.remove(getBlock(3)));
+            vi.runAllTimers();
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ] ]);
+            expect(dataChanges).toHaveBeenCalledTimes(3);
+
+            // A change of the note redraws the other links only.
+            getReferenceLinkTitleSync.mockReturnValue("Renamed");
+            noteEditor.plugins.get("ReferenceLinkEditing").refreshNoteLinks([ "abc", "def" ]);
+            expect(new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href)))
+                .toStrictEqual(new Set([ "#root/def?block=h", "#root/abc" ]));
+        });
+    });
+
     it("reads the attachment a link points to, and none from a note link or a missing href", () => {
         expect(getAttachmentId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("att1");
         expect(getAttachmentId("#root/noteAbc")).toBeNull();
@@ -361,7 +464,8 @@ describe("ReferenceLink", () => {
 
         const data = editor.getData();
 
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc", "old");
+        expect(getReferenceLinkTitleSync)
+            .toHaveBeenCalledWith("#root/noteAbc", "old", undefined);
         expect(data).toContain('class="reference-link"');
         expect(data).toContain('href="#root/noteAbc"');
         expect(data).toContain("Some title");

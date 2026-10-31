@@ -7,7 +7,7 @@ Trilium can sort the items of a list, a group of paragraphs or the rows of a tab
 ## Sorting
 
 *   To sort, place the cursor in a list or a table, or select the paragraphs to sort, then press the <span class="tn-icon bx bx-sort-alt-2"></span> _Sort_ button of the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> to sort in ascending order. The arrow beside it offers _Ascending_ and _Descending_. With the floating toolbar, the button is in the block-level popup.
-*   When the selection covers several paragraphs, list items or table cells, the same choices are also in a submenu at the bottom of the menu of the block handle, the sequence of dots to the left of the block, and in the right-click menu of the selection. The submenu is named after what it sorts: _Sort blocks_, _Sort list items_ or _Sort rows_.
+*   When the selection covers several paragraphs, list items or table cells, the same choices are also in a submenu of the menu of the block handle (the sequence of dots to the left of the block), just above _Delete block_, and in the right-click menu of the selection. The submenu is named after what it sorts: _Sort blocks_, _Sort list items_ or _Sort rows_.
 *   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the button is in the main row of the toolbar and in the row of the _List ›_ button.
 
 A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.

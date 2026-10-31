@@ -57,6 +57,7 @@ import CodeBlockLanguageDropdown from "./plugins/code_block_language_dropdown.js
 import CodeBlockInsertParagraph from "./plugins/code_block_insert_paragraph.js";
 import CodeBlockHljsClass from "./plugins/code_block_hljs_class.js";
 import MoveBlockUpDownPlugin from "./plugins/move_block_updown.js";
+import DeleteBlocks from "./plugins/delete_blocks.js";
 import ScrollOnUndoRedoPlugin from "./plugins/scroll_on_undo_redo.js"
 import InlineCodeNoSpellcheck from "./plugins/inline_code_no_spellcheck.js";
 import InlineCodeToolbar from "./plugins/inline_code_toolbar.js";
@@ -119,6 +120,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     CodeBlockInsertParagraph,
     CodeBlockHljsClass,
     MoveBlockUpDownPlugin,
+    DeleteBlocks,
     ScrollOnUndoRedoPlugin,
     InlineCodeNoSpellcheck,
     InlineCodeToolbar,

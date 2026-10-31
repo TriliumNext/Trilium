@@ -10,7 +10,9 @@ import {
     type LinkDialogRequest,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
+import {
+    deferred, encodeBlockParameter, formatBlockRange, parseBlockRange
+} from "@triliumnext/commons";
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -26,7 +28,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
+import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
@@ -259,7 +261,11 @@ export default function EditableText({
     function showLinkDialog(request: LinkDialogRequest) {
         if (!editorApiRef.current) return null;
 
-        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, request);
+        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, {
+            target: request.target,
+            display: request.display,
+            notePath: noteContext?.notePath
+        });
         if (isMobile()) {
             parentComponent?.triggerCommand("showEditLinkDialog", opts);
             return null;
@@ -532,6 +538,7 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 showLinkDialog={showLinkDialog}
+                isExcerpt={block !== undefined}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();
@@ -585,13 +592,19 @@ export default function EditableText({
  * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
  * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
  */
+/** What the edit link dialog opens on, besides the editor. */
+interface EditLinkRequest extends Pick<EditLinkOpts, "target" | "display"> {
+    /** The path of the note in the editor. Without it, the dialog lists no headings. */
+    notePath?: string | null;
+}
+
 /**
  * What the edit link dialog opens on: the link around the caret or the selected link preview, which
  * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
  */
 export function getEditLinkOpts(
     api: CKEditorApi, ready: () => Promise<unknown>,
-    { target, display }: Pick<EditLinkOpts, "target" | "display"> = {}
+    { target, display, notePath }: EditLinkRequest = {}
 ): EditLinkOpts {
     async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
         await ready();
@@ -599,8 +612,12 @@ export function getEditLinkOpts(
     }
 
     const anchors = api.getAnchors();
+    const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
     const currentLink = api.getCurrentLink();
     if (currentLink) {
+        const currentHeading = notePath && headings
+            ? findLinkedHeading(currentLink.href, headings, notePath)
+            : undefined;
         return {
             text: currentLink.text,
             hasSelection: false,
@@ -608,7 +625,8 @@ export function getEditLinkOpts(
             currentDescription: currentLink.description,
             display: currentLink.display,
             anchors,
-            ...parseLinkHref(currentLink.href, anchors),
+            headings,
+            ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
                 await api.updateLink(notePath, linkTitle, externalLink);
@@ -623,12 +641,38 @@ export function getEditLinkOpts(
         target,
         display,
         anchors,
+        headings,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
         },
         addLinkPreview
     };
+}
+
+/** The headings of the editor, which link to their blocks in the note at `notePath`. */
+function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
+    return api.getHeadings().map((heading) => ({
+        title: heading.text,
+        level: heading.level,
+        blockId: heading.blockId,
+        createLinkPath() {
+            const blockId = api.assignBlockId(heading);
+            return blockId ? `${notePath}?block=${encodeBlockParameter(blockId)}` : notePath;
+        }
+    }));
+}
+
+/** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
+function findLinkedHeading(href: string, headings: LinkHeading[], notePath: string) {
+    if (!href.startsWith("#")) return undefined;
+
+    const [ path, query = "" ] = href.slice(1).split("?", 2);
+    const blockId = new URLSearchParams(query).get("block");
+    const isSameNote = path.split("/").at(-1) === notePath.split("/").at(-1);
+    return blockId && isSameNote
+        ? headings.find((heading) => heading.blockId === blockId)
+        : undefined;
 }
 
 /**

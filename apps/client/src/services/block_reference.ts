@@ -9,10 +9,10 @@ import {
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu, { type MenuItem } from "../menus/context_menu.js";
+import contextMenu, { type ContextMenuOptions, type MenuItem } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import {
-    buildSortSelectionMenuItem, getTextEditorContaining
+    buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
@@ -50,8 +50,10 @@ export interface BlockHandleMenuActions {
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
     copyShareLink?: () => void;
-    /** The _Sort_ submenu, shown last. */
+    /** The _Sort_ submenu, after a separator. */
     sortItem?: MenuItem<CommandNames> | null;
+    /** Deletes the selected blocks, shown last, after a separator. */
+    deleteBlocks?: () => void;
 }
 
 /** The note a text editor is open on, which the references it copies point to. */
@@ -83,16 +85,18 @@ export function buildReferenceConfig(
 
     return {
         blockReference: {
-            openHandleMenu(event, count) {
+            openHandleMenu(event, count, onClose) {
+                const editor = source.getEditor();
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(event, count, {
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
-                        ? () => void copy((editor) => copyBlockShareLink(editor, shareLink))
+                        ? () => void copy((target) => copyBlockShareLink(target, shareLink))
                         : undefined,
-                    sortItem: buildSortSelectionMenuItem(source.getEditor())
-                });
+                    sortItem: buildSortSelectionMenuItem(editor),
+                    deleteBlocks: getDeleteBlocksAction(editor)
+                }, editor, onClose);
             },
             copyReference: () => void copy(copyBlockReference)
         },
@@ -102,11 +106,17 @@ export function buildReferenceConfig(
     };
 }
 
-/** Opens the menu of the block handle at `event`, for `count` selected blocks. */
+/**
+ * Opens the menu of the block handle at `event`, for `count` selected blocks, and calls `onClose`
+ * once the menu is closed. `editor` stays focused while the menu is up, so that its handle stays
+ * shown.
+ */
 export function openBlockHandleMenu(
     event: MouseEvent,
     count: number,
-    { copyReference, copyShareLink, sortItem }: BlockHandleMenuActions
+    { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
+    editor?: CKTextEditor | null,
+    onClose?: () => void
 ) {
     const items = [ getCopyItem(count, copyReference) ];
     if (copyShareLink) {
@@ -119,12 +129,27 @@ export function openBlockHandleMenu(
     if (sortItem) {
         items.push({ kind: "separator" }, sortItem);
     }
+    if (deleteBlocks) {
+        items.push({ kind: "separator" }, {
+            title: t("block_reference.delete", { count }),
+            uiIcon: "bx bx-trash destructive-action-icon",
+            handler: deleteBlocks
+        });
+    }
 
+    const editorFocus: Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> = editor
+        ? keepEditorFocused(editor)
+        : {};
     void contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items,
-        selectMenuItemHandler: () => {}
+        selectMenuItemHandler: () => {},
+        onShow: editorFocus.onShow,
+        onHide: () => {
+            editorFocus.onHide?.();
+            onClose?.();
+        }
     });
 }
 
@@ -307,6 +332,18 @@ function getCopyItem(count: number, copyReference: () => void): MenuItem<Command
         title: t("block_reference.copy", { count }),
         uiIcon: "bx bx-link",
         handler: copyReference
+    };
+}
+
+/** Runs `deleteBlocks` in `editor` and focuses it, or `undefined` while the command is disabled. */
+function getDeleteBlocksAction(editor: CKTextEditor | null | undefined) {
+    if (!editor?.commands.get("deleteBlocks")?.isEnabled) {
+        return undefined;
+    }
+
+    return () => {
+        editor.execute("deleteBlocks");
+        editor.editing.view.focus();
     };
 }
 

@@ -1,14 +1,15 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, Bold, Bookmark, ButtonView,
-    ClassicEditor, CodeBlock, ContextualBalloon, Essentials, keyCodes, type KeystrokeHandler,
-    Link, LinkEditing, LinkUI, Paragraph
+    _getModelData as getModelData, _setModelData as setModelData, BlockQuote, Bold, Bookmark,
+    ButtonView, ClassicEditor, CodeBlock, ContextualBalloon, Essentials, Heading, keyCodes,
+    type KeystrokeHandler, Link, LinkEditing, LinkUI, Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import { createLinkEmbedHost } from "../../test/link-embed-kit.js";
+import BlockReferenceEditing from "./block_reference/block_reference_editing.js";
 import InternalLinkPlugin, {
-    COMMAND_NAME, getAnchorNames, getLinkAtSelection, type LinkDialogRequest,
+    COMMAND_NAME, getAnchorNames, getHeadings, getLinkAtSelection, type LinkDialogRequest,
     replaceLinkAtSelection
 } from "./internallink.js";
 import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
@@ -195,6 +196,44 @@ describe("the anchors of the document", () => {
     it("lists none in an editor without anchors", async () => {
         const editor = await createTestEditor([ Essentials, Paragraph, InternalLinkPlugin ]);
         expect(getAnchorNames(editor)).toStrictEqual([]);
+    });
+});
+
+describe("the headings of the document", () => {
+    it("lists the headings with text in order, with their level, text and block id", async () => {
+        const editor = await createTestEditor([
+            Essentials, Paragraph, Bold, Heading, BlockQuote, BlockReferenceEditing,
+            InternalLinkPlugin
+        ]);
+        setModelData(editor.model, "<heading1>Intro[]</heading1><paragraph>text</paragraph>"
+            + "<blockQuote><heading2 blockId=\"a\"> Nested <$text bold=\"true\">part</$text>"
+            + "</heading2></blockQuote><heading3> </heading3>"
+            + "<heading3>Deep<softBreak></softBreak>down</heading3>");
+        const root = editor.model.document.getRoot();
+        const quote = root?.getChild(2);
+
+        expect(getHeadings(editor)).toStrictEqual([
+            { element: root?.getChild(0), level: 1, text: "Intro", blockId: undefined },
+            {
+                element: quote?.is("element") && quote.getChild(0),
+                level: 2, text: "Nested part", blockId: "a"
+            },
+            { element: root?.getChild(4), level: 3, text: "Deep down", blockId: undefined }
+        ]);
+    });
+
+    it("reads a reference link in a heading as its title", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, Heading, InternalLinkPlugin ], {
+            referenceLink: {
+                getTitle: async () => "Target",
+                getTitleSync: (href, storedTitle) => storedTitle ?? `Title of ${href}`
+            }
+        });
+        setModelData(editor.model, "<heading1>See <reference href=\"#root/a\"></reference>.</heading1>"
+            + "<heading2>[]<reference href=\"#root/b\" storedTitle=\"Stored\"></reference></heading2>");
+
+        expect(getHeadings(editor).map((heading) => heading.text))
+            .toStrictEqual([ "See Title of #root/a.", "Stored" ]);
     });
 });
 

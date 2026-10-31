@@ -59,18 +59,31 @@ export default class BlockReference extends Plugin {
     private openMenu(event: MouseEvent) {
         const editor = this.editor;
         const command = editor.commands.get("assignBlockReference");
-        if (!command?.isEnabled) {
+        const openHandleMenu = editor.config.get("blockReference")?.openHandleMenu;
+        if (!command?.isEnabled || !openHandleMenu) {
             return;
         }
 
-        editor.config.get("blockReference")?.openHandleMenu?.(event, command.value);
+        const plugins = editor.plugins;
+        const dragHandle = plugins.has("BlockDragHandle") ? plugins.get("BlockDragHandle") : null;
+        if (dragHandle) {
+            dragHandle.isMenuOpen = true;
+        }
+        openHandleMenu(event, command.value, () => {
+            if (dragHandle) {
+                dragHandle.isMenuOpen = false;
+            }
+        });
     }
 }
 
 /** What the host of the editor does with references to blocks. */
 export interface BlockReferenceHost {
-    /** Opens the menu of the block handle at `event`, for `count` selected blocks. */
-    openHandleMenu(event: MouseEvent, count: number): void;
+    /**
+     * Opens the menu of the block handle at `event`, for `count` selected blocks, and calls
+     * `onClose` once the menu is closed.
+     */
+    openHandleMenu(event: MouseEvent, count: number, onClose: () => void): void;
     /** Copies a reference to the selected blocks. */
     copyReference(): void;
 }

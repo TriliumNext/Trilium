@@ -167,32 +167,50 @@ describe("TableInsertUI", () => {
             expect(gap).toBeLessThan(30);
         });
 
-        it("is at least 250px wide, with the inputs and the button at the right edge", async () => {
+        it("is at least 350px wide, with segments spanning it", async () => {
             const form = await openForm(editor);
             form.useHeaders = true;
 
-            expect(getElement(form).getBoundingClientRect().width).toBeGreaterThanOrEqual(250);
+            const formElement = getElement(form);
+            const formRect = formElement.getBoundingClientRect();
+            const formStyle = getComputedStyle(formElement);
+            const contentLeft = formRect.left + parseFloat(formStyle.paddingLeft);
+            const contentRight = formRect.right - parseFloat(formStyle.paddingRight);
+            expect(formRect.width).toBeGreaterThanOrEqual(350);
+            expect(getElement(form.insertButtonView).getBoundingClientRect().right)
+                .toBeCloseTo(contentRight, 0);
 
-            const buttonRect = getElement(form.insertButtonView).getBoundingClientRect();
-            const labelRect = getElement(form.columnsField.labelView).getBoundingClientRect();
-            const contentRight = getElement(form).getBoundingClientRect().right
-                - parseFloat(getComputedStyle(getElement(form)).paddingRight);
-            expect(buttonRect.right).toBeCloseTo(contentRight, 0);
+            const segments = Array.from(formElement
+                .querySelectorAll<HTMLElement>(".ck-table-insert-form__segment"));
+            expect(segments).toHaveLength(5);
+            for (const segment of segments) {
+                const rect = segment.getBoundingClientRect();
+                expect(rect.left).toBeCloseTo(contentLeft, 0);
+                expect(rect.right).toBeCloseTo(contentRight, 0);
+            }
 
+            const segmentStyle = getComputedStyle(segments[0]);
+            const innerLeft = contentLeft + parseFloat(segmentStyle.borderLeftWidth)
+                + parseFloat(segmentStyle.paddingLeft);
+            const innerRight = contentRight - parseFloat(segmentStyle.borderRightWidth)
+                - parseFloat(segmentStyle.paddingRight);
             for (const field of ["columns", "rows", "headingColumns", "headingRows"] as const) {
                 const input = getInput(form, field);
                 const rect = input.getBoundingClientRect();
                 const fontSize = parseFloat(getComputedStyle(input).fontSize);
+                const iconRect = getElement(form[`${field}Field`].iconView).getBoundingClientRect();
                 expect(rect.width, field).toBeCloseTo(5 * fontSize, 0);
-                expect(rect.right, field).toBeCloseTo(contentRight, 0);
+                expect(rect.right, field).toBeCloseTo(innerRight, 0);
+                expect(iconRect.left, field).toBeCloseTo(innerLeft, 0);
             }
 
-            // The switch row lines up with the fields.
+            // The switch fills its segment: the label starts at the icons, the toggle ends at
+            // the inputs.
             const toggleElement = getElement(form.headersSwitchView);
             const switchLabel = toggleElement.querySelector(".ck-button__label");
             const toggle = toggleElement.querySelector(".ck-button__toggle");
-            expect(switchLabel?.getBoundingClientRect().left).toBeCloseTo(labelRect.left, 0);
-            expect(toggle?.getBoundingClientRect().right).toBeCloseTo(contentRight, 0);
+            expect(switchLabel?.getBoundingClientRect().left).toBeCloseTo(innerLeft, 0);
+            expect(toggle?.getBoundingClientRect().right).toBeCloseTo(innerRight, 0);
         });
 
         it("inserts a table of the typed size and closes", async () => {
@@ -383,6 +401,8 @@ describe("TableInsertUI", () => {
                     en: {
                         dictionary: {
                             "Insert table…": "Tabel personalizat…",
+                            "Table size": "Dimensiune",
+                            "Table headers": "Antet",
                             "Rows": "Rânduri",
                             "Columns": "Coloane",
                             "Use headers": "Cu antet",
@@ -400,6 +420,10 @@ describe("TableInsertUI", () => {
 
             getFormButton(dropdown).click();
             const form = getForm(translated.plugins.get(ContextualBalloon));
+            const headings = Array.from(getElement(form)
+                .querySelectorAll(".ck-table-insert-form__card-heading"))
+                .map((heading) => heading.textContent);
+            expect(headings).toEqual(["Dimensiune", "Antet"]);
             const labels = Array.from(getElement(form).querySelectorAll("label"))
                 .map((label) => label.textContent);
             expect(labels).toEqual(["Coloane", "Rânduri", "Coloane antet", "Rânduri antet"]);

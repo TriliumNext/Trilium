@@ -6,7 +6,7 @@ import type { CommandNames } from "../components/app_context.js";
 import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
 import { t } from "../services/i18n.js";
 import { getEditorNoteId } from "../widgets/react/NoteStore.js";
-import type { MenuItem } from "./context_menu.js";
+import type { ContextMenuOptions, MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
 
 /**
@@ -194,6 +194,28 @@ export async function getTextEditorContaining(
     const element = node instanceof Element ? node : node?.parentElement;
     const editor = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
     return editor && getEditorNoteId(editor) ? editor : null;
+}
+
+/**
+ * Menu options adding the menu to the focus tracker of `editor`, so that the editor stays focused
+ * while the menu is up.
+ */
+export function keepEditorFocused(
+    editor: CKTextEditor
+): Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> {
+    let menuContainer: HTMLElement | null = null;
+
+    return {
+        onShow: (container) => {
+            menuContainer = container;
+            editor.ui.focusTracker.add(container);
+        },
+        onHide: () => {
+            if (menuContainer) {
+                editor.ui.focusTracker.remove(menuContainer);
+            }
+        }
+    };
 }
 
 type SortSelectionCommandName = "triliumSortSelectionAscending" | "triliumSortSelectionDescending";

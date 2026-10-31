@@ -14,10 +14,14 @@ This feature was introduced in TriliumNext v0.94.0 and augmented in v0.103.0 to 
     *   Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _anchor_.
 *   To place a link to an anchor in the same note:
     *   Place the cursor at the desired position of the link, or select the text to turn into a link.
-    *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Anchors_ at the top of the [_Add link_ dialog](Links.md).
-    *   Under _Target anchor_, click the desired anchor to check it. Optionally, type a _Link title_; without one, the link shows the anchor's name.
+    *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the [_Add link_ dialog](Links.md).
+    *   Under _Anchors_, click the desired anchor to check it. Optionally, type a _Link title_; without one, the link shows the anchor's name.
     *   Press <kbd>Enter</kbd> or _Add link_ to confirm.
-*   To change a link to an anchor, place the cursor inside it and press <kbd>Ctrl</kbd>+<kbd>K</kbd>. Since v0.107.0, the _Edit link_ dialog opens on _Anchors_, with the linked anchor checked.
+*   Clicking a link to an anchor of the same note scrolls to the anchor and briefly highlights the block that holds it, while editing as well as in read-only notes and on shared pages.
+*   To change a link to an anchor, place the cursor inside it and press <kbd>Ctrl</kbd>+<kbd>K</kbd>. Since v0.107.0, the _Edit link_ dialog opens on _Headings & anchors_, with the linked anchor checked.
+
+> [!TIP]
+> To link to a heading of the same note, no anchor is needed: pick the heading under _Headings_ in the same dialog. See [Linking to a heading](Block%20references.md) for details.
 
 ## Linking across notes
 
@@ -46,4 +50,4 @@ Clicking on a reference link pointing to an anchor will automatically scroll to 
 4.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 > [!NOTE]
-> Use this method only to insert <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between two documents. To link to an anchor on the same note, use the _Add link_ dialog (<kbd>Ctrl</kbd>+<kbd>K</kbd>) and select _Anchors_ at its top instead.
+> Use this method only to insert <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between two documents. To link to an anchor on the same note, use the _Add link_ dialog (<kbd>Ctrl</kbd>+<kbd>K</kbd>) and select _Headings & anchors_ at its top instead.

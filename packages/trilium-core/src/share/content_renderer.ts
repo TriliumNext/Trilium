@@ -1,11 +1,12 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE,
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
     getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey,
     getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
     type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml,
     renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
-    SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight, sliceToBlockReference
+    resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
+    sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -657,6 +658,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         embedsAsReferenceLinks: options.embedsAsReferenceLinks,
         expandNestedEmbeds: options.expandNestedEmbeds
     };
+    // The links of an embedded note, which `getContent()` processed with that note as their host.
+    const embeddedLinks = new Set<HTMLElement>();
     for (const embedEl of document.querySelectorAll(".include-note")) {
         const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
         if (!embed) continue;
@@ -706,7 +709,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         });
         if (typeof embeddedResult.content !== "string") continue;
 
-        replaceEmbedContent(embedEl, parse(embeddedResult.content, parseOpts).childNodes);
+        const embeddedContent = parse(embeddedResult.content, parseOpts);
+        for (const linkEl of embeddedContent.querySelectorAll("a")) {
+            embeddedLinks.add(linkEl);
+        }
+        replaceEmbedContent(embedEl, embeddedContent.childNodes);
     }
 
     result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
@@ -714,6 +721,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     if (!result.isEmpty) {
         // Process attachment links.
         for (const linkEl of document.querySelectorAll("a")) {
+            if (embeddedLinks.has(linkEl)) {
+                continue;
+            }
+
             const href = linkEl.getAttribute("href");
 
             // Preserve in-page anchors (footnotes, bookmarks): a link to a note starts with `#root`.
@@ -726,7 +737,9 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, href ?? "", getNote);
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote, {
+                    noteId: note.noteId, content: document
+                });
             }
         }
 
@@ -823,7 +836,11 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
-            linkEl.setAttribute("href", link.href);
+            // A link to blocks keeps them, which the page of the note scrolls to and flashes.
+            const block = new URLSearchParams(href.split("?")[1]).get("block");
+            linkEl.setAttribute("href", block && !link.isExternal
+                ? `${link.href}?block=${encodeBlockParameter(block)}`
+                : link.href);
             if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
@@ -842,7 +859,15 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  * @param linkEl the <a> element to process.
  * @param href the `href` stored in the note; `handleAttachmentLink()` rewrites the attribute.
  */
-function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNoteFunction) {
+/** The note whose `content` holds a reference link. */
+interface ReferenceLinkHost {
+    noteId: string;
+    content: HTMLElement;
+}
+
+function cleanUpReferenceLinks(
+    linkEl: HTMLElement, href: string, getNote: GetNoteFunction, host?: ReferenceLinkHost
+) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
 
     // Handle attachment reference links
@@ -864,8 +889,38 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${utils.escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
+        // A link to a heading of the note it is in shows the text of the heading, as in the app.
+        const heading = host && note.noteId === host.noteId
+            ? getLinkedHeadingText(host.content, href)
+            : null;
+        const icon = `<span class="${utils.escapeHtml(note.getIcon())}"></span>`;
+        linkEl.innerHTML = heading !== null
+            ? `<span>${utils.escapeHtml(heading)}</span>`
+            : `<span>${icon}${utils.escapeHtml(note.title)}</span>`;
     }
+}
+
+/**
+ * The text of the heading in `content` whose block `href` links to, or `null`. The labels of the
+ * block references in the heading are left out, and a heading without text reads as "Block", as
+ * in the app.
+ */
+function getLinkedHeadingText(content: HTMLElement, href: string) {
+    const block = new URLSearchParams(href.split("?")[1]).get("block");
+    if (!block) {
+        return null;
+    }
+
+    const { start, end } = resolveBlockReference<HTMLElement>(content, block);
+    if (!start || start !== end || !/^H[1-6]$/.test(start.tagName)) {
+        return null;
+    }
+
+    const heading = start.clone() as HTMLElement;
+    for (const link of heading.querySelectorAll(`a.reference-link[href*="block="]`)) {
+        link.remove();
+    }
+    return heading.textContent.replace(/\s+/g, " ").trim() || t("content_renderer.untitled-block");
 }
 
 /** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
