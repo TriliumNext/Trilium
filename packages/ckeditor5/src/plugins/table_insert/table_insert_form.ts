@@ -2,6 +2,9 @@ import {
     ButtonView,
     FocusCycler,
     FocusTracker,
+    IconTableColumn,
+    IconTableRow,
+    IconView,
     InputNumberView,
     KeystrokeHandler,
     LabelView,
@@ -11,7 +14,7 @@ import {
     View,
     ViewCollection
 } from "ckeditor5";
-import type { FocusableView, Locale } from "ckeditor5";
+import type { FocusableView, Locale, TemplateDefinition } from "ckeditor5";
 
 /** The largest number of rows the form accepts. */
 export const MAX_TABLE_ROWS = 1000;
@@ -40,10 +43,11 @@ export interface TableInsertOptions {
 }
 
 /**
- * The balloon form behind "Insert table…": a "Columns" field, a "Rows" field, a "Use headers"
- * switch that shows the "Header columns" and "Header rows" fields, and an Insert button. Invalid
- * values are reported under their field when the form is submitted, and a table with more than
- * {@link MAX_TABLE_CELLS} cells is reported above the button.
+ * The balloon form behind "Insert table…": a "Table size" card with the "Columns" and "Rows"
+ * fields, a "Table headers" card whose "Use headers" switch shows the "Header columns" and
+ * "Header rows" fields, and an Insert button. Invalid values are reported under their field when
+ * the form is submitted, and a table with more than {@link MAX_TABLE_CELLS} cells is reported
+ * above the button.
  */
 export default class TableInsertFormView extends View {
 
@@ -80,11 +84,13 @@ export default class TableInsertFormView extends View {
         const getHeadingError = (max: number) => t("Enter a whole number between 0 and %0.", max);
 
         this.rowsField = new TableSizeFieldView(locale, t("Rows"), {
+            icon: IconTableRow,
             min: 1,
             max: MAX_TABLE_ROWS,
             getErrorText: getSizeError
         });
         this.columnsField = new TableSizeFieldView(locale, t("Columns"), {
+            icon: IconTableColumn,
             min: 1,
             max: MAX_TABLE_COLUMNS,
             getErrorText: getSizeError
@@ -98,11 +104,13 @@ export default class TableInsertFormView extends View {
         });
 
         this.headingRowsField = new TableSizeFieldView(locale, t("Header rows"), {
+            icon: IconTableRow,
             min: 0,
             max: MAX_TABLE_ROWS,
             getErrorText: getHeadingError
         });
         this.headingColumnsField = new TableSizeFieldView(locale, t("Header columns"), {
+            icon: IconTableColumn,
             min: 0,
             max: MAX_TABLE_COLUMNS,
             getErrorText: getHeadingError
@@ -129,11 +137,23 @@ export default class TableInsertFormView extends View {
                 novalidate: true
             },
             children: [
-                this.columnsField,
-                this.rowsField,
-                this.headersSwitchView,
-                this.headingColumnsField,
-                this.headingRowsField,
+                createCard(t("Table size"), [this.columnsField, this.rowsField]),
+                createCard(t("Table headers"), [
+                    {
+                        tag: "div",
+                        attributes: {
+                            class: [
+                                "ck",
+                                "ck-table-insert-form__segment",
+                                "ck-table-insert-form__switch",
+                                bind.if("useHeaders", "ck-on")
+                            ]
+                        },
+                        children: [this.headersSwitchView]
+                    },
+                    this.headingColumnsField,
+                    this.headingRowsField
+                ]),
                 {
                     tag: "div",
                     attributes: {
@@ -259,7 +279,43 @@ export default class TableInsertFormView extends View {
     }
 }
 
+/** A card of the form: a heading over its segments, which the heading names as a group. */
+function createCard(
+    heading: string,
+    segments: Array<View | TemplateDefinition>
+): TemplateDefinition {
+    const headingId = `ck-table-insert-form-heading-${uid()}`;
+
+    return {
+        tag: "div",
+        attributes: {
+            class: ["ck", "ck-table-insert-form__card"],
+            role: "group",
+            "aria-labelledby": headingId
+        },
+        children: [
+            {
+                tag: "div",
+                attributes: {
+                    id: headingId,
+                    class: ["ck", "ck-table-insert-form__card-heading"]
+                },
+                children: [{ text: heading }]
+            },
+            {
+                tag: "div",
+                attributes: {
+                    class: ["ck", "ck-table-insert-form__card-body"]
+                },
+                children: segments
+            }
+        ]
+    };
+}
+
 interface TableSizeFieldOptions {
+    /** The SVG shown before the label. */
+    icon: string;
     min: number;
     max: number;
     /** Returns the error shown for a value that is not a whole number from `min` to `max`. */
@@ -267,8 +323,8 @@ interface TableSizeFieldOptions {
 }
 
 /**
- * A number field of {@link TableInsertFormView}: a label, the input and the error under it.
- * The element has `display: contents`, so the three parts are laid out by the form's grid.
+ * A number field of {@link TableInsertFormView}, drawn as a card segment: an icon, a label, the
+ * input and the error under them.
  */
 export class TableSizeFieldView extends View {
 
@@ -280,14 +336,17 @@ export class TableSizeFieldView extends View {
 
     declare public isVisible: boolean;
 
+    public readonly iconView: IconView;
     public readonly labelView: LabelView;
     public readonly inputView: InputNumberView;
 
     private readonly min: number;
     private readonly getErrorText: (max: number) => string;
 
-    constructor(locale: Locale, label: string, { min, max, getErrorText }: TableSizeFieldOptions) {
+    constructor(locale: Locale, label: string, options: TableSizeFieldOptions) {
         super(locale);
+
+        const { icon, min, max, getErrorText } = options;
 
         const inputId = `ck-table-insert-form-input-${uid()}`;
         const errorId = `ck-table-insert-form-error-${uid()}`;
@@ -298,6 +357,9 @@ export class TableSizeFieldView extends View {
         this.set("errorText", null);
         this.set("max", max);
         this.set("isVisible", true);
+
+        this.iconView = new IconView();
+        this.iconView.content = icon;
 
         this.labelView = new LabelView(locale);
         this.labelView.set({ text: label, for: inputId });
@@ -319,11 +381,13 @@ export class TableSizeFieldView extends View {
             attributes: {
                 class: [
                     "ck",
+                    "ck-table-insert-form__segment",
                     "ck-table-insert-form__field",
                     bind.if("isVisible", "ck-hidden", (isVisible) => !isVisible)
                 ]
             },
             children: [
+                this.iconView,
                 this.labelView,
                 this.inputView,
                 {

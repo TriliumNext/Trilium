@@ -1,7 +1,9 @@
-import { Locale } from "ckeditor5";
+import { IconTableColumn, IconTableRow, Locale } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
+
+import "../../theme/table_insert.css";
 
 import TableInsertFormView, {
     DEFAULT_HEADING_COLUMNS,
@@ -83,6 +85,62 @@ describe("TableInsertFormView", () => {
         expect(button.textContent).toBe("Insert");
         expect(button.getAttribute("type")).toBe("submit");
         expect(element.lastElementChild).toBe(button);
+    });
+
+    it("lays the fields out as segments of a Table size and a Table headers card", () => {
+        const cards = Array.from(getElement(form)
+            .querySelectorAll<HTMLElement>(".ck-table-insert-form__card"));
+        expect(cards).toHaveLength(2);
+        const [sizeCard, headersCard] = cards;
+
+        const headings = cards.map((card) => {
+            const heading = card.querySelector(".ck-table-insert-form__card-heading");
+            expect(card.getAttribute("role")).toBe("group");
+            expect(heading?.id).toBeTruthy();
+            expect(card.getAttribute("aria-labelledby")).toBe(heading?.id);
+            return heading?.textContent;
+        });
+        expect(headings).toEqual(["Table size", "Table headers"]);
+        expect(sizeCard.getAttribute("aria-labelledby"))
+            .not.toBe(headersCard.getAttribute("aria-labelledby"));
+
+        const sizeSegments = getSegments(sizeCard);
+        expect(sizeSegments).toHaveLength(2);
+        expect(sizeSegments[0]).toBe(getElement(form.columnsField));
+        expect(sizeSegments[1]).toBe(getElement(form.rowsField));
+
+        const headerSegments = getSegments(headersCard);
+        expect(headerSegments).toHaveLength(3);
+        expect(headerSegments[0]).toBe(getSwitchSegment(form));
+        expect(headerSegments[1]).toBe(getElement(form.headingColumnsField));
+        expect(headerSegments[2]).toBe(getElement(form.headingRowsField));
+
+        const icons = new Map([
+            [form.columnsField, IconTableColumn],
+            [form.rowsField, IconTableRow],
+            [form.headingColumnsField, IconTableColumn],
+            [form.headingRowsField, IconTableRow]
+        ]);
+        for (const [field, icon] of icons) {
+            const iconElement = getElement(field.iconView);
+            expect(field.iconView.content).toBe(icon);
+            expect(iconElement.childElementCount).toBeGreaterThan(0);
+            expect(getElement(field).firstElementChild).toBe(iconElement);
+        }
+    });
+
+    it("rounds the bottom of the switch segment while it is the last one shown", () => {
+        const switchStyle = getComputedStyle(getSwitchSegment(form));
+        expect(switchStyle.borderStartStartRadius).toBe("8px");
+        expect(switchStyle.borderEndEndRadius).toBe("8px");
+
+        form.useHeaders = true;
+        expect(switchStyle.borderStartStartRadius).toBe("8px");
+        expect(switchStyle.borderEndEndRadius).toBe("0px");
+        expect(getComputedStyle(getElement(form.headingColumnsField)).borderEndEndRadius)
+            .toBe("0px");
+        expect(getComputedStyle(getElement(form.headingRowsField)).borderEndEndRadius)
+            .toBe("8px");
     });
 
     it("returns the entered size", () => {
@@ -385,6 +443,18 @@ function setSize(form: TableInsertFormView, rows: number, columns: number) {
 function setHeadings(form: TableInsertFormView, rows: number, columns: number) {
     getInput(form.headingRowsField).value = String(rows);
     getInput(form.headingColumnsField).value = String(columns);
+}
+
+function getSegments(card: HTMLElement): HTMLElement[] {
+    return Array.from(card.querySelectorAll<HTMLElement>(".ck-table-insert-form__segment"));
+}
+
+function getSwitchSegment(form: TableInsertFormView): HTMLElement {
+    const segment = getElement(form.headersSwitchView).parentElement;
+    if (!segment?.classList.contains("ck-table-insert-form__segment")) {
+        throw new Error("The switch is not in a segment.");
+    }
+    return segment;
 }
 
 function getSizeError(form: TableInsertFormView): HTMLElement {

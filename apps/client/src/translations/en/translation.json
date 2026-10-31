@@ -4629,6 +4629,8 @@
       "move-column-left": "Move column left",
       "move-column-right": "Move column right",
       "insert-table": "Insert table…",
+      "table-size": "Table size",
+      "table-headers": "Table headers",
       "rows": "Rows",
       "columns": "Columns",
       "use-headers": "Use headers",
