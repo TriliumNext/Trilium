@@ -158,7 +158,7 @@
     },
     "set_password": {
         "heading": "パスワードの設定",
-        "description": "ウェブから Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
+        "description": "web から Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
         "password": "パスワード",
         "password-confirmation": "パスワードの確認",
         "button": "パスワードを設定",

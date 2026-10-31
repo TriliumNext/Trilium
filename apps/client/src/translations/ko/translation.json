@@ -67,9 +67,21 @@
     "fix_link": "링크 수정",
     "button_fix_link": "링크 수정",
     "web_link": "웹 링크",
-    "url": "URL",
+    "url": "주소(URL)",
     "mirror_title": "노트 제목과 동기화",
-    "mirror_title_description": "링크에 노트의 현재 제목이 표시되며, 노트 이름을 변경하면 링크의 제목도 변경됩니다."
+    "mirror_title_description": "링크에 노트의 현재 제목이 표시되며, 노트 이름을 변경하면 링크의 제목도 변경됩니다.",
+    "display_as": "표시 형식",
+    "display_plain": "일반 링크",
+    "display_inline": "인라인",
+    "display_card": "카드",
+    "display_embed": "YouTube 삽입",
+    "page_title": "웹페이지 제목",
+    "title_from_url": "URL과 동일하게",
+    "description": "설명",
+    "page_description": "웹페이지 설명",
+    "anchors": "앵커",
+    "target_anchor": "대상 앵커",
+    "no_anchors": "사용 가능한 앵커가 없습니다."
   },
   "branch_prefix": {
     "save": "저장",
@@ -378,7 +390,10 @@
     "size_expandable_description": "펼치기 전에는 제목만 표시합니다.",
     "inserted_as_image": "이 노트는 이미지로 삽입되었습니다.",
     "size_hint": "크기는 나중에 변경할 수 있습니다.",
-    "image_size_hint": "이미지 크기는 나중에 조절할 수 있습니다."
+    "image_size_hint": "이미지 크기는 나중에 조절할 수 있습니다.",
+    "missing_note": "ID가 {{noteId}}인 노트가 없습니다.",
+    "missing_attachment": "ID가 {{attachmentId}}인 첨부 파일이 없습니다.",
+    "unknown_kind": "이 콘텐츠를 사용하려면 최신 버전의 Trilium이 필요합니다."
   },
   "info": {
     "modalTitle": "정보 메시지",
@@ -867,7 +882,8 @@
     "meeting_recording": "실행 표시줄의 \"회의 내용 전사\" 버튼으로 생성된 노트임을 나타냅니다. 이 노트에는 회의 전사 내용이 저장됩니다.",
     "calendar_hide_routine_events": "일주일에 {{days}}일 이상 반복되는 시간 지정 일정을 월간, 연간 및 목록 보기에서 숨깁니다. 속성값에 관계없이 적용됩니다.",
     "template_title_template": "템플릿 노트에 설정하는 속성으로, 해당 템플릿에서 생성되는 노트의 기본 제목을 지정합니다. 부모 노트의 <code>#titleTemplate</code> 설정보다 우선 적용됩니다. <code>#titleTemplate</code> 설정과 동일한 방식으로 평가되며, 자동으로 제공되는 <code>now</code> 및 <code>parentNote</code> 변수를 사용할 수 있습니다. 예: <code>Meeting ${now.format('YYYY-MM-DD')}</code>.",
-    "exclude_from_llm": "이 노트를 AI 채팅과 MCP 서버에서 숨깁니다. 하위 노트도 숨기려면 라벨을 상속 가능하도록 설정하세요."
+    "exclude_from_llm": "이 노트를 AI 채팅과 MCP 서버에서 숨깁니다. 하위 노트도 숨기려면 라벨을 상속 가능하도록 설정하세요.",
+    "bookmark_open_mode": "런치바에서 노트 버튼을 클릭했을 때 노트가 열리는 위치를 지정합니다: <code>currentTab</code>(기본값), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> 또는 <code>quickEdit</code>. 북마크, 런치바에 드래그하여 추가한 노트, 북마크 폴더에 있는 노트에 적용됩니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -1286,7 +1302,8 @@
     "backlinks": "백링크",
     "content_language_switcher": "콘텐츠 언어: {{language}}",
     "insert_child_note_short": "하위 노트",
-    "create_new_split_short": "새 분할"
+    "create_new_split_short": "새 분할",
+    "note_panel": "노트 패널"
   },
   "note_icon": {
     "change_note_icon": "노트 아이콘 변경",
@@ -2681,7 +2698,8 @@
     "current_note": "이 노트",
     "children_hidden": "하위 노트가 트리에서 숨겨져 있습니다",
     "workspaces": "작업 공간",
-    "bookmarks": "북마크"
+    "bookmarks": "북마크",
+    "forward": "노트로 돌아가기"
   },
   "title_bar_buttons": {
     "window-on-top": "항상 위에 표시"
@@ -2835,7 +2853,13 @@
     "configure_launch_bar": "실행 표시줄 구성...",
     "launch_bar_orientation": "실행 표시줄 방향",
     "will_reload_frontend": "(앱을 다시 불러올 예정입니다)",
-    "show_as_folder": "폴더"
+    "show_as_folder": "폴더로 표시",
+    "open_mode": "열기 방식",
+    "open_mode_current_tab": "현재 탭",
+    "open_mode_new_tab": "새 탭",
+    "open_mode_new_split": "새 분할",
+    "open_mode_new_window": "새 창",
+    "open_mode_quick_edit": "빠른 편집"
   },
   "highlighting": {
     "title": "코드 블록",
@@ -3546,7 +3570,24 @@
   "presentation_view": {
     "edit-slide": "이 슬라이드 편집",
     "start-presentation": "발표 시작",
-    "slide-overview": "슬라이드 개요 토글"
+    "slide-overview": "슬라이드 개요 토글",
+    "finish-editing": "편집 완료",
+    "new-slide": "새 슬라이드",
+    "slide-sidebar": "슬라이드 사이드바",
+    "menu-edit-slide": "슬라이드 편집",
+    "menu-new-slide-after": "뒤에 새 슬라이드 추가",
+    "menu-new-vertical-slide": "새 세로 슬라이드",
+    "menu-duplicate": "복제",
+    "menu-move-up": "위로 이동",
+    "menu-move-down": "아래로 이동",
+    "menu-make-vertical": "세로 슬라이드로 변경",
+    "menu-make-top-level": "최상위 슬라이드로 변경",
+    "menu-delete": "슬라이드 삭제...",
+    "slide-background": "슬라이드 배경",
+    "no-slides": "이 프레젠테이션에는 슬라이드가 없습니다.",
+    "previous-slide": "이전 슬라이드",
+    "next-slide": "다음 슬라이드",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "calendar_view": {
     "delete_note": "노트 삭제...",
@@ -4141,7 +4182,6 @@
       "download-image": "이미지 다운로드",
       "drag-to-reposition-the-collapsible-block": "접이식 블록을 이동하려면 드래그",
       "edit-task-states": "작업 상태 편집",
-      "edit-title": "제목 수정",
       "embed": "임베드",
       "inline": "인라인",
       "insert-a-0-mermaid-diagram-template": "\"%0\" Mermaid 다이어그램 템플릿 삽입",
@@ -4160,11 +4200,9 @@
       "select-collapsible-block": "접을 수 있는 블록 선택",
       "summary": "요약",
       "task-state": "작업 상태:",
-      "title": "제목",
       "toggle-collapsible-block": "접이식 블록 전환",
       "type-the-content-here": "여기에 내용을 입력하세요...",
       "undefined-custom-task-state": "정의되지 않은 사용자 지정 작업 상태",
-      "url": "URL",
       "admonition": "알림 상자",
       "anchor": "앵커",
       "anchor-name": "앵커 이름",
@@ -4370,7 +4408,15 @@
       "use-headers": "헤더 사용",
       "header-columns": "헤더 열",
       "header-rows": "헤더 행",
-      "enter-a-whole-number-between-0-and-0": "0에서 %0 사이의 정수를 입력하세요."
+      "enter-a-whole-number-between-0-and-0": "0에서 %0 사이의 정수를 입력하세요.",
+      "unknown-embed-widget": "알 수 없는 삽입 위젯",
+      "extended-code-block": "확장 코드 블록",
+      "insert-a-code-block-that-is-edited-as-a-code-note": "코드 노트처럼 편집할 수 있는 코드 블록을 삽입합니다.",
+      "new-child-note": "새 하위 노트",
+      "create-a-new-child-note": "새 하위 노트 만들기",
+      "create-a-new-child-note-and-insert-a-link-to-it": "새 하위 노트를 만들고 해당 노트의 링크 삽입",
+      "open-note": "노트 열기",
+      "open-attachment": "첨부 파일 열기"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4857,5 +4903,16 @@
     "tomorrow": "내일",
     "next-week": "다음 주",
     "clear": "지우기"
+  },
+  "sort_selection": {
+    "sort_blocks": "블록 정렬",
+    "sort_list_items": "목록 항목 정렬",
+    "sort_rows": "행 정렬",
+    "ascending": "오름차순",
+    "descending": "내림차순"
+  },
+  "canvas": {
+    "thin_stroke": "얇은 펜 선",
+    "thin_stroke_description": "손글씨에 적합하도록 펜 선을 더 얇게 그립니다. 이미 그린 선의 두께는 유지됩니다."
   }
 }
