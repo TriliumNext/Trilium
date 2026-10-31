@@ -21,7 +21,7 @@
     "@floating-ui/dom": "1.8.0",
     "@fullcalendar/rrule": "7.1.3",
     "@popperjs/core": "2.11.8",
-    "@preact/signals": "2.11.3",
+    "@preact/signals": "2.11.4",
     "@triliumnext/ckeditor5": "workspace:*",
     "@triliumnext/codemirror": "workspace:*",
     "@triliumnext/commons": "workspace:*",
