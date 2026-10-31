@@ -9,11 +9,18 @@
 import type {
     CKEditorError, CKTextEditor, DocumentHeading, FileUploadData, LinkAtSelection, ModelElement
 } from "@triliumnext/ckeditor5";
+import { type ComponentProps, h } from "preact";
+import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
+import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import type LoadResults from "../../../services/load_results";
+import { renderInto } from "../../../test/render";
+import type { EditLinkBalloon } from "../../dialogs/edit_link";
+import type CKEditor from "./CKEditor";
 
 const showError = vi.hoisted(() => vi.fn());
 const showErrorTitleAndMessage = vi.hoisted(() => vi.fn());
@@ -41,7 +48,38 @@ vi.mock("./utils", async (importOriginal) => ({
     showsAttachmentSave
 }));
 
+// Stand-ins for what `EditableText` renders, which keep the props they receive.
+const rendered = vi.hoisted(() => ({
+    editor: undefined as ComponentProps<typeof CKEditor> | undefined,
+    balloon: undefined as ComponentProps<typeof EditLinkBalloon> | undefined
+}));
+vi.mock("./CKEditor", () => ({
+    default: (props: ComponentProps<typeof CKEditor>) => {
+        rendered.editor = props;
+        return null;
+    }
+}));
+vi.mock("../../dialogs/edit_link", () => ({
+    EditLinkBalloon: (props: ComponentProps<typeof EditLinkBalloon>) => {
+        rendered.balloon = props;
+        return "edit link balloon";
+    }
+}));
+vi.mock("./snippets.js", () => ({ default: async () => [], updateTemplateCache: vi.fn() }));
+vi.mock("../../react/hooks", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../react/hooks")>(),
+    useEditorSpacedUpdate: () => ({}),
+    useLegacyImperativeHandlers: () => {},
+    useNoteLabel: () => [ null ],
+    useSameNoteSwitch: () => {},
+    useSearchTermsConsumer: () => {},
+    useTriliumEvent: () => {},
+    useTriliumOption: () => [ "" ],
+    useTriliumOptionBool: () => [ false ]
+}));
+
 const {
+    default: EditableText,
     applyPendingAttachmentChanges,
     getEditLinkOpts,
     getBlockData,
@@ -455,27 +493,41 @@ describe("parseLinkHref", () => {
     });
 });
 
-describe("getEditLinkOpts", () => {
-    function createApi(
-        currentLink: LinkAtSelection | null, anchors: string[] = [],
-        headings: DocumentHeading[] = []
-    ) {
-        return {
-            hasSelection: vi.fn(() => true),
-            getSelectedText: vi.fn(() => "chosen words"),
-            getCurrentLink: vi.fn(() => currentLink),
-            getAnchors: vi.fn(() => anchors),
-            getHeadings: vi.fn(() => headings),
-            assignBlockId: vi.fn<(heading: DocumentHeading) => string | undefined>(() => "new"),
-            addLink: vi.fn(),
-            updateLink: vi.fn(),
-            addLinkPreview: vi.fn(),
-            addLinkToEditor: vi.fn(),
-            addHtmlToEditor: vi.fn(),
-            addContentEmbed: vi.fn(),
-            addImage: vi.fn(async () => {})
+describe("EditableText", () => {
+    it("opens the link balloon at the caret, on the headings of the note it edits", async () => {
+        renderInto(h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext: { notePath: "root/abc" } as NoteContext,
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined
+        }));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const heading = { element: {} as ModelElement, level: 2, text: "Intro" };
+        const editorApi = rendered.editor?.editorApi;
+        if (editorApi) {
+            editorApi.current = createApi(null, [], [ heading ]);
+        }
+        const request = {
+            container: document.createElement("div"), close: vi.fn(), target: "note" as const
         };
-    }
+
+        let closeBalloon: (() => void) | null | undefined;
+        act(() => {
+            closeBalloon = rendered.editor?.showLinkDialog?.(request);
+        });
+        expect(request.container.textContent).toBe("edit link balloon");
+        expect(rendered.balloon?.onClose).toBe(request.close);
+        const opts = rendered.balloon?.opts;
+        expect(opts).toMatchObject({ target: "note", headings: [ { title: "Intro" } ] });
+        expect(opts?.headings?.[0]?.createLinkPath()).toBe("root/abc?block=new");
+
+        act(() => closeBalloon?.());
+        expect(request.container.textContent).toBe("");
+    });
+});
+
+describe("getEditLinkOpts", () => {
     const ready = async () => {};
 
     it("edits the link at the caret, rewriting it on save", async () => {
@@ -598,3 +650,23 @@ describe("getEditLinkOpts", () => {
         });
     });
 });
+
+function createApi(
+    currentLink: LinkAtSelection | null, anchors: string[] = [], headings: DocumentHeading[] = []
+) {
+    return {
+        hasSelection: vi.fn(() => true),
+        getSelectedText: vi.fn(() => "chosen words"),
+        getCurrentLink: vi.fn(() => currentLink),
+        getAnchors: vi.fn(() => anchors),
+        getHeadings: vi.fn(() => headings),
+        assignBlockId: vi.fn<(heading: DocumentHeading) => string | undefined>(() => "new"),
+        addLink: vi.fn(),
+        updateLink: vi.fn(),
+        addLinkPreview: vi.fn(),
+        addLinkToEditor: vi.fn(),
+        addHtmlToEditor: vi.fn(),
+        addContentEmbed: vi.fn(),
+        addImage: vi.fn(async () => {})
+    };
+}

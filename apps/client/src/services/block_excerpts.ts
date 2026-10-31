@@ -150,7 +150,7 @@ function getText(element: Element) {
         }
     }
 
-    return (source.textContent ?? "").replace(/\s+/g, " ").trim();
+    return (source.textContent as string).replace(/\s+/g, " ").trim();
 }
 
 function truncate(text: string, maxLength: number) {

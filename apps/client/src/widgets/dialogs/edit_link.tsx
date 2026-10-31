@@ -412,7 +412,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     ? opts.text || heading.title
                     : linkTitle.trim() || null;
                 opts.addLink(heading.createLinkPath(), title);
-            } else if (anchor) {
+            } else {
                 // A link without a text of its own reads as the anchor's name. `true` keeps the
                 // href of an anchor link as it is.
                 opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
