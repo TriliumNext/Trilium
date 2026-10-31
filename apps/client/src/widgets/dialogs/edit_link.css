@@ -43,10 +43,6 @@
                 min-width: 0;
             }
         }
-
-        .edit-link-text.tn-card-section-nested {
-            --edit-link-label-width: calc(8em - var(--card-nested-section-indent));
-        }
     }
 
     .edit-link-description textarea {

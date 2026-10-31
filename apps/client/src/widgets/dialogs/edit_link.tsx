@@ -17,7 +17,6 @@ import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
 import FormTextBox from "../react/FormTextBox";
-import FormToggle from "../react/FormToggle";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
@@ -25,8 +24,6 @@ import NoItems from "../react/NoItems";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
-
-type LinkType = "reference-link" | "external-link" | "hyper-link";
 
 /**
  * What the link points at: a note, an address outside Trilium, or a heading or an anchor in the
@@ -67,8 +64,8 @@ export interface EditLinkOpts {
      */
     currentLink?: Suggestion;
     /**
-     * The text of the link being edited. The dialog opens with the title not mirroring the note's,
-     * and keeps this text until another note or anchor is picked.
+     * The text of the link being edited, which the title field opens with and keeps until another
+     * note is picked. Without it, a link to a note mirrors the note's title.
      */
     currentTitle?: string;
     /** The description of the link preview being edited. */
@@ -198,7 +195,6 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
 function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ linkTitle, setLinkTitle ] = useState("");
     const [ linkDescription, setLinkDescription ] = useState("");
-    const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
@@ -217,8 +213,6 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // The scrolling box around the Headings and Anchors cards.
     const linkTargetsRef = useRef<HTMLDivElement>(null);
     const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
-    // The text of the link being edited, while it stands in for the picked note's title.
-    const keptTitleRef = useRef<string | null>(null);
     const initialBookmarkRef = useRef("");
     // The title of the link preview being edited, while the title field still shows it.
     const previewTitleRef = useRef<string | null>(null);
@@ -228,12 +222,6 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const autoFocus = !isMobile();
 
     useEffect(() => {
-        if (opts?.hasSelection || opts?.currentTitle !== undefined) {
-            setLinkType("hyper-link");
-        } else {
-            setLinkType("reference-link");
-        }
-
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
         setTarget(getInitialTarget(opts, initialWebLink));
         setWebLink(initialWebLink ?? "");
@@ -241,7 +229,6 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setAnchor(opts?.currentAnchor ?? "");
         setHeading(opts?.currentHeading ?? null);
         setCollapsedHeadings(new Set());
-        keptTitleRef.current = opts?.currentTitle ?? null;
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
@@ -273,12 +260,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     }
 
     function changeTarget(next: LinkTarget, text = "") {
-        keptTitleRef.current = null;
         setTarget(next);
         setNoteTitle("");
         setLinkTitle("");
         setLinkDescription("");
-        setLinkType(opts?.hasSelection ? "hyper-link" : "reference-link");
         setAnchor("");
         setHeading(null);
         if (next === "url") {
@@ -320,20 +305,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         return () => input.removeEventListener("paste", onPaste);
     }, [ target, opts ]);
 
-    async function setDefaultLinkTitle(noteId: string) {
-        const title = await tree.getNoteTitle(noteId);
-        setNoteTitle(title);
-        if (keptTitleRef.current === null) {
-            setLinkTitle(title);
-        }
-    }
-
     useEffect(() => {
-        const resetExternalLink = () =>
-            setLinkType((prev) => prev === "external-link" ? "reference-link" : prev);
-
         if (!suggestion) {
-            resetExternalLink();
             setBookmarks([]);
             setSelectedBookmark("");
             return;
@@ -344,7 +317,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (suggestion.notePath) {
             const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
             if (noteId) {
-                setDefaultLinkTitle(noteId);
+                void tree.getNoteTitle(noteId).then(setNoteTitle);
                 (async () => {
                     const note = await froca.getNote(noteId);
                     if (cancelled || !note) return;
@@ -366,24 +339,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     initialBookmarkRef.current = "";
                 })();
             }
-            resetExternalLink();
-        }
-
-        if (suggestion.externalLink) {
-            setLinkType("external-link");
         }
 
         return () => { cancelled = true; };
     }, [suggestion]);
-
-    useEffect(() => {
-        if (keptTitleRef.current !== null) return;
-        if (selectedBookmark) {
-            setLinkTitle(`${noteTitle} - ${selectedBookmark}`);
-        } else {
-            setLinkTitle(noteTitle);
-        }
-    }, [selectedBookmark, noteTitle]);
 
     // Runs one render after `onShown`, so `fillAndFocus()` reads the state set from `opts`.
     useEffect(() => {
@@ -464,7 +423,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             const path = selectedBookmark
                 ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
                 : suggestion.notePath;
-            opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
+            // `null` makes a reference link, which shows the note's current title. A selection
+            // keeps its own text, but `addLink()` needs a title to link it rather than replace it.
+            const title = opts.hasSelection ? opts.text || noteTitle : linkTitle.trim() || null;
+            opts.addLink(path, title);
         } else if (suggestion.externalLink) {
             const url = suggestion.externalLink;
             const text = linkTitle.trim();
@@ -498,7 +460,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     /** The text the link reads as while the title field is empty. */
     function getTitlePlaceholder() {
         if (target === "anchor") return heading?.title || anchor || undefined;
-        if (target !== "url") return undefined;
+        if (target === "note") return t("add_link.title_from_note");
         return isPreview ? t("add_link.page_title")
             : suggestion?.externalLink ?? t("add_link.title_from_url");
     }
@@ -689,9 +651,9 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                         changeTarget("url", picked.externalLink);
                                         return;
                                     }
-                                    // Another note takes its own title over the edited link's text.
+                                    // Another note drops the text, so the link mirrors its title.
                                     if (picked?.notePath !== suggestion?.notePath) {
-                                        keptTitleRef.current = null;
+                                        setLinkTitle("");
                                     }
                                     setSuggestion(picked);
                                 }}
@@ -714,31 +676,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                     keyProperty="value"
                                     titleProperty="title"
                                     currentValue={selectedBookmark}
-                                    onChange={(bookmark) => {
-                                        keptTitleRef.current = null;
-                                        setSelectedBookmark(bookmark);
-                                    }}
+                                    onChange={setSelectedBookmark}
                                 />
                             </OptionCardSection>
                         )}
 
-                        {showsTitle && (
-                            <OptionCardSection
-                                className="edit-link-mirror"
-                                name="mirror-title"
-                                label={t("add_link.mirror_title")}
-                                description={t("add_link.mirror_title_description")}
-                                subSectionsVisible={linkType === "hyper-link"}
-                                subSections={titleSection}
-                            >
-                                <FormToggle
-                                    currentValue={linkType === "reference-link"}
-                                    onChange={(mirror) => {
-                                        setLinkType(mirror ? "reference-link" : "hyper-link");
-                                    }}
-                                />
-                            </OptionCardSection>
-                        )}
+                        {showsTitle && titleSection}
                     </>
                 )}
             </Card>

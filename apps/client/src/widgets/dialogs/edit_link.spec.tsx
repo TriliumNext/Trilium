@@ -90,10 +90,6 @@ describe("EditLinkDialog", () => {
         return [ ...container.querySelectorAll(".tn-card-heading") ].map((heading) => heading.textContent);
     }
 
-    function mirrorToggle() {
-        return container.querySelector<HTMLInputElement>(".edit-link-mirror input.switch-toggle");
-    }
-
     /** Whether the row of the field is indented under the row it depends on. */
     function nested(name: "url" | "text") {
         return container.querySelector(`.edit-link-${name}`)?.classList.contains("tn-card-section-nested");
@@ -198,28 +194,46 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://trilium.cc", "Trilium", true);
     });
 
-    it("links a note by its title, or by a text of its own once the title stops mirroring it", async () => {
+    it("links a note mirroring its title, or by a text of its own", async () => {
         const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
         await open();
-        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
-        expect(mirrorToggle()?.checked).toBe(true);
-        expect(field("text")).toBeNull();
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        expect(container.querySelector(".edit-link-mirror")).toBeNull();
+        expect(field("text")?.value).toBe("");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_note");
+        expect(container.querySelector(".edit-link-note + .edit-link-text")).not.toBeNull();
+        expect(nested("text")).toBe(false);
+        expect(stacked()).toStrictEqual([]);
         await submit();
-        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, null);
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
 
         await open();
-        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
-        const toggle = mirrorToggle();
-        if (!toggle) throw new Error("No toggle to mirror the note's title.");
-        await act(async () => {
-            toggle.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-        await vi.waitFor(() => expect(field("text")?.value).toBe("Target"));
-        expect(nested("text")).toBe(true);
-        expect(stacked()).toStrictEqual([]);
-        await type(field("text"), "See there");
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await type(field("text"), "  ");
         await submit();
-        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, "See there");
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+
+        await open();
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await type(field("text"), " See there ");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "See there");
+    });
+
+    it("links a selection by its text, or by the note's title if it has none", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        await open({ text: "some words", hasSelection: true });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        expect(field("text")).toBeNull();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "some words");
+
+        await open({ text: "", hasSelection: true });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "Target");
     });
 
     it("opens on the web link side for an edited external link or a selected URL", async () => {
@@ -258,16 +272,28 @@ describe("EditLinkDialog", () => {
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {
         const note = buildNote({ title: "Target", "#internalBookmark": "part" });
-        await open({
-            currentLink: { notePath: `root/${note.noteId}` },
-            currentTitle: "See there",
-            currentBookmark: "part"
-        });
-        expect(mirrorToggle()?.checked).toBe(false);
+        const edited = {
+            currentLink: { notePath: `root/${note.noteId}` }, currentTitle: "See there"
+        };
+        await open({ ...edited, currentBookmark: "part" });
         await vi.waitFor(() => expect(container.querySelector("select")?.value).toBe("part"));
         expect(field("text")?.value).toBe("See there");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}?bookmark=part`, "See there");
+
+        // An emptied title turns it into a link that mirrors the note's title.
+        await open(edited);
+        await type(field("text"), "");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}`, null);
+
+        // Another note drops the text, and the link mirrors that note's title.
+        const other = buildNote({ title: "Other" });
+        await open(edited);
+        await act(async () => autocomplete.onChange?.({ notePath: `root/${other.noteId}` }));
+        expect(field("text")?.value).toBe("");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`root/${other.noteId}`, null);
 
         await open({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example"
