@@ -43,7 +43,7 @@ The rest of the menu lists its options one per row:
 *   **Open note**
     *   Clicking it opens the note in a new [tab](../Tabs.md).
     *   Hovering it or clicking its arrow opens a submenu with the places the note can be opened in: _Open in a new tab_, _Open in a new split_ (to the right of the note, within the current tab) and _Open in a new window_.
-    *   On mobile, the menu lists _Open in a new tab_ and _Open in a new split_ directly instead of _Open note_, and leaves out _Open in a new window_.
+    *   On mobile, the menu lists _Open_, _Open in a new tab_ and _Open in a new split_ directly instead of _Open note_, and leaves out _Open in a new window_. _Open_ shows the note in the current tab, which also opens a note with children, since tapping one lists its children instead.
 *   **Quick edit**
     *   Opens the note in <a class="reference-link" href="../../Navigation/Quick%20edit.md">Quick edit</a>, over the current one.
 *   **Hoist note**

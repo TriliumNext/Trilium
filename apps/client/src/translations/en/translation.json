@@ -2547,6 +2547,7 @@
     "button-tree-map": "Tree map"
   },
   "tree-context-menu": {
+    "open": "Open",
     "open-in-a-new-tab": "Open in a new tab",
     "open-in-a-new-split": "Open in a new split",
     "open-in-a-new-window": "Open in a new window",

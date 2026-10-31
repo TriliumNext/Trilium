@@ -205,6 +205,7 @@ export type CommandMappings = {
         oldMainNtxId?: string | null;
         newMainNtxId?: string | null;
     };
+    openNote: ContextMenuCommandData;
     openInTab: ContextMenuCommandData;
     openNoteInSplit: ContextMenuCommandData;
     openNoteInWindow: ContextMenuCommandData;
