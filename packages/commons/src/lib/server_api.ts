@@ -194,6 +194,58 @@ export interface PostTokensResponse {
     authToken: string;
 }
 
+/** The signed-in user, as the global menu shows them. */
+export interface CurrentUser {
+    username: string;
+    isAdmin: boolean;
+    /** The user's avatar hue, from `getAvatarHues()`, so it matches the one on the Users page. */
+    avatarHue: number;
+}
+
+/** A row of `GET /api/users`. */
+export interface UserListItem {
+    userId: string;
+    username: string;
+    email: string | null;
+    isAdmin: boolean;
+    /** The primary admin, seeded on startup, which every login currently signs in as. */
+    isPrimaryAdmin: boolean;
+    /** Whether this is the user the request was made as. */
+    isCurrentUser: boolean;
+    /** Whether the user has chosen a password through a setup link. */
+    hasPassword: boolean;
+    /** When the user's current setup link stops working; `null` when there is none. */
+    setupLinkExpiresAt: string | null;
+    dateCreated: string;
+}
+
+/**
+ * A one-time link letting a user choose their password. The token is only ever shown when the link
+ * is created; the server keeps a hash of it.
+ */
+export interface SetupLinkResponse {
+    token: string;
+    expiresAt: string;
+}
+
+/** What `POST /api/setup-account/check` tells the setup screen about a valid link. */
+export interface SetupAccountInfo {
+    username: string;
+    expiresAt: string;
+}
+
+/** The fields `POST /api/users` and `PATCH /api/users/:userId` accept. */
+export interface UserInput {
+    username: string;
+    email: string | null;
+    isAdmin: boolean;
+}
+
+export interface CreateUserResponse {
+    userId: string;
+    setupLink: SetupLinkResponse;
+}
+
 export interface BackupDatabaseNowResponse {
     backupFile: string;
 }
@@ -1082,6 +1134,11 @@ export type BootstrapDefinition = {
         ssoIssuerIcon?: string;
         /** Whether a TOTP second factor is required. */
         totpEnabled: boolean;
+        /**
+         * Whether users other than the primary admin can sign in, in which case the screen asks
+         * everyone, the primary admin included, for a username.
+         */
+        usernameEnabled?: boolean;
         /** One-shot SSO error from a failed OIDC round-trip ("wrong_account" / "not_enrolled"). */
         ssoError?: string | false;
         /**
@@ -1135,6 +1192,8 @@ export type BootstrapDefinition = {
     appCssNoteIds: string[];
     isDev: boolean;
     isMainWindow: boolean;
+    /** Who is signed in, sent only once users other than the primary admin can sign in. */
+    currentUser?: CurrentUser;
     isProtectedSessionAvailable: boolean;
     triliumVersion: string;
     appPath: string;

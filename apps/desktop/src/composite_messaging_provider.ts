@@ -38,6 +38,10 @@ export default class CompositeMessagingProvider implements MessagingProvider {
         this.ws.disconnectAllClients(reason);
     }
 
+    disconnectUserClients(userId: string, reason: string): void {
+        this.ws.disconnectUserClients(userId, reason);
+    }
+
     setClientMessageHandler(handler: ClientMessageHandler): void {
         this.ipc.setClientMessageHandler((id, message) => handler(`${IPC_PREFIX}${id}`, message));
         this.ws.setClientMessageHandler((id, message) => handler(`${WS_PREFIX}${id}`, message));

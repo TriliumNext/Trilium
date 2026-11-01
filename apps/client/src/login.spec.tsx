@@ -69,6 +69,15 @@ describe("PasswordLogin", () => {
         expect(assign).toHaveBeenCalledWith(".");
     });
 
+    it("asks for a username, required, once other users can sign in", () => {
+        expect(setup().password.form?.querySelector('input[name="username"]')).toBeNull();
+
+        const c = renderInto(<PasswordLogin illustration={null} totpEnabled={false} usernameEnabled initialError={null} />);
+        const username = c.querySelector<HTMLInputElement>('input[name="username"]');
+        expect(username).not.toBeNull();
+        expect(username?.required).toBe(true);
+    });
+
     it("includes the TOTP token only when TOTP is enabled", async () => {
         vi.spyOn(window.location, "assign").mockImplementation(() => {});
         const fetchFn = mockFetch({ ok: true, status: 200 });

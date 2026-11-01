@@ -13,7 +13,7 @@ export interface ActionButtonProps extends Pick<
     HTMLAttributes<HTMLButtonElement>,
     "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style" | "aria-expanded"
     | "aria-pressed" | "onClickCapture" | "onPointerDown" | "onPointerMove" | "onPointerUp"
-    | "onPointerLeave" | "onPointerCancel"
+    | "onPointerLeave" | "onPointerCancel" | "tabIndex"
 > {
     text: string;
     titlePosition?: "top" | "right" | "bottom" | "left";

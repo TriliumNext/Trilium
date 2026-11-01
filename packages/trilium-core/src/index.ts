@@ -97,7 +97,7 @@ export { getCrypto } from "./services/encryption/crypto";
 
 export { default as attribute_formatter} from "./services/attribute_formatter";
 export { default as attributes } from "./services/attributes";
-export { default as user_service, type User as UserRecord, PrimaryAdminDeletionError } from "./services/user_service";
+export { default as user_service, type User as UserRecord, PrimaryAdminDeletionError, PrimaryAdminDemotionError } from "./services/user_service";
 
 // Messaging system
 export * from "./services/messaging/index";

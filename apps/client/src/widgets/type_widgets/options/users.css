@@ -1,0 +1,107 @@
+.users-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    align-items: center;
+    gap: 16px;
+
+    > .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+.users-description {
+    flex: 1 1 auto;
+    margin: 0;
+    color: var(--muted-text-color);
+    font-size: 13px;
+}
+
+.tn-card.users-list .user-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    .user-row-details {
+        display: flex;
+        flex: 1 1 12em;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .user-row-name {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+
+        > .ext-badge {
+            flex-shrink: 0;
+        }
+    }
+
+    .user-row-username {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .user-row-meta {
+        color: var(--muted-text-color);
+    }
+
+    .user-row-email {
+        overflow-wrap: anywhere;
+    }
+
+    .user-row-menu {
+        flex-shrink: 0;
+        margin-inline-start: auto;
+    }
+}
+
+.ext-badge.user-badge-admin {
+    --color: var(--admonition-important-accent-color, #7c4dff);
+}
+
+.ext-badge.user-badge-you {
+    --color: var(--admonition-note-accent-color, #1e88e5);
+}
+
+.modal.user-dialog .tn-card + .tn-card {
+    margin-top: 16px;
+}
+
+.ext-badge.user-badge-pending {
+    --color: var(--admonition-warning-accent-color, #e8a33d);
+}
+
+.ext-badge.user-badge-expired {
+    --color: var(--admonition-caution-accent-color, #e53935);
+}
+
+.modal.setup-link-dialog {
+    .setup-link-description {
+        margin-bottom: 12px;
+    }
+
+    .setup-link-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        > input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-family: var(--monospace-font-family, monospace);
+            font-size: .85em;
+        }
+
+        > .btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+    }
+}

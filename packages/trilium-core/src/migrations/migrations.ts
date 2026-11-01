@@ -9,6 +9,14 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // One-time setup links for users: only a hash of the token is kept, with its expiry.
+    {
+        version: 245,
+        sql: /*sql*/`
+            ALTER TABLE users ADD COLUMN setupTokenHash TEXT DEFAULT NULL;
+            ALTER TABLE users ADD COLUMN setupTokenExpiresAt TEXT DEFAULT NULL;
+        `
+    },
     // Add note_permissions table (note sharing ACL, users and groups).
     {
         version: 244,

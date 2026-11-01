@@ -346,7 +346,10 @@ function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
                     
                     // Miscellaneous
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
-                    { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" }
+                    { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" },
+
+                    // Administration: `#adminOnly` pages, listed last under their own heading
+                    { id: "_optionsUsers", title: t("hidden-subtree.users-title"), type: "contentWidget", icon: "bx-group", attributes: [{ type: "label", name: "serverOnly" }, { type: "label", name: "notInStandalone" }, { type: "label", name: "adminOnly" }] }
                 ]
             },
             buildHiddenSubtreeTemplates()

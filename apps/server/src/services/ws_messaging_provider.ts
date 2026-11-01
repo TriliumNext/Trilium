@@ -20,6 +20,8 @@ export interface HttpAttachableMessagingProvider extends MessagingProvider {
     attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler): void;
     /** Asks every client connected over the TCP listener to reload, then closes its connection. */
     disconnectAllClients(reason: string): void;
+    /** The same, for the connections of one user. */
+    disconnectUserClients(userId: string, reason: string): void;
 }
 
 export function isHttpAttachableMessagingProvider(provider: MessagingProvider): provider is HttpAttachableMessagingProvider {
@@ -153,6 +155,19 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
                 client.send(jsonStr);
             }
             client.close();
+        }
+    }
+
+    /** Like {@link disconnectAllClients}, for the connections of one user. */
+    disconnectUserClients(userId: string, reason: string): void {
+        const jsonStr = JSON.stringify({ type: "reload-frontend", reason } satisfies WebSocketMessage);
+
+        for (const entry of this.clientMap.values()) {
+            if (entry.userId !== userId) continue;
+            if (entry.ws.readyState === WebSocket.OPEN) {
+                entry.ws.send(jsonStr);
+            }
+            entry.ws.close();
         }
     }
 

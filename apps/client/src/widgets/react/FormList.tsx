@@ -904,9 +904,15 @@ export function FormListCustomItem({ children }: { children: ComponentChildren }
                     : undefined);
             }}
             // Only a click on what the row acts with closes the menu: one in the space around it,
-            // such as between the color picker's cells, picks nothing.
+            // such as between the color picker's cells, picks nothing, so it stops here before
+            // `Dropdown` closes its popup for a click inside.
             onClick={(e) => {
-                if (menu && actsOnClick(e.target, e.currentTarget)) menu.close();
+                if (!menu) return;
+                if (actsOnClick(e.target, e.currentTarget)) {
+                    menu.close();
+                } else {
+                    e.stopPropagation();
+                }
             }}
         >
             {children}

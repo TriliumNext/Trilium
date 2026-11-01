@@ -48,8 +48,9 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         // screen is served by the SPA at the root too, so an explicit login navigation
         // (GET /login redirects here with a `?login` marker) and SPA sub-requests such
         // as /bootstrap must fall through to it — otherwise enabling the option locks
-        // the owner out of the instance entirely (#10552).
-        const isBareRootRequest = req.path === "/" && req.query.login === undefined;
+        // the owner out of the instance entirely (#10552). A user's setup link lands on the root too.
+        const isBareRootRequest = req.path === "/" && req.query.login === undefined
+            && req.query.setupAccount === undefined;
 
         if (hasRedirectBareDomain && isBareRootRequest) {
             // Only redirect to the share page when a share root is actually configured.

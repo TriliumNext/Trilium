@@ -38,7 +38,9 @@ vi.mock("../react/hooks", async (importOriginal) => {
 // Import AFTER the mocks (vi.mock is hoisted, but the import must resolve the mocked deps).
 import type { UserTheme } from "@triliumnext/commons";
 
+import type Component from "../../components/component";
 import server from "../../services/server";
+import { ParentComponent } from "../react/react_utils";
 import GlobalMenu, { parseLatestVersion, RELEASES_API_URL, UPDATE_CHECK_INTERVAL, useTriliumUpdateStatus } from "./global_menu";
 
 let status: ReturnType<typeof useTriliumUpdateStatus> | undefined;
@@ -338,5 +340,73 @@ describe("GlobalMenu", () => {
         for (const key of movedKeys) {
             expect(phone.topLevel.some((row) => row?.startsWith(key))).toBe(false);
         }
+    });
+
+    describe("the signed-in user", () => {
+        const triggerCommand = vi.fn();
+
+        afterEach(() => {
+            window.glob = { ...window.glob, currentUser: undefined };
+            triggerCommand.mockReset();
+        });
+
+        async function openMenu() {
+            await act(async () => {
+                if (container) render(
+                    <ParentComponent.Provider value={{ triggerCommand } as unknown as Component}>
+                        <GlobalMenu isHorizontalLayout />
+                    </ParentComponent.Provider>, container);
+            });
+            await act(async () => container?.querySelector<HTMLButtonElement>("button.global-menu-button")?.click());
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+            return popup()?.querySelector(".tn-menu-scroll");
+        }
+
+        it("heads the menu with the user's avatar, name and role, and logs out from there", async () => {
+            window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 120 } };
+            const scroll = await openMenu();
+
+            const account = scroll?.firstElementChild;
+            expect(account?.querySelector(".global-menu-account")).not.toBeNull();
+            const avatar = account?.querySelector<HTMLElement>(".user-avatar");
+            expect(avatar?.textContent).toBe("AL");
+            expect(avatar?.style.getPropertyValue("--user-avatar-hue")).toBe("120");
+            expect(account?.querySelector(".global-menu-account-name")?.textContent).toBe("alice");
+            expect(account?.querySelector(".global-menu-account-role")?.textContent).toBe("users.role_user");
+
+            // The account row carries the way out, so the menu has no second one.
+            expect(rows(scroll)).not.toContain("global_menu.logout");
+            // An icon button, which the keys reach as the row's way in.
+            expect(account?.querySelectorAll("button")).toHaveLength(1);
+            const logout = account?.querySelector<HTMLButtonElement>("button.icon-action.bx-log-out");
+            expect(logout).not.toBeNull();
+            expect(logout?.textContent).toBe("");
+            expect(logout?.getAttribute("tabindex")).toBe("0");
+            await act(async () => logout?.click());
+            expect(triggerCommand).toHaveBeenCalledWith("logout");
+        });
+
+        it("stays open when the account row is clicked anywhere but its button", async () => {
+            window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 120 } };
+            const scroll = await openMenu();
+
+            for (const selector of [ ".global-menu-account", ".user-avatar", ".global-menu-account-name", ".global-menu-account-role" ]) {
+                const target = scroll?.querySelector<HTMLElement>(selector);
+                expect(target, selector).not.toBeNull();
+                await act(async () => target?.click());
+                expect(popup(), selector).not.toBeNull();
+            }
+        });
+
+        it("names an admin's role, and shows no account row on a single-user instance", async () => {
+            window.glob = { ...window.glob, currentUser: { username: "admin", isAdmin: true, avatarHue: 210 } };
+            expect((await openMenu())?.querySelector(".global-menu-account-role")?.textContent).toBe("users.role_admin");
+            render(null, container ?? document.body);
+
+            window.glob = { ...window.glob, currentUser: undefined };
+            const scroll = await openMenu();
+            expect(scroll?.querySelector(".global-menu-account")).toBeNull();
+            expect(rows(scroll)).toContain("global_menu.logout");
+        });
     });
 });
