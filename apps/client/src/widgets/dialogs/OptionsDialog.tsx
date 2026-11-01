@@ -192,8 +192,8 @@ export function useOptionPages() {
  * `hidden_subtree.ts`) can carry a boolean label restricting where it appears: `#electronOnly`
  * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron)
  * app, and `#notInStandalone` hides it in the standalone build. Pages without any of them apply
- * everywhere. The page still exists in the note tree and stays reachable directly; only the modal's
- * navigation hides it.
+ * everywhere. Apart from the platform, `#adminOnly` hides a page from a signed-in member. The page
+ * still exists in the note tree and stays reachable directly; only the modal's navigation hides it.
  *
  * The first two are one axis — where the stack is served from — and are written as `Only` labels
  * because each names a single platform. Standalone is neither: its server runs in this browser, so
@@ -213,6 +213,10 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
     }
 
     if (isStandalone && page.isLabelTruthy("notInStandalone")) {
+        return false;
+    }
+
+    if (window.glob.isAdmin === false && page.isLabelTruthy("adminOnly")) {
         return false;
     }
 

@@ -1184,6 +1184,8 @@ export type BootstrapDefinition = {
     appCssNoteIds: string[];
     isDev: boolean;
     isMainWindow: boolean;
+    /** `false` for a signed-in user who is not an admin. Absent where the only user is the admin. */
+    isAdmin?: boolean;
     isProtectedSessionAvailable: boolean;
     triliumVersion: string;
     appPath: string;

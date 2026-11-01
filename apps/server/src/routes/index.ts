@@ -182,7 +182,8 @@ export function bootstrap(req: Request, res: Response) {
             && isElectronRenderer
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
-        isMainWindow: view === "mobile" ? true : !req.query.extraWindow
+        isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        isAdmin: !req.session.userId || user_service.isUserAdmin(req.session.userId)
     } satisfies BootstrapDefinition);
 }
 
