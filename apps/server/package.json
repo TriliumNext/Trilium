@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@agentclientprotocol/codex-acp": "2.3.0",
-    "@ai-sdk/anthropic": "4.0.90",
+    "@ai-sdk/anthropic": "4.0.91",
     "@ai-sdk/deepseek": "3.0.75",
     "@ai-sdk/google": "4.0.107",
     "@ai-sdk/openai": "4.0.104",
@@ -37,7 +37,7 @@
     "@hyzyla/pdfium": "3.0.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@openrouter/ai-sdk-provider": "3.1.0",
-    "ai": "7.0.155",
+    "ai": "7.0.156",
     "better-sqlite3": "13.0.3",
     "i18next": "26.5.11",
     "ipaddr.js": "^2.4.0",
