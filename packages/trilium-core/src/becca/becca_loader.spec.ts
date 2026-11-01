@@ -259,7 +259,8 @@ describe("becca_loader", () => {
         it("loads a member's own notes alongside the root and the system subtree", async () => {
             const note = createNote("root");
             getContext().init(() => {
-                getSql().execute("UPDATE notes SET ownerId = ? WHERE noteId = ?", ["loaderMember1", note.noteId]);
+                note.ownerId = "loaderMember1";
+                note.save();
             });
 
             const memberBecca = new Becca();
