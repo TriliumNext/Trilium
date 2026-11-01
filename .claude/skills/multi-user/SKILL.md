@@ -52,7 +52,7 @@ Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/
 
 ## Rules for code you write on this branch
 
-1. **Never import the default `becca`** in new code. Use `getBecca()` (`import { getBecca } from "../becca/becca.js"` in core, `getBecca` from `@triliumnext/core` in server). The default export is the unfiltered admin Becca; ~25 server files (ETAPI, LLM tools, `files.ts`, OCR, share, OneNote import) still import it and leak every note — when you touch one, convert it. Inside entities use `this.becca`.
+1. **Never import the default `becca`** in new code. Use `getBecca()` (`import { getBecca } from "../becca/becca.js"` in core, `getBecca` from `@triliumnext/core` in server). The default export is the unfiltered admin Becca; ~40 non-spec files (ETAPI, LLM tools, share, board, spreadsheet, OCR, image services, `custom.ts`, OneNote import) still import it and leak every note — when you touch one, convert it. Merging `main` keeps adding more, because the compiler doesn't flag them. Inside entities use `this.becca`.
 2. **`getBecca()` throws for a non-admin with no warmed Becca.** Any new entry point that runs with a non-admin `userId` in CLS (custom router, WS handler, background job) must `await warmBeccaForUser(userId)` first, the way `internalRoute` does. Conversely, `cls.init(...)` starts a fresh context with no `userId`, so code inside it silently runs as admin.
 3. **Do not use `getBecca()` during load.** `loadBeccaForUser` sets CLS `loadingBecca` so entity constructors register into the Becca being built; anything that calls `getBecca()` mid-load gets that partial instance.
 4. **Permission checks go through `permission_service`**, never ad-hoc SQL on `note_permissions`. Admin and owner short-circuit to full access; otherwise grants on the note *and every ancestor across all branches* are merged, highest privilege wins, write implies read.
@@ -63,7 +63,7 @@ Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/
 
 ## Migrations
 
-Branch migrations are 239 (identity + ownership columns + `oauth_enrollment`, drops `user_data`) and 240 (`note_permissions`). **`main` already uses 239–242**, so the next merge of `main` into the milestone must renumber these (to 243/244 or whatever is next) and update `schema.sql`. Both are `ignoreErrors: true` SQL migrations; data work (admin seed, backfill) intentionally lives in `seedAdminUser()` rather than the migration because the SQL instance/options aren't ready mid-chain.
+Branch migrations are 243 (identity + ownership columns + `oauth_enrollment`, drops `user_data`) and 244 (`note_permissions`). They were 239/240 until the 2026-11-01 merge of `main`, which already used 239–242. **Every time `main` is merged in, check whether it added migrations at or above ours and renumber again** so ours stay on top. Dev databases that ran an older numbering skip the main migrations that took those numbers; recreate them rather than patching. Both are `ignoreErrors: true` SQL migrations; data work (admin seed, backfill) intentionally lives in `seedAdminUser()` rather than the migration because the SQL instance/options aren't ready mid-chain.
 
 Older JS migrations call `becca_loader.load()` / save notes before `ownerId` exists, which is why `becca_loader.ts` and `bnote.ts` probe `pragma_table_info('notes')` for `ownerId`. Keep those probes when touching load/save.
 
@@ -72,7 +72,12 @@ Older JS migrations call `becca_loader.load()` / save notes before `ownerId` exi
 - Core permission/Becca tests use a real in-memory DB inside `cls.init` and insert users/notes/branches/grants with raw SQL — see `packages/trilium-core/src/services/permission_service.spec.ts` for the helper set (`insertUser`, `insertNote`, `insertBranch`, `insertGroup`, ...). Set `cls.set("userId", ...)` to impersonate.
 - Route tests: `apps/server/src/routes/api/users.spec.ts`, `permissions.spec.ts`.
 - Specs that previously imported default `becca` now import `getBecca` — follow suit in new specs.
-- Run: `pnpm --filter @triliumnext/core test src/services/permission_service.spec.ts`, `pnpm --filter @triliumnext/server test src/routes/api/permissions.spec.ts`. Follow the `writing-unit-tests` skill for harness details.
+- Run: core specs execute through the server's vitest config (core has no runner of its own): `pnpm --filter @triliumnext/server test ../../packages/trilium-core/src/services/permission_service.spec.ts`, `pnpm --filter @triliumnext/server test src/routes/api/permissions.spec.ts`.
+- `notes` and `attachments` both have an `ownerId` column (on attachments it means the owning note, not a user). Qualify it in any SQL that joins the two, or it fails with "ambiguous column name". Follow the `writing-unit-tests` skill for harness details.
+
+## Merging `main` into the milestone
+
+Merge, never rebase. Most conflicts are phase 2's `becca` → `getBecca()` rename colliding with main's edits: render them with `git checkout --conflict=zdiff3`, and where *ours* equals *base* once the rename is undone, take main's side and apply the rename. Then run `pnpm typecheck`: every `Cannot find name 'becca'` is main's new code in a file whose default import phase 2 removed, so switch those to `getBecca()`. Renumber migrations (above), check that `becca_loader` changes on main also reach `loadBeccaForUser`, and run the full `pnpm --filter @triliumnext/server test`.
 
 ## Phases and what is still open
 
