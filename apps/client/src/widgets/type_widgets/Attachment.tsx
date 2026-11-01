@@ -57,7 +57,8 @@ const CanvasDrawingDetail = lazy(() =>
 export function AttachmentList({ note }: TypeWidgetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const attachments = useAttachments(note);
-    const groups = useMemo(() => partitionAttachmentsByGroup(attachments), [ attachments ]);
+    const groups = useMemo(
+        () => partitionAttachmentsByGroup(attachments, note.type), [ attachments, note.type ]);
     // Nothing to fold away until the app has made an attachment of its own, which most notes never give
     // it reason to — so an ordinary note's list looks exactly as it did.
     const hasFoldedAway = groups.system.length > 0;
