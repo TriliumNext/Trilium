@@ -110,7 +110,7 @@
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
     "anchor_none": "None (link to note)",
-    "button_add_link": "Add link"
+    "button_add_link": "Insert link"
   },
   "delete_notes": {
     "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",

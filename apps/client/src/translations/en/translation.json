@@ -63,7 +63,7 @@
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
     "anchor_none": "None (link to note)",
-    "button_add_link": "Add link",
+    "button_add_link": "Insert link",
     "button_edit_link": "Save link",
     "button_fix_link": "Fix link",
     "web_link": "Web link",

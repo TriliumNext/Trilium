@@ -56,7 +56,7 @@ Since v0.107.0, a link preview is created from the same _Add link_ dialog as any
 *   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web link_.
 *   Type or paste the address, then pick the preview in _Display as_: _Inline_, _Card_ or, for a YouTube video, _YouTube embed_. _Plain link_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
 *   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
-*   Press <kbd>Enter</kbd> or _Add link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
+*   Press <kbd>Enter</kbd> or _Insert link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
 
 Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_). It opens the same dialog with a preview already picked: a _YouTube embed_ for a YouTube video, a _Card_ for any other page.
 

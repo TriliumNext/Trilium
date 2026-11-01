@@ -204,7 +204,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
     const [ anchor, setAnchor ] = useState("");
     const [ heading, setHeading ] = useState<LinkHeading | null>(null);
-    const [ collapsedHeadings, setCollapsedHeadings ] = useState<ReadonlySet<LinkHeading>>(
+    const [ expandedHeadings, setExpandedHeadings ] = useState<ReadonlySet<LinkHeading>>(
         new Set()
     );
     const [ isShowPending, setIsShowPending ] = useState(false);
@@ -228,7 +228,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setDisplay(opts?.display ?? "plain");
         setAnchor(opts?.currentAnchor ?? "");
         setHeading(opts?.currentHeading ?? null);
-        setCollapsedHeadings(new Set());
+        // Sub-headings start collapsed, except the ones above the heading being edited.
+        setExpandedHeadings(new Set(
+            opts?.currentHeading ? getParentHeadings(headingTree, opts.currentHeading) : []
+        ));
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
@@ -513,13 +516,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     setAnchor("");
                 }}
                 subSections={children.map(renderHeadingChoice)}
-                isExpanded={!collapsedHeadings.has(item)}
-                onExpandedChange={(isExpanded) => setCollapsedHeadings((collapsed) => {
-                    const next = new Set(collapsed);
+                isExpanded={expandedHeadings.has(item)}
+                onExpandedChange={(isExpanded) => setExpandedHeadings((expanded) => {
+                    const next = new Set(expanded);
                     if (isExpanded) {
-                        next.delete(item);
-                    } else {
                         next.add(item);
+                    } else {
+                        next.delete(item);
                     }
                     return next;
                 })}
@@ -560,7 +563,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             )}
         </div>
     </>) : (
-        <NoItems icon="bx bx-heading" text={t("add_link.no_headings_or_anchors")} />
+        <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
     );
     const displays = [
         { value: "plain", title: t("add_link.display_plain") },
@@ -724,6 +727,20 @@ function nestHeadings(headings: LinkHeading[]) {
     }
 
     return tree;
+}
+
+/** The headings that `heading` nests under in `headingTree`, from its parent up. */
+function getParentHeadings(
+    headingTree: Map<LinkHeading | null, LinkHeading[]>, heading: LinkHeading
+) {
+    const parents: LinkHeading[] = [];
+    let child = heading;
+    for (;;) {
+        const parent = [ ...headingTree ].find(([ , children ]) => children.includes(child))?.[0];
+        if (!parent) return parents;
+        parents.push(parent);
+        child = parent;
+    }
 }
 
 /** Scrolls the checked choice in `container` to the middle of it, if there is one. */
