@@ -60,7 +60,7 @@ html {
     --modal-control-button-color: #737373;
     --modal-control-button-hover-color: white;
     --modal-control-button-hover-background: gray;
-    --modal-close-button-hover-background: var(--tab-close-button-hover-background);
+    --modal-close-button-hover-background: var(--tab-close-button-hover-background, #c95a5a);
 
     --active-item-text-color: black;
     --active-item-background-color: #ddd;
