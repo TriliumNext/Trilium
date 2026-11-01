@@ -69,6 +69,36 @@ describe("PasswordLogin", () => {
         expect(assign).toHaveBeenCalledWith(".");
     });
 
+    it("reopens the address it was shown at, without the login marker", async () => {
+        const startUrl = window.location.href;
+        try {
+            const assign = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+            const reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
+            mockFetch({ ok: true, status: 200 });
+
+            // A print link: the same address with a fragment, which assign() would only scroll to.
+            window.history.replaceState(null, "", "/?print#root/abc");
+            const first = setup();
+            first.password.value = "secret";
+            first.submit();
+            await flush();
+            expect(reload).toHaveBeenCalledOnce();
+            expect(assign).not.toHaveBeenCalled();
+            render(null, container);
+            container.remove();
+
+            // GET /login lands on `?login`, which the address after login drops.
+            window.history.replaceState(null, "", "/?login&print#root/abc");
+            const second = setup();
+            second.password.value = "secret";
+            second.submit();
+            await flush();
+            expect(assign).toHaveBeenCalledWith(".?print#root/abc");
+        } finally {
+            window.history.replaceState(null, "", startUrl);
+        }
+    });
+
     it("includes the TOTP token only when TOTP is enabled", async () => {
         vi.spyOn(window.location, "assign").mockImplementation(() => {});
         const fetchFn = mockFetch({ ok: true, status: 200 });
