@@ -59,4 +59,11 @@
     td > input:not(.desktop-port) {
         width: 220px;
     }
+
+    td > textarea.custom-headers {
+        width: 320px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.9em;
+        resize: vertical;
+    }
 }

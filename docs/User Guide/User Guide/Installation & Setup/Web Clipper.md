@@ -97,7 +97,7 @@ The extension needs to connect to a running Trilium instance. By default, it loo
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
 
-To connect to a server, enter its address and your password in the extension's options and press _Login to the server instance_. If the server uses [multi-factor authentication](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), also fill in _Authentication code_ with the current code from your authenticator app (or one of your recovery codes); otherwise leave it empty. The password and the code are used only once, to obtain a token for the extension, and are not stored.
+To connect to a server, enter its address and your password in the extension's options and press _Login to the server instance_. If the server uses [multi-factor authentication](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), also fill in _Authentication code_ with the current code from your authenticator app (or one of your recovery codes); otherwise leave it empty. If the server is behind an authentication gateway or reverse proxy that requires custom HTTP headers (such as a Cloudflare Access service token), enter them in _Custom headers_, one `Header-Name: value` per line; these headers are stored and sent with the login request and every subsequent request to the server. The password and the code are used only once, to obtain a token for the extension, and are not stored.
 
 ### When a clipping fails
 

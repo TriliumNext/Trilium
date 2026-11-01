@@ -1,3 +1,5 @@
+import { parseCustomHeaders } from "@/utils";
+
 const PROTOCOL_VERSION_MAJOR = 1;
 const DESKTOP_TIMEOUT_MS = 2000;
 const SERVER_TIMEOUT_MS = 10000;
@@ -15,6 +17,7 @@ export type TriliumSearchStatus = {
     status: "found-server",
     url: string;
     token: string;
+    customHeaders?: Record<string, string>;
     protocolMinor: number;
 } | {
     status: "version-mismatch";
@@ -129,15 +132,24 @@ export default class TriliumServerFacade {
     private async findTrilium(): Promise<SearchResult> {
         const port = await this.getPort();
         const desktopUrl = `http://127.0.0.1:${port}`;
-        const { triliumServerUrl, authToken } = await browser.storage.sync
-            .get<{ triliumServerUrl?: string, authToken?: string }>([ "triliumServerUrl", "authToken" ]);
+        const { triliumServerUrl, authToken, customHeaders } = await browser.storage.sync
+            .get<{ triliumServerUrl?: string, authToken?: string, customHeaders?: string }>([
+                "triliumServerUrl",
+                "authToken",
+                "customHeaders"
+            ]);
 
+        const parsedHeaders = parseCustomHeaders(customHeaders);
         const server = triliumServerUrl && authToken
-            ? handshake(triliumServerUrl, SERVER_TIMEOUT_MS, { Authorization: authToken })
+            ? handshake(triliumServerUrl, SERVER_TIMEOUT_MS, {
+                ...parsedHeaders,
+                Authorization: authToken
+            })
                 .then((json) => json && checkVersion(json, (protocolMinor) => ({
                     status: "found-server",
                     url: triliumServerUrl,
                     token: authToken,
+                    ...(customHeaders && { customHeaders: parsedHeaders }),
                     protocolMinor
                 })))
             : Promise.resolve(null);
@@ -226,6 +238,7 @@ export default class TriliumServerFacade {
             const fetchOptions: RequestInit = {
                 method,
                 headers: {
+                    ...(search.status === "found-server" ? search.customHeaders : undefined),
                     Authorization: search.status === "found-server" ? search.token : "",
                     'Content-Type': 'application/json',
                     'trilium-local-now-datetime': this.localNowDateTime()

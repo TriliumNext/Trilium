@@ -4,7 +4,7 @@ import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import {
     createLink, describeError, extractPage, getPageLocationOrigin, isPdfTab, OPTIONAL_REQUEST_TIMEOUT_MS,
-    randomString
+    parseCustomHeaders, randomString
 } from "./utils";
 
 describe("randomString", () => {
@@ -157,6 +157,14 @@ describe("isPdfTab", () => {
         expect(await isPdfTab({ url: TAB.url })).toBe(false);
         expect(executeScript).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("parseCustomHeaders", () => {
+    it("parses Header: Value lines", () => {
+        expect(parseCustomHeaders()).toEqual({});
+        expect(parseCustomHeaders("X-Auth-Token: a:b:c\n\n : ignored\nCF-Access-Client-Id: id1"))
+            .toEqual({ "X-Auth-Token": "a:b:c", "CF-Access-Client-Id": "id1" });
     });
 });
 
