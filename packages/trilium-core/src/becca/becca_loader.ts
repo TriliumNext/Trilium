@@ -363,12 +363,14 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
         });
 
         injectVirtualSubtrees(target);
+
+        // Entities resolve their Becca through `getBecca()`, which finds `target` only while
+        // `loadingBecca` is set: the user's Becca is not cached until this load returns.
+        for (const noteId in target.notes) {
+            target.notes[noteId].sortParents();
+        }
     } finally {
         ctxSet("loadingBecca", undefined);
-    }
-
-    for (const noteId in target.notes) {
-        target.notes[noteId].sortParents();
     }
 
     target.loaded = true;

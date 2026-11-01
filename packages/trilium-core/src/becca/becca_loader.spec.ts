@@ -263,7 +263,11 @@ describe("becca_loader", () => {
             });
 
             const memberBecca = new Becca();
-            await getContext().init(() => loadBeccaForUser(memberBecca, "loaderMember1", false));
+            // As in a request, where the session's `userId` is in CLS before the load.
+            await getContext().init(() => {
+                getContext().set("userId", "loaderMember1");
+                return loadBeccaForUser(memberBecca, "loaderMember1", false);
+            });
 
             expect(memberBecca.loaded).toBe(true);
             expect(memberBecca.notes.root).toBeDefined();
