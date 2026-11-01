@@ -133,7 +133,8 @@ describe("Files API", () => {
 
         it("removes the other temp files when one cannot be removed", () => {
             const locked = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
-            const other = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+            const attachmentReq = fileReq({ attachmentId } as Record<string, string>) as unknown as Request<{ attachmentId: string }>;
+            const other = cls.init(() => filesRoute.saveAttachmentToTmpDir(attachmentReq)).tmpFilePath;
             const rmSync = fs.rmSync;
             const spy = vi.spyOn(fs, "rmSync").mockImplementation((filePath, options) => {
                 if (filePath === locked) {
@@ -169,6 +170,18 @@ describe("Files API", () => {
         });
 
         const save = () => cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId: watchedNoteId }))).tmpFilePath;
+
+        it("reuses the temp file while it holds the note's content, and keeps one with pending edits", () => {
+            const first = save();
+            expect(save()).toBe(first);
+            expect(h.watchers).toHaveLength(1);
+
+            fs.writeFileSync(first, "pending edit");
+            const second = save();
+            expect(second).not.toBe(first);
+            expect(fs.readFileSync(first, "utf8")).toBe("pending edit");
+            expect(h.watchers.map((watcher) => watcher.path)).toEqual([ first, second ]);
+        });
 
         it("reports the modification time of a changed file", () => {
             const tmpFilePath = save();

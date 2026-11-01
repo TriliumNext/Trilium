@@ -29,8 +29,17 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 }
 
 const createdTemporaryFiles = new Set<string>();
+/** The latest temp file of each entity, keyed by `entityType/entityId`. */
+const latestTemporaryFiles = new Map<string, string>();
 
 function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
+    // Opening an entity again reuses its temp file and watcher, unless the file holds edits that are not uploaded yet.
+    const entityKey = `${entityType}/${entityId}`;
+    const latest = latestTemporaryFiles.get(entityKey);
+    if (latest && holdsContent(latest, content)) {
+        return { tmpFilePath: latest };
+    }
+
     const tmpFileName = `tmp-${process.pid}-${utils.randomString(12)}-${fileName}`;
     const tmpFilePath = path.resolve(dataDirs.TMP_DIR, tmpFileName);
     fs.writeFileSync(tmpFilePath, content, { flag: "wx", mode: 0o600 });
@@ -39,6 +48,7 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
         process.once("exit", removeTemporaryFiles);
     }
     createdTemporaryFiles.add(tmpFilePath);
+    latestTemporaryFiles.set(entityKey, tmpFilePath);
 
     getLog().info(`Saved temporary file ${tmpFilePath}`);
 
@@ -57,6 +67,14 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
     return {
         tmpFilePath
     };
+}
+
+function holdsContent(filePath: string, content: string | Uint8Array) {
+    try {
+        return fs.readFileSync(filePath).equals(Buffer.from(content));
+    } catch {
+        return false;
+    }
 }
 
 function removeTemporaryFiles() {
