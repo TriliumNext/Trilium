@@ -4,7 +4,7 @@ import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, events, initMessaging, options } from "@triliumnext/core";
+import { cls, events, initMessaging, options, user_service } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
 import totp from "../services/totp.js";
@@ -78,6 +78,24 @@ describe("Login Route test", () => {
                 .post("/login")
                 .send(body)
                 .expect(401);
+        }
+    });
+
+    it("signs the admin in without a username only while no other user has a password", async () => {
+        const adminUsername = cls.init(() => user_service.getUserById(user_service.getAdminUserId())?.username);
+        expect(adminUsername).toBeTruthy();
+
+        await supertest(app).post("/login").send({ password: "demo1234" }).expect(302);
+
+        vi.spyOn(user_service, "hasUsersWithOwnPassword").mockReturnValue(true);
+        try {
+            for (const username of [ undefined, "", "  " ]) {
+                const res = await supertest(app).post("/login").send({ username, password: "demo1234" }).expect(401);
+                expect(res.body).toEqual({ success: false, factor: "password" });
+            }
+            await supertest(app).post("/login").send({ username: adminUsername, password: "demo1234" }).expect(302);
+        } finally {
+            vi.restoreAllMocks();
         }
     });
 

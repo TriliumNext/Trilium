@@ -135,12 +135,12 @@ async function login(req: Request, res: Response) {
 }
 
 /**
- * Whether a login is the primary admin's, who signs in with the instance password: no username,
- * which is all the screen asks for until there are other users, or theirs.
+ * Whether a login is the primary admin's, who signs in with the instance password: their username,
+ * or no username while no other user has a password and the screen asks for none.
  */
 function isPrimaryAdminLogin(username: string) {
     if (!username) {
-        return true;
+        return !user_service.hasUsersWithOwnPassword();
     }
 
     return user_service.getUserById(user_service.getAdminUserId())?.username === username;

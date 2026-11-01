@@ -116,12 +116,12 @@ export default function CredentialsForm({
                 <Card>
                     <CardSection>
                         {usernameEnabled && (
-                            <OptionsRow name="username" label={t("login.username")} description={t("login.username-description")} stacked>
+                            <OptionsRow name="username" label={t("login.username")} stacked>
                                 <FormTextBox
                                     inputRef={usernameRef} autoFocus
                                     name="username"
                                     autocomplete="username"
-                                    autocapitalize="none" spellcheck={false}
+                                    autocapitalize="none" spellcheck={false} required
                                 />
                             </OptionsRow>
                         )}
