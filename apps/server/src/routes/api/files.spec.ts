@@ -1,12 +1,51 @@
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
-import { becca, cls, note_service as noteService, ValidationError } from "@triliumnext/core";
+import { becca, cls, note_service as noteService, ValidationError, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import dataDirs from "../../services/data_dir.js";
 import filesRoute from "./files.js";
+
+interface FakeWatcher {
+    path: string;
+    options: { alwaysStat?: boolean };
+    listeners: Map<string, (...args: unknown[]) => void>;
+}
+
+const h = vi.hoisted(() => ({
+    electron: false,
+    watchers: [] as FakeWatcher[]
+}));
+
+vi.mock("chokidar", () => ({
+    default: {
+        watch: (watchedPath: string, options: FakeWatcher["options"]) => {
+            const watcher: FakeWatcher = { path: watchedPath, options, listeners: new Map() };
+            h.watchers.push(watcher);
+            const api = {
+                on(event: string, listener: (...args: unknown[]) => void) {
+                    watcher.listeners.set(event, listener);
+                    return api;
+                }
+            };
+            return api;
+        }
+    }
+}));
+
+vi.mock("../../services/utils.js", async (importOriginal) => {
+    const actual = await importOriginal<{ default: object }>();
+    return {
+        default: {
+            ...actual.default,
+            get isElectron() {
+                return h.electron;
+            }
+        }
+    };
+});
 
 let noteId: string;
 let attachmentId: string;
@@ -110,6 +149,40 @@ describe("Files API", () => {
             } finally {
                 spy.mockRestore();
                 fs.rmSync(locked, { force: true });
+            }
+        });
+    });
+
+    describe("watching the temp file under Electron", () => {
+        let watchedNoteId: string;
+
+        beforeEach(() => {
+            h.electron = true;
+            h.watchers.length = 0;
+            watchedNoteId = cls.init(() => noteService.createNewNote({
+                parentNoteId: "root", title: "Watched note", type: "file", mime: "text/plain", content: "watched"
+            })).note.noteId;
+        });
+
+        afterEach(() => {
+            h.electron = false;
+        });
+
+        const save = () => cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId: watchedNoteId }))).tmpFilePath;
+
+        it("reports the modification time of a changed file", () => {
+            const tmpFilePath = save();
+            const [ watcher ] = h.watchers;
+            expect(watcher.options?.alwaysStat).toBe(true);
+
+            const send = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+            try {
+                watcher.listeners.get("change")?.(tmpFilePath, { mtimeMs: 5000, atimeMs: 9000 });
+                expect(send).toHaveBeenCalledWith(expect.objectContaining({
+                    type: "openedFileUpdated", entityId: watchedNoteId, lastModifiedMs: 5000, filePath: tmpFilePath
+                }));
+            } finally {
+                send.mockRestore();
             }
         });
     });

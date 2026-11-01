@@ -43,12 +43,12 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
     getLog().info(`Saved temporary file ${tmpFilePath}`);
 
     if (utils.isElectron) {
-        chokidar.watch(tmpFilePath).on("change", (path, stats) => {
+        chokidar.watch(tmpFilePath, { alwaysStat: true }).on("change", (path, stats) => {
             ws.sendMessageToAllClients({
                 type: "openedFileUpdated",
                 entityType,
                 entityId,
-                lastModifiedMs: stats?.atimeMs,
+                lastModifiedMs: stats?.mtimeMs,
                 filePath: tmpFilePath
             });
         });
