@@ -8,14 +8,24 @@ import ws from "./ws.js";
 
 type OpenedFileUpdate = Extract<WebSocketMessage, { type: "openedFileUpdated" }>;
 
+/** The temp files this window opened; the server reports changes to every window. */
+const openedFiles = new Set<string>();
+
 ws.subscribeToMessages(async message => {
     if (message.type !== "openedFileUpdated") {
         return;
     }
 
     checkType(message.entityType);
-    await showUploadToast(message);
+    if (openedFiles.has(message.filePath)) {
+        await showUploadToast(message);
+    }
 });
+
+/** Marks a temp file as opened from this window, so its changes are offered for upload here. */
+export function watchOpenedFile(filePath: string) {
+    openedFiles.add(filePath);
+}
 
 /**
  * Offers to upload a file edited outside Trilium. Each note or attachment has one toast, which a

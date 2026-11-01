@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
+import { watchOpenedFile } from "./file_watcher.js";
 import open, { checkType, downloadFileNote, getUrlForDownload, openNoteExternally } from "./open.js";
 import options from "./options.js";
 import server from "./server.js";
 import toast from "./toast.js";
 import utils from "./utils.js";
+
+vi.mock("./file_watcher.js", () => ({ watchOpenedFile: vi.fn() }));
 
 const realWindow = window as any;
 
@@ -179,6 +182,7 @@ describe("open service", () => {
             await open.openNoteCustom("n2");
             expect(server.post).toHaveBeenCalledWith("notes/n2/save-to-tmp-dir");
             expect(shell.openCustom).toHaveBeenCalledWith("/tmp/file.png");
+            expect(watchOpenedFile).toHaveBeenCalledWith("/tmp/file.png");
             expect(toastSpy).not.toHaveBeenCalled();
         });
 
@@ -233,6 +237,7 @@ describe("open service", () => {
             await openNoteExternally("n4", "application/octet-stream");
             expect(server.post).toHaveBeenCalledWith("notes/n4/save-to-tmp-dir");
             expect(shell.openPath).toHaveBeenCalledWith("/tmp/a.bin");
+            expect(watchOpenedFile).toHaveBeenCalledWith("/tmp/a.bin");
             expect(window.open).not.toHaveBeenCalled();
         });
 

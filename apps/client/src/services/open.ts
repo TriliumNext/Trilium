@@ -1,8 +1,6 @@
-// Offers to upload the files that "Open externally" and "Open with..." leave watched.
-import "./file_watcher.js";
-
 import Component from "../components/component.js";
 import FNote from "../entities/fnote.js";
+import { watchOpenedFile } from "./file_watcher.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
@@ -69,6 +67,7 @@ async function openCustom(type: string, entityId: string) {
     }
 
     const resp = await server.post<TmpResponse>(`${type}/${entityId}/save-to-tmp-dir`);
+    watchOpenedFile(resp.tmpFilePath);
     if (!await window.electronApi.shell.openCustom(resp.tmpFilePath)) {
         toast.showError(t("open.custom_failed"));
     }
@@ -105,6 +104,7 @@ async function openExternally(type: string, entityId: string, mime: string) {
 
     if (utils.isElectron()) {
         const resp = await server.post<TmpResponse>(`${type}/${entityId}/save-to-tmp-dir`);
+        watchOpenedFile(resp.tmpFilePath);
 
         const res = await window.electronApi?.shell.openPath(resp.tmpFilePath);
 

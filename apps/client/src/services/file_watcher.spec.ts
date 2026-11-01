@@ -23,7 +23,7 @@ import froca from "./froca.js";
 import server from "./server.js";
 import toast, { type ToastOptionsWithRequiredId } from "./toast.js";
 // Import AFTER the mocks are declared (vi.mock is hoisted).
-import "./file_watcher.js";
+import { watchOpenedFile } from "./file_watcher.js";
 
 function makeUpdate(entityType: string, entityId: string): WebSocketMessage {
     return {
@@ -59,6 +59,7 @@ describe("file_watcher", () => {
     });
 
     it("offers to upload a changed note file, one toast per note", async () => {
+        watchOpenedFile("/tmp/noteA");
         const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
         await receive(makeUpdate("notes", "noteA"));
 
@@ -82,11 +83,17 @@ describe("file_watcher", () => {
 
     it("links an attachment's toast to its owner note", async () => {
         vi.spyOn(froca, "getAttachment").mockResolvedValue({ ownerId: "owner1", title: "photo.png" } as never);
+        watchOpenedFile("/tmp/attB");
         await receive(makeUpdate("attachments", "attB"));
 
         const shown = lastToast();
         expect(shown.id).toBe("opened-file-updated-attachments-attB");
         expect(shown.notes).toEqual([ { noteId: "owner1", description: "photo.png" } ]);
+    });
+
+    it("leaves a file opened from another window to that window", async () => {
+        await receive(makeUpdate("notes", "otherWindowNote"));
+        expect(toast.showPersistent).not.toHaveBeenCalled();
     });
 
     it("rejects an unrecognized entity type without showing a toast", async () => {
