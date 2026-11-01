@@ -2037,6 +2037,14 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "Options_image.png"
+                                        },
+                                        {
+                                            "attachmentId": "riFBVG3phJOr",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "1_Options_image.png"
                                         }
                                     ]
                                 },
