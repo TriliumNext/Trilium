@@ -72,7 +72,7 @@ vi.mock("../../react/Modal", async () => {
     };
 });
 
-import UserSettings, { buildSetupUrl, getAvatarHues, getInitials, validateUsername } from "./users";
+import UserSettings, { buildSetupUrl, validateUsername } from "./users";
 
 const ADMIN: UserListItem = {
     userId: "admin", username: "admin", email: null, isAdmin: true,
@@ -276,31 +276,7 @@ describe("the user dialog", () => {
 });
 
 describe("helpers", () => {
-    it("gives users far-apart avatar colors in the order they were added, whatever their names", () => {
-        // "alice" and "bob" hashed to the same orange.
-        const user = (userId: string, minute: number) => ({ ...ALICE, userId, username: userId, dateCreated: `2026-11-01 10:${String(minute).padStart(2, "0")}:00.000Z` });
-        const users = [ user("bob", 2), user("alice", 1), user("carol", 3), user("dave", 4) ];
-        const hues = getAvatarHues(users);
-
-        const distance = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
-        const ordered = [ "alice", "bob", "carol", "dave" ].map((userId) => hues.get(userId) ?? -1);
-        for (const [ i, a ] of ordered.entries()) {
-            expect(a).toBeGreaterThanOrEqual(0);
-            expect(a).toBeLessThan(360);
-            for (const b of ordered.slice(i + 1)) expect(distance(a, b)).toBeGreaterThanOrEqual(50);
-        }
-
-        // A user added later leaves everyone else's color alone.
-        const more = getAvatarHues([ ...users, user("erin", 5) ]);
-        expect([ "alice", "bob", "carol", "dave" ].map((userId) => more.get(userId))).toEqual(ordered);
-    });
-
-    it("derives initials, a stable hue and username errors", () => {
-        expect(getInitials("alice")).toBe("AL");
-        expect(getInitials("jane.doe")).toBe("JD");
-        expect(getInitials("  ")).toBe("?");
-
-
+    it("validates usernames and builds setup links", () => {
         expect(validateUsername(" ", [ ALICE ])).toBe("users.error_username_required");
         expect(validateUsername("alice", [ ALICE ])).toBe("users.error_username_taken");
         expect(validateUsername("alice", [ ALICE ], "alice")).toBeUndefined();

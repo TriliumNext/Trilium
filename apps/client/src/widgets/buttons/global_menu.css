@@ -8,6 +8,41 @@
     min-width: 20em;
 }
 
+.global-menu .global-menu-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px 8px;
+
+    .user-avatar {
+        --user-avatar-size: 40px;
+    }
+
+    .global-menu-account-details {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .global-menu-account-name {
+        overflow: hidden;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .global-menu-account-role {
+        color: var(--muted-text-color);
+        font-size: .85em;
+    }
+
+    > .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
 .tn-menu-actions.global-menu-strip {
     display: grid;
     grid-auto-flow: column;

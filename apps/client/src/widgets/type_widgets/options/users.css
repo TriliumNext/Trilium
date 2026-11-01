@@ -24,22 +24,6 @@
     align-items: center;
     gap: 8px 12px;
 
-    .user-avatar {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background-color: hsl(var(--user-avatar-hue) 55% 45%);
-        color: white;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: .5px;
-        user-select: none;
-    }
-
     /* Wide enough for a name and its badges; below that, the actions wrap onto a line of their own. */
     .user-row-details {
         display: flex;

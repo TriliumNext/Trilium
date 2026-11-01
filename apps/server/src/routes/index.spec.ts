@@ -31,6 +31,10 @@ vi.mock("@triliumnext/core", () => ({
     password: { isPasswordSet: () => true },
     sql_init: { isDbInitialized: () => true },
     task_states: { generateTaskStateCss: () => "" },
+    user_service: {
+        hasUsersWithOwnPassword: () => false,
+        getSignedInUser: (userId?: string) => (userId === "alice" ? { username: "alice", isAdmin: false, avatarHue: 210 } : undefined)
+    },
     getLog: () => ({ info: () => {}, error: () => {} })
 }));
 
@@ -38,13 +42,14 @@ const { bootstrap, getView } = await import("./index.js");
 
 function makeReq(overrides: {
     loggedIn?: boolean;
+    userId?: string;
     internal?: boolean;
     query?: Record<string, unknown>;
     cookies?: Record<string, string>;
     userAgent?: string;
 } = {}): Request {
     const req = {
-        session: { loggedIn: overrides.loggedIn ?? false },
+        session: { loggedIn: overrides.loggedIn ?? false, userId: overrides.userId },
         query: overrides.query ?? {},
         headers: overrides.userAgent ? { "user-agent": overrides.userAgent } : {},
         cookies: overrides.cookies ?? {}
@@ -83,6 +88,16 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
 
         expect(body().loggedIn).toBe(true);
         expect(body().csrfToken).toBe("csrf-test-token");
+    });
+
+    it("names the signed-in user for the global menu, and nobody without a session user", () => {
+        const signedIn = makeRes();
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), signedIn.res);
+        expect(signedIn.body().currentUser).toEqual({ username: "alice", isAdmin: false, avatarHue: 210 });
+
+        const renderer = makeRes();
+        bootstrap(makeReq({ loggedIn: false, internal: true }), renderer.res);
+        expect(renderer.body().currentUser).toBeUndefined();
     });
 
     it("bypasses the login screen for the trusted desktop renderer with no web session", () => {

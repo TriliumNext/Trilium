@@ -1,3 +1,5 @@
+import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
+
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId, randomSecureToken } from "./utils/index.js";
@@ -210,6 +212,28 @@ function hasUsersWithOwnPassword(): boolean {
     );
 }
 
+/**
+ * The signed-in user as the client shows them, or `undefined` while nobody but the primary admin
+ * can sign in, when there is nobody to tell apart.
+ */
+function getSignedInUser(userId: string | undefined): CurrentUser | undefined {
+    if (!userId || !hasUsersWithOwnPassword()) {
+        return undefined;
+    }
+
+    const users = listUsers();
+    const user = users.find((candidate) => candidate.userId === userId);
+    if (!user) {
+        return undefined;
+    }
+
+    return {
+        username: user.username,
+        isAdmin: !!user.isAdmin,
+        avatarHue: getAvatarHues(users).get(userId) ?? 0
+    };
+}
+
 function deleteUser(userId: string): void {
     // Deleting the seeded admin breaks session propagation until the next restart reseeds it.
     if (userId === getAdminUserId()) {
@@ -224,7 +248,8 @@ function deleteUser(userId: string): void {
 
 export default {
     getAdminUserId, getUserById, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
-    createSetupLink, getUserBySetupToken, completeSetup, verifyUserPassword, hasUsersWithOwnPassword
+    createSetupLink, getUserBySetupToken, completeSetup, verifyUserPassword, hasUsersWithOwnPassword,
+    getSignedInUser
 };
 
 function hashSetupToken(token: string) {

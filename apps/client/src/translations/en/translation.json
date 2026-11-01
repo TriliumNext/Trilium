@@ -5063,6 +5063,7 @@
     "account": "Account",
     "admins_heading": "Administrators",
     "users_heading": "Users",
-    "actions": "Actions"
+    "actions": "Actions",
+    "role_user": "User"
   }
 }

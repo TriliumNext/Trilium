@@ -216,7 +216,7 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
         return false;
     }
 
-    if (window.glob.isAdmin === false && page.isLabelTruthy("adminOnly")) {
+    if (window.glob.currentUser?.isAdmin === false && page.isLabelTruthy("adminOnly")) {
         return false;
     }
 

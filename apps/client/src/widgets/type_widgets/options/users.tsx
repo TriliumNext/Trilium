@@ -1,6 +1,6 @@
 import "./users.css";
 
-import type { CreateUserResponse, SetupLinkResponse, UserInput, UserListItem } from "@triliumnext/commons";
+import { type CreateUserResponse, getAvatarHues, type SetupLinkResponse, type UserInput, type UserListItem } from "@triliumnext/commons";
 import { createPortal } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -18,12 +18,9 @@ import { FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
 import Modal from "../../react/Modal";
 import NoItems from "../../react/NoItems";
+import UserAvatar from "../../react/UserAvatar";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
-
-/** Where the first user's avatar sits on the color wheel, a blue. */
-const AVATAR_FIRST_HUE = 210;
-const GOLDEN_ANGLE = 137.508;
 
 /** Which user the dialog is open for: a new one, or an existing one being edited. */
 type DialogTarget = { mode: "create" } | { mode: "edit"; user: UserListItem };
@@ -271,18 +268,6 @@ function SetupStatusBadge({ user }: { user: UserListItem }) {
         : <Badge className="user-badge-expired" icon="bx bx-error" text={t("users.badge_setup_expired")} tooltip={t("users.setup_expired_tooltip")} outline />;
 }
 
-/** A circle with the user's initials, tinted by the hue {@link getAvatarHues} gives the user. */
-function UserAvatar({ username, hue }: { username: string; hue: number }) {
-    return (
-        <span
-            className="user-avatar"
-            aria-hidden="true"
-            style={{ "--user-avatar-hue": hue }}
-        >
-            {getInitials(username)}
-        </span>
-    );
-}
 
 interface UserDialogProps {
     target: DialogTarget | null;
@@ -485,22 +470,6 @@ export function validateUsername(username: string, users: UserListItem[], except
         return t("users.error_username_taken");
     }
     return undefined;
-}
-
-export function getInitials(username: string) {
-    const words = username.trim().split(/[\s._-]+/).filter(Boolean);
-    const letters = words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? "?").slice(0, 2);
-    return letters.toUpperCase();
-}
-
-/**
- * The avatar hue of each user, by `userId`: the users in the order they were added, each a golden
- * angle round the wheel from the one before, so the first few are always far apart and a new user
- * leaves everyone else's color alone.
- */
-export function getAvatarHues(users: UserListItem[]) {
-    const ordered = [ ...users ].sort((a, b) => a.dateCreated.localeCompare(b.dateCreated) || a.userId.localeCompare(b.userId));
-    return new Map(ordered.map((user, index) => [ user.userId, Math.round((AVATAR_FIRST_HUE + index * GOLDEN_ANGLE) % 360) ]));
 }
 
 /** Why a user cannot be deleted, mirroring the server's checks; `undefined` when they can. */

@@ -1,6 +1,6 @@
 import "./global_menu.css";
 
-import { KeyboardActionNames } from "@triliumnext/commons";
+import type { CurrentUser, KeyboardActionNames } from "@triliumnext/commons";
 import { ComponentChildren, RefObject } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
@@ -12,14 +12,16 @@ import {
 } from "../../services/color_scheme";
 import { t } from "../../services/i18n";
 import utils, { isElectron, isMobile, isStandalone } from "../../services/utils";
+import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem } from "../react/FormList";
 import {
     useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool,
     useUserThemes
 } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import { ParentComponent } from "../react/react_utils";
+import UserAvatar from "../react/UserAvatar";
 
 interface MenuItemProps<T> {
     icon: string,
@@ -37,6 +39,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const parentComponent = useContext(ParentComponent);
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
     const logoRef = useRef<SVGSVGElement>(null);
+    const currentUser = window.glob.currentUser;
     useStaticTooltip(logoRef);
     const commandAction = (command: CommandNames, uiIcon: string, title: string): MenuCommandItem<CommandNames> => ({
         title, uiIcon, handler: () => void parentComponent?.triggerCommand(command)
@@ -60,6 +63,11 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             </>}
             mobileBackdrop
         >
+            {currentUser && <>
+                <AccountRow user={currentUser} />
+                <FormDropdownDivider />
+            </>}
+
             {isMobile() ? (
                 <MenuItemRows items={[ { kind: "actions", items: mobileActions, className: "global-menu-strip tn-menu-actions-cards" } ]} />
             ) : <>
@@ -98,7 +106,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
                     text={t("global_menu.download-update", {latestVersion})} />
             </>}
 
-            {!isElectron() && !isStandalone && <BrowserOnlyOptions />}
+            {!isElectron() && !isStandalone && !currentUser && <BrowserOnlyOptions />}
         </Dropdown>
     );
 }
@@ -179,6 +187,30 @@ function AdvancedMenu() {
                 <SwitchToOptions />
             </>}
         </FormDropdownSubmenu>
+    );
+}
+
+/** Who is signed in, with the way to sign out beside them. */
+function AccountRow({ user }: { user: CurrentUser }) {
+    const parentComponent = useContext(ParentComponent);
+
+    return (
+        <FormListCustomItem>
+            <div className="global-menu-account">
+                <UserAvatar username={user.username} hue={user.avatarHue} />
+                <div className="global-menu-account-details">
+                    <span className="global-menu-account-name">{user.username}</span>
+                    <span className="global-menu-account-role">
+                        {user.isAdmin ? t("users.role_admin") : t("users.role_user")}
+                    </span>
+                </div>
+                <Button
+                    size="small" icon="bx-log-out" tabIndex={0}
+                    text={t("global_menu.logout")}
+                    onClick={() => void parentComponent?.triggerCommand("logout")}
+                />
+            </div>
+        </FormListCustomItem>
     );
 }
 

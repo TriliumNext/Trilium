@@ -194,6 +194,14 @@ export interface PostTokensResponse {
     authToken: string;
 }
 
+/** The signed-in user, as the global menu shows them. */
+export interface CurrentUser {
+    username: string;
+    isAdmin: boolean;
+    /** The user's avatar hue, from `getAvatarHues()`, so it matches the one on the Users page. */
+    avatarHue: number;
+}
+
 /** A row of `GET /api/users`. */
 export interface UserListItem {
     userId: string;
@@ -1127,8 +1135,8 @@ export type BootstrapDefinition = {
         /** Whether a TOTP second factor is required. */
         totpEnabled: boolean;
         /**
-         * Whether users other than the primary admin can sign in, in which case the screen asks for
-         * a username. Left empty, it still signs in the primary admin.
+         * Whether users other than the primary admin can sign in, in which case the screen asks
+         * everyone, the primary admin included, for a username.
          */
         usernameEnabled?: boolean;
         /** One-shot SSO error from a failed OIDC round-trip ("wrong_account" / "not_enrolled"). */
@@ -1184,8 +1192,8 @@ export type BootstrapDefinition = {
     appCssNoteIds: string[];
     isDev: boolean;
     isMainWindow: boolean;
-    /** `false` for a signed-in user who is not an admin. Absent where the only user is the admin. */
-    isAdmin?: boolean;
+    /** Who is signed in, sent only once users other than the primary admin can sign in. */
+    currentUser?: CurrentUser;
     isProtectedSessionAvailable: boolean;
     triliumVersion: string;
     appPath: string;

@@ -183,7 +183,7 @@ export function bootstrap(req: Request, res: Response) {
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
-        isAdmin: !req.session.userId || user_service.isUserAdmin(req.session.userId)
+        currentUser: user_service.getSignedInUser(req.session.userId)
     } satisfies BootstrapDefinition);
 }
 
