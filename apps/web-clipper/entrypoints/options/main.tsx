@@ -4,6 +4,8 @@ import "./options.css";
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import { parseCustomHeaders } from "@/utils";
+
 type Message = { kind: "error" | "success", text: string } | null;
 type ShowMessage = (message: Message) => void;
 
@@ -99,7 +101,7 @@ function ServerSetup({ showMessage }: { showMessage: ShowMessage }) {
 
     async function reset(e: Event) {
         e.preventDefault();
-        await browser.storage.sync.set({ triliumServerUrl: "", authToken: "" });
+        await browser.storage.sync.set({ triliumServerUrl: "", authToken: "", customHeaders: "" });
         setConfiguredUrl(null);
         showMessage(null);
     }
@@ -128,6 +130,7 @@ function ServerLoginForm({ showMessage, onLoggedIn }: {
     const [ url, setUrl ] = useState("");
     const [ password, setPassword ] = useState("");
     const [ totp, setTotp ] = useState("");
+    const [ customHeaders, setCustomHeaders ] = useState("");
     const totpRef = useRef<HTMLInputElement>(null);
 
     async function login(e: Event) {
@@ -139,11 +142,15 @@ function ServerLoginForm({ showMessage, onLoggedIn }: {
         }
 
         const serverUrl = url.trim().replace(/\/+$/, "");
-        const result = await requestToken(serverUrl, password, totp.trim());
+        const result = await requestToken(serverUrl, password, totp.trim(), parseCustomHeaders(customHeaders));
 
         switch (result.kind) {
             case "token":
-                await browser.storage.sync.set({ triliumServerUrl: serverUrl, authToken: result.token });
+                await browser.storage.sync.set({
+                    triliumServerUrl: serverUrl,
+                    authToken: result.token,
+                    customHeaders: customHeaders.trim()
+                });
                 showMessage({ kind: "success", text: "Authentication against Trilium server has been successful." });
                 onLoggedIn(serverUrl);
                 break;
@@ -194,6 +201,20 @@ function ServerLoginForm({ showMessage, onLoggedIn }: {
                     </td>
                 </tr>
                 <tr>
+                    <th>Custom headers:</th>
+                    <td>
+                        <textarea
+                            id="trilium-custom-headers"
+                            className="custom-headers"
+                            rows={3}
+                            placeholder="Header-Name: value"
+                            value={customHeaders}
+                            onInput={(e) => setCustomHeaders(e.currentTarget.value)}
+                        />
+                        {" "}(optional, one per line)
+                    </td>
+                </tr>
+                <tr>
                     <th></th>
                     <td><button type="submit" className="btn btn-primary">Login to the server instance</button></td>
                 </tr>
@@ -216,12 +237,18 @@ type TokenResult =
     | { kind: "network-error", message: string };
 
 /** Logs in to a Trilium server to obtain an ETAPI token for the clipper. */
-export async function requestToken(serverUrl: string, password: string, totpToken: string): Promise<TokenResult> {
+export async function requestToken(
+    serverUrl: string,
+    password: string,
+    totpToken: string,
+    customHeaders?: Record<string, string>
+): Promise<TokenResult> {
     let resp: Response;
     try {
         resp = await fetch(`${serverUrl}/api/login/token`, {
             method: "POST",
             headers: {
+                ...customHeaders,
                 "Accept": "application/json",
                 "Content-Type": "application/json"
             },

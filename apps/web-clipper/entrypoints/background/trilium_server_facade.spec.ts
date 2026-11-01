@@ -241,6 +241,60 @@ describe("TriliumServerFacade", () => {
             expect(fetchMock.mock.lastCall?.[1]).not.toHaveProperty("body");
         });
 
+        it("includes configured custom headers in handshake and API requests", async () => {
+            await fakeBrowser.storage.sync.set({
+                ...SERVER,
+                customHeaders: "X-Custom-Header: custom-val\nCF-Access-Client-Id: client-123"
+            });
+            fetchMock.mockImplementation(async (url) => {
+                if (url.startsWith("http://127.0.0.1")) throw new Error("connection refused");
+                if (url.endsWith("/handshake")) return handshake("1.0");
+                return Response.json({ noteId: "n1" });
+            });
+            const facade = await createFacade();
+
+            expect(fetchMock).toHaveBeenCalledWith(
+                "https://trilium.example/api/clipper/handshake",
+                handshakeInit({
+                    "X-Custom-Header": "custom-val",
+                    "CF-Access-Client-Id": "client-123",
+                    Authorization: "secret"
+                })
+            );
+
+            await facade.callService("POST", "clippings", { title: "T" });
+            expect(fetchMock).toHaveBeenLastCalledWith(
+                "https://trilium.example/api/clipper/clippings",
+                {
+                    method: "POST",
+                    headers: {
+                        "X-Custom-Header": "custom-val",
+                        "CF-Access-Client-Id": "client-123",
+                        Authorization: "secret",
+                        "Content-Type": "application/json",
+                        "trilium-local-now-datetime": expect.stringMatching(LOCAL_DATE_TIME)
+                    },
+                    body: JSON.stringify({ title: "T" })
+                }
+            );
+
+            await fakeBrowser.storage.sync.set({
+                triliumServerUrl: "https://other.example",
+                authToken: "other-secret",
+                customHeaders: "X-Custom-Header: new-server-secret"
+            });
+            await facade.callService("GET", "notes-by-url/x");
+            expect(fetchMock).toHaveBeenLastCalledWith(
+                "https://trilium.example/api/clipper/notes-by-url/x",
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        "X-Custom-Header": "custom-val",
+                        Authorization: "secret"
+                    })
+                })
+            );
+        });
+
         it("sends no token to the desktop app and reports why a request failed", async () => {
             fetchMock.mockResolvedValue(handshake("1.0"));
             const facade = await createFacade();

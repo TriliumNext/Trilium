@@ -132,6 +132,26 @@ describe("options page", () => {
             .toBe("Trilium server instance has been already configured to https://trilium.example.");
         expect(container.querySelector("input[type=password]")).toBeNull();
     });
+
+    it("sends and saves custom headers during login", async () => {
+        await renderOptions();
+        await type("input[type=text]:not(#trilium-desktop-port)", "https://trilium.example");
+        await type("input[type=password]", "secret");
+        await typeTextArea("#trilium-custom-headers", "X-Custom-Auth: my-token");
+
+        fetchMock.mockResolvedValueOnce(Response.json({ token: "etapi-token" }));
+        await submit(1);
+
+        expect(fetchMock).toHaveBeenCalledWith("https://trilium.example/api/login/token", expect.objectContaining({
+            method: "POST",
+            headers: {
+                "X-Custom-Auth": "my-token",
+                Accept: "application/json",
+                "Content-Type": "application/json"
+            }
+        }));
+        expect(await stored("customHeaders")).toBe("X-Custom-Auth: my-token");
+    });
 });
 
 describe("requestToken", () => {
@@ -183,6 +203,15 @@ async function type(selector: string, value: string) {
     await act(() => {
         element.value = value;
         element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}
+
+async function typeTextArea(selector: string, value: string) {
+    const element = container.querySelector<HTMLTextAreaElement>(selector);
+    expect(element, selector).not.toBeNull();
+    await act(() => {
+        (element as HTMLTextAreaElement).value = value;
+        element?.dispatchEvent(new Event("input", { bubbles: true }));
     });
 }
 

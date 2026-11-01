@@ -1,5 +1,21 @@
 export type Rect = { x: number, y: number, width: number, height: number };
 
+/** Parses `Header: Value` lines from storage into a headers object. */
+export function parseCustomHeaders(raw?: string): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (!raw) return headers;
+
+    for (const line of raw.split(/\r?\n/)) {
+        const index = line.indexOf(":");
+        const name = index > 0 ? line.slice(0, index).trim() : "";
+        if (name) {
+            headers[name] = line.slice(index + 1).trim();
+        }
+    }
+    return headers;
+}
+
+
 /** How long a request the extension can do without, such as a favicon, has to answer, in milliseconds. */
 export const OPTIONAL_REQUEST_TIMEOUT_MS = 3000;
 
