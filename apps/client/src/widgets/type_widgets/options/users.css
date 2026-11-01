@@ -1,0 +1,109 @@
+.users-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    align-items: center;
+    gap: 16px;
+
+    > .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+.users-description {
+    flex: 1 1 auto;
+    margin: 0;
+    color: var(--muted-text-color);
+    font-size: 13px;
+}
+
+.tn-card.users-list .user-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    .user-avatar {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: hsl(var(--user-avatar-hue) 55% 45%);
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: .5px;
+        user-select: none;
+    }
+
+    /* Wide enough for a name and its badges; below that, the actions wrap onto a line of their own. */
+    .user-row-details {
+        display: flex;
+        flex: 1 1 12em;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .user-row-name {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+
+        > .ext-badge {
+            flex-shrink: 0;
+        }
+    }
+
+    .user-row-username {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .user-row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        color: var(--muted-text-color);
+    }
+
+    .user-row-email {
+        overflow-wrap: anywhere;
+    }
+
+    .user-row-email-none {
+        font-style: italic;
+    }
+
+    .tn-card-option-actions {
+        display: flex;
+        flex-shrink: 0;
+        gap: 4px;
+        margin-inline-start: auto;
+    }
+}
+
+.ext-badge.user-badge-admin {
+    --color: var(--admonition-important-accent-color, #7c4dff);
+}
+
+.ext-badge.user-badge-you {
+    --color: var(--admonition-note-accent-color, #1e88e5);
+}
+
+.modal.user-dialog {
+    .user-dialog-role-label {
+        margin-bottom: 6px;
+    }
+
+    .user-dialog-role-locked {
+        margin: 0;
+        color: var(--muted-text-color);
+        font-size: .9em;
+    }
+}

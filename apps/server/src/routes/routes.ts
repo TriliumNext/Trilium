@@ -135,6 +135,7 @@ function register(app: express.Application) {
 
     apiRoute(GET, "/api/users",             usersApiRoute.getUsers);
     apiRoute(PST, "/api/users",             usersApiRoute.createUser);
+    apiRoute(PATCH, "/api/users/:userId",   usersApiRoute.updateUser);
     apiRoute(DEL, "/api/users/:userId",     usersApiRoute.deleteUser);
 
     apiRoute(GET,  "/api/notes/:noteId/permissions",        permissionsApiRoute.listPermissions);

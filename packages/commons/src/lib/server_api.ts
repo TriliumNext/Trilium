@@ -194,6 +194,30 @@ export interface PostTokensResponse {
     authToken: string;
 }
 
+/** A row of `GET /api/users`. */
+export interface UserListItem {
+    userId: string;
+    username: string;
+    email: string | null;
+    isAdmin: boolean;
+    /** The primary admin, seeded on startup, which every login currently signs in as. */
+    isPrimaryAdmin: boolean;
+    /** Whether this is the user the request was made as. */
+    isCurrentUser: boolean;
+    dateCreated: string;
+}
+
+/** The fields `POST /api/users` and `PATCH /api/users/:userId` accept. */
+export interface UserInput {
+    username: string;
+    email: string | null;
+    isAdmin: boolean;
+}
+
+export interface CreateUserResponse {
+    userId: string;
+}
+
 export interface BackupDatabaseNowResponse {
     backupFile: string;
 }

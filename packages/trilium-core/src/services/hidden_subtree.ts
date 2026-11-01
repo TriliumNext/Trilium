@@ -343,6 +343,7 @@ function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
                     { id: "_optionsSecurity", title: t("hidden-subtree.security-title"), type: "contentWidget", icon: "bx-shield" },
                     { id: "_optionsMFA", title: t("hidden-subtree.multi-factor-authentication-title"), type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock", attributes: [{ type: "label", name: "notInStandalone" }] },
+                    { id: "_optionsUsers", title: t("hidden-subtree.users-title"), type: "contentWidget", icon: "bx-group", attributes: [{ type: "label", name: "serverOnly" }, { type: "label", name: "notInStandalone" }] },
                     
                     // Miscellaneous
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
