@@ -13,7 +13,8 @@ const h = vi.hoisted(() => ({
     openPath: vi.fn(() => Promise.resolve("")),
     showItemInFolder: vi.fn(),
     execFile: vi.fn(),
-    spawn: vi.fn()
+    spawn: vi.fn(),
+    logError: vi.fn()
 }));
 
 vi.mock("electron", () => ({
@@ -34,7 +35,7 @@ vi.mock("child_process", () => ({ execFile: h.execFile, spawn: h.spawn }));
 
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
-    return { ...actual, getLog: () => ({ info: vi.fn(), error: vi.fn() }) };
+    return { ...actual, getLog: () => ({ info: vi.fn(), error: h.logError }) };
 });
 
 const { setupShellHandlers } = await import("./shell.js");
@@ -239,6 +240,23 @@ describe("setupShellHandlers", () => {
                 spawnEmits("error", Object.assign(new Error("spawn gdbus ENOENT"), { code: "ENOENT" }));
                 expect(await fireHandle("open-custom", tmpFile)).toBe(false);
                 expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("settles once and logs the portal's stderr when a failed spawn emits both error and close", async () => {
+                const closeSync = vi.spyOn(fs, "closeSync");
+                h.spawn.mockImplementationOnce(() => {
+                    const child = Object.assign(new EventEmitter(), { stderr: new EventEmitter() });
+                    setImmediate(() => {
+                        child.stderr.emit("data", "No such interface\n");
+                        child.emit("close", 1);
+                        child.emit("error", new Error("late"));
+                    });
+                    return child;
+                });
+
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(closeSync).toHaveBeenCalledOnce();
+                expect(h.logError).toHaveBeenCalledWith(expect.stringContaining("No such interface"));
             });
         });
 

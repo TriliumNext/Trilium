@@ -91,6 +91,16 @@ describe("file_watcher", () => {
         expect(shown.notes).toEqual([ { noteId: "owner1", description: "photo.png" } ]);
     });
 
+    it("shows an attachment's toast without a note link when the attachment is gone", async () => {
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(null);
+        watchOpenedFile("/tmp/attGone");
+        await receive(makeUpdate("attachments", "attGone"));
+
+        const shown = lastToast();
+        expect(shown.id).toBe("opened-file-updated-attachments-attGone");
+        expect(shown.notes).toBeUndefined();
+    });
+
     it("leaves a file opened from another window to that window", async () => {
         await receive(makeUpdate("notes", "otherWindowNote"));
         expect(toast.showPersistent).not.toHaveBeenCalled();
