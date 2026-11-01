@@ -4,21 +4,24 @@ import Draggabilly, { type MoveVector } from "draggabilly";
 import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import contextMenu from "../menus/context_menu.js";
+import { getRecentChangesMenuItems } from "../menus/recent_changes_menu_items.js";
 import attributeService from "../services/attributes.js";
+import cssClassManager from "../services/css_class_manager.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import keyboardActionService from "../services/keyboard_actions.js";
+import search from "../services/search.js";
 import { clampDragDestination } from "../services/tab_pinning.js";
 import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
-import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
+import { noteTitleHtml } from "./layout/Breadcrumb.js";
+import { setupHoldContextMenu, setupHorizontalScrollViaWheel } from "./widget_utils.js";
 
 const isDesktop = utils.isDesktop();
 
 const TAB_CONTAINER_MIN_WIDTH = 100;
 const TAB_CONTAINER_MAX_WIDTH = 240;
-const TAB_CONTAINER_LEFT_PADDING = 5;
 const SCROLL_BUTTON_WIDTH = 36;
 const NEW_TAB_WIDTH = 36;
 const MIN_FILLER_WIDTH = isDesktop ? 50 : 15;
@@ -98,6 +101,22 @@ const TAB_ROW_TPL = `
         border-radius: var(--button-border-radius);
     }
 
+    .tooltip.new-tab-tooltip {
+        .tooltip-inner {
+            text-align: center;
+        }
+
+        .action {
+            display: block;
+            padding-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .hint {
+            opacity: 0.75;
+        }
+    }
+
     .tab-row-filler {
         box-sizing: border-box;
         -webkit-app-region: drag;
@@ -175,6 +194,24 @@ const TAB_ROW_TPL = `
     .tab-row-widget .note-tab[active] .note-tab-segment:not(.note-tab-segment-active) {
         opacity: 0.55;
         font-weight: normal;
+    }
+
+    .tab-row-widget .note-tab .protected-title,
+    .tooltip .protected-title {
+        font-style: italic;
+    }
+
+    .tab-row-widget .note-tab .protected-icon,
+    .tooltip .protected-icon {
+        margin-inline-start: 6px;
+    }
+
+    .tab-row-widget .note-tab .protected-icon {
+        color: var(--quick-search-result-highlight-color);
+    }
+
+    .tab-row-widget .note-tab:not([active]) .protected-icon {
+        opacity: 0.5;
     }
 
     .tab-row-widget .note-tab .note-tab-icon {
@@ -534,7 +571,7 @@ export default class TabRowWidget extends BasicWidget {
             this.setScrollButtonVisibility(false);
         }
 
-        const marginWidth = (numberOfTabs - 1) * MARGIN_WIDTH + TAB_CONTAINER_LEFT_PADDING;
+        const marginWidth = (numberOfTabs - 1) * MARGIN_WIDTH;
         const targetWidth = (tabsContainerWidth - marginWidth) / numberOfTabs;
         const clampedTargetWidth = Math.max(TAB_CONTAINER_MIN_WIDTH, Math.min(TAB_CONTAINER_MAX_WIDTH, targetWidth));
         const flooredClampedTargetWidth = Math.floor(clampedTargetWidth);
@@ -560,7 +597,7 @@ export default class TabRowWidget extends BasicWidget {
     getTabPositions() {
         const tabPositions: number[] = [];
 
-        let position = TAB_CONTAINER_LEFT_PADDING;
+        let position = 0;
         this.tabWidths.forEach((width) => {
             tabPositions.push(position);
             position += width + MARGIN_WIDTH;
@@ -629,8 +666,8 @@ export default class TabRowWidget extends BasicWidget {
         // than .note-tab, whose `pointer-events: none` makes Bootstrap's hover tracking misfire. The
         // close button sits above the handle (higher z-index) with its own tooltip, so they never overlap.
         new Tooltip($tab.find(".note-tab-drag-handle")[0], {
-            // titles are pre-escaped in buildTabTitle (only the active <strong> wrapper is trusted);
-            // Bootstrap's own sanitizer stays on as a second layer
+            // titles are pre-escaped in buildTabTitle (only the <strong> wrapper and a split's
+            // `html` are trusted); Bootstrap's own sanitizer stays on as a second layer
             html: true,
             title: () => $tab.attr("data-tab-title") || "",
             trigger: "hover",
@@ -786,9 +823,17 @@ export default class TabRowWidget extends BasicWidget {
 
             this.draggabillies.push(draggabilly);
 
-            draggabilly.on("staticClick", () => {
-                // restore the tab's last-focused split rather than always jumping to its main split
+            // restore the tab's last-focused split rather than always jumping to its main split
+            const activate = () =>
                 appContext.tabManager.activateTabContext(tabEl.getAttribute("data-ntx-id"));
+
+            // A mouse switches tabs on press, as browsers do. A touch switches on release, as a
+            // long press opens the context menu instead.
+            draggabilly.on("pointerDown", (event: PointerEvent) => {
+                if (event.pointerType === "mouse") activate();
+            });
+            draggabilly.on("staticClick", (event: PointerEvent) => {
+                if (event.pointerType !== "mouse") activate();
             });
 
             draggabilly.on("dragStart", () => {
@@ -895,11 +940,52 @@ export default class TabRowWidget extends BasicWidget {
         this.$widget.append(this.$newTab);
 
         new Tooltip(this.$newTab[0], {
-            title: t("tab_row.add_new_tab"),
+            html: true,
+            title: `<span class="action">${utils.escapeHtml(t("tab_row.add_new_tab"))}</span>`
+                + `<span class="hint">${utils.escapeHtml(t("tab_row.add_new_tab_hint"))}</span>`,
+            customClass: "new-tab-tooltip",
             trigger: "hover",
             placement: "bottom",
             container: "body",
             delay: { show: 500, hide: 0 }
+        });
+
+        setupHoldContextMenu(this.$newTab[0], (e) => {
+            e.preventDefault();
+            void this.showNewTabContextMenu(e.pageX, e.pageY);
+        });
+    }
+
+    async showNewTabContextMenu(x: number, y: number) {
+        const [ workspaceNotes, recentChangesItems ] = await Promise.all([
+            search.searchForNotes("#workspace #!template"),
+            getRecentChangesMenuItems()
+        ]);
+
+        contextMenu.show<CommandNames>({
+            x,
+            y,
+            items: [
+                { title: t("tab_row.new_tab"), command: "openNewTab", uiIcon: "bx bx-plus", keyboardShortcut: "openNewTab" },
+                ...(workspaceNotes.length ? [ { kind: "separator" } as const ] : []),
+                ...workspaceNotes.map((workspaceNote) => ({
+                    title: utils.escapeHtml(workspaceNote.title),
+                    uiIcon: workspaceNote.getWorkspaceIconClass() || workspaceNote.getIcon(),
+                    iconColorClass: cssClassManager.createClassForColor(workspaceNote.getWorkspaceTabBackgroundColor()) || undefined,
+                    handler: () => {
+                        void appContext.tabManager.openContextWithNote(workspaceNote.noteId, {
+                            activate: true,
+                            hoistedNoteId: workspaceNote.noteId
+                        });
+                    }
+                })),
+                ...recentChangesItems
+            ],
+            selectMenuItemHandler: ({ command }) => {
+                if (command) {
+                    this.triggerCommand(command);
+                }
+            }
         });
     }
 
@@ -1044,6 +1130,9 @@ export default class TabRowWidget extends BasicWidget {
         const splits = await Promise.all(
             subContexts.map(async (ctx) => ({
                 title: ctx.note ? await ctx.getNavigationTitle() : null,
+                html: ctx.note && !ctx.note.isContentAvailable()
+                    ? noteTitleHtml(ctx.note)
+                    : undefined,
                 active: !!ctx.ntxId && ctx.ntxId === focusedNtxId
             }))
         );
@@ -1064,7 +1153,7 @@ export default class TabRowWidget extends BasicWidget {
             if (idx > 0) {
                 $title.append(document.createTextNode(TAB_TITLE_SEPARATOR));
             }
-            const $segment = $("<span>").addClass("note-tab-segment").text(segment.text);
+            const $segment = $("<span>").addClass("note-tab-segment").html(segment.html);
             if (segment.active) {
                 $segment.addClass("note-tab-segment-active");
             }

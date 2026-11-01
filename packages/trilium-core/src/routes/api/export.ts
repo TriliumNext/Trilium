@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response } from "../../http_interface";
 
 import { getBecca } from "../../becca/becca.js";
 import opmlExportService from "../../services/export/opml.js";
@@ -30,7 +30,7 @@ async function exportBranch(req: Request<{ branchId: string; type: string; forma
             if (format !== "html" && format !== "markdown") {
                 throw new ValidationError("Invalid export type.");
             }
-            singleExportService.exportSingleNote(taskContext, branch, format, res);
+            await singleExportService.exportSingleNote(taskContext, branch, format, res);
         } else if (format === "opml") {
             opmlExportService.exportToOpml(taskContext, branch, res);
         } else {

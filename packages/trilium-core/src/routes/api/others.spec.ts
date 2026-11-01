@@ -102,5 +102,28 @@ describe("Others API (core)", () => {
             });
             expect(res.status).toBe(400);
         });
+
+        it("renders a headerless table as markdown under emptyHeader mode", async () => {
+            const htmlContent = "<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>";
+
+            const res = await api.post<{ markdownContent: string }>("/api/other/to-markdown", {
+                body: { htmlContent, headerlessTables: "emptyHeader" }
+            });
+            expect(res.status).toBe(200);
+            expect(res.body.markdownContent).toBe("|  |  |\n| --- | --- |\n| a | b |");
+
+            // Without the flag the same table stays raw HTML, for a faithful reimport.
+            const plain = await api.post<{ markdownContent: string }>("/api/other/to-markdown", {
+                body: { htmlContent }
+            });
+            expect(plain.body.markdownContent).toContain("<table>");
+        });
+
+        it("400s on an unknown headerlessTables value", async () => {
+            const res = await api.post("/api/other/to-markdown", {
+                body: { htmlContent: "<p>x</p>", headerlessTables: "bogus" }
+            });
+            expect(res.status).toBe(400);
+        });
     });
 });

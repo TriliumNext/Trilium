@@ -2,7 +2,7 @@
 Trilium is an open-source solution for note-taking and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.
 
 > [!TIP]
-> The same documentation can be accessed locally from within the Trilium Notes application by pressing <kbd>F1</kbd>.
+> The same documentation can be accessed locally from within the Trilium Notes application by pressing F1.
 
 ## Getting started
 
@@ -15,8 +15,8 @@ Trilium is an open-source solution for note-taking and organizing a personal kno
 
 *   <a class="reference-link" href="User%20Guide/Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>
 *   <a class="reference-link" href="User%20Guide/Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>
-*   <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Frontend%20API">Frontend API</a> or <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Backend%20API.dat">Backend API</a>
-*   [ETAPI reference](User%20Guide/Advanced%20Usage/ETAPI%20\(REST%20API\)/API%20Reference.dat)
+*   <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Frontend%20API.md">Frontend API</a> or <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Backend%20API.md">Backend API</a>
+*   [ETAPI reference](User%20Guide/Advanced%20Usage/ETAPI%20\(REST%20API\)/API%20Reference.md)
 
 ## External links
 

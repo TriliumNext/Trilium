@@ -31,7 +31,7 @@ export default function PromptDialog() {
     const formRef = useRef<HTMLFormElement>(null);
     const labelRef = useRef<HTMLLabelElement>(null);
     const answerRef = useRef<HTMLInputElement>(null);
-    const opts = useRef<PromptDialogOptions>();
+    const opts = useRef<PromptDialogOptions | undefined>(undefined);
     const [ value, setValue ] = useState("");
     const [ shown, setShown ] = useState(false);
     const submitValue = useRef<string>(null);
@@ -69,7 +69,10 @@ export default function PromptDialog() {
                 submitValue.current = null;
                 opts.current = undefined;
             }}
-            footer={<Button text={t("prompt.ok")} keyboardShortcut="Enter" kind="primary" />}
+            footer={<>
+                <Button text={t("modal.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("prompt.ok")} keyboardShortcut="Enter" kind="primary" />
+            </>}
             show={shown}
             stackable
         >

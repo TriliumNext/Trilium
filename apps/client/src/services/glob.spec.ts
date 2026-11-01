@@ -80,8 +80,8 @@ describe("setupGlobs", () => {
         await expect(window.glob.getReferenceLinkTitle("#root/abc")).resolves.toBe("async:#root/abc");
         expect(getReferenceLinkTitle).toHaveBeenCalledWith("#root/abc");
 
-        expect(window.glob.getReferenceLinkTitleSync("#root/def")).toBe("sync:#root/def");
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/def");
+        expect(window.glob.getReferenceLinkTitleSync("#root/def", "Stored")).toBe("sync:#root/def");
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/def", "Stored");
     });
 
     it("loads each configured app CSS note that isn't already present", () => {
@@ -120,19 +120,32 @@ describe("setupGlobs", () => {
     });
 });
 
+/** A `CKEditorError` as `ckeditor5` builds it: `context` holds an editor object, `data` the details. */
+function ckEditorError() {
+    const error = new Error("unexpected-error") as Error & Record<string, unknown>;
+    error.is = (type: string) => type === "CKEditorError";
+    error.context = { document: { roots: [ "main" ] } };
+    error.data = { originalError: "Editor crashed." };
+    return error;
+}
+
 describe("window.onerror handler", () => {
     beforeEach(() => glob.setupGlobs());
 
-    it("logs full details for a normal error and serializes the error object", () => {
-        const result = window.onerror!("Some failure", "http://x/app.js", 12, 34, new Error("boom"));
+    it("logs the message, then the stack without its header line", () => {
+        const error = new Error("boom");
+        error.stack = "Error: boom\n    at run (app.js:1:2)";
+        const result = window.onerror!("Some failure", "http://x/app.js", 12, 34, error);
 
         expect(result).toBe(false);
-        expect((ws as any).logError).toHaveBeenCalledTimes(1);
-        const msg = (ws as any).logError.mock.calls[0][0] as string;
-        expect(msg).toContain("Message: Some failure");
-        expect(msg).toContain("URL: http://x/app.js");
-        expect(msg).toContain("Line: 12");
-        expect(msg).toContain("Column: 34");
+        expect((ws as any).logError).toHaveBeenCalledExactlyOnceWith(
+            "Uncaught error: Some failure\n    at run (app.js:1:2)");
+    });
+
+    it("logs where the error happened when it has no stack", () => {
+        window.onerror!("Some failure", "http://x/app.js", 12, 34, undefined);
+        expect((ws as any).logError).toHaveBeenCalledExactlyOnceWith(
+            "Uncaught error: Some failure\nat http://x/app.js:12:34");
     });
 
     it("reports no details for a generic 'Script error'", () => {
@@ -152,7 +165,18 @@ describe("window.onerror handler", () => {
         window.onerror!("circular failure", "u", 1, 2, err);
         const msg = (ws as any).logError.mock.calls[0][0] as string;
         // The catch branch stringified the thrown serialization error via toString().
-        expect(msg).toContain("Error object: Error: nope");
+        expect(msg).toContain("Details: Error: nope");
+    });
+
+    it("logs the details of a CKEditor error without its editor object", () => {
+        const error = ckEditorError();
+        error.stack = "    at change (ckeditor5.js:1:2)";
+        window.onerror!("unexpected-error", "u", 1, 2, error);
+        expect((ws as any).logError).toHaveBeenCalledExactlyOnceWith([
+            "Uncaught error: unexpected-error",
+            "Details: {\"data\":{\"originalError\":\"Editor crashed.\"}}",
+            "    at change (ckeditor5.js:1:2)"
+        ].join("\n"));
     });
 });
 
@@ -167,10 +191,11 @@ describe("unhandledrejection handler", () => {
 
     it("logs full details for a normal rejection", () => {
         dispatchRejection({ message: "rejected", lineNumber: 5, columnNumber: 6, stack: "stack" });
-        const msg = (ws as any).logError.mock.calls[0][0] as string;
-        expect(msg).toContain("Message: rejected");
-        expect(msg).toContain("Line: 5");
-        expect(msg).toContain("Column: 6");
+        expect((ws as any).logError.mock.calls[0][0]).toBe([
+            "Uncaught error: rejected",
+            "Details: {\"lineNumber\":5,\"columnNumber\":6}",
+            "stack"
+        ].join("\n"));
     });
 
     it("reports no details for a script error rejection", () => {
@@ -188,7 +213,19 @@ describe("unhandledrejection handler", () => {
         // no .message -> string is undefined -> falls into the details branch
         dispatchRejection(circular);
         const msg = (ws as any).logError.mock.calls[0][0] as string;
-        expect(msg).toContain("Error object: Error: bad");
+        expect(msg).toContain("Details: Error: bad");
+    });
+
+    it("logs a rejection with a value that is not an error", () => {
+        dispatchRejection("plain reason");
+        expect((ws as any).logError.mock.calls[0][0]).toBe("Uncaught error: plain reason");
+    });
+
+    it("leaves the editor object out of a CKEditor error", () => {
+        dispatchRejection(ckEditorError());
+        const msg = (ws as any).logError.mock.calls[0][0] as string;
+        expect(msg).toContain("Editor crashed.");
+        expect(msg).not.toContain("roots");
     });
 });
 

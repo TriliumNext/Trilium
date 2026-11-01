@@ -1,67 +1,91 @@
 import { Component, h, VNode } from "preact";
 
+import type AppComponent from "../components/component.js";
+
 import type FNote from "../entities/fnote.js";
-import { renderReactWidgetAtElement } from "../widgets/react/react_utils.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "../widgets/react/react_utils.jsx";
 import { type Bundle, executeBundleWithoutErrorHandling } from "./bundle.js";
 import froca from "./froca.js";
-import server from "./server.js";
+import { trackPendingRender } from "./pending_renders.js";
+import { keepStylesScoped, RENDER_SCOPE_CLASS } from "./render_css_scope.js";
 
-type ErrorHandler = (e: unknown) => void;
+/**
+ * @param noteId the render note the error is attributed to, so the caller can link back to it.
+ */
+type ErrorHandler = (e: unknown, noteId?: string) => void;
 
-export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+interface RenderOptions {
+    /** The component a JSX render note's element mounts under; by default the closest `.component` element's. */
+    parentComponent?: AppComponent;
+    /** Once aborted, the render mounts nothing and reports no errors, so a stale render cannot leave a portal behind. */
+    signal?: AbortSignal;
+}
+
+export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler, options: RenderOptions = {}) {
+    const { signal } = options;
     const relations = note.getRelations("renderNote");
     const renderNoteIds = relations.map((rel) => rel.value).filter((noteId) => noteId);
+    const reportError: ErrorHandler = (e, noteId) => {
+        if (!signal?.aborted) onError?.(e, noteId);
+    };
 
+    disposeReactWidget($el[0]);
     $el.empty().toggle(renderNoteIds.length > 0);
 
+    let currentRenderNoteId: string | undefined;
     try {
         for (const renderNoteId of renderNoteIds) {
-            const bundle = await server.postWithSilentInternalServerError<Bundle>(`script/bundle/${renderNoteId}`);
+            currentRenderNoteId = renderNoteId;
+            const bundle = await froca.getScriptBundle(renderNoteId);
+            if (signal?.aborted) return;
 
             if (!bundle) {
                 throw new Error(`Script note '${renderNoteId}' could not be loaded. It may be protected and require an active protected session.`);
             }
 
-            const $scriptContainer = $("<div>");
+            const $scriptContainer = $("<div>").addClass(RENDER_SCOPE_CLASS);
             $el.append($scriptContainer);
 
             $scriptContainer.append(bundle.html);
+            keepStylesScoped($scriptContainer[0]);
 
-            // async so that scripts cannot block trilium execution
-            executeBundleWithoutErrorHandling(bundle, note, $scriptContainer)
-                .catch(onError)
-                .then(result => {
-                    // Render JSX
+            // Not awaited, so that a script cannot block Trilium. `trackPendingRender` lets printing
+            // wait for the script and its JSX mount before it captures the page.
+            const work = executeBundleWithoutErrorHandling(bundle, note, $scriptContainer)
+                .catch((e) => reportError(e, renderNoteId))
+                .then(async (result) => {
                     if (bundle.html === "") {
-                        renderIfJsx(bundle, result, $el, onError).catch(onError);
+                        await renderIfJsx(bundle, result, $el, reportError, options).catch((e) => reportError(e, bundle.noteId));
                     }
                 });
+            trackPendingRender($el[0], work);
         }
 
         return renderNoteIds.length > 0;
     } catch (e) {
         if (typeof e === "string" && e.startsWith("{") && e.endsWith("}")) {
             try {
-                onError?.(JSON.parse(e));
+                reportError(JSON.parse(e), currentRenderNoteId);
             } catch (e) {
-                onError?.(e);
+                reportError(e, currentRenderNoteId);
             }
         } else {
-            onError?.(e);
+            reportError(e, currentRenderNoteId);
         }
     }
 }
 
-export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler, { parentComponent, signal }: RenderOptions = {}) {
     // Ensure the root script note is actually a JSX.
     const rootScriptNoteId = await froca.getNote(bundle.noteId);
+    if (signal?.aborted) return;
     if (rootScriptNoteId?.mime !== "text/jsx") return;
 
     // Ensure the output is a valid el.
     if (typeof result !== "function") return;
 
     // Obtain the parent component.
-    const closestComponent = glob.getComponentByEl($el.closest(".component")[0]);
+    const closestComponent = parentComponent ?? glob.getComponentByEl($el.closest(".component")[0]);
     if (!closestComponent) return;
 
     // Render the element.
@@ -72,7 +96,7 @@ export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<H
         }
 
         componentDidCatch(error: unknown) {
-            onError?.(error);
+            onError?.(error, bundle.noteId);
             this.setState({ error });
         }
 

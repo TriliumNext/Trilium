@@ -87,13 +87,51 @@ describe("HtmlExportProvider", () => {
             expect(result).toContain("A &lt;b&gt; &amp; &quot;Title&quot;");
             expect(result).not.toContain("<b> &");
             expect(result).toContain('<base target="_parent">');
-            // Content is pretty-printed, so the body markup is preserved (line layout may differ).
+            // formatHtml() changes only the line layout, so the body markup is preserved.
             expect(result).toContain('<div class="ck-content">');
             expect(result).toContain("<p>Body</p>");
             expect(result).toContain('<h1 data-trilium-h1>');
             // rewriteFn is applied to the final content.
             expect(rewriteFn).toHaveBeenCalledTimes(1);
             expect(rewriteFn.mock.calls[0][1]).toBe(noteMeta);
+        });
+
+        it("writes a paragraph exactly as the note holds it", () => {
+            const { provider } = buildProvider({ zipExportOptions: { skipHtmlTemplate: true } });
+            const noteMeta: NoteMeta = { format: "html", notePath: ["root", "leaf"] };
+            const content = "<p>When given a value, it will sort by other criteria instead: a comma-separated "
+                + "list of levels, each <code spellcheck=\"false\">title</code>, "
+                + "<code spellcheck=\"false\">dateCreated</code>, "
+                + "<code spellcheck=\"false\">dateModified</code> or the name of a label on the child notes.</p>";
+
+            const result = provider.prepareContent("Sorting", content, noteMeta) as string;
+
+            expect(result).toBe(content);
+        });
+
+        it("exports the same file however long the href was before rewriteFn shortened it", () => {
+            // Both forms are written by Trilium for the same link: the editor stores a full note
+            // path, an import stores a bare ID. rewriteFn collapses each to the same target, so
+            // the exported file must not differ.
+            const wrapFor = (href: string) => {
+                const { provider } = buildProvider({
+                    zipExportOptions: { skipHtmlTemplate: true },
+                    rewriteFn: (content) => content.replace(/href="[^"]*"/g, 'href="#root/_help_eIg8jdvaoNNd"')
+                });
+                const content = "<p>To search the whole database while hoisted, use the full "
+                    + `<a class="reference-link" href="${href}">Search</a> and leave `
+                    + "<em>Ancestor</em> field empty.</p>";
+                return provider.prepareContent("Quick search", content, {
+                    format: "html",
+                    notePath: ["root", "leaf"]
+                }) as string;
+            };
+
+            const fromImport = wrapFor("#root/eIg8jdvaoNNd");
+            const fromEditor = wrapFor("#root/pOsGYCXsbNQG/BFs8mudNFgCS/BCkXAVs63Ttv/eIg8jdvaoNNd");
+
+            expect(fromEditor).toBe(fromImport);
+            expect(fromImport).toContain('href="#root/_help_eIg8jdvaoNNd"');
         });
 
         it("uses a bare style.css path for a top-level note (notePath length 1)", () => {
@@ -162,10 +200,10 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn).not.toHaveBeenCalled();
         });
 
-        it("does not pretty-print very large content but still wraps and rewrites it", () => {
+        it("formats large content too, after wrapping and rewriting it", () => {
             const rewriteFn = vi.fn((content: string) => content);
             const { provider } = buildProvider({ rewriteFn });
-            const big = "<p>x</p>".repeat(20000); // well over the 100k pretty-print threshold
+            const big = "<p>x</p>".repeat(20000);
 
             const result = provider.prepareContent("T", big, {
                 format: "html",
@@ -173,7 +211,7 @@ describe("HtmlExportProvider", () => {
             }) as string;
 
             expect(result).toContain('<base target="_parent">');
-            expect(result.length).toBeGreaterThan(100_000);
+            expect(result.split("\n        <p>x</p>")).toHaveLength(20001);
             expect(rewriteFn).toHaveBeenCalledTimes(1);
         });
     });
@@ -236,6 +274,44 @@ describe("HtmlExportProvider", () => {
             provider.afterDone(buildRootMeta());
 
             expect(appendCalls.map((c) => c.name).sort()).toEqual(["index.html", "navigation.html"]);
+        });
+
+        it("skips every extra file whose meta carries no data file name", () => {
+            const { provider, appendCalls } = buildProvider({ options: { contentCss: "body {}" } });
+            const metaFile = buildMetaFile();
+            provider.prepareMeta(metaFile);
+            // prepareMeta publishes the very meta objects the provider writes out later, so clearing
+            // the (optional) file names leaves it with nothing to name the archive entries after.
+            for (const file of metaFile.files) {
+                file.dataFileName = undefined;
+            }
+
+            provider.afterDone(buildRootMeta());
+
+            expect(appendCalls).toHaveLength(0);
+        });
+
+        it("formats a very large navigation tree too, one item per line", () => {
+            const { provider, appendCalls } = buildProvider();
+            provider.prepareMeta(buildMetaFile());
+            const rootMeta: NoteMeta = {
+                noteId: "root",
+                title: "Root",
+                dataFileName: "Root.html",
+                children: Array.from({ length: 2000 }, (_, i) => ({
+                    noteId: `note${i}`,
+                    title: `Note number ${i}`,
+                    dataFileName: `note${i}.html`,
+                    children: []
+                }))
+            };
+
+            provider.afterDone(rootMeta);
+
+            const navigation = appendCalls.find((c) => c.name === "navigation.html")?.content;
+            expect(typeof navigation).toBe("string");
+            expect(String(navigation).length).toBeGreaterThan(100_000);
+            expect(String(navigation).match(/^ +<li><a href="[^"]+" target="detail">Note number \d+<\/a><\/li>$/gm)).toHaveLength(2000);
         });
 
         it("throws when meta was never prepared", () => {

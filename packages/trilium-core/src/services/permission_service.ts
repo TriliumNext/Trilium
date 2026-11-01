@@ -5,7 +5,7 @@ import dateUtils from "./utils/date.js";
 import userService from "./user_service.js";
 import { evictUser } from "../becca/becca_cache.js";
 
-interface PermissionRow {
+export interface PermissionRow {
     permissionId: string;
     noteId: string;
     userId: string | null;

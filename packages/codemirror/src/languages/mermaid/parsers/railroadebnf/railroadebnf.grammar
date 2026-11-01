@@ -1,0 +1,48 @@
+// Follows the Langium grammar of Mermaid's EBNF railroad dialect (`@mermaid-js/parser`).
+@top RailroadEbnfDiagram { DiagramName Title* Rule* }
+
+Rule { RuleName ("=" | "::=") choice ";" }
+
+choice { sequence ("|" sequence)* }
+
+sequence { term (","? term)* }
+
+term { primary (Postfix | Exception)* }
+
+Exception { "-" primary }
+
+primary { String | Special | NonTerminal | Group | Optional | Repetition }
+
+Group { "(" choice ")" }
+
+Optional { "[" choice "]" }
+
+Repetition { "{" choice "}" }
+
+Postfix { "?" | "*" | "+" }
+
+Title { kw<"title"> TitleText? }
+
+RuleName { identifier }
+
+NonTerminal { identifier }
+
+DiagramName { @specialize<identifier, "railroad-ebnf-beta"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { $[A-Za-z_] $[a-zA-Z0-9_\-]* }
+  String { '"' (!["\\\n] | "\\" _)* '"' | "'" (!['\\\n] | "\\" _)* "'" }
+  Special { "?" ![?;]* "?" }
+  LineComment { "%%" ![\n]* }
+  "=" "::=" ";" "|" "," "-" "?" "*" "+" "(" ")" "[" "]" "{" "}"
+  @precedence { Special, "?" }
+}
+
+@external propSource railroadEbnfHighlighting from "./highlight.js"

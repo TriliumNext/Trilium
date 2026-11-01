@@ -16,7 +16,14 @@ vi.mock("electron", () => ({
     }
 }));
 
+const resourcesDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-resources-"));
+vi.mock("@triliumnext/server/src/services/data_dir.js", async (importOriginal) => {
+    const actual = await importOriginal<{ default: object }>();
+    return { default: { ...actual.default, RESOURCES_DIR: resourcesDir } };
+});
+
 const {
+    getConfiguredOpenRoots,
     validateDownloadUrl,
     validateOpenCustomPath,
     validateOpenExternalUrl,
@@ -176,6 +183,68 @@ describe("validateOpenPath", () => {
 
     it("accepts the data directory itself (About-dialog 'open data directory' case)", () => {
         expect(validateOpenPath(dataDir, dataDir, tmpDir)).toBe(path.resolve(dataDir));
+    });
+
+    describe("backup directory root", () => {
+        let backupDir: string;
+
+        beforeAll(() => {
+            backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-backup-"));
+            fs.writeFileSync(path.join(backupDir, "backup-daily.db"), "");
+        });
+
+        afterAll(() => fs.rmSync(backupDir, { recursive: true, force: true }));
+
+        it("accepts a backup directory outside the data directory, and what it holds", () => {
+            expect(validateOpenPath(backupDir, dataDir, tmpDir, backupDir)).toBe(path.resolve(backupDir));
+            expect(validateOpenPath(path.join(backupDir, "backup-daily.db"), dataDir, tmpDir, backupDir))
+                .toBe(path.resolve(backupDir, "backup-daily.db"));
+        });
+
+        it("rejects that same directory when it is not the configured one", () => {
+            expect(() => validateOpenPath(backupDir, dataDir, tmpDir)).toThrow(/outside data dir/);
+            expect(() => validateOpenPath(backupDir, dataDir, tmpDir, null)).toThrow(/outside data dir/);
+        });
+
+        it("does not widen the sandbox beyond the backup directory", () => {
+            const outside = path.join(backupDir, "..", "elsewhere.txt");
+            expect(() => validateOpenPath(outside, dataDir, tmpDir, backupDir)).toThrow(/outside data dir/);
+        });
+    });
+
+    describe("resources directory root", () => {
+        afterAll(() => fs.rmSync(resourcesDir, { recursive: true, force: true }));
+
+        it("accepts a resources directory moved outside the data directory, and what it holds", () => {
+            const resource = path.join(resourcesDir, "transcription.parakeet-0123456789ab");
+            fs.mkdirSync(resource);
+
+            expect(validateOpenPath(resource, dataDir, tmpDir, ...getConfiguredOpenRoots()))
+                .toBe(path.resolve(resource));
+            expect(() => validateOpenPath(resource, dataDir, tmpDir)).toThrow(/outside data dir/);
+        });
+    });
+
+    describe("a file as a root of its own (the database, wherever it is kept)", () => {
+        let documentPath: string;
+
+        beforeAll(() => {
+            documentPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-db-")), "document.db");
+            fs.writeFileSync(documentPath, "");
+        });
+
+        afterAll(() => fs.rmSync(path.dirname(documentPath), { recursive: true, force: true }));
+
+        it("accepts that exact file, and nothing else beside it", () => {
+            expect(validateOpenPath(documentPath, dataDir, tmpDir, null, documentPath))
+                .toBe(path.resolve(documentPath));
+
+            // Naming a file as a root widens the sandbox by one path, not by the directory it is in.
+            const sibling = path.join(path.dirname(documentPath), "document.db-wal");
+            fs.writeFileSync(sibling, "");
+            expect(() => validateOpenPath(sibling, dataDir, tmpDir, null, documentPath))
+                .toThrow(/outside data dir/);
+        });
     });
 
     it("accepts files under the data directory", () => {

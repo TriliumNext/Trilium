@@ -41,6 +41,12 @@ export default function buildLaunchBarConfig() {
             command: "showRecentChanges",
             icon: "bx bx-history"
         },
+        deletedNotes: {
+            title: t("hidden-subtree.deleted-notes-title"),
+            type: "launcher",
+            command: "showDeletedNotes",
+            icon: "bx bx-trash-alt"
+        },
         searchNotes: {
             title: t("hidden-subtree.search-notes-title"),
             type: "launcher",
@@ -76,7 +82,7 @@ export default function buildLaunchBarConfig() {
             title: t("hidden-subtree.backend-log-title"),
             type: "launcher",
             targetNoteId: "_backendLog",
-            icon: "bx bx-detail"
+            icon: "bx bx-receipt"
         },
         {
             id: "_zenMode",
@@ -86,18 +92,33 @@ export default function buildLaunchBarConfig() {
             icon: "bx bxs-yin-yang"
         },
         {
+            id: "_colorSchemeSwitcher",
+            title: t("hidden-subtree.color-scheme-switcher-title"),
+            type: "launcher",
+            builtinWidget: "colorSchemeSwitcher",
+            icon: "bx bx-adjust"
+        },
+        {
             id: "_lbSidebarChat",
             title: t("hidden-subtree.sidebar-chat-title"),
             type: "launcher",
             builtinWidget: "sidebarChat",
             icon: "bx bx-message-square-dots"
-        }
+        },
+        { id: "_lbDeletedNotes", ...sharedLaunchers.deletedNotes }
     ];
 
     const desktopVisibleLaunchers: HiddenSubtreeItem[] = [
         {
             id: "_lbNewNote",
             ...sharedLaunchers.newNote
+        },
+        {
+            id: "_lbRecordMeeting",
+            title: t("hidden-subtree.record-meeting-title"),
+            type: "launcher",
+            builtinWidget: "recordMeeting",
+            icon: "bx bx-microphone"
         },
         {
             id: "_lbSearch",

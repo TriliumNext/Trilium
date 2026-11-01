@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildFileObjectMap, mapViewType, synthesizeColumns } from "./collection.js";
+import { buildFileObjectMap, buildOptionMap, buildRelationMap, mapViewType, synthesizeColumns } from "./collection.js";
 import { isCollectionObject, isPage, parseObject } from "./importer.js";
 import type { AnytypeBlock, AnytypeMark, AnytypeSnapshot, RelationInfo } from "./model.js";
 
@@ -71,7 +71,7 @@ describe("collection properties", () => {
     ]);
 
     describe("parseObject — property values", () => {
-        it("maps supported property values to labels, schemes email/phone with mailto:/tel:", () => {
+        it("maps supported property values to labels, keeping email/phone as bare addresses", () => {
             const details = {
                 id: "obj",
                 name: "Row",
@@ -93,8 +93,8 @@ describe("collection properties", () => {
                 { name: "dateTime", value: localDate(1782461208, true) },
                 { name: "checkbox", value: "true" },
                 { name: "url", value: "https://triliumnotes.org" },
-                { name: "email", value: "mailto:contact@acme.com" },
-                { name: "phone", value: "tel:12345" }
+                { name: "email", value: "contact@acme.com" },
+                { name: "phone", value: "12345" }
             ]);
         });
 
@@ -131,16 +131,16 @@ describe("collection properties", () => {
             expect(result.properties).toEqual([]);
         });
 
-        it("ignores system relations (non-hex keys), unset values and an existing scheme", () => {
+        it("ignores system relations (non-hex keys) and unset values, and strips a scheme an email carries", () => {
             const details = {
                 id: "obj",
                 name: "Named", // the title, not a property
                 description: "a system longtext", // system relation, non-hex key → not a property
                 "6a3e335dcafa6953a4661c74": "", // unset url → skipped
-                "6a3e336dcafa6953a4661c75": "mailto:already@scheme.com" // keeps its existing scheme
+                "6a3e336dcafa6953a4661c75": "mailto:already@scheme.com" // scheme stripped to the bare address
             };
             const result = parseObject(snapshot([{ id: "obj", childrenIds: [] }], details), undefined, rels);
-            expect(result.properties).toEqual([{ name: "email", value: "mailto:already@scheme.com" }]);
+            expect(result.properties).toEqual([{ name: "email", value: "already@scheme.com" }]);
         });
 
         it("returns no properties when no relation map is supplied", () => {
@@ -160,12 +160,65 @@ describe("collection properties", () => {
         });
     });
 
-    describe("buildFileObjectMap", () => {
+    describe("parseObject — loosely-typed property values", () => {
+        it("accepts a string-encoded checkbox / number and a non-string text value", () => {
+            const details = {
+                id: "obj",
+                "6a3e3354cafa6953a4661c73": "false", // Checkbox stored as a string
+                "6a3e29e1cafa6953a4661c16": "17", // Number stored as a string
+                "6a3e29d5cafa6953a4661c15": 12 // Text stored as a number
+            };
+            expect(parseObject(snapshot([{ id: "obj", childrenIds: [] }], details), undefined, rels).properties).toEqual([
+                { name: "checkbox", value: "false" },
+                { name: "numberProp", value: "17" },
+                { name: "textProperty", value: "12" }
+            ]);
+        });
+
+        it("drops a checkbox that isn't boolean-ish and a number that isn't numeric", () => {
+            const parse = (details: Record<string, unknown>) =>
+                parseObject(snapshot([{ id: "obj", childrenIds: [] }], { id: "obj", ...details }), undefined, rels).properties;
+            expect(parse({ "6a3e3354cafa6953a4661c73": "maybe" })).toEqual([]);
+            expect(parse({ "6a3e29e1cafa6953a4661c16": "abc" })).toEqual([]);
+        });
+
+        it("drops select / file values that aren't a list of ids", () => {
+            const parse = (details: Record<string, unknown>) =>
+                parseObject(snapshot([{ id: "obj", childrenIds: [] }], { id: "obj", ...details }), undefined, rels, options);
+            // A select's value is always a list of option ids, a file's a list of file-object ids; anything
+            // else (a bare string, a non-string entry) carries no id to resolve.
+            expect(parse({ "6a3e29e8cafa6953a4661c17": "opt-first-cap", "6a3e2a01cafa6953a4661c1c": [42] }).properties).toEqual([]);
+            expect(parse({ "6a3e3323cafa6953a4661c6f": "file-cid" }).fileRefs).toEqual([]);
+            expect(parse({ "6a3e3323cafa6953a4661c6f": [7] }).fileRefs).toEqual([]);
+        });
+    });
+
+    describe("buildRelationMap / buildOptionMap / buildFileObjectMap", () => {
+        it("skips a snapshot with no details, defaulting a relation's missing name and format", () => {
+            const relations = buildRelationMap([snapshot([], { relationKey: "k1" }, "STRelation"), { sbType: "STRelation" }]);
+            expect([...relations]).toEqual([["k1", { name: "", format: -1, includeTime: false }]]);
+
+            const optionMap = buildOptionMap([snapshot([], { id: "opt-1" }, "STRelationOption"), { sbType: "STRelationOption" }]);
+            expect([...optionMap]).toEqual([["opt-1", ""]]);
+        });
+
         it("skips a file object that has no id", () => {
             const withId = snapshot([], { id: "file-1", name: "doc", fileExt: "pdf", source: "files/doc.pdf" }, "FileObject");
             const withoutId = snapshot([], { name: "orphan" }, "FileObject");
             const map = buildFileObjectMap([withId, withoutId]);
             expect([...map.keys()]).toEqual(["file-1"]);
+        });
+
+        it("names a source-less file object from its own name and extension, keeping Anytype's MIME as a fallback", () => {
+            const map = buildFileObjectMap([
+                snapshot([], { id: "f1", name: "Report", fileExt: "pdf" }, "FileObject"),
+                snapshot([], { id: "f2" }, "FileObject"),
+                snapshot([], { id: "f3", name: "Raw", fileMimeType: "application/x-thing" }, "FileObject")
+            ]);
+            expect(map.get("f1")).toEqual({ title: "Report.pdf", mime: "application/pdf", source: "" });
+            // Nothing to name it after and no recognizable extension: a generic title and an unknown MIME.
+            expect(map.get("f2")).toEqual({ title: "file", mime: "", source: "" });
+            expect(map.get("f3")).toEqual({ title: "Raw", mime: "application/x-thing", source: "" });
         });
     });
 
@@ -179,9 +232,10 @@ describe("collection properties", () => {
             expect(isPage(collectionDoc(14, true))).toBe(false);
         });
 
-        it("rejects a query set (dataview without isCollection) and a plain page", () => {
+        it("rejects a query set (dataview without isCollection), a plain page and a block-less snapshot", () => {
             expect(isCollectionObject(collectionDoc(3, false))).toBe(false);
             expect(isCollectionObject(page("Plain", [textBlock("b1", "body")]))).toBe(false);
+            expect(isCollectionObject({ sbType: "Page" })).toBe(false);
         });
     });
 
@@ -258,6 +312,22 @@ describe("collection properties", () => {
             ]);
         });
 
+        it("parses a bare collection: no views, no relations, no links", () => {
+            const dv: AnytypeBlock = { id: "dv", childrenIds: [], dataview: { isCollection: true } };
+            const doc = snapshot([{ id: "obj", childrenIds: ["dv"] }, dv], { id: "obj", name: "C" });
+            expect(parseObject(doc, undefined, rels).collection).toEqual({ viewType: "table", memberIds: [], columns: [] });
+        });
+
+        it("drops a visible column whose relation isn't part of the export", () => {
+            const dv: AnytypeBlock = {
+                id: "dv",
+                childrenIds: [],
+                dataview: { isCollection: true, views: [{ relations: [{ key: "6a3e0000cafa6953a4661cff", isVisible: true }] }] }
+            };
+            const doc = snapshot([{ id: "obj", childrenIds: ["dv"] }, dv], { id: "obj", name: "C", links: [] });
+            expect(parseObject(doc, undefined, rels).collection?.columns).toEqual([]);
+        });
+
         it("leaves collection undefined for a regular (non-dataview) page", () => {
             expect(parseObject(page("Plain", [textBlock("b1", "body")]), undefined, rels).collection).toBeUndefined();
         });
@@ -283,7 +353,7 @@ describe("collection properties", () => {
             const m2 = { id: "m2", "6a3e336dcafa6953a4661c75": "a@b.com", "6a3e335dcafa6953a4661c74": "https://y" }; // Email + URL (already seen)
             expect(synthesizeColumns([m1, m2], rels)).toEqual([
                 { name: "url", labelType: "url", alias: "URL", multiplicity: "single" },
-                { name: "email", labelType: "url", alias: "Email", multiplicity: "single" }
+                { name: "email", labelType: "email", alias: "Email", multiplicity: "single" }
             ]);
         });
     });

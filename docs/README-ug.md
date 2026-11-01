@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,16 +14,20 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes بولسا ھەقسىز، ئوچۇق كودلۇق، سىستېما ھالقىغان، قاتلاملىق خاتىرە
 قالدۇرۇش ئەپى بولۇپ، ئۇ ئاساسلىقى چوڭ تىپتىكى شەخسىي بىلىم ئامبىرى قۇرۇشقا
 ئەھمىيەت بېرىدۇ.
+
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -132,7 +125,7 @@ docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 * ئىچىگە ئورۇنلاشتۇرۇلغان [قېنىق رەڭلىك
   تېما](https://docs.triliumnotes.org/user-guide/concepts/themes)
 * [Evernote دىن
-  ئەكىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  ئەكىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   ۋە [Markdown نى ئەكىرىش ھەم
   چىقىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * توردىكى مەزمۇنلارنى تېز ساقلاشقا ئىشلىتىلىدىغان [Web
@@ -223,11 +216,32 @@ TriliumNext يەنە Flatpak نۇسخىسى بىلەن تەمىنلەيدۇ، ئ
 كۆچمە دېتال قوللاشقا ئائىت تېخىمۇ كۆپ ئۇچۇرلار ئۈچۈن،
 https://github.com/TriliumNext/Trilium/issues/4962 مەسىلە بېتىگە قاراڭ.
 
+#### TriliumDroid
+
 ئەگەر سىز ئەسلى Android دېتالىنى ئىشلىتىشكە ئامراق بولسىڭىز،
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
 نى ئىشلەتسىڭىز بولىدۇ. مەسىلە ياكى كەم بولغان ئىقتىدارلارنى مەلۇم قىلماقچى
 بولسىڭىز، [ئۇنىڭ ئامبىرى](https://github.com/FliegendeWurst/TriliumDroid) غا
 مەرھەمەت.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### Server
 
@@ -345,6 +359,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   [antoniotejada](https://github.com/nriver).
 * سىستېما تەخسىسى سىنبەلگىسى ئۈچۈن [Tabler Icons](https://tabler.io/icons)
   ئىشلىتىلدى.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 ئارقا سەپتىكى تېخنىكىلارنىڭ قوللىشى بولمىسا، Trilium تۈرىنى ئەمەلگە ئاشۇرغىلى
 بولمايتتى:
@@ -353,6 +373,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— كۆپلىگەن پروگرامما
   تىللىرىنى قوللايدىغان كود تەھرىرلىگۈچ.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— (Canvas) خاتىرىسىدە
   ئىشلىتىلىدىغان چەكسىز ئاق دوسكا.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— تەپەككۇر
@@ -363,12 +387,6 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   تەسىرلىشىدىغان جەدۋەللەر ئۈچۈن ئىشلىتىلىدۇ.
 * [FancyTree](https://github.com/mar10/fancytree) —— ئىقتىدارى مول بولغان
   دەرەخسىمان كونترول كۇتۇپخانىسى، ئۇنىڭغا تەڭ كېلىدىغان باشقا بىر كۇتۇپخانا يوق.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) —— كۆرۈنۈشچان ئۇلىنىش
-  كۇتۇپخانىسى. مۇناسىۋەت خەرىتىسى
-  (https://docs.triliumnotes.org/user-guide/note-types/relation-map) ۋە ئۇلىنىش
-  خەرىتىسى
-  (https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  ئۈچۈن ئىشلىتىلىدۇ
 
 ## 🤝 بىزنى قوللاش
 

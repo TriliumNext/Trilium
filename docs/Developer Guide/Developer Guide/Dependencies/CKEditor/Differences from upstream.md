@@ -1,5 +1,5 @@
 # Differences from upstream
-*   Embeds [`~~isaul32/ckeditor5-math~~`](https://github.com/isaul32/ckeditor5-math)  <a class="reference-link" href="ckeditor5-math.md">ckeditor5-math</a>, which is a third-party plugin for adding math support. CKEditor itself also has a [math plugin](https://ckeditor.com/docs/ckeditor5/latest/features/math-equations.html) with MathType and ChemType but it's premium-only.
+*   Embeds [`~~isaul32/ckeditor5-math~~`](https://github.com/isaul32/ckeditor5-math)  <a class="reference-link" href="ckeditor5-math.md">ckeditor5-math</a>, which is a third-party plugin for adding math support. CKEditor itself also has a [math plugin](https://ckeditor.com/docs/ckeditor5/latest/features/math-equations.html) with MathType and ChemType but it's premium-only.
 *   Zadam left a TODO in `findandreplaceUI`: `// FIXME: keyboard shortcut doesn't work:` [`https://github.com/ckeditor/ckeditor5/issues/10645`](https://github.com/ckeditor/ckeditor5/issues/10645)
 *   `packages\ckeditor5-build-balloon-block\src\mention_customization.js` introduces note insertion via `@` character.
 

@@ -1,4 +1,4 @@
-import { MimeType } from "@triliumnext/commons";
+import { MimeType, shouldSyntaxHighlight } from "@triliumnext/commons";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -7,27 +7,28 @@ import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { t } from "./i18n.js";
 import mime_types from "./mime_types.js";
 import options from "./options.js";
-import { getEffectiveThemeStyle } from "./theme.js";
+import { getEffectiveThemeStyle, onEffectiveThemeStyleChange } from "./theme.js";
 import { isShare } from "./utils.js";
 
 let highlightingLoaded = false;
 
 function getEffectiveCodeBlockTheme(): string {
-    if (options.get("codeBlockThemeMatchesApp") === "true") {
-        const style = getEffectiveThemeStyle();
-        return String(options.get(style === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight"));
-    }
-    return String(options.get("codeBlockTheme"));
+    const theme = options.get("codeBlockThemeMatchesApp") === "true"
+        ? options.get(getEffectiveThemeStyle() === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight")
+        : options.get("codeBlockTheme");
+    // `options.get()` answers undefined until the options have loaded. String() would turn that
+    // into the truthy "undefined", which `isSyntaxHighlightEnabled()` reads as a theme.
+    return String(theme ?? "");
 }
 
-// Re-apply the highlight.js theme when the OS color scheme changes, so that
+// Re-apply the highlight.js theme when the effective color scheme changes, so that
 // "match app appearance" reacts in real time.
 let colorSchemeListenerRegistered = false;
 export function ensureColorSchemeListener() {
     if (colorSchemeListenerRegistered) return;
     colorSchemeListenerRegistered = true;
 
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    onEffectiveThemeStyleChange(() => {
         if (highlightingLoaded && options.get("codeBlockThemeMatchesApp") === "true") {
             loadHighlightingTheme(getEffectiveCodeBlockTheme());
         }
@@ -129,6 +130,9 @@ export function applyInlineCodeCopy($inlineCode: JQuery<HTMLElement>) {
 export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLElement>, normalizedMimeType: string) {
     $codeBlock.parent().toggleClass("hljs");
     const text = $codeBlock.text();
+    if (!shouldSyntaxHighlight(text)) {
+        return;
+    }
 
     const cached = getCachedHighlight(normalizedMimeType, text);
     if (cached !== undefined) {

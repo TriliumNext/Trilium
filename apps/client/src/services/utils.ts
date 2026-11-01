@@ -1,11 +1,35 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
+import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";
+import { getNoteImageUrl } from "./image_urls.js";
 import type { ViewMode, ViewScope } from "./link.js";
 
 const SVG_MIME = "image/svg+xml";
 
-export const isShare = !window.glob;
+export const isShare = !window.glob || !!window.glob.isShare;
+
+/**
+ * True when the client is showing a *pre-auth* SPA screen — the login screen (`loggedIn: false`),
+ * the set-password screen (`passwordSet: false`), or a setup wizard still waiting to be unlocked
+ * (`setupAuthRequired: true`).
+ *
+ * The first two run with the database already initialized, so `glob.dbInitialized` (the historical
+ * proxy for "pre-auth", back when setup was the only pre-auth screen) does NOT catch them. The eager
+ * module-load side effects — froca's initial tree load, the WebSocket auto-connect, and the options /
+ * keyboard-actions / fonts fetches — must skip on these screens too, otherwise they fire
+ * unauthenticated requests that 401 with "Logged in session not found" (#10589).
+ *
+ * An ordinary setup screen (`dbInitialized: false`) is deliberately NOT flagged: froca and the
+ * WebSocket already gate on `!glob.dbInitialized`, and those requests are accepted unauthenticated
+ * server-side while there is no database to protect. A wizard standing over a knowledge base is the
+ * exception — there the server asks for the wizard's password first, which this screen has not been
+ * given yet. The strict comparisons are intentional: an unset flag (the fully-authenticated app, or
+ * a unit-test `glob`) must not be treated as pre-auth, so the eager loads keep working there.
+ */
+export function isPreAuthScreen(): boolean {
+    return glob.loggedIn === false || glob.passwordSet === false || glob.setupAuthRequired === true;
+}
 
 export function reloadFrontendApp(reason?: string) {
     if (reason) {
@@ -143,7 +167,7 @@ export function isPWA() {
         window.matchMedia('(display-mode: standalone)').matches
         || window.matchMedia('(display-mode: window-controls-overlay)').matches
         || window.navigator.standalone
-        || window.navigator.windowControlsOverlay
+        || !!window.navigator.windowControlsOverlay
     );
 }
 
@@ -157,6 +181,43 @@ export function isMobileApp() {
 
 export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
+}
+
+/**
+ * Returns `true` when the (server-reported) host platform is Linux. Prefer this over a
+ * `!isMac && !isWindows` derivation so future platforms aren't misclassified as Linux.
+ */
+export function isLinux() {
+    return window.glob?.platform === "linux";
+}
+
+/**
+ * Returns `true` when the native caption buttons sit on the leading (left) edge of the title bar,
+ * where they overlap the top of a vertical launcher pane. Always the case on macOS; on Linux it
+ * follows the desktop's decoration layout (e.g. GNOME's `button-layout`), which Chromium mirrors
+ * into the Window Controls Overlay geometry. Windows always keeps them on the right.
+ *
+ * Reflects the layout as of the call; it is not re-evaluated if the desktop setting changes while
+ * the app is running.
+ */
+export function areWindowControlsOnLeft() {
+    if (isMac()) {
+        return true;
+    }
+
+    const overlay = window.navigator.windowControlsOverlay;
+    if (!overlay?.visible) {
+        return false;
+    }
+
+    return overlay.getTitlebarAreaRect().x > 0;
+}
+
+/**
+ * Returns `true` when the (server-reported) host platform is Windows.
+ */
+export function isWindows() {
+    return window.glob?.platform === "win32";
 }
 
 export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
@@ -190,20 +251,39 @@ export function escapeQuotes(value: string) {
     return value.replaceAll('"', "&quot;");
 }
 
-export function formatSize(size: number | null | undefined) {
+/** The units a size is shown in, largest last, each 1024 of the one before it. */
+const SIZE_UNITS = ["B", "KiB", "MiB", "GiB", "TiB"];
+
+/**
+ * A byte count in the largest unit it fits in.
+ *
+ * @param decimals places to keep, trailing zeros and all. Omit it to round to at most two and drop
+ *   what is not needed, which reads best for a size at rest. Pass a number for a counter that is
+ *   still climbing: there, dropping a trailing zero shortens the text on every other update and the
+ *   line shifts about while it is being read.
+ * @param unitOf a size whose unit to show `size` in instead, so that a column of sizes shares one
+ *   unit and can be summed by eye: the largest of them, or their total.
+ */
+export function formatSize(size: number | null | undefined, decimals?: number, unitOf?: number) {
     if (size === null || size === undefined) {
         return "";
     }
 
-    if (size === 0) {
+    const reference = unitOf ?? size;
+    if (reference <= 0) {
         return "0 B";
     }
 
-    const k = 1024;
-    const sizes = ["B", "KiB", "MiB", "GiB"];
-    const i = Math.floor(Math.log(size) / Math.log(k));
+    const unit = Math.min(Math.floor(Math.log(reference) / Math.log(1024)), SIZE_UNITS.length - 1);
+    const value = size / Math.pow(1024, unit);
+    // Nothing below a byte to show, however many places were asked for.
+    const places = decimals !== undefined && unit === 0 ? 0 : decimals;
+    const step = Math.pow(10, -(places ?? 2));
+    if (size > 0 && value < step / 2) {
+        return `<${step.toFixed(places ?? 2)} ${SIZE_UNITS[unit]}`;
+    }
 
-    return `${Math.round((size / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+    return `${places === undefined ? Math.round(value * 100) / 100 : value.toFixed(places)} ${SIZE_UNITS[unit]}`;
 }
 
 function toObject<T, R>(array: T[], fn: (arg0: T) => [key: string, value: R]) {
@@ -238,6 +318,24 @@ export function isMobile() {
 }
 
 /**
+ * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
+ * only then; a tablet's wider layout places it beside what opened it. Must match the media query
+ * around the `.mobile-bottom-menu` rules in style.css.
+ */
+export function isNarrowLayout() {
+    return window.matchMedia(NARROW_LAYOUT).matches;
+}
+
+/** Calls `onChange` whenever {@link isNarrowLayout} changes, until the returned function runs. */
+export function onNarrowLayoutChange(onChange: () => void) {
+    const query = window.matchMedia(NARROW_LAYOUT);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
+
+const NARROW_LAYOUT = "(max-width: 991px)";
+
+/**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).
  * Does not check if the user requested the mobile or desktop layout, use {@link isMobile} for that.
  *
@@ -245,6 +343,16 @@ export function isMobile() {
  */
 export function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+/**
+ * The `accept` value for a file input, widened to every file on Android and iOS: both turn `accept`
+ * into a MIME filter (`Intent.EXTRA_MIME_TYPES`, UTIs) whose tables lack `.gpx`, `.enex` and
+ * `.tnbackup`, so a document provider types those files as `application/octet-stream` and the picker
+ * greys out every one of them. A caller offering `.zip`, which both tables name, keeps its filter.
+ */
+export function fileAccept(accept: string) {
+    return /Android|iPad|iPhone|iPod/.test(navigator.userAgent) ? "*/*" : accept;
 }
 
 export function isDesktop() {
@@ -298,6 +406,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("include-note") &&
         !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
@@ -372,19 +481,18 @@ function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?: strin
     const error = new Error(errorMessage || `Process exceeded time limit ${limitMs}`);
 
     return new Promise<T>((res, rej) => {
-        let resolved = false;
+        const timer = setTimeout(() => rej(error), limitMs);
 
-        promise.then((result) => {
-            resolved = true;
-
-            res(result);
-        });
-
-        setTimeout(() => {
-            if (!resolved) {
-                rej(error);
+        promise.then(
+            (result) => {
+                clearTimeout(timer);
+                res(result);
+            },
+            (e) => {
+                clearTimeout(timer);
+                rej(e);
             }
-        }, limitMs);
+        );
     });
 }
 
@@ -434,16 +542,6 @@ export async function openInReusableSplit(targetNoteId: string, targetViewMode: 
         // There is already a target split open, make sure it opens on the right note.
         existingSubcontext.setNote(targetNoteId, { viewScope });
     }
-}
-
-function filterAttributeName(name: string) {
-    return name.replace(/[^\p{L}\p{N}_:]/gu, "");
-}
-
-const ATTR_NAME_MATCHER = new RegExp("^[\\p{L}\\p{N}_:]+$", "u");
-
-function isValidAttributeName(name: string) {
-    return ATTR_NAME_MATCHER.test(name);
 }
 
 function sleep(time_ms: number) {
@@ -572,21 +670,22 @@ function areObjectsEqual(...args: unknown[]) {
     return true;
 }
 
-function copyHtmlToClipboard(content: string) {
+function copyHtmlToClipboard(html: string, plainText: string = html) {
     function listener(e: ClipboardEvent) {
         if (e.clipboardData) {
-            e.clipboardData.setData("text/html", content);
-            e.clipboardData.setData("text/plain", content);
+            e.clipboardData.setData("text/html", html);
+            e.clipboardData.setData("text/plain", plainText);
         }
         e.preventDefault();
     }
     document.addEventListener("copy", listener);
-    document.execCommand("copy");
+    const ok = document.execCommand("copy");
     document.removeEventListener("copy", listener);
+    return ok;
 }
 
 export function createImageSrcUrl(note: FNote) {
-    return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
+    return getNoteImageUrl(note.noteId, note.title, `timestamp=${Date.now()}`);
 }
 
 
@@ -594,65 +693,17 @@ export function createImageSrcUrl(note: FNote) {
 
 
 /**
- * Helper function to prepare an element for snapdom rendering.
- * Handles string parsing and temporary DOM attachment for style computation.
- *
- * @param source - Either an SVG/HTML string to be parsed, or an existing SVG/HTML element.
- * @returns An object containing the prepared element and a cleanup function.
- *          The cleanup function removes temporarily attached elements from the DOM,
- *          or is a no-op if the element was already in the DOM.
- */
-function prepareElementForSnapdom(source: string | SVGElement | HTMLElement): {
-    element: SVGElement | HTMLElement;
-    cleanup: () => void;
-} {
-    if (typeof source === 'string') {
-        const parser = new DOMParser();
-
-        // Detect if content is SVG or HTML
-        const isSvg = source.trim().startsWith('<svg');
-        const mimeType = isSvg ? SVG_MIME : 'text/html';
-
-        const doc = parser.parseFromString(source, mimeType);
-        const element = doc.documentElement;
-
-        // Temporarily attach to DOM for proper style computation
-        element.style.position = 'absolute';
-        element.style.left = '-9999px';
-        element.style.top = '-9999px';
-        document.body.appendChild(element);
-
-        return {
-            element,
-            cleanup: () => document.body.removeChild(element)
-        };
-    }
-
-    return {
-        element: source,
-        cleanup: () => {} // No-op for existing elements
-    };
-}
-
-/**
- * Downloads an SVG using snapdom for proper rendering. Can accept either an SVG string, an SVG element, or an HTML element.
+ * Given a string representation of an SVG, triggers a download of the file on the client device.
  *
  * @param nameWithoutExtension the name of the file. The .svg suffix is automatically added to it.
- * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be downloaded.
+ * @param svgContent the content of the SVG file to download.
  */
-async function downloadAsSvg(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
-    const { snapdom } = await import("@zumer/snapdom");
-    const { element, cleanup } = prepareElementForSnapdom(svgSource);
-
-    try {
-        const result = await snapdom(element, {
-            backgroundColor: "transparent",
-            scale: 2
-        });
-        triggerDownload(`${nameWithoutExtension}.svg`, result.url);
-    } finally {
-        cleanup();
-    }
+function downloadSvg(nameWithoutExtension: string, svgContent: string) {
+    // The download MUST go through a data: URL, not a blob URL: export runs after awaits have
+    // consumed the transient user-activation, and a blob-URL anchor click without activation is
+    // silently blocked (same constraint documented in spreadsheet/export.tsx `download()`).
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    triggerDownload(`${nameWithoutExtension}.svg`, dataUrl);
 }
 
 /**
@@ -674,32 +725,58 @@ function triggerDownload(fileName: string, dataUrl: string) {
     document.body.removeChild(element);
 }
 /**
- * Downloads an SVG as PNG using snapdom. Can accept either an SVG string, an SVG element, or an HTML element.
+ * Given a string representation of an SVG, rasterizes it to PNG and triggers a download of the
+ * file on the client device.
+ *
+ * The SVG must carry usable dimensions (numeric `width`/`height` attributes or a `viewBox`).
+ * Note that rasterization happens in the browser's SVG-as-image context: document fonts are not
+ * applied (only system fonts resolve) and external resources referenced by the SVG are not
+ * loaded, so any embedded images must use data URLs.
  *
  * @param nameWithoutExtension the name of the file. The .png suffix is automatically added to it.
- * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be converted to PNG.
+ * @param svgContent the content of the SVG file to rasterize.
+ * @param scale the rasterization scale factor (2 doubles the resolution).
  */
-async function downloadAsPng(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
-    const { snapdom } = await import("@zumer/snapdom");
-    const { element, cleanup } = prepareElementForSnapdom(svgSource);
-
-    try {
-        const result = await snapdom(element, {
-            backgroundColor: "transparent",
-            scale: 2
-        });
-        const pngImg = await result.toPng();
-        await triggerDownload(`${nameWithoutExtension}.png`, pngImg.src);
-    } finally {
-        cleanup();
+async function downloadSvgAsPng(nameWithoutExtension: string, svgContent: string, scale = 2) {
+    const size = getSizeFromSvg(svgContent);
+    if (!size) {
+        throw new Error("Could not determine the dimensions of the SVG.");
     }
+
+    // Decode through an <img> element — the browser's own SVG renderer. A blob URL avoids the
+    // encoding overhead and URL length limits of a data: URL for large diagrams.
+    const blob = new Blob([ svgContent ], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.src = url;
+    try {
+        await image.decode();
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(size.width * scale);
+    canvas.height = Math.round(size.height * scale);
+    const context = canvas.getContext("2d");
+    if (!context || !canvas.width || !canvas.height) {
+        throw new Error("The SVG has no drawable dimensions.");
+    }
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    triggerDownload(`${nameWithoutExtension}.png`, canvas.toDataURL("image/png"));
 }
 export function getSizeFromSvg(svgContent: string) {
     const svgDocument = (new DOMParser()).parseFromString(svgContent, SVG_MIME);
 
-    // Try to use width & height attributes if available.
+    // Try to use width & height attributes if available. Relative units (e.g. mermaid's
+    // width="100%") carry no absolute size, so fall through to the viewBox for those.
     let width = svgDocument.documentElement?.getAttribute("width");
     let height = svgDocument.documentElement?.getAttribute("height");
+    if (width?.includes("%") || height?.includes("%")) {
+        width = null;
+        height = null;
+    }
 
     // If not, use the viewbox.
     if (!width || !height) {
@@ -712,10 +789,10 @@ export function getSizeFromSvg(svgContent: string) {
     }
 
     if (width && height) {
-        return {
-            width: parseFloat(width),
-            height: parseFloat(height)
-        };
+        const size = { width: parseFloat(width), height: parseFloat(height) };
+        if (Number.isFinite(size.width) && Number.isFinite(size.height)) {
+            return size;
+        }
     }
     console.warn("SVG export error", svgDocument.documentElement);
     return null;
@@ -853,6 +930,57 @@ export function getErrorMessage(e: unknown) {
 
 }
 
+/**
+ * The script bundler wraps each script note's thrown errors as
+ * `Load of script note "<title>" (<noteId>) failed with: <inner>` and attaches the original error
+ * as the `cause` (see the bundle template in trilium-core's `script.ts`). That prefix is useful in
+ * backend logs but redundant in the UI, where the failing note is already shown as a reference link,
+ * so we surface the underlying error instead — walking the `cause` chain to the bottom also unwraps
+ * the nested errors produced when a `require()`d module fails.
+ */
+export function rootCauseMessage(e: unknown): string {
+    let root: unknown = e;
+    for (const error of causeChain(e)) {
+        root = error;
+    }
+    if (typeof root === "string") {
+        return root;
+    }
+    if (root && typeof root === "object" && "message" in root && typeof root.message === "string") {
+        return root.message;
+    }
+    return String(root);
+}
+
+/**
+ * Walks an error's `cause` chain, yielding each error from `e` down to the root. Guards against
+ * cyclic chains (e.g. `err.cause === err`, or a longer loop) so callers can't spin forever.
+ */
+export function* causeChain(e: unknown): Generator<unknown> {
+    const seen = new Set<unknown>();
+    let error: unknown = e;
+    while (error !== undefined && !seen.has(error)) {
+        seen.add(error);
+        yield error;
+        error = error instanceof Error ? error.cause : undefined;
+    }
+}
+
+/**
+ * Returns the instance a previous evaluation of the calling module stored in `hot.data`, or
+ * creates and stores one. Pass `import.meta.hot` from a module that holds an app-wide
+ * singleton: an HMR update can import that module again under a new `?t=` URL, and without
+ * this the re-evaluated copy builds a second, uninitialized instance.
+ */
+export function reuseAcrossHotReloads<T>(hot: ViteHotContext | undefined, create: () => T): T {
+    const data = hot?.data as { instance?: T } | undefined;
+    if (!data) {
+        return create();
+    }
+    data.instance ??= create();
+    return data.instance;
+}
+
 export function replaceHtmlEscapedSlashes(str: string) {
     return str.replace(/&#x2F;/g, "/");
 }
@@ -885,12 +1013,17 @@ export default {
     isElectron,
     isPWA,
     isMac,
+    isLinux,
+    isWindows,
+    areWindowControlsOnLeft,
     isCtrlKey,
     assertArguments,
     escapeHtml,
     toObject,
     randomString,
     isMobile,
+    isNarrowLayout,
+    onNarrowLayoutChange,
     isDesktop,
     setCookie,
     getNoteTypeClass,
@@ -908,8 +1041,8 @@ export default {
     areObjectsEqual,
     copyHtmlToClipboard,
     createImageSrcUrl,
-    downloadAsSvg,
-    downloadAsPng,
+    downloadSvg,
+    downloadSvgAsPng,
     triggerDownload,
     compareVersions,
     isUpdateAvailable,

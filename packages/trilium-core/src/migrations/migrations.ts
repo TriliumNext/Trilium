@@ -11,7 +11,7 @@ export function getMaxMigrationVersion() {
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
     // Add note_permissions table (note sharing ACL, users and groups).
     {
-        version: 240,
+        version: 244,
         ignoreErrors: true,
         sql: /*sql*/`
             CREATE TABLE IF NOT EXISTS "note_permissions" (
@@ -38,7 +38,7 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
     // Admin-user seeding and user_data teardown happen in sql_init.ts after
     // migrations complete, where the SQL instance is guaranteed to be set.
     {
-        version: 239,
+        version: 243,
         ignoreErrors: true,
         sql: /*sql*/`
             CREATE TABLE IF NOT EXISTS "users" (
@@ -86,6 +86,54 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
                 LIMIT 1;
             DROP TABLE IF EXISTS user_data;
         `
+    },
+    // The in-app help (`_help` subtree) became virtual — injected into becca from the bundled
+    // help meta on every load, never persisted or synced (see services/virtual_notes.ts).
+    // Remove the previously persisted rows, including their entity_changes so the deletions
+    // don't churn through sync: every instance in a cluster runs this same migration (the
+    // accompanying sync-version bump guarantees no un-migrated peers), so all copies converge.
+    // User clones of help notes and user attributes on them are dropped by design — the help
+    // structure is application-owned. Orphaned blobs are vacuumed by the regular erase job.
+    // The rows for indirectly-keyed entities must be removed from entity_changes before their
+    // base rows disappear from under the subselects.
+    {
+        version: 242,
+        sql: /*sql*/`
+            DELETE FROM entity_changes WHERE entityName = 'branches' AND entityId IN
+                (SELECT branchId FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'attributes' AND entityId IN
+                (SELECT attributeId FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'revisions' AND entityId IN
+                (SELECT revisionId FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'attachments' AND entityId IN
+                (SELECT attachmentId FROM attachments WHERE ownerId LIKE '\\_help%' ESCAPE '\\');
+            -- Blanket sweep by ID prefix: catches notes and note_reordering rows directly, plus
+            -- tombstones of help branches/attributes deleted (and later erased) by past releases —
+            -- their base rows are gone, so the subselects above cannot find them, but branch IDs
+            -- ('parentNoteId_noteId') and attribute IDs ('noteId_...') carry the _help prefix.
+            DELETE FROM entity_changes WHERE entityId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM attachments WHERE ownerId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM notes WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+        `
+    },
+    // Delete the globe icon the web clipper wrote onto clippings, so they take the icon of their clipType
+    {
+        version: 241,
+        module: () => import("./0241__drop_clipper_globe_icon.js")
+    },
+    // Give every board its own select definition for the label it groups by, so the columns stop
+    // living only in the board.json attachment
+    {
+        version: 240,
+        module: () => import("./0240__migrate_board_status_to_select.js")
+    },
+    // Turn TOTP back off for installs that had disabled MFA before the enable flag was removed
+    {
+        version: 239,
+        module: () => import("./0239__disable_totp_when_mfa_was_turned_off.js")
     },
     // Add description column to revisions table for manual revision comments
     {

@@ -1,9 +1,9 @@
 # Math Equations
 <figure class="image image-style-align-right"><img style="aspect-ratio:350/193;" src="Math Equations_image.png" width="350" height="193"></figure>
 
-Within text notes, it's possible to enter mathematical equations using the <img src="1_Math Equations_image.png" width="20" height="15"> button from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> (generally found under the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a>).
+Within text notes, it's possible to enter mathematical equations using the <span class="tn-icon cke cke-trilium-math"></span> button from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> (generally found under the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a>).
 
-The mathematical expression must be written in the TeX format. There is no visual editor for the math equations, only a preview. 
+By default, the math dialog includes a MathLive visual editor and a TeX field. Disable _MathLive visual editor_ under Options → Text Notes → Features to use only the TeX field and preview.
 
 Enabling _Display mode_ will render the equation slightly bigger (especially if using big operators such as summation, or fractions) and center it. Display mode equations will act as blocks (i.e. like paragraphs, or tables) and can be inserted for example in lists. Non-display equations can be part of the text.
 

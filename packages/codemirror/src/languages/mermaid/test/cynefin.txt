@@ -1,0 +1,66 @@
+# Cynefin
+
+cynefin-beta
+
+==>
+
+CynefinDiagram(DiagramName)
+
+# Trilium's sample
+
+cynefin-beta
+  title Incident Response
+
+  complex
+    "Investigate root cause"
+    "Run chaos experiment"
+
+  clear
+    "Restart service"
+
+  chaotic
+    "Page on-call immediately"
+
+  confusion
+    "Unknown failure mode"
+
+==>
+
+CynefinDiagram(DiagramName,Title(Keyword,TitleText),
+  Domain(DomainName,Item(String),Item(String)),
+  Domain(DomainName,Item(String)),
+  Domain(DomainName,Item(String)),
+  Domain(DomainName,Item(String)))
+
+# Items on one line and transitions
+
+cynefin-beta:
+  complicated "A" 'B'
+  clear --> chaotic : "Collapse" %% a comment
+  chaotic-->clear
+
+==>
+
+CynefinDiagram(DiagramName,":",
+  Domain(DomainName,Item(String),Item(String)),
+  Transition(DomainName,"-->",DomainName,":",String),LineComment,
+  Transition(DomainName,"-->",DomainName))
+
+# Unknown domain (invalid)
+
+cynefin-beta
+  other
+    "x"
+
+==>
+
+CynefinDiagram(DiagramName,⚠,⚠(String))
+
+# Unquoted transition label (invalid)
+
+cynefin-beta
+  complex --> clear : unquoted
+
+==>
+
+CynefinDiagram(DiagramName,Transition(DomainName,"-->",DomainName,":",⚠))

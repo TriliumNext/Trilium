@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import events from "../../services/events.js";
 import passwordEncryptionService from "../../services/encryption/password_encryption.js";
 import protectedSession from "../../services/protected_session.js";

@@ -1,7 +1,7 @@
 # Synchronization
 Trilium is an offline-first note-taking application that stores all data locally on the desktop client. However, it also offers the option to set up synchronization with a server instance, allowing multiple desktop clients to sync with a central server. This creates a star-shaped topology:
 
-![](Synchronization_image.png)
+![](Synchronization_image.jpg)
 
 In this setup, a central server (referred to as the _sync server_) and multiple _client_ (or _desktop_) instances synchronize with the sync server. Once configured, synchronization is automatic and ongoing, requiring no manual intervention.
 
@@ -16,11 +16,11 @@ Setting up the server securely is critical and can be complex. It is crucial to 
 This method is used when you already have a desktop instance of Trilium and want to set up a sync server on your web host.
 
 1.  **Server Deployment**: Ensure your server instance is deployed but uninitialized.
-2.  **Desktop Configuration**: Open your desktop instance, navigate to Options -> Sync tab -> Sync configuration, and set the "Server instance address" to your sync server's address. Click Save.
-
-![screenshot of the sync settings options modal](Synchronization_sync-config.png)
-
-1.  **Testing Sync**: Click the "Test sync" button to verify the connection to the sync server. If successful, the client will start pushing all data to the server instance. This process may take some time, but you can continue using Trilium. Periodically check the server instance to confirm when the sync is complete. Once finished, you should see the login screen on the server.
+2.  **Desktop Configuration**: Open your desktop instance, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_ → _Sync server_, and set the _Server address_ to your sync server's address.
+    *   Note that the sync server can also be overridden through <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>, case in which that value takes precedence. If that's the case, a field called _Server in use_ indicates it.
+3.  **Testing Sync**: Click the _Test sync_ button to verify the connection to the sync server.
+    *   If successful, the client will start pushing all data to the server instance.
+    *   This process may take some time, but you can continue using Trilium. Periodically check the server instance to confirm when the sync is complete. Once finished, you should see the login screen on the server.
 
 ### Synchronizing a Desktop Instance from a Sync Server
 
@@ -31,7 +31,7 @@ This method is used when you already have a sync server and want to configure a 
 
 ![screenshot of the sync from server setup page](Synchronization_sync-init.png)
 
-1.  **Server Details**: Configure the Trilium server address and enter the correct username and password for authentication.
+1.  **Server Details**: Configure the Trilium server address and enter the server's password. If the server has <a class="reference-link" href="Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> enabled, also enter a one-time password from your authenticator app, or a recovery code.
 2.  **Finish Setup**: Click the "Finish setup" button. If successful, you will see the following screen:
 
 ![screenshot of the sync page](Synchronization_sync-in-progress.png)

@@ -54,7 +54,7 @@ vi.mock("@triliumnext/core", async () => {
     return { getLog: () => getLogMock, shouldLogMessage };
 });
 
-import WebSocketMessagingProvider from "./ws_messaging_provider.js";
+import WebSocketMessagingProvider, { isHttpAttachableMessagingProvider } from "./ws_messaging_provider.js";
 
 function makeSocket(readyState = OPEN) {
     const handlers: Record<string, Handler> = {};
@@ -68,6 +68,10 @@ function makeSocket(readyState = OPEN) {
         },
         send(data: string) {
             this.sent.push(data);
+        },
+        closed: false,
+        close() {
+            this.closed = true;
         },
         emit(event: string, ...args: any[]) {
             return handlers[event]?.(...args);
@@ -92,10 +96,20 @@ describe("WebSocketMessagingProvider", () => {
         vi.restoreAllMocks();
     });
 
+    it("is recognised as HTTP-attachable (the capability www.ts gates the WS server on)", () => {
+        expect(isHttpAttachableMessagingProvider(provider)).toBe(true);
+        // A plain IPC-style provider without attachToHttpServer must not qualify.
+        expect(isHttpAttachableMessagingProvider({
+            sendMessageToAllClients() {},
+            sendMessageToClient: () => false,
+            setClientMessageHandler() {}
+        })).toBe(false);
+    });
+
     function init() {
         const httpServer = {} as any;
         const sessionParser = vi.fn((_req: any, _params: any, cb: () => void) => cb());
-        provider.init(httpServer, sessionParser as any);
+        provider.attachToHttpServer(httpServer, sessionParser as any);
         return { server: state.instances[0], sessionParser };
     }
 
@@ -214,6 +228,29 @@ describe("WebSocketMessagingProvider", () => {
                 provider.sendMessageToAllClients({ type: "frontend-update" } as WebSocketMessage)
             ).not.toThrow();
             expect(getLogMock.info).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("disconnectAllClients", () => {
+        it("asks every open client to reload, then closes every connection", () => {
+            const { server } = init();
+            const open = makeSocket(OPEN);
+            const closed = makeSocket(CLOSED);
+            server.clients.add(open);
+            server.clients.add(closed);
+
+            provider.disconnectAllClients("password changed");
+
+            expect(open.sent.map((data) => JSON.parse(data))).toEqual([
+                { type: "reload-frontend", reason: "password changed" }
+            ]);
+            expect(closed.sent).toHaveLength(0);
+            expect(open.closed).toBe(true);
+            expect(closed.closed).toBe(true);
+        });
+
+        it("is a no-op when the server is not initialized", () => {
+            expect(() => provider.disconnectAllClients("password changed")).not.toThrow();
         });
     });
 

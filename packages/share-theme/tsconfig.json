@@ -11,7 +11,14 @@
         "target": "ES2022",
         "rootDir": "src",
         "outDir": "out-tsc",
-        "module": "Node16"
+        "module": "Node16",
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact"
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../../apps/client/tsconfig.app.json"
+        }
+    ]
 }

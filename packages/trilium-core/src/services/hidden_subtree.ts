@@ -7,7 +7,6 @@ import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import buildLaunchBarConfig from "./hidden_subtree_launcherbar.js";
 import buildHiddenSubtreeTemplates from "./hidden_subtree_templates.js";
-import { cleanUpHelp, getHelpHiddenSubtreeData } from "./in_app_help.js";
 import migrationService from "./migration.js";
 import noteService from "./notes.js";
 import { getLog } from "./log.js";
@@ -32,7 +31,7 @@ export const LBTPL_CUSTOM_WIDGET = "_lbTplCustomWidget";
 
 let hiddenSubtreeDefinition: HiddenSubtreeItem;
 
-function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenSubtreeItem {
+function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
     const launchbarConfig = buildLaunchBarConfig();
 
     return {
@@ -128,6 +127,16 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                             { type: "label", name: "docName", value: "system_state" }
                         ]
                     }
+                ]
+            },
+            {
+                id: "_spaceUsage",
+                title: t("hidden-subtree.space-usage-title"),
+                type: "contentWidget",
+                icon: "bx-pie-chart-alt-2",
+                attributes: [
+                    { type: "label", name: "keepCurrentHoisting" },
+                    { type: "label", name: "fullContentWidth" }
                 ]
             },
             {
@@ -294,35 +303,51 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 title: t("hidden-subtree.options-title"),
                 type: "book",
                 icon: "bx-cog",
+                enforceChildOrder: true,
                 children: [
+                    // The order below is the order the pages are listed in, held to on every
+                    // database rather than only on one being set up: `enforceChildOrder` above
+                    // gives each page the position its place here implies, so one moved since is
+                    // put back at the next start. Reordering them is therefore this list alone.
+                    // A page since withdrawn is left standing beside the one that replaced it.
+
+                    // Personalization
                     { id: "_optionsAppearance", title: t("hidden-subtree.appearance-title"), type: "contentWidget", icon: "bx-layout" },
+                    { id: "_optionsLocalization", title: t("hidden-subtree.localization"), type: "contentWidget", icon: "bx-world" },
                     { id: "_optionsShortcuts", title: t("hidden-subtree.shortcuts-title"), type: "contentWidget", icon: "bxs-keyboard" },
+                    { id: "_optionsDesktop", title: t("hidden-subtree.desktop-title"), type: "contentWidget", icon: "bx-desktop", attributes: [{ type: "label", name: "electronOnly" }] },
+                    
+                    // Content & editing
                     { id: "_optionsTextNotes", title: t("hidden-subtree.text-notes"), type: "contentWidget", icon: "bx-text" },
                     { id: "_optionsCodeNotes", title: t("hidden-subtree.code-notes-title"), type: "contentWidget", icon: "bx-code" },
                     { id: "_optionsImages", title: "Images", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsMedia", title: t("hidden-subtree.images-title"), type: "contentWidget", icon: "bx-image" },
+                    { id: "_optionsContentManager", title: t("hidden-subtree.content-manager-title"), type: "contentWidget", icon: "bx-package" },
                     { id: "_optionsSpellcheck", title: t("hidden-subtree.spellcheck-title"), type: "contentWidget", icon: "bx-check-double", attributes: [{ type: "label", name: "electronOnly" }] },
-                    { id: "_optionsDesktop", title: t("hidden-subtree.desktop-title"), type: "contentWidget", icon: "bx-desktop", attributes: [{ type: "label", name: "electronOnly" }] },
-                    { id: "_optionsSecurity", title: t("hidden-subtree.security-title"), type: "contentWidget", icon: "bx-shield" },
-                    { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock" },
-                    { id: "_optionsMFA", title: t("hidden-subtree.multi-factor-authentication-title"), type: "contentWidget", enforceDeleted: true },
-                    { id: "_optionsEtapi", title: t("hidden-subtree.etapi-title"), type: "contentWidget", icon: "bx-extension" },
-                    { id: "_optionsBackup", title: t("hidden-subtree.backup-title"), type: "contentWidget", icon: "bx-data" },
-                    { id: "_optionsSync", title: t("hidden-subtree.sync-title"), type: "contentWidget", icon: "bx-wifi" },
-                    { id: "_optionsLlm", title: t("hidden-subtree.llm-title"), type: "contentWidget", icon: "bx-bot" },
+                    { id: "_optionsTranscription", title: t("hidden-subtree.transcription-title"), type: "contentWidget", icon: "bx-microphone", attributes: [{ type: "label", name: "electronOnly" }, { type: "label", name: "beta" }] },
+                    
+                    // Integrations
                     { id: "_optionsAi", title: "AI Chat", type: "contentWidget", enforceDeleted: true },
+                    { id: "_optionsLlm", title: t("hidden-subtree.llm-title"), type: "contentWidget", icon: "bx-bot" },
+                    
+                    // Infrastructure, security
+                    { id: "_optionsSync", title: t("hidden-subtree.sync-title"), type: "contentWidget", icon: "bx-wifi" },
+                    // Password and ETAPI both answer to something reaching the instance over
+                    // HTTP: a login to hold a session for, a token for another program to call
+                    // with. The standalone build is the only reader of its own database and is
+                    // served by no one, so neither page has anything to set there.
+                    { id: "_optionsEtapi", title: t("hidden-subtree.etapi-title"), type: "contentWidget", icon: "bx-extension", attributes: [{ type: "label", name: "notInStandalone" }] },
+                    { id: "_optionsBackup", title: t("hidden-subtree.backup-title"), type: "contentWidget", icon: "bx-data" },
+                    { id: "_optionsDatabase", title: t("hidden-subtree.database-title"), type: "contentWidget", icon: "bx-hdd" },
+                    { id: "_optionsResources", title: t("hidden-subtree.resources-title"), type: "contentWidget", icon: "bx-download", attributes: [{ type: "label", name: "notInStandalone" }] },
+                    { id: "_optionsSecurity", title: t("hidden-subtree.security-title"), type: "contentWidget", icon: "bx-shield" },
+                    { id: "_optionsMFA", title: t("hidden-subtree.multi-factor-authentication-title"), type: "contentWidget", enforceDeleted: true },
+                    { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock", attributes: [{ type: "label", name: "notInStandalone" }] },
+                    
+                    // Miscellaneous
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
-                    { id: "_optionsLocalization", title: t("hidden-subtree.localization"), type: "contentWidget", icon: "bx-world" },
                     { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" }
                 ]
-            },
-            {
-                id: "_help",
-                title: t("hidden-subtree.user-guide"),
-                type: "book",
-                icon: "bx-help-circle",
-                children: helpSubtree,
-                isExpanded: true
             },
             buildHiddenSubtreeTemplates()
         ]
@@ -340,9 +365,8 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
         return;
     }
 
-    const helpSubtree = getHelpHiddenSubtreeData();
     if (!hiddenSubtreeDefinition || force) {
-        hiddenSubtreeDefinition = buildHiddenSubtreeDefinition(helpSubtree);
+        hiddenSubtreeDefinition = buildHiddenSubtreeDefinition();
     }
 
     getSql().transactional(() => {
@@ -354,13 +378,6 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
         // so that later user deletions stick instead of being recreated on startup.
         if (!taskStatesExisted) {
             seedDefaultTaskStates();
-        }
-
-        try {
-            cleanUpHelp(helpSubtree);
-        } catch (e) {
-            // Non-critical operation should something go wrong.
-            console.error(e);
         }
     });
 }
@@ -406,7 +423,11 @@ function isWithinHiddenSubtree(noteId: string): boolean {
     return noteId.startsWith("_") || noteId === "root";
 }
 
-function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtreeItem, extraOpts: CheckHiddenExtraOpts = {}) {
+function checkHiddenSubtreeRecursively(
+    parentNoteId: string, item: HiddenSubtreeItem, extraOpts: CheckHiddenExtraOpts = {},
+    /** Where the parent's own ordering puts this item, for a parent that holds its children in order. */
+    orderedPosition?: number
+) {
     if (!item.id || !item.type || !item.title) {
         throw new Error(`Item does not contain mandatory properties: ${JSON.stringify(item)}`);
     }
@@ -439,12 +460,25 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         // Existing item, check if it's in the right state.
         branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
 
-        if (item.content && note.getContent() !== item.content) {
-            log.info(`Updating content of ${item.id}.`);
-            note.setContent(item.content);
+        if (item.content && !note.isContentAvailable()) {
+            // The note was protected by the user. Without a protected session the content can neither be
+            // read (getContent() returns "") nor written — attempting to write would throw and take down
+            // the whole hidden subtree check (see #10549), so leave the content alone.
+            log.info(`Skipping content update of ${item.id} since it is protected and no protected session is available.`);
+        } else if (item.content) {
+            try {
+                if (note.getContent() !== item.content) {
+                    log.info(`Updating content of ${item.id}.`);
+                    note.setContent(item.content);
+                }
+            } catch (e) {
+                // Unreadable content of a single built-in note (e.g. a missing blob row in a damaged
+                // database) must not abort — and thereby roll back — the entire hidden subtree check.
+                log.error(`Failed to update content of ${item.id}: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+            }
         }
 
-        if (item.enforceBranches || item.id.startsWith("_help")) {
+        if (item.enforceBranches) {
             // Clean up any branches that shouldn't exist according to the meta definition
             // For hidden subtree notes, we want to ensure they only exist in their designated locations
 
@@ -504,7 +538,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         }
     }
 
-    const shouldRestoreNames = extraOpts.restoreNames || note.noteId.startsWith("_help") || item.id.startsWith("_lb") || item.id.startsWith("_template");
+    const shouldRestoreNames = extraOpts.restoreNames || item.id.startsWith("_lb") || item.id.startsWith("_template");
     if (shouldRestoreNames && note.title !== item.title) {
         note.title = item.title;
         note.save();
@@ -525,8 +559,11 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
     if (branch) {
         // in case of launchers the branch ID is not preserved and should not be relied upon - launchers which move between
         // visible and available will change branch since the branch's parent-child relationship is immutable
-        if (item.notePosition !== undefined && branch.notePosition !== item.notePosition) {
-            branch.notePosition = item.notePosition;
+        // What the definition asks for: the item's own position, or the one its place in an ordered
+        // parent implies. Written only where it differs, so a database already in order is untouched.
+        const wantedPosition = item.notePosition ?? orderedPosition;
+        if (wantedPosition !== undefined && branch.notePosition !== wantedPosition) {
+            branch.notePosition = wantedPosition;
             branch.save();
         }
 
@@ -574,7 +611,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
                 value: attr.value,
                 isInheritable: attr.isInheritable
             }).save();
-        } else if (attr.name === "docName" || (existingAttribute.noteId.startsWith("_help") && attr.name === "iconClass")) {
+        } else if (attr.name === "docName") {
             if (existingAttribute.value !== attr.value) {
                 log.info(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${attr.value}"`);
                 existingAttribute.value = attr.value ?? "";
@@ -583,8 +620,10 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         }
     }
 
-    for (const child of item.children || []) {
-        checkHiddenSubtreeRecursively(item.id, child, extraOpts);
+    for (const [ index, child ] of (item.children ?? []).entries()) {
+        // Ten apart, as Trilium spaces positions, so there is room to drop something between two.
+        const position = item.enforceChildOrder ? (index + 1) * 10 : undefined;
+        checkHiddenSubtreeRecursively(item.id, child, extraOpts, position);
     }
 }
 

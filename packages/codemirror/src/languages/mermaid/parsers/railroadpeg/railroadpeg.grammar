@@ -1,0 +1,44 @@
+// Follows the Langium grammar of Mermaid's PEG railroad dialect (`@mermaid-js/parser`).
+@top RailroadPegDiagram { DiagramName Title* Rule* }
+
+Rule { RuleName "<-" choice ";" }
+
+choice { sequence ("/" sequence)* }
+
+sequence { prefix+ }
+
+prefix { Predicate? primary Postfix? }
+
+Predicate { "&" | "!" }
+
+Postfix { "?" | "*" | "+" }
+
+primary { String | NonTerminal | Group | Any }
+
+Group { "(" choice ")" }
+
+Any { "." }
+
+Title { kw<"title"> TitleText? }
+
+RuleName { identifier }
+
+NonTerminal { identifier }
+
+DiagramName { @specialize<identifier, "railroad-peg-beta"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { $[A-Za-z_] $[a-zA-Z0-9_\-]* }
+  String { '"' (!["\\\n] | "\\" _)* '"' | "'" (!['\\\n] | "\\" _)* "'" }
+  LineComment { "%%" ![\n]* }
+  "<-" ";" "/" "&" "!" "?" "*" "+" "(" ")" "."
+}
+
+@external propSource railroadPegHighlighting from "./highlight.js"

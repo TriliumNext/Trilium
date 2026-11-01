@@ -16,7 +16,7 @@ export function LocaleSelector({ id, locales, currentValue, onChange, defaultLoc
     const currentValueWithDefault = currentValue ?? defaultLocale?.id ?? "";
     const { activeLocale, processedLocales } = useProcessedLocales(locales, defaultLocale, currentValueWithDefault);
     return (
-        <Dropdown id={id} text={activeLocale?.name}>
+        <Dropdown id={id} text={activeLocale?.name} mobileBottomSheet>
             {processedLocales.map((locale, index) => (
                 (typeof locale === "object") ? (
                     <FormListItem

@@ -5,7 +5,7 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import toastService, { showErrorForScriptNote } from "../services/toast.js";
 import { randomString } from "../services/utils.js";
-import { renderReactWidget } from "./react/react_utils.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "./react/react_utils.jsx";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
     protected attrs: Record<string, string>;
@@ -72,13 +72,6 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         return this;
     }
 
-    /**
-     * Sets the CSS attribute of the given name to the given value.
-     *
-     * @param name the name of the CSS attribute to set (e.g. `padding-inline-start`).
-     * @param value the value of the CSS attribute to set (e.g. `12px`).
-     * @returns self for chaining.
-     */
     css(name: string, value: string) {
         this.attrs.style += `${name}: ${value};`;
         return this;
@@ -191,20 +184,10 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         }
     }
 
-    /**
-     * Indicates if the widget is enabled. Widgets are enabled by default. Generally setting this to `false` will cause the widget not to be displayed, however it will still be available on the DOM but hidden.
-     * @returns whether the widget is enabled.
-     */
     isEnabled(): boolean | null | undefined {
         return true;
     }
 
-    /**
-     * Method used for rendering the widget.
-     *
-     * Your class should override this method.
-     * The method is expected to create a this.$widget containing jQuery object
-     */
     doRender() {}
 
     toggleInt(show: boolean | null | undefined) {
@@ -275,6 +258,11 @@ export function wrapReactWidgets<T extends TypedComponent<any>>(components: (T |
 export class ReactWrappedWidget extends BasicWidget {
 
     private el: VNode;
+    /**
+     * The Preact root. Kept because `$widget` is only the rendered children, which have since been
+     * moved into the widget tree -- unmounting needs the container they were rendered into.
+     */
+    private container?: DocumentFragment;
 
     constructor(el: VNode) {
         super();
@@ -282,7 +270,20 @@ export class ReactWrappedWidget extends BasicWidget {
     }
 
     doRender() {
-        this.$widget = renderReactWidget(this, this.el);
+        this.container = new DocumentFragment();
+        this.$widget = renderReactWidgetAtElement(this, this.el, this.container).children();
+    }
+
+    /**
+     * Called when the widget is taken out of the tree (a closed split, an unmounted `useWidget`).
+     * Without this the Preact tree stays mounted for the lifetime of the page: no effect cleanup
+     * runs, and it keeps holding the DOM it rendered.
+     */
+    cleanup() {
+        if (this.container) {
+            disposeReactWidget(this.container);
+            this.container = undefined;
+        }
     }
 
 }

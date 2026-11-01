@@ -3,18 +3,15 @@ import "./login.css";
 
 import { LOCALE_IDS } from "@triliumnext/commons";
 import { render } from "preact";
-import { useRef, useState } from "preact/hooks";
 
 import logo from "./assets/icon-color.svg?url";
 import { initLocale, t } from "./services/i18n";
 import Button from "./widgets/react/Button";
-import { Card, CardSection } from "./widgets/react/Card";
-import FormTextBox from "./widgets/react/FormTextBox";
+import CredentialsForm, { type Credentials } from "./widgets/react/CredentialsForm";
 import SetupPage from "./widgets/react/SetupPage";
-import OptionsRow, { OptionsRowWithToggle } from "./widgets/type_widgets/options/components/OptionsRow";
 
 async function main() {
-    await initLocale((window.glob.currentLocale?.id ?? "en") as LOCALE_IDS);
+    await initLocale((window.glob.currentLocale?.id ?? "en") as LOCALE_IDS, "entry");
 
     const bodyWrapper = document.createElement("div");
     bodyWrapper.classList.add("setup-outer-wrapper");
@@ -28,19 +25,14 @@ async function main() {
 export function App() {
     const config = window.glob.login;
     const illustration = <img src={logo} alt="" className="illustration-logo" />;
-
-    const [ error, setError ] = useState<string | null>(ssoErrorMessage(config?.ssoError));
-    const [ errorId, setErrorId ] = useState(0);
-
-    function raiseError(message: string) {
-        setError(message);
-        setErrorId((id) => id + 1);
-    }
+    // Nothing on this page can raise a second one: the SSO branch navigates away rather than
+    // submitting, and the password form below reports its own.
+    const error = initialSsoError(config);
 
     if (config?.ssoEnabled) {
         return (
             <div class="setup-container login-container oidc">
-                <SetupPage className="login" title={t("login.heading")} illustration={illustration} error={error} errorId={errorId}>
+                <SetupPage className="login" title={t("login.heading")} illustration={illustration} error={error} errorId={0}>
                     {/* A <button>, not an <a>, on purpose: link.ts installs a global anchor-click
                         handler that preventDefaults every link and only navigates note/http links,
                         so an <a> to a plain server route gets swallowed. A button sidesteps it and
@@ -67,41 +59,22 @@ export function App() {
             <PasswordLogin
                 illustration={illustration}
                 totpEnabled={config?.totpEnabled ?? false}
-                error={error}
-                errorId={errorId}
-                onError={raiseError}
+                initialError={error}
             />
         </div>
     );
 }
 
-export function PasswordLogin({ illustration, totpEnabled, error, errorId, onError }: {
+export function PasswordLogin({ illustration, totpEnabled, initialError }: {
     illustration: preact.ComponentChildren;
     totpEnabled: boolean;
-    error: string | null;
-    errorId: number;
-    onError: (message: string) => void;
+    initialError: string | null;
 }) {
-    // Read the password / TOTP straight from the DOM at submit time instead of mirroring
-    // them into controlled state. A controlled value of "" overwrites (and loses) browser-
-    // autofilled credentials, so the first click would submit an empty password — the
-    // "incorrect password, press again" bug. These fields need no live validation, so they
-    // stay uncontrolled. (rememberMe is a toggle the user actually clicks, so it's controlled.)
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const totpRef = useRef<HTMLInputElement>(null);
-    const [ rememberMe, setRememberMe ] = useState(false);
-    const [ submitting, setSubmitting ] = useState(false);
-
-    async function handleSubmit(e: Event) {
-        e.preventDefault();
-        if (submitting) {
-            return;
-        }
-        setSubmitting(true);
+    async function submit({ password, totpToken, rememberMe }: Credentials) {
         try {
-            const body = new URLSearchParams({ password: passwordRef.current?.value ?? "" });
+            const body = new URLSearchParams({ password });
             if (totpEnabled) {
-                body.set("totpToken", totpRef.current?.value ?? "");
+                body.set("totpToken", totpToken);
             }
             if (rememberMe) {
                 body.set("rememberMe", "1");
@@ -116,13 +89,12 @@ export function PasswordLogin({ illustration, totpEnabled, error, errorId, onErr
             if (resp.ok) {
                 // Session established — navigate to the app.
                 window.location.assign(".");
-                return;
+                return null;
             }
 
             if (resp.status === 429) {
                 // Rate limiter kicked in (too many attempts) — not a credential failure.
-                onError(t("login.too-many-attempts"));
-                return;
+                return t("login.too-many-attempts");
             }
 
             const factor = resp.status === 401 ? (await resp.json().catch(() => ({}))).factor : undefined;
@@ -131,71 +103,48 @@ export function PasswordLogin({ illustration, totpEnabled, error, errorId, onErr
                 // so tailor the message to what was actually entered. This keys off the user's
                 // own input shape, never server state, so it can't reveal whether a given code
                 // was genuinely valid or already used.
-                const looksLikeRecoveryCode = /^.{22}==$/.test(totpRef.current?.value ?? "");
-                onError(t(looksLikeRecoveryCode ? "login.incorrect-recovery-code" : "login.incorrect-totp"));
-            } else {
-                onError(t("login.incorrect-password"));
+                return t(looksLikeRecoveryCode(totpToken) ? "login.incorrect-recovery-code" : "login.incorrect-totp");
             }
+
+            return t("login.incorrect-password");
         } catch {
             // fetch only rejects on network-level failures (server unreachable, DNS, etc.) —
             // not on HTTP error statuses — so this is a connection problem, not bad credentials.
-            onError(t("login.connection-error"));
-        } finally {
-            setSubmitting(false);
+            return t("login.connection-error");
         }
     }
 
     return (
-        <form onSubmit={(e) => void handleSubmit(e)}>
-            <SetupPage
-                className="login"
-                title={t("login.heading")}
-                illustration={illustration}
-                error={error}
-                errorId={errorId}
-                footer={<Button text={t("login.button")} kind="primary" disabled={submitting} />}
-            >
-                <Card>
-                    <CardSection>
-                        <OptionsRow name="password" label={t("login.password")} stacked>
-                            <FormTextBox
-                                inputRef={passwordRef} autoFocus
-                                type="password" name="password"
-                                autocomplete="current-password" required
-                            />
-                        </OptionsRow>
-
-                        {totpEnabled && (
-                            <OptionsRow name="totpToken" label={t("login.totp-token")} stacked>
-                                <FormTextBox
-                                    inputRef={totpRef}
-                                    name="totpToken"
-                                    autocomplete="one-time-code" required
-                                />
-                            </OptionsRow>
-                        )}
-
-                        <OptionsRowWithToggle
-                            name="rememberMe"
-                            label={t("login.remember-me")}
-                            currentValue={rememberMe}
-                            onChange={setRememberMe}
-                        />
-                    </CardSection>
-                </Card>
-            </SetupPage>
-        </form>
+        <CredentialsForm
+            className="login"
+            title={t("login.heading")}
+            illustration={illustration}
+            totpEnabled={totpEnabled}
+            rememberMeEnabled
+            submitLabel={t("login.button")}
+            initialError={initialError}
+            onSubmit={submit}
+        />
     );
 }
 
-function ssoErrorMessage(ssoError: string | false | undefined): string | null {
-    if (!ssoError) {
-        return null;
-    }
-    return ssoError === "wrong_account" ? t("login.sso-wrong-account") : t("login.sso-not-enrolled");
+/** Whether what was typed into the second-factor field is shaped like a recovery code. */
+export function looksLikeRecoveryCode(answer: string): boolean {
+    return /^.{22}==$/.test(answer);
 }
 
-// Skip the bootstrap render under test, where the components are imported directly.
-if (import.meta.env.MODE !== "test") {
-    void main();
+function initialSsoError(config: typeof window.glob.login): string | null {
+    // `ssoError` is the outcome of a round-trip that actually reached the provider, so it is the more
+    // specific message and wins over the generic connection failure.
+    if (config?.ssoError) {
+        return config.ssoError === "wrong_account" ? t("login.sso-wrong-account") : t("login.sso-not-enrolled");
+    }
+    if (config?.ssoConnectionFailed) {
+        return t("login.sso-connection-failed");
+    }
+    return null;
 }
+
+// index.ts holds the splash up until the page has rendered. The render under test imports
+// the components directly, so it skips this one.
+export const ready = import.meta.env.MODE !== "test" ? main() : Promise.resolve();

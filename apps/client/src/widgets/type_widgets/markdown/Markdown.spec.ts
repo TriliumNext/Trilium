@@ -2,9 +2,12 @@
 // DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
-import { describe, expect, it } from "vitest";
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+import type VanillaCodeMirror from "@triliumnext/codemirror";
+import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { renderWithSourceLines } from "./Markdown.js";
+import { findActiveBlock, renderWithSourceLines, revealTabAtLine, scrollToSourceLine } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -12,8 +15,9 @@ describe("renderWithSourceLines", () => {
         return [ ...html.matchAll(/data-source-line="(\d+)"/g) ].map((m) => parseInt(m[1], 10));
     }
 
+    /** Markup with the source-line attributes stripped, so markup assertions stay readable. */
     function html(src: string): string {
-        return renderWithSourceLines(src).html;
+        return renderWithSourceLines(src).html.replace(/ data-source-line="\d+"/g, "");
     }
 
     it("returns empty html for empty input", () => {
@@ -51,11 +55,51 @@ describe("renderWithSourceLines", () => {
         expect(extractLines(src)).toEqual([ 1, 6 ]);
     });
 
-    it("renders standard markdown constructs inside the wrappers", () => {
+    it("renders standard markdown constructs", () => {
         const result = html("## Heading\n\n- item\n");
         expect(result).toContain("<h2>Heading</h2>");
         expect(result).toContain("<ul>");
         expect(result).toContain("<li>item</li>");
+    });
+
+    it("tags blocks in place so they stay direct siblings", () => {
+        // The .ck-content styles use sibling combinators (e.g. the stacked look of consecutive
+        // collapsibles), which only match if blocks are not each wrapped in a container.
+        const src = [
+            '<details class="trilium-collapsible">',
+            "<summary>One</summary>",
+            "</details>",
+            "",
+            '<details class="trilium-collapsible">',
+            "<summary>Two</summary>",
+            "</details>"
+        ].join("\n");
+
+        const container = document.createElement("div");
+        container.innerHTML = renderWithSourceLines(src).html;
+
+        const blocks = Array.from(container.children);
+        expect(blocks.map((block) => block.tagName)).toEqual([ "DETAILS", "DETAILS" ]);
+        expect(blocks.every((block) => block.hasAttribute("data-source-line"))).toBe(true);
+    });
+
+    it("counts a tabs block as one top-level block, so the lines after it stay aligned", () => {
+        const src = [
+            "Before",       // 1
+            "",             // 2
+            "=== \"A\"",    // 3
+            "",             // 4
+            "    a",        // 5
+            "",             // 6
+            "=== \"B\"",    // 7
+            "",             // 8
+            "    b",        // 9
+            "",             // 10
+            "After"         // 11
+        ].join("\n");
+
+        expect(extractLines(src)).toEqual([ 1, 3, 11 ]);
+        expect(html(src)).toContain("<p>After</p>");
     });
 
     it("keeps H1 as H1 in the preview (no title-row context to avoid)", () => {
@@ -222,5 +266,218 @@ describe("renderWithSourceLines", () => {
             expect(h.text).not.toMatch(/onload/i);
             expect(h.text).not.toMatch(/javascript:/i);
         }
+    });
+
+    it("renders ==text== as a highlight, surviving sanitization", () => {
+        expect(html("==hi==")).toBe(`<p><span style="${HIGHLIGHT_STYLE}">hi</span></p>`);
+        expect(html("a == b")).toBe("<p>a == b</p>");
+    });
+
+    describe("highlights", () => {
+        function highlights(src: string) {
+            return renderWithSourceLines(src).highlights;
+        }
+
+        it("extracts bold, italic and underline runs", () => {
+            expect(highlights("**bold** and *italic* and <u>underline</u>").map(h => [ h.text, h.attrs.bold, h.attrs.italic, h.attrs.underline ]))
+                .toEqual([
+                    [ "bold", true, false, false ],
+                    [ "italic", false, true, false ],
+                    [ "underline", false, false, true ]
+                ]);
+        });
+
+        it("traces each run back to the source line of its block, for scrolling the editor", () => {
+            const src = [
+                "# Heading",   // line 1
+                "",            // line 2
+                "a **one** b", // line 3
+                "",            // line 4
+                "c *two* d"    // line 5
+            ].join("\n");
+
+            expect(highlights(src).map(h => [ h.text, h.line ])).toEqual([ [ "one", 3 ], [ "two", 5 ] ]);
+        });
+
+        it("gives each run an id that is stable across re-renders", () => {
+            const src = "**a** and *b*";
+            expect(highlights(src).map(h => h.id)).toEqual(highlights(src).map(h => h.id));
+        });
+
+        it("picks up a ==highlight== as a background colour", () => {
+            const [ highlight ] = highlights("some ==marked== text");
+
+            expect(highlight.text).toBe("marked");
+            expect(highlight.attrs.background).toBeTruthy();
+        });
+
+        it("finds nothing in unformatted text", () => {
+            expect(highlights("just a plain paragraph")).toEqual([]);
+        });
+    });
+
+    it("renders a colour the exporter preserved as inline HTML", () => {
+        // Non-default colours survive a Markdown export as a span, so the preview has to show them.
+        expect(html(`a <span style="color:#ff0000">**red**</span> b`))
+            .toBe(`<p>a <span style="color:#ff0000;"><strong>red</strong></span> b</p>`);
+    });
+});
+
+describe("findActiveBlock", () => {
+    /** The preview's blocks, tagged with the source lines they start at. */
+    function blocks(...sourceLines: number[]) {
+        return sourceLines.map((line) => {
+            const el = document.createElement("p");
+            el.dataset.sourceLine = String(line);
+            return el;
+        });
+    }
+
+    it("picks the block the cursor sits in, and the last one past the end", () => {
+        const [ first, second, third ] = blocks(1, 5, 9);
+        const all = [ first, second, third ];
+
+        expect(findActiveBlock(all, 1)).toBe(first);
+        expect(findActiveBlock(all, 4)).toBe(first);
+        expect(findActiveBlock(all, 5)).toBe(second);
+        expect(findActiveBlock(all, 9)).toBe(third);
+        expect(findActiveBlock(all, 100)).toBe(third);
+    });
+
+    it("matches nothing above the first block or in an empty preview", () => {
+        expect(findActiveBlock(blocks(3), 1)).toBeNull();
+        expect(findActiveBlock([], 1)).toBeNull();
+    });
+});
+
+describe("scrollToSourceLine", () => {
+    function preview() {
+        const el = document.createElement("div");
+        el.innerHTML = renderWithSourceLines("# One\n\ntext\n\n## Two\n\nmore").html;
+        const heading = el.querySelector<HTMLElement>("h2");
+        if (!heading) throw new Error("h2 not rendered");
+        heading.scrollIntoView = vi.fn();
+        return { el, heading };
+    }
+
+    /** A stand-in for the CodeMirror view, with a scroller of the given height (0 when hidden). */
+    function editor(clientHeight: number) {
+        const scrollTo = vi.fn();
+        const view = {
+            state: { doc: { lines: 7, line: () => ({ from: 0 }) } },
+            lineBlockAt: () => ({ top: 0, height: 10 }),
+            scrollDOM: { clientHeight, scrollTo }
+        } as unknown as VanillaCodeMirror;
+        return { view, scrollTo };
+    }
+
+    it("scrolls the preview when the editor is unmounted or hidden (preview mode)", () => {
+        const { el, heading } = preview();
+        expect(heading.dataset.sourceLine).toBe("5");
+
+        scrollToSourceLine(null, el, 5);
+        expect(heading.scrollIntoView).toHaveBeenCalledTimes(1);
+
+        const hidden = editor(0);
+        scrollToSourceLine(hidden.view, el, 5);
+        expect(heading.scrollIntoView).toHaveBeenCalledTimes(2);
+        expect(hidden.scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("scrolls the editor when it is on screen, leaving the preview to follow", () => {
+        const { el, heading } = preview();
+        const visible = editor(400);
+
+        scrollToSourceLine(visible.view, el, 5);
+        expect(visible.scrollTo).toHaveBeenCalledTimes(1);
+        expect(heading.scrollIntoView).not.toHaveBeenCalled();
+    });
+});
+
+describe("revealTabAtLine", () => {
+    // `applyTabs()` watches the title bars it builds, and jsdom has no `ResizeObserver`.
+    beforeEach(() => {
+        vi.stubGlobal("ResizeObserver", class {
+            observe() {}
+            disconnect() {}
+        });
+    });
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const src = [
+        "=== \"A\"",          // 1
+        "",                     // 2
+        "    a",                // 3
+        "",                     // 4
+        "=== \"B\"",          // 5
+        "",                     // 6
+        "    === \"B1\"",     // 7
+        "",                     // 8
+        "        b1",           // 9
+        "",                     // 10
+        "    === \"B2\"",     // 11
+        "",                     // 12
+        "        b2",           // 13
+        "",                     // 14
+        "After"                 // 15
+    ].join("\n");
+
+    function preview() {
+        const el = document.createElement("div");
+        el.innerHTML = renderWithSourceLines(src).html;
+        applyTabs(el, { placeholder: "", scrollLabels: { start: "", end: "" } });
+        return el;
+    }
+
+    function activeTitles(el: HTMLElement) {
+        return [ ...el.querySelectorAll(".trilium-tab-title--active") ].map((title) => title.textContent);
+    }
+
+    it("tags each tab with the line of its header", () => {
+        const lines = [ ...preview().querySelectorAll<HTMLElement>("section.trilium-tab") ]
+            .map((tab) => tab.dataset.tabSourceLine);
+        expect(lines).toEqual([ "1", "5", "7", "11" ]);
+    });
+
+    it("shows the tab the line falls in, including a nested one", () => {
+        const el = preview();
+        expect(activeTitles(el)).toEqual([ "A", "B1" ]);
+
+        revealTabAtLine(el, 13);
+        expect(activeTitles(el)).toEqual([ "B", "B2" ]);
+
+        revealTabAtLine(el, 2);
+        expect(activeTitles(el)).toEqual([ "A", "B2" ]);
+    });
+
+    it("tags the tabs of separate list items with their own lines", () => {
+        const listSrc = [
+            "- First",              // 1
+            "",                     // 2
+            "  === \"A\"",        // 3
+            "",                     // 4
+            "      a",              // 5
+            "",                     // 6
+            "- Second",             // 7
+            "",                     // 8
+            "  === \"B\"",        // 9
+            "",                     // 10
+            "      b"               // 11
+        ].join("\n");
+        const el = document.createElement("div");
+        el.innerHTML = renderWithSourceLines(listSrc).html;
+        const tabs = [ ...el.querySelectorAll<HTMLElement>("li section.trilium-tab") ];
+
+        expect(tabs.map((tab) => tab.querySelector(".trilium-tab-title")?.textContent)).toEqual([ "A", "B" ]);
+        expect(tabs.map((tab) => tab.dataset.tabSourceLine)).toEqual([ "3", "9" ]);
+    });
+
+    it("leaves the tabs alone for a line outside the block", () => {
+        const el = preview();
+        revealTabAtLine(el, 13);
+        revealTabAtLine(el, 15);
+        expect(activeTitles(el)).toEqual([ "B", "B2" ]);
     });
 });

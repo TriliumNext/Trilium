@@ -1,0 +1,40 @@
+.modal.resource-download-dialog {
+    .resource-download-list {
+        margin-bottom: 1em;
+    }
+
+    .resource-download-item {
+        gap: 12px;
+    }
+
+    .resource-download-icon {
+        align-self: flex-start;
+        font-size: 1.6em;
+        color: var(--muted-text-color);
+    }
+
+    .resource-download-size {
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .resource-download-total {
+        .tn-card-option-title,
+        .resource-download-size {
+            font-weight: 600;
+        }
+    }
+
+    .resource-download-progress {
+        margin-top: 0.5em;
+
+        .resource-download-progress-detail {
+            display: flex;
+            justify-content: space-between;
+            gap: 1em;
+            margin-top: 0.35em;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+}

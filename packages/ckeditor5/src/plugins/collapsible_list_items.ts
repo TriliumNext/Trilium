@@ -1,10 +1,40 @@
 import "../theme/collapsible_list_items.css";
 
-import { Command, ListEditing, MouseObserver, Plugin, type Editor, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
+import {
+    Command,
+    DomEventObserver,
+    ListEditing,
+    MouseObserver,
+    Plugin,
+    type Editor,
+    type EnterCommand,
+    type ListSplitCommand,
+    type ModelElement,
+    type ModelNode,
+    type ModelPosition,
+    type ModelWriter,
+    type ViewDocumentDomEventData,
+    type ViewDocumentEnterEvent,
+    type ViewDocumentMouseDownEvent,
+    type ViewDocumentMouseOutEvent,
+    type ViewElement
+} from "ckeditor5";
+
+import FindReveal from "./find_reveal.js";
 
 export const LIST_COLLAPSED_ATTRIBUTE = "listCollapsed";
 
 const COLLAPSED_DATA_ATTRIBUTE = "data-trilium-collapsed";
+
+/** Marks the item whose arrow the pointer is on, so the stylesheet can give it a filled circle. */
+const ARROW_HOVERED_CLASS = "trilium-list-arrow-hovered";
+
+/**
+ * View-only class placed on a collapsed `<li>` whose hidden children are temporarily shown to
+ * reveal a find-in-note match inside them. It only exists in the editing view (the hiding CSS
+ * opts out when it is present), so the persisted `data-trilium-collapsed` state is never touched.
+ */
+const TEMPORARILY_EXPANDED_CLASS = "trilium-list-temporarily-expanded";
 
 /**
  * Allows collapsing/expanding nested list items, similar to outliners such as Dynalist or Roam.
@@ -15,8 +45,19 @@ const COLLAPSED_DATA_ATTRIBUTE = "data-trilium-collapsed";
  */
 export default class CollapsibleListItems extends Plugin {
 
+    private _hoveredArrowItem: ViewElement | null = null;
+    /** Collapsed list items currently force-expanded (view-only) to reveal a find highlight. */
+    private readonly _findRevealed = new Set<ModelElement>();
+    /**
+     * True only for the microtask in which find is closing. Closing drops the caret onto the match
+     * (see find_in_text.findBoxClosed); without this, that caret landing inside a re-collapsed item
+     * would make {@link _enableAutoExpand} permanently expand it. While set, the caret is moved to
+     * the collapsed item's line instead — the way the collapsible <details> reveal leaves it.
+     */
+    private _findClosing = false;
+
     static get requires() {
-        return [ListEditing] as const;
+        return [ ListEditing, FindReveal ] as const;
     }
 
     init() {
@@ -47,8 +88,82 @@ export default class CollapsibleListItems extends Plugin {
         });
 
         this._enableToggleOnGutterClick();
+        this._enableArrowHoverFeedback();
         this._enableToggleOnKeystroke();
+        this._enableEnterAfterCollapsedItem();
         this._enableAutoExpand();
+        this._enableFindReveal();
+    }
+
+    /**
+     * Temporarily reveals a collapsed item's hidden children while a find-in-note highlight sits
+     * inside them, re-collapsing once the highlight moves away — the same treatment collapsible
+     * `<details>` blocks get. Unlike {@link _enableAutoExpand} (which permanently drops the
+     * collapsed state when the caret enters a hidden block), this is view-only and never touches
+     * the persisted attribute: search must not rewrite the user's collapsed layout.
+     */
+    private _enableFindReveal() {
+        const findReveal = this.editor.plugins.get(FindReveal);
+        this.listenTo(findReveal, "change:position", (_evt, _name, position) => {
+            this._syncFindReveal(position);
+        });
+    }
+
+    /**
+     * Reconcile {@link _findRevealed} with the collapsed items hiding `position`, the match the
+     * find shows: reveal ancestors newly hiding it, re-collapse ones that no longer do. A `null`
+     * position (search cleared) collapses everything.
+     */
+    private _syncFindReveal(position: ModelPosition | null) {
+        const wanted = new Set<ModelElement>();
+        const block = position?.parent;
+        // getCollapsedAncestors tolerates any block (a non-list block has no collapsed ancestors),
+        // so no list-specific guard is needed beyond narrowing the position parent to an element.
+        if (block?.is("element")) {
+            for (const ancestor of getCollapsedAncestors(block)) {
+                wanted.add(ancestor);
+            }
+        }
+
+        // A cleared position means find is closing (or moving off): flag the current microtask so
+        // the caret it is about to drop on the match doesn't permanently expand the item that
+        // {@link _enableAutoExpand} would otherwise open. Reset after the tick, so it only affects
+        // that synchronous caret landing and never a later real navigation.
+        if (!position) {
+            this._findClosing = true;
+            void Promise.resolve().then(() => {
+                this._findClosing = false;
+            });
+        }
+
+        for (const revealed of this._findRevealed) {
+            if (!wanted.has(revealed)) {
+                this._applyFindReveal(revealed, false);
+                this._findRevealed.delete(revealed);
+            }
+        }
+        for (const target of wanted) {
+            if (!this._findRevealed.has(target)) {
+                this._findRevealed.add(target);
+                this._applyFindReveal(target, true);
+            }
+        }
+    }
+
+    /** Add or remove the view-only "temporarily expanded" class on the collapsed item's `<li>`. */
+    private _applyFindReveal(block: ModelElement, reveal: boolean) {
+        const viewItem = this.editor.editing.mapper.toViewElement(block)?.findAncestor("li");
+        /* v8 ignore next 3 -- defensive: a rendered collapsed ancestor always maps to its <li>. */
+        if (!viewItem) {
+            return;
+        }
+        this.editor.editing.view.change((writer) => {
+            if (reveal) {
+                writer.addClass(TEMPORARILY_EXPANDED_CLASS, viewItem);
+            } else {
+                writer.removeClass(TEMPORARILY_EXPANDED_CLASS, viewItem);
+            }
+        });
     }
 
     /**
@@ -69,10 +184,77 @@ export default class CollapsibleListItems extends Plugin {
         });
     }
 
+    /** Moves new list siblings after hidden descendants for both CKEditor Enter command paths. */
+    private _enableEnterAfterCollapsedItem() {
+        const editor = this.editor;
+        const enterCommand = editor.commands.get("enter") as EnterCommand;
+        const splitCommand = editor.commands.get("splitListItemBefore") as ListSplitCommand;
+        let pendingEnterSplit: ModelElement | null = null;
+
+        // ListEditing handles an empty final block with splitListItemBefore and stops the event,
+        // so EnterCommand never runs on that path.
+        this.listenTo<ViewDocumentEnterEvent>(
+            editor.editing.view.document, "enter", (_evt, data) => {
+                if (data.isSoft) {
+                    pendingEnterSplit = null;
+                    return;
+                }
+                const selectedBlock = getSelectedListBlock(editor);
+                pendingEnterSplit = selectedBlock?.isEmpty
+                    && selectedBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE) === true
+                    && hasNestedItems(selectedBlock)
+                    ? selectedBlock
+                    : null;
+
+                if (pendingEnterSplit) {
+                    // The split command runs synchronously; clear state if another listener
+                    // handles Enter.
+                    void Promise.resolve().then(() => {
+                        pendingEnterSplit = null;
+                    });
+                }
+            }, { context: "li", priority: "high" }
+        );
+
+        this.listenTo(splitCommand, "afterExecute", () => {
+            if (!pendingEnterSplit || pendingEnterSplit !== getSelectedListBlock(editor)) {
+                return;
+            }
+            pendingEnterSplit = null;
+            editor.model.change((writer) => this._moveItemAfterCollapsedDescendants(writer));
+        });
+
+        this.listenTo(enterCommand, "afterExecute", (_evt, data: { writer: ModelWriter }) => {
+            this._moveItemAfterCollapsedDescendants(data.writer);
+        });
+    }
+
+    /**
+     * Moves the item Enter creates in a collapsed list item after that item's hidden descendants.
+     */
+    private _moveItemAfterCollapsedDescendants(writer: ModelWriter) {
+        const block = getSelectedListBlock(this.editor);
+        if (!block || !block.isEmpty) {
+            return;
+        }
+
+        const previousBlock = block.previousSibling;
+        if (!isListBlock(previousBlock)
+            || previousBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE) !== true
+            || previousBlock.getAttribute("listItemId") === block.getAttribute("listItemId")) {
+            return;
+        }
+
+        const lastNestedBlock = getNestedBlocks(block).at(-1);
+        if (!lastNestedBlock) {
+            return;
+        }
+        writer.move(writer.createRangeOn(block), writer.createPositionAfter(lastNestedBlock));
+    }
+
     /**
      * Toggles the collapsed state when the arrow rendered in the gutter next to a list item is
-     * clicked. The arrow is the item's `::before` pseudo-element placed outside its border box,
-     * so a mouse event left of the `<li>` box that still targets the `<li>` is an arrow click.
+     * clicked.
      */
     private _enableToggleOnGutterClick() {
         const editor = this.editor;
@@ -81,21 +263,8 @@ export default class CollapsibleListItems extends Plugin {
         view.addObserver(MouseObserver);
 
         this.listenTo<ViewDocumentMouseDownEvent>(view.document, "mousedown", (evt, data) => {
-            const viewItem = data.target;
-            if (!viewItem || !viewItem.is("element", "li")) {
-                return;
-            }
-
-            const domItem = data.domTarget as HTMLElement;
-            const rect = domItem.getBoundingClientRect();
-            const isRtl = domItem.ownerDocument.defaultView?.getComputedStyle(domItem).direction === "rtl";
-            const isGutterClick = isRtl ? data.domEvent.clientX > rect.right : data.domEvent.clientX < rect.left;
-            if (!isGutterClick) {
-                return;
-            }
-
-            const block = getListBlockFromViewListItem(editor, viewItem);
-            if (!block || !hasNestedItems(block)) {
+            const block = getArrowBlockAtPointer(editor, data);
+            if (!block) {
                 return;
             }
 
@@ -103,6 +272,52 @@ export default class CollapsibleListItems extends Plugin {
             data.preventDefault();
             evt.stop();
             toggleCollapsed(editor, block);
+        });
+    }
+
+    /**
+     * Fills the arrow into a circle while the pointer rests on it. CSS cannot match a hovered
+     * pseudo-element, so the item carries a class instead, set from the same gutter geometry the
+     * click handler uses — pointer feedback and click target can therefore never drift apart.
+     */
+    private _enableArrowHoverFeedback() {
+        const editor = this.editor;
+        const view = editor.editing.view;
+
+        view.addObserver(MouseMoveObserver);
+
+        this.listenTo<ViewDocumentMouseMoveEvent>(view.document, "mousemove", (_evt, data) => {
+            // A held button means a drag (selecting text); leave the view untouched until it ends.
+            const onArrow = data.domEvent.buttons === 0 && !!getArrowBlockAtPointer(editor, data);
+            this._setArrowHovered(onArrow ? data.target : null);
+        });
+
+        // Leaving the editable ends the stream of mouse moves, so the flag is dropped here
+        // instead — otherwise an arrow the pointer left sideways would stay lit.
+        this.listenTo<ViewDocumentMouseOutEvent>(view.document, "mouseout", (_evt, data) => {
+            const domRoot = view.getDomRoot();
+            const movedTo = data.domEvent.relatedTarget;
+            if (!domRoot || !(movedTo instanceof Node) || !domRoot.contains(movedTo)) {
+                this._setArrowHovered(null);
+            }
+        });
+    }
+
+    private _setArrowHovered(viewItem: ViewElement | null) {
+        if (viewItem === this._hoveredArrowItem) {
+            return;
+        }
+
+        const previousItem = this._hoveredArrowItem;
+        this._hoveredArrowItem = viewItem;
+
+        this.editor.editing.view.change((writer) => {
+            if (previousItem) {
+                writer.removeClass(ARROW_HOVERED_CLASS, previousItem);
+            }
+            if (viewItem) {
+                writer.addClass(ARROW_HOVERED_CLASS, viewItem);
+            }
         });
     }
 
@@ -123,6 +338,17 @@ export default class CollapsibleListItems extends Plugin {
 
             const collapsedAncestors = getCollapsedAncestors(block);
             if (collapsedAncestors.length === 0) {
+                return;
+            }
+
+            if (this._findClosing) {
+                // Find is closing and dropped the caret on the match inside a re-collapsed item.
+                // Keep the saved layout collapsed: move the caret to the outermost collapsed
+                // ancestor's line instead of expanding (mirrors the <details> reveal on close).
+                const outermost = collapsedAncestors[collapsedAncestors.length - 1];
+                model.enqueueChange({isUndoable: false}, (writer) => {
+                    writer.setSelection(writer.createPositionAt(outermost, 0));
+                });
                 return;
             }
 
@@ -203,16 +429,64 @@ export class ToggleListCollapseCommand extends Command {
 
 }
 
+/** `MouseObserver` covers mousedown/up/over/out, but not the moves the hover feedback needs. */
+class MouseMoveObserver extends DomEventObserver<"mousemove"> {
+
+    public readonly domEventType = ["mousemove"] as const;
+
+    public onDomEvent(domEvent: MouseEvent) {
+        this.fire(domEvent.type, domEvent);
+    }
+
+}
+
+type ViewDocumentMouseMoveEvent = {
+    name: "mousemove";
+    args: [data: ViewDocumentDomEventData<MouseEvent>];
+};
+
+/**
+ * The collapsible list item whose arrow the pointer is on, if any.
+ *
+ * The arrow is the item's `::before` pseudo-element, laid out entirely outside the `<li>`'s
+ * border box, so it is the only thing that can be hit at an x beyond the box while the event
+ * still targets the `<li>` — whichever side the gutter is on (it follows the text direction).
+ */
+function getArrowBlockAtPointer(editor: Editor, data: ViewDocumentDomEventData<MouseEvent>): ModelElement | null {
+    const viewItem = data.target;
+    if (!viewItem || !viewItem.is("element", "li")) {
+        return null;
+    }
+
+    const rect = (data.domTarget as HTMLElement).getBoundingClientRect();
+    const { clientX } = data.domEvent;
+    if (clientX >= rect.left && clientX <= rect.right) {
+        return null;
+    }
+
+    const block = getListBlockFromViewListItem(editor, viewItem);
+    return block && hasNestedItems(block) ? block : null;
+}
+
 function toggleCollapsed(editor: Editor, block: ModelElement): void {
     const collapse = !block.getAttribute(LIST_COLLAPSED_ATTRIBUTE);
+    const itemBlocks = getItemBlocks(block);
+    const nestedBlocks = getNestedBlocks(block);
+    const hidesSelection = collapse && [ ...editor.model.document.selection.getSelectedBlocks() ]
+        .some((selectedBlock) => nestedBlocks.includes(selectedBlock));
 
     editor.model.change((writer) => {
-        for (const itemBlock of getItemBlocks(block)) {
+        for (const itemBlock of itemBlocks) {
             if (collapse) {
                 writer.setAttribute(LIST_COLLAPSED_ATTRIBUTE, true, itemBlock);
             } else {
                 writer.removeAttribute(LIST_COLLAPSED_ATTRIBUTE, itemBlock);
             }
+        }
+
+        if (hidesSelection) {
+            const lastItemBlock = itemBlocks[itemBlocks.length - 1];
+            writer.setSelection(writer.createPositionAt(lastItemBlock, "end"));
         }
     });
 }
@@ -278,6 +552,22 @@ function hasNestedItems(block: ModelElement): boolean {
     return false;
 }
 
+/** Returns the list blocks hidden by collapsing `block`, including all descendant levels. */
+function getNestedBlocks(block: ModelElement): ModelElement[] {
+    const blocks: ModelElement[] = [];
+    const indent = getIndent(block);
+    const lastItemBlock = getItemBlocks(block).at(-1);
+
+    for (
+        let sibling = lastItemBlock?.nextSibling;
+        isListBlock(sibling) && getIndent(sibling) > indent;
+        sibling = sibling.nextSibling
+    ) {
+        blocks.push(sibling);
+    }
+    return blocks;
+}
+
 /** All consecutive blocks belonging to the same (possibly multi-block) list item. */
 function getItemBlocks(block: ModelElement): ModelElement[] {
     const itemId = block.getAttribute("listItemId");
@@ -313,7 +603,7 @@ function getCollapsedAncestors(block: ModelElement): ModelElement[] {
     return ancestors;
 }
 
-function isListBlock(node: ModelNode | null): node is ModelElement {
+function isListBlock(node: ModelNode | null | undefined): node is ModelElement {
     return !!node && node.is("element") && node.hasAttribute("listItemId");
 }
 

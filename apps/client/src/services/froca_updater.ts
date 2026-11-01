@@ -1,4 +1,4 @@
-import type { OptionNames } from "@triliumnext/commons";
+import type { AttachmentRow, OptionNames } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
@@ -7,12 +7,13 @@ import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import type { default as FNote, FNoteRow } from "../entities/fnote.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
+import { invalidateNoteImages } from "./image_urls.js";
 import LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
 import options from "./options.js";
-import utils from "./utils.js";
 
-async function processEntityChanges(entityChanges: EntityChange[]) {
+async function processEntityChanges(changes: EntityChange[]) {
+    const entityChanges = changes.map(asDeletionIfErased);
     const loadResults = new LoadResults(entityChanges);
 
     for (const ec of entityChanges) {
@@ -57,8 +58,7 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
     const missingNoteIds: string[] = [];
 
     for (const { entityName, entity } of entityChanges) {
-        if (!entity) {
-            // if erased
+        if (!entity || entity.isDeleted) {
             continue;
         }
 
@@ -75,6 +75,10 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
     if (missingNoteIds.length > 0) {
         await froca.reloadNotes(missingNoteIds);
     }
+
+    // Read from the entity changes rather than `loadResults`, which skips the notes froca has not
+    // loaded: a text note can show the image of such a note without loading it.
+    invalidateNoteImages(getImageNoteIds(entityChanges));
 
     if (!loadResults.isEmpty()) {
         if (loadResults.hasAttributeRelatedChanges()) {
@@ -95,11 +99,6 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
     }
 
     loadResults.addNote(ec.entityId, ec.componentId);
-
-    if (ec.isErased && ec.entityId in froca.notes) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
 
     if (ec.isErased || ec.entity?.isDeleted) {
         delete froca.notes[ec.entityId];
@@ -126,15 +125,19 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
 }
 
 async function processBranchChange(loadResults: LoadResults, ec: EntityChange) {
-    if (ec.isErased && ec.entityId in froca.branches) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     let branch = froca.branches[ec.entityId];
 
     if (ec.isErased || ec.entity?.isDeleted) {
-        if (branch) {
+        if (!branch) {
+            // `froca.addResp()` can drop the branch before its deletion arrives here, but the tree
+            // still shows it while either note is loaded.
+            const branchRow = ec.entity as FBranchRow | undefined;
+            const isShown = !!branchRow
+                && (branchRow.noteId in froca.notes || branchRow.parentNoteId in froca.notes);
+            if (ec.componentId && isShown) {
+                loadResults.addBranch(ec.entityId, ec.componentId);
+            }
+        } else {
             const childNote = froca.notes[branch.noteId];
             const parentNote = froca.notes[branch.parentNoteId];
 
@@ -218,11 +221,6 @@ function processNoteReordering(loadResults: LoadResults, ec: EntityChange) {
 function processAttributeChange(loadResults: LoadResults, ec: EntityChange) {
     let attribute = froca.attributes[ec.entityId];
 
-    if (ec.isErased && ec.entityId in froca.attributes) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     if (ec.isErased || ec.entity?.isDeleted) {
         if (attribute) {
             const sourceNote = froca.notes[attribute.noteId];
@@ -272,11 +270,6 @@ function processAttributeChange(loadResults: LoadResults, ec: EntityChange) {
 }
 
 function processAttachment(loadResults: LoadResults, ec: EntityChange) {
-    if (ec.isErased && ec.entityId in froca.attachments) {
-        utils.reloadFrontendApp(`${ec.entityName} '${ec.entityId}' is erased, need to do complete reload.`);
-        return;
-    }
-
     const attachment = froca.attachments[ec.entityId];
     const attachmentEntity = ec.entity as FAttachmentRow;
 
@@ -288,7 +281,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
                 note.attachments = note.attachments.filter((att) => att.attachmentId !== attachment.attachmentId);
             }
 
-            loadResults.addAttachmentRow(attachmentEntity);
+            loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
 
             delete froca.attachments[ec.entityId];
         }
@@ -297,6 +290,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
     }
 
     if (ec.entity) {
+        delete froca.blobPromises[`attachments-${ec.entityId}`];
         if (attachment) {
             attachment.update(ec.entity as FAttachmentRow);
         } else {
@@ -309,7 +303,73 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
         }
     }
 
-    loadResults.addAttachmentRow(attachmentEntity);
+    loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
+}
+
+/**
+ * Turns the erasure of an entity froca holds into a deletion of froca's copy of its row. An erase
+ * carries no row, and `LoadResults` and the widgets reading it need one to know what was removed.
+ */
+function asDeletionIfErased(ec: EntityChange): EntityChange {
+    if (!ec.isErased) {
+        return ec;
+    }
+
+    const row = getFrocaRow(ec);
+    return row ? { ...ec, entity: { ...row, isDeleted: true } } : ec;
+}
+
+function getFrocaRow({ entityName, entityId }: EntityChange) {
+    if (entityName === "notes") {
+        const note = froca.notes[entityId];
+        return note && {
+            noteId: note.noteId, title: note.title, isProtected: note.isProtected,
+            type: note.type, mime: note.mime, blobId: note.blobId
+        } satisfies FNoteRow;
+    } else if (entityName === "branches") {
+        const branch = froca.branches[entityId];
+        return branch && {
+            branchId: branch.branchId, noteId: branch.noteId, parentNoteId: branch.parentNoteId,
+            notePosition: branch.notePosition, prefix: branch.prefix,
+            isExpanded: branch.isExpanded, fromSearchNote: branch.fromSearchNote
+        } satisfies FBranchRow;
+    } else if (entityName === "attributes") {
+        const attribute = froca.attributes[entityId];
+        return attribute && {
+            attributeId: attribute.attributeId, noteId: attribute.noteId, type: attribute.type,
+            name: attribute.name, value: attribute.value, position: attribute.position,
+            isInheritable: attribute.isInheritable
+        } satisfies FAttributeRow;
+    } else if (entityName === "attachments") {
+        const attachment = froca.attachments[entityId];
+        return attachment && {
+            attachmentId: attachment.attachmentId, ownerId: attachment.ownerId,
+            role: attachment.role, mime: attachment.mime, title: attachment.title,
+            utcDateModified: attachment.utcDateModified,
+            utcDateScheduledForErasureSince: attachment.utcDateScheduledForErasureSince,
+            contentLength: attachment.contentLength
+        } satisfies AttachmentRow;
+    }
+    return undefined;
+}
+
+/**
+ * Returns the notes whose image might have changed: a note's image is its content or one of its
+ * attachments, such as `canvas-export.svg`. An erased attachment arrives without its row.
+ */
+function getImageNoteIds(entityChanges: EntityChange[]) {
+    const noteIds: string[] = [];
+    for (const ec of entityChanges) {
+        if (ec.entityName === "notes") {
+            noteIds.push(ec.entityId);
+        } else if (ec.entityName === "attachments") {
+            const ownerId = (ec.entity as FAttachmentRow | undefined)?.ownerId;
+            if (ownerId) {
+                noteIds.push(ownerId);
+            }
+        }
+    }
+    return noteIds;
 }
 
 export default {

@@ -1,4 +1,4 @@
-import { attributes, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 
 import config from "./config.js";
@@ -44,7 +44,14 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         // TriliumNextTODO: look into potentially creating an getOptionBoolOrNull instead
         const hasRedirectBareDomain = options.getOptionOrNull("redirectBareDomain") === "true";
 
-        if (hasRedirectBareDomain) {
+        // The redirect targets only a bare document request for the root. The login
+        // screen is served by the SPA at the root too, so an explicit login navigation
+        // (GET /login redirects here with a `?login` marker) and SPA sub-requests such
+        // as /bootstrap must fall through to it — otherwise enabling the option locks
+        // the owner out of the instance entirely (#10552).
+        const isBareRootRequest = req.path === "/" && req.query.login === undefined;
+
+        if (hasRedirectBareDomain && isBareRootRequest) {
             // Only redirect to the share page when a share root is actually configured.
             // Otherwise (e.g. the owner's session expired before they set one up) fall back
             // to the login screen rather than stranding the user on a 404. See #7869.
@@ -68,7 +75,23 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
             next();
             return;
         }
-        res.redirect('login');
+        // SSO is enabled but the OIDC session has lapsed while the Trilium session still
+        // carries loggedIn:true — e.g. express-openid-connect's absolute-duration cap
+        // (default 7d) expired on a still-live, rolling trilium.sid (default 21d). Redirecting
+        // to /login here loops forever: loginPage 302s straight back to "." (the SPA root),
+        // which lands right back in this branch (#10589 follow-up). Treat the session as logged
+        // out and serve the SPA, which renders the login screen from the bootstrap
+        // loggedIn:false payload. The API stays protected separately via checkApiAuth.
+        //
+        // Persist the flip explicitly before handing off: express-session's implicit save
+        // only runs on res.end(), so with an async store the SPA's immediately-following
+        // /bootstrap sub-request could otherwise read the still-loggedIn session and bounce
+        // back through this branch instead of seeing loggedIn:false.
+        req.session.loggedIn = false;
+        req.session.save((err) => {
+            if (err) console.error("Error saving session after OIDC session lapse:", err);
+            next();
+        });
         return;
     } else {
         next();
@@ -85,10 +108,39 @@ export function refreshAuth() {
     noAuthentication = (config.General && config.General.noAuthentication === true);
 }
 
+/**
+ * Whether an uninitialized instance may let this request through unauthenticated.
+ *
+ * The bypass below exists because an instance with no database has nobody to authenticate and
+ * nothing worth protecting. An instance sitting in the setup wizard with a knowledge base behind it
+ * has both: the database is attached, and every route that reaches it through SQL rather than
+ * through becca works exactly as it would on a running instance. Taking a backup of it and
+ * downloading that backup are two such routes.
+ *
+ * So for the length of that window the bypass is conditional on the wizard's own token instead of
+ * being granted outright. The exemptions are the ones `checkSetupAuth` makes, for the same reasons.
+ */
+function mayPassAsUninitialized(req: Request): boolean {
+    if (sqlInit.isDbInitialized()) {
+        return false;
+    }
+    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+        return true;
+    }
+
+    return isSetupAuthorized(readSetupAuthToken(req));
+}
+
+function readSetupAuthToken(req: Request): string | undefined {
+    const token = req.headers["trilium-setup-auth"];
+
+    return typeof token === "string" ? token : undefined;
+}
+
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
-    if (!sqlInit.isDbInitialized()) {
+    if (mayPassAsUninitialized(req)) {
         return next();
     }
 
@@ -101,7 +153,7 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
 }
 
 function checkApiAuth(req: Request, res: Response, next: NextFunction) {
-    if (!sqlInit.isDbInitialized()) {
+    if (mayPassAsUninitialized(req)) {
         return next();
     }
 
@@ -154,6 +206,31 @@ function checkAppNotInitialized(req: Request, res: Response, next: NextFunction)
     }
 }
 
+/**
+ * Guards the setup routes that could replace or erase a knowledge base sitting behind the wizard.
+ *
+ * The rest of the authentication in this file stands down while the database is uninitialized, which
+ * is exactly what an instance in setup mode reports, so nothing else here covers these routes. See
+ * `setup_auth` in core for why the session cannot be used and what is used instead.
+ *
+ * Three ways past it, all of them cases where there is nothing to guard against: an instance with no
+ * knowledge base behind the wizard, which is the ordinary first run; the desktop's own renderer,
+ * which reaches the server over the custom protocol and is the application itself; and an instance
+ * configured for no authentication, which has already said it trusts whoever can reach it.
+ */
+function checkSetupAuth(req: Request, res: Response, next: NextFunction) {
+    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+        return next();
+    }
+
+    if (!isSetupAuthorized(readSetupAuthToken(req))) {
+        reject(req, res, "The existing knowledge base has not been unlocked.");
+        return;
+    }
+
+    next();
+}
+
 function checkEtapiToken(req: Request, res: Response, next: NextFunction) {
     if (etapiTokenService.isValidAuthHeader(req.headers.authorization)) {
         next();
@@ -190,9 +267,23 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
     const password = colonIndex === -1 ? "" : auth.substr(colonIndex + 1);
     // username is ignored
 
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+    // Checked before the password so that the answer says nothing about the password.
+    const totpToken = req.headers["trilium-totp"];
+    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
+        res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
+        getLog().warn(`Missing TOTP token from ${req.ip}, rejecting.`);
+        return;
+    }
+
+    // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
+    // `verifyRecoveryCode()` write options when they accept a code.
+    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
-        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
+    } else if (failedFactor === "totp") {
+        res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
+        getLog().warn(`Wrong TOTP token from ${req.ip}, rejecting.`);
     } else {
         next();
     }
@@ -210,12 +301,12 @@ export type LoginFactor = "password" | "totp";
  * wrong password — silently wasting one of the user's limited codes. Password-first guarantees a
  * recovery code is only ever consumed once the rest of the login is known to succeed.
  */
-export async function verifyLoginCredentials(password: string, totpToken: string): Promise<LoginFactor | null> {
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+export async function verifyLoginCredentials(password: unknown, totpToken: unknown): Promise<LoginFactor | null> {
+    if (typeof password !== "string" || !(await passwordEncryptionService.verifyPassword(password))) {
         return "password";
     }
 
-    if (totp.isTotpEnabled() && !verifyTOTP(totpToken)) {
+    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !verifyTOTP(totpToken))) {
         return "totp";
     }
 
@@ -223,7 +314,7 @@ export async function verifyLoginCredentials(password: string, totpToken: string
 }
 
 function verifyTOTP(submittedTotpToken: string) {
-    if (totp.validateTOTP(submittedTotpToken)) {
+    if (totp.verifyTOTP(submittedTotpToken)) {
         return true;
     }
 
@@ -237,6 +328,7 @@ export default {
     checkPasswordSet,
     checkPasswordNotSet,
     checkAppNotInitialized,
+    checkSetupAuth,
     checkApiAuthOrElectron,
     checkEtapiToken,
     checkCredentials

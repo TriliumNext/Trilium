@@ -1,48 +1,28 @@
+import { getMermaidConfig as getSharedMermaidConfig, parseMermaidTheme } from "@triliumnext/commons";
 import type { MermaidConfig } from "mermaid";
-import type { Mermaid } from "mermaid";
-
-let elkLoaded = false;
 
 export function getMermaidConfig(): MermaidConfig {
     const documentStyle = window.getComputedStyle(document.documentElement);
-    const mermaidTheme = documentStyle.getPropertyValue("--mermaid-theme") as "default";
-
-    return {
-        theme: mermaidTheme.trim() as "default",
-        securityLevel: "antiscript",
-        flowchart: { useMaxWidth: false },
-        sequence: { useMaxWidth: false },
-        gantt: { useMaxWidth: false },
-        class: { useMaxWidth: false },
-        state: { useMaxWidth: false },
-        pie: { useMaxWidth: true },
-        journey: { useMaxWidth: false },
-        gitGraph: { useMaxWidth: false }
-    };
+    return getSharedMermaidConfig(parseMermaidTheme(documentStyle.getPropertyValue("--mermaid-theme")));
 }
 
-/**
- * Determines whether the ELK extension of Mermaid.js needs to be loaded (which is a relatively large library), based on the
- * front-matter of the diagram and loads the library if needed.
- *
- * <p>
- * If the library has already been loaded or the diagram does not require it, the method will exit immediately.
- *
- * @param mermaidContent the plain text of the mermaid diagram, potentially including a frontmatter.
- */
-export async function loadElkIfNeeded(mermaid: Mermaid, mermaidContent: string) {
-    if (elkLoaded) {
-        // Exit immediately since the ELK library is already loaded.
-        return;
+let renderId = 0;
+
+/** Renders the Mermaid `source` to an SVG string, or `""` for empty source. Throws on bad syntax. */
+export async function renderMermaidSvg(source: string) {
+    if (!source.trim()) {
+        return "";
     }
 
-    const parsedContent = await mermaid.parse(mermaidContent, {
-        suppressErrors: true
+    const mermaid = (await import("mermaid")).default;
+    mermaid.initialize({
+        startOnLoad: false,
+        ...(getMermaidConfig() as any),
     });
-    if (parsedContent && parsedContent.config?.layout === "elk") {
-        elkLoaded = true;
-        mermaid.registerLayoutLoaders((await import("@mermaid-js/layout-elk")).default);
-    }
+
+    renderId++;
+    const { svg } = await mermaid.render(`mermaid-graph-${renderId}`, source);
+    return postprocessMermaidSvg(svg);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
-import { getLanguageStats } from "./utils";
+import { getLanguageStats } from "./utils.mts";
 
 const scriptDir = __dirname;
 const rootDir = join(scriptDir, "../..");

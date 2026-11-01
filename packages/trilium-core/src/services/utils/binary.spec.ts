@@ -136,6 +136,27 @@ describe("binary utils", () => {
             const bytes = new Uint8Array([0, 255, 128, 1, 254]);
             expect(Array.from(decodeBase64(encodeBase64(bytes)))).toEqual([0, 255, 128, 1, 254]);
         });
+
+        it("matches the RFC 4648 §10 vectors", () => {
+            expect(encodeBase64("")).toBe("");
+            expect(encodeBase64("f")).toBe("Zg==");
+            expect(encodeBase64("fo")).toBe("Zm8=");
+            expect(encodeBase64("foob")).toBe("Zm9vYg==");
+            expect(encodeBase64("fooba")).toBe("Zm9vYmE=");
+            expect(encodeBase64("foobar")).toBe("Zm9vYmFy");
+        });
+
+        it("round-trips every byte value 0..255 through the active provider", () => {
+            const bytes = new Uint8Array(256);
+            for (let i = 0; i < 256; i++) bytes[i] = i;
+            expect(Array.from(decodeBase64(encodeBase64(bytes)))).toEqual(Array.from(bytes));
+        });
+
+        it("round-trips a large buffer", () => {
+            const bytes = new Uint8Array(100_000);
+            for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 31 + 7) & 0xff;
+            expect(Array.from(decodeBase64(encodeBase64(bytes)))).toEqual(Array.from(bytes));
+        });
     });
 
     describe("stripBom", () => {

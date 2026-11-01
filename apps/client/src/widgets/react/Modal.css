@@ -1,0 +1,80 @@
+/**
+ * Bootstrap scrolls a modal by capping `.modal-content`'s height and letting the
+ * `.modal-body` flex item shrink inside it. A modal given `onSubmit` wraps the
+ * body and footer in a <form>, which lands between the two: a block-level form
+ * neither shrinks (its automatic minimum size is its content) nor passes the flex
+ * sizing on, so the body keeps its full height, `overflow-y: auto` finds nothing
+ * to scroll, and `.modal-content`'s own `overflow: hidden` simply clips the
+ * overflowing content — footer included.
+ *
+ * Making the form a flex column that may shrink puts it back in the chain.
+ * `overflow` is deliberately left visible so footer dropdowns still escape.
+ */
+.modal-dialog-scrollable > .modal-content > form,
+.modal-dialog-scrollable > .modal-content > .modal-main > form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+@supports (animation-timeline: scroll()) {
+    .modal-dialog-scrollable .modal-body {
+        --modal-body-fade: 12px;
+        /* A mask cannot be faded in, so it is slid down from above the body as it scrolls. */
+        mask-image: linear-gradient(to bottom, transparent, black var(--modal-body-fade));
+        mask-repeat: no-repeat;
+        mask-size: 100% calc(100% + var(--modal-body-fade));
+        mask-position: 0 calc(-1 * var(--modal-body-fade));
+        animation: modal-body-fade linear both;
+        animation-timeline: scroll(self);
+        animation-range: 0 var(--modal-body-fade);
+    }
+}
+
+@keyframes modal-body-fade {
+    to {
+        mask-position: 0 0;
+    }
+}
+
+.script-modal-host {
+    display: contents;
+}
+
+@media (max-width: 991px) {
+    /* Bootstrap times the hide on the `.modal` element's first transition duration, so it matches
+       the dialog's. */
+    body.mobile .modal.fade {
+        opacity: 1;
+        transition: background-color 200ms ease-in;
+
+        /* `translate` rather than `transform`, which each dialog sets for its horizontal placement. */
+        .modal-dialog {
+            translate: 0 calc(100% + var(--mobile-sheet-margin, 0px));
+            transition: translate 200ms cubic-bezier(0.4, 0, 1, 1);
+        }
+
+        &.show {
+            transition-duration: 300ms;
+            transition-timing-function: ease-out;
+
+            .modal-dialog {
+                translate: none;
+                transition: translate 300ms cubic-bezier(0.32, 0.72, 0, 1);
+            }
+        }
+    }
+}
+
+@media (max-width: 991px) and (prefers-reduced-motion: reduce) {
+    body.mobile .modal.fade .modal-dialog,
+    body.mobile .modal.fade.show .modal-dialog {
+        transition: none;
+    }
+}
+
+/* Modal header */
+.modal .modal-header {
+    --bs-modal-header-border-width: 0;
+    user-select: none;
+}

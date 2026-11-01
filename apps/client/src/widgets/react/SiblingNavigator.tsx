@@ -1,7 +1,7 @@
 import "./SiblingNavigator.css";
 
 import type { RefObject } from "preact";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
@@ -9,7 +9,8 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
 import type LoadResults from "../../services/load_results";
-import { useStaticTooltip, useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks";
+import OverlayControlGroup, { OverlayControlButton } from "./OverlayControlGroup";
 import { codeToSiblingDirection, getParentFromNotePath, getSiblingNavigation, isInteractiveTarget, isTextEntryTarget, sameRoleAttachments } from "./sibling_navigation";
 
 const NO_KEYS: readonly string[] = [];
@@ -73,9 +74,6 @@ export interface SiblingNavigationProvider {
  * from the caller-provided i18n keys. Renders nothing when there is no sibling to move between.
  */
 export default function SiblingNavigator({ note, noteContext, viewScope, siblingType, previousTooltipI18nKey, nextTooltipI18nKey, keyboardTarget, extraPreviousKeys = NO_KEYS, extraNextKeys = NO_KEYS }: SiblingNavigatorProps) {
-    const previousRef = useRef<HTMLButtonElement>(null);
-    const nextRef = useRef<HTMLButtonElement>(null);
-
     // Viewing a single attachment → cycle the note's attachments; otherwise its note siblings.
     const provider = viewScope?.attachmentId
         ? attachmentSiblingProvider(note, noteContext, viewScope)
@@ -83,34 +81,28 @@ export default function SiblingNavigator({ note, noteContext, viewScope, sibling
     const navigation = useSiblingNavigation(provider);
     useSiblingKeyboard(navigation, noteContext, keyboardTarget, extraPreviousKeys, extraNextKeys);
 
-    const previousText = navigation ? t(previousTooltipI18nKey, { title: navigation.previousTitle }) : "";
-    const nextText = navigation ? t(nextTooltipI18nKey, { title: navigation.nextTitle }) : "";
-    // Memoize so the bootstrap tooltip is only recreated when the target's name actually changes.
-    const previousConfig = useMemo(() => ({ title: previousText, placement: "bottom" as const }), [ previousText ]);
-    const nextConfig = useMemo(() => ({ title: nextText, placement: "bottom" as const }), [ nextText ]);
-    useStaticTooltip(previousRef, previousConfig);
-    useStaticTooltip(nextRef, nextConfig);
-
     if (!navigation) return null;
 
     return (
-        <div className="sibling-navigator">
-            <button
-                ref={previousRef}
-                type="button"
-                className="icon-action bx bx-chevron-left"
-                aria-label={previousText}
+        <OverlayControlGroup className="sibling-navigator" placement="bottom-start">
+            <OverlayControlButton
+                title={t(previousTooltipI18nKey, { title: navigation.previousTitle })}
+                icon="bx-chevron-left"
                 onClick={() => navigation.navigatePrevious()}
             />
-            <span className="sibling-navigator-index">{navigation.index}/{navigation.total}</span>
-            <button
-                ref={nextRef}
-                type="button"
-                className="icon-action bx bx-chevron-right"
-                aria-label={nextText}
+
+            <OverlayControlButton
+                text={`${navigation.index}/${navigation.total}`}
+                className="sibling-navigator-index"
+                disabled
+            />
+
+            <OverlayControlButton
+                title={t(nextTooltipI18nKey, { title: navigation.nextTitle })}
+                icon="bx-chevron-right"
                 onClick={() => navigation.navigateNext()}
             />
-        </div>
+        </OverlayControlGroup>
     );
 }
 
@@ -196,18 +188,23 @@ export function noteSiblingProvider(note: FNote | undefined, noteContext: NoteCo
     };
 }
 
-/** Iterator over the note's same-role attachments, with the role taken from the currently-shown attachment. */
-function attachmentSiblingProvider(note: FNote | undefined, noteContext: NoteContext | undefined, viewScope: ViewScope): SiblingNavigationProvider {
+/**
+ * Iterator over the note's same-role attachments, with the role taken from the currently-shown attachment.
+ * `mimePrefix` narrows it further, for a host that can only show one kind — a media player cycles the
+ * owner's `audio/` attachments rather than every `file`-role one.
+ */
+export function attachmentSiblingProvider(note: FNote | undefined, noteContext: NoteContext | undefined, viewScope: ViewScope, filter: { mimePrefix?: string } = {}): SiblingNavigationProvider {
     const notePath = noteContext?.notePath;
     const attachmentId = viewScope.attachmentId;
+    const { mimePrefix } = filter;
     // Key on the role rather than the id, so cycling same-role attachments doesn't re-fetch the list.
     const role = note?.attachments?.find((attachment) => attachment.attachmentId === attachmentId)?.role;
     return {
         currentId: attachmentId,
-        depsKey: `attachment:${note?.noteId ?? ""}:${role ?? attachmentId ?? ""}`,
+        depsKey: `attachment:${note?.noteId ?? ""}:${role ?? attachmentId ?? ""}:${mimePrefix ?? ""}`,
         loadSiblings: async () => {
             if (!note) return [];
-            return sameRoleAttachments(Array.from(await note.getAttachments()), attachmentId);
+            return sameRoleAttachments(Array.from(await note.getAttachments()), attachmentId, mimePrefix);
         },
         navigateTo: (id) => { if (notePath) void noteContext?.setNote(notePath, { viewScope: { ...viewScope, attachmentId: id } }); },
         shouldRefresh: (loadResults) => !!note && loadResults.getAttachmentRows().some((row) => row.ownerId === note.noteId)

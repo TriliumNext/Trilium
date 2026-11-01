@@ -1,9 +1,12 @@
-import { _getViewData as getViewData, _setModelData as setModelData, ClassicEditor, Essentials, LinkEditing, Paragraph } from "ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    _getModelData as getModelData, _getViewData as getViewData, _setModelData as setModelData,
+    BlockQuote, ClassicEditor, Essentials, Heading, LinkEditing, type ModelElement, Paragraph
+} from "ckeditor5";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
-import ReferenceLink from "./referencelink.js";
+import BlockReference from "./block_reference/block_reference.js";
+import ReferenceLink, { getAttachmentId, getNoteId } from "./referencelink.js";
 
 describe("ReferenceLink", () => {
     let editor: ClassicEditor;
@@ -15,13 +18,13 @@ describe("ReferenceLink", () => {
         getReferenceLinkTitle = vi.fn(async () => "Some title");
         getReferenceLinkTitleSync = vi.fn(() => "Some title");
         loadReferenceLinkTitle = vi.fn(async () => undefined);
-        installGlobMock({
-            getComponentByEl: () => ({ loadReferenceLinkTitle }),
-            getReferenceLinkTitle,
-            getReferenceLinkTitleSync
+        editor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink], {
+            referenceLink: {
+                getTitle: getReferenceLinkTitle,
+                getTitleSync: getReferenceLinkTitleSync,
+                renderTitle: loadReferenceLinkTitle
+            }
         });
-
-        editor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink]);
     });
 
     it("loads the plugin, registers the schema and the command", () => {
@@ -61,6 +64,119 @@ describe("ReferenceLink", () => {
         expect(findReference(editor)).toBeUndefined();
     });
 
+    describe("anchored insertion during the title fetch (#10663)", () => {
+        let resolveTitle: () => void = () => {};
+
+        beforeEach(() => {
+            getReferenceLinkTitle.mockImplementation(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveTitle = resolve;
+                    })
+            );
+        });
+
+        it("inserts at the position captured at execute time even when typing continues during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            // Simulate the user continuing to type while the title fetch is still pending.
+            editor.execute("insertText", { text: " BBB" });
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const data = getModelData(editor.model, { withoutSelection: true });
+            expect(data).toBe('<paragraph>foo<reference href="#root/noteAbc"></reference> BBB</paragraph>');
+
+            // The caret must stay where typing left it, not get yanked back onto the reference.
+            const selection = editor.model.document.selection;
+            const reference = findReference(editor);
+            expect(reference).toBeDefined();
+            if (!reference) {
+                return;
+            }
+            const afterReference = editor.model.createPositionAfter(reference);
+            expect(selection.getFirstPosition()?.isEqual(afterReference)).toBe(false);
+        });
+
+        it("puts the caret after the link when the selection has not moved during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const reference = findReference(editor);
+            expect(reference).toBeDefined();
+            if (!reference) {
+                return;
+            }
+
+            const selection = editor.model.document.selection;
+            expect(selection.isCollapsed).toBe(true);
+            const afterReference = editor.model.createPositionAfter(reference);
+            expect(selection.getFirstPosition()?.isEqual(afterReference)).toBe(true);
+        });
+
+        it("does not insert when the picked context was deleted during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            const root = editor.model.document.getRoot();
+            expect(root).toBeDefined();
+            if (root) {
+                editor.model.change((writer) => {
+                    for (const child of Array.from(root.getChildren())) {
+                        writer.remove(child);
+                    }
+                });
+            }
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(findReference(editor)).toBeUndefined();
+        });
+
+        it("inserts at the position it is given instead of the selection", async () => {
+            setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph) {
+                throw new Error("The paragraph is missing.");
+            }
+
+            editor.execute("referenceLink", {
+                href: "#root/noteAbc", position: editor.model.createPositionAt(paragraph, 0)
+            });
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<paragraph><reference href=\"#root/noteAbc\"></reference>foobar</paragraph>"
+            );
+        });
+    });
+
+    it("titles a reference by its stored title, or else its address, without a host", async () => {
+        const hostless =
+            await createTestEditor([ Essentials, Paragraph, LinkEditing, ReferenceLink ]);
+        setModelData(hostless.model, "<paragraph>"
+            + "<reference href=\"#root/a\" storedTitle=\"Stored\"></reference>"
+            + "<reference href=\"#root/b\"></reference></paragraph>");
+
+        const anchors = hostless.editing.view.getDomRoot()?.querySelectorAll("a.reference-link");
+        expect([ ...anchors ?? [] ].map((anchor) => anchor.textContent))
+            .toEqual([ "Stored", "#root/b" ]);
+    });
+
     it("is enabled where text is allowed and disabled where it is not", () => {
         const command = editor.commands.get("referenceLink");
 
@@ -86,6 +202,7 @@ describe("ReferenceLink", () => {
         const reference = findReference(editor);
         expect(reference).toBeDefined();
         expect(reference?.getAttribute("href")).toBe("#root/noteAbc");
+        expect(reference?.getAttribute("storedTitle")).toBe("Some title");
     });
 
     it("renders the reference as an inline widget in the editing view and loads its title", () => {
@@ -95,23 +212,274 @@ describe("ReferenceLink", () => {
         expect(view).toContain("reference-link");
         expect(view).toContain("ck-widget");
 
-        // Force the UIElement's render callback to run so loadReferenceLinkTitle is invoked.
+        // Force the UIElement's render callback to run so `renderTitle` is invoked.
         const domRoot = editor.editing.view.getDomRoot();
         const anchor = domRoot?.querySelector("a.reference-link");
         expect(anchor).not.toBeNull();
         expect(loadReferenceLinkTitle).toHaveBeenCalledTimes(1);
         expect(loadReferenceLinkTitle.mock.calls[0]?.[1]).toBe("#root/noteAbc");
+        expect(loadReferenceLinkTitle.mock.calls[0]?.[2]).toBe("Some title");
+    });
+
+    it("shows the title it reads itself without a host to render it", () => {
+        editor.config.set("referenceLink", { renderTitle: undefined });
+        getReferenceLinkTitleSync.mockReturnValue("Synced title");
+
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc">Stored</a></p>');
+
+        const anchor = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+        expect(anchor?.textContent).toBe("Synced title");
+        expect(getReferenceLinkTitleSync)
+            .toHaveBeenCalledWith("#root/noteAbc", "Stored", undefined);
+        expect(loadReferenceLinkTitle).not.toHaveBeenCalled();
+    });
+
+    it("shows a placeholder's file name, then redraws it as a titled link once uploaded", () => {
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        const reference = editor.model.change((writer) => {
+            const element = writer.createElement("reference", {
+                href: "",
+                uploadId: "u1",
+                uploadFileName: "report.pdf"
+            });
+            editor.model.insertContent(element);
+            return element;
+        });
+        const findAnchor = () =>
+            editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+
+        expect(findAnchor()?.textContent).toBe("report.pdf");
+        expect(findAnchor()?.querySelector(".bx-spin")).not.toBeNull();
+        expect(loadReferenceLinkTitle).not.toHaveBeenCalled();
+
+        editor.model.change((writer) => {
+            writer.setAttribute("href", "#root/abc", reference);
+            writer.removeAttribute("uploadFileName", reference);
+        });
+
+        expect(findAnchor()?.getAttribute("href")).toBe("#root/abc");
+        expect(findAnchor()?.querySelector(".bx-spin")).toBeNull();
+        expect(loadReferenceLinkTitle)
+            .toHaveBeenCalledWith(expect.anything(), "#root/abc", undefined, undefined);
+    });
+
+    it("redraws the links to a changed attachment and removes those to a deleted one", () => {
+        const attachmentHref = (id: string) =>
+            `#root/owner?viewMode=attachments&amp;attachmentId=${id}`;
+        editor.setData(
+            `<p><a class="reference-link" href="${attachmentHref("renamed")}">a</a></p>` +
+            `<p><a class="reference-link" href="${attachmentHref("deleted")}">b</a></p>` +
+            "<p><a class=\"reference-link\" href=\"#root/noteAbc\">c</a></p>"
+        );
+        loadReferenceLinkTitle.mockClear();
+
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks([
+            { attachmentId: "renamed", isDeleted: false },
+            { attachmentId: "deleted", isDeleted: true }
+        ]);
+
+        const redrawnHrefs = new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href));
+        const renamedHref = "#root/owner?viewMode=attachments&attachmentId=renamed";
+        expect([ ...redrawnHrefs ]).toEqual([ renamedHref ]);
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            `<paragraph><reference href="${renamedHref}" storedTitle="a"></reference></paragraph>` +
+            "<paragraph></paragraph>" +
+            "<paragraph><reference href=\"#root/noteAbc\" storedTitle=\"c\"></reference></paragraph>"
+        );
+        // The removal records a change made elsewhere, so undo cannot bring the link back.
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+    });
+
+    it("redraws the links to a renamed attachment without changing the document", () => {
+        const href = "#root/owner?viewMode=attachments&attachmentId=renamed";
+        editor.setData(
+            "<p><a class=\"reference-link\" "
+            + "href=\"#root/owner?viewMode=attachments&amp;attachmentId=renamed\">a</a></p>"
+        );
+        const before = getModelData(editor.model);
+        loadReferenceLinkTitle.mockClear();
+
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks([
+            { attachmentId: "renamed", isDeleted: false }
+        ]);
+
+        expect(loadReferenceLinkTitle)
+            .toHaveBeenCalledWith(expect.anything(), href, "a", undefined);
+        expect(getModelData(editor.model)).toBe(before);
+    });
+
+    it("redraws the links to a renamed note without changing the document, and only those", () => {
+        const titles: Record<string, string> = {
+            "#root/renamed": "Old",
+            "#root/parent/renamed": "Old",
+            "#root/unchanged": "Same",
+            "#root/unlisted": "Old"
+        };
+        getReferenceLinkTitleSync.mockImplementation((href: string) => titles[href]);
+        editor.setData(
+            "<p><a class=\"reference-link\" href=\"#root/renamed\">a</a>"
+            + "<a class=\"reference-link\" href=\"#root/parent/renamed\">b</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unchanged\">c</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/unlisted\">d</a></p>"
+            + "<p><a href=\"#root/renamed\">e</a></p>"
+        );
+        // Anchors that only look like references: a plain link to the renamed note, and one
+        // without an address.
+        const domRoot = editor.editing.view.getDomRoot();
+        domRoot?.querySelector("a:not(.reference-link)")?.classList.add("reference-link");
+        domRoot?.appendChild(document.createElement("a")).classList.add("reference-link");
+        const before = getModelData(editor.model);
+        const references = editor.plugins.get("ReferenceLinkEditing");
+        const redrawnHrefs = () =>
+            [ ...new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href)) ];
+
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        references.refreshNoteLinks([]);
+        expect(redrawnHrefs()).toEqual([]);
+
+        titles["#root/renamed"] = titles["#root/parent/renamed"] = titles["#root/unlisted"] = "New";
+        references.refreshNoteLinks([ "renamed", "unchanged" ]);
+        expect(redrawnHrefs()).toEqual([ "#root/renamed", "#root/parent/renamed" ]);
+        expect(getModelData(editor.model)).toBe(before);
+
+        // Drawn with the new title, so the next change of the note leaves them alone.
+        loadReferenceLinkTitle.mockClear();
+        references.refreshNoteLinks([ "renamed" ]);
+        expect(redrawnHrefs()).toEqual([]);
+    });
+
+    describe("links to blocks of the note in the editor", () => {
+        const LINKS = "<p><a class=\"reference-link\" href=\"#root/abc?block=h\">a</a>"
+            + "<a class=\"reference-link\" href=\"#root/parent/abc?block=p:h\">b</a>"
+            + "<a class=\"reference-link\" href=\"#root/def?block=h\">c</a>"
+            + "<a class=\"reference-link\" href=\"#root/abc\">d</a></p>";
+        const OWN_LINKS = [ "#root/abc?block=h", "#root/parent/abc?block=p:h" ];
+
+        /** An editor on the note `abc`, with or without the block ids of `BlockReference`. */
+        function createNoteEditor(plugins = [ BlockQuote, Heading, BlockReference ]) {
+            const allPlugins = [ Essentials, Paragraph, LinkEditing, ReferenceLink, ...plugins ];
+            return createTestEditor(allPlugins, {
+                getNoteId: () => "abc",
+                referenceLink: {
+                    getTitle: getReferenceLinkTitle,
+                    getTitleSync: getReferenceLinkTitleSync,
+                    renderTitle: loadReferenceLinkTitle
+                }
+            });
+        }
+
+        it("gives the host the content of the editor to read their text from", async () => {
+            const noteEditor = await createNoteEditor([]);
+            const domRoot = noteEditor.editing.view.getDomRoot();
+            const expected = [ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ],
+                [ "#root/def?block=h", false ], [ "#root/abc", false ] ];
+
+            noteEditor.setData(LINKS);
+            expect(loadReferenceLinkTitle.mock.calls.map(([ , href, , content ]) =>
+                [ href, content === domRoot ])).toStrictEqual(expected);
+            getReferenceLinkTitleSync.mockClear();
+            noteEditor.getData();
+            expect(getReferenceLinkTitleSync.mock.calls.map(([ href, , content ]) =>
+                [ href, content === domRoot ])).toStrictEqual(expected);
+
+            // An editor that does not name its note has no links to blocks of its own.
+            loadReferenceLinkTitle.mockClear();
+            editor.setData(LINKS);
+            expect(loadReferenceLinkTitle.mock.calls.map((args) => args[3]))
+                .toStrictEqual([ undefined, undefined, undefined, undefined ]);
+        });
+
+        it("redraws the links to blocks whose text changed, but not the document", async () => {
+            const noteEditor = await createNoteEditor();
+            vi.useFakeTimers();
+            onTestFinished(() => {
+                vi.useRealTimers();
+            });
+            noteEditor.setData("<h2 data-trilium-block-id=\"h\">Intro</h2>"
+                + "<p data-trilium-block-id=\"p\">Text</p>" + LINKS
+                + "<blockquote><p>Quote</p></blockquote>");
+            const domRoot = noteEditor.editing.view.getDomRoot();
+            // An anchor that only looks like a reference.
+            domRoot?.appendChild(document.createElement("a")).classList.add("reference-link");
+            vi.runAllTimers();
+            const dataChanges = vi.fn();
+            noteEditor.model.document.on("change:data", dataChanges);
+            const getBlock = (index: number) =>
+                noteEditor.model.document.getRoot()?.getChild(index) as ModelElement;
+            const type = (index: number) => {
+                noteEditor.model.change((writer) => writer.setSelection(getBlock(index), "end"));
+                noteEditor.execute("insertText", { text: "!" });
+            };
+            // The href of each title drawn again, and whether it is the title of that link,
+            // drawn from the content of the editor.
+            const redrawn = () => {
+                const calls = loadReferenceLinkTitle.mock.calls.map(([ title, href, , dom ]) => {
+                    const linkTitle = domRoot?.querySelector(`a[href="${href}"] > span`);
+                    return [ href, title === linkTitle && dom === domRoot ];
+                });
+                loadReferenceLinkTitle.mockClear();
+                return calls;
+            };
+
+            loadReferenceLinkTitle.mockClear();
+            type(0);
+            expect(redrawn()).toStrictEqual([]);
+            vi.advanceTimersByTime(300);
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ] ]);
+
+            type(1);
+            vi.runAllTimers();
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[1], true ] ]);
+
+            noteEditor.model.change((writer) => writer.remove(getBlock(3)));
+            vi.runAllTimers();
+            expect(redrawn()).toStrictEqual([ [ OWN_LINKS[0], true ], [ OWN_LINKS[1], true ] ]);
+            expect(dataChanges).toHaveBeenCalledTimes(3);
+
+            // A change of the note redraws the other links only.
+            getReferenceLinkTitleSync.mockReturnValue("Renamed");
+            noteEditor.plugins.get("ReferenceLinkEditing").refreshNoteLinks([ "abc", "def" ]);
+            expect(new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href)))
+                .toStrictEqual(new Set([ "#root/def?block=h", "#root/abc" ]));
+        });
+    });
+
+    it("reads the attachment a link points to, and none from a note link or a missing href", () => {
+        expect(getAttachmentId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("att1");
+        expect(getAttachmentId("#root/noteAbc")).toBeNull();
+        expect(getAttachmentId(undefined)).toBeNull();
+    });
+
+    it("reads the note a link points to, or the attachment's owner, from its note path", () => {
+        expect(getNoteId("#root/parentAbc/noteAbc")).toBe("noteAbc");
+        expect(getNoteId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("owner");
+        expect(getNoteId("#root")).toBe("root");
+        expect(getNoteId("")).toBeNull();
+        expect(getNoteId(undefined)).toBeNull();
     });
 
     it("dataDowncasts a reference back to an anchor, resolving the title synchronously", () => {
-        editor.setData('<p><a class="reference-link" href="#root/noteAbc">old</a></p>');
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc"><span>old</span></a></p>');
 
         const data = editor.getData();
 
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc");
+        expect(getReferenceLinkTitleSync)
+            .toHaveBeenCalledWith("#root/noteAbc", "old", undefined);
         expect(data).toContain('class="reference-link"');
         expect(data).toContain('href="#root/noteAbc"');
         expect(data).toContain("Some title");
+    });
+
+    it("titles a reference with its stored title, or else its href, without referenceLink", async () => {
+        const plainEditor = await createTestEditor([Essentials, Paragraph, LinkEditing, ReferenceLink]);
+
+        plainEditor.setData('<p><a class="reference-link" href="#root/noteAbc">Stored</a></p>');
+        expect(plainEditor.getData()).toContain(">Stored</a>");
+
+        setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
+        plainEditor.execute("referenceLink", { href: "#root/noteNew" });
+        await vi.waitFor(() => expect(plainEditor.getData()).toContain('href="#root/noteNew">#root/noteNew</a>'));
     });
 
     it("maps a view position inside the reference widget to a model position outside of it", () => {
@@ -151,6 +519,117 @@ describe("ReferenceLink", () => {
         expect(openSpy).not.toHaveBeenCalled();
 
         openSpy.mockRestore();
+    });
+
+    it("replaces the reference it is given with one to the new href, in one undo step", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/noteNew" storedTitle="Some title"></reference>b</paragraph>');
+
+        editor.execute("undo");
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/gone" storedTitle="Gone"></reference>b</paragraph>');
+    });
+
+    it("saves the last title it saved for a link whose note goes missing while the editor is open", () => {
+        let liveTitle: string | undefined = "Renamed";
+        getReferenceLinkTitleSync.mockImplementation((_href: string, storedTitle?: string) =>
+            liveTitle ?? storedTitle ?? "[missing note]");
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc">Loaded</a></p>');
+
+        expect(editor.getData()).toContain(">Renamed</a>");
+
+        liveTitle = undefined;
+
+        expect(editor.getData()).toContain(">Renamed</a>");
+    });
+
+    it("asks to fix a reference to a missing note when it is clicked, and not one to a note", () => {
+        const fixReferenceLink = vi.fn();
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement, href: string) => {
+            el.classList.toggle("reference-link-missing", href === "#root/gone");
+        });
+        editor.config.set("referenceLink", { fixLink: fixReferenceLink });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/noteAbc">Fine</a>'
+            + '<a class="reference-link" href="#root/gone">Gone</a></p>'
+        );
+        const titles = editor.editing.view.getDomRoot()?.querySelectorAll("a.reference-link > span");
+        const click = (domTarget: Element | undefined) => editor.editing.view.document.fire("click", {
+            domTarget,
+            domEvent: {},
+            preventDefault: () => {}
+        });
+
+        click(titles?.[0]);
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(titles?.[1]);
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("Gone");
+
+        const execute = vi.spyOn(editor, "execute");
+        fixReferenceLink.mock.calls[0]?.[1]("#root/noteNew");
+        expect(execute).toHaveBeenCalledWith("referenceLink", {
+            href: "#root/noteNew",
+            replace: findReference(editor)?.nextSibling
+        });
+    });
+
+    it("asks with no title for a missing reference without one, and not for what only looks like one", () => {
+        const fixReferenceLink = vi.fn();
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement) => {
+            el.classList.add("reference-link-missing");
+        });
+        editor.config.set("referenceLink", { fixLink: fixReferenceLink });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/gone"></a><a href="https://x.org">x</a></p>'
+        );
+        const domRoot = editor.editing.view.getDomRoot();
+        const hyperlink = domRoot?.querySelector("a:not(.reference-link)");
+        const detached = document.createElement("a");
+        for (const anchor of [ hyperlink, detached ]) {
+            anchor?.classList.add("reference-link");
+            anchor?.append(Object.assign(document.createElement("span"), {
+                className: "reference-link-missing"
+            }));
+        }
+        const click = (domTarget: Element | null | undefined) =>
+            editor.editing.view.document.fire("click", {
+                domTarget,
+                domEvent: {},
+                preventDefault: () => {}
+            });
+
+        click(hyperlink?.querySelector("span"));
+        click(detached.querySelector("span"));
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(domRoot?.querySelector("a.reference-link > span"));
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("");
+    });
+
+    it("does not replace a reference deleted while the title of its replacement loads", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        editor.model.change((writer) => {
+            const reference = findReference(editor);
+            if (reference) {
+                writer.remove(reference);
+            }
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe("<paragraph>ab</paragraph>");
     });
 });
 

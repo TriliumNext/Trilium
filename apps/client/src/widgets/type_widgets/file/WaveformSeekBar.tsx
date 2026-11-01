@@ -26,7 +26,7 @@ const KEYBOARD_STEP = 0.05;
  * placeholder band; when {@link peaks} arrives the bars animate from flat to their real heights. Scrubbing works
  * throughout (it only needs the media element's duration), by mouse, touch (Pointer Events), or keyboard.
  */
-export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>; peaks: number[] | null }) {
+export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>; peaks: number[] | null }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);

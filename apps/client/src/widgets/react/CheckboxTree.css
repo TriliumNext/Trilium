@@ -1,0 +1,68 @@
+ul.checkbox-tree,
+.checkbox-tree ul.checkbox-tree-level {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+.checkbox-tree {
+    /* Nested levels indent past the parent's caret and pick up a guide line. */
+    .checkbox-tree-container > .checkbox-tree-level {
+        margin-top: 0.25em;
+        margin-inline-start: 0.6em;
+        padding-inline-start: 1em;
+        border-inline-start: 1px solid var(--main-border-color);
+    }
+
+    .checkbox-tree-row {
+        display: flex;
+        align-items: center;
+        gap: 0.25em;
+
+        .form-checkbox {
+            min-width: 0;
+        }
+    }
+
+    .checkbox-tree-caret {
+        flex-shrink: 0;
+        width: 1.5em;
+        /* Center the icon glyph itself: without this the button lays the oversized icon out on the
+           text baseline, leaving the chevron visibly high against the checkbox row. */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        line-height: 1;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--main-text-color);
+        cursor: pointer;
+
+        .arrow {
+            font-size: 1.2em;
+            line-height: 1;
+            transition: transform 150ms ease-in;
+
+            &.expanded {
+                transform: rotate(90deg);
+            }
+        }
+    }
+
+    /* Leaves have no caret; keep their checkboxes aligned with sibling containers'. */
+    .checkbox-tree-leaf {
+        padding-inline-start: calc(1.5em + 0.25em);
+    }
+
+    .checkbox-tree-count {
+        flex-shrink: 0;
+        color: var(--muted-text-color);
+        border: 1px solid var(--main-border-color);
+        font-weight: normal;
+    }
+}

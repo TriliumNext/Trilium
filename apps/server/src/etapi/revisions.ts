@@ -135,11 +135,14 @@ function register(router: Router) {
     eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/revisions", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
+        // Protected revisions are left out: GET /etapi/revisions/:revisionId refuses them with
+        // REVISION_IS_PROTECTED, and `description` is stored unencrypted, so listing them here
+        // would publish what the single read withholds.
         const revisions = becca.getRevisionsFromQuery(
             `SELECT revisions.*, LENGTH(blobs.content) AS contentLength
              FROM revisions
              JOIN blobs USING (blobId)
-             WHERE noteId = ?
+             WHERE noteId = ? AND isProtected = 0
              ORDER BY utcDateCreated DESC`,
             [note.noteId]
         );

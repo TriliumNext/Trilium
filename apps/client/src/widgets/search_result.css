@@ -12,3 +12,17 @@
     display: flex;
     flex-direction: column;
 }
+
+/* A full-height view (table, board, calendar…) needs a bounded height: Tabulator, for one, renders
+   every row at once when its container grows with its content. */
+.search-result-widget:has(> .note-list-widget.full-height) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    > .note-list-widget.full-height {
+        flex-grow: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+}

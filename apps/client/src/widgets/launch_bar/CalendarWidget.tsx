@@ -1,4 +1,4 @@
-import { Dispatch, StateUpdater, useMemo, useRef, useState } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import { LaunchBarDropdownButton, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 import { Dayjs, dayjs } from "@triliumnext/commons";
@@ -7,15 +7,15 @@ import "./CalendarWidget.css";
 import Calendar, { CalendarArgs } from "./Calendar";
 import ActionButton from "../react/ActionButton";
 import { t } from "../../services/i18n";
+import type { DropdownHandle } from "../react/Dropdown";
 import FormDropdownList from "../react/FormDropdownList";
 import FormTextBox from "../react/FormTextBox";
 import toast from "../../services/toast";
 import date_notes from "../../services/date_notes";
-import { Dropdown } from "bootstrap";
 import search from "../../services/search";
 import server from "../../services/server";
 
-const MONTHS = [
+export const MONTHS = [
     t("calendar.january"),
     t("calendar.february"),
     t("calendar.march"),
@@ -34,10 +34,10 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
     const { title, icon } = useLauncherIconAndTitle(launcherNote);
     const [ calendarArgs, setCalendarArgs ] = useState<Pick<CalendarArgs, "activeDate" | "todaysDate">>();
     const [ date, setDate ] = useState<Dayjs>();
-    const dropdownRef = useRef<Dropdown>(null);
+    const dropdownRef = useRef<DropdownHandle>(null);
     const [ enableWeekNotes, setEnableWeekNotes ] = useState(false);
     const [ weekNotes, setWeekNotes ] = useState<string[]>([]);
-    const calendarRootRef = useRef<FNote>();
+    const calendarRootRef = useRef<FNote | undefined>(undefined);
 
     async function checkEnableWeekNotes() {
         if (!calendarRootRef.current) {
@@ -58,6 +58,7 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
 
     return (
         <LaunchBarDropdownButton
+            panel
             launcherNote={launcherNote}
             icon={icon} title={title}
             onShown={async () => {
@@ -76,11 +77,9 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
                 }
             }}
             dropdownRef={dropdownRef}
-            dropdownOptions={{
-                autoClose: "outside"
-            }}
+            autoClose="outside"
         >
-            {calendarArgs && date && <div className="calendar-dropdown-widget" style={{ width: 400 }}>
+            {calendarArgs && date && <div className="calendar-dropdown-widget">
                 <CalendarHeader date={date} setDate={setDate} />
                 <Calendar
                     date={date}
@@ -114,7 +113,7 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
 
 interface CalendarHeaderProps {
     date: Dayjs;
-    setDate: Dispatch<StateUpdater<Dayjs | undefined>>;
+    setDate(date: Dayjs): void;
 }
 
 function CalendarHeader(props: CalendarHeaderProps) {
@@ -141,7 +140,6 @@ function CalendarMonthSelector({ date, setDate }: CalendarHeaderProps) {
                 keyProperty="index" titleProperty="text"
                 onChange={(index) => setDate(date.set("month", parseInt(index, 10)))}
                 buttonProps={{ "data-calendar-input": "month" }}
-                dropdownOptions={{ display: "static" }}
             />
             <AdjustDateButton date={date} setDate={setDate} direction="next" unit="month" />
         </div>
@@ -169,7 +167,7 @@ function CalendarYearSelector({ date, setDate }: CalendarHeaderProps) {
     )
 }
 
-function AdjustDateButton({ date, setDate, unit, direction }: CalendarHeaderProps & {
+export function AdjustDateButton({ date, setDate, unit, direction }: CalendarHeaderProps & {
     direction: "prev" | "next",
     unit: "month" | "year"
 }) {

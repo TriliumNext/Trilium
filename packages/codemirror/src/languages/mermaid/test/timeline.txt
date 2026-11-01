@@ -1,0 +1,83 @@
+# Timeline
+
+timeline
+
+==>
+
+TimelineDiagram(DiagramName)
+
+# Title
+
+timeline
+title History of Social Media Platform
+
+==>
+
+TimelineDiagram(DiagramName,Keyword,Text)
+
+# Section
+
+timeline
+section 2020s
+
+==>
+
+TimelineDiagram(DiagramName,Keyword,Text)
+
+# Single Period Single Event
+
+timeline
+2002 : LinkedIn
+
+==>
+
+TimelineDiagram(DiagramName,Entry(Period,Event))
+
+# Single Period Multiple Events
+
+timeline
+2004 : Facebook : Google : GMail
+
+==>
+
+TimelineDiagram(DiagramName,Entry(Period,Event,Event,Event))
+
+# Period Without Events
+
+timeline
+2002
+
+==>
+
+TimelineDiagram(DiagramName,Entry(Period))
+
+# Full Diagram
+
+timeline
+title History of Social Media Platform
+2002 : LinkedIn
+section 2020s
+2020 : covid
+
+==>
+
+TimelineDiagram(DiagramName,Keyword,Text,Entry(Period,Event),Keyword,Text,Entry(Period,Event))
+
+# Indented
+
+timeline
+    title History
+    2002 : LinkedIn : Twitter
+
+==>
+
+TimelineDiagram(DiagramName,Keyword,Text,Entry(Period,Event,Event))
+
+# LineComment
+
+timeline
+%% this is a comment
+
+==>
+
+TimelineDiagram(DiagramName,LineComment)

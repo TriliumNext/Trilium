@@ -1,0 +1,49 @@
+/*
+ * The layout of a text note's footnotes, wherever the note is shown: the editor, a read-only note
+ * and a shared page. Borders and colors are left to each of them.
+ */
+
+.ck-content .footnote-section {
+    border-radius: 2px;
+    counter-reset: footnote-counter;
+    margin: 1em 0;
+    padding: 10px;
+}
+
+.ck-content .footnote-item {
+    counter-increment: footnote-counter;
+    display: flex;
+    list-style: none;
+    margin-inline-start: 0.5em;
+}
+
+.ck-content .footnote-item > * {
+    vertical-align: text-top;
+}
+
+.ck-content .footnote-back-link {
+    margin-inline-end: 0.1em;
+    position: relative;
+    top: -0.2em;
+}
+
+.ck-content .footnotes .footnote-back-link > sup {
+    margin-inline-end: 0;
+}
+
+.ck-content .footnote-item::before {
+    content: counter(footnote-counter) ". ";
+    display: inline-block;
+    min-width: fit-content;
+    position: relative;
+    inset-inline-end: 0.2em;
+    text-align: end;
+}
+
+.ck-content .footnote-content {
+    border-radius: 2px;
+    display: inline-block;
+    flex-grow: 1;
+    padding: 0 0.3em;
+    width: 95%;
+}

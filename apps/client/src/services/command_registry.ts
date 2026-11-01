@@ -10,6 +10,7 @@ export interface CommandDefinition {
     name: string;
     description?: string;
     icon?: string;
+    /** The primary keyboard shortcut as stored, such as `CommandOrControl+N`. */
     shortcut?: string;
     commandName?: CommandNames;
     handler?: () => Promise<unknown> | null | undefined | void;
@@ -163,7 +164,7 @@ export class CommandRegistry {
                 name,
                 description: action.description,
                 icon: action.iconClass,
-                shortcut: primaryShortcut ? this.formatShortcut(primaryShortcut) : undefined,
+                shortcut: primaryShortcut,
                 commandName: action.actionName as CommandNames,
                 source: "keyboard-action",
                 keyboardAction: action
@@ -171,13 +172,6 @@ export class CommandRegistry {
 
             this.register(commandDef);
         }
-    }
-
-    private formatShortcut(shortcut: string): string {
-        // Convert electron accelerator format to display format
-        return shortcut
-            .replace(/CommandOrControl/g, 'Ctrl')
-            .replace(/\+/g, ' + ');
     }
 
     register(command: CommandDefinition) {

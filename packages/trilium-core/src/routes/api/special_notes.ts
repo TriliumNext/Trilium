@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
@@ -8,6 +8,10 @@ import { getSql } from "../../services/sql/index.js";
 
 function getInboxNote(req: Request<{ date: string }>) {
     return specialNotesService.getInboxNote(req.params.date);
+}
+
+function getInboxTarget() {
+    return specialNotesService.getInboxTarget();
 }
 
 function getDayNote(req: Request<{ date: string }>) {
@@ -107,8 +111,28 @@ function createOrUpdateScriptLauncherFromApi(req: Request) {
     return specialNotesService.createOrUpdateScriptLauncherFromApi(req.body);
 }
 
+function createLlmChat() {
+    return specialNotesService.createLlmChat();
+}
+
+function getMostRecentLlmChat() {
+    const chat = specialNotesService.getMostRecentLlmChat();
+    // Return null explicitly if no chat found (not undefined)
+    return chat || null;
+}
+
+function getRecentLlmChats(req: Request) {
+    const limit = parseInt(req.query.limit as string) || 10;
+    return specialNotesService.getRecentLlmChats(limit);
+}
+
+function saveLlmChat(req: Request<{ llmChatNoteId: string }>) {
+    return specialNotesService.saveLlmChat(req.body?.llmChatNoteId);
+}
+
 export default {
     getInboxNote,
+    getInboxTarget,
     getDayNote,
     getWeekFirstDayNote,
     getWeekNote,
@@ -122,5 +146,9 @@ export default {
     saveSearchNote,
     createLauncher,
     resetLauncher,
-    createOrUpdateScriptLauncherFromApi
+    createOrUpdateScriptLauncherFromApi,
+    createLlmChat,
+    getMostRecentLlmChat,
+    getRecentLlmChats,
+    saveLlmChat
 };

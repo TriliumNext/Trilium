@@ -1,7 +1,6 @@
-import * as htmlParser from "node-html-parser";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { convertEnexContent, rewriteEvernoteLinks } from "./enex_converter.js";
+import { convertEnexContent, hasEvernoteLink, rewriteEvernoteLinks } from "./enex_converter.js";
 
 // Mirrors the canonical CKEditor todo-list serialization the converter emits (checked before disabled).
 const todoItem = (desc: string, opts: { checked?: boolean; nested?: string } = {}) =>
@@ -43,6 +42,18 @@ describe("convertEnexContent — checkboxes (--en-todo lists)", () => {
         const input = `<ul><li><div>Bullet</div></li></ul>`;
         expect(convertEnexContent(input)).toBe(input);
     });
+
+    it("skips a list child that is neither an item nor a sub-list", () => {
+        const input = `<ul style="--en-todo:true;"><li style="--en-checked:false;"><div>A</div></li><div>stray</div></ul>`;
+        expect(convertEnexContent(input)).toBe(todoList(todoItem("A")));
+    });
+
+    it("keeps an item's text when a sub-list is nested inside the item rather than following it", () => {
+        // Evernote emits sub-lists as siblings, so a list nested *inside* the item isn't folded in — it's
+        // only excluded from the item's description.
+        const input = `<ul style="--en-todo:true;"><li style="--en-checked:false;">Direct text<ul style="--en-todo:true;"><li style="--en-checked:false;"><div>Sub</div></li></ul></li></ul>`;
+        expect(convertEnexContent(input)).toBe(todoList(todoItem("Direct text")));
+    });
 });
 
 describe("convertEnexContent — legacy checkboxes (<en-todo>)", () => {
@@ -64,8 +75,13 @@ describe("convertEnexContent — legacy checkboxes (<en-todo>)", () => {
     });
 
     it("falls back to a unicode ballot box for an inline <en-todo> that isn't a line's checkbox", () => {
-        const input = `<div>Mixed <en-todo checked="true"/>content</div>`;
-        expect(convertEnexContent(input)).toBe(`<p>Mixed ☑ content</p>`);
+        expect(convertEnexContent(`<div>Mixed <en-todo checked="true"/>content</div>`)).toBe(`<p>Mixed ☑ content</p>`);
+        expect(convertEnexContent(`<div>Mixed <en-todo checked="false"/>content</div>`)).toBe(`<p>Mixed ☐ content</p>`);
+    });
+
+    it("treats a line whose checkbox is preceded by whitespace as a to-do line", () => {
+        const input = `<div>\n<en-todo checked="false"/>Task</div>`;
+        expect(convertEnexContent(input)).toBe(todoList(todoItem("Task")));
     });
 });
 
@@ -152,6 +168,15 @@ describe("convertEnexContent — tasks (--en-task-group + <task> elements)", () 
         const input = `<div style="--en-task-group:true; --en-id:G;"><div>placeholder</div></div>`;
         expect(convertEnexContent(input, [])).toBe("");
     });
+
+    it("takes every remaining task when the placeholder carries no group id", () => {
+        const input = `<div style="--en-task-group:true;"><div>placeholder</div></div>`;
+        const tasks = [
+            { title: "First", status: "open", groupId: "GROUP1" },
+            { title: "Second", status: "completed", groupId: "GROUP2" }
+        ];
+        expect(convertEnexContent(input, tasks)).toBe(todoList(todoItem("First"), todoItem("Second", { checked: true })));
+    });
 });
 
 describe("convertEnexContent — admonitions (--en-callout)", () => {
@@ -164,6 +189,11 @@ describe("convertEnexContent — admonitions (--en-callout)", () => {
         const input = `<div style="--en-callout:true; --en-emoji:🤖;"><div>Callout with custom emoji.</div></div>`;
         expect(convertEnexContent(input)).toBe(`<aside class="admonition note"><p>🤖 Callout with custom emoji.</p></aside>`);
     });
+
+    it("injects the emoji into a first block child that is a paragraph", () => {
+        const input = `<div style="--en-callout:true; --en-emoji:🤖;"><p>Already a paragraph.</p></div>`;
+        expect(convertEnexContent(input)).toBe(`<aside class="admonition note"><p>🤖 Already a paragraph.</p></aside>`);
+    });
 });
 
 describe("convertEnexContent — toggles (--en-toggle)", () => {
@@ -172,6 +202,11 @@ describe("convertEnexContent — toggles (--en-toggle)", () => {
         expect(convertEnexContent(input)).toBe(
             `<details class="trilium-collapsible"><summary>Toggle goes here</summary><p style="padding-left:40px;">Content goes here.</p></details>`
         );
+    });
+
+    it("renders an empty collapsible when the toggle has neither a summary nor a content block", () => {
+        const input = `<div style="--en-toggle:true;"><div>Stray body</div></div>`;
+        expect(convertEnexContent(input)).toBe(`<details class="trilium-collapsible" open><summary></summary></details>`);
     });
 
     it("preserves an expanded toggle's open state", () => {
@@ -296,6 +331,11 @@ describe("rewriteEvernoteLinks — internal note references", () => {
         expect(rewriteEvernoteLinks(input, resolve)).toBe(input);
     });
 
+    it("ignores an anchor without an href", () => {
+        const input = `<p><a>bookmark</a> <a href="evernote://view-note/x">Orar legislație</a></p>`;
+        expect(rewriteEvernoteLinks(input, resolve)).toBe(`<p><a>bookmark</a> <a href="#root/noteA" class="reference-link">Orar legislație</a></p>`);
+    });
+
     it("leaves an unresolvable internal link as-is", () => {
         const input = `<a href="evernote://view-note/unknown">Some other note</a>`;
         expect(rewriteEvernoteLinks(input, resolve)).toBe(input);
@@ -309,18 +349,19 @@ describe("rewriteEvernoteLinks — internal note references", () => {
     });
 
     it("only parses when an evernote link is present (fast path skips parsing otherwise)", () => {
-        const parseSpy = vi.spyOn(htmlParser, "parse");
-        try {
-            // Content with no evernote link is returned untouched without paying for an HTML parse.
-            const noLinks = `<p>No internal links</p><a href="http://triliumnotes.org">External</a>`;
-            expect(rewriteEvernoteLinks(noLinks, resolve)).toBe(noLinks);
-            expect(parseSpy).not.toHaveBeenCalled();
+        // hasEvernoteLink is the cheap guard rewriteEvernoteLinks checks before paying for a parse,
+        // so assert it directly: node-html-parser 9 ships real ESM, and its `parse` export can no
+        // longer be spied on from a module the bundler externalizes.
+        const noLinks = `<p>No internal links</p><a href="http://triliumnotes.org">External</a>`;
+        const withLink = `<a href="evernote://view-note/x">Orar legislație</a>`;
 
-            // A present evernote link still triggers a parse so it can be rewritten.
-            rewriteEvernoteLinks(`<a href="evernote://view-note/x">Orar legislație</a>`, resolve);
-            expect(parseSpy).toHaveBeenCalledOnce();
-        } finally {
-            parseSpy.mockRestore();
-        }
+        expect(hasEvernoteLink(noLinks)).toBe(false);
+        expect(hasEvernoteLink(withLink)).toBe(true);
+
+        // Content the guard rejects comes back verbatim; content it accepts is rewritten.
+        expect(rewriteEvernoteLinks(noLinks, resolve)).toBe(noLinks);
+        expect(rewriteEvernoteLinks(withLink, resolve)).toBe(
+            `<a href="#root/noteA" class="reference-link">Orar legislație</a>`
+        );
     });
 });

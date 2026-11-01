@@ -26,6 +26,12 @@ export default createBaseConfig({
     appDir: __dirname,
     localTestDir: "e2e",
     projectName: "server",
+    // All workers share a single server instance and user account, and some state is
+    // global to the account — e.g. the openNoteContexts option holding the open tabs.
+    // With parallel workers, every test that opens a note overwrites that state for the
+    // others, which chronically flaked "Tabs are restored in right order". Same setting
+    // as the standalone app, which runs the identical shared suite without flaking.
+    workers: 1,
     webServer: !process.env.TRILIUM_DOCKER ? {
         command: "pnpm start-prod-no-dir",
         url: baseURL,

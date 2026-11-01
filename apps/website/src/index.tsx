@@ -16,28 +16,31 @@ import Resources from './pages/Resources/Resources';
 import SupportUs from './pages/SupportUs/SupportUs.js';
 
 export const LocaleContext = createContext('en');
+export const StargazersContext = createContext(FALLBACK_STARGAZERS_COUNT);
 
 export function App({ repoStargazersCount }) {
     return (
         <LocationProvider>
             <LocaleProvider>
-                <Header repoStargazersCount={repoStargazersCount ?? FALLBACK_STARGAZERS_COUNT} />
-                <main>
-                    <Router>
-                        <Route path="/" component={Home} />
-                        <Route path="/get-started" component={GetStarted} />
-                        <Route path="/support-us" component={SupportUs} />
-                        <Route path="/resources" component={Resources} />
+                <StargazersContext.Provider value={repoStargazersCount ?? FALLBACK_STARGAZERS_COUNT}>
+                    <Header />
+                    <main>
+                        <Router>
+                            <Route path="/" component={Home} />
+                            <Route path="/get-started" component={GetStarted} />
+                            <Route path="/support-us" component={SupportUs} />
+                            <Route path="/resources" component={Resources} />
 
-                        <Route path="/:locale:/" component={Home} />
-                        <Route path="/:locale:/get-started" component={GetStarted} />
-                        <Route path="/:locale:/support-us" component={SupportUs} />
-                        <Route path="/:locale:/resources" component={Resources} />
+                            <Route path="/:locale:/" component={Home} />
+                            <Route path="/:locale:/get-started" component={GetStarted} />
+                            <Route path="/:locale:/support-us" component={SupportUs} />
+                            <Route path="/:locale:/resources" component={Resources} />
 
-                        <Route default component={NotFound} />
-                    </Router>
-                </main>
-                <Footer />
+                            <Route default component={NotFound} />
+                        </Router>
+                    </main>
+                    <Footer />
+                </StargazersContext.Provider>
             </LocaleProvider>
         </LocationProvider>
     );

@@ -272,6 +272,46 @@ describe("shortcuts", () => {
             expect(matchesShortcut(event, "Ctrl+A")).toBe(true);
         });
 
+        it("matches by physical key on a layout whose keys don't produce Latin characters", () => {
+            // Russian ЙЦУКЕН: the J key produces "о", the [ key "х" and the . key "ю".
+            const ctrlJ = createKeyboardEvent({ key: "о", code: "KeyJ", ctrlKey: true });
+            expect(matchesShortcut(ctrlJ, "Ctrl+J")).toBe(true);
+            expect(matchesShortcut(ctrlJ, "Ctrl+O")).toBe(false);
+
+            const ctrlShiftJ = createKeyboardEvent({ key: "О", code: "KeyJ", ctrlKey: true, shiftKey: true });
+            expect(matchesShortcut(ctrlShiftJ, "Ctrl+Shift+J")).toBe(true);
+
+            const ctrlBracket = createKeyboardEvent({ key: "х", code: "BracketLeft", ctrlKey: true });
+            expect(matchesShortcut(ctrlBracket, "Ctrl+[")).toBe(true);
+
+            const ctrlPeriod = createKeyboardEvent({ key: "ю", code: "Period", ctrlKey: true });
+            expect(matchesShortcut(ctrlPeriod, "Ctrl+.")).toBe(true);
+
+            // The layout's own "." sits on the physical / key and still counts as ".".
+            const ctrlRussianPeriod = createKeyboardEvent({ key: ".", code: "Slash", ctrlKey: true });
+            expect(matchesShortcut(ctrlRussianPeriod, "Ctrl+.")).toBe(true);
+            expect(matchesShortcut(ctrlRussianPeriod, "Ctrl+/")).toBe(false);
+        });
+
+        it("keeps matching a Latin layout by character, not by physical key", () => {
+            // AZERTY: the physical W key produces "z".
+            const ctrlZ = createKeyboardEvent({ key: "z", code: "KeyW", ctrlKey: true });
+            expect(matchesShortcut(ctrlZ, "Ctrl+Z")).toBe(true);
+            expect(matchesShortcut(ctrlZ, "Ctrl+W")).toBe(false);
+
+            // Keys that type a non-ASCII character in a Latin script, or a symbol, keep their own meaning.
+            const latinKeys = [
+                { key: "ù", code: "Quote", shortcut: "Ctrl+'" },        // French
+                { key: "²", code: "Backquote", shortcut: "Ctrl+`" },    // French
+                { key: "ö", code: "Semicolon", shortcut: "Ctrl+;" },    // German
+                { key: "ı", code: "KeyI", shortcut: "Ctrl+I" }          // Turkish
+            ];
+            for (const { key, code, shortcut } of latinKeys) {
+                const event = createKeyboardEvent({ key, code, ctrlKey: true });
+                expect(matchesShortcut(event, shortcut), `${key} on ${code}`).toBe(false);
+            }
+        });
+
         it("should match Alt+letter shortcuts on macOS where key is a special character", () => {
             // On macOS, pressing Option/Alt + A produces 'å' but code remains 'KeyA'
             const macOSAltAEvent = createKeyboardEvent({
@@ -599,6 +639,67 @@ describe("shortcuts", () => {
             } finally {
                 isDesktopSpy.mockRestore();
             }
+        });
+    });
+
+    describe("the plus key (German / European layouts)", () => {
+        // On QWERTZ and most European layouts "+" is its own key (e.code "BracketRight"), not
+        // Shift+"=". Because "+" doubles as the shortcut separator, it used to be impossible to bind.
+        const ctrlPlus = (extra: Partial<KeyboardEvent> = {}) => ({
+            key: "+",
+            code: "BracketRight",
+            ctrlKey: true,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            ...extra
+        } as KeyboardEvent);
+
+        it("matches the raw '++' encoding (e.g. a stored or hand-typed Ctrl++)", () => {
+            expect(matchesShortcut(ctrlPlus(), "Ctrl++")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl++")).toBe(false);
+        });
+
+        it("matches the named 'Plus' token", () => {
+            expect(matchesShortcut(ctrlPlus(), "Ctrl+Plus")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ ctrlKey: false }), "Ctrl+Plus")).toBe(false);
+        });
+
+        it("matches the numpad plus key", () => {
+            const numpadPlus = ctrlPlus({ code: "NumpadAdd" });
+            expect(matchesShortcut(numpadPlus, "Ctrl+Plus")).toBe(true);
+            expect(matchesShortcut(numpadPlus, "Ctrl++")).toBe(true);
+        });
+
+        it("does not confuse the plus key with the equals key", () => {
+            // US layout zoom-in default is Ctrl+= (Shift+= produces "+"); these must stay distinct.
+            const ctrlEquals = ctrlPlus({ key: "=", code: "Equal" });
+            expect(matchesShortcut(ctrlEquals, "Ctrl++")).toBe(false);
+            expect(matchesShortcut(ctrlPlus(), "Ctrl+=")).toBe(false);
+        });
+
+        it("matchesShortcut with multiple modifiers and the plus key", () => {
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl+Shift++")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl+Shift+Plus")).toBe(true);
+        });
+
+        it("keyMatches resolves the 'plus' token to the '+' character", () => {
+            expect(keyMatches({ key: "+", code: "BracketRight" } as KeyboardEvent, "plus")).toBe(true);
+            expect(keyMatches({ key: "=", code: "Equal" } as KeyboardEvent, "plus")).toBe(false);
+        });
+
+        it("canonicalizes the raw and named plus forms to the same combination", () => {
+            expect(canonicalizeShortcut("Ctrl++")).toBe(canonicalizeShortcut("Ctrl+Plus"));
+            expect(canonicalizeShortcut("Ctrl++")).not.toBe(canonicalizeShortcut("Ctrl+="));
+        });
+
+        it("normalizeShortcut keeps a valid Ctrl++ without warning", () => {
+            const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+            expect(shortcuts.normalizeShortcut("Ctrl++")).toBe("ctrl++");
+
+            expect(consoleSpy).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
         });
     });
 

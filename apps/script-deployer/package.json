@@ -4,11 +4,12 @@
   "private": true,
   "description": "Development harness for writing and deploying Trilium scripts to a local instance",
   "scripts": {
-    "dev": "tsx watch --clear-screen=false --ignore '../client/node_modules/.vite-temp' src/dev.ts",
+    "dev": "tsx watch --clear-screen=false --ignore ../client/node_modules/.vite-temp src/dev.ts",
     "test": "vitest run",
     "clean": "rm -rf data"
   },
   "devDependencies": {
+    "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*"
   }
 }

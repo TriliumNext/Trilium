@@ -1,14 +1,27 @@
 apply plugin: 'com.android.application'
 
+// Nightly builds get a dedicated application ID (side-by-side installable with a
+// future stable app) and are signed with the CI keystore. Set by the
+// .github/actions/build-mobile composite action; local builds are unaffected.
+def isNightly = System.getenv("TRILIUM_NIGHTLY_BUILD") == "true"
+def ciKeystorePath = System.getenv("TRILIUM_ANDROID_KEYSTORE_PATH")
+def ciVersionCode = (System.getenv("TRILIUM_ANDROID_VERSION_CODE") ?: "1").toInteger()
+def ciVersionName = System.getenv("TRILIUM_ANDROID_VERSION_NAME") ?: "1.0"
+
 android {
     namespace = "org.triliumnotes.trilium"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "org.triliumnotes.trilium"
+        applicationId "org.triliumnotes.trilium" + (isNightly ? ".nightly" : "")
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode ciVersionCode
+        versionName ciVersionName
+        manifestPlaceholders = [
+            appName: isNightly ? "Trilium Nightly" : "Trilium Notes",
+            appIcon: isNightly ? "@mipmap/ic_launcher_nightly" : "@mipmap/ic_launcher",
+            appIconRound: isNightly ? "@mipmap/ic_launcher_nightly_round" : "@mipmap/ic_launcher_round"
+        ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +29,31 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    if (ciKeystorePath) {
+        signingConfigs {
+            ci {
+                storeFile file(ciKeystorePath)
+                storePassword System.getenv("TRILIUM_ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("TRILIUM_ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("TRILIUM_ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
+        debug {
+            // Keeps unsigned/randomly-signed development and PR-artifact builds from
+            // ever conflicting with a nightly or stable install.
+            applicationIdSuffix ".debug"
+            manifestPlaceholders = [appName: "Trilium Debug"]
+            // createDebugUnitTestCoverageReport writes the JaCoCo report CI uploads to Codecov.
+            enableUnitTestCoverage true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (ciKeystorePath) {
+                signingConfig signingConfigs.ci
+            }
         }
     }
 }
@@ -35,8 +69,12 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // TriliumFileSink's WebMessageListener; Capacitor's own copy is implementation-scoped.
+    implementation "androidx.webkit:webkit:$androidxWebkitVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
+    // android.jar's org.json is a stub that throws in JVM unit tests; this is the real library.
+    testImplementation "org.json:json:20250517"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

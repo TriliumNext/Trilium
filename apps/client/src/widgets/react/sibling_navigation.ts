@@ -60,10 +60,13 @@ export function isInteractiveTarget(target: { tagName?: string; getAttribute?(na
 
 /**
  * From a note's ordered attachments and the currently-shown one, keeps those sharing its role (so the
- * viewer cycles e.g. image-with-image), mapped to `{ id, title }`. Empty when the current one is absent.
+ * viewer cycles e.g. image-with-image), optionally narrowed to a mime prefix — a media player only
+ * advances between playable attachments, where the `file` role alone would also hand it a PDF or a ZIP.
+ * Mapped to `{ id, title }`. Empty when the current one is absent.
  */
-export function sameRoleAttachments(attachments: readonly { attachmentId: string; role: string; title: string }[], currentAttachmentId: string | undefined): { id: string; title: string }[] {
+export function sameRoleAttachments(attachments: readonly { attachmentId: string; role: string; title: string; mime?: string }[], currentAttachmentId: string | undefined, mimePrefix?: string): { id: string; title: string }[] {
     const role = attachments.find((attachment) => attachment.attachmentId === currentAttachmentId)?.role;
     if (!role) return [];
-    return attachments.filter((attachment) => attachment.role === role).map((attachment) => ({ id: attachment.attachmentId, title: attachment.title }));
+    const matches = (attachment: { role: string; mime?: string }) => attachment.role === role && (!mimePrefix || !!attachment.mime?.startsWith(mimePrefix));
+    return attachments.filter(matches).map((attachment) => ({ id: attachment.attachmentId, title: attachment.title }));
 }

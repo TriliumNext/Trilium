@@ -3,11 +3,6 @@
  * in its library or in `@types/*` packages.
  */
 
-declare module "normalize-strings" {
-    function normalizeString(string: string): string;
-    export default normalizeString;
-}
-
 declare module "is-animated" {
     function isAnimated(buffer: Buffer): boolean;
     export default isAnimated;
@@ -20,11 +15,6 @@ declare module "@triliumnext/ckeditor5/content.css" {
 
 
 declare module "@triliumnext/share-theme/*.ejs" {
-    const content: string;
-    export default content;
-}
-
-declare module "@triliumnext/share-theme/styles.css" {
     const content: string;
     export default content;
 }

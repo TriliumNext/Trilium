@@ -165,6 +165,45 @@ describe("Cloning API (core)", () => {
         });
     });
 
+    describe("clone-before", () => {
+        it("clones a note before an existing sibling branch", async () => {
+            const host = await createTextNote(api, { title: "Clone-before host" });
+            const sibling = await createTextNote(api, {
+                parentNoteId: host.noteId,
+                title: "Existing sibling"
+            });
+            const child = await createTextNote(api, { title: "Before cloneable" });
+
+            const res = await api.put<CloneResult>(
+                `/api/notes/${child.noteId}/clone-before/${sibling.branchId}`
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(branchRow(res.body.branchId ?? "")).toMatchObject({
+                noteId: child.noteId,
+                parentNoteId: host.noteId,
+                isDeleted: 0
+            });
+            expect(getSql().getColumn<string>(/*sql*/`
+                SELECT noteId FROM branches
+                WHERE parentNoteId = ? AND isDeleted = 0
+                ORDER BY notePosition`, [ host.noteId ])).toEqual([ child.noteId, sibling.noteId ]);
+        });
+
+        it("reports failure for a missing before-branch", async () => {
+            const child = await createTextNote(api, { title: "Before missing" });
+
+            const res = await api.put<CloneResult>(
+                `/api/notes/${child.noteId}/clone-before/missingBefore123`
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBeTruthy();
+        });
+    });
+
     describe("toggle-in-parent", () => {
         it("adds and then removes a note from a parent", async () => {
             const child = await createTextNote(api, { title: "Toggleable" });

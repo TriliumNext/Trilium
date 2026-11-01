@@ -1,0 +1,15 @@
+.tn-progress-bar {
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: var(--main-border-color);
+
+    &::after {
+        content: "";
+        display: block;
+        width: var(--tn-progress);
+        height: 100%;
+        background-color: var(--main-text-color);
+        transition: width 200ms ease-out;
+    }
+}

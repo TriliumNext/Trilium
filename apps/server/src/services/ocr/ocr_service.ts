@@ -1,6 +1,7 @@
 import { getTesseractCode } from '@triliumnext/commons';
 import { becca, blob as blobService, entity_changes as entityChangesService, getLog, options } from '@triliumnext/core';
 
+import { asBuffer } from '../binary.js';
 import sql from '../sql.js';
 import { FileProcessor } from './processors/file_processor.js';
 import { ImageProcessor } from './processors/image_processor.js';
@@ -13,6 +14,8 @@ export interface OCRResult {
     extractedAt: string;
     language?: string;
     pageCount?: number;
+    /** Pages whose OCR threw, for a document whose other pages still produced a result. */
+    failedPageCount?: number;
     processingType?: string;
 }
 
@@ -135,6 +138,8 @@ class OCRService {
             category: note.type,
             mime: note.mime,
             blobId: note.blobId,
+            isProtected: !!note.isProtected,
+            isContentAvailable: note.isContentAvailable(),
             languageNoteId: noteId,
             getContent: () => note.getContent()
         }, options);
@@ -156,6 +161,8 @@ class OCRService {
             category: attachment.role,
             mime: attachment.mime,
             blobId: attachment.blobId,
+            isProtected: !!attachment.isProtected,
+            isContentAvailable: attachment.isContentAvailable(),
             languageNoteId: attachment.ownerId,
             getContent: () => attachment.getContent()
         }, options);
@@ -170,10 +177,12 @@ class OCRService {
         category: string;
         mime: string;
         blobId: string | undefined;
+        isProtected: boolean;
+        isContentAvailable: boolean;
         languageNoteId: string;
         getContent: () => string | Uint8Array;
     }, options: OCRProcessingOptions = {}): Promise<OCRResult | null> {
-        const { entityId, entityType, category, mime, blobId, languageNoteId } = entity;
+        const { entityId, entityType, category, mime, blobId, isProtected, isContentAvailable, languageNoteId } = entity;
 
         if (!['image', 'file'].includes(category)) {
             getLog().info(`${entityType} ${entityId} is not an image or file, skipping OCR`);
@@ -190,16 +199,23 @@ class OCRService {
             return null;
         }
 
+        // Without the key the content is not readable, so there is nothing to recognise. This is an
+        // ordinary skip rather than a failure: the entity is picked up again once the vault is open.
+        if (!isContentAvailable) {
+            getLog().info(`${entityType} ${entityId} is protected and no protected session is available, skipping OCR`);
+            return null;
+        }
+
         try {
-            const content = entity.getContent();
-            if (!content || !(content instanceof Buffer)) {
+            const content = toBinaryContent(entity.getContent());
+            if (!content) {
                 throw new Error(`Cannot get content for ${entityType} ${entityId}`);
             }
 
             const language = this.resolveOcrLanguage(languageNoteId, options.language);
             const ocrResult = await this.extractTextFromFile(content, mime, { ...options, language });
 
-            this.storeOCRResult(blobId, ocrResult);
+            this.storeOCRResult(blobId, ocrResult, isProtected);
 
             return ocrResult;
         } catch (error) {
@@ -209,21 +225,26 @@ class OCRService {
     }
 
     /**
-     * Store OCR result in blob
+     * Store OCR result in blob.
+     *
+     * The text is encrypted for a protected entity, since it is a readable rendering of content that
+     * is itself only stored encrypted.
      */
-    storeOCRResult(blobId: string | undefined, ocrResult: OCRResult): void {
+    storeOCRResult(blobId: string | undefined, ocrResult: OCRResult, isProtected: boolean): void {
         if (!blobId) {
             getLog().error('Cannot store OCR result: blobId is undefined');
             return;
         }
 
         try {
+            const textRepresentation = blobService.encryptTextRepresentation(ocrResult.text, isProtected);
+
             sql.execute(`
                 UPDATE blobs SET textRepresentation = ?
                 WHERE blobId = ?
-            `, [ocrResult.text, blobId]);
+            `, [textRepresentation, blobId]);
 
-            this.putBlobEntityChange(blobId);
+            entityChangesService.putBlobEntityChange(blobId);
 
             getLog().info(`Stored OCR result for blob ${blobId}`);
         } catch (error) {
@@ -253,11 +274,13 @@ class OCRService {
         inProgress: boolean;
         total: number;
         processed: number;
+        failed: number;
         startTime?: Date;
     } = {
         inProgress: false,
         total: 0,
-        processed: 0
+        processed: 0,
+        failed: 0
     };
 
     /**
@@ -279,6 +302,7 @@ class OCRService {
                 inProgress: true,
                 total: blobsNeedingOCR.length,
                 processed: 0,
+                failed: 0,
                 startTime: new Date()
             };
 
@@ -299,8 +323,8 @@ class OCRService {
     /**
      * Get batch processing progress
      */
-    getBatchProgress(): { inProgress: boolean; total: number; processed: number; percentage?: number; startTime?: Date } {
-        const result: { inProgress: boolean; total: number; processed: number; percentage?: number; startTime?: Date } = { ...this.batchProcessingState };
+    getBatchProgress(): { inProgress: boolean; total: number; processed: number; failed: number; percentage?: number; startTime?: Date } {
+        const result: { inProgress: boolean; total: number; processed: number; failed: number; percentage?: number; startTime?: Date } = { ...this.batchProcessingState };
         if (result.total > 0) {
             result.percentage = (result.processed / result.total) * 100;
         }
@@ -330,17 +354,20 @@ class OCRService {
 
             try {
                 await this.processOcrEntity(blob);
-            } catch (error) {
-                getLog().error(`Failed to process OCR for ${blob.entityType} ${blob.entityId}: ${error}`);
+            } catch {
+                // Tolerate broken or undecodable files: count the failure and move on.
+                // The failure itself is already logged by processOcrEntity.
+                this.batchProcessingState.failed++;
             }
 
             this.batchProcessingState.processed++;
 
-            // Small delay to prevent overwhelming the system
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Small delay to keep the system responsive; recognition itself already runs
+            // in a worker thread, so this only needs to yield, not throttle.
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        getLog().info(`Batch OCR processing completed. Processed ${this.batchProcessingState.processed} files.`);
+        getLog().info(`Batch OCR processing completed. Processed ${this.batchProcessingState.processed} files (${this.batchProcessingState.failed} failed).`);
     }
 
     /**
@@ -357,28 +384,6 @@ class OCRService {
     /**
      * Get processor for a given MIME type
      */
-    /**
-     * Notifies the sync system that a blob has changed, without modifying the blob's identity.
-     */
-    private putBlobEntityChange(blobId: string): void {
-        const blob = becca.getBlob({ blobId });
-        if (!blob || !blob.blobId) return;
-
-        const hash = blobService.calculateContentHash({
-            blobId: blob.blobId,
-            content: blob.content,
-            textRepresentation: blob.textRepresentation
-        });
-        entityChangesService.putEntityChange({
-            entityName: "blobs",
-            entityId: blobId,
-            hash,
-            isErased: false,
-            utcDateChanged: blob.utcDateModified,
-            isSynced: true
-        });
-    }
-
     private getProcessorForMimeType(mimeType: string): FileProcessor | null {
         for (const processor of this.processors.values()) {
             if (processor.canProcess(mimeType)) {
@@ -405,7 +410,11 @@ class OCRService {
 
 
     /**
-     * Get blobs that need OCR processing (those without text representation)
+     * Get blobs that need OCR processing (those without a stored text representation).
+     * A NULL text representation means "never processed"; an empty string means
+     * "processed, found no text" and is treated as done, so a blob is never re-OCR'd
+     * on every batch run. Existing scanned PDFs stored before the OCR fallback can be
+     * re-run individually via the manual "Process OCR" action (which forces reprocess).
      */
     getBlobsNeedingOCR(): Array<{ blobId: string; mimeType: string; entityType: 'note' | 'attachment'; entityId: string }> {
         try {
@@ -457,3 +466,21 @@ class OCRService {
 }
 
 export default new OCRService();
+
+/**
+ * Narrows an entity's content to the `Buffer` the processors take, or null when there are no bytes to
+ * recognise — a string has no binary form, and neither does an empty buffer.
+ *
+ * The conversion matters because the two kinds of content arrive differently typed. Unprotected
+ * content is already a `Buffer`: better-sqlite3 returns one for a BLOB column and nothing rewraps it
+ * on the way through Becca. Protected content is decrypted on the way out, and the decryption builds
+ * its result with `new Uint8Array(...)`, which is not a `Buffer` — so testing for one rejected every
+ * protected image as unreadable. Same bytes either way, so wrap rather than reject.
+ */
+function toBinaryContent(content: string | Uint8Array): Buffer | null {
+    if (typeof content === "string" || content.byteLength === 0) {
+        return null;
+    }
+
+    return asBuffer(content);
+}

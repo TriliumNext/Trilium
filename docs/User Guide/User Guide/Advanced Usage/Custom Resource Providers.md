@@ -6,10 +6,9 @@ A potential use case for this is to add embed a custom font alongside a theme.
 ## Steps for creating a custom resource provider
 
 1.  Import a file such as an image or a font into Trilium by drag & drop.
-2.  Select the file and go to the _Owned Attributes_ section.
-3.  Add the label `#customResourceProvider=hello`.
-4.  To test if it is working, use a browser to navigate to `<protocol>://<host>/custom/hello` (where `<protocol>` is either `http` or `https` based on your setup, and `<host>` is the host or IP to your Trilium server instance). If you are running the TriliumNext application without a server, use `http://localhost:37840` as the base URL.
-5.  If everything went well, at the previous step the browser should have downloaded the file uploaded in the first step.
+2.  Set the [label](Attributes/Labels.md) `#customResourceProvider` to `hello`.
+3.  To test if it is working, use a browser to navigate to `<protocol>://<host>/custom/hello` (where `<protocol>` is either `http` or `https` based on your setup, and `<host>` is the host or IP to your Trilium server instance). If you are running the TriliumNext application without a server, use `http://localhost:37840` as the base URL.
+4.  If everything went well, at the previous step the browser should have downloaded the file uploaded in the first step.
 
 Instead of `hello`, the name can be:
 

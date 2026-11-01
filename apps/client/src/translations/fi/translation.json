@@ -1,6 +1,11 @@
 {
   "about": {
-    "data_directory": "Datakansio:"
+    "data_directory": "Datakansio:",
+    "version_label": "Versio:",
+    "donate": "Lahjoita",
+    "version": "{{appVersion}} (tietokanta: {{dbVersion}}, synkronointiprotokolla: {{syncVersion}})",
+    "build_info": "Koonti: {{buildDate}}, revisio: <buildRevision />",
+    "donate_tooltip": "Lahjoita tukeaksesi tätä projektia"
   },
   "toast": {
     "critical-error": {
@@ -18,24 +23,28 @@
     "link_title": "Linkin otsikko",
     "button_add_link": "Lisää linkki",
     "note": "Muistio",
-    "search_note": "etsi muistiota sen nimellä"
+    "search_note": "etsi muistiota sen nimellä",
+    "button_edit_link": "Tallenna linkki",
+    "button_fix_link": "Korjaa linkki",
+    "edit_link": "Muokkaa linkkiä",
+    "fix_link": "Korjaa linkki"
   },
   "branch_prefix": {
-    "prefix": "Etuliite: ",
-    "save": "Tallenna"
+    "prefix": "Etuliite",
+    "save": "Tallenna",
+    "cancel": "Peruuta"
   },
   "bulk_actions": {
     "bulk_actions": "Massatoiminnot",
-    "available_actions": "Saatavilla olevat toiminnot",
     "chosen_actions": "Valitut toiminnot",
-    "execute_bulk_actions": "Toteuta massatoiminnot",
+    "execute_bulk_actions_one": "Toteuta massatoiminnot",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Massatoiminnot on toteutettu onnistuneesti.",
     "none_yet": "Ei vielä... lisää toiminto klikkaamalla jotiain yllä saatavilla olevaa yltä.",
     "labels": "Merkit",
     "relations": "Suhteet",
     "notes": "Muistiot",
-    "other": "Muut",
-    "affected_notes": "Vaikuttaa muistioihin"
+    "other": "Muut"
   },
   "clone_to": {
     "clone_notes_to": "Kopioi muistiot...",
@@ -115,18 +124,12 @@
   "include_note": {
     "dialog_title": "Sisällytä muistio",
     "label_note": "Muistio",
-    "placeholder_search": "etsi muistiota sen nimellä",
-    "box_size_small": "pieni (~ 10 riviä)",
-    "box_size_medium": "keskisuuri (~ 30 riviä)",
     "button_include": "Sisällytä muistio"
   },
   "info": {
     "modalTitle": "Info viesti",
     "closeButton": "Sulje",
     "okButton": "OK"
-  },
-  "jump_to_note": {
-    "search_button": "Etsi koko tekstistä"
   },
   "call_to_action": {
     "dismiss": "Hylkää"

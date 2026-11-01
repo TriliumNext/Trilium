@@ -1,0 +1,75 @@
+/*
+ * Mirrors the code-block treatment text notes get from theme-next
+ * (stylesheets/theme-next/notes/text.css → "Code Blocks"), reusing the same
+ * --code-block-* variables so both stay in step when a theme retunes them.
+ */
+
+.code-block {
+    position: relative;
+    margin: 0 0 0.9em 0;
+    padding: 0.75em 1em;
+    border: 0;
+    border-radius: 6px;
+    box-shadow: var(--code-block-box-shadow);
+    overflow-x: auto;
+}
+
+/* Only supply a background when highlighting is off. A highlighted block carries `hljs`,
+   whose theme stylesheet brings its own — and that sheet is injected at runtime, so
+   relying on source order to win an equal-specificity fight would be fragile. */
+.code-block:not(.hljs) {
+    background-color: var(--accented-background-color);
+}
+
+.code-block > code {
+    display: block;
+    font-variant: none;
+    tab-size: var(--code-block-tab-width, 4);
+    white-space: pre;
+    user-select: text;
+}
+
+/* Marks a value the user has to substitute. Two selectors deep so it outranks the
+   highlight.js token colour of whatever string it sits inside. The tint is mixed from
+   currentColor rather than a theme variable because the backdrop here is the hljs theme's,
+   which may be light or dark independently of the rest of the UI. */
+.code-block .code-block-placeholder {
+    padding: 0 0.2em;
+    border-radius: 3px;
+    outline: 1px dashed currentColor;
+    outline-offset: -1px;
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.code-block.wrap > code {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Reserve room so a long line never slides under the button. The margin centres the
+   button on single-line blocks, matching the calculation used for text notes. */
+.code-block:has(> .code-block-copy) {
+    --code-block-copy-size: 1.8em;
+    padding-inline-end: calc(var(--code-block-copy-size) + 1.5em);
+}
+
+.code-block > .code-block-copy {
+    position: absolute;
+    top: 0.4em;
+    inset-inline-end: 0.4em;
+    font-size: 1em; /* --icon-button-size misbehaves with em units; matches text.css */
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+
+.code-block:hover > .code-block-copy,
+.code-block > .code-block-copy:focus-visible {
+    opacity: 1;
+}
+
+/* Touch devices have no hover, so the affordance must always be visible. */
+@media (hover: none) {
+    .code-block > .code-block-copy {
+        opacity: 1;
+    }
+}

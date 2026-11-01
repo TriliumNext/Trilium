@@ -1,6 +1,5 @@
-import html from "html";
-
 import { escapeHtml } from "../../utils/index";
+import { formatHtml } from "../format_html.js";
 import { ZipExportProvider, ZipExportProviderData } from "./abstract_provider.js";
 import { NoteMeta } from "../../../meta";
 
@@ -71,11 +70,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
 </html>`;
             }
 
-            if (content.length < 100_000) {
-                content = html.prettyPrint(content, { indent_size: 2 });
-            }
-            content = this.rewriteFn(content as string, noteMeta);
-            return content;
+            return formatHtml(this.rewriteFn(content, noteMeta));
         }
         return content;
 
@@ -133,9 +128,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
         <ul>${this.#saveNavigationInner(rootMeta, rootMeta)}</ul>
     </body>
     </html>`;
-        const prettyHtml = fullHtml.length < 100_000 ? html.prettyPrint(fullHtml, { indent_size: 2 }) : fullHtml;
-
-        this.archive.append(prettyHtml, { name: navigationMeta.dataFileName });
+        this.archive.append(formatHtml(fullHtml), { name: navigationMeta.dataFileName });
     }
 
     #saveIndex(rootMeta: NoteMeta, indexMeta: NoteMeta) {

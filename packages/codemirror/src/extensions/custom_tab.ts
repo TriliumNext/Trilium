@@ -93,6 +93,8 @@ function handleEmptySelections(state: EditorState, dispatch: (transaction: Trans
         }
     }
 
+    /* v8 ignore next -- a selection always has at least one range, and every range either returns
+       indentMore above or pushes a change, so `changes` is never empty. */
     if (changes.length) {
         dispatch(
             state.update({
@@ -105,5 +107,6 @@ function handleEmptySelections(state: EditorState, dispatch: (transaction: Trans
         return true;
     }
 
+    /* v8 ignore next -- unreachable for the same reason as the guard above. */
     return false;
 }

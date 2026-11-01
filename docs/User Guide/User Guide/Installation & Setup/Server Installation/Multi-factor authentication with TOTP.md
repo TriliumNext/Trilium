@@ -17,7 +17,33 @@ TOTP (Time-Based One-Time Password) is a security feature that generates a uniqu
 4.  Scan the QR code or manually enter the code in your authenticator app.
 5.  Enter the verification code from your authenticator app to confirm that the setup was successful and press _Verify & continue_.
 6.  Save the recovery codes, then tick the confirmation and press _Finish setup_.
-7.  Re-login will be required after TOTP setup is finished (After you refreshing the page).
+7.  Re-login will be required after TOTP setup is finished (after refreshing the page).
+
+## Signing in
+
+Once TOTP is enabled, the sign-in page asks for the code from your authenticator app in _One-time password or recovery code_, below the password.
+
+Trilium accepts the code for the current 30-second period as well as the periods just before and after it, so a clock that is slightly off on either side still works. Since v0.106.0, each code is accepted only once: after a successful sign-in, that code and any older one are rejected, even while they are still valid.
+
+A wrong one-time password counts toward the same limit of failed attempts as a wrong password. See _Brute-force protection_ in <a class="reference-link" href="Authentication.md">Authentication</a>.
+
+## Connecting a device to the server
+
+Once TOTP is enabled, connecting a new desktop or mobile app to the server through <a class="reference-link" href="../Synchronization.md">Synchronization</a> also asks for the second factor. On the _Connect to an existing server_ screen, enter a one-time password or a recovery code in _One-time password or recovery code_, below the server's password. Without it, the server refuses to set up the sync.
+
+The second factor is only asked for when a device is first connected. A device that is already set up keeps syncing without it.
+
+> [!NOTE]
+> Versions prior to v0.107.0 do not ask for the second factor when setting up the sync. Update the desktop and mobile apps along with the server, since older apps have no field to send it.
+
+## Obtaining an ETAPI token with a password
+
+Once TOTP is enabled, obtaining a token for the <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> through the `/auth/login` call also requires the second factor: send the one-time password or a recovery code as `totpToken`, next to `password`. Each code is accepted only once.
+
+For scripts and tools that run unattended, create a token in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _ETAPI_ instead. Such a token works regardless of TOTP.
+
+> [!WARNING]
+> Versions prior to v0.107.0 issue an ETAPI token for the password alone, even with TOTP enabled.
 
 ## Recovery codes
 

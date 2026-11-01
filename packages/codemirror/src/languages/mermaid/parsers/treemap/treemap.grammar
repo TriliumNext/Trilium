@@ -1,0 +1,39 @@
+// Follows the Langium grammar of Mermaid's treemap (`@mermaid-js/parser`). Mermaid nests rows by
+// their indentation; highlighting reads each row on its own, so newlines and indentation are
+// skipped.
+@top TreemapDiagram { DiagramName statement* }
+
+statement { Title | Section | Leaf | ClassDef }
+
+Title { kw<"title"> TitleText? }
+
+Section { String ClassSelector? }
+
+Leaf { String (":" | ",") Number ClassSelector? }
+
+ClassSelector { ":::" ClassName }
+
+ClassDef { kw<"classDef"> ClassName Styles? ";"? }
+
+ClassName { identifier }
+
+DiagramName { @specialize<identifier, "treemap-beta"> | @specialize<identifier, "treemap"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@external tokens styles from "./tokens.js" { Styles }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { (@asciiLetter | "_") ($[a-zA-Z0-9_\-]* $[a-zA-Z0-9_])? }
+  Number { @digit $[0-9_.,]* }
+  String { '"' !["\n]* '"' | "'" !['\n]* "'" }
+  LineComment { "%%" ![\n]* }
+  ":" "," ":::" ";"
+}
+
+@external propSource treemapHighlighting from "./highlight.js"

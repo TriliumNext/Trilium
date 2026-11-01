@@ -1,3 +1,5 @@
+import "./CheckboxList.css";
+
 interface CheckboxListProps<T> {
     values: T[];
     keyProperty: keyof T;
@@ -8,7 +10,7 @@ interface CheckboxListProps<T> {
     columnWidth?: string;
 }
 
-export default function CheckboxList<T>({ values, keyProperty, titleProperty, disabledProperty, currentValue, onChange, columnWidth }: CheckboxListProps<T>) {    
+export default function CheckboxList<T>({ values, keyProperty, titleProperty, disabledProperty, currentValue, onChange, columnWidth }: CheckboxListProps<T>) {
     function toggleValue(value: string) {
         if (currentValue.includes(value)) {
             // Already there, needs removing.
@@ -20,7 +22,11 @@ export default function CheckboxList<T>({ values, keyProperty, titleProperty, di
     }
 
     return (
-        <ul style={{ listStyleType: "none", marginBottom: 0, columnWidth: columnWidth ?? "400px" }}>
+        <ul
+            className="tn-checkbox-list"
+            // Handed over as a property rather than set outright, so that CSS can still reach it.
+            style={columnWidth ? { "--checkbox-list-column-width": columnWidth } : undefined}
+        >
             {values.map(value => (
                 <li>
                     <label className="tn-checkbox">

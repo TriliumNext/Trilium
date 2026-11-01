@@ -1,0 +1,13 @@
+.debug-safe-area-overlay {
+    position: fixed;
+    inset: 0;
+    border-style: solid;
+    border-color: rgba(255, 0, 0, 0.35);
+    border-width:
+        var(--safe-area-inset-top)
+        var(--safe-area-inset-right)
+        var(--safe-area-inset-bottom)
+        var(--safe-area-inset-left);
+    pointer-events: none;
+    z-index: 100000;
+}

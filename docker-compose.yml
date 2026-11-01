@@ -1,5 +1,4 @@
-# Running `docker-compose up` will create/use the "trilium-data" directory in the user home
-# Run `TRILIUM_DATA_DIR=/path/of/your/choice docker-compose up` to set a different directory
+# Running `docker-compose up` will create/use the "trilium-data" directory next to this file
 # To run in the background, use `docker-compose up -d`
 services:
   trilium:
@@ -8,8 +7,6 @@ services:
     image: triliumnext/trilium:latest
     # Restart the container unless it was stopped by the user
     restart: unless-stopped
-    environment:
-      - TRILIUM_DATA_DIR=/home/node/trilium-data
     ports:
       # By default, Trilium will be available at http://localhost:8080
       # It will also be accessible at http://<host-ip>:8080
@@ -18,8 +15,8 @@ services:
       # https://docs.docker.com/engine/network/packet-filtering-firewalls/#docker-and-ufw
       - '8080:8080'
     volumes:
-      # Unless TRILIUM_DATA_DIR is set, the data will be stored in the "trilium-data" directory in the home directory.
-      # This can also be changed with by replacing the line below with `- /path/of/your/choice:/home/node/trilium-data
-      - ${TRILIUM_DATA_DIR:-~/trilium-data}:/home/node/trilium-data
+      # Trilium stores its data in `trilium-data` next to this file. To use another directory
+      # on the host, change the part before the colon only.
+      - ./trilium-data:/home/node/trilium-data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

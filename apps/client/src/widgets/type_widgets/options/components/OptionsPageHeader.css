@@ -69,20 +69,25 @@
     justify-content: flex-end;
 }
 
+/* A card option without a card, so it needs the room a segment would have given it. */
+.options-header-switch {
+    padding-block: 4px;
+}
+
 /* A full-width bar that sticks to the top of the scrolling content, so cards scroll cleanly beneath
    it. The background is painted per context (below) so the sticky bar matches its surroundings. */
 .options-page-header {
     position: sticky;
     top: 0;
-    z-index: 1;
+    /* Above the 1–5 Bootstrap gives a control to lift it over its neighbours, below a dropdown
+       menu (999), which is meant to open over the header. */
+    z-index: 10;
     border-bottom: 1px solid var(--main-border-color);
     padding-block: 10px;
 }
 
-/* Break out of the option page's inline padding (25px in the new layout) so the bar — and its bottom
-   border — spans the full content width; re-add the inset as padding so the title and actions still
-   line up with the option cards. */
-body.experimental-feature-new-layout .options-page-header {
+/* Matches the options page's inline padding in pages.css. */
+.options-page-header {
     margin-inline: -25px;
     padding-inline: 25px;
 }
@@ -97,4 +102,20 @@ body.experimental-feature-new-layout .options-page-header {
 .note-split .options-page-header {
     background: var(--main-background-color);
     margin-bottom: 1em;
+}
+
+/* In the mobile master-detail flow the page is already named beside the way back, in the dialog's own
+   header (see MasterDetailHeader) — the small title a phone has the width for. The banner drops its
+   copy rather than saying it twice down the screen. */
+.modal.mobile-master-detail {
+    .options-page-header-icon,
+    .options-page-header-title {
+        display: none;
+    }
+
+    /* The name was all it carried, so it stands down rather than leaving an empty band above the
+       first card. Its help mark, where it had one, is handed to the header holding the name. */
+    .options-page-header-title-only {
+        display: none;
+    }
 }

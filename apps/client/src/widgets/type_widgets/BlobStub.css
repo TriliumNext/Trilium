@@ -1,0 +1,9 @@
+.note-detail-blob-stub {
+    gap: 1em;
+    padding: 2em;
+    text-align: center;
+}
+
+.note-detail-blob-stub button {
+    margin-top: 0.5em;
+}

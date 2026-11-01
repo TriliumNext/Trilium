@@ -1,0 +1,94 @@
+/*
+ * A bar standing over a canvas: the surface and blur a menu is drawn on, lifted the way the control
+ * groups beside it are, so that everything floating over a map — bars, chips, panels — reads as one
+ * family rather than as pieces from three places. Where each bar stands is settled by whoever puts
+ * it there.
+ */
+.tn-overlay-toolbar {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--menu-background-color, #fff);
+    color: var(--menu-text-color, inherit);
+    border-radius: var(--overlay-button-border-radius, 6px);
+    /* Two edges rather than four, the light in this app coming from the top leading corner — the
+       same lift a run of buttons is given (see OverlayControlGroup.css). */
+    border-right: 1px solid var(--overlay-button-shadow-color, var(--main-border-color, #0000002e));
+    border-bottom: 1px solid var(--overlay-button-shadow-color, var(--main-border-color, #0000002e));
+    /* The frosting a menu is given, rather than a blur of this bar's own: the theme sets what glass
+       looks like in the app (see shell.css in theme-next, the one theme that sets it), and a bar
+       over a map is the one place it is looked through at something with colour in it. Nothing to
+       frost in a theme that names none: its menus are opaque, and so is this bar. */
+    backdrop-filter: var(--dropdown-backdrop-filter, none);
+}
+
+/*
+ * The buttons are on the bar's own surface rather than on the shell's, so they take their color
+ * from it — as the ones inside a menu do.
+ *
+ * Their marks are centred by the button rather than by the text inside them, which is what a button
+ * does of its own accord and what the theme leans on: `text-align` centres the glyph a font icon
+ * paints, and has nothing to grip on a mark drawn as a box with a width of its own (see the mind
+ * map's direction marks), leaving that one against the leading edge. Centring the box itself holds
+ * for both, so marks of either kind sit alike.
+ */
+.tn-overlay-toolbar .tn-tool-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+/*
+ * What a tool button is otherwise given by the theme — its size, its rounding, how big the mark
+ * inside it is drawn and what a hover fills it with — said again here for the themes that give it
+ * nothing, which is every theme but Next (see the icon buttons in theme-next/forms.css).
+ *
+ * At a specificity below the theme's on purpose (`:where`), so that this is only ever what a bar
+ * falls back to: where the theme speaks, the theme wins, and these buttons go on looking like the
+ * icon buttons the rest of that theme is made of.
+ */
+.tn-overlay-toolbar :where(.tn-tool-button) {
+    width: var(--icon-button-size, 32px);
+    height: var(--icon-button-size, 32px);
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    background: transparent;
+}
+
+.tn-overlay-toolbar :where(.tn-tool-button)::before {
+    display: block;
+    line-height: 1;
+    font-size: calc(var(--icon-button-size, 32px) * var(--icon-button-icon-ratio, 0.65));
+}
+
+.tn-overlay-toolbar :where(.tn-tool-button):hover {
+    background: var(--icon-button-hover-background, var(--more-accented-background-color, #ddd));
+    color: var(--icon-button-hover-color, var(--menu-text-color, inherit));
+}
+
+.tn-overlay-toolbar :where(.tn-tool-button):active::before {
+    transform: scale(0.85);
+}
+
+/* A button that would do nothing says as much rather than merely failing to answer. */
+.tn-overlay-toolbar .tn-tool-button:disabled {
+    opacity: .4;
+    pointer-events: none;
+}
+
+/*
+ * A button standing for a choice in force is shown held down. It is dressed in the fill the app
+ * marks a chosen thing with rather than in the button group's raised chip: that chip is only told
+ * apart from its neighbours by the recessed track behind it, and there is no track here — a bar of
+ * glass is what these stand on. Held through a hover as well, so that pointing at the one already
+ * chosen does not lower it.
+ */
+.tn-overlay-toolbar .tn-tool-button.active,
+.tn-overlay-toolbar .tn-tool-button.active:hover {
+    background: var(--active-item-background-color);
+    color: var(--active-item-text-color);
+}

@@ -1,7 +1,9 @@
 # Using the desktop application as a server
 Sometimes, setting up a [dedicated server installation](../Server%20Installation.md) is not feasible. The desktop application ships with a fully functional server instance by default.
 
-You can access this web interface locally by navigating to [http://localhost:37840/login](http://localhost:37840/login).
+For security reasons, this feature is **not enabled** by default. To enable it, enable _Network access_ in <a class="reference-link" href="../../Scripting/Security.md">Security</a>.
+
+After enabling network access and restarting the application, you can access this web interface locally by navigating to [http://localhost:37840/login](http://localhost:37840/login).
 
 > [!NOTE]
 > The server embedded in the desktop application will only run as long as the desktop application itself is running. So closing the application will also close the server. To overcome this, you can try hiding the application in the system tray.

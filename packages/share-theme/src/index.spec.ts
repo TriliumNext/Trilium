@@ -1,0 +1,219 @@
+// @vitest-environment happy-dom
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+    setupLayout: vi.fn(),
+    setupExpanders: vi.fn(),
+    setupThemeSelector: vi.fn().mockImplementation(() => {
+        throw new Error("theme switch failed");
+    }),
+    setupSearch: vi.fn().mockRejectedValue(new Error("search failed")),
+    setupToC: vi.fn(),
+    setupFooter: vi.fn(),
+    setupSpeculation: vi.fn(),
+    whenActivated: vi.fn((callback: () => void) => callback()),
+    setupMath: vi.fn(),
+    setupMermaid: vi.fn(),
+    setupInPageLinks: vi.fn(),
+    applyTableScroll: vi.fn(),
+    applyStickyTableHeaders: vi.fn(),
+    applyListItemAlignment: vi.fn(),
+    applyTabs: vi.fn(),
+    revealFragment: vi.fn(),
+    showBlockReference: vi.fn(),
+    enhanceLinkPreviews: vi.fn(),
+    setupAppView: vi.fn()
+}));
+
+vi.mock("./page/layout.js", () => ({ default: mocks.setupLayout }));
+vi.mock("./page/navigation.js", () => ({ default: mocks.setupExpanders }));
+vi.mock("./page/theme_switch.js", () => ({ default: mocks.setupThemeSelector }));
+vi.mock("./page/search.js", () => ({ default: mocks.setupSearch }));
+vi.mock("./page/toc.js", () => ({ default: mocks.setupToC }));
+vi.mock("./page/footer.js", () => ({ default: mocks.setupFooter }));
+vi.mock("./page/speculation.js", () => ({
+    default: mocks.setupSpeculation,
+    whenActivated: mocks.whenActivated
+}));
+vi.mock("./content/math.js", () => ({ default: mocks.setupMath }));
+vi.mock("./content/mermaid.js", () => ({ default: mocks.setupMermaid }));
+vi.mock("./content/in_page_links.js", () => ({ default: mocks.setupInPageLinks }));
+vi.mock("./content/app_view.js", () => ({ default: mocks.setupAppView }));
+vi.mock("./content/note_view.js", () => ({ default: "mountNoteView" }));
+vi.mock("./content/collection_view.js", () => ({ default: "mountCollection" }));
+vi.mock("@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js", () => ({
+    applyTableScroll: mocks.applyTableScroll
+}));
+vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
+    applyStickyTableHeaders: mocks.applyStickyTableHeaders
+}));
+vi.mock("@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js", () => ({
+    applyListItemAlignment: mocks.applyListItemAlignment
+}));
+vi.mock("@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js", () => ({
+    applyTabs: mocks.applyTabs,
+    revealFragment: mocks.revealFragment
+}));
+vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => ({
+    showBlockReference: mocks.showBlockReference
+}));
+vi.mock("@triliumnext/commons/src/lib/link_embed_dom.js", () => ({
+    enhanceLinkPreviews: mocks.enhanceLinkPreviews
+}));
+
+const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+describe("share theme entry", () => {
+    // Vitest clears the calls of every mock before each test.
+    let pageSetupCalls: number[] = [];
+    let loggedErrors: unknown[] = [];
+    let deferredSetups = 0;
+
+    beforeAll(async () => {
+        await import("./index.js");
+        await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(2));
+        pageSetupCalls = [ mocks.setupThemeSelector, mocks.setupToC, mocks.setupExpanders,
+            mocks.setupLayout, mocks.setupSearch, mocks.setupFooter,
+            mocks.setupSpeculation ]
+            .map((setup) => setup.mock.calls.length);
+        deferredSetups = mocks.whenActivated.mock.calls.length;
+        loggedErrors = consoleError.mock.calls.map(([ error ]) => (error as Error).message);
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+        vi.unstubAllGlobals();
+        document.body.className = "";
+        document.body.innerHTML = "";
+    });
+
+    it("sets up every part of the page, logging what one throws or rejects with", () => {
+        expect(pageSetupCalls).toEqual([ 1, 1, 1, 1, 1, 1, 1 ]);
+        // The theme waits for a prerendered page to be shown.
+        expect(deferredSetups).toBe(1);
+        expect(loggedErrors.sort()).toEqual([ "search failed", "theme switch failed" ]);
+    });
+
+    it("gives `~shareJs` scripts `fetchNote()`, which defaults to the page's note", async () => {
+        const fetchMock = vi.fn(async (_url: string) => Response.json({ noteId: "fetched" }));
+        vi.stubGlobal("fetch", fetchMock);
+        document.body.dataset.noteId = "current";
+        const { fetchNote } = window as unknown as { fetchNote(noteId?: string): Promise<unknown> };
+
+        expect(await fetchNote()).toEqual({ noteId: "fetched" });
+        await fetchNote("other");
+
+        expect(fetchMock.mock.calls.map(([ url ]) => url))
+            .toEqual([ "api/notes/current", "api/notes/other" ]);
+    });
+
+    it("enhances a text note's content and reveals the tab panel the address points to", () => {
+        document.body.className = "type-text";
+        document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab"`
+            + ` data-tab-previous-label="Back" data-tab-next-label="On">`
+            + `<blockquote><figure class="include-note"></figure></blockquote></div>`;
+        const panel = { scrollIntoView: vi.fn() };
+        mocks.revealFragment.mockReturnValue(panel);
+
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+
+        const content = document.getElementById("content");
+        expect(mocks.setupMermaid).toHaveBeenCalledOnce();
+        expect(mocks.setupMath).toHaveBeenCalledOnce();
+        expect(mocks.setupInPageLinks).toHaveBeenCalledOnce();
+        expect(mocks.enhanceLinkPreviews).toHaveBeenCalledWith(document.body);
+        expect(mocks.applyTableScroll.mock.calls)
+            .toEqual([ [ content ], [ content?.querySelector(".include-note") ] ]);
+        expect(mocks.applyStickyTableHeaders.mock.calls).toEqual([ [ content ] ]);
+        expect(mocks.applyListItemAlignment.mock.calls).toEqual([ [ content ] ]);
+        expect(mocks.applyTabs).toHaveBeenCalledWith(content, {
+            placeholder: "Tab",
+            scrollLabels: { start: "Back", end: "On" }
+        });
+        expect(panel.scrollIntoView).toHaveBeenCalledOnce();
+
+        window.dispatchEvent(new Event("hashchange"));
+        expect(panel.scrollIntoView).toHaveBeenCalledTimes(2);
+    });
+
+    it("shows the linked blocks once the page is shown, after the tabs and diagrams", async () => {
+        let drawDiagrams = () => {};
+        mocks.setupMermaid.mockReturnValueOnce(new Promise<void>((resolve) => {
+            drawDiagrams = resolve;
+        }));
+        document.body.className = "type-text";
+        document.body.innerHTML = `<div id="content"></div>`;
+        history.replaceState(null, "", "?block=a%201:b");
+
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+        await vi.dynamicImportSettled();
+        expect(mocks.showBlockReference).not.toHaveBeenCalled();
+
+        drawDiagrams();
+        await vi.waitFor(() => expect(mocks.showBlockReference)
+            .toHaveBeenCalledExactlyOnceWith(document.body, "a 1:b"));
+        expect(mocks.whenActivated).toHaveBeenCalledOnce();
+        expect(mocks.applyTabs.mock.invocationCallOrder[0])
+            .toBeLessThan(mocks.showBlockReference.mock.invocationCallOrder[0]);
+
+        mocks.showBlockReference.mockClear();
+        history.replaceState(null, "", "?other=1");
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+        await vi.dynamicImportSettled();
+
+        expect(mocks.showBlockReference).not.toHaveBeenCalled();
+        history.replaceState(null, "", location.pathname);
+    });
+
+    it("treats content styled as text like a text note, with or without a content element", () => {
+        document.body.className = "type-book";
+        document.body.innerHTML = `<div id="content" class="ck-content"></div>`;
+
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+
+        expect(mocks.applyTabs)
+            .toHaveBeenCalledWith(document.getElementById("content"), {
+                placeholder: "",
+                scrollLabels: { start: "", end: "" }
+            });
+
+        mocks.applyTabs.mockClear();
+        document.body.className = "type-text";
+        document.body.innerHTML = "";
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+
+        expect(mocks.setupMath).toHaveBeenCalledTimes(2);
+        expect(mocks.applyTableScroll).toHaveBeenCalledOnce();
+        expect(mocks.applyStickyTableHeaders).toHaveBeenCalledOnce();
+        expect(mocks.applyTabs).not.toHaveBeenCalled();
+    });
+
+    it("mounts the app view of a hosted note or a collection with its own module", async () => {
+        const mountedModules = async () => Promise.all(mocks.setupAppView.mock.calls
+            .map(async ([ container, load ]) => [ container, (await load()).default ]));
+
+        document.body.className = "type-noteMap";
+        document.body.innerHTML = `<div id="content"><div class="share-note-view"></div></div>`;
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+        expect(await mountedModules()).toEqual([ [ ".share-note-view", "mountNoteView" ] ]);
+
+        mocks.setupAppView.mockClear();
+        document.body.className = "type-book";
+        document.body.innerHTML = `<div id="content"></div>`;
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+        expect(await mountedModules()).toEqual([ [ ".share-collection", "mountCollection" ] ]);
+    });
+
+    it("draws a Mermaid note's diagram and leaves other notes alone", () => {
+        document.body.className = "type-mermaid";
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+
+        expect(mocks.setupMermaid).toHaveBeenCalledOnce();
+        expect(mocks.setupMath).not.toHaveBeenCalled();
+
+        document.body.className = "type-code";
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+
+        expect(mocks.setupMermaid).toHaveBeenCalledOnce();
+    });
+});

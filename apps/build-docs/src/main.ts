@@ -3,8 +3,6 @@ import { join } from "path";
 
 import buildDocs from "./build-docs";
 import BuildContext from "./context";
-import buildScriptApi from "./script-api";
-import buildSwagger from "./swagger";
 
 const context: BuildContext = {
     gitRootDir: join(__dirname, "../../../"),
@@ -20,8 +18,6 @@ async function main() {
 
     // Start building.
     await buildDocs(context);
-    buildSwagger(context);
-    buildScriptApi(context);
 
     // Copy index and 404 files.
     cpSync(join(__dirname, "index.html"), join(context.baseDir, "index.html"));

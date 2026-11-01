@@ -1,0 +1,373 @@
+/* The look comes from `.dropdown-menu`; this only places it. */
+.dropdown-menu.tn-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* `placeFloating()` shows the menu once it has a position. */
+    visibility: hidden;
+}
+
+/*
+ * The lists that hold the rows take none of the browser's list styling. `:where()` keeps this
+ * below `.tn-menu-scroll`, whose padding it must not undo.
+ */
+:where(.tn-menu) menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* A submenu is placed by `placeFloating()`, not beside a parent it is nested in. */
+.dropdown-submenu > .dropdown-menu.tn-menu {
+    inset: 0 auto auto 0;
+    margin: 0;
+}
+
+/*
+ * The theme blurs a nested submenu on the element itself, which over a transparent window (background
+ * effects) composites with the menu's translucent background into a see-through layer with no blur.
+ * A layer is not nested in another menu, so it takes the top level's blur on `::before` instead.
+ */
+body.desktop .dropdown-submenu > .dropdown-menu.tn-menu {
+    backdrop-filter: none;
+
+    &::before {
+        content: "";
+    }
+}
+
+/*
+ * The theme's opening delay holds a submenu's opacity with `animation-fill-mode: forwards`, which
+ * leaves the layer a backdrop root once it is shown, so its `::before` would blur only the layer's
+ * own inside. `backwards` keeps the layer hidden through the delay and then releases it.
+ */
+body.desktop:not(.motion-disabled) .dropdown-submenu > .dropdown-menu.tn-menu {
+    opacity: 1;
+    animation-fill-mode: backwards;
+}
+
+/* A submenu that replaces one in view, or that a key or a press opened, shows at once. */
+body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
+    animation: none;
+}
+
+.tn-menu-page,
+.tn-menu-filterable {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    /* Spans the frame's padding as the top level's `.tn-menu-scroll` does (Popup.css), so every
+       level has the same box in the flow and out of it. */
+    margin: calc(0px - var(--tn-popup-padding));
+    border-radius: inherit;
+
+    > .tn-menu-scroll {
+        margin: 0;
+    }
+}
+
+.tn-menu-page > .tn-menu-filterable {
+    margin: 0;
+}
+
+.tn-menu-page-header {
+    padding: var(--tn-popup-padding) var(--tn-popup-padding) 0;
+}
+
+.dropdown-menu.tn-menu:has(> .tn-menu-page) {
+    overflow-x: hidden;
+}
+
+.dropdown-menu.tn-menu > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page) {
+    &:has(+ .tn-menu-page:not(.tn-menu-page-leaving)) {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        visibility: hidden;
+    }
+
+    &:has(+ .tn-menu-page-entering) {
+        visibility: visible;
+        animation: tn-slide-out-to-left 0.35s ease-in-out forwards;
+    }
+
+    &:has(+ .tn-menu-page-leaving) {
+        animation: tn-slide-in-from-left 0.35s ease-in-out forwards;
+    }
+}
+
+.dropdown-menu.tn-menu > .tn-menu-page-entering {
+    position: relative;
+    z-index: 1;
+    animation: tn-slide-in-from-right 0.35s ease-in-out forwards;
+}
+
+.dropdown-menu.tn-menu > .tn-menu-page-leaving {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    z-index: 1;
+    animation: tn-slide-out-to-right 0.35s ease-in-out forwards;
+}
+
+body[dir="rtl"] .dropdown-menu.tn-menu {
+    > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page):has(+ .tn-menu-page-entering) {
+        animation-name: tn-slide-out-to-right;
+    }
+
+    > :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page):has(+ .tn-menu-page-leaving) {
+        animation-name: tn-slide-in-from-right;
+    }
+
+    > .tn-menu-page-entering {
+        animation-name: tn-slide-in-from-left;
+    }
+
+    > .tn-menu-page-leaving {
+        animation-name: tn-slide-out-to-left;
+    }
+}
+
+.dropdown-menu.tn-menu.tn-menu-inline {
+    position: static;
+    width: 100%;
+    min-width: unset;
+}
+
+body.desktop .dropdown-item.dropdown-submenu.tn-menu-split {
+    /* The box of the arrow `.dropdown-toggle::after` draws in FormList.css. */
+    --tn-menu-split-toggle-width: calc(1.2em + 8px);
+    --menu-item-end-padding: calc(var(--tn-menu-split-toggle-width) + 10px);
+
+    .tn-menu-split-toggle {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: 0;
+        width: var(--tn-menu-split-toggle-width);
+        border-start-end-radius: inherit;
+        border-end-end-radius: inherit;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 5px;
+            inset-inline-start: 0;
+            border-inline-start: 1px solid var(--menu-item-delimiter-color);
+        }
+
+        &:hover {
+            background-color: color-mix(in srgb, currentColor 8%, transparent);
+        }
+    }
+
+    &.disabled .tn-menu-split-toggle:hover {
+        background-color: transparent;
+    }
+}
+
+/* The menu holds focus for its keys; the row they act on shows where they are instead. */
+.dropdown-menu.tn-menu:focus {
+    outline: none;
+}
+
+/*
+ * The pointer leaves the row for its submenu, so the row stays marked while the submenu is open.
+ * The row the keyboard acts on is marked the same way.
+ */
+body.desktop .dropdown-item.dropdown-submenu.submenu-open,
+.dropdown-item.tn-menu-active:not(.disabled) {
+    color: var(--hover-item-text-color);
+    background-color: var(--hover-item-background-color);
+    /* `!important` outranks the transparent border menus.css gives every `.dropdown-item`. */
+    border-color: var(--hover-item-border-color) !important;
+}
+
+/*
+ * Once the keys move the active row, a pointer at rest still hovers the row it left, which would
+ * mark a second row until the pointer moves. The row looks unhovered meanwhile, as in the resting
+ * `.dropdown-item` rule. `!important` and the extra classes outrank the theme's `:hover` rule in
+ * style.css, whose values these undo. A popup whose rows take focus themselves, such as the quick
+ * search's results, sets the class too; its focused row is the keys' row.
+ */
+.tn-menu-keyboard .dropdown-item:hover:not(.disabled, .active, .dropdown-container-item, .tn-menu-active, .submenu-open, :focus) {
+    color: var(--menu-text-color) !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+.tn-menu-filter {
+    flex: none;
+    padding: var(--tn-popup-padding) var(--tn-popup-padding) 4px;
+
+    + .tn-menu-scroll {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+        padding-top: 0;
+        scroll-padding-top: 0;
+    }
+
+    .tn-menu-scroll + & {
+        padding: 4px var(--tn-popup-padding) var(--tn-popup-padding);
+    }
+
+    .tn-menu-filter-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        margin: 0;
+        padding-inline: var(--menu-item-start-padding, 8px);
+        border-radius: 6px;
+        color: var(--muted-text-color);
+        cursor: text;
+    }
+
+    .tn-menu-filter-clear {
+        margin: calc((1em - var(--icon-button-size)) / 2);
+    }
+
+    .tn-menu-filter-input,
+    .tn-menu-filter-input:hover,
+    .tn-menu-filter-input:focus {
+        flex: 1;
+        min-width: 10em;
+        padding: 4px 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        box-shadow: none;
+        color: var(--menu-text-color);
+        font: inherit;
+    }
+}
+
+.tn-menu-scroll:has(+ .tn-menu-filter) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    padding-bottom: 0;
+    scroll-padding-bottom: 0;
+}
+
+.tn-menu-filter-empty {
+    padding: 0.25rem 0.75rem;
+    color: var(--muted-text-color);
+    font-style: italic;
+}
+
+.tn-menu-filter-title mark {
+    padding: 0;
+    background-color: transparent;
+    color: var(--quick-search-result-highlight-color, var(--admonition-warning-accent-color));
+    text-decoration: underline;
+}
+
+.tn-menu-filter-path {
+    margin-inline-start: 0.75em;
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}
+
+.tn-menu-actions {
+    display: flex;
+    gap: 3px;
+}
+
+.tn-menu-action {
+    position: relative;
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: min(4.5em, 18%);
+    padding: 4px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--menu-text-color);
+    font-size: 0.85em;
+    line-height: 1.2;
+
+    &:hover:not(:disabled),
+    &.tn-menu-active,
+    body.desktop &.submenu-open {
+        color: var(--hover-item-text-color);
+        background-color: var(--hover-item-background-color);
+    }
+
+    .tn-menu-keyboard &:hover:not(.tn-menu-active, .submenu-open) {
+        color: var(--menu-text-color);
+        background-color: transparent;
+    }
+
+    &:disabled > * {
+        opacity: var(--menu-item-disabled-opacity);
+    }
+
+    & + &::before {
+        content: "";
+        position: absolute;
+        inset-block: 10%;
+        inset-inline-start: -2px;
+        width: 1px;
+        background: var(--menu-item-delimiter-color);
+    }
+
+    &:not(:disabled) .destructive-action-icon {
+        color: var(--dropdown-item-icon-destructive-color);
+    }
+}
+
+/* The gaps and the card background match `.form-list-row` and the mobile `.dropdown-item` in theme-next/menus.css. */
+body.mobile .tn-menu-actions.tn-menu-actions-cards {
+    gap: 1em;
+    margin-bottom: 1em;
+
+    & > .tn-menu-action {
+        padding-block: var(--dropdown-menu-padding-vertical);
+        background: var(--card-background-color);
+        border-radius: var(--mobile-menu-group-radius, 6px);
+
+        &::before {
+            content: none;
+        }
+    }
+}
+
+.tn-menu-action-icon {
+    position: relative;
+    display: inline-flex;
+    color: var(--menu-item-icon-color);
+    font-size: 1.5em;
+}
+
+.tn-menu-action-badged {
+    mask-image: radial-gradient(circle at 80% 80%, transparent 0.36em, #000 0.37em);
+}
+
+.tn-menu-action-badge {
+    position: absolute;
+    right: -0.08em;
+    bottom: -0.08em;
+    font-size: 0.6em;
+}
+
+.tn-menu-action-more {
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-end: 2px;
+    color: var(--menu-item-icon-color);
+    opacity: 0.6;
+
+    &:dir(rtl) {
+        transform: scaleX(-1);
+    }
+}
+
+.tn-menu-action-title {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.8em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

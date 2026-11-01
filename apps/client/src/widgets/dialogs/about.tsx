@@ -3,7 +3,8 @@ import "./about.css";
 import type { AppInfo, Contributor, ContributorList } from "@triliumnext/commons";
 import clsx from "clsx";
 import type { ComponentChildren } from "preact";
-import { memo,useMemo } from "preact/compat";
+import { memo } from "preact/compat";
+import { useMemo } from "preact/hooks";
 import { useCallback, useRef,useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import type React from "react";
@@ -11,10 +12,10 @@ import { Trans } from "react-i18next";
 
 import contributors from "../../../../../contributors.json";
 import { t } from "../../services/i18n.js";
-import openService from "../../services/open.js";
 import server from "../../services/server.js";
-import utils, { isStandalone } from "../../services/utils.js";
+import { isStandalone } from "../../services/utils.js";
 import { formatDateTime } from "../../utils/formatters.js";
+import DirectoryLink from "../react/DirectoryLink.js";
 import { useTooltip, useTriliumEvent } from "../react/hooks.jsx";
 import Modal from "../react/Modal.js";
 import { PropertySheet, PropertySheetItem } from "../react/PropertySheet.js";
@@ -225,14 +226,3 @@ function ContributorListItem({data, onHover}: {data: Contributor, onHover?: Hove
     </>;
 }
 
-function DirectoryLink({ directory }: { directory: string}) {
-    if (utils.isElectron()) {
-        const onClick = (e: MouseEvent) => {
-            e.preventDefault();
-            openService.openDirectory(directory);
-        };
-
-        return <a className="tn-link selectable-text" href="#" onClick={onClick}>{directory}</a>;
-    }
-    return <span className="selectable-text">{directory}</span>;
-}

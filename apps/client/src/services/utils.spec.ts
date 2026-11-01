@@ -1,12 +1,15 @@
+import type { ViteHotContext } from "vite/types/hot.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import utils, {
+    areWindowControlsOnLeft,
     arrayEqual,
     clearBrowserCache,
     createImageSrcUrl,
     escapeHtml,
     escapeQuotes,
     escapeRegExp,
+    fileAccept,
     formatDateTime,
     formatSize,
     getErrorMessage,
@@ -18,6 +21,7 @@ import utils, {
     isLaunchBarConfig,
     isMac,
     isMobileApp,
+    isPreAuthScreen,
     isPWA,
     isUpdateAvailable,
     mapToKeyValueArray,
@@ -28,18 +32,10 @@ import utils, {
     reloadFrontendApp,
     replaceHtmlEscapedSlashes,
     restartDesktopApp,
+    reuseAcrossHotReloads,
+    rootCauseMessage,
     toggleBodyClass
 } from "./utils.js";
-
-// `snapdom` is used by downloadAsSvg / downloadAsPng; stub it so no real rendering happens.
-vi.mock("@zumer/snapdom", () => ({
-    snapdom: vi.fn(async () => ({
-        url: "data:image/svg+xml;base64,AAA",
-        toPng: vi.fn(async () => ({ src: "data:image/png;base64,BBB" }))
-    }))
-}));
-
-import { snapdom } from "@zumer/snapdom";
 
 // `logInfo` / `logError` are normally attached to window/globalThis by ws.ts, which is mocked
 // out by the test setup. Provide no-op globals so the few code paths that log don't crash.
@@ -115,6 +111,38 @@ describe("formatSize", () => {
         expect(formatSize(2048)).toBe("2 KiB");
         expect(formatSize(5 * 1024 * 1024)).toBe("5 MiB");
         expect(formatSize(3 * 1024 * 1024 * 1024)).toBe("3 GiB");
+    });
+
+    it("stays in the largest unit it knows rather than running off the end of them", () => {
+        // Past the last unit this used to name it "undefined", since it indexed straight into the
+        // list with whatever power of 1024 the size came to.
+        expect(formatSize(3 * 1024 ** 4)).toBe("3 TiB");
+        expect(formatSize(5 * 1024 ** 5)).toBe("5120 TiB");
+    });
+
+    it("shows a size in another size's unit, for figures read down a column", () => {
+        const total = 711_000_000;
+        expect(formatSize(643_854, 2, total)).toBe("0.61 MiB");
+        expect(formatSize(40_257_283, 2, total)).toBe("38.39 MiB");
+        expect(formatSize(0, 2, total)).toBe("0.00 MiB");
+    });
+
+    it("shows a size too small for the places of its unit as below the smallest step", () => {
+        const total = 2.5 * 1024 ** 3;
+        expect(formatSize(643_854, 2, total)).toBe("<0.01 GiB");
+        expect(formatSize(643_854, 0, total)).toBe("<1 GiB");
+        expect(formatSize(0, 2, total)).toBe("0.00 GiB");
+    });
+
+    it("keeps the places it is given, trailing zeros and all", () => {
+        // For a counter that is still climbing: dropping the zero shortens the text on every other
+        // update, and the line shifts about while it is being read.
+        expect(formatSize(1.5 * 1024 ** 3, 2)).toBe("1.50 GiB");
+        expect(formatSize(1.55 * 1024 ** 3, 2)).toBe("1.55 GiB");
+        expect(formatSize(2 * 1024 ** 3, 2)).toBe("2.00 GiB");
+        expect(formatSize(10 * 1024 ** 2, 1)).toBe("10.0 MiB");
+        // Nothing below a byte to show, however many places were asked for.
+        expect(formatSize(512, 2)).toBe("512 B");
     });
 });
 
@@ -205,9 +233,11 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<p>  </p>")).toBe(true);
     });
 
-    it("detects content via img / section / link-mention", () => {
+    it("detects content via img / section / include / link-mention", () => {
         expect(isHtmlEmpty("<IMG src='x'>")).toBe(false);
         expect(isHtmlEmpty("<SECTION></section>")).toBe(false);
+        expect(isHtmlEmpty("<figure class=\"include-note\" data-note-id=\"n1\">&nbsp;</figure>"))
+            .toBe(false);
         expect(isHtmlEmpty("<span class='link-mention'></span>")).toBe(false);
     });
 
@@ -250,6 +280,32 @@ describe("platform / device detection", () => {
         expect(isMac()).toBe(false);
     });
 
+    it("areWindowControlsOnLeft follows the platform and the overlay geometry", () => {
+        const platformSpy = vi.spyOn(navigator, "platform", "get");
+        const overlay = (visible: boolean, x: number) => {
+            navigator.windowControlsOverlay = {
+                visible,
+                getTitlebarAreaRect: () => ({ x }) as DOMRect
+            } as WindowControlsOverlay;
+        };
+
+        // macOS keeps the traffic lights on the left regardless of the overlay.
+        platformSpy.mockReturnValue("MacIntel");
+        expect(areWindowControlsOnLeft()).toBe(true);
+
+        platformSpy.mockReturnValue("Linux x86_64");
+        expect(areWindowControlsOnLeft()).toBe(false); // no overlay at all
+
+        overlay(false, 92); // native title bar: geometry is stale, ignore it
+        expect(areWindowControlsOnLeft()).toBe(false);
+
+        overlay(true, 0); // controls on the right (Windows, and Linux by default)
+        expect(areWindowControlsOnLeft()).toBe(false);
+
+        overlay(true, 92); // controls on the left
+        expect(areWindowControlsOnLeft()).toBe(true);
+    });
+
     it("isCtrlKey uses ctrlKey on non-Mac and metaKey on Mac", () => {
         const platformSpy = vi.spyOn(navigator, "platform", "get");
         platformSpy.mockReturnValue("Win32");
@@ -266,6 +322,19 @@ describe("platform / device detection", () => {
         (window as any).Capacitor = { isNativePlatform: () => true };
         expect(isMobileApp()).toBe(true);
         delete (window as any).Capacitor;
+    });
+
+    it("fileAccept widens the filter on Android and iOS only", () => {
+        const uaSpy = vi.spyOn(navigator, "userAgent", "get");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (X11; Linux x86_64) Chrome/120.0.0.0");
+        expect(fileAccept(".gpx,application/gpx+xml")).toBe(".gpx,application/gpx+xml");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (Linux; Android 14; SM-S911B) Chrome/120.0.0.0 Mobile");
+        expect(fileAccept(".gpx,application/gpx+xml")).toBe("*/*");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/605.1");
+        expect(fileAccept(".enex")).toBe("*/*");
     });
 
     it("isMobile / isDesktop respond to glob.device", () => {
@@ -437,6 +506,21 @@ describe("DOM / clipboard helpers (default export)", () => {
         delete (document as any).execCommand;
     });
 
+    it("copyHtmlToClipboard writes a distinct plain-text payload when given one", () => {
+        const setData = vi.fn();
+        const execSpy = vi.fn(() => {
+            const evt: any = new Event("copy");
+            evt.clipboardData = { setData };
+            document.dispatchEvent(evt);
+            return true;
+        });
+        (document as any).execCommand = execSpy;
+        utils.copyHtmlToClipboard("<b>x</b>", "x");
+        expect(setData).toHaveBeenCalledWith("text/html", "<b>x</b>");
+        expect(setData).toHaveBeenCalledWith("text/plain", "x");
+        delete (document as any).execCommand;
+    });
+
     it("copyHtmlToClipboard tolerates a copy event without clipboardData", () => {
         const execSpy = vi.fn(() => {
             document.dispatchEvent(new Event("copy"));
@@ -515,10 +599,10 @@ describe("timeLimit (default export)", () => {
         expect(utils.timeLimit(42 as any, 1000)).toBe(42);
     });
 
-    it("resolves when the promise settles before the limit (timer sees it as resolved)", async () => {
+    it("resolves when the promise settles before the limit", async () => {
         const result = utils.timeLimit(Promise.resolve("done"), 1000);
         await expect(result).resolves.toBe("done");
-        // Advance past the limit so the timeout callback runs and observes `resolved === true`.
+        // Advancing past the limit checks that the timeout does not turn the result into a rejection.
         await vi.advanceTimersByTimeAsync(1000);
         await expect(result).resolves.toBe("done");
     });
@@ -528,6 +612,14 @@ describe("timeLimit (default export)", () => {
         const limited = utils.timeLimit(never, 50, "too slow");
         const assertion = expect(limited).rejects.toThrow("too slow");
         await vi.advanceTimersByTimeAsync(60);
+        await assertion;
+    });
+
+    it("forwards a rejection immediately instead of waiting for the limit", async () => {
+        const failing = Promise.reject(new Error("boom"));
+        const limited = utils.timeLimit(failing, 30000);
+        const assertion = expect(limited).rejects.toThrow("boom");
+        await vi.advanceTimersByTimeAsync(0);
         await assertion;
     });
 
@@ -659,34 +751,67 @@ describe("createImageSrcUrl", () => {
     });
 });
 
-describe("snapdom downloads (default export)", () => {
-    it("downloadAsSvg parses an SVG string with the SVG mime type, renders it and triggers a download", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        // happy-dom's image/svg+xml documentElement lacks a writable `.style`, so return a real
-        // HTML element from the parser while still asserting the SVG mime branch was taken.
-        const parseSpy = vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
-            const doc = document.implementation.createHTMLDocument("");
-            return doc;
+describe("SVG downloads (default export)", () => {
+    function captureDownload() {
+        const downloads: { name: string | null, href: string | null }[] = [];
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function(this: HTMLAnchorElement) {
+            downloads.push({ name: this.getAttribute("download"), href: this.getAttribute("href") });
         });
-        await utils.downloadAsSvg("diagram", "  <svg><rect/></svg>");
-        expect(parseSpy).toHaveBeenCalledWith("  <svg><rect/></svg>", "image/svg+xml");
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+        return downloads;
+    }
+
+    function captureObjectUrls() {
+        const blobs: Blob[] = [];
+        vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+            blobs.push(blob as Blob);
+            return `blob:mock-${blobs.length}`;
+        });
+        vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+        return blobs;
+    }
+
+    it("downloadSvg downloads the SVG string as a data URL (a blob-URL anchor click after " +
+        "the export's awaits is silently blocked without user activation)", () => {
+        const downloads = captureDownload();
+        utils.downloadSvg("diagram", `<svg><text>a & b</text></svg>`);
+
+        expect(downloads).toHaveLength(1);
+        expect(downloads[0].name).toBe("diagram.svg");
+        const href = downloads[0].href ?? "";
+        expect(href.startsWith("data:image/svg+xml;charset=utf-8,")).toBe(true);
+        expect(decodeURIComponent(href.split(",")[1])).toBe(`<svg><text>a & b</text></svg>`);
     });
 
-    it("downloadAsSvg accepts an existing element without attaching it", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        const el = document.createElement("div");
-        await utils.downloadAsSvg("diagram", el);
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+    it("downloadSvgAsPng rasterizes at the given scale and downloads a PNG", async () => {
+        const downloads = captureDownload();
+        captureObjectUrls();
+        const drawImage = vi.fn();
+        const canvasSizes: { width: number, height: number }[] = [];
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage } as unknown as RenderingContext);
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockImplementation(function(this: HTMLCanvasElement) {
+            canvasSizes.push({ width: this.width, height: this.height });
+            return "data:image/png;base64,BBB";
+        });
+        vi.stubGlobal("Image", class {
+            src = "";
+            decode = vi.fn(async () => {});
+        });
+
+        try {
+            await utils.downloadSvgAsPng("diagram", `<svg width="100" height="50"></svg>`);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        expect(canvasSizes).toEqual([ { width: 200, height: 100 } ]); // default scale is 2
+        expect(drawImage).toHaveBeenCalled();
+        expect(downloads).toEqual([ { name: "diagram.png", href: "data:image/png;base64,BBB" } ]);
     });
 
-    it("downloadAsPng renders an HTML string to PNG and downloads it", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        await utils.downloadAsPng("diagram", "<div>hello</div>");
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+    it("downloadSvgAsPng rejects when the SVG has no usable dimensions", async () => {
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        await expect(utils.downloadSvgAsPng("diagram", `<svg xmlns="http://www.w3.org/2000/svg"/>`))
+            .rejects.toThrow("dimensions");
     });
 });
 
@@ -760,6 +885,38 @@ describe("getErrorMessage", () => {
         expect(getErrorMessage("plain string")).toBe("Unknown error");
         expect(getErrorMessage({ message: 5 })).toBe("Unknown error");
         expect(getErrorMessage(null)).toBe("Unknown error");
+    });
+});
+
+describe("rootCauseMessage", () => {
+    it("walks the cause chain to the bottom and returns the root message", () => {
+        const root = new Error("boom");
+        const middle = new Error(`Load of script note "B" (id2) failed with: boom`, { cause: root });
+        const outer = new Error(`Load of script note "A" (id1) failed with: ...`, { cause: middle });
+        expect(rootCauseMessage(outer)).toBe("boom");
+    });
+
+    it("returns the message of an unwrapped error or error-like object as-is", () => {
+        expect(rootCauseMessage(new Error("plain"))).toBe("plain");
+        expect(rootCauseMessage({ message: "server-side" })).toBe("server-side");
+    });
+
+    it("passes strings through and stringifies other primitives", () => {
+        expect(rootCauseMessage("raw string")).toBe("raw string");
+        expect(rootCauseMessage(42)).toBe("42");
+        expect(rootCauseMessage(new Error("outer", { cause: "string cause" }))).toBe("string cause");
+    });
+
+    it("does not loop forever on a cyclic cause chain", () => {
+        const self = new Error("self-cycle");
+        self.cause = self;
+        expect(rootCauseMessage(self)).toBe("self-cycle");
+
+        // A longer cycle: a -> b -> a. Walking stops once a repeat is seen.
+        const a = new Error("a");
+        const b = new Error("b", { cause: a });
+        a.cause = b;
+        expect(rootCauseMessage(b)).toBe("a");
     });
 });
 
@@ -839,5 +996,60 @@ describe("openInReusableSplit / openInAppHelpFromUrl", () => {
         };
         await openInAppHelpFromUrl("MyPage");
         expect(setNote).toHaveBeenCalledWith("_help_MyPage", { viewScope: { viewMode: "contextual-help" } });
+    });
+});
+
+describe("isPreAuthScreen", () => {
+    const originalGlob = window.glob;
+
+    afterEach(() => {
+        window.glob = originalGlob;
+    });
+
+    function setGlob(patch: Record<string, unknown>) {
+        // The eager module-load side effects (froca tree load, ws connect, options /
+        // keyboard-actions / fonts fetches) read `glob` directly; we only need the auth flags here.
+        window.glob = { isMainWindow: true, ...patch } as typeof window.glob;
+    }
+
+    it("flags the login screen (loggedIn:false) so eager loads skip their unauthenticated calls", () => {
+        setGlob({ dbInitialized: true, loggedIn: false });
+        expect(isPreAuthScreen()).toBe(true);
+    });
+
+    it("flags the set-password screen (passwordSet:false)", () => {
+        setGlob({ dbInitialized: true, passwordSet: false });
+        expect(isPreAuthScreen()).toBe(true);
+    });
+
+    it("does NOT flag the setup screen — froca/ws already gate on !dbInitialized and the server permits pre-init requests", () => {
+        setGlob({ dbInitialized: false });
+        expect(isPreAuthScreen()).toBe(false);
+    });
+
+    it("does NOT flag the fully authenticated app", () => {
+        setGlob({ dbInitialized: true, loggedIn: true, passwordSet: true });
+        expect(isPreAuthScreen()).toBe(false);
+    });
+
+    it("does NOT flag an unset glob (unit-test / unknown state) — strict === false keeps eager loads working", () => {
+        setGlob({});
+        expect(isPreAuthScreen()).toBe(false);
+    });
+});
+
+describe("reuseAcrossHotReloads", () => {
+    it("returns the stored instance on re-evaluation, and a fresh one without `hot.data`", () => {
+        const hot = { data: {} } as unknown as ViteHotContext;
+        const create = vi.fn(() => ({}));
+
+        const first = reuseAcrossHotReloads(hot, create);
+        expect(reuseAcrossHotReloads(hot, create)).toBe(first);
+        expect(create).toHaveBeenCalledTimes(1);
+
+        // Vitest's `import.meta.hot` stub has no `data`.
+        const stub = {} as unknown as ViteHotContext;
+        expect(reuseAcrossHotReloads(stub, create)).not.toBe(reuseAcrossHotReloads(stub, create));
+        expect(reuseAcrossHotReloads(undefined, create)).not.toBe(first);
     });
 });

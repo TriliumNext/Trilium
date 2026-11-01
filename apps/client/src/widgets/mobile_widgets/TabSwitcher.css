@@ -12,6 +12,139 @@
     }
 }
 
+#launcher-pane.tab-swipe,
+#launcher-pane.tab-swipe #launcher-container {
+    touch-action: pan-y;
+}
+
+html[data-tab-slide] {
+    --tab-slide-gap: 12px;
+    view-transition-name: none;
+
+    #mobile-rest-container {
+        view-transition-name: tab-content;
+    }
+
+    /* Named so it paints over the sliding content, which runs under it on iOS. */
+    #mobile-bottom-bar {
+        view-transition-name: tab-launch-bar;
+    }
+
+    body.ios {
+        #mobile-bottom-bar {
+            view-transition-name: none;
+        }
+
+        #mobile-bottom-bar > #launcher-pane {
+            view-transition-name: tab-launch-bar;
+        }
+    }
+
+    &::view-transition-group(tab-launch-bar) {
+        animation: none;
+    }
+
+    &::view-transition-old(tab-launch-bar) {
+        display: none;
+    }
+
+    &::view-transition-new(tab-launch-bar) {
+        animation: none;
+    }
+
+    &::view-transition-group(tab-content) {
+        background: color-mix(in srgb, var(--main-text-color) 20%, var(--main-background-color));
+    }
+
+    &::view-transition-old(tab-content),
+    &::view-transition-new(tab-content) {
+        animation-duration: 250ms;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        mix-blend-mode: normal;
+    }
+}
+
+/* Safari bakes the bar's own `backdrop-filter` into its snapshot, so the group blurs the sliding content instead. */
+html[data-tab-slide-captured] body.ios #mobile-bottom-bar > #launcher-pane {
+    backdrop-filter: none;
+}
+
+html[data-tab-slide]:has(body.ios:not(.backdrop-effects-disabled))::view-transition-group(tab-launch-bar) {
+    border-radius: calc(var(--launcher-pane-horiz-size) / 2);
+    /* Must match `--dropdown-backdrop-filter` in theme-next/ios.css. */
+    backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
+}
+
+html[data-tab-overscroll] #detail-container {
+    overflow: clip;
+}
+
+html[data-tab-drag] {
+    --tab-slide-gap: 12px;
+
+    #detail-container {
+        overflow: clip;
+    }
+
+    #detail-container > .split-note-container-widget {
+        position: relative;
+        will-change: transform;
+
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: var(--tab-slide-gap);
+            height: 100%;
+            background: color-mix(in srgb, var(--main-text-color) 20%, var(--main-background-color));
+        }
+
+        > .note-split.tab-slide-incoming {
+            display: flex !important;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+
+html[data-tab-drag="left"] #detail-container > .split-note-container-widget {
+    &::before {
+        left: 100%;
+    }
+
+    > .tab-slide-incoming {
+        left: calc(100% + var(--tab-slide-gap));
+    }
+}
+
+html[data-tab-drag="right"] #detail-container > .split-note-container-widget {
+    &::before {
+        right: 100%;
+    }
+
+    > .tab-slide-incoming {
+        left: calc(-100% - var(--tab-slide-gap));
+    }
+}
+
+html[data-tab-slide="left"] {
+    &::view-transition-old(tab-content) { animation-name: tab-slide-out-left; }
+    &::view-transition-new(tab-content) { animation-name: tab-slide-in-from-right; }
+}
+
+html[data-tab-slide="right"] {
+    &::view-transition-old(tab-content) { animation-name: tab-slide-out-right; }
+    &::view-transition-new(tab-content) { animation-name: tab-slide-in-from-left; }
+}
+
+@keyframes tab-slide-out-left { to { transform: translateX(calc(-100% - var(--tab-slide-gap))); } }
+@keyframes tab-slide-in-from-right { from { transform: translateX(calc(100% + var(--tab-slide-gap))); } }
+@keyframes tab-slide-out-right { to { transform: translateX(calc(100% + var(--tab-slide-gap))); } }
+@keyframes tab-slide-in-from-left { from { transform: translateX(calc(-100% - var(--tab-slide-gap))); } }
+
 .modal.tab-bar-modal {
     .modal-dialog {
         min-height: 85vh;
@@ -113,6 +246,31 @@
                     .note-book-content {
                         display: flex;
                         align-items: center;
+                    }
+                }
+
+                &.type-tree:not(.tab-preview-placeholder) {
+                    padding: 0.5em;
+                    font-size: 0.75em;
+
+                    .tree-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4em;
+                        padding: 0.25em 0.4em;
+                        border-radius: 0.5em;
+                        color: var(--custom-color, inherit);
+
+                        .title {
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            text-wrap: nowrap;
+                        }
+
+                        &.active {
+                            background: var(--more-accented-background-color);
+                            font-weight: bold;
+                        }
                     }
                 }
 

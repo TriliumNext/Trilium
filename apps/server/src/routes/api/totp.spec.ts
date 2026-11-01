@@ -1,14 +1,17 @@
 import { cls, options } from "@triliumnext/core";
 import type { Request } from "express";
+import type { TotpConfig, TotpOptions } from "time2fa";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
-    mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
-    mockValidate: vi.fn<(args: { passcode: string; secret: string }) => boolean>()
+    mockGenerateKey: vi.fn<GenerateKey>(),
+    mockValidate: vi.fn<typeof import("time2fa").Hotp.validate>()
 }));
 
-vi.mock("time2fa", () => ({
-    Totp: { generateKey: mockGenerateKey, validate: mockValidate }
+vi.mock("time2fa", async (importOriginal) => ({
+    ...await importOriginal<typeof import("time2fa")>(),
+    Totp: { generateKey: mockGenerateKey },
+    Hotp: { validate: mockValidate }
 }));
 
 import recoveryCodes from "../../services/encryption/recovery_codes.js";
@@ -35,7 +38,8 @@ describe("TOTP API", () => {
         expect(result.message).toMatch(/^[A-Z2-7]+$/);
         expect(result.url).toContain("otpauth://");
         // The request hostname is used as the account label under the "Trilium" issuer.
-        expect(mockGenerateKey).toHaveBeenCalledWith({ issuer: "Trilium", user: "localhost" });
+        expect(mockGenerateKey).toHaveBeenCalledWith(
+            { issuer: "Trilium", user: "localhost" }, expect.anything());
         // Generation must not store the secret — that only happens at enable.
         expect(totpRoute.getTOTPStatus().set).toBe(false);
     });
@@ -46,7 +50,8 @@ describe("TOTP API", () => {
             { success: boolean; recoveryCodes?: string[] };
         expect(result.success).toBe(true);
         expect(result.recoveryCodes).toHaveLength(8);
-        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET });
+        expect(mockValidate).toHaveBeenCalledWith(
+            { passcode: "000000", secret: SECRET, counter: expect.any(Number) }, expect.anything());
         // Verifying alone must neither enable TOTP nor store the recovery codes.
         expect(totpRoute.getTOTPStatus().set).toBe(false);
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
@@ -111,3 +116,5 @@ function runVerify(body: unknown) {
 function runEnable(body: unknown) {
     return cls.init(() => totpRoute.enableSecret({ body } as unknown as Request));
 }
+
+type GenerateKey = (opts: TotpOptions, config?: TotpConfig) => { secret: string; url: string };

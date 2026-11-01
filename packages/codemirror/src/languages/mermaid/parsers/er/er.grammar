@@ -1,0 +1,58 @@
+// Entity Relationship diagram grammar for Mermaid: https://mermaid.js.org/syntax/entityRelationshipDiagram.html
+@top ERDiagram {
+  DiagramName statement*
+}
+
+@skip { spaces | newlines | LineComment }
+
+statement {
+  Relationship |
+  Entity
+}
+
+Relationship {
+  EntityName RelationshipToken EntityName label?
+}
+
+label { ":" LabelText }
+
+LabelText { labelTextTerm }
+
+Entity {
+  EntityName Block?
+}
+
+Block {
+  "{" Attribute* "}"
+}
+
+Attribute {
+  AttrType AttrName KeyType? String?
+}
+
+EntityName { identifier }
+AttrType { identifier }
+AttrName { identifier }
+KeyType {
+  @specialize<identifier, "PK"> |
+  @specialize<identifier, "FK"> |
+  @specialize<identifier, "UK">
+}
+
+DiagramName { @specialize<identifier, "erDiagram"> }
+
+@external tokens relationshipTokens from "./tokens.js" { RelationshipToken }
+@external tokens labelTokens from "./tokens.js" { labelTextTerm }
+
+@tokens {
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[A-Za-z_] $[A-Za-z0-9_\-]* }
+  String { '"' ![\n"]* '"' }
+  "{"
+  "}"
+  ":"
+}
+
+@external propSource erHighlighting from "./highlight.js"

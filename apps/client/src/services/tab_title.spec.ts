@@ -13,8 +13,8 @@ describe("buildTabTitle", () => {
         );
 
         expect(segments).toEqual([
-            { text: "Inbox", active: false },
-            { text: "Tasks", active: true }
+            { text: "Inbox", html: "Inbox", active: false },
+            { text: "Tasks", html: "Tasks", active: true }
         ]);
         expect(tooltip).toBe(`Inbox${TAB_TITLE_SEPARATOR}Tasks`);
     });
@@ -77,6 +77,20 @@ describe("buildTabTitle tooltipHtml", () => {
         );
         expect(tooltipHtml).not.toContain("<img");
         expect(tooltipHtml).not.toContain("<script>");
+    });
+
+    it("uses a split's own markup in place of its escaped title", () => {
+        const locked = `<span class="protected-title">Protected</span>`;
+        const { segments, tooltipHtml } = buildTabTitle(
+            [
+                { title: "A & B", active: false },
+                { title: "Secret", html: locked, active: true }
+            ],
+            "New tab"
+        );
+
+        expect(segments.map((s) => s.html)).toEqual([ "A &amp; B", locked ]);
+        expect(tooltipHtml).toBe(`A &amp; B${TAB_TITLE_SEPARATOR}<strong>${locked}</strong>`);
     });
 
     it("escapes ampersands before other entities", () => {

@@ -8,8 +8,8 @@ import frocaUpdater from "./froca_updater.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
-import toastService from "./toast.js";
-import utils from "./utils.js";
+import toastService, { showUnhandledError } from "./toast.js";
+import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
@@ -86,18 +86,39 @@ export async function dispatchMessage(message: WebSocketMessage) {
     // Process the message
     if (messageType === "ping") {
         lastPingTs = Date.now();
+
+        // The backend expires the protected session with a one-shot `reload-frontend` broadcast;
+        // if the connection was down at that moment, the client would keep showing decrypted
+        // notes indefinitely. Ping replies carry the live backend state, so recover here.
+        if (msg.protectedSessionAvailable === false && glob.isProtectedSessionAvailable) {
+            utils.reloadFrontendApp("protected session expired on the backend");
+        }
     } else if (messageType === "reload-frontend") {
         utils.reloadFrontendApp("received request from backend to reload frontend");
+    } else if (messageType === "reload-froca") {
+        logInfo(`Reloading froca: ${msg.reason}`);
+        await reloadFroca();
     } else if (messageType === "frontend-update") {
         await executeFrontendUpdate(msg.data.entityChanges);
     } else if (messageType === "sync-hash-check-failed") {
-        toastService.showError(t("ws.sync-check-failed"), 60000);
+        // Not auto-dismissed after the usual few seconds: syncing stays broken until the user acts,
+        // and the backend only reports it once (it would otherwise recur with every sync attempt).
+        // The sector list is interpolated unescaped ({{- }}) since the toast renders its message as
+        // text: i18next's HTML escaping would only turn the `entityName/sector` slash into a
+        // literal `&#x2F;`.
+        toastService.showErrorTitleAndMessage(
+            t("ws.sync-hash-check-failed-title"),
+            t("ws.sync-hash-check-failed", { sectors: (msg.sectors ?? []).join(", ") }),
+            50 * 60000
+        );
     } else if (messageType === "consistency-checks-failed") {
         toastService.showError(t("ws.consistency-checks-failed"), 50 * 60000);
     } else if (messageType === "api-log-messages") {
         appContext.triggerEvent("apiLogMessages", { noteId: msg.noteId, messages: msg.messages });
     } else if (messageType === "toast") {
         toastService.showMessage(msg.message, msg.timeout);
+    } else if (messageType === "unhandled-error") {
+        showUnhandledError(msg.message, msg.stack);
     } else if (messageType === "execute-script") {
         const originEntity = msg.originEntityId ? await froca.getNote(msg.originEntityId) : null;
 
@@ -143,20 +164,44 @@ async function executeFrontendUpdate(entityChanges: EntityChange[]) {
 
         sendPing();
 
-        // first wait for all the preceding consumers to finish
-        while (consumeQueuePromise) {
-            await consumeQueuePromise;
-        }
+        await runInUpdateQueue(consumeFrontendUpdateData);
+    }
+}
 
+/**
+ * Rebuilds froca from the backend and has the widgets switch to the new objects. It runs in the
+ * update queue, so entity changes that arrive meanwhile apply on top of the rebuilt cache.
+ */
+export async function reloadFroca() {
+    await runInUpdateQueue(async () => {
         try {
-            // it's my turn, so start it up
-            consumeQueuePromise = consumeFrontendUpdateData();
-
-            await consumeQueuePromise;
-        } finally {
-            // finish and set to null to signal somebody else can pick it up
-            consumeQueuePromise = null;
+            await froca.reloadAll();
+            await appContext.triggerEvent("frocaReloaded", {});
+        } catch (e: unknown) {
+            // A partly rebuilt froca is not safe to keep using.
+            utils.reloadFrontendApp(`rebuilding froca failed: ${getErrorMessage(e)}`);
         }
+    });
+}
+
+/**
+ * Runs `task` once the tasks queued before it finish. `task` must handle its own errors: a
+ * rejection would also reject every task waiting behind it, leaving their changes unapplied.
+ */
+async function runInUpdateQueue(task: () => Promise<void>) {
+    // first wait for all the preceding consumers to finish
+    while (consumeQueuePromise) {
+        await consumeQueuePromise;
+    }
+
+    try {
+        // it's my turn, so start it up
+        consumeQueuePromise = task();
+
+        await consumeQueuePromise;
+    } finally {
+        // finish and set to null to signal somebody else can pick it up
+        consumeQueuePromise = null;
     }
 }
 
@@ -223,8 +268,7 @@ async function consumeFrontendUpdateData() {
 
             if (!glob.isDev && !options.is("debugModeEnabled")) {
                 // if there's an error in updating the frontend, then the easy option to recover is to reload the frontend completely
-
-                utils.reloadFrontendApp();
+                utils.reloadFrontendApp(`processing entity changes failed: ${e.message}`);
             } else {
                 console.log("nonProcessedEntityChanges causing the timeout", nonProcessedEntityChanges);
 
@@ -303,7 +347,10 @@ async function sendPing() {
 
 setTimeout(() => {
     if (glob.device === "print") return;
-    if (!glob.dbInitialized) return;
+    // Skip on the setup screen (!dbInitialized) and on the login / set-password pre-auth
+    // screens (isPreAuthScreen) — otherwise the browser opens a WebSocket it isn't authorised
+    // for, which the server refuses (#10589).
+    if (!glob.dbInitialized || isPreAuthScreen()) return;
 
     if (glob.isStandalone) {
         // In standalone mode, listen for messages from the local worker via custom event
@@ -346,5 +393,6 @@ export default {
     logError,
     subscribeToMessages,
     waitForMaxKnownEntityChangeId,
+    reloadFroca,
     getMaxKnownEntityChangeSyncId: () => lastAcceptedEntityChangeSyncId
 };

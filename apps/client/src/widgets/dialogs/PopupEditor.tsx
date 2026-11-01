@@ -1,46 +1,66 @@
 import "./PopupEditor.css";
 
-import { ComponentChildren } from "preact";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { ComponentChildren, type RefObject } from "preact";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
+import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import keyboard_actions from "../../services/keyboard_actions";
+import type { ViewScope } from "../../services/link";
+import shortcutService, { removeIndividualBinding, type ShortcutBinding } from "../../services/shortcuts";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
-import FloatingButtons from "../FloatingButtons";
-import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
-import NoteBadges from "../layout/NoteBadges";
-import NoteIcon from "../note_icon";
-import NoteTitleWidget from "../note_title";
+import FindWidget from "../find";
+import FormattingToolbar from "../layout/FormattingToolbar";
+import NoteActions from "../layout/NoteActions";
+import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
+import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
-import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
+import { DropdownPanel, type DropdownHandle } from "../react/Dropdown";
+import {
+    useContainedLinkNavigation, useDetachedNoteContext, useLegacyWidget, useNoteContext, useNoteLabel,
+    useTriliumEvent
+} from "../react/hooks";
 import Modal from "../react/Modal";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import ReadOnlyNoteInfoBar from "../ReadOnlyNoteInfoBar";
-import StandaloneRibbonAdapter from "../ribbon/components/StandaloneRibbonAdapter";
-import FormattingToolbar, { showFormattingToolbar } from "../ribbon/FormattingToolbar";
+import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
+import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
+/** The layer the stylesheet gives this popup while it stands over another modal. */
+const STACKED_LAYER = 1100;
 
-export default function PopupEditor() {
+/** Where a dialog this popup stands over is held while it is up, which is under its backdrop. */
+const COVERED_LAYER = 1090;
+
+/** The `ntxId`s of the popups on show, and of those stacked over another modal, which the page's classes reflect. */
+const shownPopups = new Set<string>();
+const stackedPopups = new Set<string>();
+
+export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand = "openInPopup" }: {
+    ntxId?: string;
+    /** The command this popup opens on. */
+    openCommand?: "openInPopup" | "openInNestedPopup";
+}) {
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
+    const [ switchable, setSwitchable ] = useState(false);
+    const selectsTitleRef = useRef(false);
+    /** Set while a note opened in the popup already on show waits to render before taking focus. */
+    const focusesOnRenderRef = useRef(false);
     const parentComponent = useContext(ParentComponent);
-    const [ noteContext, setNoteContext ] = useState(new NoteContext("_popup-editor"));
+    const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
-    const items = useMemo(() => {
-        const baseItems = isMobile ? [] : DESKTOP_FLOATING_BUTTONS;
-        return baseItems.filter(item => !POPUP_HIDDEN_FLOATING_BUTTONS.includes(item));
-    }, [ isMobile ]);
+    useDetachedNoteContext(noteContext);
 
-    useTriliumEvent("openInPopup", async ({ noteIdOrPath }) => {
+    useTriliumEvent(openCommand, async ({
+        noteIdOrPath, viewScope, showNoteTypeSwitcher, selectTitle
+    }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -52,14 +72,19 @@ export default function PopupEditor() {
             return;
         }
 
-        const noteContext = new NoteContext("_popup-editor");
+        const noteContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
+        setSwitchable(!!showNoteTypeSwitcher);
+        selectsTitleRef.current = !!selectTitle;
+        focusesOnRenderRef.current = shown;
 
         const hasUserSetNoteReadOnly = note.hasLabel("readOnly");
         await noteContext.setNote(noteIdOrPath, {
             viewScope: {
                 // Override auto-readonly notes to be editable, but respect user's choice to have a read-only note.
-                readOnlyTemporarilyDisabled: !hasUserSetNoteReadOnly
+                readOnlyTemporarilyDisabled: !hasUserSetNoteReadOnly,
+                // A view scope from the caller (e.g. an attachment link) decides what is actually displayed.
+                ...viewScope
             },
             keepActiveDialog: true
         });
@@ -70,22 +95,75 @@ export default function PopupEditor() {
         setShown(true);
     });
 
+    function focusOpenedNote() {
+        const shownNtxId = noteContext.ntxId;
+        if (selectsTitleRef.current) {
+            parentComponent?.handleEvent("focusAndSelectTitle", {
+                isNewNote: true, ntxId: shownNtxId
+            });
+        } else {
+            parentComponent?.handleEvent("focusOnDetail", { ntxId: shownNtxId });
+        }
+    }
+
+    // The modal fires `shown` only as it opens, so a note opened in the popup already on show is
+    // focused once it renders.
+    useEffect(() => {
+        if (!focusesOnRenderRef.current) return;
+        focusesOnRenderRef.current = false;
+        focusOpenedNote();
+    }, [ noteContext ]);
+
+    // Asked to stand aside by something within it that has sent the reader elsewhere — the note map,
+    // whose nodes navigate the pane behind rather than the popup, which would otherwise be left covering
+    // the note it has just gone to with a map of the note it came from.
+    useTriliumEvent("closePopupEditor", () => setShown(false));
+
+    // The popup's context is detached, so it never receives `entitiesReloaded` to clear a deleted note.
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const { noteId } = noteContext;
+        if (noteId && loadResults.isNoteReloaded(noteId) && loadResults.getEntityRow("notes", noteId)?.isDeleted) {
+            setShown(false);
+        }
+    });
+
     // Keep navigation that follows internal links inside the popup, rather than letting the global
     // link handler open the target in the background tab. Settings links open the options dialog.
-    useContainedLinkNavigation(modalRef, useCallback((notePath, viewScope) => {
+    const navigateInPopup = useCallback((notePath: string, viewScope: ViewScope | undefined) => {
         const targetNoteId = notePath.split("/").at(-1);
         if (targetNoteId?.startsWith("_options")) {
             void appContext.triggerCommand("showOptions", { section: targetNoteId });
         } else {
             void noteContext.setNote(notePath, { viewScope, keepActiveDialog: true });
         }
-    }, [ noteContext ]));
+    }, [ noteContext ]);
+    useContainedLinkNavigation(modalRef, navigateInPopup);
+    useFindShortcut(modalRef, ntxId);
+    const [ findBar ] = useLegacyWidget(() => new FindWidget(ntxId), { noteContext });
 
     // Add a global class to be able to handle issues with z-index due to rendering in a popup.
     useEffect(() => {
-        document.body.classList.toggle("popup-editor-open", shown);
-        document.body.classList.toggle("popup-editor-stacked", shown && stacked);
-    }, [shown, stacked]);
+        if (shown) shownPopups.add(ntxId);
+        if (shown && stacked) stackedPopups.add(ntxId);
+        syncPopupClasses();
+        return () => {
+            shownPopups.delete(ntxId);
+            stackedPopups.delete(ntxId);
+            syncPopupClasses();
+        };
+    }, [ shown, stacked, ntxId ]);
+
+    // A CKEditor dialog — the AI assistant — stacks at `--ck-z-dialog` (9999), far above the 999
+    // this popup is deliberately held at so the editor's own panels can float over it. One already
+    // open belongs to the editor behind and has to give way; one opened later belongs to the editor
+    // *in* the popup and has to stay above it. Both are appended to `<body>`, so no selector tells
+    // them apart — but the one to demote is exactly the one standing when the popup opens.
+    useEffect(() => {
+        if (!shown) return;
+        const openDialog = document.querySelector(".ck-dialog-overlay");
+        openDialog?.classList.add("ck-dialog-behind-popup-editor");
+        return () => openDialog?.classList.remove("ck-dialog-behind-popup-editor");
+    }, [shown]);
 
     // When stacked on top of another modal, raise this popup's own backdrop above
     // the underlying modal. Bootstrap does not auto-increment z-index for stacked
@@ -96,7 +174,34 @@ export default function PopupEditor() {
         const popupBackdrop = backdrops[backdrops.length - 1] as HTMLElement | undefined;
         if (!popupBackdrop) return;
         popupBackdrop.classList.add("popup-editor-backdrop");
-        return () => popupBackdrop.classList.remove("popup-editor-backdrop");
+
+        /*
+         * The stylesheet's stacked layer clears Bootstrap's own dialogs and no more. A dialog that
+         * declares a layer of its own stands above it — a confirm or a prompt at 2000, or the
+         * properties of a collection that opened this to write a template — and would cover the
+         * popup entirely.
+         *
+         * What gives way is the dialog, not this popup: it is held deliberately low so that the
+         * editor's own panels and the menus its pickers open (portalled to the page at 1200) float
+         * over it, and raising it above a dialog would put every one of those behind it. Each is
+         * put back exactly as it was found, an inline layer of its own included.
+         */
+        const dialog = modalRef.current;
+        const lowered = [ ...document.querySelectorAll<HTMLElement>(".modal.show") ]
+            .filter((modal) => modal !== dialog
+                && (parseInt(getComputedStyle(modal).zIndex, 10) || 0) >= STACKED_LAYER)
+            .map((modal) => {
+                const was = modal.style.zIndex;
+                modal.style.zIndex = String(COVERED_LAYER);
+                return () => { modal.style.zIndex = was; };
+            });
+
+        return () => {
+            popupBackdrop.classList.remove("popup-editor-backdrop");
+            for (const restore of lowered) {
+                restore();
+            }
+        };
     }, [shown, stacked]);
 
     return (
@@ -105,39 +210,128 @@ export default function PopupEditor() {
                 <Modal
                     modalRef={modalRef}
                     title={<TitleRow />}
+                    header={<>
+                        <PopupBacklinks onNavigate={navigateInPopup} />
+                        <NoteActions paneButtons={false} />
+                    </>}
                     customTitleBarButtons={[{
                         iconClassName: "bx-expand-alt",
                         title: t("popup-editor.maximize"),
                         onClick: async () => {
                             if (!noteContext.noteId) return;
-                            const { noteId, hoistedNoteId } = noteContext;
-                            await appContext.tabManager.openInNewTab(noteId, hoistedNoteId, true);
+                            const { noteId, hoistedNoteId, viewScope } = noteContext;
+                            if (viewScope?.attachmentId || (viewScope?.viewMode && viewScope.viewMode !== "default")) {
+                                // Whatever is on show that isn't the note itself — an attachment, or a view
+                                // mode such as the note map — is carried over, or the tab would open on the
+                                // note and drop what was being looked at.
+                                await appContext.tabManager.openContextWithNote(noteId, { hoistedNoteId, viewScope, activate: true });
+                            } else {
+                                await appContext.tabManager.openInNewTab(noteId, hoistedNoteId, true);
+                            }
                             setShown(false);
                         }
                     }]}
                     className="popup-editor-dialog"
                     size="lg"
                     show={shown}
-                    onShown={() => parentComponent?.handleEvent("focusOnDetail", { ntxId: noteContext.ntxId })}
+                    onShown={focusOpenedNote}
                     onHidden={() => setShown(false)}
                     keepInDom // needed for faster loading
                     noFocus // automatic focus breaks block popup
                     stackable
                 >
-                    {!isNewLayout && <ReadOnlyNoteInfoBar />}
-                    <PromotedAttributes />
+                    <div className={`popup-editor-scroll${isMobile ? " scroll-edge-fade" : ""}`}>
+                        <PromotedAttributes />
 
-                    {isMobile
-                        ? <MobileEditorToolbar inPopupEditor />
-                        : <StandaloneRibbonAdapter component={FormattingToolbar} show={showFormattingToolbar} />}
+                        {!isMobile && <FormattingToolbar />}
 
-                    <FloatingButtons items={items} />
-                    <NoteDetail />
-                    <NoteList media="screen" displayOnlyCollections />
+                        <NoteDetail />
+                        <NoteList media="screen" displayOnlyCollections />
+                    </div>
+                    {switchable && <NoteTypeSwitcher note={noteContext.note} />}
+                    {isMobile && <MobileEditorToolbar />}
+                    {findBar}
                 </Modal>
             </DialogWrapper>
         </NoteContextContext.Provider>
     );
+}
+
+/**
+ * The note's backlinks, in the dropdown of an icon button whose tooltip gives their count. The
+ * dropdown is rendered in the page's body, outside the modal, so `BacklinksInPopup` routes its links
+ * into the popup, and following one closes the dropdown.
+ */
+function PopupBacklinks({ onNavigate }: { onNavigate: (notePath: string, viewScope: ViewScope | undefined) => void }) {
+    const { note, viewScope } = useNoteContext();
+    const count = useBacklinkCount(note, viewScope?.viewMode === "default");
+    const dropdownRef = useRef<DropdownHandle>(null);
+
+    return (note && viewScope?.viewMode === "default" && count > 0 &&
+        <DropdownPanel
+            dropdownRef={dropdownRef}
+            className="popup-editor-backlinks"
+            buttonClassName="bx bx-link"
+            title={t("status_bar.backlinks_title", { count })}
+            dropdownContainerClassName="dropdown-backlinks"
+            noSelectButtonStyle
+            hideToggleArrow
+            iconAction
+            scrollable
+        >
+            <BacklinksInPopup
+                note={note}
+                onNavigate={(notePath, scope) => {
+                    dropdownRef.current?.hide();
+                    onNavigate(notePath, scope);
+                }}
+            />
+        </DropdownPanel>
+    );
+}
+
+function BacklinksInPopup({ note, onNavigate }: { note: FNote, onNavigate: (notePath: string, viewScope: ViewScope | undefined) => void }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    useContainedLinkNavigation(containerRef, onNavigate);
+
+    return (
+        <div ref={containerRef}>
+            <BacklinksWidget note={note} />
+        </div>
+    );
+}
+
+/**
+ * Binds `findInText` on the popup for its own context. The window binding targets the active tab,
+ * which is the one behind the popup.
+ */
+function useFindShortcut(modalRef: RefObject<HTMLDivElement | null>, ntxId: string) {
+    useEffect(() => {
+        const modal = modalRef.current;
+        if (!modal) return;
+
+        let bindings: ShortcutBinding[] = [];
+        let isDisposed = false;
+        void keyboard_actions.getAction("findInText", true).then((action) => {
+            if (isDisposed) return;
+            bindings = (action?.effectiveShortcuts ?? []).flatMap((shortcut) =>
+                shortcutService.bindElShortcut($(modal), shortcut, () => {
+                    void appContext.triggerCommand("findInText", { ntxId });
+                }) ?? []);
+        });
+
+        return () => {
+            isDisposed = true;
+            for (const binding of bindings) {
+                removeIndividualBinding(binding);
+            }
+        };
+    }, [ modalRef, ntxId ]);
+}
+
+function syncPopupClasses() {
+    document.body.classList.toggle("popup-editor-open", shownPopups.size > 0);
+    document.body.classList.toggle("popup-editor-stacked", stackedPopups.size > 0);
 }
 
 export function DialogWrapper({ children }: { children: ComponentChildren }) {
@@ -148,16 +342,6 @@ export function DialogWrapper({ children }: { children: ComponentChildren }) {
     return (
         <div ref={wrapperRef} class={`quick-edit-dialog-wrapper ${note?.getColorClass() ?? ""}`}>
             {children}
-        </div>
-    );
-}
-
-export function TitleRow() {
-    return (
-        <div className="title-row">
-            <NoteIcon />
-            <NoteTitleWidget />
-            {isNewLayout && <NoteBadges />}
         </div>
     );
 }

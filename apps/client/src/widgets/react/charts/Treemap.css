@@ -1,0 +1,109 @@
+/* Zero specificity, so a theme overrides these from its own `:root` block and never has to outweigh
+   this stylesheet. A cell's hue is its own and comes in inline with the geometry; a theme sets the
+   saturation and lightness struck from it, one set per color scheme. */
+:where(:root) {
+    /* A cell with no hue of its own: a bucket, standing for a crowd rather than a thing. */
+    --space-usage-treemap-cell-background: var(--accented-background-color);
+    --space-usage-treemap-cell-icon-color: var(--muted-text-color);
+    --space-usage-treemap-cell-hover-color: var(--main-text-color);
+    --space-usage-treemap-cell-selected-color: var(--main-text-color);
+
+    /* The cell's fill. */
+    --space-usage-treemap-cell-saturation: 50%;
+    --space-usage-treemap-cell-lightness: 78%;
+
+    /* The icon, pushed away from the fill it sits on so it stays legible against it. */
+    --space-usage-treemap-icon-saturation: 70%;
+    --space-usage-treemap-icon-lightness: 12%;
+
+    /* The hovered cell's ring: deep against the fill, and short of the chosen cell's full strength
+       so the two never read as the same state. */
+    --space-usage-treemap-hover-saturation: 60%;
+    --space-usage-treemap-hover-lightness: 35%;
+
+    /* The chosen cell's border: the hue at full strength, standing well clear of the fill. */
+    --space-usage-treemap-selected-saturation: 100%;
+    --space-usage-treemap-selected-lightness: 50%;
+}
+
+.treemap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    /* Painted through a variable, not a competing rule: consumers set the cell's background and
+       never race this stylesheet's cascade position. */
+    /* The corner rounding is per cell — a cell rounds only the corners its block owns — so it is
+       computed with the geometry rather than set here. */
+    .treemap-cell {
+        display: flex;
+        position: absolute;
+        align-items: center;
+        justify-content: center;
+        background: var(--space-usage-treemap-cell-background);
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    /* Struck on the cell itself, where the hue is: a custom property resolves `var()` against the
+       element it is declared on, so these cannot be composed up in the root block. */
+    .treemap-cell.treemap-colored {
+        --space-usage-treemap-cell-background: hsl(
+            var(--treemap-hue)
+            var(--space-usage-treemap-cell-saturation)
+            var(--space-usage-treemap-cell-lightness)
+        );
+    }
+
+    /* Sized inline from the cell's geometry; the pointer belongs to the cell, so the glyph never
+       intercepts a hover, a click or a right-click meant for it. */
+    .treemap-cell-icon {
+        color: var(--space-usage-treemap-cell-icon-color);
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    .treemap-cell.treemap-colored > .treemap-cell-icon {
+        --space-usage-treemap-cell-icon-color: hsl(
+            var(--treemap-hue)
+            var(--space-usage-treemap-icon-saturation)
+            var(--space-usage-treemap-icon-lightness)
+        );
+    }
+
+    /* Only where a pointer can actually hover: a tap leaves a touch screen's cell "hovered" until
+       the next one is tapped, which would put a second ring on the map beside the chosen cell's. */
+    @media (hover: hover) {
+        .treemap-cell:hover {
+            outline: 2px solid var(--space-usage-treemap-cell-hover-color);
+            outline-offset: -1px;
+            z-index: 1;
+        }
+
+        .treemap-cell.treemap-colored:hover {
+            --space-usage-treemap-cell-hover-color: hsl(
+                var(--treemap-hue)
+                var(--space-usage-treemap-hover-saturation)
+                var(--space-usage-treemap-hover-lightness)
+            );
+        }
+    }
+
+    /* The chosen cell, where identity is a selection rather than a hover. A border rather than an
+       outline: it is drawn inside the cell's own rect, which leaves the geometry alone (the cells are
+       border-box) and keeps all four sides on the outermost cells, where the container clips and the
+       map's inset is thinner than this. */
+    .treemap-cell.treemap-cell-selected {
+        z-index: 2;
+        border: 3px solid var(--space-usage-treemap-cell-selected-color);
+    }
+
+    .treemap-cell.treemap-colored.treemap-cell-selected {
+        --space-usage-treemap-cell-selected-color: hsl(
+            var(--treemap-hue)
+            var(--space-usage-treemap-selected-saturation)
+            var(--space-usage-treemap-selected-lightness)
+        );
+    }
+}

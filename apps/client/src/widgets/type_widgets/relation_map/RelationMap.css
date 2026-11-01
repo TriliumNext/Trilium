@@ -3,6 +3,9 @@
 }
 
 .note-detail-relation-map {
+    --relation-map-line-color: var(--muted-text-color);
+    --relation-map-highlight-color: var(--note-icon-background-color, var(--link-color));
+
     height: 100%;
     overflow: hidden !important;
     position: relative;
@@ -11,77 +14,96 @@
 .relation-map-wrapper {
     position: relative;
     height: 100%;
-    outline: none; /* remove dotted outline on click */
 }
 
-.note-detail-relation-map .note-box {
-    padding: 16px;
-    position: absolute !important;
-    background-color: var(--accented-background-color);
-    color: var(--main-text-color);
-    z-index: 4;
-    border: 1px solid #666;
-    box-shadow: 2px 2px 19px #999;
-    border-radius: 8px;
-    opacity: 0.8;
-    font-size: 11px;
-    width: auto;
-    height: auto;
-    max-width: 200px;
-    min-width: 150px;
-    max-height: 200px;
-    overflow: hidden;
+.relation-map-viewport,
+.relation-map-viewport .relation-map-transform.react-transform-wrapper {
+    width: 100%;
+    height: 100%;
 }
 
-.note-detail-relation-map .note-box:hover {
-    background-color: var(--more-accented-background-color);
+.relation-map-viewport {
+    outline: none;
 }
 
-.note-detail-relation-map .note-box .title {
-    font-size: larger;
-    font-weight: 600;
+.note-detail-relation-map .relation-map-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
 }
 
-.note-detail-relation-map .connection-label.jtk-hover,
-.jtk-source-hover,
-.jtk-target-hover {
-    background-color: var(--more-accented-background-color);
+.note-detail-relation-map .relation-map-connection {
+    transition: opacity 0.2s ease;
+
+    .relation-map-connection-hit {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 12px;
+        pointer-events: stroke;
+        cursor: pointer;
+    }
+
+    .relation-map-connection-line {
+        fill: none;
+        stroke: var(--relation-map-line-color);
+        stroke-width: 1px;
+        transition: stroke 0.2s ease;
+    }
+
+    .relation-map-arrow {
+        fill: var(--relation-map-line-color);
+        stroke: var(--relation-map-line-color);
+        stroke-width: 1.2px;
+        stroke-linejoin: round;
+        transition: stroke 0.2s ease, fill 0.2s ease;
+    }
+
+    &:is(.hovered, .lit, .pending) {
+        --relation-map-line-color: var(--relation-map-lit-color, var(--relation-map-highlight-color));
+    }
 }
 
 .note-detail-relation-map .connection-label {
-    background-color: var(--accented-background-color);
-    color: var(--main-text-color);
-    opacity: 0.8;
-    padding: 0.3em;
-    border-radius: 0.5em;
-    border: 1px solid #666;
-    cursor: pointer;
-}
-
-.note-detail-relation-map .endpoint {
     position: absolute;
-    bottom: 37%;
-    inset-inline-end: 5px;
-    width: 1em;
-    height: 1em;
-    background-color: #333;
+    z-index: 2;
+    transform-origin: 0 0;
+    transform: rotate(var(--relation-map-label-angle, 0deg)) translate(-50%, 0.1em);
+    white-space: nowrap;
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: var(--muted-text-color);
+    text-shadow:
+        0 0 2px var(--main-background-color),
+        0 0 4px var(--main-background-color);
     cursor: pointer;
-    box-shadow: 0 0 2px black;
+    transition: opacity 0.2s ease, color 0.2s ease;
+
+    &.above {
+        transform: rotate(var(--relation-map-label-angle, 0deg)) translate(-50%, calc(-100% - 0.1em));
+    }
+
+    &.end {
+        transform: rotate(var(--relation-map-label-angle, 0deg)) translate(0.4em, -50%);
+    }
+
+    &.hovered {
+        color: var(--main-text-color);
+    }
 }
 
-.note-detail-relation-map .endpoint:hover {
-    box-shadow: 0 0 6px black;
-}
-
-.note-detail-relation-map .dragHover {
-    border: 2px solid orange;
-}
-
-.note-detail-relation-map path,
-.note-detail-relation-map .jtk-endpoint {
-    cursor: pointer;
+.note-detail-relation-map :is(.relation-map-connection, .connection-label).faded {
+    opacity: 0.15;
 }
 
 .note-detail-relation-map .ui-contextmenu {
     z-index: 100;
+}
+
+.relation-map-wrapper.placing-note {
+    cursor: crosshair;
 }

@@ -1,6 +1,25 @@
 {
   "about": {
-    "data_directory": "Direktorijum sa podacima:"
+    "data_directory": "Direktorijum sa podacima:",
+    "version_label": "Verzija:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "contributors_label": "Doprinosioci:",
+    "contributor_roles": {
+      "lead-dev": "glavni developer",
+      "original-dev": "originalni developer"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran je osnovao TriliumNext 2024. godine, a \"community fork\" je nastao nakon što se Zadam povukao iz projekta. Zadam je kasnije preneo originalni repozitorijum TriliumNext timu, čime je spojio oba projekta u jedan."
+    },
+    "contributor_full_list": "Pogledajte celu zajednicu",
+    "channel": {
+      "nightly": "Noćni",
+      "standalone": "Samostalan"
+    },
+    "github_tooltip": "Prijavi probleme, predloži nove funkcionalnosti ili podrži na GitHub-u",
+    "license_tooltip": "Licenca",
+    "donate": "Doniraj",
+    "donate_tooltip": "Donirajte da biste podržali ovaj projekat"
   },
   "toast": {
     "critical-error": {
@@ -15,6 +34,12 @@
     "bundle-error": {
       "title": "Pokretanje prilagođene skripte neuspešno",
       "message": "Skripta iz beleške sa ID-jem \"{{id}}\", naslovom \"{{title}}\" nije mogla da se izvrši zbog:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Nije uspelo preuzimanje liste vidžeta sa servera"
+    },
+    "widget-render-error": {
+      "title": "Nije uspelo prikazivanje prilagođenog React vidžeta"
     }
   },
   "add_link": {
@@ -22,8 +47,6 @@
     "help_on_links": "Pomoć na linkovima",
     "note": "Beleška",
     "search_note": "potražite belešku po njenom imenu",
-    "link_title_mirrors": "naziv linka preslikava trenutan naziv beleške",
-    "link_title_arbitrary": "naziv linka se može proizvoljno menjati",
     "link_title": "Naziv linka",
     "button_add_link": "Dodaj link <kbd>enter</kbd>"
   },
@@ -36,11 +59,11 @@
   },
   "bulk_actions": {
     "bulk_actions": "Grupne akcije",
-    "affected_notes": "Pogođene beleške",
     "include_descendants": "Obuhvati potomke izabranih beleški",
-    "available_actions": "Dostupne akcije",
     "chosen_actions": "Izabrane akcije",
-    "execute_bulk_actions": "Izvrši grupne akcije",
+    "execute_bulk_actions_one": "Izvrši grupne akcije",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Grupne akcije su uspešno izvršene.",
     "none_yet": "Nijedna za sad... dodajte akciju tako što ćete pritisnuti na neku od dostupnih akcija iznad.",
     "labels": "Oznake",
@@ -168,11 +191,6 @@
   "include_note": {
     "dialog_title": "Uključi belešku",
     "label_note": "Beleška",
-    "placeholder_search": "pretraži belešku po njenom imenu",
-    "box_size_prompt": "Veličina kutije priložene beleške:",
-    "box_size_small": "mala (~ 10 redova)",
-    "box_size_medium": "srednja (~ 30 redova)",
-    "box_size_full": "puna (kutija prikazuje ceo tekst)",
     "button_include": "Uključi belešku"
   },
   "info": {
@@ -181,8 +199,7 @@
     "okButton": "U redu"
   },
   "jump_to_note": {
-    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande...",
-    "search_button": "Pretraga u punom tekstu <kbd>Ctrl+Enter</kbd>"
+    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande..."
   },
   "markdown_import": {
     "dialog_title": "Uvoz za Markdown",
@@ -200,10 +217,7 @@
     "move_success_message": "Izabrane beleške su premeštene u "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Promenite gde će se napraviti nova beleška:",
-    "search_placeholder": "pretraži putanju po njenom imenu (podrazumevano ako je prazno)",
     "modal_title": "Izaberite tip beleške",
-    "modal_body": "Izaberite tip beleške / šablon za novu belešku:",
     "templates": "Šabloni"
   },
   "password_not_set": {
@@ -237,10 +251,8 @@
     "title": "naslov",
     "date_created": "datum kreiranja",
     "date_modified": "datum izmene",
-    "sorting_direction": "Smer sortiranja",
     "ascending": "uzlazni",
     "descending": "silazni",
-    "folders": "Fascikle",
     "sort_folders_at_top": "sortiraj fascikle na vrh",
     "natural_sort": "Prirodno sortiranje",
     "sort_with_respect_to_different_character_sorting": "sortiranje sa poštovanjem različitih pravila sortiranja karaktera i kolacija u različitim jezicima ili regionima.",
@@ -258,23 +270,18 @@
     "tooltip": "Ako je označeno, Trilium će pokušati da smanji otpremljene slike skaliranjem i optimizacijom što može uticati na kvalitet slike. Ako nije označeno, slike će biti otpremljene bez izmena."
   },
   "attribute_detail": {
-    "attr_detail_title": "Naslov detalja atributa",
     "close_button_title": "Otkaži izmene i zatvori",
-    "attr_is_owned_by": "Atribut je u vlasništvu",
-    "attr_name_title": "Naziv atributa može biti sastavljen samo od alfanumeričkih znakova, dvotačke i donje crte",
     "name": "Naziv",
     "value": "Vrednost",
     "target_note_title": "Relacija je imenovana veza između izvorne beleške i ciljne beleške.",
     "target_note": "Ciljna beleška",
     "promoted_title": "Promovisani atribut je istaknut na belešci.",
     "promoted": "Promovisan",
-    "promoted_alias_title": "Naziv koji će biti prikazan u korisničkom interfejsu promovisanih atributa.",
     "promoted_alias": "Pseudonim",
     "multiplicity_title": "Multiplicitet definiše koliko atributa sa istim nazivom se može napraviti - najviše 1 ili više od 1.",
     "multiplicity": "Multiplicitet",
     "single_value": "Jednostruka vrednost",
     "multi_value": "Višestruka vrednost",
-    "label_type_title": "Tip oznake će pomoći Triliumu da izabere odgovarajući interfejs za unos vrednosti oznake.",
     "label_type": "Tip",
     "text": "Tekst",
     "number": "Broj",
@@ -290,14 +297,11 @@
     "inverse_relation": "Inverzna relacija",
     "inheritable_title": "Atributi koji mogu da se nasleđuju će biti nasleđeni od strane svih potomaka unutar ovog stabla.",
     "inheritable": "Nasledno",
-    "save_and_close": "Sačuvaj i zatvori <kbd>Ctrl+Enter</kbd>",
     "delete": "Obriši",
     "related_notes_title": "Druge beleške sa ovom oznakom",
     "more_notes": "Još beleški",
     "label": "Detalji oznake",
-    "label_definition": "Detalji definicije oznake",
     "relation": "Detalji relacije",
-    "relation_definition": "Detalji definicije relacije",
     "disable_versioning": "onemogućava auto-verzionisanje. Korisno za npr. velike, ali nebitne beleške - poput velikih JS biblioteka koje se koriste za skripte",
     "calendar_root": "obeležava belešku koju treba koristiti kao osnova za dnevne beleške. Samo jedna beleška treba da bude označena kao takva.",
     "archived": "beleške sa ovom oznakom neće biti podrazumevano vidljive u rezultatima pretrage (kao ni u dijalozima za Idi na, Dodaj link, itd.).",
@@ -342,7 +346,6 @@
     "hide_relations": "imena relacija razdvojenih zarezima koja treba da budu skrivena. Sva ostala će biti prikazana.",
     "title_template": "podrazumevani naslov beleški kreiranih kao deca ove beleške. Vrednost se procenjuje kao JavaScript string \n                        i stoga se može obogatiti dinamičkim sadržajem putem ubrizganih promenljivih <code>now</code> and <code>parentNote</code>. Primeri:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Pogledati <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki sa detaljima</a>, API dokumentacija za <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> i <a href=\"https://day.js.org/docs/en/display/format\">now</a> za detalje.",
     "template": "Ova beleška će biti prikazana u izboru dostupnih šablona prilikom pravljenja nove beleške",
-    "toc": "<code>#toc</code> ili <code>#toc=show</code> će pristiliti Sadržaj (Table of Contents) da bude prikazan, <code>#toc=hide</code> prisiliti njegovo sakrivanje. Ako oznaka ne postoji, ponašanje će biti usklađeno sa globalnim podešavanjem",
     "color": "definiše boju beleške u stablu beleški, linkovima itd. Koristite bilo koju važeću CSS vrednost boje kao što je „crvena“ ili #a13d5f",
     "keyboard_shortcut": "Definiše prečicu na tastaturi koja će odmah preći na ovu belešku. Primer: „ctrl+alt+e“. Potrebno je ponovno učitavanje frontenda da bi promena stupila na snagu.",
     "keep_current_hoisting": "Otvaranje ove veze neće promeniti podizanje čak i ako beleška nije prikazana u trenutno podignutom podstablu.",
@@ -350,7 +353,6 @@
     "execute_description": "Duži opis trenutne beleške sa kodom prikazan je zajedno sa dugmetom za izvršavanje",
     "exclude_from_note_map": "Beleške sa ovom oznakom biće skrivene sa mape beleški",
     "new_notes_on_top": "Nove beleške će biti napravljene na vrhu matične beleške, a ne na dnu.",
-    "hide_highlight_widget": "Sakrij vidžet sa listom istaknutih",
     "run_on_note_creation": "izvršava se kada se beleška napravi na serverskoj strani. Koristite ovu relaciju ako želite da pokrenete skriptu za sve beleške napravljene u okviru određenog podstabla. U tom slučaju, kreirajte je na korenu beleške podstabla i učinite je naslednom. Nova beleška napravljena unutar podstabla (bilo koje dubine) pokrenuće skriptu.",
     "run_on_child_note_creation": "izvršava se kada se napravi nova beleška ispod beleške gde je ova relacija definisana",
     "run_on_note_title_change": "izvršava se kada se promeni naslov beleške (uključuje i pravljenje beleške)",
@@ -377,7 +379,6 @@
     "share_favicon": "Favicon beleška koju treba postaviti na deljenu stranicu. Obično je potrebno da je podesite da deli koren i učinite je naslednom. Favicon beleška takođe mora biti u deljenom podstablu. Razmislite o korišćenju „share_hidden_from_tree“.",
     "is_owned_by_note": "je u vlasništvu beleške",
     "other_notes_with_name": "Ostale beleške sa {{attributeType}} nazivom „{{attributeName}}“",
-    "and_more": "... i još {{count}}.",
     "print_landscape": "Prilikom izvoza u PDF, menja orijentaciju stranice u pejzažnu umesto uspravne.",
     "print_page_size": "Prilikom izvoza u PDF, menja veličinu stranice. Podržane vrednosti: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Boja"
@@ -398,21 +399,13 @@
     "remove_this_search_action": "Ukloni ovu radnju pretrage"
   },
   "execute_script": {
-    "execute_script": "Izvrši skriptu",
-    "help_text": "Možete izvršiti jednostavne skripte na podudarnim beleškama.",
-    "example_1": "Na primer, da biste dodali string u naslov beleške, koristite ovu malu skriptu:",
-    "example_2": "Složeniji primer bi bio brisanje svih atributa podudarnih beleški:"
+    "execute_script": "Izvrši skriptu"
   },
   "add_label": {
     "add_label": "Dodaj oznaku",
     "label_name_placeholder": "ime oznake",
     "label_name_title": "Alfanumerički znakovi, donja crta i dvotačka su dozvoljeni znakovi.",
-    "to_value": "za vrednost",
-    "new_value_placeholder": "nova vrednost",
-    "help_text": "Na svim podudarnim beleškama:",
-    "help_text_item1": "dodajte datu oznaku ako beleška još uvek nema jednu",
-    "help_text_item2": "ili izmenite vrednost postojeće oznake",
-    "help_text_note": "Takođe možete pozvati ovu metodu bez vrednosti, u tom slučaju će oznaka biti dodeljena belešci bez vrednosti."
+    "new_value_placeholder": "nova vrednost"
   },
   "delete_label": {
     "delete_label": "Obriši oznaku",
@@ -421,9 +414,7 @@
   },
   "rename_label": {
     "rename_label": "Preimenuj oznaku",
-    "rename_label_from": "Preimenuj oznaku iz",
     "old_name_placeholder": "stari naziv",
-    "to": "U",
     "new_name_placeholder": "novi naziv",
     "name_title": "Alfanumerički znakovi, donja crtica i dvotačka su dozvoljeni znakovi."
   },
@@ -431,15 +422,9 @@
     "update_label_value": "Ažuriraj vrednost oznake",
     "label_name_placeholder": "ime oznake",
     "label_name_title": "Alfanumerički znakovi, donja crtica i dvotačka su dozvoljeni znakovi.",
-    "to_value": "u vrednost",
-    "new_value_placeholder": "nova vrednost",
-    "help_text": "Na svim podudarnim beleškama, promenite vrednost postojeće oznake.",
-    "help_text_note": "Takođe možete pozvati ovu metodu bez vrednosti, u tom slučaju će oznaka biti dodeljena belešci bez vrednosti."
+    "new_value_placeholder": "nova vrednost"
   },
   "delete_note": {
-    "delete_note": "Obriši belešku",
-    "delete_matched_notes": "Obriši podudarne beleške",
-    "delete_matched_notes_description": "Ovo će obrisati podudarne beleške.",
-    "undelete_notes_instruction": "Nakon brisanja, moguće ga je poništiti iz dijaloga Nedavne izmene."
+    "delete_note": "Obriši belešku"
   }
 }

@@ -1,0 +1,125 @@
+.tn-icon:is(
+    .bulk-action-marker-add,
+    .bulk-action-marker-update,
+    .bulk-action-marker-rename,
+    .bulk-action-marker-delete,
+    .bulk-action-marker-move,
+    .bulk-action-marker-convert
+) {
+    --bulk-action-marker-cutout: var(--card-background-color, var(--main-background-color));
+    position: relative;
+
+    &::after {
+        position: absolute;
+        inset-inline-end: -4px;
+        bottom: -3px;
+        font-family: boxicons;
+        font-size: 0.62em;
+        font-weight: normal;
+        line-height: 1;
+        text-shadow:
+            0 0 2px var(--bulk-action-marker-cutout),
+            0 0 2px var(--bulk-action-marker-cutout);
+    }
+}
+
+.tn-menu .tn-icon {
+    --bulk-action-marker-cutout: var(--menu-background-color);
+}
+
+/* Codepoints from boxicons.css. */
+.bulk-action-marker-add::after {
+    content: "\ebc0"; /* bx-plus */
+}
+
+.bulk-action-marker-update::after {
+    content: "\ebb1"; /* bx-pencil */
+}
+
+.bulk-action-marker-rename::after {
+    content: "\ebdb"; /* bx-rename */
+}
+
+.bulk-action-marker-delete::after {
+    content: "\ec8d"; /* bx-x */
+}
+
+.bulk-action-marker-move::after {
+    content: "\ebe6"; /* bx-right-arrow-alt */
+}
+
+.bulk-action-marker-convert::after {
+    content: "\ec0e"; /* bx-shuffle */
+}
+
+.bulk-action-fields {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    > .bulk-action-name {
+        flex: 0 1 16ch;
+    }
+
+    > .bulk-action-arrow {
+        flex: none;
+    }
+
+    :is(input, select):user-invalid {
+        border-color: var(--dropdown-item-icon-destructive-color);
+    }
+}
+
+.bulk-action-description {
+    color: var(--muted-text-color);
+}
+
+.bulk-action-icon {
+    margin-inline-end: 8px;
+}
+
+.bulk-action-icon.destructive-action-icon {
+    color: var(--dropdown-item-icon-destructive-color);
+}
+
+.bulk-action-arrow {
+    font-size: 1.2em;
+    color: var(--muted-text-color);
+}
+
+body[dir=rtl] .bulk-action-arrow {
+    transform: scaleX(-1);
+}
+
+.bulk-action {
+    display: grid;
+    grid-template-columns: var(--bulk-action-title-column, 12em) minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 4px;
+
+    .bulk-action-fields :is(.form-control, .form-select, .input-group-text) {
+        padding-block: 0.25rem;
+    }
+}
+
+@container (width < 560px) {
+    .bulk-action {
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        > .bulk-action-fields {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            flex-wrap: wrap;
+
+            > :not(.bulk-action-name, .bulk-action-arrow) {
+                flex-basis: 14ch;
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+# Renovate owns version updates for this repository (see renovate.json). Dependabot is
+# only active here for security updates, which need no configuration file — this one
+# exists solely to carry the ignore below.
+#
+# open-pull-requests-limit: 0 disables Dependabot's *version* updates for the ecosystem;
+# security updates are unaffected by it, which is why the ignore is needed as well.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/**"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    ignore:
+      # Bumping pdfjs-dist on its own produces a tree that cannot open a single PDF:
+      # pdf.js compares the library version against the viewer vendored under
+      # packages/pdfjs-viewer/viewer and refuses to start when they disagree. The
+      # update-pdfjs-viewer workflow bumps both together; a bot can only ever do half.
+      #
+      # This silences security PRs for pdfjs-dist too. That is the intended trade-off,
+      # not an oversight — an advisory is fixed by dispatching update-pdfjs-viewer,
+      # which picks up the same latest version and re-vendors alongside it. Watch the
+      # alert rather than waiting for the weekly run.
+      - dependency-name: "pdfjs-dist"

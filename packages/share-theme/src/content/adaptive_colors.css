@@ -1,0 +1,21 @@
+@import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
+
+:root {
+    /* Higher than in the app, for the share theme's lighter dark page. */
+    --adaptive-table-border-dark-min-lightness: 52;
+}
+
+html.theme-dark {
+    --_adaptive-text-min: var(--adaptive-text-dark-min-lightness);
+    --_adaptive-text-max: 100;
+    --_adaptive-text-chroma: var(--adaptive-text-dark-max-chroma);
+    --_adaptive-background-min: 0;
+    --_adaptive-background-max: var(--adaptive-background-dark-max-lightness);
+    --_adaptive-background-chroma: var(--adaptive-background-dark-max-chroma);
+    --_adaptive-table-border-min: var(--adaptive-table-border-dark-min-lightness);
+    --_adaptive-table-border-max: 100;
+    --_adaptive-table-border-chroma: var(--adaptive-table-border-dark-max-chroma);
+    --_adaptive-table-background-min: 0;
+    --_adaptive-table-background-max: var(--adaptive-table-background-dark-max-lightness);
+    --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
+}

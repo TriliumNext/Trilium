@@ -1,6 +1,6 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
-import type { File } from "../../services/import/common.js";
+import { type File, loadUploadedBytes } from "../../services/import/common.js";
 
 type ImportRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
@@ -9,6 +9,7 @@ import becca_loader from "../../becca/becca_loader.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import * as cls from "../../services/context.js";
+import { awaitPendingImageWrites } from "../../services/image.js";
 import importFile from "../../services/import/dispatch.js";
 import singleImportService from "../../services/import/single.js";
 import { getLog } from "../../services/log.js";
@@ -88,7 +89,7 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
     return note.getPojo();
 }
 
-function importAttachmentsToNote(req: ImportRequest<{ parentNoteId: string }>) {
+async function importAttachmentsToNote(req: ImportRequest<{ parentNoteId: string }>) {
     const { parentNoteId } = req.params;
     const { taskId, last } = req.body;
 
@@ -108,7 +109,13 @@ function importAttachmentsToNote(req: ImportRequest<{ parentNoteId: string }>) {
     // unlike in note import, we let the events run, because a huge number of attachments is not likely
 
     try {
+        await loadUploadedBytes(file);
         singleImportService.importAttachment(taskContext, file, parentNote);
+        // An imported image is stored once its compression answers, which is after the call above
+        // has returned. Waited out for the same reason the note import waits: what is reported as
+        // finished should be finished. (This path does not go through the import dispatcher, which
+        // is where every other importer is waited on.)
+        await awaitPendingImageWrites();
     } catch (e: unknown) {
         const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
 

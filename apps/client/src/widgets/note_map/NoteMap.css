@@ -3,60 +3,59 @@
     overflow: hidden;
 }
 
-/* Style Ui Element to Drag Nodes */
-.fixnodes-type-switcher {
-    display: flex;
-    align-items: center;
-    z-index: 10; /* should be below dropdown (note actions) */
-    border-radius: .2rem;
+.note-map-widget {
+    .tn-overlay-control-group {
+        z-index: 10;
+    }
+
+    .note-map-link-distance {
+        padding-inline: 10px;
+    }
+
+    .note-map-link-distance .slider {
+        width: 150px;
+    }
 }
 
-/* Start of styling the slider */
-.fixnodes-type-switcher input[type="range"] {
-
-    /* removing default appearance */
-    -webkit-appearance: none;
-    appearance: none;
-    margin-inline-start: 15px;
-    width: 150px;
+/*
+ * The tooltip standing over the note or relation being hovered, dressed as the app's own tooltips
+ * are. The graph brings its own (float-tooltip), styled from a stylesheet it injects itself, which
+ * knows nothing of the theme — so it is dressed here in the same tokens the real ones wear, with
+ * what the themes that predate those tokens can be asked for instead.
+ */
+.note-map-container .float-tooltip-kap {
+    max-width: min(260px, 90%);
+    padding: var(--tooltip-padding, 6px 10px);
+    border-radius: var(--tooltip-border-radius, 5px);
+    background: var(--tooltip-background-color);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    box-shadow: var(--tooltip-box-shadow, 2px 2px 8px rgba(0, 0, 0, 0.2));
+    color: var(--tooltip-foreground-color, var(--main-text-color));
+    font-family: var(--main-font-family);
+    font-size: var(--tooltip-font-size, 0.9rem);
+    text-align: start;
 }
 
-/* Changing slider tracker */
-.fixnodes-type-switcher input[type="range"]::-webkit-slider-runnable-track {
-    height: 4px;
-    background-color: var(--main-border-color);
-    border-radius: 4px;
-}
-
-/* Changing Slider Thumb */
-.fixnodes-type-switcher input[type="range"]::-webkit-slider-thumb {
-    /* removing default appearance */
-    -webkit-appearance: none;
-    appearance: none;
-    /* creating a custom design */
-    height: 15px;
-    width: 15px;
-    margin-top:-5px;
-    background-color: var(--accented-background-color);
-    border: 1px solid var(--main-text-color);
-    border-radius: 50%;
-}
-
-.fixnodes-type-switcher input[type="range"]::-moz-range-track {
-    background-color: var(--main-border-color);
-    border-radius: 4px;
-}
-
-.fixnodes-type-switcher input[type="range"]::-moz-range-thumb {
-    background-color: var(--accented-background-color);
-    border-color: var(--main-text-color);
-    height: 10px;
-    width: 10px;
-}
-
-/* End of styling the slider */
-
+/*
+ * What the map asks the theme for what it is drawn in, each one wearing the colour it stands for so
+ * that it can be read back off it. The map draws on a canvas, which knows nothing of a stylesheet.
+ */
 .style-resolver {
     color: var(--muted-text-color);
     display: none;
+
+    .style-resolver-background {
+        color: var(--main-background-color);
+    }
+
+    /* What a note's icon is drawn on and in wherever else it is shown at a size — beside the title of
+       the note being read, above all, which is the very note the map is drawn around. The themes that
+       do not name them are answered with what the map drew that note in before they existed. */
+    .style-resolver-anchor {
+        color: var(--note-icon-background-color, var(--link-color));
+    }
+
+    .style-resolver-anchor-icon {
+        color: var(--note-icon-color, var(--main-background-color));
+    }
 }

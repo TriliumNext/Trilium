@@ -4,19 +4,24 @@ coverage:
       default:
         target: auto
         threshold: 1%
+      # The share code is held at full coverage by the share-theme, server and standalone suites;
+      # this status checks the merged result.
+      share:
+        target: 100%
+        paths:
+          - packages/share-theme/src/
+          - packages/trilium-core/src/share/
+          - apps/server/src/share/
+          - apps/standalone/src/lightweight/share_provider.ts
     patch:
       default:
         target: 80%
         threshold: 5%
 
-# trilium-core has no test runner of its own; its specs run *through* the server
-# and standalone suites. Vitest's v8 provider emits those external files with
-# paths relative to each suite's project root, so they arrive as `../../packages/…`
-# (server, root = apps/server) and `../../../packages/…` (standalone, root = apps/standalone/src).
-# Strip the leading `../` segments so the paths resolve to the repo-root tree.
-fixes:
-  - "../../../packages/::packages/"
-  - "../../packages/::packages/"
+# No `fixes:` needed: every suite pins the lcov reporter's `projectRoot` to the repo root, so
+# `SF:` paths already arrive repo-root-relative. Leaving them project-relative would make the
+# shallow ones (`src/index.ts`, `src/utils.ts`) ambiguous across the monorepo, and Codecov would
+# attribute their coverage to whichever project won the match.
 
 flags:
   client:
@@ -37,6 +42,10 @@ flags:
     paths:
       - apps/desktop/src/
     carryforward: true
+  mobile:
+    paths:
+      - apps/mobile/android/app/src/main/java/
+    carryforward: true
   commons:
     paths:
       - packages/commons/src/
@@ -45,6 +54,32 @@ flags:
     paths:
       - packages/ckeditor5/src/
     carryforward: true
+  codemirror:
+    paths:
+      - packages/codemirror/src/
+    carryforward: true
+  highlightjs:
+    paths:
+      - packages/highlightjs/src/
+    carryforward: true
+  pdfjs-viewer:
+    paths:
+      - packages/pdfjs-viewer/src/
+    carryforward: true
+  share-theme:
+    paths:
+      - packages/share-theme/src/
+    carryforward: true
+  web-clipper:
+    paths:
+      - apps/web-clipper/entrypoints/
+      - apps/web-clipper/utils.ts
+    carryforward: true
+
+ignore:
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/MainActivity.java
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/TriliumRequestBridge.java
+  - apps/mobile/android/app/src/main/java/org/triliumnotes/trilium/TriliumWebViewClient.java
 
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"

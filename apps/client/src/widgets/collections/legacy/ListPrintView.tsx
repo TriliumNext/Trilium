@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from "preact/hooks";
 
+import Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import type { PrintReport } from "../../../print";
 import content_renderer from "../../../services/content_renderer";
 import froca from "../../../services/froca";
+import { waitForPendingRenders } from "../../../services/pending_renders";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import type { ViewModeProps } from "../interface";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
@@ -22,6 +24,9 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
 
     useLayoutEffect(() => {
         const noteIdsSet = new Set<string>();
+        // A saved search prints the notes it matched, not what hangs under them: a matching folder
+        // would otherwise bring its whole subtree, and a result repeated once it is also a child.
+        const printsChildren = note.type !== "search";
 
         froca.getNotes(noteIds).then(async (notes) => {
             const noteIdsWithChildren = await note.getSubtreeNoteIds(true);
@@ -32,10 +37,18 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                 if (isNotePrintable(note)) {
                     const content = await content_renderer.getRenderedContent(note, {
                         trim: false,
-                        noChildrenList: true
+                        noChildrenList: true,
+                        // Printing preserves full embed nesting (see expandNestedEmbeds).
+                        expandNestedEmbeds: true,
+                        mediaEnvironment: "native",
+                        // The copied content has no component tree, so a JSX render note mounts under this root.
+                        parentComponent: new Component()
                     });
 
                     const contentEl = content.$renderedContent[0];
+                    // A render note's script finishes after `getRenderedContent()`, and its
+                    // output is copied below, so wait for it first.
+                    await waitForPendingRenders(contentEl);
 
                     insertPageTitle(contentEl, note.title);
                     rewriteHeadings(contentEl, depth);
@@ -49,7 +62,7 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                     onProgressChanged(notesWithContent.length / noteIdsWithChildren.length);
                 }
 
-                if (note.hasChildren()) {
+                if (printsChildren && note.hasChildren()) {
                     const filteredChildNotes = await filterChildNotes(note);
                     for (const childNote of filteredChildNotes) {
                         await processNote(childNote, depth + 1);

@@ -9,11 +9,12 @@ const state = vi.hoisted(() => ({
     appName: "Trilium Notes",
     setLoginItemSettings: vi.fn(),
     setLoginItemThrows: false,
-    wasOpenedAsHidden: false,
+    wasOpenedAtLogin: false,
     ipcOn: new Map<string, Handler>(),
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
     rmSync: vi.fn(),
+    execFile: vi.fn(),
     log: { info: vi.fn(), error: vi.fn() }
 }));
 
@@ -24,7 +25,7 @@ vi.mock("electron", () => ({
                 if (state.setLoginItemThrows) throw new Error("boom");
                 return state.setLoginItemSettings(...a);
             },
-            getLoginItemSettings: () => ({ wasOpenedAsHidden: state.wasOpenedAsHidden }),
+            getLoginItemSettings: () => ({ wasOpenedAtLogin: state.wasOpenedAtLogin }),
             getName: () => state.appName
         },
         ipcMain: {
@@ -39,6 +40,10 @@ vi.mock("fs", () => ({
         writeFileSync: (...a: unknown[]) => state.writeFileSync(...a),
         rmSync: (...a: unknown[]) => state.rmSync(...a)
     }
+}));
+
+vi.mock("child_process", () => ({
+    execFile: (...a: unknown[]) => state.execFile(...a)
 }));
 
 vi.mock("os", () => ({ default: { homedir: () => "/home/user" } }));
@@ -77,17 +82,21 @@ beforeEach(() => {
     state.launchOnStartup = false;
     state.hideOnAutoStart = false;
     state.setLoginItemThrows = false;
-    state.wasOpenedAsHidden = false;
+    state.wasOpenedAtLogin = false;
     state.ipcOn.clear();
     delete process.env.APPIMAGE;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.FLATPAK_ID;
 });
 
 afterEach(() => {
     setPlatform(ORIGINAL_PLATFORM);
     setExecPath(ORIGINAL_EXECPATH);
     delete process.env.APPIMAGE;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.FLATPAK_ID;
 });
 
 describe("auto_launch", () => {
@@ -95,14 +104,14 @@ describe("auto_launch", () => {
         setPlatform("win32");
         state.launchOnStartup = true;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, args: [] });
     });
 
     it("disables the OS login item when the option is off", () => {
         setPlatform("darwin");
         state.launchOnStartup = false;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, args: [] });
     });
 
     it("tags the login item to start hidden when hide-on-auto-start is on", () => {
@@ -112,7 +121,6 @@ describe("auto_launch", () => {
         applyLaunchOnStartup();
         expect(state.setLoginItemSettings).toHaveBeenCalledWith({
             openAtLogin: true,
-            openAsHidden: true,
             args: [START_HIDDEN_FLAG]
         });
     });
@@ -122,7 +130,7 @@ describe("auto_launch", () => {
         state.launchOnStartup = false;
         state.hideOnAutoStart = true;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, args: [] });
     });
 
     it("writes a .desktop autostart file on Linux when enabled", () => {
@@ -166,6 +174,22 @@ describe("auto_launch", () => {
         expect(content).toContain('Exec="/home/user/Apps/Trilium.AppImage"');
     });
 
+    it("prefers TRILIUM_LAUNCH_EXEC over both APPIMAGE and execPath for the Linux Exec line", () => {
+        setPlatform("linux");
+        setExecPath("/tmp/electron");
+        process.env.APPIMAGE = "/home/user/Apps/Trilium.AppImage";
+        process.env.TRILIUM_LAUNCH_EXEC = 'electron42 "/usr/lib/triliumnext/app.asar"';
+        state.launchOnStartup = true;
+        state.hideOnAutoStart = true;
+
+        applyLaunchOnStartup();
+
+        const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
+        expect(content).toContain('Exec=electron42 "/usr/lib/triliumnext/app.asar" --start-hidden');
+        expect(content).not.toContain("/tmp/electron");
+        expect(content).not.toContain("/home/user/Apps/Trilium.AppImage");
+    });
+
     it("honours $XDG_CONFIG_HOME for the Linux autostart directory", () => {
         setPlatform("linux");
         state.launchOnStartup = true;
@@ -185,6 +209,43 @@ describe("auto_launch", () => {
 
         expect(state.rmSync).toHaveBeenCalledWith(DESKTOP_FILE, { force: true });
         expect(state.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it("asks the Background portal for autostart inside a Flatpak, without writing a file", () => {
+        setPlatform("linux");
+        process.env.FLATPAK_ID = "org.triliumnotes.Trilium";
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+        state.hideOnAutoStart = true;
+        applyLaunchOnStartup();
+        state.launchOnStartup = false;
+        applyLaunchOnStartup();
+
+        const portalOptions = state.execFile.mock.calls.map(([ command, args ]) => {
+            expect(command).toBe("gdbus");
+            expect(args).toContain("org.freedesktop.portal.Background.RequestBackground");
+            return (args as string[]).at(-1);
+        });
+        expect(portalOptions).toEqual([
+            "{'autostart': <true>, 'commandline': <['trilium']>}",
+            `{'autostart': <true>, 'commandline': <['trilium', '${START_HIDDEN_FLAG}']>}`,
+            "{'autostart': <false>, 'commandline': <['trilium']>}"
+        ]);
+        expect(state.writeFileSync).not.toHaveBeenCalled();
+        expect(state.rmSync).not.toHaveBeenCalled();
+    });
+
+    it("logs a failed Background portal call", () => {
+        setPlatform("linux");
+        process.env.FLATPAK_ID = "org.triliumnotes.Trilium";
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+        const callback = state.execFile.mock.calls[0]?.[2] as (error: Error | null) => void;
+        callback(new Error("no portal"));
+
+        expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("no portal"));
     });
 
     it("logs and does not throw when applying fails", () => {
@@ -208,11 +269,17 @@ describe("auto_launch", () => {
         }
     });
 
-    it("wasLaunchedHidden reflects wasOpenedAsHidden on macOS", () => {
+    it("wasLaunchedHidden combines wasOpenedAtLogin with hide-on-auto-start on macOS", () => {
         setPlatform("darwin");
-        state.wasOpenedAsHidden = true;
+        state.wasOpenedAtLogin = true;
+        state.hideOnAutoStart = true;
         expect(wasLaunchedHidden()).toBe(true);
-        state.wasOpenedAsHidden = false;
+
+        state.hideOnAutoStart = false;
+        expect(wasLaunchedHidden()).toBe(false);
+
+        state.wasOpenedAtLogin = false;
+        state.hideOnAutoStart = true;
         expect(wasLaunchedHidden()).toBe(false);
     });
 
@@ -225,6 +292,6 @@ describe("auto_launch", () => {
 
         state.launchOnStartup = true;
         handler?.();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, args: [] });
     });
 });

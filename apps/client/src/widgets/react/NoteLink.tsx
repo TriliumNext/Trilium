@@ -1,3 +1,6 @@
+import "./NoteLink.css";
+
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -16,15 +19,17 @@ interface NoteLinkOpts {
     style?: Record<string, string | number>;
     noPreview?: boolean;
     noTnLink?: boolean;
-    highlightedTokens?: string[] | null | undefined;
+    highlightedTokens?: (string | HighlightedTokenInfo)[] | null | undefined;
     // Override the text of the link, otherwise the note title is used.
     title?: string;
+    /** Inline text appended right after the link title (before the note path). */
+    titleSuffix?: string;
     viewScope?: ViewScope;
     noContextMenu?: boolean;
     onContextMenu?: (e: MouseEvent) => void;
 }
 
-export default function NoteLink({ className, containerClassName, notePath, showNotePath, showNoteIcon, style, noPreview, noTnLink, highlightedTokens, title, viewScope, noContextMenu, onContextMenu }: NoteLinkOpts) {
+export default function NoteLink({ className, containerClassName, notePath, showNotePath, showNoteIcon, style, noPreview, noTnLink, highlightedTokens, title, titleSuffix, viewScope, noContextMenu, onContextMenu }: NoteLinkOpts) {
     const stringifiedNotePath = Array.isArray(notePath) ? notePath.join("/") : notePath;
     const noteId = stringifiedNotePath.split("/").at(-1);
     const ref = useRef<HTMLSpanElement>(null);
@@ -35,11 +40,12 @@ export default function NoteLink({ className, containerClassName, notePath, show
     useEffect(() => {
         link.createLink(stringifiedNotePath, {
             title,
+            titleSuffix,
             showNotePath,
             showNoteIcon,
             viewScope
         }).then(setJqueryEl);
-    }, [ stringifiedNotePath, showNotePath, title, viewScope, noteTitle ]);
+    }, [ stringifiedNotePath, showNotePath, title, titleSuffix, viewScope, noteTitle ]);
 
     useEffect(() => {
         const el = jqueryEl?.[0];
@@ -88,22 +94,24 @@ export default function NoteLink({ className, containerClassName, notePath, show
     return <span className={containerClassName} ref={ref} />;
 }
 
-interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu"> {
+interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu" | "onClick" | "onDblClick"> {
     className?: string;
     notePath: string;
     viewScope?: ViewScope;
     noContextMenu?: boolean;
     showNoteIcon?: boolean;
+    /** Shows only the note's icon, with the title as its tooltip and accessible name. */
+    iconOnly?: boolean;
     noPreview?: boolean;
 }
 
-export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, noPreview, ...linkProps }: NewNoteLinkProps) {
+export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, iconOnly, noPreview, ...linkProps }: NewNoteLinkProps) {
 
     const { noteId, parentNoteId } = tree.getNoteIdAndParentIdFromUrl(notePath);
     const note = useNote(noteId);
 
     const title = useNoteTitle(noteId, parentNoteId);
-    const icon = useNoteIcon(showNoteIcon ? note : null);
+    const icon = useNoteIcon(showNoteIcon || iconOnly ? note : null);
     const colorClass = useNoteColorClass(note);
     const [ archived ] = useNoteLabelBoolean(note, "archived");
 
@@ -115,10 +123,12 @@ export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, 
             })}
             href={calculateHash({ notePath, viewScope })}
             data-no-context-menu={noContextMenu}
+            title={iconOnly ? title : undefined}
+            aria-label={iconOnly ? title : undefined}
             {...linkProps}
         >
-            {icon && <><Icon icon={icon} />&nbsp;</>}
-            {title}
+            {icon && <Icon icon={icon} className="note-link-icon" />}
+            {!iconOnly && title}
         </a>
     );
 }

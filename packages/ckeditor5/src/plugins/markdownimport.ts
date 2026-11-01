@@ -6,6 +6,7 @@ export const COMMAND_NAME = 'importMarkdownInline';
 export default class MarkdownImportPlugin extends Plugin {
 	init() {
 		const editor = this.editor;
+		const t = editor.t;
 
         editor.commands.add(COMMAND_NAME, new ImportMarkdownCommand(editor));
 
@@ -13,7 +14,7 @@ export default class MarkdownImportPlugin extends Plugin {
 			const view = new ButtonView( locale );
 
 			view.set( {
-				label: 'Markdown import from clipboard',
+				label: t('Markdown import from clipboard'),
 				icon: markdownIcon,
 				tooltip: true
 			} );
@@ -31,10 +32,16 @@ export default class MarkdownImportPlugin extends Plugin {
 class ImportMarkdownCommand extends Command {
 
     execute() {
-		const editorEl = this.editor.editing.view.getDomRoot();
-		const component = glob.getComponentByEl(editorEl);
-
-		component.triggerCommand('pasteMarkdownIntoText');
+		this.editor.config.get('markdownImport')?.open();
     }
 
+}
+
+declare module 'ckeditor5' {
+	interface EditorConfig {
+		markdownImport?: {
+			/** Opens the dialog that converts Markdown into the note at the selection. */
+			open(): void;
+		};
+	}
 }

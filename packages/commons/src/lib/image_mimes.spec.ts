@@ -1,0 +1,128 @@
+import { describe, expect, it } from "vitest";
+
+import { IMAGE_MIMES, IMAGE_UPLOAD_SUBTYPES, imageExtensionForMime, imageMimeForExtension, isAcceptedImageMime, isSvgMime } from "./image_mimes.js";
+
+describe("isAcceptedImageMime", () => {
+    it("accepts every listed type and nothing else", () => {
+        for (const mime of IMAGE_MIMES) {
+            expect(isAcceptedImageMime(mime), mime).toBe(true);
+        }
+
+        // TIFF is deliberately absent: an <img> cannot draw one outside Safari, so it is stored as
+        // a file and gets a working reference link rather than a picture that never appears.
+        for (const mime of [ "image/tiff", "application/pdf", "text/plain", "image/", "png" ]) {
+            expect(isAcceptedImageMime(mime), mime).toBe(false);
+        }
+
+        expect(isAcceptedImageMime(undefined)).toBe(false);
+        expect(isAcceptedImageMime(null)).toBe(false);
+        expect(isAcceptedImageMime("")).toBe(false);
+    });
+
+    it("recognises both spellings of an icon, and both of an SVG", () => {
+        // Servers send either icon spelling, and `image/svg` turns up in place of the registered
+        // `image/svg+xml` often enough to be worth recognising.
+        for (const mime of [ "image/x-icon", "image/vnd.microsoft.icon", "image/svg", "image/svg+xml" ]) {
+            expect(isAcceptedImageMime(mime), mime).toBe(true);
+        }
+    });
+});
+
+describe("imageExtensionForMime", () => {
+    it("names a format the way people write it, not the way its subtype reads", () => {
+        // The whole reason this exists: stripping the punctuation out of a subtype turns an icon
+        // into ".xicon" and an SVG into ".svgxml", which is what a favicon attachment used to be
+        // called.
+        expect(imageExtensionForMime("image/x-icon")).toBe("ico");
+        expect(imageExtensionForMime("image/vnd.microsoft.icon")).toBe("ico");
+        expect(imageExtensionForMime("image/svg+xml")).toBe("svg");
+    });
+
+    it("settles on one name for a JPEG, whichever of its two media types it arrived as", () => {
+        // The format is spelled two ways on each side, and a picture converted to it is named by
+        // its media type alone — the title it was uploaded under describes the format it used to
+        // be. Answering ".jpeg" for one spelling and ".jpg" for the other would make that renaming
+        // depend on which spelling happened to be stored.
+        expect(imageExtensionForMime("image/jpeg")).toBe("jpg");
+        expect(imageExtensionForMime("image/jpg")).toBe("jpg");
+    });
+
+    it("takes the subtype where the subtype is the name", () => {
+        expect(imageExtensionForMime("image/png")).toBe("png");
+        expect(imageExtensionForMime("image/webp")).toBe("webp");
+        expect(imageExtensionForMime("image/avif")).toBe("avif");
+        expect(imageExtensionForMime("image/bmp")).toBe("bmp");
+    });
+
+    it("reads a media type however it was written, and falls back where it cannot", () => {
+        expect(imageExtensionForMime("IMAGE/X-ICON")).toBe("ico");
+        expect(imageExtensionForMime("  image/x-icon  ")).toBe("ico");
+        expect(imageExtensionForMime("nonsense")).toBe("png");
+        expect(imageExtensionForMime(undefined)).toBe("png");
+        expect(imageExtensionForMime("", "bin")).toBe("bin");
+    });
+
+    it("gives every accepted media type a usable extension", () => {
+        for (const mime of IMAGE_MIMES) {
+            expect(imageExtensionForMime(mime), mime).toMatch(/^[a-z0-9]+$/);
+        }
+    });
+});
+
+describe("imageMimeForExtension", () => {
+    it("reverses the overrides, naming an icon the way servers do", () => {
+        // Two media types share ".ico"; the one a reader will recognise wins.
+        expect(imageMimeForExtension("ico")).toBe("image/x-icon");
+        expect(imageMimeForExtension("svg")).toBe("image/svg+xml");
+        // Both spellings of a JPEG resolve to the registered one. `image/jpg` is a thing clients
+        // send, not a thing to store — reaching it from a ".jpg" file is how it used to end up in
+        // the database, and from there in an export's file names.
+        expect(imageMimeForExtension("jpg")).toBe("image/jpeg");
+        expect(imageMimeForExtension("jpeg")).toBe("image/jpeg");
+    });
+
+    it("builds the media type from the extension otherwise", () => {
+        expect(imageMimeForExtension("png")).toBe("image/png");
+        expect(imageMimeForExtension("webp")).toBe("image/webp");
+        expect(imageMimeForExtension(".PNG")).toBe("image/png");
+        expect(imageMimeForExtension(undefined)).toBe("image/png");
+    });
+
+    it("round-trips every extension it produces back to an accepted media type", () => {
+        // What the two are for: an upload is named by its media type on the way out and stored
+        // under a media type derived from its format on the way back in, so a format that survives
+        // one direction but not the other would be stored as something the endpoints reject.
+        for (const mime of IMAGE_MIMES) {
+            const roundTripped = imageMimeForExtension(imageExtensionForMime(mime));
+            expect(isAcceptedImageMime(roundTripped), `${mime} -> ${roundTripped}`).toBe(true);
+        }
+    });
+});
+
+describe("IMAGE_UPLOAD_SUBTYPES", () => {
+    it("is the same list with the type stripped, in the same order", () => {
+        expect(IMAGE_UPLOAD_SUBTYPES).toStrictEqual(IMAGE_MIMES.map((mime) => mime.replace("image/", "")));
+        // The editor builds `^image/(<joined>)$` out of these, so a subtype carrying the prefix
+        // would silently match nothing.
+        for (const subtype of IMAGE_UPLOAD_SUBTYPES) {
+            expect(subtype, subtype).not.toContain("/");
+        }
+    });
+});
+
+describe("isSvgMime", () => {
+    it("claims both spellings regardless of case or padding, and nothing else", () => {
+        for (const mime of [ "image/svg+xml", "image/svg", "IMAGE/SVG+XML", "  image/svg+xml  " ]) {
+            expect(isSvgMime(mime), mime).toBe(true);
+        }
+
+        // A serving route decides whether to sanitize on this, so anything it wrongly claims is
+        // corrupted on the way out and anything it wrongly rejects is served with its scripts.
+        for (const mime of [ "image/png", "image/svg+xmlish", "text/svg", "application/xml", "" ]) {
+            expect(isSvgMime(mime), mime).toBe(false);
+        }
+
+        expect(isSvgMime(undefined)).toBe(false);
+        expect(isSvgMime(null)).toBe(false);
+    });
+});

@@ -1,3 +1,4 @@
+import { isAcceptedImageMime } from "@triliumnext/commons";
 import { note_service as noteService, special_notes as specialNotesService,utils } from "@triliumnext/core";
 import type { Request } from "express";
 import imageType from "image-type";
@@ -14,7 +15,7 @@ async function uploadImage(req: Request) {
         };
     }
 
-    if (!["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"].includes(file.mimetype)) {
+    if (!isAcceptedImageMime(file.mimetype)) {
         return [400, `Unknown image type: ${file.mimetype}`];
     }
     if (typeof file.buffer === "string") {
@@ -34,6 +35,9 @@ async function uploadImage(req: Request) {
     const parentNote = await specialNotesService.getInboxNote(req.headers["x-local-date"]);
 
     const { note, noteId } = imageService.saveImage(parentNote.noteId, file.buffer, originalName, true);
+
+    // The sender opens the note it is told about, so the picture should be in it by then.
+    await imageService.awaitImageWrite(noteId);
 
     const labelsStr = req.headers["x-labels"];
 

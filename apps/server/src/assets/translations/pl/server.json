@@ -54,17 +54,16 @@
     "note-navigation": "Nawigacja notatek",
     "copy-without-formatting": "Kopiuj bez formatowania",
     "force-save-revision": "Wymuś utworzenie/zapisanie nowej rewizji aktywnej notatki",
-    "toggle-book-properties": "Przełącz właściwości kolekcji",
     "toggle-left-note-tree-panel": "Przełącz lewy panel (drzewo notatek)",
-    "toggle-classic-editor-toolbar": "Przełącz pasek narzędzi formatowania edytora",
     "add-include-note-to-text": "Otwórz okno dołączania (include) notatki",
-    "ribbon-tabs": "Karty wstążki",
-    "toggle-link-map": "Przełącz mapę linków",
     "toggle-right-pane": "Przełącz prawy panel (spis treści i wyróżnienia)",
     "run-active-note": "Uruchom aktywny kod JavaScript (frontend/backend)",
     "toggle-note-hoisting": "Włącz/wyłącz skupienie na bieżącej notatce",
     "unhoist": "Wyłącz skupienie z dowolnego miejsca",
-    "toggle-zen-mode": "Włącz/wyłącz tryb Zen (minimalistyczny interfejs)"
+    "toggle-zen-mode": "Włącz/wyłącz tryb Zen (minimalistyczny interfejs)",
+    "toggle-archived-notes": "Pokaż/ukryj zarchiwizowane notatki w drzewie notatek",
+    "show-deleted-notes": "Pokaż okno \"Usunięte notatki\"",
+    "show-space-usage": "Otwórz stronę \"Użycie pamięci\""
   },
   "keyboard_action_names": {
     "zoom-in": "Powiększ",
@@ -146,18 +145,6 @@
     "follow-link-under-cursor": "Podążaj za linkiem",
     "insert-date-and-time-to-text": "Wstaw datę i czas",
     "add-include-note-to-text": "Dołącz notatkę do tekstu",
-    "toggle-ribbon-tab-classic-editor": "Przełącz kartę edytora klasycznego",
-    "toggle-ribbon-tab-basic-properties": "Przełącz kartę właściwości podstawowych",
-    "toggle-ribbon-tab-book-properties": "Przełącz kartę właściwości kolekcji",
-    "toggle-ribbon-tab-file-properties": "Przełącz kartę właściwości pliku",
-    "toggle-ribbon-tab-image-properties": "Przełącz kartę właściwości obrazu",
-    "toggle-ribbon-tab-owned-attributes": "Przełącz kartę atrybutów własnych",
-    "toggle-ribbon-tab-inherited-attributes": "Przełącz kartę atrybutów odziedziczonych",
-    "toggle-ribbon-tab-promoted-attributes": "Przełącz kartę atrybutów promowanych",
-    "toggle-ribbon-tab-note-map": "Przełącz kartę mapy notatek",
-    "toggle-ribbon-tab-note-info": "Przełącz kartę informacji o notatce",
-    "toggle-ribbon-tab-note-paths": "Przełącz kartę ścieżek notatki",
-    "toggle-ribbon-tab-similar-notes": "Przełącz kartę podobnych notatek",
     "toggle-right-pane": "Przełącz prawy panel",
     "toggle-note-hoisting": "Przełącz windowanie notatki",
     "unhoist-note": "Cofnij windowanie",
@@ -171,7 +158,8 @@
     "incorrect-totp": "Kod TOTP jest nieprawidłowy. Spróbuj ponownie.",
     "incorrect-password": "Hasło jest nieprawidłowe. Spróbuj ponownie.",
     "button": "Zaloguj",
-    "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}",
+    "sso-wrong-account": "Te konto nie jest połączone z tą instancją Trilium. Zaloguj się połączonym kontem."
   },
   "weekdays": {
     "monday": "Poniedziałek",
@@ -316,15 +304,11 @@
     "presentation": "Prezentacja",
     "presentation_slide": "Slajd prezentacji",
     "presentation_slide_first": "Pierwszy slajd",
-    "presentation_slide_second": "Drugi slajd",
-    "background": "Tło"
+    "presentation_slide_second": "Drugi slajd"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza danych nie jest zainicjowana, postępuj zgodnie z instrukcjami na ekranie.",
     "db_not_initialized_server": "Baza danych nie jest zainicjowana, odwiedź stronę konfiguracji - http://[adres-serwera]:{{port}}, aby dowiedzieć się, jak zainicjować Trilium."
-  },
-  "desktop": {
-    "instance_already_running": "Inna instancja jest już uruchomiona, przełączam się na nią."
   },
   "backend_log": {
     "log-does-not-exist": "Plik logów backendu '{{ fileName }}' (jeszcze) nie istnieje.",

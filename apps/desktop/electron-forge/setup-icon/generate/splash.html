@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Trilium installer splash — frame source</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    /* The window has no chrome or shadow (Squirrel's Update.exe is WindowStyle.None
+       + transparent), and the installer ships ONE baked GIF that can't follow the
+       user's Windows theme. A dark surface degrades more gracefully than a light one:
+       it's gentle on a dark desktop and unremarkable on a light one (a dark element
+       on a light screen doesn't glare the way a bright one does on a dark screen).
+       The surface is a single flat dark fill with a 1px hairline: on a dark desktop
+       the fill nearly matches the background, so the hairline is what gives the splash
+       a defined edge; on a light desktop the dark fill already contrasts. */
+    .stage {
+        width: 640px;
+        height: 480px;
+        box-sizing: border-box;
+        background: #26292f;
+        border: 1px solid #484d57;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", "Segoe UI Variable Text", system-ui, sans-serif;
+        user-select: none;
+    }
+    .card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    svg.mark {
+        width: 236px;
+        height: 236px;
+        display: block;
+    }
+    .leaf { transform-origin: 128px 128px; }
+    .wordmark {
+        margin-top: 30px;
+        font-size: 36px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: #f2f3f5;
+        display: flex;
+        align-items: baseline;
+        gap: 13px;
+    }
+    .word-notes { font-weight: 350; color: #9aa0a8; }
+    .nightly-badge {
+        display: none;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        color: #ffffff;
+        background: #8146b8;
+        border-radius: 3px;
+        padding: 3px 9px 4px;
+        transform: translateY(-5px);
+    }
+    .variant-nightly .nightly-badge { display: block; }
+    .status {
+        margin-top: 16px;
+        font-size: 18px;
+        color: #8a9082;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .variant-stable .dot.d1 { background: #4fa52b; }
+    .variant-stable .dot.d2 { background: #e47b19; }
+    .variant-stable .dot.d3 { background: #e33f3b; }
+    .variant-nightly .dot.d1 { background: #6e2ea8; }
+    .variant-nightly .dot.d2 { background: #8146b8; }
+    .variant-nightly .dot.d3 { background: #9668c2; }
+
+    /* Leaf fills — stable values are the exact nine fills from icon-color.svg. */
+    .variant-stable .g1 { fill: #95c980; } .variant-stable .g2 { fill: #72b755; } .variant-stable .g3 { fill: #4fa52b; }
+    .variant-stable .r1 { fill: #ee8c89; } .variant-stable .r2 { fill: #e96562; } .variant-stable .r3 { fill: #e33f3b; }
+    .variant-stable .o1 { fill: #efb075; } .variant-stable .o2 { fill: #e99547; } .variant-stable .o3 { fill: #e47b19; }
+    .variant-nightly .g1 { fill: #b18ad6; } .variant-nightly .g2 { fill: #9159c4; } .variant-nightly .g3 { fill: #6e2ea8; }
+    .variant-nightly .r1 { fill: #cdb2e4; } .variant-nightly .r2 { fill: #b08fd6; } .variant-nightly .r3 { fill: #9668c2; }
+    .variant-nightly .o1 { fill: #c09fe0; } .variant-nightly .o2 { fill: #a276cf; } .variant-nightly .o3 { fill: #8146b8; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="card">
+    <svg class="mark" viewBox="0 0 256 256" aria-label="Trilium mark" role="img">
+        <g class="leaf leaf-green">
+            <path class="g1" d="m202.9 112.7c-22.5 16.1-54.5 12.8-74.9 6.3l14.8-11.8 14.1-11.3 49.1-39.3-51.2 35.9-14.3 10-14.9 10.5c0.7-21.2 7-49.9 28.6-65.4 1.8-1.3 3.9-2.6 6.1-3.8 2.7-1.5 5.7-2.9 8.8-4.1 27.1-11.1 68.5-15.3 85.2-9.5 0.1 16.2-15.9 45.4-33.9 65.9-2.4 2.8-4.9 5.4-7.4 7.8-3.4 3.5-6.8 6.4-10.1 8.8z"/>
+            <path class="g2" d="m213.1 104c-22.2 12.6-51.4 9.3-70.3 3.2l14.1-11.3 49.1-39.3-51.2 35.9-14.3 10c0.5-18.1 4.9-42.1 19.7-58.6 2.7-1.5 5.7-2.9 8.8-4.1 27.1-11.1 68.5-15.3 85.2-9.5 0.1 16.2-15.9 45.4-33.9 65.9-2.3 2.8-4.8 5.4-7.2 7.8z"/>
+            <path class="g3" d="m220.5 96.2c-21.1 8.6-46.6 5.3-63.7-0.2l49.2-39.4-51.2 35.9c0.3-15.8 3.5-36.6 14.3-52.8 27.1-11.1 68.5-15.3 85.2-9.5 0.1 16.2-15.9 45.4-33.8 66z"/>
+        </g>
+        <g class="leaf leaf-orange">
+            <path class="o1" d="m86.3 59.1c21.7 10.9 32.4 36.6 35.8 54.9l-15.2-6.6-14.5-6.3-50.6-22 48.8 24.9 13.6 6.9 14.3 7.3c-16.6 7.9-41.3 14.5-62.1 4.1-1.8-0.9-3.6-1.9-5.4-3.2-2.3-1.5-4.5-3.2-6.8-5.1-19.9-16.4-40.3-46.4-42.7-61.5 12.4-6.5 41.5-5.8 64.8-0.3 3.2 0.8 6.2 1.6 9.1 2.5 4 1.3 7.6 2.8 10.9 4.4z"/>
+            <path class="o2" d="m75.4 54.8c18.9 12 28.4 35.6 31.6 52.6l-14.5-6.3-50.6-22 48.7 24.9 13.6 6.9c-14.1 6.8-34.5 13-53.3 8.2-2.3-1.5-4.5-3.2-6.8-5.1-19.8-16.4-40.2-46.4-42.6-61.5 12.4-6.5 41.5-5.8 64.8-0.3 3.1 0.8 6.2 1.6 9.1 2.6z"/>
+            <path class="o3" d="m66.3 52.2c15.3 12.8 23.3 33.6 26.1 48.9l-50.6-22 48.8 24.9c-12.2 6-29.6 11.8-46.5 10-19.8-16.4-40.2-46.4-42.6-61.5 12.4-6.5 41.5-5.8 64.8-0.3z"/>
+        </g>
+        <g class="leaf leaf-red">
+            <path class="r1" d="m106.7 179c-5.8-21 5.2-43.8 15.5-57.2l4.8 14.2 4.5 13.4 15.9 47-12.8-47.6-3.6-13.2-3.7-13.9c15.5 6.2 35.1 18.6 40.7 38.8 0.5 1.7 0.9 3.6 1.2 5.5 0.4 2.4 0.6 5 0.7 7.7 0.9 23.1-7.1 54.9-15.9 65.7-12-4.3-29.3-24-39.7-42.8-1.4-2.6-2.7-5.1-3.8-7.6-1.6-3.5-2.9-6.8-3.8-10z"/>
+            <path class="r2" d="m110.4 188.9c-3.4-19.8 6.9-40.5 16.6-52.9l4.5 13.4 15.9 47-12.8-47.6-3.6-13.2c13.3 5.2 29.9 15 38.1 30.4 0.4 2.4 0.6 5 0.7 7.7 0.9 23.1-7.1 54.9-15.9 65.7-12-4.3-29.3-24-39.7-42.8-1.4-2.6-2.7-5.2-3.8-7.7z"/>
+            <path class="r3" d="m114.2 196.5c-0.7-18 8.6-35.9 17.3-47.1l15.9 47-12.8-47.6c11.6 4.4 26.1 12.4 35.2 24.8 0.9 23.1-7.1 54.9-15.9 65.7-12-4.3-29.3-24-39.7-42.8z"/>
+        </g>
+    </svg>
+    <div class="wordmark">Trilium <span class="word-notes">Notes</span><span class="nightly-badge">NIGHTLY</span></div>
+    <div class="status">
+        <span class="dots"><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span></span>
+    </div>
+  </div>
+</div>
+<script>
+    const stage = document.getElementById("stage");
+    const params = new URLSearchParams(location.search);
+    stage.classList.add(params.get("variant") === "nightly" ? "variant-nightly" : "variant-stable");
+
+    // Timeline (all times in seconds). The reveal plays once at 10 fps, then a long
+    // steady tail pulses at 5 fps out to LOOP_DURATION. The low-fps tail keeps the
+    // frame COUNT down, which is what matters: Squirrel's Update.exe renders the GIF
+    // with WpfAnimatedGif, which pre-decodes every frame to a full-size bitmap in a
+    // 32-bit process — so memory scales with frame count, not file size.
+    const REVEAL_DURATION = 1.5;   // reveal phase, rendered at REVEAL_FPS
+    const LOOP_DURATION = 20;      // total GIF length before it loops
+    const REVEAL_FPS = 10;
+    const STEADY_FPS = 5;
+    const LEAF_STARTS = { green: 0, orange: 0.25, red: 0.5 };
+    const LEAF_DURATION = 0.4;
+    const TEXT_START = 0.7;
+    const TEXT_DURATION = 0.35;
+    const DOT_CYCLE = 1.2;
+    const DOT_DELAYS = [0, 0.2, 0.4];
+
+    function clamp01(x) {
+        return Math.min(1, Math.max(0, x));
+    }
+
+    function easeOutCubic(p) {
+        return 1 - Math.pow(1 - p, 3);
+    }
+
+    // Overshoots slightly above 1 near the end, giving the leaves a small pop.
+    function easeOutBack(p) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+    }
+
+    function setLeaf(selector, t, start) {
+        const p = clamp01((t - start) / LEAF_DURATION);
+        const leaf = stage.querySelector(selector);
+        leaf.style.opacity = String(easeOutCubic(p));
+        const scale = 0.62 + 0.38 * easeOutBack(p);
+        const rotation = -8 * (1 - easeOutCubic(p));
+        leaf.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+    }
+
+    // Renders the whole composition at absolute time `t` (seconds).
+    function renderFrame(t) {
+        setLeaf(".leaf-green", t, LEAF_STARTS.green);
+        setLeaf(".leaf-orange", t, LEAF_STARTS.orange);
+        setLeaf(".leaf-red", t, LEAF_STARTS.red);
+
+        const textProgress = easeOutCubic(clamp01((t - TEXT_START) / TEXT_DURATION));
+        for (const selector of [".wordmark", ".status"]) {
+            const el = stage.querySelector(selector);
+            el.style.opacity = String(textProgress);
+            el.style.transform = `translateY(${8 * (1 - textProgress)}px)`;
+        }
+
+        for (const [i, delay] of DOT_DELAYS.entries()) {
+            const phase = (((t - delay) % DOT_CYCLE) + DOT_CYCLE) % DOT_CYCLE / DOT_CYCLE;
+            const pulse = 0.5 - 0.5 * Math.cos(2 * Math.PI * phase);
+            const dot = stage.querySelector(`.dot.d${i + 1}`);
+            dot.style.opacity = String(0.25 + 0.75 * pulse);
+            dot.style.transform = `scale(${0.8 + 0.2 * pulse})`;
+        }
+    }
+
+    // Frame schedule: [{ t, delay }] where delay is the ms this frame is shown.
+    function buildTimeline() {
+        const frames = [];
+        const revealStep = 1 / REVEAL_FPS;
+        const steadyStep = 1 / STEADY_FPS;
+        let t = 0;
+        while (t < REVEAL_DURATION) {
+            frames.push({ t, delay: revealStep * 1000 });
+            t += revealStep;
+        }
+        while (t < LOOP_DURATION) {
+            frames.push({ t, delay: steadyStep * 1000 });
+            t += steadyStep;
+        }
+        return frames;
+    }
+
+    window.SPLASH_TIMELINE = buildTimeline();
+    window.renderFrame = renderFrame;
+
+    // When opened directly in a browser, show the settled state.
+    renderFrame(LOOP_DURATION / 2);
+</script>
+</body>
+</html>

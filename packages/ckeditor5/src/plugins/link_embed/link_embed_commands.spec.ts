@@ -1,0 +1,498 @@
+import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import {
+    changeCommand,
+    createLinkEmbedHost,
+    createTestEditor,
+    findElement,
+    LINK_EMBED_TEST_PLUGINS,
+    META,
+    type LinkEmbedHostMocks,
+    useDeferredFetch
+} from "../../../test/link-embed-kit.js";
+import {
+    CHANGE_LINK_DISPLAY_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND
+} from "./link_embed_commands.js";
+
+describe("LinkEmbed commands", () => {
+    let editor: ClassicEditor;
+    let fetchMetadata: LinkEmbedHostMocks["fetchMetadata"];
+
+    beforeEach(async () => {
+        const host = createLinkEmbedHost();
+        ({ fetchMetadata } = host);
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: host });
+    });
+
+    // -----------------------------------------------------------------------
+    // InsertLinkEmbedCommand
+    // -----------------------------------------------------------------------
+
+    it("inserts a preview for a URL, storing all the metadata whatever the mode", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        // An inline mention keeps the description and image it does not itself show, so switching it
+        // to a card later never has to go back to the network.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("url")).toBe(url);
+        expect(mention?.getAttribute("description")).toBe(META.description);
+        expect(mention?.getAttribute("image")).toBe(META.image);
+        expect(mention?.getAttribute("siteName")).toBe(META.siteName);
+    });
+
+    it("forces the opengraph type for a card, and keeps the detected one for an embed", async () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        fetchMetadata.mockResolvedValue({ ...META, url, embedType: "youtube" });
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        // A card is an embed that declines to play.
+        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "embed" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+    });
+
+    it("inserts an ordinary link for the 'plain' mode, without fetching any metadata", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain" });
+
+        expect(fetchMetadata).not.toHaveBeenCalled();
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain", title: "The article" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">The article</a></p>`);
+    });
+
+    it("shows the link at once, then the preview as titled and described", async () => {
+        const url = "https://example.com/article";
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
+        setModelData(editor.model, "<paragraph>see []</paragraph>");
+
+        const executed = editor.execute(LINK_EMBED_COMMAND, {
+            url, mode: "card", title: "My title", description: "My description"
+        }) as unknown as Promise<void>;
+        expect(editor.getData()).toBe(`<p>see <a href="${url}">My title</a></p>`);
+        resolveFetch({ ...META, url });
+        await executed;
+
+        const card = findElement(editor, "linkEmbed");
+        expect(card?.getAttribute("title")).toBe("My title");
+        expect(card?.getAttribute("description")).toBe("My description");
+        expect(card?.getAttribute("image")).toBe(META.image);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(card);
+    });
+
+    it("leaves the caret where the user moved it while the metadata loads", async () => {
+        const url = "https://example.com/article";
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
+        const selection = editor.model.document.selection;
+        const moveCaretToSecondParagraph = () => editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(1);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            writer.setSelection(paragraph, "end");
+            return paragraph;
+        });
+
+        setModelData(editor.model, "<paragraph>see []</paragraph><paragraph>elsewhere</paragraph>");
+        const inserted = editor.execute(LINK_EMBED_COMMAND, {
+            url, mode: "card"
+        }) as unknown as Promise<void>;
+        let elsewhere = moveCaretToSecondParagraph();
+        resolveFetch({ ...META, url });
+        await inserted;
+
+        expect(findElement(editor, "linkEmbed")).toBeDefined();
+        expect(selection.getFirstPosition()?.parent).toBe(elsewhere);
+        expect(selection.getFirstPosition()?.offset).toBe(9);
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">the []article</$text>`
+            + "</paragraph><paragraph>elsewhere</paragraph>");
+        const converted = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, {
+            value: "inline"
+        }) as unknown as Promise<void>;
+        elsewhere = moveCaretToSecondParagraph();
+        resolveFetch({ ...META, url });
+        await converted;
+
+        expect(findElement(editor, "linkMention")).toBeDefined();
+        expect(selection.getFirstPosition()?.parent).toBe(elsewhere);
+        expect(selection.getFirstPosition()?.offset).toBe(9);
+    });
+
+    it("replaces the link the selection is in, which is the link being edited", async () => {
+        const url = "https://example.com/new";
+        setModelData(editor.model, '<paragraph>see '
+            + '<$text linkHref="https://example.com/old">the []old one</$text> here</paragraph>');
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+
+        const embed = findElement(editor, "linkEmbed");
+        expect(embed?.getAttribute("url")).toBe(url);
+        expect(embed?.getAttribute("title")).toBe(META.title);
+        expect(editor.getData()).not.toContain("example.com/old");
+        expect(editor.getData()).not.toContain("old one");
+    });
+
+    it("reshapes and retitles a selected preview of the same address unfetched", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, `<paragraph>[<linkMention url="${url}" embedType="opengraph"`
+            + ` title="Page" description="About"></linkMention>]</paragraph>`);
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card", title: "Mine" });
+
+        const card = findElement(editor, "linkEmbed");
+        expect(fetchMetadata).not.toHaveBeenCalled();
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(card?.getAttribute("embedType")).toBe("opengraph");
+        expect(card?.getAttribute("title")).toBe("Mine");
+        expect(card?.getAttribute("description")).toBe("About");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(card);
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card", description: "My own" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("description")).toBe("My own");
+
+        // Without a title or a description, the stored ones stay.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("title")).toBe("Mine");
+        expect(mention?.getAttribute("description")).toBe("My own");
+    });
+
+    it("replaces a selected preview of another address, or turned into a plain link", async () => {
+        const url = "https://example.com/new";
+        setModelData(editor.model, '[<linkEmbed url="https://example.com/old" embedType="opengraph"'
+            + ' title="Old"></linkEmbed>]');
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+
+        expect(fetchMetadata).toHaveBeenCalledExactlyOnceWith(url);
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(url);
+
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "plain", title: "New" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">New</a></p>`);
+    });
+
+    it("is enabled in a paragraph and disabled when read-only", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const command = editor.commands.get(LINK_EMBED_COMMAND);
+        expect(command?.isEnabled).toBe(true);
+
+        editor.enableReadOnlyMode("test");
+        expect(command?.isEnabled).toBe(false);
+        editor.disableReadOnlyMode("test");
+    });
+
+    // -----------------------------------------------------------------------
+    // ChangeLinkDisplayCommand
+    // -----------------------------------------------------------------------
+
+    it("is disabled with no link widget selected and reports a null value", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const command = changeCommand(editor);
+        expect(command.isEnabled).toBe(false);
+        expect(command.value).toBeNull();
+        expect(command.embedAvailable).toBe(false);
+    });
+
+    it("reports 'inline' for a selected linkMention and exposes embed availability", () => {
+        setModelData(
+            editor.model,
+            '<paragraph>[<linkMention url="https://youtube.com/watch" embedType="web"></linkMention>]</paragraph>'
+        );
+
+        const command = changeCommand(editor);
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe("inline");
+        // detectEmbedType returns "youtube" (not "opengraph") => embeddable.
+        expect(command.embedAvailable).toBe(true);
+    });
+
+    it("exposes an http(s) URL but withholds a hostile one, so the toolbar cannot arm it", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/page" embedType="opengraph"></linkEmbed>]');
+        expect(changeCommand(editor).url).toBe("https://e.com/page");
+
+        // `url` comes from the stored data-url, which the sanitizers keep verbatim. Withholding it
+        // leaves the "open link in new tab" and copy buttons disabled rather than armed.
+        setModelData(editor.model, '[<linkEmbed url="javascript:alert(document.cookie)" embedType="opengraph"></linkEmbed>]');
+        expect(changeCommand(editor).url).toBeNull();
+    });
+
+    it("reports 'card' for an opengraph linkEmbed and 'embed' otherwise", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
+        expect(changeCommand(editor).value).toBe("card");
+
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="web"></linkEmbed>]');
+        expect(changeCommand(editor).value).toBe("embed");
+    });
+
+    it("converts a linkMention to an embed via the command, picking the detected type", () => {
+        setModelData(
+            editor.model,
+            '<paragraph>[<linkMention url="https://youtube.com/watch" embedType="web" title="T"></linkMention>]</paragraph>'
+        );
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+
+        const embed = findElement(editor, "linkEmbed");
+        expect(embed).toBeDefined();
+        expect(embed?.getAttribute("embedType")).toBe("youtube");
+        expect(embed?.getAttribute("url")).toBe("https://youtube.com/watch");
+        expect(embed?.getAttribute("title")).toBe("T");
+    });
+
+    it("converts a linkMention to a card, forcing the opengraph embed type", () => {
+        setModelData(
+            editor.model,
+            '<paragraph>[<linkMention url="https://youtube.com/watch" embedType="web"></linkMention>]</paragraph>'
+        );
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+
+        const embed = findElement(editor, "linkEmbed");
+        expect(embed?.getAttribute("embedType")).toBe("opengraph");
+    });
+
+    it("converts a linkEmbed back to an inline linkMention", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph" title="T"></linkEmbed>]');
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" });
+
+        const mention = findElement(editor, "linkMention");
+        expect(mention).toBeDefined();
+        expect(mention?.getAttribute("url")).toBe("https://e.com/");
+        expect(mention?.getAttribute("title")).toBe("T");
+    });
+
+    it("converts a link widget to a plain, ordinary link — and never re-converts it", async () => {
+        setModelData(editor.model, '<paragraph>[<linkMention url="https://e.com/" title="T"></linkMention>]</paragraph>');
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
+
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
+
+        // The linked text arrives as an insertion, not a linkHref attribute change, so
+        // AutoLinkToMention must not have kicked in and fetched the preview straight back.
+        await Promise.resolve();
+        expect(fetchMetadata).not.toHaveBeenCalled();
+
+        // A block preview converts the same way, gaining a wrapping paragraph.
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
+        expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
+    });
+
+    it("degrades a non-http(s) URL to bare text when converting to a plain link", () => {
+        // A data-url the sanitizers pass through verbatim must not become a live href
+        // (same rule as the toolbar's open-link button; see isHttpUrl).
+        setModelData(editor.model, '[<linkEmbed url="javascript:alert(1)" embedType="opengraph"></linkEmbed>]');
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
+
+        expect(editor.getData()).toBe("<p>javascript:alert(1)</p>");
+    });
+
+    it("does nothing when the target mode equals the current mode", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
+        const before = editor.getData();
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" }); // current mode is already "card"
+
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(editor.getData()).toBe(before);
+    });
+
+    // -----------------------------------------------------------------------
+    // RemoveLinkEmbedCommand (the toolbar's unlink button)
+    // -----------------------------------------------------------------------
+
+    it("unlinks a selected linkMention, leaving the bare URL as plain text", () => {
+        setModelData(editor.model, '<paragraph>[<linkMention url="https://e.com/" title="T"></linkMention>]</paragraph>');
+
+        editor.execute(REMOVE_LINK_EMBED_COMMAND);
+
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        // Mirrors the default link's unlink: the URL survives as plain, non-linked text.
+        expect(editor.getData()).toBe("<p>https://e.com/</p>");
+    });
+
+    it("unlinks a selected block linkEmbed the same way", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="youtube"></linkEmbed>]');
+
+        editor.execute(REMOVE_LINK_EMBED_COMMAND);
+
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(editor.getData()).toBe("<p>https://e.com/</p>");
+    });
+
+    it("is disabled with no link widget selected, and does nothing if executed anyway", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        const command = editor.commands.get(REMOVE_LINK_EMBED_COMMAND);
+        expect(command?.isEnabled).toBe(false);
+
+        // Command swallows execute() while disabled, so force it enabled to exercise the early return.
+        if (command) {
+            command.isEnabled = true;
+        }
+        command?.execute();
+
+        expect(editor.getData()).toBe(before);
+    });
+
+    // -----------------------------------------------------------------------
+    // ChangeLinkDisplayCommand on a native link (the link balloon's Display dropdown)
+    // -----------------------------------------------------------------------
+
+    it("offers itself on a native http(s) link, reporting 'plain' as the current mode", () => {
+        const command = changeCommand(editor);
+
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        expect(command.isEnabled).toBe(false);
+        expect(command.value).toBeNull();
+
+        setModelData(editor.model, '<paragraph><$text linkHref="https://youtube.com/watch">https://youtube.[]com/watch</$text></paragraph>');
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe("plain");
+        expect(command.embedAvailable).toBe(true);
+        expect(command.url).toBe("https://youtube.com/watch");
+
+        // An internal reference link has no page to preview.
+        setModelData(editor.model, '<paragraph><$text linkHref="#root/someNoteId">some[]note</$text></paragraph>');
+        expect(command.isEnabled).toBe(false);
+        expect(command.value).toBeNull();
+    });
+
+    it("converts a labeled native link into an inline mention, keeping the surrounding text", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, `<paragraph>see <$text linkHref="${url}">the []article</$text> here</paragraph>`);
+
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" });
+
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("url")).toBe(url);
+        expect(mention?.getAttribute("title")).toBe(META.title);
+        // The label is replaced by the pill; the text around the link survives (spaces adjacent to
+        // an inline object serialize as &nbsp;), and the new widget is left selected so its toolbar
+        // — this same dropdown included — takes over from the link balloon.
+        expect(editor.getData()).toContain("<p>see&nbsp;<span");
+        expect(editor.getData()).toContain("</span>&nbsp;here</p>");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
+    });
+
+    it("converts a native link to the chosen block shape: card forces opengraph, embed keeps the detected type", async () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        fetchMetadata.mockImplementation(async () => ({ ...META, url, embedType: "youtube" }));
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">watch [] this</$text></paragraph>`);
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">watch [] this</$text></paragraph>`);
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+        const embed = findElement(editor, "linkEmbed");
+        expect(embed?.getAttribute("embedType")).toBe("youtube");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+    });
+
+    it("does nothing for 'plain' on a native link — it already is one", async () => {
+        setModelData(editor.model, '<paragraph><$text linkHref="https://e.com/">https://e.[]com/</$text></paragraph>');
+        const before = editor.getData();
+
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
+
+        expect(fetchMetadata).not.toHaveBeenCalled();
+        expect(editor.getData()).toBe(before);
+    });
+
+    it("does nothing when the linked text was deleted while the metadata was being fetched", async () => {
+        const url = "https://example.com/";
+        let resolveFetch: (meta: unknown) => void = () => {};
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
+
+        const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;
+        setModelData(editor.model, "<paragraph>replaced[]</paragraph>");
+        resolveFetch({ ...META, url });
+        await executed;
+
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(editor.getData()).toBe("<p>replaced</p>");
+    });
+
+    it("does not convert when the link was repointed at a different URL while the metadata was being fetched", async () => {
+        const url = "https://example.com/";
+        let resolveFetch: (meta: unknown) => void = () => {};
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
+
+        const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;
+        editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            writer.setAttribute("linkHref", "https://other.example.com/", writer.createRangeIn(paragraph));
+        });
+        resolveFetch({ ...META, url });
+        await executed;
+
+        // The text is still there but no longer carries the fetched URL: converting it would
+        // attach one page's metadata to another page's link.
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+    });
+
+    it("still converts when the linked text survives behind an inserted element and a repointed prefix", async () => {
+        const url = "https://example.com/";
+        let resolveFetch: (meta: unknown) => void = () => {};
+        fetchMetadata.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">https://exa[]mple.com/</$text></paragraph>`);
+
+        const executed = editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" }) as unknown as Promise<void>;
+        editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            // Repoint the first five characters and wedge a soft break after them: the range
+            // walker must skip both before finding text that still carries the original link.
+            writer.setAttribute("linkHref", "https://other.example.com/", writer.createRange(
+                writer.createPositionAt(paragraph, 0),
+                writer.createPositionAt(paragraph, 5)
+            ));
+            writer.insertElement("softBreak", paragraph, 5);
+        });
+        resolveFetch({ ...META, url });
+        await executed;
+
+        expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(url);
+    });
+
+    it("does nothing when executed without a selected link widget or a native link", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The command is disabled with no widget selected, and CKEditor's Command
+        // swallows execute() while disabled. Force it enabled so the override body
+        // runs and we exercise the early return for "no selected link widget".
+        const command = editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND);
+        if (command) {
+            command.isEnabled = true;
+        }
+        command?.execute({ value: "embed" });
+
+        expect(editor.getData()).toBe(before);
+    });
+});

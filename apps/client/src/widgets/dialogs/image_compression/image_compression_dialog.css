@@ -1,0 +1,11 @@
+.modal.image-compression-dialog {
+    --bs-modal-width: 640px;
+
+    /* Two cards, held apart so the split between how the run compresses and how far it reaches
+       reads as deliberate rather than as one list with a gap in it. */
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+}

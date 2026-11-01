@@ -1,0 +1,338 @@
+.component.mobile-note-panel-button {
+    contain: none;
+}
+
+body.mobile:has(.virtual-keyboard-opened) .modal.mobile-note-panel .modal-footer {
+    display: none;
+}
+
+body.mobile:not(.ios) .modal.mobile-note-panel :is(.tn-master-detail-header, .modal-header > .modal-title, .modal-header > .note-panel-header-slot) {
+    height: 36px;
+}
+
+body.mobile .modal.mobile-note-panel {
+    .note-panel-header-slot {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+
+        &[hidden],
+        &:empty {
+            display: none;
+        }
+    }
+
+    :is(.modal-header, .tn-master-detail-header):has(> .note-panel-header-slot:not([hidden], :empty)) > :is(.modal-title, .tn-master-detail-title) {
+        display: none;
+    }
+
+    /* Centred on the sheet: the close button after the slot is offset by the same width before it. */
+    .note-panel-header-slot .sidebar-chat-title-dropdown {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        justify-content: center;
+        padding-inline-start: var(--note-panel-close-width, 0px);
+
+        > button {
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+            min-width: 0;
+            padding-block: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+            color: var(--main-text-color);
+            font-size: 1.1em;
+            font-weight: 600;
+
+            &::after {
+                flex-shrink: 0;
+            }
+        }
+
+        .sidebar-chat-title {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .modal-footer {
+        padding: 4px 8px max(var(--mobile-bottom-offset), 8px);
+        border-top: 1px solid var(--main-border-color);
+    }
+
+    &.mobile-view-page .modal-footer {
+        display: none;
+    }
+
+    .mobile-note-panel-tabs {
+        flex: 1;
+        margin: 0;
+        overflow: visible;
+
+        div.btn-group {
+            flex: 1;
+            gap: 0;
+            padding: 0;
+            background: transparent;
+
+            button.tab-strip-tab {
+                flex: 1 1 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                width: auto;
+                height: 52px;
+                padding-inline: 2px;
+                color: var(--muted-text-color);
+
+                &.active {
+                    color: var(--main-text-color);
+                }
+            }
+        }
+
+        .tab-strip-tab-icon {
+            font-size: 1.45em;
+        }
+
+        .tab-strip-tab-label {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.7rem;
+        }
+    }
+    .modal-dialog {
+        height: 85vh;
+    }
+
+    .modal-content {
+        flex: 1;
+        min-height: 0;
+    }
+
+    .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        padding: 0;
+    }
+
+    #right-pane {
+        flex: 1;
+        min-height: 0;
+        background: transparent;
+    }
+
+    #right-pane .right-pane-flat-tab-body {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding-bottom: var(--note-panel-group-spacing, 16px);
+
+        &:has(#sidebar-chat) {
+            padding-bottom: 0;
+        }
+
+        /* The header names the tab, so a lone section keeps only its buttons. The chat is wrapped in a
+           `.lazy-component`. */
+        &:not([data-tab-id="widgets"]) > .card:only-child > .card-header,
+        &:not([data-tab-id="widgets"]) > :only-child > .card:only-child > .card-header {
+            &:has(> .card-header-buttons:empty) {
+                display: none;
+            }
+
+            > .card-header-title {
+                visibility: hidden;
+            }
+        }
+
+        .card > .card-header {
+            --icon-button-size: 32px;
+
+            width: auto;
+            padding: var(--note-panel-group-spacing, 16px) 16px 6px;
+            border: 0;
+            background: transparent;
+
+            .card-header-title {
+                margin: 0;
+                font-size: 0.95em;
+                font-weight: 600;
+                letter-spacing: normal;
+                text-transform: none;
+                color: var(--muted-text-color);
+            }
+        }
+
+        > :first-child > .card-header,
+        > :first-child > .card:first-child > .card-header {
+            padding-top: 0;
+        }
+
+        .card:not(#sidebar-chat) {
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            overflow: visible;
+
+            > .body-wrapper {
+                margin-inline: 16px;
+                border-radius: var(--note-panel-group-radius, 6px);
+                background: var(--note-panel-group-background, var(--card-background-color));
+                overflow: hidden;
+            }
+
+            .card-body:not(.no-padding) {
+                padding: var(--note-panel-card-padding, 8px);
+            }
+
+            .toc > ol {
+                margin: 0;
+            }
+
+            .highlights-list ol {
+                margin: 0;
+                padding-inline-start: 1.5em;
+            }
+        }
+
+        > :is(#pdf-pages, #noteMap):not(.grow) .card-body {
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+        }
+
+        &[data-tab-id="attributes"] {
+            padding-inline: 16px;
+        }
+    }
+
+    /* The list and an attribute's page each scroll themselves and slide over each other, placed
+       against the tab body (see master_detail.css). */
+    &.mobile-master-detail #right-pane .right-pane-flat-tab-body[data-tab-id="attributes"] {
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+
+        .tn-master-pane,
+        .tn-detail-pane {
+            padding-inline: 16px;
+            padding-bottom: var(--note-panel-group-spacing, 16px);
+        }
+
+        .tn-detail-pane {
+            padding-bottom: calc(var(--note-panel-group-spacing, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+        }
+    }
+
+    .options-section {
+        margin: 0;
+
+        + .options-section > .options-section-header {
+            padding-top: var(--note-panel-group-spacing, 16px);
+        }
+    }
+
+    .options-section-card {
+        --options-card-padding: 0;
+
+        padding-block: 4px;
+        border: 0;
+        border-radius: var(--note-panel-group-radius, 6px);
+        background: var(--note-panel-group-background, var(--card-background-color));
+        box-shadow: none;
+        overflow: hidden;
+    }
+
+    /* The rows are menu items in a list that is not a menu: it sits in a card, so it keeps neither a
+       menu's fill nor its stacking. `z-index` must stay below the selection bar's sticky 1. */
+    .attribute-rows.dropdown-menu {
+        background: none !important;
+        box-shadow: none;
+        min-width: 0;
+        padding: 0;
+        z-index: auto !important;
+
+        .attribute-row {
+            --attribute-kind-cutout: var(--note-panel-group-background, var(--card-background-color));
+
+            border-bottom: 0 !important;
+            background: transparent;
+            border-radius: 0;
+
+            &:has(+ .attribute-row)::after {
+                content: "";
+                position: absolute;
+                inset-block-end: 0;
+                inset-inline: var(--note-panel-separator-inset, 0px) 0;
+                height: 1px;
+                background: var(--note-panel-separator-color, var(--menu-item-delimiter-color));
+            }
+        }
+
+        /* Outweighs the menus' hover fill, which a touch screen leaves on the last row tapped. */
+        .attribute-row.selected {
+            background-color: var(--selection-background-color) !important;
+        }
+    }
+
+    .options-section-header {
+        justify-content: flex-start;
+        gap: 4px;
+        margin-bottom: 6px;
+
+        h4 {
+            margin: 0;
+            font-size: 0.95em;
+            font-weight: 600;
+            letter-spacing: normal;
+            text-transform: none;
+            color: var(--muted-text-color);
+        }
+    }
+
+    .attribute-toolbar {
+        --icon-button-size: 36px;
+
+        position: static;
+        flex: 1;
+        min-width: 0;
+        height: auto;
+        padding: 0;
+        border-bottom: 0;
+        background: transparent;
+
+        .form-checkbox label,
+        .attribute-selection-count,
+        .attribute-toolbar-read-only {
+            font-size: 1em;
+        }
+    }
+
+    .attribute-rows-divider {
+        margin: 0;
+        border-top-width: 3px;
+        border-top-color: var(--modal-background-color);
+        opacity: 1;
+    }
+}
+
+.attribute-detail-page {
+    .attr-detail-title,
+    .close-attr-detail-button {
+        display: none;
+    }
+}

@@ -10,13 +10,14 @@ export interface Locale {
     /** The value to pass to `--lang` for the Electron instance in order to set it as a locale. Not setting it will hide it from the list of supported locales. */
     electronLocale?: "en" | "de" | "es" | "fr" | "zh_CN" | "zh_TW" | "ro" | "af" | "am" | "ar" | "bg" | "bn" | "ca" | "cs" | "da" | "el" | "en_GB" | "es_419" | "et" | "fa" | "fi" | "fil" | "gu" | "he" | "hi" | "hr" | "hu" | "id" | "it" | "ja" | "kn" | "ko" | "lt" | "lv" | "ml" | "mr" | "ms" | "nb" | "nl" | "pl" | "pt_BR" | "pt_PT" | "ru" | "sk" | "sl" | "sr" | "sv" | "sw" | "ta" | "te" | "th" | "tr" | "uk" | "ur" | "vi";
     /** The Tesseract OCR language code for this locale (e.g. "eng", "fra", "deu"). See https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html */
-    tesseractCode?: "eng" | "deu" | "spa" | "fra" | "gle" | "ita" | "hin" | "ind" | "jpn" | "por" | "pol" | "ron" | "rus" | "chi_sim" | "chi_tra" | "ukr" | "ara" | "heb" | "kur" | "fas" | "kor" | "ces" | "uig";
+    tesseractCode?: "eng" | "deu" | "spa" | "fra" | "gle" | "ita" | "hin" | "ind" | "jpn" | "por" | "pol" | "ron" | "rus" | "chi_sim" | "chi_tra" | "ukr" | "ara" | "heb" | "kur" | "fas" | "kor" | "ces" | "dan" | "uig" | "tur" | "vie";
 }
 
 // When adding a new locale, prefer the version with hyphen instead of underscore.
 const UNSORTED_LOCALES = [
     { id: "cn", name: "简体中文", electronLocale: "zh_CN", tesseractCode: "chi_sim" },
     { id: "cs", name: "Čeština", electronLocale: "cs", tesseractCode: "ces" },
+    { id: "da", name: "Dansk", electronLocale: "da", tesseractCode: "dan" },
     { id: "de", name: "Deutsch", electronLocale: "de", tesseractCode: "deu" },
     { id: "en", name: "English (United States)", electronLocale: "en", tesseractCode: "eng" },
     { id: "en-GB", name: "English (United Kingdom)", electronLocale: "en_GB", tesseractCode: "eng" },
@@ -27,13 +28,16 @@ const UNSORTED_LOCALES = [
     { id: "it", name: "Italiano", electronLocale: "it", tesseractCode: "ita" },
     { id: "hi", name: "हिन्दी", electronLocale: "hi", tesseractCode: "hin" },
     { id: "ja", name: "日本語", electronLocale: "ja", tesseractCode: "jpn" },
+    { id: "ko", name: "한국어", electronLocale: "ko", tesseractCode: "kor" },
     { id: "pt_br", name: "Português (Brasil)", electronLocale: "pt_BR", tesseractCode: "por" },
     { id: "pt", name: "Português (Portugal)", electronLocale: "pt_PT", tesseractCode: "por" },
     { id: "pl", name: "Polski", electronLocale: "pl", tesseractCode: "pol" },
     { id: "ro", name: "Română", electronLocale: "ro", tesseractCode: "ron" },
     { id: "ru", name: "Русский", electronLocale: "ru", tesseractCode: "rus" },
+    { id: "tr", name: "Türkçe", electronLocale: "tr", tesseractCode: "tur" },
     { id: "tw", name: "繁體中文", electronLocale: "zh_TW", tesseractCode: "chi_tra" },
     { id: "uk", name: "Українська", electronLocale: "uk", tesseractCode: "ukr" },
+    { id: "vi", name: "Tiếng Việt", electronLocale: "vi", tesseractCode: "vie" },
 
     /**
      * Development-only languages.
@@ -78,7 +82,7 @@ const UNSORTED_LOCALES = [
         id: "fa",
         name: "فارسی",
         rtl: true,
-        contentOnly: true,
+        electronLocale: "fa",
         tesseractCode: "fas"
     },
     { // Uyghur
@@ -113,3 +117,89 @@ export function isDisplayableLocale(localeId: string | null | undefined): locale
     if (!localeId) return false;
     return LOCALES.some((l) => l.id === localeId && !l.contentOnly);
 }
+
+/**
+ * The English name of a locale, or `null` when there is none worth showing: the English entries are
+ * named in English already, and anything `Intl` does not recognize has nothing to offer.
+ *
+ * Used both to annotate the locale list for a developer who cannot tell `한국어` from `हिन्दी`, and to
+ * name a language to something other than the user — an instruction to a language model, say, which
+ * would otherwise have to read its target out of the script that target is written in.
+ *
+ * @param englishNames a formatter to reuse, for a caller naming a whole list of locales at once.
+ */
+export function getEnglishName(
+    localeId: string,
+    englishNames = new Intl.DisplayNames([ "en" ], { type: "language" })
+): string | null {
+    const tag = ENGLISH_NAME_TAGS[localeId] ?? localeId.replaceAll("_", "-");
+
+    // Covers `en_rtl` too, which is not even a well-formed tag — `Intl` would throw on it.
+    if (tag === "en" || tag.startsWith("en-")) return null;
+
+    try {
+        return englishNames.of(tag) ?? null;
+    } catch {
+        // A malformed tag is a RangeError rather than an empty result.
+        return null;
+    }
+}
+
+/** Turns a Trilium locale id (`pt_br`, `cn`) into the BCP 47 tag `Intl` expects. */
+export function normalizeLocale(locale: string) {
+    locale = locale.replaceAll("_", "-");
+    switch (locale) {
+        case "cn": return "zh-CN";
+        case "tw": return "zh-TW";
+        default: return locale;
+    }
+}
+
+/**
+ * Turns a Trilium locale id into a canonical BCP 47 tag, for a `lang` attribute or `Intl`. An id
+ * that gives no valid tag, such as `en_rtl`, falls back to its language part, then to `en`.
+ */
+export function toLanguageTag(localeId: string) {
+    const tag = normalizeLocale(localeId);
+    for (const candidate of [ tag, tag.split("-")[0] ]) {
+        try {
+            const [ canonical ] = Intl.getCanonicalLocales(candidate);
+            if (canonical) {
+                return canonical;
+            }
+        } catch {
+            // `Intl` throws a RangeError on a malformed tag; the next candidate is tried.
+        }
+    }
+    return "en";
+}
+
+/**
+ * Returns the language of a note's content: its `#language` label, otherwise the
+ * `defaultContentLanguage` option, otherwise the display language (the `locale` option).
+ */
+export function resolveContentLanguage(
+    noteLanguage: string | null | undefined,
+    defaultContentLanguage: string | null | undefined,
+    displayLanguage: string | null | undefined
+): string | null {
+    return noteLanguage || defaultContentLanguage || displayLanguage || null;
+}
+
+/** Whether the language of the locale id is written right to left. */
+export function isRightToLeftLanguage(localeId: string | null | undefined) {
+    return LOCALES.find((locale) => locale.id === localeId)?.rtl ?? false;
+}
+
+/**
+ * Locale ids that are not BCP-47 tags, mapped to one.
+ *
+ * The Chinese pair deliberately resolves through the script subtags rather than the regions
+ * `normalizeLocale` maps them to: `zh-Hans` reads as
+ * "Simplified Chinese", whereas `zh-CN` would say "Chinese (China)" — the wrong distinction for
+ * entries differing by script.
+ */
+const ENGLISH_NAME_TAGS: Record<string, string> = {
+    cn: "zh-Hans",
+    tw: "zh-Hant"
+};

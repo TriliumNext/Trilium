@@ -1,4 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { OptionalContentConfig } from "pdfjs-dist/types/src/display/optional_content_config";
 
 declare global {
     /**
@@ -24,24 +25,30 @@ declare global {
             pdfDocument: PDFDocumentProxy;
             pdfViewer: {
                 currentPageNumber: number;
-                optionalContentConfigPromise: {
-                    setVisibility(groupId: string, visible: boolean);
-                    getGroup(groupId: string): {
-                        name: string;
-                        usage: {};
-                    };
-                    getOrder(): {}[]
-                };
+                /** Settles once every page has been sized. */
+                pagesPromise: Promise<void>;
+                /** Works out the visible pages and records the scroll position. */
+                update(): void;
+                /**
+                 * pdf.js' own type, rather than a local restatement of it — the previous
+                 * hand-written shape declared the config object directly and omitted the
+                 * Promise that `layers.ts` awaits.
+                 */
+                optionalContentConfigPromise: Promise<OptionalContentConfig>;
                 getPageView(pageIndex: number): {
                     div: HTMLDivElement;
-                };
+                    viewport: {
+                        /** Maps a point in PDF units to CSS pixels on the page. */
+                        convertToViewportPoint(x: number, y: number): number[];
+                    };
+                } | undefined;
                 container: HTMLElement;
             };
             pdfLinkService: {
                 goToDestination(dest: PdfJsDestination);
             };
             eventBus: {
-                on(event: string, listener: (...args: any[]) => void): void;
+                on(event: string, listener: (...args: any[]) => void, options?: { once?: boolean }): void;
                 dispatch(event: string, data?: any): void;
             };
             findBar?: {

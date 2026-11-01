@@ -1,0 +1,20 @@
+.etapi-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    align-items: center;
+    gap: 16px;
+
+    > .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+/* Carried by the header rather than a card, so it repeats what .tn-card-description would give it. */
+.etapi-description {
+    flex: 1 1 auto;
+    margin: 0;
+    color: var(--muted-text-color);
+    font-size: 13px;
+}

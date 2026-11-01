@@ -1,9 +1,14 @@
 import {
+    _getModelData as getModelData,
     _setModelData as setModelData,
+    ButtonView,
     ClassicEditor,
     Essentials,
+    IconArrowDown,
+    IconArrowUp,
     Paragraph,
     Plugin,
+    Table,
 } from "ckeditor5";
 import type { ModelElement, ModelText } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +16,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestEditor } from "../../test/editor-kit.js";
 import { TestBoxPlugin } from "../../test/fixture-plugins.js";
 import MoveBlockUpDownPlugin from "./move_block_updown.js";
+import TableMove from "./table_move/table_move.js";
 
 /** Returns the text data of the Nth block in the editor root (0-indexed). */
 function getBlockText(editor: ClassicEditor, index: number): string {
@@ -21,6 +27,17 @@ function getBlockText(editor: ClassicEditor, index: number): string {
     const textNode = (el as ModelElement).getChild(0);
     if (!textNode || !textNode.is("$text")) { return ""; }
     return (textNode as ModelText).data;
+}
+
+/** Returns the start and end offsets of the document selection. */
+function selectedOffsets(editor: ClassicEditor): [number, number] {
+    const selection = editor.model.document.selection;
+    return [selection.getFirstPosition()?.offset ?? -1, selection.getLastPosition()?.offset ?? -1];
+}
+
+/** Returns the element the document selection starts in. */
+function selectionParent(editor: ClassicEditor) {
+    return editor.model.document.selection.getFirstPosition()?.parent;
 }
 
 describe("MoveBlockUpDownPlugin", () => {
@@ -252,7 +269,7 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(getBlockText(editor, 0)).toBe("Only");
     });
 
-    it("preserves selection offset within block after moving up", () => {
+    it("preserves the selected range within the block after moving up", () => {
         setModelData(editor.model,
             "<paragraph>First</paragraph>" +
             "<paragraph>Se{co}nd</paragraph>"
@@ -261,14 +278,11 @@ describe("MoveBlockUpDownPlugin", () => {
         editor.execute("moveBlockUp");
 
         expect(getBlockText(editor, 0)).toBe("Second");
-        // Selection should be non-null and within the moved block
-        const selection = editor.model.document.selection;
-        const firstPos = selection.getFirstPosition();
-        expect(firstPos).toBeTruthy();
-        expect(firstPos?.parent.is("element") && (firstPos?.parent as ModelElement).name).toBe("paragraph");
+        expect(selectedOffsets(editor)).toEqual([2, 4]);
+        expect(selectionParent(editor)).toBe(editor.model.document.getRoot()?.getChild(0));
     });
 
-    it("preserves selection offset within block after moving down", () => {
+    it("preserves the selected range within the block after moving down", () => {
         setModelData(editor.model,
             "<paragraph>Fi{rs}t</paragraph>" +
             "<paragraph>Second</paragraph>"
@@ -277,16 +291,13 @@ describe("MoveBlockUpDownPlugin", () => {
         editor.execute("moveBlockDown");
 
         expect(getBlockText(editor, 1)).toBe("First");
-        const selection = editor.model.document.selection;
-        const firstPos = selection.getFirstPosition();
-        expect(firstPos).toBeTruthy();
+        expect(selectedOffsets(editor)).toEqual([2, 4]);
+        expect(selectionParent(editor)).toBe(editor.model.document.getRoot()?.getChild(1));
     });
 
-    it("moves an object (widget) element up — exercises getSelectedElement() and else selection-restore branch", () => {
+    it("moves an object (widget) element up and keeps it selected", () => {
         // With a testBox selected (isObject: true), getSelectedBlocks() returns []
-        // and the code falls back to getSelectedElement(). The selection restoration
-        // takes the else-branch because the selection offset (element index) exceeds
-        // the object's maxOffset (0, no children).
+        // and the code falls back to getSelectedElement().
         setModelData(editor.model,
             "<paragraph>First</paragraph>" +
             "[<testBox></testBox>]"
@@ -301,9 +312,10 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("testBox");
         const c1 = root.getChild(1);
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("paragraph");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(c0);
     });
 
-    it("moves an object (widget) element down — exercises getSelectedElement() and else selection-restore branch", () => {
+    it("moves an object (widget) element down and keeps it selected", () => {
         setModelData(editor.model,
             "[<testBox></testBox>]" +
             "<paragraph>Last</paragraph>"
@@ -317,6 +329,7 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("paragraph");
         const c1 = root.getChild(1);
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("testBox");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(c1);
     });
 
     it("does not move an object element up when it is already the first block", () => {
@@ -469,6 +482,27 @@ describe("MoveBlockUpDownPlugin with collapsible summary element", () => {
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("details");
     });
 
+    it("keeps a mid-title caret in the summary so repeated moves keep moving the collapsible", () => {
+        // #11081: the caret used to be restored by offset against the <details> the
+        // summary resolves to, whose offsets count child blocks — so a caret five
+        // characters into the title landed on the sixth child, i.e. in the body. Every
+        // further keystroke then moved that body block instead of the collapsible.
+        setModelData(editor.model,
+            "<paragraph>row1</paragraph>" +
+            "<details><summary>Squar[]e of Fame</summary><paragraph>b1</paragraph>" +
+            "<paragraph>b2</paragraph><paragraph>b3</paragraph><paragraph>b4</paragraph>" +
+            "<paragraph>b5</paragraph></details>" +
+            "<paragraph>row2</paragraph>"
+        );
+
+        editor.execute("moveBlockDown");
+        editor.execute("moveBlockDown");
+
+        const data = getModelData(editor.model);
+        expect(data).toContain("<summary>Squar[]e of Fame</summary>");
+        expect(data.indexOf("<details>")).toBeGreaterThan(data.indexOf("<paragraph>row2</paragraph>"));
+    });
+
     it("deduplicates adjacent resolved blocks when multiple summaries in the same details are selected", () => {
         // A selection spanning two <summary> elements within the same <details>
         // causes both to be hoisted to the parent <details>. The dedup filter on
@@ -487,5 +521,163 @@ describe("MoveBlockUpDownPlugin with collapsible summary element", () => {
         // After dedup, the details block moves as one unit before the paragraph
         const c0 = root.getChild(0);
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("details");
+    });
+});
+
+describe("MoveBlockUpDownPlugin inside tables", () => {
+    async function fireAltArrow(editor: ClassicEditor, key: "ArrowUp" | "ArrowDown") {
+        await new Promise<void>((resolve) => {
+            editor.editing.view.once("render", () => resolve());
+            editor.editing.view.forceRender();
+        });
+        const domRoot = editor.editing.view.getDomRoot();
+        if (!domRoot) { throw new Error("No editing DOM root"); }
+
+        const event = new KeyboardEvent("keydown", {
+            key,
+            altKey: true,
+            bubbles: true,
+            cancelable: true
+        });
+        domRoot.dispatchEvent(event);
+        return event;
+    }
+
+    const twoRowTable =
+        "<table>" +
+        "<tableRow><tableCell><paragraph>a[]</paragraph></tableCell></tableRow>" +
+        "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+        "</table>";
+
+    describe("with the TableMove plugin", () => {
+        let editor: ClassicEditor;
+
+        beforeEach(async () => {
+            editor = await createTestEditor(
+                [Essentials, Paragraph, Table, MoveBlockUpDownPlugin, TableMove]
+            );
+        });
+
+        it("moves the table row instead of the block", async () => {
+            setModelData(editor.model, twoRowTable);
+
+            await fireAltArrow(editor, "ArrowDown");
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table>" +
+                "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+                "<tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow>" +
+                "</table>"
+            );
+        });
+
+        it("does not fall back to a block move at the table edge", async () => {
+            // The cell holds two paragraphs; a block-move fallback would swap them.
+            setModelData(editor.model,
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y[]</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+
+            const event = await fireAltArrow(editor, "ArrowUp");
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+        });
+
+        it("still moves a selected table widget as a block", async () => {
+            setModelData(editor.model,
+                "<paragraph>First</paragraph>" +
+                "[<table><tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow></table>]"
+            );
+
+            await fireAltArrow(editor, "ArrowUp");
+
+            const root = editor.model.document.getRoot();
+            if (!root) { throw new Error("No root"); }
+            const c0 = root.getChild(0);
+            expect(c0?.is("element") && (c0 as ModelElement).name).toBe("table");
+        });
+    });
+
+    describe("without the TableMove plugin", () => {
+        it("keeps moving blocks inside a table cell", async () => {
+            const editor = await createTestEditor(
+                [Essentials, Paragraph, Table, MoveBlockUpDownPlugin]
+            );
+            setModelData(editor.model,
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y[]</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+
+            await fireAltArrow(editor, "ArrowUp");
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table><tableRow><tableCell>" +
+                "<paragraph>y</paragraph><paragraph>x</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+        });
+    });
+});
+
+describe("MoveBlockUpDownPlugin buttons", () => {
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        editor = await createTestEditor([Essentials, Paragraph, Table, MoveBlockUpDownPlugin, TableMove], {
+            toolbar: ["moveBlockUp", "moveBlockDown"]
+        });
+    });
+
+    function buttons() {
+        const [up, down] = [...editor.ui.view.toolbar.items];
+        if (!(up instanceof ButtonView) || !(down instanceof ButtonView)) {
+            throw new Error("The toolbar has no move buttons.");
+        }
+        return { up, down };
+    }
+
+    it("moves the block, and is disabled where it cannot move", () => {
+        const { up, down } = buttons();
+        expect(up).toMatchObject({ label: "Move up", icon: IconArrowUp, tooltip: true });
+        expect(down).toMatchObject({ label: "Move down", icon: IconArrowDown, tooltip: true });
+
+        setModelData(editor.model, "<paragraph>First[]</paragraph><paragraph>Second</paragraph>");
+        expect(up.isEnabled).toBe(false);
+        expect(down.isEnabled).toBe(true);
+
+        down.fire("execute");
+        expect(getModelData(editor.model)).toBe("<paragraph>Second</paragraph><paragraph>First[]</paragraph>");
+        expect(up.isEnabled).toBe(true);
+        expect(down.isEnabled).toBe(false);
+
+        editor.enableReadOnlyMode("spec");
+        expect(up.isEnabled).toBe(false);
+    });
+
+    it("moves the table row in a table, as Alt+Up and Alt+Down do", () => {
+        const { up, down } = buttons();
+        setModelData(editor.model,
+            "<table>" +
+            "<tableRow><tableCell><paragraph>a[]</paragraph></tableCell></tableRow>" +
+            "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+            "</table>"
+        );
+        expect(up.isEnabled).toBe(false);
+        expect(down.isEnabled).toBe(true);
+
+        down.fire("execute");
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<table>" +
+            "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+            "<tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow>" +
+            "</table>"
+        );
     });
 });

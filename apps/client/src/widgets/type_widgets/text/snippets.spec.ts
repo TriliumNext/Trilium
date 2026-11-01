@@ -7,7 +7,7 @@ vi.mock("../../../services/search.js", () => ({
 }));
 
 import search from "../../../services/search.js";
-import getTemplates from "./snippets.js";
+import getTemplates, { buildContentPreview } from "./snippets.js";
 
 const logErrorMock = vi.fn();
 
@@ -90,10 +90,55 @@ describe("getTemplates (text snippets)", () => {
         }
     });
 
+    it("falls back to a content preview when the note has no description label", async () => {
+        vi.mocked(search.searchForNotes).mockResolvedValue([
+            makeTextNote({ noteId: "plain", getContent: async () => "<p>Dear <b>Sir or Madam</b>,</p><p>I am writing to…</p>" }),
+            makeTextNote({
+                noteId: "labelled",
+                getLabelValue: (name) => (name === "snippetDescription" ? "own description" : null),
+                getContent: async () => "<p>content the label overrides</p>"
+            }),
+            makeTextNote({ noteId: "empty", getContent: async () => "<p>   </p>" })
+        ]);
+
+        const definitions = await getTemplates();
+
+        // The user's own description always wins; empty content yields no description at all.
+        expect(definitions.map((definition) => definition.description))
+            .toEqual(["Dear Sir or Madam, I am writing to…", "own description", undefined]);
+    });
+
     it("returns an empty list and logs when loading fails", async () => {
         vi.mocked(search.searchForNotes).mockRejectedValue(new Error("boom"));
 
         expect(await getTemplates()).toEqual([]);
         expect(logErrorMock).toHaveBeenCalled();
+    });
+});
+
+describe("buildContentPreview", () => {
+    it("strips markup, decodes entities and collapses whitespace", () => {
+        expect(buildContentPreview("<p>Dear <b>Sir&nbsp;or Madam</b>,</p>\n<p>hello</p>")).toBe("Dear Sir or Madam, hello");
+    });
+
+    it("returns undefined for missing, empty or markup-only content", () => {
+        expect(buildContentPreview(undefined)).toBeUndefined();
+        expect(buildContentPreview("")).toBeUndefined();
+        expect(buildContentPreview("<p>  </p><br/>")).toBeUndefined();
+    });
+
+    it("truncates long content at a word boundary with an ellipsis", () => {
+        const preview = buildContentPreview(`<p>${"word ".repeat(40)}</p>`);
+
+        expect(preview?.endsWith("…")).toBe(true);
+        expect(preview?.length).toBeLessThanOrEqual(81);
+        // No mid-word cut: everything before the ellipsis is whole words.
+        expect(preview?.slice(0, -1).split(" ").every((part) => part === "word")).toBe(true);
+    });
+
+    it("hard-cuts a single giant word rather than returning nothing", () => {
+        const preview = buildContentPreview(`<p>${"a".repeat(200)}</p>`);
+
+        expect(preview).toBe(`${"a".repeat(80)}…`);
     });
 });

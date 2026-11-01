@@ -8,8 +8,6 @@ async function main() {
         "src/cli.ts",
         "src/main.ts",
         "src/build-docs.ts",
-        "src/swagger.ts",
-        "src/script-api.ts",
         "src/context.ts"
     ]);
 
@@ -17,7 +15,8 @@ async function main() {
     build.copy("src/index.html", "index.html");
 
     // Copy node modules dependencies if needed
-    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path" ]);
+    build.copyNodeModules([ "better-sqlite3" ]);
+    build.trimBetterSqlite3();
 }
 
 main();

@@ -3,7 +3,7 @@
  * Re-exports core image service and adds OCR scheduling.
  */
 
-import { getLog, imageService, options as optionService } from "@triliumnext/core";
+import { getLog, imageService, type ImageShrink, options as optionService } from "@triliumnext/core";
 import ocrService from "./ocr/ocr_service.js";
 
 function scheduleOcrForNote(noteId: string) {
@@ -43,7 +43,7 @@ function saveImageToAttachment(
     noteId: string,
     uploadBuffer: Uint8Array,
     originalName: string,
-    shrinkImageSwitch?: boolean,
+    shrinkImageSwitch?: ImageShrink,
     trimFilename = false
 ) {
     const result = imageService.saveImageToAttachment(noteId, uploadBuffer, originalName, shrinkImageSwitch, trimFilename);
@@ -57,6 +57,9 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
 }
 
 export default {
+    // Passed straight through: waiting for an image to be stored is the same act whether or not
+    // this layer had OCR to schedule for it.
+    awaitImageWrite: imageService.awaitImageWrite,
     saveImage,
     saveImageToAttachment,
     updateImage

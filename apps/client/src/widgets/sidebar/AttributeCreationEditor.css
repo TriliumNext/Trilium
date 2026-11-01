@@ -1,0 +1,53 @@
+/* The two fields a creation row is made of, on the overlay shell (AttributeEditorOverlay.css): the
+   name leading and the value taking the rest, weighted rather than measured — with only the two of
+   them, a fixed split would starve one side on a narrow pane and waste it on a wide one. */
+.attribute-list-panel .attribute-creation-editor {
+    /* The kind, worn where a row wears its icon — and pressed to switch, so it says it can be. */
+    & .attribute-creation-kind {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        padding-inline: 2px;
+        color: var(--muted-text-color);
+        cursor: pointer;
+    }
+
+    & .attribute-creation-kind:hover {
+        color: var(--main-text-color);
+    }
+
+    & .attribute-creation-name,
+    & .attribute-creation-value {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    & .attribute-creation-name {
+        flex: 2 1 0;
+
+        & input {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+
+    & .attribute-creation-value {
+        flex: 3 1 0;
+    }
+
+    /* While the name is the field being typed, it takes the lion's share instead — the same grant the
+       value editor makes its one field: the completion drops a list exactly as wide as the box it
+       belongs to, and a name is picked before a value is worth the room. Instant rather than eased:
+       the list measures the box as it opens, and would keep a width caught mid-transition. */
+    &:has(.attribute-creation-name:focus-within) {
+        & .attribute-creation-name {
+            flex: 5 1 0;
+        }
+
+        & .attribute-creation-value {
+            flex: 1 1 0;
+        }
+    }
+}

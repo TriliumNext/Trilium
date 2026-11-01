@@ -1,5 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { processAnnotation, AnnotationType, rgbToHex } from "./annotations";
+// @vitest-environment happy-dom
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+    AnnotationType,
+    processAnnotation,
+    rgbToHex,
+    setupAnnotationLiveUpdates,
+    setupPdfAnnotations,
+    trackInitialView
+} from "./annotations";
+import { allFeaturesPdf } from "./test/fixture_pdf";
+import { InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
 
 const SAMPLE_HIGHLIGHT = {
     annotationType: 9,
@@ -48,12 +59,57 @@ describe("processAnnotation", () => {
         expect(processAnnotation(withAuthor, 1)!.author).toBe("John Doe");
     });
 
-    it("skips non-comment types and empty annotations", () => {
+    it("skips types the sidebar does not list", () => {
         const link = { ...SAMPLE_HIGHLIGHT, annotationType: 2 }; // LINK
         expect(processAnnotation(link, 1)).toBeNull();
 
-        const empty = { ...SAMPLE_HIGHLIGHT, contentsObj: { str: "", dir: "ltr" }, overlaidText: "" };
-        expect(processAnnotation(empty, 1)).toBeNull();
+        const widget = { ...SAMPLE_HIGHLIGHT, annotationType: 20 }; // WIDGET (a form field)
+        expect(processAnnotation(widget, 1)).toBeNull();
+    });
+
+    it("reads a free-text box's own words as its contents", () => {
+        const freeText = {
+            ...SAMPLE_HIGHLIGHT,
+            annotationType: AnnotationType.FREETEXT,
+            contentsObj: { str: "Typed in the box", dir: "ltr" },
+            overlaidText: undefined
+        };
+
+        const result = processAnnotation(freeText, 2)!;
+        expect(result.type).toBe("freetext");
+        expect(result.contents).toBe("Typed in the box");
+        expect(result.highlightedText).toBe("");
+    });
+
+    it("reports a free-hand highlight as a highlight, not as a drawing", () => {
+        // pdf.js stores it as Ink and marks it with /IT; only the pen's own strokes are drawings.
+        const inkHighlight = { ...SAMPLE_HIGHLIGHT, annotationType: AnnotationType.INK, it: "InkHighlight" };
+        expect(processAnnotation(inkHighlight, 1)!.type).toBe("highlight");
+
+        const penStroke = { ...SAMPLE_HIGHLIGHT, annotationType: AnnotationType.INK, it: undefined };
+        expect(processAnnotation(penStroke, 1)!.type).toBe("ink");
+
+        // /IT is shared with other types, where it says nothing about the tool used.
+        const stampedHighlight = { ...SAMPLE_HIGHLIGHT, it: "InkHighlight" };
+        expect(processAnnotation(stampedHighlight, 1)!.type).toBe("highlight");
+    });
+
+    it("keeps an annotation carrying no text at all", () => {
+        // pdf.js writes a free-hand highlight as Ink, which never has contents or overlaidText;
+        // dropping those hid every highlight not drawn over selected text (#11059).
+        const drawing = {
+            ...SAMPLE_HIGHLIGHT,
+            annotationType: AnnotationType.INK,
+            contentsObj: { str: "", dir: "ltr" },
+            overlaidText: null
+        };
+
+        const result = processAnnotation(drawing, 4)!;
+        expect(result).not.toBeNull();
+        expect(result.type).toBe("ink");
+        expect(result.contents).toBe("");
+        expect(result.highlightedText).toBe("");
+        expect(result.pageNumber).toBe(4);
     });
 
     it("keeps annotations with only one of contents or highlightedText", () => {
@@ -77,5 +133,365 @@ describe("rgbToHex", () => {
         expect(rgbToHex([255, 0, 0])).toBe("#ff0000");
         expect(rgbToHex([0, 0, 0])).toBe("#000000");
         expect(rgbToHex([255, 255, 255])).toBe("#ffffff");
+    });
+});
+
+/**
+ * The rest of the file drives the extraction against a real `PDFDocumentProxy`, so the
+ * annotation objects, the page loop and the save round-trip are pdf.js' own rather than
+ * hand-built stand-ins. See {@link ./test/fixture_pdf}.
+ */
+describe("extraction from a real document", () => {
+    let viewer: InstalledViewer;
+
+    afterEach(() => uninstallViewerApp());
+
+    /** The annotations the fixture expects to surface, in page order. */
+    const EXPECTED = [
+        expect.objectContaining({
+            id: "5R",
+            type: "highlight",
+            contents: "A remark",
+            author: "Alice",
+            pageNumber: 1,
+            color: "#ff0000"
+        }),
+        expect.objectContaining({
+            id: "14R",
+            type: "text",
+            contents: "A sticky note",
+            author: "Bob",
+            pageNumber: 1,
+            color: "#0000ff"
+        }),
+        expect.objectContaining({
+            id: "17R",
+            type: "highlight",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2
+        }),
+        expect.objectContaining({
+            id: "18R",
+            type: "ink",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2,
+            color: "#000000"
+        }),
+        expect.objectContaining({
+            id: "19R",
+            type: "freetext",
+            contents: "Typed in the box",
+            pageNumber: 2
+        }),
+        expect.objectContaining({
+            id: "20R",
+            type: "highlight",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2,
+            color: "#ffff00"
+        })
+    ];
+
+    it("walks every page and lists every annotation kind the sidebar shows", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+
+        await setupPdfAnnotations();
+
+        // Page 2's link is the only annotation filtered out — the highlight with nothing to
+        // show, the ink drawing and the free-text box all belong in the sidebar (#11059).
+        expect(viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations).toEqual(EXPECTED);
+    });
+
+    it("lets editor state override the colour and comment of a stored annotation", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // getEditor() is pinned as existing by the contract spec; its return is stubbed here
+        // because populating a real editor needs the annotation-editing UI layer.
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "getEditor").mockImplementation((id: string) =>
+            id === "5R" ? { color: "#00ff00", comment: { text: "Edited in the viewer" } } : null);
+
+        await setupPdfAnnotations();
+
+        const [ highlight ] = viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations;
+        expect(highlight).toMatchObject({ id: "5R", color: "#00ff00", contents: "Edited in the viewer" });
+    });
+
+    it("keeps a text box's font colour out of the sidebar's tint", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // Every stored annotation becomes an editor once a tool is active, so this state is
+        // reached just by pressing a toolbar button. A FreeTextEditor's `color` is the colour of
+        // its *text*, not a fill — taking it would paint the row in the text's colour, and only
+        // while a tool happened to be selected.
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "getEditor").mockImplementation((id: string) =>
+            (id === "19R" ? { color: "#000000" } : null));
+
+        await setupPdfAnnotations();
+
+        const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
+        expect(annotations.find((annotation: any) => annotation.id === "19R").color).toBeNull();
+    });
+
+    it("lists annotations that so far exist only in the editor", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // What pdf.js holds for annotations drawn in this session: keyed by the editor's own id,
+        // with `id` naming the document annotation it came from — null for one that is new.
+        // Until the file is written back these are the only record of them, so a sidebar built
+        // from the document alone stays empty however much the reader annotates (#11059).
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "serializable", "get").mockReturnValue({
+            map: new Map<string, any>([
+                [ "pdfjs_internal_editor_0", { annotationType: 9, id: null, pageIndex: 2, color: [ 255, 255, 152 ] } ],
+                [ "pdfjs_internal_editor_1", { annotationType: 3, id: null, pageIndex: 0, color: [ 0, 0, 0 ], value: "typed words" } ],
+                // An existing annotation being edited: already listed from the document.
+                [ "pdfjs_internal_editor_2", { annotationType: 9, id: "5R", pageIndex: 0, color: [ 0, 255, 0 ] } ],
+                // A signature: a kind the sidebar does not list, so it stays out here as well.
+                [ "pdfjs_internal_editor_3", { annotationType: 13, id: null, pageIndex: 0, isSignature: true } ]
+            ]),
+            hash: "x",
+            transfer: []
+        } as any);
+
+        await setupPdfAnnotations();
+
+        const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
+        expect(annotations.filter((annotation: any) => annotation.id.startsWith("pdfjs_internal_editor"))).toEqual([
+            expect.objectContaining({ id: "pdfjs_internal_editor_0", type: "highlight", pageNumber: 3, color: "#ffff98" }),
+            // pdf.js serializes a text box's *font* colour under `color`; the sidebar tints a row with
+            // this field, and a black tint behind a note is not what anyone drew.
+            expect.objectContaining({ id: "pdfjs_internal_editor_1", type: "freetext", contents: "typed words", pageNumber: 1, color: null })
+        ]);
+        // The document's own annotations are still there, and the edited one is not duplicated.
+        expect(annotations.filter((annotation: any) => annotation.id === "5R")).toHaveLength(1);
+        expect(annotations.some((annotation: any) => annotation.id === "pdfjs_internal_editor_3")).toBe(false);
+    });
+
+    it("removes deleted annotations even when they are adjacent", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "getEditor").mockReturnValue({ deleted: true });
+
+        await setupPdfAnnotations();
+
+        // Both fixture annotations are adjacent in the page's /Annots order, which is what
+        // used to break: removing one from the array under iteration shifted the next into
+        // the consumed index, so it was skipped and stayed in the sidebar — showing an
+        // annotation the user had deleted until a save round-trip replaced the list.
+        expect(viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations).toEqual([]);
+    });
+
+    it("keeps the annotations that were not deleted", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "getEditor")
+            .mockImplementation((id: string) => (id === "5R" ? { deleted: true } : null));
+
+        await setupPdfAnnotations();
+
+        const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
+        expect(annotations.map((annotation: any) => annotation.id)).toEqual([ "14R", "17R", "18R", "19R", "20R" ]);
+    });
+
+    it("reports an empty list when extraction fails", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(viewer.pdfDocument, "getPage").mockRejectedValue(new Error("boom"));
+
+        await setupPdfAnnotations();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-annotations")).toEqual({
+            type: "pdfjs-viewer-annotations",
+            annotations: []
+        });
+    });
+});
+
+describe("live updates", () => {
+    let viewer: InstalledViewer;
+
+    afterEach(() => {
+        vi.useRealTimers();
+        uninstallViewerApp();
+    });
+
+    it("chains onto an existing onSetModified and debounces the refresh", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const storage = viewer.pdfDocument.annotationStorage as any;
+        const previous = vi.fn();
+        storage.onSetModified = previous;
+        vi.useFakeTimers();
+
+        setupAnnotationLiveUpdates();
+        storage.onSetModified();
+        storage.onSetModified();
+
+        // The save flow installs its own onSetModified first; dropping it would stop the
+        // parent being told the document is dirty.
+        expect(previous).toHaveBeenCalledTimes(2);
+        expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(0);
+
+        await vi.advanceTimersByTimeAsync(500);
+        expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(1);
+    });
+
+    it("also refreshes on editor parameter and editing state changes", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        vi.useFakeTimers();
+        setupAnnotationLiveUpdates();
+
+        // Deletions and undo/redo surface only through these two events.
+        viewer.eventBus.dispatch("annotationeditorparamschanged", { source: null });
+        await vi.advanceTimersByTimeAsync(500);
+        expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(1);
+
+        viewer.eventBus.dispatch("editingstateschanged", { source: null, details: {} });
+        await vi.advanceTimersByTimeAsync(500);
+        expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(2);
+    });
+});
+
+describe("scrolling to an annotation", () => {
+    let viewer: InstalledViewer;
+
+    afterEach(() => uninstallViewerApp());
+
+    /** Both fixture pages are US Letter, 792 points tall, stacked 1000 px apart. */
+    const PAGES = { 0: { offsetTop: 0, clientHeight: 792 }, 1: { offsetTop: 1000, clientHeight: 792 } };
+
+    /** Where the last scroll request puts the centre of the container, in container pixels. */
+    function centreOfLastScroll() {
+        const { left, top } = viewer.scrollRequests.mock.lastCall?.[0] ?? {};
+        return { x: left + 600 / 2, y: top + 800 / 2 };
+    }
+
+    /** Replaces what pdf.js holds for the annotations edited in this session. */
+    function editedInSession(entries: [ string, Record<string, unknown> ][]) {
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "serializable", "get").mockReturnValue({
+            map: new Map(entries), hash: "x", transfer: []
+        } as any);
+    }
+
+    it("centres an annotation, from its rectangle in the document", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+
+        // Object 18 is the ink stroke at [400 400 500 450] on page 2. Nothing has rendered it,
+        // which no longer matters: the page's viewport places it.
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 });
+
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+        // PDF y grows upwards, so y 425 on a 792-point page is 367 px from its top.
+        expect(centreOfLastScroll()).toEqual({ x: 450, y: 1000 + 367 });
+    });
+
+    it("turns to the annotation's page before measuring it, for single-page mode", async () => {
+        // In single-page scroll mode, setting `currentPageNumber` puts the page's element into
+        // the viewer, which holds only the current page.
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+        const turnToPage = vi.fn();
+        Object.defineProperty(window.PDFViewerApplication?.pdfViewer, "currentPageNumber", {
+            get: () => 1,
+            set: turnToPage
+        });
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 });
+
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+        expect(turnToPage).toHaveBeenCalledExactlyOnceWith(2);
+        expect(turnToPage.mock.invocationCallOrder[0])
+            .toBeLessThan(viewer.scrollRequests.mock.invocationCallOrder[0]);
+        expect(centreOfLastScroll()).toEqual({ x: 450, y: 1000 + 367 });
+    });
+
+    it("has pdf.js record the new position at once, so a resize in the same frame keeps it", async () => {
+        // On a resize, pdf.js reapplies an "auto" zoom and scrolls back to the position it last
+        // recorded, which it otherwise records only on the next frame's scroll event.
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+        const app = window.PDFViewerApplication;
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 });
+        await vi.waitFor(() => expect(app?.pdfViewer.update).toHaveBeenCalledOnce());
+        expect(viewer.scrollRequests).toHaveBeenCalledWith(expect.objectContaining({ behavior: "instant" }));
+        expect(viewer.scrollRequests.mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(app?.pdfViewer.update as () => void).mock.invocationCallOrder[0]);
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", pageNumber: 1 });
+        await vi.waitFor(() => expect(app?.pdfViewer.update).toHaveBeenCalledTimes(2));
+    });
+
+    it("ignores a scroll request from another origin", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+
+        window.dispatchEvent(new MessageEvent("message", {
+            data: { type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 1 },
+            origin: "https://evil.example"
+        }));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+    });
+
+    it("finds an annotation where it was moved to, or drawn, in this session", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+        editedInSession([
+            [ "pdfjs_internal_editor_0", { annotationType: 9, id: null, pageIndex: 0, rect: [ 0, 0, 100, 100 ] } ],
+            [ "pdfjs_internal_editor_1", { annotationType: 9, id: "5R", pageIndex: 0, rect: [ 300, 392, 300, 392 ] } ]
+        ]);
+
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-annotation", annotationId: "pdfjs_internal_editor_0", pageNumber: 1
+        });
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalledTimes(1));
+        expect(centreOfLastScroll()).toEqual({ x: 50, y: 742 });
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 1 });
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalledTimes(2));
+        expect(centreOfLastScroll()).toEqual({ x: 300, y: 400 });
+    });
+
+    it("turns to the page when the annotation is gone, or none is named", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        await setupPdfAnnotations();
+        const app = window.PDFViewerApplication;
+        editedInSession([ [ "pdfjs_internal_editor_0", { id: "17R", pageIndex: 1, deleted: true } ] ]);
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "17R", pageNumber: 2 });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(2));
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "99R", pageNumber: 1 });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(1));
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", pageNumber: 2 });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(2));
+
+        // A link to a page an older version of the document had.
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 9 });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(9));
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+    });
+
+    it("waits for pdf.js to apply its initial view, which would undo an earlier scroll", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        const app = window.PDFViewerApplication;
+        if (!app) throw new Error("viewer not installed");
+        let pagesLoaded = () => {};
+        (app.pdfViewer as any).pagesPromise = new Promise<void>((resolve) => { pagesLoaded = resolve; });
+        trackInitialView(app);
+        await setupPdfAnnotations();
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+
+        // pdf.js restores the last-read position at `documentinit`, and again once every page is
+        // sized when the pages differ in size.
+        viewer.eventBus.dispatch("documentinit", { source: null });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+
+        pagesLoaded();
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
     });
 });

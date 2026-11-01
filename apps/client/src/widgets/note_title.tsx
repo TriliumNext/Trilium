@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../components/app_context";
 import branches from "../services/branches";
+import froca from "../services/froca";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import server from "../services/server";
@@ -19,15 +20,19 @@ export default function NoteTitleWidget(props: {className?: string}) {
     const newTitle = useRef("");
 
     const [ isReadOnly, setReadOnly ] = useState<boolean>(false);
+    const [ isLocked, setLocked ] = useState<boolean>(false);
     const [ navigationTitle, setNavigationTitle ] = useState<string | null>(null);
 
     // Manage read-only
     useEffect(() => {
+        const isLocked = !!note?.isProtected
+            && !protected_session_holder.isProtectedSessionAvailable();
         const isReadOnly = note === null
             || note === undefined
-            || (note.isProtected && !protected_session_holder.isProtectedSessionAvailable())
+            || isLocked
             || note.isMetadataReadOnly
             || viewScope?.viewMode !== "default";
+        setLocked(isLocked);
         setReadOnly(isReadOnly);
     }, [ note, note?.noteId, note?.isProtected, viewScope?.viewMode ]);
 
@@ -40,7 +45,8 @@ export default function NoteTitleWidget(props: {className?: string}) {
 
     // Save changes to title.
     const spacedUpdate = useSpacedUpdate(async () => {
-        if (!note) {
+        // A deleted note is gone from `froca`, and the server refuses its changes.
+        if (!note || !(note.noteId in froca.notes)) {
             return;
         }
         protected_session_holder.touchProtectedSessionIfNecessary(note);
@@ -57,7 +63,7 @@ export default function NoteTitleWidget(props: {className?: string}) {
 
     // Manage focus.
     const textBoxRef = useRef<HTMLInputElement>(null);
-    const isNewNote = useRef<boolean>();
+    const isNewNote = useRef<boolean | undefined>(undefined);
     const pendingSelect = useRef<boolean>(false);
 
     // Re-apply selection when title changes if we have a pending select.
@@ -71,8 +77,11 @@ export default function NoteTitleWidget(props: {className?: string}) {
     }, [title]);
 
     useTriliumEvents([ "focusOnTitle", "focusAndSelectTitle" ], (e, eventName) => {
-        if (noteContext?.isActive() && textBoxRef.current) {
-            // In the new layout, there are two NoteTitleWidget instances. Only handle if visible.
+        // When the event targets a specific context (e.g. a popup's own context, which is never
+        // "active" in the tab manager), match on it; otherwise fall back to the active context.
+        const isTargeted = e.ntxId ? e.ntxId === noteContext?.ntxId : noteContext?.isActive();
+        if (isTargeted && textBoxRef.current) {
+            // A note context has two NoteTitleWidget instances, the title row's and InlineTitle's. Only handle if visible.
             if (!textBoxRef.current.checkVisibility({ checkOpacity: true })) {
                 return;
             }
@@ -91,9 +100,15 @@ export default function NoteTitleWidget(props: {className?: string}) {
             {note && <FormTextBox
                 inputRef={textBoxRef}
                 autocomplete="off"
-                currentValue={(!isReadOnly ? title : navigationTitle) ?? ""}
+                currentValue={isLocked
+                    ? t("protected_session.locked_note_title")
+                    : (!isReadOnly ? title : navigationTitle) ?? ""}
                 placeholder={t("note_title.placeholder")}
-                className={`note-title ${isProtected ? "protected" : ""}`}
+                className={clsx(
+                    "note-title",
+                    isProtected && "protected",
+                    isLocked && "protected-title"
+                )}
                 tabIndex={100}
                 readOnly={isReadOnly}
                 onChange={(newValue) => {

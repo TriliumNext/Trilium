@@ -39,6 +39,7 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_text_snippet",
             "_template_markdown_snippet",
             "_template_code_snippet",
+            "_template_ai_quick_action",
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",
@@ -135,16 +136,25 @@ describe("buildHiddenSubtreeTemplates", () => {
         }
     });
 
-    it("applies the shared hidden-subtree label on the templates that hide their subtree", () => {
+    it("applies the hidden-subtree label on the templates that declare it", () => {
         const templates = buildHiddenSubtreeTemplates();
-        const hidingIds = ["_template_calendar", "_template_table", "_template_geo_map", "_template_board"];
+        const offByDefault = ["_template_calendar", "_template_table", "_template_geo_map"];
 
-        for (const id of hidingIds) {
+        for (const id of offByDefault) {
             const item = childById(templates, id);
             const attr = item.attributes?.find((a) => a.name === "subtreeHidden");
             expect(attr, id).toBeDefined();
             expect(attr?.type, id).toBe("label");
             expect(attr?.value, id).toBe("false");
+        }
+
+        // The board and the presentation hide their subtree by default: the cards, or the slide
+        // sidebar, already list the children.
+        for (const id of ["_template_board", "_template_presentation"]) {
+            const item = childById(templates, id);
+            const attr = item.attributes?.find((a) => a.name === "subtreeHidden");
+            expect(attr?.type, id).toBe("label");
+            expect(attr?.value ?? "", id).toBe("");
         }
 
         // The list/grid views intentionally do NOT hide their subtree.
@@ -170,8 +180,9 @@ describe("buildHiddenSubtreeTemplates", () => {
         const templates = buildHiddenSubtreeTemplates();
         const board = childById(templates, "_template_board");
 
-        const statusDefinition = board.attributes?.find((a) => a.name === "label:status");
-        expect(statusDefinition?.isInheritable).toBe(true);
+        // The status definition belongs to each board, not to the template every board shares: one
+        // option list here would be everyone's option list. Boards write their own.
+        expect(board.attributes?.some((a) => a.name === "label:status")).toBe(false);
 
         const childIds = (board.children ?? []).map((c) => c.id);
         expect(childIds).toEqual([
@@ -188,38 +199,28 @@ describe("buildHiddenSubtreeTemplates", () => {
         }
     });
 
-    it("wires the presentation template to its slide template via a child:template relation", () => {
+    it("gives the slides of a presentation no template of their own", () => {
         const templates = buildHiddenSubtreeTemplates();
         const presentation = childById(templates, "_template_presentation");
 
-        const childTemplate = presentation.attributes?.find((a) => a.name === "child:template");
-        expect(childTemplate?.type).toBe("relation");
-        expect(childTemplate?.value).toBe("_template_presentation_slide");
-
-        const slideChildIds = (presentation.children ?? []).map((c) => c.id);
-        expect(slideChildIds).toEqual([
+        expect(presentation.attributes?.some((a) => a.name === "child:template")).toBe(false);
+        expect((presentation.children ?? []).map((c) => c.id)).toEqual([
             "_template_presentation_first",
             "_template_presentation_second"
         ]);
-
         for (const slide of presentation.children ?? []) {
-            expect(slide.type).toBe("text");
-            const templateRelation = slide.attributes?.find((a) => a.name === "template");
-            expect(templateRelation?.type, slide.id).toBe("relation");
-            expect(templateRelation?.value, slide.id).toBe("_template_presentation_slide");
+            expect(slide.type, slide.id).toBe("text");
+            expect(slide.attributes?.some((a) => a.name === "template") ?? false, slide.id).toBe(false);
         }
     });
 
-    it("exposes the presentation slide template with a promoted background color attribute", () => {
+    it("keeps the former slide template as a bare note, for the slides that still link to it", () => {
         const templates = buildHiddenSubtreeTemplates();
         const slide = childById(templates, "_template_presentation_slide");
 
         expect(slide.type).toBe("text");
-        expect(slide.attributes?.some((a) => a.name === "slide")).toBe(true);
-
-        const background = slide.attributes?.find((a) => a.name === "label:slide:background");
-        expect(background?.type).toBe("label");
-        expect(background?.value).toContain("color");
+        expect(slide.attributes ?? []).toEqual([]);
+        expect(slide.icon).toBeUndefined();
     });
 
     it("returns a fresh independent structure on each invocation", () => {

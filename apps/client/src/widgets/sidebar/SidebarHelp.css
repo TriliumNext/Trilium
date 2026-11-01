@@ -1,0 +1,7 @@
+.sidebar-help p {
+    margin: 0;
+
+    &:not(:last-child) {
+        margin-bottom: 8px;
+    }
+}

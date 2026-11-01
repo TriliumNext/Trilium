@@ -2,10 +2,10 @@
   description = "Trilium Notes (experimental flake)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     pnpm2nix = {
-      url = "github:TriliumNext/pnpm2nix-nzbr/main";
+      url = "github:FliegendeWurst/pnpm2nix-nzbr/main";
       inputs = {
         flake-utils.follows = "flake-utils";
         nixpkgs.follows = "nixpkgs";
@@ -23,8 +23,71 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
-        electron = pkgs."electron_${lib.versions.major packageJsonDesktop.devDependencies.electron}";
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfreePredicate = pkg:
+               system == "aarch64-darwin" && nixpkgs.lib.getName pkg == "google-chrome";
+          };
+        };
+
+        electronVersion = packageJsonDesktop.devDependencies.electron;
+        # `or null` because a major bump lands in apps/desktop/package.json long before
+        # nixpkgs has the matching electron_<major> attribute; without it the flake dies
+        # with an attribute error instead of falling through to the pinned binary below.
+        electronFromNixpkgs = pkgs."electron_${lib.versions.major electronVersion}" or null;
+
+        # nixpkgs lags behind the Electron version pinned in apps/desktop/package.json —
+        # often by a whole major — and its source build cannot be bumped without
+        # upstream's Chromium dependency hashes. Build the exact pinned version from
+        # Electron's official binary release instead, reusing the nixpkgs builder.
+        #
+        # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
+        # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
+        # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
+        pinnedElectronVersion = "45.1.0";
+        pinnedElectronHashes = {
+          x86_64-linux = "9dafab2c57ce209f8f716f8f3e4fddd8ffe0820e2455bfbbfc00b0fc13e03a3b";
+          aarch64-linux = "64b78d93d1129ab805cdc0f2710f446716afbe814a1d08e639dab3175d2285a1";
+          aarch64-darwin = "002b71efcf90e247317d3da486f2d4e51860e9c2889d49f33e229ab2268b0f3b";
+          headers = "09gc30rcyf0aqlwi9fy2ls15yym94j4jrgf895jnayj3pqsi651m";
+        };
+        mkElectronBin = pkgs.callPackage (
+          pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
+        ) { };
+
+        # The nixpkgs Linux builder rewrites the rpath of Electron's ANGLE libraries with
+        # an unguarded `patchelf ... lib*GL*`. Electron 44 links ANGLE into the main binary
+        # and ships no libEGL.so/libGLESv2.so, so the glob expands to nothing and patchelf
+        # exits with "missing filename". Let that one command tolerate an empty match; it
+        # still patches the libraries on releases that do ship them.
+        #
+        # NixOS/nixpkgs@b3041dc18a skips that patchelf for Electron >= 44, so against a
+        # newer nixpkgs (e.g. via `inputs.nixpkgs.follows`) the replacement is a no-op.
+        # Drop this override once flake.lock's nixpkgs includes that commit.
+        angleLibGlob = "$out/libexec/electron/lib*GL*";
+        tolerateMissingAngleLibs =
+          drv:
+          drv.overrideAttrs (prev: {
+            postFixup = builtins.replaceStrings [ angleLibGlob ] [ "${angleLibGlob} || true" ] prev.postFixup;
+          });
+
+        # Guarded on Linux because only that branch of the builder defines postFixup.
+        pinnedElectron =
+          let
+            bin = mkElectronBin pinnedElectronVersion pinnedElectronHashes;
+          in
+          if stdenv.hostPlatform.isLinux then tolerateMissingAngleLibs bin else bin;
+
+        electron =
+          if electronFromNixpkgs != null && electronFromNixpkgs.version == electronVersion then
+            electronFromNixpkgs
+          else
+            lib.throwIf (pinnedElectronVersion != electronVersion) ''
+              flake.nix pins Electron ${pinnedElectronVersion}, but apps/desktop/package.json wants ${electronVersion}.
+              Refresh pinnedElectronVersion/pinnedElectronHashes in flake.nix, or drop the override if nixpkgs ships ${electronVersion}.
+            '' pinnedElectron;
+
         nodejs = pkgs.nodejs_24;
         # pnpm creates an overly long PATH env variable for child processes.
         # This patch deduplicates entries in PATH, which results in an equivalent but shorter entry.
@@ -34,6 +97,28 @@
           postInstall = prev.postInstall + ''
             patch $out/libexec/pnpm/dist/pnpm.mjs ${./patches/pnpm-PATH-reduction.patch}
           '';
+          # pnpm sometimes fails with ERR_PNPM_ENOENT
+          # https://github.com/pnpm/pnpm/issues/12880
+          # "fix" from https://github.com/dniku/selfhostblocks/commit/ee6fc4f04fe34714fb8676704048d8d76aba85b7
+          postFixup = (prev.postFixup or "") + (if pkgs.stdenv.hostPlatform.isLinux then ''
+            mv "$out/bin/pnpm" "$out/bin/.pnpm-unwrapped"
+            cat > "$out/bin/pnpm" <<EOF
+            #!${stdenv.shell}
+            if [ "\''${1-}" = install ]; then
+              cpuMask="\$(${lib.getExe' pkgs.util-linux "taskset"} -cp "\$\$")"
+              # Keep only the cpuset reported after the colon.
+              cpuMask="\''${cpuMask##*: }"
+              # Pick the first comma-separated segment from the cpuset.
+              firstCpu="\''${cpuMask%%,*}"
+              # If that segment is a range, pick its first CPU.
+              firstCpu="\''${firstCpu%%-*}"
+              exec ${lib.getExe' pkgs.util-linux "taskset"} -c "\$firstCpu" "$out/bin/.pnpm-unwrapped" "\$@"
+            else
+              exec "$out/bin/.pnpm-unwrapped" "\$@"
+            fi
+            EOF
+            chmod +x "$out/bin/pnpm"
+          '' else "");
         }));
         inherit (pkgs)
           copyDesktopItems
@@ -42,7 +127,7 @@
           makeBinaryWrapper
           makeDesktopItem
           makeShellWrapper
-removeReferencesTo
+          removeReferencesTo
           stdenv
           wrapGAppsHook3
           xcodebuild
@@ -122,6 +207,9 @@ removeReferencesTo
               }
             ];
 
+            # avoid ERR_PNPM_RESOLUTION_SHAPE_MISMATCH errors
+            env.PNPM_CONFIG_TRUST_LOCKFILE = "true";
+
             # remove pnpm version override
             preConfigure = ''
               node -e "const p = require('./package.json'); delete p.packageManager; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n')"
@@ -135,7 +223,7 @@ removeReferencesTo
 
             extraNativeBuildInputs =
               [
-nodejs.python
+                nodejs.python
                 removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [
@@ -145,7 +233,7 @@ nodejs.python
                 makeShellWrapper
                 wrapGAppsHook3
 
-                # For determining the Electron version to rebuild for:
+                # For the launcher wrapper generated in installCommands:
                 which
                 electron
               ]
@@ -180,14 +268,8 @@ nodejs.python
 
             components = [
               "packages/ckeditor5"
-              "packages/ckeditor5-admonition"
-              "packages/ckeditor5-footnotes"
-              "packages/ckeditor5-keyboard-marker"
-              "packages/ckeditor5-math"
-              "packages/ckeditor5-mermaid"
               "packages/codemirror"
               "packages/commons"
-              "packages/express-partial-content"
               "packages/highlightjs"
               "packages/turndown-plugin-gfm"
 
@@ -203,13 +285,13 @@ nodejs.python
 
             desktopItems = lib.optionals (app == "desktop") [
               (makeDesktopItem {
-                name = "Trilium Notes";
+                name = meta.mainProgram;
                 exec = meta.mainProgram;
                 icon = "trilium";
                 comment = meta.description;
                 desktopName = "Trilium Notes";
                 categories = [ "Office" ];
-                startupWMClass = "Trilium Notes";
+                startupWMClass = meta.mainProgram;
               })
             ];
 
@@ -221,16 +303,15 @@ nodejs.python
 
         desktop = makeApp {
           app = "desktop";
+          # better-sqlite3 v13 is N-API based and ships prebuilt binaries that
+          # load unchanged under Electron, so there is no native rebuild step
+          # (and no need for ELECTRON_NODEDIR) any more.
           preBuildCommands = ''
-            export ELECTRON_NODEDIR=${electron.headers}
             pnpm postinstall
           '';
           buildTask = "desktop:build";
           mainProgram = "trilium";
           installCommands = ''
-            #remove-references-to -t ${electron.headers} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
-            #remove-references-to -t ${nodejs.python} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
-
             mkdir -p $out/{bin,share/icons/hicolor/512x512/apps,opt/trilium}
             cp --archive apps/desktop/dist/* $out/opt/trilium
             cp apps/client/src/assets/icon.png $out/share/icons/hicolor/512x512/apps/trilium.png
@@ -239,55 +320,44 @@ nodejs.python
               --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
               --set-default ELECTRON_IS_DEV 0 \
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium \
-              --add-flags $out/opt/trilium/main.cjs
+              --add-flags $out/opt/trilium/main.mjs
           '';
         };
 
         server = makeApp {
           app = "server";
-          # pnpm throws an error at the end of `pnpm rebuild`, but it doesn't seem to matter:
+          # Important note: if pnpm throws an error similar to the follow at the end of `pnpm rebuild`,
+          # you should ensure the version of tsx (and other dependencies mentioned in the error) is identical project-wide.
           # ERR_PNPM_MISSING_HOISTED_LOCATIONS
           # vite@7.1.5(@types/node@24.3.0)(jiti@2.5.1)(less@4.1.3)(lightningcss@1.30.1)
           # (sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1)
           # is not found in hoistedLocations inside node_modules/.modules.yaml
           preBuildCommands = ''
             pushd apps/server
-            pnpm rebuild || true
+            pnpm rebuild
             popd
           '';
           buildTask = "server:build";
           mainProgram = "trilium-server";
           installCommands = ''
-            #remove-references-to -t ${nodejs.python} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
-            #remove-references-to -t ${pnpm} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
-
-            pushd apps/server/dist
-            rm -rf node_modules/better-sqlite3/build/Release/obj \
-                   node_modules/better-sqlite3/build/Release/obj.target \
-                   node_modules/better-sqlite3/build/Release/sqlite3.a \
-                   node_modules/better-sqlite3/build/{Makefile,better_sqlite3.target.mk,test_extension.target.mk,binding.Makefile} \
-                   node_modules/better-sqlite3/deps/sqlite3
-            popd
-
+            # No better-sqlite3 cleanup needed here any more: the server build
+            # trims deps/, src/ and build/ (which held the store paths that used
+            # to need remove-references-to) out of dist itself.
             mkdir -p $out/{bin,opt/trilium-server}
             cp --archive apps/server/dist/* $out/opt/trilium-server
             makeWrapper ${lib.getExe nodejs} $out/bin/trilium-server \
-              --add-flags $out/opt/trilium-server/main.cjs
+              --add-flags $out/opt/trilium-server/main.mjs
           '';
         };
 
         edit-docs = makeApp {
           app = "edit-docs";
           preBuildCommands = ''
-            export ELECTRON_NODEDIR=${electron.headers}
             pnpm postinstall
           '';
           buildTask = "edit-docs:build";
           mainProgram = "trilium-edit-docs";
           installCommands = ''
-            #remove-references-to -t ${electron.headers} apps/edit-docs/dist/node_modules/better-sqlite3/build/config.gypi
-            #remove-references-to -t ${nodejs.python} apps/edit-docs/dist/node_modules/better-sqlite3/build/config.gypi
-
             mkdir -p $out/{bin,opt/trilium-edit-docs}
             cp --archive apps/edit-docs/dist/* $out/opt/trilium-edit-docs
             makeShellWrapper ${lib.getExe electron} $out/bin/trilium-edit-docs \
@@ -320,17 +390,17 @@ nodejs.python
             mkdir -p $out/opt/trilium-build-docs/client
             cp --archive apps/client/dist/* $out/opt/trilium-build-docs/client/
 
-            # Copy share-theme (needed for exports)
-            mkdir -p $out/opt/trilium-build-docs/packages/share-theme
-            cp --archive packages/share-theme/dist/* $out/opt/trilium-build-docs/packages/share-theme/
-
             # Create wrapper script
             makeWrapper ${lib.getExe nodejs} $out/bin/trilium-build-docs \
               --add-flags $out/opt/trilium-build-docs/cli.cjs \
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium-build-docs/server
           '';
         };
-
+        chrome =
+          if stdenv.hostPlatform.system == "aarch64-darwin" then
+            pkgs.google-chrome
+          else
+            pkgs.chromium;
       in
       {
         packages.desktop = desktop;
@@ -340,13 +410,27 @@ nodejs.python
 
         packages.default = desktop;
 
+        # Not something to install — it is here so the pinned Electron binary can be
+        # built (and therefore its hashes verified) on its own, without going through
+        # a full desktop build. The update-nix-flake workflow does exactly that.
+        packages.electron = electron;
+
         devShells.default = pkgs.mkShell {
           buildInputs = [
             nodejs
             pnpm
             electron
             nodejs.python
+            # For the browser-mode tests (packages/ckeditor5). The Chromium Playwright downloads
+            # for itself is dynamically linked against libraries no NixOS system provides, so it
+            # dies on a missing libxcb.so.1. Chromium is unsupported on aarch64-darwin, so we use
+            chrome
           ];
+
+          # Read by packages/ckeditor5/vitest.config.ts and passed to Playwright as
+          # `launchOptions.executablePath`. Without it Playwright launches its own Chromium and the
+          # suite cannot start.
+          CHROME_BIN = lib.getExe chrome;
         };
       }
     );

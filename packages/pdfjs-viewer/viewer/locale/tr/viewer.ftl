@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Hızlı web görünümü:
 pdfjs-document-properties-linearized-yes = Evet
 pdfjs-document-properties-linearized-no = Hayır
 pdfjs-document-properties-close-button = Kapat
+pdfjs-digital-signature-properties-view-certificate = Sertifikayı göster
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Neden: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Zaman damgası: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Alt imza ({ $count })
+       *[other] Alt imzalar ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +187,6 @@ pdfjs-printing-not-ready = Uyarı: PDF tamamen yüklenmedi ve yazdırmaya hazır
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Kenar çubuğunu aç/kapat
-pdfjs-toggle-sidebar-notification-button =
-    .title = Kenar çubuğunu aç/kapat (Belge ana hat/ekler/katmanlar içeriyor)
-pdfjs-toggle-sidebar-button-label = Kenar çubuğunu aç/kapat
-pdfjs-document-outline-button =
-    .title = Belge ana hatlarını göster (Tüm öğeleri genişletmek/daraltmak için çift tıklayın)
-pdfjs-document-outline-button-label = Belge ana hatları
-pdfjs-attachments-button =
-    .title = Ekleri göster
-pdfjs-attachments-button-label = Ekler
-pdfjs-layers-button =
-    .title = Katmanları göster (tüm katmanları varsayılan duruma sıfırlamak için çift tıklayın)
-pdfjs-layers-button-label = Katmanlar
-pdfjs-thumbs-button =
-    .title = Küçük resimleri göster
-pdfjs-thumbs-button-label = Küçük resimler
 pdfjs-current-outline-item-button =
     .title = Mevcut ana hat öğesini bul
 pdfjs-current-outline-item-button-label = Mevcut ana hat öğesi
@@ -193,10 +197,6 @@ pdfjs-additional-layers = Ek katmanlar
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Sayfa { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Bul
     .placeholder = Belgede bul…
+    .title = Bul
 pdfjs-find-previous-button =
     .title = Önceki eşleşmeyi bul
 pdfjs-find-previous-button-label = Önceki
@@ -310,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Vurgula
 pdfjs-editor-highlight-button-label = Vurgula
 pdfjs-highlight-floating-button1 =
-    .title = Vurgula
     .aria-label = Vurgula
+    .title = Vurgula
 pdfjs-highlight-floating-button-label = Vurgula
 pdfjs-comment-floating-button =
-    .title = Yorum ekle
     .aria-label = Yorum ekle
+    .title = Yorum ekle
 pdfjs-comment-floating-button-label = Yorum ekle
 pdfjs-editor-comment-button =
-    .title = Yorum ekle
     .aria-label = Yorum ekle
+    .title = Yorum ekle
 pdfjs-editor-comment-button-label = Yorum ekle
 pdfjs-editor-signature-button =
     .title = İmza ekle
@@ -392,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Yorumlar
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Kenar çubuğunu kapat
     .aria-label = Kenar çubuğunu kapat
+    .title = Kenar çubuğunu kapat
 pdfjs-editor-comments-sidebar-close-button-label = Kenar çubuğunu kapat
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Not almaya değer bir şey mi gördünüz? Onu işaretleyip yorum yazabilirsiniz.
@@ -496,11 +496,11 @@ pdfjs-editor-new-alt-text-added-button =
 pdfjs-editor-new-alt-text-added-button-label = Alt metin eklendi
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button =
-    .aria-label = Alternatif metin eksik
+    .aria-label = Alt metin eksik
 pdfjs-editor-new-alt-text-missing-button-label = Alt metin eksik
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
 pdfjs-editor-new-alt-text-to-review-button =
-    .aria-label = Alternatif metni incele
+    .aria-label = Alt metni incele
 pdfjs-editor-new-alt-text-to-review-button-label = Alt metni incele
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
@@ -516,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Resim alt metni ayarları
 pdfjs-editor-alt-text-settings-automatic-title = Otomatik alt metin
 pdfjs-editor-alt-text-settings-create-model-button-label = Otomatik olarak alt metin oluştur
 pdfjs-editor-alt-text-settings-create-model-description = Görme engelli kişilere gösterilecek veya resmin yüklenemediği durumlarda gösterilecek açıklamalar önerir.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alt metin yapay zekâ modeli ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Verilerinizin gizli kalması için cihazınızda yerel olarak çalışır. Otomatik alt metin için gereklidir.
-pdfjs-editor-alt-text-settings-delete-model-button = Sil
-pdfjs-editor-alt-text-settings-download-model-button = İndir
-pdfjs-editor-alt-text-settings-downloading-model-button = İndiriliyor…
 pdfjs-editor-alt-text-settings-editor-title = Alt metin düzenleyicisi
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Resim eklerken alt metin düzenleyicisini hemen göster
 pdfjs-editor-alt-text-settings-show-dialog-description = Tüm resimlerinizin alt metne sahip olduğundan emin olmanızı sağlar.
@@ -731,6 +724,74 @@ pdfjs-new-badge-content = YENİ
 pdfjs-views-manager-waiting-for-file = Dosya yükleniyor…
 pdfjs-toggle-views-manager-button1 =
     .title = Sayfaları yönet
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Dijital imza özellikleri
+    .title = Dijital imza özellikleri
+pdfjs-digital-signature-properties-button-label = Dijital imza özellikleri
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Belge geçerli bir dijital imza ile imzalanmıştır
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Belge imzalanmış ancak { $count } dijital imza doğrulanamadı
+       *[other] Belge imzalanmış ancak { $count } dijital imza doğrulanamadı
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Belge, güvenilmeyen { $count } sertifikayla imzalanmış
+       *[other] Belge, güvenilmeyen { $count } sertifikayla imzalanmış
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Belge, süresi dolmuş { $count } sertifika ile imzalanmış
+       *[other] Belge, süresi dolmuş { $count } sertifika ile imzalanmış
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Belge { $count } geçersiz dijital imza içeriyor
+       *[other] Belge { $count } geçersiz dijital imza içeriyor
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Belge, iptal edilmiş { $count } sertifika ile imzalanmış
+       *[other] Belge, iptal edilmiş { $count } sertifika ile imzalanmış
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Durum: İmza doğrulandı
+pdfjs-digital-signature-properties-status-invalid = Durum: İmza geçersiz
+pdfjs-digital-signature-properties-status-unknown = Durum: Doğrulanamadı (desteklenmiyor)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Sertifika: Güvenilir ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Sertifika: Kullanılamıyor
+pdfjs-digital-signature-properties-certificate-untrusted = Sertifika: Güvensiz
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Sertifika: Bilinmeyen yayıncı ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Sertifika: Kendi kendine imzalanmış ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Sertifika: Güvenilmeyen yayıncı ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Sertifika: Süresi dolmuş
+pdfjs-digital-signature-properties-certificate-expired-with-date = Sertifika: Süresi dolmuş ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Sertifika: İptal edilmiş
 
 ## Main menu for adding/removing signatures
 

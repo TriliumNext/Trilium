@@ -30,7 +30,7 @@ describe("platform flags & isDev", () => {
     });
 });
 
-describe("isWindows11 detection", () => {
+describe("supportsBackgroundMaterial detection", () => {
     const ORIGINAL_PLATFORM = Object.getOwnPropertyDescriptor(process, "platform");
 
     afterEach(() => {
@@ -41,28 +41,30 @@ describe("isWindows11 detection", () => {
         vi.doUnmock("os");
     });
 
-    // isWindows11 is an import-time constant computed from process.platform and
-    // os.release(), so each scenario needs a fresh module load with both faked.
-    async function loadFreshIsWindows11(platform: string, release: string) {
+    // supportsBackgroundMaterial is an import-time constant computed from process.platform
+    // and os.release(), so each scenario needs a fresh module load with both faked.
+    async function loadFreshSupportsBackgroundMaterial(platform: string, release: string) {
         vi.resetModules();
         Object.defineProperty(process, "platform", { value: platform, configurable: true });
         vi.doMock("os", async (importOriginal) => ({
             ...(await importOriginal<typeof import("os")>()),
             release: () => release
         }));
-        return (await import("./utils.js")).isWindows11;
+        return (await import("./utils.js")).supportsBackgroundMaterial;
     }
 
-    it("is true on Windows with a build >= 22000", async () => {
-        expect(await loadFreshIsWindows11("win32", "10.0.22631")).toBe(true);
+    it("is true on Windows 11 22H2 and later (build >= 22621)", async () => {
+        expect(await loadFreshSupportsBackgroundMaterial("win32", "10.0.22621")).toBe(true);
+        expect(await loadFreshSupportsBackgroundMaterial("win32", "10.0.26100")).toBe(true);
     });
 
-    it("is false on Windows with an older build (< 22000)", async () => {
-        expect(await loadFreshIsWindows11("win32", "10.0.19045")).toBe(false);
+    it("is false on Windows 11 21H2 and Windows 10, which lack the DWM backdrop API", async () => {
+        expect(await loadFreshSupportsBackgroundMaterial("win32", "10.0.22000")).toBe(false);
+        expect(await loadFreshSupportsBackgroundMaterial("win32", "10.0.19045")).toBe(false);
     });
 
     it("is false on non-Windows platforms", async () => {
-        expect(await loadFreshIsWindows11("linux", "10.0.22631")).toBe(false);
+        expect(await loadFreshSupportsBackgroundMaterial("linux", "10.0.22631")).toBe(false);
     });
 });
 
@@ -106,7 +108,7 @@ describe("deprecated core delegations", () => {
         expect(randomString(10)).toHaveLength(10);
         expect(hashedBlobId("content")).toBe("stHShbUZnIX5iNA2ScNX");
         expect(getContentDisposition("file.txt"))
-            .toBe("file; filename=\"file.txt\"; filename*=UTF-8''file.txt");
+            .toBe("attachment; filename=\"file.txt\"; filename*=UTF-8''file.txt");
         expect(isStringNote("text", "text/html")).toBe(true);
         expect(quoteRegex("a.b")).toBe("a\\.b");
         expect(replaceAll("a-b-c", "-", "+")).toBe("a+b+c");

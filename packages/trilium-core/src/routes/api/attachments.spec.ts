@@ -1,5 +1,7 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { getImageProvider } from "../../services/image_provider";
 import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -41,6 +43,31 @@ async function saveAttachment(
     const attachment = list.body.find((a) => a.title === title);
     expect(attachment).toBeTruthy();
     return attachment as AttachmentPojo;
+}
+
+/** A 1x1 transparent PNG, small enough to be written out in full. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
+
+/**
+ * Wraps a picture in an icon directory of one entry, which is what an `.ico` is: a container of
+ * several sizes rather than an image format of its own. Built here rather than fixtured so the
+ * bytes that make it an icon — the type, and the offset the picture starts at — stay readable.
+ */
+function icoWrapping(image: Buffer): Buffer {
+    const directory = Buffer.alloc(22);
+    directory.writeUInt16LE(1, 2); // type: icon, as opposed to a cursor
+    directory.writeUInt16LE(1, 4); // one entry
+    directory.writeUInt8(1, 6); // width
+    directory.writeUInt8(1, 7); // height
+    directory.writeUInt16LE(1, 10); // colour planes
+    directory.writeUInt16LE(32, 12); // bits per pixel
+    directory.writeUInt32LE(image.length, 14);
+    directory.writeUInt32LE(directory.length, 18); // the picture starts where the directory ends
+
+    return Buffer.concat([ directory, image ]);
 }
 
 function attachmentIsDeleted(attachmentId: string): number | null {
@@ -150,6 +177,33 @@ describe("Attachments API (core)", () => {
             expect(res.body.url).toContain("viewMode=attachments");
         });
 
+        it("saves an Excalidraw file as a canvas drawing, whatever type the browser sends", async () => {
+            const { noteId } = await createTextNote(api, { title: "Drawing upload target" });
+            const drawing = JSON.stringify({ type: "excalidraw", version: 2, elements: [] });
+
+            const res = await api.post<{ uploaded: boolean }>(
+                `/api/notes/${noteId}/attachments/upload`,
+                {
+                    file: {
+                        originalname: "Drawing.excalidraw",
+                        mimetype: "application/octet-stream",
+                        buffer: Buffer.from(drawing)
+                    }
+                }
+            );
+            expect(res.body.uploaded).toBe(true);
+
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const [ attachment ] = list.body;
+            expect(attachment).toMatchObject({
+                role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Drawing.excalidraw"
+            });
+            const blob = await api.get<{ content: string }>(
+                `/api/attachments/${attachment.attachmentId}/blob`
+            );
+            expect(blob.body.content).toBe(drawing);
+        });
+
         it("uploads an image file as an image attachment", async () => {
             const { noteId } = await createTextNote(api, { title: "Image upload target" });
             // Minimal 1x1 transparent PNG.
@@ -171,6 +225,73 @@ describe("Attachments API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.uploaded).toBe(true);
             expect(res.body.url).toContain("/image/");
+
+            // The URL it just handed back has to be fetchable *now*. The editor puts it straight
+            // into the document as an image source and the browser asks for it immediately, so an
+            // upload that answers before the bytes are stored draws a broken image — the picture
+            // shows for a moment from the local copy and is then replaced by nothing.
+            const fetched = await api.get(`/${res.body.url}`);
+
+            expect(fetched.status).toBe(200);
+            expect((fetched.body as Uint8Array).length).toBeGreaterThan(0);
+        });
+
+        it("uploads an ICO as an image rather than as a file", async () => {
+            const { noteId } = await createTextNote(api, { title: "Icon upload target" });
+
+            const res = await api.post<{ uploaded: boolean; url: string }>(
+                `/api/notes/${noteId}/attachments/upload`,
+                {
+                    file: {
+                        originalname: "site.ico",
+                        mimetype: "image/x-icon",
+                        buffer: icoWrapping(PIXEL_PNG)
+                    }
+                }
+            );
+            expect(res.status).toBe(200);
+            expect(res.body.uploaded).toBe(true);
+            // A file attachment would answer with a `#root/...?viewMode=attachments` link instead,
+            // which is not something an <img> can be pointed at — the whole reason a favicon has to
+            // arrive here as an image.
+            expect(res.body.url).toContain("/image/");
+
+            const fetched = await api.get(`/${res.body.url}`);
+            expect(fetched.status).toBe(200);
+
+            // Stored under the registered type, not the `image/ico` that `image/<ext>` would give,
+            // since that is what the image route serves it as.
+            const [ attachment ] = (await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`)).body;
+            expect(attachment).toMatchObject({ role: "image", mime: "image/x-icon" });
+        });
+
+        it("stores a picture unchanged as an image, linked to on request", async () => {
+            const { noteId } = await createTextNote(api, { title: "Picture as link target" });
+            // Past the 40 characters at which "Upload image" names a picture plain "image".
+            const originalname = "a picture with a name long enough to be trimmed.png";
+            const processImage = vi.spyOn(getImageProvider(), "processImage");
+
+            const res = await api.post<{ uploaded: boolean; url: string }>(
+                `/api/notes/${noteId}/attachments/upload`,
+                {
+                    query: { link: "true" },
+                    file: { originalname, mimetype: "image/png", buffer: PIXEL_PNG }
+                }
+            );
+            expect(res.status).toBe(200);
+            expect(res.body.uploaded).toBe(true);
+
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const [ attachment ] = list.body;
+            expect(attachment)
+                .toMatchObject({ role: "image", mime: "image/png", title: originalname });
+            const { attachmentId } = attachment;
+            expect(res.body.url)
+                .toBe(`#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}`);
+
+            // Not shrunk, whatever the image compression option says.
+            expect(processImage).toHaveBeenCalledWith(expect.anything(), originalname, false);
+            processImage.mockRestore();
         });
 
         it("reports a missing upload when no file is present", async () => {

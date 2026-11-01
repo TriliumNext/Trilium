@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/web-clipper",
-  "version": "1.1.1",
+  "version": "1.1.90",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,15 +10,22 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
     "postinstall": "wxt prepare"
   },
   "keywords": [],
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@12.16.1",
   "devDependencies": {
-    "@wxt-dev/auto-icons": "1.1.1",
-    "wxt": "0.20.27"
+    "@triliumnext/client": "workspace:*",
+    "@wxt-dev/auto-icons": "1.1.2",
+    "jszip": "3.10.2",
+    "web-ext": "^10.7.0",
+    "wxt": "0.21.5"
   },
   "dependencies": {
-    "cash-dom": "8.1.5"
+    "@boxicons/js": "1.0.1",
+    "defuddle": "0.19.6",
+    "preact": "11.1.0"
   }
 }

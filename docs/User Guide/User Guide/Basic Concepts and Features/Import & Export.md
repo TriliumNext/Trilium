@@ -1,7 +1,18 @@
 # Import & Export
-Trilium natively supports the following formats for both import and export.
+To import a note:
+
+*   The easiest way to import is to simply drag & drop a file or an archive into the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
+    *   This will automatically detect some formats such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a>.
+    *   _Safe import_ is automatically on to prevent accidental running of foreign scripts.
+*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Import into note_.
+    *   This feature allows for dedicated importers for others apps such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a> or <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a>.
+    *   _Safe import_ as well as other options can be configured from the collapsed _Options_ section at the bottom.
+
+To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> there is a _Export note_ option.
 
 ## Supported formats
+
+Trilium natively supports the following formats for both import and export.
 
 *   HTML:
     *   This is the main format used by Trilium, where standard tags are used to represent basic formatting and layout (e.g. `<strong>`, `<table>`, `<pre>`).
@@ -26,7 +37,7 @@ During large imports or exports, memory consumption might spike but it will rema
 > For the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>, there are two distinct import mechanisms:
 > 
 > *   A quick import, from the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
-> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a>).
+> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a>).
 > 
 > When dealing with large files (multi-gigabyte), prefer using the import dialog as it has a special mechanism which makes sure that the file is read directly from disk rather than uploaded again.
 
@@ -38,7 +49,27 @@ Starting with v0.104.0, when a root note is imported, it will be imported as a c
 
 You can easily move the notes onto the root using the tree's <a class="reference-link" href="UI%20Elements/Note%20Tree/Multiple%20selection.md">Multiple selection</a> and delete the redundant root note.
 
-<table><thead><tr><th scope="col">Before</th><th scope="col">After</th></tr></thead><tbody><tr><td><ul><li data-list-item-id="e8c5b61fca3b22a75ee4f651a12b0cd2b">root<ul><li data-list-item-id="e1e4f62c9fe4499cabfefcba28bf64c7e">one</li><li data-list-item-id="e8088b4ea90e8371d88182db886b8fd1f">two</li></ul></li></ul></td><td><ul><li data-list-item-id="e74bf0ef3d3f2aff13bb3918d1e23e06f">root (existing)<ul><li data-list-item-id="efcba337fd0db50e4d83740d986d04b00">root (from import)<ul><li data-list-item-id="e50b95f63c2069dbf902c281256c32155">one</li><li data-list-item-id="e406337a40071ddfc3c5b1432ba235a2e">two</li></ul></li></ul></li></ul></td></tr></tbody></table>
+<table>
+    <thead>
+        <tr>
+            <th scope="col">Before</th>
+            <th scope="col">After</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><ul><li>root<ul><li>one</li><li>two</li></ul></li></ul></td>
+            <td><ul><li>root (existing)<ul><li>root (from import)<ul><li>one</li><li>two</li></ul></li></ul></li></ul></td>
+        </tr>
+    </tbody>
+</table>
 
 > [!TIP]
 > Instead of exporting full ZIPs (including the root note), consider using [backups](../Installation%20%26%20Setup/Backup.md) instead. Backups always contain the entire structure, as well as additional information a ZIP export does not have: maintains note IDs, contains the options/tokens and handle <a class="reference-link" href="Notes/Protected%20Notes.md">Protected Notes</a> better.
+
+## Exporting the User Guide
+
+The in-app User Guide can be exported like any other note: right click one of its pages or chapters in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_, or use <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Export note_.
+
+*   Exporting a chapter with _This note & all descendants_ writes the pictures and files of each page as its attachments. Importing that archive creates an ordinary copy that you can edit, with its pictures and the links between its pages working.
+*   Exporting a single page with _Only this note_ embeds its pictures in the exported file.

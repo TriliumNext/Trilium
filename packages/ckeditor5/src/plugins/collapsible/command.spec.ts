@@ -1,0 +1,119 @@
+import { ClassicEditor, Essentials, Paragraph, _setModelData as setModelData, _getModelData as getModelData } from "ckeditor5";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import CollapsibleEditing from "./collapsible_editing.js";
+
+describe("CollapsibleCommand", () => {
+    let domElement: HTMLDivElement;
+    let editor: ClassicEditor;
+    let model: ClassicEditor["model"];
+
+    beforeEach(async () => {
+        domElement = document.createElement("div");
+        document.body.appendChild(domElement);
+        editor = await ClassicEditor.create(domElement, {
+            licenseKey: "GPL",
+            plugins: [Essentials, Paragraph, CollapsibleEditing]
+        });
+        model = editor.model;
+    });
+
+    afterEach(() => {
+        domElement.remove();
+        return editor.destroy();
+    });
+
+    describe("execute", () => {
+        it("inserts an empty collapsible at a collapsed caret and parks the caret in the new summary", () => {
+            setModelData(model, "<paragraph>[]</paragraph>");
+            editor.execute("collapsible");
+            // Caret in the new summary; the empty body paragraph follows it. The
+            // block is created expanded so the user can see the body they're about
+            // to fill in — `open` is part of the command's own batch.
+            expect(getModelData(model)).toContain(
+                "<details open=\"true\"><summary>[]</summary><paragraph></paragraph></details>"
+            );
+        });
+
+        it("wraps an intra-block text selection into a paragraph in the new body", () => {
+            setModelData(model, "<paragraph>Hello [selected] world</paragraph>");
+            editor.execute("collapsible");
+            expect(getModelData(model, { withoutSelection: true })).toContain(
+                "<details open=\"true\"><summary></summary><paragraph>selected</paragraph></details>"
+            );
+        });
+
+        it("preserves a multi-block selection as the new body", () => {
+            setModelData(model,
+                "[<paragraph>Block one</paragraph><paragraph>Block two</paragraph>]"
+            );
+            editor.execute("collapsible");
+            const data = getModelData(model, { withoutSelection: true });
+            expect(data).toContain("<paragraph>Block one</paragraph>");
+            expect(data).toContain("<paragraph>Block two</paragraph>");
+            // Both selected paragraphs end up inside the new <details>.
+            expect(data).toMatch(/<details open="true"><summary><\/summary><paragraph>Block one<\/paragraph><paragraph>Block two<\/paragraph><\/details>/);
+        });
+
+        it("unwraps a nested <details> in the selection so we don't gain an extra level of nesting", () => {
+            setModelData(model,
+                "[<details>" +
+                    "<summary>Inner</summary>" +
+                    "<paragraph>Inner body</paragraph>" +
+                "</details>]"
+            );
+            editor.execute("collapsible");
+            const data = getModelData(model, { withoutSelection: true });
+            // Exactly ONE <details> in the output — the inner one was unwrapped.
+            expect((data.match(/<details[ >]/g) ?? []).length).toBe(1);
+            // The inner body is preserved as the new collapsible's body.
+            expect(data).toContain("<paragraph>Inner body</paragraph>");
+            // The inner summary's text isn't pulled into the new summary (the
+            // new summary is the editable title for the user to fill in).
+            expect(data).not.toContain("<summary>Inner");
+        });
+
+        it("unwraps a whole <details> caught in a wider selection, keeping only its body", () => {
+            // Unlike the case above, the selection spans several top-level blocks, so the
+            // <details> survives into the copied fragment as a block child and is unwrapped there.
+            setModelData(model,
+                "<paragraph>[before</paragraph>" +
+                "<details><summary>Inner</summary><paragraph>Inner body</paragraph></details>" +
+                "<paragraph>after]</paragraph>"
+            );
+
+            editor.execute("collapsible");
+
+            const data = getModelData(model, { withoutSelection: true });
+            expect((data.match(/<details[ >]/g) ?? []).length).toBe(1);
+            expect(data).toContain("<paragraph>before</paragraph>");
+            expect(data).toContain("<paragraph>Inner body</paragraph>");
+            expect(data).toContain("<paragraph>after</paragraph>");
+            expect(data).not.toContain("<summary>Inner");
+        });
+
+        it("drops a whitespace-only run rather than wrapping it in an empty paragraph", () => {
+            setModelData(model, "<paragraph>[ ]</paragraph><paragraph>keep</paragraph>");
+
+            editor.execute("collapsible");
+
+            const data = getModelData(model, { withoutSelection: true });
+            // Body holds the single empty paragraph the command guarantees, not a
+            // paragraph wrapping the stray space.
+            expect(data).toContain("<details open=\"true\"><summary></summary><paragraph></paragraph></details>");
+        });
+    });
+
+    describe("refresh", () => {
+        it("is enabled at a root-level caret", () => {
+            setModelData(model, "<paragraph>[]</paragraph>");
+            expect(editor.commands.get("collapsible")!.isEnabled).toBe(true);
+        });
+
+        it("keeps value=false even when the caret is already inside a collapsible (it's not a toggle)", () => {
+            setModelData(model,
+                "<details><summary>X</summary><paragraph>[]</paragraph></details>"
+            );
+            expect(editor.commands.get("collapsible")!.value).toBe(false);
+        });
+    });
+});

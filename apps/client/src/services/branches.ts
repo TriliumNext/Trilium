@@ -1,4 +1,7 @@
+import type { ProgressPhase } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
+import type FBranch from "../entities/fbranch.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
@@ -14,18 +17,19 @@ interface Response {
     message: string;
 }
 
+/** Moves the branches before `beforeBranchId`. Returns whether every move went through. */
 async function moveBeforeBranch(branchIdsToMove: string[], beforeBranchId: string) {
     branchIdsToMove = filterRootNote(branchIdsToMove);
     branchIdsToMove = filterSearchBranches(branchIdsToMove);
 
     const beforeBranch = froca.getBranch(beforeBranchId);
     if (!beforeBranch) {
-        return;
+        return false;
     }
 
     if (beforeBranch.noteId === "root" || utils.isLaunchBarConfig(beforeBranch.noteId)) {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
     for (const branchIdToMove of branchIdsToMove) {
@@ -33,25 +37,27 @@ async function moveBeforeBranch(branchIdsToMove: string[], beforeBranchId: strin
 
         if (!resp.success) {
             toastService.showError(resp.message);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
+/** Moves the branches after `afterBranchId`. Returns whether every move went through. */
 async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string) {
     branchIdsToMove = filterRootNote(branchIdsToMove);
     branchIdsToMove = filterSearchBranches(branchIdsToMove);
 
     const afterNote = await froca.getBranch(afterBranchId)?.getNote();
     if (!afterNote) {
-        return;
+        return false;
     }
 
     const forbiddenNoteIds = ["root", hoistedNoteService.getHoistedNoteId(), "_lbRoot", "_lbAvailableLaunchers", "_lbVisibleLaunchers"];
 
     if (forbiddenNoteIds.includes(afterNote.noteId)) {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
     branchIdsToMove.reverse(); // need to reverse to keep the note order
@@ -61,38 +67,45 @@ async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string)
 
         if (!resp.success) {
             toastService.showError(resp.message);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
+/** Moves the movable branches under the note of `newParentBranchId`. Returns whether the move went through. */
 async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string) {
     const newParentBranch = froca.getBranch(newParentBranchId);
     if (!newParentBranch) {
-        return;
+        return false;
     }
 
     if (newParentBranch.noteId === "_lbRoot") {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
-    branchIdsToMove = filterRootNote(branchIdsToMove);
-
-    for (const branchIdToMove of branchIdsToMove) {
+    const movableBranchIds: string[] = [];
+    for (const branchIdToMove of filterRootNote(branchIdsToMove)) {
         const branchToMove = froca.getBranch(branchIdToMove);
 
         if (!branchToMove || branchToMove.noteId === hoistedNoteService.getHoistedNoteId() || (await branchToMove.getParentNote())?.type === "search") {
             continue;
         }
 
-        const resp = await server.put<Response>(`branches/${branchIdToMove}/move-to/${newParentBranchId}`, undefined, componentId);
-
-        if (!resp.success) {
-            toastService.showError(resp.message);
-            return;
-        }
+        movableBranchIds.push(branchIdToMove);
     }
+
+    if (movableBranchIds.length === 0) {
+        return false;
+    }
+
+    const resp = await server.put<Response>(`branches/move-to/${newParentBranchId}`, { branchIds: movableBranchIds }, componentId);
+
+    if (!resp.success) {
+        toastService.showError(resp.message);
+    }
+    return resp.success;
 }
 
 /**
@@ -110,9 +123,11 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
         return false;
     }
 
-    const { proceed, deleteAllClones, eraseNotes } = await new Promise<ResolveOptions>((res) =>
-        appContext.triggerCommand("showDeleteNotesDialog", { branchIdsToDelete, callback: res, forceDeleteAllClones })
-    );
+    const { proceed, deleteAllClones, eraseNotes, noteCountToDelete } =
+        await new Promise<ResolveOptions>((res) =>
+            appContext.triggerCommand("showDeleteNotesDialog",
+                { branchIdsToDelete, callback: res, forceDeleteAllClones })
+        );
 
     if (!proceed) {
         return false;
@@ -120,39 +135,32 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
 
     if (moveToParent) {
         try {
-            await activateParentNotePath(branchIdsToDelete);
+            await activateNeighbouringNotePath(branchIdsToDelete, deleteAllClones);
         } catch (e) {
             console.error(e);
         }
     }
 
-    const taskId = utils.randomString(10);
-
-    let counter = 0;
-
-    for (const branchIdToDelete of branchIdsToDelete) {
-        counter++;
-
-        const last = counter === branchIdsToDelete.length;
-        const query = `?taskId=${taskId}&eraseNotes=${eraseNotes ? "true" : "false"}&last=${last ? "true" : "false"}`;
-
-        const branch = froca.getBranch(branchIdToDelete);
-
-        if (deleteAllClones && branch) {
-            await server.remove(`notes/${branch.noteId}${query}`, componentId);
-        } else {
-            await server.remove(`branches/${branchIdToDelete}${query}`, componentId);
-        }
-    }
-
-    if (eraseNotes) {
-        utils.reloadFrontendApp("erasing notes requires reload");
-    }
+    // One request for the whole selection, so the backend deletes it in a single transaction
+    // and the tree refreshes once instead of once per note.
+    await server.post("delete-notes", {
+        branchIdsToDelete,
+        deleteAllClones,
+        eraseNotes,
+        totalCount: noteCountToDelete,
+        taskId: utils.randomString(10)
+    }, componentId);
 
     return true;
 }
 
-async function activateParentNotePath(branchIdsToDelete: string[]) {
+/**
+ * Moves the active tab off a note that the deletion is about to remove from its path. The
+ * destination is the nearest sibling that survives the deletion (the next one, else the previous
+ * one), so the tree keeps its scroll position and the user stays where they were working; the
+ * parent is the fallback when no sibling survives.
+ */
+async function activateNeighbouringNotePath(branchIdsToDelete: string[], deleteAllClones = false) {
     const activeContext = appContext.tabManager.getActiveContext();
     const activeNotePath = activeContext?.notePathArray ?? [];
 
@@ -168,13 +176,62 @@ async function activateParentNotePath(branchIdsToDelete: string[]) {
         }
     }
 
-    // Navigate to the parent of the highest deleted ancestor
-    if (earliestIndex < activeNotePath.length) {
-        const parentPath = activeNotePath.slice(0, earliestIndex);
-        if (parentPath.length > 0) {
-            await activeContext?.setNote(parentPath.join("/"));
-        }
+    if (earliestIndex >= activeNotePath.length) {
+        return;
     }
+
+    const parentPath = activeNotePath.slice(0, earliestIndex);
+    if (parentPath.length === 0) {
+        return;
+    }
+
+    const siblingNoteId = findSurvivingSibling(
+        parentPath[parentPath.length - 1],
+        activeNotePath[earliestIndex],
+        branchIdsToDelete,
+        deleteAllClones
+    );
+    const targetPath = siblingNoteId ? [ ...parentPath, siblingNoteId ] : parentPath;
+    await activeContext?.setNote(targetPath.join("/"));
+}
+
+/**
+ * Finds the child of `parentNoteId` closest to `noteId` that is still there once the given branches
+ * are deleted: the next sibling, else the previous one. Archived siblings are skipped, since the
+ * tree can be set to hide them, and so is `_hidden`, which the tree hides under root.
+ */
+function findSurvivingSibling(
+    parentNoteId: string,
+    noteId: string,
+    branchIdsToDelete: string[],
+    deleteAllClones: boolean
+) {
+    const parentNote = froca.getNoteFromCache(parentNoteId);
+    if (!parentNote) {
+        return null;
+    }
+
+    const siblingBranches = parentNote.getChildBranches();
+    const index = siblingBranches.findIndex((branch) => branch.noteId === noteId);
+    if (index === -1) {
+        return null;
+    }
+
+    // Deleting all clones removes every branch of the deleted notes, not only the selected ones.
+    const deletedNoteIds = new Set(
+        branchIdsToDelete.map((branchId) => froca.getBranch(branchId)?.noteId)
+    );
+    const survives = (branch: FBranch) =>
+        !branchIdsToDelete.includes(branch.branchId)
+        && !(deleteAllClones && deletedNoteIds.has(branch.noteId))
+        && branch.noteId !== "_hidden"
+        && !froca.getNoteFromCache(branch.noteId)?.isArchived;
+
+    const candidates = [
+        ...siblingBranches.slice(index + 1),
+        ...siblingBranches.slice(0, index).reverse()
+    ];
+    return candidates.find(survives)?.noteId ?? null;
 }
 
 async function moveNodeUpInHierarchy(node: Fancytree.FancytreeNode) {
@@ -214,7 +271,53 @@ function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
     return {
         id,
         message,
-        icon: "trash"
+        icon: "trash",
+        // This toast replaces the in-progress one (same id), and showPersistent merges fields
+        // rather than swapping the object, so clear the bar and restore the × that
+        // makeDeleteProgressToast took away.
+        progress: undefined,
+        dismissible: true
+    };
+}
+
+/**
+ * Builds the persistent "deleting notes" toast. The delete dialog knows how many notes the deletion
+ * takes down and passes that along, so the bar is there from the first count; a deletion asked for
+ * from elsewhere has no total and shows a bare running count.
+ *
+ * The progress ratio is clamped because the two numbers count different things: the backend counts
+ * every branch it walks, while the total counts the notes that go — and a note whose clone survives
+ * the deletion is walked without being counted.
+ */
+function makeDeleteProgressToast(
+    taskId: string,
+    progressCount: number,
+    totalCount?: number,
+    phase?: ProgressPhase
+): ToastOptionsWithRequiredId {
+    const hasTotal = typeof totalCount === "number" && totalCount > 0;
+
+    if (phase === "erasing") {
+        return {
+            id: taskId,
+            icon: "bx bx-loader-circle bx-spin",
+            message: t("branches.erasing-notes"),
+            dismissible: false,
+            progress: undefined
+        };
+    }
+
+    return {
+        id: taskId,
+        icon: "bx bx-loader-circle bx-spin",
+        message: hasTotal
+            ? t("branches.delete-notes-in-progress-with-total",
+                { progress: progressCount, total: totalCount })
+            : t("branches.delete-notes-in-progress", { count: progressCount }),
+        // The deletion runs to completion regardless of the toast, so don't offer a × that looks
+        // like "cancel".
+        dismissible: false,
+        ...(hasTotal ? { progress: Math.min(1, progressCount / totalCount) } : {})
     };
 }
 
@@ -227,7 +330,9 @@ ws.subscribeToMessages(async (message) => {
         toastService.closePersistent(message.taskId);
         toastService.showError(message.message);
     } else if (message.type === "taskProgressCount") {
-        toastService.showPersistent(makeToast(message.taskId, t("branches.delete-notes-in-progress", { count: message.progressCount })));
+        toastService.showPersistent(makeDeleteProgressToast(
+            message.taskId, message.progressCount, message.totalCount, message.phase
+        ));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("branches.delete-finished-successfully"));
         toast.timeout = 5000;
@@ -283,6 +388,15 @@ async function cloneNoteAfter(noteId: string, afterBranchId: string) {
     }
 }
 
+// beware that the first arg is noteId and the second is branchId!
+async function cloneNoteBefore(noteId: string, beforeBranchId: string) {
+    const resp = await server.put<Response>(`notes/${noteId}/clone-before/${beforeBranchId}`);
+
+    if (!resp.success) {
+        toastService.showError(resp.message);
+    }
+}
+
 export default {
     moveBeforeBranch,
     moveAfterBranch,
@@ -290,6 +404,7 @@ export default {
     deleteNotes,
     moveNodeUpInHierarchy,
     cloneNoteAfter,
+    cloneNoteBefore,
     cloneNoteToBranch,
     cloneNoteToParentNote
 };

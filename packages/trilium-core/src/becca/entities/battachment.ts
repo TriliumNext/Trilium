@@ -1,7 +1,8 @@
 
 
-import type { AttachmentRow } from "@triliumnext/commons";
+import { type AttachmentRow, isImageAttachmentRole } from "@triliumnext/commons";
 
+import { ValidationError } from "../../errors.js";
 import dateUtils from "../../services/utils/date";
 import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -14,6 +15,9 @@ import { escapeRegExp, formatDownloadTitle, isStringNote, replaceAll } from "../
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
+    // A site icon converted to a note is an image note like any other; only where it came from
+    // differs, and that is not something the resulting note carries.
+    favicon: "image",
     file: "file"
 };
 
@@ -168,7 +172,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
             title: this.title,
             type: (attachmentRoleToNoteTypeMapping as any)[this.role],
             mime: this.mime,
-            content: this.getContent(),
+            content: noteService.getPortableContent(this),
             isProtected: this.isProtected
         });
 
@@ -187,9 +191,10 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
 
             let fixedContent = origContent;
 
-            if (this.role === "image") {
+            if (isImageAttachmentRole(this.role)) {
                 // Rewrite embedded images (`<img src="api/attachments/{attachmentId}/image/...">`)
-                // to point at the new image note.
+                // to point at the new image note. A link preview's `data-image` / `data-favicon`
+                // carry the same URL, so replacing the prefix covers them too.
                 const oldAttachmentUrl = `api/attachments/${attachmentId}/image/`;
                 const newNoteUrl = `api/images/${note.noteId}/`;
 
@@ -204,6 +209,13 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
                 fixedContent = fixedContent.replace(
                     new RegExp(`href="[^"]*attachmentId=${escapeRegExp(attachmentId)}[^"]*"`, "g"),
                     `href="#root/${note.noteId}"`
+                );
+
+                // An embed of the attachment becomes an include of the new note.
+                fixedContent = replaceAll(
+                    fixedContent,
+                    `data-attachment-id="${attachmentId}"`,
+                    `data-note-id="${note.noteId}"`
                 );
             }
 
@@ -220,12 +232,16 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     getFileName() {
-        const type = this.role === "image" ? "image" : "file";
+        const type = isImageAttachmentRole(this.role) ? "image" : "file";
 
         return formatDownloadTitle(this.title, type, this.mime);
     }
 
     override beforeSaving() {
+        if (this.becca.notes[this.ownerId]?.isVirtual) {
+            throw new ValidationError(`Cannot save an attachment of note '${this.ownerId}': virtual notes have no attachments.`);
+        }
+
         super.beforeSaving();
 
         if (this.position === undefined || this.position === null) {

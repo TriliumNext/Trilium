@@ -1,0 +1,128 @@
+import { describe, expect, it, vi } from "vitest";
+
+// Delegates to the real getTaskStates by default; individual tests override it
+// to inject custom task states (the namespace re-export is frozen, so a plain
+// spy can't patch it).
+const getTaskStatesMock = vi.hoisted(() => vi.fn());
+vi.mock("../../services/task_states.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../services/task_states.js")>();
+    getTaskStatesMock.mockImplementation(actual.getTaskStates);
+    return { ...actual, getTaskStates: getTaskStatesMock };
+});
+
+import markdownImport from "../import/markdown.js";
+import { buildSystemPrompt } from "./system_prompt.js";
+
+describe("buildSystemPrompt", () => {
+    it("uses config.systemPrompt over the message system prompt and emits the no-note-access notice", () => {
+        const prompt = buildSystemPrompt(
+            [{ role: "system", content: "FROM MESSAGE" }],
+            { systemPrompt: "FROM CONFIG" }
+        ) ?? "";
+        expect(prompt).toContain("FROM CONFIG");
+        expect(prompt).not.toContain("FROM MESSAGE");
+        expect(prompt).toContain("do not have access to the user's notes");
+    });
+
+    it("falls back to the system message content when no config prompt is set", () => {
+        const prompt = buildSystemPrompt([{ role: "system", content: "FROM MESSAGE" }], {}) ?? "";
+        expect(prompt).toContain("FROM MESSAGE");
+    });
+
+    it("includes the note-tools guidance when note tools are enabled", () => {
+        const prompt = buildSystemPrompt([], { enableNoteTools: true, enableWebSearch: true }) ?? "";
+        expect(prompt).toContain("load_skill");
+        expect(prompt).toContain("wiki-link format [[noteId]]");
+        // Parallel tool-call hint appears when any tool capability is on.
+        expect(prompt).toContain("issue the tool calls in parallel");
+        // Web search enabled → no "web search is disabled" notice.
+        expect(prompt).not.toContain("do not have access to web search");
+    });
+
+    it("tells a model with tools that a declined call is the user's decision, not an error to work around", () => {
+        for (const config of [ { enableNoteTools: true }, { enableWebSearch: true } ]) {
+            const prompt = buildSystemPrompt([], config) ?? "";
+            expect(prompt).toContain("declines a tool call");
+            expect(prompt).toContain("through another tool or the file system");
+        }
+        expect(buildSystemPrompt([], {})).not.toContain("declines a tool call");
+    });
+
+    it("tells a model with note tools to read a linked note by the ID in its link", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true })).toContain("#root/<noteId>");
+        expect(buildSystemPrompt([], { enableWebSearch: true })).not.toContain("#root/<noteId>");
+    });
+
+    it("emits the context-note-only notice when a context note is set but note tools are off", () => {
+        const prompt = buildSystemPrompt([], { contextNoteId: "ctx" }) ?? "";
+        expect(prompt).toContain("cannot search or access other notes");
+        expect(prompt).toContain("do not have access to web search");
+    });
+
+    it("points the user at the place in the Tools menu that turns a missing capability on", () => {
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        // The menu's own icon, as ChatToolsDropdown draws it, for the model to show the user.
+        const menu = `<span class="tn-icon bx bx-shield-quarter"></span> "Tools" menu`;
+        expect(prompt).toContain(`turn it on by choosing a search source under "Web search" in the ${menu}`);
+        expect(prompt).toContain(`turn it on with the "Note access" switch in the ${menu}`);
+        expect(prompt).not.toContain("model name dropdown");
+    });
+
+    it("always appends the markdown formatting hints", () => {
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("Admonitions");
+        expect(prompt).toContain("Mermaid diagrams");
+        expect(prompt).toContain("Blockquotes");
+        expect(prompt).toContain("Tables");
+        expect(prompt).toContain("Collapsible blocks");
+        expect(prompt).toContain("Keyboard keys");
+        expect(prompt).toContain(`<span class="tn-icon bx bx-cog"></span>`);
+    });
+
+    it("teaches content tabs with an example that imports as a tabs block", () => {
+        const example = "=== \"Windows\"\n\n    Run `setup.exe`.\n\n=== \"Linux\"\n\n    Run `./setup.sh`.";
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("Content tabs");
+        expect(prompt).toContain(example);
+
+        const html = markdownImport.renderToHtml(example, "Title");
+        expect(html.match(/class="trilium-tabs"/g)).toHaveLength(1);
+        expect(html).toContain(`<p class="trilium-tab-title">Windows</p>`);
+        expect(html).toContain(`<p class="trilium-tab-title">Linux</p>`);
+    });
+
+    it("asks to keep the indentation of content tabs only when the model can edit notes", () => {
+        const hint = "keep each `===` line and the four-space indentation of its content";
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain(hint);
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain(hint);
+    });
+
+    it("names the icon search tool in the icon hint only when the tool is there", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain("find one with search_icons");
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain("find one with search_icons");
+    });
+
+    it("lists the workspace's custom task-state markers so the model can recognize them", () => {
+        // No _taskStates container in the test becca → getTaskStates falls back to the defaults.
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("Task lists");
+        expect(prompt).toContain("`- [/]` — Doing");
+        expect(prompt).toContain("`- [?]` — Maybe");
+        expect(prompt).toContain("`- [-]` — Cancelled");
+    });
+
+    it("keeps just the native open/completed hint when no custom states are defined", () => {
+        getTaskStatesMock.mockReturnValueOnce([]);
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("`- [ ]` for an open task");
+        expect(prompt).not.toContain("also defines extra task states");
+    });
+
+    it("suffixes custom task states that mark a task as completed", () => {
+        getTaskStatesMock.mockReturnValueOnce([
+            { name: "verified", title: "Verified", markdownSymbol: "v", isCompleted: true, icon: "bx bx-check-double" }
+        ]);
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("`- [v]` — Verified (completed)");
+    });
+});

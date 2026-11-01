@@ -5,12 +5,12 @@ by `refresh()`). Commands encapsulate feature logic so UI, keystrokes, other plu
 `editor.execute()` can all trigger and observe it. Most editor features expose their behavior
 as commands.
 
-> `Command` and `AttributeCommand` come from the **`ckeditor5` library** (`48.2.0`), imported
+> `Command` and `AttributeCommand` come from the **`ckeditor5` library** (**48 or later**), imported
 > as `from 'ckeditor5'` (with file extensions). In Trilium you don't always write a command
 > class: simple `$text`-attribute features reuse the built-in `AttributeCommand` —
-> `ckeditor5-keyboard-marker` registers `new AttributeCommand( editor, '<attr>' )` and lets the
+> `keyboard_marker` registers `new AttributeCommand( editor, '<attr>' )` and lets the
 > library handle toggle/refresh (see `core-plugin-patterns.md` → Reusable AttributeCommand).
-> Features with bespoke model mutations (e.g. `ckeditor5-admonition`, `ckeditor5-footnotes`)
+> Features with bespoke model mutations (e.g. `admonition`, `footnotes`)
 > write a custom `Command` subclass as below.
 
 ## Defining and registering

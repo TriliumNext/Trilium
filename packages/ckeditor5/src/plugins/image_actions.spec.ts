@@ -165,27 +165,29 @@ describe("ImageActions", () => {
         expect(spy).toHaveBeenCalledWith("downloadImage");
     });
 
-    it("uses the translate config callback to label buttons when provided", () => {
-        return (async () => {
-            const translate = (key: string) => `translated:${key}`;
+    it("labels the buttons from the editor's dictionary when one is configured", async () => {
+        // Keyed by `en`, the language the editor resolves messages under when none is configured.
+        editor = await createTestEditor([Essentials, Paragraph, Image, ImageBlock, ImageInline, ImageActions], {
+            translations: [ {}, { en: { dictionary: {
+                "Copy image to clipboard": "Copiază imaginea în clipboard",
+                "Download image": "Descarcă imaginea"
+            } } } ]
+        });
 
-            editor = await createTestEditor([Essentials, Paragraph, Image, ImageBlock, ImageInline, ImageActions], {
-                translate
-            });
-
-            const copyButton = editor.ui.componentFactory.create("copyImageToClipboard") as { label: string };
-            const downloadButton = editor.ui.componentFactory.create("downloadImage") as { label: string };
-
-            expect(copyButton.label).toBe("translated:image.copy-to-clipboard");
-            expect(downloadButton.label).toBe("translated:image.download");
-        })();
-    });
-
-    it("falls back to the raw label key when translate config is absent", () => {
         const copyButton = editor.ui.componentFactory.create("copyImageToClipboard") as { label: string };
         const downloadButton = editor.ui.componentFactory.create("downloadImage") as { label: string };
 
-        expect(copyButton.label).toBe("image.copy-to-clipboard");
-        expect(downloadButton.label).toBe("image.download");
+        expect(copyButton.label).toBe("Copiază imaginea în clipboard");
+        expect(downloadButton.label).toBe("Descarcă imaginea");
+    });
+
+    // No dictionary is configured here, so `t()` renders the message id, which is the English
+    // label — never a raw `image.…` key, as the retired host bridge would have shown.
+    it("labels the buttons in English when no dictionary is configured", () => {
+        const copyButton = editor.ui.componentFactory.create("copyImageToClipboard") as { label: string };
+        const downloadButton = editor.ui.componentFactory.create("downloadImage") as { label: string };
+
+        expect(copyButton.label).toBe("Copy image to clipboard");
+        expect(downloadButton.label).toBe("Download image");
     });
 });

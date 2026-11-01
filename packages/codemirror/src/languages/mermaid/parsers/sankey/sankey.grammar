@@ -1,0 +1,39 @@
+// See this link for entire Sankey diagram syntax in Mermaid:
+// https://mermaid.js.org/syntax/sankey.html
+@top SankeyDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName (newlines Row)* newlines?
+}
+
+Row {
+  Field "," Field "," Value
+}
+
+Field {
+  fieldText
+}
+
+Value {
+  fieldText
+}
+
+DiagramName { kw<"sankey-beta"> | kw<"sankey"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens fieldTokens from "./tokens.js" { fieldText }
+
+@tokens {
+  identifier { (@asciiLetter | "-")+ }
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+
+  @precedence { newlines, spaces }
+}
+
+@external propSource sankeyHighlighting from "./highlight.js"

@@ -3,7 +3,7 @@
 import BNote from "./bnote.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import dateUtils from "../../services/utils/date";
-import promotedAttributeDefinitionParser from "../../services/promoted_attribute_definition_parser.js";
+import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
 import type { AttributeRow, AttributeType } from "@triliumnext/commons";
 import { normalize, sanitizeAttributeName } from "../../services/utils/index.js";
 
@@ -84,8 +84,8 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.becca.notes[this.noteId].ownedAttributes.push(this);
 
         const key = `${this.type}-${this.name.toLowerCase()}`;
-        this.becca.attributeIndex[key] = this.becca.attributeIndex[key] || [];
-        this.becca.attributeIndex[key].push(this);
+        this.becca.attributeIndex[key] ??= new Set();
+        this.becca.attributeIndex[key].add(this);
 
         const targetNote = this.targetNote;
 
@@ -162,7 +162,7 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     isDefinition() {
-        return this.type === "label" && (this.name.startsWith("label:") || this.name.startsWith("relation:"));
+        return this.type === "label" && isDefinitionName(this.name);
     }
 
     getDefinition() {
@@ -184,6 +184,13 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     override beforeSaving(opts: SavingOpts = {}) {
+        // Virtual notes (e.g. the in-app help) are not user-customizable, so no persisted
+        // attribute may be attached to them. (Relations *pointing to* virtual notes from
+        // regular notes are fine — this guards the owning note only.)
+        if (this.becca.notes[this.noteId]?.isVirtual) {
+            throw new Error(`Cannot save attribute '${this.name}' for note '${this.noteId}': attributes of virtual notes cannot be modified.`);
+        }
+
         if (!opts.skipValidation) {
             this.validate();
         }
@@ -244,6 +251,16 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
             utcDateModified: this.utcDateModified
         });
     }
+}
+
+const DEFINITION_PREFIXES = [ "label:", "relation:" ];
+
+/**
+ * A definition needs an attribute name after its prefix: `#label:` on its own defines nothing, so it
+ * is treated as an ordinary label rather than as a definition for a nameless attribute.
+ */
+export function isDefinitionName(name: string) {
+    return DEFINITION_PREFIXES.some((prefix) => name.startsWith(prefix) && name.length > prefix.length);
 }
 
 export default BAttribute;

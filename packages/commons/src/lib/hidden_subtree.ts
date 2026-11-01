@@ -5,6 +5,7 @@ enum Command {
     searchNotes,
     createNoteIntoInbox,
     showRecentChanges,
+    showDeletedNotes,
     showOptions,
     commandPalette,
     toggleZenMode
@@ -33,6 +34,13 @@ export interface HiddenSubtreeItem {
     icon?: string;
     attributes?: HiddenSubtreeAttribute[];
     children?: HiddenSubtreeItem[];
+    /**
+     * Holds the children in the order they are listed in, on every database rather than only on one
+     * being set up: each is given a position from its place in the list. For a group whose order is
+     * the app's to decide (the settings pages), not one the user arranges themselves (the launcher
+     * bar), which would be undone at every start.
+     */
+    enforceChildOrder?: boolean;
     isExpanded?: boolean;
     baseSize?: string;
     growthFactor?: string;
@@ -50,7 +58,9 @@ export interface HiddenSubtreeItem {
         | "commandPalette"
         | "toggleZenMode"
         | "mobileTabSwitcher"
-        | "sidebarChat";
+        | "sidebarChat"
+        | "colorSchemeSwitcher"
+        | "recordMeeting";
     command?: keyof typeof Command;
     /**
      * If set to true, then branches will be enforced to be in the correct place.

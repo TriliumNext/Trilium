@@ -1,10 +1,12 @@
 import Modal from "../react/Modal.jsx";
 import { t } from "../../services/i18n.js";
-import { ComponentChildren } from "preact";
+import { ComponentChildren, Fragment } from "preact";
 import appContext, { CommandNames } from "../../components/app_context.js";
 import RawHtml from "../react/RawHtml.jsx";
 import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions.js";
+import { joinElements } from "../react/react_utils.js";
+import { renderShortcutKbds } from "../react/shortcut_kbd.js";
 import { useTriliumEvent } from "../react/hooks.jsx";
 
 export default function HelpDialog() {
@@ -74,6 +76,9 @@ export default function HelpDialog() {
                     <ul>
                         <KeyboardShortcut commands="editNoteTitle" description={t("help.editNoteTitle")} />
                         <FixedKeyboardShortcut keys={["Ctrl+K"]} description={t("help.createEditLink")} />
+                        {/* The editor's own, like the link above it: registered by the AI assistant
+                            plugin rather than by a keyboard action, so it is not configurable. */}
+                        <FixedKeyboardShortcut keys={["Ctrl+Shift+K"]} description={t("help.openAiAssistant")} />
                         <KeyboardShortcut commands="addLinkToText" description={t("help.createInternalLink")} />
                         <KeyboardShortcut commands="followLinkUnderCursor" description={t("help.followLink")} />
                         <KeyboardShortcut commands="insertDateTimeToText" description={t("help.insertDateTime")} />
@@ -139,12 +144,7 @@ function KeyboardShortcut({ commands, description }: { commands: CommandNames | 
 function FixedKeyboardShortcut({ keys, description }: { keys?: string[], description: string }) {
     return (
         <li>
-            {keys && keys.map((key, index) =>
-                <>
-                    <kbd key={index}>{key}</kbd>
-                    {index < keys.length - 1 ? ", " : "" }
-                </>
-            )} - <RawHtml html={description} />
+            {joinElements(keys?.map((key, index) => <Fragment key={index}>{renderShortcutKbds(key)}</Fragment>))} - <RawHtml html={description} />
         </li>
     );
 }
@@ -164,5 +164,5 @@ function Card({ title, children }: { title: string, children: ComponentChildren 
 }
 
 function editShortcuts() {
-    appContext.tabManager.openContextWithNote("_optionsShortcuts", { activate: true });
+    void appContext.triggerCommand("showOptions", { section: "_optionsShortcuts" });
 }

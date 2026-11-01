@@ -34,12 +34,27 @@ export class StartupChecks extends Component {
 }
 
 /**
- * Shows a one-shot "account connected" toast after the OAuth provider round-trip redirects back to the
- * app root (which drops the Settings modal). The signal rides in the server's bootstrap payload
- * (`window.glob.oauthJustEnrolled`, set once by the OIDC afterCallback and cleared by /bootstrap), so
- * nothing has to be stored on the client across the redirect.
+ * Shows a one-shot toast reporting the outcome of an OAuth provider round-trip once it redirects back
+ * to the app root (which drops the Settings modal): "account connected" on success, or a failure notice
+ * when the provider couldn't be reached at all. Both signals ride in the server's bootstrap payload
+ * (`window.glob.oauthJustEnrolled` / `oauthConnectionFailed`, set once server-side and cleared by
+ * /bootstrap), so nothing has to be stored on the client across the redirect.
  */
 export async function showOAuthEnrollmentResultToast() {
+    const connectionFailure = window.glob?.oauthConnectionFailed;
+    if (connectionFailure) {
+        // The provider couldn't be reached at all, so there is no account to name. The server's technical
+        // detail (TLS trust, DNS, refused connection, …) is shown verbatim in monospace beneath the
+        // heading — it names the actual cause, which a generic "check the log" message never could.
+        toast.showErrorTitleAndMessage(
+            t("multi_factor_authentication.oauth_connect_failed"),
+            connectionFailure,
+            15_000,
+            { monospace: true }
+        );
+        return;
+    }
+
     if (!window.glob?.oauthJustEnrolled) {
         return;
     }

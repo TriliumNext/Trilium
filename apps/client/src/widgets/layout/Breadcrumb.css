@@ -64,12 +64,11 @@
             &::before {
                 opacity: .75;
             }
-        }
-    }
 
-    > span:last-of-type a {
-        max-width: 300px;
-        flex-shrink: 1;
+            body[dir=rtl] & .tn-icon {
+                transform: scaleX(-1);
+            }
+        }
     }
 
     ul {
@@ -111,5 +110,25 @@
     & > .filler {
         flex-grow: 1;
         height: 23px;
+    }
+}
+
+.breadcrumb-child-list {
+    max-width: 500px;
+
+    .dropdown-item > span > :last-child {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .protected-title {
+        font-style: italic;
+    }
+
+    .protected-icon {
+        --menu-item-icon-color: var(--quick-search-result-highlight-color);
+        margin-inline-start: 6px;
     }
 }

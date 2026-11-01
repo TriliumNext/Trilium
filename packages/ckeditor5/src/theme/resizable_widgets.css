@@ -1,0 +1,103 @@
+:where(:root) {
+    --ck-resize-handle-color: var(--ck-color-focus-border);
+    --ck-resize-handle-hit-size: 12px;
+    --ck-resize-handle-grip-size: 8px;
+    --ck-resize-handle-grip-length: 32px;
+    --ck-resize-handle-grip-thickness: 4px;
+}
+
+@media (any-pointer: coarse) {
+    :where(:root) {
+        --ck-resize-handle-hit-size: 32px;
+    }
+}
+
+.ck .ck-widget > .ck-widget__resize-handles {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* A widget stays selected while the editor is blurred. */
+.ck.ck-editor__editable.ck-focused .ck-widget_resizable.ck-widget_selected,
+.ck .ck-widget_resizable.ck-widget_resizing {
+    > .ck-widget__resize-handles {
+        display: block;
+    }
+}
+
+.ck.ck-editor__editable.ck-read-only .ck-widget > .ck-widget__resize-handles {
+    display: none;
+}
+
+.ck .ck-widget__resize-handle {
+    --_offset: calc(var(--ck-resize-handle-hit-size) / -2);
+
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+
+    &::after {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        border-radius: var(--ck-resize-handle-grip-thickness);
+        background-color: var(--ck-resize-handle-color);
+        translate: -50% -50%;
+    }
+
+    /* The edges show a grip on a touch screen only. */
+    @media (any-pointer: coarse) {
+        &::after {
+            content: "";
+        }
+    }
+
+    /* Edge handles cover the middle half of the edge, away from the type-around buttons. */
+    &.ck-widget__resize-handle_width {
+        inset-block: 25%;
+        inset-inline-end: var(--_offset);
+        width: var(--ck-resize-handle-hit-size);
+        cursor: ew-resize;
+
+        &::after {
+            width: var(--ck-resize-handle-grip-thickness);
+            height: min(var(--ck-resize-handle-grip-length), 100%);
+        }
+    }
+
+    &.ck-widget__resize-handle_height {
+        inset-inline: 25%;
+        bottom: var(--_offset);
+        height: var(--ck-resize-handle-hit-size);
+        cursor: ns-resize;
+
+        &::after {
+            width: min(var(--ck-resize-handle-grip-length), 100%);
+            height: var(--ck-resize-handle-grip-thickness);
+        }
+    }
+
+    &.ck-widget__resize-handle_corner {
+        bottom: var(--_offset);
+        inset-inline-end: var(--_offset);
+        width: var(--ck-resize-handle-hit-size);
+        height: var(--ck-resize-handle-hit-size);
+        cursor: nwse-resize;
+
+        &:dir(rtl) {
+            cursor: nesw-resize;
+        }
+
+        &::after {
+            content: "";
+            border-radius: 50%;
+            width: var(--ck-resize-handle-grip-size);
+            height: var(--ck-resize-handle-grip-size);
+        }
+    }
+}
+
+.ck .ck-widget_resizing iframe {
+    pointer-events: none;
+}

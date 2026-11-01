@@ -1,17 +1,19 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
+import { runBackendScript, showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import linkService from "../services/link.js";
+import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
-import appContext, { type NoteCommandData } from "./app_context.js";
+import appContext, { type CommandListenerData, type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
 
 export default class Entrypoints extends Component {
@@ -88,6 +90,8 @@ export default class Entrypoints extends Component {
         const api = window.electronApi?.window;
         if (api) {
             api.setFullScreen(!api.isFullScreen());
+        } else if (document.fullscreenElement) {
+            document.exitFullscreen();
         } else {
             document.documentElement.requestFullscreen();
         }
@@ -97,9 +101,22 @@ export default class Entrypoints extends Component {
         utils.reloadFrontendApp();
     }
 
-    async logoutCommand() {
-        await server.post("../logout");
-        window.location.replace(`/login`);
+    logoutCommand() {
+        // A form submission keeps the OIDC provider's redirect a top-level navigation; an XHR
+        // follows it cross-origin and fails the provider's CORS preflight.
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = `${window.glob.baseApiUrl}../logout`;
+        form.hidden = true;
+
+        const csrfToken = document.createElement("input");
+        csrfToken.type = "hidden";
+        csrfToken.name = "x-csrf-token";
+        csrfToken.value = window.glob.csrfToken ?? "";
+        form.append(csrfToken);
+
+        document.body.append(form);
+        form.submit();
     }
 
     backInNoteHistoryCommand() {
@@ -134,16 +151,12 @@ export default class Entrypoints extends Component {
         utils.reloadFrontendApp("Switching to mobile version");
     }
 
-    async openInWindowCommand({ notePath, hoistedNoteId, viewScope }: NoteCommandData) {
-        const extraWindowHash = linkService.calculateHash({ notePath, hoistedNoteId, viewScope });
+    async openInWindowCommand({ notePath, hoistedNoteId, viewScope, splits, activeSplit }: NoteCommandData) {
+        const target = { notePath, hoistedNoteId, viewScope, splits, activeSplit };
 
-        if (window.electronApi) {
-            window.electronApi.window.createExtraWindow(extraWindowHash);
-        } else {
-            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=1${extraWindowHash}`;
-
-            window.open(url, "", "width=1000,height=800");
-        }
+        // On desktop the main process turns this into an extra window that shares
+        // this renderer's process (`installWindowOpenPolicy`).
+        window.open(linkService.calculateExtraWindowUrl(target), "", "width=1000,height=800");
     }
 
     async openNewWindowCommand() {
@@ -160,8 +173,8 @@ export default class Entrypoints extends Component {
         await appContext.tabManager.openInSameTab(todayNote.noteId);
     }
 
-    async runActiveNoteCommand() {
-        const noteContext = appContext.tabManager.getActiveContext();
+    async runActiveNoteCommand({ ntxId: requestedNtxId }: CommandListenerData<"runActiveNote"> = {}) {
+        const noteContext = appContext.tabManager.getCommandContext(requestedNtxId);
         if (!noteContext) {
             return;
         }
@@ -174,9 +187,26 @@ export default class Entrypoints extends Component {
 
         // TODO: use note.executeScript()
         if (note.mime.endsWith("env=frontend")) {
-            await bundleService.getAndExecuteBundle(note.noteId);
+            try {
+                // rethrow so a failed script doesn't fall through to the "Note executed" confirmation;
+                // executeBundle has already surfaced the error toast.
+                await bundleService.getAndExecuteBundle(note.noteId, null, null, null, { rethrow: true });
+            } catch {
+                return;
+            }
         } else if (note.mime.endsWith("env=backend")) {
-            await server.post(`script/run/${note.noteId}`);
+            if (!options.is("backendScriptingEnabled")) {
+                // Show the same friendly toast as the frontend runOnBackend path, rather than letting
+                // the /script/run request 500 and surface as an "Uncaught error" via the global handler.
+                showBackendScriptingDisabledToast(note.noteId);
+                return;
+            }
+            try {
+                await runBackendScript(note.noteId);
+            } catch {
+                // Already reported as a scripting error; don't fall through to "Note executed".
+                return;
+            }
         } else if (note.mime === "text/x-sqlite;schema=trilium") {
             const response = await server.post<SqlExecuteResponse>(`sql/execute/${note.noteId}`);
             await appContext.triggerEvent("sqlQueryResults", { ntxId, response });
@@ -185,30 +215,16 @@ export default class Entrypoints extends Component {
         toastService.showMessage(t("entrypoints.note-executed"));
     }
 
-    hideAllPopups() {
-        if (utils.isDesktop()) {
-            $(".aa-input").autocomplete("close");
-        }
-    }
-
-    noteSwitchedEvent() {
-        this.hideAllPopups();
-    }
-
-    activeContextChangedEvent() {
-        this.hideAllPopups();
-    }
-
-    async forceSaveRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async forceSaveRevisionCommand({ ntxId }: CommandListenerData<"forceSaveRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
 
         await server.post(`notes/${noteId}/revision`);
 
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
 
-    async saveNamedRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async saveNamedRevisionCommand({ ntxId }: CommandListenerData<"saveNamedRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (!noteId) return;
 
         const name = await dialog.prompt({

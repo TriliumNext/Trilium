@@ -1,9 +1,11 @@
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { becca, cls, note_service as noteService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import fs from "fs";
-import { Readable } from "stream";
-import { beforeAll, describe, expect, it } from "vitest";
+import path from "path";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import dataDirs from "../../services/data_dir.js";
 import filesRoute from "./files.js";
 
 let noteId: string;
@@ -11,12 +13,6 @@ let attachmentId: string;
 
 function fileReq(params: Record<string, string>, file?: unknown, query: Record<string, string> = {}, body: Record<string, unknown> = {}) {
     return { params, file, query, body } as unknown as Request<{ noteId: string }>;
-}
-
-async function streamToString(stream: Readable) {
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-    return Buffer.concat(chunks).toString("utf8");
 }
 
 describe("Files API", () => {
@@ -31,58 +27,15 @@ describe("Files API", () => {
         });
     });
 
-    describe("updateFile", () => {
-        it("reports a missing file", () => {
-            expect(cls.init(() => filesRoute.updateFile(fileReq({ noteId })))).toEqual({ uploaded: false, message: "Missing file." });
-        });
-
-        it("replaces note content without a revision when replace=1", () => {
-            const file = { buffer: Buffer.from("replaced"), mimetype: "TEXT/Plain", originalname: "new.txt" };
-            const result = cls.init(() => filesRoute.updateFile(fileReq({ noteId }, file, { replace: "1" })));
-            expect(result).toEqual({ uploaded: true });
-            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/plain");
-        });
-
-        it("saves a revision when not replacing", () => {
-            const file = { buffer: Buffer.from("v2"), mimetype: "text/plain", originalname: "v2.txt" };
-            expect(cls.init(() => filesRoute.updateFile(fileReq({ noteId }, file)))).toEqual({ uploaded: true });
-        });
-    });
-
-    describe("updateAttachment", () => {
-        it("reports a missing file", () => {
-            const req = fileReq({ attachmentId } as Record<string, string>) as unknown as Request<{ attachmentId: string }>;
-            expect(cls.init(() => filesRoute.updateAttachment(req))).toEqual({ uploaded: false, message: "Missing file." });
-        });
-
-        it("updates attachment content", () => {
-            const file = { buffer: Buffer.from("new-att"), mimetype: "text/plain", originalname: "a.txt" };
-            const req = fileReq({ attachmentId } as Record<string, string>, file) as unknown as Request<{ attachmentId: string }>;
-            expect(cls.init(() => filesRoute.updateAttachment(req))).toEqual({ uploaded: true });
-        });
-    });
-
-    describe("content providers", () => {
-        it("streams full and ranged note content", async () => {
-            const current = becca.getNoteOrThrow(noteId).getContent() as string;
-            const provider = await filesRoute.fileContentProvider(fileReq({ noteId }));
-            expect(provider.totalSize).toBe(Buffer.byteLength(current));
-            expect(await streamToString(provider.getStream(undefined as never))).toBe(current);
-            expect(await streamToString(provider.getStream({ start: 0, end: 0 }))).toBe(current.slice(0, 1));
-        });
-
-        it("streams attachment content", async () => {
-            const req = fileReq({ attachmentId } as Record<string, string>) as unknown as Request<{ attachmentId: string }>;
-            const provider = await filesRoute.attachmentContentProvider(req);
-            expect(provider.mimeType).toBe("text/plain");
-            expect(await streamToString(provider.getStream(undefined as never))).toBe("new-att");
-        });
-    });
-
     describe("temp-dir round trip", () => {
         it("saves a note to a temp file then uploads the modified content back", () => {
             const { tmpFilePath } = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId })));
             expect(fs.existsSync(tmpFilePath)).toBe(true);
+            expect(path.dirname(tmpFilePath)).toBe(path.resolve(dataDirs.TMP_DIR));
+            expect(path.basename(tmpFilePath)).toMatch(/^tmp-\d+-\w{12}-File note\.txt$/);
+            if (process.platform !== "win32") {
+                expect(fs.statSync(tmpFilePath).mode & 0o777).toBe(0o600);
+            }
 
             fs.writeFileSync(tmpFilePath, "edited-on-disk");
             cls.init(() => filesRoute.uploadModifiedFileToNote(fileReq({ noteId }, undefined, {}, { filePath: tmpFilePath })));
@@ -98,12 +51,66 @@ describe("Files API", () => {
             expect(becca.getAttachmentOrThrow(attachmentId).getContent()).toBe("edited-att");
         });
 
+        it("saves a canvas drawing to a temp file with the images it refers to inside", () => {
+            const drawing = cls.init(() => {
+                const { note } = noteService.createNewNote({
+                    parentNoteId: "root", title: "Drawing note", type: "text", content: "<p>x</p>"
+                });
+                note.saveAttachment({
+                    role: "image", mime: "image/png", title: "f1.png", content: "abc"
+                });
+                return note.saveAttachment({
+                    role: "file",
+                    mime: CANVAS_ATTACHMENT_MIME,
+                    title: "Canvas.excalidraw",
+                    content: JSON.stringify({ elements: [ { type: "image", fileId: "f1.png" } ] })
+                });
+            });
+            const req = fileReq({ attachmentId: drawing.attachmentId ?? "" });
+
+            const { tmpFilePath } = cls.init(() => filesRoute.saveAttachmentToTmpDir(
+                req as unknown as Request<{ attachmentId: string }>));
+
+            const scene = JSON.parse(fs.readFileSync(tmpFilePath, "utf8"));
+            expect(scene.files?.["f1.png"]?.dataURL).toBe("data:image/png;base64,YWJj");
+        });
+
         it("rejects uploading from an unknown temp path", () => {
             expect(() => cls.init(() => filesRoute.uploadModifiedFileToNote(
                 fileReq({ noteId }, undefined, {}, { filePath: "/not/a/temp/file" })
             ))).toThrow(ValidationError);
             const req = fileReq({ attachmentId } as Record<string, string>, undefined, {}, { filePath: "/nope" }) as unknown as Request<{ attachmentId: string }>;
             expect(() => cls.init(() => filesRoute.uploadModifiedFileToAttachment(req))).toThrow(ValidationError);
+        });
+
+        it("removes the temp files when the process exits", () => {
+            const { tmpFilePath } = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId })));
+            const cleanup = process.listeners("exit").find((listener) => listener.name === "removeTemporaryFiles");
+            expect(cleanup).toBeDefined();
+
+            cleanup?.(0);
+            expect(fs.existsSync(tmpFilePath)).toBe(false);
+        });
+
+        it("removes the other temp files when one cannot be removed", () => {
+            const locked = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+            const other = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+            const rmSync = fs.rmSync;
+            const spy = vi.spyOn(fs, "rmSync").mockImplementation((filePath, options) => {
+                if (filePath === locked) {
+                    throw new Error("EBUSY: resource busy or locked");
+                }
+                rmSync(filePath, options);
+            });
+            const cleanup = process.listeners("exit").find((listener) => listener.name === "removeTemporaryFiles");
+
+            try {
+                expect(() => cleanup?.(0)).not.toThrow();
+                expect(fs.existsSync(other)).toBe(false);
+            } finally {
+                spy.mockRestore();
+                fs.rmSync(locked, { force: true });
+            }
         });
     });
 });

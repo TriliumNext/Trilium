@@ -1,0 +1,55 @@
+# Venn
+
+venn-beta
+
+==>
+
+VennDiagram(DiagramName)
+
+# Trilium's sample
+
+venn-beta
+    title Web Dev
+    set Frontend
+        text React
+        text shadcn-ui
+    set Backend
+        text Hono
+    union Frontend,Backend["APIs"]
+
+==>
+
+VennDiagram(DiagramName,Title(Keyword,TitleText),
+  Set(Keyword,Name),Text(Keyword,Name),Text(Keyword,Name),
+  Set(Keyword,Name),Text(Keyword,Name),
+  Union(Keyword,Name,",",Name,Label))
+
+# Labels, sizes and quoted names
+
+venn-beta
+set A["Alpha"]: 20
+set "Quoted set"[Beta]
+union A,"Quoted set": .5
+  text "note"[Note]
+text A,B shared["Shared"] %% a comment
+
+==>
+
+VennDiagram(DiagramName,
+  Set(Keyword,Name,Label,Size(":",Number)),
+  Set(Keyword,String,Label),
+  Union(Keyword,Name,",",String,Size(":",Number)),
+  Text(Keyword,String,Label),
+  Text(Keyword,Name,",",Name,Name,Label),LineComment)
+
+# Styles
+
+venn-beta
+style A fill:#f00, color:rgb(1, 2, 3), stroke-width:2px
+style A,B opacity:-0.5, label:"x y", fill:rgba(1, 2, 3, 0.5)
+
+==>
+
+VennDiagram(DiagramName,
+  Style(Keyword,Name,StyleField(Property,":",Color),",",StyleField(Property,":",Color),",",StyleField(Property,":",Number,Name)),
+  Style(Keyword,Name,",",Name,StyleField(Property,":",Number),",",StyleField(Property,":",String),",",StyleField(Property,":",Color)))

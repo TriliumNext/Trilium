@@ -51,7 +51,8 @@ function register(router: Router) {
         isExpanded: [v.notNull, v.isBoolean],
         noteId: [v.notNull, v.isValidEntityId],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route(router, "post", "/etapi/create-note", (req, res, next) => {
@@ -64,8 +65,17 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "INVALID_MIME_FOR_IMAGE", `MIME type '${params.mime}' is not allowed for image notes. MIME must start with 'image/'.`);
         }
 
+        if (params.noteId && becca.getNote(params.noteId)) {
+            throw new eu.EtapiError(409, "NOTE_ALREADY_EXISTS", `Note '${params.noteId}' already exists.`);
+        }
+
         try {
             const resp = noteService.createNewNote(params);
+            // `save()` stamps the current time, so `setDateCreatedAndModified()` applies the
+            // requested date afterwards.
+            if (req.body.utcDateModified) {
+                resp.note.setDateCreatedAndModified(undefined, req.body.utcDateModified);
+            }
 
             res.status(201).json({
                 note: mappers.mapNoteToPojo(resp.note),
@@ -78,10 +88,11 @@ function register(router: Router) {
 
     const ALLOWED_PROPERTIES_FOR_PATCH = {
         title: [v.notNull, v.isString],
-        type: [v.notNull, v.isString],
+        type: [v.notNull, v.isNoteType],
         mime: [v.notNull, v.isString],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route<{ noteId: string }>(router, "patch", "/etapi/notes/:noteId", (req, res, next) => {
@@ -102,6 +113,9 @@ function register(router: Router) {
         noteService.saveRevisionIfNeeded(note);
         eu.validateAndPatch(note, req.body, ALLOWED_PROPERTIES_FOR_PATCH);
         note.save();
+        if (req.body.utcDateModified) {
+            note.setDateCreatedAndModified(undefined, req.body.utcDateModified);
+        }
 
         res.json(mappers.mapNoteToPojo(note));
     });
@@ -160,19 +174,30 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default), 'markdown' or 'share'.`);
         }
 
+        // Protected content never leaves through ETAPI, even while the protected session is open.
+        // The share format cannot leave it out, so it refuses a subtree that holds any.
+        const protectedNote = format === "share" ? note.getSubtree({ includeHidden: true }).notes.find((n) => n.isProtected) : undefined;
+        if (protectedNote) {
+            throw new eu.EtapiError(400, "NOTE_IS_PROTECTED", `Note '${protectedNote.noteId}' is protected and cannot be exported through ETAPI in the 'share' format.`);
+        }
+
         const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
         // technically a branch is being exported (includes prefix), but it's such a minor difference yet usability pain
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
         const branch = note.getParentBranches()[0];
 
-        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
+        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res, true, { excludeProtected: true });
     });
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new eu.EtapiError(400, "ZIP_FILE_REQUIRED", "The request body must be a ZIP file sent as 'application/zip' or 'application/octet-stream'.");
+        }
+
+        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
         zipImportService.importZip(taskContext, req.body, note).then((importedNote) => {
             res.status(201).json({
                 note: mappers.mapNoteToPojo(importedNote),

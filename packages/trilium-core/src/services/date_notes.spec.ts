@@ -20,6 +20,14 @@ vi.mock("../services/sql.js", () => ({
     }
 }));
 
+// Mock options so week settings fall back to their defaults (ISO weekdays, first week
+// contains Jan 1) without needing a database.
+vi.mock("./options.js", () => ({
+    default: {
+        getOptionOrNull: () => null
+    }
+}));
+
 
 // Mock BNote
 const mockRootNote = {
@@ -94,6 +102,53 @@ describe("date_notes", () => {
 
             const dayTitle = await dateNotesService.getJournalNoteTitle(customRootNote, "day", testDate, 1);
             expect(dayTitle).toBe("2025-03-01 1 01 1st Saturday Sat Sa");
+        });
+
+        it("should fill placeholders of other time units from the date, not the note's own number (#9565)", () => {
+            const customRootNote = {
+                getOwnedLabelValue: (key: string) => {
+                    const patterns: Record<string, string> = {
+                        // exact pattern from the issue report
+                        "datePattern": "{dateNumber}.{monthNumber}. - {weekDay} ({shortWeek})",
+                        "weekPattern": "Week {weekNumber} of {monthNumber}/{year}",
+                        "monthPattern": "{monthNumber} in Q{quarterNumber} {year}"
+                    };
+                    return patterns[key] || null;
+                }
+            } as unknown as BNote;
+
+            // day note on 2026-04-25 (Saturday, ISO week 17): month/week placeholders
+            // must not be filled with the day number
+            const dayTitle = dateNotesService.getJournalNoteTitle(
+                customRootNote, "day", dayjs("2026-04-25"), 25
+            );
+            expect(dayTitle).toBe("25.4. - Saturday (W17)");
+
+            // week note: month placeholder must not be filled with the week number
+            const weekTitle = dateNotesService.getJournalNoteTitle(
+                customRootNote, "week", dayjs("2026-04-20"), 17
+            );
+            expect(weekTitle).toBe("Week 17 of 4/2026");
+
+            // month note: quarter placeholder must not be filled with the month number
+            const monthTitle = dateNotesService.getJournalNoteTitle(
+                customRootNote, "month", dayjs("2026-04-01"), 4
+            );
+            expect(monthTitle).toBe("4 in Q2 2026");
+        });
+
+        it("should keep the caller-provided week number authoritative for cross-year weeks", () => {
+            const customRootNote = {
+                getOwnedLabelValue: (key: string) =>
+                    key === "weekPattern" ? "{year}-W{weekNumberPadded}" : null
+            } as unknown as BNote;
+
+            // week 1 of 2027 starting in December 2026: the caller passes the resolved
+            // week number and week year, which must win over anything derived from the date
+            const weekTitle = dateNotesService.getJournalNoteTitle(
+                customRootNote, "week", dayjs("2026-12-28"), 1, 2027
+            );
+            expect(weekTitle).toBe("2027-W01");
         });
     });
 });

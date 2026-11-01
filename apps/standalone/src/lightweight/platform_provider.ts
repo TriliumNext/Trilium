@@ -11,8 +11,11 @@ const QUERY_TO_ENV: Record<string, string> = {
 
 export default class StandalonePlatformProvider implements PlatformProvider {
     readonly isElectron = false;
-    readonly isMac = false;
-    readonly isWindows = false;
+    readonly isStandalone = true;
+    readonly isMac = matchesPlatform("Mac");
+    readonly isWindows = matchesPlatform("Win");
+    // Android reports a Linux platform string; keep `isLinux` meaning desktop Linux.
+    readonly isLinux = matchesPlatform("Linux") && !navigator.userAgent.includes("Android");
 
     private envMap: Record<string, string> = {};
 
@@ -40,4 +43,18 @@ export default class StandalonePlatformProvider implements PlatformProvider {
     getEnv(key: string): string | undefined {
         return this.envMap[key];
     }
+
+    /** The browser owns the storage the database lives in, and gives out no path to it. */
+    getDatabasePath(): null {
+        return null;
+    }
+}
+
+/**
+ * Reads the host OS from the worker's `navigator`. `navigator.platform` is deprecated but is the one
+ * field a worker gets in every browser, and the client's `isMac()` reads it too — the two must agree,
+ * or the shortcuts the settings pane renders differ from the ones `/api/keyboard-actions` served.
+ */
+function matchesPlatform(name: string) {
+    return navigator.platform.includes(name);
 }

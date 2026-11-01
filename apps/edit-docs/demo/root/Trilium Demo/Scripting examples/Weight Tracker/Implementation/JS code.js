@@ -1,21 +1,17 @@
 async function getChartData() {
-    const days = await api.runOnBackend(() => {
-        const notes = api.getNotesWithLabel('weight');
-        const days = [];
+    const notes = await api.searchForNotes("#weight");
+    const days = [];
 
-        for (const note of notes) {
-            const date = note.getLabelValue('dateNote');
-            const weight = parseFloat(note.getLabelValue('weight'));
+    for (const note of notes) {
+        const date = note.getLabelValue('dateNote');
+        const weight = parseFloat(note.getLabelValue('weight'));
 
-            if (date && weight) {
-                days.push({ date, weight });
-            }
+        if (date && weight) {
+            days.push({ date, weight });
         }
+    }
 
-        days.sort((a, b) => a.date > b.date ? 1 : -1);
-
-        return days;
-    });
+    days.sort((a, b) => a.date > b.date ? 1 : -1);
 
     const datasets = [
         {

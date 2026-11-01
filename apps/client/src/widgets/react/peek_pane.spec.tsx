@@ -2,7 +2,14 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { isWithinPeek, persistedPaneVisible, reducePaneMode, usePeekDismiss } from "./peek_pane";
+import type { EventData } from "../../components/app_context";
+import type Component from "../../components/component";
+import options from "../../services/options";
+import {
+    isWithinPeek, PaneModeController, persistedPaneVisible, reducePaneMode, usePaneMode,
+    usePeekDismiss, watchPeekDismiss
+} from "./peek_pane";
+import { ParentComponent } from "./react_utils";
 
 describe("reducePaneMode", () => {
     it("opens as peek from closed and closes otherwise", () => {
@@ -17,11 +24,149 @@ describe("reducePaneMode", () => {
         expect(reducePaneMode("docked", "toggleDocked")).toBe("closed");
     });
 
-    it("docks and closes unconditionally", () => {
+    it("docks and closes unconditionally, and dismisses a peek only", () => {
         for (const prev of ["closed", "peek", "docked"] as const) {
             expect(reducePaneMode(prev, "dock")).toBe("docked");
             expect(reducePaneMode(prev, "close")).toBe("closed");
         }
+        expect(reducePaneMode("peek", "dismiss")).toBe("closed");
+        expect(reducePaneMode("docked", "dismiss")).toBe("docked");
+        expect(reducePaneMode("closed", "dismiss")).toBe("closed");
+    });
+});
+
+describe("usePaneMode", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    it("keeps content mounted across a soft dismiss, and unmounts on a hard close", () => {
+        let controller: PaneModeController | undefined;
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        function Harness() {
+            controller = usePaneMode("rightPaneVisible", "right");
+            return null;
+        }
+        act(() => render(<Harness />, host));
+
+        // Starts closed (the mocked option is unset) and unmounted.
+        expect(controller?.mode).toBe("closed");
+        expect(controller?.mounted).toBe(false);
+
+        act(() => controller?.togglePeek());
+        expect(controller?.mode).toBe("peek");
+        expect(controller?.visible).toBe(true);
+        expect(controller?.mounted).toBe(true);
+
+        // Peek button while open (togglePeek) soft-dismisses: hidden but still mounted.
+        act(() => controller?.togglePeek());
+        expect(controller?.mode).toBe("closed");
+        expect(controller?.visible).toBe(false);
+        expect(controller?.mounted).toBe(true);
+
+        // Re-peek reuses it; outside-press/Esc (dismiss) is also soft.
+        act(() => controller?.togglePeek());
+        act(() => controller?.dismiss());
+        expect(controller?.visible).toBe(false);
+        expect(controller?.mounted).toBe(true);
+
+        // The × button (hard close) unmounts.
+        act(() => controller?.close());
+        expect(controller?.visible).toBe(false);
+        expect(controller?.mounted).toBe(false);
+
+        act(() => render(null, host));
+    });
+
+    it("opens docked where the option says so, and writes the distinction back as it changes", () => {
+        // The pane was left docked last time, which is the one thing the option remembers.
+        const isOption = vi.spyOn(options, "is").mockReturnValue(true);
+        const save = vi.spyOn(options, "save").mockResolvedValue(undefined);
+
+        let controller: PaneModeController | undefined;
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        function Harness() {
+            controller = usePaneMode("rightPaneVisible", "right");
+            return null;
+        }
+        act(() => render(<Harness />, host));
+
+        expect(isOption).toHaveBeenCalledWith("rightPaneVisible");
+        expect(controller?.mode).toBe("docked");
+        expect(controller?.mounted).toBe(true);
+        // Nothing is written for merely arriving at what the option already said.
+        expect(save).not.toHaveBeenCalled();
+
+        // Leaving docked is a change of the distinction, so it is remembered.
+        act(() => controller?.toggleDocked());
+        expect(controller?.mode).toBe("closed");
+        expect(save).toHaveBeenCalledWith("rightPaneVisible", "false");
+
+        // A peek is not, being ephemeral: it comes and goes without touching the option.
+        save.mockClear();
+        act(() => controller?.togglePeek());
+        act(() => controller?.dismiss());
+        expect(save).not.toHaveBeenCalled();
+
+        // Docking again writes it back.
+        act(() => controller?.dock());
+        expect(save).toHaveBeenCalledWith("rightPaneVisible", "true");
+
+        act(() => render(null, host));
+        isOption.mockRestore();
+        save.mockRestore();
+    });
+
+    it("announces its mode, and gives its peek up to another pane's", () => {
+        type Handler = (data: EventData<"paneModeChanged">) => void;
+        const handlers = new Set<Handler>();
+        const parent = {
+            registerHandler: (_name: string, handler: Handler) => handlers.add(handler),
+            removeHandler: (_name: string, handler: Handler) => handlers.delete(handler),
+            triggerEvent: vi.fn()
+        } as unknown as Component;
+        const announce = (data: EventData<"paneModeChanged">) => act(() => {
+            for (const handler of handlers) {
+                handler(data);
+            }
+        });
+
+        let controller: PaneModeController | undefined;
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        function Harness() {
+            controller = usePaneMode("rightPaneVisible", "right");
+            return null;
+        }
+        act(() => render(
+            <ParentComponent.Provider value={parent}><Harness /></ParentComponent.Provider>,
+            host
+        ));
+
+        act(() => controller?.togglePeek());
+        expect(parent.triggerEvent).toHaveBeenCalledWith(
+            "paneModeChanged", { pane: "right", mode: "peek" }
+        );
+
+        // Its own peek, and the other pane closing or docking, leave it open.
+        announce({ pane: "right", mode: "peek" });
+        announce({ pane: "left", mode: "closed" });
+        announce({ pane: "left", mode: "docked" });
+        expect(controller?.mode).toBe("peek");
+
+        // Another pane's peek dismisses it, softly.
+        announce({ pane: "left", mode: "peek" });
+        expect(controller?.mode).toBe("closed");
+        expect(controller?.mounted).toBe(true);
+
+        // A docked pane stays.
+        act(() => controller?.dock());
+        announce({ pane: "left", mode: "peek" });
+        expect(controller?.mode).toBe("docked");
+
+        act(() => render(null, host));
     });
 });
 
@@ -65,11 +210,11 @@ describe("usePeekDismiss", () => {
         document.body.innerHTML = "";
     });
 
-    function renderHook(active: boolean, onDismiss: () => void, keepOpenSelector = "#right-pane") {
+    function renderHook(active: boolean, onDismiss: () => void, keepOpenSelector = "#right-pane", focusSelector?: string) {
         const host = document.createElement("div");
         document.body.appendChild(host);
         function Harness() {
-            usePeekDismiss(active, onDismiss, { keepOpenSelector });
+            usePeekDismiss(active, onDismiss, { keepOpenSelector, focusSelector });
             return null;
         }
         // act() flushes the effect so the document listeners are attached before we dispatch.
@@ -81,6 +226,9 @@ describe("usePeekDismiss", () => {
         document.body.innerHTML = `
             <div id="right-pane"></div>
             <ul class="dropdown-menu"></ul>
+            <div class="attr-detail"><input class="attr-input" /></div>
+            <div class="form-autocomplete-dropdown"><li class="suggestion"></li></div>
+            <div id="context-menu-container"><li class="menu-item"></li></div>
             <div id="center-pane"></div>
         `;
         const onDismiss = vi.fn();
@@ -90,6 +238,11 @@ describe("usePeekDismiss", () => {
         document.querySelector("#right-pane")?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
         // ...as does a default popup root (not in keepOpenSelector, but in the built-in allowlist).
         document.querySelector(".dropdown-menu")?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+        // Body-portalled popups spawned from within the pane keep it open too: the attribute
+        // detail popup and its fields, the autocomplete dropdown, and the context menu.
+        document.querySelector(".attr-input")?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+        document.querySelector(".suggestion")?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+        document.querySelector(".menu-item")?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
         expect(onDismiss).not.toHaveBeenCalled();
 
         // A press anywhere else dismisses.
@@ -112,5 +265,62 @@ describe("usePeekDismiss", () => {
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
         expect(onDismiss).toHaveBeenCalledTimes(1);
         unmountActive();
+    });
+
+    it("leaves an Escape an inner element already answered alone", () => {
+        const onDismiss = vi.fn();
+        const unmount = renderHook(true, onDismiss);
+
+        // What a dropdown closing itself on Escape leaves behind: the press is spent, and the pane
+        // it was opened from stays where it is.
+        const handled = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+        handled.preventDefault();
+        document.dispatchEvent(handled);
+        expect(onDismiss).not.toHaveBeenCalled();
+
+        // Any other key is not this hook's business either.
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+        expect(onDismiss).not.toHaveBeenCalled();
+
+        unmount();
+    });
+
+    it("stops listening once the watch is stopped, for callers outside Preact", () => {
+        const onDismiss = vi.fn();
+        const stop = watchPeekDismiss(onDismiss, { keepOpenSelector: "#right-pane" });
+
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+
+        stop();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it("marks the body while any peek is open, including two that overlap", () => {
+        const stopLeft = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#left-pane" });
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        // The next peek starts before the previous one is dismissed.
+        const stopRight = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#right-pane" });
+        stopLeft();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        stopRight();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(false);
+    });
+
+    it("hands the focus back to what opened the peek, where it was told what that is", () => {
+        document.body.innerHTML = `<button class="peek-button"></button>`;
+        const onDismiss = vi.fn();
+        const unmount = renderHook(true, onDismiss, "#right-pane", ".peek-button");
+
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+        // Escape is a keyboard gesture, so the keyboard is left somewhere it can go on from.
+        expect(document.activeElement).toBe(document.querySelector(".peek-button"));
+
+        unmount();
     });
 });

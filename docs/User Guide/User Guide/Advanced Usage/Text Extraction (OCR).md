@@ -16,17 +16,27 @@ OCR in Trilium supports the following formats:
 ### Images
 
 *   Both [individual image notes](../Note%20Types/File.md) and [attachments in text files](../Note%20Types/Text/Images.md) are supported.
-*   Supported formats: JPEG, PNG, GIF, BMP, TIFF, WebP.
-*   Currently only single-page TIFFs are supported. If you have multi-page TIFFs consider splitting them into individual images.
+*   Supported formats:
+    *   JPEG
+    *   PNG
+    *   GIF (only non-animated)
+    *   BMP
+    *   WebP
 *   Note that this feature works best for computer-rendered text rather than handwriting.
 *   The underlying technology is Tesseract.js.
 
 ### PDFs
 
-Currently only text extraction is supported and not OCR.
+The PDF extraction supports:
 
-*   This means that the PDF needs to have proper text information in it (i.e. the text can be selected in a PDF viewer), whereas scanned documents are not yet supported.
-*   There are plans to integrate the same OCR-based recognition for PDFs used for images, but this is not yet implemented.
+*   PDFs with text information (e.g. a PDF created by a browser or a word processing application), in which the text is extracted.
+*   Scanned PDFs, and other PDFs whose text cannot be selected (such as documents whose text was converted to outlines), in which the text is extracted through an OCR process.
+*   Mixed PDFs, containing both text and images with text content.
+
+Note that OCR extraction is limited to 50 pages per PDF, pages containing text information (not as an image) are not subject to this limitation.
+
+> [!NOTE]
+> Text extraction for scanned PDFs using OCR was introduced in v0.106.0. If a scanned PDF was already processed by an earlier version, reprocess it individually via _Process OCR_; batch processing only handles files that haven't been OCR'd yet.
 
 ### Office documents
 
@@ -38,7 +48,8 @@ The text will be extracted from the following file formats:
     *   Values are extracted raw, so searching for dates will not work. The OpenDocument alternative will actually extract the properly formatted value.
 *   Microsoft PowerPoint documents
 *   The OpenDocument alternatives to the previous formats (Text, Spreadsheet, Presentation), created by editors such as LibreOffice and OpenOffice.
-*   Rich Text Format (RTF), since v0.104.0.
+*   [Rich Text Format (RTF)](https://en.wikipedia.org/wiki/Rich_Text_Format), since v0.104.0.
+*   [EPUB](https://en.wikipedia.org/wiki/EPUB), since v0.104.1.
 
 ## Configuring and triggering OCR
 
@@ -79,7 +90,7 @@ To enforce the detection in a particular language for a given note, use the `lan
 
 To access the extracted content of a note:
 
-*   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Advanced_ → _View OCR Text_.
+*   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ → _View OCR Text_.
 *   For <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> (e.g. <a class="reference-link" href="../Note%20Types/Text/Images.md">Images</a> in <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes), double-click the attachment to view the details, press the \[…\] button at the left and select _View extracted text (OCR)_.
 
 This section allows:

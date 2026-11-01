@@ -298,7 +298,9 @@ for (const note of childNotes) {
     const xmlBuffer = zlib.gunzipSync(content);
     const xmlString = xmlBuffer.toString("utf-8");
 
-    api.xml2js.parseString(xmlString, (err: Error | null, result: Record<string, unknown>) => {
+    // `BackendApi` types `xml2js` as `unknown` to keep the editor's type surface import-free.
+    const xml2js = api.xml2js as typeof import("xml2js");
+    xml2js.parseString(xmlString, (err: Error | null, result: Record<string, unknown>) => {
         if (err) {
             api.log(`auto-import-xopp: failed to parse XML for "${note.title}": ${err.message}`);
             return;

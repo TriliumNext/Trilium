@@ -1,55 +1,152 @@
 import "./index.css";
 
-import { divIcon, GPXOptions, LatLng, LeafletMouseEvent } from "leaflet";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerIconShadow from "leaflet/dist/images/marker-shadow.png";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import type { Map as MapLibreGLMap } from "maplibre-gl";
+import { createPortal } from "preact";
+import { lazy, Suspense } from "preact/compat";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { getNoteImageUrl } from "../../../services/image_urls";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import { escapeHtml } from "../../../services/utils";
+import { fileAccept } from "../../../services/utils";
+import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import ActionButton from "../../react/ActionButton";
-import { ButtonOrActionButton } from "../../react/Button";
-import { useCollectionTreeDrag, useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { FormListItem } from "../../react/FormList";
+import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";
-import { createNewNote, moveMarker } from "./api";
-import openContextMenu, { openMapContextMenu } from "./context_menu";
-import Map from "./map";
-import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
-import Marker, { GpxTrack } from "./marker";
+import { createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker } from "./api";
+import Buildings from "./Buildings";
+import ContextMenus from "./ContextMenus";
+import { pointPlace } from "./coordinates";
+import DetailPane, { PaneSelection } from "./DetailPane";
+import DrawShape, { DrawTool } from "./DrawShape";
+import DrawToolbar from "./DrawToolbar";
+import EditToolbar from "./EditToolbar";
+import GhostPin from "./GhostPin";
+import ImageRulers from "./ImageRulers";
+import { GPX_MIME, GpxTrack } from "./GpxTrack";
+import type { GeoSearchResult } from "./geocoding";
+import Map, { type CameraLimits, DEFAULT_ZOOM, GeoMouseEvent } from "./map";
+import { DEFAULT_MAP_LAYER_NAME, isTileUrl, MAP_LAYERS, MapLayer } from "./map_layer";
+import MapToolbar from "./MapToolbar";
+import Markers, { DEFAULT_MARKER_COLOR, FitToNotes } from "./Markers";
+import PlaceMarker from "./PlaceMarker";
+import PlacePanel from "./PlacePanel";
+import Pois from "./Pois";
+import ResultNavigator from "./ResultNavigator";
+import { NOTE_ZOOM, type SearchResult } from "./results";
+import SearchBox from "./SearchBox";
+import { ShapeLayer, ShapeNames } from "./ShapeLayer";
+import type { GeoShape } from "./shapes";
+import { geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext, parseImageExtent } from "./space";
+import Tooltips from "./Tooltips";
 
-const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
-const DEFAULT_ZOOM = 2;
-export const LOCATION_ATTRIBUTE = "geolocation";
+/**
+ * Where a map stands when there is nothing to stand it on: no view has been saved and no note it
+ * holds has a place. Latitude first, as {@link MapData} holds a centre.
+ *
+ * A little north of the equator on the prime meridian, which at {@link DEFAULT_ZOOM} is most of the
+ * inhabited world. A map that holds located notes never opens here — it frames them instead (see
+ * {@link FitToNotes}).
+ */
+const DEFAULT_COORDINATES: [number, number] = [20, 0];
 
-interface MapData {
-    view?: {
-        center?: LatLng | [number, number];
-        zoom?: number;
-    };
+/**
+ * The instruction toast that says what the map is waiting for. One id for both kinds of placement:
+ * only one of them can be armed at a time, and reusing the id means arming the other while one is up
+ * rewrites that toast rather than stacking a second one under it.
+ */
+const PLACEMENT_TOAST_ID = "geo-placement";
+
+/**
+ * How long a place is stood on before its boundary is asked for. Long enough that stepping through
+ * results asks for nothing on the way past, short enough not to be waited on once the stepping stops.
+ */
+const OUTLINE_DELAY_MS = 250;
+
+export interface MapData {
+    view?: SavedView;
+    /** The view of the same map drawn over its image (`~map:image`), whose positions say nothing
+     *  about the world map's, so that switching between the two restores each. */
+    imageView?: SavedView;
 }
 
-enum State {
-    Normal,
-    NewNote
+interface SavedView {
+    center?: { lat: number; lng: number } | [number, number];
+    zoom?: number;
 }
 
-export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<MapData>) {
-    const [ state, setState ] = useState(State.Normal);
-    const [ coordinates, setCoordinates ] = useState(viewConfig?.view?.center);
-    const [ zoom, setZoom ] = useState(viewConfig?.view?.zoom);
+/**
+ * What the next click on the map is for, where it is for anything at all: a new note is to be created
+ * there, the marker of the note named here is to be moved there, or a shape is being drawn point by
+ * point. `undefined` is a map that is only being looked at, which is every map most of the time.
+ *
+ * One state rather than three because they are alternatives, a click meaning only one of them, and
+ * because the note being moved has nowhere else to be kept where it could not go missing. Drawing
+ * takes many clicks rather than one, so the map's own click handler leaves it alone (see onClick)
+ * and the clicks belong to {@link DrawShape} until the session finishes or is disarmed.
+ */
+type Placement =
+    | { mode: "new" }
+    | { mode: "move"; noteId: string }
+    | { mode: "draw"; tool: DrawTool };
+
+export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenNote }: ViewModeProps<MapData>) {
+    const { noteContext } = useNoteContext();
+    const [ placement, setPlacement ] = useState<Placement>();
+    // Which marker the detail pane stands for. Held here rather than in the pane so that creating a
+    // note can open the pane on it (see createNoteAt below).
+    const [ selection, setSelection ] = useState<PaneSelection | null>(null);
+    // The place taken from the search, standing on the map under a pin of its own until it is kept as
+    // a note or dismissed. It and the selection above are one state between them: both are what the
+    // map is currently standing on, and both are shown in the same corner.
+    const [ pickedPlace, setPickedPlace ] = useState<GeoSearchResult>();
+    const [ placeOutline, setPlaceOutline ] = useState<GeoJSON.Geometry>();
+    // What the last search offered and which of it the map stands on, so the rest can be stepped
+    // through once the list has stood down (see ResultNavigator).
+    const [ walk, setWalk ] = useState<{ results: SearchResult[]; index: number }>();
+    // Which pick the map stands on, so a boundary arriving after a later one is dropped rather than
+    // drawn around whatever took its place.
+    const latestPlacePick = useRef(0);
+    const outlineTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    // Gives up a boundary lookup already under way, which hands back its place in the geocoder's
+    // request queue: the next search would otherwise wait out a boundary nobody is looking at.
+    const outlineRequest = useRef<AbortController | undefined>(undefined);
+    // Held still between renders: the pin's layer is rebuilt whenever it is handed a different one,
+    // and an array literal is different every time (see PlaceMarker).
+    const placeCenter = useMemo<[number, number] | null>(
+        () => pickedPlace ? [ pickedPlace.lng, pickedPlace.lat ] : null, [ pickedPlace ]);
+    // Whether that pane has been grown over the map. Held here for the reason the selection is: what
+    // the map places around the pane has to know of it too (see the maximized pane in DetailPane).
+    const [ paneMaximized, setPaneMaximized ] = useState(false);
+    const [ coordinates, setCoordinates ] = useState<SavedView["center"]>();
+    const [ zoom, setZoom ] = useState<number>();
     const [ hasScale ] = useNoteLabelBoolean(note, "map:scale");
     const [ hideLabels ] = useNoteLabelBoolean(note, "map:hideLabels");
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const [ clustered ] = useNoteLabelBoolean(note, "map:cluster");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     const [ notes, setNotes ] = useState<FNote[]>([]);
-    const layerData = useLayerData(note);
+    const imageMap = useImageMap(note);
+    const image = imageMap.status === "image" ? imageMap : undefined;
+    const space = image?.space ?? geoSpace;
+    const isGeo = space.kind === "geo";
+    const [ isEditingProperties, setIsEditingProperties ] = useState(false);
+
+    // The note actions menu offers the properties dialog, which lives here rather than in the menu.
+    useTriliumEvent("showCollectionProperties", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId && !isReadOnly) {
+            setIsEditingProperties(true);
+        }
+    });
+    const viewKey = isGeo ? "view" : "imageView";
+    const savedView = viewConfig?.[viewKey];
+    const layerData = useLayerData(note, image);
     const spacedUpdate = useSpacedUpdate(() => {
         if (viewConfig) {
             saveConfig(viewConfig);
@@ -60,62 +157,250 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
 
     useEffect(() => {
         if (!note) return;
-        setCoordinates(viewConfig?.view?.center ?? DEFAULT_COORDINATES);
-        setZoom(viewConfig?.view?.zoom ?? DEFAULT_ZOOM);
-    }, [ note, viewConfig ]);
+        // An image map with no saved view is fitted to its image as soon as it is drawn (see
+        // FitToNotes), so where it starts out matters only for the frame before that.
+        setCoordinates(savedView?.center ?? (image ? imageCenter(image.space) : DEFAULT_COORDINATES));
+        setZoom(savedView?.zoom ?? DEFAULT_ZOOM);
+    }, [ note, savedView, image ]);
 
-    // Note creation. Scoped to this map instance via a local callback rather than the global
-    // geoMapCreateChildNote command: embedded maps share no note context (no distinct ntxId), so a
-    // broadcast command would arm placement mode on every map at once. The button is this command's
-    // only trigger, so a direct handler keeps it isolated to the clicked map.
-    const startNotePlacement = useCallback(() => setState(State.NewNote), []);
+    // Note creation and marker relocation. Both are scoped to this map instance via local callbacks
+    // rather than global commands: embedded maps share no note context (no distinct ntxId), so a
+    // broadcast command would arm placement mode on every map at once. The edit bar and the marker's
+    // context menu are these callbacks' only triggers, so a direct handler keeps each isolated to the
+    // map that was clicked.
+    //
+    // A toggle rather than an arming: the button on the edit bar shows the mode as held down, so
+    // pressing it again is the visible way out of it — the counterpart of the toast's Escape. It
+    // also takes over a map armed to move a marker, a press on + saying what the next click is for
+    // more plainly than whatever was armed before.
+    /** Forgets the place the map was standing on, and whatever was still to be fetched for it. */
+    const forgetPlace = useCallback(() => {
+        latestPlacePick.current++;
+        clearTimeout(outlineTimer.current);
+        outlineRequest.current?.abort();
+        setPickedPlace(undefined);
+        setPlaceOutline(undefined);
+    }, []);
 
-    // Placement mode (NewNote) is armed by the button. Tying the instruction toast and the global
-    // Escape-to-cancel listener to the state (rather than the click handler) guarantees both are
-    // torn down on cancel, on completion (map click) and on unmount — otherwise the listener leaks
-    // and a fresh one accumulates on every placement cycle.
+    // Nothing is left waiting to be fetched for a map that is no longer on the screen.
+    useEffect(() => () => {
+        clearTimeout(outlineTimer.current);
+        outlineRequest.current?.abort();
+    }, []);
+
+    /** Opens the pane on a note, which sends away the searched place the panel would otherwise share
+     *  a corner with. */
+    const selectNote = useCallback((next: PaneSelection | null) => {
+        if (next && onOpenNote) {
+            onOpenNote(next.noteId);
+            return;
+        }
+
+        setSelection(next);
+        if (next) {
+            forgetPlace();
+        }
+    }, [ forgetPlace, onOpenNote ]);
+
+    /** Stands the map on a place found by searching, and fetches the ground it covers where it covers
+     *  any (see PlaceMarker). */
+    const pickPlace = useCallback((place: GeoSearchResult | null) => {
+        const pickId = ++latestPlacePick.current;
+        clearTimeout(outlineTimer.current);
+        outlineRequest.current?.abort();
+        setPickedPlace(place ?? undefined);
+        setPlaceOutline(undefined);
+        if (place) {
+            setSelection(null);
+        }
+
+        const fetchOutline = place?.outline;
+        if (!fetchOutline) return;
+
+        // Held back until the reader has settled on a place rather than fetched for each one they
+        // pass. The geocoder answers one request a second and the searches queue behind the same
+        // count, so a boundary nobody waited to see would be waited out by the next search.
+        outlineTimer.current = setTimeout(() => {
+            const request = new AbortController();
+            outlineRequest.current = request;
+            fetchOutline(request.signal)
+                .then((outline) => {
+                    if (outline && latestPlacePick.current === pickId) {
+                        setPlaceOutline(outline);
+                    }
+                })
+                .catch((e) => logError(`Fetching the boundary of "${place.label}" failed: ${e}`));
+        }, OUTLINE_DELAY_MS);
+    }, []);
+
+    /**
+     * Points the map at the device's position the same way it points at a typed coordinate: pickPlace
+     * opens it as a place, offered for keeping as a marker (see PlacePanel). Does nothing while a click
+     * is armed to place a note instead.
+     */
+    const showLocation = useCallback((location: { lat: number; lng: number }) => {
+        if (placement) return;
+        pickPlace(pointPlace([ roundCoordinate(location.lng), roundCoordinate(location.lat) ]));
+    }, [ placement, pickPlace ]);
+
+    /**
+     * Stands the map on one of a search's results: a place under a pin of its own, or a note of the
+     * map's own in the detail pane. Where the map is pointed is the caller's, which is the one thing
+     * that differs between taking a result from the list and stepping onto it.
+     */
+    const showResult = useCallback((results: SearchResult[], index: number) => {
+        setWalk({ results, index });
+
+        const result = results[index];
+        if (result.kind === "place") {
+            pickPlace(result.place);
+        } else {
+            // The pane aims the camera at the marker, so it is given the zoom to aim at as well.
+            selectNote({ noteId: result.noteId, zoom: NOTE_ZOOM });
+        }
+    }, [ pickPlace, selectNote ]);
+
+    /** Takes the search off the map altogether: what it was standing on, and the rest it offered. */
+    const clearSearch = useCallback(() => {
+        setWalk(undefined);
+        forgetPlace();
+    }, [ forgetPlace ]);
+
+    /** Keeps the place the map stands on as a note of its own, which is what turns its pin into a
+     *  marker; the pane then opens on the note as any other newly created one. */
+    const keepPlaceAsMarker = useCallback(async () => {
+        if (!pickedPlace) return;
+
+        const created = await createNoteForPlace(note, pickedPlace);
+        if (!created) return;
+
+        setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
+        // A place named only by where it stands gave the note nothing to be called, so the pane
+        // opens with the stock title picked out, exactly as it does over a marker just placed.
+        selectNote({ noteId: created.noteId, isNew: pickedPlace.unnamed });
+    }, [ note, pickedPlace, selectNote ]);
+
+    const toggleNotePlacement = useCallback(() => {
+        setPlacement((current) => current?.mode === "new" ? undefined : { mode: "new" });
+    }, []);
+    const startMarkerRelocation = useCallback((noteId: string) => setPlacement({ mode: "move", noteId }), []);
+    const toggleDrawing = useCallback((tool: DrawTool) => {
+        // A press on the armed tool disarms the map, and a press on another switches to it, as
+        // the marker button takes over a map armed to move a marker.
+        setPlacement((current) => current?.mode === "draw" && current.tool === tool ? undefined : { mode: "draw", tool });
+    }, []);
+
+    /**
+     * Creates the note for a finished shape and opens the pane on it, title selected, as a placed
+     * marker is offered for naming (see createNoteAt). Disarming comes first, so a failure to
+     * create the note does not leave the map still drawing.
+     */
+    const finishShape = useCallback(async (shape: GeoShape) => {
+        setPlacement(undefined);
+
+        const created = await createShapeNote(space, note, shape);
+        if (!created) return;
+
+        setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
+        selectNote({ noteId: created.noteId, isNew: true });
+    }, [ space, note, selectNote ]);
+
+    /**
+     * Creates a note where the click landed and opens the pane on it, title selected, so naming the
+     * place is typing over the stock name — there is no dialog between the click and the note (see
+     * createNewNote). Serving both ways of asking for a note: the armed click and the right-click menu.
+     *
+     * The note is put among the map's own before the pane is pointed at it. It is already a child —
+     * the collection just has not reloaded around it yet — and the pane closes itself over a
+     * selection it cannot find, so waiting for the reload would open the pane on a note it refuses.
+     * The marker appears with the pane rather than after it, which is no accident either.
+     */
+    const createNoteAt = useCallback(async (e: GeoMouseEvent) => {
+        const created = await createNewNote(space, note, e);
+        if (!created) return;
+
+        setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
+        selectNote({ noteId: created.noteId, isNew: true });
+    }, [ space, note ]);
+
+    /**
+     * Asks for a GPX file and brings it onto the map as a child note (see importGpxTrack). The
+     * note is put among the map's own straight away, as a created note is, so the track is drawn
+     * the moment the file is read rather than after the collection reloads around it.
+     *
+     * The pane opens on it too, as it opens on a note just placed — and it is the pane's own fit
+     * that brings the track into view (see DetailPane), waiting on the line if it has not been
+     * drawn yet, so a file from the other side of the world does not land off-screen. Unlike a
+     * placed note the title is not offered for typing over: the file's name already names it.
+     */
+    const addGpxTrack = useCallback(async () => {
+        const file = await pickGpxFile();
+        if (!file) return;
+
+        const created = await importGpxTrack(note, file);
+        if (!created) return;
+
+        setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
+        selectNote({ noteId: created.noteId });
+    }, [ note ]);
+
+    // Placement mode is armed by the button or by the context menu. Tying the instruction toast and
+    // the global Escape-to-cancel listener to the state (rather than the handler that armed it)
+    // guarantees both are torn down on cancel, on completion (map click) and on unmount — otherwise
+    // the listener leaks and a fresh one accumulates on every placement cycle.
     useEffect(() => {
-        if (state !== State.NewNote) return;
+        if (!placement) return;
 
         toast.showPersistent({
-            icon: "plus",
-            id: "geo-new-note",
-            title: t("geo-map.create-child-note-toast-title"),
-            message: t("geo-map.create-child-note-instruction")
+            id: PLACEMENT_TOAST_ID,
+            ...(placement.mode === "new"
+                ? {
+                    icon: "plus",
+                    title: t("geo-map.create-child-note-toast-title"),
+                    message: t("geo-map.create-child-note-instruction")
+                }
+                : placement.mode === "move"
+                    ? {
+                        icon: "move",
+                        title: t("geo-map.move-marker-toast-title"),
+                        message: t("geo-map.move-marker-instruction")
+                    }
+                    : drawingToast(placement.tool))
         });
 
         const globalKeyListener = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                setState(State.Normal);
+                setPlacement(undefined);
             }
         };
         window.addEventListener("keydown", globalKeyListener);
 
         return () => {
             window.removeEventListener("keydown", globalKeyListener);
-            toast.closePersistent("geo-new-note");
+            toast.closePersistent(PLACEMENT_TOAST_ID);
         };
-    }, [ state ]);
+    }, [ placement ]);
 
-    useTriliumEvent("deleteFromMap", ({ noteId }) => {
-        moveMarker(noteId, null);
-    });
+    const onClick = useCallback(async (e: GeoMouseEvent) => {
+        // A drawing session's clicks are its vertices, so this handler neither consumes them nor
+        // disarms on them: the session runs until it finishes or is disarmed.
+        if (!placement || placement.mode === "draw") return;
 
-    const onClick = useCallback(async (e: LeafletMouseEvent) => {
-        if (state === State.NewNote) {
-            // Leaving NewNote closes the instruction toast via the placement-mode effect cleanup.
-            await createNewNote(note, e);
-            setState(State.Normal);
+        // Leaving placement mode closes the instruction toast via the effect's cleanup. The state is
+        // cleared first either way, so a failure to write the location does not leave the map armed
+        // for a click the user has stopped expecting to mean anything.
+        setPlacement(undefined);
+
+        if (placement.mode === "new") {
+            await createNoteAt(e);
+        } else {
+            await moveMarker(space, placement.noteId, e.latlng);
         }
-    }, [ note, state ]);
-
-    const onContextMenu = useCallback((e: LeafletMouseEvent) => {
-        openMapContextMenu(note, e, !isReadOnly);
-    }, [ note, isReadOnly ]);
+    }, [ space, placement, createNoteAt ]);
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<L.Map>(null);
+    const apiRef = useRef<MapLibreGLMap>(null);
     useCollectionTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         includeArchived,
@@ -130,150 +415,340 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             const offset = containerRef.current?.getBoundingClientRect();
             const x = e.clientX - (offset?.left ?? 0);
             const y = e.clientY - (offset?.top ?? 0);
-            const latlng = api.containerPointToLatLng([ x, y ]);
+            const lngLat = api.unproject([ x, y ]);
+            const latlng = { lat: lngLat.lat, lng: lngLat.lng };
 
             const targetNote = await froca.getNote(noteId, true);
             const parents = targetNote?.getParentNoteIds();
             if (parents?.includes(note.noteId)) {
-                await moveMarker(noteId, latlng);
+                await moveMarker(space, noteId, latlng);
                 return [];
             }
 
             await branches.cloneNoteToParentNote(noteId, note.noteId);
-            await moveMarker(noteId, latlng);
+            await moveMarker(space, noteId, latlng);
             return [ noteId ];
         }
     });
 
     return (
-        <div className={`geo-view ${state === State.NewNote ? "placing-note" : ""}`}>
+        <div className={`geo-view ${placement ? "placing-note" : ""}`}>
+            {/* Nothing of its own at the end: locking is the read-only badge's, and adding a note
+                lives on the map itself (see EditToolbar), where it survives the map going
+                fullscreen without this bar. */}
             <CollectionProperties
                 note={note}
-                rightChildren={<>
-                    <ToggleReadOnlyButton note={note} />
-                    <ButtonOrActionButton
-                        icon="bx bx-plus"
-                        text={t("geo-map.create-child-note-text")}
-                        title={t("geo-map.create-child-note-title")}
-                        onClick={startNotePlacement}
-                        disabled={isReadOnly}
-                    />
-                </>}
+                optionsChildren={!isReadOnly && (
+                    <FormListItem icon="bx bx-cog" onClick={() => setIsEditingProperties(true)}>
+                        {t("geo-map.properties")}
+                    </FormListItem>
+                )}
             />
-            { coordinates !== undefined && zoom !== undefined && <Map
+            {imageMap.status === "error" && <NoItems
+                icon="bx bx-image-alt"
+                text={t(imageMap.reason === "svg" ? "geo-map.image-svg-unsupported" : "geo-map.image-unavailable")}
+            />}
+            { coordinates !== undefined && zoom !== undefined && imageMap.status !== "loading" && imageMap.status !== "error" &&
+            <MapSpaceContext.Provider value={space}><Map
+                // Built afresh when the image changes: the camera's limits are fixed when the map
+                // is made, and they are the image's.
+                key={image?.url ?? "geo"}
                 apiRef={apiRef} containerRef={containerRef}
                 coordinates={coordinates}
                 zoom={zoom}
                 layerData={layerData}
                 viewportChanged={(coordinates, zoom) => {
                     if (!viewConfig) viewConfig = {};
-                    viewConfig.view = { center: coordinates, zoom };
+                    viewConfig[viewKey] = { center: coordinates, zoom };
                     spacedUpdate.scheduleUpdate();
                 }}
                 onClick={onClick}
-                onContextMenu={onContextMenu}
-                scale={hasScale}
+                scale={hasScale && isGeo}
+                limits={image && imageLimits(image.space)}
             >
-                {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)}
-            </Map>}
+                {/* Searching looks up places as well as the map's own notes, which an image has
+                    none of. */}
+                {isGeo && <SearchBox
+                    notes={notes}
+                    onPickResult={(picked) => picked ? showResult(picked.results, picked.index) : clearSearch()}
+                />}
+                {walk && <ResultNavigator
+                    results={walk.results} index={walk.index}
+                    onStep={(index) => showResult(walk.results, index)}
+                />}
+                {pickedPlace && placeCenter && <>
+                    <PlaceMarker
+                        center={placeCenter} name={pickedPlace.name} icon={pickedPlace.icon}
+                        outline={placeOutline} isDarkTheme={layerData.isDarkTheme ?? false}
+                    />
+                    <PlacePanel
+                        place={pickedPlace} isReadOnly={isReadOnly}
+                        onAddMarker={keepPlaceAsMarker} onClose={() => pickPlace(null)}
+                    />
+                </>}
+                <MapToolbar onLocationClick={isGeo ? showLocation : undefined} canLocate={isGeo} />
+                <EditToolbar
+                    isReadOnly={isReadOnly}
+                    placing={placement?.mode === "new"}
+                    onTogglePlacement={toggleNotePlacement}
+                    onAddGpxTrack={isGeo ? addGpxTrack : undefined}
+                />
+                <DrawToolbar
+                    isReadOnly={isReadOnly}
+                    drawingTool={placement?.mode === "draw" ? placement.tool : null}
+                    onToggleDrawing={toggleDrawing}
+                />
+                <Tooltips selectedNoteId={selection?.noteId ?? null} paneMaximized={paneMaximized} />
+                {/* The preview under the pointer while a click is armed to mean a place — the note
+                    being moved wearing its own pin, a note to be created wearing the one the map
+                    would give it (see GhostPin). Terra Draw previews a drawing session itself. */}
+                {placement && placement.mode !== "draw" && <GhostPin
+                    parentNote={note}
+                    note={placement.mode === "move"
+                        ? notes.find((n) => n.noteId === placement.noteId)
+                        : undefined}
+                />}
+                {placement?.mode === "draw" && <DrawShape tool={placement.tool} onFinish={finishShape} />}
+                <DetailPane
+                    notes={notes} parentNote={note} placing={!!placement} isReadOnly={isReadOnly}
+                    selection={selection} onSelect={selectNote} onRelocate={startMarkerRelocation}
+                    maximized={paneMaximized} onMaximizedChange={setPaneMaximized}
+                />
+                <ContextMenus parentNote={note} isReadOnly={isReadOnly} onRelocate={startMarkerRelocation} onCreateNote={createNoteAt} />
+                {/* Stood up only while the view is leaned over, so the 3D button changes the map
+                    and not merely the angle it is seen from. */}
+                {isGeo && <Buildings isDarkTheme={layerData.isDarkTheme ?? false} />}
+                {/* The scale an image map has instead of a distance in meters. */}
+                {image && hasScale && <ImageRulers space={image.space} isDarkTheme={layerData.isDarkTheme ?? false} />}
+                {/* The places the base map itself draws answer a click, which is a marker named and
+                    placed without typing either (see Pois). */}
+                {isGeo && <Pois placing={!!placement} onPick={pickPlace} />}
+                {/* The pane above is what a click on a marker opens now, so the markers no longer
+                    open the note themselves — the two would otherwise both answer the same click,
+                    raising the quick editor over the pane that had just opened behind it. */}
+                <Markers notes={notes} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} clustered={clustered} placing={!!placement} opensNotes={false} selectedNoteId={selection?.noteId ?? null} />
+                {isGeo && notes.map(note => <NoteGpxTrackWrapper key={note.noteId} note={note} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} />)}
+                {notes.map(note => <NoteShapeWrapper key={note.noteId} note={note} />)}
+                {/* One binding for every shape's layers, rather than one per shape (see ShapeNames). */}
+                <ShapeNames />
+                <FitToNotes notes={notes} enabled={!savedView} bounds={image?.space.bounds} />
+            </Map></MapSpaceContext.Provider>}
+            {isEditingProperties && createPortal(
+                <Suspense fallback={null}>
+                    <GeoMapProperties
+                        note={note}
+                        image={imageMap.status === "image"
+                            ? { status: "image", size: imageMap.space.size }
+                            : imageMap}
+                        onClose={() => setIsEditingProperties(false)}
+                    />
+                </Suspense>,
+                document.body
+            )}
         </div>
     );
 }
 
-function useLayerData(note: FNote) {
+/** Loaded when the properties dialog is first opened. */
+const GeoMapProperties = lazy(() => import("./GeoMapProperties"));
+
+/**
+ * Rounds a coordinate to six decimals, the precision a place is named and stored at (see
+ * `formatLocation` in Markers). A geolocation fix reports far more digits than that.
+ */
+function roundCoordinate(value: number) {
+    return Number(value.toFixed(6));
+}
+
+/**
+ * Asks the user for a GPX file, resolving to none where the dialog is dismissed.
+ *
+ * A detached input rather than one rendered somewhere: the browser only wants an input to open its
+ * file dialog through, and a rendered one would be a piece of DOM standing around for the one
+ * moment a button is pressed. The `cancel` event is how a file input reports the dialog closed
+ * empty-handed; a browser old enough not to fire it leaves an already-forgotten promise unsettled,
+ * which is the same nothing the caller does on null.
+ */
+function pickGpxFile(): Promise<File | null> {
+    return new Promise((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = fileAccept(".gpx,application/gpx+xml");
+        input.addEventListener("change", () => resolve(input.files?.[0] ?? null));
+        input.addEventListener("cancel", () => resolve(null));
+        input.click();
+    });
+}
+
+/**
+ * What an image map is drawn over, followed through `~map:image`: the picture's URL and the space
+ * its natural size makes (see {@link imageSpace}). A map without the relation is a geo map.
+ *
+ * The image is loaded here once to be measured, which MapLibre then loads again from the browser's
+ * cache. Its size has to be known before the map is built, since the camera's limits are (see
+ * {@link imageLimits}).
+ */
+type ImageMapState =
+    | { status: "geo" }
+    | { status: "loading" }
+    | { status: "error"; reason: "unloadable" | "svg" }
+    | { status: "image"; url: string; space: ImageSpace };
+
+function useImageMap(note: FNote): ImageMapState {
+    const [ imageNoteId ] = useNoteRelation(note, "map:image");
+    const [ boundsValue ] = useNoteLabel(note, "map:imageBounds");
+    const [ image, setImage ] = useState<LoadedImage>(imageNoteId ? { status: "loading" } : { status: "geo" });
+    // Bumped when the image note's content or title changes, which loads the picture again under a
+    // URL of its own, so neither the browser's cache nor MapLibre's keeps the old one.
+    const [ version, setVersion ] = useState(0);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (imageNoteId && (loadResults.isNoteContentReloaded(imageNoteId) || loadResults.isNoteReloaded(imageNoteId))) {
+            setVersion((current) => current + 1);
+        }
+    });
+
+    useEffect(() => {
+        if (!imageNoteId) {
+            setImage({ status: "geo" });
+            return;
+        }
+
+        let cancelled = false;
+        setImage({ status: "loading" });
+
+        const fail = (reason: "unloadable" | "svg", detail?: unknown) => {
+            if (cancelled) return;
+            if (reason === "unloadable") {
+                logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded${detail ? `: ${detail}` : "."}`);
+            }
+            setImage({ status: "error", reason });
+        };
+
+        (async () => {
+            const imageNote = await froca.getNote(imageNoteId, true);
+            // MapLibre decodes an image source with `createImageBitmap`, which refuses SVG, and
+            // would leave the map blank with only a console warning to show for it.
+            if (imageNote?.mime === "image/svg+xml") {
+                fail("svg");
+                return;
+            }
+
+            // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
+            const url = imageNote && new URL(
+                getNoteImageUrl(imageNote.noteId, imageNote.title, `v=${version}`), document.baseURI).href;
+            const size = url ? await measureImage(url) : null;
+            if (!url || !size) {
+                fail("unloadable");
+                return;
+            }
+            if (!cancelled) setImage({ status: "image", url, size });
+        })().catch((e: unknown) => fail("unloadable", e));
+
+        return () => { cancelled = true; };
+    }, [ note.noteId, imageNoteId, version ]);
+
+    // Built apart from the loading, so naming the corners anew does not fetch the image again.
+    // A value that names no corners is read as none, which leaves the image's own pixels.
+    return useMemo(() => image.status === "image"
+        ? { status: "image", url: image.url, space: imageSpace(image.size, parseImageExtent(boundsValue)) }
+        : image, [ image, boundsValue ]);
+}
+
+/** {@link ImageMapState} before the coordinate system is laid over the measured image. */
+type LoadedImage =
+    | Exclude<ImageMapState, { status: "image" }>
+    | { status: "image"; url: string; size: ImageSize };
+
+/** The natural size of the image at `url`, or `null` where it does not load as one. */
+function measureImage(url: string): Promise<ImageSize | null> {
+    return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(image.naturalWidth && image.naturalHeight
+            ? { width: image.naturalWidth, height: image.naturalHeight }
+            : null);
+        image.onerror = () => resolve(null);
+        image.src = url;
+    });
+}
+
+/** Keeps the camera over the image, from showing all of it to a few levels past its own pixels. */
+function imageLimits(space: ImageSpace): CameraLimits {
+    return { minZoom: 0, maxZoom: space.maxZoom, maxBounds: space.maxBounds };
+}
+
+/** The middle of the image, latitude first as {@link MapData} holds a centre. */
+function imageCenter({ bounds: [ [ west, south ], [ east, north ] ] }: ImageSpace): [number, number] {
+    return [ (south + north) / 2, (west + east) / 2 ];
+}
+
+function useLayerData(note: FNote, image: { url: string; space: ImageSpace } | undefined) {
     const [ layerName ] = useNoteLabel(note, "map:style");
+    // Whether the style is a dark one, which decides how a marker's title is drawn over it (see
+    // Markers). Only the style itself can say, and a style named by URL says nothing to us: it is
+    // fetched by the map, and its tiles are pictures besides. So the note is asked instead.
+    const [ isDarkStyle ] = useNoteLabelBoolean(note, "map:darkStyle");
+    const isSystemDark = useColorScheme() === "dark";
     // Memo is needed because it would generate unnecessary reloads due to layer change.
     const layerData = useMemo(() => {
+        if (image) {
+            return {
+                name: "Image",
+                type: "image",
+                url: image.url,
+                corners: image.space.corners,
+                isDarkTheme: isDarkStyle
+            } satisfies MapLayer;
+        }
+
         // Custom layers.
-        if (layerName?.startsWith("http")) {
+        if (isTileUrl(layerName)) {
             return {
                 name: "Custom",
                 type: "raster",
                 url: layerName,
-                attribution: ""
+                attribution: "",
+                isDarkTheme: isDarkStyle
             } satisfies MapLayer;
         }
 
-        // Built-in layers.
+        // Built-in layers, which declare it for themselves. The label is still honoured over one, so
+        // that setting it does something wherever it is set; it can only ever say that a style is
+        // dark, never that it is light, so a built-in dark style keeps its own answer either way.
         const layerData = MAP_LAYERS[layerName ?? ""] ?? MAP_LAYERS[DEFAULT_MAP_LAYER_NAME];
-        return layerData;
-    }, [ layerName ]);
+
+        // Automatic dark/light style switching based on the system color scheme.
+        if ("styleDark" in layerData) {
+            return {
+                ...layerData,
+                style: isSystemDark ? (layerData.styleDark ?? layerData.style) : layerData.style,
+                isDarkTheme: isSystemDark
+            } satisfies MapLayer;
+        }
+
+        return isDarkStyle ? { ...layerData, isDarkTheme: true } : layerData;
+    }, [ image, layerName, isDarkStyle, isSystemDark ]);
 
     return layerData;
 }
 
-function ToggleReadOnlyButton({ note }: { note: FNote }) {
-    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-
-    return <ActionButton
-        text={isReadOnly ? t("toggle_read_only_button.unlock-editing") : t("toggle_read_only_button.lock-editing")}
-        icon={isReadOnly ? "bx bx-lock-open-alt" : "bx bx-lock-alt"}
-        onClick={() => setReadOnly(!isReadOnly)}
-    />;
-}
-
-function NoteWrapper({ note, isReadOnly, hideLabels }: {
-    note: FNote,
-    isReadOnly: boolean,
-    hideLabels: boolean
-}) {
+/**
+ * A GPX note's track, where the note is one.
+ *
+ * Only tracks are rendered a component apiece: a note that merely carries a location is drawn into
+ * the shared symbol layer instead (see {@link Markers}).
+ */
+function NoteGpxTrackWrapper({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabels: boolean, isDarkTheme: boolean }) {
     const mime = useNoteProperty(note, "mime");
-    const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
 
-    if (mime === "application/gpx+xml") {
-        return <NoteGpxTrack note={note} hideLabels={hideLabels} />;
+    if (mime !== GPX_MIME) {
+        return null;
     }
 
-    if (location) {
-        const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;
-        if (!latLng) return;
-        return <NoteMarker note={note} editable={!isReadOnly} latLng={latLng} hideLabels={hideLabels} />;
-    }
+    return <NoteGpxTrack note={note} hideLabels={hideLabels} isDarkTheme={isDarkTheme} />;
 }
 
-function NoteMarker({ note, editable, latLng, hideLabels }: { note: FNote, editable: boolean, latLng: [number, number], hideLabels: boolean }) {
-    // React to changes
-    const [ color ] = useNoteLabel(note, "color");
-    const [ iconClass ] = useNoteLabel(note, "iconClass");
-    const [ archived ] = useNoteLabelBoolean(note, "archived");
-
-    const title = useNoteProperty(note, "title");
-    const icon = useMemo(() => {
-        const titleOrNone = hideLabels ? undefined : title;
-        return buildIcon(note.getIcon(), note.getColorClass() ?? undefined, titleOrNone, note.noteId, archived);
-    }, [ iconClass, color, title, note.noteId, archived, hideLabels ]);
-
-    const onClick = useCallback(() => {
-        appContext.triggerCommand("openInPopup", { noteIdOrPath: note.noteId });
-    }, [ note.noteId ]);
-
-    // Middle click to open in new tab
-    const onMouseDown = useCallback((e: MouseEvent) => {
-        if (e.button === 1) {
-            const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-            appContext.tabManager.openInNewTab(note.noteId, hoistedNoteId);
-            return true;
-        }
-    }, [ note.noteId ]);
-
-    const onDragged = useCallback((newCoordinates: LatLng) => {
-        moveMarker(note.noteId, newCoordinates);
-    }, [ note.noteId ]);
-
-    const onContextMenu = useCallback((e: LeafletMouseEvent) => openContextMenu(note.noteId, e, editable), [ note.noteId, editable ]);
-
-    return latLng && <Marker
-        coordinates={latLng}
-        icon={icon}
-        draggable={editable}
-        onMouseDown={onMouseDown}
-        onDragged={editable ? onDragged : undefined}
-        onClick={!editable ? onClick : undefined}
-        onContextMenu={onContextMenu}
-    />;
-}
-
-function NoteGpxTrack({ note, hideLabels }: { note: FNote, hideLabels?: boolean }) {
+function NoteGpxTrack({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabels?: boolean, isDarkTheme?: boolean }) {
     const [ xmlString, setXmlString ] = useState<string>();
     const blob = useNoteBlob(note);
 
@@ -289,39 +764,75 @@ function NoteGpxTrack({ note, hideLabels }: { note: FNote, hideLabels?: boolean 
     }, [ blob ]);
 
     // React to changes
-    const color = useNoteLabel(note, "color");
-    const iconClass = useNoteLabel(note, "iconClass");
+    const [ color ] = useNoteLabel(note, "color");
+    useNoteLabel(note, "iconClass");
+    // The line is named after the note along its whole length, so a note being renamed has to reach
+    // the map rather than leaving the old name written across the track.
+    const title = useNoteProperty(note, "title") ?? "";
 
-    const options = useMemo<GPXOptions>(() => ({
-        markers: {
-            startIcon: buildIcon(note.getIcon(), note.getColorClass(), hideLabels ? undefined : note.title),
-            endIcon: buildIcon("bxs-flag-checkered"),
-            wptIcons: {
-                "": buildIcon("bx bx-pin")
-            }
-        },
-        polyline_options: {
-            color: note.getLabelValue("color") ?? "blue"
-        }
-    }), [ color, iconClass, hideLabels ]);
-    return xmlString && <GpxTrack gpxXmlString={xmlString} options={options} />;
+    return xmlString && <GpxTrack
+        noteId={note.noteId}
+        title={title}
+        gpxXmlString={xmlString}
+        // The colour and icon rather than anything built from them: the marks are rasterized into
+        // the track's own symbol layer through the shared pin rasterizer (see GpxTrack), so the
+        // start of a track wears exactly the pin its note would wear as a marker.
+        color={color ?? DEFAULT_MARKER_COLOR}
+        iconClass={note.getIcon()}
+        isDarkTheme={isDarkTheme}
+        hideLabels={hideLabels}
+    />;
 }
 
-function buildIcon(bxIconClass: string, colorClass?: string, title?: string, noteIdLink?: string, archived?: boolean) {
-    let html = /*html*/`\
-        <img class="icon" src="${markerIcon}" />
-        <img class="icon-shadow" src="${markerIconShadow}" />
-        <span class="bx ${escapeHtml(bxIconClass)} ${escapeHtml(colorClass ?? "")}"></span>
-        <span class="title-label">${escapeHtml(title ?? "")}</span>`;
+/**
+ * A note's drawn shape, read from the space's shape label (see space.ts). A label that cannot be
+ * parsed draws nothing, as a note with no shape does: the label is user-editable like any other,
+ * and a map is no place to report a parse error.
+ */
+function NoteShapeWrapper({ note }: { note: FNote }) {
+    const space = useContext(MapSpaceContext);
+    const [ shapeValue ] = useNoteLabelByName(note, space.shapeAttribute);
+    const [ color ] = useNoteLabel(note, "color");
 
-    if (noteIdLink) {
-        html = `<div data-href="#root/${escapeHtml(noteIdLink)}" class="${archived ? "archived" : ""}">${html}</div>`;
+    const shape = space.parseShape(shapeValue);
+    if (!shape) {
+        return null;
     }
 
-    return divIcon({
-        html,
-        iconSize: [25, 41],
-        iconAnchor: [12, 41]
-    });
+    return <ShapeLayer
+        noteId={note.noteId}
+        shape={shape}
+        color={color ?? DEFAULT_MARKER_COLOR}
+    />;
+}
+
+/** What the instruction toast says while each tool is armed (see the placement toast above). */
+function drawingToast(tool: DrawTool): { icon: string; title: string; message: string } {
+    switch (tool) {
+        case "line":
+            return {
+                icon: "vector",
+                title: t("geo-map.draw-line-toast-title"),
+                message: t("geo-map.draw-line-instruction")
+            };
+        case "polygon":
+            return {
+                icon: "shape-polygon",
+                title: t("geo-map.draw-polygon-toast-title"),
+                message: t("geo-map.draw-polygon-instruction")
+            };
+        case "rectangle":
+            return {
+                icon: "rectangle",
+                title: t("geo-map.draw-rectangle-toast-title"),
+                message: t("geo-map.draw-rectangle-instruction")
+            };
+        case "circle":
+            return {
+                icon: "shape-circle",
+                title: t("geo-map.draw-circle-toast-title"),
+                message: t("geo-map.draw-circle-instruction")
+            };
+    }
 }
 

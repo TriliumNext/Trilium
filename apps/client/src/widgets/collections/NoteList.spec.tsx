@@ -18,11 +18,29 @@ import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import type { EntityChange } from "../../server_types";
 import LoadResults from "../../services/load_results";
-import { buildNote } from "../../test/easy-froca";
+import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import { useNoteIds } from "./NoteList";
+import type { ViewTypeOptions } from "./interface";
+import { CustomNoteList, shouldRenderNoteList, useNoteIds, useViewModeConfig } from "./NoteList";
+
+const wsHandlers = vi.hoisted(() => new Set<(message: unknown) => void>());
+vi.mock("../../services/ws", () => {
+    const ws = {
+        subscribeToMessages: (handler: (message: unknown) => void) => wsHandlers.add(handler),
+        unsubscribeToMessage: (handler: (message: unknown) => void) => wsHandlers.delete(handler)
+    };
+    return { default: ws, ...ws };
+});
 
 let currentNoteIds: string[] = [];
+
+// The child ids below stand for real notes: a collection view resolves the ids it is given through
+// froca.getNotes(), which round-trips to the server for anything the mock does not hold.
+buildNotes([
+    { id: "child-a", title: "Child A" },
+    { id: "child-b", title: "Child B" },
+    { id: "child-new", title: "Child New" }
+]);
 
 /** Drains the chained awaits in `refreshNoteIds` (getNoteIds → search promise → setNoteIds). */
 async function flushMicrotasks() {
@@ -30,8 +48,8 @@ async function flushMicrotasks() {
 }
 
 /** Renders `useNoteIds` and exposes its current value through the module-level `currentNoteIds`. */
-function Harness({ note }: { note: FNote }) {
-    currentNoteIds = useNoteIds(note, "dashboard", "ntx-1");
+function Harness({ note, viewType = "dashboard" }: { note: FNote; viewType?: ViewTypeOptions }) {
+    currentNoteIds = useNoteIds(note, viewType, "ntx-1");
     return null;
 }
 
@@ -48,6 +66,22 @@ function branchEntitiesReloaded(parentNoteId: string, childNoteId: string) {
     loadResults.addBranch(branchId, "comp-1");
     return loadResults;
 }
+
+describe("shouldRenderNoteList", () => {
+    const searchNote = buildNote({ title: "Search", type: "search" });
+
+    it("draws a saved search's results for the printer, though nothing on screen scrolled to them", () => {
+        expect(shouldRenderNoteList(searchNote, "searchPreview", false, "screen")).toBe(false);
+        expect(shouldRenderNoteList(searchNote, "searchPreview", false, "print")).toBe(true);
+        expect(shouldRenderNoteList(searchNote, "searchPreview", true, "screen")).toBe(true);
+    });
+
+    it("draws a book and a full-height view without waiting to be scrolled to", () => {
+        const book = buildNote({ title: "Book", type: "book" });
+        expect(shouldRenderNoteList(book, "list", false, "screen")).toBe(true);
+        expect(shouldRenderNoteList(searchNote, "calendar", false, "screen")).toBe(true);
+    });
+});
 
 describe("useNoteIds refresh race", () => {
     let container: HTMLElement | undefined;
@@ -183,5 +217,399 @@ describe("useNoteIds refresh race", () => {
         expect(currentNoteIds).toEqual([ "child-a", "child-b", "child-new" ]);
         // A new reference is what makes React/`useEffect([noteIds])` downstream actually re-run.
         expect(currentNoteIds).not.toBe(afterMount);
+    });
+});
+
+describe("useNoteIds nesting depth", () => {
+    async function renderNoteIds(viewType: ViewTypeOptions, labels: Record<string, string> = {}) {
+        const note = buildNote({
+            title: "Collection",
+            type: "book",
+            ...labels,
+            children: [{
+                id: "nested-0",
+                title: "Depth 0",
+                children: [{
+                    id: "nested-1",
+                    title: "Depth 1",
+                    children: [{ id: "nested-2", title: "Depth 2" }]
+                }]
+            }]
+        });
+        const mountPoint = document.createElement("div");
+        currentNoteIds = [];
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <Harness note={note} viewType={viewType} />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+        await act(async () => {
+            render(null, mountPoint);
+        });
+        return currentNoteIds;
+    }
+
+    it("limits the calendar, geo map and board subtree to #maxNestingDepth", async () => {
+        for (const viewType of [ "calendar", "geoMap", "board" ] as const) {
+            expect(await renderNoteIds(viewType)).toEqual([ "nested-0", "nested-1", "nested-2" ]);
+            expect(await renderNoteIds(viewType, { "#maxNestingDepth": "0" })).toEqual([ "nested-0" ]);
+            expect(await renderNoteIds(viewType, { "#maxNestingDepth": "1" }))
+                .toEqual([ "nested-0", "nested-1" ]);
+        }
+    });
+
+    it("follows a #maxNestingDepth changed while the collection is shown", async () => {
+        const note = buildNote({
+            title: "Map",
+            type: "book",
+            "#maxNestingDepth": "0",
+            children: [{
+                id: "live-0",
+                title: "Depth 0",
+                children: [{ id: "live-1", title: "Depth 1" }]
+            }]
+        });
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <Harness note={note} viewType="geoMap" />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+        expect(currentNoteIds).toEqual([ "live-0" ]);
+
+        // The label changes as a sync or the properties dialog would change it.
+        const label = note.getOwnedLabel("maxNestingDepth");
+        if (!label) throw new Error("no #maxNestingDepth label");
+        label.value = "1";
+        const loadResults = new LoadResults([ {
+            entityName: "attributes",
+            entityId: label.attributeId,
+            entity: {
+                attributeId: label.attributeId, noteId: note.noteId, type: "label",
+                name: "maxNestingDepth", value: "1", isDeleted: false
+            },
+            componentId: "comp-1"
+        } as unknown as EntityChange ]);
+        loadResults.addAttribute(label.attributeId, "comp-1");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+        expect(currentNoteIds).toEqual([ "live-0", "live-1" ]);
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+    });
+
+    it("counts an imported subtree's depth from the collection", async () => {
+        const note = buildNote({
+            title: "Map",
+            type: "book",
+            "#maxNestingDepth": "0",
+            children: [
+                { id: "import-existing", title: "Existing" },
+                {
+                    id: "import-root",
+                    title: "Imported",
+                    children: [{ id: "import-child", title: "Imported child" }]
+                }
+            ]
+        });
+        // Other modules, such as `services/import.ts`, subscribe as well; only the hook's handlers run.
+        const otherHandlers = new Set(wsHandlers);
+        const mountPoint = document.createElement("div");
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <Harness note={note} viewType="geoMap" />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+        expect(currentNoteIds).toEqual([ "import-existing", "import-root" ]);
+
+        await act(async () => {
+            const hookHandlers = [ ...wsHandlers ].filter((handler) => !otherHandlers.has(handler));
+            expect(hookHandlers).toHaveLength(1);
+            for (const handler of hookHandlers) {
+                handler({
+                    type: "taskSucceeded",
+                    taskType: "importNotes",
+                    result: { parentNoteId: note.noteId, importedNoteId: "import-root" }
+                });
+            }
+            await flushMicrotasks();
+        });
+        expect(currentNoteIds).toEqual([ "import-existing", "import-root" ]);
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+    });
+});
+
+describe("useViewModeConfig view type switch", () => {
+    it("never hands a view the config of the view type it replaced", async () => {
+        const note = buildNote({ title: "Collection", type: "book" });
+        const stored: Record<string, object> = {
+            "geoMap.json": { view: { center: [ 0, 0 ], zoom: 3 } },
+            "table.json": { tableData: { columns: [] } }
+        };
+        note.getAttachmentsByRole = vi.fn(async () => Object.entries(stored).map(([ title, config ]) => ({
+            attachmentId: title,
+            title,
+            getBlob: async () => ({ content: JSON.stringify(config) })
+        }))) as unknown as FNote["getAttachmentsByRole"];
+
+        const seen: { viewType: ViewTypeOptions; config: object | undefined }[] = [];
+        function ConfigProbe({ viewType }: { viewType: ViewTypeOptions }) {
+            seen.push({ viewType, config: useViewModeConfig<object>(note, viewType)?.config });
+            return null;
+        }
+
+        const mountPoint = document.createElement("div");
+        const renderProbe = async (viewType: ViewTypeOptions) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={new Component()}>
+                        <ConfigProbe viewType={viewType} />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            await act(async () => {
+                await flushMicrotasks();
+            });
+        };
+
+        await renderProbe("geoMap");
+        expect(seen.at(-1)?.config).toEqual(stored["geoMap.json"]);
+
+        await renderProbe("table");
+        expect(seen.at(-1)?.config).toEqual(stored["table.json"]);
+        const tableConfigs = seen.filter((entry) => entry.viewType === "table").map((entry) => entry.config);
+        expect(tableConfigs.filter((config) => config !== undefined))
+            .toEqual(tableConfigs.filter((config) => config !== undefined).map(() => stored["table.json"]));
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+    });
+
+    it("ignores a restore that resolves after the view type it was for was replaced", async () => {
+        const note = buildNote({ title: "Collection", type: "book" });
+        const stored: Record<string, object> = {
+            "geoMap.json": { view: { center: [ 0, 0 ], zoom: 3 } },
+            "table.json": { tableData: { columns: [] } }
+        };
+        const pending: ReturnType<typeof deferred<void>>[] = [];
+        note.getAttachmentsByRole = vi.fn(async () => {
+            const gate = deferred<void>();
+            pending.push(gate);
+            await gate;
+            return Object.entries(stored).map(([ title, config ]) => ({
+                attachmentId: title,
+                title,
+                getBlob: async () => ({ content: JSON.stringify(config) })
+            }));
+        }) as unknown as FNote["getAttachmentsByRole"];
+
+        let latest: object | undefined;
+        function ConfigProbe({ viewType }: { viewType: ViewTypeOptions }) {
+            latest = useViewModeConfig<object>(note, viewType)?.config;
+            return null;
+        }
+
+        const mountPoint = document.createElement("div");
+        for (const viewType of [ "geoMap", "table" ] as const) {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={new Component()}>
+                        <ConfigProbe viewType={viewType} />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+        }
+        const [ geoMapRestore, tableRestore ] = pending;
+        if (!geoMapRestore || !tableRestore) throw new Error("expected two pending restores");
+
+        await act(async () => {
+            tableRestore.resolve();
+            await flushMicrotasks();
+        });
+        expect(latest).toEqual(stored["table.json"]);
+
+        await act(async () => {
+            geoMapRestore.resolve();
+            await flushMicrotasks();
+        });
+        expect(latest).toEqual(stored["table.json"]);
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+    });
+});
+
+/**
+ * Regression test for #7901: the legacy list/grid views defer rendering until the widget scrolls
+ * into view via an IntersectionObserver. The observer's first callback fires right after
+ * `observe()` and reports `isIntersecting: false` while the widget is hidden (background tab) or
+ * below the viewport. The observer must keep observing through such callbacks — disconnecting on
+ * the first callback regardless of visibility left the cards permanently unrendered.
+ */
+describe("CustomNoteList visibility latch", () => {
+    class MockIntersectionObserver {
+        static instances: MockIntersectionObserver[] = [];
+        observe = vi.fn();
+        disconnect = vi.fn();
+
+        constructor(readonly callback: IntersectionObserverCallback) {
+            MockIntersectionObserver.instances.push(this);
+        }
+
+        fire(isIntersecting: boolean) {
+            this.callback(
+                [{ isIntersecting } as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver
+            );
+        }
+    }
+
+    let container: HTMLElement | undefined;
+
+    let realIntersectionObserver: typeof IntersectionObserver;
+
+    beforeEach(() => {
+        MockIntersectionObserver.instances = [];
+        realIntersectionObserver = window.IntersectionObserver;
+        window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    });
+
+    afterEach(() => {
+        window.IntersectionObserver = realIntersectionObserver;
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    it("keeps observing after a non-intersecting callback and renders once visible", async () => {
+        const note = buildNote({ title: "Parent", type: "text" });
+        // A note froca holds, since the list renders it and asks froca for it by id.
+        const child = buildNote({ title: "Child", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ child.noteId ]);
+        note.getAttachmentsByRole = vi.fn(async () => []);
+
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CustomNoteList
+                        note={note}
+                        viewType="grid"
+                        isEnabled={true}
+                        notePath={`root/${note.noteId}`}
+                        ntxId="ntx-1"
+                        media="screen"
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        // The widget observes only after a 10ms delay (Firefox race workaround).
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 25));
+        });
+
+        const observer = MockIntersectionObserver.instances.find((o) => o.observe.mock.calls.length > 0);
+        if (!observer) throw new Error("expected the note list to observe its widget element");
+
+        // First callback while hidden/below the viewport: must not give up.
+        await act(async () => observer.fire(false));
+        expect(observer.disconnect).not.toHaveBeenCalled();
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
+
+        // Scrolled into view: renders and stops observing.
+        await act(async () => observer.fire(true));
+        expect(observer.disconnect).toHaveBeenCalled();
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+    });
+
+    it("waits for the note content before observing, and drops the latch when a new load starts", async () => {
+        const note = buildNote({ title: "Parent", type: "text" });
+        // A note froca holds, since the list renders it and asks froca for it by id.
+        const child = buildNote({ title: "Child", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ child.noteId ]);
+        note.getAttachmentsByRole = vi.fn(async () => []);
+
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        const renderList = async (contentReady: boolean) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={parent}>
+                        <CustomNoteList
+                            note={note}
+                            viewType="grid"
+                            isEnabled={true}
+                            contentReady={contentReady}
+                            notePath={`root/${note.noteId}`}
+                            ntxId="ntx-1"
+                            media="screen"
+                        />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            // Let the 10ms observe delay (Firefox race workaround) elapse.
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 25));
+            });
+        };
+
+        // While the content is loading the widget still sits inside the viewport, so observing
+        // now would latch it visible on effectively every note.
+        await renderList(false);
+        expect(MockIntersectionObserver.instances.every((o) => o.observe.mock.calls.length === 0)).toBe(true);
+
+        // Content loaded: observe, and render once actually visible.
+        await renderList(true);
+        const observer = MockIntersectionObserver.instances.find((o) => o.observe.mock.calls.length > 0);
+        if (!observer) throw new Error("expected the note list to observe once the content loaded");
+        await act(async () => observer.fire(true));
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+
+        // A new load (e.g. a note switch) resets the latch instead of keeping the list mounted.
+        await renderList(false);
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
     });
 });

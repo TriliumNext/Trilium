@@ -3,12 +3,12 @@
 The conceptual foundation. Read this before working on editing behavior.
 
 > **Scope.** Everything here is engine mechanics from the **`ckeditor5` library** (the npm
-> aggregate, pinned to `48.2.0` in the Trilium monorepo). The APIs (`editor.model`,
+> aggregate, **48 or later** in the Trilium monorepo). The APIs (`editor.model`,
 > `editor.editing`, `Plugin`, the writer, schema, conversion) are the library's, imported as
 > `import { Plugin } from 'ckeditor5'` (with file extensions). Paths under
-> `packages/ckeditor5-*` (admonition, collapsible, footnotes, keyboard-marker, math, mermaid)
-> are **Trilium's own** plugins that consume these APIs; the editor build/aggregator lives in
-> `packages/ckeditor5`. Trilium examples are cited throughout — they exercise the same library
+> `packages/ckeditor5/src/plugins/` (admonition, collapsible, footnotes, keyboard_marker, mermaid,
+> …) are **Trilium's own** plugins that consume these APIs; the
+> editor build itself is `packages/ckeditor5`. Trilium examples are cited throughout — they exercise the same library
 > mechanics described below.
 
 ## Editor classes
@@ -146,10 +146,10 @@ Behavior that flags produce (observable in the block-widget feature):
 - `isLimit` — element can't be split (Enter) or emptied/left by Backspace; good for titles.
 - `isObject` / `$blockObject` / `$inlineObject` — selected/deleted/copied as a unit.
 
-Trilium's block features lean on exactly these: `ckeditor5-admonition` and
-`ckeditor5-collapsible` register block elements inheriting from `$blockObject` and mark inner
+Trilium's block features lean on exactly these: `admonition` and
+`collapsible` register block elements inheriting from `$blockObject` and mark inner
 title/content regions with `isLimit`, then guard structure with one or more
-`registerPostFixer` invariants (see `core-plugin-patterns.md` → post-fixers). `ckeditor5-footnotes`
+`registerPostFixer` invariants (see `core-plugin-patterns.md` → post-fixers). `footnotes`
 splits its schema across `schema.ts` / `converters.ts` with shared `constants.ts`.
 
 Custom checks for disallowing in specific contexts:

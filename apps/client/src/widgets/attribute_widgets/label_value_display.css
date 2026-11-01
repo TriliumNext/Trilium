@@ -1,0 +1,79 @@
+/* The chips a multi-valued label is read as: the whole set, wrapping rather than being clipped one
+   word in — whatever holds them growing to the tallest of what is in it. */
+.label-value-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+
+    > .tn-chip {
+        padding-inline: 8px;
+        padding-block: 1px;
+    }
+}
+
+/* A flag among several, marked as a single flag's own field marks it: set is told from unset by the
+   mark itself, so an unset one is drawn back rather than in a colour of its own. */
+.label-flag-set {
+    color: var(--muted-text-color);
+}
+
+.label-flag-unset {
+    color: var(--muted-text-color);
+    opacity: 0.55;
+}
+
+/* A flag's chip takes a wash of the answer it carries — a wash rather than the colour outright, so
+   the mark stays the thing that says it and the wash only lets it be told from across the table.
+   Doubled with .tn-chip to outweigh the chip's own ground whichever stylesheet loads last.
+
+   The mark itself keeps to the muted grey only on the chip's own neutral ground; on a wash it takes
+   its answer's colour instead, leaned well toward the theme's text colour — deepened on a light
+   theme, lifted on a dark one — so it stands on the tint rather than sinking into it. */
+.tn-chip.label-flag-chip-set {
+    background-color: color-mix(in srgb, var(--bs-success) 25%, transparent);
+
+    .label-flag-set {
+        color: color-mix(in srgb, var(--bs-success) 40%, var(--main-text-color));
+    }
+}
+
+.tn-chip.label-flag-chip-unset {
+    background-color: color-mix(in srgb, var(--bs-danger) 25%, transparent);
+
+    .label-flag-unset {
+        color: color-mix(in srgb, var(--bs-danger) 40%, var(--main-text-color));
+        /* The wash already sets an unset flag apart; a mark also drawn back would fade into it. */
+        opacity: 1;
+    }
+}
+
+/*
+ * A read-only chip that is the colour it stands for. Holding nothing — no text, no button — it has
+ * nothing to hold it open, so it is sized to show a stretch of the colour at the height the swatch
+ * takes. Ringed within like the swatch, so that a colour close to the field beneath still reads as a
+ * chip — and so that a value naming no colour, whose ground the browser refuses, is an empty ring
+ * rather than a colour it is not.
+ */
+.label-color-chip {
+    min-width: 2.5em;
+    min-height: 1.25em;
+    box-shadow: inset 0 0 0 1px var(--main-border-color);
+}
+
+/*
+ * A colour as its own square. Sized to the line rather than to a field's own height: a swatch as tall
+ * as that would make every row of a table taller, rows being of one height whether there are colours
+ * in them or not.
+ */
+.label-color-swatch {
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    vertical-align: middle;
+    border-radius: 25%;
+
+    /* Drawn within, so that a colour close to whatever it sits on still reads as a swatch rather than
+       as a gap — and so that a value naming no colour at all is an empty swatch rather than nothing. */
+    box-shadow: inset 0 0 0 1px var(--main-border-color);
+}

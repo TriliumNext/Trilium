@@ -1,12 +1,20 @@
+// Scripts build their vnodes with core's `h`, so compat's `options.vnode` hook is what gives their
+// components `defaultProps` and their numeric styles a `px` unit.
+import "preact/compat";
+
 import { createContext, Fragment, h, VNode } from "preact";
 import * as hooks from "preact/hooks";
 
+import NoteColorPicker from "../menus/custom-items/NoteColorPicker";
+import Calendar from "../widgets/collections/calendar/calendar";
+import Table from "../widgets/collections/table/tabulator";
 import ActionButton from "../widgets/react/ActionButton";
 import Admonition from "../widgets/react/Admonition";
 import Button from "../widgets/react/Button";
 import CKEditor from "../widgets/react/CKEditor";
-import Collapsible from "../widgets/react/Collapsible";
-import Dropdown from "../widgets/react/Dropdown";
+import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
+import ColorPicker from "../widgets/react/ColorPicker";
+import Dropdown, { DropdownPanel } from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
 import FormDropdownList from "../widgets/react/FormDropdownList";
 import { FormFileUploadActionButton, FormFileUploadButton } from "../widgets/react/FormFileUpload";
@@ -21,11 +29,12 @@ import * as triliumHooks from "../widgets/react/hooks";
 import Icon from "../widgets/react/Icon";
 import LinkButton from "../widgets/react/LinkButton";
 import LoadingSpinner from "../widgets/react/LoadingSpinner";
-import Modal from "../widgets/react/Modal";
+import { ScriptModal } from "../widgets/react/Modal";
 import NoteAutocomplete from "../widgets/react/NoteAutocomplete";
 import NoteLink from "../widgets/react/NoteLink";
 import RawHtml from "../widgets/react/RawHtml";
 import Slider from "../widgets/react/Slider";
+import { SortableCard } from "../widgets/react/SortableCard";
 import RightPanelWidget from "../widgets/sidebar/RightPanelWidget";
 
 export interface WidgetDefinition {
@@ -72,9 +81,11 @@ export const preactAPI = Object.freeze({
     ActionButton,
     Admonition,
     Button,
+    Calendar,
     CKEditor,
-    Collapsible,
-    Dropdown,
+    Collapsible, ExternallyControlledCollapsible,
+    ColorPicker,
+    Dropdown, DropdownPanel,
     FormCheckbox,
     FormDropdownList,
     FormFileUploadButton, FormFileUploadActionButton,
@@ -88,11 +99,14 @@ export const preactAPI = Object.freeze({
     Icon,
     LinkButton,
     LoadingSpinner,
-    Modal,
+    Modal: ScriptModal,
     NoteAutocomplete,
+    NoteColorPicker,
     NoteLink,
     RawHtml,
     Slider,
+    SortableCard,
+    Table,
 
     // Specialized widgets
     RightPanelWidget,
@@ -110,5 +124,4 @@ export const preactAPI = Object.freeze({
 // so they aren't part of the shared surface and aren't checked.)
 type _PublicPreactExports = keyof typeof import("@triliumnext/commons/src/lib/script_api_preact.js");
 type _MissingPreactMembers = Exclude<_PublicPreactExports, keyof typeof preactAPI>;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _preactDriftGuard: [_MissingPreactMembers] extends [never] ? true : _MissingPreactMembers = true;

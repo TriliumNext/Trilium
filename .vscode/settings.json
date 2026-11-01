@@ -27,15 +27,18 @@
         ".github/workflows/nightly.yml"
     ],
     "typescript.validate.enable": true,
-    "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "search.exclude": {
         "**/node_modules": true,
         "docs/**/*.html": true,
         "docs/**/*.png": true,
-        "apps/server/src/assets/doc_notes/**": true,
-        "apps/edit-docs/demo/**": true
+        "apps/edit-docs/demo/**": true,
+        "**/.claude/worktrees/**": true
+    },
+    "vitest.rootConfig": "vitest.config.ts",
+    "files.watcherExclude": {
+        "**/.claude/worktrees/**": true
     },
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"

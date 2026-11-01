@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![Urraitheoirí GitHub](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,16 +14,20 @@ aistriúcháin](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https:
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Is feidhmchlár saor in aisce agus foinse oscailte, tras-ardán, ordlathach é
 Trilium Notes chun nótaí a thógáil le fócas ar bhunachair mhóra eolais
 phearsanta a thógáil.
+
+An bhfuil tú ag lorg "Trillium Notes"? Is é "Trilium Notes" an litriú
+caighdeánach don tionscadal, le `l` amháin.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -132,7 +125,7 @@ Tá ár ndoiciméadacht ar fáil i bhformáidí éagsúla:
 * Téama dorcha
   ionsuite(https://docs.triliumnotes.org/user-guide/concepts/themes), tacaíocht
   do théamaí úsáideora
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   agus [Iompórtáil & Easpórtáil
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Gearrthóir
@@ -227,6 +220,8 @@ suiteála freastalaí (féach thíos).
 Féach ar an eagrán https://github.com/TriliumNext/Trilium/issues/4962 le
 haghaidh tuilleadh eolais faoi thacaíocht d’aipeanna soghluaiste.
 
+#### TriliumDroid
+
 Más fearr leat aip dhúchasach Android, is féidir leat
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
 a úsáid. Tuairiscigh fabhtanna agus gnéithe atá ar iarraidh ag [a
@@ -234,6 +229,26 @@ stór](https://github.com/FliegendeWurst/TriliumDroid). Tabhair faoi deara: Is
 fearr nuashonruithe uathoibríocha a dhíchumasú ar do shuiteáil freastalaí (féach
 thíos) agus TriliumDroid in úsáid agat ós rud é go gcaithfidh an leagan
 sioncrónaithe a bheith mar an gcéanna idir Trilium agus TriliumDroid.
+
+#### Trilium Póca
+
+Más mian leat aip dhúchasach Android lánghnéitheach, féach ar [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). Ritheann sé sampla iomlán de
+Trilium ar do ghuthán, tacaíonn sé le húsáid iomlán as líne, agus ligeann sé
+duit sioncrónú le do fhreastalaí.
+
+#### Trinote
+
+Más mian leat aip dhúchasach iOS, is féidir leat
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) a úsáid, cliant
+foinse oscailte chun do fhreastalaí Trilium / TriliumNext féinóstáilte. Ligeann
+sé duit do chrann nótaí a bhrabhsáil agus a eagrú, nótaí a chuardach ar an
+bhfreastalaí, gach cineál nótaí (téacs, cód, léarscáil intinne, scarbhileog,
+léarscáil gheo, chanbhás, srl.) a léamh agus a chur in eagar, agus coinníonn sé
+nótaí ar fáil agus in-eagarthóireacht as líne. Seo an
+[stór](https://github.com/StephenArg/Trinote) más spéis leat cur leis agus seo
+an freastalaí [discord](https://discord.com/invite/ghjJG56EUS) má tá aon
+aiseolas nó moltaí agat ar mhaith leat a phlé.
 
 ### Freastalaí
 
@@ -347,6 +362,14 @@ Linn" thuas.
 * [antoniotejada](https://github.com/nriver) don ghiuirléid aibhsithe comhréire
   bunaidh.
 * [Deilbhíní Tábla](https://tabler.io/icons) do na deilbhíní sa tráidire córais.
+*   Is as: na deilbhíní feidhmchláir sa dialóg allmhairithe:
+    *   [Deilbhíní Dearaidh Ábhair](https://pictogrammers.com/library/mdi/) le
+        haghaidh OneNote, Google Keep, Evernote.
+    *   [Cló iontach](https://fontawesome.com/) le haghaidh Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) le haghaidh Aon
+        Chineál.
+*  Is as [Lobe Icons](https://lobehub.com/icons) atá deilbhíní an tsoláthraí
+   LLM.
 
 Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
 
@@ -354,6 +377,11 @@ Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
   atá taobh thiar de nótaí téacs.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - eagarthóir cóid le
   tacaíocht do líon ollmhór teangacha.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - déanann sé léaráidí a
+  rindreáil ó nótaí Mermaid; feidhmíonn a pharsálaithe mar mhúnla don aibhsiú
+  comhréire a bhaineann leo.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - bunús an aibhsithe comhréire do Mermaid.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - an clár bán gan
   teorainn a úsáidtear i nótaí Canvas.
 * [Intinn Elixir](https://github.com/SSShooter/mind-elixir-core) - ag soláthar
@@ -364,11 +392,6 @@ Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
   úsáidtear i mbailiúcháin.
 * [FancyTree](https://github.com/mar10/fancytree) - leabharlann crann lán
   gnéithe gan iomaíocht cheart.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - leabharlann nascachta amhairc.
-  Úsáidte i [léarscáileanna
-  caidrimh](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  agus [léarscáileanna
-  nasc](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Tacaíocht
 

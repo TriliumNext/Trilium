@@ -21,6 +21,13 @@ The tray icon has the following functionality:
     *   Bookmarks and recent notes are displayed in a sub-menu and clicking them navigates to that note.
     *   Quitting the application.
 
+### Opening a new window from the taskbar
+
+A new window can also be opened without the tray icon, by right-clicking the application's icon:
+
+*   On Windows, in the taskbar, select _Open New Window_.
+*   On Linux, in the dock or application launcher (such as GNOME's or KDE's), select _New Window_.
+
 ### Closing to system tray
 
 This is an option which is not enabled by default and it allows a specific behavior: instead of exiting the application when the last window has been closed, the last window is instead hidden with the tray icon remaining available.
@@ -32,8 +39,22 @@ This option requires the tray icon to be enabled, otherwise it has no effect.
 Two options control the automatic startup functionality in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Startup_:
 
 *   When _Launch on startup_ is enabled, the application will automatically start up when logging into the current user.
-    
     *   Note that on Linux support depends on the desktop environment. Feel free to [report](../../Troubleshooting/Reporting%20issues.md) any issues.
 *   If _Start minimized to tray_ is also enabled, the application will start up in the background and can be revealed from the tray icon.
-    
     *   This only applies if _Launch on startup_ is enabled, manual starts are not impacted by this option.
+
+### Linux: Flatpak
+
+The Flatpak cannot write to the autostart directory itself, so _Launch on startup_ asks the desktop's Background portal instead, which creates `~/.config/autostart/org.triliumnotes.Trilium.desktop`. If the desktop environment is set to ask before letting applications run in the background, it shows a prompt the first time; denying it leaves _Launch on startup_ without effect, and the permission can be changed later from the system settings.
+
+### Linux: custom launch command for packagers
+
+On Linux, _Launch on startup_ writes a `trilium.desktop` entry to the user's autostart directory (`$XDG_CONFIG_HOME/autostart`, usually `~/.config/autostart`). Its `Exec` line points to the AppImage when running from one, or to the running executable otherwise.
+
+Distribution packages that run Trilium on a system-wide Electron (for example `electron /usr/lib/trilium/app.asar`) cannot rely on the running executable, since it is the bare Electron binary, which starts without Trilium. Such packages can set the `TRILIUM_LAUNCH_EXEC` environment variable, typically in their wrapper script, to the full command that starts Trilium:
+
+```
+export TRILIUM_LAUNCH_EXEC='electron "/usr/lib/trilium/app.asar"'
+```
+
+The value is written to the `Exec` line as-is, so any paths containing spaces must already be quoted. When _Start minimized to tray_ is enabled, `--start-hidden` is appended to it. `TRILIUM_LAUNCH_EXEC` takes precedence over both the AppImage path and the running executable.

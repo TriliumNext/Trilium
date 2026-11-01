@@ -1,0 +1,53 @@
+@top BlockDiagram {
+  document
+}
+
+@skip { whitespace | LineComment }
+
+document {
+  DiagramName statement*
+}
+
+statement {
+  Columns |
+  Space |
+  BlockGroup |
+  Node edge*
+}
+
+Columns { ColumnsKeyword (Number | NodeId) }
+
+Space { SpaceKeyword (":" Number)? }
+
+BlockGroup {
+  BlockKeyword (":" NodeId (":" Number)?)? statement* EndKeyword
+}
+
+edge { Arrow (EdgeLabel Arrow)? Node }
+
+EdgeLabel { String }
+
+Node { NodeId Shape? (":" Number)? }
+
+NodeId { identifier }
+
+ColumnsKeyword { kw<"columns"> }
+SpaceKeyword { kw<"space"> }
+BlockKeyword { kw<"block"> }
+EndKeyword { kw<"end"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens diagramName from "./tokens.js" { DiagramName }
+@external tokens shapeToken from "./tokens.js" { Shape }
+
+@tokens {
+  whitespace { $[ \t\r\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[a-zA-Z_] $[a-zA-Z0-9_]* }
+  Number { @digit+ }
+  String { '"' !["]* '"' }
+  Arrow { "<"? ("-" | "=" | ".")+ ">"? }
+}
+
+@external propSource blockHighlighting from "./highlight.js"

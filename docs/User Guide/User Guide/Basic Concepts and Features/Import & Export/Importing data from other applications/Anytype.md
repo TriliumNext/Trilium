@@ -29,7 +29,7 @@ The first step is to export the data from Anytype:
 In Trilium Notes:
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _Anytype_.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-anytype"></span> _Anytype_.
 3.  Upload the ZIP.
 
 > [!NOTE]
@@ -71,7 +71,44 @@ The following view modes are supported:
 
 The following types are supported:
 
-<table><thead><tr><th scope="col">Anytype property type</th><th scope="col">Trilium</th></tr></thead><tbody><tr><td>Text / Select</td><td>Single-valued <code spellcheck="false">text</code> label</td></tr><tr><td>Number</td><td>Single-valued <code spellcheck="false">number</code> label</td></tr><tr><td>Multi-select</td><td>One <code spellcheck="false">text</code> label per option (multi)</td></tr><tr><td>Date / Date with time</td><td><ul><li data-list-item-id="eb2f417ce240ac72c1773231746ecf0c6"><code spellcheck="false">datetime</code> if the time is included.</li><li data-list-item-id="ee9dcf32dba7753df568315409159aa7d"><code spellcheck="false">date</code> if only dates.</li></ul></td></tr><tr><td>File</td><td>The files are preserved as attachments, and a link to them is prepended to the content of the note for visibility.</td></tr><tr><td>Checkbox</td><td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code spellcheck="false">false</code>).</td></tr><tr><td>URL / Email / Phone</td><td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>, <code spellcheck="false">tel:</code> prefix)</td></tr></tbody></table>
+<table>
+    <thead>
+        <tr>
+            <th scope="col">Anytype property type</th>
+            <th scope="col">Trilium</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Text / Select</td>
+            <td>Single-valued <code>text</code> label</td>
+        </tr>
+        <tr>
+            <td>Number</td>
+            <td>Single-valued <code>number</code> label</td>
+        </tr>
+        <tr>
+            <td>Multi-select</td>
+            <td>One <code>text</code> label per option (multi)</td>
+        </tr>
+        <tr>
+            <td>Date / Date with time</td>
+            <td><ul><li><code>datetime</code> if the time is included.</li><li><code>date</code> if only dates.</li></ul></td>
+        </tr>
+        <tr>
+            <td>File</td>
+            <td>The files are preserved as attachments, and a link to them is prepended to the content of the note for visibility.</td>
+        </tr>
+        <tr>
+            <td>Checkbox</td>
+            <td><code>boolean</code> label (<code>true</code>/<code>false</code>).</td>
+        </tr>
+        <tr>
+            <td>URL / Email / Phone</td>
+            <td><code>url</code> label (<code>mailto:</code>, <code>tel:</code> prefix)</td>
+        </tr>
+    </tbody>
+</table>
 
 ## Reporting issues
 

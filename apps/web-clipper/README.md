@@ -4,20 +4,25 @@
 
 The Web Clipper is an extension for the Trilium Notes application, an open-source note-taking application that can be used either in standalone mode via the desktop application or connected to a server.
 
-The source is extracted from the official monorepo, where it can be found under `apps/web-clipper`. The only change made to the provided source code is to have `tsconfig.base.json` in the same directory as the Web Clipper. The submitted source code is a snapshot of the following commit: [https://github.com/TriliumNext/Trilium/commit/1cf93ff0dec89ee1a80654934cb30fad74920043](https://github.com/TriliumNext/Trilium/commit/1cf93ff0dec89ee1a80654934cb30fad74920043) 
+The extension lives in the official monorepo, [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium), under `apps/web-clipper`. The sources archive holds the monorepo files the build reads, unchanged and at the same paths:
 
-There are some warnings regarding the use of `innerHTML` but they come from a third-party library (Readability). We plan to update to a newer version of that library soon, but we would like to publish the extension first (if possible).
+- `apps/web-clipper`, the extension;
+- a few stylesheets and fonts from `apps/client`, the Trilium application, whose styles the popup and options page share;
+- the workspace files: `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `tsconfig.base.json` and `patches/`.
+
+Each release is a snapshot of the commit tagged `web-clipper-v` followed by the version in `apps/web-clipper/package.json`.
+
+There are some warnings regarding the use of `innerHTML`. They come from [`defuddle`](https://github.com/kepano/defuddle), the article extraction library behind the Obsidian Web Clipper, which the extension installs unmodified from npm. It runs only when the user opens the popup or saves a page, and it removes scripts, event handler attributes and `javascript:` URLs from the article it returns.
 
 ## Building from source
 
-To build from the provided sources:
+Requirements: Node.js 24 and pnpm 12.10.1 (`npm install -g pnpm@12.10.1`).
 
-1.  `pnpm i` to install the dependencies.
-2.  `pnpm build:firefox` to trigger the Firefox build.
-3.  The output will be available in `.output/firefox-mv2`.
+From the root of the sources archive:
 
-> [!NOTE]
-> To generate the ZIP instead that can be imported into Firefox, run `pnpm zip;firefox` which will generate `.output\triliumnextweb-clipper-1.0.1-sources.zip`.
+1.  `pnpm install --filter web-clipper --frozen-lockfile` to install the dependencies.
+2.  `pnpm --filter web-clipper build:firefox` to build the Firefox extension.
+3.  The output will be available in `apps/web-clipper/.output/firefox-mv2`.
 
 ## Testing
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
+import { closeOpenPopups } from "../widgets/react/Popup";
 
 // `appContext` pulls in a very large dependency graph (CKEditor, CodeMirror,
 // Tabulator, …) and at module-load `keyboard_actions.ts` only needs
@@ -10,6 +11,22 @@ vi.mock("../components/app_context.js", () => ({
     default: {
         triggerCommand: vi.fn(),
         tabManager: { activeNtxId: "ntx-active" }
+    }
+}));
+
+vi.mock("../widgets/react/Popup", () => ({ closeOpenPopups: vi.fn() }));
+
+// `updateDisplayedShortcuts` formats shortcuts via keyboard_shortcut_display, which resolves each key
+// label through i18n. Stub `t` to resolve the shortcut-key labels the way the translation files do.
+vi.mock("./i18n.js", () => ({
+    t: (key: string) => {
+        if (key.startsWith("keyboard_shortcut_keys.")) {
+            const labels: Record<string, string> = {
+                ctrl: "Ctrl", alt: "Alt", shift: "Shift", meta: "Meta"
+            };
+            return labels[key.slice("keyboard_shortcut_keys.".length)] ?? key;
+        }
+        return key;
     }
 }));
 
@@ -95,7 +112,7 @@ describe("keyboard_actions", () => {
         expect(treeActions.map((a) => a.actionName)).toEqual(["treeA"]);
     });
 
-    it("binds window-scoped shortcuts globally at module load", async () => {
+    it("setupWindowShortcuts binds window-scoped shortcuts globally, and only when asked", async () => {
         let spy: ReturnType<typeof vi.spyOn> | undefined;
         const { kb } = await loadModule(
             [
@@ -109,20 +126,46 @@ describe("keyboard_actions", () => {
             }
         );
 
-        // wait for the module-load `getActionsForScope("window").then(...)` to settle
+        // Importing the module must not bind anything: the handlers read `appContext.tabManager`,
+        // which only exists once `AppContext.initComponents()` has run and called setupWindowShortcuts.
         await kb.default.getActions();
         await Promise.resolve();
+        expect(spy).not.toHaveBeenCalled();
+
+        await kb.default.setupWindowShortcuts();
 
         expect(spy).toHaveBeenCalledTimes(2);
         const boundShortcuts = spy!.mock.calls.map((c) => c[0]);
         expect(boundShortcuts).toEqual(["ctrl+1", "ctrl+2"]);
 
-        // The bound handler routes to appContext.triggerCommand with the active ntx id.
+        // The bound handler closes open menus, then routes to appContext.triggerCommand with the
+        // active ntx id.
+        vi.mocked(closeOpenPopups).mockClear();
+        vi.mocked(appContext.triggerCommand).mockImplementationOnce(() => {
+            expect(closeOpenPopups).toHaveBeenCalledTimes(1);
+            return Promise.resolve();
+        });
         const handler = spy!.mock.calls[0][1] as () => void;
         handler();
         expect(appContext.triggerCommand).toHaveBeenCalledWith("winA", { ntxId: "ntx-active" });
 
         spy!.mockRestore();
+    });
+
+    it("setupWindowShortcutsForElement binds the window-scoped shortcuts on an element", async () => {
+        const { kb } = await loadModule([
+            action({ actionName: "winA", scope: "window", effectiveShortcuts: [ "ctrl+1" ] }),
+            action({ actionName: "treeA", scope: "note-tree", effectiveShortcuts: [ "ctrl+9" ] })
+        ]);
+        vi.mocked(appContext.triggerCommand).mockClear();
+
+        const $el = $("<div></div>");
+        const bindings = await kb.default.setupWindowShortcutsForElement($el as any);
+
+        expect(bindings.map((binding) => binding.shortcut)).toEqual([ "ctrl+1" ]);
+        expect(bindings[0].element).toBe($el[0]);
+        bindings[0].handler(new KeyboardEvent("keydown"));
+        expect(appContext.triggerCommand).toHaveBeenCalledWith("winA", { ntxId: "ntx-active" });
     });
 
     it("setupActionsForElement returns [] for an empty jQuery element", async () => {
@@ -233,7 +276,7 @@ describe("keyboard_actions", () => {
                 <kbd data-command="cmdMissing">not set</kbd>
                 <span data-trigger-command="cmdTrigger" title="My label"></span>
                 <span data-trigger-command="cmdTriggerNoTitle"></span>
-                <span data-trigger-command="cmdTriggerAlready" title="X (ctrl+x)"></span>
+                <span data-trigger-command="cmdTriggerAlready" title="X (Ctrl+x)"></span>
                 <span data-trigger-command=""></span>
                 <span data-trigger-command="cmdMissing"></span>
             </div>
@@ -244,18 +287,19 @@ describe("keyboard_actions", () => {
         // jQuery .each runs synchronously but the async getAction inside resolves later
         await new Promise((r) => setTimeout(r, 0));
 
-        expect($container.find('kbd[data-command="cmdKbd"]').text()).toBe("ctrl+a, ctrl+b");
+        // Shortcuts are localized for display: the modifier token normalizes to its canonical label.
+        expect($container.find('kbd[data-command="cmdKbd"]').text()).toBe("Ctrl+a, Ctrl+b");
         // empty shortcuts but text already "not set" -> condition false -> text untouched
         expect($container.find('kbd[data-command="cmdEmpty"]').text()).toBe("not set");
         // missing action -> getAction silent returns undefined -> skipped
         expect($container.find('kbd[data-command="cmdMissing"]').text()).toBe("not set");
 
         // title with content gets the shortcut appended in parentheses
-        expect($container.find('[data-trigger-command="cmdTrigger"]').attr("title")).toBe("My label (ctrl+t)");
+        expect($container.find('[data-trigger-command="cmdTrigger"]').attr("title")).toBe("My label (Ctrl+t)");
         // no title -> becomes just the shortcuts
-        expect($container.find('[data-trigger-command="cmdTriggerNoTitle"]').attr("title")).toBe("ctrl+n");
+        expect($container.find('[data-trigger-command="cmdTriggerNoTitle"]').attr("title")).toBe("Ctrl+n");
         // title already includes the shortcut -> early return, unchanged
-        expect($container.find('[data-trigger-command="cmdTriggerAlready"]').attr("title")).toBe("X (ctrl+x)");
+        expect($container.find('[data-trigger-command="cmdTriggerAlready"]').attr("title")).toBe("X (Ctrl+x)");
     });
 
     it("updateDisplayedShortcuts sets text when shortcuts empty but element text differs from 'not set'", async () => {

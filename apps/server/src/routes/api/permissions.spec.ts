@@ -5,8 +5,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import sqlInit from "../../services/sql_init.js";
 import permissionsRoute from "./permissions.js";
 
-function req(body: Record<string, unknown> = {}, params: Record<string, string> = {}, session: Record<string, unknown> = {}) {
-    return { body, params, session } as unknown as Request<Record<string, string>>;
+function req<P extends Record<string, string>>(body: Record<string, unknown> = {}, params = {} as P, session: Record<string, unknown> = {}) {
+    return { body, params, session } as unknown as Request<P>;
 }
 
 function adminSession(): Record<string, unknown> {

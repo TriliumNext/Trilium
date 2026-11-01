@@ -3,13 +3,13 @@
 // without this side-effect import the progress/finished toasts would never appear.
 import "./import.js";
 
-import type { OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection } from "@triliumnext/commons";
+import type { OneNoteDeviceLogin, OneNoteDevicePollResult, OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection } from "@triliumnext/commons";
 
 import server from "./server.js";
 
 // The notebook/section/selection types are shared with the server; re-export them so existing callers
 // (the import dialog, tests) keep importing them from this service.
-export type { OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection };
+export type { OneNoteDeviceLogin, OneNoteDevicePollResult, OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection };
 
 export interface OneNoteAccount {
     name: string;
@@ -21,8 +21,17 @@ export interface OneNoteStatus {
     account: OneNoteAccount | null;
 }
 
-function getAuthUrl() {
-    return server.get<{ authUrl: string }>("onenote-import/auth-url");
+// Starts a device-flow sign-in (RFC 8628): the server obtains a short user code from Microsoft, the
+// dialog shows it, and the user enters it at the verification URI in any browser. There is no OAuth
+// redirect back to the server, so this works no matter what domain the server is reachable on.
+function deviceLogin() {
+    return server.post<OneNoteDeviceLogin>("onenote-import/device-login");
+}
+
+// One round of asking the server whether the pending device sign-in has completed; called on the
+// interval returned by deviceLogin until the result is `connected` or `failed`.
+function devicePoll() {
+    return server.post<OneNoteDevicePollResult>("onenote-import/device-poll");
 }
 
 function getStatus() {
@@ -34,7 +43,9 @@ function disconnect() {
 }
 
 function getNotebooks() {
-    return server.get<{ notebooks: OneNoteNotebook[] }>("onenote-import/notebooks");
+    // silent: a 401 here (expired/lost connection) is presented inline by the import dialog with the
+    // server's reason and a retry button — the generic "unknown HTTP error" toast would double-report.
+    return server.getWithSilentUnauthorized<{ notebooks: OneNoteNotebook[] }>("onenote-import/notebooks");
 }
 
 // Kicks off the import and returns as soon as the server has accepted it. The import itself runs in the
@@ -45,12 +56,35 @@ function runImport(payload: { parentNoteId: string; sections: OneNoteSectionSele
 }
 
 export default {
-    getAuthUrl,
+    deviceLogin,
+    devicePoll,
     getStatus,
     disconnect,
     getNotebooks,
     runImport
 };
+
+/**
+ * Pulls the human-readable reason out of a rejected API call, so the dialog can show what actually went
+ * wrong instead of a generic failure. The request layer rejects with the raw response body, which is
+ * either a JSON error envelope (`{"message": …}`, from a server error) or plain text (from a
+ * `[status, message]` route result) — both shapes are unwrapped here. Returns null when the response
+ * carried no usable message and the caller should fall back to its own wording.
+ */
+export function extractServerMessage(e: unknown): string | null {
+    const raw = typeof e === "string" ? e : e instanceof Error ? e.message : null;
+    const trimmed = raw?.trim();
+    if (!trimmed) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(trimmed) as { message?: unknown };
+        return typeof parsed.message === "string" && parsed.message.trim() ? parsed.message : null;
+    } catch {
+        // Not JSON: a plain-text body is already the message.
+        return trimmed;
+    }
+}
 
 export type OneNoteContainer = OneNoteNotebook | OneNoteSectionGroup;
 
@@ -93,6 +127,21 @@ export function buildSectionSelections(notebooks: OneNoteNotebook[], selectedIds
     }
 
     return selections;
+}
+
+/**
+ * Collects the ids of every section anywhere in the given notebooks, including those nested inside
+ * section groups. Used to prune a selection after the notebook list is refreshed, so ids of sections
+ * that no longer exist can't linger in the selection (and inflate the import button's count).
+ */
+export function collectSectionIds(containers: OneNoteContainer[], into = new Set<string>()): Set<string> {
+    for (const container of containers) {
+        for (const section of container.sections) {
+            into.add(section.id);
+        }
+        collectSectionIds(container.sectionGroups, into);
+    }
+    return into;
 }
 
 /**

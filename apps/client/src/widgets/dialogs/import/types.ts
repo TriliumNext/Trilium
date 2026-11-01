@@ -18,10 +18,11 @@ export interface ImportProvider {
     id: string;
     /** Human-readable name shown in the provider picker. */
     name: string;
-    /** URL of the provider's logo (an imported SVG, e.g. `import iconUrl from "./icons/notion.svg?url"`). Rendered monochrome via a CSS mask so it adapts to the theme. Provide either this or {@link icon}. */
-    iconUrl?: string;
-    /** Boxicons class (e.g. `"bx bx-import"`) shown in place of {@link iconUrl}. Provide either this or `iconUrl`. */
-    icon?: string;
+    /**
+     * The icon class, such as `"bx bx-import"`, or the service's mark,
+     * `"tn-brand tn-brand-notion"`.
+     */
+    icon: string;
     /** One-line description shown under the name. */
     description: string;
     /** Help note ID (without the `_help_` prefix) for this provider's documentation; shown as a help button in the dialog header. */

@@ -1,5 +1,5 @@
 # Code blocks
-![](1_Code%20blocks_image.png)
+![](Code%20blocks_image.jpg)
 
 The code blocks feature allows entering pieces of code in text notes.
 
@@ -7,19 +7,25 @@ Note that this feature is meant for generally small snippets of code. For larger
 
 ## Inserting a code block
 
-*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, look for the ![](Code%20blocks_image.png) button.
+*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, look for the <span class="tn-icon cke cke-code-block"></span> button.
     *   Pressing directly on the icon will insert a code block with the language that was selected most recently. If this is the first time a code block is inserted, the language will be “Auto-detected” by default.
     *   Pressing the arrow next to the icon, which will show a popup with the available languages.
 *   Type ` ``` ` (as in Markdown).
     *   Note that it's not possible to specify the language, as it will default to the last selected language.
+*   Paste several lines of code copied from Visual Studio Code.
+    *   The code block uses the language of the file in Visual Studio Code.
+    *   If that language is not in the list of languages, the code block uses _Auto-detected_.
+    *   The colors of the Visual Studio Code theme are removed.
+    *   A single line becomes inline code instead of a code block.
+    *   In Firefox, the code block always uses _Auto-detected_. Firefox can't read the language from Visual Studio Code.
 
 ## Exiting out of the code block
 
-*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press <kbd>Enter</kbd> twice.
-*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press <kbd>Enter</kbd> twice.
+*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press Enter twice.
+*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press Enter twice.
 
 > [!NOTE]
-> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing <kbd>Enter</kbd> multiple times might not work. In that case the best approach is to delete the code block entirely and use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> (paste as plain text).
+> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing Enter multiple times might not work. In that case the best approach is to delete the code block entirely and use Ctrl+Shift+V (paste as plain text).
 
 ## Syntax highlighting & color schemes
 
@@ -27,12 +33,12 @@ Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting to the
 
 Interaction:
 
-*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. If this is problematic, consider changing the language of the code block manually.
+*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. Only the languages enabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_ are considered. If this is problematic, consider changing the language of the code block manually.
 *   When the language is set to _Plain text_, there will be no syntax highlighting.
 
-Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). This value is currently not configurable. For <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, this limitation is not applied.
+Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). In <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, in print and on a [shared page](../../../Advanced%20Usage/Sharing.md), a code block of more than 500 lines or 50,000 characters is shown without syntax highlighting. These limits are not configurable.
 
-In order to configure this new feature, a section has been added in Options → Appearance to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js.
+In order to configure this new feature, a section has been added in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js. _VS Code (Light)_ and _VS Code (Dark)_ use the same colors as the default themes of <a class="reference-link" href="../../Code.md">Code</a> notes, so a code block and a code note color the same code alike.
 
 *   It is possible to disable the syntax highlighting for all the notes by selecting “No syntax highlighting” in the “Color scheme” option.
 *   Word wrapping is disabled by default, but can be configured from the same section.
@@ -54,12 +60,38 @@ Should you encounter any issues after the migration, try running Trilium in safe
 ## Changing the language of a code block
 
 Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
-![](2_Code%20blocks_image.png)
+![](Code%20blocks_image.png)
 
 ## Adjusting the list of languages
 
 The code blocks feature shares the list of languages with the <a class="reference-link" href="../../Code.md">Code</a> note type.
 
-The supported languages can be adjusted by going to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, then _Code Notes_ and looking for the _Available MIME types in the dropdown_ section. Simply check any of the items to add them to the list, or uncheck them to remove them from the list.
+The supported languages, and the order in which they are listed, can be adjusted by going to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_. See <a class="reference-link" href="../../Code.md">Code</a> for how to add, remove and reorder them.
 
 Note that the list of languages is not immediately refreshed, you'd have to manually [refresh the application](../../../Troubleshooting/Refreshing%20the%20application.md).
+
+## Text replacements and ligatures
+
+<a class="reference-link" href="../Automatic%20replacements.md">Automatic replacements</a> are a feature of text notes which converts some character sequences into another and some of them interfere with programming text, such as the conversion of quotes. While in a code block, the automatic replacements **are not effect**. The only way the automatic replacements can interfere is if the text is typed/pasted before being put in a code block.
+
+A different feature is _programming ligatures_, which is simply a display affordance which turns `!=` into `≠` or `->` as `→` . These come from the [font](../../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md). The underlying text is not actually changed, and copying it out gives you back `!=` and `->`.
+
+Ligatures can be disabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._
+
+## Extended code blocks
+
+> [!IMPORTANT]
+> Extended code blocks are experimental, and they change as they mature. To use them, turn on _Extended code blocks_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Advanced_ → _Experimental Options_.
+
+An extended code block is a code block that is edited with the code editor of a <a class="reference-link" href="../../Code.md">Code</a> note, inside the text. It has the same syntax highlighting and code folding as a code note, and it suits longer pieces of code.
+
+*   To insert one, open the <span class="tn-icon cke cke-plus"></span> _Insert_ menu of the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> and choose <span class="tn-icon bx bx-code-block"></span> _Extended code block_, after _Columns_. It is also available as _Extended code block_ in the <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>.
+*   A new block is empty and editable, in a _Full_ box, and takes the focus. Its language is the one set last on an extended code block, or _Plain text_.
+*   A click places the cursor in the code, as in a code block. Over a _Small_ or _Medium_ box, the mouse wheel scrolls the code.
+*   The block shows in a box like the one of an included code note, with the corners and the shadow of a code block. While the block is editable, its language shows in its top corner, as for a code block. While it is read-only, because _Editable_ is unchecked or the note is one of the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, that corner has a <span class="tn-icon bx bx-copy"></span> _Copy to clipboard_ button instead, as a code block of a read-only note does.
+*   Its toolbar has the _Change language mode_ and _Change tab width_ menus of an embedded code file, described in _Editing an include in place_ in <a class="reference-link" href="../Include%20Note.md">Include Note</a>, and the <span class="tn-icon cke cke-trilium-copy"></span> _Copy to clipboard_ button, which copies the code as the one of a code block does. Its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has _Editable_, which shows the code read-only once unchecked, the _Word wrap_ and _Line numbers_ submenus, and the _Size_ submenu, with _Small_, _Medium_ and _Full_.
+*   The changes made in the block are part of the undo history of the text note.
+
+The code stays in the note as a code block of its language. The Markdown export, [shared pages](../../../Advanced%20Usage/Sharing.md) and printing show it as a code block, and copying it into another application pastes a code block. Pasted into a text note, it becomes an extended code block again, with its settings.
+
+Turning _Extended code blocks_ off again removes them from the _Insert_ menu and the slash commands only: the extended code blocks already in notes keep working. A version of Trilium without this feature shows them as code blocks, and saves them back as code blocks, without their box size and other settings.

@@ -153,6 +153,7 @@ pdfjs-document-properties-linearized = Vista rápida de la web:
 pdfjs-document-properties-linearized-yes = Sí
 pdfjs-document-properties-linearized-no = No
 pdfjs-document-properties-close-button = Cerrar
+pdfjs-digital-signature-properties-view-certificate = Ver certificado
 
 ## Print
 
@@ -161,28 +162,11 @@ pdfjs-print-progress-message = Preparando documento para impresión…
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
 pdfjs-print-progress-close-button = Cancelar
-pdfjs-printing-not-supported = Advertencia: La impresión no esta completamente soportada por este navegador.
-pdfjs-printing-not-ready = Advertencia: El PDF no cargo completamente para impresión.
+pdfjs-printing-not-supported = Advertencia: La impresión no está completamente soportada por este navegador.
+pdfjs-printing-not-ready = Advertencia: El PDF no cargó completamente para impresión.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Cambiar barra lateral
-pdfjs-toggle-sidebar-notification-button =
-    .title = Alternar barra lateral (el documento contiene esquemas/adjuntos/capas)
-pdfjs-toggle-sidebar-button-label = Cambiar barra lateral
-pdfjs-document-outline-button =
-    .title = Mostrar esquema del documento (doble clic para expandir/contraer todos los elementos)
-pdfjs-document-outline-button-label = Esquema del documento
-pdfjs-attachments-button =
-    .title = Mostrar adjuntos
-pdfjs-attachments-button-label = Adjuntos
-pdfjs-layers-button =
-    .title = Mostrar capas (doble clic para restablecer todas las capas al estado predeterminado)
-pdfjs-layers-button-label = Capas
-pdfjs-thumbs-button =
-    .title = Mostrar miniaturas
-pdfjs-thumbs-button-label = Miniaturas
 pdfjs-current-outline-item-button =
     .title = Buscar elemento de esquema actual
 pdfjs-current-outline-item-button-label = Elemento de esquema actual
@@ -193,10 +177,6 @@ pdfjs-additional-layers = Capas adicionales
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Página { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +194,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Buscar
     .placeholder = Buscar en el documento…
+    .title = Buscar
 pdfjs-find-previous-button =
     .title = Ir a la anterior frase encontrada
 pdfjs-find-previous-button-label = Anterior
@@ -265,7 +245,7 @@ pdfjs-page-landmark =
 ## Loading indicator messages
 
 pdfjs-loading-error = Un error ocurrió al cargar el PDF.
-pdfjs-invalid-file-error = Archivo PDF invalido o dañado.
+pdfjs-invalid-file-error = Archivo PDF inválido o dañado.
 pdfjs-missing-file-error = Archivo PDF no encontrado.
 pdfjs-unexpected-response-error = Respuesta inesperada del servidor.
 pdfjs-rendering-error = Un error ocurrió al renderizar la página.
@@ -310,16 +290,16 @@ pdfjs-editor-highlight-button =
     .title = Destacar
 pdfjs-editor-highlight-button-label = Destacar
 pdfjs-highlight-floating-button1 =
-    .title = Destacados
     .aria-label = Destacados
+    .title = Destacados
 pdfjs-highlight-floating-button-label = Destacados
 pdfjs-comment-floating-button =
-    .title = Comentario
     .aria-label = Comentario
+    .title = Comentario
 pdfjs-comment-floating-button-label = Comentario
 pdfjs-editor-comment-button =
-    .title = Comentario
     .aria-label = Comentario
+    .title = Comentario
 pdfjs-editor-comment-button-label = Comentario
 pdfjs-editor-signature-button =
     .title = Agregar firma
@@ -360,7 +340,7 @@ pdfjs-editor-remove-signature-button =
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Tamaño
 pdfjs-editor-ink-color-input = Color
-pdfjs-editor-ink-thickness-input = Grossor
+pdfjs-editor-ink-thickness-input = Grosor
 pdfjs-editor-ink-opacity-input = Opacidad
 pdfjs-editor-stamp-add-image-button =
     .title = Agregar imagen
@@ -392,8 +372,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Comentarios
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Cerrar la barra lateral
     .aria-label = Cerrar la barra lateral
+    .title = Cerrar la barra lateral
 pdfjs-editor-comments-sidebar-close-button-label = Cerrar la barra lateral
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = ¿Ves algo interesante? Resáltalo y deja un comentario.
@@ -516,13 +496,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Ajustes del texto alternativo de l
 pdfjs-editor-alt-text-settings-automatic-title = Texto alternativo automático
 pdfjs-editor-alt-text-settings-create-model-button-label = Crear texto alternativo automáticamente
 pdfjs-editor-alt-text-settings-create-model-description = Sugiere descripciones para ayudar a las personas que no pueden ver la imagen o cuando la imagen no se carga.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modelo de IA de texto alternativo ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Se ejecuta localmente en el dispositivo para que los datos se mantengan privados. Requerido para texto alternativo automático.
-pdfjs-editor-alt-text-settings-delete-model-button = Eliminar
-pdfjs-editor-alt-text-settings-download-model-button = Descargar
-pdfjs-editor-alt-text-settings-downloading-model-button = Descargando…
 pdfjs-editor-alt-text-settings-editor-title = Editor de texto alternativo
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostrar el editor de texto alternativo inmediatamente al añadir una imagen
 pdfjs-editor-alt-text-settings-show-dialog-description = Te ayuda a asegurarte de que todas tus imágenes tengan texto alternativo.
@@ -580,7 +553,7 @@ pdfjs-editor-add-signature-type-input =
     .aria-label = Escribe tu firma
     .placeholder = Escribe tu firma
 pdfjs-editor-add-signature-draw-placeholder = Dibuja tu firma
-pdfjs-editor-add-signature-draw-thickness-range-label = Grossor
+pdfjs-editor-add-signature-draw-thickness-range-label = Grosor
 # Variables:
 #   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
 pdfjs-editor-add-signature-draw-thickness-range =
@@ -697,15 +670,15 @@ pdfjs-views-manager-status-undo-cut-label =
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label =
     { $count ->
-        [one] 1 pagina copiada
-       *[other] { $count } paginas copiadas
+        [one] 1 página copiada
+       *[other] { $count } páginas copiadas
     }
 # Variables:
 #   $count (Number) - the number of selected pages to be deleted.
 pdfjs-views-manager-pages-status-undo-delete-label =
     { $count ->
-        [one] 1 pagina eliminada
-       *[other] { $count } paginas eliminadas
+        [one] 1 página eliminada
+       *[other] { $count } páginas eliminadas
     }
 pdfjs-views-manager-pages-status-waiting-ready-label = Preparando tu archivo…
 pdfjs-views-manager-pages-status-waiting-uploading-label = Subiendo archivo…

@@ -1,0 +1,28 @@
+{
+    "hero_section": {
+        "tagline_no_account": "Ingen konto nødvendig",
+        "tagline_cross_platform": "Virker offline",
+        "screenshot_alt": "Skærmbillede af skrivebordsprogrammet Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Organisér dine noter på din måde",
+        "screenshot_alt": "Hierarkisk notetræ i Trilium",
+        "note_structure_title": "Notestruktur",
+        "note_structure_description": "Noter kan organiseres hierarkisk. Der er ikke brug for mapper, da hver note kan indeholde undernoter. Den samme note kan føjes til flere steder i hierarkiet.",
+        "attributes_title": "Notemærker og relationer",
+        "attributes_description": "Brug relationer mellem noter, eller tilføj etiketter for at gøre kategoriseringen nemmere. Brug fremhævede attributter til at indtaste strukturerede oplysninger, som kan bruges i tabeller og tavler.",
+        "hoisting_title": "Arbejdsområder og hoisting",
+        "hoisting_description": "Adskil nemt dine private noter og arbejdsnoter ved at samle dem i et arbejdsområde, som begrænser notetræet til kun at vise et bestemt udvalg af noter."
+    },
+    "productivity_benefits": {
+        "title": "Stærke hverdagsfunktioner",
+        "revisions_title": "Noteversioner",
+        "revisions_content": "Noter gemmes jævnligt automatisk i baggrunden, og versioner kan bruges til gennemgang eller til at fortryde utilsigtede ændringer. Du kan også oprette versioner efter behov.",
+        "protected_notes_title": "Beskyttede noter",
+        "protected_notes_content": "Beskyt følsomme personoplysninger ved at kryptere noterne og låse dem bag en adgangskodebeskyttet session.",
+        "auth_title": "Sikkert login",
+        "auth_content": "Beskyt dit serverlogin med tofaktorgodkendelse (TOTP), eller log ind via din identitetsudbyder med OpenID Connect.",
+        "search_title": "Søgning og hurtig navigation",
+        "search_content": "Gå til en vilkårlig note eller kommando ved at søge på titlen med fuzzy matching, eller foretag en fuldtekstsøgning i dine noter – også i tekst i billeder og PDF-filer via OCR."
+    }
+}

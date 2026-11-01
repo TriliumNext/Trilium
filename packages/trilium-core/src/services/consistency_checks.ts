@@ -13,6 +13,7 @@ import optionsService from "./options.js";
 import { getSql } from "./sql/index.js";
 import sqlInit from "./sql_init.js";
 import syncMutexService from "./sync_mutex.js";
+import { getVirtualNoteProvider } from "./virtual_notes.js";
 import ws from "./ws.js";
 import { default as eraseService } from "./erase.js";
 import becca_loader from "../becca/becca_loader.js";
@@ -34,9 +35,13 @@ class ConsistencyChecks {
         this.reloadNeeded = false;
     }
 
-    findAndFixIssues(query: string, fixerCb: (res: any) => void) {
+    /**
+     * @param isExempt - rows it accepts are not issues at all: they are dropped before the fixer
+     *                   runs, so they neither get "fixed" nor counted as unrecovered errors.
+     */
+    findAndFixIssues(query: string, fixerCb: (res: any) => void, isExempt?: (res: any) => boolean) {
         const sql = getSql();
-        const results = sql.getRows(query);
+        const results = sql.getRows(query).filter((res) => !isExempt?.(res));
 
         for (const res of results) {
             try {
@@ -250,7 +255,15 @@ class ConsistencyChecks {
                 } else {
                     logError(`Relation '${attributeId}' references missing note '${noteId}'`);
                 }
-            }
+            },
+            // Virtual notes (the in-app help, …) live only in becca and are deliberately never
+            // written to the `notes` table, so a relation pointing at one — the `~internalLink` a
+            // reference link to a help page produces, say — looks broken to a check done in SQL.
+            // Such relations are legitimate, so their whole namespace is exempt. The test is the
+            // registered namespace rather than becca's contents: a provider may not have injected
+            // its subtree at check time, and deleting the user's relations over that would be
+            // irreversible and would propagate through sync.
+            ({ noteId }) => !!getVirtualNoteProvider(noteId)
         );
 
         this.findAndFixIssues(
@@ -338,10 +351,17 @@ class ConsistencyChecks {
         );
 
         this.findAndFixIssues(
+            // The unary '+' on branches.isDeleted makes that term non-indexable, which is
+            // deliberate: without ANALYZE statistics the planner otherwise picks
+            // IDX_branches_isDeleted_utcDateModified for the inner loop of this join. That index
+            // has a single distinct value across nearly every branch, so the join degenerates
+            // into a scan of all branches per note (~486M iterations on a 20k-note database,
+            // measured at 95s, which blocks the Electron main process). Suppressing it forces
+            // IDX_branches_noteId_parentNoteId and the same query runs in ~0.1s.
             `
             SELECT DISTINCT notes.noteId
             FROM notes
-            LEFT JOIN branches ON notes.noteId = branches.noteId AND branches.isDeleted = 0
+            LEFT JOIN branches ON notes.noteId = branches.noteId AND +branches.isDeleted = 0
             WHERE notes.isDeleted = 0
             AND branches.branchId IS NULL
         `,

@@ -1,7 +1,6 @@
 import "./OptionsSection.css";
 
-import type { ComponentChildren } from "preact";
-import { CSSProperties } from "preact/compat";
+import type { ComponentChildren, CSSProperties } from "preact";
 
 import HelpButton from "../../../react/HelpButton";
 
@@ -13,13 +12,16 @@ interface OptionsSectionProps {
     style?: CSSProperties;
     className?: string;
     helpUrl?: string;
+    /** Buttons for the section's own header, beside the help button — e.g. one that adds to the card. */
+    actions?: ComponentChildren;
 }
 
-export default function OptionsSection({ title, description, children, noCard, className, helpUrl, ...rest }: OptionsSectionProps) {
-    const header = (title || helpUrl) && (
+export default function OptionsSection({ title, description, children, noCard, className, helpUrl, actions, ...rest }: OptionsSectionProps) {
+    const header = (title || helpUrl || actions) && (
         <div className="options-section-header">
             {title && <h4>{title}</h4>}
             {helpUrl && <HelpButton helpPage={helpUrl} />}
+            {actions}
         </div>
     );
 

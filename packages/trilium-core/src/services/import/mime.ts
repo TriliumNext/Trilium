@@ -26,6 +26,7 @@ const CODE_MIME_TYPES = new Set([
     "text/x-kotlin",
     "text/x-lua",
     "text/x-markdown",
+    "text/x-nim",
     "text/xml",
     "text/x-objectivec",
     "text/x-pascal",
@@ -69,6 +70,7 @@ const EXTENSION_TO_MIME = new Map<string, string>([
     [".http", "message/http"],
     [".kt", "text/x-kotlin"],
     [".m", "text/x-objectivec"],
+    [".nim", "text/x-nim"],
     [".py", "text/x-python"],
     [".rb", "text/x-ruby"],
     [".scala", "text/x-scala"],
@@ -76,7 +78,8 @@ const EXTENSION_TO_MIME = new Map<string, string>([
     [".ts", "text/x-typescript"],
     [".excalidraw", "application/json"],
     [".mermaid", "text/vnd.mermaid"],
-    [".mmd", "text/vnd.mermaid"]
+    [".mmd", "text/vnd.mermaid"],
+    [".triliumsheet", "text/x-spreadsheet"]
 ]);
 
 /** @returns false if MIME is not detected */

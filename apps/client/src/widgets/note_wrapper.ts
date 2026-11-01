@@ -1,9 +1,11 @@
+import { isFullWidthNoteType } from "@triliumnext/commons";
+
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import type FNote from "../entities/fnote.js";
 import attributeService from "../services/attributes.js";
-import { getLocaleById } from "../services/i18n.js";
 import utils from "../services/utils.js";
+import { isContentRightToLeft } from "../utils/formatters.js";
 import type BasicWidget from "./basic_widget.js";
 import FlexContainer from "./containers/flex_container.js";
 
@@ -15,6 +17,20 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         super("column");
 
         this.css("flex-grow", "1").collapsible();
+    }
+
+    doRender() {
+        super.doRender();
+        this.$widget.prepend(createCaretStop()).append(createCaretStop());
+        // Adds `note-split` before the note context arrives: `resizer.ts` selects the panes by it.
+        this.refresh();
+    }
+
+    toggleExt(show: boolean | null | "" | undefined) {
+        super.toggleExt(show);
+        if (!show) {
+            releaseFocusAndSelection(this.$widget[0]);
+        }
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
@@ -38,65 +54,56 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
     }
 
     refresh() {
-        const isHiddenExt = this.isHiddenExt(); // preserve through class reset
-        const isActive = this.$widget.hasClass("active");
+        const classes = new Set(this.getClasses().join(" ").split(/[\t\n\f\r ]+/).filter(Boolean));
 
-        this.$widget.removeClass();
-
-        this.toggleExt(!isHiddenExt);
-
-        if (isActive) {
-            this.$widget.addClass("active");
+        // Only the difference is applied: a class change on the split restyles the whole note.
+        const classList = this.$widget[0].classList;
+        for (const cls of [ ...classList ]) {
+            if (!classes.has(cls)) {
+                classList.remove(cls);
+            }
+        }
+        for (const cls of classes) {
+            if (!classList.contains(cls)) {
+                classList.add(cls);
+            }
         }
 
-        this.$widget.addClass("component note-split");
+        // `bgfx` can change here without SplitNoteContainer refreshing.
+        const container = this.$widget[0].parentElement;
+        if (container) {
+            markVisibleSplits(container);
+        }
+    }
+
+    /** The classes of the split, each entry holding one or more class names split by whitespace. */
+    private getClasses() {
+        // These are owned by SplitNoteContainer, not by the note, so they are kept as they are.
+        const classes = CONTAINER_OWNED_CLASSES.filter((cls) => this.$widget.hasClass(cls));
+        classes.push(this.isHiddenExt() ? "hidden-ext" : "visible", "component", "note-split");
 
         const note = this.noteContext?.note;
         if (!note) {
-            this.$widget.addClass("bgfx empty-note");
-            return;
+            classes.push("bgfx", "empty-note");
+            return classes;
         }
 
-        this.$widget.toggleClass("full-content-width", isFullWidthNote(note));
+        classes.push(
+            note.getCssClass(),
+            utils.getNoteTypeClass(note.type),
+            utils.getMimeTypeClass(note.mime),
+            `view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`,
+            note.getColorClass()
+        );
+        if (isFullWidthNote(note)) classes.push("full-content-width");
+        if (note.isOptions()) classes.push("options");
+        if (hasBackgroundEffects(note)) classes.push("bgfx");
+        if (note.isProtected) classes.push("protected");
+        // Resolved rather than read straight off the label: a note with no language of its own
+        // still follows the default content language.
+        if (isContentRightToLeft(note.getLabelValue("language"))) classes.push("rtl");
 
-        this.$widget.addClass(note.getCssClass());
-
-        this.$widget.addClass(utils.getNoteTypeClass(note.type));
-        this.$widget.addClass(utils.getMimeTypeClass(note.mime));
-        this.$widget.addClass(`view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`);
-        this.$widget.addClass(note.getColorClass());
-        this.$widget.toggleClass("options", note.isOptions());
-        this.$widget.toggleClass("bgfx", this.#hasBackgroundEffects(note));
-        this.$widget.toggleClass("protected", note.isProtected);
-
-        const noteLanguage = note?.getLabelValue("language");
-        const locale = getLocaleById(noteLanguage);
-        this.$widget.toggleClass("rtl", !!locale?.rtl);
-    }
-
-    #hasBackgroundEffects(note: FNote): boolean {
-        const MIME_TYPES_WITH_BACKGROUND_EFFECTS = [
-            "application/pdf"
-        ];
-
-        const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
-            "grid",
-            "list"
-        ];
-
-        if (note.isOptions()) {
-            return true;
-        }
-
-        if (note.type === "file" && (MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime) || note.mime.startsWith("audio/"))) {
-            return true;
-        }
-
-        if (note.type === "book" && COLLECTIONS_WITH_BACKGROUND_EFFECTS.includes(note.getLabelValue("viewType") ?? "none")) {
-            return true;
-        }
-
-        return false;
+        return classes;
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
@@ -105,11 +112,105 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         const noteId = this.noteContext?.noteId;
         if (
             loadResults.isNoteReloaded(noteId) ||
+            // The direction of a note carrying no `#language` comes from this option, so a change to it
+            // has to repaint the `rtl` class the same way a change to the label would.
+            loadResults.isOptionReloaded("defaultContentLanguage") ||
             loadResults.getAttributeRows().find((attr) => attr.type === "label" && LABELS_CAUSING_REFRESH.includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
         ) {
             this.refresh();
         }
     }
+}
+
+/** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
+const CONTAINER_OWNED_CLASSES = [ "active", "last-visible" ];
+
+/**
+ * Marks the rightmost visible split of `container` with `last-visible`, and the container with
+ * `multiple-splits` while it shows more than one. Sets `first-split-bgfx` and `last-split-bgfx` on
+ * `body` while the outer visible splits are translucent, for the peek buttons on either side of
+ * `#center-pane`. Reads the DOM order, since `SplitNoteContainer` reorders the splits in place.
+ */
+export function markVisibleSplits(container: HTMLElement) {
+    const splits = [ ...container.children ]
+        .filter((child) => child.classList.contains("note-split"));
+    const visibleSplits = splits.filter((split) => !split.classList.contains("hidden-ext"));
+    const firstVisible = visibleSplits.at(0);
+    const lastVisible = visibleSplits.at(-1);
+    for (const split of splits) {
+        split.classList.toggle("last-visible", split === lastVisible);
+    }
+
+    const bodyClasses = document.body.classList;
+    container.classList.toggle("multiple-splits", visibleSplits.length > 1);
+    bodyClasses.toggle("first-split-bgfx", !!firstVisible?.classList.contains("bgfx"));
+    bodyClasses.toggle("last-split-bgfx", !!lastVisible?.classList.contains("bgfx"));
+}
+
+/**
+ * Returns an invisible, selectable element. When an editor takes focus, Chromium searches the page
+ * for the nearest selectable position, and stops at this element instead of walking through the
+ * notes of the hidden tabs.
+ */
+export function createCaretStop() {
+    const stop = document.createElement("div");
+    stop.className = "caret-stop";
+    stop.setAttribute("aria-hidden", "true");
+    stop.textContent = "​";
+    return stop;
+}
+
+/**
+ * Blurs the focused element and clears the selection inside a split that is being hidden. Chromium
+ * keeps both in a `content-visibility: hidden` split, where resolving the caret walks the note.
+ */
+function releaseFocusAndSelection(split: HTMLElement) {
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && split.contains(focused)) {
+        focused.blur();
+    }
+
+    const selection = document.getSelection();
+    if (selection?.anchorNode && split.contains(selection.anchorNode)) {
+        selection.removeAllRanges();
+    }
+}
+
+/**
+ * Whether the split should be translucent (`bgfx`), letting the window background effect show through.
+ * This suits notes that render their content on a bare background (media, option pages, and the
+ * collections whose own surface is only what they lay out on it); notes that paint their own
+ * background stay opaque. Exported as a pure function for
+ * unit testing.
+ */
+export function hasBackgroundEffects(note: FNote): boolean {
+    const MIME_TYPES_WITH_BACKGROUND_EFFECTS = [
+        "application/pdf"
+    ];
+
+    const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
+        "grid",
+        "list",
+        "board"
+    ];
+
+    if (note.isOptions()) {
+        return true;
+    }
+
+    if (note.type === "image") {
+        return true;
+    }
+
+    if (note.type === "file" && (MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime) || note.mime.startsWith("audio/"))) {
+        return true;
+    }
+
+    if (note.type === "book" && COLLECTIONS_WITH_BACKGROUND_EFFECTS.includes(note.getLabelValue("viewType") ?? "none")) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -118,11 +219,13 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
  * UI toggle is hidden. Exported as a pure function for unit testing.
  */
 export function isAlwaysFullWidthByType(note: FNote) {
-    if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "mindMap", "spreadsheet"].includes(note.type)) {
+    // Icon packs render a full-pane glyph grid; `code`-type ones are already covered below, this also
+    // catches the `file`-type packs (distributable zips).
+    if (note.isIconPack()) {
         return true;
     }
 
-    if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/") || note.mime.startsWith("audio/"))) {
+    if (isFullWidthNoteType(note.type, note.mime)) {
         return true;
     }
 

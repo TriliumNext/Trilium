@@ -363,6 +363,9 @@ function isMergeableList(el: HTMLElement): boolean {
  */
 function convertColumns(root: HTMLElement) {
     for (const columnList of root.querySelectorAll("div.column-list")) {
+        /* v8 ignore next 4 -- defensive: guards insertAdjacentHTML from dereferencing a null parent. Unreachable
+           in practice, since node-html-parser's remove() detaches only the removed node itself (a nested list
+           keeps its now-detached parent), and each list from the eager querySelectorAll is removed at most once. */
         if (!columnList.parentNode) {
             continue; // a nested list, already rendered as part of its parent
         }
@@ -392,6 +395,7 @@ function flattenColumns(columnList: HTMLElement, parentWidth: number): { width: 
 
     const leaves: { width: number; content: string }[] = [];
     for (const [index, column] of columns.entries()) {
+        /* v8 ignore next -- `widths` is `columns.map(...)`, so it always has an entry at a column's own index; the `?? 0` only satisfies noUncheckedIndexedAccess */
         const share = parentWidth * ((widths[index] ?? 0) / total);
         const wrapped = pureWrapperList(column);
         if (wrapped) {
@@ -423,6 +427,7 @@ function round2(value: number): number {
 
 /** True for an empty `<p>` (Notion's layout spacers), which shouldn't count as a column's real content. */
 function isEmptyParagraph(node: HTMLElement): boolean {
+    /* v8 ignore next -- node-html-parser's textContent getter always returns a string, so the `?? ""` never applies */
     return isTag(node, "p") && (node.textContent ?? "").trim() === "";
 }
 
@@ -482,10 +487,11 @@ function stripTableAttributes(table: HTMLElement) {
 
 // #region Images
 /**
- * Notion image blocks are `<figure class="image"><a href="…"><img src="…"></a></figure>`, where the
- * `<a>` is a self-link to the file and the `<img>` carries an inline pixel width. Reduce each to Trilium's
- * canonical `<figure class="image"><img src="…"></figure>` (unwrap the link, drop the sizing and the
- * Notion id). The `src` still points at the zip-relative path; the importer rewrites it to an attachment.
+ * Notion image blocks are `<figure class="image" data-notion-image="…"><a href="…"><img src="…"></a></figure>`,
+ * where the `<a>` is a self-link to the file, `data-notion-image` repeats that same source and the `<img>`
+ * carries an inline pixel width. Reduce each to Trilium's canonical `<figure class="image"><img src="…"></figure>`
+ * (unwrap the link, drop the sizing, the Notion id and the repeated source). The `src` still points at the
+ * zip-relative path; the importer rewrites it to an attachment.
  */
 function convertImages(root: HTMLElement) {
     for (const figure of root.querySelectorAll("figure.image")) {
@@ -495,6 +501,7 @@ function convertImages(root: HTMLElement) {
         }
         img.removeAttribute("style");
         figure.removeAttribute("id");
+        figure.removeAttribute("data-notion-image");
         figure.set_content(img.toString());
     }
 }

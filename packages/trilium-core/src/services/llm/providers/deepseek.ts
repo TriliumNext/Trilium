@@ -1,0 +1,200 @@
+import { createDeepSeek, type DeepSeekLanguageModelChatOptions, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
+import type { LlmAttachmentKind, LlmReasoningEffort } from "@triliumnext/commons";
+import type { ToolSet } from "ai";
+
+import type { LlmProviderConfig, ModelInfo } from "../types.js";
+import { createReadWebPageTool, createWebSearchTool } from "../web_search.js";
+import { BaseProvider, type RemoteModel } from "./base_provider.js";
+import { llmFetch } from "./fetch.js";
+
+/**
+ * DeepSeek's OpenAI-compatible endpoint. The `/v1` here is the compatibility
+ * path their SDK guide uses and has nothing to do with the model version — the
+ * bare host answers identically.
+ */
+const OFFICIAL_BASE_URL = "https://api.deepseek.com/v1";
+
+/** The thinking levels of a V4 model, weakest first: `none` turns thinking off, the rest set `reasoning_effort`. */
+const V4_REASONING_EFFORTS = [ "none", "low", "high", "max" ] as const satisfies LlmReasoningEffort[];
+type V4ReasoningEffort = (typeof V4_REASONING_EFFORTS)[number];
+const V4_DEFAULT_REASONING_EFFORT: V4ReasoningEffort = "high";
+
+/**
+ * DeepSeek, over its OpenAI-compatible API. `@ai-sdk/deepseek` rather than
+ * `@ai-sdk/openai` reads the thinking from `reasoning_content` and sends it back
+ * with later turns. DeepSeek could also be reached through the
+ * generic custom-endpoint card, but a card of its own is what makes its models
+ * priced: {@link BaseProvider.getProviderPrices} keys the committed table by
+ * provider name, and DeepSeek publishes bare ids (`deepseek-chat`) that the
+ * table carries verbatim — so cost and context windows resolve, which they never
+ * can for an endpoint we can't name.
+ */
+export class DeepSeekProvider extends BaseProvider {
+    name = "deepseek";
+    /**
+     * Only the pre-listing fallback. DeepSeek retires ids between generations —
+     * an account provisioned for the v4 line lists neither of these — so the real
+     * defaults come from {@link pickModelDefaults} once the endpoint has answered.
+     */
+    protected defaultModel = "deepseek-chat";
+    protected titleModel = "deepseek-chat";
+
+    /** Whether the two above have been replaced by ids the endpoint actually offers. */
+    private defaultsFromListing = false;
+
+    private deepseek: DeepSeekSDKProvider;
+
+    constructor(apiKey: string, baseURL?: string) {
+        super(apiKey, baseURL);
+        if (!apiKey) {
+            throw new Error("API key is required for DeepSeek provider");
+        }
+        this.deepseek = createDeepSeek({ apiKey, baseURL: this.baseURL ?? OFFICIAL_BASE_URL, fetch: llmFetch });
+    }
+
+    protected createModel(modelId: string) {
+        return this.deepseek.chat(modelId);
+    }
+
+    /** V4 models get the reasoning effort dropdown in place of the extended thinking switch. */
+    override async listModels(): Promise<ModelInfo[]> {
+        const models = await super.listModels();
+        return models.map(m => isDeepSeekV4Model(m.id)
+            ? { ...m, reasoningEfforts: [ ...V4_REASONING_EFFORTS ], defaultReasoningEffort: V4_DEFAULT_REASONING_EFFORT }
+            : m);
+    }
+
+    /**
+     * Sends the chat's effort to a V4 model, or the default when the chat has none, so the
+     * level the dropdown shows is the one DeepSeek runs at.
+     */
+    protected override chatProviderOptions(config: LlmProviderConfig) {
+        if (!isDeepSeekV4Model(config.model || this.defaultModel)) {
+            return undefined;
+        }
+        const effort = V4_REASONING_EFFORTS.find(level => level === config.reasoningEffort) ?? V4_DEFAULT_REASONING_EFFORT;
+        const options: DeepSeekLanguageModelChatOptions = effort === "none"
+            ? { thinking: { type: "disabled" } }
+            : { thinking: { type: "enabled" }, reasoningEffort: effort };
+        return { deepseek: options };
+    }
+
+    /**
+     * DeepSeek's Chat Completions API has no server-side search, so built-in search calls its
+     * Search API with the provider's key, through the same tools a search provider gets.
+     */
+    protected override addWebSearchTool(tools: ToolSet): void {
+        tools.web_search = createWebSearchTool({ provider: "deepseek", apiKey: this.apiKey, baseURL: this.baseURL }, { builtIn: true });
+        tools.read_web_page = createReadWebPageTool();
+    }
+
+    /** DeepSeek reads no PDFs, and images only on its vision models (`deepseek-v4-flash-vision-exp`). */
+    protected override acceptsAttachment(kind: LlmAttachmentKind, modelId: string): boolean {
+        return kind === "image" && modelId.includes("vision");
+    }
+
+    /** Everything DeepSeek lists is a chat model, so nothing is filtered out. */
+    protected override async fetchRemoteModels(): Promise<RemoteModel[] | null> {
+        const payload = await this.fetchJson(`${this.baseURL ?? OFFICIAL_BASE_URL}/models`, {
+            Authorization: `Bearer ${this.apiKey}`
+        });
+        const data = (payload as { data?: unknown }).data;
+        if (!Array.isArray(data)) {
+            throw new Error("Unexpected /models response shape");
+        }
+        const models = data
+            .filter((m): m is { id: string } => typeof (m as { id?: unknown }).id === "string")
+            .map(m => ({ id: m.id, name: deepSeekModelName(m.id) }));
+        this.pickModelDefaults(models.map(m => m.id));
+        return models;
+    }
+
+    /**
+     * Point the defaults at ids the account actually has. Titles go to the
+     * cheapest listed model — a title is one line, generated for every new chat —
+     * and conversation to the dearest, which is DeepSeek's flagship tier.
+     *
+     * Both take the *first* of a tied group rather than the last, so a chat and a
+     * reasoner priced identically default to chat: same cost per token, but the
+     * reasoner spends far more of them thinking.
+     */
+    private pickModelDefaults(ids: string[]): void {
+        if (ids.length === 0) {
+            return;
+        }
+        const prices = this.getProviderPrices();
+        // Ids the table doesn't know (a gateway serving something else) can't be
+        // ranked on cost, so they decide nothing unless nothing at all is priced.
+        const priced = ids.filter(id => prices[id]);
+        const ranked = priced.length > 0 ? priced : ids;
+        const cost = (id: string) => prices[id]?.output ?? 0;
+
+        // Strict comparisons, so a tie leaves the first-listed id in place.
+        let cheapest = ranked[0];
+        let dearest = ranked[0];
+        for (const id of ranked) {
+            if (cost(id) < cost(cheapest)) {
+                cheapest = id;
+            }
+            if (cost(id) > cost(dearest)) {
+                dearest = id;
+            }
+        }
+
+        this.titleModel = cheapest;
+        this.defaultModel = dearest;
+        this.defaultsFromListing = true;
+    }
+
+    /**
+     * The title model is only known once the endpoint has been listed, so make
+     * sure that has happened. The base class caches the list, so this is a no-op
+     * after the first call; a listing failure falls through to the alias above
+     * rather than costing the user a title.
+     */
+    override async generateTitle(firstMessage: string): Promise<string> {
+        if (!this.defaultsFromListing) {
+            await this.listModels().catch(() => undefined);
+        }
+        return super.generateTitle(firstMessage);
+    }
+
+    protected override modelName(id: string): string {
+        return deepSeekModelName(id);
+    }
+
+    /**
+     * The catalog is small enough to recommend wholesale, minus the coder line —
+     * `deepseek-coder` was folded into `deepseek-chat` and lingers only for
+     * callers pinned to it, so pre-selecting it would put a superseded model in
+     * front of the user.
+     */
+    override recommendedModelIds(models: ModelInfo[]): Set<string> {
+        return new Set(
+            models
+                .filter(m => !m.isLegacy && !/preview/i.test(m.id) && !/^deepseek-coder/.test(m.id))
+                .map(m => m.id)
+        );
+    }
+}
+
+/**
+ * `deepseek-chat` → "DeepSeek Chat", `deepseek-v4-pro` → "DeepSeek V4 Pro". The
+ * `/models` response carries ids only, and an unprefixed id (a proxy serving
+ * something else) is left exactly as it came.
+ */
+export function deepSeekModelName(id: string): string {
+    const match = /^deepseek-(.+)$/.exec(id);
+    if (!match) {
+        return id;
+    }
+    const words = match[1]
+        .split("-")
+        .map(word => (/^v\d+$/i.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)));
+    return `DeepSeek ${words.join(" ")}`;
+}
+
+/** The V4 line, which takes `thinking` and `reasoning_effort`; the same test `@ai-sdk/deepseek` applies. */
+function isDeepSeekV4Model(id: string): boolean {
+    return id.includes("deepseek-v4") || id.startsWith("deepseek-flash") || id.startsWith("deepseek-pro");
+}

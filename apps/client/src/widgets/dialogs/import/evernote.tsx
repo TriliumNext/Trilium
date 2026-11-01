@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import importService from "../../../services/import.js";
+import { fileAccept } from "../../../services/utils.js";
 import Button from "../../react/Button.js";
 import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/evernote.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 
 function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPanelProps) {
@@ -16,7 +16,7 @@ function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
     const [shrinkImages, setShrinkImages] = useState(compressImages);
 
     // An Evernote export is one ENEX (.enex) file per notebook, so allow selecting several at once.
-    const onChange = useCallback((fileList: FileList | null) => setFiles(fileList ? Array.from(fileList) : []), []);
+    const onChange = useCallback((fileList: File[] | null) => setFiles(fileList ?? []), []);
 
     const doImport = useCallback(async () => {
         if (!files.length) {
@@ -53,7 +53,7 @@ function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
         <Card heading={t("evernote_import.choose_file")}>
             <CardSection>
                 <OptionsRow name="import-file" description={t("evernote_import.description_long")} stacked>
-                    <FileDropZone multiple onChange={onChange} accept=".enex" />
+                    <FileDropZone multiple onChange={onChange} accept={fileAccept(".enex")} />
                 </OptionsRow>
                 <OptionsRowWithToggle
                     name="shrink-images"
@@ -72,7 +72,7 @@ const provider: ImportProvider = {
     id: "evernote",
     helpPage: "syuSEKf2rUGr",
     name: t("evernote_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-evernote",
     description: t("evernote_import.description"),
     Panel: EvernotePanel
 };

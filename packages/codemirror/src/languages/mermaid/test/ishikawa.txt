@@ -1,0 +1,48 @@
+# Ishikawa
+
+ishikawa-beta
+
+==>
+
+IshikawaDiagram(DiagramName)
+
+# Trilium's sample
+
+ishikawa-beta
+  Blurry Photo
+  Process
+    Out of focus
+    Shutter speed too slow
+  User
+    Shaky hands
+  Equipment
+    LENS
+      Inappropriate lens
+    SENSOR
+      Damaged sensor
+
+==>
+
+IshikawaDiagram(DiagramName,Effect,Category,Cause,Cause,Category,Cause,Category,Cause,Cause,Cause,Cause)
+
+# Effect on the diagram line and a shallower category
+
+ishikawa Blurry
+    Process
+      cause
+  Less indented
+
+==>
+
+IshikawaDiagram(DiagramName,Effect,Category,Cause,Category)
+
+# Comments
+
+ishikawa-beta
+  Effect %% stays text
+  %% a comment
+  Category
+
+==>
+
+IshikawaDiagram(DiagramName,Effect,LineComment,Category)

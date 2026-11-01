@@ -1,0 +1,17 @@
+/* Keycap style matching CKEditor content (`.ck-content kbd`); shared by the hints button and pane. */
+.tn-shortcut-hints-kbd kbd {
+    display: inline-block;
+    border: 1px solid var(--help-kbd-shortcut-border);
+    border-radius: 5px;
+    padding: 0 5px;
+    background: var(--help-kbd-shortcut-background);
+    box-shadow:
+        0 2px 0 var(--help-kbd-shortcut-border),
+        inset 0 -1px 0 var(--help-kbd-shortcut-border);
+    color: var(--help-kbd-shortcut-color);
+    font-family: var(--main-font-family);
+    font-size: 0.7em;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.5pt;
+}

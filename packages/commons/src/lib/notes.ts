@@ -2,7 +2,9 @@
  * @module notes Common logic for notes (across front-end and back-end)
  */
 
-import { MIME_TYPES_DICT } from "./mime_type.js";
+import { isFontMimeType } from "./font_mimes.js";
+import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
+import { isOfficeMimeType } from "./office.js";
 import { NoteType } from "./rows.js";
 
 export const NOTE_TYPE_ICONS = {
@@ -11,7 +13,7 @@ export const NOTE_TYPE_ICONS = {
     code: "bx bx-code",
     render: "bx bx-extension",
     search: "bx bx-file-find",
-    relationMap: "bx bxs-network-chart",
+    relationMap: "bx bx-shape-polygon",
     book: "bx bx-book",
     noteMap: "bx bxs-network-chart",
     mermaid: "bx bx-selection",
@@ -25,23 +27,187 @@ export const NOTE_TYPE_ICONS = {
     llmChat: "bx bx-message-square-dots"
 };
 
-const FILE_MIME_MAPPINGS = {
+/**
+ * Note types that can be embedded as an image but are not images themselves, mapped to the title of
+ * the attachment holding their rendered picture. The type widgets write these attachments, the
+ * `api/images/<noteId>` routes serve them in place of the note's own content, the ZIP export writes
+ * them out beside the note and the importer resolves them back, and note orphan-erasure exempts
+ * them. Everything keys off this one table so those five places cannot drift apart.
+ */
+export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
+    canvas: "canvas-export.svg",
+    mermaid: "mermaid-export.svg",
+    mindMap: "mindmap-export.svg",
+    spreadsheet: "spreadsheet-export.png"
+} as const satisfies Partial<Record<NoteType, string>>;
+
+/**
+ * The title of the attachment holding the rendered image of the given note type, or `undefined` if
+ * notes of that type carry their image as content and are served directly.
+ *
+ * Prefer indexing {@link NOTE_TYPE_IMAGE_ATTACHMENTS} directly when the note type is known
+ * statically — it narrows to the exact title instead of `string | undefined`.
+ */
+export function getImageAttachmentTitle(type: NoteType | null | undefined): string | undefined {
+    if (!type) {
+        return undefined;
+    }
+
+    return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
+}
+
+/** The media type of a canvas drawing saved in an attachment, such as one in a text note. */
+export const CANVAS_ATTACHMENT_MIME = "application/vnd.excalidraw+json";
+
+/** The title of the attachment a new canvas drawing is saved in. */
+export const CANVAS_ATTACHMENT_TITLE = "Canvas.excalidraw";
+
+/**
+ * The title of the SVG image attachment that holds the picture of the canvas drawing saved in
+ * attachment `attachmentId`. The note that owns the drawing owns the picture, and shared pages show
+ * the picture in place of the drawing.
+ */
+export function getDrawingPictureTitle(attachmentId: string) {
+    return `${attachmentId}.svg`;
+}
+
+/** The content of a new, empty canvas drawing. */
+export const EMPTY_CANVAS_CONTENT = JSON.stringify({
+    type: "excalidraw",
+    version: 2,
+    elements: [],
+    files: {},
+    appState: {}
+});
+
+/** The media type of a Mermaid diagram saved in an attachment, such as one in a text note. */
+export const MERMAID_ATTACHMENT_MIME = "text/vnd.mermaid";
+
+/** The title of the attachment a new Mermaid diagram is saved in. */
+export const MERMAID_ATTACHMENT_TITLE = "Diagram.mmd";
+
+/** The content of a new Mermaid diagram. */
+export const NEW_MERMAID_CONTENT = "flowchart LR\n    A --> B\n";
+
+/**
+ * The media type of a file attached under `fileName`: {@link CANVAS_ATTACHMENT_MIME} for an
+ * Excalidraw file, so that it shows as a canvas drawing, else `mime`.
+ */
+export function getAttachedFileMime(fileName: string, mime: string) {
+    return fileName.toLowerCase().endsWith(".excalidraw") ? CANVAS_ATTACHMENT_MIME : mime;
+}
+
+/**
+ * The note a mind map node's link points at, or `null` where it points somewhere else entirely.
+ *
+ * A node carries one link of its own — Mind Elixir's `hyperLink` — which the editor writes as the
+ * in-app address a note link wears everywhere else in Trilium, so that following it is answered by
+ * the delegated link handler with nothing else to wire up. The whole value has to be that address:
+ * a page whose own address happens to carry `#root/…` is a page, not a link between notes.
+ *
+ * Shared, so that what writes a link, what follows one, and what relates the two notes to each
+ * other all agree on what a link is.
+ */
+export function parseMindMapNoteLink(link: unknown): { notePath: string; noteId: string } | null {
+    if (typeof link !== "string" || !/^#root(\/[a-zA-Z0-9_]+)*$/.test(link)) {
+        return null;
+    }
+
+    const notePath = link.slice(1);
+    const segments = notePath.split("/");
+    return {
+        notePath,
+        noteId: segments[segments.length - 1]
+    };
+}
+
+const FILE_MIME_MAPPINGS: Record<string, string> = {
     "application/pdf": "bx bxs-file-pdf",
     "application/vnd.oasis.opendocument.text": "bx bxs-file-doc",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bx bxs-file-doc",
+    "application/gpx+xml": "bx bx-trip",
+    // Workbooks kept as file notes or attachments, which `convertOfficeToHtml` previews as a grid.
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bx bx-spreadsheet",
+    "application/vnd.oasis.opendocument.spreadsheet": "bx bx-spreadsheet",
+    "application/vnd.ms-excel": "bx bx-spreadsheet",
+    "text/csv": "bx bx-spreadsheet",
+    [CANVAS_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.canvas,
+    [MERMAID_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.mermaid
 };
 
-const IMAGE_MIME_MAPPINGS = {
+const IMAGE_MIME_MAPPINGS: Record<string, string> = {
     "image/gif": "bx bxs-file-gif",
 };
 
-export function getNoteIcon({ noteId, type, mime, iconClass, workspaceIconClass, isFolder }: {
+/** The labels a note carries to stand on a geo map, read by {@link getNoteIcon}. */
+export const GEO_LOCATION_ATTRIBUTE = "geolocation";
+export const GEO_SHAPE_ATTRIBUTE = "geoShape";
+
+/** The same two labels on a map drawn over an image, in the map's own coordinates rather than
+ *  degrees. */
+export const MAP_POSITION_ATTRIBUTE = "mapPosition";
+export const MAP_SHAPE_ATTRIBUTE = "mapShape";
+
+/** The icon a note on a geo map is drawn under where it has none of its own. */
+export const GEO_MARKER_ICON = "bx bx-pin";
+
+/**
+ * The icon for a drawn shape, keyed by the kind its `#geoShape` label names (see the client's
+ * geomap/shapes.ts for the format). An unreadable label falls back to the line icon.
+ */
+export const GEO_SHAPE_ICONS: Record<string, string> = {
+    line: "bx bx-vector",
+    polygon: "bx bx-shape-polygon",
+    circle: "bx bx-shape-circle"
+};
+
+/**
+ * The icon of a note made by the web clipper or the PWA share target, keyed by its `#clipType`
+ * label.
+ */
+export const CLIP_TYPE_ICONS: ReadonlyMap<string, string> = new Map([
+    [ "clippings", "bx bx-paperclip" ],
+    [ "page", "bx bx-globe" ],
+    [ "note", "bx bx-bookmark" ],
+    [ "tabs", "bx bx-window-alt" ],
+    [ "share", "bx bx-share" ]
+]);
+
+/** The icon of a calendar event, a text note with a start date (see {@link getEventStartDate}). */
+export const CALENDAR_EVENT_ICON = "bx bx-calendar-event";
+
+/** The label on a note created by the "Record meeting" launcher. It has no value. */
+export const MEETING_RECORDING_LABEL = "meetingRecording";
+
+/** The icon of a note carrying {@link MEETING_RECORDING_LABEL}. */
+export const MEETING_RECORDING_ICON = "bx bx-conversation";
+
+/**
+ * The icon a note is drawn under: its own `#iconClass` where it has one, and a default read off
+ * what the note is otherwise.
+ *
+ * A note carrying a non-empty `#geolocation` or `#mapPosition` is drawn as a pin, and one carrying
+ * a `#geoShape` or `#mapShape` as the shape it names, where neither has anything more specific.
+ * The geo map therefore writes no `#iconClass` onto a marker or a shape it creates, so an icon it
+ * hands down through
+ * `#child:iconClass` or a template still applies, and redrawing a shape as another kind changes the
+ * icon with it. A note the web clipper made is drawn by its `#clipType` ({@link CLIP_TYPE_ICONS}),
+ * a recorded meeting by {@link MEETING_RECORDING_ICON}, and a calendar event by
+ * {@link CALENDAR_EVENT_ICON}.
+ * `iconClass` stays an argument rather than being read here because the share tree
+ * narrows it to the prefixes an icon pack supplies.
+ */
+export function getNoteIcon({
+    noteId, type, mime, iconClass, workspaceIconClass, isFolder, getLabelValue
+}: {
     noteId: string;
     type: NoteType;
     mime: string;
     iconClass: string | undefined;
     workspaceIconClass: string | undefined;
     isFolder: () => boolean;
+    /** One of the note's labels, inherited ones included, as every note entity resolves them. */
+    getLabelValue: (name: string) => string | null;
 }) {
     if (iconClass) {
         return iconClass;
@@ -53,20 +219,166 @@ export function getNoteIcon({ noteId, type, mime, iconClass, workspaceIconClass,
     if (noteId === "_share") {
         return "bx bx-share-alt";
     } else if (type === "text") {
+        // A place on a map is written onto a note deliberately, so it outranks the folder icon the
+        // note picks up from having children.
+        if (getLabelValue(GEO_LOCATION_ATTRIBUTE) || getLabelValue(MAP_POSITION_ATTRIBUTE)) {
+            return GEO_MARKER_ICON;
+        }
+        const shape = getLabelValue(GEO_SHAPE_ATTRIBUTE) || getLabelValue(MAP_SHAPE_ATTRIBUTE);
+        if (shape) {
+            return GEO_SHAPE_ICONS[shape.split(":", 1)[0]] ?? GEO_SHAPE_ICONS.line;
+        }
+        const clipIcon = CLIP_TYPE_ICONS.get(getLabelValue("clipType") ?? "");
+        if (clipIcon) {
+            return clipIcon;
+        }
+        if (getLabelValue(MEETING_RECORDING_LABEL) !== null) {
+            return MEETING_RECORDING_ICON;
+        }
+        if (getEventStartDate(getLabelValue)) {
+            return CALENDAR_EVENT_ICON;
+        }
         if (isFolder()) {
             return "bx bx-folder";
         }
         return "bx bx-note";
     } else if (type === "code") {
-        const correspondingMimeType = MIME_TYPES_DICT.find(m => m.mime === mime);
-        return correspondingMimeType?.icon ?? NOTE_TYPE_ICONS.code;
+        return getCodeLanguageIcon(MIME_TYPES_DICT.find(m => m.mime === mime));
     } else if (type === "file") {
-        if (mime.startsWith("video/")) return "bx bx-video";
-        if (mime.startsWith("audio/")) return "bx bx-music";
-        return FILE_MIME_MAPPINGS[mime] ?? NOTE_TYPE_ICONS.file;
+        return getFileMimeIcon(mime);
     } else if (type === "image") {
-        return IMAGE_MIME_MAPPINGS[mime] ?? NOTE_TYPE_ICONS.image;
+        return getImageMimeIcon(mime);
     }
 
     return NOTE_TYPE_ICONS[type];
+}
+
+/**
+ * The start date of a calendar event: the value of the label `#calendar:startDate` names, falling
+ * back to `#startDate`, as the calendar collection reads it.
+ */
+export function getEventStartDate(getLabelValue: (name: string) => string | null) {
+    const customLabelName = getLabelValue("calendar:startDate");
+    return (customLabelName && getLabelValue(customLabelName)) || getLabelValue("startDate");
+}
+
+/**
+ * The icon for something known only by its media type — an attachment, or anything else the app holds
+ * that is not a note and so has no type to ask about.
+ *
+ * A note of the same content gets the same icon, which is the point of routing both through here: a PDF
+ * is a PDF whether it was uploaded as a note or attached to one.
+ */
+export function getMimeIcon(mime: string | undefined | null): string {
+    if (!mime) {
+        return NOTE_TYPE_ICONS.file;
+    }
+
+    return mime.startsWith("image/") ? getImageMimeIcon(mime) : getFileMimeIcon(mime);
+}
+
+/**
+ * The icon of a code note in `language`: the language's own, or the code note type's for a language
+ * without one or a mime `MIME_TYPES_DICT` does not know.
+ */
+export function getCodeLanguageIcon(language: Pick<MimeTypeDefinition, "icon"> | undefined): string {
+    return language?.icon ?? NOTE_TYPE_ICONS.code;
+}
+
+/**
+ * Whether a note of `type` and `mime` always takes the full width of the content, whatever its
+ * `#fullContentWidth` label says: canvas-like types, and files shown in a viewer (PDF, video, audio).
+ */
+export function isFullWidthNoteType(type: string, mime: string) {
+    if (FULL_WIDTH_NOTE_TYPES.includes(type)) {
+        return true;
+    }
+
+    return type === "file"
+        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
+}
+
+/** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */
+export function isMarkdownMime(mime: string) {
+    return MARKDOWN_MIME_TYPES.includes(mime);
+}
+
+/**
+ * The kind of content a note renders as, which picks its renderer: `iconPack` for an icon pack's
+ * manifest, `markdown` for a Markdown code note, else what {@link getFileContentType} names.
+ *
+ * @param hasIconPackLabel whether the note carries `#iconPack`, disabled or not.
+ */
+export function getNoteContentType(type: string, mime: string, hasIconPackLabel: boolean) {
+    if ((type === "code" || type === "file") && mime === "application/json" && hasIconPackLabel) {
+        return "iconPack";
+    }
+    if (type === "code" && isMarkdownMime(mime)) {
+        return "markdown";
+    }
+    return getFileContentType(type, mime);
+}
+
+/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
+export function getFileContentType(type: string, mime: string) {
+    if (type === "file" && mime === "application/pdf") return "pdf";
+    if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
+    if (type === "file" && mime === MERMAID_ATTACHMENT_MIME) return "mermaidDiagram";
+    if ((type === "file" || type === "viewConfig") && mime === "application/json") return "code";
+    if (type === "file" && mime.startsWith("audio/")) return "audio";
+    if (type === "file" && mime.startsWith("video/")) return "video";
+    if (type === "file" && isOfficeMimeType(mime)) return "office";
+    return type;
+}
+
+/**
+ * The group of the share theme's manifest, `content:<group>`, that holds the renderer the app
+ * loads on demand for each kind of content {@link getNoteContentType} names. A kind it renders
+ * with nothing loaded on demand, such as text or code, has none. Each group is a key of the
+ * client's `CONTENT_RENDERERS`.
+ */
+export const CONTENT_RENDERER_GROUPS: Readonly<Record<string, string>> = {
+    iconPack: "iconPack",
+    markdown: "markdown",
+    image: "image",
+    canvasDrawing: "file",
+    mermaidDiagram: "file",
+    pdf: "file",
+    audio: "file",
+    video: "file",
+    render: "render",
+    webView: "webView",
+    llmChat: "llmChat"
+};
+
+/** The group {@link CONTENT_RENDERER_GROUPS} names for content of `kind`, or `undefined` for none. */
+export function getContentRendererGroup(kind: string) {
+    return lookUpMime(CONTENT_RENDERER_GROUPS, kind);
+}
+
+const MARKDOWN_MIME_TYPES = [ "text/markdown", "text/x-markdown", "text/x-gfm" ];
+
+const FULL_WIDTH_NOTE_TYPES = [
+    "code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap",
+    "mindMap", "spreadsheet"
+];
+
+function getFileMimeIcon(mime: string): string {
+    if (mime.startsWith("video/")) return "bx bx-video";
+    if (mime.startsWith("audio/")) return "bx bx-music";
+    if (isFontMimeType(mime)) return "bx bx-font";
+    return lookUpMime(FILE_MIME_MAPPINGS, mime) ?? NOTE_TYPE_ICONS.file;
+}
+
+function getImageMimeIcon(mime: string): string {
+    return lookUpMime(IMAGE_MIME_MAPPINGS, mime) ?? NOTE_TYPE_ICONS.image;
+}
+
+/**
+ * `hasOwn` rather than a plain lookup: the media type is whatever was stored, so `"constructor"` reaches
+ * these tables, and reading it off one would answer with something from its prototype — a function, which
+ * survives the `??` and is handed on as an icon class.
+ */
+function lookUpMime(mappings: Record<string, string>, mime: string): string | undefined {
+    return Object.hasOwn(mappings, mime) ? mappings[mime] : undefined;
 }

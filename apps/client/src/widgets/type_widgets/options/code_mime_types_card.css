@@ -1,0 +1,47 @@
+:where(:root) {
+    --code-mime-types-badge-color: var(--muted-text-color);
+    --code-mime-types-muted-color: var(--muted-text-color);
+    --code-mime-types-sort-label-color: var(--main-text-color);
+}
+
+.tn-card.code-mime-types-card {
+    .tn-card-description {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .code-mime-types-sort {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 0.25em;
+        margin-inline-start: auto;
+        color: var(--code-mime-types-sort-label-color);
+
+        label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+    }
+
+    .code-mime-types-title {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .code-mime-types-muted {
+        color: var(--code-mime-types-muted-color);
+    }
+
+    .code-mime-types-badge {
+        --color: var(--code-mime-types-badge-color);
+        flex-shrink: 0;
+    }
+
+    .code-mime-types-remove {
+        flex-shrink: 0;
+    }
+}

@@ -4,11 +4,21 @@ import path from "path";
 
 import { getResourceDir, isDev } from "../../utils.js";
 
+/**
+ * The stylesheet of an HTML export: CKEditor's content styles, Trilium's content colors over them,
+ * then the multicolumn layout's.
+ */
 function readContentCss(): string {
-    const cssFile = isDev
-        ? path.join(require.resolve("ckeditor5/ckeditor5-content.css"))
-        : path.join(getResourceDir(), "ckeditor5-content.css");
-    return fs.readFileSync(cssFile, "utf-8");
+    const cssFiles = isDev
+        ? [
+            require.resolve("ckeditor5/ckeditor5-content.css"),
+            // In development the resource directory is `apps/server/src`.
+            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/content_colors.css"),
+            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/multicolumn.css")
+        ]
+        : [ "ckeditor5-content.css", "ckeditor5-content-colors.css", "ckeditor5-multicolumn.css" ]
+            .map((fileName) => path.join(getResourceDir(), fileName));
+    return cssFiles.map((cssFile) => fs.readFileSync(cssFile, "utf-8")).join("\n");
 }
 
 export async function serverZipExportProviderFactory(format: ExportFormat, data: ZipExportProviderData): Promise<ZipExportProvider> {
@@ -22,8 +32,8 @@ export async function serverZipExportProviderFactory(format: ExportFormat, data:
             return new MarkdownExportProvider(data);
         }
         case "share": {
-            const { default: ShareThemeExportProvider } = await import("./share_theme.js");
-            return new ShareThemeExportProvider(data);
+            const { createShareThemeExportProvider } = await import("./share_theme.js");
+            return createShareThemeExportProvider(data);
         }
         default:
             throw new Error(`Unsupported export format: '${format}'`);

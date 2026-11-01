@@ -626,6 +626,51 @@ factor = choice(
 number = oneOrMore(nonterminal("digit")) ;
 digit = choice(terminal("0"), terminal("1"), terminal("2"), terminal("3"), terminal("4"), terminal("5"), terminal("6"), terminal("7"), terminal("8"), terminal("9")) ;
 `
+    },
+    {
+        name: t("mermaid.sample_event_modeling"),
+        content: `\
+eventmodeling
+
+tf 01 ui ShopUI
+tf 02 cmd AddItemToCart
+tf 03 evt ItemAdded
+tf 04 rmo CartView ->> 03
+tf 05 ui CheckoutUI
+tf 06 cmd PlaceOrder
+tf 07 evt OrderPlaced
+tf 08 rmo OrderStatus ->> 07
+`
+    },
+    {
+        name: t("mermaid.sample_use_case"),
+        content: `\
+usecase-beta
+actor User("User")
+actor Admin("Administrator")
+Login("Log in")
+ViewProfile("View profile")
+ManageUsers("Manage users")
+ViewReports("View reports")
+User --> Login
+User --> ViewProfile
+Admin --> ManageUsers
+Admin --> ViewReports
+`
+    },
+    {
+        name: t("mermaid.sample_agentflow"),
+        content: `\
+agentflow-beta TB
+  flow reviewer["Review Agent"]
+    changes["Gather changes"]@{ shape: input }
+    analyse["Analyse diff"]@{ shape: task }
+    lint["run_linter"]@{ shape: tool }
+    ok["Clean?"]@{ shape: decision }
+
+    changes --> analyse --> lint --> ok
+  end
+`
     }
 ];
 

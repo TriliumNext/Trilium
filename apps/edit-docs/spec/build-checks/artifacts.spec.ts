@@ -7,9 +7,7 @@ describe("Check artifacts are present", () => {
 
     it("has the necessary node modules", async () => {
         const paths = [
-            "node_modules/better-sqlite3",
-            "node_modules/bindings",
-            "node_modules/file-uri-to-path",
+            "node_modules/better-sqlite3"
         ];
 
         ensurePathsExist(paths);
@@ -32,7 +30,9 @@ describe("Check artifacts are present", () => {
         const paths = [
             "assets",
             "share-theme",
-            "ckeditor5-content.css"
+            "ckeditor5-content.css",
+            "ckeditor5-content-colors.css",
+            "ckeditor5-multicolumn.css"
         ];
 
         ensurePathsExist(paths);

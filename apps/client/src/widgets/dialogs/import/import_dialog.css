@@ -37,7 +37,7 @@
         margin: 0;
     }
 
-    .option-row-description p + p {
+    .option-row-description p:not(:first-child) {
         margin-top: 0.4em;
     }
 
@@ -56,38 +56,62 @@
         border-bottom: 1px solid var(--main-border-color);
     }
 
+    /* Refresh + Disconnect stay grouped on the row's right edge. */
+    .onenote-account-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    /* Secondary explanation under a message (e.g. why an account can look notebook-less). */
+    .onenote-hint {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
+
     .onenote-status {
         display: flex;
         align-items: center;
         gap: 0.5em;
     }
 
-    .onenote-notebooks {
+    .onenote-device-signin {
         display: flex;
         flex-direction: column;
-        gap: 1em;
+        align-items: flex-start;
+        gap: 0.75em;
+    }
+
+    /* The code the user has to carry over to Microsoft's sign-in page: large, monospaced and
+       selectable so it is easy to read across windows or copy. */
+    .onenote-device-code {
+        font-family: var(--monospace-font-family, monospace);
+        font-size: 1.6em;
+        letter-spacing: 0.15em;
+        user-select: all;
+        padding: 0.25em 0.6em;
+        border: 1px solid var(--main-border-color);
+        border-radius: 6px;
+        background: var(--accented-background-color);
+    }
+
+    .onenote-device-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .onenote-notebooks {
         max-height: 45vh;
         overflow-y: auto;
-    }
 
-    .onenote-notebook {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25em;
-    }
+        /* Notebooks are the tree's roots; set them apart like the headings they replaced. */
+        > .checkbox-tree {
+            gap: 0.5em;
+        }
 
-    .onenote-section-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25em;
-        padding-left: 1.25em;
-        border-left: 1px solid var(--main-border-color);
-        margin-left: 0.25em;
-    }
-
-    .onenote-section-group-title {
-        color: var(--muted-text-color);
-        font-size: 0.9em;
-        font-weight: bold;
+        > .checkbox-tree > .checkbox-tree-container > .checkbox-tree-row .form-check-label {
+            font-weight: bold;
+        }
     }
 }

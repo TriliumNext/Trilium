@@ -1,4 +1,5 @@
-import { ButtonView, Plugin, View } from "ckeditor5";
+import bxPencil from "boxicons/svg/regular/bx-pencil.svg?raw";
+import { ButtonView, Plugin, View, type Editor, type ToolbarConfigItem } from "ckeditor5";
 import TodoListMultistateEditing, { getActiveTaskStates } from "./todo_list_multistate_editing.js";
 
 export default class TodoListMultistateUI extends Plugin {
@@ -42,6 +43,26 @@ export default class TodoListMultistateUI extends Plugin {
                 return button;
             });
         }
+
+        editor.ui.componentFactory.add("taskStateEdit", (locale) => {
+            const button = new ButtonView(locale);
+            button.set({
+                label: editor.t("Edit task states"),
+                icon: bxPencil,
+                tooltip: true,
+                class: "ck-task-state-edit"
+            });
+            button.on("execute", () => {
+                const editTaskStates = editor.config.get("editTaskStates") as (() => void) | undefined;
+                editTaskStates?.();
+            });
+            return button;
+        });
     }
 
+}
+
+/** The task state buttons and the button that edits the states, as the task state toolbar holds them. */
+export function getTaskStateToolbarItems(editor: Editor): ToolbarConfigItem[] {
+    return [...getActiveTaskStates(editor).map((state) => `taskState:${state.name}`), "|", "taskStateEdit"];
 }

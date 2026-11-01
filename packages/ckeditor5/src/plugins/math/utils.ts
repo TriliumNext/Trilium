@@ -1,0 +1,315 @@
+import type { Editor, ModelElement, ModelDocumentSelection, PositioningFunction } from 'ckeditor5';
+import { BalloonPanelView, CKEditorError } from 'ckeditor5';
+import type { KatexOptions, MathJax2, MathJax3 } from './typings_external.js';
+
+export function getSelectedMathModelWidget(
+	selection: ModelDocumentSelection
+): null | ModelElement {
+	const selectedElement = selection.getSelectedElement();
+
+	if (
+		selectedElement &&
+		( selectedElement.is( 'element', 'mathtex-inline' ) ||
+			selectedElement.is( 'element', 'mathtex-display' ) )
+	) {
+		return selectedElement;
+	}
+
+	return null;
+}
+
+// Simple MathJax 3 version check
+export function isMathJaxVersion3( MathJax: unknown ): MathJax is MathJax3 {
+	return (
+		MathJax != null && typeof MathJax == 'object' && 'version' in MathJax && typeof MathJax.version == 'string' &&
+		MathJax.version.split( '.' ).length === 3 &&
+		MathJax.version.split( '.' )[ 0 ] === '3'
+	);
+}
+
+// Simple MathJax 2 version check
+export function isMathJaxVersion2( MathJax: unknown ): MathJax is MathJax2 {
+	return (
+		MathJax != null && typeof MathJax == 'object' && 'Hub' in MathJax );
+}
+
+// Check if equation has delimiters.
+export function hasDelimiters( text: string ): RegExpMatchArray | null {
+	return text.match( /^(\\\[.*?\\\]|\\\(.*?\\\))$/ );
+}
+
+// Extract delimiters and figure display mode for the model
+export function extractDelimiters( equation: string ): {
+	equation: string;
+	display: boolean;
+} {
+	equation = equation.trim();
+
+	// Remove delimiters (e.g. \( \) or \[ \])
+	const hasInlineDelimiters =
+		equation.includes( '\\(' ) && equation.includes( '\\)' );
+	const hasDisplayDelimiters =
+		equation.includes( '\\[' ) && equation.includes( '\\]' );
+	if ( hasInlineDelimiters || hasDisplayDelimiters ) {
+		equation = equation.substring( 2, equation.length - 2 ).trim();
+	}
+
+	return {
+		equation,
+		display: hasDisplayDelimiters
+	};
+}
+
+export async function renderEquation(
+	equation: string,
+	element: HTMLElement,
+	engine:
+		| 'katex'
+		| 'mathjax'
+		| undefined
+		| ( (
+			equation: string,
+			element: HTMLElement,
+			display: boolean,
+		) => void ) = 'katex',
+	lazyLoad?: () => Promise<void>,
+	display = false,
+	preview = false,
+	previewUid = '',
+	previewClassName: Array<string> = [],
+	katexRenderOptions: KatexOptions = {}
+): Promise<void> {
+	if ( engine == 'mathjax' ) {
+		if ( isMathJaxVersion3( MathJax ) ) {
+			selectRenderMode(
+				element,
+				preview,
+				previewUid,
+				previewClassName,
+				el => {
+					renderMathJax3( equation, el, display, () => {
+						if ( preview ) {
+							el.style.visibility = 'visible';
+						}
+					} );
+				}
+			);
+		} else {
+			selectRenderMode(
+				element,
+				preview,
+				previewUid,
+				previewClassName,
+				el => {
+					// Fixme: MathJax typesetting cause occasionally math processing error without asynchronous call
+					window.setTimeout( () => {
+						renderMathJax2( equation, el, display );
+
+						// Move and scale after rendering
+						if ( preview && isMathJaxVersion2( MathJax ) ) {
+							// eslint-disable-next-line new-cap
+							MathJax.Hub.Queue( () => {
+								el.style.visibility = 'visible';
+							} );
+						}
+					} );
+				}
+			);
+		}
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+	} else if ( engine === 'katex' && window.katex !== undefined ) {
+		selectRenderMode(
+			element,
+			preview,
+			previewUid,
+			previewClassName,
+			el => {
+				/* v8 ignore next -- defensive: this arm is already gated on window.katex being defined */
+				if ( katex ) {
+					katex.render( equation, el, {
+						throwOnError: false,
+						displayMode: display,
+						...katexRenderOptions,
+						...normalizeKatexMacros( katexRenderOptions )
+					} );
+				}
+				if ( preview ) {
+					el.style.visibility = 'visible';
+				}
+			}
+		);
+	} else if ( typeof engine === 'function' ) {
+		engine( equation, element, display );
+	} else {
+		if ( lazyLoad != null ) {
+			try {
+				window.CKEDITOR_MATH_LAZY_LOAD ??= lazyLoad();
+				// `textContent`, here and in the two arms below: the source arrives as text —
+				// `MathEditing` upcasts it from a text node's `data` — so any markup in it is
+				// markup the note had escaped, and writing it back as HTML is what un-escapes it.
+				// The sanitizer that cleared the note saw inert text and had nothing to strip.
+				element.textContent = equation;
+				await window.CKEDITOR_MATH_LAZY_LOAD;
+				await renderEquation(
+					equation,
+					element,
+					engine,
+					undefined,
+					display,
+					preview,
+					previewUid,
+					previewClassName,
+					katexRenderOptions
+				);
+			} catch ( err ) {
+				element.textContent = equation;
+				console.error(
+					`math-tex-typesetting-lazy-load-failed: Lazy load failed: ${ String( err ) }`
+				);
+			}
+		} else {
+			element.textContent = equation;
+			console.warn(
+				`math-tex-typesetting-missing: Missing the mathematical typesetting engine (${ String( engine ) }) for tex.`
+			);
+		}
+	}
+}
+
+export function getBalloonPositionData( editor: Editor ): {
+	target: Range | HTMLElement;
+	positions: Array<PositioningFunction>;
+} {
+	const view = editor.editing.view;
+	const defaultPositions = BalloonPanelView.defaultPositions;
+
+	const selectedElement = view.document.selection.getSelectedElement();
+	if ( selectedElement ) {
+		return {
+			target: view.domConverter.viewToDom( selectedElement ),
+			positions: [
+				defaultPositions.southArrowNorth,
+				defaultPositions.southArrowNorthWest,
+				defaultPositions.southArrowNorthEast
+			]
+		};
+	} else {
+		const viewDocument = view.document;
+		const firstRange = viewDocument.selection.getFirstRange();
+		if ( !firstRange ) {
+			/**
+			* Missing first range.
+			* @error math-missing-range
+					*/
+			throw new CKEditorError( 'math-missing-range' );
+		}
+		return {
+			target: view.domConverter.viewRangeToDom(
+				firstRange
+			),
+			positions: [
+				defaultPositions.southArrowNorth,
+				defaultPositions.southArrowNorthWest,
+				defaultPositions.southArrowNorthEast
+			]
+		};
+	}
+}
+
+// KaTeX writes macro definitions from `\gdef` straight into the `macros` object it is handed, so
+// give it a disposable copy: Trilium supplies the shared `KATEX_MACROS` constant by reference, and
+// one note's `\gdef` would otherwise leak into every later render. The copy also hands KaTeX an
+// ordinary-prototype object — CKEditor config values are prototype-less (`Object.create( null )`),
+// which crashed KaTeX <= 0.17 (#9523) before it switched to `Object.prototype.hasOwnProperty.call()`.
+function normalizeKatexMacros( options: KatexOptions ): { macros?: object } {
+	const { macros } = options;
+	if ( macros && typeof macros === 'object' ) {
+		return { macros: { ...macros } };
+	}
+	return {};
+}
+
+function selectRenderMode(
+	element: HTMLElement,
+	preview: boolean,
+	previewUid: string,
+	previewClassName: Array<string>,
+	cb: ( previewEl: HTMLElement ) => void
+) {
+	if ( preview ) {
+		createPreviewElement(
+			element,
+			previewUid,
+			previewClassName,
+			previewEl => {
+				cb( previewEl );
+			}
+		);
+	} else {
+		cb( element );
+	}
+}
+
+function renderMathJax3( equation: string, element: HTMLElement, display: boolean, cb: () => void ) {
+	let promiseFunction: undefined | ( ( input: string, options: { display: boolean } ) => Promise<HTMLElement> ) = undefined;
+	/* v8 ignore next 3 -- defensive: only called from the branch that already checked for MathJax 3 */
+	if ( !isMathJaxVersion3( MathJax ) ) {
+		return;
+	}
+	if ( MathJax.tex2chtmlPromise ) {
+		promiseFunction = MathJax.tex2chtmlPromise;
+	} else if ( MathJax.tex2svgPromise ) {
+		promiseFunction = MathJax.tex2svgPromise;
+	}
+
+	if ( promiseFunction != null ) {
+		void promiseFunction( equation, { display } ).then( ( node: Element ) => {
+			if ( element.firstChild ) {
+				element.removeChild( element.firstChild );
+			}
+			element.appendChild( node );
+			cb();
+		} );
+	}
+}
+
+function renderMathJax2( equation: string, element: HTMLElement, display?: boolean ) {
+	if ( isMathJaxVersion2( MathJax ) ) {
+		// Text rather than HTML, as in the fallback arms above — and what MathJax 2 wants either
+		// way, since `Typeset` scans text nodes for the delimiters.
+		if ( display ) {
+			element.textContent = '\\[' + equation + '\\]';
+		} else {
+			element.textContent = '\\(' + equation + '\\)';
+		}
+		// eslint-disable-next-line
+		MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);
+	}
+}
+
+function createPreviewElement(
+	element: HTMLElement,
+	previewUid: string,
+	previewClassName: Array<string>,
+	render: ( previewEl: HTMLElement ) => void
+): void {
+	const previewEl = getPreviewElement( element, previewUid, previewClassName );
+	render( previewEl );
+}
+
+function getPreviewElement(
+	element: HTMLElement,
+	previewUid: string,
+	previewClassName: Array<string>
+) {
+	let previewEl = document.getElementById( previewUid );
+	// Create if not found
+	if ( !previewEl ) {
+		previewEl = document.createElement( 'div' );
+		previewEl.setAttribute( 'id', previewUid );
+		previewEl.classList.add( ...previewClassName );
+		previewEl.style.visibility = 'hidden';
+		element.appendChild( previewEl );
+	}
+	return previewEl;
+}

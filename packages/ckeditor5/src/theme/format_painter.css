@@ -1,0 +1,9 @@
+/*
+ * Cursor for an armed format painter. `FormatPainterUI` toggles `ck-format-painter-active` on the
+ * editing root; `cursor` inherits, so the whole editable signals that the next click will paint.
+ * The class name is premium's, so any existing override keyed on it keeps applying.
+ */
+
+.ck.ck-content.ck-editor__editable.ck-format-painter-active {
+    cursor: copy;
+}

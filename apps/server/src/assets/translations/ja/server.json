@@ -11,7 +11,7 @@
     "creating-and-moving-notes": "ノートの作成と移動",
     "create-note-after": "アクティブなノートの後にノートを作成する",
     "create-note-into": "アクティブなノートの子ノートを作成する",
-    "edit-note-title": "ツリーからノートの詳細にジャンプして、タイトルを編集",
+    "edit-note-title": "ツリーからノートの詳細に移動して、タイトルを編集",
     "clone-notes-to": "選択したノートを複製",
     "move-notes-to": "選択したノートを移動",
     "copy-notes-to-clipboard": "選択したノートをクリップボードにコピー",
@@ -38,8 +38,6 @@
     "insert-date-and-time-to-text": "現在の日時を挿入する",
     "paste-markdown-into-text": "クリップボードからマークダウンをテキストノートに貼り付けます",
     "cut-into-note": "現在のノートから選択範囲を切り取り、サブノートを作成",
-    "ribbon-tabs": "リボンタブ",
-    "toggle-link-map": "リンクマップ切り替え",
     "other": "その他",
     "toggle-right-pane": "目次とハイライトを含む右ペインの表示を切り替え",
     "open-note-externally": "デフォルトのアプリケーションでノートをファイルとして開く",
@@ -51,7 +49,7 @@
     "copy-without-formatting": "選択したテキストを書式なしでコピーする",
     "quick-search": "クイック検索バーを有効にする",
     "sort-child-notes": "子ノートを並べ替える",
-    "create-note-into-inbox": "inbox（定義されている場合）またはデイノートにノートを作成する",
+    "create-note-into-inbox": "inbox（定義されている場合）または日ノートにノートを作成する",
     "note-clipboard": "ノートクリップボード",
     "edit-branch-prefix": "「ブランチ接頭辞の編集」ダイアログを表示",
     "show-revisions": "「ノートの変更履歴」ダイアログを表示",
@@ -60,14 +58,27 @@
     "create-new-relation": "新しいリレーションを作成する",
     "toggle-note-hoisting": "ノートホイスト切り替え",
     "unhoist": "すべてのホイストを無効にする",
-    "toggle-book-properties": "コレクションプロパティ切り替え",
     "toggle-zen-mode": "禅モード（集中した編集のための最小限のUI）を有効/無効にする",
     "add-include-note-to-text": "ノートを埋め込むダイアログを開く",
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
-    "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え",
     "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存",
     "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
-    "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします"
+    "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします",
+    "show-deleted-notes": "\"削除されたノート\" ダイアログを表示",
+    "show-shortcut-hints": "フォーカスされているウィジェットのキーボードショートカットを表示",
+    "show-space-usage": "\"スペース使用状況\" ページを開く",
+    "create-new-split": "アクティブな画面の右側に、新しい空の分割画面を開く",
+    "close-active-split": "アクティブな分割画面を閉じる（タブ内の他の分割画面は開いたままにする）",
+    "focus-split-left": "アクティブな分割画面の左側の分割画面にフォーカスを移動する",
+    "focus-split-right": "アクティブな分割画面の右側の分割画面にフォーカスを移動する",
+    "split-view": "画面分割",
+    "move-split-left": "アクティブな分割画面を左側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）",
+    "move-split-right": "アクティブな分割画面を右側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）",
+    "note-panels": "ノートパネル",
+    "show-note-map": "右ペインにノートマップを表示",
+    "focus-collection-properties": "コレクションの表示タイプセレクターにフォーカスを移動",
+    "focus-formatting-toolbar": "固定の書式設定ツールバーとエディター間でフォーカスを移動",
+    "peek-left-pane": "コンテンツの上に浮かぶ一時的なパネルとしてノートツリーを表示する"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -144,50 +155,61 @@
     "reset-zoom-level": "ズームレベルのリセット",
     "zoom-out": "ズームアウト",
     "zoom-in": "ズームイン",
-    "jump-to-note": "ジャンプ先…",
+    "jump-to-note": "移動先…",
     "edit-branch-prefix": "ブランチ接頭辞の編集",
     "show-revisions": "変更履歴を表示",
     "add-new-label": "ラベルを追加",
     "add-new-relation": "リレーションを追加",
-    "toggle-ribbon-tab-basic-properties": "リボンタブ切り替え：基本属性",
-    "toggle-ribbon-tab-book-properties": "リボンタブ切り替え：書籍属性",
-    "toggle-ribbon-tab-file-properties": "リボンタブ切り替え：ファイル属性",
-    "toggle-ribbon-tab-image-properties": "リボンタブ切り替え：画像属性",
-    "toggle-ribbon-tab-owned-attributes": "リボンタブ切り替え：所有属性",
-    "toggle-ribbon-tab-inherited-attributes": "リボンタブ切り替え：継承属性",
-    "toggle-ribbon-tab-note-map": "リボンタブ切り替え：ノートマップ",
-    "toggle-ribbon-tab-note-info": "リボンタブ切り替え：ノート情報",
-    "toggle-ribbon-tab-note-paths": "リボンタブ切り替え：ノートパス",
-    "toggle-ribbon-tab-similar-notes": "リボンタブ切り替え：類似ノート",
     "toggle-note-hoisting": "ノートホイスト切り替え",
     "unhoist-note": "ノートホイストを無効にする",
     "force-save-revision": "強制保存リビジョン",
     "add-include-note-to-text": "埋め込みノートを追加",
-    "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
-    "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性",
     "save-named-revision": "変更履歴を名前を付けて保存",
     "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
-    "peek-right-pane": "右ペインをピーク表示"
+    "peek-right-pane": "右ペインをピーク表示",
+    "show-deleted-notes": "削除されたノートを表示",
+    "show-shortcut-hints": "ショートカットのヒントを表示",
+    "show-space-usage": "スペース使用状況を表示",
+    "create-new-split": "新しい分割画面を作成",
+    "close-active-split": "アクティブな分割画面を閉じる",
+    "move-split-left": "分割画面を左へ移動",
+    "move-split-right": "分割画面を右へ移動",
+    "focus-split-left": "左側の分割画面にフォーカスを移動",
+    "focus-split-right": "右側の分割画面にフォーカスを移動",
+    "duplicate-note": "子ノートを含めずに複製",
+    "focus-formatting-toolbar": "書式設定ツールバーにフォーカス",
+    "show-basic-properties": "基本プロパティを表示",
+    "focus-collection-properties": "コレクションのプロパティにフォーカス",
+    "focus-file-actions": "ファイル操作にフォーカス",
+    "focus-image-actions": "画像操作にフォーカス",
+    "toggle-owned-attributes": "所有属性の表示を切り替え",
+    "toggle-inherited-attributes": "継承属性の表示を切り替え",
+    "toggle-promoted-attributes": "プロモート属性の表示を切り替え",
+    "show-note-map": "ノートマップを表示",
+    "show-note-info": "ノート情報を表示",
+    "show-note-paths": "ノートパスを表示",
+    "toggle-similar-notes": "類似ノートの表示を切り替え",
+    "peek-left-pane": "ツリーペインをピーク表示"
   },
   "login": {
     "title": "ログイン",
     "heading": "Trilium ログイン",
-    "incorrect-totp": "TOTPが正しくありません。もう一度お試しください。",
-    "incorrect-password": "パスワードが正しくありません。もう一度お試しください。",
+    "incorrect-totp": "TOTP が正しくありません。もう一度お試しください。",
+    "incorrect-password": "パスワードが間違っています。もう一度お試しください。",
     "password": "パスワード",
     "button": "ログイン",
-    "remember-me": "ログイン情報を記憶する",
-    "sign_in_with_sso": "{{ ssoIssuerName }}でログイン",
-    "sso-wrong-account": "そのアカウントはこの Trilium インスタンスにリンクされているものではありません。リンクされているアカウントでサインインしてください。",
-    "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずパスワードでサインインし、設定からアカウントをリンクしてください。"
+    "remember-me": "ログイン状態を保持する",
+    "sign_in_with_sso": "{{ ssoIssuerName }} でサインイン",
+    "sso-wrong-account": "そのアカウントは、この Trilium インスタンスに連携されていません。連携済みのアカウントでサインインしてください。",
+    "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずはパスワードでサインインし、その後、設定からアカウントを連携させてください。"
   },
   "set_password": {
     "title": "パスワードの設定",
     "heading": "パスワードの設定",
-    "description": "web から Trilium を始めるには、パスワードを設定する必要があります。設定したパスワードを使ってログインします。",
+    "description": "web から Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
     "password": "パスワード",
-    "button": "パスワードの設定",
-    "password-confirmation": "パスワードの再入力"
+    "button": "パスワードを設定",
+    "password-confirmation": "パスワードの確認"
   },
   "weekdays": {
     "monday": "月曜日",
@@ -241,7 +263,7 @@
     "open-today-journal-note-title": "今日の日記を開く",
     "quick-search-title": "クイック検索",
     "recent-changes-title": "最近の変更",
-    "root-title": "隠されたノート",
+    "root-title": "非表示ノート",
     "note-map-title": "ノートマップ",
     "shared-notes-title": "共有ノート",
     "bulk-action-title": "一括操作",
@@ -259,7 +281,7 @@
     "go-to-previous-note-title": "前のノートに移動",
     "go-to-next-note-title": "次のノートに移動",
     "search-notes-title": "検索ノート",
-    "jump-to-note-title": "ジャンプ先…",
+    "jump-to-note-title": "移動先…",
     "calendar-title": "カレンダー",
     "protected-session-title": "保護されたセッション",
     "sync-status-title": "同期状態",
@@ -289,26 +311,42 @@
     "task-state-attr-color": "色",
     "task-state-attr-is-hidden": "リストから非表示",
     "security-title": "セキュリティ",
-    "desktop-title": "デスクトップ"
+    "desktop-title": "デスクトップ",
+    "deleted-notes-title": "削除されたノート",
+    "color-scheme-switcher-title": "配色の切り替え",
+    "content-manager-title": "コンテンツマネージャー",
+    "database-title": "データベース",
+    "space-usage-title": "スペース使用状況",
+    "record-meeting-title": "ミーティングの文字起こし",
+    "transcription-title": "文字起こし",
+    "resources-title": "ダウンロード済みリソース"
   },
   "notes": {
     "new-note": "新しいノート",
     "duplicate-note-suffix": "(複製)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "ノートの削除に失敗しました: {{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "バックエンドのログファイル '{{ fileName }}' は（まだ）存在しません。",
-    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。"
+    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。",
+    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。"
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "このノートタイプは表示できません。"
+    "note-cannot-be-displayed": "このノートタイプは表示できません。",
+    "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
+    "broken-block-reference": "参照が壊れています",
+    "play-video": "動画を再生",
+    "content-not-available": "このコンテンツは利用できません。",
+    "untitled-block": "ブロック"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
     "unable-to-export-message": "現在のノートをPDFとしてエクスポートできませんでした。",
     "unable-to-export-title": "PDFとしてエクスポートできません",
     "unable-to-save-message": "選択されたファイルに書き込めませんでした。もう一度試すか、別の保存先を選択してください。",
-    "unable-to-print": "ノートを印刷できません"
+    "unable-to-print": "ノートを印刷できません",
+    "render-timeout": "ノートのレンダリングが {{seconds}} 秒以内に完了しませんでした。"
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -341,7 +379,22 @@
     "toggle-navigation": "ナビゲーションの切り替え",
     "toggle-toc": "目次の切り替え",
     "logo-alt": "ロゴ",
-    "login": "ログイン"
+    "login": "ログイン",
+    "tab-title": "タブ名",
+    "appearance": "外観",
+    "theme-light": "ライト",
+    "theme-dark": "ダーク",
+    "theme-system": "システム",
+    "theme-current": "外観: {{- theme}}",
+    "subpages-of": "{{- title}} のサブページ",
+    "heading-link": "このセクションへのリンク",
+    "previous": "前へ",
+    "next": "次へ",
+    "page-navigation": "前後のページ",
+    "hidden-subpages_other": "ツリーから非表示になっているサブページ {{count}} 個",
+    "previous-tabs": "前のタブエリアへスクロール",
+    "next-tabs": "次のタブエリアへスクロール",
+    "copy-code": "コードをコピー"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",
@@ -363,16 +416,16 @@
     "board_status_done": "完了",
     "geo-map": "ジオマップ",
     "geolocation": "ジオロケーション",
-    "built-in-templates": "内蔵のテンプレート",
+    "built-in-templates": "組み込みテンプレート",
     "board_status_todo": "未完了",
     "presentation": "プレゼンテーション",
     "presentation_slide": "プレゼンテーションスライド",
     "presentation_slide_first": "最初のスライド",
     "presentation_slide_second": "2番目のスライド",
-    "background": "背景",
     "markdown-snippet": "マークダウンスニペット",
     "code-snippet": "コードスニペット",
-    "dashboard": "ダッシュボード"
+    "dashboard": "ダッシュボード",
+    "ai-quick-action": "AI クイックアクション"
   },
   "share_404": {
     "title": "該当なし",
@@ -390,9 +443,6 @@
     "db_not_initialized_desktop": "DB が初期化されていません。画面の指示に従ってください。",
     "db_not_initialized_server": "DB が初期化されていません。セットアップ ページ 「http://[your-server-host]:{{port}}」 にアクセスして、Trilium を初期化する方法の説明を確認してください。"
   },
-  "desktop": {
-    "instance_already_running": "すでにインスタンスが実行されているので、代わりにそのインスタンスにフォーカスします。"
-  },
   "search": {
     "error": {
       "in-context": "{{- context}} でエラーが発生しました: {{- message}}",
@@ -400,7 +450,8 @@
       "cannot-compare-with": "\"{{- token}}\" と比較できません。リテラル値を検索するには、引用符を使用してください: \"{{- token}}\"",
       "misplaced-expression": "\"{{- token}}\" という式が不適切または不完全です",
       "fulltext-after-expression": "\"{{- token}}\" は有効な式ではありません。テキストを検索するには、属性フィルターの前に記述してください（例: \"#label {{- token}}\" ではなく \"{{- token}} #label\"）。",
-      "unrecognized-expression": "認識されない式 \"{{- token}}\""
+      "unrecognized-expression": "認識されない式 \"{{- token}}\"",
+      "regex-not-allowed": "ここでは正規表現演算子 \"%=\" は使用できません。"
     }
   },
   "script": {
@@ -425,10 +476,37 @@
     "sql-console": "SQL コンソール",
     "sql-console-warning": "SQL コンソールを使用すると、データベースに対して任意の SQL クエリを実行できます。",
     "lan-access": "ネットワークアクセス",
-    "lan-access-warning": "ローカルネットワーク上の他のデバイスが、この Trilium インスタンスに接続できるようになります。"
+    "lan-access-warning": "アプリと共有ノートはネットワーク経由で配信されます — このコンピュータのブラウザや、ローカルネットワーク上の他のデバイスからアクセス可能です。"
   },
   "onenote_import": {
-    "root-title": "OneNote インポート"
+    "root-title": "OneNote インポート",
+    "failed-page-placeholder": "このページを OneNote からインポートできませんでした。エラー: {{error}}",
+    "report": {
+      "row-pages": "ページのインポートが完了しました",
+      "row-notebooks": "インポートされたノートブック",
+      "row-sections": "インポートされたセクション",
+      "row-duration": "インポートにかかった合計時間",
+      "row-images": "画像",
+      "row-attachments": "添付ファイル",
+      "row-ink": "手書きや描画を含むページ",
+      "row-links": "ページ間リンク",
+      "row-throttling": "Microsoft Graph による速度制限",
+      "value-links": "{{resolved}} 解決済み、{{unresolved}} はインポート範囲外を指しています",
+      "value-throttling_other": "{{- wait}} ({{count}} 件の要求が制限されました)",
+      "skipped-sections-title": "インポートできなかったセクション",
+      "skipped-sections-section": "セクション",
+      "skipped-sections-notebook": "ノートブック",
+      "skipped-sections-error": "エラー",
+      "failed-pages-title": "インポートできなかったページ",
+      "failed-pages-page": "ページ",
+      "failed-pages-section": "セクション",
+      "failed-pages-error": "エラー",
+      "failed-resources-title": "画像や添付ファイルが見つかりません",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} 件のリソースをダウンロードできませんでした"
+    },
+    "failed-section-placeholder": "このセクションは OneNote からインポートできなかったため、空の状態で作成されました。エラー: {{error}}",
+    "protected-section-error": "このセクションはパスワードで保護されています。OneNote でパスワードを解除してから、再度インポートしてください。",
+    "protected-section-placeholder": "このセクションはパスワードで保護されているため、ページをインポートできず、空の状態で作成されました。インポートするには、OneNote でセクションを開き、パスワード保護を解除（セクションを右クリック → パスワード保護 → パスワードの解除）してから、インポートを再度実行してください。"
   },
   "notion_import": {
     "root-title": "Notion インポート",
@@ -445,5 +523,85 @@
   },
   "obsidian_import": {
     "root-title": "Obsidian インポート"
+  },
+  "export": {
+    "zip_filter": "ZIP アーカイブ (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "選択したファイルの有効期限が切れているか、ファイルが無効です。もう一度ファイルを選択してください。"
+  },
+  "note_conversion": {
+    "revision_before_markdown": "マークダウンへの変換前",
+    "revision_before_text": "テキストノートへの変換前"
+  },
+  "backup": {
+    "custom_directory_unwritable": "データベースのバックアップに失敗しました: {{- location}} への書き込みができませんでした。代わりにデフォルトの場所にバックアップします。",
+    "passphrase_unavailable": "バックアップパスワードが読み取れなかったため、このバックアップは暗号化されません。選択した場所ではなく、デフォルトの場所に保存されました。"
+  },
+  "dialog": {
+    "select_directory": "フォルダを選択"
+  },
+  "backup-password-dialog": {
+    "cancel": "キャンセル",
+    "set-title": "バックアップパスワードを設定しますか？",
+    "set-message": "今後のバックアップはこのパスワードで暗号化されます。",
+    "set-detail": "Trilium はこのパスワードを再度表示できないため、安全な場所にコピーを保管してください。パスワードがないとバックアップを復元できません。\n\nこの確認画面が表示されることを予期していなかった場合は、キャンセルしてください — ノートやスクリプトによってパスワードが要求された可能性があります。",
+    "set-confirm": "パスワードを設定",
+    "clear-title": "バックアップパスワードを解除（消去）しますか？",
+    "clear-message": "今後作成されるバックアップは暗号化されなくなります。",
+    "clear-detail": "既に作成されたバックアップには、作成時に使用されたパスワードが保持されており、そのパスワードを使用して復元することができます。\n\nこの確認画面が表示されることを予期していなかった場合は、キャンセルしてください — ノートやスクリプトによってパスワードが要求された可能性があります。",
+    "clear-confirm": "パスワードを解除"
+  },
+  "restore": {
+    "pick_backup_title": "復元するバックアップを選択",
+    "backup_filter": "Trilium バックアップ (*.db, *.tnbackup)",
+    "any_file_filter": "すべてのファイル"
+  },
+  "setup-window": {
+    "getting-started": "はじめに - Trilium Notes",
+    "start-over": "最初からやり直す - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "最初からやり直す",
+    "message": "Trilium を再起動してセットアップ画面に戻りますか？",
+    "detail": "まず現在のナレッジベースのバックアップを作成するよう案内されます。新しいナレッジベースの作成、バックアップの復元、別デバイスからの同期を選ぶまでは、何も削除されません。\n\nスクリプトや見覚えのないノートから指示された場合は、続行しないでください。",
+    "cancel": "キャンセル",
+    "confirm": "再起動して最初からやり直す"
+  },
+  "transcription": {
+    "already-recording": "すでにミーティングの文字起こしが実行中です。",
+    "note-not-found": "ミーティングノートは存在しません。",
+    "start-failed": "文字起こしを開始できませんでした: {{- message}}",
+    "stopped-unexpectedly": "文字起こしが予期せず停止しました。それまでに文字起こしされた内容は保存されます。",
+    "save-locked": "保護されたセッションがロックされている間は、文字起こしを保存できません。Trilium が開いている限りデータは保持され、保護されたセッションに入ると保存されます。",
+    "save-failed": "文字起こしを保存できませんでした: {{- message}} データは保持され、次の文で再試行します。",
+    "capture-lost": "音声を取得できなくなったため、文字起こしが停止しました。それまでに文字起こしされた内容は保存されます。",
+    "attachment-title": "文字起こし",
+    "model-not-downloaded": "音声認識モデルがまだダウンロードされていません。ランチャーから録音を開始して、モデルをダウンロードしてください。",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3（高精度）",
+    "recognizer-description": "NVIDIA が提供する音声認識モデルでヨーロッパの 25 言語に対応しています。認識処理はすべてデバイス上で行われるため、録音データが外部に送信されることはありません。",
+    "vad-title": "Silero VAD",
+    "vad-description": "音声の中の発言を検出し、発言が含まれる部分のみを文字起こしするために使用されます。",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "話者を識別し、文字起こし結果において誰が何を言ったかを判別するために使用されます。"
+  },
+  "resources": {
+    "unknown": "{{id}} という名前のリソースは存在しません。",
+    "http-error": "{{name}} のダウンロードに失敗しました。 HTTP ステータス {{status}}。",
+    "size-mismatch": "{{name}} のサイズが想定されたサイズと一致しません。",
+    "hash-mismatch": "{{name}} のチェックサムが想定と一致しなかったため、破棄されました。",
+    "delete-while-downloading": "{{- title}} は現在ダウンロード中です。削除する前にダウンロードをキャンセルしてください。",
+    "not-foreign": "{{- name}} はリソースフォルダ内の未使用エントリーではありません。",
+    "stalled": "{{name}} のダウンロードが停止しました: {{seconds}} 秒間データを受信できませんでした。接続状況を確認してから、再度お試しください。"
+  },
+  "share_target": {
+    "default-title": "共有コンテンツ",
+    "nothing-to-share": "共有するものがありません: テキスト、リンク、またはファイルが受信されていません。",
+    "rejected": "共有が拒否されました: {{- reason}}",
+    "other-page": "このアドレスにコンテンツを送信できるのはシステムの共有メニューからのみです。"
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium は Flatpak として動作するため、{{- cli}} などのサンドボックス外にインストールされたプログラムを起動できません。{{- cli}} を使用するには:\n\n1. このコンピュータにインストールし、ターミナルからサインインします。\n2. ターミナルで以下のコマンドを実行し、Triliumがサンドボックス外のプログラムを起動できるようにします:\n\n{{- grantCommand}}\n\n3. Trilium を再起動します。\n\nこれにより、Trilium は Flatpak 以外でインストールされた場合と同様に、コンピュータへのアクセス権を取得します。アクセス権を元に戻すには、以下のコマンドを実行してください:\n\n{{- revokeCommand}}"
   }
 }

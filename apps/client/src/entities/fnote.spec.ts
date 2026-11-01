@@ -1,3 +1,4 @@
+import type { NoteType } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import froca from "../services/froca.js";
@@ -10,7 +11,7 @@ import FAttachment from "./fattachment.js";
 import FAttribute from "./fattribute.js";
 import FBlob from "./fblob.js";
 import FBranch from "./fbranch.js";
-import FNote, { type FNoteRow, type NoteType } from "./fnote.js";
+import FNote, { type FNoteRow } from "./fnote.js";
 
 vi.mock("../services/search.js", () => ({
     default: {
@@ -194,6 +195,31 @@ describe("FNote branches & children", () => {
         expect(child.getParentNotes().map((n) => n.noteId)).toContain(parent.noteId);
     });
 
+    it("leaves the share root, the bookmarks and saved searches out of the real parents", () => {
+        const first = buildNote({ title: "First", children: [ { id: "cloned", title: "Cloned" } ] });
+        const cloned = froca.notes["cloned"];
+        if (!cloned) throw new Error("expected the cloned note");
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId ]);
+
+        const second = buildNote({ title: "Second" });
+        const parents = [
+            buildNote({ id: "_share", title: "Share" }),
+            buildNote({ id: "_lbBookmarks", title: "Bookmarks" }),
+            buildNote({ title: "Saved search", type: "search" }),
+            second
+        ];
+        for (const parent of parents) {
+            const branchId = `${parent.noteId}_cloned`;
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId: "cloned", parentNoteId: parent.noteId, notePosition: 0, fromSearchNote: false
+            });
+            parent.addChild("cloned", branchId, false);
+            cloned.addParent(parent.noteId, branchId, false);
+        }
+
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId, second.noteId ]);
+    });
+
     it("getChildNotes / getSubtreeNoteIds / getSubtreeNotes traverse the tree and skip archived", async () => {
         const root = buildNote({
             title: "root",
@@ -217,6 +243,26 @@ describe("FNote branches & children", () => {
 
         const subtreeNotes = await root.getSubtreeNotes();
         expect(subtreeNotes.map((n) => n.noteId).sort()).toEqual(["branchA", "leafA"]);
+    });
+
+    it("getSubtreeNoteIds stops at maxDepth, a negative one meaning no limit", async () => {
+        const root = buildNote({
+            title: "root",
+            children: [{
+                id: "depth0",
+                title: "depth0",
+                children: [{
+                    id: "depth1",
+                    title: "depth1",
+                    children: [{ id: "depth2", title: "depth2" }]
+                }]
+            }]
+        });
+
+        expect(await root.getSubtreeNoteIds(false, 0)).toEqual(["depth0"]);
+        expect(await root.getSubtreeNoteIds(false, 1)).toEqual(["depth0", "depth1"]);
+        expect(await root.getSubtreeNoteIds(false, -1)).toEqual(["depth0", "depth1", "depth2"]);
+        expect(await root.getSubtreeNoteIds()).toEqual(["depth0", "depth1", "depth2"]);
     });
 
     it("getChildNoteIdsWithArchiveFiltering returns children directly for hidden/search/includeArchived", async () => {
@@ -369,7 +415,7 @@ describe("FNote attributes & inheritance", () => {
 
     it("__getCachedAttributes inherits from parents and templates, and breaks cycles", () => {
         // fresh notes that are NOT pre-cached by easy-froca for the parent/template relationship
-        const template = buildNote({ id: "tmplNote", title: "template", "#fromTemplate(inheritable)": "yes", "#template": "marker" });
+        const template = buildNote({ id: "tmplNote", title: "template", "#fromTemplate(inheritable)": "yes", "#template": "marker", "#workspaceTemplate": "" });
         const parent = buildNote({ id: "parentInh", title: "parent", "#fromParent(inheritable)": "p" });
         const instance = buildNote({ id: "instanceNote", title: "instance", "~template": "tmplNote" });
         // wire parent
@@ -392,8 +438,10 @@ describe("FNote attributes & inheritance", () => {
         const names = instance.getAttributes().map((a) => a.name);
         expect(names).toContain("fromParent");
         expect(names).toContain("fromTemplate");
-        // the "template" marker label must not be inherited
-        expect(instance.getAttributes("label").some((a) => a.name === "template")).toBe(false);
+        // the marker labels must not be inherited
+        const labelNames = instance.getAttributes("label").map((a) => a.name);
+        expect(labelNames).not.toContain("template");
+        expect(labelNames).not.toContain("workspaceTemplate");
     });
 
     it("__getCachedAttributes ignores a template relation pointing at the note itself", () => {
@@ -605,6 +653,39 @@ describe("FNote attributes & inheritance", () => {
         // definitions originate from three different notes -> the cross-note sort branch runs both ways
         expect(noteIds.size).toBeGreaterThanOrEqual(3);
     });
+
+    it("getAttributeDefinitions lets a note's own definition win over the one it inherits", () => {
+        const parent = buildNote({
+            id: "shadowParent",
+            title: "shadowParent",
+            "#label:status(inheritable)": "promoted,single,text"
+        });
+        const child = buildNote({
+            id: "shadowChild",
+            title: "shadowChild",
+            "#label:status(inheritable)": "promoted,single,select,options=Todo;Done"
+        });
+        registerBranch("br-shadow", "shadowChild", "shadowParent", 0);
+        parent.addChild("shadowChild", "br-shadow", false);
+        child.addParent("shadowParent", "br-shadow", false);
+
+        delete noteAttributeCache.attributes["shadowChild"];
+        delete noteAttributeCache.attributes["shadowParent"];
+
+        // Both definitions reach the child, but only the nearest describes the field — otherwise the
+        // child would show two Status inputs for the same label.
+        expect(child.getAttributes().filter((attr) => attr.name === "label:status")).toHaveLength(2);
+
+        const definitions = child.getAttributeDefinitions().filter((attr) => attr.name === "label:status");
+        expect(definitions).toHaveLength(1);
+        expect(definitions[0].noteId).toBe("shadowChild");
+        expect(definitions[0].getDefinition().selectOptions).toEqual([ "Todo", "Done" ]);
+
+        // The parent still sees its own, unchanged.
+        expect(parent.getAttributeDefinitions()
+            .filter((attr) => attr.name === "label:status")
+            .map((attr) => attr.noteId)).toEqual([ "shadowParent" ]);
+    });
 });
 
 describe("FNote paths & hierarchy", () => {
@@ -679,6 +760,33 @@ describe("FNote paths & hierarchy", () => {
 
         expect(leaf.getBestNotePath("root", "root/branchX/sharedLeaf")).toEqual(["root", "branchX", "sharedLeaf"]);
         expect(leaf.getBestNotePathString()).toContain("sharedLeaf");
+    });
+
+    it("keeps a bookmark clone out of the best path while a hidden note is active", () => {
+        // Bookmarking clones the note under `_lbBookmarks`, so its children gain a second path
+        // through `_hidden`. A search activates a search note that lives under `_hidden` as well,
+        // and that shared prefix must not promote the bookmark path over the real one.
+        const root = froca.notes["root"] ?? buildNote({ id: "root", title: "root" });
+        const hidden = froca.notes["_hidden"] ?? buildNote({ id: "_hidden", title: "Hidden" });
+        wireChild(root, hidden);
+
+        let launchBarParent = hidden;
+        for (const id of ["_lbRoot", "_lbVisibleLaunchers", "_lbBookmarks"]) {
+            const launcher = buildNote({ id, title: id });
+            wireChild(launchBarParent, launcher);
+            launchBarParent = launcher;
+        }
+
+        const inbox = buildNote({ id: "bmInbox", title: "Inbox" });
+        wireChild(root, inbox);
+        wireChild(launchBarParent, inbox);
+
+        const leaf = buildNote({ id: "bmLeaf", title: "ThisIsTest" });
+        wireChild(inbox, leaf);
+
+        expect(leaf.getAllNotePaths()).toHaveLength(2);
+        expect(leaf.getBestNotePath("root", "root/_hidden/_search/202609/searchNoteId"))
+            .toEqual(["root", "bmInbox", "bmLeaf"]);
     });
 
     it("getSortedNotePathRecords orders by archived / hidden / search / length without an active path", () => {
@@ -763,6 +871,27 @@ describe("FNote paths & hierarchy", () => {
         // active path equal to one of the candidate paths -> equal-overlap branch exercised
         const withActive = leaf.getSortedNotePathRecords("root", "root/plainP/hoistLeaf");
         expect(withActive[0].notePath).toEqual(["root", "plainP", "hoistLeaf"]);
+    });
+
+    it("getBestNotePathString still resolves a note that froca has dropped", () => {
+        const root = froca.notes["root"] ?? buildNote({ id: "root", title: "root" });
+        const parent = buildNote({ id: "droppedParent", title: "parent" });
+        registerBranch("br-root-droppedParent", "droppedParent", "root", 0);
+        root.addChild("droppedParent", "br-root-droppedParent", false);
+        parent.addParent("root", "br-root-droppedParent", false);
+
+        const leaf = buildNote({ id: "droppedLeaf", title: "leaf", "#archived": "" });
+        registerBranch("br-droppedParent-droppedLeaf", "droppedLeaf", "droppedParent", 0);
+        parent.addChild("droppedLeaf", "br-droppedParent-droppedLeaf", false);
+        leaf.addParent("droppedParent", "br-droppedParent-droppedLeaf", false);
+
+        // `froca_updater` removes a deleted note from `froca.notes`, while a view can still hold it.
+        delete froca.notes["droppedLeaf"];
+
+        const [ record ] = leaf.getSortedNotePathRecords("root");
+        expect(record.notePath).toEqual(["root", "droppedParent", "droppedLeaf"]);
+        expect(record.isArchived).toBe(true);
+        expect(leaf.getBestNotePathString()).toBe("root/droppedParent/droppedLeaf");
     });
 
     it("getSortedNotePathRecords comparator exercises both ternary directions (reversed parent order)", () => {
@@ -923,6 +1052,59 @@ describe("FNote icon, color, folder & css", () => {
         expect(noIcon.getIcon()).toContain("tn-icon");
     });
 
+    it("draws a note carrying a location as a pin, behind an icon of its own", () => {
+        const here = buildNote({ title: "here", "#geolocation": "48.85,2.36" });
+        expect(here.getIcon()).toBe("tn-icon bx bx-pin");
+
+        const own = buildNote({
+            title: "own", "#geolocation": "48.85,2.36", "#iconClass": "bx bx-store" });
+        expect(own.getIcon()).toBe("tn-icon bx bx-store");
+
+        // Taking a marker off the map empties the label rather than removing it (see moveMarker in
+        // the geo map's api), and a note that stands nowhere is a plain note again.
+        const gone = buildNote({ title: "gone", "#geolocation": "" });
+        expect(gone.getIcon()).toBe("tn-icon bx bx-note");
+    });
+
+    it("answers what a new child would be given, nearest source first", () => {
+        const template = buildNote({ title: "Place", "#iconClass": "bx bx-map" });
+
+        // All three at once: the copy beats the inheritable label, which beats the template.
+        const dressed = buildNote({
+            title: "The map",
+            "#child:iconClass": "bx bx-store",
+            "#iconClass(inheritable)": "bx bx-star",
+            "~child:template": template.noteId
+        });
+        expect(dressed.getLabelValueForNewChild("iconClass")).toBe("bx bx-store");
+
+        const inheritable = buildNote({ title: "map2", "#iconClass(inheritable)": "bx bx-star" });
+        expect(inheritable.getLabelValueForNewChild("iconClass")).toBe("bx bx-star");
+
+        const templated = buildNote({ title: "map3", "~child:template": template.noteId });
+        expect(templated.getLabelValueForNewChild("iconClass")).toBe("bx bx-map");
+
+        // An inheritable `~template` reaches the child down the tree rather than by being copied.
+        const handedDown = buildNote({ title: "map4", "~template(inheritable)": template.noteId });
+        expect(handedDown.getLabelValueForNewChild("iconClass")).toBe("bx bx-map");
+
+        // An icon the map wears itself is the map's, and says nothing about its children.
+        const own = buildNote({ title: "map5", "#iconClass": "bx bx-star" });
+        expect(own.getLabelValueForNewChild("iconClass")).toBeNull();
+        expect(buildNote({ title: "map6" }).getLabelValueForNewChild("iconClass")).toBeNull();
+    });
+
+    it("skips a child template of another type, which core would not apply either", () => {
+        // The type is the caller's explicit choice, so core leaves such a template alone (#3015);
+        // left unsaid, the template is taken to apply.
+        const canvas = buildNote({ title: "Sketch", type: "canvas", "#iconClass": "bx bx-pen" });
+        const map = buildNote({ title: "The map", "~child:template": canvas.noteId });
+
+        expect(map.getLabelValueForNewChild("iconClass", "text")).toBeNull();
+        expect(map.getLabelValueForNewChild("iconClass", "canvas")).toBe("bx bx-pen");
+        expect(map.getLabelValueForNewChild("iconClass")).toBe("bx bx-pen");
+    });
+
     it("isFolder reflects subtreeHidden, search type and filtered children", () => {
         const hiddenSubtree = buildNote({ title: "hs", "#subtreeHidden": "" });
         expect(hiddenSubtree.isFolder()).toBe(false);
@@ -1027,6 +1209,34 @@ describe("FNote system-note predicates", () => {
         expect(makeNote({ mime: "text/plain" }).isTriliumScript()).toBe(false);
     });
 
+    it("mime predicates survive a note row that arrives without a mime", () => {
+        const note = makeNote({ type: "code", mime: "application/javascript;env=backend" });
+        expect(note.isTriliumScript()).toBe(true);
+
+        // What froca_updater does with a ws payload: `note.update(ec.entity as FNoteRow)`. A server
+        // that builds that payload from a becca skeleton note (a note referenced by a branch that
+        // synced ahead of it) has `mime`/`title` undefined, and JSON.stringify drops the keys
+        // entirely - so the cast hides a row that is missing them. froca is the last line of
+        // defence here since it cannot tell such a row apart from a complete one.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(() => note.isTriliumScript()).not.toThrow();
+        expect(note.isTriliumScript()).toBe(false);
+        expect(note.isJavaScript()).toBe(false);
+        expect(note.isTriliumSqlite()).toBe(false);
+        expect(note.getScriptEnv()).toBeNull();
+    });
+
+    it("title stays a string when a note row arrives without a title", () => {
+        const note = makeNote({ title: "Real title" });
+
+        // The same skeleton row as above; `NoteTreeWidget.getTitleHtml()` passes the title to
+        // `escapeHtml()`, which calls `.replace()` on it.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(note.title).toBe("");
+    });
+
     it("getScriptEnv returns frontend / backend / null", () => {
         expect(makeNote({ type: "code", mime: "text/html" }).getScriptEnv()).toBe("frontend");
         expect(makeNote({ type: "code", mime: "application/javascript;env=frontend" }).getScriptEnv()).toBe("frontend");
@@ -1048,7 +1258,10 @@ describe("FNote executeScript", () => {
     });
 
     it("posts to the server for a backend script", async () => {
-        const postSpy = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        // Runs through backend_scripting, so a failure is reported against the note rather than as
+        // a request that went wrong — which is why the silent variant is the one called.
+        const postSpy = vi.spyOn(server, "postWithSilentInternalServerError")
+            .mockResolvedValue(undefined);
         const note = makeNote({ type: "code", mime: "application/javascript;env=backend" });
 
         await note.executeScript();
@@ -1163,6 +1376,14 @@ function makeBlob(content: string | undefined): FBlob {
         dateModified: "2020",
         utcDateModified: "2020"
     });
+}
+
+/** Wires one froca note as a child of another, the way a branch does in the application. */
+function wireChild(parent: FNote, child: FNote) {
+    const branchId = `br-${parent.noteId}-${child.noteId}`;
+    registerBranch(branchId, child.noteId, parent.noteId, 0);
+    parent.addChild(child.noteId, branchId, false);
+    child.addParent(parent.noteId, branchId, false);
 }
 
 function registerBranch(branchId: string, noteId: string, parentNoteId: string, notePosition: number | undefined) {

@@ -5,7 +5,7 @@ For this, Trilium provides a concept of "day note". Trilium semi-automatically g
 
 Select an existing day note, and the menubar contains a calendar widget. Select any day to create a note for that day. 
 
-![](1_Day%20Notes_image.png)
+![](Day%20Notes_image.jpg)
 
 This pattern works well also because of [Cloning Notes](../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) functionality - note can appear in multiple places in the note tree, so besides appearing under day note, it can also be categorized into other notes.
 
@@ -16,6 +16,10 @@ This pattern works well also because of [Cloning Notes](../../Basic%20Concepts%2
 You can see the structure of day notes appearing under "Journal" note - there's a note for the whole year 2025, under it, you have "03 - March" which then contains "09 - Monday". This is our "day note" which contains some text in its content and also has some child notes (some of them are from [Task manager](Task%20Manager.md)).
 
 You can also notice how this day note has [promoted attribute](../Attributes/Promoted%20Attributes.md) "weight" where you can track your daily weight. This data is then used in [Weight tracker](Weight%20Tracker.md).
+
+## Edited notes
+
+When a day note is opened, a collapsible section will appear underneath the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> showing the notes edited on that day.
 
 ## Week Note and Quarter Note
 

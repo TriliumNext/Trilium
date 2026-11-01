@@ -63,11 +63,16 @@ describe("FetchRequestProvider.exec", () => {
         expect(result).toBeNull();
     });
 
-    it("adds a trilium-cred header when auth is provided", async () => {
+    it("adds a trilium-cred header when auth is provided, and trilium-totp only with a token", async () => {
         const spy = mockFetch({ status: 200, text: async () => "{}" });
         await provider.exec({ method: "GET", url: `${location.origin}/x`, auth: { password: "pw" } } as ExecOpts);
         const headers = lastInit(spy).headers as Record<string, string>;
         expect(headers["trilium-cred"]).toBe(btoa("dummy:pw"));
+        expect(headers).not.toHaveProperty("trilium-totp");
+
+        spy.mockClear();
+        await provider.exec({ method: "GET", url: `${location.origin}/x`, auth: { password: "pw", totpToken: "123456" } } as ExecOpts);
+        expect((lastInit(spy).headers as Record<string, string>)["trilium-totp"]).toBe("123456");
     });
 
     it("serializes object bodies as JSON and passes string bodies through", async () => {
@@ -108,7 +113,24 @@ describe("FetchRequestProvider.exec", () => {
             (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
         }));
         const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
-        const rejection = expect(promise).rejects.toThrow("timeout after 50ms");
+        const rejection = expect(promise).rejects.toThrow("timeout after 50ms waiting for the response headers");
+        await vi.advanceTimersByTimeAsync(50);
+        await rejection;
+    });
+
+    it("reports a timeout while reading the body with the status and when the headers arrived", async () => {
+        vi.useFakeTimers();
+        const abortErr = Object.assign(new Error("aborted"), { name: "AbortError" });
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => ({
+            status: 200,
+            text: () => new Promise<string>((_resolve, reject) => {
+                (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
+            })
+        }) as unknown as Response);
+        const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
+        const rejection = expect(promise).rejects.toThrow(
+            /timeout after 50ms while reading the response body \(status 200 received after 0ms\)$/
+        );
         await vi.advanceTimersByTimeAsync(50);
         await rejection;
     });
@@ -148,5 +170,53 @@ describe("FetchRequestProvider.getImage", () => {
     it("throws when the image response is not ok", async () => {
         mockFetch({ ok: false, status: 404, arrayBuffer: async () => new ArrayBuffer(0) });
         await expect(provider.getImage(`${location.origin}/missing.png`)).rejects.toThrow("404 GET");
+    });
+});
+
+describe("FetchRequestProvider.fetchResource", () => {
+    it("reads a capped body and the type it came under", async () => {
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("<html/>", { headers: { "content-type": "text/html; charset=utf-8" } })
+        );
+
+        const read = await provider.fetchResource("https://example.com/p", {
+            maxBytes: 1000,
+            headers: { "user-agent": "TriliumNotes" }
+        });
+
+        expect(read).toEqual({
+            status: 200,
+            ok: true,
+            contentType: "text/html",
+            bytes: new TextEncoder().encode("<html/>")
+        });
+        expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });
+    });
+
+    it("refuses an address before a request is made of it", async () => {
+        const spy = vi.spyOn(globalThis, "fetch");
+
+        await expect(provider.fetchResource("file:///etc/passwd", { maxBytes: 10 })).rejects.toThrow(/http and https/);
+        await expect(provider.fetchResource("https://u:p@example.com/", { maxBytes: 10 })).rejects.toThrow(/credentials/);
+        expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("refuses a body over the ceiling", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("x".repeat(50)));
+
+        await expect(provider.fetchResource("https://example.com/big", { maxBytes: 10 }))
+            .rejects.toThrow(/exceeds the 10 byte limit/);
+    });
+
+    /**
+     * The case with no server behind it: a site that sends no CORS headers fails the fetch itself,
+     * however healthy the response was. Nothing here can fix that — what matters is that it surfaces
+     * as a rejection the caller can degrade on, rather than as an empty preview.
+     */
+    it("propagates the failure a cross-origin refusal shows up as", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+
+        await expect(provider.fetchResource("https://example.com/p", { maxBytes: 10 }))
+            .rejects.toThrow(/Failed to fetch/);
     });
 });

@@ -153,6 +153,28 @@ pdfjs-document-properties-linearized = Быстрый просмотр в Web:
 pdfjs-document-properties-linearized-yes = Да
 pdfjs-document-properties-linearized-no = Нет
 pdfjs-document-properties-close-button = Закрыть
+pdfjs-digital-signature-properties-view-certificate = Просмотреть сертификат
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Причина: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Метка времени: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Дополнительная подпись ({ $count })
+        [few] Дополнительные подписи ({ $count })
+       *[many] Дополнительные подписи ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +188,6 @@ pdfjs-printing-not-ready = Предупреждение: PDF не полност
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Показать/скрыть боковую панель
-pdfjs-toggle-sidebar-notification-button =
-    .title = Показать/скрыть боковую панель (документ имеет содержание/вложения/слои)
-pdfjs-toggle-sidebar-button-label = Показать/скрыть боковую панель
-pdfjs-document-outline-button =
-    .title = Показать содержание документа (двойной щелчок, чтобы развернуть/свернуть все элементы)
-pdfjs-document-outline-button-label = Содержание документа
-pdfjs-attachments-button =
-    .title = Показать вложения
-pdfjs-attachments-button-label = Вложения
-pdfjs-layers-button =
-    .title = Показать слои (дважды щёлкните, чтобы сбросить все слои к состоянию по умолчанию)
-pdfjs-layers-button-label = Слои
-pdfjs-thumbs-button =
-    .title = Показать миниатюры
-pdfjs-thumbs-button-label = Миниатюры
 pdfjs-current-outline-item-button =
     .title = Найти текущий элемент структуры
 pdfjs-current-outline-item-button-label = Текущий элемент структуры
@@ -193,10 +198,6 @@ pdfjs-additional-layers = Дополнительные слои
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Страница { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +215,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Найти
     .placeholder = Найти в документе…
+    .title = Найти
 pdfjs-find-previous-button =
     .title = Найти предыдущее вхождение фразы в текст
 pdfjs-find-previous-button-label = Назад
@@ -312,16 +313,16 @@ pdfjs-editor-highlight-button =
     .title = Выделение
 pdfjs-editor-highlight-button-label = Выделение
 pdfjs-highlight-floating-button1 =
-    .title = Выделение
     .aria-label = Выделение
+    .title = Выделение
 pdfjs-highlight-floating-button-label = Выделение
 pdfjs-comment-floating-button =
-    .title = Комментировать
     .aria-label = Комментировать
+    .title = Комментировать
 pdfjs-comment-floating-button-label = Комментировать
 pdfjs-editor-comment-button =
-    .title = Комментарий
     .aria-label = Комментарий
+    .title = Комментарий
 pdfjs-editor-comment-button-label = Комментарий
 pdfjs-editor-signature-button =
     .title = Добавить подпись
@@ -395,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[many] Комментарии
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Закрыть боковую панель
     .aria-label = Закрыть боковую панель
+    .title = Закрыть боковую панель
 pdfjs-editor-comments-sidebar-close-button-label = Закрыть боковую панель
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Увидели что-то интересное? Выделите и оставьте комментарий.
@@ -519,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Настройки альтерн�
 pdfjs-editor-alt-text-settings-automatic-title = Автоматический альтернативный текст
 pdfjs-editor-alt-text-settings-create-model-button-label = Автоматически создавать альтернативный текст
 pdfjs-editor-alt-text-settings-create-model-description = Предлагает описания, чтобы помочь людям, которые не видят изображение, или если изображение не загружается.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = ИИ-модель альтернативного текста ({ $totalSize } МБ)
-pdfjs-editor-alt-text-settings-ai-model-description = Запускается локально на вашем устройстве, поэтому ваши данные остаются конфиденциальными. Требуется для автоматического альтернативного текста.
-pdfjs-editor-alt-text-settings-delete-model-button = Удалить
-pdfjs-editor-alt-text-settings-download-model-button = Скачать
-pdfjs-editor-alt-text-settings-downloading-model-button = Загрузка…
 pdfjs-editor-alt-text-settings-editor-title = Редактор альтернативного текста
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Сразу показывать редактор альтернативного текста при добавлении изображения
 pdfjs-editor-alt-text-settings-show-dialog-description = Помогает вам убедиться, что все ваши изображения имеют альтернативный текст.
@@ -739,6 +733,79 @@ pdfjs-new-badge-content = НОВОЕ
 pdfjs-views-manager-waiting-for-file = Загрузка файла…
 pdfjs-toggle-views-manager-button1 =
     .title = Управление страницами
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Свойства цифровой подписи
+    .title = Свойства цифровой подписи
+pdfjs-digital-signature-properties-button-label = Свойства цифровой подписи
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Документ был подписан действительной цифровой подписью
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Документ подписан, но { $count } цифровая подпись не может быть проверены
+        [few] Документ подписан, но { $count } цифровых подписи не могут быть проверены
+       *[many] Документ подписан, но { $count } цифровых подписей не могут быть проверены
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Документ, подписанный { $count } недоверенным сертификатом
+        [few] Документ, подписанный { $count } недоверенными сертификатами
+       *[many] Документ, подписанный { $count } недоверенных сертификатов
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Документ, подписанный { $count } истёкшим сертификатом
+        [few] Документ, подписанный { $count } истёкшими сертификатами
+       *[many] Документ, подписанный { $count } истёкших сертификатов
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Документ имеет { $count } неверную цифровую подпись
+        [few] Документ имеет { $count } неверных цифровых подписей
+       *[many] Документ имеет { $count } неверных цифровых подписей
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Документ, подписанный { $count } отозванным сертификатом
+        [few] Документ, подписанный { $count } отозванными сертификатами
+       *[many] Документ, подписанный { $count } отозванных сертификатов
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Статус: Подпись проверена
+pdfjs-digital-signature-properties-status-invalid = Статус: Подпись недействительна
+pdfjs-digital-signature-properties-status-unknown = Статус: Не удалось проверить (не поддерживается)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Сертификат: Доверенный ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Сертификат: Недоступен
+pdfjs-digital-signature-properties-certificate-untrusted = Сертификат: Недоверенный
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Сертификат: Неизвестный издатель ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Сертификат: Самоподписанный ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Сертификат: Недоверенный издатель ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Сертификат: Истёк срок действия
+pdfjs-digital-signature-properties-certificate-expired-with-date = Сертификат: Истёк срок действия ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Сертификат: Отозван
 
 ## Main menu for adding/removing signatures
 

@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import toast from "./toast.js";
-import { copyText, copyTextWithToast } from "./clipboard_ext.js";
+import utils from "./utils.js";
+import { buildNote } from "../test/easy-froca";
+import {
+    copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText, copyTextWithToast
+} from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
@@ -59,6 +63,42 @@ describe("copyText", () => {
         expect(document.querySelector("textarea")).toBeNull();
     });
 
+    it("keeps the fallback textarea inside an open modal that traps focus", () => {
+        setClipboard(undefined);
+
+        document.body.innerHTML = `
+            <input class="quick-search">
+            <div class="modal show" tabindex="-1"><input class="first"><button class="copy">Copy</button></div>`;
+        const modal = document.querySelector<HTMLElement>(".modal");
+        const first = document.querySelector<HTMLInputElement>(".first");
+        const button = document.querySelector<HTMLButtonElement>(".copy");
+        if (!modal || !first || !button) throw new Error("fixture missing");
+        // Bootstrap's `FocusTrap` pulls focus that lands outside the modal back into it.
+        const trap = (e: FocusEvent) => {
+            if (!modal.contains(e.target as Node)) {
+                first.focus();
+            }
+        };
+        document.addEventListener("focusin", trap);
+        button.focus();
+
+        let copiedValue: string | undefined;
+        (document as unknown as { execCommand: () => boolean }).execCommand = () => {
+            const active = document.activeElement;
+            copiedValue = active instanceof HTMLTextAreaElement ? active.value : undefined;
+            return true;
+        };
+
+        try {
+            expect(copyText("in-modal")).toBe(true);
+        } finally {
+            document.removeEventListener("focusin", trap);
+        }
+        expect(copiedValue).toBe("in-modal");
+        expect(document.querySelector("textarea")).toBeNull();
+        expect(document.activeElement).toBe(button);
+    });
+
     it("returns false and warns when the fallback throws", () => {
         setClipboard(undefined);
 
@@ -101,5 +141,121 @@ describe("copyTextWithToast", () => {
 
         expect(showError).toHaveBeenCalledTimes(1);
         expect(showMessage).not.toHaveBeenCalled();
+    });
+});
+
+describe("copyHtml", () => {
+    afterEach(() => {
+        delete (globalThis as any).ClipboardItem;
+    });
+
+    /** Install the `ClipboardItem` constructor the asynchronous Clipboard API needs. */
+    function stubClipboardItem() {
+        (globalThis as any).ClipboardItem = class {
+            constructor(public readonly data: Record<string, unknown>) {}
+        };
+    }
+
+    it("writes both flavours through navigator.clipboard when available", async () => {
+        const write = vi.fn(async (..._args: any[]) => {});
+        setClipboard({ write });
+        stubClipboardItem();
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard");
+
+        expect(await copyHtml("<b>x</b>", "x")).toBe(true);
+
+        const items = write.mock.calls[0][0] as any[];
+        expect(await (items[0].data["text/html"] as Blob).text()).toBe("<b>x</b>");
+        expect(await (items[0].data["text/plain"] as Blob).text()).toBe("x");
+        expect(copyHtmlToClipboard).not.toHaveBeenCalled();
+    });
+
+    it("falls back to the copy event outside a secure context, where the API is undefined (#10723)", async () => {
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+
+        // The plain text defaults to the HTML.
+        expect(await copyHtml("<b>x</b>")).toBe(true);
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "<b>x</b>");
+    });
+
+    it("returns false and warns when the copy event itself throws", async () => {
+        setClipboard(undefined);
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const error = new Error("execCommand failed");
+        vi.spyOn(utils, "copyHtmlToClipboard").mockImplementation(() => {
+            throw error;
+        });
+
+        expect(await copyHtml("<b>x</b>")).toBe(false);
+        expect(warn).toHaveBeenCalledWith(error);
+    });
+
+    it("falls back to the copy event when the write is denied, and reports a failure of both", async () => {
+        const denied = new Error("NotAllowedError");
+        setClipboard({ write: vi.fn(async () => { throw denied; }) });
+        stubClipboardItem();
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(false);
+
+        expect(await copyHtml("<b>x</b>", "x")).toBe(false);
+        expect(warn).toHaveBeenCalledWith(denied);
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "x");
+    });
+});
+
+describe("copyHtmlWithToast", () => {
+    it("copies through the copy event, defaults the plain text to the HTML, and reports success", async () => {
+        // No `navigator.clipboard` at all: the API is undefined outside secure contexts, which is
+        // how Trilium is usually served over a LAN (#10723).
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
+        await copyHtmlWithToast("<b>x</b>");
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "<b>x</b>");
+
+        await copyHtmlWithToast("<a href=\"#root/abc\">Note</a>", "#root/abc");
+        expect(copyHtmlToClipboard).toHaveBeenLastCalledWith("<a href=\"#root/abc\">Note</a>", "#root/abc");
+
+        expect(showMessage).toHaveBeenCalledTimes(2);
+        expect(showError).not.toHaveBeenCalled();
+    });
+
+    it("shows an error message when the copy fails", async () => {
+        setClipboard(undefined);
+        vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(false);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
+        await copyHtmlWithToast("<b>x</b>");
+
+        expect(showError).toHaveBeenCalledTimes(1);
+        expect(showMessage).not.toHaveBeenCalled();
+    });
+});
+
+describe("copyReferenceWithToast", () => {
+    it("copies a reference link drawn from what the href points at", async () => {
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const board = buildNote({ title: "Board" });
+        const href = `#root/${board.noteId}?column=colTodo00001&columnTitle=To%20Do`;
+
+        await copyReferenceWithToast(href);
+
+        const [ html, plainText ] = copyHtmlToClipboard.mock.calls[0];
+        // The editor keeps only the class and the href, and draws the rest from the href itself,
+        // so the markup is read back the way a paste parses it.
+        const parsed = document.createElement("div");
+        parsed.innerHTML = html;
+        const $anchor = parsed.querySelector("a.reference-link");
+        expect($anchor?.getAttribute("href")).toBe(href);
+        expect($anchor?.textContent).toContain("Board");
+        // What a Markdown or code note pastes, where the rich flavour is of no use.
+        expect(plainText).toBe(href);
+        expect(showMessage).toHaveBeenCalledTimes(1);
     });
 });

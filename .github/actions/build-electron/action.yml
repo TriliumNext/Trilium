@@ -21,7 +21,7 @@ runs:
   # Certificate setup
   - name: Import Apple certificates
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v7
+    uses: apple-actions/import-codesign-certs@77ba2a2a8f5cfc8c405ebf3159f767c323e238f9 # v7.1.0
     with:
       p12-file-base64: ${{ env.APPLE_APP_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_APP_CERTIFICATE_PASSWORD }}
@@ -30,7 +30,7 @@ runs:
 
   - name: Install Installer certificate
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v7
+    uses: apple-actions/import-codesign-certs@77ba2a2a8f5cfc8c405ebf3159f767c323e238f9 # v7.1.0
     with:
       p12-file-base64: ${{ env.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
@@ -79,6 +79,14 @@ runs:
       APPIMAGETOOL_ARCH=$(if [[ ${{ inputs.arch }} = 'arm64' ]]; then echo 'aarch64'; else echo 'x86_64'; fi)
       wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage" -O /usr/local/bin/appimagetool
       chmod +x /usr/local/bin/appimagetool
+
+  # See the equivalent step in build-server: substitute an addon built against an
+  # older glibc for better-sqlite3's bundled prebuild, before electron-forge
+  # packages node_modules/better-sqlite3 into the app.
+  - name: Rebuild better-sqlite3 against an older glibc
+    if: ${{ inputs.os == 'linux' }}
+    shell: ${{ inputs.shell }}
+    run: bash scripts/build-portable-better-sqlite3.sh ${{ inputs.arch }}
 
   - name: Update build info
     shell: ${{ inputs.shell }}

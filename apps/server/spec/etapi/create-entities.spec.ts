@@ -1,4 +1,4 @@
-import { BBranch, note_service as noteService } from "@triliumnext/core";
+import { BBranch, becca, note_service as noteService } from "@triliumnext/core";
 import { Application } from "express";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import supertest from "supertest";
@@ -76,6 +76,40 @@ describe("etapi/create-entities", () => {
         });
     });
 
+    it("keeps a given utcDateModified on create and on patch", async () => {
+        const utcDateModified = "2024-05-06 08:11:12.456Z";
+        const created = await supertest(app)
+            .post("/etapi/create-note")
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                parentNoteId: "root",
+                title: "Imported",
+                type: "text",
+                content: "x",
+                utcDateModified
+            })
+            .expect(201);
+        const { noteId } = created.body.note;
+        expect(created.body.note.utcDateModified).toBe(utcDateModified);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).toBe(utcDateModified);
+
+        await supertest(app)
+            .put(`/etapi/notes/${noteId}/content`)
+            .auth(USER, token, { "type": "basic"})
+            .set("Content-Type", "text/plain")
+            .send("rewritten")
+            .expect(204);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).not.toBe(utcDateModified);
+
+        const patched = await supertest(app)
+            .patch(`/etapi/notes/${noteId}`)
+            .auth(USER, token, { "type": "basic"})
+            .send({ utcDateModified })
+            .expect(200);
+        expect(patched.body.utcDateModified).toBe(utcDateModified);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).toBe(utcDateModified);
+    });
+
     it("obtains attribute information", async () => {
         const response = await supertest(app)
             .get(`/etapi/attributes/${createdAttributeId}`)
@@ -109,6 +143,31 @@ describe("etapi/create-entities", () => {
                 .send({ parentNoteId: "root", title: "img", type: "image", mime: "text/plain" })
                 .expect(400);
             expect(response.body.code).toStrictEqual("INVALID_MIME_FOR_IMAGE");
+        });
+
+        it("refuses to create a note or attribute over an existing one", async () => {
+            for (const [ noteId, parentNoteId ] of [ [ createdNoteId, "root" ], [ "root", "root" ] ]) {
+                const response = await supertest(app)
+                    .post("/etapi/create-note")
+                    .auth(USER, token, { "type": "basic"})
+                    .send({ noteId, parentNoteId, title: "overwritten", type: "text", content: "x" })
+                    .expect(409);
+                expect(response.body.code).toStrictEqual("NOTE_ALREADY_EXISTS");
+            }
+            expect(becca.getNoteOrThrow(createdNoteId).title).toStrictEqual("Hello");
+            expect(becca.getNoteOrThrow("root").title).not.toStrictEqual("overwritten");
+            expect(becca.getBranch("root_root")).toBeNull();
+
+            const response = await supertest(app)
+                .post("/etapi/attributes")
+                .auth(USER, token, { "type": "basic"})
+                .send({ attributeId: createdAttributeId, noteId: "root", type: "label", name: "overwritten" })
+                .expect(409);
+            expect(response.body.code).toStrictEqual("ATTRIBUTE_ALREADY_EXISTS");
+            expect(becca.getAttributeOrThrow(createdAttributeId)).toMatchObject({
+                noteId: createdNoteId,
+                name: "mylabel"
+            });
         });
 
         it("reports a 500 when note creation throws", async () => {

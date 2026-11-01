@@ -32,3 +32,7 @@ There are two ways to add widgets to a dashboard:
 
 *   Create a child note of any type, the dashboard will automatically pick it up and add it onto the grid.
 *   From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, drag an existing note onto the dashboard and it will be placed there. This will [clone](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) the note into the collection.
+
+## Read-only dashboards
+
+On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) dashboard, the widgets can't be moved or resized, notes dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> aren't added, and the menu of a widget no longer offers to remove it.

@@ -12,7 +12,7 @@ Setting up authentication with OpenID connect is a two-step process:
 
 ### Configuring the authentication provider
 
-1.  First, make sure the authentication provider (e.g. Google, Authelia) is configured properly.
+1.  First, make sure the authentication provider (e.g. Google, Authelia) is configured properly. See <a class="reference-link" href="Signing%20in%20with%20OpenID%20Connect/Setting%20up%20with%20various%20providers.md">Setting up with various providers</a> for concrete examples.
     
     1.  The redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
     2.  You should obtain the base URL, client ID and client secret.
@@ -23,21 +23,31 @@ Setting up authentication with OpenID connect is a two-step process:
     | Base URL\* | `oauthBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | The URL of your Trilium instance (e.g. `https://example.com`). |
     | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | The client ID from your provider configuration. |
     | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | The client secret from your provider configuration. |
+    | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate` or `invalid_client` error. |
+    | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32);">error.</span> |
     
     Asterisk (\*) marks a required field
 3.  The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables:
     
     | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
     | --- | --- | --- | --- |
-    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | The URL of your provider (e.g. `https://auth.example.com:9091`) |
+    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Either the issuer itself (`https://auth.example.com`) or a full discovery URL (`https://auth.example.com/.well-known/openid-configuration`).  <br>  <br>A URL containing `/.well-known/` is used as-is<span style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span>  <br>  <br>Use the full form when your provider advertises an issuer that differs from the path serving its discovery document, such as Authentik in "global" issuer mode. |
     | Issuer name | `oauthIssuerName` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | The name of your authentication provider, used for reference on the login screen and in settings. Default is “Google”. |
     | Issuer icon | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Optionally, the URL to a logo of the provider. By default it will try to obtain the favicon from the website, so it's optional. |
     
     All the fields here are optional, since the default OAuth issuer is Google.
-4.  Restart the server so that the changes are applied.
+4.  Optionally, tune the following advanced settings. All are optional and have sensible defaults:
+    
+    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | --- | --- | --- | --- |
+    | HTTP timeout | `oauthHttpTimeout` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | Timeout in milliseconds for the provider HTTP requests (discovery, token exchange, userinfo). Defaults to `30000` (30s). Raise this if your provider cold-starts slowly and you are occasionally asked to sign in twice. Minimum accepted value is `500`. |
+    | Scopes | `oauthScope` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | Space-separated list of OIDC scopes requested at login. Defaults to `openid profile email`. `openid` is required and is prepended automatically if you omit it. |
+    
+    The OIDC session lifetime is automatically bound to Trilium's own session cookie lifetime (the `cookieMaxAge` setting in the `[Session]` section, 21 days by default), so a single sign-in stays valid for as long as your Trilium session does rather than expiring early on the OIDC library's shorter internal defaults.
+5.  Restart the server so that the changes are applied.
 
 > [!NOTE]
-> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`
+> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_HTTP_TIMEOUT`, `TRILIUM_OAUTH_SCOPE`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG`.
 
 ## Connecting to the authentication provider
 
@@ -47,7 +57,7 @@ To do so:
 
 1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth._
 2.  In the _Sign-in with_ field, choose _OpenID Connect provider._
-3.  In the _OpenID Connect_ section, look for the _Connect account_ button.
+3.  In the _OpenID Connect_ section, look for the _Connect account_ (<span class="tn-icon bx bx-log-in"></span>) button.
 4.  This will redirect you to your authentication provider, where you can sign in or confirm the action if needed.
 5.  Once you are authenticated you will be redirected back to the Trilium application.
 
@@ -60,7 +70,7 @@ When logging out of Trilium, a request is made to the authentication provider to
 When switching providers (e.g. going from Google to Authelia), it's important to take the following steps:
 
 1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth_.
-2.  In the _OpenID Connect_ section, press the _Disconnect_ button.
+2.  In the _OpenID Connect_ section, press the _Disconnect_ (<span class="tn-icon bx bx-trash"></span>) button.
 3.  Wait for the section to indicate that you are disconnected.
 4.  Change the configuration pointing to the new provider.
 5.  Restart your server.
@@ -82,12 +92,26 @@ To disable the OpenID Connect authentication and instead rely on the local passw
 
 ## Troubleshooting
 
-### Setup fails with “invalid user”
+### Setup fails with a `WWW-Authenticate` or `invalid_client` error
 
-If you are running behind a [reverse proxy](2.%20Reverse%20proxy.md), a buffer overflow can cause this issue. Here is a sample fix for <a class="reference-link" href="2.%20Reverse%20proxy/Nginx.md">Nginx</a>: 
+Your provider disagrees with Trilium about how client credentials should be sent to the token endpoint. Set `oauthClientAuthMethod` to `client_secret_post` (or `client_secret_basic` if it's already set to post) and restart. Providers vary: some reject `client_secret_post` outright because the method is fixed when the client is registered (e.g. Authelia), so if one value doesn't work, try the other.
+
+### Setup fails with `invalid user`
+
+If you are running behind a [reverse proxy](2.%20Reverse%20proxy.md), a buffer overflow can also cause this issue. Here is a sample fix for <a class="reference-link" href="2.%20Reverse%20proxy/Nginx.md">Nginx</a>: 
 
 ```
 proxy_buffer_size 128k;
 proxy_buffers 4 256k;
 proxy_busy_buffers_size 256k;
 ```
+
+### Setup fails with an `unexpected JWT alg` error
+
+Depending on your version the message reads `unexpected JWT "alg" header parameter` or `unexpected JWT alg received, expected RS256, got: EdDSA`. Both mean the same thing: your provider signs ID tokens with an algorithm other than RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.
+
+From v0.104.2 Trilium detects the algorithm from your provider automatically, and the log records the outcome (`OAuth: the issuer does not sign ID tokens with RS256; expecting ES256`). If detection can't reach the provider it falls back to RS256, so check that the issuer URL is correct and reachable first. Should it still fail, set `oauthIdTokenSigningAlg` explicitly to the algorithm your provider uses.
+
+### Setup fails with `OAUTH_RESPONSE_IS_NOT_CONFORM`
+
+Make sure the base URL is correct and that the identity provider actually supports OpenID Connect. Some providers such as GitHub offer only OAuth 2.0.

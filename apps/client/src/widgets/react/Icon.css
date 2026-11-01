@@ -1,0 +1,12 @@
+.tn-svg-icon {
+    display: inline-flex;
+
+    & > svg {
+        width: 1em;
+        height: 1em;
+    }
+
+    & > svg *:not([fill]) {
+        fill: currentColor;
+    }
+}

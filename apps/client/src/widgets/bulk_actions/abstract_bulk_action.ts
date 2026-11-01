@@ -15,11 +15,15 @@ export interface ActionDefinition {
     labelValue?: string;
     oldLabelName?: string;
     newLabelName?: string;
+    conversion?: string;
+    revisionName?: string;
 }
 
 export default abstract class AbstractBulkAction {
     attribute: FAttribute;
     actionDef: ActionDefinition;
+    /** Set by `deleteAction()`, so a save still pending in the row's `SpacedUpdate` is dropped. */
+    private deleted = false;
 
     constructor(attribute: FAttribute, actionDef: ActionDefinition) {
         this.attribute = attribute;
@@ -29,11 +33,40 @@ export default abstract class AbstractBulkAction {
     // to be overridden
     abstract doRender(): VNode;
 
+    /**
+     * An optional message shown for confirmation before the batch is executed (e.g. to warn about
+     * a lossy operation). Returning `null` (the default) means the action runs without a prompt.
+     */
+    getConfirmationMessage(): string | null {
+        return null;
+    }
+
     static get actionName() {
         return "";
     }
 
+    /** The action's name, shown in the add menu and as the label of its row. */
+    static get actionTitle() {
+        return "";
+    }
+
+    /**
+     * The action's icon, shown in the add menu and on its row: a boxicons class for what it acts on,
+     * plus a `bulk-action-marker-*` class for the corner glyph saying what it does.
+     */
+    static get actionIcon() {
+        return "";
+    }
+
+    /** What the action does, shown as the tooltip of its entry in the add menu. */
+    static get actionDescription() {
+        return "";
+    }
+
     async saveAction(data: {}) {
+        if (this.deleted) {
+            return;
+        }
         const actionObject = Object.assign({ name: (this.constructor as typeof AbstractBulkAction).actionName }, data);
 
         await server.put(`notes/${this.attribute.noteId}/attribute`, {
@@ -47,7 +80,14 @@ export default abstract class AbstractBulkAction {
     }
 
     async deleteAction() {
-        await server.remove(`notes/${this.attribute.noteId}/attributes/${this.attribute.attributeId}`);
+        this.deleted = true;
+        try {
+            await server.remove(`notes/${this.attribute.noteId}/attributes/${this.attribute.attributeId}`);
+        } catch {
+            // `server.remove()` has already shown the error; the row stays, so its edits save again.
+            this.deleted = false;
+            return;
+        }
         await ws.waitForMaxKnownEntityChangeId();
     }
 }

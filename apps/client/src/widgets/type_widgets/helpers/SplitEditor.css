@@ -1,4 +1,6 @@
 .note-detail-split {
+    --gutter-color: var(--left-pane-background-color);
+
     display: flex;
     height: 100%;
 }
@@ -29,11 +31,6 @@
 
 .note-detail-split .note-detail-code-editor .cm-editor {
     margin: 0 !important;
-}
-
-body.desktop .note-detail-split .note-detail-code-editor {
-    border-radius: 6px;
-    margin-top: 1px;
 }
 
 /* Error card, anchored to the top so the dimmed last render stays visible behind it.
@@ -98,10 +95,6 @@ body.desktop .note-detail-split .note-detail-code-editor {
 /* Horizontal layout */
 
 .note-detail-split.split-horizontal:not(.split-read-only) {
-    &> .note-detail-split-preview-col {
-        border-inline-start: 1px solid var(--main-border-color);
-    }
-
     &> .note-detail-split-editor-col,
     &> .note-detail-split-preview-col {
         height: 100%;
@@ -122,10 +115,6 @@ body.desktop .note-detail-split .note-detail-code-editor {
     &> .note-detail-split-preview-col {
         width: 100%;
         height: 50%;
-    }
-
-    &> .note-detail-split-editor-col {
-        border-top: 1px solid var(--main-border-color);
     }
 
     &> .note-detail-split-preview-col {
@@ -157,7 +146,17 @@ body.desktop .note-detail-split .note-detail-code-editor {
 }
 
 /* #region SVG */
+/* react-zoom-pan-pinch sizes both of its boxes as `fit-content`, which leaves the percentage heights
+   below nothing to resolve against. Stretch them to the pane so the SVG fits it at a scale of 1. */
+.note-detail-split.svg-editor .svg-preview-root,
+.note-detail-split.svg-editor .svg-preview-viewport,
+.note-detail-split.svg-editor .svg-preview-content {
+    width: 100%;
+    height: 100%;
+}
+
 .note-detail-split.svg-editor .render-container {
+    width: 100%;
     height: 100%;
 }
 
@@ -165,5 +164,11 @@ body.desktop .note-detail-split .note-detail-code-editor {
     width: 100%;
     height: 100%;
     max-width: 100% !important;
+}
+
+/* OverlayControlGroup pins the controls by its `placement`. The z-index keeps them above
+   `.note-detail-error-card`, which uses 10 as well. */
+.note-detail-split.svg-editor .svg-preview-controls {
+    z-index: 10;
 }
 /* #endregion */

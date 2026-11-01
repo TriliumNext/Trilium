@@ -1,0 +1,20 @@
+.shortcut-hint-button {
+    padding-inline: 8px;
+    gap: 5px;
+    white-space: nowrap;
+
+    /* Keycap style comes from the shared `.tn-shortcut-hints-kbd` rule. */
+
+    .shortcut-hint-button-key {
+        font-size: 0.85em;
+        font-family: monospace;
+        letter-spacing: .5pt;
+    }
+}
+
+/* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is what it
+   stands above and how it fades. */
+.shortcut-hint-button-group {
+    z-index: 2;
+    transition: opacity .3s;
+}

@@ -1,0 +1,216 @@
+import path from "path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+type ExecFileCallback = (err: Error | null, stdout: string, stderr: string) => void;
+// The probe keeps the child so it can close its stdin; a bare `stdin.end` is
+// all the fake needs to provide.
+const fakeChild = vi.hoisted(() => ({ stdin: { end: vi.fn() } }));
+const execFileMock = vi.hoisted(() => vi.fn<(binary: string, args: string[], options: object, cb: ExecFileCallback) => typeof fakeChild>());
+vi.mock("child_process", () => ({ execFile: execFileMock }));
+
+const existsSyncMock = vi.hoisted(() => vi.fn((_path: string) => true));
+vi.mock("fs", () => ({ existsSync: existsSyncMock }));
+
+vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: vi.fn(), error: vi.fn() }) }));
+
+const { resetCopilotBinaryCache, resolveCopilotBinaryPath } = await import("./copilot_binary.js");
+const { resetLoginShellPathCache } = await import("./binary_lookup.js");
+
+describe("resolveCopilotBinaryPath", () => {
+    const originalOverride = process.env.TRILIUM_COPILOT_PATH;
+    const originalPath = process.env.PATH;
+    const originalShell = process.env.SHELL;
+    const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
+
+    beforeEach(() => {
+        resetCopilotBinaryCache();
+        resetLoginShellPathCache();
+        // No $SHELL: the login-shell fallback is a no-op, so these cases
+        // stay about the inherited PATH (binary_lookup.spec.ts covers it).
+        delete process.env.SHELL;
+        execFileMock.mockReset();
+        fakeChild.stdin.end.mockReset();
+        existsSyncMock.mockReset();
+        existsSyncMock.mockReturnValue(true);
+        process.env.TRILIUM_COPILOT_PATH = "/opt/copilot/copilot";
+    });
+
+    afterEach(() => {
+        if (originalOverride === undefined) {
+            delete process.env.TRILIUM_COPILOT_PATH;
+        } else {
+            process.env.TRILIUM_COPILOT_PATH = originalOverride;
+        }
+        process.env.PATH = originalPath;
+        if (originalShell === undefined) {
+            delete process.env.SHELL;
+        } else {
+            process.env.SHELL = originalShell;
+        }
+        if (originalPlatform) {
+            Object.defineProperty(process, "platform", originalPlatform);
+        }
+    });
+
+    function stubPlatform(platform: NodeJS.Platform) {
+        Object.defineProperty(process, "platform", { ...originalPlatform, value: platform });
+    }
+
+    function probeSucceeds() {
+        execFileMock.mockImplementation((_binary, _args, _options, cb) => {
+            cb(null, "1.0.71\n", "");
+            return fakeChild;
+        });
+    }
+
+    /** One probe that ends with `err`, after the child printed `stdout`/`stderr`. */
+    function probeFails(err: Error | string, stdout = "", stderr = "") {
+        execFileMock.mockImplementationOnce((_binary, _args, _options, cb) => {
+            cb(err as Error, stdout, stderr);
+            return fakeChild;
+        });
+    }
+
+    it("probes the overridden binary once and shares the result across calls (even concurrent ones)", async () => {
+        probeSucceeds();
+
+        const [first, second] = await Promise.all([resolveCopilotBinaryPath(), resolveCopilotBinaryPath()]);
+        const third = await resolveCopilotBinaryPath();
+
+        expect(first).toBe("/opt/copilot/copilot");
+        expect(second).toBe("/opt/copilot/copilot");
+        expect(third).toBe("/opt/copilot/copilot");
+        expect(execFileMock).toHaveBeenCalledTimes(1);
+        expect(execFileMock.mock.calls[0][0]).toBe("/opt/copilot/copilot");
+        expect(execFileMock.mock.calls[0][1]).toEqual(["--version"]);
+        // A wrapper that prompts on stdin must read end-of-file, not wait.
+        expect(fakeChild.stdin.end).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects with an actionable message on a broken binary and re-probes on the next call", async () => {
+        probeFails(new Error("spawn ENOENT"));
+
+        await expect(resolveCopilotBinaryPath()).rejects.toThrow(/\nbut it failed to run: spawn ENOENT\n\nEnsure .*copilot login/);
+
+        // The failure must not be cached — a later (fixed) install is picked up.
+        probeSucceeds();
+        await expect(resolveCopilotBinaryPath()).resolves.toBe("/opt/copilot/copilot");
+        expect(execFileMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("stringifies non-Error probe failures into the actionable message", async () => {
+        probeFails("killed by signal");
+
+        await expect(resolveCopilotBinaryPath()).rejects.toThrow(/failed to run: killed by signal\n/);
+    });
+
+    it("names the timeout and quotes the output instead of the generic 'Command failed'", async () => {
+        // What execFile reports when the timeout kills the child: here VS
+        // Code's Copilot Chat bootstrapper shim, stuck on its install prompt.
+        const killed = Object.assign(new Error('Command failed: "copilot.bat" --version\n'), { killed: true, signal: "SIGTERM" });
+        probeFails(killed, "Cannot find GitHub Copilot CLI (https://docs.github.com/copilot-cli)\n", "");
+
+        await expect(resolveCopilotBinaryPath()).rejects.toThrow(
+            "but it failed to run: did not exit within 15 seconds.\n\nIt printed:\nCannot find GitHub Copilot CLI (https://docs.github.com/copilot-cli)\n\nEnsure"
+        );
+    });
+
+    it("rejects a binary that exits cleanly without reporting a version, quoting what it printed", async () => {
+        // The same shim with its stdin closed: the prompt reads end-of-file,
+        // the install is declined on the user's behalf and it exits 0.
+        execFileMock.mockImplementationOnce((_binary, _args, _options, cb) => {
+            cb(null, "Cannot find GitHub Copilot CLI (https://docs.github.com/copilot-cli)\n", "Split-Path : Cannot bind argument\r\n");
+            return fakeChild;
+        });
+
+        await expect(resolveCopilotBinaryPath()).rejects.toThrow(new Error([
+            "Found GitHub Copilot CLI at:",
+            "/opt/copilot/copilot",
+            "but it failed to run: did not report a version.",
+            "",
+            "It printed:",
+            "Cannot find GitHub Copilot CLI (https://docs.github.com/copilot-cli)",
+            "Split-Path : Cannot bind argument",
+            "",
+            "Ensure it is installed correctly and that you've run `copilot login` on the machine running the Trilium server."
+        ].join("\n")));
+
+        // Not cached either: installing the real CLI fixes it without a restart.
+        probeSucceeds();
+        await expect(resolveCopilotBinaryPath()).resolves.toBe("/opt/copilot/copilot");
+    });
+
+    it("rejects when TRILIUM_COPILOT_PATH points at a missing file, without probing", async () => {
+        existsSyncMock.mockReturnValue(false);
+
+        await expect(resolveCopilotBinaryPath()).rejects.toThrow(/TRILIUM_COPILOT_PATH/);
+        expect(execFileMock).not.toHaveBeenCalled();
+    });
+
+    describe("PATH fallback (no override)", () => {
+        beforeEach(() => {
+            delete process.env.TRILIUM_COPILOT_PATH;
+        });
+
+        it("finds the bare `copilot` binary on POSIX, skipping empty PATH segments", async () => {
+            stubPlatform("linux");
+            const hit = path.join("/home/user/bin", "copilot");
+            // Leading empty segment exercises the `if (!dir) continue` guard.
+            process.env.PATH = ["", "/usr/local/bin", "/home/user/bin"].join(path.delimiter);
+            existsSyncMock.mockImplementation((candidate: string) => candidate === hit);
+            probeSucceeds();
+
+            await expect(resolveCopilotBinaryPath()).resolves.toBe(hit);
+            expect(execFileMock.mock.calls[0][0]).toBe(hit);
+        });
+
+        it("probes PATHEXT-style extensions on Windows and quotes the shimmed path for the shell", async () => {
+            stubPlatform("win32");
+            // No drive letter: a `C:` prefix would be split apart by the POSIX
+            // `:` PATH delimiter when this spec runs on a non-Windows host.
+            const dir = path.join("npm", "prefix");
+            const hit = path.join(dir, "copilot.cmd");
+            process.env.PATH = dir;
+            existsSyncMock.mockImplementation((candidate: string) => candidate === hit);
+            probeSucceeds();
+
+            await expect(resolveCopilotBinaryPath()).resolves.toBe(hit);
+            // .cmd shim must be launched through a shell, with the path quoted.
+            expect(execFileMock.mock.calls[0][0]).toBe(`"${hit}"`);
+            expect(execFileMock.mock.calls[0][2]).toMatchObject({ shell: true });
+        });
+
+        it("prefers the .cmd shim over the extensionless bash script npm installs beside it", async () => {
+            stubPlatform("win32");
+            // The real `npm install -g @github/copilot` layout: a POSIX `sh`
+            // script (for Git Bash) sits next to the Windows shims. Node cannot
+            // spawn the bash script — resolving it fails with a misleading
+            // "found it but it failed to run" ENOENT.
+            const dir = path.join("npm", "prefix");
+            const shim = path.join(dir, "copilot.cmd");
+            const bashScript = path.join(dir, "copilot");
+            process.env.PATH = dir;
+            existsSyncMock.mockImplementation((candidate: string) => candidate === shim || candidate === bashScript);
+            probeSucceeds();
+
+            await expect(resolveCopilotBinaryPath()).resolves.toBe(shim);
+
+            // With only the unusable bash script present, the bare name is
+            // skipped entirely so the user gets the actionable install message
+            // instead of an opaque spawn failure.
+            resetCopilotBinaryCache();
+            existsSyncMock.mockImplementation((candidate: string) => candidate === bashScript);
+
+            await expect(resolveCopilotBinaryPath()).rejects.toThrow(/GitHub Copilot CLI not found/);
+        });
+
+        it("rejects with install instructions when `copilot` is nowhere on PATH (or PATH is unset)", async () => {
+            stubPlatform("linux");
+            delete process.env.PATH;
+            existsSyncMock.mockReturnValue(false);
+
+            await expect(resolveCopilotBinaryPath()).rejects.toThrow(/GitHub Copilot CLI not found/);
+            expect(execFileMock).not.toHaveBeenCalled();
+        });
+    });
+});

@@ -1,6 +1,7 @@
 import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
+import type { WidgetsByParent } from "../services/bundle.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
@@ -13,8 +14,10 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
+import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
@@ -22,18 +25,23 @@ import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import QuickSearchWidget from "../widgets/quick_search.js";
+import QuickSearch from "../widgets/quick_search.jsx";
 import ScrollPadding from "../widgets/scroll_padding";
 import SearchResult from "../widgets/search_result.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
+    private customWidgets: WidgetsByParent;
+
+    constructor(customWidgets: WidgetsByParent) {
+        this.customWidgets = customWidgets;
+    }
+
     getRootWidget(appContext: typeof AppContext) {
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
             .class("horizontal-layout")
-            .child(new FlexContainer("column").id("mobile-sidebar-container"))
             .child(
                 new FlexContainer("row")
                     .filling()
@@ -49,8 +57,7 @@ export default class MobileLayout {
                             .child(
                                 new FlexContainer("column")
                                     .filling()
-                                    .id("mobile-sidebar-wrapper")
-                                    .child(new QuickSearchWidget())
+                                    .child(<QuickSearch />)
                                     .child(<MobileNoteNavigator />)
                             )
                     )
@@ -70,6 +77,7 @@ export default class MobileLayout {
                                                 .child(<NoteIconWidget />)
                                                 .child(<NoteTitleWidget />)
                                                 .child(<NoteBadges />)
+                                                .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                                 .child(<MobileDetailMenu />)
                                         )
                                         .child(
@@ -100,7 +108,8 @@ export default class MobileLayout {
                         .child(<GlobalMenuWidget isHorizontalLayout />)
                         .id("launcher-pane"))
             )
-            .child(<CloseZenModeButton />);
+            .child(<CloseZenModeButton />)
+            .child(<HideKeyboardButton />);
         applyModals(rootContainer);
         return rootContainer;
     }

@@ -7,6 +7,11 @@ description: Use when measuring or chasing Vitest/v8 code coverage in the Triliu
 
 There is **one** coverage analyzer — `coverage.mjs` in this skill folder. Don't write a new throwaway parser; every past session that did (`cov-analyze.mjs`, `cov-parse.mjs`, `cov-lines.mjs`, `cov-gaps.cjs`) reinvented the same two operations. Use this instead.
 
+> **Analyzing existing coverage data is free; producing it is not.** A coverage run is a full suite run
+> plus instrumentation — minutes, and normally CI's job. Prefer whatever `lcov.info` is already on
+> disk, and when you do need fresh numbers, scope the run to the package or path in question rather
+> than running `pnpm coverage`. Generating repo-wide coverage is an explicit-request activity.
+
 ```
 node .claude/skills/analyzing-coverage/coverage.mjs <coverage-file> [summary|gaps] [options]
 ```
@@ -49,6 +54,9 @@ trilium-core has **no runner of its own** — its coverage is measured *through*
 |---|---|---|
 | `apps/client/src/**` | client | `apps/client/test-output/vitest/coverage/lcov.info` |
 | `apps/server/src/**`, `packages/trilium-core/src/**` | server | `apps/server/test-output/vitest/coverage/lcov.info` |
+| `apps/standalone/src/**`, or `packages/trilium-core/src/**` under the sqlite-wasm runtime | standalone | `apps/standalone/test-output/vitest/coverage/lcov.info` |
+
+`packages/trilium-core/src/**` is covered by **both** the server and standalone suites (its specs are pulled into each via the core `include` glob), so a core file shows two separate lcov entries. They aren't identical: the standalone suite runs core through happy-dom + sqlite-wasm, so a line uncovered there but covered under server (or vice-versa) is a real runtime-specific gap, not noise. Pick the suite matching the runtime you care about; to chase core to 100% everywhere, check both.
 
 Run the suite (or a scoped subset) with coverage, then analyze the lcov:
 
@@ -56,6 +64,7 @@ Run the suite (or a scoped subset) with coverage, then analyze the lcov:
 # Whole package (slow but complete):
 pnpm --filter @triliumnext/client test --coverage
 pnpm --filter server test --coverage
+pnpm --filter @triliumnext/standalone coverage   # core under sqlite-wasm; lcov anchored to apps/standalone/test-output
 
 # Scoped to specific specs (fast iteration). On Windows/sandbox, pnpm exec can
 # EPERM — call the hoisted binary in the REPO-ROOT node_modules directly:
@@ -75,6 +84,8 @@ node ../../.claude/skills/analyzing-coverage/coverage.mjs \
 - **Multi-file client runs must `cd apps/client` first.** Running multiple specs from the repo root with `--root apps/client` triggers a vitest "failed to find the runner" crash; a single spec with `--root` is fine.
 - **Isolated vs full-suite gaps:** when you run only *your* spec, lines covered by *other* specs in the full suite show as uncovered. That's expected — only your assigned lines need to disappear. Don't chase the rest.
 - **`--coverage.reportsDirectory` is relative to `--root`**, so it can double a path prefix — pass a simple relative dir like `./test-output/cov-<slug>`.
+- **A block `if` with no `else` can report a phantom uncovered branch.** `if (x) { … }` can show its fall-through as uncovered even when many tests exercise it — statement hits on the lines after it prove it ran. Don't hunt for a test that cannot exist: rewrite branchlessly, e.g. a latch `flag = cond || flag;` in place of `if (cond) flag = true;` (hit in `apps/desktop/src/services/security_settings.ts`).
+- **A cache-once arm can only be reached once per module instance** — a `coreUtils.isDev() ? dev : prod` expression memoized on first call (`getPreloadScript()` in `services/window.ts` / `printing.ts`) runs one arm and never the other, whatever the tests do. Mock the reachable arm and `/* v8 ignore next N -- … */` the other with a reason naming what does cover it (the production build).
 - For provably-dead defensive branches, mark with `/* v8 ignore next N -- reason */` rather than writing a fake test (sanctioned by writing-unit-tests).
 
 ## Writing the tests

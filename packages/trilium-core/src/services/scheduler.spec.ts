@@ -4,8 +4,10 @@ import { getBecca } from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import attributeService from "./attributes.js";
 import config from "./config.js";
+import events from "./events.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import protected_session from "./protected_session.js";
 import { startScheduler } from "./scheduler.js";
 import scriptService from "./script.js";
@@ -28,20 +30,35 @@ const HOUR = 3600 * SECOND;
  * startScheduler() registers all its timers inside `sqlInit.dbReady.then(...)`.
  * Awaiting the (already-resolved) dbReady promise lets those then-callbacks run
  * first, so the timers exist before we advance the fake clock.
+ *
+ * Several microtasks rather than one: the hidden-subtree callback reconciles the
+ * language before it runs, and each `await` inside it costs another turn.
  */
 async function settleDbReady() {
     await sqlInit.dbReady;
-    await Promise.resolve();
+    for (let i = 0; i < 5; i++) {
+        await Promise.resolve();
+    }
 }
 
 function buildBackendScript() {
     return buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
 }
 
+/**
+ * Sets what `TRILIUM_SAFE_MODE` reads as, through the platform provider that owns it.
+ *
+ * `process.env` is not that provider on every runtime: the browser build has no `process` and takes
+ * the value from a `?safeMode` URL parameter, so a spec that sets the variable directly would leave
+ * the branch untested there.
+ */
+function stubSafeMode(value?: string) {
+    vi.spyOn(getPlatform(), "getEnv").mockImplementation((key) => (key === "TRILIUM_SAFE_MODE" ? value : undefined));
+}
+
 describe("scheduler", () => {
     const originalScriptingEnabled = config.Security.backendScriptingEnabled;
     const originalInstanceName = config.General.instanceName;
-    const originalSafeMode = process.env.TRILIUM_SAFE_MODE;
 
     let getNotesWithLabel: ReturnType<typeof vi.spyOn>;
     let executeNoteNoException: ReturnType<typeof vi.spyOn>;
@@ -60,7 +77,7 @@ describe("scheduler", () => {
 
         config.Security.backendScriptingEnabled = true;
         config.General.instanceName = "";
-        delete process.env.TRILIUM_SAFE_MODE;
+        stubSafeMode();
 
         getNotesWithLabel = vi.spyOn(attributeService, "getNotesWithLabel").mockReturnValue([]);
         executeNoteNoException = vi.spyOn(scriptService, "executeNoteNoException").mockImplementation(() => {});
@@ -79,11 +96,6 @@ describe("scheduler", () => {
         vi.restoreAllMocks();
         config.Security.backendScriptingEnabled = originalScriptingEnabled;
         config.General.instanceName = originalInstanceName;
-        if (originalSafeMode === undefined) {
-            delete process.env.TRILIUM_SAFE_MODE;
-        } else {
-            process.env.TRILIUM_SAFE_MODE = originalSafeMode;
-        }
     });
 
     it("runs backendStartup, hourly and daily scripts on their timers when scripting is enabled", async () => {
@@ -94,7 +106,7 @@ describe("scheduler", () => {
         startScheduler();
         await settleDbReady();
 
-        // DB was already initialized → hidden subtree is checked immediately via dbReady.
+        // The hidden subtree is checked as soon as there is a database, via dbReady.
         expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
 
         await vi.advanceTimersByTimeAsync(10 * SECOND);
@@ -110,15 +122,21 @@ describe("scheduler", () => {
         expect(getNotesWithLabel).toHaveBeenCalledWith("run", "daily");
     });
 
-    it("checks the hidden subtree only via the periodic maintenance interval when the DB is not yet initialized", async () => {
+    it("still checks the hidden subtree where the database was opened after the scheduler started", async () => {
+        // Which is every path through the setup wizard: the instance has nothing to open when this
+        // runs, and the database it goes on to open — restored from a backup, or pulled from a sync
+        // server — was written by an older version that knows nothing of whatever has been added to
+        // the subtree since. Asking whether the database was initialized at the moment the scheduler
+        // started answered for the wrong moment, and left those instances unchecked until a restart.
         isDbInitialized.mockReturnValue(false);
 
         startScheduler();
         await settleDbReady();
-        expect(checkHiddenSubtree).not.toHaveBeenCalled();
+
+        expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
 
         await vi.advanceTimersByTimeAsync(7 * HOUR);
-        expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
+        expect(checkHiddenSubtree).toHaveBeenCalledTimes(2);
     });
 
     it("does not schedule script timers when backend scripting is disabled, but still runs maintenance", async () => {
@@ -133,7 +151,7 @@ describe("scheduler", () => {
     });
 
     it("does not schedule script timers in safe mode", async () => {
-        process.env.TRILIUM_SAFE_MODE = "1";
+        stubSafeMode("1");
 
         startScheduler();
         await settleDbReady();
@@ -147,12 +165,16 @@ describe("scheduler", () => {
         // Non-zero (the source guards on the date being truthy) but far in the past.
         getLastProtectedSessionOperationDate.mockReturnValue(1);
         getOptionInt.mockReturnValue(10); // 10s timeout
+        const emit = vi.spyOn(events, "emit").mockImplementation(() => {});
 
         startScheduler();
         await settleDbReady();
 
         await vi.advanceTimersByTimeAsync(30 * SECOND);
         expect(resetDataKey).toHaveBeenCalled();
+        // The event triggers the becca reload that re-encrypts in-memory titles;
+        // manual logout emits it too, and the two paths must stay symmetric.
+        expect(emit).toHaveBeenCalledWith(events.LEAVE_PROTECTED_SESSION);
         expect(reloadFrontend).toHaveBeenCalledWith(expect.any(String));
     });
 

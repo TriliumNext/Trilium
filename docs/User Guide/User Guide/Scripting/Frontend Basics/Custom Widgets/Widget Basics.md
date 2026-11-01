@@ -51,7 +51,7 @@ After making this change, reload Trilium. You should now see a button in the top
 
 ### Step 3: Styling the Widget
 
-To make the button more visually appealing and position it correctly, we'll apply some custom styling. Trilium includes [Box Icons](https://boxicons.com), which we'll use to replace the button text with an icon. For example the `bx bxs-magic-wand` icon.
+To make the button more visually appealing and position it correctly, we'll apply some custom styling. Trilium includes [Box Icons](https://boxicons.com), which we'll use to replace the button text with an icon. For example the <span class="tn-icon bx bxs-magic-wand"></span> `bx bxs-magic-wand` icon.
 
 Here's the updated template:
 

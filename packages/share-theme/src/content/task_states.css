@@ -1,0 +1,14 @@
+/*
+ * Todo checkboxes take the app's rules from `@triliumnext/ckeditor5/src/theme/todo_lists.css`.
+ * Custom task states carry `data-trilium-task-state` on their `<li>`; the color, hue and icon
+ * glyph of each state are injected per state into the icon pack stylesheet.
+ */
+
+/* The state colors of `theme-next-light.css` and `theme-next-dark.css`. */
+html.theme-light [data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
+}
+
+html.theme-dark [data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
+}

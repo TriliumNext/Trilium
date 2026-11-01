@@ -133,6 +133,10 @@ export const ALLOWED_NOTE_TYPES = [
 ] as const;
 export type NoteType = (typeof ALLOWED_NOTE_TYPES)[number];
 
+export function isNoteType(value: unknown): value is NoteType {
+    return typeof value === "string" && (ALLOWED_NOTE_TYPES as readonly string[]).includes(value);
+}
+
 export interface NoteRow {
     noteId: string;
     deleteId?: string;

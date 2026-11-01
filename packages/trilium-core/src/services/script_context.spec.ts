@@ -83,6 +83,16 @@ describe("ScriptContext", () => {
         expect(typeof (lodash as { join?: unknown }).join).toBe("function");
     });
 
+    it("require() refuses blocked OS-level modules before consulting the whitelist", () => {
+        const moduleNote = buildNote({ title: "myModule" });
+        const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
+        const require = ctx.require([moduleNote.noteId]);
+
+        for (const blocked of ["child_process", "fs", "net", "os"]) {
+            expect(() => require(blocked)).toThrow(/blocked/);
+        }
+    });
+
     it("require() throws when falling back to a non-existent native module", () => {
         const moduleNote = buildNote({ title: "myModule" });
         const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });

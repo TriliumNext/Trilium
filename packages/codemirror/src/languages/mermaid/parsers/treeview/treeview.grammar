@@ -1,0 +1,30 @@
+// Follows the Langium grammar of Mermaid's tree view (`@mermaid-js/parser`). Mermaid nests nodes
+// by their indentation; highlighting reads each line on its own, so newlines and indentation are
+// skipped. A `title` comes before the first node.
+@top TreeViewDiagram { DiagramName Title* Node* }
+
+Title { titleKeyword TitleText? }
+
+Node { (String | Name) (ClassAnnotation | Icon | Description)* }
+
+DiagramName { "treeView-beta" }
+
+@skip { space | LineComment }
+
+// `titleText` comes first: it takes only the rest of a `title` line, which `names` would read as a
+// node name.
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@external tokens names from "./tokens.js" { titleKeyword[@name=Keyword], Name }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  word { $[a-zA-Z0-9_\-] }
+  String { '"' !["\n]* '"' | "'" !['\n]* "'" }
+  ClassAnnotation { ":::" $[ \t]* $[a-zA-Z_] word* }
+  Icon { "icon(" word* (":" word+)? ")" }
+  Description { "##" ![\n]* }
+  LineComment { "%%" ![\n]* }
+}
+
+@external propSource treeViewHighlighting from "./highlight.js"

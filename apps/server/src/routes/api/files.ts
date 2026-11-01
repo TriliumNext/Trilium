@@ -1,106 +1,13 @@
-import { note_service as noteService, ValidationError, ws } from "@triliumnext/core";
+import { ValidationError, ws } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import { Readable } from "stream";
-import tmp from "tmp";
 
-import { becca } from "@triliumnext/core";
+import { becca, note_service as noteService } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
 import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-
-function updateFile(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    const file = req.file;
-    if (!file) {
-        return {
-            uploaded: false,
-            message: `Missing file.`
-        };
-    }
-
-    if (req.query.replace !== "1") {
-        note.saveRevision();
-    }
-
-    note.mime = file.mimetype.toLowerCase();
-    note.save();
-
-    note.setContent(file.buffer);
-
-    note.setLabel("originalFileName", file.originalname);
-
-    void noteService.asyncPostProcessContent(note, file.buffer);
-
-    return {
-        uploaded: true
-    };
-}
-
-function updateAttachment(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
-    const file = req.file;
-    if (!file) {
-        return {
-            uploaded: false,
-            message: `Missing file.`
-        };
-    }
-
-    attachment.getNote().saveRevision();
-
-    attachment.mime = file.mimetype.toLowerCase();
-    attachment.setContent(file.buffer, { forceSave: true });
-
-    return {
-        uploaded: true
-    };
-}
-
-function fileContentProvider(req: Request<{ noteId: string }>) {
-    // Read the file name from route params.
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    // blobId is a content hash, so it's a stable ETag that changes only when the content does.
-    return streamContent(note.getContent(), note.getFileName(), note.mime, note.blobId);
-}
-
-function attachmentContentProvider(req: Request<{ attachmentId: string }>) {
-    // Read the file name from route params.
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
-
-    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime, attachment.blobId);
-}
-
-async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string, etag?: string) {
-    if (typeof content === "string") {
-        content = Buffer.from(content, "utf8");
-    }
-
-    const totalSize = content.byteLength;
-
-    const getStream = (range: { start: number; end: number }) => {
-        if (!range) {
-            // Request if for complete content.
-            return Readable.from(content);
-        }
-        // Partial content request.
-        const { start, end } = range;
-
-        return Readable.from(content.slice(start, end + 1));
-    };
-
-    return {
-        fileName,
-        totalSize,
-        mimeType,
-        etag,
-        getStream
-    };
-}
 
 function saveNoteToTmpDir(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -113,7 +20,7 @@ function saveNoteToTmpDir(req: Request<{ noteId: string }>) {
 function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
     const fileName = attachment.getFileName();
-    const content = attachment.getContent();
+    const content = noteService.getPortableContent(attachment);
 
     if (!attachment.attachmentId) {
         throw new ValidationError("Missing attachment ID.");
@@ -124,38 +31,42 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 const createdTemporaryFiles = new Set<string>();
 
 function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
-    const tmpObj = tmp.fileSync({
-        postfix: fileName,
-        tmpdir: dataDirs.TMP_DIR
-    });
+    const tmpFileName = `tmp-${process.pid}-${utils.randomString(12)}-${fileName}`;
+    const tmpFilePath = path.resolve(dataDirs.TMP_DIR, tmpFileName);
+    fs.writeFileSync(tmpFilePath, content, { flag: "wx", mode: 0o600 });
 
-    if (typeof content === "string") {
-        fs.writeSync(tmpObj.fd, content);
-    } else {
-        fs.writeSync(tmpObj.fd, content);
+    if (createdTemporaryFiles.size === 0) {
+        process.once("exit", removeTemporaryFiles);
     }
+    createdTemporaryFiles.add(tmpFilePath);
 
-    fs.closeSync(tmpObj.fd);
-
-    createdTemporaryFiles.add(tmpObj.name);
-
-    getLog().info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpFilePath}`);
 
     if (utils.isElectron) {
-        chokidar.watch(tmpObj.name).on("change", (path, stats) => {
+        chokidar.watch(tmpFilePath).on("change", (path, stats) => {
             ws.sendMessageToAllClients({
                 type: "openedFileUpdated",
                 entityType,
                 entityId,
                 lastModifiedMs: stats?.atimeMs,
-                filePath: tmpObj.name
+                filePath: tmpFilePath
             });
         });
     }
 
     return {
-        tmpFilePath: tmpObj.name
+        tmpFilePath
     };
+}
+
+function removeTemporaryFiles() {
+    for (const filePath of createdTemporaryFiles) {
+        try {
+            fs.rmSync(filePath, { force: true });
+        } catch {
+            // On Windows, an editor that still holds the file open makes `rmSync()` throw.
+        }
+    }
 }
 
 /**
@@ -226,12 +137,8 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 }
 
 export default {
-    updateFile,
-    updateAttachment,
-    fileContentProvider,
     saveNoteToTmpDir,
     saveAttachmentToTmpDir,
-    attachmentContentProvider,
     uploadModifiedFileToNote,
     uploadModifiedFileToAttachment
 };

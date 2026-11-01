@@ -1,0 +1,168 @@
+/*
+ * The surface an anchored popover is drawn on: the sheet the overlay panels wear (see
+ * OverlayPanel.css), stood beside its anchor rather than over a canvas. What it holds and how wide
+ * it is are the caller's.
+ */
+.tn-popover {
+    /* How far the arrow reaches out of the panel, and how wide it is where it meets it. The square
+       is what makes it: stood on its corner, its diagonal is the base — 8.5 ≈ 12 / √2. */
+    --tn-popover-arrow-depth: 6px;
+    --tn-popover-arrow-base: 12px;
+    --tn-popover-arrow-square: 8.5px;
+
+    /* Above the note split's own layers; menus and dialogs stand higher still. */
+    z-index: 998;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background: var(--menu-background-color);
+    color: var(--menu-text-color);
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0003;
+    backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));
+}
+
+/* Hidden until `placeFloating()` sets its position. */
+.tn-popover:not(.maximized) {
+    top: 0;
+    left: 0;
+    visibility: hidden;
+}
+
+/* A maximized card (see `maximized` in Popover.tsx). `Popover` removes `data-placement` together
+   with the inline position, so these rules apply only once both are gone. */
+.tn-popover.maximized:not([data-placement]) {
+    position: fixed;
+    inset-block: 5vh;
+    inset-inline: 0;
+    margin-inline: auto;
+    max-width: calc(100vw - 4rem);
+}
+
+.tn-popover.maximized > .tn-popover-arrow {
+    display: none;
+}
+
+/* Frosting suits a card standing beside something, not one grown to fill the window: there is
+   little left to see through it, and a surface that size reads as smeared rather than glassy. The
+   opaque menu colour is the one the theme falls back to wherever the blur cannot be had (see the
+   `body.background-effects` rules in theme-next/base.css); the themes that state no such colour
+   have an opaque menu colour to begin with. */
+.tn-popover.maximized {
+    background: var(--menu-background-color-no-backdrop, var(--menu-background-color));
+    backdrop-filter: none;
+}
+
+/* The card's sibling rather than its child: `backdrop-filter` above makes the card the containing
+   block for anything fixed within it. */
+.tn-popover-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 997;
+    /* Each theme states the colour opaque and leaves the dimming to `.modal-backdrop.show`, which
+       is Bootstrap's and not in play here. */
+    background: var(--modal-backdrop-color, #000);
+    opacity: 0.5;
+}
+
+/*
+ * The arrow. `data-placement` gives the side of the anchor the card is on; these rules put the
+ * arrow on the facing edge, and `placeFloating()` sets its offset along that edge so it points at
+ * the anchor (see the `arrow` option in Popover.tsx).
+ *
+ * A window onto the square rather than the square itself. The panel's own background is
+ * translucent (see `--menu-background-color`), so the half of the diamond that would lie inside the
+ * panel would lay that translucency over itself and read as a lozenge floating within the panel.
+ * Only what stands outside is drawn — plus a single pixel, which is what covers the panel's border
+ * where the arrow meets it, so the arrow reads as an opening rather than a shape stuck on.
+ */
+.tn-popover-arrow {
+    position: absolute;
+    overflow: hidden;
+}
+
+.tn-popover-arrow::before {
+    content: "";
+    position: absolute;
+    /* Said rather than inherited: the square's size is what the depth and the base are reckoned
+       from, and borders counted on top of it would push the tip past the window that clips it. */
+    box-sizing: border-box;
+    width: var(--tn-popover-arrow-square);
+    height: var(--tn-popover-arrow-square);
+    background: var(--menu-background-color);
+    /* On all four sides so the square keeps its size and stands square; only the two facing out of
+       the panel are given a colour, the other two being the mouth. */
+    border: 1px solid transparent;
+    transform: rotate(45deg);
+}
+
+/*
+ * Each side in turn. The window is the arrow's depth plus that one pixel, and the square is centred
+ * on the panel's edge — which is the window's inner edge, hence the same arithmetic from whichever
+ * outward side it is measured.
+ */
+
+/* stylelint-disable property-layout-mappings -- The sides here are physical because Floating UI's
+   placements are: `data-placement="right"` means the card is right of its anchor in either text
+   direction, so the arrow goes on the card's physical left edge. The callers request the mirrored
+   placement in a right-to-left layout; `inset-inline-start` would flip the arrow a second time,
+   onto the wrong edge. */
+.tn-popover[data-placement^="right"] > .tn-popover-arrow {
+    top: 0;
+    left: calc(-1 * var(--tn-popover-arrow-depth));
+    width: calc(var(--tn-popover-arrow-depth) + 1px);
+    height: var(--tn-popover-arrow-base);
+}
+
+.tn-popover[data-placement^="right"] > .tn-popover-arrow::before {
+    left: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
+    top: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
+    border-left-color: var(--dropdown-border-color);
+    border-bottom-color: var(--dropdown-border-color);
+}
+
+.tn-popover[data-placement^="left"] > .tn-popover-arrow {
+    top: 0;
+    right: calc(-1 * var(--tn-popover-arrow-depth));
+    width: calc(var(--tn-popover-arrow-depth) + 1px);
+    height: var(--tn-popover-arrow-base);
+}
+
+.tn-popover[data-placement^="left"] > .tn-popover-arrow::before {
+    right: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
+    top: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
+    border-top-color: var(--dropdown-border-color);
+    border-right-color: var(--dropdown-border-color);
+}
+
+.tn-popover[data-placement^="bottom"] > .tn-popover-arrow {
+    left: 0;
+    top: calc(-1 * var(--tn-popover-arrow-depth));
+    height: calc(var(--tn-popover-arrow-depth) + 1px);
+    width: var(--tn-popover-arrow-base);
+}
+
+.tn-popover[data-placement^="bottom"] > .tn-popover-arrow::before {
+    top: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
+    left: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
+    border-top-color: var(--dropdown-border-color);
+    border-left-color: var(--dropdown-border-color);
+}
+
+.tn-popover[data-placement^="top"] > .tn-popover-arrow {
+    left: 0;
+    bottom: calc(-1 * var(--tn-popover-arrow-depth));
+    height: calc(var(--tn-popover-arrow-depth) + 1px);
+    width: var(--tn-popover-arrow-base);
+}
+
+.tn-popover[data-placement^="top"] > .tn-popover-arrow::before {
+    bottom: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
+    left: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
+    border-bottom-color: var(--dropdown-border-color);
+    border-right-color: var(--dropdown-border-color);
+}
+
+/* stylelint-enable property-layout-mappings */

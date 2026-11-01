@@ -52,8 +52,10 @@ describe("hidden_subtree (real DB)", () => {
             expect(hidden.getParentBranches().some((b) => b.parentNoteId === "root")).toBe(true);
 
             // A representative set of the declared children must exist and sit
-            // directly under _hidden.
-            for (const childId of ["_search", "_options", "_help", "_taskStates", "_lbRoot"]) {
+            // directly under _hidden. (_help is deliberately absent: it is a virtual
+            // subtree owned by the in-app help provider, not by checkHiddenSubtree —
+            // see in_app_help.spec.ts.)
+            for (const childId of ["_search", "_options", "_taskStates", "_lbRoot"]) {
                 const child = getBecca().notes[childId];
                 expect(child, `${childId} should exist`).toBeDefined();
                 expect(
@@ -106,6 +108,16 @@ describe("hidden_subtree (real DB)", () => {
                 expect(tpl, `${tplId} should exist`).toBeDefined();
                 expect(tpl.getParentBranches().some((b) => b.parentNoteId === LBTPL_ROOT)).toBe(true);
             }
+        });
+
+        it("marks the settings pages that have nothing to set in the standalone build", () => {
+            // The client's settings navigation reads these (isOptionPageVisibleOnPlatform); a rename
+            // here would silently put the pages back rather than fail anywhere.
+            for (const pageId of [ "_optionsPassword", "_optionsEtapi" ]) {
+                expect(getBecca().notes[pageId]?.isLabelTruthy("notInStandalone"), pageId).toBe(true);
+            }
+            // Not a blanket mark: the pages that do apply everywhere carry nothing.
+            expect(getBecca().notes._optionsAppearance?.isLabelTruthy("notInStandalone")).toBe(false);
         });
     });
 
@@ -204,6 +216,52 @@ describe("hidden_subtree (real DB)", () => {
 
             checkHiddenSubtree();
             expect(getBecca().notes[deprecatedId]).toBeUndefined();
+        });
+    });
+
+    describe("the order the settings pages are held in", () => {
+        /** The settings pages under `_options`, read in the order the tree holds them. */
+        function pageOrder() {
+            return getBecca().notes["_options"].getChildBranches()
+                .filter((branch) => !branch.isDeleted)
+                .sort((a, b) => a.notePosition - b.notePosition)
+                .map((branch) => branch.noteId);
+        }
+
+        it("puts them back in the declared order after one is moved, not only on a new database", () => {
+            const before = pageOrder();
+            expect(before[0]).toBe("_optionsAppearance");
+            expect(before.length).toBeGreaterThan(1);
+
+            // A database that already holds them in some other order: send the first page last.
+            const moved = getBecca().notes["_options"].getChildBranches()
+                .find((branch) => branch.noteId === "_optionsAppearance");
+            getContext().init(() => {
+                if (moved) {
+                    moved.notePosition = 999;
+                    moved.save();
+                }
+            });
+            expect(pageOrder()[0]).not.toBe("_optionsAppearance");
+
+            checkHiddenSubtree();
+
+            expect(pageOrder()).toEqual(before);
+        });
+
+        it("leaves a group the user arranges alone, the launcher bar declaring no order", () => {
+            const launchers = getBecca().notes["_lbRoot"].getChildBranches().filter((b) => !b.isDeleted);
+            const moved = launchers[0];
+            const rearranged = moved.notePosition + 5;
+
+            getContext().init(() => {
+                moved.notePosition = rearranged;
+                moved.save();
+            });
+
+            checkHiddenSubtree();
+
+            expect(moved.notePosition).toBe(rearranged);
         });
     });
 

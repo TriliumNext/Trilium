@@ -121,7 +121,7 @@ pdfjs-document-properties-modification-date = تاريخ التعديل:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-pdfjs-document-properties-creator = المنشئ:
+pdfjs-document-properties-creator = المُنشئ:
 pdfjs-document-properties-producer = منتج PDF:
 pdfjs-document-properties-version = إصدارة PDF:
 pdfjs-document-properties-page-count = عدد الصفحات:
@@ -153,6 +153,19 @@ pdfjs-document-properties-linearized = العرض السريع عبر الوِب
 pdfjs-document-properties-linearized-yes = نعم
 pdfjs-document-properties-linearized-no = لا
 pdfjs-document-properties-close-button = أغلق
+pdfjs-digital-signature-properties-view-certificate = اعرض الشهادة
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = السبب: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = الطابع الزمني: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Print
 
@@ -166,23 +179,6 @@ pdfjs-printing-not-ready = تحذير: ملف PDF لم يُحمّل كاملًا
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = بدّل ظهور الشريط الجانبي
-pdfjs-toggle-sidebar-notification-button =
-    .title = بدّل ظهور الشريط الجانبي (يحتوي المستند على مخطط أو مرفقات أو طبقات)
-pdfjs-toggle-sidebar-button-label = بدّل ظهور الشريط الجانبي
-pdfjs-document-outline-button =
-    .title = اعرض فهرس المستند (نقر مزدوج لتمديد أو تقليص كل العناصر)
-pdfjs-document-outline-button-label = مخطط المستند
-pdfjs-attachments-button =
-    .title = اعرض المرفقات
-pdfjs-attachments-button-label = المُرفقات
-pdfjs-layers-button =
-    .title = اعرض الطبقات (انقر مرتين لتصفير كل الطبقات إلى الحالة المبدئية)
-pdfjs-layers-button-label = ‏‏الطبقات
-pdfjs-thumbs-button =
-    .title = اعرض مُصغرات
-pdfjs-thumbs-button-label = مُصغّرات
 pdfjs-current-outline-item-button =
     .title = ابحث عن عنصر المخطّط التفصيلي الحالي
 pdfjs-current-outline-item-button-label = عنصر المخطّط التفصيلي الحالي
@@ -193,10 +189,6 @@ pdfjs-additional-layers = الطبقات الإضافية
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = صفحة { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +206,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ابحث
     .placeholder = ابحث في المستند…
+    .title = ابحث
 pdfjs-find-previous-button =
     .title = ابحث عن التّواجد السّابق للعبارة
 pdfjs-find-previous-button-label = السابق
@@ -318,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = أبرِز
 pdfjs-editor-highlight-button-label = أبرِز
 pdfjs-highlight-floating-button1 =
-    .title = أبرِز
     .aria-label = أبرِز
+    .title = أبرِز
 pdfjs-highlight-floating-button-label = أبرِز
 pdfjs-comment-floating-button =
-    .title = علق
     .aria-label = علق
+    .title = علق
 pdfjs-comment-floating-button-label = علق
 pdfjs-editor-comment-button =
-    .title = علق
     .aria-label = علق
+    .title = علق
 pdfjs-editor-comment-button-label = التعليق
 pdfjs-editor-signature-button =
     .title = أضِف توقيع
@@ -404,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] تعليقات
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = أغلِق الشريط الجانبي
     .aria-label = أغلِق الشريط الجانبي
+    .title = أغلِق الشريط الجانبي
 pdfjs-editor-comments-sidebar-close-button-label = أغلِق الشريط الجانبي
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = هل رأيت شيئاً جديرًا بالملاحظة؟ ابرزه واترك تعليقًا.
@@ -528,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = إعدادات النص البدي
 pdfjs-editor-alt-text-settings-automatic-title = نص بديل تلقائي
 pdfjs-editor-alt-text-settings-create-model-button-label = أنشئ نص بديل تلقائيًا
 pdfjs-editor-alt-text-settings-create-model-description = يقترح أوصافًا لمساعدة الأشخاص الذين لا يستطيعون رؤية الصورة أو عندما لا يتم تحميل الصورة.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = نموذج الذكاء الاصطناعي للنص البديل ({ $totalSize } م.بايت)
-pdfjs-editor-alt-text-settings-ai-model-description = يتم تشغيله محليًا على جهازك حتى تظل بياناتك خاصة. مطلوب للنص البديل التلقائي.
-pdfjs-editor-alt-text-settings-delete-model-button = احذف
-pdfjs-editor-alt-text-settings-download-model-button = نزّل
-pdfjs-editor-alt-text-settings-downloading-model-button = يُنزل…
 pdfjs-editor-alt-text-settings-editor-title = مُحرِّر النص البديل
 pdfjs-editor-alt-text-settings-show-dialog-button-label = أظهِر مُحرِّر النص البديل على الفور عند إضافة صورة
 pdfjs-editor-alt-text-settings-show-dialog-description = يساعدك على التأكد من أن جميع صورك تحتوي على نص بديل.
@@ -763,6 +748,49 @@ pdfjs-new-badge-content = جديد
 pdfjs-views-manager-waiting-for-file = يرفع ملف…
 pdfjs-toggle-views-manager-button1 =
     .title = أدِر الصفحات
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = خصائص التوقيع الرقمي
+    .title = خصائص التوقيع الرقمي
+pdfjs-digital-signature-properties-button-label = خصائص التوقيع الرقمي
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = وقِّع المستند بتوقيع رقمي صالح
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = الحالة: تحققَ من التوقيع
+pdfjs-digital-signature-properties-status-invalid = الحالة: التوقيع غير صالح
+pdfjs-digital-signature-properties-status-unknown = الحالة: تعذّر التحقق (غير مدعوم)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = الشهادة: موثوقة ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = الشهادة: غير متوفرة
+pdfjs-digital-signature-properties-certificate-untrusted = الشهادة: غير موثوقة
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = الشهادة: جهة إصدار مجهولة ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = الشهادة: موقعّة ذاتيًا ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = الشهادة: جهة إصدار مجهولة ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = الشهادة: منتهية الصلاحية
+pdfjs-digital-signature-properties-certificate-expired-with-date = الشهادة: منتهية الصلاحية ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = الشهادة: مُلغاة
 
 ## Main menu for adding/removing signatures
 

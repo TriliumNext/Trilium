@@ -1,0 +1,139 @@
+/* Zero specificity, so a theme overrides these from its own `:root` block and never has to outweigh
+   this stylesheet. A segment's hue is its own and comes in inline with the geometry; a theme sets
+   the saturation and lightness struck from it, one set per color scheme. */
+:where(:root) {
+    /* The band the segments are laid on, and a segment with neither a hue nor a semantic color of
+       its own. */
+    --space-usage-donut-track-color: var(--main-border-color);
+    --space-usage-donut-segment-color: var(--accented-background-color);
+    --space-usage-donut-segment-hover-color: var(--input-focus-outline-color);
+    --space-usage-donut-segment-selected-color: var(--main-text-color);
+
+    /* The segment's fill, matching the treemap's cells so the two charts speak one color
+       language. */
+    --space-usage-donut-segment-saturation: 50%;
+    --space-usage-donut-segment-lightness: 78%;
+
+    /* The hovered segment's ring: deep against the fill, and short of the chosen segment's full
+       strength so the two never read as the same state. */
+    --space-usage-donut-hover-saturation: 60%;
+    --space-usage-donut-hover-lightness: 35%;
+
+    /* The chosen segment's trace: the hue at full strength, standing well clear of the fill. */
+    --space-usage-donut-selected-saturation: 100%;
+    --space-usage-donut-selected-lightness: 50%;
+}
+
+.donut-chart {
+    display: flex;
+    position: relative;
+    margin: auto;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+
+    svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* The empty band the segments are laid on, in the color of any other divider — a ring with
+       nothing on it still has to read as a ring rather than as a blank square. */
+    .donut-track {
+        stroke: var(--space-usage-donut-track-color);
+    }
+
+    /* Colored through a variable, not a competing rule: consumers set the segment's color and never
+       race this stylesheet's cascade position. */
+    .donut-segment {
+        stroke: var(--space-usage-donut-segment-color);
+        /* Dash geometry is the segment's shape, so transitions carry re-layouts and the keyframe
+           sweeps a freshly mounted segment in from zero length. */
+        transition: stroke-dasharray 0.45s ease, stroke-dashoffset 0.45s ease;
+        animation: donut-sweep 0.45s ease;
+    }
+
+    /* Struck on the segment itself, where the hue is: a custom property resolves `var()` against
+       the element it is declared on, so these cannot be composed up in the root block. */
+    .donut-segment.donut-colored {
+        --space-usage-donut-segment-color: hsl(
+            var(--donut-hue)
+            var(--space-usage-donut-segment-saturation)
+            var(--space-usage-donut-segment-lightness)
+        );
+    }
+
+    /* An outline that traces the arc rather than its box: `outline` on a dashed circle would frame
+       the entire ring, since that is the element's extent. Blur-less shadows in the four directions
+       hug the painted shape instead, and stay inside the inter-segment gap. */
+    /* Only where a pointer can hover: a tapped arc on a touch screen stays hovered, and would wear
+       this ring alongside the chosen segment's. */
+    @media (hover: hover) {
+        .donut-segment:hover {
+            filter:
+                brightness(1.12)
+                drop-shadow(2px 0 0 var(--space-usage-donut-segment-hover-color))
+                drop-shadow(-2px 0 0 var(--space-usage-donut-segment-hover-color))
+                drop-shadow(0 2px 0 var(--space-usage-donut-segment-hover-color))
+                drop-shadow(0 -2px 0 var(--space-usage-donut-segment-hover-color));
+        }
+
+        .donut-segment.donut-colored:hover {
+            --space-usage-donut-segment-hover-color: hsl(
+                var(--donut-hue)
+                var(--space-usage-donut-hover-saturation)
+                var(--space-usage-donut-hover-lightness)
+            );
+        }
+    }
+
+    /* The chosen segment, traced the same way and for the same reason as the hover ring above: an
+       `outline` would frame the whole ring rather than the arc. The offsets are viewBox units, which
+       the chart scales down to roughly the three device pixels the treemap's chosen cell borders
+       itself with. */
+    .donut-segment.donut-segment-selected {
+        filter:
+            drop-shadow(3px 0 0 var(--space-usage-donut-segment-selected-color))
+            drop-shadow(-3px 0 0 var(--space-usage-donut-segment-selected-color))
+            drop-shadow(0 3px 0 var(--space-usage-donut-segment-selected-color))
+            drop-shadow(0 -3px 0 var(--space-usage-donut-segment-selected-color));
+    }
+
+    /* The segment's own hue at full strength, as the treemap strikes a chosen cell's border. A
+       segment painted from a semantic colour rather than a hue sets this variable itself; one with
+       neither keeps the plain default above. */
+    .donut-segment.donut-colored.donut-segment-selected {
+        --space-usage-donut-segment-selected-color: hsl(
+            var(--donut-hue)
+            var(--space-usage-donut-selected-saturation)
+            var(--space-usage-donut-selected-lightness)
+        );
+    }
+
+    .donut-clickable {
+        cursor: pointer;
+    }
+
+    .donut-chart-center {
+        display: flex;
+        position: absolute;
+        inset: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        /* The hole is inside the rings' hit area; only the actual content should catch the pointer. */
+        pointer-events: none;
+    }
+
+    .donut-chart-center > * {
+        pointer-events: auto;
+    }
+}
+
+@keyframes donut-sweep {
+    from {
+        stroke-dasharray: 0 var(--donut-circumference);
+    }
+}

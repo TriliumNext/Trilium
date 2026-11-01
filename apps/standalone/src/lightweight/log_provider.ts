@@ -1,8 +1,15 @@
 import { FileBasedLogService, type LogFileInfo } from "@triliumnext/core";
+import { t } from "i18next";
 
 const LOG_DIR_NAME = "logs";
 const LOG_FILE_PATTERN = /^trilium-\d{4}-\d{2}-\d{2}\.log$/;
 const DEFAULT_RETENTION_DAYS = 7;
+const OPEN_ATTEMPTS = 3;
+const OPEN_RETRY_DELAY_MS = 100;
+const BACKGROUND_RETRY_INITIAL_MS = 1_000;
+const BACKGROUND_RETRY_MAX_MS = 30_000;
+/** Entries kept in memory while no log file is open. */
+export const MAX_PENDING_ENTRIES = 5_000;
 
 /**
  * Standalone log service using OPFS (Origin Private File System).
@@ -14,6 +21,13 @@ export default class StandaloneLogService extends FileBasedLogService {
     private currentFileName: string = "";
     private textEncoder = new TextEncoder();
     private textDecoder = new TextDecoder();
+    /** Entries written while no file is open, flushed to the file once it opens. */
+    private pendingEntries: string[] = [];
+    /** Set while the background retry is the only thing that can open the log file. */
+    private fileUnavailable = false;
+    private retryTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Incremented on every open and close, so an attempt for an older file discards its handle. */
+    private openGeneration = 0;
 
     constructor() {
         super();
@@ -31,50 +45,47 @@ export default class StandaloneLogService extends FileBasedLogService {
     }
 
     protected override async openLogFile(fileName: string): Promise<void> {
+        this.closeLogFile();
+        const generation = this.openGeneration;
+
         if (!this.logDir) {
             await this.ensureLogDirectory();
         }
-
-        // Close existing file if open
-        if (this.currentFile) {
-            this.currentFile.close();
-            this.currentFile = null;
+        if (!this.logDir) {
+            return;
         }
 
-        const fileHandle = await this.logDir!.getFileHandle(fileName, { create: true });
+        const fileHandle = await this.logDir.getFileHandle(fileName, { create: true });
 
-        // Try to create sync access handle with retry logic for worker restarts
-        // Previous worker may have left handle open before being terminated
-        const maxRetries = 3;
-        const retryDelay = 100;
-
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
+        // A worker that was just replaced can still hold the handle for a moment.
+        for (let attempt = 0; attempt < OPEN_ATTEMPTS; attempt++) {
             try {
-                this.currentFile = await fileHandle.createSyncAccessHandle();
-                break;
+                this.adoptFile(await fileHandle.createSyncAccessHandle(), fileName, generation);
+                return;
             } catch (error) {
-                if (attempt === maxRetries - 1) {
-                    // Last attempt failed - fall back to console-only logging
-                    console.warn("[LogService] Could not open log file, using console-only logging:", error);
-                    this.currentFile = null;
-                    this.currentFileName = "";
+                if (attempt === OPEN_ATTEMPTS - 1) {
+                    console.warn(
+                        "[LogService] Could not open log file, retrying in the background:", error
+                    );
+                    this.fileUnavailable = true;
+                    this.scheduleRetry(
+                        fileHandle, fileName, generation, BACKGROUND_RETRY_INITIAL_MS
+                    );
                     return;
                 }
-                // Wait before retrying - previous handle may be released
-                await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+                const delayMs = OPEN_RETRY_DELAY_MS * (attempt + 1);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
             }
-        }
-
-        this.currentFileName = fileName;
-
-        // Seek to end for appending
-        if (this.currentFile) {
-            const size = this.currentFile.getSize();
-            this.currentFile.truncate(size); // No-op, but ensures we're at the right position
         }
     }
 
     protected override closeLogFile(): void {
+        this.openGeneration++;
+        this.fileUnavailable = false;
+        if (this.retryTimer) {
+            clearTimeout(this.retryTimer);
+            this.retryTimer = null;
+        }
         if (this.currentFile) {
             this.currentFile.close();
             this.currentFile = null;
@@ -84,7 +95,10 @@ export default class StandaloneLogService extends FileBasedLogService {
 
     protected override writeEntry(entry: string): void {
         if (!this.currentFile) {
-            console.log(entry); // Fallback to console if file not ready
+            this.pendingEntries.push(entry);
+            if (this.pendingEntries.length > MAX_PENDING_ENTRIES) {
+                this.pendingEntries.shift();
+            }
             return;
         }
 
@@ -162,8 +176,55 @@ export default class StandaloneLogService extends FileBasedLogService {
         }
     }
 
+    override getLogContents(): string | null {
+        const contents = super.getLogContents();
+        if (contents !== null || this.currentFile) {
+            return contents;
+        }
+        const entries = this.pendingEntries.join("");
+        return this.fileUnavailable
+            ? `${t("backend_log.log-file-unavailable")}\n\n${entries}`
+            : entries;
+    }
+
     protected override getRetentionDays(): number {
         // Standalone doesn't have config system, use default
         return DEFAULT_RETENTION_DAYS;
+    }
+
+    private adoptFile(
+        accessHandle: FileSystemSyncAccessHandle, fileName: string, generation: number
+    ): void {
+        if (generation !== this.openGeneration) {
+            accessHandle.close();
+            return;
+        }
+        this.currentFile = accessHandle;
+        this.currentFileName = fileName;
+        this.fileUnavailable = false;
+        if (this.pendingEntries.length > 0) {
+            const entries = this.pendingEntries.join("");
+            this.pendingEntries = [];
+            this.writeEntry(entries);
+        }
+    }
+
+    private scheduleRetry(
+        fileHandle: FileSystemFileHandle, fileName: string, generation: number, delayMs: number
+    ): void {
+        this.retryTimer = setTimeout(async () => {
+            this.retryTimer = null;
+            let accessHandle: FileSystemSyncAccessHandle;
+            try {
+                accessHandle = await fileHandle.createSyncAccessHandle();
+            } catch {
+                if (generation === this.openGeneration) {
+                    const nextDelayMs = Math.min(delayMs * 2, BACKGROUND_RETRY_MAX_MS);
+                    this.scheduleRetry(fileHandle, fileName, generation, nextDelayMs);
+                }
+                return;
+            }
+            this.adoptFile(accessHandle, fileName, generation);
+        }, delayMs);
     }
 }

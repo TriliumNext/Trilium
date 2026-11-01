@@ -3,24 +3,32 @@ Front-end scripts are custom JavaScript notes that are run on the client (browse
 
 There are four flavors of front-end scripts:
 
-|  |  |
-| --- | --- |
-| Regular scripts | These are run with the current app and note context. These can be run either manually or automatically on start-up. |
-| <a class="reference-link" href="Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a> | These can introduce new UI elements in various positions, such as near the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, content area or even the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>. |
-| <a class="reference-link" href="Frontend%20Basics/Launch%20Bar%20Widgets.md">Launch Bar Widgets</a> | Similar to <a class="reference-link" href="Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a>, but dedicated to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>. These can simply introduce new buttons or graphical elements to the bar. |
-| <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a> | This allows rendering custom content inside a note, using either HTML or Preact JSX. |
+<table>
+    <tbody>
+        <tr>
+            <td>Regular scripts</td>
+            <td>These are run with the current app and note context. These can be run either manually or automatically on start-up.</td>
+        </tr>
+        <tr>
+            <td><a class="reference-link" href="Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a></td>
+            <td>These can introduce new UI elements in various positions, such as near the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, content area or even the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.</td>
+        </tr>
+        <tr>
+            <td><a class="reference-link" href="Frontend%20Basics/Launch%20Bar%20Widgets.md">Launch Bar Widgets</a></td>
+            <td>Similar to&nbsp;<a class="reference-link" href="Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a>, but dedicated to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>. These can simply introduce new buttons or graphical elements to the bar.</td>
+        </tr>
+        <tr>
+            <td><a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a></td>
+            <td>This allows rendering custom content inside a note, using either HTML or Preact JSX.</td>
+        </tr>
+    </tbody>
+</table>
 
 For more advanced behaviors that do not require a user interface (e.g. batch modifying notes), see <a class="reference-link" href="Backend%20scripts.md">Backend scripts</a>.
 
 ## Scripts
 
-Scripts don't have any special requirements. They can be run manually using the _Execute_ button on the code note or they can be run automatically; to do so, set the `run` [label](../Advanced%20Usage/Attributes/Labels.md) to either:
-
-*   `frontendStartup` - when Trilium frontend starts up (or is refreshed), but not on mobile.
-*   `mobileStartup` - when Trilium frontend starts up (or is refreshed), on mobile.
-
-> [!NOTE]
-> Backend scripts have more powerful triggering conditions, for example they can run automatically on a hourly or daily basis, but also on events such as when a note is created or an attribute is modified. See the server-side <a class="reference-link" href="Backend%20scripts/Events.md">Events</a> for more information.
+Scripts don't have any special requirements. They can be run manually using the _Execute_ button on the code note or they can be run automatically, see <a class="reference-link" href="Frontend%20Basics/Frontend%20Events.md">Frontend Events</a>.
 
 ## Widgets
 
@@ -33,7 +41,7 @@ For more information, see <a class="reference-link" href="Frontend%20Basics/Cus
 
 ## Script API
 
-The front-end API of Trilium is available to all scripts running in the front-end context as global variable `api`. For a reference of the API, see <a class="reference-link" href="Script%20API/Frontend%20API">Frontend API</a>.
+The front-end API of Trilium is available to all scripts running in the front-end context as global variable `api`. For a reference of the API, see <a class="reference-link" href="Script%20API/Frontend%20API.md">Frontend API</a>.
 
 ### Tutorial
 

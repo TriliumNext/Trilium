@@ -5,7 +5,6 @@ export default class App {
     readonly noteTree: Locator;
     readonly currentNoteSplit: Locator;
     readonly currentNoteSplitTitle: Locator;
-    readonly currentNoteSplitRibbon: Locator;
     readonly currentNoteSplitContent: Locator;
     page: Page;
 
@@ -13,8 +12,7 @@ export default class App {
         this.page = page;
         this.noteTree = page.locator(".tree-wrapper");
         this.currentNoteSplit = page.locator(".note-split:not(.hidden-ext)");
-        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title");
-        this.currentNoteSplitRibbon = this.currentNoteSplit.locator(".ribbon-container");
+        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".title-row .note-title");
         this.currentNoteSplitContent = this.currentNoteSplit.locator(".note-detail-printable.visible");
     }
 
@@ -24,30 +22,19 @@ export default class App {
         await expect(this.currentNoteSplitTitle).toHaveValue(noteTitle);
     }
 
-    async goToRibbonTab(tabName: string) {
-        await this.currentNoteSplitRibbon.locator(`.ribbon-tab-title`, { hasText: tabName }).click();
-    }
-
     async setNoteShared(shared: boolean) {
-        await this.goToRibbonTab("Basic Properties");
+        await this.currentNoteSplit.locator(".note-actions button").first().click();
+        const menu = this.page.locator(".tn-dropdown-portal.note-actions .dropdown-menu").first();
+        await expect(menu).toBeVisible();
 
-        // Ensure the initial state.
-        const switchButton = this.currentNoteSplitRibbon.locator(`.shared-switch-container .switch-button`);
-        if (shared) {
-            await expect(switchButton.locator("input")).not.toBeChecked();
-        } else {
-            await expect(switchButton.locator("input")).toBeChecked();
-        }
+        const sharedItem = menu.locator(".dropdown-item").filter({ has: this.page.locator(".bx-share-alt") });
+        const toggle = sharedItem.locator("input");
+        await expect(toggle).toBeChecked({ checked: !shared });
 
-        // Click the switch to change the state.
-        await switchButton.click();
+        await sharedItem.click();
+        await expect(toggle).toBeChecked({ checked: shared });
 
-        // Verify the state after clicking.
-        if (shared) {
-            await expect(switchButton.locator("input")).toBeChecked();
-        } else {
-            await expect(switchButton.locator("input")).not.toBeChecked();
-        }
+        await this.page.keyboard.press("Escape");
     }
 
 }

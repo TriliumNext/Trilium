@@ -1,9 +1,10 @@
 import branchService from "../../services/branches.js";
 import eraseService from "../../services/erase.js";
 import eventService from "../../services/events.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { getBecca } from "../../becca/becca.js";
+import type BBranch from "../../becca/entities/bbranch.js";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
@@ -17,17 +18,41 @@ import { ValidationError } from "../../errors.js";
  * for not deleted branches. There may be multiple deleted note-parent note relationships.
  */
 
-function moveBranchToParent(req: Request<{ branchId: string, parentBranchId: string }>) {
-    const { branchId, parentBranchId } = req.params;
+/**
+ * Moves the branches in `branchIds`, in order, under the note of `parentBranchId`. All moves run in one
+ * transaction, so the client receives them as a single frontend update. The first move that fails
+ * validation stops the batch; the moves before it stay.
+ */
+function moveBranchesToParent(req: Request<{ parentBranchId: string }>) {
+    const { parentBranchId } = req.params;
+    const { branchIds } = req.body;
 
-    const branchToMove = getBecca().getBranch(branchId);
-    const targetParentBranch = getBecca().getBranch(parentBranchId);
-
-    if (!branchToMove || !targetParentBranch) {
-        throw new ValidationError(`One or both branches '${branchId}', '${parentBranchId}' have not been found`);
+    if (!Array.isArray(branchIds)) {
+        throw new ValidationError("branchIds must be an array");
     }
 
-    return branchService.moveBranchToBranch(branchToMove, targetParentBranch, branchId);
+    const targetParentBranch = getBecca().getBranch(parentBranchId);
+    if (!targetParentBranch) {
+        throw new ValidationError(`Target branch '${parentBranchId}' has not been found`);
+    }
+
+    const branchesToMove = branchIds.map((branchId) => {
+        const branch = typeof branchId === "string" ? getBecca().getBranch(branchId) : null;
+        if (!branch) {
+            throw new ValidationError(`Branch '${branchId}' has not been found`);
+        }
+        return { branchId: branchId as string, branch };
+    });
+
+    for (const { branchId, branch } of branchesToMove) {
+        const res = branchService.moveBranchToBranch(branch, targetParentBranch, branchId);
+
+        if (!("success" in res) || !res.success) {
+            return res;
+        }
+    }
+
+    return { success: true };
 }
 
 function moveBranchBeforeNote(req: Request<{ branchId: string, beforeBranchId: string }>) {
@@ -151,40 +176,41 @@ function setExpanded(req: Request<{ branchId: string, expanded: string }>) {
 
 function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string }>) {
     const { branchId } = req.params;
-    const expanded = parseInt(req.params.expanded);
-    const sql = getSql();
+    const isExpanded = req.params.expanded === "1";
 
-    let branchIds = sql.getColumn<string>(
-        `
-        WITH RECURSIVE
-        tree(branchId, noteId) AS (
-            SELECT branchId, noteId FROM branches WHERE branchId = ?
-            UNION
-            SELECT branches.branchId, branches.noteId FROM branches
-                JOIN tree ON branches.parentNoteId = tree.noteId
-            WHERE branches.isDeleted = 0
-                AND branches.isExpanded = 1
-        )
-        SELECT branchId FROM tree`,
-        [branchId]
-    );
+    // Walks becca rather than the `branches` table, so that the virtual branches a provider
+    // injects are reached too; `none_root` is skipped because the root is always expanded.
+    const changedBranches: BBranch[] = [];
+    const visitedNoteIds = new Set<string>();
+    const startBranch = getBecca().branches[branchId];
+    const pending = startBranch ? [ startBranch ] : [];
 
-    // root is always expanded
-    branchIds = branchIds.filter((branchId) => branchId !== "none_root");
+    for (let branch = pending.pop(); branch; branch = pending.pop()) {
+        if (branch.branchId !== "none_root" && branch.isExpanded !== isExpanded) {
+            changedBranches.push(branch);
+        }
 
-    const expandedValue = expanded ? 1 : 0;
-    sql.executeMany(/*sql*/`UPDATE branches SET isExpanded = ${expandedValue} WHERE branchId IN (???)`, branchIds);
-
-    for (const branchId of branchIds) {
-        const branch = getBecca().branches[branchId];
-
-        if (branch) {
-            branch.isExpanded = !!expanded;
+        if (!visitedNoteIds.has(branch.noteId)) {
+            visitedNoteIds.add(branch.noteId);
+            for (const childBranch of branch.childNote.getChildBranches()) {
+                if (childBranch) {
+                    pending.push(childBranch);
+                }
+            }
         }
     }
 
+    getSql().executeMany(
+        /*sql*/`UPDATE branches SET isExpanded = ${isExpanded ? 1 : 0} WHERE branchId IN (???)`,
+        changedBranches.filter((branch) => !branch.isVirtual).map((branch) => branch.branchId)
+    );
+
+    for (const branch of changedBranches) {
+        branch.isExpanded = isExpanded;
+    }
+
     return {
-        branchIds
+        branchIds: changedBranches.map((branch) => branch.branchId)
     };
 }
 
@@ -246,13 +272,14 @@ function deleteBranch(req: Request<{ branchId: string }>) {
     if (eraseNotes) {
         // erase automatically means deleting all clones + note itself
         branch.getNote().deleteNote(deleteId, taskContext);
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
         noteDeleted = true;
     } else {
         noteDeleted = branch.deleteBranch(deleteId, taskContext);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 
@@ -304,7 +331,7 @@ function setPrefixBatch(req: Request) {
 }
 
 export default {
-    moveBranchToParent,
+    moveBranchesToParent,
     moveBranchBeforeNote,
     moveBranchAfterNote,
     setExpanded,

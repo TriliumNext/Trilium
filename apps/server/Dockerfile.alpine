@@ -1,29 +1,33 @@
-FROM node:24.18.0-alpine AS builder
-RUN corepack enable
-
-# Install build tools required to compile native addons (e.g. better-sqlite3) on ARM
-RUN apk add --no-cache python3 make g++
-
-# Install native dependencies since we might be building cross-platform.
-WORKDIR /usr/src/app
-COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/
-# We have to use --no-frozen-lockfile due to CKEditor patches
-RUN pnpm install --no-frozen-lockfile --prod && pnpm rebuild
-
-FROM node:24.18.0-alpine
+# Alpine is pinned to 3.23 deliberately: musl 1.2.6 (Alpine 3.24+) issues pwritev2, which hosts
+# with libseccomp < 2.3.3 deny with EPERM instead of ENOSYS. musl only falls back on ENOSYS, so
+# SQLite fails with "disk I/O error" there. Alpine 3.23 ships musl 1.2.5 and is supported until
+# 2027-11-01. See https://github.com/TriliumNext/Trilium/issues/10627
+#
+# See the comment in Dockerfile: better-sqlite3 v13 ships N-API prebuilds — the
+# linuxmusl-* ones here — so there is no native compile step and no builder
+# stage. They link libstdc++, which node:*-alpine already provides at runtime.
+FROM node:24.22.2-alpine3.23
 # Install runtime dependencies
-RUN apk add --no-cache su-exec shadow
+RUN apk add --no-cache shadow curl
 
 WORKDIR /usr/src/app
 COPY ./dist /usr/src/app
-RUN rm -rf /usr/src/app/node_modules/better-sqlite3
-COPY --from=builder /usr/src/app/node_modules/better-sqlite3 /usr/src/app/node_modules/better-sqlite3
 COPY ./start-docker.sh /usr/src/app
 
 # Add application user
 RUN adduser -s /bin/false node; exit 0
 
+# A new named volume takes its owner from the mount point, so a container started with --user
+# can write to it. Other UIDs need to pass through /home/node to reach a volume of their own.
+RUN mkdir -p /home/node/trilium-data && \
+    chown node:node /home/node/trilium-data && \
+    chmod 700 /home/node/trilium-data && \
+    chmod 711 /home/node
+
+# The healthcheck reads the listening address the server records here.
+ENV TRILIUM_DATA_DIR=/home/node/trilium-data
+
 # Configure container
 EXPOSE 8080
 CMD [ "sh", "./start-docker.sh" ]
-HEALTHCHECK --start-period=10s CMD exec su-exec node node /usr/src/app/docker_healthcheck.cjs
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s CMD sh /usr/src/app/docker_healthcheck.sh

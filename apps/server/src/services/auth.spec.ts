@@ -1,7 +1,9 @@
-import { attributes, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { attributes, authenticateSetup, enterSetupMode, leaveSetupMode, options, password as passwordService, password_encryption as passwordEncryptionService, resetSetupAuth } from "@triliumnext/core";
+import type { NextFunction, Request, Response } from "express";
 import { Application } from "express";
 import supertest from "supertest";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { generateConfig, Totp } from "time2fa";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import auth, { refreshAuth, verifyLoginCredentials } from "./auth";
 import { cls } from "@triliumnext/core";
@@ -108,6 +110,7 @@ describe("Auth", () => {
             return {
                 method: "GET",
                 path: "/test",
+                query: {},
                 ip: "127.0.0.1",
                 sessionID: "sid",
                 headers: {},
@@ -165,14 +168,39 @@ describe("Auth", () => {
             const labelSpy = vi.spyOn(attributes, "getNotesWithLabel").mockReturnValue([]);
             const resLogin = makeRes();
             const nextLogin = vi.fn();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), resLogin as never, nextLogin);
+            auth.checkAuth(makeReq({ path: "/", session: { loggedIn: false } }), resLogin as never, nextLogin);
             expect(nextLogin).toHaveBeenCalled();
             expect(resLogin.statusCode).not.toBe(404);
 
             labelSpy.mockReturnValue([{ noteId: "x" } as never]);
             const resShare = makeRes();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), resShare as never, vi.fn());
+            auth.checkAuth(makeReq({ path: "/", session: { loggedIn: false } }), resShare as never, vi.fn());
             expect(resShare.redirectedTo).toBe("share");
+
+            cls.init(() => options.setOption("redirectBareDomain", "false"));
+        });
+
+        it("checkAuth limits the bare-domain redirect to bare root requests (#10552)", () => {
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
+            vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
+            vi.spyOn(attributes, "getNotesWithLabel").mockReturnValue([{ noteId: "x" } as never]);
+            cls.init(() => options.setOption("redirectBareDomain", "true"));
+
+            // An explicit login navigation (GET /login redirects to the root with the
+            // `?login` marker) must reach the SPA login screen, not the share page.
+            const resLogin = makeRes();
+            const nextLogin = vi.fn();
+            auth.checkAuth(makeReq({ path: "/", query: { login: "" }, session: { loggedIn: false } }), resLogin as never, nextLogin);
+            expect(nextLogin).toHaveBeenCalled();
+            expect(resLogin.redirectedTo).toBeUndefined();
+
+            // SPA sub-requests such as /bootstrap must fall through too, or the login
+            // screen can never render its `loggedIn: false` payload.
+            const resBootstrap = makeRes();
+            const nextBootstrap = vi.fn();
+            auth.checkAuth(makeReq({ path: "/bootstrap", session: { loggedIn: false } }), resBootstrap as never, nextBootstrap);
+            expect(nextBootstrap).toHaveBeenCalled();
+            expect(resBootstrap.redirectedTo).toBeUndefined();
 
             cls.init(() => options.setOption("redirectBareDomain", "false"));
         });
@@ -206,29 +234,60 @@ describe("Auth", () => {
             errSpy.mockRestore();
         });
 
-        it("checkAuth handles the SSO-enabled path (authenticated vs not)", () => {
+        it("checkAuth passes through when SSO is enabled and the OIDC session is authenticated", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(true);
-            const base = {
-                loggedIn: true,
-                lastAuthState: { totpEnabled: false, ssoEnabled: true }
-            };
 
             const nextOk = vi.fn();
             auth.checkAuth(
-                makeReq({ session: { ...base }, oidc: { isAuthenticated: () => true } }),
+                makeReq({
+                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true } },
+                    oidc: { isAuthenticated: () => true }
+                }),
                 makeRes() as never,
                 nextOk
             );
             expect(nextOk).toHaveBeenCalled();
+            // The unauthenticated / lapsed-OIDC case is covered by the regression test below.
+        });
 
-            const resRedirect = makeRes();
+        it("checkAuth does not bounce a stale SSO session to /login (regression: infinite /↔/login loop)", () => {
+            // Repro of the redirect loop shipped in v0.104.0. When OIDC/SSO is enabled and the
+            // Trilium session still carries loggedIn:true but the OIDC appSession has lapsed
+            // (oidc.isAuthenticated() === false), checkAuth 302s to "login" — but loginPage
+            // (routes/login.ts) 302s straight back to "." (the SPA root), so the browser
+            // ping-pongs /↔/login until it aborts with ERR_TOO_MANY_REDIRECTS.
+            //
+            // This desync is reachable by any active OAuth user, not just a stale-cookie dev
+            // artifact: the OIDC appSession has a hard absolute cap (express-openid-connect
+            // default 7d) that activity can't extend, while trilium.sid is rolling with a much
+            // longer window (default cookieMaxAge 21d). Once the OIDC cap lapses on a still-live
+            // trilium session, every navigation loops.
+            //
+            // Correct behaviour: treat the stale session as logged out and fall through to serve
+            // the SPA, which renders the login screen from the bootstrap loggedIn:false payload —
+            // no redirect, so no loop.
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
+            vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(true);
+
+            const res = makeRes();
+            const next = vi.fn();
+            // save() flushes the loggedIn:false flip before handoff; invoke its callback so next() runs.
+            const save = vi.fn((cb: (err?: unknown) => void) => cb());
+            const session = { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true }, save };
             auth.checkAuth(
-                makeReq({ session: { ...base }, oidc: { isAuthenticated: () => false } }),
-                resRedirect as never,
-                vi.fn()
+                makeReq({ session, oidc: { isAuthenticated: () => false } }),
+                res as never,
+                next
             );
-            expect(resRedirect.redirectedTo).toBe("login");
+
+            // The loop half we must break: never 302 to the login route (which comes right back).
+            expect(res.redirectedTo).not.toBe("login");
+            // Instead fall through so the SPA renders the login screen in place.
+            expect(next).toHaveBeenCalled();
+            // And the stale flag is cleared (and persisted) so subsequent requests take the logged-out path.
+            expect(session.loggedIn).toBe(false);
+            expect(save).toHaveBeenCalled();
         });
 
         it("checkAuth falls through to next on the normal logged-in path", () => {
@@ -422,6 +481,81 @@ describe("Auth", () => {
 
             expect(next).toHaveBeenCalled();
         });
+
+        it("checkCredentials requires a valid second factor when TOTP is enabled", async () => {
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+            vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            const verifyPasswordSpy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            vi.spyOn(totp, "verifyTOTP").mockImplementation((token) => token === "123456");
+            const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
+            const cred = Buffer.from("user:correctpass").toString("base64");
+
+            async function call(headers: Record<string, unknown>) {
+                const res = makeRes();
+                const next = vi.fn();
+                await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred, ...headers } }), res as never, next);
+                return { res, next };
+            }
+
+            // Missing token -> 401 before the password is checked, so the answer reveals nothing about it.
+            const missing = await call({});
+            expect(missing.next).not.toHaveBeenCalled();
+            expect(missing.res.statusCode).toBe(401);
+            expect(missing.res.body).toBe("TOTP token is required");
+            expect(verifyPasswordSpy).not.toHaveBeenCalled();
+
+            const wrong = await call({ "trilium-totp": "000000" });
+            expect(wrong.next).not.toHaveBeenCalled();
+            expect(wrong.res.statusCode).toBe(401);
+            expect(wrong.res.body).toBe("Incorrect TOTP token");
+
+            // A wrong password is reported as such and never reaches the recovery codes.
+            verifyPasswordSpy.mockResolvedValueOnce(false as never);
+            recoverySpy.mockClear();
+            const wrongPassword = await call({ "trilium-totp": "000000" });
+            expect(wrongPassword.res.statusCode).toBe(401);
+            expect(wrongPassword.res.body).toBe("Incorrect password");
+            expect(recoverySpy).not.toHaveBeenCalled();
+
+            const valid = await call({ "trilium-totp": "123456" });
+            expect(valid.next).toHaveBeenCalled();
+
+            recoverySpy.mockReturnValue(true);
+            const recovery = await call({ "trilium-totp": "recovery-code" });
+            expect(recovery.next).toHaveBeenCalled();
+            expect(recoverySpy).toHaveBeenLastCalledWith("recovery-code");
+        });
+
+        // `checkCredentials` runs as middleware, before the route handler opens a CLS context, and
+        // `verifyTOTP()` records the code's time step as an option.
+        it("checkCredentials accepts a real TOTP code outside a CLS context and records its time step", async () => {
+            const { secret } = Totp.generateKey({ issuer: "Trilium", user: "spec" });
+            cls.init(() => {
+                options.setOption("mfaMethod", "totp");
+                totp.setSecret(secret);
+            });
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+            vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            const [ code ] = Totp.generatePasscodes({ secret }, generateConfig());
+            expect(code).toBeDefined();
+
+            const res = makeRes();
+            const next = vi.fn();
+            await auth.checkCredentials(makeReq({
+                headers: { "trilium-cred": Buffer.from("user:pw").toString("base64"), "trilium-totp": code }
+            }), res as never, next);
+
+            expect(res.statusCode).toBe(0);
+            expect(next).toHaveBeenCalled();
+            expect(Number(options.getOptionOrNull("totpLastUsedStep"))).toBeGreaterThan(0);
+
+            cls.init(() => {
+                totp.resetTotp();
+                options.setOption("totpLastUsedStep", "");
+            });
+        });
     });
 
     describe("verifyLoginCredentials", () => {
@@ -435,7 +569,7 @@ describe("Auth", () => {
         it("does not consume a recovery code when the password is wrong", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
             expect(await verifyLoginCredentials("wrong-password", RECOVERY_CODE)).toBe("password");
@@ -450,7 +584,7 @@ describe("Auth", () => {
         it("returns null for a correct password when TOTP is disabled", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
-            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "")).toBeNull();
             // With TOTP disabled the second factor is skipped entirely.
@@ -460,7 +594,7 @@ describe("Auth", () => {
         it("returns null for a correct password with a valid TOTP token, without touching recovery codes", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(true);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(true);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "123456")).toBeNull();
@@ -471,7 +605,7 @@ describe("Auth", () => {
         it("consumes a recovery code only after the password is verified", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
             expect(await verifyLoginCredentials("correct", RECOVERY_CODE)).toBeNull();
@@ -481,10 +615,145 @@ describe("Auth", () => {
         it("rejects a correct password paired with an invalid second factor", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "000000")).toBe("totp");
         });
     });
 }, 60_000);
+
+/**
+ * The gate that stands in for everything else while an instance is in setup mode with a knowledge
+ * base still behind it.
+ *
+ * Driven directly rather than over HTTP: setup mode makes the whole application report itself
+ * uninitialized, which is not a state the shared test fixture can be put into and taken back out of
+ * around a supertest call.
+ */
+describe("the setup wizard's gate", () => {
+    type GateOpts = {
+        token?: string;
+        internalElectron?: boolean;
+        /** Which guard to drive; `checkSetupAuth` by default. */
+        middleware?: "checkSetupAuth" | "checkApiAuth" | "checkApiAuthOrElectron";
+    };
+
+    /** A request carrying the token, or nothing, plus what the middleware did with it. */
+    function callGate({ token, internalElectron = false, middleware = "checkSetupAuth" }: GateOpts = {}) {
+        const req = {
+            headers: token ? { "trilium-setup-auth": token } : {},
+            method: "POST",
+            path: "/api/database/backup-database",
+            session: {}
+        } as unknown as Request;
+        if (internalElectron) {
+            markAsInternalElectronRequest(req);
+        }
+
+        const outcome = { passed: false, status: 0 };
+        const res = {
+            setHeader: () => res,
+            status: (code: number) => {
+                outcome.status = code;
+                return res;
+            },
+            send: () => res
+        } as unknown as Response & { setHeader: () => unknown };
+        const next: NextFunction = () => {
+            outcome.passed = true;
+        };
+
+        auth[middleware](req, res as unknown as Response, next);
+
+        return outcome;
+    }
+
+    beforeAll(() => {
+        config.General.noAuthentication = false;
+        refreshAuth();
+    });
+
+    beforeEach(() => {
+        resetSetupAuth();
+        // An instance the app sent back to setup, with the fixture's knowledge base behind it.
+        enterSetupMode({ lang: "en" });
+    });
+
+    afterEach(() => {
+        leaveSetupMode();
+        resetSetupAuth();
+    });
+
+    it("refuses a request that has not unlocked the knowledge base", () => {
+        // Nothing else in this file covers it: every other check here gives way while the database
+        // reports itself uninitialized, which is exactly what setup mode makes it report.
+        expect(callGate()).toEqual({ passed: false, status: 401 });
+        expect(callGate({ token: "not a token" })).toEqual({ passed: false, status: 401 });
+    });
+
+    it("lets through a request carrying the token the password bought", async () => {
+        vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+        const token = await authenticateSetup("whatever the fixture's is");
+
+        expect(callGate({ token: token ?? "" })).toMatchObject({ passed: true });
+
+        vi.restoreAllMocks();
+    });
+
+    it("lets the desktop's own renderer through, since nobody else can be it", () => {
+        expect(callGate({ internalElectron: true })).toMatchObject({ passed: true });
+    });
+
+    it("asks nothing of an instance that has already said it trusts whoever can reach it", () => {
+        config.General.noAuthentication = true;
+        refreshAuth();
+        try {
+            expect(callGate()).toMatchObject({ passed: true });
+        } finally {
+            config.General.noAuthentication = false;
+            refreshAuth();
+        }
+    });
+
+    it("stands down once the knowledge base is gone, which is where a first run begins", () => {
+        leaveSetupMode();
+
+        expect(callGate()).toMatchObject({ passed: true });
+    });
+
+    describe("and the rest of the API, which stands down for the same reason", () => {
+        // The wizard's own routes are not the only ones reachable while it is open. Every ordinary
+        // API guard gives way on an instance that reports itself uninitialized — which setup mode
+        // makes it report — and the database is attached the whole time, so anything reaching it
+        // through SQL rather than through becca works. Backing the knowledge base up and then
+        // downloading that backup is two such requests, and would have been the whole of it.
+        for (const middleware of [ "checkApiAuth", "checkApiAuthOrElectron" ] as const) {
+            it(`refuses an unauthenticated request through ${middleware} while the wizard is locked`, () => {
+                expect(callGate({ middleware })).toEqual({ passed: false, status: 401 });
+            });
+
+            it(`lets ${middleware} through once the wizard has been unlocked`, async () => {
+                vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+                const token = await authenticateSetup("whatever the fixture's is");
+
+                // The client sends the token on every request once it holds one, so the rest of the
+                // wizard's own needs — keyboard actions, options, network addresses — keep working.
+                expect(callGate({ middleware, token: token ?? "" })).toMatchObject({ passed: true });
+
+                vi.restoreAllMocks();
+            });
+
+            it(`lets ${middleware} through on a first run, which has nothing to protect`, () => {
+                // No marker, so nothing behind the wizard, and no database open either: the state
+                // the bypass was written for, and the one it has to go on allowing.
+                leaveSetupMode();
+                vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+
+                expect(callGate({ middleware })).toMatchObject({ passed: true });
+
+                vi.restoreAllMocks();
+            });
+        }
+    });
+});

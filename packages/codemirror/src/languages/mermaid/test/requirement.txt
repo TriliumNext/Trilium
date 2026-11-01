@@ -1,0 +1,417 @@
+# Requirement
+
+requirementDiagram
+
+==>
+
+RequirementDiagram(DiagramName)
+
+# Comment
+
+requirementDiagram %% this is a comment
+
+==>
+
+RequirementDiagram(DiagramName,LineComment)
+
+# Requirement Section with Unquoted String
+
+requirementDiagram
+
+    requirement test_req {
+
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString))
+
+# Requirement Section with Quoted String
+
+requirementDiagram
+
+    requirement "test_req" {
+
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(QuotedString))
+
+# Requirement Section - IDNumber with zero decimals
+
+requirementDiagram
+
+    requirement test_req {
+      id: 1
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber)
+
+# Requirement Section - IDNumber with one decimal
+
+requirementDiagram
+
+    requirement test_req {
+      id: 1.2
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber)
+
+# Requirement Section - IDNumber with two decimals
+
+requirementDiagram
+
+    requirement test_req {
+      id: 1.2.3
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber)
+
+# Requirement Section - IDNumber with multidigit numbers and decimals
+
+requirementDiagram
+
+    requirement test_req {
+      id: 12.34.56
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber)
+
+# Requirement Section - Text
+
+requirementDiagram
+
+    requirement test_req {
+      text: Pizza is delicious 🍕
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),Text(PropKeyword),UnquotedString)
+
+# Requirement Section - Risk
+
+requirementDiagram
+
+    requirement test_req {
+      risk: high
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),Risk(PropKeyword),RiskType(Keyword))
+
+# Requirement Section - ID + Text
+
+requirementDiagram
+
+    requirement test_req {
+      id: 1
+      text: Pizza is delicious 🍕
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString)
+
+# Requirement Section - All fields
+
+requirementDiagram
+
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# functionalRequirement Section - All fields
+
+requirementDiagram
+
+    functionalRequirement test_req2 {
+    id: 1.1
+    text: the second test text.
+    risk: low
+    verifymethod: inspection
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# performanceRequirement Section - All fields
+
+requirementDiagram
+
+    performanceRequirement test_req3 {
+    id: 1.2
+    text: the third test text.
+    risk: medium
+    verifymethod: demonstration
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# interfaceRequirement Section - All fields
+
+requirementDiagram
+
+    interfaceRequirement test_req4 {
+    id: 1.2.1
+    text: the fourth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# physicalRequirement Section - All fields
+
+requirementDiagram
+
+    physicalRequirement test_req5 {
+    id: 1.2.2
+    text: the fifth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# designConstraint Section - All fields
+
+requirementDiagram
+
+    designConstraint test_req6 {
+    id: 1.2.3
+    text: the sixth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword))
+
+# Element Line with Unquoted String - Type
+
+requirementDiagram
+
+    element test_entity {
+    type: simulation
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString)
+
+# Element Line with Unquoted String - All fields
+
+requirementDiagram
+
+    element test_entity2 {
+    type: word doc
+    docRef: reqs/test_entity
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString,DocRef(PropKeyword),UnquotedString)
+
+# Element Line with Quoted String - All fields
+
+requirementDiagram
+
+    element test_entity3 {
+    type: "test suite"
+    docRef: github.com/all_the_tests
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),Type(PropKeyword),QuotedString,DocRef(PropKeyword),UnquotedString)
+
+# Relationship Line with Forward Arrow
+
+requirementDiagram
+    testword - satisfies -> test_req2
+
+==>
+
+RequirementDiagram(DiagramName,RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)))
+
+# Relationship Line with Back Arrow
+
+requirementDiagram
+    testword <- satisfies - test_req2
+
+==>
+
+RequirementDiagram(DiagramName,RelationshipLine(RelationshipStart,BackArrow,RelationshipType(Keyword),Hyphen,Name(UnquotedString)))
+
+# All SubDiagram Types
+
+requirementDiagram
+
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+
+    functionalRequirement test_req2 {
+    id: 1.1
+    text: the second test text.
+    risk: low
+    verifymethod: inspection
+    }
+
+    performanceRequirement test_req3 {
+    id: 1.2
+    text: the third test text.
+    risk: medium
+    verifymethod: demonstration
+    }
+
+    interfaceRequirement test_req4 {
+    id: 1.2.1
+    text: the fourth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    physicalRequirement test_req5 {
+    id: 1.2.2
+    text: the fifth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    designConstraint test_req6 {
+    id: 1.2.3
+    text: the sixth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    element test_entity {
+    type: simulation
+    }
+
+    element test_entity2 {
+    type: word doc
+    docRef: reqs/test_entity
+    }
+
+    element test_entity3 {
+    type: "test suite"
+    docRef: github.com/all_the_tests
+    }
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString,SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString,DocRef(PropKeyword),UnquotedString,SubDiagramType,Name(UnquotedString),Type(PropKeyword),QuotedString,DocRef(PropKeyword),UnquotedString)
+
+# All Features
+
+requirementDiagram
+
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+
+    functionalRequirement test_req2 {
+    id: 1.1
+    text: the second test text.
+    risk: low
+    verifymethod: inspection
+    }
+
+    performanceRequirement test_req3 {
+    id: 1.2
+    text: the third test text.
+    risk: medium
+    verifymethod: demonstration
+    }
+
+    interfaceRequirement test_req4 {
+    id: 1.2.1
+    text: the fourth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    physicalRequirement test_req5 {
+    id: 1.2.2
+    text: the fifth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    designConstraint test_req6 {
+    id: 1.2.3
+    text: the sixth test text.
+    risk: medium
+    verifymethod: analysis
+    }
+
+    element test_entity {
+    type: simulation
+    }
+
+    element test_entity2 {
+    type: word doc
+    docRef: reqs/test_entity
+    }
+
+    element test_entity3 {
+    type: "test suite"
+    docRef: github.com/all_the_tests
+    }
+
+
+    test_entity - satisfies -> test_req2
+    test_req - traces -> test_req2
+    test_req - contains -> test_req3
+    test_req3 - contains -> test_req4
+    test_req4 - derives -> test_req5
+    test_req5 - refines -> test_req6
+    test_entity3 - verifies -> test_req5
+    test_req <- copies - test_entity2
+
+==>
+
+RequirementDiagram(DiagramName,SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),ID(PropKeyword),IDNumber,Text(PropKeyword),UnquotedString,Risk(PropKeyword),RiskType(Keyword),VerifyMethod(PropKeyword),VerifyMethodType(Keyword),SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString,SubDiagramType,Name(UnquotedString),Type(PropKeyword),UnquotedString,DocRef(PropKeyword),UnquotedString,SubDiagramType,Name(UnquotedString),Type(PropKeyword),QuotedString,DocRef(PropKeyword),UnquotedString,RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,Hyphen,RelationshipType(Keyword),ForwardArrow,Name(UnquotedString)),RelationshipLine(RelationshipStart,BackArrow,RelationshipType(Keyword),Hyphen,Name(UnquotedString)))
+
+# Element name at the end of input
+
+requirementDiagram
+  a
+
+==>
+
+RequirementDiagram(DiagramName,⚠)

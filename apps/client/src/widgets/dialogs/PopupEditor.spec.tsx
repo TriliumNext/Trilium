@@ -1,0 +1,617 @@
+import { type ComponentChildren, render, type RefObject } from "preact";
+import { act } from "preact/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type FNote from "../../entities/fnote";
+import type { ViewScope } from "../../services/link";
+
+const mocks = vi.hoisted(() => ({
+    triggerCommand: vi.fn(),
+    openInNewTab: vi.fn(),
+    openContextWithNote: vi.fn(),
+    registerDetachedContext: vi.fn(),
+    unregisterDetachedContext: vi.fn(),
+    getNote: vi.fn(),
+    getAttachment: vi.fn(),
+    /** Every context the popup created, newest last — one is built per open. */
+    contexts: [] as { setNote: ReturnType<typeof vi.fn>, viewScope?: ViewScope, noteId: string, ntxId: string }[],
+    isMobile: vi.fn(() => false),
+    /** The note of every context the popup builds, read by the badges in its header. */
+    contextNote: undefined as unknown,
+    backlinkCount: vi.fn(() => 0)
+}));
+
+vi.mock("../../components/app_context", () => ({
+    default: {
+        triggerCommand: mocks.triggerCommand,
+        tabManager: {
+            openInNewTab: mocks.openInNewTab,
+            openContextWithNote: mocks.openContextWithNote,
+            registerDetachedContext: mocks.registerDetachedContext,
+            unregisterDetachedContext: mocks.unregisterDetachedContext
+        }
+    }
+}));
+
+// A real NoteContext would drag in the whole tab/froca stack; the popup only ever builds one,
+// points it at a note and reads back what it resolved.
+vi.mock("../../components/note_context", () => ({
+    default: class {
+        ntxId: string;
+        noteId = "n1";
+        hoistedNoteId = "root";
+        viewScope: ViewScope | undefined;
+        note = mocks.contextNote;
+        triggerEvent = vi.fn();
+        setNote = vi.fn(async (_notePath: string, opts?: { viewScope?: ViewScope }) => {
+            this.viewScope = { viewMode: "default", ...opts?.viewScope };
+        });
+
+        constructor(ntxId: string) {
+            this.ntxId = ntxId;
+            mocks.contexts.push(this);
+        }
+    }
+}));
+
+vi.mock("../../services/froca", () => ({
+    default: { getNote: mocks.getNote, getAttachment: mocks.getAttachment }
+}));
+
+vi.mock("../../services/tree", () => ({
+    default: {
+        getNoteIdAndParentIdFromUrl: (url: string) => ({ noteId: url.split("/").at(-1) }),
+        // Read by link.ts when the popup resolves a link clicked inside itself.
+        getNoteIdFromUrl: (url: string) => url.split("/").at(-1)
+    }
+}));
+
+vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+
+// Keep the rest of `utils` real: it is loaded by half the client stack (e.g. keyboard_actions),
+// and only the platform check decides anything here.
+vi.mock("../../services/utils", async (importActual) => {
+    const actual = await importActual<typeof import("../../services/utils")>();
+    return { ...actual, default: { ...actual.default, isMobile: mocks.isMobile } };
+});
+
+vi.mock("../../services/experimental_features", () => ({ isExperimentalFeatureEnabled: () => false }));
+
+vi.mock("../../services/keyboard_actions", async (importActual) => {
+    const actual = await importActual<typeof import("../../services/keyboard_actions")>();
+    return {
+        ...actual,
+        default: {
+            ...actual.default,
+            getAction: async (actionName: string) => (actionName === "findInText"
+                ? { actionName, effectiveShortcuts: [ "Ctrl+F" ] }
+                : undefined)
+        }
+    };
+});
+
+// The modal itself is Bootstrap-driven; the popup's own state is what it hands over.
+interface ModalStubProps {
+    title?: ComponentChildren;
+    header?: ComponentChildren;
+    children?: ComponentChildren;
+    show?: boolean;
+    customTitleBarButtons?: { onClick: () => void }[];
+    modalRef?: RefObject<HTMLDivElement | null>;
+    onShown?: () => void;
+    onHidden?: () => void;
+}
+
+vi.mock("../react/Modal", () => ({
+    default: ({ title, header, children, show, customTitleBarButtons, modalRef, onShown, onHidden }: ModalStubProps) => (
+        <div ref={modalRef} className="modal-stub" data-shown={String(!!show)}>
+            <button
+                className="maximize-stub"
+                onClick={() => customTitleBarButtons?.[0]?.onClick()}
+            />
+            {/* Bootstrap's own lifecycle, which the stub leaves to the test to drive. */}
+            <button className="shown-stub" onClick={() => onShown?.()} />
+            <button className="hidden-stub" onClick={() => onHidden?.()} />
+            {title}
+            {header}
+            {children}
+        </div>
+    )
+}));
+
+// The popup's body: each is exercised by its own spec, and none of it decides what the popup shows.
+vi.mock("../NoteDetail", () => ({ default: () => <div className="note-detail-stub" /> }));
+vi.mock("../collections/NoteList", () => ({ default: () => null }));
+vi.mock("../PromotedAttributes", () => ({ default: () => null }));
+vi.mock("../layout/NoteActions", () => ({ default: () => null }));
+// `BacklinksWidget` has its own spec; this one covers where its links navigate.
+vi.mock("../sidebar/Backlinks", () => ({
+    useBacklinkCount: mocks.backlinkCount,
+    BacklinksWidget: () => <a className="backlink-stub" href="#root/source">Source</a>
+}));
+vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
+vi.mock("../layout/NoteTypeSwitcher", () => ({
+    default: () => <div className="note-type-switcher-stub" />
+}));
+vi.mock("../layout/FormattingToolbar", () => ({ default: () => null }));
+vi.mock("../type_widgets/text/mobile_editor_toolbar", () => ({ default: () => <div className="mobile-toolbar-stub" /> }));
+vi.mock("../note_icon", () => ({ default: () => <div className="note-icon-stub" /> }));
+vi.mock("../note_title", () => ({ default: () => <div className="note-title-stub" /> }));
+
+import Component from "../../components/component";
+import { ParentComponent } from "../react/react_utils";
+import PopupEditor from "./PopupEditor";
+
+const ATTACHMENT_SCOPE: ViewScope = { viewMode: "attachments", attachmentId: "att-1" };
+/** A view mode of the note itself, as the sidebar's note map card expands into the popup with. */
+const NOTE_MAP_SCOPE: ViewScope = { viewMode: "note-map" };
+
+function fakeNote(labels: string[] = [], isOptions = false) {
+    return {
+        noteId: "n1",
+        isOptions: () => isOptions,
+        hasLabel: (name: string) => labels.includes(name)
+    } as unknown as FNote;
+}
+
+let container: HTMLDivElement;
+let parent: Component;
+
+async function openPopup(data: {
+    noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean,
+    selectTitle?: boolean
+}) {
+    await act(async () => {
+        await parent.handleEvent("openInPopup", data as never);
+    });
+}
+
+/** An entity reload naming one attachment. Other row kinds are read by the dialog's own hooks. */
+async function attachmentsReloaded(attachmentId: string) {
+    await act(async () => {
+        await parent.handleEvent("entitiesReloaded", {
+            loadResults: {
+                getAttachmentRows: () => [ { attachmentId } ],
+                getAttributeRows: () => [],
+                isNoteReloaded: () => false
+            }
+        } as never);
+    });
+}
+
+/** An entity reload of one note, deleted or not. */
+async function noteReloaded(noteId: string, isDeleted: boolean) {
+    await act(async () => {
+        await parent.handleEvent("entitiesReloaded", {
+            loadResults: {
+                getAttachmentRows: () => [],
+                getAttributeRows: () => [],
+                isNoteReloaded: (id: string) => id === noteId,
+                getEntityRow: (_entityName: string, id: string) => (id === noteId ? { noteId, isDeleted } : undefined)
+            }
+        } as never);
+    });
+}
+
+/** The context the popup built for the current open. */
+function lastContext() {
+    const context = mocks.contexts.at(-1);
+    expect(context).toBeDefined();
+    return context;
+}
+
+/** A left click on a link rendered inside the popup, which the dialog handles itself. */
+function clickLink(href: string) {
+    const link = modal()?.appendChild(document.createElement("a"));
+    link?.setAttribute("href", href);
+    act(() => {
+        link?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+    link?.remove();
+}
+
+function modal() {
+    const el = container.querySelector<HTMLElement>(".modal-stub");
+    expect(el).not.toBeNull();
+    return el;
+}
+
+beforeEach(async () => {
+    vi.clearAllMocks();
+    mocks.contexts = [];
+    mocks.isMobile.mockReturnValue(false);
+    mocks.getNote.mockResolvedValue(fakeNote());
+    mocks.getAttachment.mockResolvedValue({ title: "diagram.png" });
+
+    parent = new Component();
+    container = document.body.appendChild(document.createElement("div"));
+    await act(async () => {
+        render(
+            <ParentComponent.Provider value={parent}>
+                <PopupEditor />
+            </ParentComponent.Provider>,
+            container
+        );
+    });
+
+    // The popup builds an empty context up front to render against; only the ones an open creates
+    // are of interest here.
+    mocks.contexts = [];
+});
+
+afterEach(() => {
+    render(null, container);
+    container.remove();
+    document.body.className = "";
+});
+
+describe("PopupEditor", () => {
+    it("opens a note editable, unless the user made it read-only themselves", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        expect(lastContext()?.setNote).toHaveBeenCalledWith("root/n1", {
+            viewScope: { readOnlyTemporarilyDisabled: true },
+            keepActiveDialog: true
+        });
+        expect(modal()?.dataset.shown).toBe("true");
+        expect(document.body.classList.contains("popup-editor-open")).toBe(true);
+        // Registered so that a command naming the popup's context can find it.
+        expect(mocks.registerDetachedContext).toHaveBeenCalledWith(lastContext());
+
+        mocks.getNote.mockResolvedValue(fakeNote([ "readOnly" ]));
+        await openPopup({ noteIdOrPath: "root/n2" });
+        expect(lastContext()?.setNote).toHaveBeenCalledWith("root/n2", {
+            viewScope: { readOnlyTemporarilyDisabled: false },
+            keepActiveDialog: true
+        });
+    });
+
+    it("shows the attachment a view scope names, with its own read-only title", async () => {
+        await openPopup({ noteIdOrPath: "root/n1", viewScope: ATTACHMENT_SCOPE });
+
+        // The caller's scope decides what is displayed; the popup's own editability default stays
+        // underneath it rather than overwriting it.
+        expect(lastContext()?.setNote).toHaveBeenCalledWith("root/n1", {
+            viewScope: { readOnlyTemporarilyDisabled: true, ...ATTACHMENT_SCOPE },
+            keepActiveDialog: true
+        });
+
+        await vi.waitFor(() => {
+            expect(container.querySelector(".attachment-title")?.textContent)
+                .toBe("popup-editor.attachment_title");
+        });
+        expect(mocks.getAttachment).toHaveBeenCalledWith("att-1");
+        // The note's own header is what an attachment replaces: no icon picker, no editable title.
+        expect(container.querySelector(".note-icon-stub")).toBeNull();
+        expect(container.querySelector(".note-title-stub")).toBeNull();
+    });
+
+    it("keeps a note's own header when no attachment is in view", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        expect(container.querySelector(".note-icon-stub")).not.toBeNull();
+        expect(container.querySelector(".note-title-stub")).not.toBeNull();
+        expect(container.querySelector(".attachment-title")).toBeNull();
+    });
+
+    it("re-reads the attachment title when it is renamed while the popup is open", async () => {
+        await openPopup({ noteIdOrPath: "root/n1", viewScope: ATTACHMENT_SCOPE });
+        await vi.waitFor(() => expect(mocks.getAttachment).toHaveBeenCalledTimes(1));
+
+        await attachmentsReloaded("att-1");
+        expect(mocks.getAttachment).toHaveBeenCalledTimes(2);
+
+        // Another attachment's change is none of this popup's business.
+        await attachmentsReloaded("att-other");
+        expect(mocks.getAttachment).toHaveBeenCalledTimes(2);
+    });
+
+    it("sends settings pages to their own dialog instead of opening the popup", async () => {
+        mocks.getNote.mockResolvedValue(fakeNote([], true));
+        await openPopup({ noteIdOrPath: "root/_optionsAppearance" });
+
+        expect(mocks.triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsAppearance" });
+        expect(mocks.contexts).toHaveLength(0);
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
+    it("opens nothing for a path with no note, or a note that no longer exists", async () => {
+        await openPopup({ noteIdOrPath: "" });
+        mocks.getNote.mockResolvedValue(null);
+        await openPopup({ noteIdOrPath: "root/gone" });
+
+        expect(mocks.contexts).toHaveLength(0);
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
+    it("maximizes into a tab, carrying along whatever is in view instead of the note itself", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        await act(async () => container.querySelector<HTMLElement>(".maximize-stub")?.click());
+
+        expect(mocks.openInNewTab).toHaveBeenCalledWith("n1", "root", true);
+        expect(modal()?.dataset.shown).toBe("false");
+
+        await openPopup({ noteIdOrPath: "root/n1", viewScope: ATTACHMENT_SCOPE });
+        await act(async () => container.querySelector<HTMLElement>(".maximize-stub")?.click());
+
+        // Otherwise maximizing would silently fall back to the attachment's owning note.
+        expect(mocks.openContextWithNote).toHaveBeenCalledWith("n1", {
+            hoistedNoteId: "root",
+            viewScope: expect.objectContaining(ATTACHMENT_SCOPE),
+            activate: true
+        });
+
+        // Likewise for a view mode of the note itself: the last rung of the map's expand ladder is the
+        // popup's own maximize, which would otherwise land on the note and leave the map behind.
+        await openPopup({ noteIdOrPath: "root/n1", viewScope: NOTE_MAP_SCOPE });
+        await act(async () => container.querySelector<HTMLElement>(".maximize-stub")?.click());
+
+        expect(mocks.openContextWithNote).toHaveBeenLastCalledWith("n1", {
+            hoistedNoteId: "root",
+            viewScope: expect.objectContaining(NOTE_MAP_SCOPE),
+            activate: true
+        });
+    });
+
+    it("stands aside when something within it has sent the reader elsewhere", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(modal()?.dataset.shown).toBe("true");
+
+        // What a press on a node of the note map amounts to: the map navigates the pane behind the
+        // popup, so the popup would otherwise be left covering the note it has just gone to.
+        await act(async () => { await parent.handleEvent("closePopupEditor", {} as never); });
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
+    it("closes when the note it shows is deleted, and only then", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        await noteReloaded("other", true);
+        await noteReloaded("n1", false);
+        expect(modal()?.dataset.shown).toBe("true");
+
+        await noteReloaded("n1", true);
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
+    it("stays put when there is no note to maximize", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const context = lastContext();
+        if (context) {
+            context.noteId = "";
+        }
+
+        await act(async () => container.querySelector<HTMLElement>(".maximize-stub")?.click());
+
+        expect(mocks.openInNewTab).not.toHaveBeenCalled();
+        expect(mocks.openContextWithNote).not.toHaveBeenCalled();
+        expect(modal()?.dataset.shown).toBe("true");
+    });
+
+    it("follows a link inside itself instead of letting it navigate the tab behind", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const context = lastContext();
+        if (context) {
+            context.setNote.mockClear();
+        }
+
+        clickLink("#root/note2222");
+        expect(context?.setNote).toHaveBeenCalledWith("root/note2222", {
+            viewScope: { viewMode: "default" },
+            keepActiveDialog: true
+        });
+
+        // A settings page cannot be shown here: it has its own dialog, with the page selector.
+        clickLink("#root/_optionsAppearance");
+        expect(mocks.triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsAppearance" });
+        expect(context?.setNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports its lifecycle: focuses the content when shown, and forgets itself when hidden", async () => {
+        const handleEvent = vi.spyOn(parent, "handleEvent");
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        await act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+        expect(handleEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: "_popup-editor" });
+
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(modal()?.dataset.shown).toBe("false");
+        expect(document.body.classList.contains("popup-editor-open")).toBe(false);
+    });
+
+    it("selects the title instead of the content when asked to, for that open only", async () => {
+        const handleEvent = vi.spyOn(parent, "handleEvent");
+        const focusCalls = () =>
+            handleEvent.mock.calls.filter(([ name ]) => name.startsWith("focus"));
+        const selectTitle = [ "focusAndSelectTitle", { isNewNote: true, ntxId: "_popup-editor" } ];
+        const focusContent = [ "focusOnDetail", { ntxId: "_popup-editor" } ];
+
+        await openPopup({ noteIdOrPath: "root/n1", selectTitle: true });
+        expect(focusCalls()).toEqual([]);
+        await act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+        expect(focusCalls()).toEqual([ selectTitle ]);
+
+        // Opened in the popup already on show, which fires no `shown` event.
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n2" });
+        expect(focusCalls()).toEqual([ focusContent ]);
+
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n3", selectTitle: true });
+        expect(focusCalls()).toEqual([ selectTitle ]);
+    });
+
+    it("opens a nested popup over itself, which answers only its own command and context", async () => {
+        const nestedContainer = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <PopupEditor ntxId="_popup-editor-nested" openCommand="openInNestedPopup" />
+                </ParentComponent.Provider>,
+                nestedContainer
+            );
+        });
+        const nestedModal = nestedContainer.querySelector<HTMLElement>(".modal-stub");
+        expect(nestedModal).not.toBeNull();
+        const isOpen = () => document.body.classList.contains("popup-editor-open");
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(modal()?.dataset.shown).toBe("true");
+        expect(nestedModal?.dataset.shown).toBe("false");
+
+        await act(async () => {
+            await parent.handleEvent("openInNestedPopup", { noteIdOrPath: "_help_abc" } as never);
+        });
+        expect(nestedModal?.dataset.shown).toBe("true");
+        expect(lastContext()?.ntxId).toBe("_popup-editor-nested");
+        expect(lastContext()?.setNote).toHaveBeenCalledWith("_help_abc", expect.anything());
+
+        // Closing one popup keeps the page's popup layering for the one still open.
+        await act(async () => nestedContainer.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(isOpen()).toBe(true);
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(isOpen()).toBe(false);
+
+        render(null, nestedContainer);
+        nestedContainer.remove();
+    });
+
+    /**
+     * The popup is held low on purpose, so the editor's panels and the menus its pickers open float
+     * over it. A dialog declaring a layer of its own would cover it, so that dialog gives way for
+     * as long as the popup is up, and is put back exactly as it was found.
+     */
+    it("puts a dialog it stands over underneath it, and back afterwards", async () => {
+        const underlying = document.body.appendChild(document.createElement("div"));
+        underlying.className = "modal show";
+        underlying.style.zIndex = "2000";
+        document.body.appendChild(document.createElement("div")).className = "modal-backdrop";
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(underlying.style.zIndex).toBe("1090");
+
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(underlying.style.zIndex).toBe("2000");
+    });
+
+    /** One standing below it already is left where it is: nothing about it covers the popup. */
+    it("leaves a dialog below its own layer alone", async () => {
+        const underlying = document.body.appendChild(document.createElement("div"));
+        underlying.className = "modal show";
+        underlying.style.zIndex = "1055";
+        document.body.appendChild(document.createElement("div")).className = "modal-backdrop";
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        expect(underlying.style.zIndex).toBe("1055");
+    });
+
+    it("raises its own backdrop when it opens over another dialog", async () => {
+        const underlying = document.body.appendChild(document.createElement("div"));
+        underlying.className = "modal show";
+        const backdrop = document.body.appendChild(document.createElement("div"));
+        backdrop.className = "modal-backdrop";
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        // Bootstrap stacks neither the dialog nor its backdrop on its own.
+        expect(document.body.classList.contains("popup-editor-stacked")).toBe(true);
+        expect(backdrop.classList.contains("popup-editor-backdrop")).toBe(true);
+
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(backdrop.classList.contains("popup-editor-backdrop")).toBe(false);
+
+        // Bootstrap may not have appended a backdrop yet; the popup still opens.
+        backdrop.remove();
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(document.body.classList.contains("popup-editor-stacked")).toBe(true);
+
+        underlying.remove();
+    });
+
+    /**
+     * The switcher offers the note types a note can still become, which only the caller knows is
+     * wanted: a template opened to be written is, an attachment or a note map is not.
+     */
+    it("offers the note type switcher only where the caller asked for it", async () => {
+        await openPopup({ noteIdOrPath: "n1" });
+        expect(container.querySelector(".note-type-switcher-stub")).toBeNull();
+
+        await openPopup({ noteIdOrPath: "n1", showNoteTypeSwitcher: true });
+        expect(container.querySelector(".note-type-switcher-stub")).not.toBeNull();
+
+        // And gone again for the next note opened without it.
+        await openPopup({ noteIdOrPath: "n1" });
+        expect(container.querySelector(".note-type-switcher-stub")).toBeNull();
+    });
+
+    it("offers the note's backlinks in its header, opening them in itself rather than the tab behind", async () => {
+        mocks.contextNote = { noteId: "n1", getLabelValue: () => null, getColorClass: () => "" };
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(container.querySelector(".popup-editor-backlinks")).toBeNull();
+
+        mocks.backlinkCount.mockReturnValue(2);
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const toggle = container.querySelector<HTMLElement>(".popup-editor-backlinks button");
+        expect(toggle).not.toBeNull();
+        await act(async () => toggle?.click());
+        const link = document.querySelector<HTMLElement>(".backlink-stub");
+        expect(link).not.toBeNull();
+
+        const context = lastContext();
+        await act(async () => link?.click());
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/source", { viewScope: { viewMode: "default" }, keepActiveDialog: true });
+        expect(document.querySelector(".backlink-stub")).toBeNull();
+        mocks.contextNote = undefined;
+    });
+
+    it("gives mobile its own toolbar and hides the buttons that make no sense in a popup", async () => {
+        expect(container.querySelector(".mobile-toolbar-stub")).toBeNull();
+        expect(container.querySelector(".popup-editor-scroll")?.classList.contains("scroll-edge-fade")).toBe(false);
+
+        mocks.isMobile.mockReturnValue(true);
+        const mobileContainer = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <PopupEditor />
+                </ParentComponent.Provider>,
+                mobileContainer
+            );
+        });
+
+        // The fields and the note scroll above the toolbar, which stays at the foot of the dialog
+        // as it does on a text note.
+        const scroll = mobileContainer.querySelector(".popup-editor-scroll");
+        const toolbar = mobileContainer.querySelector(".mobile-toolbar-stub");
+        expect(scroll?.querySelector(".note-detail-stub")).not.toBeNull();
+        expect(scroll?.classList.contains("scroll-edge-fade")).toBe(true);
+        expect(toolbar).not.toBeNull();
+        expect(scroll?.contains(toolbar)).toBe(false);
+        expect(scroll?.nextElementSibling).toBe(toolbar);
+
+        render(null, mobileContainer);
+        mobileContainer.remove();
+    });
+
+    it("searches its own note on Ctrl+F, leaving the tab behind alone", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const findBar = modal()?.querySelector(".find-replace-widget");
+        expect(findBar).not.toBeNull();
+        expect(container.querySelector(".popup-editor-scroll")?.contains(findBar ?? null)).toBe(false);
+
+        const onDocument = vi.fn();
+        document.addEventListener("keydown", onDocument);
+        const detail = modal()?.querySelector(".note-detail-stub");
+        expect(detail).not.toBeNull();
+        await vi.waitFor(() => {
+            detail?.dispatchEvent(new KeyboardEvent("keydown", {
+                key: "f", code: "KeyF", ctrlKey: true, bubbles: true, cancelable: true
+            }));
+            expect(mocks.triggerCommand).toHaveBeenCalledWith("findInText", { ntxId: "_popup-editor" });
+        });
+        // The global binding would name the active tab instead.
+        expect(onDocument).not.toHaveBeenCalled();
+        document.removeEventListener("keydown", onDocument);
+    });
+});

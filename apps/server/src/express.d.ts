@@ -8,11 +8,15 @@ export declare module "express-serve-static-core" {
 
             authorization?: string;
             "trilium-cred"?: string;
+            "trilium-totp"?: string;
             "x-csrf-token"?: string;
 
             "trilium-component-id"?: string;
             "trilium-local-now-datetime"?: string;
             "trilium-hoisted-note-id"?: string;
+
+            /** Byte range a media player seeks with, read by the open-partial routes. */
+            range?: string;
 
             "user-agent"?: string;
         };
@@ -47,14 +51,24 @@ export declare module "express-session" {
          */
         ssoJustEnrolled?: true;
         /**
-         * Transient state for the OneNote importer's delegated-Graph OAuth flow. During sign-in it
-         * holds the PKCE verifier + state + redirect URI; after a successful callback it holds the
-         * access/refresh tokens and the connected account. Session-scoped only — never synced.
+         * One-shot technical detail set when the OIDC provider round-trip fails outright (the provider
+         * is unreachable, its TLS certificate isn't trusted, the token exchange errors, …) rather than
+         * completing with a rejection. Read and cleared by /bootstrap so the client can show a single
+         * "connection failed" toast after we redirect back to the app root instead of leaving the user
+         * on a raw JSON error page. Always non-empty when set, since its presence is what marks the
+         * failure; bounded in length because it is held in the session store.
+         */
+        ssoConnectionFailed?: string;
+        /**
+         * Transient state for the OneNote importer's delegated-Graph OAuth device flow. During
+         * sign-in it holds the pending device code (the secret the tokens are polled out with — never
+         * sent to the browser); once the sign-in completes it holds the access/refresh tokens and the
+         * connected account. Session-scoped only — never synced.
          */
         oneNoteImport?: {
-            verifier?: string;
-            state?: string;
-            redirectUri?: string;
+            deviceCode?: string;
+            /** Epoch millis at which the pending device code expires. */
+            deviceCodeExpiresAt?: number;
             accessToken?: string;
             refreshToken?: string;
             expiresAt?: number;

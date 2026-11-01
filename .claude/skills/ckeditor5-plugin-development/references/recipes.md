@@ -1,7 +1,7 @@
 # Recipes (task-oriented how-tos)
 
 Task-oriented snippets for Trilium's CKEditor plugins (`packages/ckeditor5-*`). All library
-symbols import from `ckeditor5` (48.2.0); local imports carry file extensions. All model
+symbols import from `ckeditor5` (48 or later); local imports carry file extensions. All model
 mutations run inside `editor.model.change( writer => … )`. In Trilium the "document" is the
 content of a single text note, so these recipes operate over that note's model root.
 
@@ -9,8 +9,8 @@ content of a single text note, so these recipes operate over that note's model r
 
 Inside plugin code you already have it: `this.editor` (in a `Plugin`/`Command` subclass) or the
 `editor` argument of a function plugin / converter / `componentFactory` callback. You don't fetch
-it from the DOM — in Trilium the editor is created and owned by the React watchdog component
-(`apps/client/src/widgets/type_widgets/text/CKEditorWithWatchdog.tsx`), not by plugin code.
+it from the DOM — in Trilium the editor is created and owned by the Preact component
+`apps/client/src/widgets/type_widgets/text/CKEditor.tsx`, not by plugin code.
 
 ```js
 class MyPlugin extends Plugin {

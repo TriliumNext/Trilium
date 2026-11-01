@@ -69,6 +69,17 @@ describe("rewriteMarkdownContentLinks", () => {
                 .toBe("![photo](Note_Photo Name.jpeg)");
         });
 
+        it("preserves attachment links when the note meta carries no attachments key at all", () => {
+            // `attachments` is optional on NoteMeta, so a note that never had any is exported without it.
+            const noteMeta: NoteMeta = { noteId: "testNote1", notePath: ["root", "testNote1"] };
+            const content = [
+                "![photo](api/attachments/att1/image/photo.png)",
+                "[doc.pdf](#root/note1?attachmentId=att2)"
+            ].join("\n");
+
+            expect(rewriteMarkdownContentLinks(content, noteMeta, nullNoteUrl)).toBe(content);
+        });
+
         it("handles attachment URL with leading slash", () => {
             const content = "![photo](./api/attachments/abc123/image/photo.png)";
             const noteMeta = buildNoteMeta([{ attachmentId: "abc123", dataFileName: "Note_photo.png" }]);

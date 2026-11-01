@@ -26,8 +26,16 @@ const {
 // async loadCommands() proceeds. t() is made a deterministic stub.
 vi.mock("./i18n.js", () => ({
     translationsInitializedPromise: Promise.resolve(),
-    t: (key: string, opts?: Record<string, unknown>) =>
-        opts && "name" in opts ? `${key}:${opts.name}` : key
+    t: (key: string, opts?: Record<string, unknown>) => {
+        // Resolve the keyboard-shortcut key labels the way the real translation files do.
+        if (key.startsWith("keyboard_shortcut_keys.")) {
+            const labels: Record<string, string> = {
+                ctrl: "Ctrl", alt: "Alt", shift: "Shift", meta: "Meta"
+            };
+            return labels[key.slice("keyboard_shortcut_keys.".length)] ?? key;
+        }
+        return opts && "name" in opts ? `${key}:${opts.name}` : key;
+    }
 }));
 
 vi.mock("../components/app_context.js", () => ({
@@ -48,7 +56,9 @@ vi.mock("./keyboard_actions.js", () => ({
 }));
 
 vi.mock("./utils.js", () => ({
-    default: { isElectron }
+    default: { isElectron },
+    // keyboard_shortcut_display imports the named isMac; keep the command palette on the non-Mac path.
+    isMac: () => false
 }));
 
 // Imported AFTER the mocks (vi.mock is hoisted).
@@ -154,7 +164,7 @@ describe("CommandRegistry default commands", () => {
 });
 
 describe("CommandRegistry keyboard actions", () => {
-    it("registers eligible keyboard actions, formatting shortcuts and tree-scoped names", async () => {
+    it("registers eligible keyboard actions, with their primary shortcut and tree-scoped names", async () => {
         getActions.mockImplementation(async () => [
             action({
                 actionName: "newAction",
@@ -174,8 +184,8 @@ describe("CommandRegistry keyboard actions", () => {
         const newCmd = registry.getCommand("newAction")!;
         expect(newCmd.source).toBe("keyboard-action");
         expect(newCmd.commandName).toBe("newAction");
-        // formatShortcut: CommandOrControl -> Ctrl, + -> " + "
-        expect(newCmd.shortcut).toBe("Ctrl + N");
+        // Stored as written; the command palette formats it for display.
+        expect(newCmd.shortcut).toBe("CommandOrControl+N");
 
         const treeCmd = registry.getCommand("treeAction")!;
         // note-tree scope wraps the name with the tree-action-name translation key

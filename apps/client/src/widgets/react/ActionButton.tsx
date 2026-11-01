@@ -1,19 +1,38 @@
+import { Tooltip } from "bootstrap";
 import { HTMLAttributes } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import keyboard_actions from "../../services/keyboard_actions";
+import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { isMobile } from "../../services/utils";
 import { useStaticTooltip } from "./hooks";
+import { useCommandTrigger } from "./react_utils";
 
-export interface ActionButtonProps extends Pick<HTMLAttributes<HTMLButtonElement>, "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style"> {
+export interface ActionButtonProps extends Pick<
+    HTMLAttributes<HTMLButtonElement>,
+    "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style" | "aria-expanded"
+    | "aria-pressed" | "onClickCapture" | "onPointerDown" | "onPointerMove" | "onPointerUp"
+    | "onPointerLeave" | "onPointerCancel"
+> {
     text: string;
     titlePosition?: "top" | "right" | "bottom" | "left";
     /** Extra class applied to the tooltip popup (e.g. `tooltip-top` to raise its z-index above modals). */
     tooltipClass?: string;
+    /** Renders `text` as (sanitized) HTML in the tooltip instead of plain text. Only pass trusted, non-user content. */
+    tooltipHtml?: boolean;
     icon: string;
     className?: string;
+    /**
+     * Keeps the tooltip off a touch screen, where there is no hover to open it with: the tap that
+     * presses the button opens it instead, and it then sits over whatever the press brought up until
+     * something else takes the focus. For a button whose meaning is already plain where it stands.
+     * The label is still given to assistive technology, which is what the tooltip was carrying it for.
+     */
+    noTooltipOnTouch?: boolean;
     triggerCommand?: CommandNames;
+    /** A shortcut named in the tooltip as it is written, for a button whose key is no `triggerCommand` action. */
+    shortcut?: string;
     noIconActionClass?: boolean;
     frame?: boolean;
     active?: boolean;
@@ -22,18 +41,41 @@ export interface ActionButtonProps extends Pick<HTMLAttributes<HTMLButtonElement
 
 const cachedIsMobile = isMobile();
 
-export default function ActionButton({ text, icon, className, triggerCommand, titlePosition, tooltipClass, noIconActionClass, frame, active, disabled, ...restProps }: ActionButtonProps) {
+export default function ActionButton({ text, icon, className, triggerCommand, shortcut, titlePosition, tooltipClass, tooltipHtml, noIconActionClass, noTooltipOnTouch, frame, active, disabled, ...restProps }: ActionButtonProps) {
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const [ keyboardShortcut, setKeyboardShortcut ] = useState<string[]>();
+    const [ actionShortcuts, setKeyboardShortcut ] = useState<string[]>();
+    const keyboardShortcut = actionShortcuts ?? (shortcut ? [ shortcut ] : undefined);
+    const triggerOwnCommand = useCommandTrigger(triggerCommand);
 
-    useStaticTooltip(buttonRef, {
-        title: keyboardShortcut?.length ? `${text} (${keyboardShortcut?.join(",")})` : text,
+    const title = keyboardShortcut?.length
+        ? `${text} (${keyboardShortcut.map((shortcut) => joinShortcut(formatShortcut(shortcut))).join(", ")})`
+        : text;
+    const titleRef = useRef(title);
+    titleRef.current = title;
+    const declined = !!noTooltipOnTouch && cachedIsMobile;
+    const hasTitle = !!title && title.length > 0 && !declined;
+
+    // The tooltip is recreated only when its structural options (or its presence) change — not when
+    // the label text changes. A plain text change is pushed into the live tooltip via setContent
+    // below, so a dynamic label updates in place instead of disposing and recreating the tooltip,
+    // which would drop the current hover. The title is resolved lazily (a function) so Bootstrap
+    // always reads the latest value from titleRef rather than one captured when the config was memoized.
+    const tooltipConfig = useMemo<Partial<Tooltip.Options>>(() => ({
+        title: hasTitle ? () => titleRef.current ?? "" : undefined,
         placement: titlePosition ?? "bottom",
         fallbackPlacements: [ titlePosition ?? "bottom" ],
         customClass: tooltipClass ?? "",
+        html: tooltipHtml ?? false,
         trigger: cachedIsMobile ? "focus" : "hover focus",
         animation: false
-    });
+    }), [titlePosition, tooltipClass, tooltipHtml, hasTitle]);
+    useStaticTooltip(buttonRef, tooltipConfig);
+
+    useEffect(() => {
+        if (buttonRef.current) {
+            Tooltip.getInstance(buttonRef.current)?.setContent({ ".tooltip-inner": title ?? "" });
+        }
+    }, [title]);
 
     useEffect(() => {
         if (triggerCommand) {
@@ -49,7 +91,10 @@ export default function ActionButton({ text, icon, className, triggerCommand, ti
         // (e.g. the error-dismiss button stealing the login form's Enter).
         type="button"
         class={`${className ?? ""} ${!noIconActionClass ? "icon-action" : "btn"} ${icon} ${frame ? "btn btn-primary" : ""} ${disabled ? "disabled" : ""} ${active ? "active" : ""}`}
-        data-trigger-command={triggerCommand}
+        onClick={triggerOwnCommand}
+        // Only where the tooltip that would otherwise carry it has been declined: elsewhere the
+        // tooltip is the button's name, and a second one here would be read out beside it.
+        aria-label={declined ? title : undefined}
         disabled={disabled}
         {...restProps}
     />;

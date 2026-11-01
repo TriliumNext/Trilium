@@ -60,6 +60,8 @@ nohup TRILIUM_ENV=dev node src/www &
 
 The application by default starts up on port 8080, so you can open your browser and navigate to [http://localhost:8080](http://localhost:8080) to access Trilium (replace "localhost" with your hostname).
 
+Once the server is running, the console lists the addresses it can be reached on, including the ones other devices on your network can use.
+
 ## TLS
 
 Don't forget to [configure TLS](../HTTPS%20\(TLS\).md) which is required for secure usage!

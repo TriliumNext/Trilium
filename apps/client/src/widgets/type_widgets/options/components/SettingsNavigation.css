@@ -39,3 +39,8 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+.settings-navigation .settings-navigation-beta-badge {
+    --color: var(--link-color, var(--main-text-color));
+    flex-shrink: 0;
+}

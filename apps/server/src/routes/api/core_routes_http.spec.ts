@@ -37,4 +37,37 @@ describe("Core routes over Express", () => {
         const res = await ctx.agent.get(`/api/notes/${noteId}`).expect(200);
         expect(res.body.title).toBe("Via Express");
     });
+
+    // The upload routes are the only core ones behind multer, so this is where that middleware —
+    // and the CSRF token a multipart PUT has to carry — is actually exercised.
+    it("takes a multipart upload on a core route", async () => {
+        const create = await ctx.agent
+            .post("/api/notes/root/children?target=into")
+            .set("x-csrf-token", ctx.csrfToken)
+            .send({ title: "notes.txt", type: "file", mime: "text/plain", content: "original" })
+            .expect(200);
+        const noteId = create.body.note.noteId as string;
+
+        await ctx.agent
+            .put(`/api/notes/${noteId}/file?replace=1`)
+            .set("x-csrf-token", ctx.csrfToken)
+            .attach("upload", Buffer.from("uploaded"), { filename: "notes.txt", contentType: "text/plain" })
+            .expect(200, { uploaded: true });
+
+        await ctx.agent.get(`/api/notes/${noteId}/open`).expect(200, "uploaded");
+    });
+
+    // Media players stream from open-partial, and only a real Express response can show that the
+    // slice leaves as bytes: `res.send()` treats anything that is not a Buffer as JSON.
+    it("answers a byte range on open-partial with 206 and the raw slice", async () => {
+        const { noteId } = await createTextNote(ctx, { content: "<p>hello</p>" });
+
+        const full = await ctx.agent.get(`/api/notes/${noteId}/open-partial`).expect(200);
+        expect(full.headers["accept-ranges"]).toBe("bytes");
+        expect(full.text).toBe("<p>hello</p>");
+
+        const ranged = await ctx.agent.get(`/api/notes/${noteId}/open-partial`).set("Range", "bytes=3-7").expect(206);
+        expect(ranged.headers["content-range"]).toBe("bytes 3-7/12");
+        expect(ranged.text).toBe("hello");
+    });
 });

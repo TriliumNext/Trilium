@@ -23,3 +23,15 @@ export default function CloseZenModeButton() {
         </div>
     )
 }
+
+/** Leaves full screen. Shown in the tab bar only while `body.full-screen` is set. */
+export function LeaveFullScreenButton() {
+    return (
+        <ActionButton
+            className="toggle-button leave-full-screen-button"
+            text={t("tab_row.leave_full_screen")}
+            icon="bx bx-exit-fullscreen"
+            triggerCommand="toggleFullscreen"
+        />
+    );
+}

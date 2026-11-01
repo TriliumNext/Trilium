@@ -1,0 +1,975 @@
+import { readFile } from "node:fs/promises";
+import type { ServerResponse } from "node:http";
+import { join, posix } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Node loads these without a bundler, so neither imports another source file.
+import { getThemeById } from "@triliumnext/codemirror/src/color_themes.js";
+import {
+    buildCodePreviewCss, readPreviewTheme
+} from "@triliumnext/codemirror/src/preview_theme.js";
+import type { ShareThemeManifest } from "@triliumnext/commons";
+import {
+    resolveShareThemeGroups, SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES,
+    SHARE_HOSTED_VIEW_TYPES
+} from "@triliumnext/commons/src/lib/share_hosting.js";
+import {
+    buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
+} from "@triliumnext/highlightjs/src/vs_code_theme.js";
+import {
+    build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
+    type ResolvedConfig, type Rollup, type ViteDevServer
+} from "vite";
+
+/**
+ * Drops the hyphenation machinery `@univerjs/engine-render` carries for Univer Docs.
+ * `shaping()` hyphenates only a paragraph whose section sets `autoHyphenation`, which
+ * the spreadsheet note type never turns on, so none of it can run:
+ *
+ * - The 77 TeX pattern tables, 4.4 MB of lazy chunks (Hungarian alone 747 kB). The
+ *   entry makes exactly 77 relative imports and every one is a table, so resolving
+ *   them all to one empty module collapses them into a single stub chunk.
+ * - `franc-min`, whose 102 kB trigram model backs the `LanguageDetector` call that
+ *   `shaping()` makes ahead of the hyphenation check, on every paragraph it lays out.
+ *
+ * Both stubs are keyed on the importer, so a second consumer of `franc-min` would still
+ * get the real package. Both the client and the standalone build bundle Univer, so both
+ * apply this. `vite-plugins.spec.ts` checks the rules still match the installed
+ * dependency.
+ */
+export function stripUniverHyphenation(): Plugin {
+    return {
+        name: "strip-univer-hyphenation",
+        enforce: "pre",
+        resolveId: resolveUniverHyphenationStub
+    };
+}
+
+/**
+ * Returns the stub for a hyphenation import made by `@univerjs/engine-render`'s entry,
+ * and `null` for everything else so other resolvers keep their turn.
+ */
+export function resolveUniverHyphenationStub(source: string, importer: string | undefined): string | null {
+    if (!importer?.replace(/\\/g, "/").endsWith(ENGINE_RENDER_ENTRY)) {
+        return null;
+    }
+
+    if (source === LANGUAGE_DETECTOR_PACKAGE) {
+        return stubPath("franc_min");
+    }
+
+    return source.startsWith("./") ? stubPath("univer_hyphenation_pattern") : null;
+}
+
+export const ENGINE_RENDER_ENTRY = "@univerjs/engine-render/lib/es/index.js";
+export const LANGUAGE_DETECTOR_PACKAGE = "franc-min";
+
+function stubPath(name: string): string {
+    return fileURLToPath(new URL(`./src/stubs/${name}.ts`, import.meta.url));
+}
+
+/**
+ * Empties the data `@univerjs/ui` generates for its emoji picker: the emoji table in the
+ * entry (about 200 kB) and the search index and titles in every locale (about 520 kB each
+ * in English). Only the Univer Docs ribbon opens the picker, so the spreadsheet note type
+ * never shows it. The table keeps its category keys, which `EMOJI_CATEGORIES` is built
+ * from, and `getEmojiLocaleData()` reads the search index and titles as optional.
+ * `vite-plugins.spec.ts` checks the rules still match the installed dependency.
+ */
+export function stripUniverEmojiData(): Plugin {
+    return {
+        name: "strip-univer-emoji-data",
+        enforce: "pre",
+        transform: (code, id) => stripUniverEmojiSource(code, id)
+    };
+}
+
+/**
+ * Returns `code` with the generated emoji data emptied when `id` is the `@univerjs/ui`
+ * entry or one of its locales, and `null` for every other module.
+ */
+export function stripUniverEmojiSource(code: string, id: string): string | null {
+    const path = id.replace(/\\/g, "/");
+    if (path.endsWith(UI_ENTRY)) {
+        return replaceOnce(code, EMOJI_TABLE, (_, region: string, table: string) => {
+            const categories = Object.keys(JSON.parse(table) as Record<string, unknown>);
+            return `${region}const emojis = ${JSON.stringify(Object.fromEntries(categories.map((key) => [ key, [] ])))};\n`;
+        });
+    }
+
+    if (UI_LOCALE.test(path)) {
+        return replaceOnce(code, EMOJI_LOCALE, (_, region: string) => `${region}const emojiLocale = {};\n`);
+    }
+
+    return null;
+}
+
+export const UI_ENTRY = "@univerjs/ui/lib/es/index.js";
+export const UI_LOCALE = /@univerjs\/ui\/lib\/es\/locale\/[^/]+\.js$/;
+export const EMOJI_TABLE = /(\/\/#region src\/views\/emoji-picker\/emojis\.generated\.ts\n)const emojis = (\{[\s\S]*?\n\});\n/;
+export const EMOJI_LOCALE = /(\/\/#region src\/locale\/emoji-locale\/[^\n]+\.generated\.ts\n)const emojiLocale = \{[\s\S]*?\n\};\n/;
+
+function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ...groups: string[]) => string): string {
+    if (!pattern.test(code)) {
+        throw new Error(`strip-univer-emoji-data: ${pattern} no longer matches; update vite-plugins.mts.`);
+    }
+    return code.replace(pattern, replacer);
+}
+
+/**
+ * Rewrites the third-party selectors that make Chromium restyle a whole container each time an
+ * element is inserted into it, which in a large note is the whole note on every Enter: a `*`
+ * after `+`, `~` or a position pseudo-class, and a sibling or `:nth-*` compound without a class.
+ * Also a `*` or bare pseudo-element after `.ck-focused` or `.ck-blurred`, which restyles the
+ * whole note each time the editor gains or loses focus.
+ * `vite-plugins.spec.ts` checks every rewrite still matches the installed stylesheet.
+ */
+export function narrowThirdPartySelectors(): Plugin {
+    return {
+        name: "narrow-third-party-selectors",
+        enforce: "pre",
+        transform: (code, id) => narrowSelectorsSource(code, id)
+    };
+}
+
+/**
+ * Returns `code` with the rewrites of the stylesheet `id` applied, and `null` for other
+ * modules.
+ */
+export function narrowSelectorsSource(code: string, id: string): string | null {
+    const path = id.replace(/\\/g, "/").replace(/\?.*$/, "");
+    const stylesheet = THIRD_PARTY_STYLESHEETS.find(({ file }) =>
+        path.endsWith(`/node_modules/${file}`));
+    if (!stylesheet) {
+        return null;
+    }
+
+    let narrowed = code;
+    for (const { from, to, count } of stylesheet.rewrites) {
+        const found = narrowed.split(from).length - 1;
+        if (found !== count) {
+            throw new Error(`narrow-third-party-selectors: expected ${count} × "${from}" in `
+                + `${stylesheet.file}, found ${found}; update vite-plugins.mts.`);
+        }
+        narrowed = narrowed.replaceAll(from, to);
+    }
+    return narrowed;
+}
+
+interface SelectorRewrite {
+    from: string;
+    to: string;
+    /** How often `from` occurs in the installed stylesheet. */
+    count: number;
+}
+
+/**
+ * Bootstrap's minified selectors, the same in its LTR and RTL builds. Trilium uses no
+ * `.table-striped-columns` or `.has-validation`; floating labels need `.form-control` or
+ * `.form-select` on the field.
+ */
+const BOOTSTRAP_REWRITES: SelectorRewrite[] = [
+    // The cells only read the stripe's custom properties, so the row can set them.
+    {
+        from: ".table-striped>tbody>tr:nth-of-type(odd)>*",
+        to: ".table-striped>tbody>tr:nth-of-type(odd)",
+        count: 1
+    },
+    {
+        from: ".table-striped-columns>:not(caption)>tr>:nth-child(2n)",
+        to: ".table-striped-columns>:not(caption)>tr>td:nth-child(2n),"
+            + ".table-striped-columns>:not(caption)>tr>th:nth-child(2n)",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:focus~",
+        to: ".form-floating>textarea.form-control:focus~",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:not(:placeholder-shown)~",
+        to: ".form-floating>textarea.form-control:not(:placeholder-shown)~",
+        count: 1
+    },
+    {
+        from: ".form-floating>textarea:disabled~",
+        to: ".form-floating>textarea.form-control:disabled~",
+        count: 1
+    },
+    {
+        from: ".form-floating>:disabled~label",
+        to: ".form-floating>.form-select:disabled~label",
+        count: 1
+    },
+    {
+        from: ",.input-group.has-validation>:nth-last-child(n+3)"
+            + ":not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating)",
+        to: "",
+        count: 1
+    }
+];
+
+/** CKEditor's nested selectors. Its UI views all carry the `ck` class. */
+const CKEDITOR_REWRITES: SelectorRewrite[] = [
+    { from: "&:not(.ck-hidden) ~ * {", to: "&:not(.ck-hidden) ~ .ck {", count: 1 },
+    { from: "& > * + * {", to: "& > .ck + .ck {", count: 2 },
+    { from: "& + * {", to: "&.ck + .ck {", count: 3 },
+    // The keys of a keystroke, with only text between them.
+    { from: "& + kbd {", to: "&:not(:first-child) {", count: 1 },
+    // A blurred editor shows its selection in the same color as a focused one.
+    {
+        from: "&.ck-blurred ::selection {\n"
+            + "    background: var(--ck-color-editable-blur-selection, #d9d9d9);\n  }",
+        to: "",
+        count: 1
+    },
+    // The icon's `svg *` rule reads its stroke from this variable.
+    {
+        from: "& svg * {\n    stroke: var(--ck-color-widget-blurred-border);\n  }",
+        to: "--ck-color-widget-type-around-button-icon: var(--ck-color-widget-blurred-border);",
+        count: 1
+    }
+];
+
+/**
+ * The stylesheets rewritten: `specifier` resolves to the file, `file` is its path in
+ * `node_modules`.
+ */
+export const THIRD_PARTY_STYLESHEETS = [
+    {
+        specifier: "bootstrap/dist/css/bootstrap.min.css",
+        file: "bootstrap/dist/css/bootstrap.min.css",
+        rewrites: [ clearAfterLegend("left"), ...BOOTSTRAP_REWRITES ]
+    },
+    {
+        specifier: "bootstrap/dist/css/bootstrap.rtl.min.css",
+        file: "bootstrap/dist/css/bootstrap.rtl.min.css",
+        rewrites: [ clearAfterLegend("right"), ...BOOTSTRAP_REWRITES ]
+    },
+    {
+        specifier: "ckeditor5/ckeditor5.css",
+        file: "ckeditor5/dist/ckeditor5.css",
+        rewrites: CKEDITOR_REWRITES
+    }
+];
+
+/**
+ * Bootstrap floats a `<legend>` to `side` and clears the element after it. Excalidraw's panels
+ * put each legend first in its `<fieldset>`, so the rewrite clears the other children instead.
+ */
+function clearAfterLegend(side: "left" | "right"): SelectorRewrite {
+    return {
+        from: `legend+*{clear:${side}}`,
+        to: `fieldset>:not(legend){clear:${side}}`,
+        count: 1
+    };
+}
+
+/** The share theme's sources, which the app build bundles into the files shared pages load. */
+const SHARE_THEME_SRC = join(import.meta.dirname, "../../packages/share-theme/src");
+
+/** The app's sources, whose views the share theme reuses. */
+const CLIENT_SRC = join(import.meta.dirname, "src");
+
+/**
+ * The directory the share theme's files go to: the one the app's chunks go to, so the share theme
+ * imports the chunks it shares with the app by their file name.
+ */
+const SHARE_THEME_DIR = "src";
+
+/** The page's files, at the fixed paths `content_renderer.ts` writes into every page. */
+const SCRIPTS_FILE = `${SHARE_THEME_DIR}/scripts.js`;
+const STYLES_FILE = `${SHARE_THEME_DIR}/scripts.css`;
+const TREE_FILE = `${SHARE_THEME_DIR}/tree.js`;
+export const SHARE_THEME_MANIFEST_FILE = `${SHARE_THEME_DIR}/share_theme.json`;
+
+/**
+ * The browsers `tree.js` and `scripts.css` are built for. Shared pages are open to any visitor,
+ * so they target older browsers than the app.
+ */
+const SHARE_THEME_TARGET = "chrome96";
+
+/**
+ * The modules whose `import()` expressions load what a share-theme export copies only for the
+ * pages that use it, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid; the script
+ * API a render note runs its scripts with; and what every app view loads first. Every module such
+ * a module imports on demand joins its group.
+ */
+const LAZY_IMPORTERS: Record<string, string[]> = {
+    mermaid: [ join(SHARE_THEME_SRC, "content/mermaid.ts") ],
+    scripting: [ join(CLIENT_SRC, "services/script_context.ts") ],
+    app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
+};
+
+/**
+ * The tables of loaders by which the app picks the view of a collection or the widget of a note
+ * type, each giving its keys a group of the manifest, `<prefix><key>`, of the modules the
+ * `import()` expressions of `property` load. A later table replaces the groups of an earlier one.
+ */
+const TYPE_TABLES: LoaderTable[] = [
+    {
+        file: join(CLIENT_SRC, "widgets/collections/NoteList.tsx"),
+        name: "ViewComponents",
+        property: "normal",
+        prefix: "view:"
+    },
+    {
+        file: join(CLIENT_SRC, "widgets/note_types.tsx"),
+        name: "TYPE_MAPPINGS",
+        property: "view",
+        prefix: "type:"
+    },
+    {
+        file: join(SHARE_THEME_SRC, "content/note_view.tsx"),
+        name: "SHARE_NOTE_VIEWS",
+        prefix: "type:"
+    },
+    {
+        file: join(CLIENT_SRC, "services/content_renderer.ts"),
+        name: "CONTENT_RENDERERS",
+        prefix: "content:"
+    }
+];
+
+/**
+ * The groups of {@link LAZY_IMPORTERS} a page loads by what its content holds, such as a diagram or
+ * a render note, which the share-theme export finds in the notes it writes.
+ */
+const CONTENT_GROUPS = [ "mermaid", "scripting" ];
+
+interface LoaderTable {
+    file: string;
+    /** The variable holding the table, an object literal keyed by type. */
+    name: string;
+    /** The property of each entry whose `import()` expressions make the group, else the entry. */
+    property?: string;
+    prefix: string;
+}
+
+const CODE_THEMES_ID = "virtual:code-themes.css";
+
+interface ShareThemeOptions {
+    /**
+     * Another directory for the page's three files, each of which loads its namesake in `src/`. A
+     * static host serves `/share/assets/` from there, as it cannot map that path to `src/`.
+     */
+    stubDir?: string;
+}
+
+/**
+ * Builds the share theme as part of the app: `scripts.js` and its chunks next to the app's, so
+ * both load one copy of what they share, and `scripts.css` and `tree.js` in builds of their own.
+ * Writes the {@link ShareThemeManifest} the share-theme export copies the files by. The
+ * development server serves the page's scripts from source instead.
+ */
+export function shareTheme(options: ShareThemeOptions = {}): Plugin[] {
+    let config: ResolvedConfig | undefined;
+
+    return [
+        codeThemesPlugin(),
+        {
+            name: "share-theme-dev",
+            apply: "serve",
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    serveFromSource(server, req, res, next).catch(next);
+                });
+            }
+        },
+        {
+            name: "share-theme-build",
+            apply: "build",
+            // After `vite:css-post`, which merges chunks holding only styles into their importers.
+            enforce: "post",
+            configResolved(resolvedConfig) {
+                config = resolvedConfig;
+            },
+            buildStart() {
+                const id = join(SHARE_THEME_SRC, "index.ts");
+                this.emitFile({ type: "chunk", id, fileName: SCRIPTS_FILE });
+            },
+            async generateBundle(_, bundle) {
+                await emitShareTheme(this, bundle as Record<string, BundleOutput>, config, options);
+            }
+        }
+    ];
+}
+
+/** The modules the development server answers the page's scripts with. */
+const DEV_SOURCES: Record<string, string> = {
+    "scripts.js": "index.ts",
+    "tree.js": "tree.ts"
+};
+
+/** Answers the page's files under `${base}share/assets/` from the share theme's sources. */
+async function serveFromSource(
+    server: ViteDevServer,
+    req: Connect.IncomingMessage,
+    res: ServerResponse,
+    next: (error?: unknown) => void
+) {
+    const { base } = server.config;
+    const prefix = `${base}share/assets/`;
+    const [ path ] = (req.url ?? "").split("?");
+    if (!path.startsWith(prefix)) {
+        next();
+        return;
+    }
+
+    const file = path.slice(prefix.length);
+    if (file === "scripts.css") {
+        // The page links it in `<head>`, so the styles apply before the first paint, as the built
+        // file's do. `scripts.js` still injects the same styles, which keeps hot reloading working.
+        const styles = await collectStyleUrls(server, toFsUrl(DEV_SOURCES["scripts.js"]));
+        res.setHeader("Content-Type", "text/css");
+        res.setHeader("Cache-Control", "no-cache");
+        res.end(styles.map((url) => `@import url("${base}${url.slice(1)}");\n`).join(""));
+        return;
+    }
+
+    const source = DEV_SOURCES[file];
+    if (source) {
+        req.url = `${base}${toFsUrl(source).slice(1)}`;
+    }
+    next();
+}
+
+/** Returns the development server's URL, without its base, of a share theme source file. */
+function toFsUrl(source: string) {
+    return `/@fs/${normalizePath(join(SHARE_THEME_SRC, source)).replace(/^\//, "")}`;
+}
+
+/**
+ * Returns the URLs, without the base, of the stylesheets the module at `entryUrl` imports
+ * statically, directly or through other modules, in the order the browser applies them.
+ */
+async function collectStyleUrls(server: ViteDevServer, entryUrl: string) {
+    const environment = server.environments.client;
+    const { base } = server.config;
+    const styles: string[] = [];
+    const visited = new Set<string>();
+
+    async function visit(url: string) {
+        if (visited.has(url)) {
+            return;
+        }
+        visited.add(url);
+
+        if (url.endsWith(".css")) {
+            styles.push(url);
+            return;
+        }
+        if (url.includes("?") || url.startsWith("/@vite/")
+            || environment.depsOptimizer?.isOptimizedDepUrl(url)) {
+            return;
+        }
+
+        const result = await environment.transformRequest(url);
+        if (!result) {
+            return;
+        }
+        const { program } = await parse(`${url}.js`, result.code);
+        for (const node of program.body) {
+            const isStatic = node.type === "ImportDeclaration"
+                || node.type === "ExportAllDeclaration" || node.type === "ExportNamedDeclaration";
+            if (!isStatic || !node.source) {
+                continue;
+            }
+            const specifier = node.source.value.replace(/[?&]t=\d+$/, "");
+            if (specifier.startsWith(base)) {
+                await visit(`/${specifier.slice(base.length)}`);
+            } else if (specifier.startsWith("/")) {
+                await visit(specifier);
+            }
+        }
+    }
+
+    await visit(entryUrl);
+    return styles;
+}
+
+/**
+ * Adds the share theme's `tree.js`, `scripts.css` with the files it references, the manifest and
+ * the stubs of `options` to the app's `bundle`, which holds `scripts.js` and its chunks.
+ */
+async function emitShareTheme(
+    context: Pick<Rollup.PluginContext, "emitFile" | "getModuleInfo" | "resolve">,
+    bundle: Record<string, BundleOutput>,
+    config: ResolvedConfig | undefined,
+    options: ShareThemeOptions
+) {
+    const resolve = async (specifier: string, importer: string) => {
+        const resolved = await context.resolve(specifier, importer);
+        if (!resolved) {
+            throw new Error(`Unable to resolve '${specifier}' from ${importer}.`);
+        }
+        return resolved.id;
+    };
+
+    const groups: ShareThemeGroups = {
+        shared: {}, byContent: CONTENT_GROUPS, typed: {}, gated: []
+    };
+    for (const [ name, importers ] of Object.entries(LAZY_IMPORTERS)) {
+        groups.shared[name] = importers.flatMap((importer) => {
+            const info = context.getModuleInfo(normalizePath(importer));
+            if (!info) {
+                throw new Error(`The share theme's '${name}' group names ${importer}, `
+                    + "which the build does not include.");
+            }
+            return info.dynamicallyImportedIds;
+        });
+    }
+    for (const table of TYPE_TABLES) {
+        const { entries, all } = await readLoaderTable(table);
+        for (const [ key, specifiers ] of Object.entries(entries)) {
+            groups.typed[`${table.prefix}${key}`] = await Promise.all(specifiers.map((specifier) =>
+                resolve(specifier, table.file)));
+        }
+        groups.gated.push(...await Promise.all(all.map((specifier) =>
+            resolve(specifier, table.file))));
+    }
+    checkHostedGroups(Object.keys(groups.typed));
+
+    const [ tree, styles ] = await Promise.all([ buildTreeScript(config), buildStyles(config) ]);
+    const emit = (fileName: string, source: string | Uint8Array) =>
+        context.emitFile({ type: "asset", fileName, source });
+    emit(TREE_FILE, tree);
+    emit(STYLES_FILE, styles.source);
+    const styleAssets = styles.assets.map((asset) => ({
+        ...asset,
+        fileName: `${SHARE_THEME_DIR}/${asset.fileName}`
+    }));
+    for (const asset of styleAssets) {
+        if (!(asset.fileName in bundle)) {
+            emit(asset.fileName, asset.source);
+        }
+    }
+
+    const assetNames = styleAssets.map((asset) => asset.fileName);
+    const manifest = buildShareThemeManifest(bundle, groups, assetNames);
+    emit(SHARE_THEME_MANIFEST_FILE, JSON.stringify(manifest));
+
+    const { stubDir } = options;
+    if (stubDir) {
+        const toSource = (file: string) => posix.relative(stubDir, file);
+        emit(`${stubDir}/tree.js`, tree);
+        emit(`${stubDir}/scripts.js`, `import "${toSource(SCRIPTS_FILE)}";\n`);
+        emit(`${stubDir}/scripts.css`, `@import url("${toSource(STYLES_FILE)}");\n`);
+    }
+}
+
+/**
+ * Serves `virtual:code-themes.css`: the VS Code highlighting themes code notes also use, one per
+ * share theme mode, for the highlight.js code blocks of text notes and for the code notes that
+ * `renderCodePreview()` renders. `:where()` keeps the block rules as weak as a stock highlight.js
+ * theme's, so the share theme's own `.ck-content code` colors still win inside text notes.
+ */
+function codeThemesPlugin(): Plugin {
+    return {
+        name: "share-theme-code-themes",
+        resolveId: (id) => (id === CODE_THEMES_ID ? `\0${CODE_THEMES_ID}` : null),
+        // The development server asks for `?direct` when `scripts.css` imports the themes.
+        load: async (id) => {
+            if (id.split("?")[0] !== `\0${CODE_THEMES_ID}`) return null;
+
+            const codePreviewCss = await Promise.all(SHARE_CODE_PREVIEW_THEMES.map(
+                async ({ id: themeId, key, scope }) => {
+                    const definition = getThemeById(themeId);
+                    if (!definition) throw new Error(`Unknown code note theme "${themeId}".`);
+                    const theme = readPreviewTheme(themeId, await definition.load());
+                    return buildCodePreviewCss({ theme, key }, scope);
+                }
+            ));
+            return [
+                buildVsCodeThemeCss(VS_CODE_LIGHT, ":where(html.theme-light)"),
+                buildVsCodeThemeCss(VS_CODE_DARK, ":where(html.theme-dark)"),
+                ...codePreviewCss
+            ].join("\n");
+        }
+    };
+}
+
+/**
+ * Bundles `tree.ts` on its own, so that it loads as one file: in the app's build, the code it
+ * shares with `scripts.js` would move into a chunk the page's first paint waits for.
+ */
+async function buildTreeScript(config: ResolvedConfig | undefined) {
+    const outputs = await buildShareThemeFile(config, "tree.ts", {});
+    const chunks = outputs.filter((output) => output.type === "chunk");
+    if (chunks.length !== 1 || outputs.length !== 1) {
+        throw new Error(`tree.ts built to ${outputs.length} files instead of one.`);
+    }
+    return chunks[0].code;
+}
+
+/**
+ * Builds the styles of everything `index.ts` imports statically into one stylesheet, in the order
+ * it imports them. In the app's build, the stylesheets the theme shares with the app move into the
+ * shared chunks, which reorders the cascade. A module imported on demand brings its own styles
+ * from the app's build. Returns the stylesheet and the files it references.
+ */
+async function buildStyles(config: ResolvedConfig | undefined) {
+    const outputs = await buildShareThemeFile(config, "index.ts", {
+        base: "./",
+        plugins: [
+            codeThemesPlugin(),
+            { name: "share-theme-static-styles", resolveDynamicImport: () => false }
+        ],
+        css: { transformer: config?.css.transformer },
+        build: {
+            cssCodeSplit: false,
+            assetsDir: ""
+        }
+    });
+    const assets = outputs.flatMap((output) => (output.type === "asset" ? [ output ] : []));
+    const stylesheets = assets.filter((asset) => asset.fileName.endsWith(".css"));
+    if (stylesheets.length !== 1) {
+        const count = stylesheets.length;
+        throw new Error(`The share theme's styles built to ${count} stylesheets instead of one.`);
+    }
+
+    return {
+        source: String(stylesheets[0].source),
+        assets: assets.filter((asset) => asset !== stylesheets[0])
+            .map(({ fileName, source }) => ({ fileName, source }))
+    };
+}
+
+/** Builds `input` of the share theme without writing it, with the minification of `config`. */
+async function buildShareThemeFile(
+    config: ResolvedConfig | undefined,
+    input: string,
+    overrides: InlineConfig
+) {
+    const result = await build({
+        ...overrides,
+        configFile: false,
+        root: SHARE_THEME_SRC,
+        logLevel: "warn",
+        build: {
+            ...overrides.build,
+            write: false,
+            copyPublicDir: false,
+            target: SHARE_THEME_TARGET,
+            minify: config?.build.minify,
+            cssMinify: config?.build.cssMinify,
+            rollupOptions: {
+                ...overrides.build?.rollupOptions,
+                input: join(SHARE_THEME_SRC, input)
+            }
+        }
+    });
+
+    return (Array.isArray(result) ? result : [ result ]).flatMap((output) =>
+        "output" in output ? output.output : []);
+}
+
+type BundleOutput =
+    | { type: "asset"; fileName: string }
+    | {
+        type: "chunk";
+        fileName: string;
+        facadeModuleId: string | null;
+        moduleIds?: string[];
+        imports: string[];
+        dynamicImports: string[];
+        viteMetadata?: { importedCss: Set<string>; importedAssets: Set<string> };
+    };
+
+/** The modules of the share theme's groups of files, as the IDs the build resolves them to. */
+export interface ShareThemeGroups {
+    /** The groups a page loads whole when it needs them, such as `mermaid`, by their name. */
+    shared: Record<string, string[]>;
+    /**
+     * The shared groups a page loads by what its content holds, such as `mermaid` for a diagram.
+     * Reaching one of their modules adds them to a group's `requires` only from the group's own
+     * modules.
+     */
+    byContent: string[];
+    /** The groups a page loads by the type of what it shows, such as `view:<viewType>`. */
+    typed: Record<string, string[]>;
+    /**
+     * Every module the type tables load, those of no group included, such as a print view. The
+     * files of a group stop where they load one that is not their own on demand, as the type of a
+     * note decides whether a page loads it.
+     */
+    gated: string[];
+}
+
+/**
+ * Lists the files the share theme loads: the page's three files, `styleAssets` that `scripts.css`
+ * references, and every chunk `scripts.js` loads, statically or on demand, with what each loads in
+ * turn. The styles of the chunks `scripts.js` imports statically are in `scripts.css`, so their
+ * stylesheets are listed only when a chunk loaded on demand imports them, which preloads them.
+ *
+ * What only the modules of a group in `groups` load is listed under the name of the group, without
+ * the files of the groups it requires. The files of a group stop where they load the modules of
+ * another group or of `groups.gated` on demand; loading those of a shared group adds that group to
+ * the group's `requires`.
+ */
+export function buildShareThemeManifest(
+    bundle: Record<string, BundleOutput>,
+    groups: ShareThemeGroups,
+    styleAssets: string[]
+): ShareThemeManifest {
+    const findChunk = (id: string, name: string) => {
+        const chunk = Object.values(bundle).find((output) =>
+            output.type === "chunk" && output.facadeModuleId === id);
+        if (!chunk) {
+            throw new Error(`The bundle has no chunk for '${id}' of the share theme's '${name}'.`);
+        }
+        return chunk.fileName;
+    };
+
+    const entries = new Map<string, string[]>();
+    const sharedGroupOf = new Map<string, string>();
+    for (const [ name, ids ] of Object.entries(groups.shared)) {
+        const chunks = ids.map((id) => findChunk(id, name));
+        entries.set(name, chunks);
+        for (const chunk of chunks) {
+            sharedGroupOf.set(chunk, name);
+        }
+    }
+    for (const [ name, ids ] of Object.entries(groups.typed)) {
+        entries.set(name, ids.map((id) => findChunk(id, name)));
+    }
+    const stops = new Set([
+        ...[ ...entries.values() ].flat(),
+        ...groups.gated.map((id) => findChunk(id, "type tables"))
+    ]);
+
+    const appOnly = new Set(Object.values(bundle).flatMap((output) =>
+        (output.type === "chunk" && output.moduleIds?.some(isAppOnlyModule) ? [ output.fileName ] : [])));
+    const pageFiles = collectFiles(bundle, [ SCRIPTS_FILE ], { dynamic: false });
+    const onDemand = [ ...pageFiles ].flatMap((fileName) => {
+        const output = bundle[fileName];
+        return output?.type === "chunk" ? output.dynamicImports : [];
+    });
+    const files = new Set([
+        ...pageFiles,
+        ...collectFiles(bundle, onDemand, {
+            dynamic: true, excluded: new Set([ ...stops, ...appOnly ])
+        }),
+        TREE_FILE,
+        STYLES_FILE,
+        ...styleAssets
+    ]);
+
+    const collected = new Map<string, Set<string>>();
+    const requires: Record<string, string[]> = {};
+    for (const [ name, own ] of entries) {
+        const isShared = name in groups.shared;
+        const required = new Set<string>();
+        const groupFiles = new Set<string>();
+        const pending: [ string, boolean ][] = own.map((fileName) => [ fileName, true ]);
+        for (let item = pending.pop(); item !== undefined; item = pending.pop()) {
+            const [ fileName, onDemand ] = item;
+            const isOwn = own.includes(fileName);
+            if (groupFiles.has(fileName)) {
+                continue;
+            }
+            const output = bundle[fileName];
+            if (files.has(fileName)) {
+                // The group's chunks preload the stylesheets of the page's chunks they import,
+                // which `scripts.css` holds and the page does not load apart.
+                if (output?.type === "chunk") {
+                    for (const stylesheet of output.viteMetadata?.importedCss ?? []) {
+                        pending.push([ stylesheet, false ]);
+                    }
+                }
+                continue;
+            }
+            const sharedGroup = sharedGroupOf.get(fileName);
+            if (sharedGroup !== undefined && sharedGroup !== name && (onDemand || isOwn)) {
+                if (isOwn || !groups.byContent.includes(sharedGroup)) {
+                    required.add(sharedGroup);
+                }
+                continue;
+            }
+            const isGated = stops.has(fileName) || (isShared && appOnly.has(fileName));
+            if (onDemand && !isOwn && isGated) {
+                continue;
+            }
+
+            groupFiles.add(fileName);
+            if (output?.type === "chunk") {
+                const { importedAssets = [], importedCss = [] } = output.viteMetadata ?? {};
+                for (const imported of [ ...output.imports, ...importedAssets, ...importedCss ]) {
+                    pending.push([ imported, false ]);
+                }
+                for (const imported of output.dynamicImports) {
+                    pending.push([ imported, true ]);
+                }
+            }
+        }
+        collected.set(name, groupFiles);
+        requires[name] = [ ...required ].sort();
+    }
+
+    const lazy: Record<string, string[]> = {};
+    for (const [ name, groupFiles ] of collected) {
+        const inherited = new Set(resolveShareThemeGroups(requires, [ name ]).flatMap((other) =>
+            (other === name ? [] : [ ...collected.get(other) ?? [] ])));
+        lazy[name] = toManifestPaths([ ...groupFiles ].filter((file) => !inherited.has(file)));
+    }
+
+    return { files: toManifestPaths([ ...files ]), lazy, requires };
+}
+
+/**
+ * Reads the type table `table`: for each key, the specifiers of the `import()` expressions in its
+ * entry's `property`, and every specifier the table imports.
+ */
+export async function readLoaderTable(table: LoaderTable) {
+    const code = await readFile(table.file, "utf-8");
+    const { program } = await parse(table.file, code);
+    const declarator = program.body
+        .flatMap((node) => {
+            const declaration = node.type === "ExportNamedDeclaration" ? node.declaration : node;
+            return declaration?.type === "VariableDeclaration" ? declaration.declarations : [];
+        })
+        .find((candidate) =>
+            candidate.id.type === "Identifier" && candidate.id.name === table.name);
+    let init: AstNode | null | undefined = declarator?.init as AstNode | null | undefined;
+    while (init && (init.type === "TSSatisfiesExpression" || init.type === "TSAsExpression")) {
+        init = init.expression as AstNode;
+    }
+    if (init?.type !== "ObjectExpression") {
+        throw new Error(`${table.file} has no object literal '${table.name}' to read the types`
+            + " from.");
+    }
+
+    const entries: Record<string, string[]> = {};
+    for (const property of init.properties as AstNode[]) {
+        const key = readPropertyKey(property);
+        if (key === undefined) {
+            throw new Error(`'${table.name}' in ${table.file} has an entry whose key is not a`
+                + " literal.");
+        }
+        const value = property.value as AstNode;
+        const properties = value.type === "ObjectExpression" ? value.properties as AstNode[] : [];
+        const selected = table.property
+            ? properties.find((inner) => readPropertyKey(inner) === table.property)?.value
+            : value;
+        entries[key] = selected ? collectImportSpecifiers(selected as AstNode) : [];
+    }
+    return { entries, all: collectImportSpecifiers(init) };
+}
+
+/** A node of the tree `parse()` returns, read loosely. */
+type AstNode = { type: string; [key: string]: unknown };
+
+function readPropertyKey(property: AstNode) {
+    const key = property.key as AstNode | undefined;
+    if (property.type !== "Property" || !key || property.computed) {
+        return undefined;
+    }
+    if (key.type === "Identifier") {
+        return key.name as string;
+    }
+    return key.type === "Literal" && typeof key.value === "string" ? key.value : undefined;
+}
+
+/** Returns the specifiers of the `import()` expressions below `node` that are string literals. */
+function collectImportSpecifiers(node: AstNode) {
+    const specifiers: string[] = [];
+    const visit = (value: unknown) => {
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                visit(item);
+            }
+            return;
+        }
+        if (!value || typeof value !== "object" || !("type" in value)) {
+            return;
+        }
+        const child = value as AstNode;
+        const source = child.source as AstNode | undefined;
+        if (child.type === "ImportExpression" && source?.type === "Literal"
+            && typeof source.value === "string") {
+            specifiers.push(source.value);
+        }
+        for (const [ key, nested ] of Object.entries(child)) {
+            if (key !== "type") {
+                visit(nested);
+            }
+        }
+    };
+    visit(node);
+    return specifiers;
+}
+
+/**
+ * Checks that every view type and note type core shows with an app view on a shared page has a
+ * group among `groupNames`, so that a page of the type finds its files in an export.
+ */
+export function checkHostedGroups(groupNames: string[]) {
+    const names = new Set(groupNames);
+    const missing = [
+        ...SHARE_HOSTED_VIEW_TYPES.map((type) => `view:${type}`),
+        ...SHARE_HOSTED_NOTE_TYPES.map((type) => `type:${type}`)
+    ].filter((name) => !names.has(name));
+    if (missing.length) {
+        throw new Error("The share theme hosts types with no group of files:"
+            + ` ${missing.join(", ")}. Add them to a type table of \`TYPE_TABLES\`.`);
+    }
+}
+
+/**
+ * Whether `id` is one of the app's modules that the client code the share theme reuses imports on
+ * demand, on paths a shared page never takes unless it shows a type that needs them, such as
+ * running a script note.
+ */
+function isAppOnlyModule(id: string) {
+    return APP_ONLY_MODULES.some((module) => id.endsWith(module));
+}
+
+const APP_ONLY_MODULES = [
+    "/apps/client/src/services/search.ts",
+    "/apps/client/src/services/bundle.ts",
+    "/apps/client/src/services/backend_scripting.ts",
+    "/apps/client/src/services/dialog.ts"
+];
+
+/**
+ * Collects `entries` and the chunks and assets they import, without descending into `excluded`.
+ * With `dynamic`, also the chunks they load on demand and the stylesheets they preload.
+ */
+function collectFiles(bundle: Record<string, BundleOutput>, entries: string[], options: {
+    dynamic: boolean;
+    excluded?: Set<string>;
+}) {
+    const files = new Set<string>();
+    const pending = [ ...entries ];
+    for (let fileName = pending.pop(); fileName !== undefined; fileName = pending.pop()) {
+        if (files.has(fileName) || options.excluded?.has(fileName)) {
+            continue;
+        }
+
+        files.add(fileName);
+        const output = bundle[fileName];
+        if (output?.type === "chunk") {
+            pending.push(...output.imports, ...(output.viteMetadata?.importedAssets ?? []));
+            if (options.dynamic) {
+                pending.push(...output.dynamicImports, ...(output.viteMetadata?.importedCss ?? []));
+            }
+        }
+    }
+    return files;
+}
+
+/**
+ * Sorts `files` and makes them relative to the manifest, checking they share its directory or are
+ * in `assets/`, such as a worker, which they list as `../assets/<file>`. A chunk refers to a file
+ * there as `../assets/<file>`, which from `/share/assets/` and from an export's `assets/` is the
+ * same directory, so an export writes both by their name alone.
+ */
+function toManifestPaths(files: string[]) {
+    const outside = files.filter((file) =>
+        posix.dirname(file) !== SHARE_THEME_DIR && posix.dirname(file) !== "assets");
+    if (outside.length) {
+        const list = outside.join(", ");
+        throw new Error(`The share theme's files must all be in '${SHARE_THEME_DIR}/': ${list}.`);
+    }
+    return files.map((file) => posix.relative(SHARE_THEME_DIR, file)).sort();
+}

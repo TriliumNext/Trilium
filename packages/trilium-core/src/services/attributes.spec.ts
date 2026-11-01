@@ -59,6 +59,13 @@ describe("attributes service", () => {
             expect(isAttributeDangerous("relation", "run")).toBe(false);
         });
 
+        it("flags the script relations, which run only on user action but run all the same", () => {
+            expect(isAttributeDangerous("relation", "script")).toBe(true);
+            expect(isAttributeDangerous("relation", "searchScript")).toBe(true);
+            // Without this a launcher could run its content instead, sidestepping `~script`.
+            expect(isAttributeDangerous("label", "scriptInLauncherContent")).toBe(true);
+        });
+
         it("matches case-insensitively and trims whitespace from the name", () => {
             expect(isAttributeDangerous("label", "RUN")).toBe(true);
             expect(isAttributeDangerous("label", "  run  ")).toBe(true);
@@ -175,6 +182,18 @@ describe("attributes service", () => {
 
         it("returns an empty array when no note carries the label", () => {
             expect(getNotesWithLabel("yetAnotherMissingLabel")).toEqual([]);
+        });
+    });
+
+    describe("completeAttributeNames", () => {
+        it("adds the matching built-in names, drops the internal links and lists prefix matches first", () => {
+            expect(attributeService.completeAttributeNames([ "myShareNote", "shareAlias" ], "label", "SHARE"))
+                .toEqual(expect.arrayContaining([ "shareAlias", "shareRoot", "myShareNote" ]));
+            const names = attributeService.completeAttributeNames([ "myShareNote" ], "label", "share");
+            expect(names.indexOf("myShareNote")).toBe(names.length - 1);
+            expect(names.filter((name) => name === "shareAlias")).toHaveLength(1);
+            expect(attributeService.completeAttributeNames([ "internalLink", "zzLink" ], "relation", "zzlink"))
+                .toEqual([ "zzLink" ]);
         });
     });
 

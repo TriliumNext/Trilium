@@ -1,16 +1,19 @@
 import type { LlmMessage } from "@triliumnext/commons";
+import type { LlmProviderConfig } from "@triliumnext/core/src/services/llm/types.js";
 import type { Request, Response } from "express";
 
-import { generateChatTitle } from "../../services/llm/chat_title.js";
-import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
-import { streamToChunks } from "../../services/llm/stream.js";
-import { getLog } from "@triliumnext/core";
-import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
-
 interface ChatRequest {
+    /** The id the client gave the turn, by which it answers the turn's tool calls. */
+    streamId: string;
     messages: LlmMessage[];
     config?: LlmProviderConfig;
 }
+
+/** Silence after which `streamChat` writes an SSE comment so idle proxies keep the socket. */
+export const SSE_HEARTBEAT_MS = 30_000;
+
+/** SSE comment frame. EventSource and the client's `data:` parser ignore it. */
+export const SSE_HEARTBEAT_FRAME = ":\n\n";
 
 /**
  * SSE endpoint for streaming chat completions.
@@ -22,10 +25,17 @@ interface ChatRequest {
  *
  * On error:
  * data: {"type":"error","error":"Error message"}
+ *
+ * nginx/ALB drop an idle response at 60s. After 30s without a chunk the handler
+ * writes an SSE comment (`:\n\n`) that the client ignores.
  */
 async function streamChat(req: Request, res: Response) {
-    const { messages, config = {} } = req.body as ChatRequest;
+    const { streamId, messages, config = {} } = req.body as ChatRequest;
 
+    if (!streamId) {
+        res.status(400).json({ error: "streamId is required" });
+        return;
+    }
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         res.status(400).json({ error: "messages array is required" });
         return;
@@ -44,73 +54,65 @@ async function streamChat(req: Request, res: Response) {
     // Type assertion for flush method (available when compression is used)
     const flushableRes = res as Response & { flush?: () => void };
 
+    // Abort the provider turn when the client disconnects, so a closed tab
+    // does not leave an agent loop running. Aborting `runChat` does not always
+    // settle at once, so the heartbeat stops here rather than in `finally`.
+    const abortController = new AbortController();
+
+    let stopped = false;
+    const writeFrame = (frame: string) => {
+        if (stopped) {
+            return;
+        }
+        res.write(frame);
+        if (typeof flushableRes.flush === "function") {
+            flushableRes.flush();
+        }
+    };
+
+    const heartbeat = startSseHeartbeat(() => writeFrame(SSE_HEARTBEAT_FRAME));
+    res.on("close", () => {
+        stopped = true;
+        heartbeat.stop();
+        abortController.abort();
+    });
+
     try {
-        if (!hasConfiguredProviders()) {
-            res.write(`data: ${JSON.stringify({ type: "error", error: "No LLM providers configured. Please add a provider in Options → AI / LLM." })}\n\n`);
-            return;
+        // Imported here rather than at module scope so the chat pipeline and
+        // the provider SDKs land in lazy chunks (the same convention as
+        // getProviderModels in core's routes/api/llm.ts).
+        const { runChat } = await import("@triliumnext/core/src/services/llm/chat.js");
+        for await (const chunk of runChat(streamId, messages, config, abortController.signal)) {
+            writeFrame(`data: ${JSON.stringify(chunk)}\n\n`);
+            heartbeat.reset();
         }
-
-        const provider = getProviderByType(config.provider || "anthropic");
-        const result = provider.chat(messages, config);
-
-        // Get pricing and display name for the model
-        const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
-        if (!modelId) {
-            res.write(`data: ${JSON.stringify({ type: "error", error: "No model specified and no default model available for the provider." })}\n\n`);
-            return;
-        }
-
-        const pricing = provider.getModelPricing(modelId);
-        const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
-        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
-            if (chunk.type === "error") {
-                getLog().error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
-            }
-            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-            // Flush immediately to ensure real-time streaming
-            if (typeof flushableRes.flush === "function") {
-                flushableRes.flush();
-            }
-        }
-        // Auto-generate a title for the chat note on the first user message
-        const userMessages = messages.filter(m => m.role === "user");
-        if (userMessages.length === 1 && config.chatNoteId) {
-            try {
-                const firstContent = userMessages[0].content;
-                // Multimodal content: title from the text parts only — image
-                // bytes are useless to the title model.
-                const firstText = typeof firstContent === "string"
-                    ? firstContent
-                    : firstContent.filter(p => p.type === "text").map(p => p.text).join("\n").trim();
-                if (firstText) {
-                    await generateChatTitle(config.chatNoteId, firstText);
-                }
-            } catch (err) {
-                // Title generation is best-effort; don't fail the chat
-                getLog().error(`Failed to generate chat title: ${safeExtractMessageAndStackFromError(err)}`);
-            }
-        }
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        getLog().error(`LLM chat stream failed: ${safeExtractMessageAndStackFromError(error)}`);
-        res.write(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`);
     } finally {
+        stopped = true;
+        heartbeat.stop();
         res.end();
     }
 }
 
-/**
- * Get available models from all configured providers.
- */
-function getModels(_req: Request, _res: Response) {
-    if (!hasConfiguredProviders()) {
-        return { models: [] };
-    }
-
-    return { models: getAllModels() };
+function startSseHeartbeat(send: () => void) {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const arm = () => {
+        if (timer !== undefined) {
+            clearInterval(timer);
+        }
+        timer = setInterval(send, SSE_HEARTBEAT_MS);
+    };
+    arm();
+    return {
+        reset: arm,
+        stop() {
+            if (timer !== undefined) {
+                clearInterval(timer);
+                timer = undefined;
+            }
+        }
+    };
 }
 
 export default {
-    streamChat,
-    getModels
+    streamChat
 };

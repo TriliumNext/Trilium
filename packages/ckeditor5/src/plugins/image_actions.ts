@@ -26,30 +26,31 @@ export default class ImageActions extends Plugin {
     }
 
     init() {
-        this._registerButton("copyImageToClipboard", "image.copy-to-clipboard", copyIcon, "copyToClipboard");
-        this._registerButton("downloadImage", "image.download", downloadIcon, "download");
+        const t = this.editor.t;
+
+        // Translated here rather than inside the helper: each label has to be a literal argument of
+        // a `t()` call for the message registry to find it (see `messages.ts`).
+        this._registerButton("copyImageToClipboard", t("Copy image to clipboard"), copyIcon, "copyToClipboard");
+        this._registerButton("downloadImage", t("Download image"), downloadIcon, "download");
     }
 
-    private _registerButton(name: string, labelKey: string, icon: string, action: ImageAction) {
+    /** `label` arrives already translated — see {@link ImageActions#init}. */
+    private _registerButton(name: string, label: string, icon: string, action: ImageAction) {
         const editor = this.editor;
-        editor.commands.add(name, new ImageActionCommand(editor, action));
+        const command = new ImageActionCommand(editor, action);
+        editor.commands.add(name, command);
 
         editor.ui.componentFactory.add(name, (locale) => {
             const button = new ButtonView(locale);
             button.set({
-                label: this._translate(labelKey),
+                label,
                 icon,
                 tooltip: true
             });
-            button.bind("isEnabled").to(editor.commands.get(name)!, "isEnabled");
+            button.bind("isEnabled").to(command, "isEnabled");
             this.listenTo(button, "execute", () => editor.execute(name));
             return button;
         });
-    }
-
-    private _translate(key: string) {
-        const translate = this.editor.config.get("translate") as ((key: string) => string) | undefined;
-        return translate ? translate(key) : key;
     }
 
 }

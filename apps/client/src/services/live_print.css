@@ -1,0 +1,39 @@
+@media print {
+    html:has(> body.print-live),
+    body.print-live,
+    body.print-live :has(.print-live-target) {
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        contain: none !important;
+        transform: none !important;
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    body.print-live .print-live-target {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        contain: none !important;
+    }
+
+    body.print-live :not(:has(.print-live-target), .print-live-target, .print-live-target *) {
+        display: none !important;
+    }
+
+    body.print-live .print-live-unscroll {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+}

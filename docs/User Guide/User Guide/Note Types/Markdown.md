@@ -17,7 +17,7 @@ Even if Markdown is now specially treated by having a preview mechanism, Trilium
 ### Source view pane
 
 *   Syntax highlighting for the Markdown syntax.
-*   Nested syntax highlighting for code inside code blocks.
+*   Nested syntax highlighting for code inside code blocks, including <a class="reference-link" href="Mermaid%20Diagrams.md">Mermaid Diagrams</a> in ` ```mermaid ` blocks.
 *   When editing larger documents, the preview scrolls along with the source editor.
 
 ### Preview pane
@@ -36,17 +36,41 @@ The following features are supported by Trilium's Markdown format and will show 
 *   <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> (no built-in Markdown syntax, but HTML syntax works just fine):
     
     ```html
-    <section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
-        &nbsp;
-    </section>
+    <figure class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
+        <figcaption>An optional caption, with <strong>HTML</strong> formatting</figcaption>
+    </figure>
     ```
     
+    *   The caption is optional. Markdown is not processed inside the HTML block, so format the caption with HTML tags.
+    *   Includes written as `<section class="include-note">`, the syntax of earlier versions, still work.
     *   These can also be quickly created via the `/include` command or via a dedicated keyboard shortcut (not assigned by default).
 *   <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> via its HTML syntax, or through a _Wikilinks_\-like format (only <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>):
     
     ```
     [[Hg8TS5ZOxti6]]
     ```
+*   To-do lists with extended task states:
+    
+    <table class="ck-table-resized" style="border-style:none;">
+        <colgroup>
+            <col style="width:80.6%;">
+            <col style="width:19.4%;">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td><pre><code class="language-text-x-markdown">- [ ] None
+    - [/] Doing
+    - [X] Done
+    - [?] Maybe
+    - [-] Cancelled</code></pre></td>
+                <td><figure class="image image-style-align-right"><img style="aspect-ratio:218/221;" src="Markdown_image.png" width="218" height="221"></figure></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    Task states are customizable: you can reorder them, create new ones with different colors and symbols, or delete the ones you don't need. See <a class="reference-link" href="../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Customizing to-do task states</a> for more details.
+    
+    Note that to-do items with task states other than "None" and "Done" are Trilium-specific and may not work well with other Markdown software.
 *   <a class="reference-link" href="Text/Footnotes.md">Footnotes</a> are also supported via the corresponding Markdown syntax:
     
     ```
@@ -57,10 +81,16 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     
     *   These can also be quickly created using the `/footnote` command.
-*   Page breaks for <a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/W0msUwLxm40d">Printing and exporting to PDF</a>:
+*   Page breaks for <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>:
     
     ```
     <div class="page-break"></div>
+    ```
+*   Highlights (background color) are supported both via the `==` Markdown syntax, as well as the canonical HTML representation in Trilium:
+    
+    ```
+    ==highlighted==
+    <span style="background-color:#e5e64d;--tn-background:#e5e64d;">Highlighted</span>
     ```
 
 ### Links
@@ -88,13 +118,15 @@ To create a link, either:
 *   Type it manually using the syntax described above.
 *   Use the _Add link_ dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or typing the `/link` command.
 
+<a class="reference-link" href="Text/Link%20Previews.md">Link Previews</a> are also rendered, but there is no mechanism to insert them automatically as of now, they have to be copied from a <a class="reference-link" href="Text.md">Text</a> note instead.
+
 ### Keyboard shortcuts
 
 The Markdown notes share some of the keyboard shortcuts from <a class="reference-link" href="Text.md">Text</a> notes:
 
 *   _Cut to note_ (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection into a new child note.
 *   _Add link_ (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog to create external or reference links.
-*   _Insert date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
+*   _Date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
 *   _Include note_ (not assigned by default), which triggers the same dialog to insert notes as the one for text notes.
 
 In addition, the following formatting keyboard shortcuts are available:
@@ -133,13 +165,28 @@ Just like <a class="reference-link" href="Text.md">Text</a> notes, Markdown no
 *   Inserting a [footnote](Text/Footnotes.md) (`/footnote`).
 *   Inserting a [Mermaid](Mermaid%20Diagrams.md) diagram (`/mermaid`), with one variant per sample template (e.g. `/mermaid:flowchart`).
 *   Inserting a collapsible block (`/collapsible`).
+*   Inserting [tabs](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md) (`/tabs`).
 *   Inserting a page break for printing (`/page-break`).
 *   Inserting a table (`/table`).
 *   Creating admonitions (e.g. `/tip`, `/note`, `/important`, `/caution`, `/warning`).
 *   Inserting task items (`/todo:<state>`, e.g. `/todo:done`), one per configured task state.
 *   Inserting code snippets (`/snippet:<name>`) from your Markdown/plain-text snippet notes.
 
+The list shows each command by its title, as in Text notes. Typing a command's title, its keyword (as listed above) or a related word such as `latex` or `grid` finds it.
+
 Note that slash commands only work outside of code blocks and inline code.
+
+#### Linking notes with `@` or `[[`
+
+As in <a class="reference-link" href="Text.md">Text</a> notes, typing `@` at the start of a line or after a space opens the note search. Picking a note replaces what was typed with a link to it in the Wikilinks-like format (`[[noteId]]`), which the preview shows as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> with the note's title.
+
+The search runs on everything typed after the `@`, spaces included, so a title such as `@My meeting notes` can be typed out; press <kbd>Esc</kbd> to close the list and go on writing. If no note fits, the list offers to create one, as a child of the Markdown note or in the inbox; the link is inserted once the note is created.
+
+You can also start typing the link directly: `[[` opens the same list, and closing the brackets yourself dismisses it. To change where an existing link points, place the cursor inside it and pick another note.
+
+Like slash commands, `@` and `[[` do nothing inside code blocks and inline code.
+
+In the editor, a `[[noteId]]` link shows as the note's icon and title, so you can tell which note it points to without looking up its ID. Clicking it, or moving the cursor next to it, shows the link as written so it can be edited. Links inside code blocks and inline code are left as they are.
 
 #### Code block language auto-completion
 
@@ -150,7 +197,7 @@ The list of languages matches the one for <a class="reference-link" href="Code.
 ### Other features
 
 *   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
-    *   This feature is available only on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>.
+*   A Markdown note included in a <a class="reference-link" href="Text.md">Text</a> note shows its source, its preview or both, and can be edited in place. See _Included Markdown_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
 
 ### Shared notes
 
@@ -194,20 +241,7 @@ If the Markdown note contains attachments, a ZIP export will rewrite the links t
 
 ## Conversion between text notes and Markdown notes
 
-Currently there is no built-in functionality to convert a <a class="reference-link" href="Text.md">Text</a> note into a Markdown note or vice-versa. We do have plans to address this in the future.
-
-This can be achieved manually, for a single note:
-
-1.  Export the file as Markdown, with single format.
-2.  Import the file again, but unchecking _Import HTML, Markdown and TXT as text notes if it's unclear from the metadata_.
-
-For multiple notes, the process is slightly more involved:
-
-1.  Export the file as Markdown, ZIP.
-2.  Extract the archive.
-3.  Remove the `!!!meta.json` file.
-4.  Compress the extracted files back into an archive.
-5.  Import the newly create archive, but unchecking _Import HTML, Markdown and TXT as text notes if it's unclear from the metadata_.
+<a class="reference-link" href="Text.md">Text</a> notes can be converted into Markdown notes and vice versa. See <a class="reference-link" href="Converting%20between%20note%20types.md">Converting between note types</a>.
 
 ## Sync-scrolling & block highlight
 

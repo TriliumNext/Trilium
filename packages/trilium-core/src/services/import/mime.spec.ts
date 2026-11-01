@@ -153,6 +153,16 @@ describe("#getType", () => {
             [{textImportedAsText: false}, "text/html"], "file"
         ],
 
+        [
+            "w/ 'text/vnd.mermaid' mime type – it should return 'mermaid'",
+            [{}, "text/vnd.mermaid"], "mermaid"
+        ],
+
+        [
+            "w/ 'text/vnd.mermaid' mime type and codeImportedAsCode: true – it should still return 'mermaid'",
+            [{codeImportedAsCode: true}, "text/vnd.mermaid"], "mermaid"
+        ],
+
     ]
 
     testCases.forEach((testCase) => {

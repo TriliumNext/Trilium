@@ -1,0 +1,19 @@
+@use 'sass:color';
+@use 'sass:math';
+@use 'settings';
+
+// The same brightness as `colorBrightness()` in reveal.js, which picks `has-dark-background`.
+$-brightness: math.div(
+	color.channel(settings.$background-color, 'red', $space: rgb) * 299
+		+ color.channel(settings.$background-color, 'green', $space: rgb) * 587
+		+ color.channel(settings.$background-color, 'blue', $space: rgb) * 114,
+	1000
+);
+
+.reveal {
+	@if $-brightness < 128 {
+		color-scheme: dark;
+	} @else {
+		color-scheme: light;
+	}
+}

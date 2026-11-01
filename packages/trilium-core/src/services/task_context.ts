@@ -13,6 +13,7 @@ class TaskContext<T extends TaskType> {
     private totalCount: number | null;
     private phase: ProgressPhase | null;
     private lastSentCountTs: number;
+    private scheduledEraseDeleteIds: string[];
     data: TaskData<T>;
     noteDeletionHandlerTriggered: boolean;
 
@@ -21,6 +22,7 @@ class TaskContext<T extends TaskType> {
         this.taskType = taskType;
         this.data = data;
         this.noteDeletionHandlerTriggered = false;
+        this.scheduledEraseDeleteIds = [];
         this.totalCount = null;
         this.phase = null;
 
@@ -72,22 +74,69 @@ class TaskContext<T extends TaskType> {
         this.progressCount = 0;
     }
 
+    /**
+     * Sets the phase and pushes the current progress immediately, without waiting for the next unit of
+     * work. For phases entered while no counts are flowing — e.g. the OneNote importer waiting out Graph
+     * throttling, where the next increaseProgressCount() may be an hour away — setPhase() alone would
+     * leave the client showing the previous label (and a seemingly hung count) the whole time.
+     */
+    reportPhase(phase: ProgressPhase) {
+        this.phase = phase;
+        this.sendProgressMessage();
+    }
+
+    /**
+     * Clears the phase so subsequent progress messages drop the label. Does not send by itself: callers
+     * clear right before counting the unit of work that ended the phase, and the forced flush here makes
+     * that very next increaseProgressCount() deliver the corrected label and count in one message.
+     */
+    clearPhase() {
+        if (this.phase !== null) {
+            this.phase = null;
+            this.lastSentCountTs = 0;
+        }
+    }
+
+    /**
+     * Records a deleteId whose entities are to be erased once the task group ends. Erasing flags
+     * entity changes as erased, which makes every connected client reload; a delete-notes group
+     * spans one request per branch, so erasing before the last one cuts off the requests the client
+     * has yet to send.
+     */
+    scheduleErase(deleteId: string) {
+        this.scheduledEraseDeleteIds.push(deleteId);
+    }
+
+    /** Returns the deleteIds collected by {@link scheduleErase} and clears them. */
+    takeScheduledErases(): string[] {
+        const deleteIds = this.scheduledEraseDeleteIds;
+        this.scheduledEraseDeleteIds = [];
+        return deleteIds;
+    }
+
     increaseProgressCount() {
         this.progressCount++;
 
-        if (Date.now() - this.lastSentCountTs >= 300 && this.taskId !== "no-progress-reporting") {
-            this.lastSentCountTs = Date.now();
-
-            ws.sendMessageToAllClients({
-                type: "taskProgressCount",
-                taskId: this.taskId,
-                taskType: this.taskType,
-                data: this.data,
-                progressCount: this.progressCount,
-                ...(this.totalCount !== null ? { totalCount: this.totalCount } : {}),
-                ...(this.phase !== null ? { phase: this.phase } : {})
-            } as WebSocketMessage);
+        if (Date.now() - this.lastSentCountTs >= 300) {
+            this.sendProgressMessage();
         }
+    }
+
+    private sendProgressMessage() {
+        if (this.taskId === "no-progress-reporting") {
+            return;
+        }
+        this.lastSentCountTs = Date.now();
+
+        ws.sendMessageToAllClients({
+            type: "taskProgressCount",
+            taskId: this.taskId,
+            taskType: this.taskType,
+            data: this.data,
+            progressCount: this.progressCount,
+            ...(this.totalCount !== null ? { totalCount: this.totalCount } : {}),
+            ...(this.phase !== null ? { phase: this.phase } : {})
+        } as WebSocketMessage);
     }
 
     reportError(message: string) {

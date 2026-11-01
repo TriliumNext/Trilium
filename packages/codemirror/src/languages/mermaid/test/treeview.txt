@@ -1,0 +1,76 @@
+# Tree view
+
+treeView-beta
+
+==>
+
+TreeViewDiagram(DiagramName)
+
+# Trilium's sample
+
+treeView-beta
+    "src"
+        "components"
+            "Button.tsx"
+        "index.ts"
+    "README.md"
+
+==>
+
+TreeViewDiagram(DiagramName,Node(String),Node(String),Node(String),Node(String),Node(String))
+
+# Bare names with annotations
+
+treeView-beta
+  title Files %% a comment
+  src folder
+    my file.ts :::hot icon(mdi:file) ## The entry point
+    "quoted" ## Described
+
+==>
+
+TreeViewDiagram(DiagramName,Title(Keyword,TitleText),LineComment,
+  Node(Name),
+  Node(Name,ClassAnnotation,Icon,Description),
+  Node(String,Description))
+
+# Annotation markers without whitespace or a class are part of the name
+
+treeView-beta
+  a##b
+  c :::
+  %% a comment line
+  d %% stays in the name
+
+==>
+
+TreeViewDiagram(DiagramName,Node(Name),Node(Name),LineComment,Node(Name))
+
+# Title after a node (invalid, parses as a node)
+
+treeView-beta
+  src
+  title Files
+
+==>
+
+TreeViewDiagram(DiagramName,Node(Name),Node(Name))
+
+# Node on the diagram line (invalid)
+
+treeView-beta src
+
+==>
+
+TreeViewDiagram(DiagramName,Title(⚠,TitleText))
+
+# Each annotation ending a bare name
+
+treeView-beta
+  a file icon(mdi:file)
+  b file ## Described
+  c file ::: hot
+
+==>
+
+TreeViewDiagram(DiagramName,Node(Name,Icon),Node(Name,Description),Node(Name,ClassAnnotation))

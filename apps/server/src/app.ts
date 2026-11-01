@@ -11,14 +11,16 @@ import path from "path";
 import favicon from "serve-favicon";
 import type serveStatic from "serve-static";
 
-import assets from "./routes/assets.js";
+import assets, { getClientDir } from "./routes/assets.js";
 import custom from "./routes/custom.js";
 import error_handlers from "./routes/error_handlers.js";
 import mcpRoutes from "./routes/mcp.js";
 import routes from "./routes/routes.js";
 import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
+import { desktopNetworkAccessGate } from "./services/desktop_network_gate.js";
 import { createReactiveOidcMiddleware } from "./services/open_id.js";
+import { setupSecondFactor } from "./services/setup_second_factor.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
 
@@ -29,7 +31,8 @@ export default async function buildApp() {
     const app = express();
 
     const publicDir = isDev ? path.join(getResourceDir(), "../dist/public") : path.join(getResourceDir(), "public");
-    const publicAssetsDir = path.join(publicDir, "assets");
+    // The client source dir in dev, where `dist/public` is not rebuilt; the built `public` dir otherwise.
+    const publicAssetsDir = path.join(getClientDir(), "assets");
     const assetsDir = RESOURCE_DIR;
 
     // view engine setup
@@ -92,12 +95,21 @@ export default async function buildApp() {
 
     app.use(express.text({ limit: "500mb" }));
     app.use(express.json({ limit: "500mb" }));
-    app.use(express.raw({ limit: "500mb" }));
+    app.use(express.raw({ type: ["application/octet-stream", "application/zip"], limit: "500mb" }));
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
 
-    // MCP is registered before session/auth middleware — it uses its own
-    // localhost-only guard and does not require Trilium authentication.
+    // Desktop only: gate web access (SPA/login, /share, /api, static assets) behind
+    // the network-access opt-in. Mounted before the static/app/share routes, and before
+    // MCP so that the gate's loopback-Host check applies there too — Express dispatches
+    // in registration order, so a route registered first would answer before this ever
+    // ran. The localhost integrations it exempts stay reachable on loopback while the
+    // web app does not, unless the user enables network access. No-op on the server build.
+    app.use(desktopNetworkAccessGate);
+
+    // MCP is registered before session/auth middleware — it authenticates with its own
+    // guard (an ETAPI token, always required) and never uses the Trilium session, which
+    // would make the endpoint CSRF-able.
     mcpRoutes.register(app);
 
     app.use(express.static(path.join(publicDir, "root"), STATIC_OPTIONS));
@@ -105,9 +117,14 @@ export default async function buildApp() {
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
 
-    const { default: sessionParser, startSessionCleanup } = await import("./routes/session_parser.js");
+    const {
+        default: sessionParser,
+        startSessionCleanup,
+        startSessionRevocationOnPasswordChange
+    } = await import("./routes/session_parser.js");
     app.use(sessionParser);
     startSessionCleanup();
+    startSessionRevocationOnPasswordChange();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
     // Always mount the OIDC middleware, but have it activate reactively from the current `mfaMethod`
@@ -121,8 +138,24 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    const { sync, consistency_checks, scheduler } = await import("@triliumnext/core");
+    const { sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n } = await import("@triliumnext/core");
     sync.startSyncTimer();
+
+    // What the setup wizard asks for besides the password, where this instance has one. Registered
+    // here rather than handed to `initializeCore`, because it is the server that has a second factor
+    // at all: the browser-only build never runs this file. Desktop reaches it through the same
+    // www.js → buildApp path, and is exempt from the wizard's gate for its own reasons.
+    initSetupSecondFactor(setupSecondFactor);
+
+    // Server-side i18next always boots on "en" (initTranslations runs before initSql in initializeCore),
+    // so re-sync it with the document's stored locale before the scheduler's dbReady.then(checkHiddenSubtree)
+    // rebuilds the built-in titles — otherwise they are (re-)generated in English on every start. The read
+    // goes through becca, so wait for it; guard on isDbInitialized so we don't await beccaLoaded (which never
+    // resolves pre-setup) on a fresh install. Desktop reaches this via the same www.js → buildApp path.
+    if (sql_init.isDbInitialized()) {
+        await becca_loader.beccaLoaded;
+        await i18n.reconcileLanguageAfterDbInit();
+    }
 
     consistency_checks.startConsistencyChecks();
     scheduler.startScheduler();

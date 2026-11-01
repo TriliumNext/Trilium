@@ -1,43 +1,62 @@
 import protectedSessionService from "../../services/protected_session.js";
 import noteService from "../../services/notes.js";
 import { getBecca } from "../../becca/becca.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import type { RecentChangeRow } from "@triliumnext/commons";
+import { ValidationError } from "../../errors.js";
 import { getSql } from "../../services/sql/index.js";
 
-function getRecentChanges(req: Request<{ ancestorNoteId: string }>) {
+function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly?: string }>) {
     const { ancestorNoteId } = req.params;
+    const deletedOnly = req.query.deletedOnly === "true";
 
     let recentChanges: RecentChangeRow[] = [];
 
     const sql = getSql();
-    const revisionRows = sql.getRows<RecentChangeRow>(`
-        SELECT
-            notes.noteId,
-            notes.isDeleted AS current_isDeleted,
-            notes.deleteId AS current_deleteId,
-            notes.title AS current_title,
-            notes.isProtected AS current_isProtected,
-            revisions.title,
-            revisions.utcDateCreated AS utcDate,
-            revisions.dateCreated AS date
-        FROM
-            revisions
-            JOIN notes USING(noteId)`);
 
-    for (const revisionRow of revisionRows) {
-        const note = getBecca().getNote(revisionRow.noteId);
+    // Revisions are individual change events. The deleted-notes view lists each note once (at its
+    // deletion), so revisions (and the per-note creation point below) are only collected for the
+    // full recent-changes view.
+    if (!deletedOnly) {
+        const revisionRows = sql.getRows<RecentChangeRow>(`
+            SELECT
+                notes.noteId,
+                notes.isDeleted AS current_isDeleted,
+                notes.deleteId AS current_deleteId,
+                notes.title AS current_title,
+                notes.isProtected AS current_isProtected,
+                revisions.title,
+                revisions.utcDateCreated AS utcDate,
+                revisions.dateCreated AS date
+            FROM
+                revisions
+                JOIN notes USING(noteId)`);
 
-        // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
-        if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {
-            recentChanges.push(revisionRow);
+        for (const revisionRow of revisionRows) {
+            const note = getBecca().getNote(revisionRow.noteId);
+
+            // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
+            if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {
+                recentChanges.push(revisionRow);
+            }
         }
     }
 
-    // now we need to also collect date points not represented in note revisions:
-    // 1. creation for all notes (dateCreated)
-    // 2. deletion for deleted notes (dateModified)
-    const noteRows = sql.getRows<RecentChangeRow>(`
+    // Date points from the notes table:
+    //  - deleted-only view: just the deletion point (dateModified), so each deleted note appears exactly once
+    //  - full view: creation (dateCreated) for every note, plus deletion (dateModified) for deleted notes
+    const noteRows = sql.getRows<RecentChangeRow>(deletedOnly ? `
+            SELECT
+                notes.noteId,
+                notes.isDeleted AS current_isDeleted,
+                notes.deleteId AS current_deleteId,
+                notes.title AS current_title,
+                notes.isProtected AS current_isProtected,
+                notes.title,
+                notes.utcDateModified AS utcDate,
+                notes.dateModified AS date
+            FROM notes
+            WHERE notes.isDeleted = 1` : `
             SELECT
                 notes.noteId,
                 notes.isDeleted AS current_isDeleted,
@@ -97,6 +116,40 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }>) {
     return recentChanges;
 }
 
+/** Returns the IDs of the most recently modified live notes under the ancestor, newest first. */
+function getRecentlyChangedNoteIds(req: Request<{ ancestorNoteId: string }, { limit?: string }>) {
+    const { ancestorNoteId } = req.params;
+    const limit = Number.parseInt(req.query.limit ?? "", 10);
+    if (!(limit > 0)) {
+        throw new ValidationError("'limit' must be a positive integer.");
+    }
+
+    const noteIds: string[] = [];
+    // Walks `IDX_notes_isDeleted_utcDateModified` and stops once the list is full.
+    const rows = getSql().iterateRows<{ noteId: string }>(`
+        SELECT noteId FROM notes WHERE isDeleted = 0 ORDER BY utcDateModified DESC`);
+
+    for (const { noteId } of rows) {
+        const note = getBecca().getNote(noteId);
+        if (!note?.hasAncestor(ancestorNoteId)) {
+            continue;
+        }
+
+        // `BNote.isHiddenCompletely()` is false for `_hidden` itself.
+        if (ancestorNoteId === "root" && (noteId === "_hidden" || note.isHiddenCompletely())) {
+            continue;
+        }
+
+        noteIds.push(noteId);
+        if (noteIds.length === limit) {
+            break;
+        }
+    }
+
+    return noteIds;
+}
+
 export default {
-    getRecentChanges
+    getRecentChanges,
+    getRecentlyChangedNoteIds
 };

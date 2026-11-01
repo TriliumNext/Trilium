@@ -6,17 +6,24 @@
  */
 
 import type { OneNoteFolderRef, OneNoteSectionSelection } from "@triliumnext/commons";
-import { becca, binary_utils, type BNote, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
+import { becca, binary_utils, type BNote, cls, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
 import { t } from "i18next";
 import { parse } from "node-html-parser";
 
 import sql from "../../sql.js";
 import converter, { ONENOTE_ATTACHMENT_CLASS } from "./converter.js";
-import graph, { type OneNotePage } from "./graph.js";
+import graph, { type AccessTokenProvider, type OneNotePage, sanitizeGraphUrl } from "./graph.js";
 import { inkmlToSvg } from "./inkml.js";
 import { type LinkTarget, rewritePageLinks } from "./links.js";
+import { type FailedPageReport, type FailedSectionReport, type ImportReportData, renderImportReport } from "./report.js";
 
 interface FetchedPage {
+    /**
+     * The Graph API page id, preserved on the imported note as `#oneNotePageId` so a later pass
+     * (re-import dedup, retrying failed pages) can map the note back to its OneNote page. Distinct
+     * from {@link pageId}, the GUID OneNote uses in `onenote:` links.
+     */
+    id: string;
     title: string;
     /** OneNote's indentation level in the page list: 0 for a top-level page, 1+ for a subpage. */
     level: number;
@@ -31,11 +38,43 @@ interface FetchedPage {
     inkSvg: string | null;
     /** Binary resources (images, file attachments) referenced by the page, downloaded up front. */
     resources: DownloadedResource[];
-    /** OneNote's page creation timestamp (ISO 8601), preserved on the imported note. */
+    /** How many of the page's resources failed to download (skipped, reported in the import report). */
+    failedResourceCount: number;
+    /**
+     * OneNote's page creation timestamp (ISO 8601), preserved on the imported note. The authored
+     * date from the page HTML's `<meta name="created">` when available — the date OneNote itself
+     * displays, which survives page moves/copies and notebook migrations — otherwise the Graph
+     * page object's `createdDateTime` (re-stamped by those operations; placeholder pages have no
+     * HTML to read the authored date from).
+     */
     createdDateTime?: string;
     /** OneNote's last-modified timestamp (ISO 8601), preserved on the imported note. */
     lastModifiedDateTime?: string;
+    /**
+     * Set when the page's content could not be fetched (after retries). The page is imported as a
+     * placeholder note carrying this error instead of aborting the whole import: one poisoned page
+     * must not cost the user hours of already-fetched work.
+     */
+    fetchError?: string;
 }
+
+/**
+ * Aborts the import once this many pages in a row fail to fetch. A streak this long means the
+ * failure is systemic (expired token, service outage) rather than page-specific, and failing fast
+ * beats producing a tree of nothing but placeholders. Mirrors the Obsidian importer's threshold.
+ */
+const MAX_CONSECUTIVE_PAGE_FAILURES = 5;
+
+/**
+ * Aborts the import once this many non-protected sections fail to enumerate without a successful one
+ * in between. A section whose page list can't be listed normally becomes a placeholder folder, but a
+ * streak of such failures means a systemic problem (expired token, Graph outage) rather than
+ * individual bad sections — failing fast beats marking a placeholder-only tree "successful".
+ * Password-protected sections are skipped, not counted: a structured 403/20185 is a known per-section
+ * condition, so it neither trips the breaker nor resets the streak (so a systemic run interleaved with
+ * locked sections still trips). Only a genuine success resets the streak.
+ */
+const MAX_CONSECUTIVE_SECTION_FAILURES = 5;
 
 interface DownloadedResource {
     /** The Graph resource URL as it still appears in the converted HTML; used to match references. */
@@ -48,6 +87,9 @@ interface DownloadedResource {
 }
 
 interface FetchedSection {
+    /** The Graph API section id, preserved on the section note (as `#oneNoteSectionId`) when the
+     *  section is imported as a placeholder, so a later "retry failed sections" pass can re-fetch it. */
+    id: string;
     title: string;
     createdDateTime?: string;
     lastModifiedDateTime?: string;
@@ -57,6 +99,16 @@ interface FetchedSection {
     notebookCreatedDateTime?: string;
     notebookLastModifiedDateTime?: string;
     pages: FetchedPage[];
+    /**
+     * Set when the section's page list could not be fetched (e.g. an encrypted/password-protected
+     * section, which Graph rejects). The section is imported as an empty placeholder folder carrying
+     * this error — holding its place in the tree so import order is preserved — rather than skipped,
+     * so the user sees where it belongs and can unlock and re-import it.
+     */
+    fetchError?: string;
+    /** Whether {@link fetchError} was caused by the section being password-protected: drives a friendlier
+     *  placeholder message and a lock icon, distinguishing it from other (transient) section failures. */
+    passwordProtected?: boolean;
 }
 
 /**
@@ -65,8 +117,28 @@ interface FetchedSection {
  * reported over the WebSocket via the "importNotes" TaskContext, so this never throws to the caller:
  * any error is caught and surfaced as a task error toast instead.
  */
-export async function importSelection({ accessToken, parentNoteId, sections, taskId, debug = false, shrinkImages = false }: { accessToken: string; parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean }): Promise<void> {
+export async function importSelection({ getAccessToken, parentNoteId, sections, taskId, debug = false, shrinkImages = false }: { getAccessToken: AccessTokenProvider; parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean }): Promise<void> {
     const taskContext = TaskContext.getInstance(taskId, "importNotes", { safeImport: true, shrinkImages });
+    const startedAtMs = Date.now();
+    graph.resetThrottleStats();
+
+    // While Graph is throttling, no page completes and the progress count sits still — for up to an
+    // hour — which looks exactly like a hang; users have killed healthy multi-hour imports (losing all
+    // fetched work, since notes are only committed at the end) over it. So the first gate extension
+    // flips the toast to a "waiting out rate limiting" phase, and the next completed unit of work flips
+    // it back (clearThrottledPhase below). The extra flag keeps a sustained throttle — which re-fires
+    // the listener on every retry — from re-sending an identical message each time.
+    let throttleReported = false;
+    graph.setThrottleListener(() => {
+        if (!throttleReported) {
+            throttleReported = true;
+            taskContext.reportPhase("throttled");
+        }
+    });
+    const clearThrottledPhase = () => {
+        throttleReported = false;
+        taskContext.clearPhase();
+    };
 
     try {
         // Phase 1: pull everything over the network first, so note creation can run in a single
@@ -74,46 +146,127 @@ export async function importSelection({ accessToken, parentNoteId, sections, tas
 
         // Enumerate every selected section's pages up front so the total page count is known before
         // any content is fetched — this lets the client show a real progress bar rather than a bare count.
-        const sectionPages: { section: OneNoteSectionSelection; pages: OneNotePage[] }[] = [];
+        const sectionPages: { section: OneNoteSectionSelection; pages: OneNotePage[]; error?: string; passwordProtected?: boolean }[] = [];
+        let consecutiveSectionFailures = 0;
         for (const section of sections) {
-            sectionPages.push({ section, pages: await graph.listPages(accessToken, section.id) });
+            // A section whose page list can't be fetched doesn't abort the whole import: it is tagged
+            // with the error here and imported as a placeholder folder below, holding its place so the
+            // rest of the selection still imports in order. This covers e.g. encrypted/password-protected
+            // sections — which Graph rejects outright — as well as any other per-section Graph failure.
+            try {
+                sectionPages.push({ section, pages: await graph.listPages(getAccessToken, section.id) });
+                consecutiveSectionFailures = 0;
+                clearThrottledPhase();
+            } catch (e: unknown) {
+                const rawMessage = e instanceof Error ? e.message : String(e);
+                // A password-protected section is a user-fixable, expected case, so replace Graph's opaque
+                // "HTTP 403: 20185: Encrypted sections are not accessible." with actionable guidance. The
+                // raw error is still logged for diagnosis.
+                const passwordProtected = graph.isEncryptedSectionError(e);
+                const error = passwordProtected ? t("onenote_import.protected-section-error") : rawMessage;
+                getLog().error(`OneNote import: could not list the pages of section '${section.title}' (${section.id}); it will be imported as a placeholder: ${rawMessage}`);
+                sectionPages.push({ section, pages: [], error, passwordProtected });
+
+                // Only unexpected failures count toward the circuit breaker. A password-protected section
+                // is a known per-section condition, not a failure signal, so it is skipped entirely — it
+                // neither increments the streak nor resets it. Skipping (rather than resetting) is what
+                // keeps a systemic run of failures *interleaved* with locked sections tripping the breaker,
+                // instead of each protected response masking the outage. Only a genuine success (above)
+                // resets, since it proves real pages came back and the pipeline is healthy.
+                if (!passwordProtected && ++consecutiveSectionFailures > MAX_CONSECUTIVE_SECTION_FAILURES) {
+                    throw new Error(`Aborting the OneNote import: ${consecutiveSectionFailures} sections failed to list their pages without a successful one in between, which points to a systemic problem (expired authentication, Graph outage) rather than individual unreadable sections. Last error: ${rawMessage}`);
+                }
+            }
         }
         taskContext.setTotalCount(sectionPages.reduce((total, entry) => total + entry.pages.length, 0));
 
         const fetched: FetchedSection[] = [];
-        for (const { section, pages } of sectionPages) {
+        let consecutivePageFailures = 0;
+        for (const { section, pages, error, passwordProtected } of sectionPages) {
+            // A section whose pages couldn't be listed keeps its slot in `fetched` (so import order is
+            // preserved) but carries the error instead of pages — createNotes renders it as a placeholder.
+            if (error !== undefined) {
+                fetched.push(toFetchedSection(section, [], error, passwordProtected));
+                continue;
+            }
             const fetchedPages: FetchedPage[] = [];
             for (const page of pages) {
-                const { html: rawHtml, inkml } = await graph.getPageContent(accessToken, page.id);
-                const html = converter.convertPageHtml(rawHtml);
-                const resources = await downloadPageResources(accessToken, page.title, html);
-                fetchedPages.push({ title: page.title, level: page.level, pageId: page.pageId, html, rawHtml, rawInkml: inkml, inkSvg: inkmlToSvg(inkml), resources, createdDateTime: page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime });
+                // The Graph fetch and the local processing (HTML/InkML conversion, resource discovery)
+                // are guarded separately. Only a failed *fetch* counts toward the circuit breaker: a run
+                // of fetch failures means a systemic problem (expired auth, Graph outage) worth aborting
+                // for, whereas a page that fetches but fails to convert is an isolated bad page that must
+                // become a placeholder without dragging the whole import down.
+                let rawHtml: string;
+                let inkml: string;
+                try {
+                    ({ html: rawHtml, inkml } = await graph.getPageContent(getAccessToken, page.id));
+                    consecutivePageFailures = 0;
+                } catch (e: unknown) {
+                    consecutivePageFailures++;
+                    const message = e instanceof Error ? e.message : String(e);
+                    getLog().error(`OneNote import: could not fetch page '${page.title}' (${page.id}); a placeholder note will be imported instead: ${message}`);
+                    if (consecutivePageFailures > MAX_CONSECUTIVE_PAGE_FAILURES) {
+                        throw new Error(`Aborting the OneNote import: ${consecutivePageFailures} pages in a row failed to fetch, which points to a systemic problem rather than individual broken pages. Last error: ${message}`);
+                    }
+                    fetchedPages.push(buildPlaceholderPage(page, message));
+                    clearThrottledPhase();
+                    taskContext.increaseProgressCount();
+                    continue;
+                }
+
+                try {
+                    const html = converter.convertPageHtml(rawHtml);
+                    const { resources, failedResourceCount } = await downloadPageResources(getAccessToken, page.title, html);
+                    fetchedPages.push({ id: page.id, title: page.title, level: page.level, pageId: page.pageId, html, rawHtml, rawInkml: inkml, inkSvg: inkmlToSvg(inkml), resources, failedResourceCount, createdDateTime: converter.extractPageCreatedDate(rawHtml) ?? page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime });
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    getLog().error(`OneNote import: fetched page '${page.title}' (${page.id}) but could not process its content; a placeholder note will be imported instead: ${message}`);
+                    fetchedPages.push(buildPlaceholderPage(page, message));
+                }
+                clearThrottledPhase();
                 taskContext.increaseProgressCount();
             }
-            fetched.push({
-                title: section.title,
-                createdDateTime: section.createdDateTime,
-                lastModifiedDateTime: section.lastModifiedDateTime,
-                groupPath: section.groupPath,
-                notebookId: section.notebookId,
-                notebookTitle: section.notebookTitle,
-                notebookCreatedDateTime: section.notebookCreatedDateTime,
-                notebookLastModifiedDateTime: section.notebookLastModifiedDateTime,
-                pages: fetchedPages
-            });
+            fetched.push(toFetchedSection(section, fetchedPages));
         }
 
         // Phase 2: create the note tree.
-        const rootNoteId = sql.transactional(() => createNotes(parentNoteId, fetched, debug, shrinkImages));
+        const rootNoteId = sql.transactional(() => createNotes(parentNoteId, fetched, debug, shrinkImages, startedAtMs));
 
         taskContext.taskSucceeded({ parentNoteId, importedNoteId: rootNoteId });
     } catch (e: unknown) {
         getLog().error(`OneNote import failed: ${e instanceof Error ? (e.stack ?? e.message) : e}`);
         taskContext.reportError(e instanceof Error ? e.message : String(e));
+    } finally {
+        graph.setThrottleListener(null);
     }
 }
 
-function createNotes(parentNoteId: string, sections: FetchedSection[], debug: boolean, shrinkImages: boolean): string {
+/** Copies a selected section's metadata into a {@link FetchedSection}, attaching its fetched pages and
+ *  (when its page list couldn't be loaded) the error that turns it into a placeholder folder. */
+function toFetchedSection(section: OneNoteSectionSelection, pages: FetchedPage[], fetchError?: string, passwordProtected?: boolean): FetchedSection {
+    return {
+        id: section.id,
+        title: section.title,
+        createdDateTime: section.createdDateTime,
+        lastModifiedDateTime: section.lastModifiedDateTime,
+        groupPath: section.groupPath,
+        notebookId: section.notebookId,
+        notebookTitle: section.notebookTitle,
+        notebookCreatedDateTime: section.notebookCreatedDateTime,
+        notebookLastModifiedDateTime: section.notebookLastModifiedDateTime,
+        pages,
+        fetchError,
+        passwordProtected
+    };
+}
+
+/** A content-less stand-in for a page that could not be fetched or processed; imported so the tree and
+ *  cross-page links stay intact and the failure is reported (see {@link FetchedPage.fetchError}). */
+function buildPlaceholderPage(page: OneNotePage, error: string): FetchedPage {
+    return { id: page.id, title: page.title, level: page.level, pageId: page.pageId, html: "", rawHtml: "", rawInkml: "", inkSvg: null, resources: [], failedResourceCount: 0, fetchError: error, createdDateTime: page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime };
+}
+
+function createNotes(parentNoteId: string, sections: FetchedSection[], debug: boolean, shrinkImages: boolean, startedAtMs: number): string {
     const parentNote = becca.getNoteOrThrow(parentNoteId);
     const isProtected = parentNote.isProtected && protectedSession.isProtectedSessionAvailable();
 
@@ -123,10 +276,16 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
     const rootNote = createFolder(parentNoteId, t("onenote_import.root-title"));
     rootNote.addLabel("iconClass", "bx bx-import");
 
+    // Root created; keep the OneNote notebooks/sections/pages in their display order under an inherited
+    // #newNotesOnTop (the root above still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
+
     // Created page notes with their content-so-far (resources/ink applied), plus a map from each
     // page's OneNote page-id GUID to its imported note (and title) — both feed the link-resolution pass.
     const createdPages: { note: BNote; original: string; content: string; page: FetchedPage }[] = [];
     const targetByPageId = new Map<string, LinkTarget>();
+    const failedPages: FailedPageReport[] = [];
+    const failedSections: FailedSectionReport[] = [];
 
     // Recreate the OneNote hierarchy as folder notes: a folder per notebook, then a folder per section
     // group on the path down to the section, then the section itself. Folders are keyed by their OneNote
@@ -154,6 +313,24 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
         }
 
         const sectionNote = createFolder(containerNoteId, section.title);
+
+        if (section.fetchError !== undefined) {
+            // A section whose pages couldn't be listed becomes an empty placeholder folder: it holds the
+            // section's place in the tree (so order and hierarchy are preserved), explains itself, and is
+            // findable/retryable by label + section id. The report links to this note. A password-protected
+            // section — the expected, user-fixable case — gets a lock icon and tailored guidance.
+            sectionNote.setContent(section.passwordProtected ? renderProtectedSectionPlaceholder() : renderFailedSectionPlaceholder(section.fetchError));
+            sectionNote.addLabel("oneNoteImportFailed");
+            sectionNote.addLabel("oneNoteSectionId", section.id);
+            if (section.passwordProtected) {
+                sectionNote.addLabel("iconClass", "bx bx-lock-alt");
+            }
+            // Applied after setContent, whose save would otherwise re-stamp the modification date.
+            applyOriginalDates(sectionNote, section.createdDateTime, section.lastModifiedDateTime);
+            failedSections.push({ title: section.title, notebookTitle: section.notebookTitle, noteId: sectionNote.noteId, error: section.fetchError });
+            continue;
+        }
+
         applyOriginalDates(sectionNote, section.createdDateTime, section.lastModifiedDateTime);
 
         // OneNote pages carry an indentation level (subpages); preserve it by parenting each page under
@@ -167,12 +344,27 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
             const { note: pageNote } = noteService.createNewNote({
                 parentNoteId: parentIndex >= 0 ? (pageNoteIds[parentIndex] ?? sectionNote.noteId) : sectionNote.noteId,
                 title: page.title,
-                content: page.html,
+                content: page.fetchError === undefined ? page.html : renderFailedPagePlaceholder(page.fetchError),
                 type: "text",
                 mime: "text/html",
                 isProtected
             });
             pageNoteIds[index] = pageNote.noteId;
+            pageNote.addLabel("oneNotePageId", page.id);
+            if (page.pageId) {
+                // Registered for placeholders too, so other pages' links to a failed page resolve to it.
+                targetByPageId.set(page.pageId, { noteId: pageNote.noteId, title: page.title });
+            }
+
+            if (page.fetchError !== undefined) {
+                // A placeholder rather than a gap: it holds the page's spot in the tree (subpages
+                // resolve their parent by index), keeps the OneNote timestamps, and is findable by
+                // label. The dates are applied here because placeholders skip the second pass below.
+                pageNote.addLabel("oneNoteImportFailed");
+                failedPages.push({ title: page.title, sectionTitle: section.title, noteId: pageNote.noteId, error: page.fetchError });
+                applyOriginalDates(pageNote, page.createdDateTime, page.lastModifiedDateTime);
+                continue;
+            }
 
             // Resources and ink both need the page note to exist (attachments hang off it), so build
             // the per-page content now: swap Graph URLs for local attachment references, then append
@@ -187,9 +379,6 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
             }
 
             createdPages.push({ note: pageNote, original: page.html, content, page });
-            if (page.pageId) {
-                targetByPageId.set(page.pageId, { noteId: pageNote.noteId, title: page.title });
-            }
 
             // Debug aid: keep the unmodified Graph HTML (and InkML, when present) alongside the
             // converted note so the two can be compared when diagnosing conversion issues.
@@ -214,8 +403,18 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
 
     // Second pass: now that every page has a note, resolve cross-page `onenote:` links and persist the
     // final content. Done once per page (rather than re-saving for resources, then again for links).
+    let resolvedLinkCount = 0;
+    let unresolvedLinkCount = 0;
     for (const { note, original, content, page } of createdPages) {
-        const finalContent = rewritePageLinks(content, (pageId) => targetByPageId.get(pageId) ?? null);
+        const finalContent = rewritePageLinks(content, (pageId) => {
+            const target = targetByPageId.get(pageId) ?? null;
+            if (target) {
+                resolvedLinkCount++;
+            } else {
+                unresolvedLinkCount++;
+            }
+            return target;
+        });
         if (finalContent !== original) {
             note.setContent(finalContent);
             void noteService.asyncPostProcessContent(note, finalContent);
@@ -226,7 +425,63 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
         applyOriginalDates(note, page.createdDateTime, page.lastModifiedDateTime);
     }
 
+    // Finally, document the import's outcome as the root note's content — the task toast is ephemeral,
+    // and for a multi-hour import the user has likely walked away by the time it finishes.
+    const allPages = createdPages.map(({ note, page }) => ({ note, page }));
+    const throttleStats = graph.getThrottleStats();
+    const reportData: ImportReportData = {
+        importedPageCount: createdPages.length,
+        notebookCount: new Set(sections.map((section) => section.notebookId)).size,
+        // Successfully imported sections; the placeholder (failed) ones are counted via failedSections.
+        sectionCount: sections.length - failedSections.length,
+        durationMs: Date.now() - startedAtMs,
+        imageCount: sumResources(allPages, "image", () => 1),
+        imageBytes: sumResources(allPages, "image", (resource) => resource.content.length),
+        attachmentCount: sumResources(allPages, "file", () => 1),
+        attachmentBytes: sumResources(allPages, "file", (resource) => resource.content.length),
+        inkPageCount: allPages.filter(({ page }) => page.inkSvg !== null).length,
+        resolvedLinkCount,
+        unresolvedLinkCount,
+        throttledRequestCount: throttleStats.requestCount,
+        throttleWaitMs: throttleStats.waitMs,
+        failedSections,
+        failedPages,
+        failedResources: allPages
+            .filter(({ page }) => page.failedResourceCount > 0)
+            .map(({ note, page }) => ({ pageTitle: page.title, pageNoteId: note.noteId, failedCount: page.failedResourceCount }))
+    };
+    rootNote.setContent(renderImportReport(reportData));
+
     return rootNote.noteId;
+}
+
+/** The body of a placeholder note standing in for a page whose content could not be fetched. */
+function renderFailedPagePlaceholder(error: string): string {
+    return `<p>${t("onenote_import.failed-page-placeholder", { error })}</p>`;
+}
+
+/** The body of a placeholder folder standing in for a section whose page list could not be fetched. */
+function renderFailedSectionPlaceholder(error: string): string {
+    return `<p>${t("onenote_import.failed-section-placeholder", { error })}</p>`;
+}
+
+/** The body of a placeholder folder standing in for a password-protected section, with the steps to
+ *  make it importable. No error is interpolated — the cause is known. */
+function renderProtectedSectionPlaceholder(): string {
+    return `<p>${t("onenote_import.protected-section-placeholder")}</p>`;
+}
+
+/** Totals `value` over every downloaded page resource of the given kind. */
+function sumResources(pages: { page: FetchedPage }[], kind: DownloadedResource["kind"], value: (resource: DownloadedResource) => number): number {
+    let sum = 0;
+    for (const { page } of pages) {
+        for (const resource of page.resources) {
+            if (resource.kind === kind) {
+                sum += value(resource);
+            }
+        }
+    }
+    return sum;
 }
 
 /**
@@ -286,7 +541,7 @@ function renderInkFigure(note: BNote, svg: string, shrinkImages: boolean): strin
  * downloads each once. Failures are logged and skipped so one missing resource doesn't abort the whole
  * import; the reference is simply left untouched.
  */
-async function downloadPageResources(accessToken: string, pageTitle: string, html: string): Promise<DownloadedResource[]> {
+async function downloadPageResources(getAccessToken: AccessTokenProvider, pageTitle: string, html: string): Promise<{ resources: DownloadedResource[]; failedResourceCount: number }> {
     const root = parse(html);
 
     const refs = new Map<string, Omit<DownloadedResource, "content">>();
@@ -305,7 +560,7 @@ async function downloadPageResources(accessToken: string, pageTitle: string, htm
     }
 
     if (refs.size === 0) {
-        return [];
+        return { resources: [], failedResourceCount: 0 };
     }
 
     const all = Array.from(refs.values());
@@ -318,10 +573,10 @@ async function downloadPageResources(accessToken: string, pageTitle: string, htm
     // practice dropped most images and left the note nearly empty. A failed download is skipped.
     const downloaded = await mapWithConcurrency(all, RESOURCE_DOWNLOAD_CONCURRENCY, async (ref) => {
         try {
-            const { content, contentType } = await graph.getResource(accessToken, ref.url);
+            const { content, contentType } = await graph.getResource(getAccessToken, ref.url);
             return { ...ref, mime: ref.mime || contentType, content };
         } catch (e: unknown) {
-            getLog().error(`OneNote import: could not download resource ${ref.url}: ${e instanceof Error ? e.message : e}`);
+            getLog().error(`OneNote import: could not download resource ${sanitizeGraphUrl(ref.url)}: ${e instanceof Error ? e.message : e}`);
             return null;
         }
     });
@@ -330,7 +585,7 @@ async function downloadPageResources(accessToken: string, pageTitle: string, htm
     const failed = all.length - resources.length;
     const totalBytes = resources.reduce((sum, resource) => sum + resource.content.length, 0);
     getLog().info(`OneNote import: page '${pageTitle}' downloaded ${resources.length}/${all.length} resource(s) (${Math.round(totalBytes / 1024)} KiB)${failed > 0 ? `; ${failed} failed and were skipped` : ""}`);
-    return resources;
+    return { resources, failedResourceCount: failed };
 }
 
 /**

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
-import attributeService, { removeOwnedAttributesByNameOrType, setAttribute, setBooleanWithInheritance, setLabel, setRelation } from "./attributes";
+import { allViewTypes } from "../widgets/collections/interface";
+import { getPresentationThemes } from "../widgets/collections/presentation/themes";
+import { MEDIA_PLAY_MODES } from "../widgets/type_widgets/file/media_play_mode";
+import attributeService, { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute, removeOwnedAttributesByNameOrType, setAttribute, setBooleanWithInheritance, setLabel, setLabelValueWithInheritance, setRelation } from "./attributes";
 import froca from "./froca";
 import server from "./server.js";
 
@@ -134,6 +138,181 @@ describe("Set boolean with inheritance", () => {
             isInheritable: false
         }, undefined);
     });
+
+    it("compares with the inherited value when the note owns the label too", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [
+                { id: "ownsTrue", title: "Owns true", "#foo": "" },
+                { id: "ownsFalse", title: "Owns false", "#foo": "false" }
+            ]
+        });
+        const ownsTrue = froca.notes["ownsTrue"];
+        const ownsFalse = froca.notes["ownsFalse"];
+
+        const overrideId = ownsFalse.getOwnedLabel("foo")?.attributeId;
+        expect(overrideId).toBeTruthy();
+        await setBooleanWithInheritance(ownsFalse, "foo", true);
+        expect(server.remove).toHaveBeenCalledWith(`notes/ownsFalse/attributes/${overrideId}`);
+        expect(server.put).not.toHaveBeenCalled();
+
+        vi.clearAllMocks();
+        // Removing the owned label would leave the inherited one in effect.
+        await setBooleanWithInheritance(ownsTrue, "foo", false);
+        expect(server.put).toHaveBeenCalledWith(`notes/ownsTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("removes every owned duplicate to restore the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoFalse", title: "Owns false twice", "#foo": [ "false", "false" ] } ]
+        });
+        const note = froca.notes["twoFalse"];
+        const [ first, second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", true);
+        expect(server.remove).toHaveBeenCalledTimes(2);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${first.attributeId}`);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${second.attributeId}`);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned duplicates before overriding the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoTrue", title: "Owns true twice", "#foo": [ "", "" ] } ]
+        });
+        const note = froca.notes["twoTrue"];
+        const [ , second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", false);
+        expect(server.remove).toHaveBeenCalledExactlyOnceWith(
+            `notes/twoTrue/attributes/${second.attributeId}`
+        );
+        expect(server.put).toHaveBeenCalledExactlyOnceWith(`notes/twoTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        // `set-attribute` updates whichever owned label it finds, so only one can be left by then.
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+
+    it("waits for the label write and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note" });
+        vi.mocked(server.put).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", true)).rejects.toThrow("offline");
+    });
+
+    it("waits for the label removal and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note", "#foo": "" });
+        vi.mocked(server.remove).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", false)).rejects.toThrow("offline");
+    });
+});
+
+describe("Set label value with inheritance", () => {
+    const set = (note: FNote, value: string, isInheritable = false) =>
+        setLabelValueWithInheritance(note, "mode", value, "a", isInheritable);
+    const putCall = (noteId: string, value: string, isInheritable = false) => [
+        `notes/${noteId}/set-attribute`,
+        { type: "label", name: "mode", value, isInheritable },
+        undefined
+    ];
+    const removeCall = (note: FNote, index: number) => [
+        `notes/${note.noteId}/attributes/${note.getOwnedLabels("mode")[index]?.attributeId}`
+    ];
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        buildNote({
+            title: "Parent note",
+            "#mode(inheritable)": "b",
+            children: [
+                { id: "inherits", title: "Inherits" },
+                { id: "overrides", title: "Overrides", "#mode": [ "c", "c" ] }
+            ]
+        });
+    });
+
+    it("leaves a note alone that reads the value already, the default included", async () => {
+        await set(froca.notes["inherits"], "b");
+        await set(froca.notes["overrides"], "c");
+        await set(buildNote({ title: "Bare" }), "a");
+        await set(buildNote({ title: "Blank", "#mode": "" }), "a");
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("overrides the inherited or default value with an owned label", async () => {
+        await set(froca.notes["inherits"], "a");
+        expect(vi.mocked(server.put).mock.lastCall).toEqual(putCall("inherits", "a"));
+
+        const bare = buildNote({ title: "Bare" });
+        await set(bare, "b");
+        expect(vi.mocked(server.put).mock.lastCall).toEqual(putCall(bare.noteId, "b"));
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned labels when they keep the value from being inherited", async () => {
+        const note = froca.notes["overrides"];
+        const expectedRemovals = [ removeCall(note, 0), removeCall(note, 1) ];
+        await set(note, "b");
+        expect(vi.mocked(server.remove).mock.calls).toEqual(expectedRemovals);
+        expect(server.put).not.toHaveBeenCalled();
+
+        vi.clearAllMocks();
+        const owned = buildNote({ title: "Owned", "#mode": "b" });
+        const expectedRemoval = removeCall(owned, 0);
+        await set(owned, "a");
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned duplicates before changing the value", async () => {
+        const note = froca.notes["overrides"];
+        const expectedRemoval = removeCall(note, 1);
+        await set(note, "d");
+
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall("overrides", "d") ]);
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+
+    it("keeps an owned label inheritable when asked to, so the children read the value", async () => {
+        // An inheritable label in place already, or inherited from a parent, needs no write.
+        await set(buildNote({ title: "Inheritable", "#mode(inheritable)": "b" }), "b", true);
+        await set(froca.notes["inherits"], "b", true);
+        expect(server.put).not.toHaveBeenCalled();
+        expect(server.remove).not.toHaveBeenCalled();
+
+        const bare = buildNote({ title: "Bare" });
+        await set(bare, "b", true);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall(bare.noteId, "b", true) ]);
+
+        // `set-attribute` leaves an owned label's inheritability as it is, so the label is replaced.
+        vi.clearAllMocks();
+        const plain = buildNote({ title: "Plain", "#mode": "b" });
+        const expectedRemoval = removeCall(plain, 0);
+        await set(plain, "b", true);
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall(plain.noteId, "b", true) ]);
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
 });
 
 describe("addLabel / setLabel / setRelation", () => {
@@ -184,6 +363,194 @@ describe("addLabel / setLabel / setRelation", () => {
     });
 });
 
+describe("setLabelValues", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    /** A note holding the given values under one name, as several labels of it. */
+    function noteHolding(...values: string[]) {
+        const note = buildNote({ title: "N" });
+        for (const [ index, value ] of values.entries()) {
+            note.attributes.push(`attr-${index}`);
+            froca.attributes[`attr-${index}`] = {
+                attributeId: `attr-${index}`, noteId: note.noteId, type: "label",
+                name: "tags", value, position: index, isInheritable: false
+            } as never;
+        }
+        return note;
+    }
+
+    it("reuses the labels already there, so the set keeps its order and positions", async () => {
+        const note = noteHolding("a", "b");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "c" ]);
+
+        // "a" is where it was, so only the label that changed is written.
+        expect(server.put).toHaveBeenCalledTimes(1);
+        expect(server.put).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: "attr-1", type: "label", name: "tags", value: "c" },
+            undefined
+        );
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("creates what the set gained, having no label left to reuse for it", async () => {
+        const note = noteHolding("a");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "b" ], "comp-1");
+
+        expect(server.put).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "b" },
+            "comp-1"
+        );
+    });
+
+    it("removes the labels the set no longer fills, emptying included", async () => {
+        const note = noteHolding("a", "b", "c");
+
+        await attributeService.setLabelValues(note, "tags", [ "a" ]);
+
+        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/attr-1`, undefined);
+        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/attr-2`, undefined);
+
+        vi.clearAllMocks();
+        await attributeService.setLabelValues(note, "tags", []);
+        expect(server.remove).toHaveBeenCalledTimes(3);
+    });
+
+    it("removes only the label of a value taken out of the middle (#12382)", async () => {
+        const note = noteHolding("a", "b", "c", "d");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d" ]);
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+
+        // Removing one value and appending another leaves the kept labels alone.
+        vi.clearAllMocks();
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d", "e" ]);
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ [
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "e" },
+            undefined
+        ] ]);
+    });
+
+    it("rewrites the labels after a value inserted mid-set, as a new one goes last", async () => {
+        const note = noteHolding("a", "c");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "b", "c" ]);
+
+        expect(server.remove).not.toHaveBeenCalled();
+        expect(vi.mocked(server.put).mock.calls.map(([ , body ]) => body)).toEqual([
+            { attributeId: "attr-1", type: "label", name: "tags", value: "b" },
+            { attributeId: undefined, type: "label", name: "tags", value: "c" }
+        ]);
+    });
+});
+
+describe("setRelationValues", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("writes the targets as relations of the name, reused and trimmed as a label set is", async () => {
+        const note = buildNote({ title: "N" });
+        for (const [ index, value ] of [ "aaa", "bbb" ].entries()) {
+            note.attributes.push(`rel-${index}`);
+            froca.attributes[`rel-${index}`] = {
+                attributeId: `rel-${index}`, noteId: note.noteId, type: "relation",
+                name: "crew", value, position: index, isInheritable: false
+            } as never;
+        }
+
+        await attributeService.setRelationValues(note, "crew", [ "aaa", "ccc" ], "comp-1");
+
+        // Only the target that changed is written — as a relation, through the slot already there.
+        expect(server.put).toHaveBeenCalledTimes(1);
+        expect(server.put).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: "rel-1", type: "relation", name: "crew", value: "ccc" },
+            "comp-1"
+        );
+
+        vi.clearAllMocks();
+        await attributeService.setRelationValues(note, "crew", [ "aaa" ], "comp-1");
+        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/rel-1`, "comp-1");
+    });
+
+    it("removes only the relation of a target taken out of the middle (#12382)", async () => {
+        const note = buildNote({ title: "N" });
+        for (const [ index, value ] of [ "aaa", "bbb", "ccc" ].entries()) {
+            note.attributes.push(`rel-${index}`);
+            froca.attributes[`rel-${index}`] = {
+                attributeId: `rel-${index}`, noteId: note.noteId, type: "relation",
+                name: "crew", value, position: index, isInheritable: false
+            } as never;
+        }
+
+        await attributeService.setRelationValues(note, "crew", [ "aaa", "ccc" ], "comp-1");
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/rel-1`, "comp-1" ]
+        ]);
+    });
+});
+
+describe("addSelectOption", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    /** The note carrying the definition, which is not the note the field is edited on. */
+    function definitionOf(value: string) {
+        const owner = buildNote({ title: "Owner", [`#label:status`]: value });
+        const definitionAttr = owner.getAttributeDefinitions()
+            .find((attr) => attr.name === "label:status");
+        if (!definitionAttr) throw new Error("expected the definition to be built");
+        return definitionAttr;
+    }
+
+    it("appends the option to the definition, writing it back to the note that owns it", async () => {
+        const definitionAttr = definitionOf("promoted,single,select,options=Todo;Done");
+
+        const newDefinition = await attributeService.addSelectOption(definitionAttr, "Blocked", "comp-1");
+
+        expect(newDefinition.selectOptions).toEqual([ "Todo", "Done", "Blocked" ]);
+        expect(server.put).toHaveBeenCalledWith(
+            `notes/${definitionAttr.noteId}/attribute`,
+            {
+                attributeId: definitionAttr.attributeId,
+                type: "label",
+                name: "label:status",
+                value: "promoted,single,select,options=Todo;Done;Blocked"
+            },
+            "comp-1"
+        );
+    });
+
+    it("gives a definition with no options its first, and escapes what the format claims", async () => {
+        await attributeService.addSelectOption(definitionOf("promoted,single,select"), "1,5 kg");
+        expect(server.put).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ value: "promoted,single,select,options=1%2C5 kg" }),
+            undefined
+        );
+    });
+
+    it("leaves an option it already offers alone, without a write", async () => {
+        const definitionAttr = definitionOf("promoted,single,select,options=Todo;Done");
+
+        const unchanged = await attributeService.addSelectOption(definitionAttr, "Done");
+
+        expect(unchanged.selectOptions).toEqual([ "Todo", "Done" ]);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+});
+
 describe("removeAttributeById / removeOwnedAttributesByNameOrType", () => {
     beforeEach(() => vi.clearAllMocks());
 
@@ -210,29 +577,31 @@ describe("removeAttributeById / removeOwnedAttributesByNameOrType", () => {
 describe("removeOwnedLabelByName / removeOwnedRelationByName", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("removeOwnedLabelByName removes an existing label and returns true", () => {
+    it("removeOwnedLabelByName removes an existing label and returns true", async () => {
         const note = buildNote({ title: "N", "#color": "red" });
         const labelId = note.getOwnedLabel("color")!.attributeId;
-        expect(attributeService.removeOwnedLabelByName(note, "color")).toBe(true);
+        await expect(attributeService.removeOwnedLabelByName(note, "color")).resolves.toBe(true);
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${labelId}`);
     });
 
-    it("removeOwnedLabelByName returns false when label is absent", () => {
+    it("removeOwnedLabelByName returns false when label is absent", async () => {
         const note = buildNote({ title: "N" });
-        expect(attributeService.removeOwnedLabelByName(note, "missing")).toBe(false);
+        await expect(attributeService.removeOwnedLabelByName(note, "missing")).resolves.toBe(false);
         expect(server.remove).not.toHaveBeenCalled();
     });
 
-    it("removeOwnedRelationByName removes an existing relation and returns true", () => {
+    it("removeOwnedRelationByName removes an existing relation and returns true", async () => {
         const note = buildNote({ title: "N", "~template": "tpl1" });
         const relId = note.getOwnedRelation("template")!.attributeId;
-        expect(attributeService.removeOwnedRelationByName(note, "template")).toBe(true);
+        await expect(attributeService.removeOwnedRelationByName(note, "template"))
+            .resolves.toBe(true);
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${relId}`);
     });
 
-    it("removeOwnedRelationByName returns false when relation is absent", () => {
+    it("removeOwnedRelationByName returns false when relation is absent", async () => {
         const note = buildNote({ title: "N" });
-        expect(attributeService.removeOwnedRelationByName(note, "missing")).toBe(false);
+        await expect(attributeService.removeOwnedRelationByName(note, "missing"))
+            .resolves.toBe(false);
         expect(server.remove).not.toHaveBeenCalled();
     });
 });
@@ -366,5 +735,98 @@ describe("getNameWithoutDangerousPrefix", () => {
     it("strips the disabled: prefix when present and leaves plain names untouched", () => {
         expect(attributeService.getNameWithoutDangerousPrefix("disabled:run")).toBe("run");
         expect(attributeService.getNameWithoutDangerousPrefix("run")).toBe("run");
+    });
+});
+
+describe("isBuiltinAttribute", () => {
+    it("recognizes built-ins of each type and rejects user-invented names", () => {
+        expect(isBuiltinAttribute("label", "archived")).toBe(true);
+        expect(isBuiltinAttribute("relation", "template")).toBe(true);
+        expect(isBuiltinAttribute("label", "myOwnLabel")).toBe(false);
+        expect(isBuiltinAttribute("relation", "myOwnRelation")).toBe(false);
+    });
+
+    it("does not confuse the two types", () => {
+        // `archived` is a label only, `renderNote` a relation only.
+        expect(isBuiltinAttribute("relation", "archived")).toBe(false);
+        expect(isBuiltinAttribute("label", "renderNote")).toBe(false);
+        // `template` and `widget` exist as both, so both must be recognized.
+        expect(isBuiltinAttribute("label", "template")).toBe(true);
+        expect(isBuiltinAttribute("relation", "widget")).toBe(true);
+    });
+
+    it("recognizes the journal and calendar names, which the list long omitted", () => {
+        expect(isBuiltinAttribute("label", "yearNote")).toBe(true);
+        expect(isBuiltinAttribute("relation", "dateTemplate")).toBe(true);
+        expect(isBuiltinAttribute("label", "calendar:view")).toBe(true);
+        // An event reads its dates from these by default, so the names are Trilium's, not the user's.
+        expect(isBuiltinAttribute("label", "startDate")).toBe(true);
+        expect(isBuiltinAttribute("label", "calendar:startDate")).toBe(true);
+    });
+
+    it("recognizes the board's task-state names", () => {
+        expect(isBuiltinAttribute("label", "board:groupBy")).toBe(true);
+        expect(isBuiltinAttribute("label", "stateId")).toBe(true);
+        expect(isBuiltinAttribute("label", "isCompleted")).toBe(true);
+    });
+
+    it("recognizes the names of the smaller subsystems", () => {
+        expect(isBuiltinAttribute("label", "fastSearch")).toBe(true);
+        expect(isBuiltinAttribute("label", "launcherType")).toBe(true);
+        expect(isBuiltinAttribute("relation", "hoistedNote")).toBe(true);
+        expect(isBuiltinAttribute("label", "shareOpenGraphURL")).toBe(true);
+        expect(isBuiltinAttribute("label", "oneNotePageId")).toBe(true);
+        expect(isBuiltinAttribute("label", "versioningLimit")).toBe(true);
+        expect(isBuiltinAttribute("relation", "includeNoteLink")).toBe(true);
+        // `shareOpenGraphImage` is read as either a label or a relation, so both must be recognized.
+        expect(isBuiltinAttribute("label", "shareOpenGraphImage")).toBe(true);
+        expect(isBuiltinAttribute("relation", "shareOpenGraphImage")).toBe(true);
+    });
+
+    it("recognizes the map names", () => {
+        expect(isBuiltinAttribute("label", "geolocation")).toBe(true);
+        expect(isBuiltinAttribute("label", "map:style")).toBe(true);
+        expect(isBuiltinAttribute("label", "excludeFromNoteMap")).toBe(true);
+    });
+
+    it("reports the value type of a built-in label, and nothing for anything else", () => {
+        expect(getBuiltinLabelValueType("color")).toBe("color");
+        expect(getBuiltinLabelValueType("archived")).toBe("boolean");
+        expect(getBuiltinLabelValueType("pageSize")).toBe("number");
+        // Relations point at a note, so they carry no value type even under a shared name.
+        expect(getBuiltinLabelValueType("template")).toBe("boolean");
+        expect(getBuiltinLabelValueType("renderNote")).toBeUndefined();
+        // Matched exactly, as the built-in lookup is.
+        expect(getBuiltinLabelValueType("disabled:webViewSrc")).toBeUndefined();
+        expect(getBuiltinLabelValueType("myOwnLabel")).toBeUndefined();
+    });
+
+    it("reports the choices of a built-in closed set, and nothing for anything else", () => {
+        expect(getBuiltinLabelValueType("sortDirection")).toBe("select");
+        expect(getBuiltinLabelSelectOptions("sortDirection")).toEqual([ "asc", "desc" ]);
+        // A built-in label of any other type has no choices to offer, nor has a name Trilium
+        // attaches no meaning to.
+        expect(getBuiltinLabelSelectOptions("color")).toBeUndefined();
+        expect(getBuiltinLabelSelectOptions("myOwnLabel")).toBeUndefined();
+    });
+
+    it("offers the same choices the widgets reading those labels act on", () => {
+        // The lists live in two places by necessity — the vocabulary is shared, the widgets are the
+        // client's — so drift between them is caught here rather than by an unexplained blank field.
+        expect(getBuiltinLabelSelectOptions("viewType")).toEqual([ ...allViewTypes ]);
+        // "Play once" is the absence of the label, so it is the one mode not offered as a value.
+        expect(getBuiltinLabelSelectOptions("mediaNotesPlayMode"))
+            .toEqual(MEDIA_PLAY_MODES.filter((mode) => mode !== "once"));
+        // The stored value is the theme's id, not the name the collection properties show.
+        expect(getBuiltinLabelSelectOptions("presentation:theme"))
+            .toEqual(getPresentationThemes().map((theme) => theme.id));
+    });
+
+    it("matches exactly, so prefixed names are not built-ins", () => {
+        // A definition describes a built-in without being one, and a disabled one is inert.
+        expect(isBuiltinAttribute("label", "label:archived")).toBe(false);
+        expect(isBuiltinAttribute("label", "disabled:run")).toBe(false);
+        // Casing is part of the name; the server's own lookup is likewise name-sensitive.
+        expect(isBuiltinAttribute("label", "Archived")).toBe(false);
     });
 });

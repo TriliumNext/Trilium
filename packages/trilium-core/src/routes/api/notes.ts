@@ -1,12 +1,16 @@
-import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
+import { t } from "i18next";
+
+import type { Request } from "../../http_interface";
 
 import blobService from "../../services/blob";
+import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { ValidationError } from "../../errors.js";
+import { NotFoundError, ValidationError } from "../../errors.js";
 import { getBecca } from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import { getLog } from "../../services/log.js";
+import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
@@ -103,6 +107,63 @@ function getNoteMetadata(req: Request<{ noteId: string }>) {
     } satisfies MetadataResponse;
 }
 
+/**
+ * @swagger
+ * /api/notes/metadata:
+ *   post:
+ *     summary: Retrieve the timestamps of several notes at once
+ *     operationId: notes-metadata-bulk
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               noteIds:
+ *                 type: array
+ *                 items:
+ *                   $ref: "#/components/schemas/NoteId"
+ *     responses:
+ *       '200':
+ *         description: The timestamps of each note found, keyed by note ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties:
+ *                 $ref: "#/components/schemas/Timestamps"
+ *     security:
+ *       - session: []
+ *     tags: ["data"]
+ */
+function getNotesMetadata(req: Request) {
+    const { noteIds } = req.body as { noteIds?: unknown };
+    if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
+        throw new ValidationError("Expected 'noteIds' to be an array of note IDs.");
+    }
+
+    const metadata: Record<string, MetadataResponse> = {};
+
+    for (const noteId of noteIds as string[]) {
+        // Unknown notes are skipped rather than refused: a caller asks about the notes it holds,
+        // and one of them can be deleted before the request lands.
+        const note = getBecca().notes[noteId];
+        if (!note) {
+            continue;
+        }
+
+        metadata[noteId] = {
+            dateCreated: note.dateCreated,
+            utcDateCreated: note.utcDateCreated,
+            dateModified: note.dateModified,
+            utcDateModified: note.utcDateModified
+        };
+    }
+
+    return metadata;
+}
+
 function createNote(req: Request) {
     const params = Object.assign({}, req.body); // clone
     params.parentNoteId = req.params.parentNoteId;
@@ -120,6 +181,18 @@ function createNote(req: Request) {
 
     const { note, branch } = noteService.createNewNoteWithTarget(target, String(targetBranchId), params);
 
+    // Content handed to us at creation gets the same pass a save gives it — `createNewNote`
+    // deliberately does none of it itself, so every caller taking content from outside runs it (see
+    // `import/single.ts`). Without it, content that came from another note keeps pointing at that
+    // note's attachments: "cut selection into sub-note" hands the new note the selected HTML,
+    // picture URLs and all, and then removes the selection from the source, which schedules the very
+    // attachments the sub-note shows for erasure. The copying step lives here, in the same
+    // transaction (`scanForLinks` runs before this promise's first await), so the note is right
+    // before the response leaves.
+    if (typeof params.content === "string" && params.content) {
+        void noteService.asyncPostProcessContent(note, params.content);
+    }
+
     return {
         note,
         branch
@@ -131,6 +204,52 @@ function updateNoteData(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
 
     return noteService.updateNoteData(noteId, content, attachments);
+}
+
+/** The blocks of a text note that the `block` query parameter points at, to edit apart. */
+function getNoteBlocks(req: Request<{ noteId: string }>) {
+    const { content, block } = getBlockRangeRequest(req);
+    const blocks = getBlockRangeContent(content, block);
+    if (blocks === null) {
+        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    }
+
+    return { content: blocks };
+}
+
+/** Replaces the blocks of a text note that the `block` query parameter points at. */
+function updateNoteBlocks(req: Request<{ noteId: string }>) {
+    const { content, block } = getBlockRangeRequest(req);
+    const { content: blocks, attachments } = req.body;
+    if (typeof blocks !== "string") {
+        throw new ValidationError("Missing the content of the blocks.");
+    }
+
+    const newContent = replaceBlockRangeContent(content, block, blocks);
+    if (newContent === null) {
+        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    }
+
+    noteService.updateNoteData(req.params.noteId, newContent, attachments);
+}
+
+function getBlockRangeRequest(req: Request<{ noteId: string }>) {
+    const { block } = req.query;
+    if (typeof block !== "string") {
+        throw new ValidationError("Missing the 'block' parameter.");
+    }
+
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
+    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
+    if (typeof content !== "string") {
+        throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
+    }
+
+    return { content, block };
+}
+
+function getBlockRangeError(noteId: string, block: string) {
+    return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
 }
 
 /**
@@ -189,10 +308,11 @@ function deleteNote(req: Request<{ noteId: string }>) {
     note.deleteNote(deleteId, taskContext);
 
     if (eraseNotes) {
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 }
@@ -200,9 +320,22 @@ function deleteNote(req: Request<{ noteId: string }>) {
 function undeleteNote(req: Request<{ noteId: string }>) {
     const taskContext = TaskContext.getInstance(randomString(10), "undeleteNotes", null);
 
-    noteService.undeleteNote(req.params.noteId, taskContext);
+    // A note whose original parent is gone can only be restored by giving it a new home. The caller
+    // opts into that by naming a fallback parent (the client uses the inbox / default new-note
+    // location, after telling the user the original location no longer exists).
+    const { fallbackParentNoteId } = req.body ?? {};
+
+    if (fallbackParentNoteId !== undefined && typeof fallbackParentNoteId !== "string") {
+        throw new ValidationError("'fallbackParentNoteId' must be a note id.");
+    }
+
+    // Report whether the note was actually restored (and where): it may fail if the note was already
+    // erased, so the client can give feedback instead of navigating to a note that was never brought back.
+    const result = noteService.undeleteNote(req.params.noteId, taskContext, { fallbackParentNoteId });
 
     taskContext.taskSucceeded(null);
+
+    return result;
 }
 
 function sortChildNotes(req: Request<{ noteId: string }>) {
@@ -233,6 +366,10 @@ function setNoteTypeMime(req: Request<{ noteId: string }>) {
     // can't use [] destructuring because req.params is not iterable
     const { noteId } = req.params;
     const { type, mime } = req.body;
+
+    if (!isNoteType(type)) {
+        throw new ValidationError(`'${type}' is not a valid note type`);
+    }
 
     const note = getBecca().getNoteOrThrow(noteId);
     note.type = type;
@@ -269,8 +406,9 @@ function changeTitle(req: Request<{ noteId: string }>) {
 
 function duplicateSubtree(req: Request<{ noteId: string; parentNoteId: string }>) {
     const { noteId, parentNoteId } = req.params;
+    const { withChildren } = (req.body ?? {}) as { withChildren?: unknown };
 
-    return noteService.duplicateSubtree(noteId, parentNoteId);
+    return noteService.duplicateSubtree(noteId, parentNoteId, { withChildren: withChildren !== false });
 }
 
 function eraseDeletedNotesNow() {
@@ -343,6 +481,82 @@ function getDeleteNotesPreview(req: Request) {
     } satisfies DeleteNotesPreview;
 }
 
+/**
+ * Deletes a whole selection of branches, which is what the delete-notes dialog carries out.
+ *
+ * Takes the selection in one request so it deletes in one transaction, and the commit hook
+ * broadcasts one frontend update for the whole batch rather than one per note.
+ *
+ * Each branch gets a deleteId of its own, so Recent Changes can undelete one note of the selection
+ * without bringing the rest back.
+ */
+function deleteNotes(req: Request) {
+    const { branchIdsToDelete, deleteAllClones, eraseNotes, totalCount, taskId } = req.body ?? {};
+
+    if (!Array.isArray(branchIdsToDelete)) {
+        throw new ValidationError("'branchIdsToDelete' must be an array of branch IDs.");
+    }
+
+    if (typeof taskId !== "string") {
+        throw new ValidationError("Missing or incorrect type for task ID.");
+    }
+
+    const taskContext = new TaskContext(taskId, "deleteNotes", null);
+
+    // What getDeleteNotesPreview told the caller the deletion costs. A caller that did not ask gets
+    // a bare running count instead of a bar.
+    if (typeof totalCount === "number" && totalCount > 0) {
+        taskContext.setTotalCount(totalCount);
+    }
+
+    try {
+        for (const branchId of branchIdsToDelete) {
+            const branch = getBecca().getBranch(branchId);
+
+            if (!branch) {
+                // Either a stale id, or a branch an earlier one of the selection took down with
+                // its subtree.
+                getLog().info(`Branch '${branchId}' was not found, skipping its deletion.`);
+                continue;
+            }
+
+            const deleteId = randomString(10);
+
+            // Erasing one branch would leave the note's other clones pointing at erased content, so
+            // eraseNotes deletes the note everywhere it hangs.
+            if (deleteAllClones || eraseNotes) {
+                branch.getNote().deleteNote(deleteId, taskContext);
+            } else {
+                branch.deleteBranch(deleteId, taskContext);
+            }
+
+            if (eraseNotes) {
+                taskContext.scheduleErase(deleteId);
+            }
+        }
+
+        const deleteIdsToErase = taskContext.takeScheduledErases();
+
+        if (deleteIdsToErase.length > 0) {
+            // Erasing is bulk SQL over the whole batch with no per-note step to count, so it
+            // reports a phase rather than letting the bar sit at its last value.
+            taskContext.reportPhase("erasing");
+            eraseService.eraseNotesWithDeleteIds(deleteIdsToErase);
+        }
+
+        taskContext.taskSucceeded(null);
+    } catch (e: unknown) {
+        // The progress toast has no close button, so a failure the task system never hears about
+        // leaves it on screen until the page is reloaded. Rethrown rather than answered with a
+        // status, because the surrounding transaction rolls back on the throw — returning here
+        // would commit a half-deleted selection.
+        const message = e instanceof Error ? e.message : String(e);
+        getLog().error(`Deleting notes failed: ${message}`);
+        taskContext.reportError(t("notes.delete-notes-failed", { message }));
+        throw e;
+    }
+}
+
 function forceSaveRevision(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const note = getBecca().getNoteOrThrow(noteId);
@@ -368,11 +582,21 @@ function convertNoteToAttachment(req: Request<{ noteId: string }>) {
     };
 }
 
+function convertNoteFormat(req: Request<{ noteId: string }>) {
+    const { noteId } = req.params;
+    const note = getBecca().getNoteOrThrow(noteId);
+
+    return noteFormatConversionService.convertNoteFormat(note);
+}
+
 export default {
     getNote,
     getNoteBlob,
     getNoteMetadata,
+    getNotesMetadata,
     updateNoteData,
+    getNoteBlocks,
+    updateNoteBlocks,
     deleteNote,
     undeleteNote,
     createNote,
@@ -384,6 +608,8 @@ export default {
     eraseDeletedNotesNow,
     eraseUnusedAttachmentsNow,
     getDeleteNotesPreview,
+    deleteNotes,
     forceSaveRevision,
-    convertNoteToAttachment
+    convertNoteToAttachment,
+    convertNoteFormat
 };

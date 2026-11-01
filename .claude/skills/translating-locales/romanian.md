@@ -62,7 +62,37 @@ Adjectives and past participles **must agree** with the noun's gender and number
 | Enable / Disable | Activează / Dezactivează |
 | Search | Căutare / Caută |
 | code (note type) | Cod sursă |
-| backup | copie de rezervă |
+| backup | copie de siguranță |
 | Preview | Previzualizare |
 
-Keep in English: ETAPI, MCP, OAuth/OpenID, Markdown, Widget, Mermaid, search-engine names, and words identical in Romanian (Text, Editor, Calendar, Vertical, Zoom, August, Logo, Alias).
+Settled in later passes — the file is not always self-consistent, so prefer these:
+
+| English | Romanian | note |
+|---|---|---|
+| backup | copie de siguranță | the dominant form in both catalogs; `backup.title` still says "Copie de rezervă" |
+| hoist / hoisted | focalizează / focalizat | `tree-context-menu.hoist-note` = "Focalizează notița" |
+| board (Kanban) | tablă | `book_properties.board` = "Tablă Kanban" |
+| marker (geo map) | marcaj | |
+| snippet | fragment (de text / de cod) | |
+| saved search | căutare salvată | |
+| backlink | legătură de retur | |
+| launcher / launch bar / spacer | lansator / bară de lansare / separator | |
+| day, week, month note | notiță zilnică, săptămânală, lunară | |
+| workspace | spațiu de lucru | |
+| knowledge base | bază de cunoștințe | |
+| ribbon | panglică | |
+| promoted attribute | atribut evidențiat | |
+| notebook (OneNote, Evernote) | blocnotes | |
+| collection | colecție | |
+| pin / unpin (tab) | fixează / anulează fixarea | |
+| erase (permanently) | șterge definitiv | vs. plain `delete` = șterge |
+| tray, tab, widget, token, log | tray, tab, widget, token, log | already borrowed in the file; decline with a hyphen (tab-ul, widget-uri, log-uri) |
+
+**Interpolated foreign UI labels stay in English.** When the string tells the user to click something in *another* product ("re-export with **Create folders for subpages** enabled", OneNote's "Password Protection → Remove Password"), leave that label untranslated — the user has to find that exact control.
+
+Keep in English: ETAPI, MCP, OAuth/OpenID, Markdown, Widget, Mermaid, search-engine names, keyboard key names (Ctrl, Shift, Enter, Delete, Home, Insert…), and words identical in Romanian (Text, Editor, Calendar, Vertical, Zoom, August, Logo, Alias, Original, Important, Card, Beta, Format, Prefix, Script).
+
+## Typography
+
+- Quotation marks are **„…”** (opening low, closing high), not `"…"` — e.g. `Ștergeți atributul „{{name}}”?`.
+- Put a space between a number and its unit: `Interval: {{seconds}} s`.

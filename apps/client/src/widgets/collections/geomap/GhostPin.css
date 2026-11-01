@@ -1,0 +1,36 @@
+/*
+ * The translucent pin that follows the pointer while the map is waiting to be told a place (see
+ * GhostPin.tsx). It stands at the container's origin and is carried to the pointer by a transform
+ * the component writes, so nothing here says where it is — only what it looks like.
+ */
+.geo-map-container .geo-ghost-pin {
+  position: absolute;
+  top: 0;
+  /* `left` whatever the writing direction: the transform carries pixel offsets measured from the
+     left edge, which is where MapLibre measures a point from. */
+  left: 0;
+  /* Over the map and its control corners (2), under the toolbar and the detail pane (3): the
+     ghost is part of the map's picture, not of the furniture standing over it. */
+  z-index: 2;
+  /* The click this pin previews has to fall through it onto the canvas — which is also what keeps
+     the crosshair up, the cursor being the canvas container's to say (see index.css). */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.geo-map-container .geo-ghost-pin.visible {
+  /* Present enough to be read, translucent enough to read as an offer rather than a marker. */
+  opacity: 0.6;
+}
+
+.geo-map-container .geo-ghost-pin img {
+  display: block;
+  /* The canvas drawMarkerImage draws, in CSS pixels: the pin plus the room left around it for its
+     shadow. Must agree with MARKER_WIDTH, MARKER_HEIGHT and MARKER_SHADOW_PADDING (Markers.tsx). */
+  width: 37px;
+  height: 53px;
+  /* The tip of the pin is what stands on the pointer, and it sits a shadow-padding's height above
+     the image's bottom edge — the same correction the symbol layer applies (see `icon-offset`). */
+  transform: translate(-50%, calc(-100% + 6px));
+}

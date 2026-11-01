@@ -8,7 +8,7 @@ import { useTriliumEvent } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
 import { TypeWidgetProps } from "./type_widget";
 
-export default function Doc({ note, viewScope, ntxId }: TypeWidgetProps) {
+export default function Doc({ note, ntxId }: TypeWidgetProps) {
     const initialized = useRef<Promise<void> | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +31,7 @@ export default function Doc({ note, viewScope, ntxId }: TypeWidgetProps) {
     return (
         <div
             ref={containerRef}
-            className={`note-detail-doc-content ck-content ${viewScope?.viewMode === "contextual-help" ? "contextual-help" : ""}`}
+            className="note-detail-doc-content ck-content"
         />
     );
 }

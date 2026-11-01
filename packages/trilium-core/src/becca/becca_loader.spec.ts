@@ -7,6 +7,7 @@ import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
 import { getBecca } from "./becca.js";
 import beccaLoader, { load, reload } from "./becca_loader.js";
+import BAttribute from "./entities/battribute.js";
 import BNote from "./entities/bnote.js";
 
 let counter = 0;
@@ -135,6 +136,33 @@ describe("becca_loader", () => {
 
             expect(Object.keys(getBecca().attributes).length).toBe(attributesBefore);
         });
+
+        it("attributeDeleted removes an attribute from its index bucket without rebuilding it", () => {
+            const makeLabel = (attributeId: string, noteId: string) => new BAttribute({
+                attributeId, noteId, type: "label", name: "loaderSharedLabel",
+                value: "", isInheritable: false, position: 0
+            });
+            const deleteAttribute = (attribute: BAttribute) => eventService.emit(
+                eventService.ENTITY_DELETED,
+                { entityName: "attributes", entityId: attribute.attributeId, entity: attribute }
+            );
+
+            const first = makeLabel("loaderShared1", "loaderSharedNote1");
+            const second = makeLabel("loaderShared2", "loaderSharedNote2");
+            const third = makeLabel("loaderShared3", "loaderSharedNote1");
+            const bucket = getBecca().attributeIndex["label-loadersharedlabel"];
+
+            deleteAttribute(second);
+
+            // Rebuilding the bucket per deletion makes deleting n same-named attributes O(n²).
+            expect(getBecca().attributeIndex["label-loadersharedlabel"]).toBe(bucket);
+            expect(getBecca().findAttributes("label", "loaderSharedLabel")).toEqual([ first, third ]);
+            expect(getBecca().getNote("loaderSharedNote2")).toBeNull();
+
+            deleteAttribute(first);
+            deleteAttribute(third);
+            expect(getBecca().findAttributes("label", "loaderSharedLabel")).toEqual([]);
+        });
     });
 
     describe("ENTER_PROTECTED_SESSION listener", () => {
@@ -147,6 +175,35 @@ describe("becca_loader", () => {
             // the event dispatcher), so emitting never throws.
             expect(() => eventService.emit(eventService.ENTER_PROTECTED_SESSION)).not.toThrow();
             expect(spy).toHaveBeenCalled();
+        });
+    });
+
+    describe("LEAVE_PROTECTED_SESSION listener", () => {
+        it("reloads becca from disk, purging decrypted titles from memory and the flat-text index", () => {
+            // Simulate the post-unlock state: a protected note whose plaintext title lives
+            // only in becca memory (on disk the title is ciphertext, here it has no row at all).
+            const note = new BNote();
+            note.updateFromRow({
+                noteId: "loaderLeaveProtected",
+                title: "swordfish plaintext",
+                isProtected: true,
+                type: "text",
+                mime: "text/html",
+                blobId: ""
+            });
+            note.init();
+            note.isDecrypted = true;
+
+            // The flat-text search index serves the plaintext title (this is the #10115
+            // leak surface: title-word search matching protected notes without a session).
+            expect(getBecca().getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(true);
+
+            getContext().init(() => eventService.emit(eventService.LEAVE_PROTECTED_SESSION));
+
+            // Full reload from disk: the memory-only decrypted state is discarded...
+            expect(getBecca().getNote("loaderLeaveProtected")).toBeNull();
+            // ...and the rebuilt search index no longer matches the plaintext.
+            expect(getBecca().getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(false);
         });
     });
 
@@ -170,25 +227,69 @@ describe("becca_loader", () => {
             expect(token?.name).toBe("loader-test-token");
             expect(getBecca().loaded).toBe(true);
         });
+
+        it("orders a note's children by notePosition rather than by insertion order", () => {
+            const parent = createNote("root");
+            const children = [
+                createNote(parent.noteId), createNote(parent.noteId), createNote(parent.noteId)
+            ];
+
+            getContext().init(() => {
+                // Reverse the positions, so the rowid order the table is scanned in disagrees
+                // with the order the children belong in.
+                const update = /*sql*/`UPDATE branches SET notePosition = ?
+                                       WHERE noteId = ? AND parentNoteId = ?`;
+                for (const [index, child] of children.entries()) {
+                    const position = (children.length - index) * 10;
+                    getSql().execute(update, [position, child.noteId, parent.noteId]);
+                }
+
+                load();
+            });
+
+            const loadedParent = getBecca().getNoteOrThrow(parent.noteId);
+            expect(loadedParent.children.map((child) => child.noteId)).toEqual(
+                [...children].reverse().map((child) => child.noteId)
+            );
+        });
     });
 
     describe("reload()", () => {
-        it("reloads becca and notifies the frontend with the supplied reason", () => {
-            const spy = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
+        it("reloads becca and has the clients refresh froca with the supplied reason", () => {
+            const refresh = vi.spyOn(ws, "reloadFroca").mockImplementation(() => {});
+            const fullReload = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
 
             getContext().init(() => reload("custom reason"));
 
             expect(getBecca().loaded).toBe(true);
-            expect(spy).toHaveBeenCalledWith("custom reason");
+            expect(refresh).toHaveBeenCalledWith("custom reason");
+            expect(fullReload).not.toHaveBeenCalled();
         });
 
         it("falls back to a default reason when none is given", () => {
-            const spy = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
+            const spy = vi.spyOn(ws, "reloadFroca").mockImplementation(() => {});
 
             getContext().init(() => reload(""));
 
-            // The empty reason triggers the `reason || "becca reloaded"` fallback.
             expect(spy).toHaveBeenCalledWith("becca reloaded");
+        });
+    });
+
+    describe("note update", () => {
+        it("drops the title-derived search caches so a rename is searchable under its new title", () => {
+            const note = createNote("root");
+            // Populate both caches, as a search would.
+            expect(note.getFlatText()).toContain("becca-loader-spec");
+
+            expect(note.getSearchableTitle().normalized).toBe(note.title.toLowerCase());
+
+            // A local rename assigns the title and saves; `updateFromRow` is not involved.
+            note.title = "Renamed Vienna";
+            getContext().init(() => note.save());
+
+            expect(note.getSearchableTitle().normalized).toBe("renamed vienna");
+            expect(note.getSearchableTitle().words).toEqual([ "renamed", "vienna" ]);
+            expect(note.getFlatText()).toContain("renamed vienna");
         });
     });
 

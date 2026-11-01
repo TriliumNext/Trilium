@@ -153,6 +153,19 @@ pdfjs-document-properties-linearized = 快速 Web 视图：
 pdfjs-document-properties-linearized-yes = 是
 pdfjs-document-properties-linearized-no = 否
 pdfjs-document-properties-close-button = 关闭
+pdfjs-digital-signature-properties-view-certificate = 查看证书
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = 原因：{ $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = 时间戳：{ DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Print
 
@@ -166,23 +179,6 @@ pdfjs-printing-not-ready = 警告：此 PDF 未完成加载，无法打印。
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = 打开/关闭侧栏
-pdfjs-toggle-sidebar-notification-button =
-    .title = 打开/关闭侧栏（文档所含的大纲/附件/图层）
-pdfjs-toggle-sidebar-button-label = 打开/关闭侧栏
-pdfjs-document-outline-button =
-    .title = 显示文档大纲（双击展开/折叠所有项）
-pdfjs-document-outline-button-label = 文档大纲
-pdfjs-attachments-button =
-    .title = 显示附件
-pdfjs-attachments-button-label = 附件
-pdfjs-layers-button =
-    .title = 显示图层（双击即可将所有图层重置为默认状态）
-pdfjs-layers-button-label = 图层
-pdfjs-thumbs-button =
-    .title = 显示缩略图
-pdfjs-thumbs-button-label = 缩略图
 pdfjs-current-outline-item-button =
     .title = 查找当前大纲项目
 pdfjs-current-outline-item-button-label = 当前大纲项目
@@ -193,10 +189,6 @@ pdfjs-additional-layers = 其他图层
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = 第 { $page } 页
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +206,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = 查找
     .placeholder = 在文档中查找…
+    .title = 查找
 pdfjs-find-previous-button =
     .title = 查找词语上一次出现的位置
 pdfjs-find-previous-button-label = 上一页
@@ -302,16 +294,16 @@ pdfjs-editor-highlight-button =
     .title = 高亮
 pdfjs-editor-highlight-button-label = 高亮
 pdfjs-highlight-floating-button1 =
-    .title = 高亮
     .aria-label = 高亮
+    .title = 高亮
 pdfjs-highlight-floating-button-label = 高亮
 pdfjs-comment-floating-button =
-    .title = 批注
     .aria-label = 批注
+    .title = 批注
 pdfjs-comment-floating-button-label = 批注
 pdfjs-editor-comment-button =
-    .title = 批注
     .aria-label = 批注
+    .title = 批注
 pdfjs-editor-comment-button-label = 批注
 pdfjs-editor-signature-button =
     .title = 添加签名
@@ -380,8 +372,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = 批注
 pdfjs-editor-comments-sidebar-close-button =
-    .title = 关闭侧栏
     .aria-label = 关闭侧栏
+    .title = 关闭侧栏
 pdfjs-editor-comments-sidebar-close-button-label = 关闭侧栏
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = 发现值得注意的地方？可为其添加高亮并批注。
@@ -504,13 +496,6 @@ pdfjs-editor-alt-text-settings-dialog-label = 图像替换文字设置
 pdfjs-editor-alt-text-settings-automatic-title = 自动创建替换文字
 pdfjs-editor-alt-text-settings-create-model-button-label = 自动创建替换文字
 pdfjs-editor-alt-text-settings-create-model-description = 向无法看到或加载图像的用户提供描述。
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = 提供替换文字的 AI 模型（{ $totalSize } MB）
-pdfjs-editor-alt-text-settings-ai-model-description = 在您的设备本地运行，可使数据保持私密。自动创建替换文字需要使用此模型。
-pdfjs-editor-alt-text-settings-delete-model-button = 删除
-pdfjs-editor-alt-text-settings-download-model-button = 下载
-pdfjs-editor-alt-text-settings-downloading-model-button = 正在下载…
 pdfjs-editor-alt-text-settings-editor-title = 替换文字编辑器
 pdfjs-editor-alt-text-settings-show-dialog-button-label = 添加图像后立即显示替换文字编辑器
 pdfjs-editor-alt-text-settings-show-dialog-description = 帮助确保所有图像均拥有替换文字。
@@ -699,6 +684,39 @@ pdfjs-new-badge-content = 新
 pdfjs-views-manager-waiting-for-file = 正在上传文件…
 pdfjs-toggle-views-manager-button1 =
     .title = 管理页面
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = 数字签名属性
+    .title = 数字签名属性
+pdfjs-digital-signature-properties-button-label = 数字签名属性
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = 状态：签名已验证
+pdfjs-digital-signature-properties-status-invalid = 状态：签名无效
+pdfjs-digital-signature-properties-status-unknown = 状态：无法验证（不支持）
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = 证书：受信任（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-unknown = 证书：不可用
+pdfjs-digital-signature-properties-certificate-untrusted = 证书：不可信
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = 证书：颁发者未知（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = 证书：自签名（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = 证书: 颁发者不可信（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-expired = 证书: 已过期
+pdfjs-digital-signature-properties-certificate-expired-with-date = 证书：已过期（{ DATETIME($dateObj, dateStyle: "medium") }）
+pdfjs-digital-signature-properties-certificate-revoked = 证书：已吊销
 
 ## Main menu for adding/removing signatures
 

@@ -7,25 +7,10 @@
     h5 { font-size: 1.1em; }
     h6 { font-size: 1.0em; }
 
-    .mermaid-diagram,
-    .mermaid-diagram svg,
     img {
         max-width: 100%;
         height: auto;
     }
-}
-
-/* Top-level (not scoped to the note view) so a swallowed mermaid failure is
-   visible in the chat panel too, where the container lacks the note class. */
-.mermaid-diagram.mermaid-error {
-    display: block;
-    white-space: pre-wrap;
-    padding: 0.75em 1em;
-    border: 1px solid var(--main-border-color);
-    border-radius: 4px;
-    color: var(--muted-text-color);
-    font-family: var(--monospace-font-family, monospace);
-    font-size: 0.85em;
 }
 
 body.heading-style-markdown .note-detail-readonly-text-content {
@@ -47,8 +32,7 @@ body.heading-style-underline .note-detail-readonly-text-content {
 }
 
 .note-detail-readonly-text {
-    padding-inline-start: 24px;
-    padding-top: 10px;
+    padding: 1px var(--content-margin-inline) 0 var(--content-margin-inline);
     font-family: var(--detail-font-family);
     min-height: 50px;
     position: relative;
@@ -90,5 +74,5 @@ body.mobile .note-detail-readonly-text {
 }
 
 .note-detail-readonly-text-content code.copyable-inline-code:hover {
-    background-color: var(--accented-background-color);
+    background-color: var(--inline-code-hover-background-color);
 }

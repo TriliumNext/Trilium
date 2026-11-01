@@ -3,29 +3,62 @@ export * from "./lib/katex_macros.js";
 export * from "./lib/options_interface.js";
 export * from "./lib/keyboard_actions_interface.js";
 export * from "./lib/hidden_subtree.js";
+export * from "./lib/help_meta.js";
 export * from "./lib/rows.js";
+export * from "./lib/safe_template.js";
 export * from "./lib/test-utils.js";
+export * from "./lib/attachment_roles.js";
+export * from "./lib/custom_fonts.js";
+export * from "./lib/font_mimes.js";
+export * from "./lib/icon_font_metrics.js";
+export * from "./lib/image_mimes.js";
 export * from "./lib/mime_type.js";
+export * from "./lib/office.js";
 export * from "./lib/bulk_actions.js";
 export * from "./lib/server_api.js";
 export * from "./lib/shared_constants.js";
 export * from "./lib/shared_types.js";
+export * from "./lib/share_hosting.js";
 export * from "./lib/ws_api.js";
 export * from "./lib/attribute_names.js";
+export * from "./lib/search_syntax.js";
+export * from "./lib/sort_criteria.js";
+export * from "./lib/auto_sort.js";
+export * from "./lib/text_transforms.js";
+export * from "./lib/note_type_ids.js";
+export * from "./lib/promoted_attribute_definition_parser.js";
+export { default as promotedAttributeDefinitionParser } from "./lib/promoted_attribute_definition_parser.js";
 export * from "./lib/utils.js";
 export * from "./lib/dayjs.js";
 export * from "./lib/notes.js";
 export * from "./lib/onenote.js";
 export * from "./lib/week_utils.js";
+export * from "./lib/board_columns.js";
+export * from "./lib/block_reference.js";
+export * from "./lib/content_embeds.js";
+export * from "./lib/builtin_attributes.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // The spreadsheet modules are deliberately not re-exported here: they pull in numfmt, and the
 // barrel is imported by virtually every client module. Import them via their subpath instead,
 // e.g. "@triliumnext/commons/src/lib/spreadsheet/render_to_html".
+export * from "./lib/backup_name.js";
+export * from "./lib/filesystem_name.js";
 export * from "./lib/electron_api_interface.js";
+export * from "./lib/security_settings.js";
+export * from "./lib/setup_marker.js";
+export * from "./lib/standalone_api_interface.js";
+export * from "./lib/favicon_contrast.js";
+export * from "./lib/mermaid_config.js";
 export * from "./lib/link_embed.js";
+export * from "./lib/link_embed_dom.js";
+export * from "./lib/scroll_fade.js";
+export * from "./lib/link_embed_markup.js";
 export * from "./lib/llm_api.js";
 export * from "./lib/marked_extensions.js";
 // The markdown renderer is deliberately not re-exported here: it pulls in marked, and the barrel
 // is imported by virtually every client module. Import it via its subpath instead,
 // e.g. "@triliumnext/commons/src/lib/markdown_renderer".
 export * from "./lib/task_states.js";
+export * from "./lib/resources.js";
+export * from "./lib/transcript.js";
+export * from "./lib/keyboard_shortcut_display.js";

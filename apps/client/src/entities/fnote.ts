@@ -1,11 +1,9 @@
-import { getNoteIcon } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime, type NoteType } from "@triliumnext/commons";
 
-import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
-import search from "../services/search.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import type FAttachment from "./fattachment.js";
@@ -13,13 +11,6 @@ import type { AttributeType, default as FAttribute } from "./fattribute.js";
 
 const LABEL = "label";
 const RELATION = "relation";
-
-/**
- * There are many different Note types, some of which are entirely opaque to the
- * end user. Those types should be used only for checking against, they are
- * not for direct use.
- */
-export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet" | "llmChat";
 
 export interface NotePathRecord {
     isArchived: boolean;
@@ -36,6 +27,8 @@ export interface FNoteRow {
     type: NoteType;
     mime: string;
     blobId: string;
+    /** Sent only as `false`, for a virtual note whose provider cannot save content. */
+    isContentWritable?: boolean;
 }
 
 export interface NoteMetaData {
@@ -55,12 +48,11 @@ export default class FNote {
     title!: string;
     isProtected!: boolean;
     type!: NoteType;
-    /**
-     * content-type, e.g. "application/json"
-     */
     mime!: string;
     // the main use case to keep this is to detect content change which should trigger refresh
     blobId!: string;
+    /** `false` for a note that no editing mode can unlock, such as a page of the in-app help. */
+    isContentWritable!: boolean;
 
     attributes: string[];
     targetRelations: string[];
@@ -74,6 +66,9 @@ export default class FNote {
     // Managed by Froca.
     searchResultsLoaded?: boolean;
     highlightedTokens?: string[];
+    /** Structured, diacritic/regex-aware counterpart of {@link highlightedTokens}; prefer this
+     *  when present. */
+    highlightedTokenInfos?: HighlightedTokenInfo[];
 
     constructor(froca: Froca, row: FNoteRow) {
         this.froca = froca;
@@ -92,13 +87,18 @@ export default class FNote {
 
     update(row: FNoteRow) {
         this.noteId = row.noteId;
-        this.title = row.title;
         this.isProtected = !!row.isProtected;
         this.type = row.type;
 
-        this.mime = row.mime;
+        // The server can send a row without a mime or title: becca materialises "skeleton" notes
+        // for entities that arrive out of order during sync, and JSON serialisation drops their
+        // undefined mime/title. Defaulting keeps the mime predicates (isTriliumScript(), ...) and
+        // title consumers (escapeHtml() in the tree) from throwing until the real row syncs in.
+        this.title = row.title ?? "";
+        this.mime = row.mime ?? "";
 
         this.blobId = row.blobId;
+        this.isContentWritable = row.isContentWritable ?? true;
     }
 
     addParent(parentNoteId: string, branchId: string, sort = true) {
@@ -173,9 +173,6 @@ export default class FNote {
         return Object.values(this.parentToBranch);
     }
 
-    /**
-     * @deprecated use getParentBranchIds() instead
-     */
     getBranchIds() {
         return this.getParentBranchIds();
     }
@@ -186,9 +183,6 @@ export default class FNote {
         return this.froca.getBranches(branchIds);
     }
 
-    /**
-     * @deprecated use getParentBranches() instead
-     */
     getBranches() {
         return this.getParentBranches();
     }
@@ -210,6 +204,15 @@ export default class FNote {
 
     getParentNotes() {
         return this.froca.getNotesFromCache(this.parents);
+    }
+
+    /**
+     * The parent notes that make this note a clone: the share root, the bookmarks and saved
+     * searches also hold the note as a child, but the tree does not count them.
+     */
+    getRealParentNotes() {
+        return this.getParentNotes().filter((parent) =>
+            parent.noteId !== "_share" && parent.noteId !== "_lbBookmarks" && parent.type !== "search");
     }
 
     // will sort the parents so that non-search & non-archived are first and archived at the end
@@ -236,10 +239,6 @@ export default class FNote {
         return this.hasAttribute("label", "archived");
     }
 
-    /**
-     * Returns true if the note's metadata (title, icon) should not be editable.
-     * This applies to system notes like options, help, and launch bar configuration.
-     */
     get isMetadataReadOnly() {
         return utils.isLaunchBarConfig(this.noteId)
             || this.noteId.startsWith("_help_")
@@ -254,7 +253,8 @@ export default class FNote {
         const isHiddenNote = this.noteId.startsWith("_");
         const isSearchNote = this.type === "search";
         if (!includeArchived && !isHiddenNote && !isSearchNote) {
-            const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
+            const query = `note.parents.noteId="${this.noteId}" #!archived`;
+            const unorderedIds = new Set(await this.froca.searchNoteIds(query, this.noteId));
             const results: string[] = [];
             for (const id of this.children) {
                 if (unorderedIds.has(id)) {
@@ -266,13 +266,15 @@ export default class FNote {
         return this.children;
     }
 
-    async getSubtreeNoteIds(includeArchived = false) {
+    async getSubtreeNoteIds(includeArchived = false, maxDepth = -1) {
         const noteIds: (string | string[])[] = [];
         for (const child of await this.getChildNotes()) {
             if (child.isArchived && !includeArchived) continue;
 
             noteIds.push(child.noteId);
-            noteIds.push(await child.getSubtreeNoteIds(includeArchived));
+            if (maxDepth !== 0) {
+                noteIds.push(await child.getSubtreeNoteIds(includeArchived, maxDepth - 1));
+            }
         }
         return noteIds.flat();
     }
@@ -327,22 +329,12 @@ export default class FNote {
         return true;
     }
 
-    /**
-     * @param [type] - attribute type to filter
-     * @param [name] - attribute name to filter
-     * @returns all note's attributes, including inherited ones
-     */
     getOwnedAttributes(type?: AttributeType, name?: string) {
         const attrs = this.attributes.map((attributeId) => this.froca.attributes[attributeId]).filter(Boolean); // filter out nulls;
 
         return this.__filterAttrs(attrs, type, name);
     }
 
-    /**
-     * @param [type] - attribute type to filter
-     * @param [name] - attribute name to filter
-     * @returns all note's attributes, including inherited ones
-     */
     getAttributes(type?: AttributeType, name?: string) {
         return this.__filterAttrs(this.__getCachedAttributes([]), type, name);
     }
@@ -380,7 +372,7 @@ export default class FNote {
                         templateNote
                             .__getCachedAttributes(newPath)
                             // template attr is used as a marker for templates, but it's not meant to be inherited
-                            .filter((attr) => !(attr.type === "label" && (attr.name === "template" || attr.name === "workspacetemplate")))
+                            .filter((attr) => !(attr.type === "label" && (attr.name === "template" || attr.name === "workspaceTemplate")))
                     );
                 }
             }
@@ -404,11 +396,6 @@ export default class FNote {
         return this.noteId === "root";
     }
 
-    /**
-     * Gives all possible note paths leading to this note. Paths containing search note are ignored (could form cycles)
-     *
-     * @returns array of notePaths (each represented by array of noteIds constituting the particular note path)
-     */
     getAllNotePaths(): string[][] {
         if (this.noteId === "root") {
             return [["root"]];
@@ -430,12 +417,16 @@ export default class FNote {
 
     getSortedNotePathRecords(hoistedNoteId = "root", activeNotePath: string | null = null): NotePathRecord[] {
         const isHoistedRoot = hoistedNoteId === "root";
+        // Every ancestor in a path comes out of `froca.notes`, but the last segment is this note,
+        // which a view can still hold after `froca_updater` drops it from the cache.
+        const getPathNote = (noteId: string) =>
+            noteId === this.noteId ? this : this.froca.notes[noteId];
 
         const notePaths: NotePathRecord[] = this.getAllNotePaths().map((path) => ({
             notePath: path,
             isInHoistedSubTree: isHoistedRoot || path.includes(hoistedNoteId),
-            isArchived: path.some((noteId) => this.froca.notes[noteId].isArchived),
-            isSearch: path.some((noteId) => this.froca.notes[noteId].type === "search"),
+            isArchived: path.some((noteId) => getPathNote(noteId).isArchived),
+            isSearch: path.some((noteId) => getPathNote(noteId).type === "search"),
             isHidden: path.includes("_hidden")
         }));
 
@@ -446,16 +437,6 @@ export default class FNote {
         };
 
         notePaths.sort((a, b) => {
-            if (activeNotePath) {
-                const activeSegments = activeNotePath.split('/');
-                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
-                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
-                // Paths with more matching prefix segments are prioritized
-                // when the match count is equal, other criteria are used for sorting
-                if (bOverlap !== aOverlap) {
-                    return bOverlap - aOverlap;
-                }
-            }
             if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
                 return a.isInHoistedSubTree ? -1 : 1;
             } else if (a.isArchived !== b.isArchived) {
@@ -467,38 +448,35 @@ export default class FNote {
                 return a.isSearch ? 1 : -1;
             }
             /* v8 ignore stop */
+
+            if (activeNotePath) {
+                // Among otherwise equal paths, the one sharing the longest prefix with the active
+                // note wins, so opening a clone keeps the user where they came from. The checks
+                // above outrank it: an active `_hidden` note must not promote a bookmark clone.
+                const activeSegments = activeNotePath.split("/");
+                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
+                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
+                if (bOverlap !== aOverlap) {
+                    return bOverlap - aOverlap;
+                }
+            }
+
             return a.notePath.length - b.notePath.length;
         });
 
         return notePaths;
     }
 
-    /**
-     * Returns the note path considered to be the "best"
-     *
-     * @param {string} [hoistedNoteId='root']
-     * @param {string|null} [activeNotePath=null]
-     * @return {string[]} array of noteIds constituting the particular note path
-     */
     getBestNotePath(hoistedNoteId = "root", activeNotePath: string | null = null) {
         return this.getSortedNotePathRecords(hoistedNoteId, activeNotePath)[0]?.notePath;
     }
 
-    /**
-     * Returns the note path considered to be the "best"
-     *
-     * @param {string} [hoistedNoteId='root']
-     * @return {string} serialized note path (e.g. 'root/a1h315/js725h')
-     */
     getBestNotePathString(hoistedNoteId = "root") {
         const notePath = this.getBestNotePath(hoistedNoteId);
 
         return notePath?.join("/");
     }
 
-    /**
-     * @return boolean - true if there's no non-hidden path, note is not cloned to the visible tree
-     */
     isHiddenCompletely() {
         if (this.noteId === "_hidden") {
             return true;
@@ -558,18 +536,10 @@ export default class FNote {
         }
     }
 
-    /**
-     * @param name - label name to filter
-     * @returns all note's labels (attributes with type label), including inherited ones
-     */
     getOwnedLabels(name?: string) {
         return this.getOwnedAttributes(LABEL, name);
     }
 
-    /**
-     * @param [name] - label name to filter
-     * @returns all note's labels (attributes with type label), including inherited ones
-     */
     getLabels(name: string) {
         return this.getAttributes(LABEL, name);
     }
@@ -584,7 +554,8 @@ export default class FNote {
             mime: this.mime,
             iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
             workspaceIconClass,
-            isFolder: this.isFolder.bind(this)
+            isFolder: this.isFolder.bind(this),
+            getLabelValue: this.getLabelValue.bind(this)
         });
         return `tn-icon ${icon}`;
     }
@@ -616,115 +587,60 @@ export default class FNote {
         return childBranches;
     }
 
-    /**
-     * @param [name] - relation name to filter
-     * @returns all note's relations (attributes with type relation), including inherited ones
-     */
     getOwnedRelations(name: string) {
         return this.getOwnedAttributes(RELATION, name);
     }
 
-    /**
-     * @param [name] - relation name to filter
-     * @returns all note's relations (attributes with type relation), including inherited ones
-     */
     getRelations(name?: string) {
         return this.getAttributes(RELATION, name);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns true if note has an attribute with given type and name (including inherited)
-     */
     hasAttribute(type: AttributeType, name: string) {
         const attributes = this.getAttributes();
 
         return attributes.some((attr) => attr.name === name && attr.type === type);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns true if note has an attribute with given type and name (including inherited)
-     */
     hasOwnedAttribute(type: AttributeType, name: string) {
         return !!this.getOwnedAttribute(type, name);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute of the given type and name. If there are more such attributes, first is returned. Returns null if there's no such attribute belonging to this note.
-     */
     getOwnedAttribute(type: AttributeType, name: string) {
         const attributes = this.getOwnedAttributes();
 
         return attributes.find((attr) => attr.name === name && attr.type === type);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute of the given type and name. If there are more such attributes, first is returned. Returns null if there's no such attribute belonging to this note.
-     */
     getAttribute(type: AttributeType, name: string) {
         const attributes = this.getAttributes();
 
         return attributes.find((attr) => attr.name === name && attr.type === type);
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute value of the given type and name or null if no such attribute exists.
-     */
     getOwnedAttributeValue(type: AttributeType, name: string) {
         const attr = this.getOwnedAttribute(type, name);
 
         return attr ? attr.value : null;
     }
 
-    /**
-     * @param type - attribute type (label, relation, etc.)
-     * @param name - attribute name
-     * @returns attribute value of the given type and name or null if no such attribute exists.
-     */
     getAttributeValue(type: AttributeType, name: string) {
         const attr = this.getAttribute(type, name);
 
         return attr ? attr.value : null;
     }
 
-    /**
-     * @param name - label name
-     * @returns true if label exists (excluding inherited)
-     */
     hasOwnedLabel(name: string) {
         return this.hasOwnedAttribute(LABEL, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns true if label exists (including inherited)
-     */
     hasLabel(name: string) {
         return this.hasAttribute(LABEL, name);
     }
 
-    /**
-     * Returns `true` if the note has a label with the given name (same as {@link hasOwnedLabel}), or it has a label with the `disabled:` prefix (for example due to a safe import).
-     * @param name the name of the label to look for.
-     * @returns `true` if the label exists, or its version with the `disabled:` prefix.
-     */
     hasLabelOrDisabled(name: string) {
         return this.hasLabel(name) || this.hasLabel(`disabled:${name}`);
     }
 
-    /**
-     * @param name - label name
-     * @returns true if label exists (including inherited) and does not have "false" value.
-     */
     isLabelTruthy(name: string) {
         const label = this.getLabel(name);
 
@@ -735,66 +651,34 @@ export default class FNote {
         return label && label.value !== "false";
     }
 
-    /**
-     * @param name - relation name
-     * @returns true if relation exists (excluding inherited)
-     */
     hasOwnedRelation(name: string) {
         return this.hasOwnedAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns true if relation exists (including inherited)
-     */
     hasRelation(name: string) {
         return this.hasAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label if it exists, null otherwise
-     */
     getOwnedLabel(name: string) {
         return this.getOwnedAttribute(LABEL, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label if it exists, null otherwise
-     */
     getLabel(name: string) {
         return this.getAttribute(LABEL, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation if it exists, null otherwise
-     */
     getOwnedRelation(name: string) {
         return this.getOwnedAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation if it exists, null otherwise
-     */
     getRelation(name: string) {
         return this.getAttribute(RELATION, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label value if label exists, null otherwise
-     */
     getOwnedLabelValue(name: string) {
         return this.getOwnedAttributeValue(LABEL, name);
     }
 
-    /**
-     * @param name - label name
-     * @returns label value if label exists, null otherwise
-     */
     getLabelValue(name: string) {
         return this.getAttributeValue(LABEL, name);
     }
@@ -809,35 +693,20 @@ export default class FNote {
 
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation value if relation exists, null otherwise
-     */
     getOwnedRelationValue(name: string) {
         return this.getOwnedAttributeValue(RELATION, name);
     }
 
-    /**
-     * @param name - relation name
-     * @returns relation value if relation exists, null otherwise
-     */
     getRelationValue(name: string) {
         return this.getAttributeValue(RELATION, name);
     }
 
-    /**
-     * @param name
-     * @returns target note of the relation or null (if target is empty or note was not found)
-     */
     async getRelationTarget(name: string) {
         const targets = await this.getRelationTargets(name);
 
         return targets.length > 0 ? targets[0] : null;
     }
 
-    /**
-     * @param [name] - relation name to filter
-     */
     async getRelationTargets(name: string) {
         const relations = this.getRelations(name);
         const targets: (FNote | null)[] = [];
@@ -853,6 +722,79 @@ export default class FNote {
         const relations = [...this.getRelations("template"), ...this.getRelations("inherit")];
 
         return relations.map((rel) => this.froca.notes[rel.value]);
+    }
+
+    /**
+     * The value a note created under this one would be given for the attribute without asking for
+     * it, or `null` where it would be given none: a `child:`-prefixed attribute copied onto every
+     * new child, an inheritable attribute handed down the tree, or one lent by a template the child
+     * is given. Checked in that order, which is the order `getAttributes()` lists them in on the
+     * child itself.
+     *
+     * Mirrors `copyChildAttributes()` in trilium-core, which is where the copying happens. Two
+     * uses: previewing a note that does not exist yet (see GhostPin in the geo map), and telling a
+     * default apart from a value the user chose — what a note would be given anyway is not worth
+     * writing onto it, and writing it defeats the setting that would have given it.
+     *
+     * `childType` is the type the caller is about to create. A `~child:template` of another type is
+     * skipped by core when the type was chosen explicitly (#3015) and lends such a child nothing;
+     * left out, the template is taken to apply. The title is not answered for: `#titleTemplate` is
+     * evaluated by the server against values the client does not hold.
+     */
+    getAttributeValueForNewChild(type: AttributeType, name: string, childType?: NoteType) {
+        const copied = this.getAttributeValue(type, `child:${name}`);
+        if (copied !== null) {
+            return copied;
+        }
+
+        const inherited = this.getAttributes(type, name).find((attr) => attr.isInheritable);
+        if (inherited) {
+            return inherited.value;
+        }
+
+        for (const template of this.__getTemplatesForNewChild(childType)) {
+            const value = template.getAttributeValue(type, name);
+            if (value !== null) {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param name - label name
+     * @returns the label value a note created under this one would be given, or null
+     */
+    getLabelValueForNewChild(name: string, childType?: NoteType) {
+        return this.getAttributeValueForNewChild(LABEL, name, childType);
+    }
+
+    /**
+     * The templates a note created under this one would be given: the target of a `~child:template`
+     * copied onto it, and the targets of the inheritable `~template` / `~inherit` it inherits.
+     *
+     * @private
+     */
+    __getTemplatesForNewChild(childType?: NoteType) {
+        const templates: FNote[] = [];
+
+        for (const attr of this.getAttributes(RELATION)) {
+            const isCopied = attr.name === "child:template";
+            const isHandedDown = attr.isInheritable && ["template", "inherit"].includes(attr.name);
+            if (!isCopied && !isHandedDown) {
+                continue;
+            }
+
+            const template = this.froca.notes[attr.value];
+            if (!template || (isCopied && childType && template.type !== childType)) {
+                continue;
+            }
+
+            templates.push(template);
+        }
+
+        return templates;
     }
 
     getPromotedDefinitionAttributes() {
@@ -881,8 +823,19 @@ export default class FNote {
     }
 
     getAttributeDefinitions() {
-        return this.getAttributes()
-            .filter((attr) => attr.isDefinition());
+        const definitions: FAttribute[] = [];
+        const seenNames = new Set<string>();
+
+        for (const attr of this.getAttributes()) {
+            if (!attr.isDefinition() || seenNames.has(attr.name)) {
+                continue;
+            }
+
+            seenNames.add(attr.name);
+            definitions.push(attr);
+        }
+
+        return definitions;
     }
 
     hasAncestor(ancestorNoteId: string, followTemplates = false, visitedNoteIds: Set<string> | null = null) {
@@ -920,30 +873,18 @@ export default class FNote {
         return this.noteId === "_hidden" || this.hasAncestor("_hidden");
     }
 
-    /**
-     * @deprecated NOOP
-     */
     invalidateAttributeCache() {}
 
-    /**
-     * Get relations which target this note
-     */
     getTargetRelations() {
         return this.targetRelations.map((attributeId) => this.froca.attributes[attributeId]);
     }
 
-    /**
-     * Get relations which target this note
-     */
     async getTargetRelationSourceNotes() {
         const targetRelations = this.getTargetRelations();
 
         return await this.froca.getNotes(targetRelations.map((tr) => tr.noteId));
     }
 
-    /**
-     * @deprecated use getBlob() instead
-     */
     async getNoteComplement() {
         return this.getBlob();
     }
@@ -978,7 +919,6 @@ export default class FNote {
         return labels.length > 0 ? labels[0].value : "";
     }
 
-    /** @returns true if this note is JavaScript (code or file) */
     isJavaScript() {
         return (
             (this.type === "code" || this.type === "file" || this.type === "launcher") &&
@@ -990,12 +930,10 @@ export default class FNote {
         return (this.type === "code" && this.mime === "text/jsx");
     }
 
-    /** @returns true if this note is HTML */
     isHtml() {
         return (this.type === "code" || this.type === "file" || this.type === "render") && this.mime === "text/html";
     }
 
-    /** @returns JS script environment - either "frontend" or "backend" */
     getScriptEnv() {
         if (this.isHtml() || (this.isJavaScript() && this.mime.endsWith("env=frontend")) || this.isJsx()) {
             return "frontend";
@@ -1012,12 +950,6 @@ export default class FNote {
         return null;
     }
 
-    /**
-     * Executes this {@link FNote} as a front-end or back-end script.
-     *
-     * @throws an {@link Error} if the note has an incorrect note type or MIME for execution.
-     * @returns a promise that resolves when the script has been run. Additionally, for front-end notes, the promise will contain the value that is returned by the script.
-     */
     async executeScript() {
         if (!(this.isJavaScript() || this.isJsx())) {
             throw new Error(`Note ${this.noteId} is of type ${this.type} and mime ${this.mime} and thus cannot be executed`);
@@ -1026,9 +958,11 @@ export default class FNote {
         const env = this.getScriptEnv();
 
         if (env === "frontend") {
+            const { default: bundleService } = await import("../services/bundle.js");
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
-            await server.post(`script/run/${this.noteId}`);
+            const { runBackendScript } = await import("../services/backend_scripting.js");
+            await runBackendScript(this.noteId);
         } else {
             throw new Error(`Unrecognized env type ${env} for note ${this.noteId}`);
         }
@@ -1071,7 +1005,14 @@ export default class FNote {
     }
 
     isMarkdown() {
-        return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
+        return this.type === "code" && isMarkdownMime(this.mime);
+    }
+
+    isIconPack() {
+        // Icon-pack manifests exist both as JSON `code` notes (created manually per the docs) and as
+        // `file` notes (produced by the icon-pack builder and shipped in distributable zips). Disabled
+        // packs (#disabled:iconPack, e.g. from a safe import) still preview so the user can inspect them.
+        return (this.type === "code" || this.type === "file") && this.mime === "application/json" && this.hasLabelOrDisabled("iconPack");
     }
 
     isTriliumScript() {
@@ -1082,9 +1023,6 @@ export default class FNote {
         return this.mime === "image/svg+xml";
     }
 
-    /**
-     * Provides note's date metadata.
-     */
     async getMetadata() {
         return await server.get<NoteMetaData>(`notes/${this.noteId}/metadata`);
     }

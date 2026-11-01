@@ -1,111 +1,37 @@
-import { becca, cls, getLog, routeHelpers, scriptService, utils } from "@triliumnext/core";
+import { cls, type Request as CoreRequest, routes } from "@triliumnext/core";
 import type { Request, Response, Router } from "express";
 
-import { namespace } from "../cls_provider.js";
+import { bindEmitter } from "../cls_provider.js";
 import { isScriptingEnabled } from "../services/scripting_guard.js";
-import sql from "../services/sql.js";
-
-function handleRequest(req: Request, res: Response) {
-
-    // handle path from "*path" route wildcard
-    // in express v4, you could just add
-    // req.params.path + req.params[0], but with v5
-    // we get a split array that we have to join ourselves again
-
-    // @TriliumNextTODO: remove typecasting once express types are fixed
-    // they currently only treat req.params as string, while in reality
-    // it can also be a string[], when using wildcards
-    const splitPath = req.params.path as unknown as string[];
-
-    //const path = splitPath.map(segment => encodeURIComponent(segment)).join("/")
-    // naively join the "decoded" paths using a slash
-    // this is to mimick handleRequest behaviour
-    // as with the previous express v4.
-    // @TriliumNextTODO: using something like =>
-    // splitPath.map(segment => encodeURIComponent(segment)).join("/")
-    // might be safer
-
-    const path = splitPath.join("/");
-
-    const attributeIds = sql.getColumn<string>("SELECT attributeId FROM attributes WHERE isDeleted = 0 AND type = 'label' AND name IN ('customRequestHandler', 'customResourceProvider')");
-
-    const attrs = attributeIds.map((attrId) => becca.getAttribute(attrId));
-
-    for (const attr of attrs) {
-        if (!attr?.value.trim()) {
-            continue;
-        }
-
-        // Get normalized patterns to handle both trailing slash cases
-        const patterns = utils.normalizeCustomHandlerPattern(attr.value);
-        let match: RegExpMatchArray | null = null;
-
-        try {
-            // Try each pattern until we find a match
-            for (const pattern of patterns) {
-                const regex = new RegExp(`^${pattern}$`);
-                match = path.match(regex);
-                if (match) {
-                    break; // Found a match, exit pattern loop
-                }
-            }
-        } catch (e: unknown) {
-            const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
-            getLog().error(`Testing path for label '${attr.attributeId}', regex '${attr.value}' failed with error: ${errMessage}, stack: ${errStack}`);
-            continue;
-        }
-
-        if (!match) {
-            continue;
-        }
-
-        if (attr.name === "customRequestHandler") {
-            // Custom request handlers execute backend scripts, so they remain gated behind the
-            // scripting toggle. Resource providers only serve static note content and are not.
-            if (!isScriptingEnabled()) {
-                res.status(403).send("Backend script execution is disabled on this server.");
-                return;
-            }
-
-            const note = attr.getNote();
-
-            getLog().info(`Handling custom request '${path}' with note '${note.noteId}'`);
-
-            try {
-                scriptService.executeNote(note, {
-                    pathParams: match.slice(1),
-                    req,
-                    res
-                });
-            } catch (e: unknown) {
-                const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
-                getLog().error(`Custom handler '${note.noteId}' failed with: ${errMessage}, ${errStack}`);
-                res.setHeader("Content-Type", "text/plain").status(500).send(errMessage);
-            }
-        } else if (attr.name === "customResourceProvider") {
-            routeHelpers.downloadNoteInt(attr.noteId, res);
-        } else {
-            throw new Error(`Unrecognized attribute name '${attr.name}'`);
-        }
-
-        return; // only the first handler is executed
-    }
-
-    const message = `No handler matched for custom '${path}' request.`;
-
-    getLog().info(message);
-    res.setHeader("Content-Type", "text/plain").status(404).send(message);
-}
 
 function register(router: Router) {
     // explicitly no CSRF middleware since it's meant to allow integration from external services
 
     router.all("/custom/*path", (req: Request, res: Response, _next) => {
-        namespace.bindEmitter(req);
-        namespace.bindEmitter(res);
+        bindEmitter(req);
+        bindEmitter(res);
 
-        cls.init(() => handleRequest(req, res));
+        cls.init(() => routes.handleCustomRequest(
+            joinWildcardPath(req), req as unknown as CoreRequest, res, isScriptingEnabled
+        ));
     });
+}
+
+/**
+ * Rebuilds the path below `/custom/` from the `*path` wildcard.
+ *
+ * Express 5 splits a wildcard into one array entry per segment, where Express 4 passed the whole
+ * remainder as a string. The segments arrive decoded, so joining them naively reproduces the
+ * Express 4 behaviour a handler's pattern was written against.
+ *
+ * @TriliumNextTODO: remove the typecast once express types are fixed — they currently only treat
+ * `req.params` as string, while in reality it can also be a string[] when using wildcards.
+ * @TriliumNextTODO: `splitPath.map(segment => encodeURIComponent(segment)).join("/")` might be safer.
+ */
+function joinWildcardPath(req: Request): string {
+    const splitPath = req.params.path as unknown as string[];
+
+    return splitPath.join("/");
 }
 
 export default {

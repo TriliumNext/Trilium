@@ -16,7 +16,6 @@ import fs from "fs";
 // Heavy dependencies worth keeping off the startup path. Extend as new ones appear.
 const DEFAULT_PROBES = [
     "deps/ckeditor5.js",
-    "ckeditor5-premium-features",
     "highlight__js",
     "deps/katex.js",
     "snapdom",

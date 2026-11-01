@@ -69,6 +69,9 @@ describe("FAttribute", () => {
         expect(makeAttribute(froca, { type: "label", name: "relation:foo", value: "" }).isDefinition()).toBe(true);
         expect(makeAttribute(froca, { type: "label", name: "foo", value: "" }).isDefinition()).toBe(false);
         expect(makeAttribute(froca, { type: "relation", name: "label:foo", value: "x" }).isDefinition()).toBe(false);
+        // a prefix without a name defines nothing (#label:=promoted,single,text)
+        expect(makeAttribute(froca, { type: "label", name: "label:", value: "promoted,single,text" }).isDefinition()).toBe(false);
+        expect(makeAttribute(froca, { type: "label", name: "relation:", value: "promoted,single" }).isDefinition()).toBe(false);
     });
 
     it("getDefinition() parses the value via the promoted attribute definition parser", () => {

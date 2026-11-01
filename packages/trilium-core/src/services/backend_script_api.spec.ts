@@ -33,6 +33,24 @@ describe("BackendScriptApi.log", () => {
     });
 });
 
+describe("BackendScriptApi.transactional", () => {
+    beforeEach(() => getBecca().reset());
+
+    it("runs the callback inside a transaction and returns its result", () => {
+        const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
+        const api = new BackendScriptApi(startNote, { startNote });
+
+        let executed = false;
+        const result = api.transactional(() => {
+            executed = true;
+            return 42;
+        });
+
+        expect(executed).toBe(true);
+        expect(result).toBe(42);
+    });
+});
+
 describe("BackendScriptApi markdown conversion", () => {
     beforeEach(() => getBecca().reset());
 
@@ -47,5 +65,28 @@ describe("BackendScriptApi markdown conversion", () => {
 
     it("markdownToHtml converts Markdown to HTML", () => {
         expect(makeApi().markdownToHtml("This is **bold**.")).toContain("<strong>bold</strong>");
+    });
+});
+
+describe("BackendScriptApi removed libraries", () => {
+    beforeEach(() => getBecca().reset());
+
+    function makeApi() {
+        const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
+        return new BackendScriptApi(startNote, { startNote });
+    }
+
+    it("throws a migration hint whether cheerio is read from or called", () => {
+        const api = makeApi();
+
+        expect(() => (api.cheerio as any).load("<p></p>")).toThrow(/api\.htmlParser/);
+        expect(() => (api.cheerio as any)("<p></p>")).toThrow(/api\.htmlParser/);
+    });
+
+    it("throws a migration hint whether axios is read from or called", () => {
+        const api = makeApi();
+
+        expect(() => (api.axios as any).get("https://example.com")).toThrow(/fetch\(\)/);
+        expect(() => (api.axios as any)("https://example.com")).toThrow(/fetch\(\)/);
     });
 });

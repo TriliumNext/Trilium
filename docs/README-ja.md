@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,15 +14,18 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes
 は、大規模な個人知識ベースの構築に重点を置いた、無料かつオープンソースのクロスプラットフォームの階層型ノート作成アプリケーションです。
+
+"Trillium Notes" をお探しですか？このプロジェクトの正式な綴りは "Trilium Notes" で、`l` が 1 つです。
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -105,7 +97,7 @@ Trilium Notes
   [モバイルフロントエンド](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 組み込みの
   [ダークテーマ](https://docs.triliumnotes.org/user-guide/concepts/themes)、ユーザーテーマのサポート
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   と
   [マークダウンのインポートとエクスポート](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) で
@@ -180,9 +172,24 @@ TriliumNext は Flatpak としても提供されていますが、FlatHub では
 モバイルアプリのサポートの詳細については、issue https://github.com/TriliumNext/Trilium/issues/4962
 を参照してください。
 
+#### TriliumDroid
+
 ネイティブAndroidアプリをご希望の場合は、[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
 をご利用いただけます。バグや不足している機能は [リポジトリ](https://github.com/FliegendeWurst/TriliumDroid)
 でご報告ください。注：TriliumDroidを使用する場合は、TriliumとTriliumDroidの同期バージョンが一致している必要があるため、サーバーインストールで自動更新を無効にすることをお勧めします（下記参照）。
+
+#### Pocket Trilium
+
+機能が充実した Android ネイティブアプリをお探しなら、[Pocket
+Trilium](https://github.com/Nriver/pocket-trilium) をチェックしてみてください。スマートフォン上で
+Trilium のインスタンスを完全に動作させることができ、完全なオフライン利用やサーバーとの同期にも対応しています。
+
+#### Trinote
+
+iOS ネイティブアプリをお探しなら、[Trinote](https://apps.apple.com/us/app/trinote/id6761228249)
+が利用可能です。これは、セルフホスト型の Trilium または TriliumNext
+サーバー向けのオープンソースクライアントです。ノートツリーの閲覧・整理、サーバー上のノート検索、あらゆるタイプのノート（テキスト、コード、マインドマップ、スプレッドシート、ジオマップ、キャンバスなど）の読み書きが可能なほか、オフラインでもノートの閲覧や編集が行えます。開発への貢献にご興味がある方はこちらの[リポジトリ](https://github.com/StephenArg/Trinote)を、フィードバックや提案について話し合いたい方はこちらの
+[Discord](https://discord.com/invite/ghjJG56EUS) サーバーをご覧ください。
 
 ### サーバー
 
@@ -288,12 +295,22 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) Canvasへのオリジナルな取り組み。
 * [antoniotejada](https://github.com/nriver) オリジナルの構文ハイライトウィジェット。
 * [Tabler Icons](https://tabler.io/icons) システムトレイアイコン。
+*   インポートダイアログ内のアプリケーションアイコンは以下から取得されています:
+    *   OneNote, Google Keep, Evernote には[Material Design
+        Icons](https://pictogrammers.com/library/mdi/)。
+    *   Notion, Obsidian には [Font Awesome](https://fontawesome.com/) 。
+    *   Anytype には [SVGicons.com](https://svgicons.com/icon/187676/anytype)。
+*  LLM プロバイダーのアイコンは [Lobe Icons](https://lobehub.com/icons) を使用。
 
 Trilium は、その基盤となる技術なしには実現できませんでした:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - テキストノートのビジュアルエディタ。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) -
   膨大な数の言語をサポートするコードエディター。
+* [Mermaid](https://github.com/mermaid-js/mermaid)
+  -マーメイド記法の図を描画します。そのパーサーは、構文ハイライトのモデルとして機能します。
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - マーメイド構文ハイライトの基盤となるものです。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas
   ノートで使用される無限のホワイトボード。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) -
@@ -302,11 +319,6 @@ Trilium は、その基盤となる技術なしには実現できませんでし
 * Tabulator](https://github.com/olifolkerd/tabulator) -
   コレクションで使用されるインタラクティブなテーブル。
 * [FancyTree](https://github.com/mar10/fancytree) - 他に類を見ない機能豊富なツリーライブラリ。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) -
-  視覚的な接続ライブラリ。[リレーションマップ](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  と
-  [リンクマップ](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  で使用されます
 
 ## 🤝 サポート
 

@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../components/app_context.js";
 import { buildNote } from "../test/easy-froca.js";
 import froca from "./froca.js";
-import { showError } from "./toast.js";
+import toastService from "./toast.js";
 
 vi.mock("./i18n.js", () => ({
     // Echo the key so assertions stay on stable keys, not translated strings.
@@ -19,7 +19,10 @@ vi.mock("./i18n.js", () => ({
 }));
 
 vi.mock("./toast.js", () => ({
-    showError: vi.fn()
+    default: {
+        showPersistent: vi.fn(),
+        closePersistent: vi.fn()
+    }
 }));
 
 const { getTaskStateDefinitions, openCustomTaskStateConfig } = await import("./task_states.js");
@@ -73,7 +76,7 @@ describe("getTaskStateDefinitions", () => {
         // The archived child is never enumerated.
         expect(result.some((s) => s.title === "Archived state")).toBe(false);
         // No validation errors for a fully valid set.
-        expect(showError).not.toHaveBeenCalled();
+        expect(toastService.showPersistent).not.toHaveBeenCalled();
 
         expect(result.find((s) => s.id === "_taskStateDoing")).toEqual({
             id: "_taskStateDoing",
@@ -100,7 +103,7 @@ describe("getTaskStateDefinitions", () => {
         ]);
 
         const result = await getTaskStateDefinitions();
-        expect(showError).not.toHaveBeenCalled();
+        expect(toastService.showPersistent).not.toHaveBeenCalled();
         expect(result.find((s) => s.id === "_taskStateBare")).toEqual({
             id: "_taskStateBare",
             name: "bare",
@@ -113,7 +116,7 @@ describe("getTaskStateDefinitions", () => {
         });
     });
 
-    it("reports each dropped state once via a toast, then never again", async () => {
+    it("reports dropped states in one persistent toast, deduplicates, re-reports on change and clears when fixed", async () => {
         // Two non-archived states missing stateId/iconClass map to empty name/icon
         // (covering the nullish-left branches), then get dropped by validation.
         useContainer([
@@ -124,20 +127,46 @@ describe("getTaskStateDefinitions", () => {
         const result = await getTaskStateDefinitions();
         // No valid custom states remain -> falls back to the defaults.
         expect(result).toBe(DEFAULT_TASK_STATES);
-        expect(showError).toHaveBeenCalledTimes(2);
 
-        // A second invocation must not re-report (the session-level latch is set).
-        vi.mocked(showError).mockClear();
+        // A single persistent toast lists both dropped notes, each annotated with its reason.
+        expect(toastService.showPersistent).toHaveBeenCalledTimes(1);
+        const options = vi.mocked(toastService.showPersistent).mock.calls[0][0];
+        expect(options.id).toBe("task-states-validation");
+        expect(options.notes).toEqual([
+            { noteId: "_taskBadA", description: "text-editor.validation-errors.undefined-name" },
+            { noteId: "_taskBadB", description: "text-editor.validation-errors.undefined-name" }
+        ]);
+
+        // Its button opens the task-states config popup and dismisses the toast.
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockImplementation(() => undefined);
+        const dismissToast = vi.fn();
+        options.buttons?.[0].onClick({ dismissToast });
+        expect(triggerCommand).toHaveBeenCalledWith("openInTreePopup", expect.objectContaining({
+            noteIdOrPath: TASK_STATES_CONTAINER_ID
+        }));
+        expect(dismissToast).toHaveBeenCalled();
+        triggerCommand.mockRestore();
+
+        // An unchanged error set is not re-reported...
+        await getTaskStateDefinitions();
+        expect(toastService.showPersistent).toHaveBeenCalledTimes(1);
+
+        // ...but a different one is...
         useContainer([{ id: "_taskBadC", title: "Bad C" }]);
         await getTaskStateDefinitions();
-        expect(showError).not.toHaveBeenCalled();
+        expect(toastService.showPersistent).toHaveBeenCalledTimes(2);
+
+        // ...and a clean set closes the toast without re-showing it.
+        useContainer([{ id: "_taskStateOk", title: "Ok", "#stateId": "ok", "#iconClass": "bx bx-x" }]);
+        await getTaskStateDefinitions();
+        expect(toastService.closePersistent).toHaveBeenCalledWith("task-states-validation");
+        expect(toastService.showPersistent).toHaveBeenCalledTimes(2);
     });
 });
 
 describe("openCustomTaskStateConfig", () => {
     it("opens the task-states container hoisted in the tree popup", () => {
-        const triggerCommand = vi.fn();
-        (appContext as unknown as { triggerCommand: typeof triggerCommand }).triggerCommand = triggerCommand;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockImplementation(() => undefined);
 
         openCustomTaskStateConfig();
 
@@ -145,5 +174,6 @@ describe("openCustomTaskStateConfig", () => {
             noteIdOrPath: TASK_STATES_CONTAINER_ID,
             hoistedNoteId: TASK_STATES_CONTAINER_ID
         });
+        triggerCommand.mockRestore();
     });
 });

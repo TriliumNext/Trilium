@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { sanitizeHtml } from "./sanitizer.js";
+import optionService from "./options.js";
 import { trimIndentation } from "@triliumnext/commons";
 
 describe("sanitize", () => {
@@ -51,6 +52,18 @@ describe("sanitize", () => {
         expect(sanitizeHtml(dirty)).toBe(clean);
     });
 
+    it("keeps the size of a resized embed and drops other variables on it", () => {
+        const html = `<figure class="include-note" style="--include-note-width:30em;--include-note-height:12.5em" data-note-id="abc" data-box-size="medium"></figure>`;
+        expect(sanitizeHtml(html)).toBe(html);
+
+        const dirty = `<figure class="include-note" style="--include-note-height:calc(100vh);--other:1em" data-note-id="abc"></figure>`;
+        expect(sanitizeHtml(dirty)).toBe(`<figure class="include-note" data-note-id="abc"></figure>`);
+
+        // An embed that keeps its source in the note is saved as a code block.
+        const inline = `<pre style="--include-note-width:30em;--include-note-height:12.5em" data-box-size="medium"><code class="language-mermaid">graph TD;</code></pre>`;
+        expect(sanitizeHtml(inline)).toBe(inline);
+    });
+
     it("keeps the hidden-border style on table header cells", () => {
         // The OneNote importer maps hidden borders to border-color:transparent on table, td and th —
         // all three must survive sanitization, or header cells render with visible borders.
@@ -63,9 +76,61 @@ describe("sanitize", () => {
         expect(sanitizeHtml(dirty)).toBe(dirty);
     });
 
+    it("keeps the start and reversed attributes on <ol> (CKEditor list properties)", () => {
+        const dirty = `<ol start="3"><li>Third</li></ol><ol reversed><li>Last</li></ol><ol reversed start="10"><li>Ten</li></ol>`;
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
     it("keeps the scope attribute on table header cells", () => {
         const dirty = `<table><thead><tr><th scope="col">C</th></tr></thead><tbody><tr><th scope="row">R</th><td>A</td></tr></tbody></table>`;
         expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
+    it("keeps the theme-adaptive color variables next to the colors", () => {
+        const style = "color:#e64d4d;--tn-color:#e64d4d;"
+            + "background-color:#e5e64d;--tn-background:#e5e64d";
+        const dirty = `<p><span style="${style}">x</span></p>`
+            + `<table><tbody><tr><td style="--tn-background:#e64d4d">c</td></tr></tbody></table>`;
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+
+        // Only a color passes, only under these names, and a border color only on tables.
+        expect(sanitizeHtml(`<span style="--tn-color:url(x)">x</span>`)).toBe("<span>x</span>");
+        expect(sanitizeHtml(`<span style="--tn-other:#e64d4d">x</span>`)).toBe("<span>x</span>");
+        expect(sanitizeHtml(`<span style="--tn-border-color:#e64d4d">x</span>`))
+            .toBe("<span>x</span>");
+    });
+
+    it("keeps the border styles CKEditor writes for tables and cells", () => {
+        // A border with a custom width is written as the shorthand, one with the default width as
+        // separate properties.
+        const dirty = `<figure class="table">`
+            + `<table style="border:2px solid #4d99e6;--tn-border-color:#4d99e6"><tbody><tr>`
+            + `<th style="border:1.5px double #000000">H</th>`
+            + `<td style="border-color:#555;--tn-border-color:#555;border-style:dashed">C</td>`
+            + `<td style="border-style:dotted;border-width:3px">D</td>`
+            + "</tr></tbody></table></figure>";
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
+    it("keeps a fractional image aspect-ratio (OneNote reports fractional pixel dimensions)", () => {
+        // CKEditor's usual integer ratio still passes...
+        expect(sanitizeHtml(`<img style="aspect-ratio:991/403" src="x.png" />`)).toContain("aspect-ratio:991/403");
+        // ...and a fractional ratio (e.g. a 577.5×277.5 OneNote screen clipping) is no longer stripped.
+        expect(sanitizeHtml(`<img style="aspect-ratio:577.5/277.5" src="x.png" />`)).toContain("aspect-ratio:577.5/277.5");
+        // A non-ratio value is still rejected.
+        expect(sanitizeHtml(`<img style="aspect-ratio:auto" src="x.png" />`)).not.toContain("aspect-ratio");
+    });
+
+    it("falls back to the default allowed tags when the allowedHtmlTags option is unusable", () => {
+        const optionSpy = vi.spyOn(optionService, "getOption").mockReturnValue("{ not json");
+        try {
+            // The parse failure must not propagate; sanitization still applies the default list.
+            const sanitized = sanitizeHtml(`<p>kept</p><script>alert(1)</script>`);
+            expect(sanitized).toContain(`<p>kept</p>`);
+            expect(sanitized).not.toContain(`<script>`);
+        } finally {
+            optionSpy.mockRestore();
+        }
     });
 
     describe("bookmark anchors", () => {

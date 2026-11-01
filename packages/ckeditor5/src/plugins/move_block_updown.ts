@@ -2,64 +2,166 @@
  * https://github.com/TriliumNext/Trilium/issues/1002
  */
 
-import { Command, ModelDocumentSelection, ModelElement, ModelNode, Plugin, ModelRange, _isMac, Editor } from 'ckeditor5';
+import {
+	ButtonView, Command, IconArrowDown, IconArrowUp, ModelDocumentSelection, ModelElement, ModelLiveRange,
+	ModelNode, Plugin, _isMac, Editor
+} from 'ckeditor5';
 
-const keyMap = {
-    ArrowUp: 'moveBlockUp',
-    ArrowDown: 'moveBlockDown'
-};
+import { isSelectionInTable } from "./table_move/table_move_commands.js";
 
+interface MoveKeyCommands {
+    table: "moveTableRowUp" | "moveTableRowDown";
+    block: "moveBlockUp" | "moveBlockDown";
+}
+
+const MOVE_UP: MoveKeyCommands = { table: "moveTableRowUp", block: "moveBlockUp" };
+const MOVE_DOWN: MoveKeyCommands = { table: "moveTableRowDown", block: "moveBlockDown" };
+
+const keyMap = new Map<string, MoveKeyCommands>([
+    ["ArrowUp", MOVE_UP],
+    ["ArrowDown", MOVE_DOWN]
+]);
+
+/**
+ * Registers the `moveBlockUp` and `moveBlockDown` commands, their Alt+↑/↓ shortcuts and buttons
+ * of the same names. The shortcuts and the buttons move the table row instead in a table.
+ */
 export default class MoveBlockUpDownPlugin extends Plugin {
     init() {
         const editor = this.editor;
+        const t = editor.t;
 
         editor.commands.add('moveBlockUp', new MoveBlockUpCommand(editor));
         editor.commands.add('moveBlockDown', new MoveBlockDownCommand(editor));
 
 		// Use native DOM capturing to intercept Ctrl/Alt + ↑/↓,
 		// as plugin-level keystroke handling may fail when the selection is near an object.
-        this.bindMoveBlockShortcuts(editor);
+        this.bindMoveBlockShortcuts();
+
+        this.addButton('moveBlockUp', t('Move up'), IconArrowUp, MOVE_UP);
+        this.addButton('moveBlockDown', t('Move down'), IconArrowDown, MOVE_DOWN);
     }
 
-	bindMoveBlockShortcuts(editor: Editor) {
-		editor.editing.view.once('render', () => {
-			const domRoot = editor.editing.view.getDomRoot();
-			/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
-			if (!domRoot) return;
+    private addButton(name: string, label: string, icon: string, commands: MoveKeyCommands) {
+        const editor = this.editor;
+        editor.ui.componentFactory.add(name, (locale) => {
+            const button = new ButtonView(locale);
+            button.set({ label, icon, tooltip: true });
 
-            const isMac = _isMac(navigator.userAgent.toLowerCase());
-			const handleKeydown = (e: KeyboardEvent) => {
-				const command = keyMap[e.key];
-                if (!command) return;
-                const isOnlyMeta = (!e.ctrlKey && !e.altKey && e.metaKey);
-                const isOnlyAlt = (!e.ctrlKey && e.altKey && !e.metaKey);
+            const refresh = () => {
+                button.isEnabled = this.canMove(commands);
+            };
+            refresh();
+            button.listenTo(editor.model.document, 'change', refresh);
+            button.listenTo(editor, 'change:isReadOnly', refresh);
 
-				if ((!isMac && isOnlyMeta) || isOnlyAlt) {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-					editor.execute(command);
-				}
-			};
+            button.on('execute', () => {
+                this.move(commands);
+                editor.editing.view.focus();
+            });
+            return button;
+        });
+    }
 
-			domRoot.addEventListener('keydown', handleKeydown, { capture: true });
+    /**
+     * The command that moves the selection: the row of the table it is in, or its blocks. Inside
+     * a table the block commands would only shuffle paragraphs inside one cell. The block commands
+     * still serve editor builds without the TableMove plugin.
+     */
+    private getMoveCommandName(commands: MoveKeyCommands) {
+        const editor = this.editor;
+        return editor.commands.get(commands.table) && isSelectionInTable(editor.model.document.selection)
+            ? commands.table
+            : commands.block;
+    }
 
-			// Remove the native listener when the editor is destroyed. The editing root is
-			// reused across editor recreations (e.g. switching the content language rebuilds
-			// the editor in the same container — see #10095). Without this cleanup the orphaned
-			// listener stays attached, captures the keystroke first and runs editor.execute()
-			// against the destroyed editor — silently swallowing the shortcut until a reload.
-			this.listenTo(editor, 'destroy', () => {
-				domRoot.removeEventListener('keydown', handleKeydown, { capture: true });
-			});
+    private canMove(commands: MoveKeyCommands) {
+        return !!this.editor.commands.get(this.getMoveCommandName(commands))?.isEnabled;
+    }
+
+    private move(commands: MoveKeyCommands) {
+        if (this.canMove(commands)) {
+            this.editor.execute(this.getMoveCommandName(commands));
+        }
+    }
+
+	bindMoveBlockShortcuts() {
+		addEditingKeydownCapture(this, (e) => {
+			const commands = keyMap.get(e.key);
+			if (!commands || !hasMoveModifier(e)) {
+				return;
+			}
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			this.move(commands);
 		});
 	}
 
+}
+
+/** True when the keydown carries the move-shortcut modifier: plain Alt, or plain Meta off macOS. */
+export function hasMoveModifier(e: KeyboardEvent): boolean {
+	const isMac = _isMac(navigator.userAgent.toLowerCase());
+	const isOnlyMeta = (!e.ctrlKey && !e.altKey && e.metaKey);
+	const isOnlyAlt = (!e.ctrlKey && e.altKey && !e.metaKey);
+	return (!isMac && isOnlyMeta) || isOnlyAlt;
+}
+
+/**
+ * Adds a capture-phase keydown listener on the editing DOM root once it renders. Native
+ * capturing intercepts the keystroke before plugin-level keystroke handling, which can fail
+ * when the selection is near an object, and before window-scoped application shortcuts.
+ *
+ * The listener is removed when the editor is destroyed. The editing root is reused across
+ * editor recreations (e.g. switching the content language rebuilds the editor in the same
+ * container — see #10095). Without this cleanup the orphaned listener stays attached, captures
+ * the keystroke first and runs editor.execute() against the destroyed editor — silently
+ * swallowing the shortcut until a reload.
+ *
+ * The keys pressed in the content of an embed, such as in its editor, are skipped.
+ */
+export function addEditingKeydownCapture(plugin: Plugin, handleKeydown: (e: KeyboardEvent) => void) {
+	const editor = plugin.editor;
+	const onKeydown = (e: KeyboardEvent) => {
+		if (isFromEditable(editor, e)) {
+			handleKeydown(e);
+		}
+	};
+	editor.editing.view.once('render', () => {
+		const domRoot = editor.editing.view.getDomRoot();
+		/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
+		if (!domRoot) return;
+
+		domRoot.addEventListener('keydown', onKeydown, { capture: true });
+		plugin.listenTo(editor, 'destroy', () => {
+			domRoot.removeEventListener('keydown', onKeydown, { capture: true });
+		});
+	});
+}
+
+/**
+ * Whether `event` comes from an editable of `editor`, such as its root, a caption or a table cell,
+ * rather than from the content of an embed, which the wrapper of the embed marks with
+ * `data-cke-ignore-events`.
+ */
+export function isFromEditable(editor: Editor, event: Event) {
+	const root = editor.editing.view.getDomRoot();
+	const target = event.target instanceof Element ? event.target : null;
+	const embedWrapper = target?.closest('[data-cke-ignore-events]');
+	return !!root && !!target && root.contains(target)
+		&& !(embedWrapper && root.contains(embedWrapper));
 }
 
 abstract class MoveBlockUpDownCommand extends Command {
 
 	abstract getSibling(selectedBlock: ModelElement): ModelNode | null;
     abstract get offset(): "before" | "after";
+
+	override refresh() {
+		const blocks = this.getSelectedBlocks(this.editor.model.document.selection);
+		this.isEnabled = blocks.length > 0 && blocks.every(block => !!this.getSibling(block));
+	}
 
 	override execute() {
 		const model = this.editor.model;
@@ -76,13 +178,13 @@ abstract class MoveBlockUpDownCommand extends Command {
             ? selectedBlocks
             : [...selectedBlocks].reverse();
 
-        // Store selection offsets
-		const firstBlock = selectedBlocks[0];
-		const lastBlock = selectedBlocks[selectedBlocks.length - 1];
-		/* v8 ignore next 1 -- getFirstPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
-		const startOffset = model.document.selection.getFirstPosition()?.offset ?? 0;
-		/* v8 ignore next 1 -- getLastPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
-		const endOffset = model.document.selection.getLastPosition()?.offset ?? 0;
+		// Live ranges follow the caret through the move operations, so the selection
+		// ends up on the same characters it started on. Re-deriving it from an offset
+		// stored beforehand cannot: a caret in a collapsible's <summary> resolves to the
+		// enclosing <details>, whose offsets count child blocks, so offset 5 of a title
+		// restored onto the <details> lands in the body — after which the next keystroke
+		// moves a body block instead of the collapsible (see #11081).
+		const restoredRanges = [...selection.getRanges()].map(range => ModelLiveRange.fromRange(range));
 
 		model.change((writer) => {
 			// Move blocks
@@ -95,30 +197,14 @@ abstract class MoveBlockUpDownCommand extends Command {
 				}
 			}
 
-			// Restore selection
-			let range: ModelRange;
-			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
-			const maxStart = firstBlock.maxOffset ?? startOffset;
-			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
-			const maxEnd = lastBlock.maxOffset ?? endOffset;
-			// If original offsets valid within bounds, restore partial selection
-			if (startOffset <= maxStart && endOffset <= maxEnd) {
-				const clampedStart = Math.min(startOffset, maxStart);
-				const clampedEnd = Math.min(endOffset, maxEnd);
-				range = writer.createRange(
-					writer.createPositionAt(firstBlock, clampedStart),
-					writer.createPositionAt(lastBlock, clampedEnd)
-				);
-			} else { // Fallback: select entire moved blocks (handles tables)
-				range = writer.createRange(
-					writer.createPositionBefore(firstBlock),
-					writer.createPositionAfter(lastBlock)
-				);
-			}
-			writer.setSelection(range);
+			writer.setSelection(restoredRanges.map(range => range.toRange()));
 			this.editor.editing.view.focus();
 			scrollToSelection(this.editor);
 		});
+
+		for (const range of restoredRanges) {
+			range.detach();
+		}
     }
 
 	getSelectedBlocks(selection: ModelDocumentSelection) {

@@ -1,0 +1,62 @@
+.options {
+    max-width: 640px;
+    padding: 8px 20px 20px;
+    line-height: 1.5;
+
+    h2 {
+        margin: 24px 0 8px;
+        font-size: 1.3em;
+    }
+
+    p {
+        margin: 8px 0;
+    }
+
+    code {
+        font-size: 0.95em;
+    }
+
+    .message {
+        margin-top: 16px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: var(--input-background-color);
+        font-weight: 500;
+    }
+
+    .message-error {
+        color: var(--status-error-color);
+    }
+
+    .message-success {
+        color: var(--status-ok-color);
+    }
+
+    label[for="trilium-desktop-port"] {
+        font-weight: 500;
+    }
+
+    .desktop-port {
+        width: 6em;
+        text-align: right;
+    }
+
+    table {
+        border-spacing: 0 8px;
+    }
+
+    th {
+        padding-inline-end: 12px;
+        font-weight: 500;
+        text-align: start;
+        white-space: nowrap;
+    }
+
+    td {
+        color: var(--muted-text-color);
+    }
+
+    td > input:not(.desktop-port) {
+        width: 220px;
+    }
+}

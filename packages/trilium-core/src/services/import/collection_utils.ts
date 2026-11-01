@@ -42,9 +42,10 @@ export function attachmentReferenceLink(noteId: string, attachmentId: string, ti
     return `<a class="reference-link" href="#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}">${escapeHtml(title)}</a>`;
 }
 
-/** Gives a value a clickable scheme (`mailto:` for an email, `tel:` for a phone) unless it already carries it. */
-export function applyUrlScheme(value: string, scheme: string): string {
-    return value.startsWith(scheme) ? value : `${scheme}${value}`;
+/** Strips a value's clickable scheme (`mailto:` for an email, `tel:` for a phone) if it carries one, leaving
+ * the bare address the typed `email`/`phone` inputs hold. */
+export function stripUrlScheme(value: string, scheme: string): string {
+    return value.startsWith(scheme) ? value.substring(scheme.length) : value;
 }
 
 /** Saves bytes as a `role:"file"` attachment on `note`, defaulting the MIME from the title (or octet-stream). */

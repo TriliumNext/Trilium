@@ -12,6 +12,8 @@ The following information is displayed:
 *   A snippet of the content will be displayed as well.
 *   A button to [quickly edit](../Navigation/Quick%20edit.md) the note in a popup.
 
+For a link to an [attachment](../Notes/Attachments.md), the tooltip shows the attachment instead: its title after the path of the note that owns it, a line giving its size (for example _Attachment • 20.59 MiB_), a preview of its content where one is available, and the quick edit button opening the attachment.
+
 The tooltip can be found in multiple places, including:
 
 *   In <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, when hovering over <a class="reference-link" href="../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> .

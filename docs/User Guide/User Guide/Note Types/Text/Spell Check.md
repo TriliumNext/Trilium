@@ -48,6 +48,8 @@ On Windows and macOS, Electron delegates "Add to dictionary" to the operating sy
 
 When accessing Trilium through a web browser, spell checking is handled entirely by the browser itself. Trilium does not control the browser's spellchecker — language selection, dictionaries, and all other settings are managed through your browser's preferences.
 
+The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a> has a special behavior in which a right-clicked word (without selection) shows the browser's default contextual menu which allows the spellcheck to function.
+
 The Spell Check settings page in Trilium will indicate that these options apply only to desktop builds.
 
 ## Frequently asked questions

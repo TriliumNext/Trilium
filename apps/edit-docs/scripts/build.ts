@@ -11,13 +11,16 @@ async function main() {
 
     // Copy assets from server (needed for DB initialization)
     build.copy("/apps/server/src/assets", "assets/");
-    build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
+    build.copy("/packages/ckeditor5/src/theme/content_colors.css", "ckeditor5-content-colors.css");
+    build.copy("/packages/ckeditor5/src/theme/multicolumn.css", "ckeditor5-multicolumn.css");
     build.buildFrontend();
 
     // Copy node modules dependencies
-    build.copyNodeModules(["better-sqlite3", "bindings", "file-uri-to-path"]);
+    build.copyNodeModules(["better-sqlite3"]);
+    // No musl build: Electron itself ships glibc-only Linux binaries.
+    build.trimBetterSqlite3({ includeMusl: false });
 
     generatePackageJson();
 }

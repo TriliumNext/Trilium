@@ -124,6 +124,62 @@
     }
 }
 
-.code-sample-wrapper {
-    padding-top: 0.75em;
+/* A date format, not a sentence: the browser's default twenty characters is the right width. */
+.text-notes-editor input[type="text"] {
+    width: auto;
+    max-width: 100%;
+}
+
+/* A plain segment rather than a card option, so it is sized here instead. */
+.text-notes-toc .tn-number-unit-pair {
+    width: auto;
+
+    input[type="number"] {
+        width: 7em;
+    }
+}
+
+.custom-replacement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.custom-replacement-pair {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.custom-replacement-entry {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+
+    > .form-control {
+        flex: 1 1 0;
+        min-width: 6ch;
+        padding: 4px 10px;
+    }
+}
+
+.custom-replacement-arrow {
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+/* Sized alike, so a segment's height does not change as a pair is completed or removed. */
+.custom-replacement-add,
+.custom-replacement-remove {
+    --icon-button-size: 20px;
+    --icon-button-icon-ratio: 0.9;
+
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
 }

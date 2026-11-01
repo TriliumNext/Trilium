@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { getBecca } from "../becca/becca.js";
 import { getContext } from "./context.js";
@@ -32,6 +32,45 @@ describe("options service (real DB)", () => {
 
         it("returns null from getOptionOrNull for a non-existent option", () => {
             expect(optionService.getOptionOrNull("doesNotExistOption" as any)).toBeNull();
+        });
+
+        it("returns null when becca is not loaded and the DB query fails", () => {
+            // Before becca is loaded (e.g. during initial sync) the value is read straight
+            // from the DB, which is not necessarily initialized yet.
+            const getRowSpy = vi.spyOn(getSql(), "getRow").mockImplementation(() => {
+                throw new Error("DB is not initialized");
+            });
+            const wasLoaded = getBecca().loaded;
+            getBecca().loaded = false;
+
+            try {
+                expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
+            } finally {
+                getBecca().loaded = wasLoaded;
+                getRowSpy.mockRestore();
+            }
+        });
+
+        it("does not query the options table while becca is not loaded and the table does not exist", () => {
+            // A query against a missing table fails and sql.ts logs it, even though the caller expects it.
+            const sql = getSql();
+            const originalGetValue = sql.getValue.bind(sql);
+            const getValueSpy = vi.spyOn(sql, "getValue").mockImplementation((query, params) =>
+                query.includes("sqlite_master") ? null : originalGetValue(query, params)
+            );
+            const getRowSpy = vi.spyOn(sql, "getRow");
+            const wasLoaded = getBecca().loaded;
+            getBecca().loaded = false;
+
+            try {
+                expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
+                expect(getValueSpy).toHaveBeenCalledWith(expect.stringContaining("sqlite_master"));
+                expect(getRowSpy).not.toHaveBeenCalled();
+            } finally {
+                getBecca().loaded = wasLoaded;
+                getValueSpy.mockRestore();
+                getRowSpy.mockRestore();
+            }
         });
 
         it("throws from getOption for a non-existent option", () => {
@@ -115,7 +154,7 @@ describe("options service (real DB)", () => {
             expect(readFromDb(name)).toBe("changed");
         });
 
-        it("creates the option (local-only) when it does not yet exist", () => {
+        it("creates an unknown option as local-only when it does not yet exist", () => {
             const name = uniqueName();
 
             getContext().init(() => optionService.setOption(name as any, "created-by-set"));
@@ -123,6 +162,27 @@ describe("options service (real DB)", () => {
             expect(optionService.getOption(name as any)).toBe("created-by-set");
             expect(getBecca().getOption(name)?.isSynced).toBe(false);
             expect(readFromDb(name)).toBe("created-by-set");
+        });
+
+        it("auto-creates a missing known option using its declared sync flag", () => {
+            // searchEnableFuzzyMatching is declared as a synced option in defaultOptions.
+            // Simulate the option being absent (e.g. a write landing before initStartupOptions)
+            // so setOption falls through to its create branch.
+            const name = "searchEnableFuzzyMatching";
+            getContext().init(() => {
+                getSql().execute("DELETE FROM options WHERE name = ?", [name]);
+                delete getBecca().options[name];
+            });
+
+            getContext().init(() => optionService.setOption(name as any, "true"));
+
+            // Must be recreated as synced, not silently downgraded to local-only.
+            expect(getBecca().getOption(name)?.isSynced).toBe(true);
+            const row = getSql().getRowOrNull<{ isSynced: number }>(
+                "SELECT isSynced FROM options WHERE name = ?",
+                [name]
+            );
+            expect(row?.isSynced).toBe(1);
         });
     });
 

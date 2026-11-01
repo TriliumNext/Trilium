@@ -35,10 +35,13 @@
     "show-options": "Open \"Options\" page",
     "show-revisions": "Show \"Note Revisions\" dialog",
     "show-recent-changes": "Show \"Recent Changes\" dialog",
+    "show-deleted-notes": "Show \"Deleted Notes\" dialog",
     "show-sql-console": "Open \"SQL Console\" page",
     "show-backend-log": "Open \"Backend Log\" page",
+    "show-space-usage": "Open the \"Space Usage\" page",
     "show-help": "Open the built-in User Guide",
     "show-cheatsheet": "Show a modal with common keyboard operations",
+    "show-shortcut-hints": "Show keyboard shortcuts for the focused widget",
     "text-note-operations": "Text note operations",
     "add-link-to-text": "Open dialog to add link to the text",
     "follow-link-under-cursor": "Follow link within which the caret is placed",
@@ -49,8 +52,8 @@
     "attributes-labels-and-relations": "Attributes (labels & relations)",
     "add-new-label": "Create new label",
     "create-new-relation": "Create new relation",
-    "ribbon-tabs": "Ribbon tabs",
-    "toggle-link-map": "Toggle Link Map",
+    "note-panels": "Note panels",
+    "show-note-map": "Shows the note map in the right pane",
     "other": "Other",
     "toggle-right-pane": "Toggle the display of the right pane, which includes Table of Contents and Highlights",
     "peek-right-pane": "Peek the right pane as a temporary panel that floats over the content and closes when it loses focus",
@@ -65,9 +68,17 @@
     "copy-without-formatting": "Copy selected text without formatting",
     "force-save-revision": "Force creating / saving new note revision of the active note",
     "save-named-revision": "Save a named revision of the active note",
-    "toggle-book-properties": "Toggle Collection Properties",
-    "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
-    "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)"
+    "focus-collection-properties": "Moves focus to the collection's view type selector",
+    "focus-formatting-toolbar": "Moves focus between the fixed formatting toolbar and the editor",
+    "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)",
+    "create-new-split": "Open a new empty split to the right of the active one",
+    "close-active-split": "Close the active split, keeping the other splits of the tab open",
+    "focus-split-left": "Move the focus to the split on the left of the active one",
+    "focus-split-right": "Move the focus to the split on the right of the active one",
+    "split-view": "Split view",
+    "move-split-left": "Swap the active split with the one on its left, so the note moves and the focus follows it",
+    "move-split-right": "Swap the active split with the one on its right, so the note moves and the focus follows it",
+    "peek-left-pane": "Peek the note tree as a temporary panel that floats over the content"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Back in Note History",
@@ -101,6 +112,7 @@
     "add-note-above-to-selection": "Add Note Above to Selection",
     "add-note-below-to-selection": "Add Note Below to Selection",
     "duplicate-subtree": "Duplicate Subtree",
+    "duplicate-note": "Duplicate Note Without Children",
     "open-new-tab": "Open New Tab",
     "close-active-tab": "Close Active Tab",
     "reopen-last-tab": "Reopen Last Tab",
@@ -123,10 +135,13 @@
     "show-options": "Show Options",
     "show-revisions": "Show Revisions",
     "show-recent-changes": "Show Recent Changes",
+    "show-deleted-notes": "Show Deleted Notes",
     "show-sql-console": "Show SQL Console",
     "show-backend-log": "Show Backend Log",
+    "show-space-usage": "Show Space Usage",
     "show-help": "Show Help",
     "show-cheatsheet": "Show Cheatsheet",
+    "show-shortcut-hints": "Show Shortcut Hints",
     "add-link-to-text": "Add Link to Text",
     "follow-link-under-cursor": "Follow Link Under Cursor",
     "insert-date-and-time-to-text": "Insert Date and Time to Text",
@@ -136,18 +151,18 @@
     "edit-read-only-note": "Edit Read-Only Note",
     "add-new-label": "Add New Label",
     "add-new-relation": "Add New Relation",
-    "toggle-ribbon-tab-classic-editor": "Toggle Ribbon Tab Classic Editor",
-    "toggle-ribbon-tab-basic-properties": "Toggle Ribbon Tab Basic Properties",
-    "toggle-ribbon-tab-book-properties": "Toggle Ribbon Tab Book Properties",
-    "toggle-ribbon-tab-file-properties": "Toggle Ribbon Tab File Properties",
-    "toggle-ribbon-tab-image-properties": "Toggle Ribbon Tab Image Properties",
-    "toggle-ribbon-tab-owned-attributes": "Toggle Ribbon Tab Owned Attributes",
-    "toggle-ribbon-tab-inherited-attributes": "Toggle Ribbon Tab Inherited Attributes",
-    "toggle-ribbon-tab-promoted-attributes": "Toggle Ribbon Tab Promoted Attributes",
-    "toggle-ribbon-tab-note-map": "Toggle Ribbon Tab Note Map",
-    "toggle-ribbon-tab-note-info": "Toggle Ribbon Tab Note Info",
-    "toggle-ribbon-tab-note-paths": "Toggle Ribbon Tab Note Paths",
-    "toggle-ribbon-tab-similar-notes": "Toggle Ribbon Tab Similar Notes",
+    "focus-formatting-toolbar": "Focus Formatting Toolbar",
+    "show-basic-properties": "Show Basic Properties",
+    "focus-collection-properties": "Focus Collection Properties",
+    "focus-file-actions": "Focus File Actions",
+    "focus-image-actions": "Focus Image Actions",
+    "toggle-owned-attributes": "Toggle Owned Attributes",
+    "toggle-inherited-attributes": "Toggle Inherited Attributes",
+    "toggle-promoted-attributes": "Toggle Promoted Attributes",
+    "show-note-map": "Show Note Map",
+    "show-note-info": "Show Note Info",
+    "show-note-paths": "Show Note Paths",
+    "toggle-similar-notes": "Toggle Similar Notes",
     "toggle-right-pane": "Toggle Right Pane",
     "peek-right-pane": "Peek Right Pane",
     "print-active-note": "Print Active Note",
@@ -167,7 +182,14 @@
     "reset-zoom-level": "Reset Zoom Level",
     "copy-without-formatting": "Copy Without Formatting",
     "force-save-revision": "Force Save Revision",
-    "save-named-revision": "Save Named Revision"
+    "save-named-revision": "Save Named Revision",
+    "create-new-split": "Create New Split",
+    "close-active-split": "Close Active Split",
+    "move-split-left": "Move Split Left",
+    "move-split-right": "Move Split Right",
+    "focus-split-left": "Focus Split to the Left",
+    "focus-split-right": "Focus Split to the Right",
+    "peek-left-pane": "Peek Tree Pane"
   },
   "login": {
     "title": "Login",
@@ -248,12 +270,13 @@
     "task-state-doing": "Doing",
     "task-state-done": "Done",
     "task-state-maybe": "Maybe",
-    "task-state-cancelled": "Cancelled",
+    "task-state-cancelled": "Canceled",
     "task-state-attr-state-id": "Identifier (required)",
     "task-state-attr-markdown-symbol": "Markdown symbol",
     "task-state-attr-is-completed": "Counts as completed",
     "task-state-attr-color": "Color",
     "task-state-attr-is-hidden": "Hidden from list",
+    "space-usage-title": "Space Usage",
     "backend-log-title": "Backend Log",
     "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
@@ -274,6 +297,7 @@
     "jump-to-note-title": "Jump to...",
     "calendar-title": "Calendar",
     "recent-changes-title": "Recent Changes",
+    "deleted-notes-title": "Deleted notes",
     "bookmarks-title": "Bookmarks",
     "command-palette": "Open Command Palette",
     "zen-mode": "Zen Mode",
@@ -281,12 +305,14 @@
     "quick-search-title": "Quick Search",
     "protected-session-title": "Protected Session",
     "sync-status-title": "Sync Status",
+    "color-scheme-switcher-title": "Color Scheme Switcher",
     "settings-title": "Settings",
     "options-title": "Options",
     "appearance-title": "Appearance",
     "shortcuts-title": "Shortcuts",
     "text-notes": "Text Notes",
     "code-notes-title": "Code Notes",
+    "content-manager-title": "Content Manager",
     "images-title": "Media",
     "spellcheck-title": "Spellcheck",
     "desktop-title": "Desktop",
@@ -295,6 +321,7 @@
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",
+    "database-title": "Database",
     "sync-title": "Sync",
     "other": "Other",
     "advanced-title": "Advanced",
@@ -304,22 +331,65 @@
     "localization": "Language & Region",
     "inbox-title": "Inbox",
     "tab-switcher-title": "Tab Switcher",
-    "sidebar-chat-title": "AI Chat"
+    "sidebar-chat-title": "AI Chat",
+    "record-meeting-title": "Transcribe meeting",
+    "transcription-title": "Transcription",
+    "resources-title": "Downloaded resources"
   },
   "notes": {
     "new-note": "New note",
     "duplicate-note-suffix": "(dup)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Deleting notes failed: {{- message}}"
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Before conversion to Markdown",
+    "revision_before_text": "Before conversion to Text Note"
   },
   "backend_log": {
     "log-does-not-exist": "The backend log file '{{ fileName }}' does not exist (yet).",
-    "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed."
+    "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed.",
+    "log-file-unavailable": "The log file could not be opened, so only the most recent entries kept in memory are shown. Trilium keeps trying to open it and writes these entries to it once it can."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "This note type cannot be displayed."
+    "note-cannot-be-displayed": "This note type cannot be displayed.",
+    "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here.",
+    "content-not-available": "This content is not available.",
+    "broken-block-reference": "Broken reference",
+    "untitled-block": "Block",
+    "play-video": "Play video"
   },
   "onenote_import": {
-    "root-title": "OneNote import"
+    "root-title": "OneNote import",
+    "failed-page-placeholder": "This page could not be imported from OneNote. Error: {{error}}",
+    "failed-section-placeholder": "This section could not be imported from OneNote, so it was created empty. Error: {{error}}",
+    "protected-section-error": "This section is password-protected. Remove its password in OneNote, then import it again.",
+    "protected-section-placeholder": "This section is password-protected, so its pages could not be imported and it was created empty. To import it, open the section in OneNote, remove its password protection (right-click the section &rarr; Password Protection &rarr; Remove Password), then run the import again.",
+    "report": {
+      "row-pages": "Pages imported successfully",
+      "row-notebooks": "Notebooks imported",
+      "row-sections": "Sections imported",
+      "row-duration": "Total import duration",
+      "row-images": "Images",
+      "row-attachments": "File attachments",
+      "row-ink": "Pages with handwriting or drawings",
+      "row-links": "Cross-page links",
+      "row-throttling": "Time throttled by Microsoft Graph",
+      "value-links": "{{resolved}} resolved, {{unresolved}} pointing outside the imported selection",
+      "value-throttling_one": "{{- wait}} ({{count}} throttled request)",
+      "value-throttling_other": "{{- wait}} ({{count}} throttled requests)",
+      "skipped-sections-title": "Sections that could not be imported",
+      "skipped-sections-section": "Section",
+      "skipped-sections-notebook": "Notebook",
+      "skipped-sections-error": "Error",
+      "failed-pages-title": "Pages that could not be imported",
+      "failed-pages-page": "Page",
+      "failed-pages-section": "Section",
+      "failed-pages-error": "Error",
+      "failed-resources-title": "Missing images and attachments",
+      "failed-resources-item_one": "{{- pageLink}}: {{count}} resource could not be downloaded",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} resources could not be downloaded"
+    }
   },
   "notion_import": {
     "root-title": "Notion import",
@@ -343,8 +413,14 @@
   "import": {
     "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
+  "restore": {
+    "pick_backup_title": "Choose a backup to restore",
+    "backup_filter": "Trilium backup (*.db, *.tnbackup)",
+    "any_file_filter": "All files"
+  },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
+    "render-timeout": "The note did not finish rendering within {{seconds}} seconds.",
     "unable-to-export-message": "The current note could not be exported as a PDF.",
     "unable-to-export-title": "Unable to export as PDF",
     "unable-to-save-message": "The selected file could not be written to. Try again or select another destination.",
@@ -360,6 +436,13 @@
     "show-windows": "Show windows",
     "open_new_window": "Open new window"
   },
+  "backup": {
+    "custom_directory_unwritable": "Database backup failed: unable to write to {{- location}}. Backing up to the default location instead.",
+    "passphrase_unavailable": "The backup password could not be read, so this backup is not encrypted. It has been saved to the default location instead of the chosen one."
+  },
+  "dialog": {
+    "select_directory": "Select folder"
+  },
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
     "error_message": "Error during migration to version {{version}}: {{stack}}",
@@ -372,21 +455,38 @@
   },
   "share_theme": {
     "site-theme": "Site Theme",
+    "appearance": "Appearance",
+    "theme-light": "Light",
+    "theme-dark": "Dark",
+    "theme-system": "System",
+    "theme-current": "Appearance: {{- theme}}",
     "search_placeholder": "Search...",
     "image_alt": "Article Image",
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
     "expand": "Expand",
+    "subpages-of": "Subpages of {{- title}}",
+    "hidden-subpages_one": "{{count}} subpage that is hidden from the tree",
+    "hidden-subpages_other": "{{count}} subpages that are hidden from the tree",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",
-    "login": "Login"
+    "login": "Login",
+    "tab-title": "Tab title",
+    "heading-link": "Link to This Section",
+    "previous": "Previous",
+    "next": "Next",
+    "page-navigation": "Previous and next pages",
+    "previous-tabs": "Scroll to the previous tabs",
+    "next-tabs": "Scroll to the next tabs",
+    "copy-code": "Copy code"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
     "markdown-snippet": "Markdown Snippet",
     "code-snippet": "Code Snippet",
+    "ai-quick-action": "AI Quick Action",
     "description": "Description",
     "list-view": "List View",
     "grid-view": "Grid View",
@@ -411,15 +511,11 @@
     "presentation_slide": "Presentation slide",
     "presentation_slide_first": "First slide",
     "presentation_slide_second": "Second slide",
-    "background": "Background",
     "dashboard": "Dashboard"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
     "db_not_initialized_server": "DB not initialized, please visit setup page - http://[your-server-host]:{{port}} to see instructions on how to initialize Trilium."
-  },
-  "desktop": {
-    "instance_already_running": "There's already an instance running, focusing that instance instead."
   },
   "script": {
     "wrong-environment": "Cannot execute note \"{{- noteTitle}}\" ({{- noteId}}). This is a {{- actualEnv}} script, but execution was attempted in the {{- expectedEnv}}."
@@ -431,8 +527,20 @@
       "cannot-compare-with": "cannot compare with \"{{- token}}\". To search for a literal value, use quotes: \"{{- token}}\"",
       "misplaced-expression": "Misplaced or incomplete expression \"{{- token}}\"",
       "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
-      "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
+      "unrecognized-expression": "Unrecognized expression \"{{- token}}\"",
+      "regex-not-allowed": "The regular expression operator \"%=\" is not available here."
     }
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancel",
+    "set-title": "Set the backup password?",
+    "set-message": "Future backups will be encrypted with this password.",
+    "set-detail": "Trilium cannot show this password again, so keep a copy somewhere safe: without it, a backup cannot be restored.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "set-confirm": "Set password",
+    "clear-title": "Forget the backup password?",
+    "clear-message": "Backups will no longer be encrypted.",
+    "clear-detail": "Backups already written keep the password they were made with, and can still be restored with it.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "clear-confirm": "Forget password"
   },
   "security-dialog": {
     "enable-title": "Enable {{settingLabel}}",
@@ -450,6 +558,53 @@
     "sql-console": "SQL console",
     "sql-console-warning": "The SQL console allows executing arbitrary SQL queries against the database.",
     "lan-access": "network access",
-    "lan-access-warning": "Other devices on your local network will be able to connect to this Trilium instance."
+    "lan-access-warning": "The app and your shared notes will be served over the network — reachable from a browser on this computer and from other devices on your local network."
+  },
+  "setup-window": {
+    "getting-started": "Getting Started - Trilium Notes",
+    "start-over": "Start Over - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Start over",
+    "message": "Restart Trilium and go back to the setup screen?",
+    "detail": "You will be offered a backup of your current knowledge base first. Nothing is deleted until you choose to create a new knowledge base, restore a backup or sync from another device.\n\nDo not continue if a script or an unfamiliar note prompted you to.",
+    "cancel": "Cancel",
+    "confirm": "Restart and start over"
+  },
+  "transcription": {
+    "already-recording": "A meeting is already being transcribed.",
+    "note-not-found": "The meeting note no longer exists.",
+    "start-failed": "The transcription could not start: {{- message}}",
+    "stopped-unexpectedly": "The transcription stopped unexpectedly. What was transcribed until then is kept.",
+    "save-locked": "The transcript cannot be saved while the protected session is locked. The transcription keeps it and saves it once you enter the protected session, as long as Trilium stays open.",
+    "save-failed": "The transcript could not be saved: {{- message}} The transcription keeps it and tries again with the next sentence.",
+    "capture-lost": "The transcription stopped because the audio could no longer be captured. What was transcribed until then is kept.",
+    "attachment-title": "Transcript",
+    "model-not-downloaded": "The speech recognition model is not downloaded yet. Start a recording from the launcher to download it.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, high accuracy",
+    "recognizer-description": "A speech recognition model by NVIDIA that supports 25 European languages. Recognition runs entirely on this device, so your recordings never leave it.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Used to detect speech in the audio, so that only the parts with speech are transcribed.",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "Used to distinguish speakers, so that you can see who said what in the transcript."
+  },
+  "resources": {
+    "unknown": "There is no resource named {{id}}.",
+    "http-error": "Downloading {{name}} failed with HTTP status {{status}}.",
+    "size-mismatch": "{{name}} does not have the expected size.",
+    "hash-mismatch": "{{name}} does not match its expected checksum, so it was discarded.",
+    "delete-while-downloading": "{{- title}} is being downloaded. Cancel the download before deleting it.",
+    "not-foreign": "{{- name}} is not an unused entry of the resources folder.",
+    "stalled": "Downloading {{name}} stopped: nothing arrived for {{seconds}} seconds. Check your connection, then try again."
+  },
+  "share_target": {
+    "default-title": "Shared content",
+    "nothing-to-share": "Nothing to share: no text, link or files were received.",
+    "rejected": "Share rejected: {{- reason}}",
+    "other-page": "Only the system share menu can send content to this address."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium runs as a Flatpak, so it cannot start programs installed outside its sandbox, such as {{- cli}}. To use {{- cli}}:\n\n1. Install it on this computer and sign in to it from a terminal.\n2. Allow Trilium to start programs outside its sandbox by running this in a terminal:\n\n{{- grantCommand}}\n\n3. Restart Trilium.\n\nThis gives Trilium the same access to your computer as an installation outside Flatpak. To take it back, run:\n\n{{- revokeCommand}}"
   }
 }

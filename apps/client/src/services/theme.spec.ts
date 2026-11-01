@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle, initThemeChangeNotifier } from "./theme.js";
+import {
+    applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle,
+    initThemeChangeNotifier, onEffectiveThemeStyleChange, updateColorSchemeClasses
+} from "./theme.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
 // without pulling the whole app graph into happy-dom.
@@ -32,6 +35,11 @@ function setTheme(theme: ThemeValue) {
     win.glob = { ...(win.glob ?? {}), theme };
 }
 
+/** happy-dom models no window visibility, so `document.hidden` is shadowed on the instance. */
+function setDocumentHidden(hidden: boolean) {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+}
+
 afterEach(async () => {
     // Let any pending `themeChanged` dynamic import settle before teardown, so a late emit can't leak into the
     // next test, then clear the captured calls.
@@ -39,6 +47,10 @@ afterEach(async () => {
     win.getComputedStyle = originalGetComputedStyle;
     win.matchMedia = originalMatchMedia;
     win.glob = originalGlob;
+    Reflect.deleteProperty(document, "hidden");
+    for (const lock of document.head.querySelectorAll("meta[name='darkreader-lock']")) {
+        lock.remove();
+    }
     triggerEvent.mockClear();
     vi.restoreAllMocks();
 });
@@ -329,7 +341,94 @@ describe("initThemeChangeNotifier", () => {
         await new Promise((resolve) => setTimeout(resolve));
         expect(triggerEvent).not.toHaveBeenCalled();
     });
+
+    /** Chromium withholds the `change` event while the window is hidden and never replays it (#11267). */
+    function flipWithoutEventWhileHidden(mql: { matches: boolean }) {
+        setDocumentHidden(true);
+        mql.matches = true;
+        setDocumentHidden(false);
+        document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("recovers an OS flip that arrived with no change event while the window was hidden", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+
+        flipWithoutEventWhileHidden(mql);
+
+        await vi.waitFor(() => expect(triggerEvent).toHaveBeenCalledWith("themeChanged", { themeStyle: "dark" }));
+    });
+
+    it("notifies subscribers of a flip recovered on becoming visible, exactly once", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        const listener = vi.fn();
+        const unsubscribe = onEffectiveThemeStyleChange(listener);
+        initThemeChangeNotifier();
+
+        flipWithoutEventWhileHidden(mql);
+        expect(listener).toHaveBeenCalledExactlyOnceWith("dark");
+
+        // Becoming visible again with nothing changed must stay quiet.
+        document.dispatchEvent(new Event("visibilitychange"));
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        unsubscribe();
+        mql.matches = false;
+        mql.listener?.();
+        expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it("stays quiet while the window is still hidden", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+
+        setDocumentHidden(true);
+        mql.matches = true;
+        document.dispatchEvent(new Event("visibilitychange"));
+
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(triggerEvent).not.toHaveBeenCalled();
+    });
+
+    it("adds the Dark Reader lock only while the effective style is dark", () => {
+        setTheme("next-dark");
+        installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(1);
+
+        setTheme("next");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(0);
+
+        mql.matches = true;
+        mql.listener?.();
+        expect(darkReaderLocks()).toHaveLength(1);
+
+        mql.matches = false;
+        mql.listener?.();
+        expect(darkReaderLocks()).toHaveLength(0);
+    });
+
+    it("locks Dark Reader for a dark custom theme once its stylesheet reports the style", () => {
+        setTheme("my-theme");
+        installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(0);
+
+        stubComputedStyle({ "--theme-style": "dark" });
+        updateColorSchemeClasses();
+        expect(darkReaderLocks()).toHaveLength(1);
+        expect(document.body.classList.contains("dark-theme")).toBe(true);
+    });
 });
+
+function darkReaderLocks() {
+    return document.head.querySelectorAll("meta[name='darkreader-lock']");
+}
 
 function themeStylesheetHrefs() {
     return Array.from(document.head.querySelectorAll<HTMLLinkElement>("link[data-theme-stylesheet]"))

@@ -1,4 +1,4 @@
-import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons";
+import { ActionHandlers, BulkAction, BulkActionData, evaluateTemplate } from "@triliumnext/commons";
 import branchService from "./branches";
 import eraseService from "./erase.js";
 
@@ -6,7 +6,7 @@ import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
 import { getLog } from "./log";
-import { evaluateTemplate } from "./safe_template.js";
+import noteFormatConversionService from "./note_format_conversion.js";
 import { executeBundle } from "./script.js";
 import { assertScriptingEnabled } from "./scripting_guard.js";
 import { randomString } from "./utils/index.js";
@@ -28,6 +28,15 @@ const ACTION_HANDLERS: ActionHandlerMap = {
         const deleteId = `searchbulkaction-${randomString(10)}`;
 
         note.deleteNote(deleteId);
+    },
+    saveRevision: (action, note) => {
+        // Mirror forceSaveRevision: skip protected notes outside a protected session
+        // rather than throwing and aborting the whole batch.
+        if (!note.isContentAvailable()) {
+            getLog().info(`Skipping saveRevision for protected note ${note.noteId}.`);
+            return;
+        }
+        note.saveRevision({ description: action.revisionName ?? "", source: "manual" });
     },
     deleteRevisions: (action, note) => {
         const revisionIds = note
@@ -106,6 +115,10 @@ const ACTION_HANDLERS: ActionHandlerMap = {
         if ("success" in res && !res.success) {
             getLog().info(`Moving/cloning note ${note.noteId} to ${action.targetParentNoteId} failed with error ${JSON.stringify(res)}`);
         }
+    },
+    convertNote: (action, note) => {
+        // Only converts notes matching the conversion's expected source type; others are skipped.
+        noteFormatConversionService.convertNoteByConversionId(note, action.conversion);
     },
     executeScript: (action, note) => {
         assertScriptingEnabled();

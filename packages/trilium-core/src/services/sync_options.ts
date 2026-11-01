@@ -23,7 +23,8 @@ export default {
         return host ? normalizeUrl(host) : host;
     },
     isSyncSetup: () => {
-        const syncServerHost = get("syncServerHost");
+        // The option does not exist before setup creates the database, which means sync is not set up.
+        const syncServerHost = config["Sync"]?.syncServerHost || optionService.getOptionOrNull("syncServerHost");
 
         // special value "disabled" is here to support a use case where the document is configured with sync server,
         // and we need to override it with config from config.ini

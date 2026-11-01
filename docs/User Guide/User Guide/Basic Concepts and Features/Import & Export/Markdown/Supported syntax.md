@@ -15,6 +15,8 @@ Standard Markdown links are supported.
 
 Trilium internal links (that mirror a note's title and display its icon) are embedded as HTML in order to preserve the information on import.
 
+<a class="reference-link" href="../../../Note%20Types/Text/Anchors.md">Anchors</a> are kept as HTML as well, so links to an anchor still lead to it after the note is imported again.
+
 ## Math equations
 
 Both inline and display equations are supported, using the `$` and `$$` syntaxes.
@@ -39,6 +41,26 @@ The Markdown syntax for admonitions as supported by Trilium is the one that GitH
 
 There are currently no plans of supporting alternative admonition syntaxes such as `!!! note`.
 
+## Tabs
+
+Tabs use the syntax of [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/reference/content-tabs/): each tab starts with a `=== "Title"` line, followed by its content indented by four spaces. Consecutive tabs form one tabs block, and `===!` starts a new block right after another one:
+
+```
+=== "Windows"
+
+    Run the **installer**.
+
+=== "Linux"
+
+    Use the package.
+
+===! "Another block"
+
+    This tab starts a separate tabs block.
+```
+
+Tabs can be nested by indenting the inner tabs inside the content of a tab. A tab title is plain text, so its formatting is not kept on export. For how tabs blocks work in a text note, see <a class="reference-link" href="../../../Note%20Types/Text/Content%20tabs.md">Content tabs</a>.
+
 ## Wikilinks
 
 Basic support for wikilinks has been added in v0.96.0:
@@ -55,3 +77,20 @@ This feature is import-only, which means that it will turn wikilinks into Triliu
 > 
 > *   If there is a single directory within the archive at root level, then that directory is considered the root.
 > *   If there are multiple files & directories at root level, then the archive root (containing all of these items) is considered the root.
+
+## Highlights
+
+Background highlights are supported in two ways:
+
+*   The Markdown `==` extension which is supported by other Markdown-based applications such as Obsidian:
+    
+    ```
+    ==highlighted==
+    ```
+*   The canonical HTML representation of highlights, as supported by Trilium:
+    
+    ```html
+    <span style="background-color:hsl(0,0%,100%);">Highlighted</span>
+    ```
+
+When the yellow highlight is used, import/export prefers the `==` syntax whereas the canonical HTML reprepresentation is used otherwise.

@@ -31,3 +31,18 @@ class NoteSavedDataStore {
 }
 
 export const noteSavedDataStore = new NoteSavedDataStore();
+
+/**
+ * The note whose content each live text editor holds. A CKEditor instance is reused across note
+ * switches and across the read-only ↔ editable switch, so a consumer that reads its model (the
+ * sidebar table of contents) has to tell whether what is in it belongs to the note it shows.
+ */
+const editorNoteIds = new WeakMap<object, string>();
+
+export function setEditorNoteId(editor: object, noteId: string) {
+    editorNoteIds.set(editor, noteId);
+}
+
+export function getEditorNoteId(editor: object) {
+    return editorNoteIds.get(editor);
+}

@@ -9,9 +9,9 @@ const OPERATOR_WORDS =
   'EQ NE LT GT GE CS CP NP CO CN DIV MOD BIT-AND BIT-OR BIT-XOR BIT-NOT NOT OR AND XOR BETWEEN EQUIV BYTE-CO, BYTE-CN, BYTE-CA BYTE-NA BYTE-CS BYTE-NS';
 
 const KEYWORDS = KEYWORD_WORDS.split(' ');
-const OPERATORS = OPERATORS_SYMBOLS.concat(OPERATOR_WORDS, ' ').split(
-  ' ',
-);
+// Split each list separately: concatenating the two strings first joined the last symbol to the
+// first word ("&&" + "EQ" -> "&&EQ"), so ABAP's `&&` string-concatenation operator matched nothing.
+const OPERATORS = [ ...OPERATORS_SYMBOLS.split(' '), ...OPERATOR_WORDS.split(' ') ];
 
 const COMMENT = 'comment';
 const KEYWORD = 'keyword';

@@ -38,28 +38,28 @@ See <a class="reference-link" href="Server%20Installation/Authentication.md">Au
 
 To configure a reverse proxy for Trilium, you can use either **nginx** or **Apache**. You can also check out the documentation stored in the Reverse proxy folder.
 
-### nginx
+=== "nginx"
 
-Add the following configuration to your `nginx` setup to proxy requests to Trilium:
+    Add the following configuration to your `nginx` setup to proxy requests to Trilium:
 
-```
-location /trilium/ {
-    proxy_pass http://127.0.0.1:8080/;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
-}
-```
+    ```
+    location /trilium/ {
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+    ```
 
-To avoid limiting the size of payloads, include this in the `server {}` block:
+    To avoid limiting the size of payloads, include this in the `server {}` block:
 
-```
-# Set to 0 for unlimited. Default is 1M.
-client_max_body_size 0;
-```
+    ```
+    # Set to 0 for unlimited. Default is 1M.
+    client_max_body_size 0;
+    ```
 
-### Apache
+=== "Apache"
 
-For an Apache setup, refer to the [Apache proxy setup](Server%20Installation/2.%20Reverse%20proxy/Apache%20using%20Docker.md) guide.
+    For an Apache setup, refer to the <a class="reference-link" href="Server%20Installation/2.%20Reverse%20proxy/Apache%20using%20Docker.md">Apache using Docker</a> guide.

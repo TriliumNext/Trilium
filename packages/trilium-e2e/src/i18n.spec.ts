@@ -11,14 +11,14 @@ test("Displays translation on desktop", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
 
-    await expect(page.locator("#left-pane .quick-search input")).toHaveAttribute("placeholder", "Quick search");
+    await expect(page.locator("#left-pane .quick-search .cm-content")).toHaveAttribute("aria-placeholder", "Quick search");
 });
 
 test("Displays translation on mobile", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto({ isMobile: true });
 
-    await expect(page.locator("#mobile-sidebar-wrapper .quick-search input")).toHaveAttribute("placeholder", "Quick search");
+    await expect(page.locator("#mobile-sidebar-wrapper .quick-search .cm-content")).toHaveAttribute("aria-placeholder", "Quick search");
 });
 
 test("Displays translations in Settings", async ({ page, context }) => {
@@ -40,7 +40,8 @@ test("User can change language from settings", async ({ page, context }) => {
     await app.goToSettings();
     await app.goToSettingsPage("_optionsLocalization");
 
-    const languageCombobox = app.dropdown(app.optionsDialogContent.locator(".options-section .dropdown").first());
+    // Named rather than counted: the option's `name` prefixes the id of the control it labels.
+    const languageCombobox = app.dropdown(app.optionsDialogContent.locator(".dropdown:has(> button[id^='language-'])"));
     const restartButton = app.optionsDialogContent.locator("button[name=restart-app-button]");
 
     // Check that the default value (English) is set.

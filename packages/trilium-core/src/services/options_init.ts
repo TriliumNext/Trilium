@@ -1,4 +1,4 @@
-import { type KeyboardShortcutWithRequiredActionName, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { DEFAULT_TRANSCRIPTION_MODEL, type KeyboardShortcutWithRequiredActionName, type OptionDefinitions, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 
 import appInfo from "./app_info.js";
 import { getPlatform } from "./platform.js";
@@ -19,6 +19,7 @@ export function initDocumentOptions() {
 interface NotSyncedOpts {
     syncServerHost?: string;
     syncProxy?: string;
+    syncMaxBlobContentSize?: number;
 }
 
 /**
@@ -38,38 +39,71 @@ interface DefaultOption {
 /**
  * Initializes the default options for new databases only.
  *
+ * Every option registered here is local-only (hence the name), which is what makes it safe to run on
+ * both paths that create a database: a brand-new document, and the empty shell that
+ * `sql_init#createDatabaseForSync` fills by syncing an existing document into it. Defaults that must
+ * be synced belong in {@link initNewDocumentOptions} instead — see the warning there.
+ *
  * @param initialized `true` if the database has been fully initialized (i.e. a new database was created), or `false` if the database is created for sync.
  * @param opts additional options to be initialized, for example the sync configuration.
  */
 export async function initNotSyncedOptions(initialized: boolean, opts: NotSyncedOpts = {}) {
-    optionService.createOption(
+    createNotSyncedOption(
         "openNoteContexts",
         JSON.stringify([
             {
                 notePath: "root",
                 active: true
             }
-        ]),
-        false
+        ])
     );
 
-    optionService.createOption("lastDailyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("lastWeeklyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("lastMonthlyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("dbVersion", appInfo.dbVersion.toString(), false);
+    createNotSyncedOption("lastDailyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("lastWeeklyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("lastMonthlyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("dbVersion", appInfo.dbVersion.toString());
 
-    optionService.createOption("initialized", initialized ? "true" : "false", false);
+    createNotSyncedOption("initialized", initialized ? "true" : "false");
 
-    optionService.createOption("lastSyncedPull", "0", false);
-    optionService.createOption("lastSyncedPush", "0", false);
+    createNotSyncedOption("lastSyncedPull", "0");
+    createNotSyncedOption("lastSyncedPush", "0");
 
-    optionService.createOption("theme", "next", false);
+    createNotSyncedOption("theme", "next");
+
+    createNotSyncedOption("syncServerHost", opts.syncServerHost || "");
+    createNotSyncedOption("syncServerTimeout", "120"); // 120 seconds (2 minutes)
+    createNotSyncedOption("syncProxy", opts.syncProxy || "");
+    createNotSyncedOption("syncIncomplete", "false");
+    // Per-device blob size limit (bytes) for sync pulls; 0 = disabled. Set to a non-zero value only
+    // on memory-constrained clients (mobile), so this is not synced across the cluster.
+    createNotSyncedOption("syncMaxBlobContentSize", (opts.syncMaxBlobContentSize ?? 0).toString());
+}
+
+/**
+ * Initializes the defaults that apply to a brand-new document only and that, unlike
+ * {@link initNotSyncedOptions}, do participate in sync. Must therefore be called only when creating a
+ * genuinely new document, never when creating a database to sync an existing one into.
+ *
+ * These cannot live in {@link defaultOptions}, which is also applied to existing databases on every
+ * startup: a value there fills in for everyone who does not have the option yet, so it would change
+ * the behaviour of upgrading users as well. And they must not live in {@link initNotSyncedOptions},
+ * which also runs on the sync-setup path, on an empty database, before the first pull. An option
+ * created there carries the current timestamp, so it wins the purely timestamp-based conflict
+ * resolution in `sync_update#updateNormalEntity` against the server's older value and is then pushed
+ * to the whole cluster — setting up a single fresh client would silently reset the setting
+ * everywhere (#10626).
+ */
+export function initNewDocumentOptions() {
     optionService.createOption("textNoteEditorType", "ckeditor-classic", true);
+}
 
-    optionService.createOption("syncServerHost", opts.syncServerHost || "", false);
-    optionService.createOption("syncServerTimeout", "120", false); // 120 seconds (2 minutes)
-    optionService.createOption("syncProxy", opts.syncProxy || "", false);
-    optionService.createOption("syncIncomplete", "false", false);
+/**
+ * Creates a local-only option, i.e. one that is not propagated to the other instances of a sync
+ * cluster. Deliberately offers no way to create a synced option, so that the contract of
+ * {@link initNotSyncedOptions} cannot be broken by passing the wrong argument.
+ */
+function createNotSyncedOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T]) {
+    optionService.createOption(name, value, false);
 }
 
 /**
@@ -111,9 +145,11 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
+    { name: "syncMaxBlobContentSize", value: "0", isSynced: false },
     { name: "revisionSnapshotTimeInterval", value: "600", isSynced: true },
     { name: "revisionSnapshotTimeIntervalTimeScale", value: "60", isSynced: true }, // default to Minutes
     { name: "revisionSnapshotNumberLimit", value: "-1", isSynced: true },
+    { name: "revisionIgnoreNamedSnapshots", value: "true", isSynced: true },
     { name: "protectedSessionTimeout", value: "600", isSynced: true },
     { name: "protectedSessionTimeoutTimeScale", value: "60", isSynced: true },
     { name: "zoomFactor", value: () => isWindows() ? "0.9" : "1.0", isSynced: false },
@@ -126,25 +162,53 @@ const defaultOptions: DefaultOption[] = [
     { name: "detailFontSize", value: "110", isSynced: false },
     { name: "monospaceFontFamily", value: "theme", isSynced: false },
     { name: "monospaceFontSize", value: "110", isSynced: false },
+    // Off rather than on: the theme default is JetBrains Mono, whose ligatures nobody opted into,
+    // and which have been reported as characters being replaced often enough to be worth defaulting
+    // away from (#2851, #6224). Not synced, matching the font options it sits with in the UI.
+    { name: "monospaceLigaturesEnabled", value: "false", isSynced: false },
     { name: "spellCheckEnabled", value: "true", isSynced: false },
     { name: "spellCheckLanguageCode", value: "en-US", isSynced: false },
     { name: "imageMaxWidthHeight", value: "2000", isSynced: true },
     { name: "imageJpegQuality", value: "75", isSynced: true },
+    // What automatic compression does to an arriving image, said out loud rather than left implicit.
+    // Scaling and recompressing are what it always did; the PNG answer is not. It used to turn every
+    // PNG into a JPEG, which is lossy, permanent, and throws away transparency — the only thing it
+    // could do before there was anything else. Optimizing makes a PNG smaller and leaves it a PNG,
+    // which is the right default for a step that runs unattended on everything a user pastes.
+    // Converting is still there for anyone who wants the space more than the format.
+    { name: "imageResize", value: "true", isSynced: true },
+    { name: "imageJpegHandling", value: "compress", isSynced: true },
+    { name: "imagePngHandling", value: "optimize", isSynced: true },
+    { name: "imageConversionQuality", value: "75", isSynced: true },
     { name: "autoFixConsistencyIssues", value: "true", isSynced: false },
     { name: "vimKeymapEnabled", value: "false", isSynced: false },
     { name: "codeLineWrapEnabled", value: "true", isSynced: false },
+    { name: "codeLineNumbersEnabled", value: "true", isSynced: false },
+    { name: "transcriptCleanupEnabled", value: "true", isSynced: true },
+    { name: "transcriptionEnabled", value: "false", isSynced: true },
+    { name: "transcriptionModel", value: DEFAULT_TRANSCRIPTION_MODEL, isSynced: false },
+    { name: "transcriptionSpeakersEnabled", value: "true", isSynced: true },
+    { name: "transcriptionKeepRecordings", value: "false", isSynced: false },
     { name: "codeNoteTabWidth", value: "4", isSynced: true },
     { name: "codeNoteIndentWithTabs", value: "false", isSynced: true },
     {
         name: "codeNotesMimeTypes",
-        value: '["text/x-csrc","text/x-c++src","text/x-csharp","text/css","text/x-elixir","text/x-go","text/x-groovy","text/x-haskell","text/html","message/http","text/x-java","text/javascript","application/javascript;env=frontend","application/javascript;env=backend","application/json","text/x-kotlin","text/x-markdown","text/x-perl","text/x-php","text/x-python","text/x-ruby",null,"text/x-sql","text/x-sqlite;schema=trilium","text/x-swift","text/xml","text/x-yaml","text/x-sh","application/typescript"]',
+        value: '["text/x-csrc","text/x-c++src","text/x-csharp","text/css","text/x-dockerfile","text/x-go","text/html","text/x-java","text/javascript","application/javascript;env=frontend","application/javascript;env=backend","application/json","text/jsx","text/x-kotlin","text/x-markdown","text/x-php","application/x-powershell","text/x-python","text/x-ruby","text/x-rustsrc",null,"text/x-sql","text/x-sqlite;schema=trilium","text/x-swift","text/xml","text/x-yaml","text/x-sh","application/typescript","text/typescript-jsx"]',
         isSynced: true
     },
+    { name: "codeNotesMimeTypesSortAlphabetically", value: "true", isSynced: true },
+    { name: "contentManagerSortOrder", value: "title", isSynced: true },
+    { name: "contentManagerViewMode", value: "category", isSynced: true },
     { name: "leftPaneWidth", value: "25", isSynced: false },
     { name: "leftPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneCollapsedItems", value: "[]", isSynced: false },
+    { name: "rightPaneSelectedTab", value: "outline", isSynced: false },
+    { name: "presentationSidebarVisible", value: "true", isSynced: false },
+    // Synced, unlike the rest of the pane's state: which map to read connections as is a preference
+    // rather than where a window happens to be left standing.
+    { name: "rightPaneNoteMapType", value: "link", isSynced: true },
     { name: "nativeTitleBarVisible", value: "false", isSynced: false },
     { name: "eraseEntitiesAfterTimeInSeconds", value: "604800", isSynced: true }, // default is 7 days
     { name: "eraseEntitiesAfterTimeScale", value: "86400", isSynced: true }, // default 86400 seconds = Day
@@ -153,16 +217,19 @@ const defaultOptions: DefaultOption[] = [
     { name: "headingStyle", value: "underline", isSynced: true },
     { name: "autoCollapseNoteTree", value: "true", isSynced: true },
     { name: "treeScrollFollowNavigation", value: "true", isSynced: true },
+    { name: "treeDensity", value: "relaxed", isSynced: false },
     { name: "autoReadonlySizeText", value: "32000", isSynced: false },
     { name: "autoReadonlySizeCode", value: "64000", isSynced: false },
     { name: "dailyBackupEnabled", value: "true", isSynced: false },
     { name: "weeklyBackupEnabled", value: "true", isSynced: false },
     { name: "monthlyBackupEnabled", value: "true", isSynced: false },
+    { name: "customDbBackupDir", value: "", isSynced: false },
+    { name: "backupEnableCompression", value: "false", isSynced: false },
+    { name: "backupEnableEncryption", value: "false", isSynced: false },
     { name: "maxContentWidth", value: "1200", isSynced: false },
     { name: "centerContent", value: "false", isSynced: false },
     { name: "compressImages", value: "true", isSynced: true },
     { name: "downloadImagesAutomatically", value: "true", isSynced: true },
-    { name: "minTocHeadings", value: "5", isSynced: true },
     { name: "highlightsList", value: '["underline","color","bgColor"]', isSynced: true },
     { name: "checkForUpdates", value: "true", isSynced: true },
     { name: "disableTray", value: "false", isSynced: false },
@@ -178,6 +245,7 @@ const defaultOptions: DefaultOption[] = [
     // Search settings
     { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
     { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
+    { name: "searchResultsPageSize", value: "20", isSynced: true },
 
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },
@@ -200,18 +268,25 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
-    { name: "codeNoteThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeNoteThemeMatchesApp", value: "true", isSynced: false },
     { name: "codeNoteThemeLight", value: "default:vs-code-light", isSynced: false },
     { name: "codeNoteThemeDark", value: "default:vs-code-dark", isSynced: false },
     { name: "motionEnabled", value: "true", isSynced: false },
     { name: "shadowsEnabled", value: "true", isSynced: false },
     { name: "backdropEffectsEnabled", value: "true", isSynced: false },
     { name: "smoothScrollEnabled", value: "true", isSynced: false },
-    { name: "newLayout", value: "true", isSynced: true },
+    { name: "hardwareAccelerationEnabled", value: "true", isSynced: false },
+
+    // PDF
+    { name: "pdfSignatures", value: "{}", isSynced: true },
 
     // Internationalization
     { name: "locale", value: "en", isSynced: true },
     { name: "formattingLocale", value: "", isSynced: true }, // no value means auto-detect
+    // English rather than "" (which would follow the application's language), so that an install
+    // that never touches this keeps writing the quotes it wrote before the setting existed. An
+    // empty value is still honoured if the user picks the auto entry.
+    { name: "defaultContentLanguage", value: "en", isSynced: true },
     { name: "firstDayOfWeek", value: "1", isSynced: true },
     { name: "firstWeekOfYear", value: "0", isSynced: true },
     { name: "minDaysInFirstWeek", value: "4", isSynced: true },
@@ -229,7 +304,7 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
-    { name: "codeBlockThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeBlockThemeMatchesApp", value: "true", isSynced: false },
     { name: "codeBlockThemeLight", value: "default:stackoverflow-light", isSynced: false },
     { name: "codeBlockThemeDark", value: "default:stackoverflow-dark", isSynced: false },
     { name: "codeBlockWordWrap", value: "false", isSynced: true },
@@ -238,10 +313,30 @@ const defaultOptions: DefaultOption[] = [
     // Text note configuration
     { name: "textNoteEditorType", value: "ckeditor-balloon", isSynced: true },
     { name: "textNoteEditorMultilineToolbar", value: "false", isSynced: true },
+    // The four groups of as-you-type replacements. All on, which is how the editor behaved before
+    // they could be turned off; the point of the setting is that the behaviour is now visible and
+    // refusable, not that it changes for anyone who leaves it alone.
+    // "auto" keeps the marks following the note's language, which is what the editor did before the
+    // setting existed. An explicit preset overrides the language entirely — the point of offering
+    // it. The two keys are set apart because the conventions disagree about which pair belongs on
+    // which: British typography puts the single curly marks where American puts the double ones.
+    { name: "textNoteDoubleQuoteStyle", value: "auto", isSynced: true },
+    { name: "textNoteSingleQuoteStyle", value: "auto", isSynced: true },
+    { name: "textNotePunctuationReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteMathReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteSymbolReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteCustomReplacements", value: "[]", isSynced: true },
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
-    { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
+    { name: "mathFieldEnabled", value: "true", isSynced: true },
+    { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
+    { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    { name: "textNoteStickyTableHeadersEnabled", value: "true", isSynced: false },
+    // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
+    // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
+    { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
+    { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },
@@ -252,6 +347,18 @@ const defaultOptions: DefaultOption[] = [
         isSynced: true
     },
 
+    // Empty rather than a set of defaults: nothing the cleanup tool erases is picked until the user
+    // picks it, so an uninitialized setting has to mean "nothing selected".
+    { name: "cleanupToolOptions", value: "{}", isSynced: true },
+
+    // Likewise empty: the compression tool fills its dimensions and quality in from the image
+    // options, so an uninitialized setting opens on those rather than on a second set of defaults
+    // that could disagree with them.
+    { name: "imageCompressionToolOptions", value: "{}", isSynced: true },
+
+    // Canvas settings
+    { name: "canvasThinStroke", value: "true", isSynced: true },
+
     // Share settings
     { name: "redirectBareDomain", value: "false", isSynced: true },
     { name: "showLoginInShareTheme", value: "false", isSynced: true },
@@ -259,7 +366,7 @@ const defaultOptions: DefaultOption[] = [
     {
         name: "seenCallToActions",
         value: JSON.stringify([
-            "new_layout", "background_effects", "next_theme"
+            "background_effects", "next_theme"
         ]),
         isSynced: true
     },
@@ -269,6 +376,9 @@ const defaultOptions: DefaultOption[] = [
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.
     { name: "aiEnabled", value: (optionsMap) => optionsMap.experimentalFeatures?.includes('"llm"') ? "true" : "false", isSynced: true },
     { name: "llmProviders", value: "[]", isSynced: true },
+    { name: "llmWebSearchProvider", value: "", isSynced: true },
+    { name: "llmPermissionMode", value: "ask_before_changes", isSynced: true },
+    { name: "aiAssistantModel", value: "", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
 
     // OCR options
@@ -320,5 +430,26 @@ function getKeyboardDefaultOptions() {
         value: JSON.stringify(ka.defaultShortcuts),
         isSynced: false
     })) as DefaultOption[];
+}
+
+let syncedFlagByOption: Map<OptionNames, boolean> | null = null;
+
+/**
+ * Resolves the declared `isSynced` flag for one of the well-known default options.
+ *
+ * Returns `undefined` for names that are not part of {@link defaultOptions} (e.g. options created
+ * directly in {@link initNotSyncedOptions}/{@link initDocumentOptions}, keyboard shortcuts, or unknown
+ * names). Used by `setOption` so that auto-creating a missing default does not silently downgrade a
+ * meant-to-be-synced option to local-only, which would otherwise produce an unreconcilable sync hash.
+ *
+ * The lookup is built lazily on first use to avoid evaluating the (cyclic) options module graph at
+ * import time.
+ */
+export function getDefaultOptionSyncedFlag(name: OptionNames): boolean | undefined {
+    if (!syncedFlagByOption) {
+        syncedFlagByOption = new Map(defaultOptions.map((option) => [option.name, option.isSynced]));
+    }
+
+    return syncedFlagByOption.get(name);
 }
 

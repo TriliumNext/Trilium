@@ -74,13 +74,14 @@ describe("BridgedRequestProvider.exec", () => {
         const promise = provider.exec({
             method: "POST",
             url: "http://x",
-            auth: { password: "pw" },
+            auth: { password: "pw", totpToken: "123456" },
             body: { a: 1 },
             paging: { pageCount: 2, pageIndex: 0, requestId: "r" }
         } as ExecOpts);
 
         const posted = lastPosted();
         expect(posted.request.headers["trilium-cred"]).toBe(btoa("dummy:pw"));
+        expect(posted.request.headers["trilium-totp"]).toBe("123456");
         expect(posted.request.headers["Content-Type"]).toBe("text/plain");
         expect(posted.request.body).toBe(JSON.stringify({ a: 1 }));
 
@@ -165,6 +166,29 @@ describe("BridgedRequestProvider.exec", () => {
         respond({ status: 200, body: JSON.stringify({ ok: true }) });
         await expect(promise).resolves.toEqual({ ok: true });
     });
+
+    it("resolves via the structured-clone data field without re-parsing a body", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec<{ ok: boolean }>({ method: "GET", url: "http://x" } as ExecOpts);
+        // Main thread delivers the already-parsed object as `data` (no `body`) — the worker
+        // must use it directly rather than JSON.parse-ing a string.
+        respond({ status: 201, data: { ok: true } });
+        await expect(promise).resolves.toEqual({ ok: true });
+    });
+
+    it("reads the error message from a structured-clone data object on a non-2xx response", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec({ method: "GET", url: "http://x" } as ExecOpts);
+        respond({ status: 500, data: { message: "boom via data" } });
+        await expect(promise).rejects.toThrow("500 GET http://x: boom via data");
+    });
+
+    it("falls back to an empty message when the structured-clone error data has no message field", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec({ method: "GET", url: "http://x" } as ExecOpts);
+        respond({ status: 500, data: { code: "X" } });
+        await expect(promise).rejects.toThrow("500 GET http://x:");
+    });
 });
 
 describe("BridgedRequestProvider.getImage", () => {
@@ -184,5 +208,92 @@ describe("BridgedRequestProvider.getImage", () => {
         const promise = provider.getImage("http://x/missing.png");
         respond({ status: 404, body: "" });
         await expect(promise).rejects.toThrow("404 GET");
+    });
+});
+
+describe("BridgedRequestProvider.fetchResource", () => {
+    it("asks the native side for the bytes and reports what they came under", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/p", {
+            maxBytes: 1000,
+            headers: { "user-agent": "TriliumNotes" }
+        });
+
+        expect(lastPosted().request).toMatchObject({
+            method: "GET",
+            url: "https://example.com/p",
+            headers: { "user-agent": "TriliumNotes" },
+            responseType: "arraybuffer"
+        });
+
+        respond({ status: 200, headers: { "content-type": "text/html; charset=utf-8" }, body: btoa("<html/>") });
+
+        await expect(promise).resolves.toEqual({
+            status: 200,
+            ok: true,
+            contentType: "text/html",
+            bytes: new TextEncoder().encode("<html/>")
+        });
+    });
+
+    it("answers a non-2xx rather than throwing, the page having said something", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/gone", { maxBytes: 1000 });
+
+        respond({ status: 404, headers: {}, body: btoa("nope") });
+
+        await expect(promise).resolves.toMatchObject({ status: 404, ok: false, contentType: "" });
+    });
+
+    it("refuses an address before anything is posted for it", async () => {
+        const provider = new BridgedRequestProvider();
+        const posted = postSpy.mock.calls.length;
+
+        await expect(provider.fetchResource("file:///etc/passwd", { maxBytes: 10 })).rejects.toThrow(/http and https/);
+        expect(postSpy.mock.calls.length).toBe(posted);
+    });
+
+    /**
+     * The ceiling is checked on what arrived rather than on what is arriving — a native transport
+     * hands over a whole response, so there is no stream to abandon. It still has to hold.
+     */
+    it("refuses a body over the ceiling once it is back", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/big", { maxBytes: 10 });
+
+        respond({ status: 200, headers: {}, body: btoa("x".repeat(50)) });
+
+        await expect(promise).rejects.toThrow(/exceeds the 10 byte limit/);
+    });
+
+    /**
+     * And refuses it *before* decoding, which is the part that matters. Decoding is where an
+     * oversized body multiplies — atob builds a binary string and Uint8Array.from copies that again
+     * — so a check running afterwards has already paid for what it is about to refuse.
+     */
+    it("refuses an oversized body without decoding it", async () => {
+        const decode = vi.spyOn(globalThis, "atob");
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/big", { maxBytes: 10 });
+
+        respond({ status: 200, headers: {}, body: btoa("x".repeat(5000)) });
+
+        await expect(promise).rejects.toThrow(/exceeds the 10 byte limit/);
+        expect(decode).not.toHaveBeenCalled();
+    });
+
+    it("measures the decoded size rather than the encoded one, at every padding", async () => {
+        // Base64 runs 4/3 the size of what it carries, so measuring the encoded string would refuse
+        // a 30-byte body against a 30-byte ceiling. The three lengths cover the three paddings.
+        for (const length of [ 30, 29, 28 ]) {
+            const provider = new BridgedRequestProvider();
+            const promise = provider.fetchResource("https://example.com/exact", { maxBytes: 30 });
+
+            respond({ status: 200, headers: {}, body: btoa("x".repeat(length)) });
+
+            await expect(promise).resolves.toMatchObject({
+                bytes: new Uint8Array(length).fill("x".charCodeAt(0))
+            });
+        }
     });
 });

@@ -5,11 +5,13 @@ import "jquery.fancytree/dist/modules/jquery.fancytree.filter.js";
 import "../stylesheets/tree.css";
 import "./note_tree.css";
 
+import { GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE } from "@triliumnext/commons";
+import { h } from "preact";
+
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import type { SetNoteOpts } from "../components/note_context.js";
 import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
@@ -22,12 +24,15 @@ import type { AttributeRow, BranchRow } from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
+import { buildShareLink } from "../services/share_link.js";
 import shortcutService from "../services/shortcuts.js";
 import toastService from "../services/toast.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
+import TreeSettings from "./note_tree_settings.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "./react/react_utils.jsx";
 
 const TPL = /*html*/`
 <div class="tree-wrapper">
@@ -89,23 +94,12 @@ const TPL = /*html*/`
         inset-inline-end: 10px;
     }
 
-    .tree-settings-popup {
-        display: none;
-        position: absolute;
-        background-color: var(--accented-background-color);
-        border: 1px solid var(--main-border-color);
-        padding: 20px;
-        z-index: 1000;
-        width: 340px;
-        border-radius: 10px;
-    }
-
     .tree .hidden-node-is-hidden {
         display: none;
     }
     </style>
 
-    <div class="tree"></div>
+    <div class="tree scroll-edge-fade"></div>
 
     <div class="tree-actions">
         <button class="tree-floating-button bx bx-layer-minus collapse-tree-button"
@@ -118,37 +112,6 @@ const TPL = /*html*/`
 
         <button class="tree-floating-button bx bxs-tree tree-settings-button"
                 title="${t("note_tree.tree-settings-title")}"></button>
-    </div>
-
-
-    <div class="tree-settings-popup">
-        <h4>${t("note_tree.tree-settings-title")}</h4>
-        <div class="form-check">
-            <label class="form-check-label tn-checkbox">
-                <input class="form-check-input hide-archived-notes" type="checkbox" value="">
-                ${t("note_tree.hide-archived-notes")}
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label tn-checkbox">
-                <input class="form-check-input auto-collapse-note-tree" type="checkbox" value="">
-                ${t("note_tree.automatically-collapse-notes")}
-                <span class="bx bx-info-circle"
-                      title="${t("note_tree.automatically-collapse-notes-title")}"></span>
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label tn-checkbox">
-                <input class="form-check-input follow-active-note" type="checkbox" value="">
-                ${t("note_tree.follow-active-note")}
-                <span class="bx bx-info-circle"
-                      title="${t("note_tree.follow-active-note-title")}"></span>
-            </label>
-        </div>
-
-        <br/>
-
-        <button class="btn btn-sm btn-primary save-tree-settings-button" type="submit">${t("note_tree.save-changes")}</button>
     </div>
 </div>
 `;
@@ -182,29 +145,14 @@ interface RefreshContext {
     noteIdsToReload: Set<string>;
 }
 
-/**
- * The information contained within a drag event.
- */
-export interface DragData {
-    noteId: string;
-    branchId: string;
-    title: string;
-}
-
-export const TREE_CLIPBOARD_TYPE = "application/x-fancytree-node";
-
 /** Entity changes below the given threshold will be processed without batching to avoid performance degradation. */
 const BATCH_UPDATE_THRESHOLD = 10;
 
 export default class NoteTreeWidget extends NoteContextAwareWidget {
     private $tree!: JQuery<HTMLElement>;
     private $treeActions!: JQuery<HTMLElement>;
-    private $treeSettingsButton!: JQuery<HTMLElement>;
-    private $treeSettingsPopup!: JQuery<HTMLElement>;
-    private $saveTreeSettingsButton!: JQuery<HTMLElement>;
-    private $hideArchivedNotesCheckbox!: JQuery<HTMLElement>;
-    private $autoCollapseNoteTree!: JQuery<HTMLElement>;
-    private $followActiveNoteCheckbox!: JQuery<HTMLElement>;
+    private settingsContainer = document.createElement("div");
+    private isSettingsShown = false;
     private treeName: "main";
     private autoCollapseTimeoutId?: Timeout;
     private lastFilteredHoistedNotePath?: string | null;
@@ -234,7 +182,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             } else if (target.classList.contains("add-note-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
-                noteCreateService.createNote(parentNotePath, { isProtected: node.data.isProtected });
+                noteCreateService.createNote(parentNotePath, {
+                    isProtected: node.data.isProtected,
+                    // Activate in this tree's own context — in popup dialogs (e.g. the task states
+                    // tree popup) it is not the tab manager's active context.
+                    noteContext: this.noteContext
+                });
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 this.triggerCommand("hoistNote", { noteId: node.data.noteId });
@@ -266,54 +219,15 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             }
         });
 
-        this.$treeSettingsPopup = this.$widget.find(".tree-settings-popup");
-        this.$hideArchivedNotesCheckbox = this.$treeSettingsPopup.find(".hide-archived-notes");
-        this.$autoCollapseNoteTree = this.$treeSettingsPopup.find(".auto-collapse-note-tree");
-        this.$followActiveNoteCheckbox = this.$treeSettingsPopup.find(".follow-active-note");
-
-        this.$treeSettingsButton = this.$widget.find(".tree-settings-button");
-        this.$treeSettingsButton.on("click", (e) => {
-            if (this.$treeSettingsPopup.is(":visible")) {
-                this.$treeSettingsPopup.hide();
-                return;
-            }
-
-            this.$hideArchivedNotesCheckbox.prop("checked", this.hideArchivedNotes);
-            this.$autoCollapseNoteTree.prop("checked", this.autoCollapseNoteTree);
-            this.$followActiveNoteCheckbox.prop("checked", this.treeScrollFollowNavigation);
-
-            const top = this.$treeActions[0].offsetTop - (this.$treeSettingsPopup.outerHeight() ?? 0);
-            const left = Math.max(0, this.$treeActions[0].offsetLeft - (this.$treeSettingsPopup.outerWidth() ?? 0) + (this.$treeActions.outerWidth() ?? 0));
-
-            this.$treeSettingsPopup
-                .css({
-                    top,
-                    left
-                })
-                .show();
-
-            return false;
-        });
-
-        this.$treeSettingsPopup.on("click", (e) => {
-            e.stopPropagation();
-        });
-
-        $(document).on("click", () => this.$treeSettingsPopup.hide());
-
-        this.$saveTreeSettingsButton = this.$treeSettingsPopup.find(".save-tree-settings-button");
-        this.$saveTreeSettingsButton.on("click", async () => {
-            await this.setHideArchivedNotes(this.$hideArchivedNotesCheckbox.prop("checked"));
-            await this.setAutoCollapseNoteTree(this.$autoCollapseNoteTree.prop("checked"));
-            await this.setTreeScrollFollowNavigation(this.$followActiveNoteCheckbox.prop("checked"));
-
-            this.$treeSettingsPopup.hide();
-
-            this.reloadTreeFromCache();
+        this.$widget.find(".tree-settings-button").on("click", () => {
+            this.toggleSettings(!this.isSettingsShown);
         });
 
         // note tree starts initializing already during render which is atypical
-        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => this.initFancyTree());
+        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => {
+            this.applyDensity();
+            this.initFancyTree();
+        });
 
         this.setupNoteTitleTooltip();
     }
@@ -353,24 +267,39 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         await this.reloadTreeFromCache();
     }
 
-    async setHideArchivedNotes(val: string) {
-        await options.save(`hideArchivedNotes_${this.treeName}`, val.toString());
-    }
-
     get autoCollapseNoteTree() {
         return options.is("autoCollapseNoteTree");
-    }
-
-    async setAutoCollapseNoteTree(val: string) {
-        await options.save("autoCollapseNoteTree", val.toString());
     }
 
     get treeScrollFollowNavigation() {
         return options.is("treeScrollFollowNavigation");
     }
 
-    async setTreeScrollFollowNavigation(val: boolean) {
-        await options.save("treeScrollFollowNavigation", val.toString());
+    /** Makes the rows compact while the `treeDensity` option is `dense`. */
+    private applyDensity() {
+        this.$widget.toggleClass("dense", options.get("treeDensity") === "dense");
+    }
+
+    private toggleSettings(isShown: boolean) {
+        if (isShown === this.isSettingsShown) {
+            return;
+        }
+
+        this.isSettingsShown = isShown;
+        if (!isShown) {
+            disposeReactWidget(this.settingsContainer);
+            return;
+        }
+
+        renderReactWidgetAtElement(this, h(TreeSettings, {
+            anchor: this.$treeActions[0],
+            onHideArchivedNotesChange: () => this.reloadTreeFromCache(),
+            onClose: () => this.toggleSettings(false)
+        }), this.settingsContainer);
+    }
+
+    cleanup() {
+        this.toggleSettings(false);
     }
 
     initFancyTree() {
@@ -481,30 +410,15 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 return true;
             },
             activate: async (event, data) => {
-                // click event won't propagate so let's close context menu manually
-                contextMenu.hide();
-
-                // hide all dropdowns, fix calendar widget dropdown doesn't close when click on a note
-                $('.dropdown-menu').parent('.dropdown').find('[data-bs-toggle="dropdown"]').dropdown('hide');
-
                 this.clearSelectedNodes();
 
                 const notePath = treeService.getNotePath(data.node);
 
-                // Prefer the context this tree is bound to (e.g. a popup editor with its own
-                // hoisted context) over the globally active tab. For the main sidebar tree the
-                // bound context already is the active context, so behaviour is unchanged there.
-                const activeNoteContext = this.noteContext ?? appContext.tabManager.getActiveContext();
-                const opts: SetNoteOpts = {};
-                if (activeNoteContext?.viewScope?.viewMode === "contextual-help") {
-                    opts.viewScope = activeNoteContext.viewScope;
+                const { noteContext, opts } = this.getNavigationTarget();
+                if (noteContext?.viewScope?.viewMode === "contextual-help") {
+                    opts.viewScope = noteContext.viewScope;
                 }
-                // When this tree drives a context other than the active tab (e.g. one embedded in a
-                // popup editor), keep any open dialog so navigating the tree doesn't dismiss the popup.
-                if (activeNoteContext && activeNoteContext !== appContext.tabManager.getActiveContext()) {
-                    opts.keepActiveDialog = true;
-                }
-                await activeNoteContext?.setNote(notePath, opts);
+                await noteContext?.setNote(notePath, opts);
             },
             expand: (event, data) => this.setExpanded(data.node.data.branchId, true),
             collapse: (event, data) => this.setExpanded(data.node.data.branchId, false),
@@ -541,11 +455,17 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     return true; // allow dragging to start
                 },
                 dragEnter: (node, data) => {
-                    if (node.data.noteType === "search") {
+                    publishDropMarkerShift(node);
+
+                    // Content dragged out of a text note lists no notes, and its editor deletes
+                    // the content once a drop accepts it as a move.
+                    if (data.dataTransfer.types.includes("application/ckeditor5-dragging-uid")) {
+                        return false;
+                    } else if (node.data.noteType === "search") {
                         return false;
                     } else if (node.data.noteId === "_lbRoot") {
                         return false;
-                    } else if (node.data.noteId.startsWith("_options")) {
+                    } else if (node.data.noteId.startsWith("_options") || node.data.noteId.startsWith("_help")) {
                         return false;
                     } else if (node.data.noteId === hoistedNoteService.getHoistedNoteId()) {
                         // The hoisted note is the tree root, so it has no visible siblings to drop before/after.
@@ -577,6 +497,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         const importService = await import("../services/import.js");
 
                         importService.uploadFiles("notes", node.data.noteId, files, {
+                            // Nothing was chosen here the way the import dialog makes a user choose, so
+                            // let the importer recognize an archive it knows (an Obsidian vault).
+                            format: "auto",
                             safeImport: true,
                             shrinkImages: true,
                             textImportedAsText: true,
@@ -592,6 +515,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                             notes = JSON.parse(jsonStr);
                         } catch (e) {
                             logError(`Cannot parse JSON '${jsonStr}' into notes for drop`);
+                            return;
+                        }
+
+                        // Help pages are virtual notes, which the server never moves.
+                        if (notes.some((note) => note.noteId?.startsWith("_help"))) {
+                            toastService.showError(t("note_tree.dropping-not-allowed"));
                             return;
                         }
 
@@ -810,14 +739,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        const title = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.title}`;
-
         node.data.isProtected = note.isProtected;
         node.data.noteType = note.type;
         node.folder = note.isFolder();
         node.icon = note.getIcon();
         node.extraClasses = this.getExtraClasses(note);
-        node.title = utils.escapeHtml(title);
+        node.title = this.getTitleHtml(note, branch);
 
         if (node.isExpanded() !== branch.isExpanded) {
             await node.setExpanded(branch.isExpanded, { noEvents: true, noAnimation: true });
@@ -834,8 +761,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return null;
         }
 
-        const title = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.title}`;
-
         const isFolder = note.isFolder();
 
         const node: Fancytree.FancytreeNewNode = {
@@ -844,7 +769,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             branchId: branch.branchId,
             isProtected: note.isProtected,
             noteType: note.type,
-            title: utils.escapeHtml(title),
+            title: this.getTitleHtml(note, branch),
             extraClasses: this.getExtraClasses(note),
             icon: note.getIcon(),
             refKey: note.noteId,
@@ -862,6 +787,14 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         return node;
     }
 
+    getTitleHtml(note: FNote, branch: FBranch) {
+        const title = note.isContentAvailable()
+            ? utils.escapeHtml(note.title)
+            : `<span class="protected-title">${t("protected_session.locked_note_title")}</span>`;
+
+        return branch.prefix ? `${utils.escapeHtml(branch.prefix)} - ${title}` : title;
+    }
+
     getExtraClasses(note: FNote) {
         utils.assertArguments(note);
 
@@ -875,16 +808,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             extraClasses.push("shared");
         }
 
-        if (note.getParentNoteIds().length > 1) {
-            const realClones = note
-                .getParentNoteIds()
-                .map((noteId: string) => froca.notes[noteId])
-                .filter((note: FNote) => !!note)
-                .filter((note: FNote) => !["_share", "_lbBookmarks"].includes(note.noteId) && note.type !== "search");
-
-            if (realClones.length > 1) {
-                extraClasses.push("multiple-parents");
-            }
+        if (note.getRealParentNotes().length > 1) {
+            extraClasses.push("multiple-parents");
         }
 
         const cssClass = note.getCssClass();
@@ -1145,7 +1070,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     async refresh() {
         this.toggleInt(this.isEnabled());
-        this.$treeSettingsPopup.hide();
+        this.toggleSettings(false);
 
         this.activityDetected();
 
@@ -1153,7 +1078,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         const newActiveNode =
             this.noteContext?.notePath &&
-            (!treeService.isNotePathInHiddenSubtree(this.noteContext.notePath) || (await hoistedNoteService.isHoistedInHiddenSubtree())) &&
+            // Pass this tree's own hoisted note (e.g. a popup hoisted into the hidden subtree) rather
+            // than the active tab's — otherwise a hidden-subtree note never gets an active node here.
+            (!treeService.isNotePathInHiddenSubtree(this.noteContext.notePath) || (await hoistedNoteService.isHoistedInHiddenSubtree(this.hoistedNoteId))) &&
             (await this.getNodeFromPath(this.noteContext.notePath));
 
         if (this.spotlightedNode && newActiveNode !== this.spotlightedNode) {
@@ -1263,6 +1190,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         this.activityDetected();
 
+        if (loadResults.isOptionReloaded("treeDensity")) {
+            this.applyDensity();
+        }
+
         if (loadResults.isEmptyForTree()) {
             return;
         }
@@ -1307,7 +1238,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     #processAttributeRows(attributeRows: AttributeRow[], refreshCtx: RefreshContext) {
         for (const attrRow of attributeRows) {
-            const dirtyingLabels = ["iconClass", "cssClass", "workspace", "workspaceIconClass", "color"];
+            // `geolocation`, `mapPosition` and `startDate` decide the icon of a note that has none
+            // of its own (see getNoteIcon).
+            const dirtyingLabels = ["iconClass", "cssClass", "workspace", "workspaceIconClass",
+                "color", GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, "startDate"];
 
             if (attrRow.type === "label" && dirtyingLabels.includes(attrRow.name ?? "") && attrRow.noteId) {
                 if (attrRow.isInheritable) {
@@ -1363,7 +1297,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 for (const node of this.getNodesByBranch(branchRow)) {
                     if (node.isActive()) {
                         if (allBranchesDeleted) {
-                            const newActiveNode = node.getNextSibling() || node.getPrevSibling() || node.getParent();
+                            // `_hidden` stays in the tree under root, hidden only by CSS.
+                            const newActiveNode = [
+                                node.getNextSibling(), node.getPrevSibling(), node.getParent()
+                            ].find((candidate) => candidate && candidate.data.noteId !== "_hidden");
 
                             if (newActiveNode) {
                                 newActiveNode.setActive(true, { noEvents: true, noFocus: true });
@@ -1497,7 +1434,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        let node: Fancytree.FancytreeNode | null | undefined = await this.expandToNote(activeNotePath, false);
+        const follow = this.treeScrollFollowNavigation;
+        let node: Fancytree.FancytreeNode | null | undefined = await this.getNodeFromPath(activeNotePath, follow, false);
 
         if (node && node.data.noteId !== treeService.getNoteIdFromUrl(activeNotePath)) {
             // if the active note has been moved elsewhere then it won't be found by the path,
@@ -1521,7 +1459,14 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             this.tree.$container.focus();
         }
 
-        await node.setActive(true, { noEvents: true, noFocus: !activeNodeFocused });
+        // fancytree's `activeVisible` expands the ancestors of a node it activates.
+        const prevActiveVisible = this.tree.options.activeVisible;
+        this.tree.options.activeVisible = follow;
+        try {
+            await node.setActive(true, { noEvents: true, noFocus: !activeNodeFocused });
+        } finally {
+            this.tree.options.activeVisible = prevActiveVisible;
+        }
     }
 
     sortChildren(node: Fancytree.FancytreeNode) {
@@ -1853,7 +1798,19 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         await ws.waitForMaxKnownEntityChangeId();
 
-        appContext.tabManager.getActiveContext()?.setNote(resp.note.noteId);
+        const { noteContext, opts } = this.getNavigationTarget();
+        await noteContext?.setNote(resp.note.noteId, opts);
+    }
+
+    /** Returns the tree's own note context (or the active one), with `keepActiveDialog` set when they differ. */
+    private getNavigationTarget() {
+        const activeContext = appContext.tabManager.getActiveContext();
+        const noteContext = this.noteContext ?? activeContext;
+        const opts: SetNoteOpts = {};
+        if (noteContext && noteContext !== activeContext) {
+            opts.keepActiveDialog = true;
+        }
+        return { noteContext, opts };
     }
 
 }
@@ -1927,19 +1884,9 @@ function buildEnhanceTitle() {
         }
 
         // Add clone indicator with tooltip if note has multiple parents
-        const parentNotes = note.getParentNotes();
-        const realParents: FNote[] = [];
-        for (const parent of parentNotes) {
-            if (parent.noteId !== "_share" && parent.noteId !== "_lbBookmarks" && parent.type !== "search") {
-                realParents.push(parent);
-            }
-        }
-
+        const realParents = note.getRealParentNotes();
         if (realParents.length > 1) {
-            const parentTitles = realParents.map((p) => p.title).join(", ");
-            const tooltipText = realParents.length === 2
-                ? t("note_tree.clone-indicator-tooltip-single", { parent: realParents[1].title })
-                : t("note_tree.clone-indicator-tooltip", { count: realParents.length, parents: parentTitles });
+            const tooltipText = treeService.getCloneIndicatorTooltip(realParents);
 
             const $cloneIndicator = $(`<span class="note-indicator-icon clone-indicator"></span>`);
             $cloneIndicator.attr("title", tooltipText);
@@ -1949,7 +1896,9 @@ function buildEnhanceTitle() {
         // Add shared indicator with tooltip if note is shared
         if (note.isShared()) {
             const shareId = note.getOwnedLabelValue("shareAlias") || note.noteId;
-            const shareUrl = `${location.origin}${location.pathname}share/${shareId}`;
+            // Pass no sync host to preserve this tooltip's prior local-origin behavior; the helper
+            // still substitutes the loopback origin for the trilium-app:// desktop renderer (#10589).
+            const shareUrl = buildShareLink(shareId, undefined);
             const tooltipText = t("note_tree.shared-indicator-tooltip-with-url", { url: shareUrl });
 
             const $sharedIndicator = $(`<span class="note-indicator-icon shared-indicator"></span>`);
@@ -1966,3 +1915,55 @@ function buildEnhanceTitle() {
         }
     };
 }
+
+/**
+ * Tells the drop marker how far it sits from the boundary between two rows, in pixels.
+ *
+ * dnd5 anchors the marker on the target *title* — its bottom edge for "after", its top edge for
+ * "before" — and those are half the row's spare height either side of the boundary the note
+ * actually lands on. Left alone, dropping between two notes draws the line in one of two places
+ * depending on which of them the pointer is over.
+ *
+ * Measured rather than written down: the distance is the row height less the title's line box, and
+ * both follow whichever family and size the tree font names.
+ */
+export function publishDropMarkerShift(node: Fancytree.FancytreeNode) {
+    const row = node.span;
+    const title = row?.querySelector(".fancytree-title");
+    if (!row || !title) {
+        return;
+    }
+
+    const shift = (row.getBoundingClientRect().height - title.getBoundingClientRect().height) / 2;
+    // On the body, since the marker is parented there and custom properties inherit; it is also
+    // created lazily, so it cannot be relied on to exist when the first note is dragged over.
+    document.body.style.setProperty("--tree-drop-marker-shift", `${shift}px`);
+}
+
+type ScrollIntoViewFn = (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) => JQueryPromise<unknown>;
+
+/**
+ * jquery.fancytree's `FancytreeNode.scrollIntoView()` reads `$(this.span).offset().top`, which throws
+ * "Cannot read properties of undefined (reading 'top')" for a node that has no DOM markup — e.g. nodes
+ * recreated by `load(true)` while rendering is suspended by `batchUpdate()` during a large sync update.
+ * Its `isVisible()` guard only checks the ancestors' expanded flags, not the actual markup, and the
+ * exception then aborts the whole tab activation (see #10407). Skip the scroll instead, mirroring the
+ * library's own early return for invisible nodes; the node gets rendered (and styled as active) by the
+ * full `tree.render()` that re-enabling updates triggers anyway.
+ */
+function patchScrollIntoViewCrash() {
+    const { _FancytreeNodeClass } = $.ui.fancytree as Fancytree.FancytreeStatic & {
+        _FancytreeNodeClass: { prototype: Fancytree.FancytreeNode };
+    };
+    const originalScrollIntoView = _FancytreeNodeClass.prototype.scrollIntoView as ScrollIntoViewFn;
+
+    _FancytreeNodeClass.prototype.scrollIntoView = function (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) {
+        if (!this.span) {
+            return $.Deferred().resolveWith(this).promise();
+        }
+
+        return originalScrollIntoView.call(this, effects, options);
+    };
+}
+
+patchScrollIntoViewCrash();

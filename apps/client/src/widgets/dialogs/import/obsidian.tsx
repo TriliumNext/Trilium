@@ -6,7 +6,6 @@ import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/obsidian.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 import useProviderImport from "./useProviderImport.js";
 
@@ -15,7 +14,7 @@ function ObsidianPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
     const [shrinkImages, setShrinkImages] = useState(compressImages);
     // `format: "obsidian"` routes the upload/native import to the Obsidian importer, overriding the .zip
     // extension's default (the generic zip importer).
-    const { hasSelection, displayNames, onChange, onBrowse, onNativeDrop, doImport } = useProviderImport({ format: "obsidian", parentNoteId, shrinkImages, closeDialog });
+    const { hasSelection, displayNames, onChange, onBrowse, onNativeDrop, onRemove, doImport } = useProviderImport({ format: "obsidian", parentNoteId, shrinkImages, closeDialog });
 
     // Keep the latest import handler in a ref so the footer effect depends only on whether a file is
     // selected, never on doImport's identity — otherwise re-pushing the footer on every change would loop
@@ -38,7 +37,7 @@ function ObsidianPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
         <Card heading={t("obsidian_import.choose_file")}>
             <CardSection>
                 <p className="import-files-description">{t("obsidian_import.description_long")}</p>
-                <FileDropZone onChange={onChange} onBrowse={onBrowse} onNativeDrop={onNativeDrop} displayNames={displayNames} />
+                <FileDropZone onChange={onChange} onBrowse={onBrowse} onNativeDrop={onNativeDrop} onRemove={onRemove} displayNames={displayNames} />
                 <OptionsRowWithToggle
                     name="shrink-images"
                     label={t("import.shrinkImages")}
@@ -56,7 +55,7 @@ const provider: ImportProvider = {
     id: "obsidian",
     helpPage: "iWD7wiIuMtgV",
     name: t("obsidian_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-obsidian",
     description: t("obsidian_import.description"),
     Panel: ObsidianPanel
 };

@@ -1,8 +1,7 @@
-import { restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import { ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { RefObject } from "preact";
-import { JSX } from "preact";
+import { RefObject, TargetedDragEvent } from "preact";
 import { useCallback } from "preact/hooks";
 
 /** Default size of an embeddable created by dropping a note onto the canvas. */
@@ -23,8 +22,8 @@ const STACK_OFFSET = 24;
  * payload is readable: a recognized note payload is handled here and kept from Excalidraw, while any
  * other `text/plain` drop falls through to Excalidraw's own handling.
  */
-export default function useCanvasNoteDrop(apiRef: RefObject<ExcalidrawImperativeAPI>, isReadOnly: boolean) {
-    const onDragOverCapture = useCallback((e: JSX.TargetedDragEvent<HTMLElement>) => {
+export default function useCanvasNoteDrop(apiRef: RefObject<ExcalidrawImperativeAPI | null>, isReadOnly: boolean) {
+    const onDragOverCapture = useCallback((e: TargetedDragEvent<HTMLElement>) => {
         if (isReadOnly || !e.dataTransfer?.types.includes("text/plain")) {
             return;
         }
@@ -33,7 +32,7 @@ export default function useCanvasNoteDrop(apiRef: RefObject<ExcalidrawImperative
         e.stopPropagation();
     }, [isReadOnly]);
 
-    const onDropCapture = useCallback((e: JSX.TargetedDragEvent<HTMLElement>) => {
+    const onDropCapture = useCallback((e: TargetedDragEvent<HTMLElement>) => {
         const api = apiRef.current;
         if (isReadOnly || !api) {
             return;
@@ -64,7 +63,9 @@ export default function useCanvasNoteDrop(apiRef: RefObject<ExcalidrawImperative
         })) as ExcalidrawEmbeddableElement[];
 
         const newElements = restoreElements(partialElements, null);
-        api.updateScene({ elements: [...api.getSceneElements(), ...newElements] });
+        // A drop is a user action and must be its own undo step; without IMMEDIATELY it would
+        // only be captured as part of the next action (#7148).
+        api.updateScene({ elements: [...api.getSceneElements(), ...newElements], captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     }, [apiRef, isReadOnly]);
 
     return { onDragOverCapture, onDropCapture };

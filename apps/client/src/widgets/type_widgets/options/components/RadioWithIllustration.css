@@ -1,10 +1,16 @@
-.options-section-card .radio-with-illustration {
+/* A card given over to a single illustrated choice, its heading standing in for the label. */
+.thumbnail-selector-option-card {
+    --card-padding-block: 12px;
+    --card-background-color: transparent;
+}
+
+.radio-with-illustration {
     list-style-type: none;
     margin-bottom: 0;
     padding: 0;
     display: flex;
     gap: 1.5em;
-    justify-content: center;
+    justify-content: start;
 
     figure {
         figcaption {

@@ -1,3 +1,5 @@
+import type { UserTheme } from "@triliumnext/commons";
+
 import { readCssVar } from "../utils/css-var.js";
 
 export function getThemeStyle(): "auto" | "light" | "dark" {
@@ -114,6 +116,24 @@ export function updateColorSchemeClasses() {
     const colorScheme = readCssVar(document.body, "theme-style").asString();
     document.body.classList.toggle("light-theme", colorScheme === "light");
     document.body.classList.toggle("dark-theme", colorScheme === "dark");
+    syncDarkReaderLock();
+}
+
+/**
+ * Adds `<meta name="darkreader-lock">` while the effective style is dark, so the Dark Reader extension leaves a
+ * dark theme alone and still darkens a light one. Dark Reader disables itself when the tag appears, but removing
+ * the tag does not re-enable it until the page reloads.
+ */
+function syncDarkReaderLock() {
+    const lock = document.head.querySelector("meta[name='darkreader-lock']");
+    const isDark = getEffectiveThemeStyle() === "dark";
+    if (isDark && !lock) {
+        const meta = document.createElement("meta");
+        meta.name = "darkreader-lock";
+        document.head.appendChild(meta);
+    } else if (!isDark && lock) {
+        lock.remove();
+    }
 }
 
 let backgroundEffectsSuspended = false;
@@ -152,7 +172,7 @@ export async function applyThemeFromOptions() {
 
     // Custom theme — resolve its note to build the CSS URL and the optional `next` base.
     const { default: server } = await import("./server.js");
-    const userThemes = await server.get<CustomThemeInfo[]>("options/user-themes");
+    const userThemes = await server.get<UserTheme[]>("options/user-themes");
 
     // The theme may have changed again while the request was in flight; applying the stale
     // one now would override the latest choice (whose own invocation may already have run).
@@ -166,12 +186,6 @@ export async function applyThemeFromOptions() {
         match ? `api/notes/download/${match.noteId}` : undefined,
         match?.appThemeBase
     );
-}
-
-interface CustomThemeInfo {
-    val: string;
-    noteId: string;
-    appThemeBase?: ThemeBase;
 }
 
 /**
@@ -236,35 +250,70 @@ export function applyTheme(theme: string, customThemeCssUrl?: string, themeBase?
     });
 }
 
-/** Last effective light/dark style broadcast via `themeChanged`, so the OS-preference listener only fires when
- *  the style actually flips (an auto theme following the OS) rather than on every preference change. */
-let lastNotifiedThemeStyle: "light" | "dark" | null = null;
+/** Last effective light/dark style the subscribers and `themeChanged` were told about, so an OS-preference
+ *  change only propagates when the style actually flips (an auto theme following the OS). */
+let lastKnownThemeStyle: "light" | "dark" | null = null;
 
-/** Broadcasts the global `themeChanged` event. `appContext` is imported lazily because this module is loaded by
- *  the boot entry point before the app context (and jQuery) exist; the import resolves later, when an actual
- *  theme change occurs. */
-function notifyThemeChanged() {
-    const themeStyle = getEffectiveThemeStyle();
-    lastNotifiedThemeStyle = themeStyle;
-    void import("../components/app_context.js").then(({ default: appContext }) => {
-        void appContext.triggerEvent("themeChanged", { themeStyle });
-    });
+/** Callbacks registered through {@link onEffectiveThemeStyleChange}. */
+const themeStyleListeners = new Set<(themeStyle: "light" | "dark") => void>();
+
+/**
+ * Subscribes to changes of the effective light/dark style, whether they come from the OS preference or from
+ * an explicit theme swap. Returns a function that removes the subscription.
+ *
+ * Prefer this over a private `matchMedia("(prefers-color-scheme: dark)")` listener: this one also fires for
+ * a theme-option swap, and it recovers the OS switches Chromium drops (see {@link initThemeChangeNotifier}).
+ */
+export function onEffectiveThemeStyleChange(listener: (themeStyle: "light" | "dark") => void) {
+    themeStyleListeners.add(listener);
+    return () => themeStyleListeners.delete(listener);
 }
 
 /**
- * Installs a listener so that, while an auto theme follows the OS, a system light/dark switch also emits
- * `themeChanged` — explicit theme-option swaps already emit from {@link applyTheme}. Call once at startup.
+ * Installs the listeners that keep the effective light/dark style current while an auto theme follows the OS;
+ * explicit theme-option swaps notify from {@link applyTheme}. Call once at startup.
+ *
+ * Chromium withholds `prefers-color-scheme` change events from a hidden window and does not replay them when
+ * it is shown again, so an OS switch made while the window sat in the tray stays unapplied until restart
+ * (#11267). Reconciling on `visibilitychange` recovers that missed edge; the media query alone cannot.
  */
 export function initThemeChangeNotifier() {
-    if (!window.matchMedia) {
-        return;
+    lastKnownThemeStyle = getEffectiveThemeStyle();
+    syncDarkReaderLock();
+
+    // A module-level reference, so a repeated init cannot stack duplicate listeners.
+    document.addEventListener("visibilitychange", reconcileOnceVisible);
+
+    window.matchMedia?.("(prefers-color-scheme: dark)")
+        .addEventListener("change", reconcileEffectiveThemeStyle);
+}
+
+/** Reads the effective style again once the window is back on screen, where a dropped OS switch shows up. */
+function reconcileOnceVisible() {
+    if (!document.hidden) {
+        reconcileEffectiveThemeStyle();
     }
-    lastNotifiedThemeStyle = getEffectiveThemeStyle();
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-        // A fixed light/dark theme ignores the OS preference, so only emit when the effective style truly flips.
-        if (getEffectiveThemeStyle() !== lastNotifiedThemeStyle) {
-            notifyThemeChanged();
-        }
+}
+
+/** Notifies only when the style truly flips — a fixed light/dark theme ignores the OS preference. */
+function reconcileEffectiveThemeStyle() {
+    if (getEffectiveThemeStyle() !== lastKnownThemeStyle) {
+        notifyThemeChanged();
+    }
+}
+
+/** Broadcasts to the subscribers and the global `themeChanged` event. `appContext` is imported lazily because
+ *  this module is loaded by the boot entry point before the app context (and jQuery) exist; the import
+ *  resolves later, when an actual theme change occurs. */
+function notifyThemeChanged() {
+    const themeStyle = getEffectiveThemeStyle();
+    lastKnownThemeStyle = themeStyle;
+    syncDarkReaderLock();
+    for (const listener of themeStyleListeners) {
+        listener(themeStyle);
+    }
+    void import("../components/app_context.js").then(({ default: appContext }) => {
+        void appContext.triggerEvent("themeChanged", { themeStyle });
     });
 }
 

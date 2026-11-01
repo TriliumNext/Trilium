@@ -166,8 +166,18 @@ export default abstract class FileBasedLogService extends LogService {
         let millisSinceMidnight = Date.now() - this.todaysMidnight.getTime();
         millisSinceMidnight = this.checkDateAndRotate(millisSinceMidnight);
 
-        const entry = `${this.formatTime(millisSinceMidnight)} ${str}${this.eol}`;
-        this.writeEntry(entry);
+        const timestamp = this.formatTime(millisSinceMidnight);
+        this.writeEntry(`${timestamp} ${str}${this.eol}`);
+        this.echoToConsole(str, timestamp);
+    }
+
+    /**
+     * Mirrors an entry to stdout, which is how `docker logs`/journalctl surface server activity.
+     * Overridable so a runtime that captures stdout through a costly channel can opt out while
+     * still writing the entry to the log file. The `timestamp` is the one written to the file;
+     * stdout omits it because log collectors stamp lines themselves.
+     */
+    protected echoToConsole(str: string, _timestamp: string): void {
         console.log(str);
     }
 
@@ -175,11 +185,12 @@ export default abstract class FileBasedLogService extends LogService {
         this.log(message);
     }
 
+    override warn(message: string | Error | unknown): void {
+        this.log(`WARNING: ${stringifyMessage(message)}`);
+    }
+
     override error(message: string | Error | unknown): void {
-        const str = message instanceof Error
-            ? message.stack || message.message
-            : String(message);
-        this.log(`ERROR: ${str}`);
+        this.log(`ERROR: ${stringifyMessage(message)}`);
     }
 
     override getLogContents(): string | null {
@@ -209,4 +220,10 @@ export default abstract class FileBasedLogService extends LogService {
     protected formatDate(): string {
         return `${this.pad(this.todaysMidnight.getFullYear())}-${this.pad(this.todaysMidnight.getMonth() + 1)}-${this.pad(this.todaysMidnight.getDate())}`;
     }
+}
+
+function stringifyMessage(message: string | Error | unknown): string {
+    return message instanceof Error
+        ? message.stack || message.message
+        : String(message);
 }

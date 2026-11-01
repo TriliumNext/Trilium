@@ -42,7 +42,7 @@
       "path": "../../packages/turndown-plugin-gfm/tsconfig.lib.json"
     },
     {
-      "path": "../../packages/express-partial-content/tsconfig.lib.json"
+      "path": "../../packages/trilium-backup-container/tsconfig.lib.json"
     },
     {
       "path": "../../packages/commons/tsconfig.lib.json"

@@ -8,7 +8,7 @@ info:
         email: contact@eliandoran.me
         url: https://triliumnotes.org
     license:
-        name: GNU Affero General Public License v3.0 only
+        name: GNU Affero General Public License v3.0 or later
         url: https://www.gnu.org/licenses/agpl-3.0.en.html
 servers:
     - url: http://localhost:37740/etapi
@@ -16,10 +16,37 @@ servers:
 security:
     - EtapiTokenAuth: []
     - EtapiBasicAuth: []
+tags:
+    - name: Notes
+      description: Notes and their content, and the import and export of whole subtrees.
+      x-icon: bx bx-note
+    - name: Branches
+      description: Branches place a note in the tree, under a parent note.
+      x-icon: bx bx-git-branch
+    - name: Attributes
+      description: Labels and relations of a note.
+      x-icon: bx bx-purchase-tag
+    - name: Attachments
+      description: Files attached to a note.
+      x-icon: bx bx-paperclip
+    - name: Revisions
+      description: Snapshots of a note's content.
+      x-icon: bx bx-history
+    - name: Calendar
+      description: Day, week, month and year notes of the journal, and the inbox note.
+      x-icon: bx bx-calendar
+    - name: Tokens
+      description: Obtaining and revoking ETAPI tokens with the password.
+      x-icon: bx bx-key
+    - name: Application
+      description: Information about the instance, backups and metrics.
+      x-icon: bx bx-server
 paths:
     /create-note:
         post:
+            summary: Create a note
             description: Create a note and place it into the note tree
+            tags: [Notes]
             operationId: createNote
             requestBody:
                 required: true
@@ -34,6 +61,12 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/NoteWithBranch"
+                "409":
+                    description: a note with the given noteId already exists (NOTE_ALREADY_EXISTS)
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 default:
                     description: unexpected error
                     content:
@@ -42,7 +75,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /notes:
         get:
+            summary: Search notes
             description: Search notes
+            tags: [Notes]
             operationId: searchNotes
             parameters:
                 - name: search
@@ -175,7 +210,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get a note
             description: Returns a note identified by its ID
+            tags: [Notes]
             operationId: getNoteById
             responses:
                 "200":
@@ -191,7 +228,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         patch:
+            summary: Update a note
             description: patch a note identified by the noteId with changes in the body
+            tags: [Notes]
             operationId: patchNoteById
             requestBody:
                 required: true
@@ -213,7 +252,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         delete:
+            summary: Delete a note
             description: deletes a single note based on the noteId supplied
+            tags: [Notes]
             operationId: deleteNoteById
             responses:
                 "204":
@@ -232,25 +273,37 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
-            description: Returns note content identified by its ID
+            summary: Get the content of a note
+            description: Returns note content identified by its ID. The response carries the note's MIME type as its `Content-Type`.
+            tags: [Notes]
             operationId: getNoteContent
             responses:
                 "200":
-                    description: note content response
+                    description: note content
                     content:
-                        text/html:
+                        "*/*":
                             schema:
                                 type: string
+                                format: binary
         put:
+            summary: Replace the content of a note
             description: Updates note content identified by its ID
+            tags: [Notes]
             operationId: putNoteContentById
             requestBody:
-                description: html content of note
+                description: >
+                    New content of the note. Send text (such as the HTML of a text note) as
+                    `text/plain` and binary data (such as the file of an image or file note) as
+                    `application/octet-stream`; other content types are not accepted.
                 required: true
                 content:
                     text/plain:
                         schema:
                             type: string
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "204":
                     description: note content updated
@@ -271,7 +324,13 @@ paths:
                       - share
                   default: html
         get:
-            description: Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId
+            summary: Export a subtree
+            description: >-
+                Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId.
+                Protected notes are exported as "[protected]", without their content or attachments, even while
+                the protected session is open. The "share" format refuses a subtree that contains a protected note
+                with NOTE_IS_PROTECTED.
+            tags: [Notes]
             operationId: exportNoteSubtree
             responses:
                 "200":
@@ -295,8 +354,24 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         post:
+            summary: Import a ZIP archive
             description: Imports ZIP file into a given note.
+            tags: [Notes]
             operationId: importZip
+            requestBody:
+                description: >
+                    The ZIP file, sent as `application/zip` or `application/octet-stream`;
+                    other content types are not accepted.
+                required: true
+                content:
+                    application/zip:
+                        schema:
+                            type: string
+                            format: binary
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: note created
@@ -326,7 +401,9 @@ paths:
                       - markdown
                   default: html
         post:
+            summary: Create a revision
             description: Create a note revision for the given note
+            tags: [Revisions]
             operationId: createRevision
             responses:
                 "204":
@@ -345,7 +422,11 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
-            description: Returns all revisions for a note identified by its ID
+            summary: List the revisions of a note
+            description: |
+                Returns the revisions of a note identified by its ID. Protected revisions are
+                omitted, since they cannot be read through ETAPI individually either.
+            tags: [Revisions]
             operationId: getNoteRevisions
             responses:
                 "200":
@@ -370,7 +451,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: List the attachments of a note
             description: Returns all attachments for a note identified by its ID
+            tags: [Attachments]
             operationId: getNoteAttachments
             responses:
                 "200":
@@ -395,7 +478,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         post:
+            summary: Restore a deleted note
             description: Restore a deleted note. The note must be deleted and must have at least one undeleted parent.
+            tags: [Notes]
             operationId: undeleteNote
             responses:
                 "200":
@@ -416,7 +501,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /notes/history:
         get:
+            summary: List recent changes
             description: Returns recent changes including note creations, modifications, and deletions
+            tags: [Notes]
             operationId: getNoteHistory
             parameters:
                 - name: ancestorNoteId
@@ -448,7 +535,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get a revision
             description: Returns a revision identified by its ID
+            tags: [Revisions]
             operationId: getRevisionById
             responses:
                 "200":
@@ -471,7 +560,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get the content of a revision
             description: Returns revision content identified by its ID
+            tags: [Revisions]
             operationId: getRevisionContent
             responses:
                 "200":
@@ -488,10 +579,12 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /branches:
         post:
+            summary: Create a branch
             description: >
                 Create a branch (clone a note to a different location in the tree).
                 In case there is a branch between parent note and child note already,
                 then this will update the existing branch with prefix, notePosition and isExpanded.
+            tags: [Branches]
             operationId: postBranch
             requestBody:
                 required: true
@@ -501,7 +594,7 @@ paths:
                             $ref: "#/components/schemas/Branch"
             responses:
                 "200":
-                    description: branch updated (branch between parent note and child note already existed)
+                    description: existing branch updated
                     content:
                         application/json; charset=utf-8:
                             schema:
@@ -526,7 +619,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get a branch
             description: Returns a branch identified by its ID
+            tags: [Branches]
             operationId: getBranchById
             responses:
                 "200":
@@ -542,7 +637,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         patch:
+            summary: Update a branch
             description: patch a branch identified by the branchId with changes in the body. Only prefix and notePosition can be updated. If you want to update other properties, you need to delete the old branch and create a new one.
+            tags: [Branches]
             operationId: patchBranchById
             requestBody:
                 required: true
@@ -564,9 +661,11 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         delete:
+            summary: Delete a branch
             description: >
                 deletes a branch based on the branchId supplied. If this is the last branch of the (child) note,
                 then the note is deleted as well.
+            tags: [Branches]
             operationId: deleteBranchById
             responses:
                 "204":
@@ -579,7 +678,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /attachments:
         post:
+            summary: Create an attachment
             description: create an attachment
+            tags: [Attachments]
             operationId: postAttachment
             requestBody:
                 required: true
@@ -608,7 +709,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get an attachment
             description: Returns an attachment identified by its ID
+            tags: [Attachments]
             operationId: getAttachmentById
             responses:
                 "200":
@@ -624,7 +727,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         patch:
+            summary: Update an attachment
             description: patch an attachment identified by the attachmentId with changes in the body. Only role, mime, title, and position are patchable.
+            tags: [Attachments]
             operationId: patchAttachmentById
             requestBody:
                 required: true
@@ -646,7 +751,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         delete:
+            summary: Delete an attachment
             description: deletes an attachment based on the attachmentId supplied.
+            tags: [Attachments]
             operationId: deleteAttachmentById
             responses:
                 "204":
@@ -665,31 +772,45 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
-            description: Returns attachment content identified by its ID
+            summary: Get the content of an attachment
+            description: Returns attachment content identified by its ID. The response carries the attachment's MIME type as its `Content-Type`.
+            tags: [Attachments]
             operationId: getAttachmentContent
             responses:
                 "200":
-                    description: attachment content response
+                    description: attachment content
                     content:
-                        text/html:
+                        "*/*":
                             schema:
                                 type: string
+                                format: binary
         put:
+            summary: Replace the content of an attachment
             description: Updates attachment content identified by its ID
+            tags: [Attachments]
             operationId: putAttachmentContentById
             requestBody:
-                description: html content of attachment
+                description: >
+                    New content of the attachment. Send text as `text/plain` and binary data
+                    (such as an image or a PDF) as `application/octet-stream`; other content
+                    types are not accepted.
                 required: true
                 content:
                     text/plain:
                         schema:
                             type: string
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "204":
                     description: attachment content updated
     /attributes:
         post:
+            summary: Create an attribute
             description: create an attribute for a given note
+            tags: [Attributes]
             operationId: postAttribute
             requestBody:
                 required: true
@@ -704,6 +825,12 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Attribute"
+                "409":
+                    description: an attribute with the given attributeId already exists (ATTRIBUTE_ALREADY_EXISTS)
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 default:
                     description: unexpected error
                     content:
@@ -718,7 +845,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
+            summary: Get an attribute
             description: Returns an attribute identified by its ID
+            tags: [Attributes]
             operationId: getAttributeById
             responses:
                 "200":
@@ -734,7 +863,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         patch:
+            summary: Update an attribute
             description: patch an attribute identified by the attributeId with changes in the body. For labels, only value and position can be updated. For relations, only position can be updated. If you want to modify other properties, you need to delete the old attribute and create a new one.
+            tags: [Attributes]
             operationId: patchAttributeById
             requestBody:
                 required: true
@@ -756,7 +887,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Error"
         delete:
+            summary: Delete an attribute
             description: deletes an attribute based on the attributeId supplied.
+            tags: [Attributes]
             operationId: deleteAttributeById
             responses:
                 "204":
@@ -775,14 +908,16 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         post:
+            summary: Refresh the order of child notes
             description: >
                 notePositions in branches are not automatically pushed to connected clients and need a specific instruction.
                 If you want your changes to be in effect immediately, call this service after setting branches' notePosition.
                 Note that you need to supply "parentNoteId" of branch(es) with changed positions.
+            tags: [Branches]
             operationId: postRefreshNoteOrdering
             responses:
                 "204":
-                    description: note ordering will be asynchronously updated in all connected clients
+                    description: note ordering refreshed
                 default:
                     description: unexpected error
                     content:
@@ -791,9 +926,12 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /inbox/{date}:
         get:
+            summary: Get the inbox note
             description: >
                 returns an "inbox" note, into which note can be created. Date will be used depending on whether the inbox
-                is a fixed note (identified with #inbox label) or a day note in a journal.
+                is a fixed note (identified with #inbox label) or a day note in a journal. A database with neither
+                returns the root note, and ignores the date, rather than creating a journal to hold a day note.
+            tags: [Calendar]
             operationId: getInboxNote
             parameters:
                 - name: date
@@ -818,7 +956,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /calendar/days/{date}:
         get:
+            summary: Get a day note
             description: returns a day note for a given date. Gets created if doesn't exist.
+            tags: [Calendar]
             operationId: getDayNote
             parameters:
                 - name: date
@@ -841,10 +981,43 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Error"
+    /calendar/week-first-day/{date}:
+        get:
+            summary: Get the day note starting the week
+            description: |
+                Returns the day note for the first day of the week containing the given date, honouring
+                the configured first day of week. The note is created if it doesn't exist. This returns a
+                day note, not a week note, so unlike /calendar/weeks/{week} it does not require the
+                enableWeekNote label on the calendar root.
+            tags: [Calendar]
+            operationId: getWeekFirstDayNote
+            parameters:
+                - name: date
+                  in: path
+                  required: true
+                  description: Any date within the week, in the format YYYY-MM-DD.
+                  schema:
+                      type: string
+                      format: date
+                  example: 2022-02-22
+            responses:
+                "200":
+                    description: day note starting the week
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
     /calendar/weeks/{week}:
         get:
             summary: Get a week note
             description: Returns a week note for a given ISO week (format YYYY-Www, e.g., 2025-W01). The note is created if it doesn't exist.
+            tags: [Calendar]
             operationId: getWeekNote
             parameters:
                 - name: week
@@ -872,6 +1045,7 @@ paths:
         get:
             summary: Get a month note
             description: Returns a month note for a given month (format YYYY-MM, e.g., 2022-02). The note is created if it doesn't exist.
+            tags: [Calendar]
             operationId: getMonthNote
             parameters:
                 - name: month
@@ -898,6 +1072,7 @@ paths:
         get:
             summary: Get a year note
             description: Returns a year note for a given year (format YYYY, e.g., 2022). The note is created if it doesn't exist.
+            tags: [Calendar]
             operationId: getYearNote
             parameters:
                 - name: year
@@ -922,7 +1097,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /auth/login:
         post:
-            description: get an ETAPI token based on password for further use with ETAPI
+            summary: Log in
+            description: get an ETAPI token based on password for further use with ETAPI. Too many requests from one IP address within a short time, such as failed logins, block that address for a while.
+            tags: [Tokens]
             operationId: login
             security: [] # no token based auth for login endpoint
             requestBody:
@@ -934,6 +1111,12 @@ paths:
                                 password:
                                     type: string
                                     description: user's password used to e.g. login to Trilium server and/or protect notes
+                                totpToken:
+                                    type: string
+                                    description: the current TOTP code, or one of the recovery codes; required when multi-factor authentication with TOTP is enabled. Each code is accepted once.
+                                tokenName:
+                                    type: string
+                                    description: name of the created token, shown in the list of ETAPI tokens
             responses:
                 "201":
                     description: auth token
@@ -944,8 +1127,14 @@ paths:
                                     authToken:
                                         type: string
                                         example: Bc4bFn0Ffiok_4NpbVCDnFz7B2WU+pdhW8B5Ne3DiR5wXrEyqdjgRIsk=
+                "401":
+                    description: "wrong credentials: `WRONG_PASSWORD`, `TOTP_REQUIRED` (TOTP is enabled and no `totpToken` was sent) or `WRONG_TOTP`"
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 "429":
-                    description: Client IP has been blacklisted because too many requests (possibly failed authentications) were made within a short time frame, try again later
+                    description: too many requests
                 default:
                     description: unexpected error
                     content:
@@ -954,7 +1143,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /auth/logout:
         post:
+            summary: Log out
             description: logout (delete/deactivate) an ETAPI token
+            tags: [Tokens]
             operationId: logout
             responses:
                 "204":
@@ -967,7 +1158,9 @@ paths:
                                 $ref: "#/components/schemas/Error"
     /app-info:
         get:
+            summary: Get application info
             description: returns information about the running Trilium instance
+            tags: [Application]
             operationId: getAppInfo
             responses:
                 "200":
@@ -991,11 +1184,57 @@ paths:
               schema:
                   $ref: "#/components/schemas/StringId"
         put:
+            summary: Create a backup
             description: Create a database backup under a given name
+            tags: [Application]
             operationId: createBackup
             responses:
                 "204":
                     description: backup has been created
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /metrics:
+        get:
+            summary: Get instance metrics
+            description: |
+                Returns instance and database metrics for monitoring: note, attachment, revision,
+                branch, attribute and blob counts, note and attachment type breakdowns, version
+                information and database size. Counts only — no note titles, content or attributes.
+
+                The same data is served by GET /api/metrics to the web session.
+            tags: [Application]
+            operationId: getMetrics
+            parameters:
+                - name: format
+                  in: query
+                  required: false
+                  description: Response format. Defaults to Prometheus text.
+                  schema:
+                      type: string
+                      enum: [prometheus, json]
+                      default: prometheus
+            responses:
+                "200":
+                    description: instance metrics
+                    content:
+                        text/plain:
+                            schema:
+                                type: string
+                            example: |
+                                # HELP trilium_info Trilium instance information
+                                # TYPE trilium_info gauge
+                                trilium_info{version="0.99.3",db_version="231"} 1 1701432000
+
+                                # HELP trilium_notes_total Total number of notes including deleted
+                                # TYPE trilium_notes_total gauge
+                                trilium_notes_total 1234 1701432000
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Metrics"
                 default:
                     description: unexpected error
                     content:
@@ -1063,7 +1302,7 @@ components:
                     description: true if this note (as a folder) should appear expanded
                 noteId:
                     $ref: "#/components/schemas/EntityId"
-                    description: DON'T specify unless you want to force a specific noteId
+                    description: DON'T specify unless you want to force a specific noteId. It must not belong to an existing note.
                 branchId:
                     $ref: "#/components/schemas/EntityId"
                     description: DON'T specify unless you want to force a specific branchId
@@ -1073,6 +1312,12 @@ components:
                 utcDateCreated:
                     $ref: "#/components/schemas/UtcDateTime"
                     description: UTC timestap of the note creation. Specify only if you want to override the default (current datetime).
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: >
+                        UTC timestamp of the note's last modification, e.g. to keep the date of a note being migrated
+                        from another application. The local dateModified is derived from it. Specify only if you want
+                        to override the default (current datetime).
         Note:
             type: object
             properties:
@@ -1081,6 +1326,9 @@ components:
                     readOnly: true
                 title:
                     type: string
+                    description: |
+                        Title of the note. Returned as "[protected]" for protected notes, since ETAPI
+                        cannot open a protected session.
                 type:
                     type: string
                     enum:
@@ -1133,7 +1381,9 @@ components:
                     $ref: "#/components/schemas/UtcDateTime"
                 utcDateModified:
                     $ref: "#/components/schemas/UtcDateTime"
-                    readOnly: true
+                    description: >
+                        Writable through PATCH, e.g. to restore a migrated note's date after its content was rewritten.
+                        The local dateModified is derived from it.
         Branch:
             type: object
             description: Branch places the note into the tree, it represents the relationship between a parent note and child note
@@ -1181,6 +1431,9 @@ components:
                     type: string
                 title:
                     type: string
+                    description: |
+                        Title of the attachment. Returned as "[protected]" for protected attachments,
+                        since ETAPI cannot open a protected session.
                 position:
                     type: integer
                     format: int32
@@ -1213,6 +1466,10 @@ components:
                     type: string
                 content:
                     type: string
+                    description: >
+                        Text content of the attachment, stored as-is. To store binary content,
+                        create the attachment without it, then upload the data with
+                        `PUT /attachments/{attachmentId}/content`.
                 position:
                     type: integer
                     format: int32
@@ -1312,7 +1569,7 @@ components:
                 clipperProtocolVersion:
                     type: string
                     description: version of the supported Trilium Web Clipper protocol
-                    example: 1.0
+                    example: 1.1
                 utcDateTime:
                     type: string
                     description: current UTC date time
@@ -1427,3 +1684,91 @@ components:
                 canBeUndeleted:
                     type: boolean
                     description: Whether the note can be undeleted (only present for deleted notes)
+        Metrics:
+            type: object
+            description: Instance and database metrics, as served by GET /etapi/metrics?format=json
+            properties:
+                version:
+                    type: object
+                    properties:
+                        app:
+                            type: string
+                            example: "0.99.3"
+                        db:
+                            type: integer
+                            example: 231
+                        node:
+                            type: string
+                            example: v22.14.0
+                        sync:
+                            type: integer
+                            example: 35
+                        buildDate:
+                            type: string
+                            example: "2024-09-07T18:36:34Z"
+                        buildRevision:
+                            type: string
+                            example: 7c0d6930fa8f20d269dcfbcbc8f636a25f6bb9a7
+                database:
+                    type: object
+                    properties:
+                        totalNotes:
+                            type: integer
+                        deletedNotes:
+                            type: integer
+                        activeNotes:
+                            type: integer
+                        protectedNotes:
+                            type: integer
+                        totalAttachments:
+                            type: integer
+                        deletedAttachments:
+                            type: integer
+                        activeAttachments:
+                            type: integer
+                        totalRevisions:
+                            type: integer
+                        totalBranches:
+                            type: integer
+                        totalAttributes:
+                            type: integer
+                        totalBlobs:
+                            type: integer
+                        totalEtapiTokens:
+                            type: integer
+                        totalRecentNotes:
+                            type: integer
+                noteTypes:
+                    type: object
+                    description: Number of active notes per note type
+                    additionalProperties:
+                        type: integer
+                    example:
+                        text: 800
+                        code: 200
+                attachmentTypes:
+                    type: object
+                    description: Number of active attachments per MIME type
+                    additionalProperties:
+                        type: integer
+                    example:
+                        image/png: 45
+                        application/pdf: 14
+                statistics:
+                    type: object
+                    properties:
+                        oldestNote:
+                            type: string
+                            nullable: true
+                        newestNote:
+                            type: string
+                            nullable: true
+                        lastModified:
+                            type: string
+                            nullable: true
+                        databaseSizeBytes:
+                            type: integer
+                            nullable: true
+                timestamp:
+                    type: string
+                    example: "2024-12-01T12:00:00.000Z"

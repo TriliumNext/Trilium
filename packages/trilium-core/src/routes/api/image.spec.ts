@@ -105,6 +105,26 @@ describe("Image API (core)", () => {
             expect(Buffer.from(res.body as Buffer)).toEqual(PNG_BYTES);
         });
 
+        it("sandboxes an image note or attachment whose mime renders as HTML", async () => {
+            const payload = "<html><script>alert(document.domain)</script></html>";
+            const noteId = await createImageNote({
+                mime: "text/html",
+                content: payload,
+                attachments: [ { title: "page.html", role: "image", mime: "text/html", content: payload } ]
+            });
+
+            const fromNote = await api.get<string>(`/api/images/${noteId}/file.png`);
+            expect(fromNote.status).toBe(200);
+            expect(fromNote.headers["Content-Security-Policy"]).toBe("sandbox");
+            expect(fromNote.headers["X-Content-Type-Options"]).toBe("nosniff");
+
+            const [ attachment ] = getBecca().getNoteOrThrow(noteId).getAttachments();
+            const fromAttachment = await api.get<string>(`/api/attachments/${attachment.attachmentId}/image/file.png`);
+            expect(fromAttachment.status).toBe(200);
+            expect(fromAttachment.headers["Content-Security-Policy"]).toBe("sandbox");
+            expect(fromAttachment.headers["X-Content-Type-Options"]).toBe("nosniff");
+        });
+
         it("sanitizes a real SVG image note", async () => {
             const noteId = await createImageNote({
                 mime: "image/svg+xml",
@@ -215,11 +235,23 @@ describe("Image API (core)", () => {
             expect(res.status).toBe(404);
         });
 
-        it("400s when the attachment role is not image", async () => {
+        it("400s when the attachment role is not a picture", async () => {
             const attachmentId = await createAttachment({ role: "file", mime: "text/plain", content: "hi" });
             const res = await api.get<string>(`/api/attachments/${attachmentId}/image/file.png`);
             expect(res.status).toBe(400);
             expect(res.headers["Content-Type"]).toBe("text/plain");
+        });
+
+        it("serves every picture role, not just the user's own images", async () => {
+            // A link preview's favicon and cover are pictures under their own roles; a route that
+            // knew only "image" would answer 400 and leave every preview showing a placeholder.
+            for (const role of [ "favicon", "coverImage" ]) {
+                const attachmentId = await createAttachment({ role, mime: "image/png", content: PNG_BYTES });
+                const res = await api.get(`/api/attachments/${attachmentId}/image/file.png`);
+
+                expect(res.status, role).toBe(200);
+                expect(Buffer.from(res.body as Buffer), role).toEqual(PNG_BYTES);
+            }
         });
 
         it("serves a real raster attachment image", async () => {
@@ -305,7 +337,13 @@ class MockResponse {
     body?: string;
     headers: Record<string, string> = {};
 
+    // Express answers to both spellings, so the double has to as well: the routes under test
+    // reach header-setting helpers that pick either one.
     set(name: string, value: string) {
+        this.headers[name] = value;
+    }
+
+    setHeader(name: string, value: string) {
         this.headers[name] = value;
     }
 

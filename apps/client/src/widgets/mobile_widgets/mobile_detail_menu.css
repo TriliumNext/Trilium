@@ -1,3 +1,5 @@
-.code-note-switcher-modal .dropdown-menu {
-    background: none !important;
+/* The modal frames the list, so the list drops its own height cap and padding. */
+.similar-notes-modal .similar-notes-wrapper {
+    max-height: unset;
+    padding: 0;
 }

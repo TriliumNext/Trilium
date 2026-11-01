@@ -1,11 +1,12 @@
 import { type TaskStateDef } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
-import { _setModelData as setModelData, ClassicEditor, Essentials, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, Essentials, HorizontalLine, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import TodoListUncheckOnEnter from "../todo_list_uncheck_on_enter.js";
-import TodoListMultistateEditing, { getActiveTaskStates, getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
+import TodoListMultistateEditing, { buildTooltipTitle, getActiveTaskStates, getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
 
 const TODO_LIST_CHECKED_ATTRIBUTE = "todoListChecked";
 
@@ -32,6 +33,17 @@ function getBlock(editor: ClassicEditor, index: number): ModelElement {
     return child;
 }
 
+function todoList(...items: string[]): string {
+    return `<ul class="todo-list">${items.join("")}</ul>`;
+}
+
+/** A saved todo item, in the shape the data downcast produces. */
+function todoItem(text: string, state?: string, nested?: string): string {
+    const stateAttribute = state ? ` data-trilium-task-state="${state}"` : "";
+    return `<li${stateAttribute}><label class="todo-list__label"><input type="checkbox">`
+        + `<span class="todo-list__label__description">${text}</span></label>${nested ?? ""}</li>`;
+}
+
 function pressCtrlShiftEnter(editor: ClassicEditor): void {
     editor.keystrokes.press({
         keyCode: keyCodes.enter,
@@ -41,6 +53,22 @@ function pressCtrlShiftEnter(editor: ClassicEditor): void {
         stopPropagation: () => {}
     });
 }
+
+/**
+ * The visible tooltip popup Bootstrap adds to `<body>` when the manager renders
+ * the top-of-stack entry, or `null` when nothing is shown. Ground-truth for
+ * every "is the tooltip on screen" assertion.
+ */
+function livePopup(): HTMLElement | null {
+    return document.body.querySelector<HTMLElement>(".tooltip");
+}
+
+/**
+ * The multistate plugin's `TOOLTIP_DWELL_MS` — kept in sync with the plugin's
+ * constant. Tests advance fake timers by this to bypass the dwell without
+ * paying real wall-clock latency.
+ */
+const TOOLTIP_DWELL_MS = 200;
 
 describe("TodoListMultistateEditing", () => {
     let editor: ClassicEditor;
@@ -153,6 +181,36 @@ describe("TodoListMultistateEditing", () => {
             // An anchor value must not become a model state attribute.
             editor.setData('<ul class="todo-list"><li data-trilium-task-state="done"><label class="todo-list__label"><input type="checkbox"><span class="todo-list__label__description">B</span></label></li></ul>');
             expect(getBlock(editor, 0).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+        });
+
+        it("leaves a checkbox that belongs to no todo item alone", () => {
+            // The converter listens for every `<input>` in the incoming data, so it meets
+            // checkboxes that upstream never marked as a todo item: one in a plain list, and one
+            // loose in a paragraph, whose block is not even an element by the time it is asked.
+            editor.setData('<ul><li data-trilium-task-state="doing">Plain<input type="checkbox"></li></ul>'
+                + '<p><input type="checkbox" data-trilium-task-state="doing">Loose</p>');
+
+            for (let index = 0; index < (editor.model.document.getRoot()?.childCount ?? 0); index++) {
+                expect(getBlock(editor, index).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+            }
+            expect(editor.getData()).not.toContain("data-trilium-task-state");
+        });
+
+        it("upcasts a state onto its own item only, never onto nested or sibling items", () => {
+            // The list model is flat, so a nested item is a sibling block covered by the
+            // parent <li>'s converted range. The state must not spread across it.
+            editor.setData(todoList(
+                todoItem("Parent", "doing", todoList(todoItem("Child"), todoItem("Sibling", "review"))),
+                todoItem("After")));
+
+            expect(getBlock(editor, 0).getAttribute(TASK_STATE_ATTRIBUTE)).toBe("doing");
+            expect(getBlock(editor, 1).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+            expect(getBlock(editor, 2).getAttribute(TASK_STATE_ATTRIBUTE)).toBe("review");
+            expect(getBlock(editor, 3).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+
+            // A reload therefore round-trips the content unchanged, rather than persisting
+            // the parent's state onto its children.
+            expect(editor.getData().match(/data-trilium-task-state/g)).toHaveLength(2);
         });
 
         it("cycles through active (non-hidden) states with Ctrl+Shift+Enter", () => {
@@ -332,12 +390,17 @@ describe("TodoListMultistateEditing", () => {
             spy.mockRestore();
         });
 
-        it("creates a Bootstrap tooltip on each checkbox and disposes it on destroy", async () => {
+        it("does not spawn a Bootstrap tooltip eagerly; nothing is on screen until a handle pushes", () => {
+            // The manager creates handles lazily and shows nothing until a handle
+            // pushes onto the visibility stack — so a freshly-rendered editor
+            // has no popup, and every checkbox reports `null` for
+            // `Tooltip.getInstance` until it is hovered or the caret enters it.
             const domRoot = editor.editing.view.getDomRoot();
             const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(input).not.toBeNull();
+            expect(livePopup()).toBeNull();
             if (input) {
-                expect(Tooltip.getInstance(input)).not.toBeNull();
+                expect(Tooltip.getInstance(input)).toBeNull();
             }
         });
     });
@@ -370,29 +433,27 @@ describe("TodoListMultistateEditing", () => {
             expect(command?.value).toBe("doing");
         });
 
-        it("downcasts a default custom state and creates a tooltip via the identity translate fallback", () => {
+        it("downcasts a default custom state without a host translator configured", () => {
             editor.execute("setTaskState", { state: "doing" });
             expect(editor.getData()).toContain('data-trilium-task-state="doing"');
-            // No `translate` config → the identity `(key) => key` fallback is used. The tooltip
-            // is still created on the checkbox.
+            // No dictionary and no host bridge: the tooltip messages fall back to their English
+            // ids and the shortcut key names to the identity `(key) => key`. Neither may crash the
+            // render loop.
             const domRoot = editor.editing.view.getDomRoot();
             const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(input).not.toBeNull();
-            if (input) {
-                expect(Tooltip.getInstance(input)).not.toBeNull();
-            }
         });
     });
 
     describe("helper functions and tooltip lifecycle", () => {
-        let translate: ReturnType<typeof vi.fn>;
+        let t: ReturnType<typeof vi.spyOn>;
 
         beforeEach(async () => {
-            translate = vi.fn((key: string) => `T:${key}`);
-            editor = await createEditor({
-                taskStates: CUSTOM_STATES,
-                translate
-            });
+            editor = await createEditor({ taskStates: CUSTOM_STATES });
+            // `editor.t` is an own property assigned in the editor's constructor, and
+            // `_computeContent` reads it fresh on each rebuild, so spying here intercepts every
+            // tooltip message. Installed before the fixture, which is what triggers the first render.
+            t = vi.spyOn(editor, "t");
             setModelData(editor.model, TODO_FIXTURE);
         });
 
@@ -403,29 +464,20 @@ describe("TodoListMultistateEditing", () => {
             expect(active).not.toContain("secret");
         });
 
-        it("uses the configured translate provider for the tooltip title", () => {
-            const domRoot = editor.editing.view.getDomRoot();
-            const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
-            expect(input).not.toBeNull();
-            if (input) {
-                expect(Tooltip.getInstance(input)).not.toBeNull();
-            }
-            // The configured translate provider is consulted for the checkbox tooltip title.
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip", expect.objectContaining({
-                shortcut: expect.any(String)
-            }));
+        it("builds the tooltip content on each rendered checkbox", () => {
+            // Render creates hover handles eagerly per checkbox; each handle's initial content is
+            // assembled via `buildTooltipTitle`. We don't need the popup on screen to verify that.
+            expect(t).toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.any(String));
         });
 
-        it("disposes the tooltip of a checkbox that becomes disconnected and creates a fresh one", () => {
+        it("disposes the hover handle of a checkbox that becomes disconnected and re-attaches to the fresh input", () => {
             const domRoot = editor.editing.view.getDomRoot();
             const firstInput = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(firstInput).not.toBeNull();
-            const firstTooltip = firstInput ? Tooltip.getInstance(firstInput) : null;
-            expect(firstTooltip).not.toBeNull();
-            const disposeSpy = firstTooltip ? vi.spyOn(firstTooltip, "dispose") : null;
 
-            // Toggling the checkbox reconverts the todo item, recreating the checkbox element;
-            // the render listener then disposes the tooltip on the now-detached old input.
+            // Toggling the native checkbox reconverts the todo item, replacing
+            // the input DOM node. The render listener reaps the old handle and
+            // creates one on the fresh input.
             editor.execute("setTaskState", { state: "doing" });
             editor.execute("checkTodoList");
             editor.editing.view.forceRender();
@@ -433,16 +485,505 @@ describe("TodoListMultistateEditing", () => {
             if (firstInput) {
                 expect(firstInput.isConnected).toBe(false);
             }
-            if (disposeSpy) {
-                expect(disposeSpy).toHaveBeenCalled();
-            }
-
-            // A new tooltip exists on the current checkbox.
+            // The new checkbox is present in the DOM and is a fresh node.
             const currentInput = editor.editing.view.getDomRoot()?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(currentInput).not.toBeNull();
-            if (currentInput) {
-                expect(Tooltip.getInstance(currentInput)).not.toBeNull();
-            }
+            expect(currentInput).not.toBe(firstInput);
+            // Whether a popup is currently visible depends on where the caret
+            // is (`TODO_FIXTURE` places it inside the item, so the plugin's
+            // caret-driven flow can legitimately show the tooltip during the
+            // rebuild) — that's orthogonal to the "old-handle-disposed" invariant
+            // this test exists to verify.
         });
+
+        it("includes the state label when a configured state is set", () => {
+            t.mockClear();
+            editor.execute("setTaskState", { state: "doing" });
+            expect(t).toHaveBeenCalledWith("Task state:");
+        });
+
+        it("uses the unknown-state suffix when the state has no definition", () => {
+            t.mockClear();
+            editor.model.change((writer) => {
+                writer.setAttribute(TASK_STATE_ATTRIBUTE, "ghost", getBlock(editor, 0));
+            });
+            expect(t).toHaveBeenCalledWith("Task state:");
+            expect(t).toHaveBeenCalledWith("(missing definition)");
+        });
+
+        it("omits the state prefix entirely for anchor states (unchecked / checked)", () => {
+            // Starting fixture has no taskState → anchor. Re-render explicitly and assert
+            // neither state-prefix key was consulted.
+            t.mockClear();
+            editor.editing.view.forceRender();
+            expect(t).not.toHaveBeenCalledWith("Task state:");
+            expect(t).not.toHaveBeenCalledWith("(missing definition)");
+        });
+
+        it("rebuilds hover-handle content when the state changes on a rendered checkbox", () => {
+            t.mockClear();
+
+            // A state change on the todo item triggers a reconvert of the list
+            // item block (any scope-`item` attribute mutation does), which
+            // gives us a new `<input>` and a new hover handle. Either way the
+            // plugin must rebuild the fresh content — including the state
+            // prefix — so a subsequent hover shows the right tooltip.
+            editor.execute("setTaskState", { state: "doing" });
+
+            expect(t).toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.any(String));
+            expect(t).toHaveBeenCalledWith("Task state:");
+        });
+
+        it("does not touch handle content when a render fires without any state change", () => {
+            const input = editor.editing.view.getDomRoot()?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+            expect(input).not.toBeNull();
+            t.mockClear();
+
+            // Render fires but the tracked state on every input matches the DOM,
+            // so the plugin does no work.
+            editor.editing.view.forceRender();
+
+            // No content-rebuild keys were consulted.
+            expect(t).not.toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.anything());
+            expect(t).not.toHaveBeenCalledWith("Task state:");
+        });
+    });
+
+    describe("caret-driven tooltip visibility", () => {
+        // Fixture: a plain paragraph then two todo items. The caret starts in the plain
+        // paragraph so we can move it into (and between) the todos to drive the listener.
+        const CARET_FIXTURE = '<paragraph>plain[]</paragraph>' +
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">A</paragraph>' +
+            '<paragraph listIndent="0" listItemId="t-b" listType="todo">B</paragraph>';
+
+        function moveCaretTo(blockIndex: number): void {
+            editor.model.change((writer) => {
+                const block = getBlock(editor, blockIndex);
+                writer.setSelection(writer.createPositionAt(block, 0));
+            });
+        }
+
+        beforeEach(async () => {
+            editor = await createEditor({ taskStates: CUSTOM_STATES });
+            setModelData(editor.model, CARET_FIXTURE);
+            // Real timers by default — the dwell-delay tests below opt into fake
+            // timers explicitly so they can advance past `TOOLTIP_DWELL_MS`
+            // without paying the wall-clock cost.
+            vi.useFakeTimers({ shouldAdvanceTime: false });
+        });
+
+        // Switch back to real timers between tests — Bootstrap's own transitions
+        // still run on real time, and leaving fake timers on can wedge cleanup.
+        function endFakeTimers(): void {
+            vi.runOnlyPendingTimers();
+            vi.useRealTimers();
+        }
+
+        it("shows a tooltip on the correct source element after the dwell delay when the caret enters a todo <li>", () => {
+            expect(livePopup()).toBeNull();
+
+            moveCaretTo(1); // caret in todo A → schedules a delayed show
+            expect(livePopup()).toBeNull(); // still deferred
+
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+
+            // The tooltip belongs to the caret's todo item — its aria link points
+            // back at the corresponding checkbox.
+            const source = document.querySelector<HTMLElement>(`[aria-describedby="${livePopup()?.id}"]`);
+            const targetLi = source?.closest("li");
+            expect(targetLi?.getAttribute("data-list-item-id")).toBe("t-a");
+
+            endFakeTimers();
+        });
+
+        it("hides the visible tooltip when the caret leaves any todo item", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+
+            moveCaretTo(0); // back to the plain paragraph — the caret handle disposes
+            expect(livePopup()).toBeNull();
+
+            endFakeTimers();
+        });
+
+        it("switches the visible tooltip's source element when the caret moves between two todo items", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const firstSourceLi = document.querySelector<HTMLElement>(
+                `[aria-describedby="${livePopup()?.id}"]`
+            )?.closest("li");
+            expect(firstSourceLi?.getAttribute("data-list-item-id")).toBe("t-a");
+
+            moveCaretTo(2); // enter B — the caret handle rebinds to the new checkbox
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const secondSourceLi = document.querySelector<HTMLElement>(
+                `[aria-describedby="${livePopup()?.id}"]`
+            )?.closest("li");
+            expect(secondSourceLi?.getAttribute("data-list-item-id")).toBe("t-b");
+
+            endFakeTimers();
+        });
+
+        it("does not disturb the popup when the caret moves within the same todo item", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const before = livePopup();
+            expect(before).not.toBeNull();
+
+            // Move the caret to a different position WITHIN the same todo item.
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(getBlock(editor, 1), 1));
+            });
+
+            // Same DOM popup element — no dispose/re-create dance.
+            expect(livePopup()).toBe(before);
+
+            endFakeTimers();
+        });
+
+        it("re-shows the tooltip immediately after a state change on the caret's item (no second dwell)", () => {
+            moveCaretTo(1); // caret in todo A
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+
+            // 'doing' has isCompleted=false → the checkbox input stays the same
+            // DOM element. The plugin detects the state change on the caret's
+            // item and calls `handle.show()` (not showAfter), so the popup
+            // stays visible without any additional dwell wait.
+            editor.execute("setTaskState", { state: "doing" });
+            expect(livePopup()).not.toBeNull();
+
+            endFakeTimers();
+        });
+
+        it("recovers cleanly when the checkbox under the caret is replaced by a reconvert", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const domRoot = editor.editing.view.getDomRoot();
+            const oldInput = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+
+            // Toggling the native checkbox reconverts the todo item — the DOM
+            // input is replaced. The plugin reaps the old hover handle and
+            // re-attaches its caret handle to the new input.
+            editor.execute("checkTodoList");
+            editor.editing.view.forceRender();
+
+            expect(oldInput?.isConnected).toBe(false);
+            // Moving the caret out must not throw despite the stale reference.
+            expect(() => moveCaretTo(0)).not.toThrow();
+
+            endFakeTimers();
+        });
+
+        it("keeps no tooltip visible when the caret has no todo ancestor", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+
+            moveCaretTo(0); // plain paragraph → no todo ancestor → hide
+            expect(livePopup()).toBeNull();
+
+            endFakeTimers();
+        });
+
+        it("bails out safely when the position has no parent (defensive branch)", () => {
+            const selection = editor.model.document.selection;
+            const spy = vi.spyOn(selection, "getFirstPosition")
+                .mockReturnValueOnce(null as unknown as ReturnType<typeof selection.getFirstPosition>);
+            // Nudge the selection so `change:range` fires with the mocked getFirstPosition.
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(getBlock(editor, 0), 0));
+            });
+            spy.mockRestore();
+        });
+
+        it("nulls the caret-shown reference on destroy", async () => {
+            moveCaretTo(1);
+            // No throw expected — destroy must clear internal state cleanly whether
+            // or not a caret-shown tooltip is currently tracked.
+            await editor.destroy();
+            expect(editor.state).toBe("destroyed");
+            // Recreate so the shared afterEach's destroy() does not double-destroy.
+            editor = await createEditor({ taskStates: CUSTOM_STATES });
+        });
+    });
+
+    describe("hover-driven tooltip visibility", () => {
+        // Two todos so we can hover one while the caret sits in a plain
+        // paragraph — the caret and hover flows must be independently
+        // exercised, since the `ownedByCaret` check yields different results
+        // in each case.
+        const HOVER_FIXTURE = '<paragraph>plain[]</paragraph>' +
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">A</paragraph>' +
+            '<paragraph listIndent="0" listItemId="t-b" listType="todo">B</paragraph>';
+
+        function moveCaretTo(blockIndex: number): void {
+            editor.model.change((writer) => {
+                const block = getBlock(editor, blockIndex);
+                writer.setSelection(writer.createPositionAt(block, 0));
+            });
+        }
+
+        function checkboxOfItem(itemId: string): HTMLInputElement {
+            const domRoot = editor.editing.view.getDomRoot();
+            const input = domRoot?.querySelector<HTMLInputElement>(
+                `li[data-list-item-id="${itemId}"] .todo-list__label input[type="checkbox"]`
+            );
+            if (!input) {
+                throw new Error(`No checkbox for item ${itemId}.`);
+            }
+            return input;
+        }
+
+        beforeEach(async () => {
+            editor = await createEditor({ taskStates: CUSTOM_STATES });
+            setModelData(editor.model, HOVER_FIXTURE);
+            vi.useFakeTimers({ shouldAdvanceTime: false });
+        });
+
+        function endFakeTimers(): void {
+            vi.runOnlyPendingTimers();
+            vi.useRealTimers();
+        }
+
+        it("mouseenter on a checkbox not owned by the caret schedules a delayed show; mouseleave cancels it", () => {
+            // Caret in the plain paragraph — no todo owns the caret, so the
+            // hover flow is fully in charge of the hovered checkbox's tooltip.
+            moveCaretTo(0);
+            const inputA = checkboxOfItem("t-a");
+            expect(livePopup()).toBeNull();
+
+            inputA.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            expect(livePopup()).toBeNull(); // dwell not yet elapsed
+
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+            const source = document.querySelector<HTMLElement>(
+                `[aria-describedby="${livePopup()?.id}"]`
+            );
+            expect(source?.closest("li")?.getAttribute("data-list-item-id")).toBe("t-a");
+
+            // Leaving the checkbox pops the hover handle → stack empties → popup gone.
+            inputA.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+            expect(livePopup()).toBeNull();
+
+            endFakeTimers();
+        });
+
+        it("mouseenter is a no-op when the caret is inside the hovered checkbox's item", () => {
+            // Caret is inside todo A → the caret handle already owns A's
+            // tooltip visibility. Hovering the same checkbox must not run the
+            // dwell-and-push cycle (the manager would flicker if it did).
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const beforeHover = livePopup();
+            expect(beforeHover).not.toBeNull(); // caret drove this popup
+
+            const inputA = checkboxOfItem("t-a");
+            inputA.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            // Advance well past the dwell — no NEW render, and no manager churn.
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 2);
+            // Same popup element — the caret handle's tooltip was never disturbed.
+            expect(livePopup()).toBe(beforeHover);
+
+            endFakeTimers();
+        });
+
+        it("mouseleave is a no-op when the caret is inside the hovered checkbox's item", () => {
+            // The caret owns A's popup. Even if a mouseleave arrives (mouse
+            // sweeping across the checkbox during selection), the hover branch
+            // must not tear the popup down — the caret handle still wants it.
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            const beforeLeave = livePopup();
+            expect(beforeLeave).not.toBeNull();
+
+            const inputA = checkboxOfItem("t-a");
+            inputA.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+            expect(livePopup()).toBe(beforeLeave);
+
+            endFakeTimers();
+        });
+    });
+
+    describe("contentHintsEnabled config", () => {
+        // With hints off, neither the hover nor the caret flow should spawn
+        // a popup — the plugin's core editing behavior (state cycle, native
+        // toggle) must still work, but the on-screen hint is fully muted.
+        beforeEach(async () => {
+            editor = await createEditor({
+                taskStates: CUSTOM_STATES,
+                contentHintsEnabled: false
+            });
+            setModelData(editor.model,
+                '<paragraph>plain[]</paragraph>' +
+                '<paragraph listIndent="0" listItemId="t-a" listType="todo">A</paragraph>');
+            vi.useFakeTimers({ shouldAdvanceTime: false });
+        });
+
+        it("no popup appears when the caret enters a todo (dwell elapses silently)", () => {
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(getBlock(editor, 1), 0));
+            });
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 5);
+            expect(livePopup()).toBeNull();
+
+            vi.runOnlyPendingTimers();
+            vi.useRealTimers();
+        });
+
+        it("no popup appears on hover, and the core state-cycle still works", () => {
+            const domRoot = editor.editing.view.getDomRoot();
+            const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+            input?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 5);
+            expect(livePopup()).toBeNull();
+
+            // Core editing surface still functions — hints are additive UX only.
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(getBlock(editor, 1), 0));
+            });
+            editor.execute("setTaskState", { state: "doing" });
+            expect(getBlock(editor, 1).getAttribute(TASK_STATE_ATTRIBUTE)).toBe("doing");
+
+            vi.runOnlyPendingTimers();
+            vi.useRealTimers();
+        });
+    });
+
+    // Pure-function tests for the tooltip HTML builder. Assert against the
+    // returned string directly rather than introspecting Bootstrap Tooltip
+    // instances — no `_config` peeking, no editor scaffolding needed.
+    describe("buildTooltipTitle", () => {
+        // Stands in for `editor.t`: no dictionary, so each message id renders as its own English
+        // text, with `%0` substituted the way CKEditor would.
+        const t = (message: string, ...values: string[]) =>
+            message.replace(/%(\d+)/g, (placeholder, index) => values[Number(index)] ?? placeholder);
+        const SHORTCUT = "<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>";
+
+        it("returns just the body for an anchor state (null)", () => {
+            const title = buildTooltipTitle(document, null, new Map(), t, SHORTCUT);
+            expect(title).toContain("Right-click or press");
+            expect(title).toContain("to change state.");
+            expect(title).not.toContain("Task state:");
+        });
+
+        it("prepends the state prefix with a bold state title for a configured state", () => {
+            const stateByName = new Map(CUSTOM_STATES.map((state) => [state.name, state]));
+            const title = buildTooltipTitle(document, "doing", stateByName, t, SHORTCUT);
+            expect(title).toContain("Task state:");
+            expect(title).toContain("<strong>Doing</strong>"); // state.title takes precedence over name
+            expect(title).toContain('data-trilium-task-state="doing"');
+            expect(title).toContain('class="tn-task-tooltip-state"');
+        });
+
+        it("falls back to state.name in the state prefix when the state's title is empty", () => {
+            const stateByName = new Map<string, TaskStateDef>([
+                ["bare", { id: "_bare", name: "bare", title: "", markdownSymbol: "b", isCompleted: false, icon: "bx bx-x" }]
+            ]);
+            const title = buildTooltipTitle(document, "bare", stateByName, t, SHORTCUT);
+            expect(title).toContain("<strong>bare</strong>");
+        });
+
+        it("uses the unknown-state suffix for a state with no definition, without bold or icon", () => {
+            const title = buildTooltipTitle(document, "ghost", new Map(), t, SHORTCUT);
+            expect(title).toContain("Task state:");
+            expect(title).toContain("ghost (missing definition)");
+            expect(title).not.toContain("<strong>");
+            expect(title).not.toContain('data-trilium-task-state="ghost"');
+        });
+
+        it("text-escapes the raw state name in the unknown-state suffix (no HTML injection)", () => {
+            const title = buildTooltipTitle(document, "<script>alert(1)</script>", new Map(), t, SHORTCUT);
+            expect(title).not.toContain("<script>");
+            expect(title).toContain("&lt;script&gt;");
+        });
+    });
+});
+
+describe("toggling a checkbox of an editor without a selection of its own", () => {
+    async function createEditorWithObjectFirst(): Promise<ClassicEditor> {
+        const editor = await createTestEditor([Essentials, Paragraph, HorizontalLine, List, TodoList, TodoListMultistateEditing]);
+        setModelData(editor.model, "<horizontalLine></horizontalLine>"
+            + '<paragraph listIndent="0" listItemId="t-a" listType="todo">Task</paragraph>'
+            + '<paragraph listIndent="0" listItemId="t-b" listType="todo">Other</paragraph>');
+        return editor;
+    }
+
+    function toggle(editor: ClassicEditor, index: number) {
+        const inputs = editor.editing.view.getDomRoot()?.querySelectorAll<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+        const input = inputs?.[index];
+        expect(input).toBeDefined();
+        if (!input) return;
+        input.checked = !input.checked;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    it("leaves the selection in the toggled item rather than on the object ahead of the list", async () => {
+        const editor = await createEditorWithObjectFirst();
+        editor.model.change((writer) => writer.setSelection(null));
+        const selection = editor.model.document.selection;
+        expect(selection.hasOwnRange).toBe(false);
+        expect(selection.getSelectedElement()?.name).toBe("horizontalLine");
+
+        toggle(editor, 1);
+        expect(getBlock(editor, 2).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        expect(selection.getSelectedElement()).toBeNull();
+        expect(selection.getFirstPosition()?.parent).toBe(getBlock(editor, 2));
+    });
+
+    it("restores a selection of its own, as upstream does", async () => {
+        const editor = await createEditorWithObjectFirst();
+        editor.model.change((writer) => writer.setSelection(getBlock(editor, 1), 2));
+
+        toggle(editor, 1);
+        expect(getBlock(editor, 2).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(position?.parent).toBe(getBlock(editor, 1));
+        expect(position?.offset).toBe(2);
+    });
+});
+
+describe("clicking a checkbox", () => {
+    it("toggles the item and leaves the focus and the caret in the editable", async () => {
+        const editor = await createEditor();
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">Ta[]sk</paragraph>'
+            + '<paragraph listIndent="0" listItemId="t-b" listType="todo">Other</paragraph>');
+        editor.editing.view.focus();
+        const root = editor.editing.view.getDomRoot();
+        const checkboxes = () =>
+            root?.querySelectorAll<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+        const input = checkboxes()?.[1];
+        expect(root).toBeDefined();
+        expect(input).toBeDefined();
+        if (!root || !input) return;
+        expect(document.activeElement).toBe(root);
+        const focused: EventTarget[] = [];
+        root.addEventListener("focusin", (event) => focused.push(event.target ?? root));
+
+        await userEvent.click(input);
+        expect(getBlock(editor, 1).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        expect(focused).toEqual([]);
+        expect(document.activeElement).toBe(root);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(position?.parent).toBe(getBlock(editor, 0));
+        expect(position?.offset).toBe(2);
+
+        // Only a left-button press on a checkbox of a focused editor keeps the focus.
+        const rightPress = new MouseEvent("mousedown", { button: 2, bubbles: true, cancelable: true });
+        checkboxes()?.[0]?.dispatchEvent(rightPress);
+        const textPress = new MouseEvent("mousedown", { button: 0, bubbles: true, cancelable: true });
+        root.querySelector(".todo-list__label__description")?.dispatchEvent(textPress);
+        root.blur();
+        expect(editor.editing.view.document.isFocused).toBe(false);
+        const blurredPress = new MouseEvent("mousedown",
+            { button: 0, bubbles: true, cancelable: true });
+        checkboxes()?.[0]?.dispatchEvent(blurredPress);
+        expect(rightPress.defaultPrevented).toBe(false);
+        expect(textPress.defaultPrevented).toBe(false);
+        expect(blurredPress.defaultPrevented).toBe(false);
     });
 });

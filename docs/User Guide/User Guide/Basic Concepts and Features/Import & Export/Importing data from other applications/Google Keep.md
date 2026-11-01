@@ -21,7 +21,7 @@ The first step is to download your Google Keep information:
 Then in Trilium Notes:
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _Google Keep_.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-google-keep"></span> _Google Keep_.
 3.  Upload the ZIP obtained in the previous step.
 
 ## Supported features

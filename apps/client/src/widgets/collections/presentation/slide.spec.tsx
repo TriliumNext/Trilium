@@ -1,0 +1,353 @@
+import { render } from "preact";
+import { useContext } from "preact/hooks";
+import { act } from "preact/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { PresentationModel, PresentationSlideBaseModel } from "./model";
+
+const webViewSlide: PresentationSlideBaseModel = {
+    noteId: "web",
+    type: "webView",
+    content: { __html: "" },
+    webViewSrc: "https://example.com/"
+};
+
+describe("Slide", () => {
+    afterEach(() => {
+        vi.doUnmock("../../../services/utils");
+        vi.resetModules();
+    });
+
+    it("shows a web view in a partitioned <webview> on desktop", async () => {
+        const section = await renderSlide({ isElectron: true });
+
+        const webview = section.querySelector("webview");
+        expect(webview?.getAttribute("src")).toBe("https://example.com/");
+        expect(webview?.getAttribute("partition")).toBe("persist:webview");
+        expect(section.classList.contains("web-view-slide")).toBe(true);
+        expect(section.hasAttribute("data-background-iframe")).toBe(false);
+        expect(section.querySelector(".slide-content")).toBeNull();
+    });
+
+    it("lets Reveal.js frame a web view in the slide background in the browser", async () => {
+        const section = await renderSlide({ isElectron: false });
+
+        expect(section.getAttribute("data-background-iframe")).toBe("https://example.com/");
+        expect(section.hasAttribute("data-background-interactive")).toBe(true);
+        expect(section.querySelector("webview")).toBeNull();
+        expect(section.classList.contains("web-view-slide")).toBe(false);
+    });
+});
+
+async function renderSlide({ isElectron }: { isElectron: boolean }) {
+    vi.doMock("../../../services/utils", async (importOriginal) => {
+        const actual = await importOriginal<typeof import("../../../services/utils")>();
+        return { ...actual, default: { ...actual.default, isElectron: () => isElectron }, isElectron: () => isElectron };
+    });
+    const { Slide } = await import("./slides");
+
+    const container = document.createElement("div");
+    render(<Slide slide={webViewSlide} ntxId={undefined} />, container);
+    const section = container.querySelector("section");
+    if (!section) throw new Error("The slide did not render a <section>.");
+    return section;
+}
+
+describe("canvas slides", () => {
+    it("shows the editor of an edited canvas slide through its slot, and edits one on a double-click", async () => {
+        const { Slide } = await import("./slides");
+        const canvasSlide: PresentationSlideBaseModel = { noteId: "drawing", type: "canvas", content: { __html: "<img>" } };
+        const onEdit = vi.fn();
+        const container = document.createElement("div");
+
+        render(<Slide slide={canvasSlide} ntxId={undefined} onEdit={onEdit} />, container);
+        const section = container.querySelector("section");
+        expect(section?.querySelector(".slide-content")).not.toBeNull();
+        section?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+        expect(onEdit).toHaveBeenCalledOnce();
+
+        render(<Slide slide={canvasSlide} ntxId={undefined} isCanvasEdited onEdit={onEdit} />, container);
+        expect(section?.classList.contains("edited-canvas-slide")).toBe(true);
+        expect(section?.querySelector("slot")?.getAttribute("name")).toBe("canvas-editor-drawing");
+        expect(section?.querySelector(".slide-content")).toBeNull();
+        section?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+        expect(onEdit).toHaveBeenCalledOnce();
+    });
+});
+
+describe("collection slides", () => {
+    afterEach(() => {
+        vi.doUnmock("../NoteList");
+        vi.resetModules();
+        document.body.replaceChildren();
+    });
+
+    it("shows each collection slide through its slot, read-only unless it is the edited slide", async () => {
+        const listProps = new Map<string, { isReadOnly?: boolean, onOpenNote?: (noteId: string) => void ; controls?: unknown }>();
+        const { CollectionControls } = await import("../../note_bars/CollectionProperties");
+        vi.doMock("../NoteList", () => ({
+            EmbeddedNoteList: (props: { note: { noteId: string }, isReadOnly?: boolean, onOpenNote?: (noteId: string) => void }) => {
+                listProps.set(props.note.noteId, { ...props, controls: useContext(CollectionControls) });
+                return <div className="mock-note-list">{props.note.noteId}</div>;
+            }
+        }));
+        const { buildNote } = await import("../../../test/easy-froca");
+        const { CollectionSlides, Slide } = await import("./slides");
+        buildNote({ id: "board", title: "Board", type: "book", "#viewType": "board" });
+        buildNote({ id: "table", title: "Table", type: "book", "#viewType": "table" });
+        const boardSlide: PresentationSlideBaseModel = { noteId: "board", type: "book", content: { __html: "" }, isCollection: true };
+        const tableSlide: PresentationSlideBaseModel = { noteId: "table", type: "book", content: { __html: "" }, isCollection: true };
+        const textSlide: PresentationSlideBaseModel = { noteId: "text", type: "text", content: { __html: "<p>Text</p>" } };
+
+        const onOpenNote = vi.fn();
+        const slideContainer = document.createElement("div");
+        render(<Slide slide={boardSlide} ntxId={undefined} />, slideContainer);
+        const section = slideContainer.querySelector("section");
+        expect(section?.classList.contains("collection-slide")).toBe(true);
+        expect(section?.querySelector("slot")?.getAttribute("name")).toBe("collection-board");
+        expect(section?.querySelector(".slide-content")).toBeNull();
+
+        // A collection slide can also be a vertical slide; the text slide gets no note list.
+        const host = document.createElement("div");
+        document.body.append(host);
+        render(<CollectionSlides
+            presentation={{ slides: [ { ...textSlide, verticalSlides: [ boardSlide ] }, { ...tableSlide, verticalSlides: undefined } ] }}
+            ntxId={undefined}
+            editedNoteId="table"
+            onOpenNote={onOpenNote}
+        />, host);
+        await vi.waitFor(() => expect(host.querySelectorAll(".mock-note-list")).toHaveLength(2));
+        expect([ ...host.querySelectorAll(".presentation-collection-slide") ].map(wrapper => ({
+            slot: wrapper.getAttribute("slot"),
+            list: wrapper.textContent
+        }))).toStrictEqual([
+            { slot: "collection-board", list: "board" },
+            { slot: "collection-table", list: "table" }
+        ]);
+
+        // Only the edited slide's collection can be changed, and only it opens the notes it selects.
+        expect(listProps.get("board")?.isReadOnly).toBe(true);
+        expect(listProps.get("table")?.isReadOnly).toBe(false);
+        listProps.get("board")?.onOpenNote?.("card");
+        expect(onOpenNote).not.toHaveBeenCalled();
+        listProps.get("table")?.onOpenNote?.("row");
+        expect(onOpenNote).toHaveBeenCalledWith("row");
+        expect(host.querySelector('[slot="collection-table"]')?.classList.contains("is-edited")).toBe(true);
+        expect(host.querySelector('[slot="collection-board"]')?.classList.contains("is-edited")).toBe(false);
+
+        // The view type never changes on a slide, and only the edited collection offers its settings.
+        expect(listProps.get("board")?.controls).toStrictEqual({ viewTypeSwitcher: false, viewOptions: false });
+        expect(listProps.get("table")?.controls).toStrictEqual({ viewTypeSwitcher: false, viewOptions: true });
+    });
+
+    it("leaves the keys of a field being typed in to the field", async () => {
+        const { isTypingIn } = await import("./reveal");
+        const keyFrom = (element: HTMLElement) => {
+            let typing: boolean | undefined;
+            element.addEventListener("keydown", (e) => { typing = isTypingIn(e); });
+            document.body.append(element);
+            element.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+            return typing;
+        };
+
+        const editable = document.createElement("div");
+        editable.contentEditable = "true";
+        expect([ "input", "textarea", "select" ].map(tag => keyFrom(document.createElement(tag)))).toStrictEqual([ true, true, true ]);
+        expect(keyFrom(editable)).toBe(true);
+        expect(keyFrom(document.createElement("div"))).toBe(false);
+    });
+});
+
+describe("Presentation keys", () => {
+    afterEach(() => {
+        vi.doUnmock("reveal.js");
+        vi.resetModules();
+        document.body.replaceChildren();
+    });
+
+    it("starts the presentation on F, but leaves F to a field being typed in", async () => {
+        let config: { keyboard?: Record<number, () => void>; keyboardCondition?: (e: KeyboardEvent) => boolean } = {};
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                constructor(_element: HTMLElement, options: typeof config) { config = options; }
+                initialize() { return new Promise(() => {}); }
+                destroy() {}
+                isReady() { return false; }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const onStartPresentation = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        act(() => render(
+            <Presentation
+                presentation={{ slides: [] }}
+                setApi={() => {}}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={undefined}
+                onEditorHost={() => {}}
+                pendingNoteId={undefined}
+                onPendingSlideShown={() => {}}
+                onStartPresentation={onStartPresentation}
+            />,
+            container
+        ));
+
+        config.keyboard?.[70]();
+        expect(onStartPresentation).toHaveBeenCalledTimes(1);
+
+        const press = (target: HTMLElement) => {
+            let allowed: boolean | undefined;
+            target.addEventListener("keydown", (e) => { allowed = config.keyboardCondition?.(e); });
+            target.dispatchEvent(new KeyboardEvent("keydown", { key: "f", bubbles: true, composed: true }));
+            return allowed;
+        };
+        const reveal = container.querySelector<HTMLElement>(".reveal");
+        expect(reveal).not.toBeNull();
+        const slides = document.createElement("div");
+        const field = document.createElement("input");
+        const outside = document.createElement("div");
+        outside.tabIndex = -1;
+        reveal?.append(slides, field);
+        document.body.append(outside);
+        expect(press(slides)).toBe(true);
+        expect(press(field)).toBe(false);
+        expect(press(outside)).toBe(false);
+    });
+});
+
+describe("Presentation double-click", () => {
+    afterEach(() => {
+        vi.doUnmock("reveal.js");
+        vi.resetModules();
+        document.body.replaceChildren();
+    });
+
+    it("edits the slide shown on a double-click beside its content, as an empty slide has none", async () => {
+        const reveal = { currentNoteId: "empty" };
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                element: HTMLElement;
+                constructor(element: HTMLElement) { this.element = element; }
+                initialize() { return Promise.resolve(); }
+                destroy() {}
+                isReady() { return true; }
+                layout() {}
+                sync() {}
+                slide() {}
+                on() {}
+                off() {}
+                isOverview() { return false; }
+                getIndices() { return { h: 0, v: 0 }; }
+                getRevealElement() { return this.element; }
+                getCurrentSlide() { return this.element.querySelector(`#slide-${reveal.currentNoteId}`); }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const onEditSlide = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(
+            <Presentation
+                presentation={{ slides: [
+                    { noteId: "empty", type: "text", content: { __html: "" }, verticalSlides: undefined },
+                    { noteId: "web", type: "webView", content: { __html: "" }, verticalSlides: undefined }
+                ] }}
+                setApi={() => {}}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={onEditSlide}
+                onEditorHost={() => {}}
+                pendingNoteId={undefined}
+                onPendingSlideShown={() => {}}
+                onStartPresentation={undefined}
+            />,
+            container
+        ));
+        const dblclick = (target: Element | null) => {
+            expect(target).not.toBeNull();
+            act(() => {
+                target?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, composed: true }));
+            });
+        };
+
+        // Reveal.js sizes a slide to its content to center it, so the slide area around it is not the slide.
+        await vi.waitFor(() => {
+            dblclick(container.querySelector(".slides"));
+            expect(onEditSlide.mock.calls).toEqual([ [ "empty" ] ]);
+        });
+        // A double-click on the slide itself edits it once.
+        dblclick(container.querySelector("#slide-empty"));
+        expect(onEditSlide.mock.calls).toEqual([ [ "empty" ], [ "empty" ] ]);
+
+        // A slide that cannot be edited in place stays as it is.
+        reveal.currentNoteId = "web";
+        dblclick(container.querySelector(".reveal"));
+        expect(onEditSlide).toHaveBeenCalledTimes(2);
+    });
+
+    it("goes to a pending slide once it is rendered, and lets Reveal.js go when it unmounts", async () => {
+        const slide = vi.fn();
+        const destroy = vi.fn();
+        vi.doMock("reveal.js", () => ({
+            default: class {
+                element: HTMLElement;
+                constructor(element: HTMLElement) { this.element = element; }
+                initialize() { return Promise.resolve(); }
+                destroy = destroy;
+                isReady() { return true; }
+                layout() {}
+                sync() {}
+                slide = slide;
+                on() {}
+                off() {}
+                getIndices(section?: HTMLElement) { return { h: section?.id === "slide-added" ? 1 : 0, v: 0 }; }
+                getRevealElement() { return this.element; }
+                getCurrentSlide() { return this.element.querySelector("#slide-first"); }
+            }
+        }));
+        const { Presentation } = await import("./slides");
+        const setApi = vi.fn();
+        const onPendingSlideShown = vi.fn();
+        const container = document.createElement("div");
+        document.body.append(container);
+        const first: PresentationModel["slides"][number] = {
+            noteId: "first", type: "text", content: { __html: "" },
+            verticalSlides: [ { noteId: "below", type: "text", content: { __html: "" } } ]
+        };
+        const show = (slides: PresentationModel["slides"]) => act(async () => render(
+            <Presentation
+                presentation={{ slides }}
+                setApi={setApi}
+                ntxId={undefined}
+                editedNoteId={undefined}
+                isEditorReady={false}
+                closingContents={{}}
+                onEditSlide={undefined}
+                onEditorHost={() => {}}
+                pendingNoteId="added"
+                onPendingSlideShown={onPendingSlideShown}
+                onStartPresentation={undefined}
+            />,
+            container
+        ));
+
+        await show([ first ]);
+        await vi.waitFor(() => expect(setApi).toHaveBeenCalledWith(expect.anything()));
+        expect(container.querySelector(":scope .slides > section > #slide-below")).not.toBeNull();
+        expect(onPendingSlideShown).not.toHaveBeenCalled();
+
+        await show([ first, { noteId: "added", type: "text", content: { __html: "" }, verticalSlides: undefined } ]);
+        expect(slide).toHaveBeenLastCalledWith(1, 0, undefined);
+        expect(onPendingSlideShown).toHaveBeenCalledExactlyOnceWith("added");
+
+        await act(async () => render(null, container));
+        expect(destroy).toHaveBeenCalledOnce();
+        expect(setApi).toHaveBeenLastCalledWith(undefined);
+    });
+});

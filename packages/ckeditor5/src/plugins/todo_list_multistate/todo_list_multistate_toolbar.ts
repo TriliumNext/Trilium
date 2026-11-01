@@ -11,8 +11,8 @@ import {
     type ModelElement,
     type ViewElement
 } from "ckeditor5";
-import { getActiveTaskStates, getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
-import TodoListMultistateUI from "./todo_list_multistate_ui.js";
+import { getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
+import TodoListMultistateUI, { getTaskStateToolbarItems } from "./todo_list_multistate_ui.js";
 
 class TodoCheckboxContextMenuObserver extends DomEventObserver<"contextmenu"> {
     get domEventType() {
@@ -77,35 +77,10 @@ export default class TodoListMultistateToolbar extends Plugin {
         const editor = this.editor;
         const toolbar = new ToolbarView(editor.locale);
         toolbar.class = "task-state-toolbar";
-        for (const state of getActiveTaskStates(editor)) {
-            toolbar.items.add(editor.ui.componentFactory.create(`taskState:${state.name}`));
-        }
-        toolbar.items.add(new ToolbarSeparatorView(editor.locale));
-        toolbar.items.add(this._createEditButton());
+        toolbar.fillFromConfig(getTaskStateToolbarItems(editor), editor.ui.componentFactory);
+        const editButton = toolbar.items.last as ButtonView;
+        editButton.on("execute", () => this._hide(), { priority: "high" });
         return toolbar;
-    }
-
-    private _translate(key: string): string {
-        const translate = this.editor.config.get("translate") as ((key: string) => string) | undefined;
-        return translate ? translate(key) : key;
-    }
-
-    private _createEditButton(): ButtonView {
-        const editor = this.editor;
-        const button = new ButtonView(editor.locale);
-
-        button.set({
-            label: this._translate("text-editor.edit-states-tooltip"),
-            withText: false,
-            tooltip: true,
-            class: "ck-task-state-edit bx bx-pencil"
-        });
-        button.on("execute", () => {
-            this._hide();
-            const editTaskStates = editor.config.get("editTaskStates") as (() => void) | undefined;
-            editTaskStates?.();
-        });
-        return button;
     }
 
     private _show(checkbox: ViewElement) {
@@ -206,7 +181,7 @@ export default class TodoListMultistateToolbar extends Plugin {
                 class: "ck tn-task-state-unknown"
             },
             children: [
-                { text: `${this._translate("text-editor.unknown-task-state")}: ` },
+                { text: `${this.editor.t("Undefined custom task state")}: ` },
                 {
                     tag: "span",
                     attributes: {

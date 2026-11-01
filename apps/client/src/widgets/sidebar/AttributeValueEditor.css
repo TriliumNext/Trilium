@@ -1,0 +1,17 @@
+/* The one thing the value editor adds to the overlay shell it stands on (AttributeEditorOverlay.css):
+   its leading edge is held off so the row's name stays readable beside it — as far as the name
+   actually reaches (measured by the editor, which hands it over in the variable), and never further
+   than the row's leading fifth: past the cap a long name is cut at the overlay's edge rather than
+   the field squeezed for its sake. Doubled with the shell's class to outweigh its edge-to-edge
+   default whichever stylesheet loads last. */
+.attribute-list-panel .attribute-editor-overlay.attribute-value-editor {
+    inset-inline-start: min(var(--value-editor-name-end, 20%), 20%);
+
+    /* Typed where the preview shows it: the value reads from the trailing edge in the row (see
+       AttributeList.css), so the field keeps it there while it is edited, and closing the editor
+       does not make the text jump sides. The colour swatch is a box, not text, and needs none. */
+    & .form-control:not(.label-color-picker),
+    & .form-select {
+        text-align: end;
+    }
+}

@@ -117,6 +117,17 @@ export default defineConfig(
     "apps/edit-docs/demo/*",
     "docs/*",
     "apps/web-clipper/lib/*",
+    // Build output that is gitignored but sits outside a `dist`, so it would otherwise be
+    // linted. `cap sync` copies the whole standalone bundle into the native projects, which
+    // adds ~165 MB of minified JS and makes ESLint run out of memory.
+    "apps/mobile/android/**",
+    "apps/mobile/ios/**",
+    "apps/*/out/**",
+    "apps/web-clipper/.output/**",
+    "site/**",
+    "**/test-output/**",
+    // A worktree here is a full second copy of the repository.
+    ".claude/worktrees/**",
     // TODO: check if we want to format packages here as well - for now skipping it
     "packages/*",
   ]),

@@ -1,7 +1,7 @@
 # General formatting
 ## Headings
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:255/284;" src="3_General formatting_image.png" width="255" height="284"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:255/284;" src="2_General formatting_image.png" width="255" height="284"></figure>
 
 Trilium provides headings to define sections within text. Headings are numbered from 2 to 6.
 
@@ -23,7 +23,7 @@ Apart from using the UI, it is also possible to quickly insert headings using th
 
 One way to highlight a portion of text is to increase the size of the font.
 
-To do so, select some text and choose an option from the _Font size_ selector (as pictured to the right).
+To do so, select some text and choose an option from the _Font size_ (<span class="tn-icon cke cke-font-size"></span>) selector (as pictured to the right).
 
 Unlike other text editors such as Microsoft Word, the font size is relative (i.e. “Tiny”, “Small” instead of a number like 12).
 
@@ -31,11 +31,11 @@ Avoid using this feature just to simply make all text bigger. In that case it's 
 
 ## Bold, italic, underline, strike-through
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="4_General formatting_image.png" width="215" height="71"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
 
-Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons in the formatting toolbar.
+Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) in the formatting toolbar.
 
-This formatting can be easily removed using the _Remove formatting_ item.
+This formatting can be easily removed using the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) item.
 
 The following keyboard shortcuts can be used here:
 
@@ -59,19 +59,37 @@ For mathematical formulas, prefer the <a class="reference-link" href="Math%20Eq
 
 ## Font color and background color
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="2_General formatting_image.png" width="167" height="204"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
-Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker.
+Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>).
 
 Once there is at least one color defined in the document, it will appear in the list for easy reuse.
 
-When selecting a foreground or a background color, consider the contrast if switching between a dark theme or a light [theme](../../Basic%20Concepts%20and%20Features/Themes.md).
+Colors adapt to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md). Trilium shows each color in a lighter or darker shade that suits the current theme, so the text stays readable after switching between light and dark themes. The hue stays the same: red text is red in both themes, only lighter or darker. This applies to the palette, the color picker and the document colors alike, and to shared notes too. Printed notes and PDF exports always use the shades of light themes, which suit white paper. The note itself keeps the color as it was picked, so an exported note shows it unchanged.
 
-To remove either the background or foreground color of a text, select the corresponding formatting button and press _Remove color_ or use the _Remove formatting_ toolbar item.
+Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
+
+Older browsers that can't adapt colors show them exactly as they were picked.
+
+When you paste text copied from a web page in Chrome, Edge or a Chromium-based app (such as Visual Studio Code), Trilium removes the page's styling:
+
+*   Text and background colors.
+*   Fonts and font sizes.
+*   Table borders, backgrounds and spacing.
+
+The following formatting is preserved:
+
+*   Bold, italic, underline and strikethrough.
+*   Subscript and superscript.
+*   Links, code and tables.
+
+Colors are preserved when pasting from Word, Google Docs or another note.
+
+To remove either the background or foreground color of a text, select the corresponding formatting button (<span class="tn-icon cke cke-font-color"></span> or <span class="tn-icon cke cke-font-background"></span>) and press _Remove color_ (<span class="tn-icon cke cke-eraser"></span>) or use the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) toolbar item.
 
 ## Remove formatting
 
-The <img src="1_General formatting_image.png" width="17" height="16"> _Remove formatting_ button is a quick way to eliminate the general formatting styling of a particular text.
+The <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_ button is a quick way to eliminate the general formatting styling of a particular text.
 
 Simply select the text and press the button to remove the formatting (bold, italic, colors, sizes, etc.). If the text does not have any removable formatting, the button will appear disabled.
 
@@ -81,7 +99,7 @@ When pasting content that comes with undesired formatting, an alternative to pas
 
 ## Format painter
 
-The <a class="reference-link" href="Premium%20features/Format%20Painter.md">Format Painter</a> allows users to copy the formatting of text (such as bold, italic, Strikethrough, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
+The <a class="reference-link" href="Format%20Painter.md">Format Painter</a> allows users to copy the formatting of text (such as bold, italic, Strikethrough, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
 
 ## Support for Markdown
 

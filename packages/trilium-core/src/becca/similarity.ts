@@ -232,9 +232,9 @@ function splitToWords(text: string) {
             }
             // special case for english plurals
             else if (words[idx].length > 2 && words[idx].endsWith("es")) {
-                words[idx] = words[idx].substr(0, words[idx] - 2);
+                words[idx] = words[idx].substr(0, words[idx].length - 2);
             } else if (words[idx].length > 1 && words[idx].endsWith("s")) {
-                words[idx] = words[idx].substr(0, words[idx] - 1);
+                words[idx] = words[idx].substr(0, words[idx].length - 1);
             }
         }
     }
@@ -250,7 +250,7 @@ function hasConnectingRelation(sourceNote: BNote, targetNote: BNote) {
     return sourceNote.getAttributes().find((attr) => attr.type === "relation" && ["includenotelink", "imagelink"].includes(attr.name) && attr.value === targetNote.noteId);
 }
 
-async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefined> {
+async function findSimilarNotes(noteId: string): Promise<SimilarNote[]> {
     const results: SimilarNote[] = [];
     let i = 0;
 
@@ -436,17 +436,14 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
         if (score >= 1.5) {
             const notePath = candidateNote.getBestNotePath();
 
-            // this takes care of note hoisting
-            if (!notePath) {
-                // TODO: This return is suspicious, it should probably be continue
-                return;
-            }
+            // a missing note path (e.g. due to note hoisting) skips only this candidate
+            if (notePath) {
+                if (beccaService.isNotePathArchived(notePath)) {
+                    score -= 0.5; // archived penalization
+                }
 
-            if (beccaService.isNotePathArchived(notePath)) {
-                score -= 0.5; // archived penalization
+                results.push({ score, notePath, noteId: candidateNote.noteId });
             }
-
-            results.push({ score, notePath, noteId: candidateNote.noteId });
         }
 
         i++;

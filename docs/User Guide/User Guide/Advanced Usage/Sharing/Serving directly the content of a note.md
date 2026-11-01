@@ -3,7 +3,7 @@ When accessing a shared note, Trilium will render it as a web page. Sometimes it
 
 | A note displayed as a web page (HTML) | A note displayed as a raw format |
 | --- | --- |
-| <figure class="image"><img style="aspect-ratio:738/275;" src="1_Serving directly the content of a note_image.png" width="738" height="275"></figure> | ![](Serving%20directly%20the%20content%20of%20a%20note_image.png) |
+| <figure class="image"><img style="aspect-ratio:738/275;" src="Serving directly the content of a note_image.png" width="738" height="275"></figure> | ![](Serving%20directly%20the%20content%20of%20a%20note_image.jpg) |
 
 ## By adding an attribute to the note
 
@@ -13,4 +13,4 @@ Simply add the `#shareRaw` attribute and the note will always be rendered _raw_ 
 
 Append `?raw` to the URL to display a note in its raw format regardless of whether the `#shareRaw` attribute is added on the note.
 
-![](Serving%20directly%20the%20content%20of%20a%20note_image.png)
+![](Serving%20directly%20the%20content%20of%20a%20note_image.jpg)

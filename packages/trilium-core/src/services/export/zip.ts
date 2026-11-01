@@ -1,10 +1,14 @@
-import { NoteType } from "@triliumnext/commons";
+import { getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, NoteType } from "@triliumnext/commons";
+import mimeTypes from "mime-types";
 import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
 import { getBecca } from "../../becca/becca.js";
+import type BAttachment from "../../becca/entities/battachment.js";
+import type BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
+import type { Response } from "../../http_interface";
 import dateUtils from "../utils/date.js";
 import { getLog } from "../log.js";
 import protectedSessionService from "../protected_session.js";
@@ -18,18 +22,30 @@ import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
 import { truncateUtf8Bytes } from "../utils/binary";
 import { rewriteMarkdownContentLinks, isMarkdownCodeNote } from "./rewrite_links.js";
+import { stripListItemIds } from "./strip_list_item_ids.js";
+import { getVirtualNoteAssets, referenceAssetsAsAttachments, type VirtualNoteAsset } from "../virtual_notes.js";
 
 // Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
 const MAX_FILENAME_BYTES = 255;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Record<string, any>, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
+/**
+ * Where the archive is written: a {@link Response} when a client asked for the download, or the
+ * writable a {@link FileStream} exposes when it goes to disk. `"sendStatus" in destination` tells
+ * the two apart — only the HTTP one carries a status code and headers.
+ */
+export type ZipExportDestination = Response | { write(chunk: string | Uint8Array): boolean; end(): unknown };
+
+async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: ZipExportDestination, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
     const archive = getZipProvider().createZipArchive();
     const rewriteFn = (zipExportOptions?.customRewriteLinks ? zipExportOptions?.customRewriteLinks(rewriteLinks, getNoteTargetUrl) : rewriteLinks);
     const provider = await buildProvider();
     const log = getLog();
 
     const noteIdToMeta: Record<string, NoteMeta> = {};
+    /** The file holding the content of an image or file note in a share export, beside its page. */
+    const noteIdToRawFileName: Record<string, string> = {};
+    /** The files a virtual note's content links to, exported as attachments of that note. */
+    const noteIdToVirtualAssets: Record<string, VirtualNoteAsset[]> = {};
 
     async function buildProvider() {
         const providerData: ZipExportProviderData = {
@@ -39,6 +55,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             rewriteFn,
             zipExportOptions
         };
+
+        if (format === "share") {
+            const { ensureShareHighlighting } = await import("../../share/index.js");
+            await ensureShareHighlighting();
+        }
 
         return getZipExportProviderFactory()(format, providerData);
     }
@@ -80,9 +101,32 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // name so the whole entry (extension included) stays within the 255-byte
         // filesystem limit without ever chopping the extension off long / multi-byte
         // titles and attachment names. This replaces the old arbitrary 30-char cap.
+        const named = dropReplacedPictureExtension(fileName, existingExtension, newExtension);
+        const base = truncateUtf8Bytes(sanitize(named), MAX_FILENAME_BYTES - extension.length);
+
+        return getUniqueFilename(existingFileNames, `${base}${extension}`);
+    }
+
+    /** Names the file that holds a note's content as it is, keeping or deriving its extension. */
+    function getRawFileName(mime: string, baseFileName: string, existingFileNames: Record<string, number>): string {
+        const fileName = baseFileName.trim() || "note";
+        const extension = extname(fileName) ? "" : `.${mimeTypes.extension(mime) || "dat"}`;
         const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
 
         return getUniqueFilename(existingFileNames, `${base}${extension}`);
+    }
+
+    /**
+     * Whether the export can carry the title and content of `entity`: an unprotected one always,
+     * a protected one only while the protected session is open and `excludeProtected` is not set.
+     */
+    function isReadable(entity: BNote | BAttachment) {
+        return !entity.isProtected
+            || (!zipExportOptions?.excludeProtected && protectedSessionService.isProtectedSessionAvailable());
+    }
+
+    function getTitle(note: BNote) {
+        return isReadable(note) ? note.getTitleOrProtected() : "[protected]";
     }
 
     function createNoteMeta(branch: BBranch, parentMeta: Partial<NoteMeta>, existingFileNames: Record<string, number>): NoteMeta | null {
@@ -92,7 +136,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return null;
         }
 
-        const title = note.getTitleOrProtected();
+        const title = getTitle(note);
         const completeTitle = branch.prefix ? `${branch.prefix} - ${title}` : title;
         let baseFileName = sanitize(completeTitle);
         if (format === "share") {
@@ -117,7 +161,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 isClone: true,
                 noteId: note.noteId,
                 notePath,
-                title: note.getTitleOrProtected(),
+                title: getTitle(note),
                 prefix: branch.prefix,
                 dataFileName: fileName,
                 type: "text", // export will have text description
@@ -130,23 +174,25 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         meta.isClone = false;
         meta.noteId = note.noteId;
         meta.notePath = notePath;
-        meta.title = note.getTitleOrProtected();
+        meta.title = getTitle(note);
         meta.notePosition = branch.notePosition;
         meta.prefix = branch.prefix;
         meta.isExpanded = branch.isExpanded;
         meta.type = note.type;
         meta.mime = note.mime;
-        meta.attributes = note.getOwnedAttributes().map((attribute) => {
-            const attrMeta: AttributeMeta = {
-                type: attribute.type,
-                name: attribute.name,
-                value: attribute.value,
-                isInheritable: attribute.isInheritable,
-                position: attribute.position
-            };
+        meta.attributes = note.getOwnedAttributes()
+            .filter((attribute) => !isRebuiltOnImport(attribute))
+            .map((attribute) => {
+                const attrMeta: AttributeMeta = {
+                    type: attribute.type,
+                    name: attribute.name,
+                    value: attribute.value,
+                    isInheritable: attribute.isInheritable,
+                    position: attribute.position
+                };
 
-            return attrMeta;
-        });
+                return attrMeta;
+            });
 
         taskContext.increaseProgressCount();
 
@@ -160,17 +206,20 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         note.sortChildren();
         const childBranches = note.getChildBranches().filter((branch) => branch?.noteId !== "_hidden");
 
-        let shouldIncludeFile = (!note.isProtected || protectedSessionService.isProtectedSessionAvailable());
+        let shouldIncludeFile = isReadable(note);
         if (format !== "share") {
             shouldIncludeFile = shouldIncludeFile && (note.getContent().length > 0 || childBranches.length === 0);
         }
 
         // if it's a leaf, then we'll export it even if it's empty
         if (shouldIncludeFile) {
+            if (format === "share" && (note.type === "image" || note.type === "file")) {
+                noteIdToRawFileName[note.noteId] = getRawFileName(note.mime, baseFileName, existingFileNames);
+            }
             meta.dataFileName = getDataFileName(note.type, note.mime, baseFileName, existingFileNames);
         }
 
-        const attachments = note.getAttachments();
+        const attachments = note.getAttachments().filter(isReadable);
         meta.attachments = attachments
             .toSorted((a, b) => ((a.attachmentId ?? "").localeCompare(b.attachmentId ?? "", "en") ?? 1))
             .map((attachment) => {
@@ -184,6 +233,21 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 };
                 return attMeta;
             });
+
+        if (note.isVirtual) {
+            const assets = getVirtualNoteAssets(note.noteId);
+            noteIdToVirtualAssets[note.noteId] = assets;
+            for (const [index, asset] of assets.entries()) {
+                meta.attachments.push({
+                    attachmentId: asset.id,
+                    title: asset.title,
+                    role: asset.mime.startsWith("image/") ? "image" : "file",
+                    mime: asset.mime,
+                    position: (index + 1) * 10,
+                    dataFileName: getDataFileName(null, asset.mime, `${baseFileName}_${asset.title}`, existingFileNames)
+                });
+            }
+        }
 
         if (childBranches.length > 0) {
             meta.dirFileName = getUniqueFilename(existingFileNames, baseFileName);
@@ -209,7 +273,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return meta as NoteMeta;
     }
 
-    function getNoteTargetUrl(targetNoteId: string, sourceMeta: NoteMeta): string | null {
+    function getNoteTargetUrl(targetNoteId: string, sourceMeta: NoteMeta, fileNameOverride?: string): string | null {
         const targetMeta = noteIdToMeta[targetNoteId];
 
         if (!targetMeta || !targetMeta.notePath || !sourceMeta.notePath) {
@@ -241,22 +305,46 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         const meta = noteIdToMeta[targetPath[targetPath.length - 1]];
 
         // link can target note which is only "folder-note" and as such, will not have a file in an export
-        url += encodeURIComponent(meta.dataFileName || meta.dirFileName || "");
+        url += encodeURIComponent(fileNameOverride ?? (meta.dataFileName || meta.dirFileName || ""));
 
         return url;
     }
 
+    /**
+     * Resolves an `api/images/<noteId>` embed to the file that actually holds the image. For a
+     * mermaid or canvas note that is the exported `*-export.svg` attachment sitting next to the
+     * note's data file, not the data file itself — which holds the diagram source, or the note's
+     * own HTML page in a share export, and renders as a broken image.
+     */
+    function getEmbeddedImageUrl(targetNoteId: string, sourceMeta: NoteMeta): string | null {
+        // `targetMeta` is undefined when the embedded note lies outside the exported subtree. It is
+        // typed as always present, so guard it explicitly rather than leaning on `attachmentTitle`
+        // happening to be undefined in that case.
+        const targetMeta = noteIdToMeta[targetNoteId];
+        const attachmentTitle = getImageAttachmentTitle(targetMeta?.type);
+        const attachmentMeta = targetMeta && attachmentTitle
+            ? (targetMeta.attachments || []).find((attMeta) => attMeta.title === attachmentTitle)
+            : undefined;
+
+        // Falls back to the note's own data file when the attachment was never generated.
+        return getNoteTargetUrl(targetNoteId, sourceMeta,
+            attachmentMeta?.dataFileName ?? noteIdToRawFileName[targetNoteId]);
+    }
+
     function rewriteLinks(content: string, noteMeta: NoteMeta): string {
         content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/[^"]*"/g, (match, targetNoteId) => {
-            const url = getNoteTargetUrl(targetNoteId, noteMeta);
+            const url = getEmbeddedImageUrl(targetNoteId, noteMeta);
 
             return url ? `src="${url}"` : match;
         });
 
-        content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, targetAttachmentId) => {
+        // `data-image` and `data-favicon` are where link previews (section.link-embed /
+        // span.link-mention) keep their two picture references; both point at the exported
+        // attachment file just like an <img> src.
+        content = content.replace(/(src|data-image|data-favicon)="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, attrName, targetAttachmentId) => {
             const url = findAttachment(targetAttachmentId);
 
-            return url ? `src="${url}"` : match;
+            return url ? `${attrName}="${url}"` : match;
         });
 
         content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, targetAttachmentId) => {
@@ -272,10 +360,12 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         });
 
         if (format === "share") {
-            content = content.replace(/src="[^"]*api\/notes\/([a-zA-Z0-9_]+)\/download"/g, (match, targetNoteId) => {
-                const url = getNoteTargetUrl(targetNoteId, noteMeta);
+            // A PDF's frame and a file's download button reach the note's content through the API.
+            const apiUrl = /(src="|location\.href=')[^"']*api\/notes\/([a-zA-Z0-9_]+)\/(?:download|view)(["'])/g;
+            content = content.replace(apiUrl, (match, prefix, targetNoteId, quote) => {
+                const url = getNoteTargetUrl(targetNoteId, noteMeta, noteIdToRawFileName[targetNoteId]);
 
-                return url ? `src="${url}"` : match;
+                return url ? `${prefix}${url}${quote}` : match;
             });
         }
 
@@ -299,6 +389,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         const isText = ["html", "markdown"].includes(noteMeta?.format || "");
         if (isText) {
             content = content.toString();
+        }
+
+        // Text notes store HTML regardless of the export format, so strip CKEditor's per-list-item
+        // bookkeeping before the provider runs: gone from HTML exports and from the raw-HTML tables
+        // that survive Markdown conversion alike.
+        if (noteMeta?.type === "text" && typeof content === "string") {
+            content = stripListItemIds(content);
+        }
+
+        if (note?.isVirtual && typeof content === "string") {
+            content = referenceAssetsAsAttachments(note.noteId, content, noteIdToVirtualAssets[note.noteId] ?? []);
         }
 
         content = provider.prepareContent(title, content, noteMeta, note, branch);
@@ -354,6 +455,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             await archive.waitForCapacity?.();
         }
 
+        const rawFileName = noteIdToRawFileName[noteMeta.noteId];
+        if (rawFileName) {
+            archive.append(note.getContent(), {
+                name: filePathPrefix + rawFileName,
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(noteMeta.mime)
+            });
+
+            await archive.waitForCapacity?.();
+        }
+
         taskContext.increaseProgressCount();
 
         for (const attachmentMeta of noteMeta.attachments || []) {
@@ -361,11 +473,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 continue;
             }
 
-            const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
+            const asset = noteIdToVirtualAssets[note.noteId]?.find((a) => a.id === attachmentMeta.attachmentId);
             // getContent() already returns a string or a Uint8Array; the binary
             // case can be appended as-is (the zip provider handles the Buffer
             // conversion), so avoid an extra full copy of the blob here.
-            const content = attachment.getContent();
+            const content = asset
+                ? await asset.getContent()
+                : note.getAttachmentById(attachmentMeta.attachmentId).getContent();
+            if (content === null) {
+                log.info(`Could not read asset '${attachmentMeta.title}' of virtual note '${note.noteId}', leaving it out of the export.`);
+                continue;
+            }
 
             archive.append(content, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
@@ -440,7 +558,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     }
 
     const note = branch.getNote();
-    const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.getTitleOrProtected()}.zip`;
+    const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${getTitle(note)}.zip`;
 
     if (setHeaders && "setHeader" in res) {
         res.setHeader("Content-Disposition", getContentDisposition(zipFileName));
@@ -483,6 +601,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     }
 }
 
+/**
+ * Whether the importer discards the attribute and rebuilds it from the note's content, which
+ * `saveLinks()` does for `internalLink`, `imageLink` and the `internalBookmark` labels. Exporting
+ * those writes a set nothing reads back, in an order that differs between a note the editor has
+ * appended a link to and the same note derived on import. `includeNoteLink` and `relationMapLink`
+ * stay: `services/import/zip.ts` reads them to remap note ids inside the content it imports.
+ */
+function isRebuiltOnImport(attribute: BAttribute): boolean {
+    return attribute.type === "relation"
+        ? [ "internalLink", "imageLink" ].includes(attribute.name)
+        : attribute.name === "internalBookmark";
+}
+
 /** Counts the notes in a metadata tree — i.e. the number of `saveNote()` calls the content-writing pass will make. */
 function countMetaNodes(meta: NoteMeta): number {
     let count = 1;
@@ -502,7 +633,7 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
         throw new ValidationError(`Note ${noteId} not found.`);
     }
 
-    await exportToZip(taskContext, note.getParentBranches()[0], format, destination as Record<string, any>, false, zipExportOptions);
+    await exportToZip(taskContext, note.getParentBranches()[0], format, destination as ZipExportDestination, false, zipExportOptions);
     await waitForFinish();
 
     getLog().info(`Exported '${noteId}' with format '${format}' to '${zipFilePath}'`);
@@ -524,7 +655,7 @@ async function exportBranchToZipFile(branchId: string, format: ExportFormat, zip
     const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
 
     try {
-        await exportToZip(taskContext, branch, format, destination as Record<string, any>, false);
+        await exportToZip(taskContext, branch, format, destination as ZipExportDestination, false);
         await waitForFinish();
         // exportToZip defers success for non-HTTP destinations: only now, with the file fully flushed to
         // disk, is the export genuinely complete — so report it here rather than before the final write.
@@ -565,6 +696,33 @@ export function shouldStoreUncompressed(mime: string | undefined | null): boolea
     }
 
     return ALREADY_COMPRESSED.has(m) || isZipBasedContainer(m);
+}
+
+/**
+ * The name with the extension the new one is about to replace taken off it, where that is what is
+ * happening — otherwise the name unchanged.
+ *
+ * A picture is the one thing whose extension gets *substituted* rather than added to: an image
+ * converted to JPEG on upload keeps a `.png` title, and the export renames it. Appending there
+ * produces `image.png.jpg`.
+ *
+ * Everywhere else the extension is only ever added to a name that had none of its own, and taking
+ * a trailing dot-suffix off would do real damage: `extname` reads "v0.48" as ending in ".48", so a
+ * release note by that name would export as "v0.md". Restricting this to a picture replacing a
+ * picture is what keeps a suffix that merely looks like an extension out of reach — the check is
+ * against the media types those extensions name, not against the text.
+ */
+function dropReplacedPictureExtension(fileName: string, existingExtension: string, newExtension: string | null): string {
+    if (!existingExtension || !newExtension || !namesPicture(existingExtension) || !namesPicture(newExtension)) {
+        return fileName;
+    }
+
+    return fileName.slice(0, -existingExtension.length);
+}
+
+/** Whether an extension is one a picture is written with, dotted or not. */
+function namesPicture(extension: string): boolean {
+    return !!extension && isAcceptedImageMime(imageMimeForExtension(extension));
 }
 
 // Office / e-book / package formats that are ZIP containers under the hood.

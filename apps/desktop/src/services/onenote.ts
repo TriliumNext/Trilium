@@ -19,7 +19,7 @@ export function setupOneNoteHandlers() {
     electron.ipcMain.handle("onenote-login", async (): Promise<OneNoteLoginResult> => {
         try {
             const tokens = await authorizeViaLoopback(ONENOTE_OAUTH);
-            const account = await graph.getAccount(tokens.access_token);
+            const account = await graph.getAccount(() => Promise.resolve(tokens.access_token));
 
             setDesktopSession({
                 accessToken: tokens.access_token,

@@ -1,0 +1,172 @@
+# Pie
+
+pie
+
+==>
+
+PieDiagram(DiagramName)
+
+# ShowData
+
+pie showData
+
+==>
+
+PieDiagram(DiagramName,ShowData)
+
+# Title
+
+pie title
+
+==>
+
+PieDiagram(DiagramName,Title)
+
+# Title + TitleText
+
+pie title This is some title text
+
+==>
+
+PieDiagram(DiagramName,Title,TitleText)
+
+# Key-Value Pair
+
+pie
+"Calcium" : 42.96
+
+==>
+
+PieDiagram(DiagramName,String,Number)
+
+# Multiple Key-Value Pairs
+
+pie
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,String,Number,String,Number,String,Number,String,Number)
+
+# ShowData + Title
+
+pie showData title
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title)
+
+# ShowData + Title + TitleText
+
+pie showData title This is some title text
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title,TitleText)
+
+# ShowData + Title + TitleText + Key-Value Pair
+
+pie showData title This is some title text
+"Calcium" : 42.96
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title,TitleText,String,Number)
+
+# ShowData + Title + TitleText + Key-Value Pairs
+
+pie showData title This is some title text
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title,TitleText,String,Number,String,Number,String,Number,String,Number)
+
+# Title + TitleText + Key-Value Pair
+
+pie title This is some title text
+"Calcium" : 42.96
+
+==>
+
+PieDiagram(DiagramName,Title,TitleText,String,Number)
+
+# Title + TitleText + Key-Value Pairs
+
+pie title This is some title text
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,Title,TitleText,String,Number,String,Number,String,Number,String,Number)
+
+# ShowData + Key-Value Pairs
+
+pie showData
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,ShowData,String,Number,String,Number,String,Number,String,Number)
+
+# ShowData + Title + Key-Value Pairs
+
+pie showData title
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title,TitleText,String,Number,String,Number,String,Number,String,Number)
+
+# ShowData + Empty Spaces + Key-Value Pairs
+
+pie showData   
+"Calcium" : 42.96
+"Potassium" : 50.05
+"Magnesium" : 10.01
+"Iron" :  5
+
+==>
+
+PieDiagram(DiagramName,ShowData,String,Number,String,Number,String,Number,String,Number)
+
+# LineComment
+
+pie %% comment
+
+==>
+
+PieDiagram(DiagramName,LineComment)
+
+# Key-Value Pair + LineComment
+
+pie
+"Calcium" : 42.96 %% comment
+
+==>
+
+PieDiagram(DiagramName,String,Number,LineComment)
+
+# Key-Value Pair + ShowData + Title + LineComment
+
+pie showData title
+"Calcium" : 42.96 %% comment
+
+==>
+
+PieDiagram(DiagramName,ShowData,Title,TitleText,String,Number,LineComment)

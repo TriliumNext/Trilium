@@ -1,3 +1,5 @@
+import "./Slider.css";
+
 interface SliderProps {
     value: number;
     onChange(newValue: number);
@@ -5,6 +7,7 @@ interface SliderProps {
     max?: number;
     step?: number;
     title?: string;
+    disabled?: boolean;
 }
 
 export default function Slider({ onChange, value, min = 0, max = 100, ...restProps }: SliderProps) {

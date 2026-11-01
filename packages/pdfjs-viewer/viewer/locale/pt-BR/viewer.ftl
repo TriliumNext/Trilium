@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Exibição web rápida:
 pdfjs-document-properties-linearized-yes = Sim
 pdfjs-document-properties-linearized-no = Não
 pdfjs-document-properties-close-button = Fechar
+pdfjs-digital-signature-properties-view-certificate = Ver certificado
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Motivo: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Data e hora: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Assinatura secundária ({ $count })
+       *[other] Assinaturas secundárias ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +187,6 @@ pdfjs-printing-not-ready = Aviso: o PDF não está totalmente carregado para imp
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Exibir/ocultar painel lateral
-pdfjs-toggle-sidebar-notification-button =
-    .title = Exibir/ocultar painel lateral (documento contém estrutura/anexos/camadas)
-pdfjs-toggle-sidebar-button-label = Exibir/ocultar painel lateral
-pdfjs-document-outline-button =
-    .title = Mostrar estrutura do documento (duplo-clique expande/recolhe todos os itens)
-pdfjs-document-outline-button-label = Estrutura do documento
-pdfjs-attachments-button =
-    .title = Mostrar anexos
-pdfjs-attachments-button-label = Anexos
-pdfjs-layers-button =
-    .title = Mostrar camadas (duplo-clique redefine todas as camadas ao estado predefinido)
-pdfjs-layers-button-label = Camadas
-pdfjs-thumbs-button =
-    .title = Mostrar miniaturas
-pdfjs-thumbs-button-label = Miniaturas
 pdfjs-current-outline-item-button =
     .title = Encontrar item atual da estrutura
 pdfjs-current-outline-item-button-label = Item atual da estrutura
@@ -193,10 +197,6 @@ pdfjs-additional-layers = Camadas adicionais
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Página { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Procurar
     .placeholder = Procurar no documento…
+    .title = Procurar
 pdfjs-find-previous-button =
     .title = Procurar a ocorrência anterior da frase
 pdfjs-find-previous-button-label = Anterior
@@ -310,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Destaque
 pdfjs-editor-highlight-button-label = Destaque
 pdfjs-highlight-floating-button1 =
-    .title = Destaque
     .aria-label = Destaque
+    .title = Destaque
 pdfjs-highlight-floating-button-label = Destaque
 pdfjs-comment-floating-button =
-    .title = Comentário
     .aria-label = Comentário
+    .title = Comentário
 pdfjs-comment-floating-button-label = Comentário
 pdfjs-editor-comment-button =
-    .title = Comentar
     .aria-label = Comentar
+    .title = Comentar
 pdfjs-editor-comment-button-label = Comentar
 pdfjs-editor-signature-button =
     .title = Adicionar assinatura
@@ -392,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Comentários
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Fechar painel lateral
     .aria-label = Fechar painel lateral
+    .title = Fechar painel lateral
 pdfjs-editor-comments-sidebar-close-button-label = Fechar painel lateral
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Viu algo digno de atenção? Destaque e deixe um comentário.
@@ -516,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Configurações de texto alternati
 pdfjs-editor-alt-text-settings-automatic-title = Texto alternativo automático
 pdfjs-editor-alt-text-settings-create-model-button-label = Criar texto alternativo automaticamente
 pdfjs-editor-alt-text-settings-create-model-description = Sugere uma descrição para ajudar pessoas que não conseguem ver a imagem ou quando a imagem não é carregada.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modelo de inteligência artificial de texto alternativo ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Funciona localmente no seu dispositivo para que seus dados permaneçam privativos. Necessário para texto alternativo automático.
-pdfjs-editor-alt-text-settings-delete-model-button = Excluir
-pdfjs-editor-alt-text-settings-download-model-button = Baixar
-pdfjs-editor-alt-text-settings-downloading-model-button = Baixando…
 pdfjs-editor-alt-text-settings-editor-title = Editor de texto alternativo
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostrar o editor de texto alternativo imediatamente ao adicionar uma imagem
 pdfjs-editor-alt-text-settings-show-dialog-description = Ajuda a assegurar que todas as suas imagens tenham texto alternativo.
@@ -731,6 +724,74 @@ pdfjs-new-badge-content = NOVIDADE
 pdfjs-views-manager-waiting-for-file = Enviando arquivo…
 pdfjs-toggle-views-manager-button1 =
     .title = Gerenciar páginas
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Propriedades da assinatura digital
+    .title = Propriedades da assinatura digital
+pdfjs-digital-signature-properties-button-label = Propriedades da assinatura digital
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = O documento foi assinado com uma assinatura digital válida
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Documento assinado, mas { $count } assinatura digital não pôde ser verificada
+       *[other] Documento assinado, mas { $count } assinaturas digitais não puderam ser verificadas
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Documento assinado com { $count } certificado que não é confiável
+       *[other] Documento assinado com { $count } certificados que não são confiáveis
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Documento assinado com { $count } certificado expirado
+       *[other] Documento assinado com { $count } certificados expirados
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] O documento tem { $count } assinatura digital inválida
+       *[other] O documento tem { $count } assinaturas digitais inválidas
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Documento assinado com { $count } certificado revogado
+       *[other] Documento assinado com { $count } certificados revogados
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Status: Assinatura verificada
+pdfjs-digital-signature-properties-status-invalid = Status: Assinatura inválida
+pdfjs-digital-signature-properties-status-unknown = Status: Não foi possível verificar (não há suporte)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Certificado: Confiável ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certificado: Não disponível
+pdfjs-digital-signature-properties-certificate-untrusted = Certificado: Não confiável
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certificado: Emissor desconhecido ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certificado: Autoassinado ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certificado: Emissor não confiável ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Certificado: Expirado
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certificado: Expirado ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Certificado: Revogado
 
 ## Main menu for adding/removing signatures
 

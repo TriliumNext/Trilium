@@ -1,8 +1,9 @@
-import { _setModelData as setModelData, ClassicEditor, keyCodes, List, Paragraph, TodoList, Typing, Undo, type ModelElement } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, FindAndReplace, FindAndReplaceEditing, keyCodes, List, Paragraph, TodoList, Typing, Undo, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../test/editor-kit.js";
 import CollapsibleListItems, { LIST_COLLAPSED_ATTRIBUTE, ToggleListCollapseCommand } from "./collapsible_list_items.js";
+import FindReveal from "./find_reveal.js";
 
 // Lists are flat in the model: sibling blocks related by listIndent/listItemId.
 const LIST_FIXTURE =
@@ -120,6 +121,41 @@ describe("CollapsibleListItems", () => {
         expect(editor.getData()).not.toContain("data-trilium-collapsed");
     });
 
+    it("moves the selection to the parent when collapsing hides it (#11256)", () => {
+        setSelectionIn(editor, 1);
+        const parentItem = editor.editing.view.getDomRoot()?.querySelector("li");
+        expect(parentItem).toBeTruthy();
+        if (!parentItem) {
+            return;
+        }
+
+        mouseDownAt(parentItem, -10);
+
+        const parentBlock = getBlock(editor, 0);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(parentBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(position?.parent).toBe(parentBlock);
+        expect(position?.offset).toBe(parentBlock.maxOffset);
+    });
+
+    it("moves a selection that ends in a hidden child when collapsing (#11256)", () => {
+        editor.model.change((writer) => {
+            writer.setSelection(writer.createRange(
+                writer.createPositionAt(getBlock(editor, 0), 2),
+                writer.createPositionAt(getBlock(editor, 1), 3)
+            ));
+        });
+
+        editor.execute("toggleListCollapse");
+
+        const parentBlock = getBlock(editor, 0);
+        const selection = editor.model.document.selection;
+        expect(parentBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(selection.isCollapsed).toBe(true);
+        expect(selection.getFirstPosition()?.parent).toBe(parentBlock);
+        expect(selection.getFirstPosition()?.offset).toBe(parentBlock.maxOffset);
+    });
+
     it("expands automatically when an item is indented under a collapsed parent", () => {
         editor.execute("toggleListCollapse");
         setSelectionIn(editor, 3); // "Sibling", still visible at indent 0
@@ -149,6 +185,105 @@ describe("CollapsibleListItems", () => {
         });
 
         expect(getBlock(editor, 5).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+    });
+
+    it("leaves Enter behavior unchanged outside collapsed list items", () => {
+        setModelData(editor.model, "<paragraph>paragraph[]</paragraph>");
+        editor.execute("enter");
+        expect(editor.model.document.getRoot()?.childCount).toBe(2);
+
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="u-a" listType="bulleted">item[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="u-b" listType="bulleted">child</paragraph>');
+        editor.execute("enter");
+        expect(getBlock(editor, 1).isEmpty).toBe(true);
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("u-b");
+    });
+
+    it("moves a sibling past hidden children when Enter exits a collapsed multi-block item", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="m-a" listType="bulleted">first</paragraph>' +
+            '<paragraph listIndent="0" listItemId="m-a" listType="bulleted">second[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="m-b" listType="bulleted">child</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        pressEnter(editor);
+
+        expect(getBlock(editor, 0).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).isEmpty).toBe(true);
+
+        pressEnter(editor, true);
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+
+        pressEnter(editor);
+
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-b");
+        expect(getBlock(editor, 3).getAttribute("listItemId")).not.toBe("m-a");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+        expect(editor.model.document.selection.getFirstPosition()?.parent)
+            .toBe(getBlock(editor, 3));
+
+        editor.execute("undo");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).isEmpty).toBe(true);
+        expect(getBlock(editor, 3).getAttribute("listItemId")).toBe("m-b");
+    });
+
+    it("inserts after the hidden children when Enter splits a collapsed item (#11256)", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">todo1[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="t-b" listType="todo">a</paragraph>' +
+            '<paragraph listIndent="1" listItemId="t-c" listType="todo">b</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        editor.execute("enter");
+
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("t-b");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("t-c");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).isEmpty).toBe(true);
+        expect(editor.model.document.selection.getFirstPosition()?.parent)
+            .toBe(getBlock(editor, 3));
+
+        editor.execute("undo");
+        expect(editor.model.document.getRoot()?.childCount).toBe(3);
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
+    it("inserts after the entire hidden subtree when Enter splits a collapsed item", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="d-a" listType="bulleted">parent[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="d-b" listType="bulleted">mid</paragraph>' +
+            '<paragraph listIndent="2" listItemId="d-c" listType="bulleted">leaf</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        editor.execute("enter");
+
+        expect(getBlock(editor, 0).getAttribute("listItemId")).toBe("d-a");
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("d-b");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("d-c");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).isEmpty).toBe(true);
+    });
+
+    it("does not crash when Enter follows a collapsed item with no remaining children", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="s-a" listType="bulleted">parent[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="s-b" listType="bulleted">kid</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        for (let i = 0; i < 4; i++) {
+            editor.execute("forwardDelete");
+        }
+
+        expect(editor.model.document.getRoot()?.childCount).toBe(1);
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(() => editor.execute("enter")).not.toThrow();
+        expect(editor.model.document.getRoot()?.childCount).toBe(2);
     });
 
     it("toggles when clicking the arrow in the gutter and ignores other clicks", () => {
@@ -193,11 +328,7 @@ describe("CollapsibleListItems", () => {
             return;
         }
 
-        const rect = parentLi.getBoundingClientRect();
-        const fontSize = parseFloat(getComputedStyle(parentLi).fontSize);
-        // CSS: inset-inline-start: -2.1em; width/height: 0.4em; top: 0.45em → aim at its centre.
-        const x = Math.round(rect.left - 1.9 * fontSize);
-        const y = Math.round(rect.top + 0.65 * fontSize);
+        const { x, y } = arrowCentre(parentLi);
 
         // Click whatever element actually sits at the arrow's coordinates — the real target,
         // not a forced <li> — so a mismatch between where the arrow paints and what the
@@ -206,6 +337,49 @@ describe("CollapsibleListItems", () => {
         hit?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
 
         expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
+    it("fills the arrow into a circle while the pointer is on it", async () => {
+        const editorElement = getEditorElement(editor);
+        editorElement.style.marginLeft = "160px";
+        editorElement.style.marginTop = "60px";
+
+        const parentLi = editor.editing.view.getDomRoot()?.querySelector("li");
+        expect(parentLi).toBeTruthy();
+        if (!parentLi) {
+            return;
+        }
+
+        const arrow = arrowCentre(parentLi);
+        const rect = parentLi.getBoundingClientRect();
+
+        mouseMoveAt(arrow.x, arrow.y);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(true);
+        // The arrow is a boxicons glyph, not a hand-drawn shape.
+        expect(getComputedStyle(parentLi, "::before").fontFamily).toBe("boxicons");
+        // Polled: the circle fades in, so its colour only settles once the transition ends.
+        await expect.poll(() => getComputedStyle(parentLi, "::before").backgroundColor)
+            .toBe("rgba(128, 128, 128, 0.25)");
+
+        // Over the item's own text the pointer is no longer on the arrow.
+        mouseMoveAt(Math.round(rect.left + 5), arrow.y);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
+        await expect.poll(() => getComputedStyle(parentLi, "::before").backgroundColor)
+            .toBe("rgba(0, 0, 0, 0)");
+
+        // A held button is a drag (selecting text), not a hover.
+        mouseMoveAt(arrow.x, arrow.y, 1);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
+
+        // Leaving the editable ends the mouse moves, so the arrow is unlit on the way out —
+        // but moving on to another element inside it is left to the mousemove handler.
+        mouseMoveAt(arrow.x, arrow.y);
+        const otherItem = editor.editing.view.getDomRoot()?.querySelectorAll("li")[1];
+        parentLi.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: otherItem }));
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(true);
+
+        parentLi.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }));
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
     });
 
     it("toggles a to-do list item when its gutter arrow is clicked", () => {
@@ -223,10 +397,7 @@ describe("CollapsibleListItems", () => {
             return;
         }
 
-        const rect = parentLi.getBoundingClientRect();
-        const fontSize = parseFloat(getComputedStyle(parentLi).fontSize);
-        const x = Math.round(rect.left - 1.9 * fontSize);
-        const y = Math.round(rect.top + 0.65 * fontSize);
+        const { x, y } = arrowCentre(parentLi);
 
         const hit = document.elementFromPoint(x, y);
         hit?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
@@ -418,6 +589,101 @@ describe("CollapsibleListItems", () => {
         editor.execute("toggleListCollapse");
         expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
     });
+
+    describe("find-in-note reveal", () => {
+        // A fresh editor *with* the find plugin (the default one above deliberately has none, so
+        // the "no find plugin" early-return stays exercised). The parent is collapsed, hiding
+        // "Child" and "Other child".
+        async function createCollapsedFindEditor(): Promise<ClassicEditor> {
+            const findEditor = await createTestEditor([CollapsibleListItems, List, TodoList, Paragraph, Typing, Undo, FindAndReplace]);
+            setModelData(findEditor.model, LIST_FIXTURE);
+            findEditor.execute("toggleListCollapse");
+            return findEditor;
+        }
+
+        function collapsedItem(findEditor: ClassicEditor): { li: HTMLElement; nested: HTMLElement } {
+            const li = findEditor.editing.view.getDomRoot()?.querySelector<HTMLElement>('li[data-trilium-collapsed="true"]');
+            const nested = li?.querySelector<HTMLElement>("ul");
+            if (!li || !nested) {
+                throw new Error("Expected a collapsed list item with a hidden nested list.");
+            }
+            return { li, nested };
+        }
+
+        it("reveals a collapsed item to show a match inside it and follows the highlight, without persisting", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { li, nested } = collapsedItem(findEditor);
+            expect(getComputedStyle(nested).display).toBe("none");
+
+            findEditor.execute("find", "child"); // first match: "Child", hidden under the collapsed parent
+
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            // Advancing to the sibling match keeps the same ancestor revealed (no churn, no error).
+            findEditor.execute("findNext"); // "Other child", still under the same collapsed parent
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+
+            // The persisted collapsed state is never touched — search must not rewrite the layout.
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+            expect(findEditor.getData()).toContain('data-trilium-collapsed="true"');
+        });
+
+        it("re-collapses once the search is cleared", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { li, nested } = collapsedItem(findEditor);
+
+            findEditor.execute("find", "child");
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            findEditor.plugins.get(FindAndReplaceEditing).state?.clear(findEditor.model);
+
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
+            expect(getComputedStyle(nested).display).toBe("none");
+        });
+
+        it("reveals a collapsed item around a position that FindReveal shows", async () => {
+            const findEditor = await createTestEditor([
+                CollapsibleListItems, List, TodoList, Paragraph, Typing, Undo, FindAndReplace,
+                FindReveal
+            ]);
+            setModelData(findEditor.model, LIST_FIXTURE);
+            findEditor.execute("toggleListCollapse");
+            const { li } = collapsedItem(findEditor);
+            const findReveal = findEditor.plugins.get(FindReveal);
+
+            findReveal.show(findEditor.model.createPositionAt(getBlock(findEditor, 1), 0));
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+
+            findReveal.show(null);
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        });
+
+        it("does not permanently expand when the search closes with the highlight inside the item", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { nested } = collapsedItem(findEditor);
+
+            findEditor.execute("find", "Other child");
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            // Reproduce find_in_text.findBoxClosed: clear the highlight, then drop the caret on the
+            // match. Both are synchronous, so the "find is closing" window is still open here.
+            const state = findEditor.plugins.get(FindAndReplaceEditing).state;
+            const range = state?.highlightedResult?.marker?.getRange();
+            expect(range).toBeTruthy();
+            state?.clear(findEditor.model);
+            if (range) {
+                findEditor.model.change((writer) => writer.setSelection(range));
+            }
+
+            // The item stays collapsed (saved layout intact) instead of expanding...
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+            expect(getComputedStyle(nested).display).toBe("none");
+            // ...and the caret sits on the collapsed item's own line, not stranded in the hidden child.
+            expect(findEditor.model.document.selection.getFirstPosition()?.parent).toBe(getBlock(findEditor, 0));
+        });
+    });
 });
 
 function getBlock(editor: ClassicEditor, index: number): ModelElement {
@@ -450,6 +716,32 @@ function pressCtrlEnter(editor: ClassicEditor): void {
         ctrlKey: true,
         preventDefault: () => {}
     });
+}
+
+function pressEnter(editor: ClassicEditor, isSoft = false): void {
+    editor.editing.view.document.fire("enter", { preventDefault: () => {}, isSoft });
+}
+
+/**
+ * On-screen centre of the arrow drawn next to a list item, read back from the stylesheet rather
+ * than restated here: the arrow is a pseudo-element (so it has no rect of its own), but its
+ * resolved box is offset from the item, and `translateY(-50%)` puts its centre exactly at `top`.
+ * Insets differ per list type — to-do items have no marker to clear — so hardcoding one would
+ * make these tests aim at the wrong spot as soon as the CSS moves.
+ */
+function arrowCentre(item: HTMLElement): { x: number; y: number } {
+    const rect = item.getBoundingClientRect();
+    const arrow = getComputedStyle(item, "::before");
+
+    return {
+        x: Math.round(rect.left + parseFloat(arrow.left) + parseFloat(arrow.width) / 2),
+        y: Math.round(rect.top + parseFloat(arrow.top))
+    };
+}
+
+function mouseMoveAt(clientX: number, clientY: number, buttons = 0): void {
+    document.elementFromPoint(clientX, clientY)
+        ?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX, clientY, buttons }));
 }
 
 function mouseDownAt(item: HTMLElement, offsetX: number): void {

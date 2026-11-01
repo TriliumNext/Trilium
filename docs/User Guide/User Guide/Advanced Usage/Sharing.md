@@ -6,21 +6,102 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 ## Features, interaction and limitations
 
 *   Searching by note title.
-*   Automatic dark/light mode based on the user's browser settings.
-*   Mobile-friendly layout, with sidebar.
-*   Collapsible tree with the same note icons as the application.
+*   Light and dark mode, following the visitor's system setting by default, also while the page is open. The visitor can pick _Light_, _Dark_ or _System_ with the buttons at the top of the navigation pane; the choice is remembered by the browser.
+*   A layout centered on wide screens, with the navigation tree and the table of contents at either side of the content, and a mobile-friendly layout on narrow ones. There, the navigation tree slides in from the menu button in the header, and lists the headings of the current page below its entry (at the top of the pane, for a page the tree does not show).
+*   Collapsible tree with the same note icons as the application. It keeps the sections the visitor expanded and its scroll position while they move between the pages of the site, and shows the current note.
 *   Customizable logo.
-*   Toggle button for dark/light mode, which also stores the user preferences.
 *   Quick navigation buttons (previous and next note).
-*   Displaying the date of the last update of the note.
+*   Notes that hide their children from the tree with `#subtreeHidden` (such as a <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban Board</a>) show a badge counting them in place of listing them. The page of one of those children shows only that child below its parent, and the previous and next buttons skip them.
+*   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage and the start of its text (or its `#shareDescription`), or, for a subpage without text, links to its own first subpages. The cards can be hidden with `#hideChildrenOverview`.
+*   Displaying the date of the last update of the note, written out in the application's language.
+*   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
 ### By note type
 
-<table class="ck-table-resized"><colgroup><col style="width:19.92%;"><col style="width:41.66%;"><col style="width:38.42%;"></colgroup><thead><tr><th>&nbsp;</th><th>Supported features</th><th>Limitations</th></tr></thead><tbody><tr><th><a class="reference-link" href="../Note%20Types/Text.md">Text</a></th><td><ul><li data-list-item-id="e26b4ce9ba4e9dfe224d04e0f341925ed">Table of contents.</li><li data-list-item-id="e9707fdfa2c92d66690cf932f7e647253">Syntax highlight of code blocks, provided a language is selected (does not work if “Auto-detected” is enabled).</li><li data-list-item-id="e84420a10c6d64bd107edb6e867c91d4b">Rendering for math equations.</li><li data-list-item-id="e10834dcd0619d77ae2e94d3695bedf58"><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li></ul></td><td><ul><li data-list-item-id="e41cc4139377f9f88d653d1eb8ca47bb4">Inline Mermaid diagrams are not rendered.</li></ul></td></tr><tr><th><a class="reference-link" href="../Note%20Types/Code.md">Code</a></th><td><ul><li data-list-item-id="e291ae6d5130677b4c99f7c3bdbe974b4">Basic support (displaying the contents of the note in a monospace font).</li></ul></td><td><ul><li data-list-item-id="e0270680bbdd7a129306e61e11691e36d">No syntax highlight.</li></ul></td></tr><tr><th><a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Collections.md">Collections</a></th><td><ul><li data-list-item-id="ea031e1d4149eb443ace756234490c5a4">The child notes are displayed in a fixed format.&nbsp;</li></ul></td><td><ul><li data-list-item-id="ea4a9d424aec2afbaecc07bbf64b7bebd">More advanced view types such as the calendar view are not supported.</li></ul></td></tr><tr><th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th><td><ul><li data-list-item-id="e582d283f2b1b30cbe5ae35d8e01b2bf2">The diagram is displayed as a vector image.</li></ul></td><td><ul><li data-list-item-id="e33268686446e3c217077201bb5964364">No further interaction supported.</li></ul></td></tr><tr><th><a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a></th><td><ul><li data-list-item-id="e443dd0e97c30cb12c77e8906a71569ea">The diagram is displayed as a vector image.</li></ul></td><td><ul><li data-list-item-id="efe151ef3f3826c825416417525fb5fb2">No further interaction supported.</li></ul></td></tr><tr><th><a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a></th><td>The diagram is displayed as a vector image.</td><td><ul><li data-list-item-id="ed3b4fb473042f6e32b4502d4fa11a767">No further interaction supported.</li></ul></td></tr><tr><th><a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a></th><td>Not supported.</td><td>&nbsp;</td></tr><tr><th><a class="reference-link" href="../Note%20Types/File.md">File</a></th><td>Basic interaction (downloading the file).</td><td><ul><li data-list-item-id="ed87e836a39d127ebcbb33e9e59045afb">No further interaction supported.</li></ul></td></tr></tbody></table>
+<table class="ck-table-resized">
+    <colgroup>
+        <col style="width:19.92%;">
+        <col style="width:41.66%;">
+        <col style="width:38.42%;">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>&nbsp;</th>
+            <th>Supported features</th>
+            <th>Limitations</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Text.md">Text</a></th>
+            <td><ul><li>Table of contents, keeping the inline formatting of the headings, such as code or bold text.</li><li>A link next to each heading, shown while the pointer is over the heading. Clicking it shows the address of the section in the address bar of the browser and copies it, to share a link to the section.</li><li>Syntax highlight of code blocks, in the language selected for each block and in the colors of the VS Code light or dark theme, following the page's mode. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>A button in the top right corner of each code block, shown while the pointer is over the block, that copies its code. Pages opened over plain HTTP do not have it, since browsers allow copying to the clipboard only on secure (HTTPS) pages.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li><li>Drawing canvases, shown as pictures at their own size.</li><li>Mermaid diagrams in code blocks, drawn in the page's light or dark mode and redrawn when the visitor switches it.</li></ul></td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Code.md">Code</a></th>
+            <td><ul><li>Syntax highlight, in the language of the note and in the colors of the VS Code light or dark theme, following the page's mode. A language not enabled in&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>&nbsp;→ <em>Code Notes</em> is not highlighted. The lines are numbered unless <em>Line numbers</em> is turned off in the same section.</li></ul></td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Collections.md">Collections</a></th>
+            <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon and the start of its text (or its <code>#shareDescription</code>), or, for a child note without text, links to its own first child notes.</li></ul></td>
+            <td><ul><li>The calendar, table, board, geo map, dashboard and presentation view types are shown as in the app, but read-only.</li></ul></td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
+            <td><ul><li>The diagram is drawn in the page's light or dark mode and redrawn when the visitor switches it. In browsers with JavaScript disabled, the image saved when the note was last edited is shown instead, and the source of the diagram can be expanded below it.</li><li>The diagram fills the page and can be zoomed with the <span class="tn-icon bx bx-minus-circle"></span> and <span class="tn-icon bx bx-plus-circle"></span> buttons in its bottom corner or with the mouse wheel, between 50% and 1000% of its fitted size, and on touch screens by pinching. Clicking the percentage between the buttons, or double-clicking the diagram, shows it whole again. The diagram can be panned by dragging it.</li></ul></td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a></th>
+            <td><ul><li>The diagram is displayed as a vector image.</li></ul></td>
+            <td><ul><li>No further interaction supported.</li></ul></td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a></th>
+            <td>The diagram is displayed as a vector image.</td>
+            <td><ul><li>No further interaction supported.</li></ul></td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a></th>
+            <td>Not supported.</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <th><a class="reference-link" href="../Note%20Types/File.md">File</a></th>
+            <td>Basic interaction (downloading the file).</td>
+            <td><ul><li>No further interaction supported.</li></ul></td>
+        </tr>
+    </tbody>
+</table>
 
 While the sharing feature is powerful, it has some limitations:
 
-*   **Code Notes**: No syntax highlighting.
 *   **Static Note Tree**
 *   **Protected Notes**: Cannot be shared.
 *   **Include Notes**: Not supported.
@@ -44,7 +125,7 @@ When you share a note, you actually share the entire subtree of notes beneath it
 
 ## Viewing and managing shared notes
 
-You can view a list of all shared notes by clicking on "Show Shared Notes Subtree" in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. This allows you to manage and navigate through all the notes you have made public.
+You can view a list of all shared notes by clicking on _Advanced_ → _Shared notes_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. This allows you to manage and navigate through all the notes you have made public.
 
 ## Security considerations
 
@@ -105,7 +186,7 @@ To completely redesign the share, it is possible to create or use an existing [c
 
 ### Creating human-readable URL aliases
 
-Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`.
+Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`. The URL with the note's ID keeps working and redirects to the alias.
 
 **Important**:
 
@@ -137,9 +218,10 @@ To do so, create a shared text note and apply the `shareIndex` label. When viewe
 
 Sometimes it's useful to include a link to an external website alongside your shared notes — for example in the shared navigation or in an index. To do so, add the `#shareExternalLink` label to a note, with the target URL as its value (e.g. `#shareExternalLink="https://example.com"`).
 
-Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
+Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. Opening the note's shared URL by its ID also redirects to the external website. This applies to:
 
 *   the listing produced by the `#shareIndex` label;
+*   the navigation tree of the shared site;
 *   the "Subpages" list shown under a parent note;
 *   inline links to this note from within other shared notes.
 
@@ -150,27 +232,86 @@ The URL must be absolute and include the scheme (e.g. `https://`).
 
 ## Attribute reference
 
-<table class="ck-table-resized"><colgroup><col style="width:18.38%;"><col style="width:81.62%;"></colgroup><thead><tr><th>Attribute</th><th>Description</th></tr></thead><tbody><tr><td><code spellcheck="false">#shareHiddenFromTree</code></td><td>this note is hidden from left navigation tree, but still accessible with its URL</td></tr><tr><td><code spellcheck="false">#shareExternalLink</code></td><td>when a link points to this note (from the share index, a subpage list, or an inline link in another shared note), it redirects to the given external URL in a new tab instead of the note's shared page. Value is the absolute URL, e.g. <code spellcheck="false">https://example.com</code>.</td></tr><tr><td><code spellcheck="false">#shareAlias</code></td><td>define an alias using which the note will be available under <code spellcheck="false">https://your_trilium_host/share/[your_alias]</code></td></tr><tr><td><code spellcheck="false">#shareOmitDefaultCss</code></td><td>default share page CSS will be omitted. Use when you make extensive styling changes.</td></tr><tr><td><code spellcheck="false">#shareRoot</code></td><td>marks note which is served on /share root.</td></tr><tr><td><code spellcheck="false">#shareDescription</code></td><td>define text to be added to the HTML meta tag for description</td></tr><tr><td><code spellcheck="false">#shareRaw</code></td><td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20of%20a%20note.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td></tr><tr><td><code spellcheck="false">#shareDisallowRobotIndexing</code></td><td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li data-list-item-id="e6baa9f60bf59d085fd31aa2cce07a0e7">Setting the <code spellcheck="false">X-Robots-Tag: noindex</code> HTTP header.</li><li data-list-item-id="ec0d067db136ef9794e4f1033405880b7">Setting the <code spellcheck="false">noindex, follow</code> meta tag.</li></ul></td></tr><tr><td><code spellcheck="false">#shareCredentials</code></td><td>require credentials to access this shared note. Value is expected to be in format <code spellcheck="false">username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td></tr><tr><td><code spellcheck="false">#shareIndex</code></td><td>Note with this label will list all roots of shared notes.</td></tr><tr><td><code spellcheck="false">#shareHtmlLocation</code></td><td>defines where custom HTML injected via <code spellcheck="false">~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code spellcheck="false">location:position</code> where location is <code spellcheck="false">head</code>, <code spellcheck="false">body</code>, or <code spellcheck="false">content</code> and position is <code spellcheck="false">start</code> or <code spellcheck="false">end</code>. Defaults to <code spellcheck="false">content:end</code>.</td></tr></tbody></table>
+<table class="ck-table-resized">
+    <colgroup>
+        <col style="width:18.38%;">
+        <col style="width:81.62%;">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>#shareHiddenFromTree</code></td>
+            <td>this note is hidden from the left navigation tree, from its parent's list of subpages, from shared note maps and from the share's search, but still accessible with its URL</td>
+        </tr>
+        <tr>
+            <td><code>#shareExternalLink</code></td>
+            <td>when a link points to this note (from the share index, a subpage list, or an inline link in another shared note), it redirects to the given external URL in a new tab instead of the note's shared page. Value is the absolute URL, e.g. <code>https://example.com</code>.</td>
+        </tr>
+        <tr>
+            <td><code>#shareAlias</code></td>
+            <td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code></td>
+        </tr>
+        <tr>
+            <td><code>#shareOmitDefaultCss</code></td>
+            <td>default share page CSS will be omitted. Use when you make extensive styling changes.</td>
+        </tr>
+        <tr>
+            <td><code>#shareRoot</code></td>
+            <td>marks note which is served on /share root.</td>
+        </tr>
+        <tr>
+            <td><code>#shareDescription</code></td>
+            <td>define text to be added to the HTML meta tag for description. It also describes the note in the list of subpages of its parent, in place of the start of its text.</td>
+        </tr>
+        <tr>
+            <td><code>#shareRaw</code></td>
+            <td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20of%20a%20note.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td>
+        </tr>
+        <tr>
+            <td><code>#shareDisallowRobotIndexing</code></td>
+            <td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li>Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li><li>Setting the <code>noindex, follow</code> meta tag.</li></ul></td>
+        </tr>
+        <tr>
+            <td><code>#shareCredentials</code></td>
+            <td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td>
+        </tr>
+        <tr>
+            <td><code>#shareIndex</code></td>
+            <td>Note with this label will list all roots of shared notes.</td>
+        </tr>
+        <tr>
+            <td><code>#shareHtmlLocation</code></td>
+            <td>defines where custom HTML injected via <code>~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where location is <code>head</code>, <code>body</code>, or <code>content</code> and position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td>
+        </tr>
+    </tbody>
+</table>
 
 ### Customizing logo
 
-It's possible to adjust the logo which is displayed on the top-left of the left pane.
+It's possible to adjust the logo which is displayed above the navigation tree (in the header, on a narrow screen).
 
 | Attribute | Description |
 | --- | --- |
-| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). |
-| `#shareLogoWidth` | The width (in pixels, without unit) to set for the logo. Default is `53`. |
-| `#shareLogoHeight` | The height (in pixels, without unit) to set for the logo. Default is `40`. |
+| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). Without it, the logo is the icon of the shared root note. |
+| `#shareLogoWidth` | The width of the logo, as a number without unit. With `#shareLogoHeight`, it sets the proportions of the logo, which is shown 32 pixels wide. Default is `53`. |
+| `#shareLogoHeight` | The height of the logo, as a number without unit. With `#shareLogoWidth`, it sets the proportions of the logo. Default is `40`. |
 | `#shareRootLink` | URL to navigate to when the logo is pressed. |
 
 ### Customizing OpenGraph
 
+A meta-property is left out of the page when its attribute is not set. Without an image, link previews use a small card.
+
 | Attribute | Description |
 | --- | --- |
 | `#shareOpenGraphColor` | This adjusts the `theme-color` meta-property. |
-| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. |
+| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. It is also the address a relative `og:image` is completed with, so it should be the public address of the shared site, such as `https://example.com/share/`. |
 | `#shareOpenGraphDomain` | Adjusts the `twitter:domain` meta-property. |
-| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label, case in which the value is passed on as-is, or it can be a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. |
+| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label with the address of an image, or a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. Sites that show a preview of the link load the image from their own servers, so a relative address, which the relation always gives, is completed with `#shareOpenGraphURL`; without it, the image does not show in such previews. |
 
 ## Credits
 

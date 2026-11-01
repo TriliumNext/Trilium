@@ -6,6 +6,10 @@
     display: flex;
     flex-direction: column;
 
+    > .collection-properties {
+        border-bottom: 0;
+    }
+
     .tabulator-tableholder {
         height: unset !important;
     }
@@ -13,15 +17,21 @@
 
 .table-view-container {
     height: 100%;
-    margin-inline-start: var(--content-margin-inline);
 }
 
-.search-result-widget-content .table-view {
-    position: absolute;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
+/* Under a note's own content the table grows with its rows, so that only the note scrolls; a book
+   has no content above it, and keeps a bounded table that scrolls by itself. */
+.note-split:not(.type-book) > .scrolling-container > .note-list-widget.full-height:has(> .note-list-widget-content > .table-view) {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+
+    .note-list-widget-content,
+    .table-view,
+    .table-view-container {
+        height: auto;
+    }
 }
 
 .tabulator-cell .autocomplete {
@@ -54,6 +64,25 @@
 .tabulator .tabulator-footer .tabulator-footer-contents {
     justify-content: left;
     gap: 0.5em;
+}
+
+/* The "new row" strip under the last row. Part of the scrolled content vertically, so it follows
+   the rows; pinned to the visible edge horizontally, so it reads whole at any scroll position.
+   The strip itself takes no clicks — only the button within it does, sitting past the "#" column
+   so that it lines up with the title a new row would get. */
+.table-view .tabulator-tableholder > .table-new-row-strip {
+    position: sticky;
+    inset-inline-start: 0;
+    width: 100%;
+    padding-inline-start: var(--row-handle-column-width, 0px);
+
+    > .table-new-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+        padding: 5px 8px;
+        color: var(--muted-text-color);
+    }
 }
 
 .tabulator button.tree-expand,

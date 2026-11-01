@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Transcription prototype</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 16px; max-width: 960px; }
+        fieldset { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+        #progress { color: #666; font-variant-numeric: tabular-nums; }
+        #log { white-space: pre-wrap; background: #f4f4f4; padding: 12px; min-height: 200px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <h1>Transcription prototype (sherpa-onnx WebAssembly)</h1>
+
+    <fieldset>
+        <legend>Model</legend>
+        <select id="model"></select>
+        <button id="download">Download to OPFS</button>
+        <button id="load">Load</button>
+        <button id="delete">Delete from OPFS</button>
+        <span id="progress"></span>
+    </fieldset>
+
+    <fieldset>
+        <legend>Transcribe</legend>
+        <select id="clip"></select>
+        <button id="transcribe">Transcribe clip</button>
+        <button id="listen-microphone"></button>
+        <button id="listen-tab"></button>
+    </fieldset>
+
+    <pre id="log"></pre>
+
+    <script src="main.js"></script>
+</body>
+</html>

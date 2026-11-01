@@ -64,6 +64,9 @@ test("Can drag tab to new window", async ({ page, context }, testInfo) => {
 test("Tabs are restored in right order", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
+    // The barrier below waits on the recent-notes request itself, which the standalone build
+    // would otherwise answer without issuing one.
+    await app.observeApiRequests();
 
     // Open three tabs.
     await app.closeAllTabs();
@@ -117,7 +120,7 @@ test("Search works when dismissing a tab", async ({ page, context }) => {
     await app.goto();
 
     await app.goToNoteInNewTab("Table of contents");
-    await app.openAndClickNoteActionMenu("Search in note");
+    await app.openAndClickNoteActionMenu("Find");
     await expect(app.findAndReplaceWidget).toBeVisible();
     app.findAndReplaceWidget.locator(".find-widget-close-button").click();
 
@@ -125,7 +128,7 @@ test("Search works when dismissing a tab", async ({ page, context }) => {
     await app.goToNoteInNewTab("Sample mindmap");
 
     await (await app.getTab(0)).click();
-    await app.openAndClickNoteActionMenu("Search in note");
+    await app.openAndClickNoteActionMenu("Find");
     await expect(app.findAndReplaceWidget.first()).toBeVisible();
 });
 

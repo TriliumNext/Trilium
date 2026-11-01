@@ -1,0 +1,237 @@
+import type {
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SortTargetKind
+} from "@triliumnext/ckeditor5";
+
+import type { CommandNames } from "../components/app_context.js";
+import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
+import { t } from "../services/i18n.js";
+import { getEditorNoteId } from "../widgets/react/NoteStore.js";
+import type { ContextMenuOptions, MenuItem } from "./context_menu.js";
+import { submenuItem } from "./context_menu_utils.js";
+
+/**
+ * The "AI assistant" row of the text editor's right-click menu: the toolbar's split-button entry,
+ * reproduced as a submenu — its main action first, then the same quick actions in the same groups,
+ * separated the same way.
+ *
+ * Right-click is where Word, Pages and the Obsidian AI plugins all put this, and it is the one
+ * place the feature can be reached without knowing that a toolbar button or a `/` command exists.
+ * The menu is built per click and read from the same `config.aiAssistant.quickActions` the toolbar
+ * renders, so the two cannot drift; unlike the toolbar's, its enablement is a snapshot rather than
+ * an observable binding, which is all a menu that lives for one click needs.
+ *
+ * Returns `null` whenever the assistant is out of reach — the click was not inside a text editor,
+ * no LLM provider is configured, or a run is already streaming into the one dialog it has.
+ */
+export async function buildAiActionsMenuItem(): Promise<MenuItem<CommandNames> | null> {
+    const editor = await getTextEditorAtSelection();
+    if (!editor?.plugins.has("AiAssistantUI")) {
+        return null;
+    }
+
+    const ui = editor.plugins.get("AiAssistantUI");
+    const command = editor.commands.get("aiAssistant");
+    if (!command?.isEnabled || ui.isStreaming) {
+        return null;
+    }
+
+    // The plugin's list rather than the config's: the config only seeded it, and the content
+    // languages behind Translate can be changed from inside the editor.
+    const quickActions = buildQuickActionItems(
+        ui.quickActions,
+        ui.hasContext,
+        (action) => ui.runQuickAction(action)
+    );
+
+    // With nothing to hang off it the toolbar entry degrades from a split button to a plain one,
+    // and so does this: a submenu holding a single row is a worse way to click that same row.
+    if (!quickActions.length) {
+        return {
+            title: t("ai_assistant.title"),
+            uiIcon: "bx bx-bot",
+            handler: () => editor.execute("aiAssistant")
+        };
+    }
+
+    return {
+        title: t("ai_assistant.title"),
+        uiIcon: "bx bx-bot",
+        items: [
+            {
+                title: t("ai_assistant.action_ask"),
+                uiIcon: "bx bx-message-square-dots",
+                handler: () => editor.execute("aiAssistant")
+            },
+            { kind: "separator" },
+            ...quickActions,
+            ...(ui.menuFooter.length ? [{ kind: "separator" } as const, ...footerItems(ui.menuFooter)] : [])
+        ]
+    };
+}
+
+/** A footer row, or the submenu it opens onto when it has children rather than something to run. */
+function footerItems(rows: ReadonlyArray<AiQuickActionFooter>): MenuItem<CommandNames>[] {
+    return rows.map((row) => ({
+        title: row.label,
+        uiIcon: row.iconClass,
+        enabled: true,
+        ...(row.children ? { items: footerItems(row.children) } : { handler: row.run })
+    }));
+}
+
+/**
+ * The quick actions as menu rows, laid out the way the toolbar's dropdown lays them out: a group
+ * marked `submenu` opens one, an inlined group contributes its actions directly, and a rule is
+ * drawn between groups except between two consecutive submenus, which read as one block of openers
+ * already.
+ *
+ * @param hasContext whether there is content to work on, as the assistant reports it. Actions that
+ *                   need content — every one Trilium ships — are disabled without it, and so is a
+ *                   submenu whose actions all do.
+ */
+function buildQuickActionItems(
+    groups: ReadonlyArray<AiQuickActionGroup>,
+    hasContext: boolean,
+    run: (action: AiQuickAction) => void
+): MenuItem<CommandNames>[] {
+    const canRun = (action: AiQuickAction) => action.requiresContent === false || hasContext;
+    const items: MenuItem<CommandNames>[] = [];
+
+    for (const [index, group] of groups.entries()) {
+        const children: MenuItem<CommandNames>[] = group.actions.map((action) => ({
+            title: action.label,
+            uiIcon: action.iconClass,
+            enabled: canRun(action),
+            handler: () => run(action)
+        }));
+
+        if (group.submenu) {
+            if (group.footer) {
+                children.push({ kind: "separator" }, {
+                    title: group.footer.label,
+                    uiIcon: group.footer.iconClass,
+                    // Configures the group rather than running against the document, so it stays
+                    // reachable when everything above it is closed off — as does its submenu.
+                    enabled: true,
+                    handler: group.footer.run
+                });
+            }
+            items.push({
+                title: group.label,
+                uiIcon: group.iconClass,
+                enabled: !!group.footer || group.actions.some(canRun),
+                items: children
+            });
+        } else {
+            items.push(...children);
+        }
+
+        const next = groups[index + 1];
+        if (next && !(group.submenu && next.submenu)) {
+            items.push({ kind: "separator" });
+        }
+    }
+
+    return items;
+}
+
+/**
+ * The _Sort_ submenu for a selection over several blocks of `editor`, named by what it sorts. It
+ * is `null` while the experimental feature is off, for a selection inside one block, and when
+ * nothing at the selection can be sorted. `isRowsExcluded` leaves out a sort of table rows, for a
+ * menu that has its own.
+ */
+export function buildSortSelectionMenuItem(
+    editor: CKTextEditor | null | undefined,
+    { isRowsExcluded = false } = {}
+): MenuItem<CommandNames> | null {
+    const command = editor?.commands.get("triliumSortSelectionAscending");
+    if (!editor || !command?.isEnabled || !command.value
+            || (isRowsExcluded && command.value === "rows")
+            || !isExperimentalFeatureEnabled("sortSelection")
+            || Array.from(editor.model.document.selection.getSelectedBlocks()).length < 2) {
+        return null;
+    }
+
+    const sortItem = (title: string, uiIcon: string, commandName: SortSelectionCommandName) => ({
+        title,
+        uiIcon,
+        handler: () => {
+            editor.execute(commandName);
+            editor.editing.view.focus();
+        }
+    });
+    return submenuItem({ title: getSortMenuTitle(command.value), uiIcon: "bx bx-sort-alt-2" }, [
+        sortItem(t("sort_selection.ascending"), "bx bx-sort-up", "triliumSortSelectionAscending"),
+        sortItem(t("sort_selection.descending"), "bx bx-sort-down",
+            "triliumSortSelectionDescending")
+    ]);
+}
+
+/**
+ * The text editor the live DOM selection sits in, or `null` when it sits anywhere else.
+ *
+ * The containment check is what makes this answer the click rather than the tab: the active note
+ * can be a text note while the selection is in a dialog or a plain input, and the editor would
+ * happily report its own stale model selection for it.
+ */
+export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
+    return getTextEditorContaining(window.getSelection()?.anchorNode);
+}
+
+/**
+ * Returns the text editor of a note whose editable contains `node`, or `null` when no such editor
+ * does. Takes the right-click target instead of the DOM selection, because a right-click does not
+ * move the selection in every browser.
+ *
+ * Reads the editor off the innermost editable root around `node`, so it finds the editor of a split
+ * pane the right-click did not activate, of a dialog such as the quick edit, and of an included
+ * note edited in place. An editor that holds no note, such as the attribute editor, does not count.
+ */
+export async function getTextEditorContaining(
+    node: Node | null | undefined
+): Promise<CKTextEditor | null> {
+    const element = node instanceof Element ? node : node?.parentElement;
+    const editor = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
+    return editor && getEditorNoteId(editor) ? editor : null;
+}
+
+/**
+ * Menu options adding the menu to the focus tracker of `editor`, so that the editor stays focused
+ * while the menu is up.
+ */
+export function keepEditorFocused(
+    editor: CKTextEditor
+): Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> {
+    let menuContainer: HTMLElement | null = null;
+
+    return {
+        onShow: (container) => {
+            menuContainer = container;
+            editor.ui.focusTracker.add(container);
+        },
+        onHide: () => {
+            if (menuContainer) {
+                editor.ui.focusTracker.remove(menuContainer);
+            }
+        }
+    };
+}
+
+type SortSelectionCommandName = "triliumSortSelectionAscending" | "triliumSortSelectionDescending";
+
+function getSortMenuTitle(kind: SortTargetKind) {
+    switch (kind) {
+        case "listItems":
+            return t("sort_selection.sort_list_items");
+        case "rows":
+            return t("sort_selection.sort_rows");
+        case "blocks":
+            return t("sort_selection.sort_blocks");
+    }
+}
+
+/** The editable root of a text editor, which CKEditor gives a reference to the editor. */
+type EditorRootElement = HTMLElement & { ckeditorInstance?: CKTextEditor | null };
+
+const EDITOR_ROOT_SELECTOR = ".ck-editor__editable:not(.ck-editor__nested-editable)";

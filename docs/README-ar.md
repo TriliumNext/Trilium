@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # ملاحظات تريليوم
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,16 +14,20 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 تريليوم هو برنامج مجاني مفتوح المصدر، يمكن استخدامه في أكثر من جهاز بنفس الوقت،
 مبني على كتابة الملاحظات بالتفرعات الشجرية مع التركيز على بناء قاعدة بيانات
 معرفية ضخمة.
+
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -129,7 +122,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 * [الوضع الداكن](https://docs.triliumnotes.org/user-guide/concepts/themes)
   المدمج، ودعم سمات المستخدم
 * [إيفيرنوت
-  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   و[استيراد وتصدير ملفات
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [أداة قص الويب](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
@@ -216,12 +209,33 @@ TriliumNext/Trilium، فقد تم تحديث أرقام المزامنة الخ�
 راجع المشكلة رقم https://github.com/TriliumNext/Trilium/issues/4962 لمزيد من
 المعلومات حول دعم إصدار الهاتف المحمول.
 
+#### TriliumDroid
+
 إذا كنت تفضل تطبيقًا أصليًا لنظام Android، يمكنك استخدام
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 أبلغ عن الأخطاء والميزات المفقودة في
 [مستودعهم](https://github.com/FliegendeWurst/TriliumDroid). ملاحظة: يُفضل تعطيل
 التحديثات التلقائية على تثبيت الخادم الخاص بك (انظر أدناه) عند استخدام
 TriliumDroid، حيث يجب أن تتطابق نسخة المزامنة بين Trilium وTriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### خادم
 
@@ -334,6 +348,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * لـ [antoniotejada](https://github.com/nriver): لأداة تمييز الصيغة البرمجية
   (Syntax highlight) الأصلية.
 * لـ [Tabler Icons](https://tabler.io/icons): لأيقونات شريط النظام.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 لم يكن لـ Trilium أن يرى النور لولا التقنيات التي تقف خلفه:
 
@@ -341,6 +361,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   الملاحظات النصية.
 * محرر [CodeMirror](https://github.com/codemirror/CodeMirror): - محرر أكواد يدعم
   عدداً هائلاً من اللغات.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * برنامج [Excalidraw](https://github.com/excalidraw/excalidraw): - السبورة
   البيضاء اللانهائية المستخدمة في ملاحظات Canvas.
 * برنامج [Mind Elixir](https://github.com/SSShooter/mind-elixir-core): - يوفر
@@ -351,11 +375,6 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   التفاعلية المستخدمة في المجموعات.
 * مكتبة [FancyTree](https://github.com/mar10/fancytree): - مكتبة "شجرية" غنية
   بالميزات ولا يوجد لها منافس حقيقي.
-* مكتبة [jsPlumb](https://github.com/jsplumb/jsplumb): - مكتبة للربط المرئي،
-  تُستخدم في [خرائط
-  العلاقات](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  و[خرائط
-  الروابط](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 الدعم
 

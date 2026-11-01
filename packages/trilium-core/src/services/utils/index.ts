@@ -1,20 +1,31 @@
+import { isFontMimeType } from "@triliumnext/commons/src/lib/font_mimes.js";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
+
 import { getCrypto } from "../encryption/crypto";
 import { getPlatform } from "../platform";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
-import escape from "escape-html";
 import { basename, extname } from "./path";
+import { stripTags } from "./strip_tags";
 import { NoteMeta } from "../../meta";
+
+export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+export { stripTags };
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
+export function isStandalone() { return getPlatform().isStandalone; }
 export function isMac() { return getPlatform().isMac; }
 export function isWindows() { return getPlatform().isWindows; }
+export function isLinux() { return getPlatform().isLinux; }
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
-const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml", "application/inkml+xml"]);
+const STRING_MIME_TYPES = new Set([
+    "application/javascript", "application/x-javascript", "application/json", "application/x-sql",
+    "image/svg+xml", "application/inkml+xml", CANVAS_ATTACHMENT_MIME
+]);
 
 export function hash(text: string) {
     return encodeBase64(getCrypto().createHash("sha1", text.normalize()));
@@ -25,8 +36,13 @@ export function md5(content: string | Uint8Array) {
     return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function isStringNote(type: string | undefined, mime: string) {
-    return (type && STRING_NOTE_TYPES.has(type)) || mime.startsWith("text/") || STRING_MIME_TYPES.has(mime);
+/**
+ * `mime` is optional because becca materialises "skeleton" notes for entities that arrive out of
+ * order during sync (see `BBranch.childNote`), and those carry neither a type nor a mime until the
+ * real row lands. Such a note is reported as binary rather than crashing the caller.
+ */
+export function isStringNote(type: string | undefined, mime: string | undefined) {
+    return (type && STRING_NOTE_TYPES.has(type)) || (!!mime && (mime.startsWith("text/") || STRING_MIME_TYPES.has(mime)));
 }
 
 export function randomString(length: number) {
@@ -35,6 +51,14 @@ export function randomString(length: number) {
 
 export function newEntityId() {
     return randomString(12);
+}
+
+/**
+ * Link parsing (`link.ts` on the client, `findInternalLinks()` on the server) matches only this
+ * character set, so a note ID outside it cannot be the target of a link.
+ */
+export function isValidEntityId(id: string) {
+    return /^[A-Za-z0-9_]{4,128}$/.test(id);
 }
 
 export function hashedBlobId(content: string | Uint8Array) {
@@ -72,6 +96,44 @@ export function removeDiacritic(str: string) {
 
 export function normalize(str: string) {
     return removeDiacritic(str).toLowerCase();
+}
+
+/**
+ * Diacritic-stripping + lowercasing normalizer that is GUARANTEED to preserve the
+ * original code-unit length, so a position found in the normalized string maps 1:1
+ * onto the original string for slicing/highlighting. This is what the search
+ * snippet/highlight index math relies on: it finds match offsets on the normalized
+ * text but inserts markers into (or slices) the original text at the same offsets.
+ *
+ * Each character (Unicode code point) is transformed individually, and the original character is
+ * kept whenever the transformed result is a different code-unit length: a bare combining mark that
+ * would vanish, or a ligature that would expand. This trades perfect folding of already-decomposed
+ * content for a hard length invariant.
+ */
+export function normalizePreservingLength(str: string) {
+    let result = "";
+    for (const char of str) {
+        const transformed = removeDiacritic(char).toLowerCase();
+        // Keep the transform only when it stays the same code-unit length as the
+        // source character, otherwise index alignment against the original breaks.
+        result += transformed.length === char.length ? transformed : char;
+    }
+
+    return result;
+}
+
+/**
+ * Removes every trailing `/` from `str`.
+ *
+ * Written as an index scan rather than `replace(/\/+$/, "")`: that pattern backtracks
+ * polynomially on a value with many slashes (CodeQL js/polynomial-redos).
+ */
+export function trimTrailingSlashes(str: string) {
+    let end = str.length;
+    while (end > 0 && str.charAt(end - 1) === "/") {
+        end--;
+    }
+    return str.slice(0, end);
 }
 
 /**
@@ -154,6 +216,19 @@ export function sanitizeSqlIdentifier(str: string) {
 export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
 
 /**
+ * Headers for stored, non-SVG content served without a `Content-Disposition`. A browser that
+ * navigates to such a response renders it as a document in Trilium's origin, so `sandbox` keeps
+ * its scripts from running. Embedders (`<img>`, `<video>`, `fetch()`, `@font-face`) ignore the
+ * policy. A PDF goes without it, because Chrome refuses to display a sandboxed PDF.
+ */
+export function getInlineContentHeaders(mime: string): Record<string, string> {
+    return {
+        "X-Content-Type-Options": "nosniff",
+        ...(mime === "application/pdf" ? {} : { "Content-Security-Policy": "sandbox" })
+    };
+}
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */
@@ -172,7 +247,7 @@ export function sanitizeSvg(svg: string): string {
 export function getContentDisposition(filename: string) {
     const sanitizedFilename = sanitizeFileName(filename).trim() || "file";
     const uriEncodedFilename = encodeURIComponent(sanitizedFilename);
-    return `file; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
+    return `attachment; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
 }
 
 export function formatDownloadTitle(fileName: string, type: string | null, mime: string) {
@@ -213,7 +288,41 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
     return map;
 }
 
-export const escapeHtml = escape;
+/**
+ * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.
+ * Covers the markup characters alongside the quote and the backslash, because the HTML
+ * parser ends a `<style>` element at `</style` no matter what CSS quoting says: an
+ * unescaped value carrying that sequence closes the element, and everything after it in
+ * the response is parsed as markup rather than as stylesheet content.
+ */
+export function escapeCssString(value: string): string {
+    return value.replace(/["'\\<>&\u0000-\u001F\u007F]/g, (char) => `\\${char.charCodeAt(0).toString(16)} `);
+}
+
+/**
+ * Decodes the CSS escape sequences (`\30 `, `\f015`) an icon pack manifest carries when its
+ * glyphs were copied out of a stylesheet instead of written as characters. Callers pass the
+ * result to `escapeCssString()`, which re-escapes a decoded `<` or `"` rather than emitting
+ * it raw, so decoding widens the accepted input without widening the output. A backslash
+ * that starts no hex sequence stays literal text. Code points CSS resolves to U+FFFD — zero,
+ * surrogates, and anything past the Unicode range — resolve to it here too.
+ */
+export function decodeCssEscapes(value: string): string {
+    return value.replace(/\\([0-9a-fA-F]{1,6})(?:\r\n|[ \t\n\f\r])?/g, (_, hex: string) => {
+        const codePoint = parseInt(hex, 16);
+        const isSurrogate = codePoint >= 0xD800 && codePoint <= 0xDFFF;
+        return (codePoint === 0 || codePoint > 0x10FFFF || isSurrogate) ? "\uFFFD" : String.fromCodePoint(codePoint);
+    });
+}
+
+/**
+ * Escapes the `</style` sequences in `stylesheet` so it can be embedded in an inline
+ * `<style>` element without ending it early. `\3c ` is the CSS escape for `<`, so a
+ * sequence inside a string keeps its value; generated CSS carries none anywhere else.
+ */
+export function escapeInlineStylesheet(stylesheet: string): string {
+    return stylesheet.replace(/<(?=\/style)/gi, "\\3c ");
+}
 
 /**
  * Decodes the five HTML entities (and their numeric short forms) that the
@@ -268,7 +377,9 @@ export function escapeRegExp(str: string) {
 export function removeFileExtension(filePath: string, mime?: string) {
     const extension = extname(filePath).toLowerCase();
 
-    if (mime?.startsWith("video/") || mime?.startsWith("audio/")) {
+    // Dropped by media type rather than by extension: what these carry after the dot is the
+    // format the file is in, which the note's own mime already records.
+    if (mime?.startsWith("video/") || mime?.startsWith("audio/") || isFontMimeType(mime)) {
         return filePath.substring(0, filePath.length - extension.length);
     }
 
@@ -284,6 +395,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
         case ".pdf":
         case ".xlsx":
         case ".csv":
+        case ".gpx":
+        case ".triliumsheet":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;
@@ -291,8 +404,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
 }
 
 export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boolean, noteMeta?: NoteMeta) {
-    const trimmedNoteMeta = noteMeta?.title?.trim();
-    if (trimmedNoteMeta) return trimmedNoteMeta;
+    // An empty title in `!!!meta.json` is an untitled note, not a missing title.
+    if (noteMeta?.title !== undefined) return noteMeta.title.trim();
 
     const fileBasename = basename(removeFileExtension(filePath, noteMeta?.mime));
     return replaceUnderscoresWithSpaces ? fileBasename.replace(/_/g, " ").trim() : fileBasename;
@@ -406,10 +519,6 @@ export function slugify(text: string) {
         .replace(/(^-|-$)+/g, ""); // trim dashes
 }
 
-export function stripTags(text: string) {
-    return text.replace(/<(?:.|\n)*?>/gm, "");
-}
-
 /**
  * Generates a list of unique slugs for the given heading titles, preserving
  * document order. Titles are stripped of HTML tags and slugified; when the same
@@ -418,9 +527,10 @@ export function stripTags(text: string) {
  *
  * This keeps anchor IDs and their table-of-contents links unique on shared
  * pages, so clicking a duplicate heading in the ToC jumps to the right one.
+ * No slug is one of `reserved`, the IDs the page already uses.
  */
-export function slugifyHeadings(titles: string[]): string[] {
-    const used = new Set<string>();
+export function slugifyHeadings(titles: string[], reserved: Iterable<string> = []): string[] {
+    const used = new Set(reserved);
     return titles.map((title) => {
         const base = slugify(stripTags(title));
         let slug = base;

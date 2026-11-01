@@ -1,33 +1,85 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
-import type { CSSProperties, HTMLProps, RefObject } from "preact/compat";
+import type { CSSProperties, HTMLAttributes, RefObject } from "preact";
+import { useLayoutEffect, useRef } from "preact/hooks";
+
+import { useImperativeSearchHighlighlighting } from "./hooks";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
-interface RawHtmlProps extends Pick<HTMLProps<HTMLElement>, "tabindex" | "dir"> {
+interface RawHtmlProps extends Pick<HTMLAttributes<HTMLElement>, "tabindex" | "dir"> {
     className?: string;
     html?: HTMLElementLike;
     style?: CSSProperties;
     onClick?: (e: MouseEvent) => void;
 }
 
-export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement>}) {
+export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement | null>}) {
     return <span ref={containerRef} {...getProps(props)} />;
 }
 
-export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLDivElement>}) {
+export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLDivElement | null>}) {
     return <div ref={containerRef} {...getProps(props)} />;
 }
 
-function getProps({ className, html, style, onClick }: RawHtmlProps) {
+function getProps({ className, html, style, onClick, dir, tabindex }: RawHtmlProps) {
     return {
         className,
         dangerouslySetInnerHTML: getHtml(html ?? ""),
         style,
-        onClick
+        onClick,
+        dir,
+        tabindex
     };
 }
 
-export function getHtml(html: string | HTMLElement | JQuery<HTMLElement>) {
+export function getHtml(html: HTMLElementLike) {
+    return {
+        __html: toHtmlString(html)
+    };
+}
+
+/** Renders plain text with search-match highlighting. */
+export function HighlightedText({ className, text, highlightedTokens }: {
+    className?: string;
+    text: string;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
+}) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const highlight = useImperativeSearchHighlighlighting(highlightedTokens);
+
+    // Before the paint, so the text is not drawn unhighlighted for a frame first. `highlight` is a
+    // fresh closure each render, so the effect keys on the token list instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => highlight(ref.current), [ text, highlightedTokens ]);
+
+    return <span className={className} ref={ref}>{text}</span>;
+}
+
+/**
+ * Renders HTML content sanitized via DOMPurify to prevent XSS.
+ * Use this instead of {@link RawHtml} when the HTML originates from
+ * untrusted sources (e.g. LLM responses, user-generated markdown).
+ */
+export function SanitizedHtml({ className, html, style, containerRef }: {
+    className?: string;
+    html?: HTMLElementLike;
+    style?: CSSProperties;
+    containerRef?: RefObject<HTMLDivElement | null>;
+}) {
+    return (
+        <div
+            ref={containerRef}
+            className={className}
+            style={style}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(toHtmlString(html ?? "")) }}
+        />
+    );
+}
+
+/** The markup an element-like value stands for, so both renderers take the same inputs. */
+function toHtmlString(html: HTMLElementLike): string {
     if (typeof html === "object" && "length" in html) {
         html = html[0];
     }
@@ -36,23 +88,5 @@ export function getHtml(html: string | HTMLElement | JQuery<HTMLElement>) {
         html = html.outerHTML;
     }
 
-    return {
-        __html: html as string
-    };
-}
-
-/**
- * Renders HTML content sanitized via DOMPurify to prevent XSS.
- * Use this instead of {@link RawHtml} when the HTML originates from
- * untrusted sources (e.g. LLM responses, user-generated markdown).
- */
-export function SanitizedHtml({ className, html, style }: { className?: string; html: string; style?: CSSProperties }) {
-    return (
-        <div
-            className={className}
-            style={style}
-            // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
-        />
-    );
+    return html as string;
 }

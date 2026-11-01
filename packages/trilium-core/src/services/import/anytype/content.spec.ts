@@ -251,6 +251,64 @@ describe("inline files", () => {
     });
 });
 
+describe("bookmarks", () => {
+    /** A bookmark block — Anytype's web-link card, carrying the target site's url/title/description inline. */
+    const bookmarkBlock = (id: string, bookmark: AnytypeBlock["bookmark"]): AnytypeBlock => ({ id, bookmark, childrenIds: [] });
+
+    it("renders a bookmark as a Trilium link-embed, keeping the title, description and favicon/preview file placeholders", () => {
+        const doc = listDoc(["b1"], [
+            bookmarkBlock("b1", {
+                url: "https://triliumnotes.org/",
+                title: "Trilium Notes",
+                description: "An open-source note-taking app.",
+                faviconHash: "favicon-cid",
+                imageHash: "preview-cid",
+                type: "Page",
+                targetObjectId: "bookmark-obj-cid",
+                state: "Done"
+            })
+        ]);
+        const result = parseObject(doc);
+        // The favicon/preview are emitted as raw file-id placeholders; the importer resolves them to data URIs.
+        expect(result.content).toBe(
+            '<section class="link-embed" data-url="https://triliumnotes.org/" data-embed-type="opengraph" data-title="Trilium Notes" data-description="An open-source note-taking app." data-favicon="favicon-cid" data-image="preview-cid"></section>'
+        );
+        // The favicon/preview file ids are surfaced so a collection-scoped export doesn't treat them as members.
+        expect(result.inlineFileIds).toEqual(["favicon-cid", "preview-cid"]);
+    });
+
+    it("omits the optional fields when the bookmark doesn't provide them", () => {
+        const doc = listDoc(["b1"], [bookmarkBlock("b1", { url: "https://example.com/", state: "Done" })]);
+        const result = parseObject(doc);
+        expect(result.content).toBe(
+            '<section class="link-embed" data-url="https://example.com/" data-embed-type="opengraph"></section>'
+        );
+        expect(result.inlineFileIds).toEqual([]);
+    });
+
+    it("escapes the url, title and description", () => {
+        const doc = listDoc(["b1"], [
+            bookmarkBlock("b1", { url: 'https://example.com/?a="1"&b=2', title: 'A & "B" <x>', description: "<script>" })
+        ]);
+        expect(parseObject(doc).content).toBe(
+            '<section class="link-embed" data-url="https://example.com/?a=&quot;1&quot;&amp;b=2" data-embed-type="opengraph" data-title="A &amp; &quot;B&quot; &lt;x&gt;" data-description="&lt;script&gt;"></section>'
+        );
+    });
+
+    it("drops a bookmark with no url (still resolving, or a broken card)", () => {
+        const doc = listDoc(["b1"], [bookmarkBlock("b1", { title: "No url yet", state: "Fetching" })]);
+        expect(parseObject(doc).content).toBe("");
+    });
+
+    it("does not record an internalLink for a bookmark (it is an external web link, not an imported note)", () => {
+        const doc = listDoc(["b1"], [bookmarkBlock("b1", { url: "https://example.com/", targetObjectId: "bookmark-obj-cid", state: "Done" })]);
+        const resolve: LinkResolver = () => ({ noteId: "n", title: "unexpected" });
+
+        const result = parseObject(doc, resolve);
+        expect(result.linkTargetIds).toEqual([]);
+    });
+});
+
 describe("extractContent", () => {
     it("returns empty output when the block tree has no resolvable root", () => {
         expect(extractContent([], "missing", () => undefined)).toEqual({ html: "", linkTargetIds: [], fileTargetIds: [] });
@@ -259,6 +317,57 @@ describe("extractContent", () => {
     it("ignores an inline mark of an unrenderable type, leaving the text plain", () => {
         // Not a structural mark, a known colour, or a Mention — so it contributes no formatting.
         expect(renderInlineText("x", [mark(0, 1, "Emoji")])).toBe("x");
+    });
+});
+
+describe("sparse block shapes", () => {
+    // Every field of an exported block is optional, so the renderer has to cope with blocks carrying
+    // nothing beyond their id and style.
+    const noResolve: LinkResolver = () => undefined;
+
+    it("falls back to the first block when no root id is given, and tolerates a childless root", () => {
+        expect(extractContent([{ id: "obj" }], "", noResolve)).toEqual({ html: "", linkTargetIds: [], fileTargetIds: [] });
+    });
+
+    it("renders a list item carrying no text, marks or children", () => {
+        expect(extractContent([{ id: "obj", childrenIds: ["m1"] }, { id: "m1", text: { style: "Marked" } }], "obj", noResolve).html)
+            .toBe("<ul><li></li></ul>");
+    });
+
+    it("ends a list run at an id that repeats or is missing from the export", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["m1", "m1", "gone"] },
+            { id: "m1", text: { text: "One", style: "Marked" }, childrenIds: [] }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe("<ul><li>One</li></ul>");
+    });
+
+    it("drops a link block with no target and a latex block with no text", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["l1", "x1"] },
+            { id: "l1", link: {} },
+            { id: "x1", latex: { processor: "Mermaid" } }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe("");
+    });
+
+    it("renders empty toggle / quote / callout blocks with neither body text nor children", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["t1", "q1", "c1"] },
+            { id: "t1", text: { text: "", style: "Toggle" } },
+            { id: "q1", text: { text: "  ", style: "Quote" } },
+            { id: "c1", text: { text: "", style: "Callout" } }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe(
+            '<details class="trilium-collapsible"><summary></summary></details>'
+            + "<blockquote></blockquote>"
+            + '<aside class="admonition tip"></aside>'
+        );
+    });
+
+    it("ignores a mark with no range, on its own and around an inline formula", () => {
+        expect(renderInlineText("x", [{ type: "Bold" }])).toBe("x");
+        expect(renderInlineText("a $x$ b", [{ type: "Bold" }])).toBe('a <span class="math-tex">\\( x \\)</span> b');
     });
 });
 
@@ -376,6 +485,12 @@ describe("inline formulas", () => {
     it("leaves a lone or mismatched $ as literal text", () => {
         expect(renderInlineText("Costs $5 today", [])).toBe("Costs $5 today");
         expect(renderInlineText("$$e=mc^2$", [])).toBe("$$e=mc^2$");
+    });
+
+    it("leaves dollar amounts as literal text next to a formula", () => {
+        expect(renderInlineText("It costs $15, parts cost $6 and $4", [])).toBe("It costs $15, parts cost $6 and $4");
+        expect(renderInlineText("$4,000 grows by $FV=PV$", []))
+            .toBe('$4,000 grows by <span class="math-tex">\\( FV=PV \\)</span>');
     });
 });
 
@@ -518,6 +633,27 @@ describe("tables", () => {
             ["rows", { id: "rows", childrenIds: [] }]
         ]);
         expect(renderTable(byId.get("tbl") ?? { id: "x" }, byId)).toBe("");
+    });
+
+    it("returns empty for a table block with no children, or whose layout blocks are missing", () => {
+        expect(renderTable({ id: "t" }, new Map())).toBe("");
+        const byId = new Map<string, AnytypeBlock>([["t", { id: "t", table: {}, childrenIds: ["cols", "rows"] }]]);
+        expect(renderTable(byId.get("t") ?? { id: "t" }, byId)).toBe("");
+    });
+
+    it("ignores a child that isn't one of the row's cells, and a cell block carrying no text", () => {
+        const byId = new Map<string, AnytypeBlock>([
+            ["t", { id: "t", table: {}, childrenIds: ["cols", "rows"] }],
+            ["cols", { id: "cols", childrenIds: ["c1"] }],
+            ["rows", { id: "rows", childrenIds: ["r1", "r2"] }],
+            // "stray" isn't addressed as `${rowId}-${columnId}`, so it's no cell of r1; r2 lists no cells at all.
+            ["r1", { id: "r1", childrenIds: ["stray", "r1-c1"] }],
+            ["stray", { id: "stray", text: { text: "off-grid", marks: { marks: [] } } }],
+            ["r1-c1", { id: "r1-c1" }],
+            ["r2", { id: "r2" }]
+        ]);
+        expect(renderTable(byId.get("t") ?? { id: "t" }, byId))
+            .toBe('<figure class="table"><table><tbody><tr><td></td></tr><tr><td></td></tr></tbody></table></figure>');
     });
 
     it("skips a row whose block is missing from the export", () => {

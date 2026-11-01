@@ -1,9 +1,8 @@
 import type { CryptoProvider, ScryptOptions } from "@triliumnext/core";
 import { binary_utils } from "@triliumnext/core";
 import crypto from "crypto";
-import { generator } from "rand-token";
 
-const randtoken = generator({ source: "crypto" });
+const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export default class NodejsCryptoProvider implements CryptoProvider {
 
@@ -24,7 +23,11 @@ export default class NodejsCryptoProvider implements CryptoProvider {
     }
 
     randomString(length: number): string {
-        return randtoken.generate(length);
+        let result = "";
+        for (let i = 0; i < length; i++) {
+            result += CHARS[crypto.randomInt(CHARS.length)];
+        }
+        return result;
     }
 
     hmac(secret: string | Uint8Array, value: string | Uint8Array) {
@@ -56,5 +59,15 @@ export default class NodejsCryptoProvider implements CryptoProvider {
         }
 
         return crypto.timingSafeEqual(bufA, bufB);
+    }
+
+    base64Encode(bytes: Uint8Array): string {
+        // View the existing memory (zero-copy) rather than reallocating, then let Node's native
+        // (C++) encoder do the work — orders of magnitude faster than a per-byte JS loop.
+        return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64");
+    }
+
+    base64Decode(base64: string): Uint8Array {
+        return Buffer.from(base64, "base64");
     }
 }

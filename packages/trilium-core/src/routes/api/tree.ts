@@ -1,5 +1,5 @@
 import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { getBecca } from "../../becca/becca.js";
 import { NotFoundError } from "../../errors.js";
@@ -53,7 +53,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         collectEntityIds(note);
     }
 
-    const notes: NoteRow[] = [];
+    const notes: (NoteRow & { isContentWritable?: false })[] = [];
 
     for (const noteId of collectedNoteIds) {
         const note = getBecca().notes[noteId];
@@ -64,7 +64,8 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
             isProtected: note.isProtected,
             type: note.type,
             mime: note.mime,
-            blobId: note.blobId
+            blobId: note.blobId,
+            ...(note.isContentWritable() ? {} : { isContentWritable: false })
         });
     }
 

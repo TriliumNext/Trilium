@@ -20,7 +20,8 @@
  * root either way, so the redundant wrapper folder is stripped and the import root is named after the vault.
  *
  * Obsidian-specific inline syntax is handled during Markdown rendering (gated by the `obsidian` flag):
- * `==highlight==` becomes `<mark>` and `%% comment %%` becomes an HTML comment.
+ * `%% comment %%` becomes an HTML comment, and callouts become admonitions. `==highlight==` needs no
+ * flag — it is supported for all Markdown rendering.
  *
  * Front matter (parsed by {@link ../frontmatter.js}) becomes labels via {@link mapObsidianFrontmatter}: tags
  * become individual labels, aliases become `#alias` labels, cssclasses/publish/permalink are dropped, and
@@ -35,6 +36,7 @@
 import { t } from "i18next";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import * as cls from "../../context.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
 import type TaskContext from "../../task_context.js";
@@ -130,6 +132,10 @@ function createNotes(importRootNote: BNote, notes: VaultNote[], attachments: Map
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: rootTitle, content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the vault's notes/folders in order under an inherited #newNotesOnTop (the root above
+    // still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     const attachmentIndex = buildAttachmentIndex(attachments);
     const shrinkImages = !!taskContext.data?.shrinkImages;

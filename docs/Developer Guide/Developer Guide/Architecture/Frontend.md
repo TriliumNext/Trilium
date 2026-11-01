@@ -25,7 +25,6 @@ Key services:
 *   `widgets/containers/` - Layout containers
 *   `widgets/buttons/` - Toolbar buttons
 *   `widgets/dialogs/` - Modal dialogs
-*   `widgets/ribbon_widgets/` - Tab widgets
 *   `widgets/type_widgets/` - Note type editors
 
 ### Event System

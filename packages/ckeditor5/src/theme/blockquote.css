@@ -1,0 +1,20 @@
+/*
+ * Trilium's only override of CKEditor's block-quote styling.
+ *
+ * `ckeditor5/ckeditor5.css` (imported first in `src/index.ts`) already ships the full
+ * `.ck-content blockquote` rule — border, margins, italics, overflow — and the `[dir="rtl"]`
+ * variant, so none of that is repeated here. This file used to be a verbatim copy of upstream's
+ * `ckeditor5-block-quote/theme/blockquote.css`, carried in with the admonition fork, and had
+ * drifted into duplicating rules the distribution already provides.
+ *
+ * Only the horizontal padding differs from upstream: 2em instead of 1.5em — see 916f0d80c0,
+ * "fix(ckeditor): increase blockquote padding".
+ *
+ * Both selectors have the same specificity, so this must stay imported *after*
+ * `ckeditor5/ckeditor5.css` for the override to apply.
+ */
+
+.ck-content blockquote {
+    /* https://github.com/ckeditor/ckeditor5-block-quote/issues/15 */
+    padding-inline: 2em;
+}

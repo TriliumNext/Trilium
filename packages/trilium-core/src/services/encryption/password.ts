@@ -1,10 +1,13 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
+import events from "../events.js";
 import options from "../options.js";
+import protectedSessionService from "../protected_session.js";
 import { getSql } from "../sql/index.js";
 import scryptService from "./scrypt.js";
 import passwordEncryptionService from "./password_encryption.js";
 import { encodeBase64 } from "../utils/binary.js";
 import { getCrypto } from "./crypto.js";
+import ws from "../ws.js";
 
 /**
  * Generates a random secure token encoded as base64.
@@ -24,7 +27,7 @@ export function isPasswordSet(): boolean {
 
 /**
  * Changes the password from currentPassword to newPassword.
- * Re-encrypts the data key with the new password.
+ * Re-encrypts the data key with the new password and closes the protected session.
  */
 export async function changePassword(
     currentPassword: string,
@@ -58,6 +61,12 @@ export async function changePassword(
     }
 
     options.setOption("passwordVerificationHash", newPasswordVerificationKey);
+
+    if (protectedSessionService.isProtectedSessionAvailable()) {
+        protectedSessionService.resetDataKey();
+        events.emit(events.LEAVE_PROTECTED_SESSION);
+        ws.sendMessageToAllClients({ type: "protectedSessionLogout" });
+    }
 
     return {
         success: true

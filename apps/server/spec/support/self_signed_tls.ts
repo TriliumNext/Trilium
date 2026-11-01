@@ -1,0 +1,54 @@
+/**
+ * A throwaway self-signed certificate for tests that need a real TLS listener, generated for
+ * CN=localhost and valid until 2126. It secures nothing: the key is public in this repository,
+ * and it exists only so a test can start an https server without shelling out to openssl.
+ *
+ * RSA rather than EC because the curl macOS ships links LibreSSL 3.3.6, which cannot complete an
+ * EC handshake against Node's TLS and would fail the healthcheck script test on every mac.
+ */
+export const SELF_SIGNED_KEY = `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDG427cazas7DZu
+8ph0peYV75eCjdSqfJ2fGN3ma6Sym3fd9RxtD34l9wy2NrQ18xqDYCXChaQ6eouE
+kpf2ewpA5b9RBmN90fCyz7qSIbLouFFqRdzZUnd1esE6tSxmT6CNt48hHty1daG6
+kSWmq68Q26PrtH9XPaOEsEeCCQO+H3OkuQVa067HoDPstfCQshzWAofN4uzT4yIn
+iZp5rFKIwRAnaAC/oGmNo5PAyF99QM0PqDI1yiu+Yv52QKaP5HZHGDFLk1jx9KS8
+sv+v/KVuLsS2dNClXLVUZvdRNQpJ3ny1fsCofdRWWbnaS+kHIuAs6yVgOveyric7
+Rb6nQXCjAgMBAAECggEBALXBFAfExsOCXkBH3MEE9t5nBOufF5Dxrs282NSA3JMI
+dqNVIzQba2ngejJujYOb9UfH7tn0bV+vq55spQjv6i/ihVLTZsqNt8yA/3wZ5bi8
+8FIRJEFKFrc6hilTdg7Nh+jaradT39jIdhLcIC9PR/486nE1kwWz46IXwlF4UX5E
+/HkSOVgIikhCpLC+cgZSoKfFsPY1/YqJWG0Xtn3hmgwEOEvzEcaIQ+NTuGkwzXEZ
+aBUaC6U+AQTIhKHXZHcmX2G26MMjOY4fBm3gbMqvrU5ATo8XGyZ6VTHynWw+ZuJ2
+hoxQm+7ffZ5WiudYMD5LTHKu4XX4OdZ0elRzBRmtzOkCgYEA8XrQQbxXGfaOVPvA
+lQ00bGaIRQDQtZeCVioIli0Kr+4wIsgaqn1iWb44/ErTP3ap9s+Sv1USMO5R30K/
+iivi7c2UEGdoXam6HTcdumFjJQAsi/dxvP8+zhZUMMr2HE/WitTWAs4BI3cqQbdN
+XIEbWVkNmgY3g83G1to5zyq3mzcCgYEA0tj+213iJQ3QZ2RsTq7K3lHc4tPhamcf
+d3HDfpnjFwChPuS9YBDl8UrikDC6WD09DCPjmw1NcDt49pEgiqflwW1ExVQW9Qkk
+4rVsU84wfMrga5a8SFdytrSBfphI4Cqkc/8Jb88PSONxK6i3G5qUHAxP6RG1YqO/
+PxJ9V6Wpw/UCgYBrKA6mPQeB0/FRMO5CtjtfJxitVjFHg9Yomjp5Ob+WVmIx7Q44
+Pa+ZF1p+Sk33yZaemXoLQZry766RHjOVAuiOkj10Eg80EQ8vy7d7b5/pWWxrKADm
+13VtSmdNx6Ly6VLRBKV7VSMYM9cilk7UD86tFWF9yeh0qqnjya8BiXk0fQKBgCSg
+z71aFOQs/yxG9M3CbbmrbPz2o+0xFvVQDQ8cOqgPUvOzFvbuWJPPV4aHAIg9szI9
+tdeEuxQpML1cvtN3kWFF0zGYhxhwSzkbHUN9yUyUjeIC4JiMoH/+4ZQVbmuK3ODN
+yFzlEpmt8UYNXCnuc5ZfyS4LBoCpQ5r4Yk/slo5VAoGBAJNE8RxirWh0CjapsiTj
+5fGsydjM7YwEZM+7pp8WXIezzEBEYhMb8Gxe6OWrU5xB2bjU61dgmGQxSidSV8DD
+tXpOQkeGWWi1qRjZnbXBWwuykVUa6lythrQnBJXr50vynVE9ZhiqwFzKMqZKMMLO
+Z50hDlrssCmCI6TW9GQLIDKV
+-----END PRIVATE KEY-----`;
+
+export const SELF_SIGNED_CERT = `-----BEGIN CERTIFICATE-----
+MIICyzCCAbOgAwIBAgIJAIsAstDtfD1NMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNV
+BAMMCWxvY2FsaG9zdDAgFw0yNjA4MjMxNTU3NTFaGA8yMTI2MDczMDE1NTc1MVow
+FDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+CgKCAQEAxuNu3Gs2rOw2bvKYdKXmFe+Xgo3Uqnydnxjd5mukspt33fUcbQ9+JfcM
+tja0NfMag2AlwoWkOnqLhJKX9nsKQOW/UQZjfdHwss+6kiGy6LhRakXc2VJ3dXrB
+OrUsZk+gjbePIR7ctXWhupElpquvENuj67R/Vz2jhLBHggkDvh9zpLkFWtOux6Az
+7LXwkLIc1gKHzeLs0+MiJ4maeaxSiMEQJ2gAv6BpjaOTwMhffUDND6gyNcorvmL+
+dkCmj+R2RxgxS5NY8fSkvLL/r/ylbi7EtnTQpVy1VGb3UTUKSd58tX7AqH3UVlm5
+2kvpByLgLOslYDr3sq4nO0W+p0FwowIDAQABox4wHDAaBgNVHREEEzARgglsb2Nh
+bGhvc3SHBH8AAAEwDQYJKoZIhvcNAQELBQADggEBAELpL0D0/tsN2mMhHOSsUpGt
+E4Zwhe1bLBDcT92CfoVIYUKebiPYqbuctUc7PRhaYwrT92bClSRXfWKBKBNRey0H
+4v+bY55MFwIdv64I9OrrUqVXExG1hGP1yJUEAMRxdffGQNBb5dyKM0plczzgu1U2
+b8JLA3x6HRS5MDA05hSlpl3ippaYvyrFRdHA1Eqdauua/mef62XfSkZL3stZiyI5
+Q9pX/OmCd6hicYngxysUi5JZJp2tRSkHf5yYSg7I1txinUDMzrcBBYA5T8Uf+fdJ
+56Dd1E+X4GdeYVXiOHZ5mV2bfU3nF7x4S9qPjTE8y/jru6tE5LDiEsa+0M/I8KM=
+-----END CERTIFICATE-----`;

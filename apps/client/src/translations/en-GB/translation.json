@@ -11,7 +11,9 @@
     "auto_read_only_disabled": "text/code notes can be set automatically into read mode when they are too large. You can disable this behaviour on per-note basis by adding this label to the note",
     "workspace_tab_background_color": "CSS colour used in the note tab when hoisted to this note",
     "color": "defines colour of the note in note tree, links etc. Use any valid CSS colour value like 'red' or #a13d5f",
-    "color_type": "Colour"
+    "color_type": "Colour",
+    "calendar_slot_label_interval": "How often the timeslots of a calendar are labelled, as <code>HH:MM:SS</code>. Defaults to an hour.",
+    "slide_background": "The background of a slide, as a colour or as a CSS gradient."
   },
   "mobile_detail_menu": {
     "error_unrecognized_command": "Unrecognised command {{command}}"
@@ -34,9 +36,6 @@
     "description": "You can customise the highlights list displayed in the right panel:",
     "color": "Coloured text",
     "bg_color": "Text with background colour"
-  },
-  "table_of_contents": {
-    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customise this number:"
   },
   "custom_date_time_format": {
     "description": "Customise the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens."
@@ -108,8 +107,6 @@
     "help_on_links": "Help on links",
     "note": "Note",
     "search_note": "search for note by its name",
-    "link_title_mirrors": "link title mirrors the note's current title",
-    "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
     "anchor_none": "None (link to note)",
@@ -146,11 +143,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
-    "affected_notes": "Affected notes",
     "include_descendants": "Include descendants of the selected notes",
-    "available_actions": "Available actions",
     "chosen_actions": "Chosen actions",
-    "execute_bulk_actions": "Execute bulk actions",
+    "execute_bulk_actions_one": "Execute bulk actions",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Bulk actions have been executed successfully.",
     "none_yet": "None yet... add an action by clicking one of the available ones above.",
     "labels": "Labels",
@@ -235,5 +231,33 @@
     "bulletList": "<code>*</code> or <code>-</code> followed by space for bullet list",
     "numberedList": "<code>1.</code> or <code>1)</code> followed by space for numbered list",
     "blockQuote": "start a line with <code>></code> followed by space for block quote"
+  },
+  "fonts": {
+    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its colour in <em>full sun</em> and fades to green in the shade."
+  },
+  "sidebar_help": {
+    "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, coloured text and text on a background colour can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it."
+  },
+  "sync_2": {
+    "effective_server_disabled": "Synchronisation is turned off."
+  },
+  "relation_map": {
+    "note_color": "Note colour"
+  },
+  "resource_download": {
+    "license": "{{license}} licence"
+  },
+  "geo-map": {
+    "dark-image-description": "Draws the marker titles in a light colour, so that they can be read over a dark image.",
+    "dark-tiles-description": "Draws the marker titles in a light colour, so that they can be read over dark tiles."
+  },
+  "ocr": {
+    "no_text_recognized": "OCR found no text to recognise."
+  },
+  "text-editor": {
+    "color-menu": {
+      "text-color": "Text colour",
+      "background-color": "Background colour"
+    }
   }
 }

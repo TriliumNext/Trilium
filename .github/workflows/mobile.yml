@@ -24,6 +24,95 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Build mobile APK
         uses: ./.github/actions/build-mobile
+
+      - name: Upload Android coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: apps/mobile/android/app/build/reports/coverage/test/debug/report.xml
+          flags: mobile
+          disable_search: true
+          fail_ci_if_error: false
+
+  test_ios_request_broker:
+    name: Test iOS request broker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run the RequestBroker tests
+        working-directory: apps/mobile/ios/RequestBroker
+        run: |
+          swift --version
+          swift test
+
+  build_ios:
+    name: Build iOS App
+    # iOS builds require Xcode, which is only available on macOS runners.
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update build info
+        run: pnpm run chore:update-build-info
+
+      - name: Build client-standalone (webDir for Capacitor)
+        run: pnpm --filter @triliumnext/mobile build
+
+      - name: Sync Capacitor iOS project
+        run: pnpm --filter @triliumnext/mobile exec cap sync ios
+
+      # Build an unsigned .app for the iOS Simulator. This sidesteps the need
+      # for Apple Developer signing credentials and produces a bundle that can
+      # be launched in the Simulator for smoke-testing or downloaded as an
+      # artifact. Switch to a signed archive build once we have certs + a
+      # provisioning profile in repo secrets.
+      - name: Build iOS app for Simulator (unsigned)
+        working-directory: apps/mobile/ios/App
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .app bundle
+        working-directory: apps/mobile/ios/App/build/Build/Products/Debug-iphonesimulator
+        run: zip -ry App.app.zip App.app
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@v7
+        with:
+          name: trilium-mobile-ios-simulator-app
+          path: apps/mobile/ios/App/build/Build/Products/Debug-iphonesimulator/App.app.zip
+          retention-days: 14

@@ -18,6 +18,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Assets are published to the public "nightly" release only for runs on the main
+# branch (scheduled or manually dispatched). Runs on any other ref — PRs, branch
+# dispatches, renovate pushes — keep their outputs as workflow artifacts instead.
+# The main ref is intentionally a literal: the schedule event payload is minimal,
+# so deriving the default branch from it is not reliable.
+
 env:
   GITHUB_RELEASE_ID: 179589950
 
@@ -59,18 +65,42 @@ jobs:
               shell: bash
               forge_platform: linux
     runs-on: ${{ matrix.os.image }}
+    defaults:
+      run:
+        # Under pnpm/action-setup's pnpm 12 bootstrap, `pnpm` invoked from PowerShell on the
+        # win-signing runner exits 0 without running anything, so the steps below have to
+        # reach it through the same shell the build uses.
+        shell: ${{ matrix.os.shell }}
+    env:
+      # "Update nightly version" rewrites the version field of six workspace manifests, which
+      # makes the next `pnpm run` re-install the whole workspace even though the dependency
+      # graph is unchanged. "Install dependencies" below is the authoritative install.
+      PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false"
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      # pnpm derives its store from PNPM_HOME, which pnpm/action-setup points inside the
+      # directory it reinstalls on every run. The win-signing runner is persistent, so the
+      # store has to sit somewhere that survives between jobs, and packages have to be copied
+      # out of it: rebuilding better-sqlite3 and electron-forge's pruning both write into
+      # node_modules, which a hardlink would carry back into the shared store.
+      - name: Keep the pnpm store outside the pnpm installation
+        if: ${{ matrix.os.name == 'windows' }}
+        shell: powershell
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "PNPM_CONFIG_STORE_DIR=C:\pnpm-store"
+          Add-Content -Path $env:GITHUB_ENV -Value "PNPM_CONFIG_PACKAGE_IMPORT_METHOD=copy"
       - name: Set up node & dependencies
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        env:
-          npm_config_package_import_method: copy
+        # The macOS and Windows runners each package both architectures, which needs the other
+        # architecture's native optional dependencies (sherpa-onnx-darwin-x64,
+        # sherpa-onnx-win-arm64) beside the host's.
+        run: pnpm install --frozen-lockfile ${{ (matrix.os.name == 'macos' || matrix.os.name == 'windows') && '--cpu=x64,arm64' || '' }}
       - name: Update nightly version
         run: pnpm run chore:ci-update-nightly-version
       - name: Run the build
@@ -93,8 +123,8 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
-        if: ${{ github.event_name != 'pull_request' }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         with:
           make_latest: false
           prerelease: true
@@ -106,7 +136,7 @@ jobs:
 
       - name: Publish artifacts
         uses: actions/upload-artifact@v7
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
           path: apps/desktop/upload
@@ -117,19 +147,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Build mobile APK
         uses: ./.github/actions/build-mobile
+        with:
+          nightly: "true"
+          upload-artifact: "false"
+          keystore-base64: ${{ secrets.NIGHTLY_ANDROID_KEYSTORE_BASE64 }}
+          keystore-password: ${{ secrets.NIGHTLY_ANDROID_KEYSTORE_PASSWORD }}
+          key-alias: ${{ secrets.NIGHTLY_ANDROID_KEY_ALIAS }}
+          key-password: ${{ secrets.NIGHTLY_ANDROID_KEY_PASSWORD }}
+
+      - name: Rename APK
+        run: >-
+          mv apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          apps/mobile/android/app/build/outputs/apk/release/TriliumNotes-mobile-nightly.apk
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        if: ${{ github.ref == 'refs/heads/main' }}
         with:
           make_latest: false
           prerelease: true
           draft: false
-          files: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          files: apps/mobile/android/app/build/outputs/apk/release/*.apk
           tag_name: nightly
           name: Mobile Nightly
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v7
+        if: ${{ github.ref != 'refs/heads/main' }}
+        with:
+          name: TriliumNotes mobile nightly
+          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
+          archive: false
 
   nightly-server:
     if: ${{ github.repository == vars.REPO_MAIN }}
@@ -146,6 +199,8 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -154,8 +209,8 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
-        if: ${{ github.event_name != 'pull_request' }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         with:
           make_latest: false
           prerelease: true
@@ -164,3 +219,10 @@ jobs:
           files: upload/*.*
           tag_name: nightly
           name: Nightly Build
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v7
+        if: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+        with:
+          name: TriliumNotes server linux ${{ matrix.arch }}
+          path: upload

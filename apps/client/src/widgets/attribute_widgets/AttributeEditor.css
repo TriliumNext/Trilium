@@ -1,0 +1,64 @@
+/* Wrapper around the attribute editor, rendered by its consumers (e.g. the owned attributes tab, the status bar). */
+.attribute-list {
+    margin-inline-start: 7px;
+    margin-inline-end: 7px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.attribute-list .attr-detail {
+    contain: none;
+}
+
+.attribute-list-editor {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 140px 0 5px !important;
+    margin: 0 !important;
+    max-height: 100px;
+    overflow: auto;
+}
+
+/*
+ * A save dips the attribute text and brings it back, as a hint that it went through. It is one eased
+ * animation rather than an opacity toggle so that the two halves cannot land abruptly, and only the
+ * text takes part: dipping the whole wrapper would carry the buttons and the error message with it.
+ */
+@keyframes attribute-editor-save-blink {
+    50% { opacity: .25; }
+}
+
+.attribute-list-editor-wrapper.blink .attribute-list-editor {
+    animation: attribute-editor-save-blink 300ms ease-in-out;
+}
+
+body[dir=rtl] .attribute-list-editor {
+    padding: 0 5px 0 140px !important;
+    text-align: right !important;
+}
+
+.attribute-list-editor p {
+    margin: 0 !important;
+}
+
+.attribute-list-editor.ck-content .mention {
+    color: var(--muted-text-color) !important;
+    background: transparent !important;
+}
+
+.attribute-editor-buttons {
+    display: flex;
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.attribute-errors {
+    color: red;
+    padding: 5px 140px 0px 5px; /* large right padding to avoid buttons */
+}

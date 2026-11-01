@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, _getViewData as getViewData, ClassicEditor, CodeBlock, Essentials, GeneralHtmlSupport, HorizontalLine, Paragraph, type EditorConfig } from "ckeditor5";
+import { _setModelData as setModelData, _getViewData as getViewData, ClassicEditor, CodeBlock, Essentials, FindAndReplaceEditing, GeneralHtmlSupport, HorizontalLine, Paragraph, type EditorConfig } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -127,6 +127,48 @@ describe("SyntaxHighlighting", () => {
 
         expect(fakeHljs.highlight).toHaveBeenLastCalledWith("const abc", { language: "javascript" });
         expect(getViewData(editor.editing.view)).toContain("hljs-keyword");
+    });
+
+    it("keeps the find results of a code block when replacing one of them re-highlights it", async () => {
+        editor = await createEditor(makeConfig(), [ FindAndReplaceEditing ]);
+
+        setModelData(editor.model, '<codeBlock language="javascript">foo bar foo[]</codeBlock>');
+        await flushPostFixers(editor);
+
+        const { results } = editor.execute("find", "foo");
+        expect(results.length).toBe(2);
+        const [ replaced, remaining ] = [ ...results ];
+
+        editor.execute("replace", "baz", replaced);
+
+        expect(remaining.marker?.getRange().isFlat).toBe(true);
+        expect(remaining.marker && editor.model.markers.has(remaining.marker)).toBe(true);
+        expect(fakeHljs.highlight).toHaveBeenLastCalledWith("baz bar foo", { language: "javascript" });
+        expect(getViewData(editor.editing.view)).toContain("hljs-keyword");
+    });
+
+    it("keeps the find results of a code block when typing into it during a search", async () => {
+        editor = await createEditor(makeConfig(), [ FindAndReplaceEditing ]);
+
+        setModelData(editor.model, '<codeBlock language="javascript">foo bar foo[]</codeBlock>');
+        await flushPostFixers(editor);
+
+        const results = editor.plugins.get(FindAndReplaceEditing).find("foo");
+        expect(results.length).toBe(2);
+
+        editor.model.change((writer) => {
+            const codeBlock = editor?.model.document.getRoot()?.getChild(0);
+            if (codeBlock && codeBlock.is("element")) {
+                writer.insertText(" foo", writer.createPositionAt(codeBlock, "end"));
+            }
+        });
+
+        expect(fakeHljs.highlight).toHaveBeenLastCalledWith("foo bar foo foo", { language: "javascript" });
+        const markerNames = [ ...results ].map((result) => result.marker?.name);
+        expect(markerNames).toHaveLength(3);
+        for (const name of markerNames) {
+            expect(name && editor.model.markers.has(name)).toBe(true);
+        }
     });
 
     it("handles softBreaks (newlines) in code blocks", async () => {

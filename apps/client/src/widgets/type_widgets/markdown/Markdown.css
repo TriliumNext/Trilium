@@ -1,34 +1,35 @@
-.note-detail-markdown {
-    .note-detail-code-editor {
-        margin-top: 0 !important;
-
-        .cm-editor .cm-scroller {
-            padding-block: 0.25em;
-        }
-    }
-
+:is(.note-detail-markdown, .markdown-embed-content) {
     .markdown-preview {
         box-sizing: border-box;
         height: 100%;
         overflow: auto;
         padding: 0.5em 1em;
         user-select: text;
-    }
 
-    .markdown-preview [data-source-line] {
-        border-left: 2px solid transparent;
-        padding-left: 0.5em;
-        margin-left: -0.5em;
-    }
+        /* The active-block marker is the preview's own background rather than a pseudo-element
+         * on the block: `.admonition` already draws its icon in `::before`, and a block that
+         * sets `overflow: hidden` clips anything drawn in its gutter. `local` attachment
+         * scrolls it with the content; `useSyncedHighlight` writes the custom properties. */
+        background-image: linear-gradient(var(--main-text-color), var(--main-text-color));
+        background-attachment: local;
+        background-repeat: no-repeat;
+        background-position: 0.5em var(--markdown-preview-marker-top, 0);
+        background-size: 2px var(--markdown-preview-marker-height, 0);
 
-    [data-source-line].markdown-preview-active {
-        border-left-color: var(--main-text-color);
-    }
+        /* Only while the cursor moves to another block: the hook adds the class for that update
+         * alone, so the marker still resizes instantly as the block it sits in is edited. */
+        &.markdown-preview-marker-moving {
+            transition: background-position 150ms ease, background-size 150ms ease;
 
+            @media (prefers-reduced-motion: reduce) {
+                transition: none;
+            }
+        }
+    }
 }
 
 /* Markdown preview content blocks in split-view */
-.note-detail-split.split-horizontal .note-detail-split-preview > .note-detail-readonly-text-content > div {
+.note-detail-split.split-horizontal .note-detail-split-preview > .note-detail-readonly-text-content > * {
     max-width: var(--preferred-max-content-width);
 
     body.prefers-centered-content & {

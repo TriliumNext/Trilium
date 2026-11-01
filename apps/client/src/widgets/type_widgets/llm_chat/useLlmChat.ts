@@ -1,20 +1,57 @@
-import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import { LLM_PERMISSION_MODES, LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmMessagePart, type LlmModelInfo, type LlmPermissionMode, type LlmReasoningEffort, type LlmStreamStatus, type LlmToolApprovalAnswer, type LlmUsage } from "@triliumnext/commons";
 import { RefObject } from "preact";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { streamChatCompletion } from "../../../services/llm_chat.js";
+import { type ModelOption, type ModelProviderGroup, readSearchProviders, readSelectedModels, resolveSelectedModel, resolveWebSearch, unreadableAttachments } from "../../../services/llm_providers.js";
+import optionService from "../../../services/options.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
-import type { ContentBlock, FileBlock, ImageBlock, LlmChatContent, StoredMessage, TextFileBlock } from "./llm_chat_types.js";
+import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
+import { stripQuoteSources } from "./chat_quote.js";
+import { conversationForRegenerate } from "./chat_regenerate.js";
+import {
+    type ContentBlock,
+    type FileBlock,
+    type ImageBlock,
+    type LlmChatContent,
+    type StoredMessage,
+    type TextFileBlock,
+    type ToolCall,
+    trimToFirstUserMessage
+} from "./llm_chat_types.js";
 import { useSmoothStreaming } from "./useSmoothStreaming.js";
 
 /** A user-supplied attachment waiting to be sent with the next message. */
 export type AttachmentBlock = ImageBlock | FileBlock | TextFileBlock;
 
+/** The subset of the reply-input editor API the chat needs to write into it imperatively. */
+export interface InputEditorApi {
+    appendBlockQuote(markdown: string): void;
+    focus(): void;
+}
+
+/** Distance (px) past the content bottom edge within which the timeline counts as "at bottom". */
+const SCROLL_BOTTOM_THRESHOLD = 50;
+/**
+ * On send, the boundary between the user's message and the reply is parked this
+ * fraction of the viewport down from the top — the reply then types out in place,
+ * with the tail of the query still visible above.
+ */
+const REPLY_ANCHOR_TOP_FRACTION = 0.25;
+/** Duration (ms) of the smooth scroll that parks a new reply near the top. */
+const ANCHOR_SCROLL_DURATION_MS = 300;
+
+/** The most recent user message element inside the scroll container, or null. */
+function getLastUserMessageEl(container: HTMLElement): HTMLElement | null {
+    const els = container.querySelectorAll<HTMLElement>('[data-message-role="user"]');
+    return els.length ? els[els.length - 1] : null;
+}
+
 /**
  * Flatten a stored message's content into the wire format the server expects.
  * Plain string content stays as-is; block-shaped content (with images) becomes
- * an ordered array of text/image parts, with tool-call blocks stripped.
+ * an ordered array of text/image parts, with tool-call and thinking blocks stripped.
  */
 function flattenToApiContent(content: string | ContentBlock[]): string | LlmMessagePart[] {
     if (typeof content === "string") {
@@ -33,7 +70,8 @@ function flattenToApiContent(content: string | ContentBlock[]): string | LlmMess
         }
         // tool_call blocks belong to assistant history rendering only — they
         // are reconstructed from the model's own tool-use turns and must not
-        // be re-sent as user/assistant content.
+        // be re-sent as user/assistant content. thinking blocks are the model's
+        // reasoning, which it must not read back as something it said.
     }
     // Collapse to a string if there is no multimodal content — keeps backwards
     // compatibility with providers/paths that haven't been touched.
@@ -42,8 +80,21 @@ function flattenToApiContent(content: string | ContentBlock[]): string | LlmMess
     return parts;
 }
 
-export interface ModelOption extends LlmModelInfo {
-    costDescription?: string;
+/** Strip quote attribution lines from wire content, so the message-id anchors never reach the LLM. */
+function stripQuoteSourcesFromApiContent(content: string | LlmMessagePart[]): string | LlmMessagePart[] {
+    if (typeof content === "string") return stripQuoteSources(content);
+    return content.map(part => (part.type === "text" ? { ...part, text: stripQuoteSources(part.text) } : part));
+}
+
+/** A tool call of the running turn that waits for the user. */
+interface WaitingToolCall {
+    toolName: string;
+    /** Send the user's answer to the turn; resolves once the turn has received it. */
+    send: (approved: boolean, scope?: LlmToolApprovalAnswer["scope"]) => Promise<void>;
+    /** Stop waiting on the call, showing it declined or not. */
+    settle: (approved: boolean) => void;
+    /** The answer on its way to the turn, if any; while it is, a second click sends nothing. */
+    answering?: boolean;
 }
 
 export interface LlmChatOptions {
@@ -60,37 +111,75 @@ export interface LlmChatOptions {
 export interface UseLlmChatReturn {
     // State
     messages: StoredMessage[];
-    input: string;
+    /** Whether the reply-input draft has non-whitespace text. The draft itself is kept out of
+     * state (typing must not re-render the chat tree); read it at submit time via
+     * {@link getInput}. */
+    hasInputText: boolean;
     isStreaming: boolean;
-    streamingContent: string;
     streamingBlocks: ContentBlock[];
-    streamingThinking: string;
+    /** What the streaming turn waits on before its reply starts, if the server said. */
+    streamingStatus: LlmStreamStatus | null;
     pendingCitations: LlmCitation[];
     /** Images or files the user has attached but not yet sent. */
     pendingAttachments: AttachmentBlock[];
     availableModels: ModelOption[];
+    /** Per-provider groups (including providers with no models selected yet). */
+    modelGroups: ModelProviderGroup[];
     selectedModel: string;
+    /** Provider type owning {@link selectedModel}; undefined until a model is picked or in pre-existing chats. */
+    selectedProvider: string | undefined;
+    /** ID of the provider config owning {@link selectedModel}; undefined in chats saved before it existed. */
+    selectedProviderId: string | undefined;
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
+    /** The effort chosen for a model with levels; undefined means the model's default. */
+    reasoningEffort: LlmReasoningEffort | undefined;
+    /** The tools allowed for this chat, whose calls run without asking. */
+    allowedTools: string[];
+    /** Which tool calls of the chat wait for the user. */
+    permissionMode: LlmPermissionMode;
     contextNoteId: string | undefined;
     /** The chat note's ID — used as the upload target for attachments. */
     chatNoteId: string | undefined;
     lastPromptTokens: number;
-    messagesEndRef: RefObject<HTMLDivElement>;
-    scrollContainerRef: RefObject<HTMLDivElement>;
+    /** Completion tokens of the last reply — part of the next prompt, so the context indicator counts them. */
+    lastCompletionTokens: number;
+    /** Coarse estimate of the unsent draft, quantized so typing rarely re-renders. */
+    draftTokens: number;
+    messagesEndRef: RefObject<HTMLDivElement | null>;
+    scrollContainerRef: RefObject<HTMLDivElement | null>;
+    /** Trailing spacer below the last message; sized so the active turn can park near the top. */
+    bottomSpacerRef: RefObject<HTMLDivElement | null>;
+    /** Whether the timeline is scrolled away from the bottom (drives the jump-to-bottom button). */
+    showScrollToBottom: boolean;
+    /** Jump the timeline to the latest content. */
+    scrollToBottom: () => void;
     /** Whether a provider is configured and available */
     hasProvider: boolean;
     /** Whether we're still checking for providers */
     isCheckingProvider: boolean;
 
+    /** Register the reply-input editor so message-timeline actions (e.g. quoting) can write into it. */
+    registerInputEditor: (api: InputEditorApi | undefined) => void;
+    /** Append a preformatted block (e.g. a Markdown quote) to the reply input and focus it. */
+    appendToInput: (text: string) => void;
+    /** Focus the reply input, or, while its editor is still loading, as soon as it registers. */
+    focusInput: () => void;
+
+    /** Read the current reply-input draft text (kept in a ref, not state — see {@link hasInputText}). */
+    getInput: () => string;
+
     // Setters
     setInput: (value: string) => void;
     setMessages: (messages: StoredMessage[]) => void;
-    setSelectedModel: (model: string) => void;
+    setSelectedModel: (model: string, provider?: string, providerId?: string) => void;
     setEnableWebSearch: (value: boolean) => void;
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
+    setReasoningEffort: (value: LlmReasoningEffort | undefined) => void;
+    /** Set the chat's permission mode, which new chats then start in. */
+    setPermissionMode: (value: LlmPermissionMode) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
     /** Append a freshly uploaded image or file to the pending-attachments list. */
@@ -108,8 +197,15 @@ export interface UseLlmChatReturn {
     refreshModels: () => void;
     /** Stop the current generation */
     stopStreaming: () => void;
+    /** Allow or deny a tool call of the running turn that waits for the user. With the
+     * `"chat"` scope, its tool is allowed for the rest of the chat. */
+    answerToolCall: (toolCallId: string, approved: boolean, scope?: LlmToolApprovalAnswer["scope"]) => void;
+    /** Make the chat ask about a tool it allowed again. */
+    revokeAllowedTool: (toolName: string) => void;
     /** Re-run the last turn after a failed response (drops the trailing error message) */
     retryLast: () => void;
+    /** Regenerate the last reply: re-run from the last user message, dropping the reply that followed */
+    regenerateLastReply: () => void;
 }
 
 export function useLlmChat(
@@ -119,42 +215,92 @@ export function useLlmChat(
     const { defaultEnableNoteTools = false, supportsExtendedThinking = false, contextNoteId: initialContextNoteId, chatNoteId: initialChatNoteId } = options;
 
     const [messages, setMessagesInternal] = useState<StoredMessage[]>([]);
-    const [input, setInput] = useState("");
+    // The reply-input draft lives in a ref so typing never re-renders the chat tree; only the
+    // empty <-> non-empty transition is stateful (it drives the send button), and same-value
+    // setState calls bail out of re-rendering.
+    const inputRef = useRef("");
+    const [hasInputText, setHasInputText] = useState(false);
+    const setInput = useCallback((value: string) => {
+        inputRef.current = value;
+        setHasInputText(value.trim().length > 0);
+        // The context indicator has to account for the draft, or it can go from hidden
+        // straight to critical inside one send. Quantized so this only actually changes
+        // state about once per hundred characters typed, keeping the ref's whole point —
+        // that typing doesn't re-render the chat tree — very nearly intact.
+        setDraftTokens(quantizeDraftTokens(estimateTokens(value)));
+    }, []);
+    const [draftTokens, setDraftTokens] = useState(0);
+    const getInput = useCallback(() => inputRef.current, []);
     const [isStreaming, setIsStreaming] = useState(false);
     // The canonical "target" content received from the stream so far. The
     // displayed `streamingBlocks` is derived from this with the trailing text
     // block smoothed via useSmoothStreaming for a steady reveal cadence.
     const [targetBlocks, setTargetBlocks] = useState<ContentBlock[]>([]);
-    const [streamingThinking, setStreamingThinking] = useState("");
+    const [streamingStatus, setStreamingStatus] = useState<LlmStreamStatus | null>(null);
     const { displayedText: smoothedTailText, append: smoothAppend, drain: smoothDrain, reset: smoothReset } = useSmoothStreaming();
     const [pendingCitations, setPendingCitations] = useState<LlmCitation[]>([]);
     const [pendingAttachments, setPendingAttachments] = useState<AttachmentBlock[]>([]);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
+    const [modelGroups, setModelGroups] = useState<ModelProviderGroup[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>("");
+    const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
+    const [selectedProviderId, setSelectedProviderId] = useState<string | undefined>(undefined);
     const [enableWebSearch, setEnableWebSearch] = useState(true);
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
+    const [reasoningEffort, setReasoningEffort] = useState<LlmReasoningEffort | undefined>(undefined);
+    const [allowedTools, setAllowedTools] = useState<string[]>([]);
+    const [permissionMode, setPermissionMode] = useState<LlmPermissionMode>(rememberedPermissionMode);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
+    // The reply to the last prompt is part of the *next* prompt, so the context indicator
+    // has to count it too — `lastPromptTokens` alone understates by a whole reply.
+    const [lastCompletionTokens, setLastCompletionTokens] = useState<number>(0);
     const [hasProvider, setHasProvider] = useState<boolean>(true); // Assume true initially
     const [isCheckingProvider, setIsCheckingProvider] = useState<boolean>(true);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const bottomSpacerRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const isNearBottomRef = useRef(true);
+    // The tool calls of the running turn that wait for the user, by call id: how to answer one,
+    // and how to stop waiting on one the turn approved itself.
+    const toolApprovalAnswersRef = useRef(new Map<string, WaitingToolCall>());
+    const anchorRafRef = useRef<number | null>(null);
+    // A one-shot scroll to run after the next messages render: "anchor" parks a fresh
+    // reply near the top (sending/retrying), "bottom" jumps to the latest content
+    // (loading a chat). The timeline never follows the stream beyond this single action.
+    const pendingScrollRef = useRef<"anchor" | "bottom" | null>(null);
+    // True from the moment the layout effect commits an anchor scroll until that smooth scroll finishes or
+    // the user takes over. `pendingScrollRef` only guards the window before the layout effect consumes the
+    // mode; once consumed it's null, so this covers the ~300ms animation that follows — during which a
+    // content reload must not queue a bottom jump that would yank the just-parked reply to the latest content.
+    const anchorScrollActiveRef = useRef(false);
 
     // Refs to get fresh values in getContent (avoids stale closures)
     const messagesRef = useRef(messages);
     messagesRef.current = messages;
+    const availableModelsRef = useRef(availableModels);
+    availableModelsRef.current = availableModels;
     const selectedModelRef = useRef(selectedModel);
     selectedModelRef.current = selectedModel;
+    const selectedProviderRef = useRef(selectedProvider);
+    selectedProviderRef.current = selectedProvider;
+    const selectedProviderIdRef = useRef(selectedProviderId);
+    selectedProviderIdRef.current = selectedProviderId;
     const enableWebSearchRef = useRef(enableWebSearch);
     enableWebSearchRef.current = enableWebSearch;
     const enableNoteToolsRef = useRef(enableNoteTools);
     enableNoteToolsRef.current = enableNoteTools;
+    const allowedToolsRef = useRef(allowedTools);
+    allowedToolsRef.current = allowedTools;
+    const permissionModeRef = useRef(permissionMode);
+    permissionModeRef.current = permissionMode;
     const enableExtendedThinkingRef = useRef(enableExtendedThinking);
     enableExtendedThinkingRef.current = enableExtendedThinking;
+    const reasoningEffortRef = useRef(reasoningEffort);
+    reasoningEffortRef.current = reasoningEffort;
     const chatNoteIdRef = useRef(chatNoteId);
     chatNoteIdRef.current = chatNoteId;
     const setChatNoteId = useCallback((noteId: string | undefined) => {
@@ -166,6 +312,29 @@ export function useLlmChat(
     const pendingAttachmentsRef = useRef(pendingAttachments);
     pendingAttachmentsRef.current = pendingAttachments;
 
+    // The reply-input editor, registered by ChatInputBar once its CKEditor has initialized. Held in a
+    // ref so timeline actions (e.g. quoting a selection) can write into it without a render-order
+    // dependency.
+    const inputEditorRef = useRef<InputEditorApi | undefined>(undefined);
+    const isInputFocusPendingRef = useRef(false);
+    const registerInputEditor = useCallback((api: InputEditorApi | undefined) => {
+        inputEditorRef.current = api;
+        if (api && isInputFocusPendingRef.current) {
+            isInputFocusPendingRef.current = false;
+            api.focus();
+        }
+    }, []);
+    const focusInput = useCallback(() => {
+        if (inputEditorRef.current) {
+            inputEditorRef.current.focus();
+        } else {
+            isInputFocusPendingRef.current = true;
+        }
+    }, []);
+    const appendToInput = useCallback((text: string) => {
+        inputEditorRef.current?.appendBlockQuote(text);
+    }, []);
+
     const addPendingAttachment = useCallback((attachment: AttachmentBlock) => {
         setPendingAttachments(prev => [...prev, attachment]);
     }, []);
@@ -173,35 +342,44 @@ export function useLlmChat(
         setPendingAttachments(prev => prev.filter(a => a.attachmentId !== attachmentId));
     }, []);
 
-    // Wrapper to call onMessagesChange when messages update
+    // Wrapper to call onMessagesChange when messages update. The callback goes through a ref:
+    // both hosts pass inline arrows, and keeping them out of the deps keeps setMessages — and the
+    // whole action-callback chain built on it (runStream, handleSubmit, retryLast, ...) — stable
+    // across renders.
+    const onMessagesChangeRef = useRef(onMessagesChange);
+    onMessagesChangeRef.current = onMessagesChange;
     const setMessages = useCallback((newMessages: StoredMessage[]) => {
         setMessagesInternal(newMessages);
-        onMessagesChange?.(newMessages);
-    }, [onMessagesChange]);
+        onMessagesChangeRef.current?.(newMessages);
+    }, []);
 
-    // Fetch available models on mount
+    // Selecting a model records its provider (and provider config id) too, so a
+    // later send resolves the right provider even when two providers expose the
+    // same model ID (e.g. an Anthropic API key and a Claude subscription both
+    // offering "claude-sonnet-5", or two OpenAI-compatible endpoints).
+    const selectModel = useCallback((model: string, provider?: string, providerId?: string) => {
+        setSelectedModel(model);
+        setSelectedProvider(provider);
+        setSelectedProviderId(providerId);
+    }, []);
+
+    // Read the user's selected models straight from the synced `llmProviders`
+    // option — no server round-trip, no live provider fetch. The models were
+    // picked (with full metadata) when the provider was configured; dynamic
+    // listing only runs in the provider-settings model picker.
     const refreshModels = useCallback(() => {
-        setIsCheckingProvider(true);
-        getAvailableModels().then(models => {
-            const modelsWithDescription = models.map(m => ({
-                ...m,
-                costDescription: m.costMultiplier ? `${m.costMultiplier}x` : undefined
-            }));
-            setAvailableModels(modelsWithDescription);
-            setHasProvider(models.length > 0);
-            setIsCheckingProvider(false);
-            if (!selectedModel) {
-                const defaultModel = models.find(m => m.isDefault) || models[0];
-                if (defaultModel) {
-                    setSelectedModel(defaultModel.id);
-                }
+        const { models, groups, hasProvider } = readSelectedModels();
+        setAvailableModels(models);
+        setModelGroups(groups);
+        setHasProvider(hasProvider);
+        setIsCheckingProvider(false);
+        if (!selectedModel) {
+            const defaultModel = models.find(m => m.isDefault) || models[0];
+            if (defaultModel) {
+                selectModel(defaultModel.id, defaultModel.provider, defaultModel.providerId);
             }
-        }).catch(err => {
-            console.error("Failed to fetch available models:", err);
-            setHasProvider(false);
-            setIsCheckingProvider(false);
-        });
-    }, [selectedModel]);
+        }
+    }, [selectedModel, selectModel]);
 
     useEffect(() => {
         refreshModels();
@@ -217,39 +395,172 @@ export function useLlmChat(
         }
     }, [refreshModels]));
 
-    // Track whether the user is near the bottom of the scroll container
-    useEffect(() => {
+    /** Jump to the latest content (ignores the trailing spacer). */
+    const scrollToBottom = useCallback(() => {
+        messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "instant" });
+    }, []);
+
+    // Size the trailing spacer so the current turn can be parked near the top: reserve
+    // enough room below the user→reply boundary for the boundary to sit at
+    // REPLY_ANCHOR_TOP_FRACTION of the viewport, minus whatever the reply already
+    // provides (so long replies leave little blank). Set imperatively so it settles
+    // synchronously, right before the one-shot anchor scroll — no extra render, no flash.
+    const recomputeBottomSpacer = useCallback(() => {
+        const container = scrollContainerRef.current;
+        const spacer = bottomSpacerRef.current;
+        const endEl = messagesEndRef.current;
+        if (!container || !spacer || !endEl) return;
+
+        const lastUser = getLastUserMessageEl(container);
+        const viewport = container.clientHeight;
+        if (!lastUser || viewport === 0) {
+            spacer.style.height = "0px";
+            return;
+        }
+        // The spacer sits after endEl, so boundary→endEl is independent of its own
+        // height — no feedback loop.
+        const boundary = lastUser.getBoundingClientRect().bottom;
+        const contentEnd = endEl.getBoundingClientRect().top;
+        const replyHeight = Math.max(0, contentEnd - boundary);
+        const roomNeeded = viewport * (1 - REPLY_ANCHOR_TOP_FRACTION);
+        spacer.style.height = `${Math.round(Math.max(0, roomNeeded - replyHeight))}px`;
+    }, []);
+
+    /** Smoothly scroll the container to `targetTop` over ANCHOR_SCROLL_DURATION_MS. */
+    const smoothScrollTo = useCallback((targetTop: number) => {
+        const container = scrollContainerRef.current;
+        if (!container) {
+            anchorScrollActiveRef.current = false;
+            return;
+        }
+        if (anchorRafRef.current != null) {
+            cancelAnimationFrame(anchorRafRef.current);
+            anchorRafRef.current = null;
+        }
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        const to = Math.max(0, Math.min(targetTop, maxScroll));
+        const from = container.scrollTop;
+        const distance = to - from;
+        if (Math.abs(distance) < 1) {
+            container.scrollTop = to;
+            anchorScrollActiveRef.current = false;
+            return;
+        }
+        // Committed to the parked position — hold off reload-driven bottom jumps until the animation ends.
+        anchorScrollActiveRef.current = true;
+        const start = performance.now();
+        let lastSetTop = from;
+        const step = (now: number) => {
+            // Bail out if the user scrolled mid-animation (don't fight them).
+            if (Math.abs(container.scrollTop - lastSetTop) > 2) {
+                anchorRafRef.current = null;
+                anchorScrollActiveRef.current = false;
+                return;
+            }
+            const t = Math.min(1, (now - start) / ANCHOR_SCROLL_DURATION_MS);
+            const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2; // easeInOutQuad
+            container.scrollTop = from + distance * eased;
+            lastSetTop = container.scrollTop;
+            if (t < 1) {
+                anchorRafRef.current = requestAnimationFrame(step);
+            } else {
+                anchorRafRef.current = null;
+                anchorScrollActiveRef.current = false;
+            }
+        };
+        anchorRafRef.current = requestAnimationFrame(step);
+    }, []);
+
+    /** Park the latest user→reply boundary near the top, once, with a smooth transition. */
+    const anchorReplyToTop = useCallback(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
-
-        const THRESHOLD = 50; // px from bottom
-        const handleScroll = () => {
-            isNearBottomRef.current =
-                container.scrollHeight - container.scrollTop - container.clientHeight <= THRESHOLD;
-        };
-
-        container.addEventListener("scroll", handleScroll, { passive: true });
-        return () => container.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    // Scroll to bottom when content changes, but only if user hasn't scrolled away.
-    // Always use instant scroll — smooth animations race with the scroll listener
-    // during streaming, causing the auto-scroll to "unstick" mid-animation.
-    const scrollToBottom = useCallback(() => {
-        if (isNearBottomRef.current) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+        const lastUser = getLastUserMessageEl(container);
+        if (!lastUser) {
+            scrollToBottom();
+            return;
         }
+        const viewport = container.clientHeight;
+        const containerTop = container.getBoundingClientRect().top;
+        const userRect = lastUser.getBoundingClientRect();
+        const boundaryWithinView = userRect.bottom - containerTop;
+        // Keep at most a REPLY_ANCHOR_TOP_FRACTION-viewport sliver of the query above the
+        // boundary; if the query is shorter, just pin its top (no blank gap above).
+        const offsetAboveBoundary = Math.min(viewport * REPLY_ANCHOR_TOP_FRACTION, userRect.height);
+        smoothScrollTo(container.scrollTop + boundaryWithinView - offsetAboveBoundary);
+    }, [scrollToBottom, smoothScrollTo]);
+
+    // The timeline does not follow the stream — the model can outpace the reader, and
+    // moving text is hard to read. A jump-to-latest button appears whenever the content
+    // end sits below the fold. An IntersectionObserver on the messagesEnd anchor drives
+    // it: it fires only when the anchor crosses the viewport edge — no per-scroll layout
+    // reads — and covers scrolling, resize, streaming growth, and message changes alike.
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        const endEl = messagesEndRef.current;
+        if (!container || !endEl || typeof IntersectionObserver === "undefined") return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                const rootBounds = entry.rootBounds;
+                // Show only when the content end is genuinely below the fold — not when it
+                // has been scrolled above (matches the previous distance-based check).
+                setShowScrollToBottom(rootBounds ? entry.boundingClientRect.top > rootBounds.bottom : false);
+            },
+            { root: container, rootMargin: `0px 0px ${SCROLL_BOTTOM_THRESHOLD}px 0px`, threshold: 0 }
+        );
+        observer.observe(endEl);
+        return () => observer.disconnect();
     }, []);
 
+    // Re-fit the spacer and run any pending one-shot scroll as the message list changes.
+    // A layout effect lets the spacer settle synchronously so the anchor scroll already
+    // has the room it needs (no double-scroll, no flash). The stream itself never moves
+    // the view: `messages` is stable while streaming, so this does not re-run per token.
+    useLayoutEffect(() => {
+        recomputeBottomSpacer();
+        const mode = pendingScrollRef.current;
+        if (mode) {
+            pendingScrollRef.current = null;
+            if (mode === "anchor") {
+                anchorReplyToTop();
+            } else {
+                scrollToBottom();
+            }
+        }
+    }, [messages, recomputeBottomSpacer, anchorReplyToTop, scrollToBottom]);
+
+    // Re-fit the spacer when the container is resized (pane split, window resize, etc.).
+    // The button is handled by the IntersectionObserver, which reacts to resize itself.
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, smoothedTailText, streamingThinking, scrollToBottom]);
+        const container = scrollContainerRef.current;
+        if (!container || typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(() => recomputeBottomSpacer());
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [recomputeBottomSpacer]);
+
+    // On unmount, stop the anchor animation and abort any active stream so it stops
+    // consuming API tokens and can't push chunks into an unmounted component.
+    useEffect(() => () => {
+        if (anchorRafRef.current != null) cancelAnimationFrame(anchorRafRef.current);
+        abortControllerRef.current?.abort();
+    }, []);
 
     // Load state from content object
     const loadFromContent = useCallback((content: LlmChatContent) => {
+        // Opening an existing chat should land on the most recent message — but never clobber a send/retry
+        // that has queued the reply-anchor positioning, nor one whose anchor scroll is still animating: a
+        // content reload can race both the layout effect that consumes the pending mode and the ~300ms
+        // smooth scroll that follows, and a bottom jump in either window would yank the reply to the latest content.
+        if ((content.messages?.length ?? 0) > 0 && pendingScrollRef.current !== "anchor" && !anchorScrollActiveRef.current) {
+            pendingScrollRef.current = "bottom";
+        }
         setMessagesInternal(content.messages || []);
         if (content.selectedModel) {
-            setSelectedModel(content.selectedModel);
+            // selectedProvider/selectedProviderId may be absent in chats saved
+            // before they existed; the sender then falls back to resolving the
+            // provider by model ID.
+            selectModel(content.selectedModel, content.selectedProvider, content.selectedProviderId);
         }
         if (typeof content.enableWebSearch === "boolean") {
             setEnableWebSearch(content.enableWebSearch);
@@ -260,10 +571,16 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        setReasoningEffort(LLM_REASONING_EFFORTS.find(level => level === content.reasoningEffort));
+        setPermissionMode(LLM_PERMISSION_MODES.find(mode => mode === content.permissionMode) ?? rememberedPermissionMode());
+        setAllowedTools(Array.isArray(content.allowedTools)
+            ? content.allowedTools.filter((name): name is string => typeof name === "string")
+            : []);
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
-    }, [supportsExtendedThinking]);
+        setLastCompletionTokens(lastUsage?.completionTokens ?? 0);
+    }, [supportsExtendedThinking, selectModel]);
 
     // Get current state as content object (uses refs to avoid stale closures)
     const getContent = useCallback((): LlmChatContent => {
@@ -271,11 +588,20 @@ export function useLlmChat(
             version: 1,
             messages: messagesRef.current,
             selectedModel: selectedModelRef.current || undefined,
+            selectedProvider: selectedProviderRef.current || undefined,
+            selectedProviderId: selectedProviderIdRef.current || undefined,
             enableWebSearch: enableWebSearchRef.current,
-            enableNoteTools: enableNoteToolsRef.current
+            enableNoteTools: enableNoteToolsRef.current,
+            permissionMode: permissionModeRef.current
         };
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
+        }
+        if (reasoningEffortRef.current) {
+            content.reasoningEffort = reasoningEffortRef.current;
+        }
+        if (allowedToolsRef.current.length) {
+            content.allowedTools = allowedToolsRef.current;
         }
         return content;
     }, [supportsExtendedThinking]);
@@ -283,6 +609,9 @@ export function useLlmChat(
     const clearMessages = useCallback(() => {
         setMessages([]);
         setLastPromptTokens(0);
+        setLastCompletionTokens(0);
+        setAllowedTools([]);
+        setPermissionMode(rememberedPermissionMode());
     }, [setMessages]);
 
     /**
@@ -294,13 +623,29 @@ export function useLlmChat(
         setMessagesInternal(conversation);
         setIsStreaming(true);
         setTargetBlocks([]);
-        setStreamingThinking("");
+        setStreamingStatus(null);
         smoothReset();
 
-        let thinkingContent = "";
         const contentBlocks: ContentBlock[] = [];
         const citations: LlmCitation[] = [];
         let usage: LlmUsage | undefined;
+
+        toolApprovalAnswersRef.current.clear();
+
+        /** Apply `change` to the tool call `toolCallId`. Returns `false` if the reply has none. */
+        function updateToolCall(toolCallId: string, change: Partial<ToolCall>): boolean {
+            for (let i = contentBlocks.length - 1; i >= 0; i--) {
+                const block = contentBlocks[i];
+                if (block.type === "tool_call" && block.toolCall.id === toolCallId) {
+                    contentBlocks[i] = {
+                        type: "tool_call",
+                        toolCall: { ...block.toolCall, ...change }
+                    };
+                    return true;
+                }
+            }
+            return false;
+        }
 
         /** Get or create the last text block to append streaming text to. */
         function lastTextBlock(): ContentBlock & { type: "text" } {
@@ -313,22 +658,47 @@ export function useLlmChat(
             return block as ContentBlock & { type: "text" };
         }
 
-        const apiMessages: LlmMessage[] = conversation.map(m => ({
+        const apiMessages: LlmMessage[] = trimToFirstUserMessage(conversation.filter(m => m.type !== "thinking")).map(m => ({
             role: m.role,
-            content: flattenToApiContent(m.content)
+            content: stripQuoteSourcesFromApiContent(flattenToApiContent(m.content))
         }));
 
-        const selectedModelProvider = availableModels.find(m => m.id === selectedModel)?.provider;
+        // Prefer the provider recorded when the model was picked; fall back to
+        // resolving by model ID for chats saved before selectedProvider existed.
+        // The fallback returns the first match, so it can pick the wrong provider
+        // when two share a model ID — but such chats predate the subscription
+        // provider entirely, so their IDs only ever match one provider.
+        const matchedModel = availableModels.find(m =>
+            m.id === selectedModel && (!selectedProvider || m.provider === selectedProvider));
+        const selectedModelProvider = selectedProvider ?? matchedModel?.provider;
+        const webSearch = resolveWebSearch({
+            modelProvider: selectedModelProvider,
+            enableWebSearch,
+            enableNoteTools,
+            searchProviderId: optionService.get("llmWebSearchProvider") ?? "",
+            searchProviders: readSearchProviders()
+        });
         const streamOptions: Parameters<typeof streamChatCompletion>[1] = {
             model: selectedModel || undefined,
             provider: selectedModelProvider,
-            enableWebSearch,
+            // The config id pins the exact provider instance when several of the
+            // same type are configured (e.g. OpenAI + self-hosted Ollama).
+            providerId: selectedProviderId ?? matchedModel?.providerId,
+            enableWebSearch: webSearch.enableWebSearch,
+            webSearchProviderId: webSearch.webSearchProviderId,
             enableNoteTools,
             contextNoteId,
-            chatNoteId: chatNoteIdRef.current
+            chatNoteId: chatNoteIdRef.current,
+            permissionMode
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
+        }
+        if (reasoningEffort && matchedModel?.reasoningEfforts?.length) {
+            streamOptions.reasoningEffort = reasoningEffort;
+        }
+        if (allowedTools.length) {
+            streamOptions.allowedTools = allowedTools;
         }
 
         const abortController = new AbortController();
@@ -341,52 +711,48 @@ export function useLlmChat(
             // the finalized message.
             smoothDrain();
 
+            // The reply can end before the turn acknowledges an answer it already acted on.
+            for (const [toolCallId, waiting] of toolApprovalAnswersRef.current) {
+                if (waiting.answering !== undefined) {
+                    updateToolCall(toolCallId, { approval: waiting.answering ? undefined : "declined" });
+                }
+            }
+
             // Mark any in-progress tool calls as stopped so they don't show infinite spinners.
             // Also clear `inputStreaming` so a half-streamed JSON arg list doesn't render.
             for (const [i, block] of contentBlocks.entries()) {
-                if (block.type === "tool_call" && !block.toolCall.result) {
+                if (block.type !== "tool_call") continue;
+                if (!block.toolCall.result) {
                     contentBlocks[i] = {
                         type: "tool_call",
                         toolCall: {
                             ...block.toolCall,
                             inputStreaming: undefined,
                             result: "[Stopped]",
-                            isError: true
+                            isError: true,
+                            approval: undefined
                         }
                     };
+                } else if (block.toolCall.approval === "pending") {
+                    contentBlocks[i] = { type: "tool_call", toolCall: { ...block.toolCall, approval: undefined } };
                 }
             }
 
-            const finalNewMessages: StoredMessage[] = [];
-
-            if (thinkingContent) {
-                finalNewMessages.push({
-                    id: randomString(),
-                    role: "assistant",
-                    content: thinkingContent,
-                    createdAt: new Date().toISOString(),
-                    type: "thinking"
-                });
-            }
-
             if (contentBlocks.length > 0) {
-                finalNewMessages.push({
+                setMessages([...conversation, {
                     id: randomString(),
                     role: "assistant",
                     content: contentBlocks,
                     createdAt: new Date().toISOString(),
                     citations: citations.length > 0 ? citations : undefined,
                     usage
-                });
-            }
-
-            if (finalNewMessages.length > 0) {
-                setMessages([...conversation, ...finalNewMessages]);
+                }]);
             }
 
             setTargetBlocks([]);
-            setStreamingThinking("");
             setPendingCitations([]);
+            setStreamingStatus(null);
+            toolApprovalAnswersRef.current.clear();
             setIsStreaming(false);
             abortControllerRef.current = null;
         }
@@ -395,6 +761,7 @@ export function useLlmChat(
             apiMessages,
             streamOptions,
             {
+                onStatus: setStreamingStatus,
                 onChunk: (text) => {
                     // A new text block begins whenever the previous tail is
                     // anything other than text (or there's nothing yet). In
@@ -410,8 +777,16 @@ export function useLlmChat(
                     setTargetBlocks([...contentBlocks]);
                 },
                 onThinking: (text) => {
-                    thinkingContent += text;
-                    setStreamingThinking(thinkingContent);
+                    const last = contentBlocks[contentBlocks.length - 1];
+                    if (last?.type === "thinking") {
+                        contentBlocks[contentBlocks.length - 1] = { type: "thinking", content: last.content + text };
+                    } else {
+                        // The smoother animates only a trailing text block, so reveal the
+                        // text before this thought in full.
+                        smoothDrain();
+                        contentBlocks.push({ type: "thinking", content: text });
+                    }
+                    setTargetBlocks([...contentBlocks]);
                 },
                 onToolInputStart: (toolCallId, toolName) => {
                     // Snap any pending smoothed text to its full value before
@@ -474,6 +849,31 @@ export function useLlmChat(
                     });
                     setTargetBlocks([...contentBlocks]);
                 },
+                onToolApprovalRequest: ({ toolCallId, toolName, toolInput }, answer) => {
+                    // The request can arrive before the `tool_use` chunk of its call.
+                    const waiting: Partial<ToolCall> = {
+                        input: toolInput,
+                        inputStreaming: undefined,
+                        approval: "pending"
+                    };
+                    if (!updateToolCall(toolCallId, waiting)) {
+                        smoothDrain();
+                        const toolCall: ToolCall = {
+                            id: toolCallId, toolName, input: toolInput, approval: "pending"
+                        };
+                        contentBlocks.push({ type: "tool_call", toolCall });
+                    }
+                    toolApprovalAnswersRef.current.set(toolCallId, {
+                        toolName,
+                        send: answer,
+                        settle: (approved) => {
+                            toolApprovalAnswersRef.current.delete(toolCallId);
+                            updateToolCall(toolCallId, { approval: approved ? undefined : "declined" });
+                            setTargetBlocks([...contentBlocks]);
+                        }
+                    });
+                    setTargetBlocks([...contentBlocks]);
+                },
                 onToolResult: (toolCallId, _toolName, result, isError) => {
                     // Replace the matching block with a new object so Preact sees the change.
                     for (let i = contentBlocks.length - 1; i >= 0; i--) {
@@ -497,22 +897,24 @@ export function useLlmChat(
                 },
                 onUsage: (u) => {
                     usage = u;
-                    setLastPromptTokens(u.promptTokens);
+                    setLastPromptTokens(u.promptTokens ?? 0);
+                    setLastCompletionTokens(u.completionTokens ?? 0);
                 },
-                onError: (errorMsg) => {
-                    console.error("Chat error:", errorMsg);
+                onError: (errorMsg, errorDetails) => {
+                    console.error("Chat error:", errorMsg, errorDetails);
                     const errorMessage: StoredMessage = {
                         id: randomString(),
                         role: "assistant",
                         content: errorMsg,
                         createdAt: new Date().toISOString(),
-                        type: "error"
+                        type: "error",
+                        ...(errorDetails ? { errorDetails } : {})
                     };
                     const finalMessages = [...conversation, errorMessage];
                     setMessages(finalMessages);
                     smoothReset();
                     setTargetBlocks([]);
-                    setStreamingThinking("");
+                    setStreamingStatus(null);
                     setIsStreaming(false);
                 },
                 onDone: () => {
@@ -540,18 +942,29 @@ export function useLlmChat(
             }]);
             smoothReset();
             setTargetBlocks([]);
-            setStreamingThinking("");
+            setStreamingStatus(null);
             setIsStreaming(false);
             abortControllerRef.current = null;
         });
-    }, [selectedModel, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
+    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, reasoningEffort, allowedTools, permissionMode, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
         if (isStreaming) return;
-        const trimmedInput = input.trim();
+        // The picked model must resolve to one the provider actually offers.
+        // A bare `selectedModel` truthiness check isn't enough: a saved chat can
+        // restore a model ID that has since been deselected (so it's absent from
+        // availableModels). Sending it anyway would let the server silently fall
+        // back to some default, so block until an available model is chosen.
+        const model = resolveSelectedModel(availableModelsRef.current, selectedModelRef.current, selectedProviderRef.current, selectedProviderIdRef.current);
+        if (!model) {
+            return;
+        }
+        const trimmedInput = inputRef.current.trim();
         const attachments = pendingAttachmentsRef.current;
         if (!trimmedInput && attachments.length === 0) return;
+        // An attachment the model can't read would reach it as a placeholder only; the input bar says why Send is blocked.
+        if (unreadableAttachments(model, attachments).length > 0) return;
 
         // If there are attachments, build a block-shaped content array so the
         // images travel alongside the text. Otherwise stay with the simple
@@ -578,14 +991,27 @@ export function useLlmChat(
         };
         setInput("");
         setPendingAttachments([]);
+        pendingScrollRef.current = "anchor";
         await runStream([...messages, userMessage]);
-    }, [input, isStreaming, messages, runStream]);
+    }, [isStreaming, messages, runStream, setInput]);
 
     /** Re-run the last turn after a failed response, dropping the trailing error message. */
     const retryLast = useCallback(async () => {
         if (isStreaming) return;
         if (messages[messages.length - 1]?.type !== "error") return;
+        pendingScrollRef.current = "anchor";
         await runStream(messages.slice(0, -1));
+    }, [isStreaming, messages, runStream]);
+
+    /** Regenerate the last reply: re-run from the last user message, dropping the reply that followed. */
+    const regenerateLastReply = useCallback(async () => {
+        // Re-check against the current state, not the snapshot from when the menu opened: only act while
+        // idle and while the last message is still an assistant reply to regenerate.
+        if (isStreaming || messages[messages.length - 1]?.role !== "assistant") return;
+        const conversation = conversationForRegenerate(messages);
+        if (!conversation) return;
+        pendingScrollRef.current = "anchor";
+        await runStream(conversation);
     }, [isStreaming, messages, runStream]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -594,6 +1020,52 @@ export function useLlmChat(
             handleSubmit(e);
         }
     }, [handleSubmit]);
+
+    /**
+     * Allow or deny a tool call of the running turn that waits for the user. The call keeps waiting
+     * until the turn has received the answer, so an answer that fails to send can be given again.
+     * Allowed for the chat, its tool is added to `allowedTools`, and the other calls of it that wait
+     * stop waiting, since the turn approves them itself. When the reply ended while the answer was on
+     * its way, `finalizeStream()` already saved the call with it, and only `allowedTools` changes.
+     */
+    const answerToolCall = useCallback(async (toolCallId: string, approved: boolean, scope?: LlmToolApprovalAnswer["scope"]) => {
+        const waiting = toolApprovalAnswersRef.current.get(toolCallId);
+        if (!waiting || waiting.answering !== undefined) return;
+        const chatNoteId = chatNoteIdRef.current;
+        waiting.answering = approved;
+        try {
+            await waiting.send(approved, scope);
+        } catch (e) {
+            waiting.answering = undefined;
+            console.error("Failed to answer the tool call:", e);
+            return;
+        }
+
+        if (approved && scope === "chat" && chatNoteIdRef.current === chatNoteId) {
+            setAllowedTools(tools => (tools.includes(waiting.toolName) ? tools : [ ...tools, waiting.toolName ]));
+        }
+        if (toolApprovalAnswersRef.current.get(toolCallId) !== waiting) return;
+
+        waiting.settle(approved);
+        if (!approved || scope !== "chat") return;
+
+        for (const other of [ ...toolApprovalAnswersRef.current.values() ]) {
+            if (other.toolName === waiting.toolName) {
+                other.settle(true);
+            }
+        }
+    }, []);
+
+    const revokeAllowedTool = useCallback((toolName: string) => {
+        setAllowedTools(tools => tools.filter(tool => tool !== toolName));
+    }, []);
+
+    const choosePermissionMode = useCallback((mode: LlmPermissionMode) => {
+        setPermissionMode(mode);
+        optionService.save("llmPermissionMode", mode).catch((e: unknown) => {
+            console.error("Failed to remember the permission mode:", e);
+        });
+    }, []);
 
     /** Stop the current generation by aborting the SSE connection. */
     const stopStreaming = useCallback(() => {
@@ -618,41 +1090,53 @@ export function useLlmChat(
         ];
     }, [targetBlocks, smoothedTailText]);
 
-    const streamingContent = useMemo(() => streamingBlocks
-        .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
-        .map(b => b.content)
-        .join(""), [streamingBlocks]);
-
     return {
         // State
         messages,
-        input,
+        hasInputText,
         isStreaming,
-        streamingContent,
         streamingBlocks,
-        streamingThinking,
+        streamingStatus,
         pendingCitations,
         pendingAttachments,
         availableModels,
+        modelGroups,
         selectedModel,
+        selectedProvider,
+        selectedProviderId,
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
+        reasoningEffort,
+        allowedTools,
+        permissionMode,
         contextNoteId,
         chatNoteId,
         lastPromptTokens,
+        lastCompletionTokens,
+        draftTokens,
         messagesEndRef,
         scrollContainerRef,
+        bottomSpacerRef,
+        showScrollToBottom,
+        scrollToBottom,
         hasProvider,
         isCheckingProvider,
+
+        registerInputEditor,
+        appendToInput,
+        focusInput,
+        getInput,
 
         // Setters
         setInput,
         setMessages,
-        setSelectedModel,
+        setSelectedModel: selectModel,
         setEnableWebSearch,
         setEnableNoteTools,
         setEnableExtendedThinking,
+        setReasoningEffort,
+        setPermissionMode: choosePermissionMode,
         setContextNoteId,
         setChatNoteId,
         addPendingAttachment,
@@ -666,6 +1150,15 @@ export function useLlmChat(
         clearMessages,
         refreshModels,
         stopStreaming,
-        retryLast
+        answerToolCall,
+        revokeAllowedTool,
+        retryLast,
+        regenerateLastReply
     };
+}
+
+/** The permission mode picked last in any chat, which a new chat starts in. */
+function rememberedPermissionMode(): LlmPermissionMode {
+    const remembered = optionService.get("llmPermissionMode");
+    return LLM_PERMISSION_MODES.find(mode => mode === remembered) ?? "ask_before_changes";
 }

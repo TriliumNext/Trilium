@@ -118,6 +118,11 @@ class WasmStatement implements Statement {
                 }
                 stmt.reset();
                 return { value: undefined, done: true };
+            },
+            // Called by `break` or `return` inside a `for...of` loop.
+            return(): IteratorResult<unknown> {
+                stmt.reset();
+                return { value: undefined, done: true };
             }
         };
     }
@@ -373,6 +378,19 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             this.db.exec("PRAGMA journal_mode = WAL");
             this.db.exec("PRAGMA synchronous = NORMAL");
 
+            // Performance tuning — SAHPool/OPFS writes on iOS WKWebView are
+            // expensive (each flush hits the native filesystem barrier), so
+            // we lean heavily on in-memory caching and defer WAL checkpoints.
+            //   * cache_size:        64 MB page cache (negative value = KiB)
+            //   * temp_store:        keep tmp tables/sorts/indices in RAM
+            //   * mmap_size:         256 MB memory-mapped reads when supported
+            //   * wal_autocheckpoint: 10× the SQLite default so commits don't
+            //                         pay for a full WAL flush every ~4 MB
+            this.db.exec("PRAGMA cache_size = -65536");
+            this.db.exec("PRAGMA temp_store = MEMORY");
+            this.db.exec("PRAGMA mmap_size = 268435456");
+            this.db.exec("PRAGMA wal_autocheckpoint = 10000");
+
             const loadTime = performance.now() - startTime;
             console.log(`[BrowserSqlProvider] SAHPool database loaded in ${loadTime.toFixed(2)}ms (WAL mode)`);
         } catch (e) {
@@ -613,6 +631,22 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     }
 
     /**
+     * Lets go of the database so the pool entry behind it can be replaced or unlinked.
+     *
+     * The same thing as {@link close} here, since there is no file handle to release beyond the
+     * connection itself. It exists under this name so the erase and the swap can go through the SQL
+     * service, which holds prepared statements of its own that belong to the connection being let
+     * go of and have to be dropped with it.
+     */
+    detach(): void {
+        this.close();
+    }
+
+    isAttached(): boolean {
+        return this.db !== undefined;
+    }
+
+    /**
      * Get the number of rows changed by the last INSERT, UPDATE, or DELETE statement.
      */
     changes(): number {
@@ -644,4 +678,100 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             );
         }
     }
+}
+
+/**
+ * Where `installOpfsSAHPoolVfs()` keeps the pool files under the default options
+ * {@link BrowserSqlProvider.installSahPool} uses: `"." + name` under the OPFS root, with the
+ * files in its `.opaque` subdirectory.
+ */
+const SAH_POOL_OPAQUE_PATH = ".opfs-sahpool/.opaque";
+
+export interface SahPoolReleaseWait {
+    /** How long to keep probing before reporting the pool as still held. */
+    deadlineMs?: number;
+    /** Pause between two probe rounds. */
+    pollMs?: number;
+    /** Stands in for `navigator.storage.getDirectory` in tests. */
+    getRoot?: () => Promise<FileSystemDirectoryHandle>;
+}
+
+/**
+ * Waits until no file of the SAHPool directory is held by another context.
+ *
+ * A page reload starts a new worker while the browser is still releasing the previous worker's
+ * exclusive OPFS access handles, so an immediate {@link BrowserSqlProvider.installSahPool} can
+ * find the pool files locked. That failure must not simply be retried:
+ * `installOpfsSAHPoolVfs()` reacts to it by deleting the pool directory, database included, so
+ * the pool has to be acquirable before it runs at all.
+ *
+ * Resolves `true` once every pool file accepts a (immediately closed) probe access handle, and
+ * without waiting when the pool does not exist yet or the OPFS API is missing — in both cases
+ * `installSahPool()` is the one with the authoritative answer. Resolves `false` when a file is
+ * still locked after `deadlineMs`.
+ */
+export async function waitForSahPoolRelease(
+    { deadlineMs = 15_000, pollMs = 150, getRoot }: SahPoolReleaseWait = {}
+): Promise<boolean> {
+    if (!getRoot) {
+        if (!navigator?.storage?.getDirectory) {
+            return true;
+        }
+        getRoot = () => navigator.storage.getDirectory();
+    }
+
+    let dir: FileSystemDirectoryHandle;
+    try {
+        dir = await getRoot();
+        for (const segment of SAH_POOL_OPAQUE_PATH.split("/")) {
+            dir = await dir.getDirectoryHandle(segment);
+        }
+    } catch {
+        return true;
+    }
+
+    const deadline = Date.now() + deadlineMs;
+    let announced = false;
+    for (;;) {
+        const heldFile = await findHeldPoolFile(dir);
+        if (!heldFile) {
+            if (announced) {
+                console.log("[BrowserSqlProvider] The SAHPool files have been released");
+            }
+            return true;
+        }
+        if (!announced) {
+            console.log(
+                `[BrowserSqlProvider] Pool file "${heldFile}" is still held, usually by the `
+                + "worker of the page this one replaced — waiting for its release..."
+            );
+            announced = true;
+        }
+        if (Date.now() >= deadline) {
+            return false;
+        }
+        await new Promise(resolve => setTimeout(resolve, pollMs));
+    }
+}
+
+/** The name of a pool file whose exclusive access handle another context still holds, if any. */
+async function findHeldPoolFile(dir: FileSystemDirectoryHandle): Promise<string | null> {
+    for await (const [name, handle] of dir.entries()) {
+        if (handle.kind !== "file") {
+            continue;
+        }
+        try {
+            const probe = await (handle as FileSystemFileHandle).createSyncAccessHandle();
+            probe.close();
+        } catch (e) {
+            // `createSyncAccessHandle()` throws NoModificationAllowedError for exactly the case
+            // worth waiting out: a lock another context holds. Every other failure is a broken
+            // environment that waiting cannot fix, and reporting it as held would keep the boot
+            // from starting at all.
+            if ((e as DOMException)?.name === "NoModificationAllowedError") {
+                return name;
+            }
+        }
+    }
+    return null;
 }

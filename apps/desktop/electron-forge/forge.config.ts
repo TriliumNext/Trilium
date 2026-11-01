@@ -1,7 +1,8 @@
 import type { ForgeConfig } from "@electron-forge/shared-types";
-import { FuseV1Options, FuseVersion } from "@electron/fuses";
-import { LOCALES } from "@triliumnext/commons";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, unlinkSync } from "fs";
+import { FuseV1Options } from "@electron/fuses";
+import { FUSES } from "./flip-fuses.js";
+import { trimElectronLocales } from "./trim-locales.js";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync } from "fs";
 import path, { join } from "path";
 
 import packageJson from "../package.json" with { type: "json" };
@@ -42,7 +43,11 @@ const config: ForgeConfig = {
         name: PRODUCT_NAME,
         appVersion: packageJson.version,
         overwrite: true,
-        asar: true,
+        asar: {
+            // The shared libraries beside sherpa-onnx's addon (onnxruntime) are loaded by the OS,
+            // which cannot read them from inside the archive. auto-unpack-natives adds `*.node`.
+            unpack: "**/node_modules/sherpa-onnx-*-*/**"
+        },
         icon: path.join(APP_ICON_PATH, isNightly ? "icon-dev" : "icon"),
         ...macosSignConfiguration,
         windowsSign: windowsSignConfiguration,
@@ -52,33 +57,23 @@ const config: ForgeConfig = {
         ],
         prune: false,
         afterComplete: [
-            (buildPath, _electronVersion, platform, _arch, callback) => {
+            ({ buildPath, platform }) => {
                 // Only move resources on non-macOS platforms
-                if (platform !== "darwin") {
-                    try {
-                        for (const resource of extraResourcesForPlatform) {
-                            const baseName = path.basename(resource);
-                            const sourcePath = path.join(buildPath, "resources", baseName);
+                if (platform === "darwin") return;
 
-                            // prettier-ignore
-                            const destPath = (baseName !== "256x256.png")
-                                ? path.join(buildPath, baseName)
-                                : path.join(buildPath, "icon.png");
+                for (const resource of extraResourcesForPlatform) {
+                    const baseName = path.basename(resource);
+                    const sourcePath = path.join(buildPath, "resources", baseName);
 
-                            renameSync(sourcePath, destPath);
-                        }
-                        callback();
-                    } catch (err) {
-                        callback(err as Error);
-                    }
-                } else {
-                    callback();
+                    // prettier-ignore
+                    const destPath = (baseName !== "256x256.png")
+                        ? path.join(buildPath, baseName)
+                        : path.join(buildPath, "icon.png");
+
+                    renameSync(sourcePath, destPath);
                 }
             }
         ]
-    },
-    rebuildConfig: {
-        extraModules: [ "better-sqlite3" ]
     },
     makers: [
         {
@@ -92,7 +87,6 @@ const config: ForgeConfig = {
             config: {
                 options: {
                     ...baseLinuxMakerConfigOptions,
-                    desktopTemplate: undefined, // otherwise it would put in the wrong exec
                     icon: {
                         "128x128": path.join(APP_ICON_PATH, isNightly ? "png/128x128-dev.png" : "png/128x128.png"),
                     },
@@ -152,7 +146,27 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/maker-dmg",
             config: {
-                icon: path.join(APP_ICON_PATH, isNightly ? "icon-dev.icns" : "icon.icns")
+                // Volume icon of the MOUNTED image (Finder sidebar, desktop mount, DMG
+                // title bar) — a drive body carrying the mark, NOT the app icon, so the
+                // installer reads as media rather than a second copy of the app.
+                // Generated from dmg-icon/volume-icon.html; see that folder's README.
+                icon: path.join(ELECTRON_FORGE_DIR, "dmg-icon",
+                    isNightly ? "volume-dev.icns" : "volume.icns"),
+                // Branded Finder-window background (generated from dmg-background/background.html).
+                // appdmg auto-uses the sibling background@2x.png for Retina.
+                background: path.join(ELECTRON_FORGE_DIR, "dmg-background", isNightly ? "background-dev.png" : "background.png"),
+                iconSize: 128,
+                additionalDMGOptions: {
+                    window: { size: { width: 640, height: 400 } }
+                },
+                // Icon CENTERS in Finder's .DS_Store Iloc coordinate space: top-left origin,
+                // y increasing downward. y=182 centers the icon + its caption pair vertically in
+                // the window (there is no baked banner above them). Verify on a macOS build
+                // (appdmg is darwin-only).
+                contents: (opts: { appPath: string }) => [
+                    { x: 180, y: 182, type: "file", path: opts.appPath },
+                    { x: 460, y: 182, type: "link", path: "/Applications" }
+                ]
             }
         },
         {
@@ -173,13 +187,9 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/plugin-fuses",
             config: {
-                version: FuseVersion.V1,
-                [FuseV1Options.RunAsNode]: false,
-                [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
-                [FuseV1Options.EnableNodeCliInspectArguments]: false,
-                [FuseV1Options.EnableCookieEncryption]: true,
+                ...FUSES,
+                // The forge builds package the app into an asar archive; the Flathub build has none.
                 [FuseV1Options.OnlyLoadAppFromAsar]: true,
-                [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
                 [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true
             }
         }
@@ -188,75 +198,24 @@ const config: ForgeConfig = {
         // Remove unused locales from the packaged app to save some space.
         async postPackage(_, packageResult) {
             const isMac = (process.platform === "darwin");
-            let localesToKeep = LOCALES
-                .filter(locale => !locale.contentOnly)
-                .map(locale => locale.electronLocale) as string[];
-            if (!isMac) {
-                localesToKeep = localesToKeep.map(locale => locale.replace("_", "-"));
-            }
+            const localeDirs = packageResult.outputPaths.flatMap((outputPath) => isMac
+                ? [
+                    path.join(outputPath, `${PRODUCT_NAME}.app/Contents/Resources`),
+                    path.join(outputPath, `${PRODUCT_NAME}.app/Contents/Frameworks/Electron Framework.framework/Resources`)
+                ]
+                : [ path.join(outputPath, 'locales') ]);
 
-            const keptLocales = new Set();
-            const removedLocales: string[] =  [];
-            const extension = (isMac ? ".lproj" : ".pak");
-
-            for (const outputPath of packageResult.outputPaths) {
-                const localeDirs = isMac
-                    ? [
-                        path.join(outputPath, `${PRODUCT_NAME}.app/Contents/Resources`),
-                        path.join(outputPath, `${PRODUCT_NAME}.app/Contents/Frameworks/Electron Framework.framework/Resources`)
-                    ]
-                    : [ path.join(outputPath, 'locales') ];
-
-                for (const localeDir of localeDirs) {
-                    if (!existsSync(localeDir)) {
-                        console.log(`No locales directory found in '${localeDir}'.`);
-                        process.exit(2);
-                    }
-
-                    const files = readdirSync(localeDir);
-
-                    for (const file of files) {
-                        if (!file.endsWith(extension)) {
-                            continue;
-                        }
-
-                        let localeName = path.basename(file, extension);
-                        if (localeName === "en-US" && !isMac) {
-                            // If the locale is "en-US" on Windows, we treat it as "en".
-                            // This is because the Windows version of Electron uses "en-US.pak" instead of "en.pak".
-                            localeName = "en";
-                        }
-
-                        if (localesToKeep.includes(localeName)) {
-                            keptLocales.add(localeName);
-                            continue;
-                        }
-
-                        const filePath = path.join(localeDir, file);
-                        if (isMac) {
-                            rmSync(filePath, { recursive: true });
-                        } else {
-                            unlinkSync(filePath);
-                        }
-
-                        removedLocales.push(file);
-                    }
-                }
-            }
-
-            console.log(`Removed unused locale files: ${removedLocales.join(", ")}`);
-
-            // Ensure all locales that should be kept are actually present.
-            for (const locale of localesToKeep) {
-                if (!keptLocales.has(locale)) {
-                    throw new Error(`Locale ${locale} was not found in the packaged app.`);
-                }
-            }
+            const { removed } = trimElectronLocales(localeDirs, isMac);
+            console.log(`Removed unused locale files: ${removed.join(", ")}`);
 
             // Check that the bettersqlite3 binary has the right architecture.
+            // Since v13, better-sqlite3 ships N-API prebuilds and the Electron
+            // native rebuild was dropped, so no build/Release/ addon is ever
+            // produced. The loadable binary is the shipped prebuild, which
+            // auto-unpack-natives extracts to app.asar.unpacked/.../prebuilds/.
             if (packageResult.platform === "linux" && packageResult.arch === "arm64") {
                 for (const outputPath of packageResult.outputPaths) {
-                    const binaryPath = join(outputPath, "resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node");
+                    const binaryPath = join(outputPath, "resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/linux-arm64.node");
                     if (!existsSync(binaryPath)) {
                         throw new Error(`[better-sqlite3] Unable to find .node file at ${binaryPath}`);
                     }

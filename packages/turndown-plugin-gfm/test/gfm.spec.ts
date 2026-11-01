@@ -261,19 +261,32 @@ describe("GFM plugin", () => {
             expect(turndown.turndown(input)).toBe(expected);
         });
 
-        it("handles non-definitive heading row", () => {
+        // GFM cannot represent a headerless table without inventing a phantom
+        // empty header row, which reimports as a spurious blank row. Such tables
+        // are kept as raw HTML instead so they round-trip faithfully. The HTML is
+        // pretty-printed (structural tags indented, no blank lines) so it stays
+        // readable in the exported Markdown while remaining a single HTML block.
+        it("keeps a table with no heading row as HTML", () => {
             const input = `<table>
                 <tr><td>Row 1 Cell 1</td><td>Row 1 Cell 2</td></tr>
                 <tr><td>Row 2 Cell 1</td><td>Row 2 Cell 2</td></tr>
             </table>`;
-            const expected = `|  |  |
-| --- | --- |
-| Row 1 Cell 1 | Row 1 Cell 2 |
-| Row 2 Cell 1 | Row 2 Cell 2 |`;
+            const expected = `<table>
+    <tbody>
+        <tr>
+            <td>Row 1 Cell 1</td>
+            <td>Row 1 Cell 2</td>
+        </tr>
+        <tr>
+            <td>Row 2 Cell 1</td>
+            <td>Row 2 Cell 2</td>
+        </tr>
+    </tbody>
+</table>`;
             expect(turndown.turndown(input)).toBe(expected);
         });
 
-        it("handles non-definitive heading row with th", () => {
+        it("keeps a table with only heading columns as HTML", () => {
             const input = `<table>
                 <tr>
                     <th>Heading</th>
@@ -284,10 +297,50 @@ describe("GFM plugin", () => {
                     <td>Not a heading</td>
                 </tr>
             </table>`;
-            const expected = `|  |  |
-| --- | --- |
-| Heading | Not a heading |
-| Heading | Not a heading |`;
+            const expected = `<table>
+    <tbody>
+        <tr>
+            <th>Heading</th>
+            <td>Not a heading</td>
+        </tr>
+        <tr>
+            <td>Heading</td>
+            <td>Not a heading</td>
+        </tr>
+    </tbody>
+</table>`;
+            expect(turndown.turndown(input)).toBe(expected);
+        });
+
+        it("pretty-prints a caption, colgroup and thead kept as HTML", () => {
+            // A table with block content in a cell (here a list) is kept as HTML;
+            // the caption, colgroup/col and thead/tbody structure is all indented,
+            // while the cell contents (including the list) stay inline.
+            const input = `<table>
+                <caption>My caption</caption>
+                <colgroup><col style="width:50%"><col></colgroup>
+                <thead><tr><th>H1</th><th>H2</th></tr></thead>
+                <tbody><tr><td>A</td><td><ul><li>x</li></ul></td></tr></tbody>
+            </table>`;
+            const expected = `<table>
+    <caption>My caption</caption>
+    <colgroup>
+        <col style="width:50%">
+        <col>
+    </colgroup>
+    <thead>
+        <tr>
+            <th>H1</th>
+            <th>H2</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>A</td>
+            <td><ul><li>x</li></ul></td>
+        </tr>
+    </tbody>
+</table>`;
             expect(turndown.turndown(input)).toBe(expected);
         });
     });

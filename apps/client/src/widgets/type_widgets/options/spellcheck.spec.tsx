@@ -13,7 +13,7 @@ const setSpellCheckLanguageCode = vi.fn();
 
 // `useTriliumOptionBool` drives the enabled state, `useTriliumOption` drives the language codes; both
 // return the value plus a setter spy so we can assert the persisted option is written. Partial-mock so
-// other hooks used by sibling components (e.g. `useUniqueName` in OptionsRow) keep their real impl.
+// other hooks used by sibling components (e.g. `useUniqueName` in OptionCardSection) keep their real impl.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks")>()),
     useTriliumOptionBool: vi.fn(() => [true, setSpellCheckEnabled]),
@@ -26,8 +26,11 @@ vi.mock("../../../services/utils", async (importActual) => ({
     isElectron: vi.fn(() => true)
 }));
 
+// Stubbed for the note context it would otherwise need, but both its slots are rendered: the page's
+// master switch lives on the row below the title.
 vi.mock("./components/OptionsPageHeader", () => ({
-    default: ({ actions }: { actions?: ComponentChildren }) => <div className="header-stub">{actions}</div>
+    default: ({ actions, below }: { actions?: ComponentChildren; below?: ComponentChildren }) =>
+        <div className="header-stub">{actions}{below}</div>
 }));
 
 vi.mock("../../react/FormToggle", () => ({

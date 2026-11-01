@@ -1,0 +1,72 @@
+/* The app's views pad themselves by the margin `scrolling_container.css` sets in the app. */
+#content.app-view > :is(.share-collection, .share-note-view) {
+    --content-margin-inline: 24px;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
+
+    > * {
+        flex: 1;
+        min-height: 0;
+    }
+
+    > img {
+        flex: 0 1 auto;
+        align-self: center;
+        object-fit: contain;
+    }
+}
+
+@media (max-width: 48em) {
+    #content.app-view > :is(.share-collection, .share-note-view) {
+        --content-margin-inline: 8px;
+    }
+}
+
+#content.app-view:has(.collection-properties) > #title-row {
+    border-bottom: 0;
+}
+
+html.has-scripts:not(.app-view-shown) #content.app-view > :is(.share-collection, .share-note-view) {
+    > :not(img) {
+        visibility: hidden;
+        overflow: hidden;
+        animation: app-view-show 0s 10s forwards;
+    }
+
+    &:not(:has(> img))::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 32px;
+        height: 32px;
+        margin: auto;
+        border: 3px solid var(--background-highlight);
+        border-top-color: var(--text-menu);
+        border-radius: 50%;
+        animation: app-view-spin 800ms linear infinite, app-view-hide 0s 10s forwards;
+    }
+}
+
+@keyframes app-view-show {
+    to {
+        visibility: visible;
+        overflow: auto;
+    }
+}
+
+@keyframes app-view-hide {
+    to {
+        visibility: hidden;
+    }
+}
+
+@keyframes app-view-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

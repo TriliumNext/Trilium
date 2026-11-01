@@ -1,5 +1,6 @@
 import { getLog, password as passwordService, user_service, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
+import rateLimit from "express-rate-limit";
 
 import { verifyLoginCredentials } from "../services/auth.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
@@ -9,8 +10,11 @@ import totp from '../services/totp.js';
 function loginPage(req: Request, res: Response) {
     // The login screen is served by the SPA at the root now (driven by the bootstrap
     // `loggedIn: false` payload, which also surfaces any one-shot SSO error left by a
-    // failed OIDC round-trip); redirect any direct hits there.
-    res.redirect(".");
+    // failed OIDC round-trip); redirect any direct hits there. The `?login` marker
+    // tells checkAuth this is an explicit login navigation, so it isn't mistaken for
+    // a bare-domain hit and bounced to the share page (#10552). A direct hit on
+    // "/login/" (trailing slash) needs ".." — "." would resolve onto itself and loop.
+    res.redirect(req.path.endsWith("/") ? "../?login" : "./?login");
 }
 
 function setPasswordPage(req: Request, res: Response) {
@@ -114,9 +118,9 @@ async function login(req: Request, res: Response) {
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
     if (totp.isTotpEnabled()) {
-        getLog().info(`WARNING: Wrong ${errorType} from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong ${errorType} from ${req.ip}, rejecting.`);
     } else {
-        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
     }
 
     // The client submits via fetch; report the failed factor as JSON. The 401 keeps the
@@ -138,6 +142,25 @@ function logout(req: Request, res: Response) {
         }
 
         res.redirect('login');
+    });
+}
+
+/**
+ * Caps password guessing per IP across every route that checks a credential: `/login`,
+ * `/api/login/*`, `/api/setup/auth` and the ETAPI login.
+ *
+ * `skipSuccessfulRequests` refunds the hit from a `res.on("finish")` handler, and
+ * express-rate-limit decides what to refund with `requestWasSuccessful`, which defaults to
+ * `response.statusCode < 400`. So every route behind this MUST answer a failed credential with a
+ * status of 400 or above, or its attempts are refunded as fast as they are counted and the limit is
+ * never reached. A successful login to `/login` is counted all the same: it redirects, and a 302 is
+ * below 400.
+ */
+export function createLoginRateLimiter() {
+    return rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 10, // limit each IP to 10 requests per windowMs
+        skipSuccessfulRequests: true
     });
 }
 

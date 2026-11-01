@@ -3,17 +3,12 @@
  * (like consistency checks) can use this mutex to make sure sync isn't currently running.
  */
 
-import { Mutex } from "async-mutex";
+import { Mutex } from "@triliumnext/commons";
+
 const instance = new Mutex();
 
-async function doExclusively<T>(func: () => T) {
-    const releaseMutex = await instance.acquire();
-
-    try {
-        return await func();
-    } finally {
-        releaseMutex();
-    }
+function doExclusively<T>(func: () => T | PromiseLike<T>) {
+    return instance.runExclusive(func);
 }
 
 export default {

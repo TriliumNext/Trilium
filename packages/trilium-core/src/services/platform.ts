@@ -6,8 +6,20 @@ export interface PlatformProvider {
     /** Returns the value of an environment variable, or undefined if not set. */
     getEnv(key: string): string | undefined;
     readonly isElectron: boolean;
+    /**
+     * `true` in the standalone build, where core runs inside a browser worker rather than on Node.
+     * The OS flags below stay honest there, so this is what tells standalone apart from a desktop.
+     */
+    readonly isStandalone: boolean;
     readonly isMac: boolean;
     readonly isWindows: boolean;
+    readonly isLinux: boolean;
+    /**
+     * Where the database file is, for the platforms whose database is a file the user can reach.
+     * Null where it is not — the browser build keeps it in storage the browser owns, which has no
+     * path to give — and absent where a platform does not answer at all.
+     */
+    getDatabasePath?(): string | null;
     /**
      * Lets a platform decide whether an HTTP-server startup error should be
      * swallowed (logged-only) rather than treated as fatal. The desktop uses

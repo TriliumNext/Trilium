@@ -3,12 +3,33 @@
  * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
  */
 
-import { getContext, routes } from "@triliumnext/core";
+import { routes } from "@triliumnext/core";
 
 export interface UploadedFile {
     originalname: string;
     mimetype: string;
-    buffer: Uint8Array;
+    /** Unset for a {@link LocalUploadBody} file on a route that reads uploads in place. */
+    buffer?: Uint8Array;
+    /** The file the page posted, for a {@link LocalUploadBody}. */
+    blob?: Blob;
+}
+
+/**
+ * A multipart upload the page posts as its fields and the picked `File` itself. Structured cloning
+ * passes the `File` by reference, so no bytes are read until a route asks for them.
+ */
+export interface LocalUploadBody {
+    type: "upload";
+    fields: Record<string, string>;
+    file?: File;
+}
+
+export interface RouteOptions {
+    /**
+     * Whether the route reads an upload from `UploadedFile.blob` itself, as the import routes do.
+     * Every other route gets the upload's bytes in `buffer`.
+     */
+    readsUploadsInPlace?: boolean;
 }
 
 export interface BrowserRequest {
@@ -35,6 +56,7 @@ interface Route {
     pattern: RegExp;
     paramNames: string[];
     handler: RouteHandler;
+    options: RouteOptions;
 }
 
 /**
@@ -48,21 +70,25 @@ const encoder = new TextEncoder();
 
 /**
  * Convert an Express-style path pattern to a RegExp.
- * Supports :param syntax for path parameters.
+ * Supports :param syntax for path parameters and Express 5's *splat wildcard, which matches the
+ * rest of the path including slashes.
  *
  * Examples:
  *   /api/notes/:noteId -> /^\/api\/notes\/([^\/]+)$/
  *   /api/notes/:noteId/revisions -> /^\/api\/notes\/([^\/]+)\/revisions$/
+ *   /custom/*path -> /^\/custom\/(.*)$/
  */
 function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
     const paramNames: string[] = [];
 
-    // Escape special regex characters except for :param patterns
+    // Escape special regex characters first, so the placeholder scan below sees `\*splat` rather
+    // than a `*` that could be read as a quantifier. One pass over both forms keeps `paramNames`
+    // in the same order as the capture groups.
     const regexPattern = path
         .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
-        .replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, paramName) => {
-            paramNames.push(paramName);
-            return '([^/]+)';
+        .replace(/\\\*([a-zA-Z_][a-zA-Z0-9_]*)|:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, splat, param) => {
+            paramNames.push(splat ?? param);
+            return splat ? '(.*)' : '([^/]+)';
         });
 
     return {
@@ -111,6 +137,21 @@ function textResponse(text: string, status = 200, extraHeaders: Record<string, s
 }
 
 /**
+ * Builds the response for a handler's return value, mirroring the server's `send`: a string
+ * body goes out as-is (the office preview answers with an HTML fragment, which an envelope
+ * would escape), anything else is JSON. An error keeps text/plain so the client reads the
+ * message rather than a JSON-quoted copy of it.
+ */
+function sendResult(response: unknown, status: number): BrowserResponse {
+    if (typeof response === "string") {
+        return status >= 400
+            ? textResponse(response, status)
+            : textResponse(response, status, { "content-type": "text/html; charset=utf-8" });
+    }
+    return jsonResponse(response, status);
+}
+
+/**
  * Browser router class that handles route registration and dispatching.
  */
 export class BrowserRouter {
@@ -119,13 +160,14 @@ export class BrowserRouter {
     /**
      * Register a route handler.
      */
-    register(method: string, path: string, handler: RouteHandler): void {
+    register(method: string, path: string, handler: RouteHandler, options: RouteOptions = {}): void {
         const { pattern, paramNames } = pathToRegex(path);
         this.routes.push({
             method: method.toUpperCase(),
             pattern,
             paramNames,
-            handler
+            handler,
+            options
         });
     }
 
@@ -164,7 +206,16 @@ export class BrowserRouter {
         // Parse body based on content-type
         let parsedBody = body;
         let uploadedFile: UploadedFile | undefined;
-        if (body instanceof ArrayBuffer && headers) {
+        if (isLocalUploadBody(body)) {
+            parsedBody = body.fields;
+            if (body.file) {
+                uploadedFile = {
+                    originalname: body.file.name,
+                    mimetype: body.file.type || 'application/octet-stream',
+                    blob: body.file
+                };
+            }
+        } else if (body instanceof ArrayBuffer && headers) {
             const contentType = headers['content-type'] || headers['Content-Type'] || '';
             if (contentType.includes('application/json')) {
                 try {
@@ -214,6 +265,10 @@ export class BrowserRouter {
                 params[route.paramNames[i]] = decodeURIComponent(match[i + 1]);
             }
 
+            if (uploadedFile?.blob && !uploadedFile.buffer && !route.options.readsUploadsInPlace) {
+                uploadedFile.buffer = new Uint8Array(await uploadedFile.blob.arrayBuffer());
+            }
+
             const request: BrowserRequest = {
                 method: upperMethod,
                 url: urlString,
@@ -226,7 +281,10 @@ export class BrowserRouter {
             };
 
             try {
-                const result = await getContext().init(async () => await route.handler(request));
+                // No execution context is opened here: every route registered by
+                // `browser_routes.ts` opens its own inside `dbLock`, which is what keeps one
+                // asynchronous scope live at a time. One opened here would sit outside that lock.
+                const result = await route.handler(request);
                 return this.formatResult(result);
             } catch (error) {
                 return this.formatError(error, `Error handling ${method} ${path}`);
@@ -250,7 +308,13 @@ export class BrowserRouter {
             if (raw.body instanceof ArrayBuffer) {
                 body = raw.body;
             } else if (raw.body instanceof Uint8Array) {
-                body = raw.body.buffer as ArrayBuffer;
+                // A view can cover just part of its buffer — a byte range sliced out of a note's
+                // content is exactly that — so handing over the whole buffer would answer with the
+                // entire file. Only the view's own bytes may go out, copied when it isn't the whole
+                // buffer already (the common case, which must not copy a whole video to serve it).
+                body = raw.body.byteOffset === 0 && raw.body.byteLength === raw.body.buffer.byteLength
+                    ? raw.body.buffer as ArrayBuffer
+                    : new Uint8Array(raw.body).buffer;
             } else if (typeof raw.body === 'string') {
                 body = encoder.encode(raw.body).buffer as ArrayBuffer;
             }
@@ -265,7 +329,7 @@ export class BrowserRouter {
         // Handle [statusCode, response] format
         if (Array.isArray(result) && result.length > 0 && Number.isInteger(result[0])) {
             const [statusCode, response] = result;
-            return jsonResponse(response, statusCode);
+            return sendResult(response, statusCode);
         }
 
         // Handle undefined (no content) - 204 should have no body
@@ -277,8 +341,7 @@ export class BrowserRouter {
             };
         }
 
-        // Default: JSON response with 200
-        return jsonResponse(result, 200);
+        return sendResult(result, 200);
     }
 
     /**
@@ -311,4 +374,8 @@ export class BrowserRouter {
  */
 export function createRouter(): BrowserRouter {
     return new BrowserRouter();
+}
+
+function isLocalUploadBody(body: unknown): body is LocalUploadBody {
+    return typeof body === "object" && body !== null && (body as LocalUploadBody).type === "upload";
 }

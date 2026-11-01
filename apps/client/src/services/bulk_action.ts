@@ -2,6 +2,7 @@ import server from "./server.js";
 import ws from "./ws.js";
 import MoveNoteBulkAction from "../widgets/bulk_actions/note/move_note.js";
 import DeleteNoteBulkAction from "../widgets/bulk_actions/note/delete_note.js";
+import SaveRevisionBulkAction from "../widgets/bulk_actions/note/save_revision.js";
 import DeleteRevisionsBulkAction from "../widgets/bulk_actions/note/delete_revisions.js";
 import DeleteLabelBulkAction from "../widgets/bulk_actions/label/delete_label.js";
 import DeleteRelationBulkAction from "../widgets/bulk_actions/relation/delete_relation.js";
@@ -13,6 +14,7 @@ import ExecuteScriptBulkAction from "../widgets/bulk_actions/execute_script.js";
 import AddLabelBulkAction from "../widgets/bulk_actions/label/add_label.js";
 import AddRelationBulkAction from "../widgets/bulk_actions/relation/add_relation.js";
 import RenameNoteBulkAction from "../widgets/bulk_actions/note/rename_note.js";
+import ConvertNoteBulkAction from "../widgets/bulk_actions/note/convert_note.js";
 import { t } from "./i18n.js";
 import type FNote from "../entities/fnote.js";
 import toast from "./toast.js";
@@ -21,18 +23,22 @@ import { BulkAction } from "@triliumnext/commons";
 export const ACTION_GROUPS = [
     {
         title: t("bulk_actions.labels"),
+        icon: "bx bx-hash",
         actions: [AddLabelBulkAction, UpdateLabelValueBulkAction, RenameLabelBulkAction, DeleteLabelBulkAction]
     },
     {
         title: t("bulk_actions.relations"),
+        icon: "bx bx-transfer",
         actions: [AddRelationBulkAction, UpdateRelationTargetBulkAction, RenameRelationBulkAction, DeleteRelationBulkAction]
     },
     {
         title: t("bulk_actions.notes"),
-        actions: [RenameNoteBulkAction, MoveNoteBulkAction, DeleteNoteBulkAction, DeleteRevisionsBulkAction]
+        icon: "bx bx-note",
+        actions: [RenameNoteBulkAction, MoveNoteBulkAction, ConvertNoteBulkAction, DeleteNoteBulkAction, SaveRevisionBulkAction, DeleteRevisionsBulkAction]
     },
     {
         title: t("bulk_actions.other"),
+        icon: "bx bx-dots-horizontal-rounded",
         actions: [ExecuteScriptBulkAction]
     }
 ];
@@ -41,6 +47,7 @@ const ACTION_CLASSES = [
     RenameNoteBulkAction,
     MoveNoteBulkAction,
     DeleteNoteBulkAction,
+    SaveRevisionBulkAction,
     DeleteRevisionsBulkAction,
     DeleteLabelBulkAction,
     DeleteRelationBulkAction,
@@ -50,7 +57,8 @@ const ACTION_CLASSES = [
     AddRelationBulkAction,
     UpdateLabelValueBulkAction,
     UpdateRelationTargetBulkAction,
-    ExecuteScriptBulkAction
+    ExecuteScriptBulkAction,
+    ConvertNoteBulkAction
 ];
 
 async function addAction(noteId: string, actionName: string) {
@@ -91,7 +99,21 @@ function parseActions(note: FNote) {
         .filter((action) => !!action);
 }
 
-export async function executeBulkActions(targetNoteIds: string[], actions: BulkAction[], includeDescendants = false) {
+export interface BulkActionOptions {
+    /** Whether to apply the actions to every descendant of the given notes as well. */
+    includeDescendants?: boolean;
+    /**
+     * Whether to skip the "bulk actions executed" toast, for a caller whose own UI already
+     * shows the result of the change.
+     */
+    silent?: boolean;
+}
+
+export async function executeBulkActions(
+    targetNoteIds: string[],
+    actions: BulkAction[],
+    { includeDescendants = false, silent = false }: BulkActionOptions = {}
+) {
     await server.post("bulk-action/execute", {
         noteIds: targetNoteIds,
         includeDescendants,
@@ -99,7 +121,10 @@ export async function executeBulkActions(targetNoteIds: string[], actions: BulkA
     });
 
     await ws.waitForMaxKnownEntityChangeId();
-    toast.showMessage(t("bulk_actions.bulk_actions_executed"), 3000);
+
+    if (!silent) {
+        toast.showMessage(t("bulk_actions.bulk_actions_executed"), 3000);
+    }
 }
 
 export default {

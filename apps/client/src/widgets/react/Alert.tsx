@@ -1,5 +1,4 @@
-import { ComponentChildren } from "preact";
-import { CSSProperties } from "preact/compat";
+import { ComponentChildren, CSSProperties } from "preact";
 
 interface AlertProps {
     type: "info" | "danger" | "warning";

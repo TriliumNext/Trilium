@@ -1,0 +1,21 @@
+@import "@triliumnext/ckeditor5/src/theme/external_links.css";
+
+/* The arrow of the app's default theme, `theme-next/forms.css`. */
+#content a:is(.external, [href^="http://"], [href^="https://"]):not(.no-arrow)::after {
+    display: inline-block;
+    opacity: 0.5;
+}
+
+#content a:is(.external, [href^="http://"], [href^="https://"]):not(.no-arrow):hover::after {
+    animation: external-link-arrow-blink 500ms linear alternate infinite;
+}
+
+@keyframes external-link-arrow-blink {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.5;
+    }
+}

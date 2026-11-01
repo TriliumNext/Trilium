@@ -4,6 +4,7 @@ import supertest from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import config from "../../src/services/config.js";
+import etapiTokenService from "../../src/services/etapi_tokens.js";
 import { createNote, login } from "./utils.js";
 
 let app: Application;
@@ -26,15 +27,18 @@ function parseSseResponse(text: string) {
     return JSON.parse(dataLine.slice("data: ".length));
 }
 
-function mcpPost(app: Application) {
+/** An MCP request carrying no credentials at all. */
+function mcpPostAnonymous(app: Application) {
     return supertest(app)
         .post("/mcp")
-        // supertest binds to an ephemeral port, so its default Host (127.0.0.1:<random>)
-        // would be rejected by the DNS-rebinding allow-list. Present a bare loopback Host,
-        // matching what a real client on a standard port sends.
         .set("Host", "localhost")
         .set("Accept", MCP_ACCEPT)
         .set("Content-Type", "application/json");
+}
+
+/** An MCP request authenticated with the suite's token — what every real client sends. */
+function mcpPost(app: Application) {
+    return mcpPostAnonymous(app).set("Authorization", token);
 }
 
 function setOption(name: Parameters<typeof optionService.setOption>[0], value: string) {
@@ -85,7 +89,52 @@ describe("mcp", () => {
                     clientInfo: { name: "test", version: "1.0.0" }
                 }));
 
-            expect(response.status).not.toBe(403);
+            expect(response.status).toBe(200);
+        });
+    });
+
+    // Loopback is not a credential: any local process can reach the listener, so a token is
+    // required on every request. Without these, the rest of the suite could keep passing
+    // while the endpoint silently rejected or silently admitted everyone.
+    describe("authentication", () => {
+        beforeAll(() => {
+            setOption("mcpEnabled", "true");
+        });
+
+        it("rejects a request that carries no token", async () => {
+            const response = await mcpPostAnonymous(app)
+                .send(jsonRpc("initialize"))
+                .expect(401);
+
+            expect(response.body.error).toContain("ETAPI token");
+        });
+
+        it("rejects a token that was never issued", async () => {
+            const response = await mcpPostAnonymous(app)
+                .set("Authorization", "Bearer nSFHqNzUUAtCHTIm_not_a_real_token")
+                .send(jsonRpc("initialize"))
+                .expect(401);
+
+            expect(response.body.error).toContain("ETAPI token");
+        });
+
+        it("stops accepting a token once it is revoked", async () => {
+            const name = "mcp revocation spec";
+            const { authToken } = cls.init(() => etapiTokenService.createToken(name));
+
+            await mcpPostAnonymous(app)
+                .set("Authorization", `Bearer ${authToken}`)
+                .send(jsonRpc("initialize"))
+                .expect(200);
+
+            const issued = becca.getEtapiTokens().find(t => t.name === name);
+            expect(issued).toBeDefined();
+            cls.init(() => etapiTokenService.deleteToken(issued?.etapiTokenId ?? ""));
+
+            await mcpPostAnonymous(app)
+                .set("Authorization", `Bearer ${authToken}`)
+                .send(jsonRpc("initialize"))
+                .expect(401);
         });
     });
 

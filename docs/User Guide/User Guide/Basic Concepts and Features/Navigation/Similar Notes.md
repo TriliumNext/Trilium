@@ -1,9 +1,13 @@
 # Similar Notes
-<figure class="image image-style-align-center"><img style="aspect-ratio:1626/540;" src="Similar Notes_image.png" width="1626" height="540"></figure>
+<figure class="image image-style-align-right image_resized" style="width:50.46%;"><img style="aspect-ratio:538/290;" src="Similar Notes_image.png" width="538" height="290"></figure>
 
 The Similar Notes feature tries to identify notes that relate to the current note by looking at the content of the notes, their relationships, as well as the date they were created.
 
-To access the list of similar notes, press the “Similar Notes” tab in the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>.
+To access the list of similar notes:
+
+*   Go to the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and look for the corresponding section.
+*   Alternatively, press the <span class="tn-icon bx bx-info-circle"></span> in the <a class="reference-link" href="../UI%20Elements/Status%20bar.md">Status bar</a> and select _Show similar notes_ which will open a pane at the bottom.
+*   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, open the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> → _Note info_ and select _Show similar notes_.
 
 ## Interaction
 

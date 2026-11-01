@@ -4,41 +4,65 @@
 // We use dynamic imports below to ensure error handlers are registered first.
 // =============================================================================
 
-self.onerror = (message, source, lineno, colno, error) => {
-    const errorMsg = `[Worker] Uncaught error: ${message}\n  at ${source}:${lineno}:${colno}`;
-    console.error(errorMsg, error);
+/**
+ * Set once the worker has finished starting up, which is what decides an escaped
+ * error's cost.
+ *
+ * Before it, an error means the application never came up — an unreadable database,
+ * a failed migration — and the page has nothing to show but the overlay saying so.
+ * After it, the worker is serving requests and the error belongs to one background
+ * task: an LLM completion, a sync tick, a timer. Blanking the screen and failing
+ * every request in flight over that costs the user their session for something that
+ * is usually inconsequential to it, so those are reported and the worker carries on.
+ *
+ * The server draws the same line for the same reason, in `process_errors.ts`.
+ */
+let workerStarted = false;
+
+/**
+ * Report an error nothing else caught, as fatal or as an aside depending on
+ * {@link workerStarted}. Deliberately free of imports: this runs before any module
+ * has loaded, which is exactly when the fatal case happens.
+ */
+function reportEscapedError(label: string, message: string, stack?: string) {
+    console.error(`[Worker] ${label}: ${message}`, stack);
     try {
-        self.postMessage({
-            type: "WORKER_ERROR",
-            error: {
-                message: String(message),
-                source,
-                lineno,
-                colno,
-                stack: error?.stack || new Error().stack
-            }
-        });
+        self.postMessage(workerStarted
+            // The same destination as the server's process-level safety net: a
+            // notification naming the failure, with the stack behind a details
+            // step. The client renders it from `unhandled-error` either way.
+            ? { type: "WS_MESSAGE", message: { type: "unhandled-error", message, stack } }
+            : { type: "WORKER_ERROR", error: { message, stack } });
     } catch (e) {
-        console.error("[Worker] Failed to report error:", e);
+        console.error(`[Worker] Failed to report ${label.toLowerCase()}:`, e);
     }
+}
+
+/**
+ * Tell the page which startup step the worker has reached, so the splash's progress bar can
+ * advance. Import-free for the same reason as {@link reportEscapedError}: the first of these
+ * fires before any module has loaded. Ids match `STANDALONE_STARTUP_PHASES` in main.ts.
+ */
+function reportStartupPhase(phase: string) {
+    self.postMessage({ type: "STARTUP_PROGRESS", phase });
+}
+
+self.onerror = (message, source, lineno, colno, error) => {
+    reportEscapedError(
+        "Uncaught error",
+        `${message}\n  at ${source}:${lineno}:${colno}`,
+        error?.stack || new Error().stack
+    );
     return false;
 };
 
 self.onunhandledrejection = (event) => {
     const reason = event.reason;
-    const errorMsg = `[Worker] Unhandled rejection: ${reason?.message || reason}`;
-    console.error(errorMsg, reason);
-    try {
-        self.postMessage({
-            type: "WORKER_ERROR",
-            error: {
-                message: String(reason?.message || reason),
-                stack: reason?.stack || new Error().stack
-            }
-        });
-    } catch (e) {
-        console.error("[Worker] Failed to report rejection:", e);
-    }
+    reportEscapedError(
+        "Unhandled rejection",
+        String(reason?.message || reason),
+        reason?.stack || new Error().stack
+    );
 };
 
 console.log("[Worker] Error handlers installed, loading modules...");
@@ -47,6 +71,11 @@ console.log("[Worker] Error handlers installed, loading modules...");
 // TYPE-ONLY IMPORTS (erased at runtime, safe as static imports)
 // =============================================================================
 import type { BrowserRouter } from './lightweight/browser_router';
+import type { StandaloneRestoreProgress, StandaloneRestoreResult } from "@triliumnext/commons";
+
+// Nothing that opens a database or a backup is imported statically: both reach for the backup
+// container and the whole of core, and evaluating those at worker startup is what kept the iOS
+// worker from booting. Every use below loads its module when it is actually needed.
 
 // Build-time constant injected by Vite (see `define` in vite.config.mts).
 declare const __TRILIUM_INTEGRATION_TEST__: string;
@@ -64,13 +93,27 @@ let BridgedRequestProvider: typeof import('./lightweight/bridged_request_provide
 let StandalonePlatformProvider: typeof import('./lightweight/platform_provider').default;
 let StandaloneLogService: typeof import('./lightweight/log_provider').default;
 let StandaloneBackupService: typeof import('./lightweight/backup_provider').default;
+let removeBackupLeftovers: typeof import('./lightweight/backup_provider').removeBackupLeftovers;
 let StandaloneInAppHelpProvider: typeof import('./lightweight/in_app_help_provider').default;
+let inAppHelpProvider: InstanceType<typeof import('./lightweight/in_app_help_provider').default>;
+let inAppHelpLoaded: Promise<void>;
 let translationProvider: typeof import('./lightweight/translation_provider').default;
 let createConfiguredRouter: typeof import('./lightweight/browser_routes').createConfiguredRouter;
+let waitForSahPoolRelease: typeof import('./lightweight/sql_provider').waitForSahPoolRelease;
 
 // Instance state
 let sqlProvider: InstanceType<typeof BrowserSqlProvider> | null = null;
 let messagingProvider: InstanceType<typeof WorkerMessagingProvider> | null = null;
+
+/** Holds the lock on `security.json` for as long as this worker lives, and is its only writer. */
+let securityStore: import('./lightweight/security_settings').SecuritySettingsStore | null = null;
+
+/**
+ * The page's end of that channel, taken from the INIT message. Module scope is what makes it
+ * trustworthy: backend scripts run through `eval()` in this worker's realm, which reaches its
+ * globals, `self.onmessage` among them, but no module's bindings.
+ */
+let securityPort: MessagePort | null = null;
 
 // Core module, router, and initialization state
 let coreModule: typeof import("@triliumnext/core") | null = null;
@@ -99,11 +142,7 @@ function assertSqliteMagic(buffer: Uint8Array, source: string): void {
  * Load the test fixture database for integration tests.
  * Seeds from the fixture if not already present.
  */
-async function loadTestDatabase(sahPoolAvailable: boolean, dbName: string): Promise<void> {
-    if (!sahPoolAvailable) {
-        throw new Error("SAHPool is required for integration tests.");
-    }
-
+async function loadTestDatabase(dbName: string): Promise<void> {
     const poolFiles = sqlProvider!.sahPool!.getFileNames();
     if (!poolFiles.includes(dbName)) {
         console.log("[Worker] Integration test mode: seeding fixture database into SAHPool...");
@@ -161,6 +200,7 @@ async function loadModules(): Promise<void> {
     ]);
 
     BrowserSqlProvider = sqlModule.default;
+    waitForSahPoolRelease = sqlModule.waitForSahPoolRelease;
     WorkerMessagingProvider = messagingModule.default;
     BrowserExecutionContext = clsModule.default;
     BrowserCryptoProvider = cryptoModule.default;
@@ -169,12 +209,18 @@ async function loadModules(): Promise<void> {
     StandalonePlatformProvider = platformModule.default;
     StandaloneLogService = logModule.default;
     StandaloneBackupService = backupModule.default;
+    removeBackupLeftovers = backupModule.removeBackupLeftovers;
     translationProvider = translationModule.default;
     createConfiguredRouter = routesModule.createConfiguredRouter;
 
     // Loaded separately to avoid breaking Promise.all tuple inference
     BridgedRequestProvider = (await import('./lightweight/bridged_request_provider.js')).default;
     StandaloneInAppHelpProvider = (await import('./lightweight/in_app_help_provider.js')).default;
+    // Started here rather than at the point of use: the guide's content is a plain fetch, so it
+    // can run alongside opening the database instead of adding to startup, and it has to be in
+    // memory before anything reads a page — `getContent` is synchronous by then.
+    inAppHelpProvider = new StandaloneInAppHelpProvider();
+    inAppHelpLoaded = inAppHelpProvider.load();
 
     // Create instances
     sqlProvider = new BrowserSqlProvider();
@@ -200,29 +246,51 @@ async function initialize(): Promise<void> {
             // First, load all modules dynamically
             await loadModules();
 
+            // Before the database, and before anything that can take time: the window in which
+            // this file is locked by nobody is the window in which a page that outlived the
+            // previous worker could write it, so it is made as short as this boot allows.
+            const { acquireSecuritySettings, toCoreConfig } = await import('./lightweight/security_settings.js');
+            securityStore = await acquireSecuritySettings();
+            const securityConfig = toCoreConfig(securityStore.read());
+
+            // A reload starts this worker while the browser is still releasing the previous
+            // worker's exclusive OPFS access handles, so the boot waits for the database pool
+            // to be free — before the log service, whose own OPFS file is held the same way.
+            // Running installSahPool() against files another context still holds is worse than
+            // not booting: installOpfsSAHPoolVfs() answers the acquisition failure by deleting
+            // the pool directory, and a lock covering only part of it takes the rest with it.
+            if (!await waitForSahPoolRelease()) {
+                throw opfsAccessError("another context still holds the database files");
+            }
+
             // Initialize log service as early as possible so subsequent
             // initialization steps are persisted to the OPFS log file.
             const logService = new StandaloneLogService();
             await logService.initialize();
             logService.info("[Worker] Log service initialized with OPFS");
 
+            reportStartupPhase("sqlite");
             logService.info("[Worker] Initializing SQLite WASM...");
             await sqlProvider!.initWasm();
 
-            // Try to install the SAHPool VFS (preferred: supports WAL, much faster)
-            let sahPoolAvailable = false;
+            // A failure past the wait is a broken environment rather than a transient, so it
+            // ends the boot: throwing from initialize() reaches the page as WORKER_ERROR.
             try {
                 await sqlProvider!.installSahPool();
-                sahPoolAvailable = true;
             } catch (e) {
-                logService.info(`[Worker] SAHPool VFS not available, will fall back to in-memory: ${e}`);
+                throw opfsAccessError(e instanceof Error ? e.message : String(e));
             }
 
             // Integration test mode is baked in at build time via the
             // __TRILIUM_INTEGRATION_TEST__ Vite define (derived from the
             // TRILIUM_INTEGRATION_TEST env var when the bundle was built).
             const integrationTestMode = __TRILIUM_INTEGRATION_TEST__;
-            const dbName = "/trilium.db";
+            // Which pool entry holds the database is a stored answer rather than a constant: a
+            // restore cannot rename an entry, so it writes the new database in beside the old one
+            // and changes this. Unrestored instances read the name they have always used.
+            reportStartupPhase("database");
+            const { readCurrentDatabaseName } = await import('./lightweight/database_restore.js');
+            const dbName = await readCurrentDatabaseName();
 
             if (integrationTestMode === "memory") {
                 // Use OPFS for the DB in integration test mode so option changes
@@ -230,22 +298,32 @@ async function initialize(): Promise<void> {
                 // Playwright gives each test a fresh BrowserContext, which means a
                 // fresh OPFS — so on the first worker init of a test we seed from
                 // the fixture, and subsequent inits in the same test reuse it.
-                await loadTestDatabase(sahPoolAvailable, dbName);
-            } else if (sahPoolAvailable) {
-                logService.info("[Worker] SAHPool available, loading persistent database (WAL mode)...");
-                sqlProvider!.loadFromSahPool(dbName);
+                await loadTestDatabase(dbName);
             } else {
-                // SAHPool only needs a Worker + OPFS API, so reaching this
-                // branch means the environment lacks OPFS entirely.
-                logService.info("[Worker] OPFS not available, using in-memory database (data will not persist)");
-                sqlProvider!.loadFromMemory();
+                logService.info("[Worker] Loading persistent database from SAHPool (WAL)...");
+                sqlProvider!.loadFromSahPool(dbName);
             }
 
             logService.info("[Worker] Database loaded");
 
+            // A backup interrupted by the page going away leaves its snapshot in the pool, up to
+            // the database's own size. Reclaimed here so the space is back whether or not another
+            // backup is ever taken.
+            const backupPool = sqlProvider?.sahPool;
+            if (backupPool) {
+                removeBackupLeftovers(backupPool);
+            }
+
+            reportStartupPhase("core");
             logService.info("[Worker] Loading @triliumnext/core...");
             const schemaModule = await import("@triliumnext/core/src/assets/schema.sql?raw");
             coreModule = await import("@triliumnext/core");
+            const {
+                consumeSetupMarker,
+                hasSetupMarker,
+                removeSetupMarker,
+                writeSetupMarker
+            } = await import('./lightweight/setup_marker.js');
 
             await coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
@@ -264,8 +342,21 @@ async function initialize(): Promise<void> {
                     if (!response.ok) return null;
                     return new Uint8Array(await response.arrayBuffer());
                 },
-                inAppHelp: new StandaloneInAppHelpProvider(),
+                inAppHelp: inAppHelpProvider,
                 image: (await import("./services/image_provider.js")).standaloneImageProvider,
+                // What `assertScriptingEnabled()` answers from. Read from a locked OPFS file rather
+                // than the database, because the SQL console is enabled separately and an `UPDATE
+                // options` would otherwise be all it takes to grant backend scripting.
+                config: securityConfig,
+                // Read before core opens anything, because what it says is whether to open the
+                // database at all: a page reloaded by the app itself comes back to the wizard.
+                setupMarker: await consumeSetupMarker(),
+                setupPlatform: {
+                    writeMarker: writeSetupMarker,
+                    hasMarker: hasSetupMarker,
+                    removeMarker: removeSetupMarker,
+                    removeDatabase: removeStandaloneDatabase
+                },
                 dbConfig: {
                     provider: sqlProvider!,
                     isReadOnly: false,
@@ -279,6 +370,17 @@ async function initialize(): Promise<void> {
             });
             coreModule.ws.init();
 
+            // Nothing can read a help page before the routes are up, and by then this has long
+            // since resolved; awaited so a slow network delays the first page rather than
+            // silently serving it empty.
+            await inAppHelpLoaded;
+
+            // This build's half of the LLM stack, mirroring what the server
+            // contributes in registerServerLlmExtensions. Imported here rather than
+            // at the top of the file so the skill sheets it inlines travel in a
+            // chunk of their own instead of the worker's startup bundle.
+            (await import("./lightweight/llm_skills.js")).registerStandaloneLlmExtensions();
+
             logService.info(`[Worker] Supported routes: ${Object.keys(coreModule.routes).join(", ")}`);
 
             // Create and configure the router
@@ -290,6 +392,7 @@ async function initialize(): Promise<void> {
             coreModule.sql_init.initializeDb();
 
             if (coreModule.sql_init.isDbInitialized()) {
+                reportStartupPhase("becca");
                 logService.info("[Worker] Database already initialized, loading becca...");
                 await coreModule.becca_loader.beccaLoaded;
 
@@ -304,16 +407,27 @@ async function initialize(): Promise<void> {
                 const dbLocale = coreModule.options.getOptionOrNull("locale");
                 if (dbLocale && dbLocale !== "en") {
                     logService.info(`[Worker] Reconciling i18next locale to "${dbLocale}" from DB`);
-                    await coreModule.i18n.changeLanguage(dbLocale);
+                    // `changeLanguage` rebuilds the hidden subtree, and committing that writes
+                    // entity change ids into the execution context, so it needs one open.
+                    await coreModule.getContext().init(() => coreModule.i18n.changeLanguage(dbLocale));
                 }
             } else {
                 logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
+
+                // An interrupted initial sync (schema present but not yet
+                // initialized) is resumed by startSyncTimer()'s kickoff below:
+                // sync() calls setDbAsInitialized() once it converges, and the
+                // client stays on the sync-in-progress screen via the
+                // `syncInProgress` bootstrap flag. No explicit trigger needed here.
             }
 
             coreModule.sync.startSyncTimer();
             coreModule.scheduler.startScheduler();
 
             logService.info("[Worker] Initialization complete");
+            // Past this point an escaped error is one background task's problem
+            // rather than the application's — see `workerStarted`.
+            workerStarted = true;
         } catch (error) {
             initError = error instanceof Error ? error : new Error(String(error));
             console.error("[Worker] Initialization failed:", initError);
@@ -322,6 +436,21 @@ async function initialize(): Promise<void> {
     })();
 
     return initPromise;
+}
+
+/**
+ * The startup error for a database the browser will not grant exclusive OPFS access to, painted
+ * by `error-overlay.ts`. Opening an in-memory database instead would boot an empty instance
+ * whose notes vanish on the next reload.
+ */
+function opfsAccessError(reason: string): Error {
+    return new Error(
+        "The notes database could not be opened, because the browser did not grant exclusive "
+        + `access to its persistent storage (OPFS): ${reason}\n\n`
+        + "Close any other window running Trilium and reload this page. Your notes are not "
+        + "affected. If the browser does not support OPFS sync access handles at all, Trilium "
+        + "cannot run in it."
+    );
 }
 
 /**
@@ -352,6 +481,194 @@ async function dispatch(request: LocalRequest) {
     return appRouter.dispatch(request.method, request.url, request.body, request.headers);
 }
 
+/**
+ * Erases the database the wizard was booted away from, and leaves an empty one in its place.
+ *
+ * The pool has no notion of "no database", and everything after this point in the wizard writes to
+ * one: creating a document, converging a sync. So the entry is unlinked and a fresh one opened under
+ * the name a first run uses, which is exactly the state a browser that had never run Trilium is in.
+ */
+async function removeStandaloneDatabase(): Promise<void> {
+    const pool = sqlProvider?.sahPool;
+    if (!sqlProvider || !pool || !coreModule) {
+        throw new Error("The database is not open, so there is nothing to erase.");
+    }
+
+    const { eraseDatabase } = await import('./lightweight/database_restore.js');
+
+    await eraseDatabase({
+        pool,
+        // Closed through the SQL service rather than straight at the provider: the service holds
+        // prepared statements of its own, bound to the connection this closes, and the wizard goes
+        // on using the same worker afterwards — creating a document runs against the database
+        // opened at the end of this, in this very request.
+        close: () => coreModule?.getSql().detachConnection(),
+        open: (dbName) => sqlProvider?.loadFromSahPool(dbName)
+    });
+}
+
+/**
+ * Restores the database from a backup handed straight to this worker.
+ *
+ * Answers rather than throws: the caller is a page waiting on a message, and every way this can end
+ * is something the setup screen has to say to the user. A missing passphrase is not a failure but a
+ * question, so it is reported as one and the same file can be offered again with an answer.
+ */
+async function handleRestoreBackup(id: string, backup: File, passphrase?: string): Promise<void> {
+    const answer = (result: StandaloneRestoreResult) =>
+        (self as unknown as Worker).postMessage({ type: "RESTORE_RESULT", id, result });
+    const report = (progress: StandaloneRestoreProgress) =>
+        (self as unknown as Worker).postMessage({ type: "RESTORE_PROGRESS", id, progress });
+
+    const core = coreModule;
+    const pool = sqlProvider?.sahPool;
+    if (!core || !sqlProvider || !pool) {
+        answer({ status: "error", reason: "swap-failed", message: "The database is not ready yet." });
+        return;
+    }
+
+    // What `checkAppNotInitialized` is to the server's routes. A restore replaces the database
+    // wholesale, so it is only ever offered by the setup screen; a tab left open on that screen
+    // after another one finished setting up must not act on it.
+    if (core.sql_init.isDbInitialized()) {
+        answer({ status: "error", reason: "already-initialized", message: "The database is already set up." });
+        return;
+    }
+
+    // Two restores would prepare over each other, since they write the same candidate.
+    if (restoreInProgress) {
+        answer({ status: "error", reason: "restore-refused", message: "A restore is already running." });
+        return;
+    }
+
+    restoreInProgress = true;
+
+    const { restoreDatabase, RestoreFailure } = await import('./lightweight/database_restore.js');
+
+    try {
+        await restoreDatabase(
+            {
+                pool,
+                close: () => sqlProvider?.close(),
+                open: (dbName) => sqlProvider?.loadFromSahPool(dbName)
+            },
+            backup,
+            { passphrase, report: ({ stage, fraction }) => report({ stage, fraction }) }
+        );
+
+        // Whatever asked this instance into setup has had its answer, and until this is said the
+        // instance keeps reporting that it has nothing to open, which is what the next line checks.
+        core.leaveSetupMode();
+
+        // What the "create new document" path announces for the same reason: everything that waits
+        // on a database being there starts from here.
+        await core.sql_init.initDbConnection();
+        core.events.emit(core.events.DB_INITIALIZED);
+
+        answer({ status: "restored" });
+    } catch (e) {
+        const reason = e instanceof RestoreFailure ? e.reason : "swap-failed";
+        const message = e instanceof Error ? e.message : String(e);
+
+        answer(reason === "passphrase-required"
+            ? { status: "needs-passphrase" }
+            : { status: "error", reason, message });
+    } finally {
+        restoreInProgress = false;
+    }
+}
+
+/** Whether a restore is running, since a second one would prepare over the first one's work. */
+let restoreInProgress = false;
+
+/**
+ * Takes the page's end of the security channel, once, and answers what arrives on it. Once, because
+ * the port is what proves a message came from the page: a second one could be substituted by
+ * anything that reaches the INIT path.
+ */
+function adoptSecurityPort(port: MessagePort | undefined): void {
+    if (securityPort || !port) {
+        return;
+    }
+
+    securityPort = port;
+    securityPort.onmessage = async (event) => {
+        const msg = event.data;
+        if (msg?.type !== "SECURITY_SET") {
+            return;
+        }
+
+        // Waits for the boot that takes the lock: a change arriving before it would be written by
+        // a store that has no handle, and reported as refused for no reason the user could see.
+        await initialize().catch(() => undefined);
+        handleSecuritySet(msg.id, msg.setting, msg.enabled);
+    };
+}
+
+/**
+ * Writes a security setting the user has agreed to, which this worker is the only writer of.
+ *
+ * Reached only over {@link securityPort}, which carries what `requestSecurityChange` sends after
+ * the browser's own confirmation dialog. What arrives is still just a message, so the name and the
+ * value are checked by the store rather than trusted. The change applies at the next start, since
+ * core was handed its config when it was initialized.
+ */
+function handleSecuritySet(id: string, setting: unknown, enabled: unknown): void {
+    const written = securityStore?.setSetting(setting, enabled) === true;
+
+    if (written) {
+        console.log(`[Worker] Security setting "${setting}" written; it applies from the next start.`);
+    }
+
+    securityPort?.postMessage({ type: "SECURITY_SET_RESULT", id, written });
+}
+
+/**
+ * Streams the database into a download the service worker is holding open on the other end of
+ * `port`. Every way this ends is reported twice over: through the port for the download's sake,
+ * and to the page, which keeps the service worker alive while the stream runs and whose screen
+ * gates its Continue on the outcome.
+ */
+async function handleBackupStream(port: MessagePort, passphrase?: string): Promise<void> {
+    const announce = (active: boolean, result?: { status: string; message?: string }) =>
+        (self as unknown as Worker).postMessage({ type: "BACKUP_STREAM_ACTIVE", active, result });
+
+    const core = coreModule;
+    if (!core || !sqlProvider?.isOpen()) {
+        port.postMessage({ type: "error", message: "The database is not ready yet." });
+        port.close();
+        announce(false, { status: "failed", message: "The database is not ready yet." });
+        return;
+    }
+
+    console.log("[Worker] Streaming a backup download...");
+    announce(true);
+
+    const { streamDatabaseDownload } = await import("./lightweight/backup-download.js");
+    const result = await streamDatabaseDownload(
+        {
+            getValue: (sql, params) => core.getSql().getValue(sql, params),
+            getColumn: (sql, params) => core.getSql().getColumn(sql, params)
+        },
+        // A MessagePort satisfies the seam at runtime; only the `onmessage` property's event
+        // parameter is typed wider here than the seam's, which a cast is the whole cost of.
+        port as unknown as import("./lightweight/backup-download.js").DownloadPort,
+        {
+            passphrase,
+            // To the page rather than the port: the browser's own download UI is out of reach on
+            // a phone until the notification shade is pulled down, so the screen says it itself.
+            onProgress: (sentBytes, totalBytes) => (self as unknown as Worker).postMessage({
+                type: "BACKUP_STREAM_PROGRESS",
+                sentBytes,
+                totalBytes
+            })
+        }
+    );
+
+    announce(false, result);
+    console.log(`[Worker] Backup download stream ended: ${result.status}.`);
+}
+
 // Wait for the INIT message before initializing so that queryString
 // (which may contain ?integrationTest=memory for e2e) is available.
 let initReceived = false;
@@ -363,9 +680,11 @@ self.onmessage = async (event) => {
     if (msg.type === "INIT") {
         queryString = msg.queryString || "";
         useNativeHttp = msg.useNativeHttp || false;
+        adoptSecurityPort(msg.securityPort);
         if (!initReceived) {
             initReceived = true;
             console.log("[Worker] Starting initialization...");
+            reportStartupPhase("worker-modules");
             initialize().catch(err => {
                 console.error("[Worker] Initialization failed:", err);
                 self.postMessage({
@@ -377,6 +696,16 @@ self.onmessage = async (event) => {
                 });
             });
         }
+        return;
+    }
+
+    if (msg.type === "RESTORE_BACKUP") {
+        await handleRestoreBackup(msg.id, msg.backup, msg.passphrase);
+        return;
+    }
+
+    if (msg.type === "BACKUP_STREAM") {
+        await handleBackupStream(msg.port, msg.passphrase);
         return;
     }
 

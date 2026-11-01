@@ -3,7 +3,14 @@
     position: relative;
     margin-top: 1rem;
     padding-bottom: 1.25rem;
-    max-width: 85%;
+    /* Isolate each message: layout, paint and style invalidations stop at the message
+       boundary instead of walking the whole timeline. Deliberately NOT content-visibility:
+       auto — skipped messages sit at placeholder sizes, which silently breaks everything
+       that measures the timeline (ToC scroll-spy offsets, the bottom-spacer/reply-park
+       math in useLlmChat, smooth scrollIntoView landings). Paint containment clips ink at
+       the wrapper edge, so overflowing effects must be inset (see the jump flash below)
+       and wide content needs its own scroll context (see the KaTeX rule). */
+    contain: content;
 }
 
 .llm-chat-message-wrapper:first-child {
@@ -39,6 +46,19 @@
     background: var(--accented-background-color);
 }
 
+/*
+ * Under background effects the panes turn glassy, and the bubble's fully opaque grey reads
+ * as a slab pasted over the material. Borderless like the theme's own bgfx surfaces —
+ * definition comes from the fill alone, so if it ever needs more presence the knob is the
+ * fill percentage, not an outline.
+ */
+body.background-effects.theme-supports-background-effects .llm-chat-message-user {
+    /* Mostly material, faintly tinted: the bubble is a whisper of the normal fill with the
+       Mica/vibrancy doing the actual surface work — the same weight class as the theme's
+       own bgfx tints (cards at ~7% alpha). */
+    background: color-mix(in srgb, var(--accented-background-color) 35%, transparent);
+}
+
 .llm-chat-message-content {
     word-wrap: break-word;
     line-height: 1.5;
@@ -48,6 +68,7 @@
     display: block;
     margin: 0.5rem 0;
     max-width: 100%;
+    cursor: zoom-in;
 }
 
 .llm-chat-message-image img {
@@ -118,7 +139,7 @@
     padding: 0.25rem 0.75rem;
 }
 
-.llm-chat-citations-list tr + tr td {
+.llm-chat-citations-list tr:not(:first-child) td {
     border-top: 1px solid var(--main-border-color);
 }
 
@@ -146,35 +167,92 @@
     text-align: right;
 }
 
-/* Error message — rendered as a real "caution" admonition (styled by
-   packages/ckeditor5/src/theme/ck-content.css) so it stays visually identical to
-   admonitions the model itself emits. Only chat-specific tweaks live here. */
+/* Error message — rendered as a "caution" extended admonition (see
+   widgets/react/Admonition.css, layered on the base admonition styling from
+   packages/ckeditor5/src/theme/ck-content.css). Only chat-specific tweaks live here. */
 .admonition.llm-chat-error {
     margin: 0;
     user-select: text;
+}
+
+/* The body is the provider's raw error text: monospace, with newlines kept and
+   long unbroken tokens (URLs, JSON payloads) allowed to break mid-word so they
+   can't push the card wider than the chat column. */
+.llm-chat-error-text {
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Endpoint + raw response body, revealed by the details toggle. Same treatment as the
+   message above, minus the `<pre>` default margin. */
+.llm-chat-error-details {
+    margin: 0;
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--muted-text-color);
 }
 
 .llm-chat-error-actions {
     margin-top: 0.75rem;
 }
 
-.llm-chat-thinking-card.expandable-card {
-    width: 100%;
-    max-width: 100%;
-    border-style: dashed;
-    margin-right: 0;
-    margin: 0;
+/* The disclosure line itself is `.expandable-line` in ExpandableCard.css. */
+.llm-chat-thinking {
+    margin: 0.25rem 0;
+
+    /* `text-overflow` needs a block container: as a flex container the label never shows the ellipsis. */
+    .expandable-section-label {
+        display: block;
+    }
+
+    .llm-chat-thinking-label {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* The label is the only copy of its line, so the opened thought wraps it in full. */
+    &[open] > .expandable-section-summary :is(.expandable-section-label, .llm-chat-thinking-label) {
+        white-space: normal;
+    }
+
+    /* A body-less thought whose label fits has nothing to reveal. */
+    &.llm-chat-thinking-fits > .expandable-section-summary {
+        pointer-events: none;
+
+        .expandable-section-chevron {
+            display: none;
+        }
+    }
 }
 
-.llm-chat-thinking-card .expandable-section-summary {
-    color: var(--muted-text-color);
+.llm-chat-thinking-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.llm-chat-thinking-content {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    color: var(--muted-text-color);
-    white-space: pre-wrap;
+/* Spaced like `.llm-chat-thinking` and `.llm-chat-tool-calls`, the lines it follows. */
+.llm-chat-stream-idle {
+    margin: 0.25rem 0;
+    animation: llm-chat-stream-idle-appear 0.2s ease-out;
+}
+
+@keyframes llm-chat-stream-idle-appear {
+    from {
+        opacity: 0;
+    }
+}
+
+/* The text after the last thought or tool call, set apart from the steps that led to it. */
+.llm-chat-reply {
+    margin-top: 1rem;
 }
 
 /* Markdown styles */
@@ -221,12 +299,16 @@
     margin: 0.25em 0;
 }
 
-.llm-chat-markdown code {
-    background: var(--accented-background-color);
-    padding: 0.15em 0.4em;
-    border-radius: 4px;
+/* Same treatment as inline code in a note (style.css) — a chat answer and the note it ends up in
+ * should not render the same snippet differently. Translucent, so it composites over the bubble. */
+.llm-chat-markdown code:not(pre code) {
+    background: var(--inline-code-background-color);
+    border: 1px solid var(--inline-code-border-color);
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
     font-family: var(--monospace-font-family, monospace);
     font-size: 0.9em;
+    overflow-wrap: break-word;
 }
 
 .llm-chat-markdown pre {
@@ -243,6 +325,13 @@
     font-size: 0.85em;
 }
 
+/* KaTeX display math is white-space: nowrap; give it its own scroll context (like `pre`
+   above) so a wide equation stays reachable — the wrapper's paint containment would
+   otherwise clip its tail with no scrollbar. */
+.llm-chat-markdown .katex-display {
+    overflow-x: auto;
+}
+
 .llm-chat-markdown blockquote {
     margin: 0.75em 0;
     padding: 0.5em 1em;
@@ -251,7 +340,7 @@
 }
 
 .llm-chat-markdown blockquote p {
-    margin: 0;
+    margin: 0 1.5em;
 }
 
 .llm-chat-markdown a {
@@ -277,6 +366,26 @@
     font-style: italic;
 }
 
+/* "Show quote source" jump link at the end of a submitted quote. Inherits link color from
+   `.llm-chat-markdown a`; the pointer cursor is kept explicit since the jump is handled by a click
+   listener rather than real navigation. */
+.chat-message-jump {
+    cursor: pointer;
+}
+
+/* Flash the referenced bubble when jumped to. An inset box-shadow pulse (no layout shift)
+   works on both the user bubble and the transparent assistant bubble — and, unlike an outer
+   shadow, isn't clipped by the message wrapper's paint containment. Duration mirrors
+   FLASH_DURATION_MS in chat_message_jump.ts. */
+.llm-chat-message-wrapper.llm-chat-message-jump-target .llm-chat-message {
+    animation: llm-chat-jump-flash 1.2s ease-out;
+}
+
+@keyframes llm-chat-jump-flash {
+    from { box-shadow: inset 0 0 0 2px var(--quick-search-result-highlight-color, #007bff); }
+    to { box-shadow: inset 0 0 0 2px transparent; }
+}
+
 /* Message footer (timestamp + token usage, sits below the bubble) */
 .llm-chat-footer {
     position: absolute;
@@ -294,24 +403,44 @@
     transition: opacity 0.15s ease;
 }
 
-.llm-chat-footer-user {
-    justify-content: flex-end;
+/* The footer is one line, always. It is positioned out of flow against a fixed reserve of
+   wrapper padding, so a second line has nowhere to go but up and over the last line of the
+   message. Entries therefore never wrap and never shrink; the model name below is the sole
+   exception and absorbs the whole squeeze. */
+.llm-chat-footer > * {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.llm-chat-footer .bx {
-    font-size: 0.875rem;
+/* Separators are generated on each item after the first rather than being elements of their
+   own: a dot that belongs to the item it precedes can never be orphaned onto a line by
+   itself, and it always shares that item's baseline. `gap` spaces the dot from the item
+   before it, the margin from the item it introduces. */
+.llm-chat-footer > :not(:first-child)::before {
+    content: "·";
+    margin-inline-end: 0.375rem;
+    opacity: 0.5;
+}
+
+.llm-chat-footer-user {
+    justify-content: flex-end;
 }
 
 .llm-chat-footer-time {
     cursor: help;
 }
 
+/* The one entry that gives way when the row runs out of room: the others are short, fixed
+   and each carries a whole fact, whereas a model name is long, open-ended and still legible
+   truncated. `min-width: 0` is what lets a flex item shrink past its content at all — the
+   ellipsis is inert without it. The generated separator sits inside this box, so it is
+   clipped last rather than being stranded when the name disappears entirely. */
 .llm-chat-usage-model {
     font-weight: 500;
-}
-
-.llm-chat-usage-separator {
-    opacity: 0.5;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .llm-chat-usage-tokens {

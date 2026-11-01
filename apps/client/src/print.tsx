@@ -1,12 +1,14 @@
 import { render } from "preact";
-import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
+import Component from "./components/component";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
-import { applyInlineMermaid } from "./services/content_renderer_text";
 import froca from "./services/froca";
+import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
+import { ParentComponent } from "./widgets/react/react_utils";
 
 interface RendererProps {
     note: FNote;
@@ -28,6 +30,7 @@ export type PrintReport = {
 export async function main() {
     const notePath = window.location.hash.substring(1);
     const noteId = notePath.split("/").at(-1);
+    console.debug("[print] Rendering the print page for", notePath || "(no note path)");
     if (!noteId) return;
 
     await import("./print.css");
@@ -47,6 +50,16 @@ export async function main() {
     document.head.appendChild(fontLink);
 
     const note = await froca.getNote(noteId);
+    console.debug("[print] Note loaded:", noteId, note?.type);
+
+    // printToPDF() and the browser print dialog name the document after document.title.
+    if (note?.title) {
+        document.title = note.title;
+    }
+
+    if (!note) {
+        reportPrintError(new Error(`The note to print (${noteId}) could not be loaded.`));
+    }
 
     const bodyWrapper = document.createElement("div");
     render(<App note={note} noteId={noteId} />, bodyWrapper);
@@ -83,7 +96,7 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
 
     return (
         <>
-            {note.type === "book"
+            {note.type === "book" || note.type === "search"
                 ? <CollectionRenderer {...props} />
                 : <SingleNoteRenderer {...props} />
             }
@@ -109,12 +122,30 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             } else {
                 if (note.type === "text") {
                     await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
+                    await import("@triliumnext/ckeditor5/src/theme/multicolumn.css");
                 }
-                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true });
+                // Printing preserves full embed nesting (see expandNestedEmbeds). The print page has
+                // no component tree, so a JSX render note mounts under a bare root `Component`.
+                const { $renderedContent } = await content_renderer.getRenderedContent(note, {
+                    noChildrenList: true,
+                    expandNestedEmbeds: true,
+                    mediaEnvironment: "native",
+                    parentComponent: new Component()
+                });
                 container.replaceChildren(...$renderedContent);
 
-                // Wait for all images to load.
+                // Note types rendered as a mounted component (an AI chat) start their transform
+                // passes — mermaid, syntax highlighting, embedded notes — in a layout effect that
+                // getRenderedContent does not await. Printing snapshots the page, so wait for those
+                // to settle first; otherwise they land after the capture and are missing from the PDF.
+                await waitForPendingRenders(container);
+
+                // Wait for all images to load. A lazy image, such as a link embed's favicon, never
+                // scrolls into the print window's viewport, so it would fire neither `load` nor `error`.
                 const images = Array.from(container.querySelectorAll("img"));
+                for (const img of images) {
+                    img.loading = "eager";
+                }
                 await Promise.all(
                     images.map(img => {
                         if (img.complete) return Promise.resolve();
@@ -124,11 +155,6 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                         });
                     })
                 );
-
-                // Initialize mermaid.
-                if (note.type === "text") {
-                    await applyInlineMermaid(container);
-                }
             }
 
             // Check custom CSS.
@@ -140,7 +166,14 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
 
         load().then(() => requestAnimationFrame(() => onReady({
             type: "single-note"
-        })));
+        }))).catch((error: unknown) => {
+            console.error("[print] Rendering the note failed:", error);
+            onReady({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        });
     }, [ note ]);
 
     return <>
@@ -151,21 +184,68 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
 
 export function CollectionRenderer({ note, onReady, onProgressChanged }: RendererProps) {
     const viewType = useNoteViewType(note);
-    return <CustomNoteList
-        viewType={viewType}
-        isEnabled
-        note={note}
-        notePath={note.getBestNotePath().join("/")}
-        ntxId="print"
-        highlightedTokens={null}
-        media="print"
-        onReady={async (data: PrintReport) => {
-            await loadCustomCss(note);
-            await document.fonts.ready;
-            onReady(data);
-        }}
-        onProgressChanged={onProgressChanged}
-    />;
+    // A saved search holds its results as virtual children only once it has run server-side.
+    const [ ready, setReady ] = useState(note.type !== "search");
+    // The print page has no component tree, so the view's hooks get a bare root `Component`.
+    const [ rootComponent ] = useState(() => new Component());
+
+    useEffect(() => {
+        if (note.type !== "search") {
+            return;
+        }
+
+        let cancelled = false;
+        console.debug("[print] Running the saved search…");
+        void froca.loadSearchNote(note.noteId)
+            .then((result) => {
+                if (cancelled) return;
+
+                // The query's own errors come back resolved, in `error`.
+                if (result?.error) {
+                    console.warn("[print] The saved search failed:", result.error);
+                    onReady({ type: "error", message: result.error });
+                    return;
+                }
+
+                console.debug("[print] The saved search run finished.");
+                setReady(true);
+            })
+            .catch((e: unknown) => {
+                if (cancelled) return;
+
+                console.warn("[print] Unable to run the saved search being printed:", e);
+                onReady({
+                    type: "error",
+                    message: e instanceof Error ? e.message : String(e),
+                    stack: e instanceof Error ? e.stack : undefined
+                });
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [ note, onReady ]);
+
+    if (!ready) return null;
+
+    return (
+        <ParentComponent.Provider value={rootComponent}>
+            <CustomNoteList
+                viewType={viewType}
+                isEnabled
+                note={note}
+                notePath={note.getBestNotePath().join("/")}
+                ntxId="print"
+                highlightedTokens={null}
+                media="print"
+                onReady={async (data: PrintReport) => {
+                    await loadCustomCss(note);
+                    await document.fonts.ready;
+                    onReady(data);
+                }}
+                onProgressChanged={onProgressChanged}
+            />
+        </ParentComponent.Provider>
+    );
 }
 
 export function Error404({ noteId }: { noteId: string }) {
@@ -185,12 +265,17 @@ export async function loadCustomCss(note: FNote) {
         if (!printCssNote || (printCssNote.type !== "code" && printCssNote.mime !== "text/css")) continue;
 
         const linkEl = document.createElement("link");
-        linkEl.href = `/api/notes/${printCssNote.noteId}/download`;
+        // Relative like the fonts link above, so it resolves under a subpath deployment
+        linkEl.href = `api/notes/${printCssNote.noteId}/download`;
         linkEl.rel = "stylesheet";
 
         const promise = $.Deferred();
         loadPromises.push(promise.promise());
         linkEl.onload = () => promise.resolve();
+        linkEl.onerror = () => {
+            console.warn(`Unable to load the print stylesheet ${printCssNote.noteId}; printing without it.`);
+            promise.resolve();
+        };
 
         document.head.appendChild(linkEl);
     }
@@ -198,4 +283,21 @@ export async function loadCustomCss(note: FNote) {
     await Promise.allSettled(loadPromises);
 }
 
-main();
+/** index.ts holds the splash up until the note has rendered. */
+window.addEventListener("error", (e) => console.error("[print] Uncaught error in the print page:", e.error ?? e.message));
+window.addEventListener("unhandledrejection", (e) => console.error("[print] Unhandled rejection in the print page:", e.reason));
+
+export const ready = main().catch((error: unknown) => {
+    console.error("[print] The print page failed to render:", error);
+    reportPrintError(error);
+});
+
+/**
+ * Tells the window that opened the print page that it should not wait for a render any longer, so a
+ * failure shows as the print report rather than as a print that never starts.
+ */
+function reportPrintError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    window.dispatchEvent(new CustomEvent("note-ready", { detail: { type: "error", message, stack } }));
+}

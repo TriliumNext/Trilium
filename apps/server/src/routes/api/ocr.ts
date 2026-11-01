@@ -1,10 +1,9 @@
-import type { OCRProcessResponse, TextRepresentationResponse } from "@triliumnext/commons";
+import type { OCRProcessResponse } from "@triliumnext/commons";
 import { options } from "@triliumnext/core";
 import type { Request } from "express";
 
 import { becca } from "@triliumnext/core";
 import ocrService from "../../services/ocr/ocr_service.js";
-import sql from "../../services/sql.js";
 
 function getMinConfidenceThreshold(): number {
     const minConfidence = options.getOption('ocrMinConfidence') ?? 0;
@@ -61,6 +60,10 @@ async function processNoteOCR(req: Request<{ noteId: string }>): Promise<OCRProc
     const note = becca.getNote(noteId);
     if (!note) {
         return [404, { success: false, message: 'Note not found' }];
+    }
+
+    if (!note.isContentAvailable()) {
+        return [400, { success: false, message: 'Note is protected and the protected session is not available' }];
     }
 
     const result = await ocrService.processNoteOCR(noteId, { language, forceReprocess });
@@ -127,6 +130,10 @@ async function processAttachmentOCR(req: Request<{ attachmentId: string }>): Pro
         return [404, { success: false, message: 'Attachment not found' }];
     }
 
+    if (!attachment.isContentAvailable()) {
+        return [400, { success: false, message: 'Attachment is protected and the protected session is not available' }];
+    }
+
     const result = await ocrService.processAttachmentOCR(attachmentId, { language, forceReprocess });
     if (!result) {
         return [400, { success: false, message: 'Attachment is not an image or has unsupported format' }];
@@ -183,73 +190,9 @@ async function getBatchProgress() {
     return ocrService.getBatchProgress();
 }
 
-/**
- * @swagger
- * /api/ocr/notes/{noteId}/text:
- *   get:
- *     summary: Get OCR text for a specific note
- *     operationId: ocr-get-note-text
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *         description: Note ID to get OCR text for
- *     responses:
- *       200:
- *         description: OCR text retrieved successfully
- *       404:
- *         description: Note not found
- *     tags: ["ocr"]
- */
-function getTextRepresentation(blobId: string | undefined): TextRepresentationResponse {
-    let ocrText: string | null = null;
-
-    if (blobId) {
-        const result = sql.getRow<{
-            textRepresentation: string | null;
-        }>(`
-            SELECT textRepresentation
-            FROM blobs
-            WHERE blobId = ?
-        `, [blobId]);
-
-        if (result) {
-            ocrText = result.textRepresentation;
-        }
-    }
-
-    return {
-        success: true,
-        text: ocrText || '',
-        hasOcr: !!ocrText
-    };
-}
-
-async function getNoteOCRText(req: Request<{ noteId: string }>) {
-    const note = becca.getNote(req.params.noteId);
-    if (!note) {
-        return [404, { success: false, message: 'Note not found' }];
-    }
-
-    return getTextRepresentation(note.blobId);
-}
-
-async function getAttachmentOCRText(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachment(req.params.attachmentId);
-    if (!attachment) {
-        return [404, { success: false, message: 'Attachment not found' }];
-    }
-
-    return getTextRepresentation(attachment.blobId);
-}
-
 export default {
     processNoteOCR,
     processAttachmentOCR,
     batchProcessOCR,
     getBatchProgress,
-    getNoteOCRText,
-    getAttachmentOCRText
 };

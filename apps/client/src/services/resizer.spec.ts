@@ -26,17 +26,6 @@ function flushRaf() {
     }
 }
 
-/** Force `$("#right-pane").is(":visible")` to a chosen value (no layout in happy-dom). */
-function setRightPaneVisible(visible: boolean) {
-    const origIs = ($ as any).fn.is;
-    return vi.spyOn(($ as any).fn, "is").mockImplementation(function (this: any, sel: any, ...rest: any[]) {
-        if (sel === ":visible") {
-            return visible;
-        }
-        return origIs.call(this, sel, ...rest);
-    });
-}
-
 /**
  * Force `$("#launcher-pane").outerWidth()` to a chosen pixel value (happy-dom has
  * no layout, so it otherwise returns 0). Used to exercise the vertical-layout
@@ -57,13 +46,12 @@ function setLauncherPaneWidth(px: number) {
  * singleton that never resets) with options.get/getInt stubbed to the supplied
  * values.
  */
-async function loadResizer(opts: { layoutOrientation?: string; leftPaneWidth?: number | null; rightPaneWidth?: number | null } = {}) {
+async function loadResizer(opts: { layoutOrientation?: string; leftPaneWidth?: number | null } = {}) {
     vi.resetModules();
     const optionsModule = (await import("./options.js")).default;
     optionsModule.get = vi.fn((key) => (key === "layoutOrientation" ? (opts.layoutOrientation ?? "horizontal") : "")) as typeof optionsModule.get;
     optionsModule.getInt = vi.fn((key) => {
         if (key === "leftPaneWidth") return opts.leftPaneWidth ?? null;
-        if (key === "rightPaneWidth") return opts.rightPaneWidth ?? null;
         return null;
     }) as typeof optionsModule.getInt;
     optionsModule.save = vi.fn(async () => {}) as typeof optionsModule.save;
@@ -88,12 +76,14 @@ beforeEach(() => {
     SplitMock.mockImplementation(() => ({ destroy: vi.fn() }));
     document.body.innerHTML = `
         <div id="launcher-pane"></div>
-        <div id="left-pane"></div>
+        <div id="left-pane-host">
+            <div id="left-pane"></div>
+            <div class="peek-pane-spacer"></div>
+        </div>
         <div id="rest-pane"></div>
         <div id="center-pane">
             <div class="split-note-container-widget"></div>
-        </div>
-        <div id="right-pane"></div>`;
+        </div>`;
 });
 
 afterEach(() => {
@@ -104,9 +94,8 @@ describe("setupLeftPaneResizer", () => {
     it("when left pane is hidden, stretches rest pane to full width (horizontal layout, no reserved width)", async () => {
         const { resizer } = await loadResizer({ layoutOrientation: "horizontal" });
 
-        resizer.setupLeftPaneResizer(false);
+        resizer.setupLeftPaneResizer("closed");
 
-        expect($("#left-pane").is(":hidden") || $("#left-pane").css("display") === "none").toBe(true);
         expect($("#rest-pane").css("width")).toBe("100%");
         expect(SplitMock).not.toHaveBeenCalled();
     });
@@ -117,7 +106,7 @@ describe("setupLeftPaneResizer", () => {
         setLauncherPaneWidth(120);
         const { resizer } = await loadResizer({ layoutOrientation: "vertical" });
 
-        resizer.setupLeftPaneResizer(false);
+        resizer.setupLeftPaneResizer("closed");
 
         // reservedWidth = 120 / window.innerWidth * 100; rest-pane = (100 - reservedWidth)%.
         const reservedWidth = (120 / window.innerWidth) * 100;
@@ -133,7 +122,7 @@ describe("setupLeftPaneResizer", () => {
         // fallback yields reservedWidth 0 -> rest-pane 100%.
         const { resizer } = await loadResizer({ layoutOrientation: "vertical" });
 
-        resizer.setupLeftPaneResizer(false);
+        resizer.setupLeftPaneResizer("closed");
 
         expect($("#rest-pane").css("width")).toBe("100%");
     });
@@ -143,7 +132,7 @@ describe("setupLeftPaneResizer", () => {
         setLauncherPaneWidth(120);
         const { resizer } = await loadResizer({ layoutOrientation: "horizontal" });
 
-        resizer.setupLeftPaneResizer(false);
+        resizer.setupLeftPaneResizer("closed");
 
         expect($("#rest-pane").css("width")).toBe("100%");
     });
@@ -153,14 +142,14 @@ describe("setupLeftPaneResizer", () => {
         SplitMock.mockImplementation(() => ({ destroy }));
         const { resizer, options } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: 30 });
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         // Split is only created once the rAF callback runs.
         expect(SplitMock).not.toHaveBeenCalled();
         flushRaf();
 
         expect(SplitMock).toHaveBeenCalledTimes(1);
         const [elements, config] = SplitMock.mock.calls[0];
-        expect(elements).toEqual(["#left-pane", "#rest-pane"]);
+        expect(elements).toEqual([ "#left-pane-host", "#rest-pane" ]);
         expect(config.sizes).toEqual([30, 70]);
         expect(config.gutterSize).toBe(5);
         expect(config.minSize).toEqual([150, 300]);
@@ -171,7 +160,7 @@ describe("setupLeftPaneResizer", () => {
 
         // onDragEnd also mutates the module-level cache: a subsequent rebuild must use
         // the NEW (dragged + rounded) width 43, not the original 30 -> sizes [43, 57].
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
         expect(SplitMock).toHaveBeenCalledTimes(2);
         expect(SplitMock.mock.calls[1][1].sizes).toEqual([43, 57]);
@@ -180,7 +169,7 @@ describe("setupLeftPaneResizer", () => {
     it("clamps a missing stored width (getInt -> null) up to the minimum of 5", async () => {
         const { resizer } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: null });
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
 
         // getInt returns null -> falls back to 0 -> clamped to the 5 minimum.
@@ -190,7 +179,7 @@ describe("setupLeftPaneResizer", () => {
     it("clamps a too-small stored width (e.g. 2) up to the minimum of 5", async () => {
         const { resizer } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: 2 });
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
 
         expect(SplitMock.mock.calls[0][1].sizes).toEqual([5, 95]);
@@ -201,83 +190,98 @@ describe("setupLeftPaneResizer", () => {
         SplitMock.mockImplementation(() => ({ destroy }));
         const { resizer } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: 30 });
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
         expect(destroy).not.toHaveBeenCalled();
 
         // Second invocation must tear down the existing instance before rebuilding.
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         expect(destroy).toHaveBeenCalledTimes(1);
         flushRaf();
         expect(SplitMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("when peeking, sizes the pane against the host's backdrop", async () => {
+        const { resizer } = await loadResizer({
+            layoutOrientation: "horizontal", leftPaneWidth: 30
+        });
+
+        resizer.setupLeftPaneResizer("peek");
+        expect($("#rest-pane").css("width")).toBe("100%");
+        flushRaf();
+
+        const [ elements, config ] = SplitMock.mock.calls[0];
+        expect(elements).toEqual([ "#left-pane", "#left-pane-host > .peek-pane-spacer" ]);
+        expect(config.sizes).toEqual([ 30, 70 ]);
+        expect(config.minSize).toEqual([ 150, 300 ]);
+    });
+
+    it("in the vertical layout, reserves the peek button while it shows", async () => {
+        setLauncherPaneWidth(120);
+        const { resizer } = await loadResizer({ layoutOrientation: "vertical", leftPaneWidth: 30 });
+        const peekButton = document.createElement("button");
+        peekButton.className = "left-pane-peek-button";
+        document.body.append(peekButton);
+        let peekButtonWidth = 12;
+        Object.defineProperty(peekButton, "offsetWidth", { get: () => peekButtonWidth });
+
+        resizer.setupLeftPaneResizer("closed");
+        expect($("#rest-pane").css("width")).toBe(`${100 - (132 / window.innerWidth) * 100}%`);
+
+        // Docked, the button is not displayed.
+        peekButtonWidth = 0;
+        resizer.setupLeftPaneResizer("docked");
+        flushRaf();
+        const [ , restWidth ] = SplitMock.mock.calls[0][1].sizes;
+        expect(restWidth).toBeCloseTo(100 - 30 - (120 / window.innerWidth) * 100);
+    });
+
+    it("in the vertical layout, peeks the pane as wide as it docks", async () => {
+        setLauncherPaneWidth(120);
+        const { resizer, options } = await loadResizer({
+            layoutOrientation: "vertical", leftPaneWidth: 30
+        });
+
+        resizer.setupLeftPaneResizer("peek");
+        flushRaf();
+
+        // The host starts after the launcher pane, so the pane takes a larger share of it.
+        const scale = 100 / (100 - (120 / window.innerWidth) * 100);
+        const { sizes, onDragEnd } = SplitMock.mock.calls[0][1];
+        expect(sizes[0]).toBeCloseTo(30 * scale);
+        expect(sizes[0] + sizes[1]).toBeCloseTo(100);
+
+        onDragEnd([ 40 * scale, 100 - 40 * scale ]);
+        expect(options.save).toHaveBeenCalledWith("leftPaneWidth", 40);
+    });
+
+    it("drops a split still waiting for its frame when the mode changes again", async () => {
+        const { resizer } = await loadResizer({
+            layoutOrientation: "horizontal", leftPaneWidth: 30
+        });
+
+        resizer.setupLeftPaneResizer("peek");
+        resizer.setupLeftPaneResizer("closed");
+        flushRaf();
+
+        expect(SplitMock).not.toHaveBeenCalled();
+        expect(cancelledRafIds).toHaveLength(1);
     });
 
     it("reuses cached layout/width state on subsequent calls instead of re-reading options", async () => {
         const { resizer, options } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: 30 });
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
         const getCallsAfterFirst = (options.get as ReturnType<typeof vi.fn>).mock.calls.length;
         const getIntCallsAfterFirst = (options.getInt as ReturnType<typeof vi.fn>).mock.calls.length;
 
-        resizer.setupLeftPaneResizer(true);
+        resizer.setupLeftPaneResizer("docked");
         flushRaf();
 
         // layoutOrientation / leftPaneWidth are cached after the first call (?? short-circuits).
         expect((options.get as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getCallsAfterFirst);
         expect((options.getInt as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getIntCallsAfterFirst);
-    });
-});
-
-describe("setupRightPaneResizer", () => {
-    it("when right pane is hidden, stretches center pane to full width", async () => {
-        const isSpy = setRightPaneVisible(false);
-        const { resizer } = await loadResizer();
-
-        resizer.setupRightPaneResizer();
-
-        expect($("#center-pane").css("width")).toBe("100%");
-        expect(SplitMock).not.toHaveBeenCalled();
-        isSpy.mockRestore();
-    });
-
-    it("when right pane is visible, creates a Split and persists drag results", async () => {
-        const isSpy = setRightPaneVisible(true);
-        const { resizer, options } = await loadResizer({ rightPaneWidth: 25 });
-
-        resizer.setupRightPaneResizer();
-
-        expect(SplitMock).toHaveBeenCalledTimes(1);
-        const [elements, config] = SplitMock.mock.calls[0];
-        expect(elements).toEqual(["#center-pane", "#right-pane"]);
-        expect(config.sizes).toEqual([75, 25]);
-        expect(config.minSize).toEqual([300, 180]);
-
-        config.onDragEnd([60.2, 39.8]);
-        expect(options.save).toHaveBeenCalledWith("rightPaneWidth", 40);
-
-        // onDragEnd also mutates the module-level cache: a subsequent rebuild must use
-        // the NEW (dragged + rounded) width 40, not the original 25 -> sizes [60, 40].
-        resizer.setupRightPaneResizer();
-        expect(SplitMock).toHaveBeenCalledTimes(2);
-        expect(SplitMock.mock.calls[1][1].sizes).toEqual([60, 40]);
-        isSpy.mockRestore();
-    });
-
-    it("clamps an undefined/too-small right pane width up to 5 and destroys a previous instance", async () => {
-        const isSpy = setRightPaneVisible(true);
-        const destroy = vi.fn();
-        SplitMock.mockImplementation(() => ({ destroy }));
-        const { resizer } = await loadResizer({ rightPaneWidth: null });
-
-        resizer.setupRightPaneResizer();
-        expect(SplitMock.mock.calls[0][1].sizes).toEqual([95, 5]);
-        expect(destroy).not.toHaveBeenCalled();
-
-        resizer.setupRightPaneResizer();
-        expect(destroy).toHaveBeenCalledTimes(1);
-        expect(SplitMock).toHaveBeenCalledTimes(2);
-        isSpy.mockRestore();
     });
 });
 

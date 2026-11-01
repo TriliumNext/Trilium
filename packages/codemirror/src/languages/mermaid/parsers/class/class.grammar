@@ -1,0 +1,80 @@
+// Class diagram grammar for Mermaid: https://mermaid.js.org/syntax/classDiagram.html
+@top ClassDiagram {
+  DiagramName statement*
+}
+
+@skip { spaces | newlines | LineComment }
+
+statement {
+  ClassDef |
+  Relation |
+  MemberLine |
+  AnnotationStatement |
+  Note |
+  Direction
+}
+
+ClassDef {
+  Class ClassName ClassLabel? ClassBody?
+}
+
+ClassLabel { "[" String "]" }
+
+ClassBody { "{" bodyItem* "}" }
+
+bodyItem {
+  Annotation |
+  Member
+}
+
+Member { memberText }
+
+MemberLine { ClassName ":" Member }
+
+Relation {
+  ClassName String? RelationArrow String? ClassName Label?
+}
+
+Label { ":" LabelText }
+
+LabelText { memberText }
+
+AnnotationStatement { Annotation ClassName }
+
+Note { NoteKw (For ClassName)? String }
+
+Direction { DirectionKw DirectionValue }
+
+DirectionValue { identifier }
+
+ClassName { identifier }
+
+Class { @specialize<identifier, "class"> }
+
+NoteKw { @specialize<identifier, "note"> }
+
+For { @specialize<identifier, "for"> }
+
+DirectionKw { @specialize<identifier, "direction"> }
+
+DiagramName { @specialize<identifier, "classDiagram"> versionSuffix? }
+
+@external tokens memberTextToken from "./tokens.js" { memberText }
+
+@tokens {
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[a-zA-Z0-9_~]+ }
+  versionSuffix { "-v" $[0-9]+ }
+  String { '"' !["\n]* '"' }
+  Annotation { "<<" ![\n>]* ">>" }
+  RelationArrow {
+    ("<|" | "<" | "*" | "o")? ("--" | "..") ("|>" | ">" | "*" | "o")?
+  }
+  "{" "}" "[" "]" ":"
+
+  @precedence { versionSuffix, RelationArrow }
+}
+
+@external propSource classHighlighting from "./highlight.js"

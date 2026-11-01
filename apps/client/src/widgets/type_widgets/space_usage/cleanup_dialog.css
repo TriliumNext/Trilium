@@ -1,0 +1,186 @@
+.modal.space-usage-cleanup-dialog {
+    /* One color per item, worn by its ring segment and by the legend swatch naming it, so those two
+       are always the same paint. Softened into the theme surface like the browse donut's semantic
+       colors, which is why nothing else takes it: mostly-surface reads fine as an arc and has too
+       little contrast for text. */
+    --cleanup-deleted-color: color-mix(in srgb, var(--accented-background-color) 55%, #d9645b 45%);
+    --cleanup-attachments-color: color-mix(in srgb, var(--accented-background-color) 55%, #d9a93d 45%);
+    --cleanup-revisions-color: color-mix(in srgb, var(--accented-background-color) 55%, #8f959c 45%);
+    /* Blue, as the browse donut paints a note's own body: this segment is the file itself rather
+       than any of the content in it. */
+    --cleanup-compact-color: color-mix(in srgb, var(--accented-background-color) 55%, #5b8dd9 45%);
+
+    /* Sized by its content rather than to the floor the component sets: a long item title widens the
+       dialog for as long as there is width to give it. Capped at the viewport, past which there is
+       nowhere to grow and the titles wrap instead (see below). */
+    .modal-dialog {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* The largest square that fits inside the ring's hole, as a share of the chart's width. The hole
+       is the ring's inner edge — radius 150 less half of its 40 thickness, so 260 across a 420-unit
+       viewBox, or 61.9% — and a square inscribed in a circle has a side of that over √2. Keep in
+       step with DONUT_RADIUS and DONUT_THICKNESS in the component. */
+    --cleanup-donut-hole: 43.8%;
+
+
+    /* Drives the whole chart: the ring is laid out in viewBox units against a square aspect, so its
+       radius and thickness scale with this rather than being sized here. */
+    .cleanup-chart {
+        height: 270px;
+    }
+
+    /* Held to the hole rather than to the chart: the primitive centers its children over the whole
+       square, where a long amount would otherwise run out across the ring and past it. Whatever
+       still will not fit wraps, and is clipped only as a last resort. */
+    .cleanup-chart-center {
+        display: flex;
+        flex-direction: column;
+        max-width: var(--cleanup-donut-hole);
+        max-height: var(--cleanup-donut-hole);
+        gap: 2px;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
+
+    .cleanup-chart-caption {
+        color: var(--muted-text-color);
+        font-size: 0.75em;
+    }
+
+    /* What the picked items would free — the figure the reading is about, so it carries the weight.
+       A figure and its unit are one word, so neither line ever breaks between them. */
+    .cleanup-chart-amount {
+        font-size: 1.35em;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Spans the reading rather than the text on either side of it: the children of this column
+       stretch, so the rule is as wide as the widest line and reads as dividing them. */
+    .cleanup-chart-rule {
+        border-top: 1px solid var(--main-border-color);
+    }
+
+    /* The whole it is a part of, quieted so the figure above stays the one being read. */
+    .cleanup-chart-total {
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+
+    .cleanup-segment-deletedEntities {
+        --space-usage-donut-segment-color: var(--cleanup-deleted-color);
+    }
+
+    .cleanup-segment-unusedAttachments {
+        --space-usage-donut-segment-color: var(--cleanup-attachments-color);
+    }
+
+    .cleanup-segment-revisionSnapshots {
+        --space-usage-donut-segment-color: var(--cleanup-revisions-color);
+    }
+
+    .cleanup-segment-compactDatabase {
+        --space-usage-donut-segment-color: var(--cleanup-compact-color);
+    }
+
+    /* Left in place rather than removed: the ring stands for everything reclaimable, so an unpicked
+       item keeps its share of it and only stops being claimed. */
+    .cleanup-segment-unpicked {
+        opacity: 0.25;
+    }
+
+    .cleanup-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Carried by the row, so that everything in it is painted from one declaration rather than each
+       part naming its own item. */
+    .cleanup-item-deletedEntities {
+        --cleanup-item-color: var(--cleanup-deleted-color);
+    }
+
+    .cleanup-item-unusedAttachments {
+        --cleanup-item-color: var(--cleanup-attachments-color);
+    }
+
+    .cleanup-item-revisionSnapshots {
+        --cleanup-item-color: var(--cleanup-revisions-color);
+    }
+
+    /* Named like the rows above it, but transparent: recompressing takes no arc in the chart, since
+       what it will save is not knowable until it has run. The swatch keeps the row's alignment. */
+    .cleanup-item-compress {
+        --cleanup-item-color: transparent;
+    }
+
+    .cleanup-item-compact {
+        --cleanup-item-color: var(--cleanup-compact-color);
+    }
+
+    .cleanup-item-swatch {
+        flex: 0 0 auto;
+        width: 4px;
+        height: 1.2em;
+        border-radius: 2px;
+        background: var(--cleanup-item-color);
+    }
+
+    /* Takes the slack, so the size and the switch stay at the trailing edge whatever the title.
+       It gives it back rather than run past the card: while the dialog can still be widened, a
+       fit-content width means a title is measured unwrapped and gets the room it asks for, and only
+       once the viewport has capped that does it wrap onto a second line and take the row with it. */
+    .cleanup-item-title {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /* Muted rather than the item's color: the swatch beside it already says which item the figure
+       belongs to, and that color at chart strength is mostly surface — too little contrast to carry
+       text, as trying it showed. */
+    .cleanup-item-size {
+        flex: 0 0 auto;
+        margin-inline-start: 12px;
+        color: var(--muted-text-color);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Indented by the card itself; the sub-rows carry no swatch, so their titles line up with the
+       titles above rather than with the swatches. */
+    .cleanup-item-nested .cleanup-item-title {
+        color: var(--muted-text-color);
+    }
+
+    /* Prose rather than a row of controls, so none of the item layout applies to it.
+       A fit-content dialog takes its width from the longest unbroken line in it, and this sentence
+       would otherwise be that line. Containment says the part that is actually true — this row's
+       width does not depend on what is written in it — so the dialog is sized by the rows that
+       should size it, and the sentence wraps to whatever width that leaves. The row still stretches
+       to the card, and still grows downwards for as many lines as it takes. */
+    .cleanup-compact-notice {
+        contain: inline-size;
+        font-size: 0.85em;
+    }
+
+    .cleanup-item-number {
+        flex: 0 0 auto;
+        width: 5em;
+        text-align: right;
+    }
+
+    /* The switch brings its own label slot, unused here — the row's own title names the item. */
+    .cleanup-item .switch-widget {
+        flex: 0 0 auto;
+    }
+}

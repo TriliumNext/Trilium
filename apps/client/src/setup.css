@@ -37,10 +37,15 @@ body.setup {
             position: relative;
             height: 100%;
 
+            body.electron & {
+                border-radius: 0;
+            }
+
             @media (min-width: 700px) {
                 display: flex;
                 width: 750px;
                 height: 650px;
+                max-height: 100%;
                 top: unset;
                 overflow: hidden;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -55,68 +60,112 @@ body.setup {
                 body.desktop & {
                     gap: 0.75rem;
                 }
+            }
 
-                .setup-option-card {
-                    padding: 1.5em;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
+            .setup-option-card {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: .75em 1.5em;
+                cursor: pointer;
 
-                    &.disabled {
-                        cursor: not-allowed;
-                        opacity: 0.5;
-                        background-color: transparent;
-                        border-color: var(--main-border-color)
+                &.disabled {
+                    cursor: not-allowed;
+                    opacity: 0.5;
+                    background-color: transparent;
+                    border-color: var(--main-border-color)
+                }
+
+                &:not(.disabled):hover {
+                    background-color: var(--card-background-hover-color);
+                    filter: contrast(105%);
+                    transition: background-color .2s ease-out;
+                }
+
+                .tn-icon {
+                    font-size: 2.5em;
+                    color: var(--muted-text-color);
+                    /* A box of its own rather than whatever width the glyph happens to have, so
+                       every title and description in the list starts on the same line however
+                       large the icon beside it is drawn. One em at this size is 2.5em of the card,
+                       which is the measure the quieter card below matches itself to. */
+                    width: 1em;
+                    flex-shrink: 0;
+                    text-align: center;
+                }
+
+                h3 {
+                    margin-bottom: 4px;
+                    font-size: 1.15em;
+                    font-weight: normal;
+
+                    body.desktop & {
+                        font-size: 1.3em;
                     }
+                }
 
-                    &:not(.disabled):hover {
-                        background-color: var(--card-background-hover-color);
-                        filter: contrast(105%);
-                        transition: background-color .2s ease-out;
-                    }
+                p:last-of-type {
+                    margin-bottom: 0;
+                    font-size: .85em;
+                    color: var(--muted-text-color);
+                }
+            }
 
-                    .tn-icon {
-                        font-size: 2.5em;
-                        color: var(--muted-text-color);
-                    }
+            /* Apart from the four below, which all replace the knowledge base, and quieter than
+               them: this is the one that changes nothing. */
+            .setup-keep-card {
+                margin-bottom: 0.5rem;
+                background-color: transparent;
 
-                    h3 {
-                        font-size: 1.15em;
-                        font-weight: normal;
+                .tn-icon {
+                    font-size: 1.75em;
+                    /* Drawn smaller, but taking the same room: 2.5em of the card, written in this
+                       icon's own units. Without it the smaller glyph pulls its title left and the
+                       item stops lining up with the four below. */
+                    width: calc(2.5em / 1.75);
+                }
 
-                        body.desktop & {
-                            font-size: 1.5em;
-                        }
-                    }
+                h3 {
+                    font-size: 1em;
 
-                    p:last-of-type {
-                        margin-bottom: 0;
-                        color: var(--muted-text-color);
+                    body.desktop & {
+                        font-size: 1.05em;
                     }
                 }
             }
         }
 
         .page {
+            --page-padding-inline: 2em;
+            --page-padding-block: 2em;
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding-top: calc(2em + env(safe-area-inset-top));
-            padding-bottom: calc(2em + env(safe-area-inset-bottom));
-            padding-left: calc(2em + env(safe-area-inset-left));
-            padding-right: calc(2em + env(safe-area-inset-right));
+            padding-top: calc(var(--page-padding-block) + env(titlebar-area-height, 0px) + var(--safe-area-inset-top, env(safe-area-inset-top)));
+            padding-bottom: calc(var(--page-padding-block) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+            padding-left: calc(var(--page-padding-inline) + var(--safe-area-inset-left, env(safe-area-inset-left)));
+            padding-right: calc(var(--page-padding-inline) + var(--safe-area-inset-right, env(safe-area-inset-right)));
             overflow: auto;
 
-            >.back-button {
-                position: absolute;
-                top: calc(1em + env(safe-area-inset-top));
-                inset-inline-start: 1em;
-                color: var(--muted-text-color);
+            body.electron & {
+                --page-padding-block: 1em;
+            }
 
-                body.desktop & {
-                    inset-inline-start: 2em;
-                    top: 2em;
+            >.back-button {
+                /* `.page` scrolls (not `.setup-container`), so sticky is required here, not
+                   absolute, to stay in flow and follow the scroll. */
+                position: sticky;
+                top: 0;
+                inset-inline-start: 0;
+                align-self: flex-start;
+                z-index: 1;
+                color: var(--muted-text-color);
+                /* Sticky content still scrolls in underneath; an opaque fill stops it showing
+                   through, same technique `.page > footer` below already uses. */
+                background: var(--main-background-color);
+
+                body.background-effects & {
+                    background: transparent;
                 }
 
                 .tn-icon {
@@ -147,7 +196,7 @@ body.setup {
             >footer {
                 background: var(--main-background-color);
                 position: sticky;
-                bottom: -2rem;
+                bottom: calc(-1 * var(--page-padding-block));
                 left: 0;
                 right: 0;
                 display: flex;
@@ -155,10 +204,10 @@ body.setup {
                 gap: 0.5rem;
                 border-top: 1px solid var(--main-border-color);
                 padding-top: 1rem;
-                padding-bottom: 2rem;
-                margin-inline: -2rem;
-                margin-bottom: -2rem;
-                padding-inline: 2rem;
+                padding-bottom: var(--page-padding-block);
+                margin-inline: calc(-1 * var(--page-padding-inline));
+                margin-bottom: calc(-1 * var(--page-padding-block));
+                padding-inline: var(--page-padding-inline);
 
                 body.background-effects & {
                     background: transparent;
@@ -174,12 +223,14 @@ body.setup {
                 margin: 0;
                 border-radius: 0;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-                padding-top: calc(1em + env(safe-area-inset-top));
+                padding-top: calc(1em + var(--safe-area-inset-top, env(safe-area-inset-top)));
                 padding-inline-end: 2.5em;
                 user-select: text;
 
-                @media (min-width: 700px) {
-                    border-radius: 16px 16px 0 0;
+                body:not(.electron) & {
+                    @media (min-width: 700px) {
+                        border-radius: 16px 16px 0 0;
+                    }
                 }
 
                 button {
@@ -197,7 +248,7 @@ body.setup {
             width: 100%;
             margin-inline: auto;
 
-            body.desktop & {
+            @media (min-width: 700px) {
                 width: 80%;
             }
 
@@ -311,14 +362,14 @@ body.setup.background-effects .setup-container {
     background: transparent;
 }
 
-/* macOS: draggable title bar region and traffic light buttons */
-body.setup.platform-darwin {
+/* The band the window controls are drawn in, which drags the window in place of the title bar. */
+body.setup.electron {
     .drag-region {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        height: 40px;
+        height: env(titlebar-area-height, 40px);
         -webkit-app-region: drag;
         z-index: 10;
     }
@@ -326,6 +377,42 @@ body.setup.platform-darwin {
     .back-button {
         -webkit-app-region: no-drag;
         z-index: 11;
+    }
+
+    /* The error's header shares the band with the window controls: it drags the window and stays
+       clear of the controls on either side. Stacked above `.drag-region` so the dismiss button
+       receives clicks. */
+    .page > .page-error {
+        z-index: 11;
+        padding-top: 0;
+
+        .admonition-header {
+            height: env(titlebar-area-height, 40px);
+            margin-block-end: 0;
+            padding-left: max(0px, calc(env(titlebar-area-x, 0px) - 1em));
+            padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+            -webkit-app-region: drag;
+        }
+
+        button {
+            top: calc(env(titlebar-area-height, 40px) / 2);
+            right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 0.5em);
+            transform: translateY(-50%);
+            -webkit-app-region: no-drag;
+        }
+
+        /* Without a header, the content starts below the band and the banner stays under
+           `.drag-region`, so the band still drags the window. */
+        &.no-title {
+            z-index: 1;
+            padding-top: calc(env(titlebar-area-height, 40px) + 1em);
+
+            button {
+                top: calc(env(titlebar-area-height, 40px) + 0.5em);
+                right: 0.5em;
+                transform: none;
+            }
+        }
     }
 }
 
@@ -338,53 +425,16 @@ body.setup.platform-darwin {
     }
 }
 
+/* Stepped rather than linear: a continuously-animating element forces the browser to render
+   at full display refresh rate (90+ fps on some phones) for as long as the spinner is visible.
+   Setup spinners stay on screen for the entire initial sync — measured at ~40% of a CPU core
+   on mobile — so cap them at ~6 frames/s, which looks the same at icon size. Scoped to setup
+   because other in-app animations may want the smoother framerate. */
+body.setup .bx-spin {
+    animation-timing-function: steps(12);
+}
+
 /* Slide transitions */
-.slide-page {
-    position: absolute;
-    inset: 0;
-}
-
-.slide-out-forward,
-.slide-out-backward,
-.slide-in-forward,
-.slide-in-backward {
-    animation-duration: 0.35s;
-    animation-timing-function: ease-in-out;
-    animation-fill-mode: forwards;
-}
-
-.slide-out-forward {
-    animation-name: slide-out-left;
-}
-
-.slide-out-backward {
-    animation-name: slide-out-right;
-}
-
-.slide-in-forward {
-    animation-name: slide-in-right;
-}
-
-.slide-in-backward {
-    animation-name: slide-in-left;
-}
-
-body[dir=rtl] .slide-out-forward {
-    animation-name: slide-out-right;
-}
-
-body[dir=rtl] .slide-out-backward {
-    animation-name: slide-out-left;
-}
-
-body[dir=rtl] .slide-in-forward {
-    animation-name: slide-in-left;
-}
-
-body[dir=rtl] .slide-in-backward {
-    animation-name: slide-in-right;
-}
-
 .page.select-language {
     main {
         min-height: 0;
@@ -416,8 +466,18 @@ body[dir=rtl] .slide-in-backward {
 .page.sync-from-desktop {
     .card-columns {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 1.5rem;
+
+        @media (min-width: 700px) {
+            flex-direction: row;
+
+            /* `container-type: inline-size` on `.tn-card` (Card.css) zeroes a flex item's
+               own width contribution; give this card an explicit share of the row. */
+            > :first-child {
+                flex: 1;
+            }
+        }
     }
 
     .sync-from-desktop-waiting {
@@ -467,21 +527,8 @@ body[dir=rtl] .slide-in-backward {
         align-items: center;
         gap: 0.5rem;
 
-        progress {
-            width: 100%;
-            height: 1rem;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            appearance: none;
-
-            &::-webkit-progress-bar {
-                background-color: var(--main-border-color);
-            }
-
-            &::-webkit-progress-value {
-                background-color: var(--main-text-color);
-                transition: width 0.2s ease-out;
-            }
+        .tn-progress-bar {
+            flex: 1;
         }
 
         span {
@@ -493,22 +540,20 @@ body[dir=rtl] .slide-in-backward {
     }
 }
 
-@keyframes slide-out-left {
-    from { transform: translateX(0); opacity: 1; }
-    to   { transform: translateX(-100%); opacity: 0; }
-}
+.page.sync-failed {
+    .admonition-body pre {
+        /* Sync errors embed full request URLs — wrap instead of overflowing the card. */
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0 0 0.5rem;
+        /* The error is meant to be copied into bug reports — opt back out of the
+           app-wide `body { user-select: none }`. */
+        user-select: text;
+    }
 
-@keyframes slide-out-right {
-    from { transform: translateX(0); opacity: 1; }
-    to   { transform: translateX(100%); opacity: 0; }
-}
-
-@keyframes slide-in-right {
-    from { transform: translateX(100%); opacity: 0; }
-    to   { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slide-in-left {
-    from { transform: translateX(-100%); opacity: 0; }
-    to   { transform: translateX(0); opacity: 1; }
+    .admonition-body p {
+        margin: 0;
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
 }

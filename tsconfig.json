@@ -37,28 +37,10 @@
       "path": "./apps/edit-docs"
     },
     {
-      "path": "./packages/express-partial-content"
-    },
-    {
       "path": "./apps/db-compare"
     },
     {
       "path": "./packages/ckeditor5"
-    },
-    {
-      "path": "./packages/ckeditor5-keyboard-marker"
-    },
-    {
-      "path": "./packages/ckeditor5-mermaid"
-    },
-    {
-      "path": "./packages/ckeditor5-admonition"
-    },
-    {
-      "path": "./packages/ckeditor5-footnotes"
-    },
-    {
-      "path": "./packages/ckeditor5-math"
     },
     {
       "path": "./packages/codemirror"

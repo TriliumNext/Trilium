@@ -1,0 +1,5 @@
+# Capacitor-generated Gradle scaffold: regenerated on `cap sync` with LF endings.
+# Pin to LF so a Windows checkout (core.autocrlf=true) stops flipping them to CRLF
+# and showing perpetual no-op diffs. Marked generated to collapse them in reviews.
+capacitor.settings.gradle    text eol=lf linguist-generated
+app/capacitor.build.gradle   text eol=lf linguist-generated

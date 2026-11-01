@@ -1,4 +1,4 @@
-import type { NoteType } from "@triliumnext/commons";
+import { getAttachedFileMime, type NoteType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
 import imageService from "../../services/image.js";
@@ -19,7 +19,29 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 // MIME of a `.csv` upload, as resolved by `mime-types`.
 const CSV_MIME = "text/csv";
 
+/**
+ * Imports one uploaded file as a note, then puts it through the same post-processing every other
+ * importer runs (`zip.importZip` does it per created note).
+ *
+ * `createNewNote` deliberately does none of that itself, so without this step a single-file import
+ * produced a note whose links were never scanned and whose pictures were never taken in hand — a
+ * gap the single-file *export* makes plain, since it inlines every picture as base64 and this is
+ * what unpacks them again.
+ */
 async function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    const note = await importSingleFileAs(taskContext, file, parentNote);
+
+    // The types the pass acts on at all, checked here rather than left to it: reading the content is
+    // what costs, and an uploaded video or disk image would be pulled into memory in full only to be
+    // handed to a step that returns immediately on seeing what type it is.
+    if (note.type === "text" || note.type === "relationMap") {
+        await noteService.asyncPostProcessContent(note, note.getContent());
+    }
+
+    return note;
+}
+
+async function importSingleFileAs(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
 
     if (taskContext?.data?.textImportedAsText) {
@@ -46,6 +68,12 @@ async function importSingleFile(taskContext: TaskContext<"importNotes">, file: F
 
     if (mime === "text/vnd.mermaid") {
         return importCustomType(taskContext, file, parentNote, "mermaid", mime);
+    }
+
+    // `.triliumsheet` is Trilium's native lossless spreadsheet format (see single-note export): the raw
+    // Univer workbook JSON is re-imported verbatim, unlike `.xlsx`/`.csv` which are parsed into a workbook.
+    if (mime === "text/x-spreadsheet") {
+        return importCustomType(taskContext, file, parentNote, "spreadsheet", mime);
     }
 
     if (taskContext?.data?.codeImportedAsCode && mimeService.getType(taskContext.data, mime) === "code") {
@@ -264,7 +292,9 @@ function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentN
 }
 
 function importAttachment(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
-    const mime = mimeService.getMime(file.originalname) || file.mimetype;
+    const mime = getAttachedFileMime(
+        file.originalname, mimeService.getMime(file.originalname) || file.mimetype
+    );
 
     if (mime.startsWith("image/") && typeof file.buffer !== "string") {
         imageService.saveImageToAttachment(parentNote.noteId, file.buffer, file.originalname, taskContext.data?.shrinkImages);

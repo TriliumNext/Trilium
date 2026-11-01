@@ -1,8 +1,14 @@
 import { options } from "@triliumnext/core";
-import { Totp } from "time2fa";
+import { generateConfig, Hotp, Totp } from "time2fa";
 
 import recoveryCodesService from "./encryption/recovery_codes.js";
 import totpEncryptionService from "./encryption/totp_encryption.js";
+
+/**
+ * Bytes in a new secret: 160 bits, the length RFC 4226 (section 4) recommends and the output size
+ * of HMAC-SHA-1. It encodes to 32 base32 characters with no `=` padding.
+ */
+const SECRET_SIZE = 20;
 
 function isTotpEnabled(): boolean {
     return options.getOptionOrNull("mfaMethod") === "totp" &&
@@ -22,7 +28,8 @@ function isTotpEnabled(): boolean {
  */
 function generateSecret(accountName = "Trilium"): { success: boolean; message?: string; url?: string } {
     try {
-        const key = Totp.generateKey({ issuer: "Trilium", user: accountName });
+        const key = Totp.generateKey(
+            { issuer: "Trilium", user: accountName }, { secretSize: SECRET_SIZE });
 
         return {
             success: true,
@@ -38,9 +45,13 @@ function generateSecret(accountName = "Trilium"): { success: boolean; message?: 
     }
 }
 
-/** Persists a (previously verified) TOTP secret, making TOTP the active second factor at login. */
+/**
+ * Persists a (previously verified) TOTP secret, making TOTP the active second factor at login, and
+ * clears the time step the previous secret last used (see {@link verifyTOTP}).
+ */
 function setSecret(secret: string): void {
     totpEncryptionService.setTotpSecret(secret);
+    options.setOption("totpLastUsedStep", "");
 }
 
 function getTotpSecret(): string | null {
@@ -51,6 +62,43 @@ function checkForTotpSecret(): boolean {
     return totpEncryptionService.isTotpSecretSet();
 }
 
+/** Time steps accepted on either side of the current one, so clocks a step apart still agree. */
+const CLOCK_DRIFT_STEPS = 1;
+
+/**
+ * Returns the time step `submittedPasscode` was generated for, or `null` if it matches none of the
+ * steps within `drift` of the current one. Steps up to `lastUsedStep` are never tried.
+ */
+function findTimeStep(
+    secret: string,
+    submittedPasscode: string,
+    drift: number,
+    lastUsedStep = -Infinity
+): number | null {
+    const config = generateConfig({ secretSize: getSecretSize(secret) });
+    const currentStep = Math.floor(Date.now() / 1000 / config.period);
+    const firstStep = Math.max(currentStep - drift, lastUsedStep + 1);
+
+    try {
+        for (let step = firstStep; step <= currentStep + drift; step++) {
+            const code = { passcode: submittedPasscode, secret: secret.trim(), counter: step };
+            if (Hotp.validate(code, config)) return step;
+        }
+    } catch (e) {
+        console.error("Failed to validate TOTP:", e);
+    }
+
+    return null;
+}
+
+/**
+ * Returns the byte length of a base32 `secret`. `Hotp.validate` rejects a secret whose length
+ * differs from `secretSize`, and secrets enrolled before v0.107.0 are 10 bytes long.
+ */
+function getSecretSize(secret: string): number {
+    return Math.floor(secret.trim().replaceAll("=", "").length * 5 / 8);
+}
+
 /**
  * Validates a passcode against an explicitly supplied secret. Used during enrollment to verify the
  * user's authenticator before the secret is persisted (see {@link generateSecret}).
@@ -58,23 +106,34 @@ function checkForTotpSecret(): boolean {
 function validateTOTPForSecret(secret: string, submittedPasscode: string): boolean {
     if (!secret) return false;
 
-    try {
-        return Totp.validate({
-            passcode: submittedPasscode,
-            secret: secret.trim()
-        });
-    } catch (e) {
-        console.error("Failed to validate TOTP:", e);
-        return false;
-    }
+    return findTimeStep(secret, submittedPasscode, CLOCK_DRIFT_STEPS) !== null;
 }
 
-/** Validates a passcode against the persisted secret. Used at login. */
+/**
+ * Validates a passcode for the current step only, since it records nothing. Used by the setup
+ * wizard, which must not write options while becca is unloaded (see `SetupSecondFactor.verify`).
+ */
 function validateTOTP(submittedPasscode: string): boolean {
     const secret = getTotpSecret();
     if (!secret) return false;
 
-    return validateTOTPForSecret(secret, submittedPasscode);
+    return findTimeStep(secret, submittedPasscode, 0) !== null;
+}
+
+/**
+ * Validates a passcode against the persisted secret and records its time step, so that neither it
+ * nor a code from an earlier step is accepted again (RFC 6238, section 5.2). Used at login.
+ */
+function verifyTOTP(submittedPasscode: string): boolean {
+    const secret = getTotpSecret();
+    if (!secret) return false;
+
+    const lastUsedStep = Number(options.getOptionOrNull("totpLastUsedStep")) || -Infinity;
+    const step = findTimeStep(secret, submittedPasscode, CLOCK_DRIFT_STEPS, lastUsedStep);
+    if (step === null) return false;
+
+    options.setOption("totpLastUsedStep", String(step));
+    return true;
 }
 
 function resetTotp(): void {
@@ -90,5 +149,6 @@ export default {
     checkForTotpSecret,
     validateTOTP,
     validateTOTPForSecret,
+    verifyTOTP,
     resetTotp
 };

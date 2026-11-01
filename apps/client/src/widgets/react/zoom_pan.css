@@ -1,0 +1,14 @@
+/* Marks the focused viewport the way `.note-split.active` marks the active split: same accent, same
+   150ms fade (theme-next/shell.css). An inset outline rather than that rule's border — a border on a
+   viewport sized to 100% of its pane costs the content 4px, and declaring an outline here replaces
+   the browser's own focus ring without needing `outline: none`.
+   The fallback covers theme-light.css and theme-dark.css, which define no accent. */
+.tn-zoom-pan-viewport {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    transition: outline-color 150ms ease-out;
+}
+
+.tn-zoom-pan-viewport:focus-visible {
+    outline-color: var(--link-selection-outline-color, var(--main-border-color));
+}

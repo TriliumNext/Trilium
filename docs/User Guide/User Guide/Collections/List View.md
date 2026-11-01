@@ -1,18 +1,18 @@
 # List View
 <figure class="image"><img style="aspect-ratio:1387/758;" src="List View_image.png" width="1387" height="758"></figure>
 
-List view is similar to <a class="reference-link" href="Grid%20View.md">Grid View</a>, but in the list view mode, each note is displayed in a single row with only the title and the icon of the note being visible by the default. By pressing the expand button it's possible to view the content of the note, as well as the children of the note (recursively).
+List view is similar to <a class="reference-link" href="Grid%20View.md">Grid View</a>, but in the list view mode, each note is displayed in a single row with only the title and the icon of the note being visible by the default. By pressing the <span class="tn-icon bx bx-chevron-right"></span> expand button it's possible to view the content of the note, as well as the children of the note (recursively).
 
 In the example above, the "Node.js" note on the left panel contains several child notes. The right panel displays the content of these child notes as a single continuous document.
 
 ### Creating a new table
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _List View_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _List View_.
 
 ## Interaction
 
-*   Each note can be expanded or collapsed by clicking on the arrow to the left of the title.
-*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>, in the _Collection_ tab there are options to expand and to collapse all notes easily.
+*   Each note can be expanded or collapsed by clicking on the <span class="tn-icon bx bx-chevron-right"></span> arrow to the left of the title.
+*   In the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> toolbar, the buttons at the right end expand (<span class="tn-icon bx bx-move-vertical"></span>) and collapse (<span class="tn-icon bx bx-layer-minus"></span>) all notes easily.
 
 ## Printing and exporting to PDF
 
@@ -27,11 +27,11 @@ If exported to PDF within the desktop application, there is additional functiona
 
 ## Expanding and collapsing multiple notes at once
 
-Apart from individually expanding or collapsing notes, it's also possible to expand or collapse them all at once. To do so, go to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and look for the corresponding button.
+Apart from individually expanding or collapsing notes, it's also possible to expand or collapse them all at once. To do so, go to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> toolbar and look for the buttons at its right end.
 
-By default, the _Expand_ button will only expand the direct children (first level) of the collection. Starting with v0.100.0, it's possible to expand multiple levels of notes using the arrow button next to the button.
+By default, the <span class="tn-icon bx bx-move-vertical"></span> button expands only the direct children (first level) of the collection. Starting with v0.100.0, it's possible to expand multiple levels of notes using the <span class="tn-icon bx bx-chevron-down"></span> button next to it.
 
-Manually expanded notes will reset if the application/tab is closed and then the collection is visited again. Automatically expanded notes, using the ribbon configuration will persist.
+Manually expanded notes will reset if the application/tab is closed and then the collection is visited again. However notes automatically expanded/collapsed via the buttons in <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> will persist.
 
 > [!TIP]
 > By design, the UI provides only a handful of levels of depth for expanding notes (direct children, 2-5, all levels). It's also possible to specify any desired depth by manually setting the [corresponding label](../Advanced%20Usage/Attributes/Labels.md). For example: `#expanded=100` to expand up to 100 levels of depth.

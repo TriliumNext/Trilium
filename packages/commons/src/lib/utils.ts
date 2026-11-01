@@ -60,3 +60,45 @@ export function deferred<T>(): DeferredPromise<T> {
         return promise as DeferredPromise<T>;
     })();
 }
+
+/** Runs callbacks one at a time, in the order `runExclusive()` was called. */
+export class Mutex {
+    private tail: Promise<unknown> = Promise.resolve();
+
+    runExclusive<T>(callback: () => T | PromiseLike<T>): Promise<T> {
+        const result = this.tail.then(() => callback());
+        this.tail = result.catch(() => undefined);
+        return result;
+    }
+}
+
+/**
+ * Hashes a string with FNV-1a, returning the digest as an unsigned 32-bit number.
+ *
+ * Not a security primitive and not asked to be one: callers use it to tell two values apart. Web
+ * Crypto is not an option here — Trilium is served over plain HTTP as often as not, and
+ * `crypto.subtle` exists only in a secure context.
+ */
+export function fnv1a(value: string): number {
+    let hash = 0x811c9dc5;
+
+    for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+
+    return hash >>> 0;
+}
+
+/**
+ * Escapes `&`, `<`, `>`, `"` and `'`, so that the value can go into HTML text or a quoted
+ * attribute.
+ */
+export function escapeHtml(value: string): string {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+}

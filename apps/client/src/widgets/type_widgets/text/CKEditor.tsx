@@ -1,0 +1,515 @@
+import {
+    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor, type DocumentHeading,
+    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
+    type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
+    replaceLinkAtSelection, SnippetDefinition
+} from "@triliumnext/ckeditor5";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { createPortal, HTMLAttributes, RefObject } from "preact";
+import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
+
+import froca from "../../../services/froca";
+import { isMobile } from "../../../services/utils";
+import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import IconPicker from "../../react/IconPicker";
+import type { AiNoteLocation } from "./ai_assistant_stream";
+import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
+import { buildConfig, BuildEditorOptions, type ContentEmbedHandlers } from "./config";
+
+export type BoxSize = "tiny" | "small" | "medium" | "full" | "expandable";
+
+export interface CKEditorApi {
+    /** returns true if user selected some text, false if there's no selection */
+    hasSelection(): boolean;
+    getSelectedText(): string;
+    /** The link around the caret or the selected link preview, or `null` outside one. */
+    getCurrentLink(): LinkAtSelection | null;
+    /** The names of the anchors in the document. */
+    getAnchors(): string[];
+    /** The headings of the document that have text, in document order. */
+    getHeadings(): DocumentHeading[];
+    /**
+     * The block id of `heading`, which gets a new id first if it has none. `undefined` once the
+     * editor is gone.
+     */
+    assignBlockId(heading: DocumentHeading): string | undefined;
+    addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
+    /**
+     * Rewrites the link around the caret or the selected link preview, as {@link addLink} would
+     * write a new one.
+     */
+    updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
+    /**
+     * Puts a preview of `url` in place of the link around the caret or the selected link preview,
+     * or at the selection. `title` and `description` replace the page's own.
+     */
+    addLinkPreview(
+        url: string, display: LinkDisplayMode, title: string | null, description: string | null
+    ): void;
+    addLinkToEditor(linkHref: string, linkTitle: string): void;
+    addHtmlToEditor(html: string): void;
+    addContentEmbed(noteId: string, boxSize?: BoxSize): void;
+    addImage(noteId: string): Promise<void>;
+}
+
+/**
+ * The `EventInfo` CKEditor hands to every listener as its *first* argument. Listeners on
+ * `show:warning` receive `(evt, data)` in that order — getting it backwards throws inside the
+ * event handler, which reaches `onEditorError` as an editor error (see #10859).
+ */
+export interface NotificationEventInfo {
+    stop(): void;
+}
+
+/** The payload of `Notification#show:warning`, as built by `Notification#_showNotification`. */
+export interface NotificationEventData {
+    /** The notification text. `Notification#showWarning` takes it as its first argument. */
+    message: string;
+    type: "success" | "info" | "warning";
+    /** Empty string when the caller did not supply one. */
+    title: string;
+}
+
+interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className" | "tabIndex"> {
+    contentLanguage: string | null | undefined;
+    isClassicEditor?: boolean;
+    editorRef: RefObject<CKTextEditor | null>;
+    onNotificationWarning?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
+    onNotificationInfo?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
+    /** Called with each error that escapes the editor. The editor keeps running after it. */
+    onEditorError?: (error: CKEditorError) => void;
+    onChange: () => void;
+    /** Called each time a CKEditor instance is built: on the first render and after a config change that requires it (e.g. content language). */
+    onEditorInitialized?: (editor: CKTextEditor) => void;
+    editorApi: RefObject<CKEditorApi | null>;
+    templates: SnippetDefinition[];
+    /** Rebuilds the editor each time it changes, e.g. to recover from an error. */
+    rebuildKey?: number;
+    containerRef?: RefObject<HTMLDivElement | null>;
+    /** What renders the embeds of the editor and acts on them. Editors without embeds leave it out. */
+    contentEmbedHandlers?: ContentEmbedHandlers;
+    /** Shows the link dialog, as `internalLink.showDialog` does. */
+    showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
+    isExcerpt?: boolean;
+}
+
+export default function CKEditor({
+    containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
+    editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
+    onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
+    showLinkDialog, isExcerpt
+}: CKEditorProps) {
+    const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
+    const editorRef = useRef<CKTextEditor>(null);
+    const stopReportingErrorsRef = useRef<() => void>(undefined);
+    const onEditorErrorRef = useRef(onEditorError);
+    onEditorErrorRef.current = onEditorError;
+    // Serializes editor build/teardown so overlapping effect runs never operate on the same
+    // container concurrently. Under Vite + Prefresh HMR, effects are force-re-run (ignoring the
+    // dependency array) and can fire several times in quick succession; without this queue two
+    // `buildEditor` calls could race on the same <div> and trip CKEditor's
+    // `editor-source-element-already-used` guard.
+    const buildQueueRef = useRef<Promise<void>>(Promise.resolve());
+    // Keep the latest snippet definitions reachable from the (rarely re-running) build effect without
+    // listing `templates` as one of its dependencies. Snippet changes are pushed into the live editor
+    // instead of forcing a rebuild — see the "push snippet definitions" effect below.
+    const templatesRef = useRef(templates);
+    templatesRef.current = templates;
+    const [ uiLanguage ] = useTriliumOption("locale");
+    // Read purely as rebuild triggers: config builders consume the values through options.get() at
+    // editor-creation time, so the editor must be recreated when either changes.
+    const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
+    const [ mathFieldEnabled ] = useTriliumOptionBool("mathFieldEnabled");
+    // Rebuild triggers for the same reason, and there is no cheaper option for these: CKEditor bakes
+    // the transformation list at plugin init — `normalizeTransformations` runs once inside
+    // `_enableTransformationWatchers` — so unlike the settings read through a getter (link previews,
+    // clipboard image embedding) a live editor has nothing left to re-read.
+    const [ doubleQuoteStyle ] = useTriliumOption("textNoteDoubleQuoteStyle");
+    const [ singleQuoteStyle ] = useTriliumOption("textNoteSingleQuoteStyle");
+    const [ punctuationReplacements ] = useTriliumOptionBool("textNotePunctuationReplacementsEnabled");
+    const [ mathReplacements ] = useTriliumOptionBool("textNoteMathReplacementsEnabled");
+    const [ symbolReplacements ] = useTriliumOptionBool("textNoteSymbolReplacementsEnabled");
+    // The raw JSON, deliberately: `useTriliumOptionJson` parses on every render and would hand back a
+    // new array each time, rebuilding the editor continuously. A string compares by value.
+    const [ customReplacements ] = useTriliumOption("textNoteCustomReplacements");
+    // Which language a note with no `#language` of its own is written in, and so which quotes it
+    // gets. The UI locale it can fall back to is already covered by `uiLanguage` above.
+    const [ defaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
+    // Rebuild triggers as well: `buildHtmlSupportConfig()` reads both at editor-creation time, and
+    // GHS turns its allow-list into schema definitions and converters when `DataSchema`/`DataFilter`
+    // register at init, so there is nothing for a live editor to re-read. The raw JSON string for
+    // the tag list, for the same by-value reason as `customReplacements` above.
+    const [ htmlSupportEnabled ] = useTriliumOptionBool("textNoteHtmlSupportEnabled");
+    const [ allowedHtmlTags ] = useTriliumOption("allowedHtmlTags");
+    // Whether the AI assistant is offered at all, which `buildConfig()` settles at creation time:
+    // it decides both the transport the command gates on and whether the toolbars carry the
+    // assistant's entries, neither of which a live editor can be told about afterwards. Switching
+    // the AI features off has to take the button away there and then, not at the next rebuild.
+    // The provider list is a rebuild trigger for the same reason — configuring the first one (or
+    // removing the last) is what makes the feature usable.
+    const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
+    const [ llmProviders ] = useTriliumOption("llmProviders");
+    // Deliberately *not* a rebuild trigger — pushed into the live editor by the effect below
+    // instead. The enabled content languages fill the assistant's Translate submenu, which now
+    // offers the row that edits them, so the change is made from inside the editor and several
+    // times over while the modal is open; the custom actions are notes, written and revised in the
+    // editor itself. A rebuild for either would cost the caret and the undo history of the note
+    // being written.
+    const quickActions = useAiQuickActions();
+    const menuFooter = useAiMenuFooter();
+    const [ editor, setEditor ] = useState<CKTextEditor>();
+    const { parentComponent, ntxId, note, notePath } = useNoteContext();
+    // Which note the assistant says a run is writing into. Kept in a ref for the same reason the
+    // snippets are: switching notes reuses the editor rather than rebuilding it, so a captured
+    // note would name whichever one happened to be open when the editor was built.
+    const noteLocationRef = useRef<AiNoteLocation | null>(null);
+    noteLocationRef.current = note ? { title: note.title, notePath } : null;
+    const noteRef = useRef(note);
+    noteRef.current = note;
+    const contentEmbedHandlersRef = useRef(contentEmbedHandlers);
+    contentEmbedHandlersRef.current = contentEmbedHandlers;
+    const showLinkDialogRef = useRef(showLinkDialog);
+    showLinkDialogRef.current = showLinkDialog;
+    const isExcerptRef = useRef(isExcerpt);
+    isExcerptRef.current = isExcerpt;
+    /** The open icon picker request and its balloon container, or `null` when none is open. */
+    const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerRequest | null>(null);
+
+    // CKEditor creates and positions the balloon; `IconPicker` renders into its container.
+    // On mobile, `showIconPickerDialog` opens the picker in a modal instead.
+    function showIconPicker(request: IconPickerRequest) {
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showIconPickerDialog", { onSelect: request.onSelect });
+            return null;
+        }
+
+        setIconPickerRequest(request);
+        return () => setIconPickerRequest(null);
+    }
+
+    useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
+
+    useImperativeHandle(editorApi, () => ({
+        hasSelection() {
+            const model = editorRef.current?.model;
+            const selection = model?.document.selection;
+
+            return !selection?.isCollapsed;
+        },
+        getSelectedText() {
+            const range = editorRef.current?.model.document.selection.getFirstRange();
+            let text = "";
+
+            if (!range) {
+                return text;
+            }
+
+            for (const item of range.getItems()) {
+                if ("data" in item && item.data) {
+                    text += item.data;
+                }
+            }
+
+            return text;
+        },
+        getCurrentLink() {
+            const editor = editorRef.current;
+            return editor ? getLinkAtSelection(editor) : null;
+        },
+        getAnchors() {
+            const editor = editorRef.current;
+            return editor ? getAnchorNames(editor) : [];
+        },
+        getHeadings() {
+            const editor = editorRef.current;
+            return editor ? getHeadings(editor) : [];
+        },
+        assignBlockId(heading) {
+            const model = editorRef.current?.model;
+            return model && assignBlockId(model, heading.element);
+        },
+        async updateLink(notePath, linkTitle, externalLink) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.editing.view.focus();
+            const href = externalLink ? notePath : `#${notePath}`;
+            await replaceLinkAtSelection(editor, href, linkTitle);
+        },
+        addLinkPreview(url, display, title, description) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.editing.view.focus();
+            void editor.execute("insertLinkEmbed", {
+                url, mode: display, title: title ?? undefined, description: description ?? undefined
+            });
+        },
+        addLink(notePath, linkTitle, externalLink) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            if (linkTitle) {
+                if (this.hasSelection()) {
+                    editor.execute("link", externalLink ? `${notePath}` : `#${notePath}`);
+                } else {
+                    this.addLinkToEditor(externalLink ? `${notePath}` : `#${notePath}`, linkTitle);
+                }
+            } else {
+                editor.execute("referenceLink", { href: `#${  notePath}` });
+            }
+
+            editor.editing.view.focus();
+        },
+        addLinkToEditor(linkHref, linkTitle) {
+            editorRef.current?.model.change((writer) => {
+                const insertPosition = editorRef.current?.model.document.selection.getFirstPosition();
+                if (insertPosition) {
+                    writer.insertText(linkTitle, { linkHref }, insertPosition);
+                }
+            });
+        },
+        addContentEmbed(noteId, boxSize) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor?.model.change((writer) => {
+                // Insert <contentEmbed>*</contentEmbed> at the current selection position
+                // in a way that will result in creating a valid model structure
+                editor?.model.insertContent(
+                    writer.createElement("contentEmbed", {
+                        noteId,
+                        boxSize
+                    })
+                );
+            });
+        },
+        addHtmlToEditor(html: string) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            editor.model.change((writer) => {
+                const viewFragment = editor.data.processor.toView(html);
+                const modelFragment = editor.data.toModel(viewFragment);
+                const insertPosition = editor.model.document.selection.getLastPosition();
+
+                if (insertPosition) {
+                    const range = editor.model.insertContent(modelFragment, insertPosition);
+
+                    if (range) {
+                        writer.setSelection(range.end);
+                    }
+                }
+            });
+
+            editor.editing.view.focus();
+        },
+        async addImage(noteId) {
+            const editor = editorRef.current;
+            if (!editor) return;
+
+            const note = await froca.getNote(noteId);
+            if (!note) return;
+
+            editor.model.change(() => {
+                const encodedTitle = encodeURIComponent(note.title);
+                const src = `api/images/${note.noteId}/${encodedTitle}`;
+
+                editor?.execute("insertImage", { source: src });
+            });
+        },
+    }));
+
+    async function destroyEditor() {
+        const editor = editorRef.current;
+        editorRef.current = null;
+        externalEditorRef.current = null;
+        stopReportingErrorsRef.current?.();
+        stopReportingErrorsRef.current = undefined;
+        await editor?.destroy();
+    }
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        let isStale = false;
+
+        const init = async () => {
+            // Preserve the scroll position across editor recreation: rebuilding the editor briefly
+            // empties the content, which collapses the surrounding scrolling container back to the top.
+            const scrollContainer = container.closest<HTMLElement>(".scrolling-container");
+            const scrollTop = scrollContainer?.scrollTop ?? 0;
+
+            await destroyEditor().catch((e) => console.warn("CKEditor destroy failed", e));
+            if (isStale) return;
+
+            const editor = await buildEditor(container, !!isClassicEditor, {
+                isClassicEditor: !!isClassicEditor,
+                uiLanguage: uiLanguage as DISPLAYABLE_LOCALE_IDS,
+                contentLanguage: contentLanguage ?? null,
+                templates: templatesRef.current,
+                getNoteLocation: () => noteLocationRef.current,
+                getChildNoteParent: () => {
+                    const parentNote = noteRef.current;
+                    const parentNotePath = noteLocationRef.current?.notePath;
+                    if (!parentNote || !parentNotePath) return undefined;
+                    return { notePath: parentNotePath, isProtected: parentNote.isProtected, ntxId };
+                },
+                getNoteId: () => noteRef.current?.noteId,
+                isExcerpt: () => !!isExcerptRef.current,
+                getComponentId: () => parentComponent?.componentId,
+                triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
+                showIconPicker,
+                referenceSource: {
+                    getEditor: () => editorRef.current,
+                    getNote: () => noteRef.current,
+                    getNotePath: () => noteLocationRef.current?.notePath,
+                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
+                },
+                getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
+                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null
+            });
+
+            if (isStale) {
+                await editor.destroy();
+                return;
+            }
+
+            editorRef.current = editor;
+            externalEditorRef.current = editor;
+            stopReportingErrorsRef.current = onTextEditorError(editor, (error) => {
+                onEditorErrorRef.current?.(error);
+            });
+            setEditor(editor);
+
+            if (import.meta.env.VITE_CKEDITOR_ENABLE_INSPECTOR === "true") {
+                const CKEditorInspector = (await import("@ckeditor/ckeditor5-inspector")).default;
+                CKEditorInspector.attach(editor);
+            }
+
+            onEditorInitialized?.(editor);
+
+            if (isStale || !scrollContainer || !scrollTop) return;
+
+            // Restore after the content has been set and laid out, otherwise the container is still
+            // collapsed and the assignment gets clamped to a smaller scroll height.
+            requestAnimationFrame(() => {
+                if (!isStale) {
+                    // `behavior: "instant"` overrides the container's `scroll-behavior: smooth`,
+                    // so the position is restored without an animation.
+                    scrollContainer.scrollTo({ top: scrollTop, behavior: "instant" });
+                }
+            });
+        };
+
+        // Chain this run behind any in-flight build/teardown so two editors are never created on
+        // the same container concurrently. Skipping when already stale avoids rebuilding for an
+        // effect run that a newer one has already superseded. The queue promise is kept
+        // always-resolving so one failed build can't wedge every subsequent run.
+        buildQueueRef.current = buildQueueRef.current
+            .then(() => (isStale ? undefined : init()))
+            .catch((e) => {
+                console.warn("CKEditor build failed", e);
+            });
+
+        return () => {
+            isStale = true;
+        };
+        // `templates` is intentionally excluded: snippet changes are pushed into the live editor by the
+        // effect below, so they must not trigger a full editor rebuild.
+        //
+        // The options below are not read in this effect — `buildConfig` goes to the options store
+        // itself — but they are listed so that changing one rebuilds the editor. The rebuild is what
+        // makes them apply to an already-open note; it costs the cursor position and undo history,
+        // which is acceptable for a change made deliberately over in the settings.
+    }, [
+        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar, mathFieldEnabled,
+        doubleQuoteStyle, singleQuoteStyle, punctuationReplacements, mathReplacements, symbolReplacements,
+        customReplacements, defaultContentLanguage, htmlSupportEnabled, allowedHtmlTags,
+        aiEnabled, llmProviders, rebuildKey
+    ]);
+
+    // Destroys the editor when the component goes away, after a build still in progress.
+    useEffect(() => () => {
+        buildQueueRef.current = buildQueueRef.current
+            .then(destroyEditor)
+            .catch((e) => {
+                console.warn("CKEditor destroy failed", e);
+            });
+    }, []);
+
+    // Push snippet ("template") definitions into the live editor instead of rebuilding it. The premium
+    // Template plugin read its definitions once at init; TriliumSnippets keeps them in a live
+    // collection, so add/remove/rename/re-icon all apply in place.
+    useEffect(() => {
+        if (!editor || !templates) return;
+        if (editor.plugins.has("TriliumSnippets")) {
+            editor.plugins.get("TriliumSnippets").updateDefinitions(templates);
+        }
+    }, [ editor, templates ]);
+
+    // Likewise for the AI quick actions: enabling a content language or writing a `#aiQuickAction`
+    // note shows up in the menu without the note being edited losing its undo history.
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.plugins.has("AiAssistantUI")) {
+            editor.plugins.get("AiAssistantUI").updateQuickActions(quickActions);
+        }
+    }, [ editor, quickActions ]);
+
+    // Likewise for the row naming the model a run speaks to, which restates itself once picked.
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.plugins.has("AiAssistantUI")) {
+            editor.plugins.get("AiAssistantUI").updateMenuFooter(menuFooter);
+        }
+    }, [ editor, menuFooter ]);
+
+
+    // React to notification warning callback.
+    useEffect(() => {
+        if (!onNotificationWarning || !editor) return;
+        const notificationPlugin = editor.plugins.get("Notification");
+        notificationPlugin.on("show:warning", onNotificationWarning);
+        return () => notificationPlugin.off("show:warning", onNotificationWarning);
+    }, [ editor, onNotificationWarning ]);
+
+    useEffect(() => {
+        if (!onNotificationInfo || !editor) return;
+        const notificationPlugin = editor.plugins.get("Notification");
+        notificationPlugin.on("show:info", onNotificationInfo);
+        return () => notificationPlugin.off("show:info", onNotificationInfo);
+    }, [ editor, onNotificationInfo ]);
+
+    // React to on change listener.
+    useEffect(() => {
+        if (!editor) return;
+        editor.model.document.on("change:data", onChange);
+        return () => editor.model.document.off("change:data", onChange);
+    }, [ editor, onChange ]);
+
+    return (
+        <>
+            <div ref={containerRef} className={className} tabIndex={tabIndex} />
+            {iconPickerRequest && createPortal(
+                <IconPicker
+                    columnCount={ICON_PICKER_COLUMNS}
+                    compact
+                    onSelect={iconPickerRequest.onSelect}
+                />,
+                iconPickerRequest.container
+            )}
+        </>
+    );
+}
+
+/** The number of icons per row of the picker in the editor's balloon. */
+const ICON_PICKER_COLUMNS = 9;
+
+async function buildEditor(element: HTMLElement, isClassicEditor: boolean, opts: BuildEditorOptions) {
+    const editorClass = isClassicEditor ? ClassicEditor : PopupEditor;
+    const config = await buildConfig(opts);
+    return await editorClass.create(element, config);
+}

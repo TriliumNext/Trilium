@@ -1,0 +1,134 @@
+/* The quick search box of the app's default theme (`widgets/quick_search.css`). */
+.search-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: var(--quick-search-background);
+    transition: background-color 200ms ease-in;
+}
+
+.search-item:hover {
+    background: var(--quick-search-hover-background);
+    transition: background-color 75ms ease-out;
+}
+
+.search-item:focus-within {
+    border-color: var(--quick-search-focus-border);
+    background: var(--quick-search-focus-background);
+    transition: background-color 100ms ease-out;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 3px 8px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    line-height: 24px;
+}
+
+.search-input::placeholder {
+    color: var(--quick-search-color);
+    opacity: 1;
+}
+
+.search-item:focus-within .search-input {
+    color: var(--quick-search-focus-color);
+}
+
+/* Outranks the icon pack's `.bx { display: inline-block }`, which the page loads after this. */
+.search-item .search-icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    margin-inline-end: 8px;
+    border-radius: 50%;
+    color: var(--quick-search-color);
+    font-size: 16px;
+    transition: background-color 200ms ease-in;
+}
+
+.search-item:focus-within:has(.search-input:not(:placeholder-shown)) .search-icon {
+    background: var(--quick-search-button-active-background);
+    color: var(--quick-search-button-active-color);
+    transition: background-color 500ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .search-item,
+    .search-icon {
+        transition: none;
+    }
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    background: var(--background-highlight);
+    margin-top: 10px;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    z-index: 5;
+}
+
+.search-result-item {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 12px;
+    color: var(--text-primary);
+}
+
+.search-result-item:hover {
+    cursor: pointer;
+    background: var(--background-active);
+    color: var(--text-menu-active);
+    text-decoration: none;
+}
+
+.search-result-item:hover .search-result-note {
+    color: var(--text-menu-active);
+}
+
+.search-result-note {
+    font-size: 12px;
+    color: var(--text-menu);
+}
+
+.search-result-snippet {
+    font-size: 12px;
+    color: var(--text-menu);
+    margin-top: 2px;
+    /* Clamp to two lines so long matches don't blow up the popout. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+.search-result-snippet b {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.search-result-item:hover .search-result-snippet {
+    color: var(--text-menu-active);
+}
+
+.search-result-item:hover .search-result-snippet b {
+    color: var(--text-menu-active);
+}

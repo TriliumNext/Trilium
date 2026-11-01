@@ -7,7 +7,7 @@ The main note type is a rich-text note type called <a class="reference-link" hr
 
 There are also more complex note types such as <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a>, <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a> that usually go hand-in-hand with <a class="reference-link" href="../Scripting.md">Scripting</a>.
 
-In Trilium there's no specific "folder" note type. Any note can have children and thus be a folder.
+In Trilium there's no specific "folder" note type. Any note can have children and thus be a folder. To make a note that only shows its children, like a folder in other applications, use a <a class="reference-link" href="../Collections/Grid%20View.md">Grid View</a> or <a class="reference-link" href="../Collections/List%20View.md">List View</a> collection. See also <a class="reference-link" href="../FAQ.md">FAQ</a>.
 
 ### Root note
 

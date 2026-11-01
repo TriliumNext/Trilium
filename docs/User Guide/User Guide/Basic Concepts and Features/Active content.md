@@ -23,11 +23,11 @@ These are the types of active content in Trilium, along with a few examples of w
 | <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> | Yes | Displays a website inside a note. | Can point to a phishing website which can collect the data (for example on a log in page). |
 | <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a> | Yes | Renders custom content inside a note, such as a dashboard or a new editor that is not officially supported by Trilium. | Can affect the UI similar to front-end scripts or custom widgets since the scripts are not completely encapsulated, or they can act similar to a web view where they can collect data entered by the user. |
 | <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> | No | Can alter the layout and style of the UI using CSS, applied regardless of theme. | Generally less problematic than the rest of active content, but a badly written CSS can affect the layout of the application, requiring the use of <a class="reference-link" href="../Advanced%20Usage/Safe%20mode.md">Safe mode</a> to be able to use the application. |
-| [Custom themes](../Theme%20development.md) | No | Can change the style of the entire UI. | Similar to custom app-wide CSS. |
+| [Custom themes](../Theme%20development) | No | Can change the style of the entire UI. | Similar to custom app-wide CSS. |
 | <a class="reference-link" href="Themes/Icon%20Packs.md">Icon Packs</a> | No | Introduces new icons that can be used for notes. | Generally are more contained and less prone to cause issues, but they can cause performance issues (for example if the icon pack has millions of icons in it). |
 
 ## Active content badge
 
-Starting with v0.102.0, on the <a class="reference-link" href="UI%20Elements/New%20Layout.md">New Layout</a> a badge will be displayed near the note title, indicating that an active content is detected. Clicking the badge will reveal a menu with various options related to that content type, for example to open the documentation or to configure the execution of scripts.
+If a note is considered to have active content, a badge is shown in the <a class="reference-link" href="Notes/Note%20badges.md">Note badges</a> area. Clicking the badge will reveal a menu with various options related to that content type, for example to open the documentation or to configure the execution of scripts.
 
 For some active content types, such as backend scripts with custom triggering conditions a toggle button will appear. This makes it possible to easily disable scripts or widgets, but also to re-enable them if an import was made with safe mode active.

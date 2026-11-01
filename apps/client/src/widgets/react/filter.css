@@ -1,0 +1,14 @@
+/*
+ * What the parts of a filtered subtree are marked as, so that a component can say what its content
+ * is worth to a filter without owning the rules for it. See `FilterRole` in filter.tsx.
+ *
+ * A group holding nothing that matched is worth nothing, so it goes. Everything else follows from
+ * the marks alone, which is why only one rule is needed here: what a group considers its own chrome
+ * is the group's business, and stays with the component that knows its shape.
+ */
+/* Said over whatever layout the group is given: a group's own `display` carries the same weight as
+   this rule, which would leave an empty group standing or not by nothing more than the order the
+   stylesheets happen to land in. */
+.tn-filter-scope:not(:has(.tn-filter-match)) {
+    display: none !important;
+}

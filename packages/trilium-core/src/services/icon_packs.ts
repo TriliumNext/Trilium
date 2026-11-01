@@ -1,11 +1,16 @@
-import { IconRegistry } from "@triliumnext/commons";
+import { iconFontFaceOverrides, type IconFontMetrics, IconRegistry } from "@triliumnext/commons";
 
+import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
+import brandsManifest from "./icon_pack_brands.json" with { type: "json" };
+import textEditorManifest from "./icon_pack_text_editor.json" with { type: "json" };
 import { getLog } from "./log";
 import search from "./search/services/search";
-import { safeExtractMessageAndStackFromError } from "./utils/index";
+import {
+    decodeCssEscapes, escapeCssString, isDev, safeExtractMessageAndStackFromError
+} from "./utils/index";
 
 const PREFERRED_MIME_TYPE = [
     "font/woff2",
@@ -19,6 +24,15 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
     "font/woff2": "woff2"
 };
 
+/**
+ * Character set a pack's prefix and each of its icon keys must match. Both are interpolated
+ * into a CSS class selector, which takes letters, digits, `-`, `_` and any code point at or
+ * above U+0080 unescaped. Anything else has to be rejected: a key holding `</style>` ends the
+ * inline `<style>` element that `generateCss()` output is served in.
+ */
+const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
+const MAX_LOGGED_SKIPPED_KEYS = 10;
+
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {
     "font/ttf": "ttf",
     "font/woff": "woff",
@@ -30,6 +44,12 @@ export interface IconPackManifest {
         glyph: string,
         terms: string[];
     }>;
+    /**
+     * Where the pack draws its glyphs, so that a browser centres them on the box they were drawn in
+     * rather than on the one the font's platform metrics describe. Packs built before this was
+     * measured carry none, and are left to the browser.
+     */
+    metrics?: IconFontMetrics;
 }
 
 export interface ProcessedIconPack {
@@ -42,29 +62,65 @@ export interface ProcessedIconPack {
     icon: string;
     /** Indicates whether this icon pack is built-in (shipped with Trilium) or user-defined. */
     builtin: boolean;
+    /**
+     * Whether the pack exists for Trilium's own documentation. Its icons render everywhere, but
+     * are offered for picking only in development, where the documentation is written.
+     */
+    internal?: boolean;
 }
 
 export function getIconPacks() {
-    const defaultIconPack: ProcessedIconPack = {
-        prefix: "bx",
-        manifest: boxiconsManifest,
-        manifestNoteId: "boxicons",
-        fontMime: "font/woff2",
-        fontAttachmentId: "boxicons",
-        title: "Boxicons",
-        icon: "bx bx-package",
-        builtin: true
-    };
+    const builtinIconPacks: ProcessedIconPack[] = [
+        {
+            prefix: "bx",
+            manifest: boxiconsManifest,
+            manifestNoteId: "boxicons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "boxicons",
+            title: "Boxicons",
+            icon: "bx bx-package",
+            builtin: true
+        },
+        {
+            // The icons of the text editor's toolbar, built by `apps/icon-pack-builder`.
+            prefix: "cke",
+            manifest: textEditorManifest,
+            manifestNoteId: "text-editor-icons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "text-editor-icons",
+            title: "Text Editor Icons",
+            icon: "cke cke-pilcrow",
+            builtin: true,
+            internal: true
+        },
+        {
+            // The marks of the AI providers and import sources, built by `apps/icon-pack-builder`.
+            prefix: "tn-brand",
+            manifest: brandsManifest,
+            manifestNoteId: "brand-icons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "brand-icons",
+            title: "Brand Icons",
+            icon: "tn-brand tn-brand-openai",
+            builtin: true,
+            internal: true
+        }
+    ];
 
-    const usedPrefixes = new Set<string>([defaultIconPack.prefix]);
+    // Custom packs are notes, which a search cannot find before becca is loaded (e.g. during setup).
+    if (!becca.loaded) {
+        return builtinIconPacks;
+    }
+
+    const usedPrefixes = new Set<string>(builtinIconPacks.map((iconPack) => iconPack.prefix));
     const customIconPacks = search.searchNotes("#iconPack")
         .filter(note => !note.isProtected)
         .map(iconPackNote => processIconPack(iconPackNote))
         .filter(iconPack => {
             if (!iconPack) return false;
 
-            if (iconPack.prefix === "bx" || usedPrefixes.has(iconPack.prefix)) {
-                getLog().info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
+            if (usedPrefixes.has(iconPack.prefix)) {
+                getLog().warn(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
                 return false;
             }
             usedPrefixes.add(iconPack.prefix);
@@ -72,7 +128,7 @@ export function getIconPacks() {
         }) as ProcessedIconPack[];
 
     return [
-        defaultIconPack,
+        ...builtinIconPacks,
         ...customIconPacks
     ];
 }
@@ -80,7 +136,9 @@ export function getIconPacks() {
 export function generateIconRegistry(iconPacks: ProcessedIconPack[]): IconRegistry {
     const sources: IconRegistry["sources"] = [];
 
-    for (const { manifest, title, icon, prefix } of iconPacks) {
+    for (const { manifest, title, icon, prefix, internal } of iconPacks) {
+        if (internal && !isDev()) continue;
+
         const icons: IconRegistry["sources"][number]["icons"] = Object.entries(manifest.icons)
             .map(( [id, { terms }] ) => {
                 if (!id || !terms) return null;
@@ -119,9 +177,8 @@ export function processIconPack(iconPackNote: BNote): ProcessedIconPack | undefi
         return;
     }
 
-    // Ensure prefix is alphanumeric only, dashes and underscores.
-    if (!/^[a-zA-Z0-9-_]+$/.test(prefix)) {
-        getLog().error(`Icon pack has invalid 'iconPack' prefix (only alphanumeric characters, dashes and underscores are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
+    if (!CSS_CLASS_NAME_PATTERN.test(prefix)) {
+        getLog().error(`Icon pack has invalid 'iconPack' prefix (only letters, digits, dashes, underscores and non-ASCII characters are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
@@ -153,20 +210,62 @@ export function determineBestFontAttachment(iconPackNote: BNote) {
     return null;
 }
 
+/**
+ * The transforms an icon can carry in a note's content, written by the text editor's icon toolbar
+ * as a class. Boxicons names them, but the rules are not scoped to a pack, so they apply to any
+ * icon — the application's own `bx bx-sidebar bx-flip-horizontal` is one.
+ */
+const ICON_TRANSFORM_RULES: Record<string, string> = {
+    "bx-rotate-90": "rotate(90deg)",
+    "bx-rotate-180": "rotate(180deg)",
+    "bx-rotate-270": "rotate(270deg)",
+    "bx-flip-horizontal": "scaleX(-1)",
+    "bx-flip-vertical": "scaleY(-1)"
+};
+
+/**
+ * Generates the CSS for {@link ICON_TRANSFORM_RULES}. `boxicons-compat.css` carries these rules in
+ * the application, which a shared or exported page does not load: there they come from here, beside
+ * the icon packs' own CSS.
+ */
+export function generateIconTransformCss(): string {
+    return Object.entries(ICON_TRANSFORM_RULES)
+        .map(([ className, transform ]) => `.${className} { transform: ${transform}; }`)
+        .join("\n");
+}
+
 export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
     try {
         const iconDeclarations: string[] = [];
+        const skippedKeys: string[] = [];
         for (const [ key, mapping ] of Object.entries(manifest.icons)) {
-            iconDeclarations.push(`.${prefix}.${key}::before { content: "${mapping.glyph}"; }`);
+            if (!CSS_CLASS_NAME_PATTERN.test(key)) {
+                skippedKeys.push(key);
+                continue;
+            }
+
+            const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
+            iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
+        }
+
+        if (skippedKeys.length) {
+            const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
+            const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
+            getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
+        const fontFace = [
+            `font-family: '${fontFamily}';`,
+            "font-weight: normal;",
+            "font-style: normal;",
+            `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
+            ...iconFontFaceOverrides(manifest.metrics)
+        ].join("\n                ");
+
         return `\
             @font-face {
-                font-family: '${fontFamily}';
-                font-weight: normal;
-                font-style: normal;
-                src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');
+                ${fontFace}
             }
 
             .${prefix} {

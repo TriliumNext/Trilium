@@ -35,35 +35,6 @@ export default function OptionsRow({ name, label, description, children, centere
     );
 }
 
-interface OptionsRowLinkProps {
-    label: string;
-    description?: string;
-    href: string;
-    onClick?: (e: MouseEvent) => void;
-    /** Opts out of the options dialog's contained link navigation (which runs before `onClick`),
-     *  so that `onClick` gets to handle the click itself. */
-    noContainedNavigation?: boolean;
-}
-
-export function OptionsRowLink({ label, description, href, onClick, noContainedNavigation }: OptionsRowLinkProps) {
-    return (
-        <a
-            href={href}
-            className="option-row option-row-link no-tooltip-preview"
-            onClick={onClick}
-            data-no-contained-navigation={noContainedNavigation ? "" : undefined}
-        >
-            <div className="option-row-label">
-                <label style={{ cursor: "pointer" }}>{label}</label>
-                {description && <small className="option-row-description">{description}</small>}
-            </div>
-            <div className="option-row-input">
-                <span className="bx bx-chevron-right" />
-            </div>
-        </a>
-    );
-}
-
 interface OptionsRowWithToggleProps {
     name: string;
     label: ComponentChildren;

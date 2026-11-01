@@ -88,6 +88,19 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, { path: "/tmp/obs.zip" }, parentNote, "MyVault.zip");
         });
 
+        it("falls back to the raw bytes for the other tagged providers too", async () => {
+            const buffer = new Uint8Array([5, 5, 5]);
+
+            await importFile(taskContext, makeFile({ originalname: "keep.zip", buffer, path: undefined }), parentNote, makeOptions(), "keep");
+            expect(stubbed.importKeep).toHaveBeenCalledWith(taskContext, buffer, parentNote);
+
+            await importFile(taskContext, makeFile({ originalname: "any.zip", buffer, path: undefined }), parentNote, makeOptions(), "anytype");
+            expect(stubbed.importAnytype).toHaveBeenCalledWith(taskContext, buffer, parentNote, "any.zip");
+
+            await importFile(taskContext, makeFile({ originalname: "obs.zip", buffer, path: undefined }), parentNote, makeOptions(), "obsidian");
+            expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, buffer, parentNote, "obs.zip");
+        });
+
         it("ignores the format tag and falls through to single import when the upload is a bare string body", async () => {
             // No path and a string buffer means there are no real bytes to hand a zip-reading importer, so
             // the provider guards short-circuit and the file is imported as a single note.
@@ -137,4 +150,56 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
         });
     });
+
+    describe("Obsidian detection (only for the \"auto\" tag a drag-and-drop sends)", () => {
+        it("hands the zip importer an Obsidian fallback that imports the vault in place of the archive", async () => {
+            const file = makeFile({ originalname: "MyVault.zip", path: "/tmp/v.zip" });
+            await importFile(taskContext, file, parentNote, makeOptions(), "auto");
+
+            // The zip importer's scan pass decides whether to call this; recognition is covered in zip.spec.ts.
+            const opts = stubbed.importZip.mock.calls[0]?.[3];
+            await opts?.onObsidianVault?.();
+            expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, { path: "/tmp/v.zip" }, parentNote, "MyVault.zip");
+        });
+
+        it("offers no fallback for a .zip chosen in the import dialog", async () => {
+            // The dialog's Files tile sends no format: the user picked a plain archive import and gets one.
+            await importFile(taskContext, makeFile({ originalname: "MyVault.zip", path: "/tmp/v.zip" }), parentNote, makeOptions());
+            expect(stubbed.importZip).toHaveBeenCalledWith(taskContext, { path: "/tmp/v.zip" }, parentNote);
+        });
+    });
+
+    describe("a Blob upload (standalone, where the page posts the picked File)", () => {
+        it("hands a zip importer the Blob without reading it", async () => {
+            const blob = new Blob([ "zip bytes" ]);
+            const arrayBuffer = vi.spyOn(blob, "arrayBuffer");
+            const file = { originalname: "notes.zip", mimetype: "application/zip", blob } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions(), "notion");
+
+            expect(stubbed.importNotion).toHaveBeenCalledWith(taskContext, { blob }, parentNote);
+            expect(arrayBuffer).not.toHaveBeenCalled();
+            expect(file.buffer).toBeUndefined();
+        });
+
+        it("reads the Blob into the buffer for an importer that needs the whole file", async () => {
+            const file = { originalname: "page.md", mimetype: "text/markdown", blob: new Blob([ "# Hi" ]) } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions());
+
+            expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
+            expect(new TextDecoder().decode(file.buffer as Uint8Array)).toBe("# Hi");
+        });
+
+        it("reads the Blob for a zip the user chose not to explode", async () => {
+            const file = { originalname: "keep.zip", mimetype: "application/zip", blob: new Blob([ "PK" ]) } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions({ explodeArchives: false }));
+
+            expect(stubbed.importZip).not.toHaveBeenCalled();
+            expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
+            expect(file.buffer).toBeInstanceOf(Uint8Array);
+        });
+    });
 });
+

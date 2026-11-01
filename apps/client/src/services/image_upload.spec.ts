@@ -10,11 +10,16 @@ const serverUpload = vi.mocked(server.upload);
 describe("parseImageDataUrl", () => {
     it("splits a base64 data URL into its mime, raw base64 and extension", () => {
         expect(parseImageDataUrl("data:image/png;base64,AAAA")).toEqual({ mime: "image/png", base64: "AAAA", ext: "png" });
-        expect(parseImageDataUrl("data:image/jpeg;base64,BBBB")?.ext).toBe("jpeg");
     });
 
-    it("maps svg+xml to a clean 'svg' extension", () => {
+    it("names a format the way people write it", () => {
+        // ".jpg", not the ".jpeg" its subtype reads as — the same name a JPEG gets everywhere else.
+        expect(parseImageDataUrl("data:image/jpeg;base64,BBBB")?.ext).toBe("jpg");
         expect(parseImageDataUrl("data:image/svg+xml;base64,Q0M=")?.ext).toBe("svg");
+        // A favicon used to be stored as "example.com.xicon", the subtype having had its
+        // punctuation stripped out rather than being recognised.
+        expect(parseImageDataUrl("data:image/x-icon;base64,Q0M=")?.ext).toBe("ico");
+        expect(parseImageDataUrl("data:image/vnd.microsoft.icon;base64,Q0M=")?.ext).toBe("ico");
     });
 
     it("returns null for non-base64 data URLs and plain URLs", () => {

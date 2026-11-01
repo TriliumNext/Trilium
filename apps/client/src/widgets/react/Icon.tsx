@@ -1,11 +1,15 @@
+import "./Icon.css";
+
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
 import { useRef } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import { useStaticTooltip } from "./hooks";
+import RawHtml from "./RawHtml";
 
-interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>, "className" | "onClick" | "title" | "style"> {
+interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>,
+    "className" | "onClick" | "title" | "style" | "role" | "aria-label"> {
     icon?: string;
     className?: string;
 }
@@ -17,6 +21,11 @@ export default function Icon({ icon, className, ...restProps }: IconProps) {
             {...restProps}
         />
     );
+}
+
+/** An icon drawn from its SVG source, such as a CKEditor toolbar item's, sized as an {@link Icon}. */
+export function SvgIcon({ svg, className }: { svg: string; className?: string }) {
+    return <RawHtml className={clsx("tn-icon tn-svg-icon", className)} html={svg} />;
 }
 
 interface TooltipIconProps extends Omit<IconProps, "title"> {

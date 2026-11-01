@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 import { IconPackData } from "../provider";
+import { readIconFontMetrics } from "../utils";
 
 export default function buildIcons(pack: "basic" | "brands"): IconPackData {
     const inputDir = join(__dirname, "../../boxicons-free/fonts");
@@ -36,7 +37,8 @@ export default function buildIcons(pack: "basic" | "brands"): IconPackData {
             content: readFileSync(join(inputDir, pack, `${fileName}.woff2`))
         },
         manifest: {
-            icons
+            icons,
+            metrics: readIconFontMetrics(join(inputDir, pack, `${fileName}.ttf`))
         },
         meta: {
             version: "3.0.0",

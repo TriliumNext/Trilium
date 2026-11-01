@@ -2,5 +2,9 @@
     "extends": [
         "../../tsconfig.base.json",
         "./.wxt/tsconfig.json"
-    ]
+    ],
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact"
+    }
 }

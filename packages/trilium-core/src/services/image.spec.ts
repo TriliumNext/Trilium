@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { imageMimeForExtension } from "@triliumnext/commons";
+
 import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import imageService from "./image.js";
 import { getImageProvider } from "./image_provider.js";
 import type { ProcessedImage } from "./image_provider.js";
+import noteService from "./notes.js";
 import protectedSessionService from "./protected_session.js";
 
 /**
@@ -26,10 +29,13 @@ const fakeBuffer = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
  * Replaces the provider's processImage with one that resolves to the given
  * processed image, so the async persistence branch runs deterministically.
  */
-function stubProcessImage(format: { ext: string }, buffer: Uint8Array = fakeBuffer) {
+function stubProcessImage(format: { ext: string; mime?: string }, buffer: Uint8Array = fakeBuffer) {
     const processed: ProcessedImage = {
+        // A real provider reports both halves and they agree — `{ ext: "jpg", mime: "image/jpeg" }`
+        // is what the codec hands back. Deriving the default the same way keeps a stub from
+        // describing an image no provider would ever produce.
         buffer,
-        format: { ext: format.ext, mime: `image/${format.ext}` }
+        format: { ext: format.ext, mime: format.mime ?? imageMimeForExtension(format.ext) }
     };
     return vi.spyOn(getImageProvider(), "processImage").mockResolvedValue(processed);
 }
@@ -112,7 +118,7 @@ describe("image service (real DB)", () => {
             expect(bytesOf(note.getContent())).toEqual(Array.from(fakeBuffer));
         });
 
-        it("maps the svg extension to the svg+xml mime and appends the extension when missing", async () => {
+        it("stores the svg+xml mime whole and appends the extension when the name has none", async () => {
             stubProcessImage({ ext: "svg" });
             counter++;
             const baseName = `nodotsvg${counter}`;
@@ -164,6 +170,107 @@ describe("image service (real DB)", () => {
             ).toThrow();
         });
 
+        it("reuses a deduplicated role's attachment of the same title rather than storing it twice", () => {
+            // A note that links a site many times, or pastes one URL twice, would otherwise carry a
+            // copy of that site's icon and that page's cover for every use.
+            const host = createTargetNote();
+            const store = (title: string, role: "favicon" | "coverImage") =>
+                getContext().init(() => imageService.saveImageToAttachment(host.noteId, fakeBuffer, title, false, false, role));
+
+            const first = store("example.com.ico", "favicon");
+            const again = store("example.com.ico", "favicon");
+            const otherSite = store("other.example.ico", "favicon");
+            const cover = store("example.com-page-1a2b3c4d.jpeg", "coverImage");
+
+            expect(again.attachmentId).toBe(first.attachmentId);
+            // A different site, and a different kind of picture, are different things.
+            expect(otherSite.attachmentId).not.toBe(first.attachmentId);
+            expect(cover.attachmentId).not.toBe(first.attachmentId);
+        });
+
+        it("stores the user's own images separately however they are named", () => {
+            // Two pictures the user gave one name are two pictures; collapsing them would lose one.
+            const host = createTargetNote();
+            const store = () =>
+                getContext().init(() => imageService.saveImageToAttachment(host.noteId, fakeBuffer, "photo.png", false));
+
+            expect(store().attachmentId).not.toBe(store().attachmentId);
+        });
+
+        it("keeps a long title whole for a deduplicated role, that being what identifies it", () => {
+            // Ordinary uploads collapse a title past 40 characters to "image"; doing that here
+            // would make every hostname past the limit share one icon.
+            const host = createTargetNote();
+            const longHost = `${"a-very-long-subdomain".repeat(3)}.example.com.ico`;
+
+            const stored = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, longHost, false, true, "favicon"));
+
+            expect(stored.title).toBe(longHost);
+        });
+
+        it("post-processes the note five seconds later, and lets it go quietly once deleted", () => {
+            const postProcessSpy = vi.spyOn(noteService, "asyncPostProcessContent").mockResolvedValue(undefined);
+            stubProcessImage({ ext: "png" });
+            vi.useFakeTimers();
+
+            try {
+                const survivor = createTargetNote();
+                getContext().init(() =>
+                    imageService.saveImageToAttachment(survivor.noteId, fakeBuffer, "kept.png", false)
+                );
+
+                const doomed = createTargetNote();
+                getContext().init(() =>
+                    imageService.saveImageToAttachment(doomed.noteId, fakeBuffer, "raced.png", false)
+                );
+                // The window is wide enough to lose the note to a delete — the user's own, or one
+                // arriving over sync — which is what made this a routine crash rather than a rare one.
+                getContext().init(() => doomed.deleteNote());
+
+                expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+
+                // The surviving note is still post-processed, so the guard skips the deleted note only.
+                expect(postProcessSpy).toHaveBeenCalledTimes(1);
+                expect(postProcessSpy.mock.calls[0][0].noteId).toBe(survivor.noteId);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("drops the processed image when its attachment no longer exists", async () => {
+            const host = createTargetNote();
+            let resolveProcessing: ((processed: ProcessedImage) => void) | undefined;
+            vi.spyOn(getImageProvider(), "processImage").mockReturnValue(
+                new Promise<ProcessedImage>((resolve) => { resolveProcessing = resolve; })
+            );
+
+            const att = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, "outlived.png", false)
+            );
+
+            // Nothing awaits the processing chain, so a throw inside it never reaches an assertion — it
+            // escapes as an unhandled rejection, which Node promotes to the same fatal uncaught
+            // exception. Watch for it directly, or this test would pass with the guard removed.
+            const rejections: unknown[] = [];
+            const captureRejection = (reason: unknown) => rejections.push(reason);
+            process.on("unhandledRejection", captureRejection);
+
+            try {
+                // Deleting the note marks its attachments deleted, so the in-flight processing resolves
+                // with nowhere to write its result.
+                getContext().init(() => host.deleteNote());
+                resolveProcessing?.({ buffer: fakeBuffer, format: { ext: "png", mime: "image/png" } });
+                await flushAsync();
+            } finally {
+                process.off("unhandledRejection", captureRejection);
+            }
+
+            // The attachment really is gone, so the guard — not a lucky lookup — is what was exercised.
+            expect(getBecca().getAttachment(att.attachmentId ?? "")).toBeFalsy();
+            expect(rejections).toEqual([]);
+        });
+
         it("updates the attachment mime/content and appends a missing extension asynchronously", async () => {
             const host = createTargetNote();
             stubProcessImage({ ext: "jpg" });
@@ -174,9 +281,29 @@ describe("image service (real DB)", () => {
             await flushAsync();
 
             const attachment = getBecca().getAttachment(att.attachmentId!)!;
-            expect(attachment.mime).toBe("image/jpg");
+            expect(attachment.mime).toBe("image/jpeg");
             expect(attachment.title).toBe("nodotattach.jpg");
             expect(bytesOf(attachment.getContent())).toEqual(Array.from(fakeBuffer));
+        });
+
+        it("records the media type the provider reported rather than rebuilding one from its extension", async () => {
+            // The codec names JPEG `{ ext: "jpg", mime: "image/jpeg" }`, so the correct media
+            // type is already in hand. Deriving it from the extension instead yields the
+            // unregistered "image/jpg", which every consumer downstream then needs a special
+            // case for — mapExtension carries one, and IMAGE_MIMES has to list it.
+            const host = createTargetNote();
+            stubProcessImage({ ext: "jpg", mime: "image/jpeg" });
+
+            const att = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, "screenshot.png", false)
+            );
+            await flushAsync();
+
+            const attachment = getBecca().getAttachment(att.attachmentId ?? "");
+            expect(attachment?.mime).toBe("image/jpeg");
+            // The title is left alone on purpose (a canvas addresses its images by it), which is
+            // precisely why the mime has to be right — it is all the export has left to go on.
+            expect(attachment?.title).toBe("screenshot.png");
         });
     });
 
@@ -225,7 +352,7 @@ describe("image service (real DB)", () => {
             expect(note.getOwnedLabelValue("originalFileName")).toBe("renamed.png");
             // Mime/content now reflect updateImage's distinct provider output, which
             // differs from the PNG/[1,2,3] state saveImage produced.
-            expect(note.mime).toBe("image/jpg");
+            expect(note.mime).toBe("image/jpeg");
             expect(bytesOf(note.getContent())).toEqual(Array.from(updatedBuffer));
         });
     });

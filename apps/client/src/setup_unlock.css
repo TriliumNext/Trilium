@@ -1,0 +1,36 @@
+/*
+ * Selectors carry the whole chain down from `body.setup` on purpose. setup.css writes its own rules
+ * as one nested block, so a plain `.setup-container form` reads as
+ * `body.setup > .setup-outer-wrapper .setup-container form` and outweighs anything shorter. Both
+ * rules below override one of those, so both have to be at least as specific to be applied at all.
+ */
+
+/*
+ * The unlock page wraps the whole of itself in a form, so that the footer's button submits it the
+ * way the login screen's does. setup.css lays out every form in the wizard as a column of its own,
+ * which for a form that IS the page leaves `.page` sizing itself against a parent of no particular
+ * height: `height: 100%` resolves to auto, the page shrinks to its contents, and the footer comes to
+ * rest wherever they end. Made transparent to layout instead, so the page sizes against the frame.
+ *
+ * Note this cannot be borrowed from login.css by putting `login-container` on the wizard's own
+ * container: that class sets `height: auto`, and the wizard's pages are absolutely positioned, so
+ * the container would have nothing left in the flow to take its height from and would collapse.
+ */
+body.setup .setup-outer-wrapper .setup-container form.setup-unlock-form {
+    display: contents;
+}
+
+/*
+ * The one short field, narrowed to the login screen's proportions.
+ *
+ * Only across, never down: setup.css grows `main` with `flex: 1`, and that is what holds the footer
+ * against the bottom of the frame. login.css centres its own `main` with `margin: auto`, which works
+ * there because that container is only as tall as its contents — borrowed here it absorbs the free
+ * space `flex` was going to use, and the footer comes to rest halfway up the page.
+ */
+@media (min-width: 700px) {
+    body.setup .setup-outer-wrapper .setup-container .page.setup-unlock > main {
+        width: 65%;
+        margin-inline: auto;
+    }
+}

@@ -163,6 +163,106 @@ describe("NodejsZipProvider", () => {
         });
     });
 
+    describe("bytes after the central directory", () => {
+        const dir = mkdtempSync(join(tmpdir(), "trilium-zip-provider-trailing-spec-"));
+        afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+        let zipCounter = 0;
+        function writeTo(buffer: Buffer): string {
+            const path = join(dir, `trailing-${zipCounter++}.zip`);
+            writeFileSync(path, buffer);
+            return path;
+        }
+
+        /** Rewrites the comment length in a zip's end-of-central-directory record. */
+        function setCommentLength(buffer: Buffer, length: number) {
+            buffer.writeUInt16LE(length, buffer.lastIndexOf("PK\x05\x06", buffer.length, "binary") + 20);
+        }
+
+        it("reads a zip padded with trailing bytes, from its bytes and from a path alike", async () => {
+            // Padding after the record is what several font distributions and download proxies emit; yauzl
+            // reads it as the archive comment and refuses the file unless the size it sees is trimmed.
+            // Three entries, so the reader has to stay usable across successive entry reads.
+            const padded = Buffer.concat([
+                await buildZip([
+                    { name: "a.txt", content: "alpha" },
+                    { name: "b.txt", content: "beta" },
+                    { name: "dir/c.txt", content: "gamma" }
+                ]),
+                Buffer.alloc(24)
+            ]);
+
+            const fromBytes = await readZip(padded);
+            expect(Object.keys(fromBytes).sort()).toEqual(["a.txt", "b.txt", "dir/c.txt"]);
+
+            const path = writeTo(padded);
+            const fromPath: Record<string, Buffer> = {};
+            await provider.readZipFile({ path }, async (entry: ZipEntry, readContent) => {
+                fromPath[entry.fileName] = Buffer.from(await readContent());
+            });
+            expect(Object.keys(fromPath).sort()).toEqual(["a.txt", "b.txt", "dir/c.txt"]);
+            expect(fromPath["dir/c.txt"].toString("utf-8")).toBe("gamma");
+            expect(await provider.detectFilenameEncoding({ path })).toBe(await provider.detectFilenameEncoding(padded));
+        });
+
+        it("keeps a genuine archive comment, and trims only the padding that follows it", async () => {
+            const comment = Buffer.from("built by trilium");
+            const base = await buildZip([{ name: "a.txt", content: "alpha" }]);
+            const commented = Buffer.concat([base, comment]);
+            setCommentLength(commented, comment.length);
+            const padded = Buffer.concat([commented, Buffer.alloc(8)]);
+            setCommentLength(padded, comment.length);
+
+            expect((await readZip(commented))["a.txt"].toString("utf-8")).toBe("alpha");
+            expect((await readZip(padded))["a.txt"].toString("utf-8")).toBe("alpha");
+        });
+
+        it("leaves a zip with no end-of-central-directory record to yauzl to reject", async () => {
+            const truncated = (await buildZip([{ name: "a.txt", content: "alpha" }])).subarray(0, 40);
+            await expect(readZip(truncated)).rejects.toBeTruthy();
+        });
+    });
+
+    describe("per-entry size limit", () => {
+        const limited = new NodejsZipProvider(64 * 1024);
+        const tooLarge = /"zeros\.bin" decompresses to more than 65536 bytes/;
+
+        async function readWithLimit(buffer: Buffer) {
+            const out: Record<string, number> = {};
+            await limited.readZipFile(buffer, async (entry, readContent) => {
+                out[entry.fileName] = (await readContent()).length;
+            });
+            return out;
+        }
+
+        /** Rewrites every central directory record's uncompressed size, as a decompression bomb can. */
+        function setDeclaredSizes(buffer: Buffer, size: number) {
+            let offset = buffer.indexOf("PK\x01\x02", 0, "binary");
+            while (offset !== -1) {
+                buffer.writeUInt32LE(size, offset + 24);
+                offset = buffer.indexOf("PK\x01\x02", offset + 4, "binary");
+            }
+        }
+
+        it("reads entries up to the limit and rejects one declared past it", async () => {
+            expect(await readWithLimit(await buildZip([{ name: "small.bin", content: new Uint8Array(64 * 1024) }])))
+                .toEqual({ "small.bin": 64 * 1024 });
+            await expect(readWithLimit(await buildZip([{ name: "zeros.bin", content: new Uint8Array(1024 * 1024) }])))
+                .rejects.toThrow(tooLarge);
+        });
+
+        it("stops inflating an entry whose declared size understates its content", async () => {
+            const bomb = await buildZip([{ name: "zeros.bin", content: new Uint8Array(1024 * 1024) }]);
+            setDeclaredSizes(bomb, 16);
+            await expect(readWithLimit(bomb)).rejects.toThrow(tooLarge);
+        });
+    });
+
+    it("rejects a Blob source, which only the browser provider reads", async () => {
+        await expect(provider.readZipFile({ blob: new Blob([]) }, async () => {}))
+            .rejects.toThrow("A Blob zip source is only readable in the browser.");
+    });
+
     describe("reading from a path (in place, no full-buffer load)", () => {
         const dir = mkdtempSync(join(tmpdir(), "trilium-zip-provider-spec-"));
         afterAll(() => rmSync(dir, { recursive: true, force: true }));

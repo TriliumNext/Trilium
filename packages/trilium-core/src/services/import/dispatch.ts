@@ -1,9 +1,10 @@
 import type BNote from "../../becca/entities/bnote.js";
+import { awaitPendingImageWrites } from "../image.js";
 import type TaskContext from "../task_context.js";
 import { extname } from "../utils/path.js";
 import type { ZipSource } from "../zip_provider.js";
 import anytypeImportService from "./anytype/importer.js";
-import type { File } from "./common.js";
+import { type File, loadUploadedBytes } from "./common.js";
 import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
 import notionImportService from "./notion/importer.js";
@@ -31,18 +32,36 @@ export interface ImportOptions {
  * importer identically. The caller owns the surrounding CLS setup (`disableEntityEvents`,
  * `ignoreEntityChangeIds`) and the `becca_loader.load()` afterwards.
  *
- * A `.zip` is read from `file.path` in place (streamed per entry) when present, falling back to
- * `file.buffer` for the browser/WASM upload that has no temp file.
+ * A `.zip` is read in place from `file.path` or `file.blob` when present, falling back to
+ * `file.buffer`.
  */
 export default async function importFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
+    const imported = await routeToImporter(taskContext, file, parentNote, options, format);
+
+    // An image note is created empty and filled in when the compression it was handed to answers,
+    // so an importer that has returned is not an import that has finished: its pictures may still
+    // be on their way. Waited out here, in the one place every importer passes through, so that an
+    // import reported as done is one the user can close the lid on — rather than one whose notes
+    // fill in over the following minutes, and stay empty for good if the process stops first.
+    //
+    // Nothing is serialised by this. The images were all handed over as the notes were made and
+    // have been compressing throughout; this only declines to call the import finished while any
+    // of them is outstanding.
+    await awaitPendingImageWrites();
+
+    return imported;
+}
+
+async function routeToImporter(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
     const extension = extname(file.originalname).toLowerCase();
 
-    // Every zip-reading importer (generic + the tagged providers) reads the archive straight from the temp
-    // file (server disk storage / native pick) so a multi-GB zip is streamed per entry — never held in one
-    // buffer, and free of fs.readFile's ~2 GiB ceiling. Falls back to the buffer when there's no path (the
-    // browser/WASM upload). The `typeof file.buffer !== "string"` guards below ensure the no-path fallback
-    // is real bytes, not a string body.
-    const zipSource: ZipSource = file.path ? { path: file.path } : file.buffer as Uint8Array;
+    // Every zip-reading importer reads the archive in place, from the temp file on the server or the
+    // picked `Blob` in the browser, so a multi-GB zip is read one entry at a time. The buffer is the
+    // fallback for an upload that has neither. The `typeof file.buffer !== "string"` guards below ensure
+    // that fallback is real bytes, not a string body.
+    const zipSource: ZipSource = file.path ? { path: file.path }
+        : file.blob ? { blob: file.blob }
+        : file.buffer as Uint8Array;
 
     if (format === "notion" && (file.path || typeof file.buffer !== "string")) {
         // An explicit format always wins over extension sniffing: a Notion export is just a `.zip`,
@@ -62,8 +81,18 @@ export default async function importFile(taskContext: TaskContext<"importNotes">
         // Trilium export by extension alone; the Obsidian import dialog tags the upload to route it here.
         return await obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname);
     } else if (extension === ".zip" && options.explodeArchives && (file.path || typeof file.buffer !== "string")) {
+        if (format === "auto") {
+            // "auto" is what the note tree's drop handler sends, naming no importer. A `.zip` chosen in the
+            // import dialog names one, so only the dropped archive is checked for an Obsidian vault.
+            return await zipImportService.importZip(taskContext, zipSource, parentNote, {
+                onObsidianVault: () => obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname)
+            });
+        }
         return await zipImportService.importZip(taskContext, zipSource, parentNote);
-    } else if (extension === ".opml" && options.explodeArchives) {
+    }
+
+    await loadUploadedBytes(file);
+    if (extension === ".opml" && options.explodeArchives) {
         return await opmlImportService.importOpml(taskContext, file.buffer, parentNote);
     } else if (extension === ".enex" && options.explodeArchives) {
         return await enexImportService.importEnex(taskContext, file, parentNote);

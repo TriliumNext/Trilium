@@ -1,0 +1,76 @@
+.model-selection-status {
+    padding: 1em;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.model-selection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+}
+
+.model-selection-count {
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}
+
+.model-selection-actions {
+    display: flex;
+    gap: 0.5em;
+}
+
+.model-selection {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.model-selection-list {
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    --scroll-fade-top: 12px;
+    padding-top: var(--scroll-fade-top);
+}
+
+.tn-card-section.tn-no-padding > .model-selection {
+    > .model-selection-toolbar {
+        padding: var(--card-padding-block) var(--card-padding-inline) 0;
+    }
+
+    > .model-selection-list {
+        padding: var(--scroll-fade-top) var(--card-padding-inline) var(--card-padding-block);
+    }
+}
+
+.model-selection-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.model-selection-cost {
+    color: var(--muted-text-color);
+}
+
+/* Setup checklist shown inside the "couldn't list models" placeholder. */
+.model-selection-troubleshooting {
+    margin: 0.75em 0 0;
+    padding-inline-start: 1.2em;
+    text-align: start;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+
+    & li {
+        margin-bottom: 0.25em;
+    }
+}
+
+.no-items.model-selection-error {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

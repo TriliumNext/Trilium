@@ -2,8 +2,10 @@ import { ClassicEditor, Essentials, FileRepository, Paragraph, type FileLoader, 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock } from "../../test/globals-test-kit.js";
-import UploadimagePlugin from "./uploadimage.js";
+import UploadimagePlugin, {
+    isUploadAsLink,
+    uploadAsLink
+} from "./uploadimage.js";
 
 /**
  * A fake XMLHttpRequest that records the calls the adapter makes and lets the
@@ -17,6 +19,7 @@ class FakeXHR {
     public async?: boolean;
     public responseType = "";
     public response: unknown = undefined;
+    public status = 0;
     public sentData: unknown = undefined;
     public requestHeaders: Record<string, string> = {};
 
@@ -63,6 +66,17 @@ class FakeXHR {
     }
 }
 
+/** Waits for the adapter to create its request and send the form data, then hands it over. */
+async function awaitSentXhr(): Promise<FakeXHR> {
+    await vi.waitFor(() => expect(FakeXHR.last).toBeDefined());
+    const xhr = FakeXHR.last;
+    if (!xhr) {
+        throw new Error("XHR was never created.");
+    }
+    await vi.waitFor(() => expect(xhr.sentData).toBeInstanceOf(FormData));
+    return xhr;
+}
+
 /**
  * A minimal FileLoader stand-in: only the members the adapter touches.
  */
@@ -77,20 +91,23 @@ function createFakeLoader(file: File | null): FileLoader {
 describe("UploadimagePlugin", () => {
     let editor: ClassicEditor;
     let getHeaders: ReturnType<typeof vi.fn>;
+    let noteId: string | undefined;
+    let localUpload: ReturnType<typeof vi.fn> | undefined;
     let originalXHR: typeof window.XMLHttpRequest;
 
     beforeEach(async () => {
         getHeaders = vi.fn(async () => ({ Authorization: "Bearer token", "x-csrf": "abc" }));
-        installGlobMock({
-            getHeaders,
-            getActiveContextNote: () => ({ noteId: "noteAbc" })
-        });
+        noteId = "noteAbc";
+        localUpload = undefined;
 
         originalXHR = window.XMLHttpRequest;
         window.XMLHttpRequest = FakeXHR as unknown as typeof window.XMLHttpRequest;
         FakeXHR.last = undefined;
 
-        editor = await createTestEditor([Essentials, Paragraph, FileRepository, UploadimagePlugin]);
+        editor = await createTestEditor([Essentials, Paragraph, FileRepository, UploadimagePlugin], {
+            getNoteId: () => noteId,
+            attachmentUpload: { getHeaders, getLocalUpload: () => localUpload }
+        });
     });
 
     afterEach(() => {
@@ -146,6 +163,40 @@ describe("UploadimagePlugin", () => {
         await expect(uploadPromise).resolves.toEqual({ default: "http://example.com/pic.png" });
     });
 
+    it("uploads to the note the host names when the upload starts, and nowhere without one", async () => {
+        noteId = "otherNote";
+        void createAdapter(new File(["content"], "pic.png", { type: "image/png" })).upload();
+        expect((await awaitSentXhr()).url).toBe("api/notes/otherNote/attachments/upload");
+
+        FakeXHR.last = undefined;
+        noteId = undefined;
+        await expect(createAdapter(new File(["content"], "pic.png", { type: "image/png" })).upload())
+            .rejects.toBe("Cannot upload file: pic.png.");
+        expect(FakeXHR.last).toBeUndefined();
+    });
+
+    it("cannot upload without the getNoteId config entry", async () => {
+        const plainEditor = await createTestEditor([Essentials, Paragraph, FileRepository, UploadimagePlugin]);
+        const adapter = plainEditor.plugins.get(FileRepository)
+            .createUploadAdapter?.(createFakeLoader(new File(["content"], "pic.png", { type: "image/png" })));
+
+        await expect(adapter?.upload()).rejects.toBe("Cannot upload file: pic.png.");
+    });
+
+    it("asks for a link only for a loader marked to upload as one", async () => {
+        const fileRepository = editor.plugins.get(FileRepository);
+        const marked = createFakeLoader(new File(["content"], "pic.png", { type: "image/png" }));
+        uploadAsLink(marked);
+        expect(isUploadAsLink(marked)).toBe(true);
+
+        void fileRepository.createUploadAdapter?.(marked).upload();
+        expect((await awaitSentXhr()).url).toBe("api/notes/noteAbc/attachments/upload?link=true");
+
+        FakeXHR.last = undefined;
+        void createAdapter(new File(["content"], "pic.png", { type: "image/png" })).upload();
+        expect((await awaitSentXhr()).url).toBe("api/notes/noteAbc/attachments/upload");
+    });
+
     it("rejects with the server error message when the response carries one", async () => {
         const file = new File(["content"], "pic.png", { type: "image/png" });
         const adapter = createAdapter(file);
@@ -158,10 +209,31 @@ describe("UploadimagePlugin", () => {
         }
         await vi.waitFor(() => expect(xhr.sentData).toBeInstanceOf(FormData));
 
+        xhr.status = 500;
         xhr.response = { uploaded: false, error: { message: "Disk full" } };
         xhr.fireLoad();
 
-        await expect(uploadPromise).rejects.toBe("Disk full");
+        await expect(uploadPromise).rejects.toBe("Cannot upload file: pic.png. Disk full");
+    });
+
+    it("explains a failure the response body cannot, from the status code alone", async () => {
+        // A reverse proxy enforcing its own body-size limit answers HTML, which the adapter parses
+        // as JSON and gets nothing from — the status is all there is to report (#10859).
+        for (const [ status, expected ] of [
+            [ 413, "Cannot upload file: pic.png. The file is too large to be uploaded (HTTP 413). If Trilium is behind a reverse proxy, raise its request body size limit." ],
+            [ 502, "Cannot upload file: pic.png. The server responded with HTTP 502." ]
+        ] as const) {
+            FakeXHR.last = undefined;
+            const adapter = createAdapter(new File(["content"], "pic.png", { type: "image/png" }));
+            const uploadPromise = adapter.upload();
+            const xhr = await awaitSentXhr();
+
+            xhr.status = status;
+            xhr.response = null;
+            xhr.fireLoad();
+
+            await expect(uploadPromise).rejects.toBe(expected);
+        }
     });
 
     it("rejects with a generic message when the response has no usable error", async () => {
@@ -270,6 +342,65 @@ describe("UploadimagePlugin", () => {
         xhr.response = { uploaded: true, url: "http://example.com/pic.png" };
         xhr.fireLoad();
         await expect(uploadPromise).resolves.toEqual({ default: "http://example.com/pic.png" });
+    });
+
+    describe("with a local server", () => {
+        function answerWith(body: string, status = 200, contentType = "application/json") {
+            localUpload?.mockResolvedValue(new Response(body, { status, headers: { "content-type": contentType } }));
+        }
+
+        beforeEach(() => {
+            localUpload = vi.fn();
+        });
+
+        it("hands the file to the local server instead of sending a request", async () => {
+            answerWith(JSON.stringify({ uploaded: true, url: "api/attachments/att1/image/pic.png" }));
+            const file = new File(["content"], "pic.png", { type: "image/png" });
+
+            await expect(createAdapter(file).upload())
+                .resolves.toEqual({ default: "api/attachments/att1/image/pic.png" });
+            expect(FakeXHR.last).toBeUndefined();
+            expect(localUpload).toHaveBeenCalledExactlyOnceWith("api/notes/noteAbc/attachments/upload", {
+                method: "POST",
+                headers: { Authorization: "Bearer token", "x-csrf": "abc" },
+                fields: {},
+                file
+            });
+        });
+
+        it("reports a failed upload as the request path does", async () => {
+            const file = new File(["content"], "pic.png", { type: "image/png" });
+
+            answerWith(JSON.stringify({ uploaded: false, error: { message: "Disk full" } }), 500);
+            await expect(createAdapter(file).upload()).rejects.toBe("Cannot upload file: pic.png. Disk full");
+
+            answerWith("<html>Too large</html>", 413, "text/html");
+            await expect(createAdapter(file).upload()).rejects.toBe(
+                "Cannot upload file: pic.png. The file is too large to be uploaded (HTTP 413). If Trilium is behind a reverse proxy, raise its request body size limit.");
+
+            localUpload?.mockRejectedValue(new Error("Worker gone"));
+            await expect(createAdapter(file).upload()).rejects.toBe("Cannot upload file: pic.png.");
+        });
+
+        it("rejects with no reason when aborted, and ignores the late answer", async () => {
+            let answer: (response: Response) => void = () => {};
+            localUpload?.mockReturnValue(new Promise<Response>(resolve => {
+                answer = resolve;
+            }));
+            const adapter = createAdapter(new File(["content"], "pic.png", { type: "image/png" }));
+
+            const uploadPromise = adapter.upload();
+            await vi.waitFor(() => expect(localUpload).toHaveBeenCalledOnce());
+            adapter.abort();
+            answer(new Response(JSON.stringify({ uploaded: true, url: "late" })));
+
+            await expect(uploadPromise).rejects.toBeUndefined();
+        });
+
+        it("rejects when the loader has no file", async () => {
+            await expect(createAdapter(null).upload()).rejects.toBe("Missing file");
+            expect(localUpload).not.toHaveBeenCalled();
+        });
     });
 
     it("rejects when the loader has no file", async () => {

@@ -1,0 +1,30 @@
+.relation-name-popover {
+    width: 300px;
+
+    .relation-name-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 9px;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .relation-name-heading {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 0;
+        font-weight: 600;
+    }
+
+    .relation-name-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 10px;
+    }
+
+    .relation-name-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}

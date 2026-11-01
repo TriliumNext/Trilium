@@ -2,7 +2,7 @@ import { ProgressPhase, WebSocketMessage } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
-import server from "./server.js";
+import server, { type UploadFormError } from "./server.js";
 import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
 import utils from "./utils.js";
 import ws from "./ws.js";
@@ -10,7 +10,10 @@ import ws from "./ws.js";
 type BooleanLike = boolean | "true" | "false";
 
 export interface UploadFilesOptions {
-    /** Routes the upload to a specific importer (e.g. "notion"), overriding extension-based detection. */
+    /**
+     * Routes the upload to a specific importer (e.g. "notion"), overriding extension-based detection.
+     * `"auto"` instead lets the importer recognize the archive itself, which only drag-and-drop asks for.
+     */
     format?: string;
     safeImport?: BooleanLike;
     shrinkImages: BooleanLike;
@@ -21,7 +24,7 @@ export interface UploadFilesOptions {
     replaceUnderscoresWithSpaces?: BooleanLike;
 }
 
-export async function uploadFiles(entityType: string, parentNoteId: string, files: string[] | File[], options: UploadFilesOptions) {
+export async function uploadFiles(entityType: string, parentNoteId: string, files: File[], options: UploadFilesOptions) {
     if (!["notes", "attachments"].includes(entityType)) {
         throw new Error(`Unrecognized import entity type '${entityType}'.`);
     }
@@ -36,32 +39,31 @@ export async function uploadFiles(entityType: string, parentNoteId: string, file
     for (const file of files) {
         counter++;
 
-        const formData = new FormData();
-        formData.append("upload", file);
-        formData.append("taskId", taskId);
-        formData.append("last", counter === files.length ? "true" : "false");
-
-        for (const key in options) {
-            formData.append(key, (options as any)[key]);
+        const fields: Record<string, string> = {
+            taskId,
+            last: counter === files.length ? "true" : "false"
+        };
+        for (const [ key, value ] of Object.entries(options)) {
+            fields[key] = String(value);
         }
 
-        await $.ajax({
-            url: `${window.glob.baseApiUrl}notes/${parentNoteId}/${entityType}-import`,
-            headers: await server.getHeaders(),
-            data: formData,
-            dataType: "json",
-            type: "POST",
-            timeout: 60 * 60 * 1000,
-            error (xhr) {
-                // Fallback toast for failures that never produced a WebSocket `taskError` (e.g. transport or
-                // auth errors raised before the importer runs). Deferred so the canonical WebSocket error —
-                // emitted alongside this same 500 — can claim the taskId first and win.
-                const message = t("import.failed", { message: xhr.responseText });
-                setTimeout(() => reportImportError(taskId, message), IMPORT_ERROR_FALLBACK_DELAY);
-            },
-            contentType: false, // NEEDED, DON'T REMOVE THIS
-            processData: false // NEEDED, DON'T REMOVE THIS
-        });
+        try {
+            await server.uploadForm(`notes/${parentNoteId}/${entityType}-import`, {
+                method: "POST",
+                headers: await server.getHeaders(),
+                fields,
+                file,
+                timeoutMs: 60 * 60 * 1000,
+                dataType: "json"
+            });
+        } catch (e) {
+            // Fallback toast for failures that never produced a WebSocket `taskError` (e.g. transport or
+            // auth errors raised before the importer runs). Deferred so the canonical WebSocket error —
+            // emitted alongside this same 500 — can claim the taskId first and win.
+            const message = t("import.failed", { message: (e as Partial<UploadFormError>).responseText });
+            setTimeout(() => reportImportError(taskId, message), IMPORT_ERROR_FALLBACK_DELAY);
+            throw e;
+        }
     }
 }
 
@@ -80,6 +82,8 @@ function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
 
 /**
  * Builds the persistent "import in progress" toast:
+ *  - the "throttled" phase (OneNote under Graph rate limiting) → an explicit "waiting for the service"
+ *    message, since the count can legitimately sit still for up to an hour and must not look hung;
  *  - a phase is known (zip import) → a phase-specific message: "Extracted X items of N" while extracting
  *    archive entries, "Processed X notes of N" while post-processing the created notes;
  *  - a total but no phase (single-format importers like Notion/Obsidian) → "Imported X notes of N";
@@ -90,7 +94,11 @@ function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
 function makeProgressToast(taskId: string, progressCount: number, totalCount?: number, phase?: ProgressPhase): ToastOptionsWithRequiredId {
     const hasTotal = typeof totalCount === "number" && totalCount > 0;
     let message: string;
-    if (hasTotal && phase === "extracting") {
+    if (phase === "throttled") {
+        message = hasTotal
+            ? t("import.throttled-with-total", { progress: progressCount, total: totalCount })
+            : t("import.throttled");
+    } else if (hasTotal && phase === "extracting") {
         message = t("import.extracting", { progress: progressCount, total: totalCount });
     } else if (hasTotal && phase === "processing") {
         message = t("import.processing", { progress: progressCount, total: totalCount });

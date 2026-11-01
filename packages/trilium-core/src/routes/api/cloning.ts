@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import cloningService from "../../services/cloning.js";
 
@@ -22,6 +22,12 @@ function cloneNoteAfter(req: Request<{ noteId: string; afterBranchId: string }>)
     return cloningService.cloneNoteAfter(noteId, afterBranchId);
 }
 
+function cloneNoteBefore(req: Request<{ noteId: string; beforeBranchId: string }>) {
+    const { noteId, beforeBranchId } = req.params;
+
+    return cloningService.cloneNoteBefore(noteId, beforeBranchId);
+}
+
 function toggleNoteInParent(req: Request<{ noteId: string; parentNoteId: string; present: string }>) {
     const { noteId, parentNoteId, present } = req.params;
 
@@ -32,5 +38,6 @@ export default {
     cloneNoteToBranch,
     cloneNoteToParentNote,
     cloneNoteAfter,
+    cloneNoteBefore,
     toggleNoteInParent
 };

@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.102.2",
+    "appVersion": "0.106.1",
     "files": [
         {
             "isClone": false,
@@ -86,48 +86,6 @@
                     "type": "text",
                     "mime": "text/html",
                     "attributes": [
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "xY1FldcqIlaS",
-                            "isInheritable": false,
-                            "position": 10
-                        },
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "Th0SHTjziC8R",
-                            "isInheritable": false,
-                            "position": 20
-                        },
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "1afuYh5pfoEP",
-                            "isInheritable": false,
-                            "position": 30
-                        },
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "FtCt1LKirRGs",
-                            "isInheritable": false,
-                            "position": 40
-                        },
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "uppxiNYbjvGw",
-                            "isInheritable": false,
-                            "position": 50
-                        },
-                        {
-                            "type": "relation",
-                            "name": "internalLink",
-                            "value": "Q3ve69mXIaMY",
-                            "isInheritable": false,
-                            "position": 60
-                        },
                         {
                             "type": "label",
                             "name": "iconClass",
@@ -236,8 +194,8 @@
                                     "attributes": [
                                         {
                                             "type": "relation",
-                                            "name": "internalLink",
-                                            "value": "_help_nBAXQFj20hS1",
+                                            "name": "includeNoteLink",
+                                            "value": "VsFbpoySMCE3",
                                             "isInheritable": false,
                                             "position": 10
                                         }
@@ -272,7 +230,7 @@
                                                     "position": 1
                                                 }
                                             ],
-                                            "dataFileName": "The Last Question by Issac.pdf",
+                                            "dataFileName": "The Last Question by Issac Asimov.pdf",
                                             "attachments": []
                                         }
                                     ]
@@ -397,13 +355,6 @@
                                     "type": "text",
                                     "mime": "text/html",
                                     "attributes": [
-                                        {
-                                            "type": "relation",
-                                            "name": "internalLink",
-                                            "value": "sh460UeSCkDG",
-                                            "isInheritable": false,
-                                            "position": 10
-                                        },
                                         {
                                             "type": "label",
                                             "name": "iconClass",
@@ -1339,7 +1290,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "TODO - Send invites for christ.html",
+                                                            "dataFileName": "TODO - Send invites for christmas party.html",
                                                             "attachments": []
                                                         }
                                                     ]
@@ -1866,7 +1817,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "DONE - Buy a board game for Al.html",
+                                                            "dataFileName": "DONE - Buy a board game for Alice.html",
                                                             "attachments": [
                                                                 {
                                                                     "attachmentId": "SmnN1IA6sqy7",
@@ -1874,7 +1825,7 @@
                                                                     "role": "image",
                                                                     "mime": "image/jpg",
                                                                     "position": 10,
-                                                                    "dataFileName": "DONE - Buy a board game fo.jpg"
+                                                                    "dataFileName": "DONE - Buy a board game for Alice_codenames.jpg"
                                                                 }
                                                             ]
                                                         },
@@ -3077,7 +3028,7 @@
                                                     "role": "image",
                                                     "mime": "image/svg+xml",
                                                     "position": 10,
-                                                    "dataFileName": "Entity Relationship_mermai.svg"
+                                                    "dataFileName": "Entity Relationship_mermaid-export.svg"
                                                 }
                                             ]
                                         },
@@ -3214,7 +3165,7 @@
                                             "role": "viewConfig",
                                             "mime": "application/json",
                                             "position": 0,
-                                            "dataFileName": "Geo Map (The Seven Wonder.json"
+                                            "dataFileName": "Geo Map (The Seven Wonders of the World)_geoMap.json"
                                         }
                                     ],
                                     "dirFileName": "Geo Map (The Seven Wonders of the World)",
@@ -3861,7 +3812,7 @@
                                             "position": 30
                                         }
                                     ],
-                                    "dataFileName": "eb-garamond-v9-latin-reg.woff2",
+                                    "dataFileName": "eb-garamond-v9-latin-regular.woff2",
                                     "attachments": []
                                 },
                                 {
@@ -3902,7 +3853,7 @@
                                             "position": 30
                                         }
                                     ],
-                                    "dataFileName": "raleway-v12-latin-regula.woff2",
+                                    "dataFileName": "raleway-v12-latin-regular.woff2",
                                     "attachments": []
                                 }
                             ]
@@ -4122,7 +4073,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "Send invites for christmas par.html",
+                                                            "dataFileName": "Send invites for christmas party.html",
                                                             "attachments": []
                                                         }
                                                     ]
@@ -4500,7 +4451,7 @@
                                                             "role": "image",
                                                             "mime": "image/jpg",
                                                             "position": 10,
-                                                            "dataFileName": "Buy a board game for Alice.jpg"
+                                                            "dataFileName": "Buy a board game for Alice_codenames.jpg"
                                                         }
                                                     ]
                                                 },
@@ -5573,7 +5524,7 @@
                                                                                     "position": 1
                                                                                 }
                                                                             ],
-                                                                            "dataFileName": "chartjs-plugin-datalabe.min.js",
+                                                                            "dataFileName": "chartjs-plugin-datalabels.min.js",
                                                                             "attachments": []
                                                                         }
                                                                     ]

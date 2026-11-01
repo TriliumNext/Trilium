@@ -4,20 +4,28 @@ import NoteContext from "../../components/note_context.js";
 import splitService from "../../services/resizer.js";
 import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
+import { getTabToward } from "../mobile_widgets/tab_swipe.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import { createCaretStop, markVisibleSplits } from "../note_wrapper.js";
 import FlexContainer from "./flex_container.js";
 
 interface SplitNoteWidget extends BasicWidget {
     hasBeenAlreadyShown?: boolean;
+    /** Whether the widget has received `setNoteContext`. */
+    hasNoteContext?: boolean;
     ntxId?: string;
 }
 
 type WidgetFactory = () => SplitNoteWidget;
 
+/** How long, in ms, the panes of the next tab to render wait on mobile after a tab is shown or rendered. */
+const NEIGHBOUR_RENDER_DELAY = 1000;
+
 export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
     private widgetFactory: WidgetFactory;
     private widgets: Record<string, SplitNoteWidget>;
+    private neighbourRenderTimer?: ReturnType<typeof setTimeout>;
 
     constructor(widgetFactory: WidgetFactory) {
         super("row");
@@ -30,6 +38,11 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         this.collapsible();
     }
 
+    doRender() {
+        super.doRender();
+        this.$widget.append(createCaretStop(), createCaretStop());
+    }
+
     async newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {
         const widget = this.widgetFactory();
 
@@ -38,7 +51,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         $renderedWidget.attr("data-ntx-id", noteContext.ntxId);
         $renderedWidget.on("click", () => appContext.tabManager.activateNoteContext(noteContext.ntxId));
 
-        this.$widget.append($renderedWidget);
+        this.$widget.children(".caret-stop").last().before($renderedWidget);
 
         widget.handleEvent("initialRenderComplete", {});
 
@@ -48,7 +61,9 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             this.widgets[noteContext.ntxId] = widget;
         }
 
-        await widget.handleEvent("setNoteContext", { noteContext });
+        if (appContext.tabManager.getActiveMainContext() === noteContext.getMainContext()) {
+            await this.provideNoteContext(widget, noteContext);
+        }
 
         this.child(widget);
 
@@ -95,6 +110,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
             // move the note context rendered widget after the originating widget
             this.$widget.find(`[data-ntx-id="${noteContext.ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxId}"]`));
+
+            this.refresh();
         }
 
 
@@ -116,6 +133,12 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         // the pane showing a pinned note can't be closed (unpin the tab first). Bail before the
         // demote/reorder below, which would otherwise strip the main context of its pinned state.
         if (contexts[currentIndex].pinned) {
+            return;
+        }
+
+        // A tab whose only pane is this one has no split to close -- closing it would take the whole
+        // tab down. ClosePaneButton hides itself there; the keyboard action can still ask for it.
+        if (contexts[currentIndex].getMainContext().getSubContexts().length <= 1) {
             return;
         }
 
@@ -141,10 +164,18 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         const contexts = appContext.tabManager.noteContexts;
 
         const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
+        if (currentIndex === -1) {
+            logError(`invalid context! ntxId: ${ntxId}`);
+            return;
+        }
+
         const leftIndex = isMovingLeft ? currentIndex - 1 : currentIndex;
 
-        if (currentIndex === -1 || leftIndex < 0 || leftIndex + 1 >= contexts.length) {
-            logError(`invalid context! currentIndex: ${currentIndex}, leftIndex: ${leftIndex}, contexts.length: ${contexts.length}`);
+        // A tab lays its panes out as the main context followed by its sub-contexts, so the right
+        // half of the swapped pair is a sub-context whenever the pair sits inside one tab. Anything
+        // else is at a tab boundary, where a swap would move a pane into the neighbouring tab.
+        // MovePaneButton hides itself in that state; the keyboard actions can still ask for it.
+        if (leftIndex < 0 || leftIndex + 1 >= contexts.length || !contexts[leftIndex + 1].mainNtxId) {
             return;
         }
 
@@ -166,14 +197,37 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         // reorder the note context widgets
         this.$widget.find(`[data-ntx-id="${ntxIds[leftIndex]}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxIds[leftIndex + 1]}"]`));
 
+        // the reorder changes which split is last; the activation below may be a no-op (the moved
+        // context can already be active), so it can't be relied on to refresh.
+        this.refresh();
+
         // activate context that now contains the original note
         await appContext.tabManager.activateNoteContext(isMovingLeft ? ntxIds[leftIndex + 1] : ntxIds[leftIndex]);
 
         splitService.moveNoteSplitResizer(ntxIds[leftIndex]);
     }
 
+    /*
+     * Entry points for the split keyboard actions. They dispatch from `appContext`, which finds no
+     * matching command on its top-level components and distributes downwards as an event instead, so
+     * they cannot reuse the command handlers above -- those only run when a pane button bubbles the
+     * command up from the pane it belongs to.
+     */
+    async closeActiveNoteSplitEvent({ ntxId }: EventData<"closeActiveNoteSplit">) {
+        await this.closeThisNoteSplitCommand({ ntxId });
+    }
+
+    async moveActiveNoteSplitLeftEvent({ ntxId }: EventData<"moveActiveNoteSplitLeft">) {
+        await this.moveThisNoteSplitCommand({ ntxId, isMovingLeft: true });
+    }
+
+    async moveActiveNoteSplitRightEvent({ ntxId }: EventData<"moveActiveNoteSplitRight">) {
+        await this.moveThisNoteSplitCommand({ ntxId, isMovingLeft: false });
+    }
+
     activeContextChangedEvent() {
         this.refresh();
+        this.renderNeighbourTabsLater();
     }
 
     noteSwitchedAndActivatedEvent() {
@@ -181,17 +235,28 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
     }
 
     noteContextRemovedEvent({ ntxIds }: EventData<"noteContextRemoved">) {
-        this.children = this.children.filter((c) => !ntxIds.includes(c.ntxId ?? ""));
-
         for (const ntxId of ntxIds) {
             this.$widget.find(`[data-ntx-id="${ntxId}"]`).remove();
 
             const widget = this.widgets[ntxId];
+            if (!widget) {
+                continue;
+            }
+
+            // Detach through this map, not through a `widget.ntxId` lookup: the widgets are whatever
+            // the factory builds (a NoteWrapperWidget on both layouts), and none of them carries an
+            // ntxId -- only the DOM node gets one, as `data-ntx-id`. A filter over `children` reading
+            // `c.ntxId` therefore matches nothing, leaving the closed split in the tree and its
+            // widgets handling events for a pane the user cannot see.
+            this.removeChild(widget);
             recursiveCleanup(widget);
             delete this.widgets[ntxId];
         }
 
         splitService.delNoteSplitResizer(ntxIds);
+
+        // closing a non-active split fires no activation, so nothing else would refresh here
+        this.refresh();
     }
 
     contextsReopenedEvent({ ntxId, mainNtxId, afterNtxId }: EventData<"contextsReopened">) {
@@ -204,6 +269,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
             this.$widget.find(`[data-ntx-id="${mainNtxId}"]`).insertBefore(this.$widget.find(`[data-ntx-id="${beforeNtxId}"]`));
         }
+
+        this.refresh();
     }
 
     async refresh() {
@@ -213,6 +280,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         for (const child of this.children as NoteContextAwareWidget[]) {
             child.$widget.toggleClass("active", !!child.noteContext?.isActive());
         }
+
+        markVisibleSplits(this.$widget[0]);
     }
 
     toggleInt(show: boolean) {} // not needed
@@ -230,9 +299,10 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
     }
 
     /**
-     * widget.hasBeenAlreadyShown is intended for lazy loading of cached tabs - initial note switches of new tabs
-     * are not executed, we're waiting for the first tab activation, and then we update the tab. After this initial
-     * activation, further note switches are always propagated to the tabs.
+     * Delays the panes of a background tab until the tab is first shown, for tabs restored at
+     * startup and for tabs the user opens in the background. Until then a pane gets no
+     * `setNoteContext` and no `noteSwitched`, so its widgets have no note and load nothing. After
+     * the first showing, every `noteSwitched` is passed on.
      */
     async handleEventInChildren<T extends EventNames>(name: T, data: EventData<T>) {
         if (["noteSwitched", "noteSwitchedAndActivated"].includes(name)) {
@@ -249,6 +319,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
             if (widget.hasBeenAlreadyShown || name === "noteSwitchedAndActivated" || appContext.tabManager.getActiveMainContext() === noteSwitchedContext.noteContext.getMainContext()) {
                 widget.hasBeenAlreadyShown = true;
+                await this.provideNoteContext(widget, noteSwitchedContext.noteContext);
 
                 // Promise.all (not a bare array) so that awaiting triggerEvent("noteSwitched")
                 // genuinely waits for the tab's widgets to process the switch.
@@ -277,13 +348,47 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             if (!widget.hasBeenAlreadyShown) {
                 widget.hasBeenAlreadyShown = true;
 
-                promises.push(widget.handleEvent("activeContextChanged", { noteContext: subContext }));
+                promises.push(this.provideNoteContext(widget, subContext)
+                    .then(() => widget.handleEvent("activeContextChanged", { noteContext: subContext })));
             }
         }
 
         this.refresh();
 
         return Promise.all(promises);
+    }
+
+    /**
+     * On mobile, renders the panes of the tabs before and after the active one while they stay hidden,
+     * one tab per delay, so that a swipe to either slides in a rendered note.
+     */
+    private renderNeighbourTabsLater() {
+        if (!isMobile()) return;
+
+        clearTimeout(this.neighbourRenderTimer);
+        const renderNext = () => {
+            const tab = getNeighbourTabs().find((neighbour) => neighbour.getSubContexts()
+                .some((subContext) => subContext.ntxId && !this.widgets[subContext.ntxId]?.hasBeenAlreadyShown));
+            if (!tab) return;
+
+            const timer = this.neighbourRenderTimer;
+            void this.refreshNotShown({ noteContext: tab }).then(() => {
+                if (this.neighbourRenderTimer === timer) {
+                    this.neighbourRenderTimer = setTimeout(renderNext, NEIGHBOUR_RENDER_DELAY);
+                }
+            });
+        };
+        this.neighbourRenderTimer = setTimeout(renderNext, NEIGHBOUR_RENDER_DELAY);
+    }
+
+    /** Sends `setNoteContext` to the widget, unless the widget has already received it. */
+    private async provideNoteContext(widget: SplitNoteWidget, noteContext: NoteContext) {
+        if (widget.hasNoteContext) {
+            return;
+        }
+
+        widget.hasNoteContext = true;
+        await widget.handleEvent("setNoteContext", { noteContext });
     }
 }
 
@@ -294,4 +399,9 @@ function recursiveCleanup(widget: Component) {
     if ("cleanup" in widget && typeof widget.cleanup === "function") {
         widget.cleanup();
     }
+}
+
+/** The tabs before and after the active one, which a swipe on mobile leads to. */
+function getNeighbourTabs() {
+    return [ getTabToward("next"), getTabToward("previous") ].filter((tab) => !!tab);
 }

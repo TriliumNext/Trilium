@@ -1,6 +1,7 @@
 import xml2js from "xml2js";
 
 import type BNote from "../../becca/entities/bnote.js";
+import * as cls from "../context.js";
 import noteService from "../../services/notes.js";
 import protectedSessionService from "../protected_session.js";
 import type TaskContext from "../task_context.js";
@@ -59,9 +60,11 @@ async function importOpml(taskContext: TaskContext<"importNotes">, fileBuffer: s
         } else if (opmlVersion === 2) {
             title = outline.$.text;
             content = outline.$._note; // _note is already HTML
+            /* v8 ignore start -- unreachable: the version check above admits only 1.0/1.1/2.0, so parseInt is always 1 or 2 */
         } else {
             throw new Error(`Unrecognized OPML version ${opmlVersion}`);
         }
+        /* v8 ignore stop */
 
         content = sanitizeHtml(content || "");
 
@@ -84,6 +87,11 @@ async function importOpml(taskContext: TaskContext<"importNotes">, fileBuffer: s
 
     const outlines = xml.opml.body[0].outline || [];
     let returnNote: BNote | null = null;
+
+    // Unlike the other importers, OPML has no single wrapper root — its top-level outlines are imported
+    // directly under the target. So order-preservation covers the whole import (including those top-level
+    // outlines), otherwise an inherited #newNotesOnTop would reverse them. See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     for (const outline of outlines) {
         const note = importOutline(outline, parentNote.noteId);

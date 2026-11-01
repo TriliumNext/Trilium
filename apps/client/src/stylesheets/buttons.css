@@ -1,0 +1,77 @@
+.icon-action {
+    border: 1px solid transparent;
+    padding: 5px;
+    width: 37px;
+    height: 35px;
+    cursor: pointer;
+    font-size: 1.5em;
+    color: var(--button-text-color);
+    background: var(--button-background-color);
+    border-radius: var(--button-border-radius);
+}
+
+.icon-action-split {
+    display: inline-flex;
+    align-items: center;
+
+    > .icon-action {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+
+    > .dropdown .icon-action {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+}
+
+.icon-action-always-border {
+    border-color: var(--button-border-color);
+}
+
+.icon-action:hover:not(.disabled) {
+    text-decoration: none;
+    border-color: var(--button-border-color);
+}
+
+/* An action that takes something away, marked as such the way destructive menu items are. */
+.icon-action.destructive-action-icon {
+    color: var(--dropdown-item-icon-destructive-color);
+}
+
+/* A toggle that is on, held through a hover. The Next theme colors icon buttons through these
+   variables, so the button sets them as well as its own colors. */
+.icon-action.active {
+    --icon-button-color: var(--active-item-text-color);
+    --icon-button-hover-color: var(--active-item-text-color);
+    --icon-button-hover-background: var(--active-item-background-color);
+    color: var(--active-item-text-color);
+    background: var(--active-item-background-color);
+}
+
+.icon-action.disabled {
+    color: var(--muted-text-color) !important;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.icon-action.btn {
+    padding: 0 8px;
+    min-width: unset !important;
+}
+
+/*
+ * Low profile buttons
+ */
+
+button.tn-low-profile {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: inherit;
+}
+
+button.tn-low-profile:hover {
+    background-color: var(--icon-button-hover-background);
+}

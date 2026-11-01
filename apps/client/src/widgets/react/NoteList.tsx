@@ -1,4 +1,4 @@
-import type { CSSProperties } from "preact/compat";
+import type { CSSProperties } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";

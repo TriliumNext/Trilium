@@ -1,0 +1,60 @@
+/* The download action, with what it will write above it and how it is going below. */
+.backup-download {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    margin-block: 3em;
+
+    .backup-download-file {
+        /* A file name has no spaces to break at, and it is the one thing on this screen the user
+           has to recognise afterwards. */
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
+    /* The spinner beside the words rather than above them, with the label and its count stacked in
+       the second column. Left-aligned, so a percentage does not shift the line about as it grows
+       from one digit to two, and the panel's own centring places the block as a whole. */
+    .backup-download-status {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 0.75em;
+        text-align: start;
+    }
+
+    .backup-download-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15em;
+    }
+
+    .backup-download-progress {
+        display: flex;
+        gap: 0.4em;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+        /* Every digit the same width, so a count that climbs does not jitter the line under it. */
+        font-variant-numeric: tabular-nums;
+
+        /* Held open for the widest it will ever be, so the sizes beside it start at the same place
+           whether the count reads 9% or 100%. Filled from the start, not the end: the reserved
+           space belongs after the number, or a short one would sit indented from the label above
+           it. With tabular figures a digit is exactly 1ch, so five covers "100%". */
+        .backup-download-percent {
+            min-width: 5ch;
+        }
+    }
+
+    .backup-download-hint {
+        text-align: center;
+        opacity: 0.7;
+    }
+
+    .backup-download-outcome {
+        /* The panel centres its children, which would leave a full-width block floating. */
+        align-self: stretch;
+        margin-bottom: 40px;
+    }
+}

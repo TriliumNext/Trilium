@@ -2,10 +2,15 @@ import test, { expect, Page } from "@playwright/test";
 
 import App from "../support/app";
 
+// Everything below reads the right pane, which remembers both which of its tabs was last shown and
+// which of its cards were last put away — for the account, not for the run. A fresh one is on the
+// outline tab with nothing collapsed, so this only matters to a suite run against an instance that has
+// been used; where it does, none of these tests can see what they are looking for.
 test.beforeEach(async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
     await app.setOption("rightPaneCollapsedItems", "[]");
+    await app.setOption("rightPaneSelectedTab", "outline");
 });
 
 test("Table of contents works", async ({ page, context }) => {

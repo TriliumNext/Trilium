@@ -5,8 +5,16 @@ import { describe, expect, it } from "vitest";
 import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
+import { fakeRequestProvider } from "../../../test/request_provider.js";
+import { initRequest } from "../../request.js";
 import TaskContext from "../../task_context.js";
 import notionImporter from "./importer.js";
+
+/** A 1x1 PNG. The bytes are asked what they are, so a placeholder buffer would rightly be refused. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
 
 /** Builds an in-memory zip from a map of entry name -> contents. */
 async function createZipBuffer(files: Record<string, string | Buffer>): Promise<Buffer> {
@@ -116,16 +124,18 @@ describe("Notion importer — integration", () => {
         ).rejects.toThrow(/Create folders for subpages/i);
     });
 
-    it("imports a flat export containing an empty database (no rows) without flagging", async () => {
-        // An empty database (CSV header only) contributes no row titles, so a legitimately flat export that
-        // happens to include one isn't mistaken for a flattened hierarchy.
-        const importRoot = await importNotion({
-            "Empty DB 08d361c59a9940c2a9d7237a4e6cd09a.csv": "Name,Status",
-            "Note A 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("Note A", "4f195d8c55fb44f4b94a063e643b0297"),
-            "Note B 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Note B", "388c5eca1b8b80929a78da7c68154bd7")
-        });
+    it("imports a flat export containing a database with no rows, or only unnamed ones, without flagging", async () => {
+        // A CSV holding only a header — or only rows with a blank first column — contributes no row titles, so
+        // a legitimately flat export that happens to include one isn't mistaken for a flattened hierarchy.
+        for (const csv of ["Name,Status", "Name,Status\n,Done"]) {
+            const importRoot = await importNotion({
+                "Empty DB 08d361c59a9940c2a9d7237a4e6cd09a.csv": csv,
+                "Note A 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("Note A", "4f195d8c55fb44f4b94a063e643b0297"),
+                "Note B 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Note B", "388c5eca1b8b80929a78da7c68154bd7")
+            });
 
-        expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(expect.arrayContaining(["Note A", "Note B"]));
+            expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(expect.arrayContaining(["Note A", "Note B"]));
+        }
     });
 
     it("imports flat top-level pages that only mention each other (no subpage blocks) without flagging", async () => {
@@ -466,6 +476,43 @@ describe("Notion importer — integration", () => {
         expect(undated?.utcDateCreated.startsWith("2024-01-02")).toBe(false);
     });
 
+    it("reads a page's timestamps from the <time> element's datetime attribute", async () => {
+        const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
+        // A non-English export renders the visible text in its own locale, which `new Date()` parses only
+        // when the month name opens with its English abbreviation ("mars" does, "juillet" doesn't). The
+        // datetime attribute carries the same instant as ISO 8601, so read that instead.
+        const propertyTable =
+            `<table class="properties"><tbody>` +
+            `<tr class="property-row property-row-created_time"><th>Date de création</th><td><time datetime="2020-07-14T10:10">14 juillet 2020 10:10</time></td></tr>` +
+            `<tr class="property-row property-row-last_edited_time"><th>Date de modification</th><td><time datetime="2023-12-30T14:26">30 décembre 2023 14:26</time></td></tr>` +
+            `</tbody></table>`;
+        const importRoot = await importNotion({
+            "Houmous 2c6c5eca1b8b80f7b9eaf4f396b755dc.html":
+                `<html><head><title>Houmous</title></head><body><div id="${id}">${propertyTable}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        // Notion's timestamps carry no offset, so they are local wall-clock; assert the local columns to
+        // keep the expectation independent of the runner's timezone.
+        const note = importRoot.getChildNotes().find((n) => n.title === "Houmous");
+        expect(note?.dateCreated?.startsWith("2020-07-14 10:10:00")).toBe(true);
+        expect(note?.dateModified?.startsWith("2023-12-30 14:26:00")).toBe(true);
+    });
+
+    it("falls back to the visible text when a timestamp's <time> element carries no datetime attribute", async () => {
+        const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
+        const propertyTable =
+            `<table class="properties"><tbody>` +
+            `<tr class="property-row property-row-created_time"><th>Created</th><td><time>January 2, 2024 3:04 AM</time></td></tr>` +
+            `</tbody></table>`;
+        const importRoot = await importNotion({
+            "TextOnly 2c6c5eca1b8b80f7b9eaf4f396b755dc.html":
+                `<html><head><title>TextOnly</title></head><body><div id="${id}">${propertyTable}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const note = importRoot.getChildNotes().find((n) => n.title === "TextOnly");
+        expect(note?.dateCreated?.startsWith("2024-01-02 03:04:00")).toBe(true);
+    });
+
     it("imports a page's text property as a Trilium label", async () => {
         const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
         // Real Notion markup: the <th> leads with an icon span (no text) before the column name.
@@ -735,7 +782,7 @@ describe("Notion importer — integration", () => {
         expect(row?.getOwnedLabelValue("lastEditedBy")).toBe("Elian Doran");
     });
 
-    it("imports url, email and phone columns as url-typed labels (mailto:/tel: schemes)", async () => {
+    it("imports url, email and phone columns as their own typed labels, holding the bare address", async () => {
         const dbId = "388c5eca1b8b8078a20fd18330d81306";
         const rowId = "388c5eca1b8b80929a78da7c68154bd7";
         // All three render as <a class="url-value">; email/phone hrefs are bare addresses.
@@ -753,16 +800,17 @@ describe("Notion importer — integration", () => {
         });
 
         const db = importRoot.getChildNotes().find((n) => n.title === "DB");
-        // Each column gets a url-typed definition.
+        // Each column gets a definition of the type its values are, rather than all three being urls.
         expect(db?.getOwnedLabel("label:url")?.value).toBe("promoted,single,url,alias=URL");
-        expect(db?.getOwnedLabel("label:email")?.value).toBe("promoted,single,url,alias=Email");
-        expect(db?.getOwnedLabel("label:phone")?.value).toBe("promoted,single,url,alias=Phone");
+        expect(db?.getOwnedLabel("label:email")?.value).toBe("promoted,single,email,alias=Email");
+        expect(db?.getOwnedLabel("label:phone")?.value).toBe("promoted,single,phone,alias=Phone");
 
         const row = db?.getChildNotes().find((n) => n.title === "Row");
         expect(row?.getOwnedLabelValue("url")).toBe("https://triliumnotes.org");
-        // Email/phone are stored as clickable mailto:/tel: links.
-        expect(row?.getOwnedLabelValue("email")).toBe("mailto:test@acme.org");
-        expect(row?.getOwnedLabelValue("phone")).toBe("tel:12345678");
+        // Stored bare, which is what the typed email/phone inputs hold; the scheme is applied where the
+        // value is rendered as a link.
+        expect(row?.getOwnedLabelValue("email")).toBe("test@acme.org");
+        expect(row?.getOwnedLabelValue("phone")).toBe("12345678");
     });
 
     it("imports a dated column with a clock time as a datetime label", async () => {
@@ -781,6 +829,42 @@ describe("Notion importer — integration", () => {
         const row = db?.getChildNotes().find((n) => n.title === "Row");
         // Local datetime-local format; "7:00 PM" → 19:00 (parse-local + format-local is timezone-independent).
         expect(row?.getOwnedLabelValue("date")).toBe("2026-06-23T19:00");
+    });
+
+    it("reads a dated column from the <time> element's datetime attribute", async () => {
+        const dbId = "388c5eca1b8b8078a20fd18330d81306";
+        const rowId = "388c5eca1b8b80929a78da7c68154bd7";
+        // "juin" is unparseable to `new Date()`, so the value has to come from the datetime attribute.
+        const props = `<table class="properties"><tbody><tr class="property-row property-row-date"><th><span class="icon property-icon"><img src="x.svg"/></span>Date</th><td><time datetime="2026-06-23T19:00">23 juin 2026 19:00</time></td></tr></tbody></table>`;
+        const importRoot = await importNotion({
+            "DB 388c5eca1b8b8078a20fd18330d81306.html":
+                `<html><head><title>DB</title></head><body><div id="${dbId}"><div class="page-body"></div></div></body></html>`,
+            "DB/Row 388c5eca1b8b80929a78da7c68154bd7.html":
+                `<html><head><title>Row</title></head><body><div id="${rowId}">${props}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const db = importRoot.getChildNotes().find((n) => n.title === "DB");
+        expect(db?.getOwnedLabel("label:date")?.value).toBe("promoted,single,datetime,alias=Date");
+        const row = db?.getChildNotes().find((n) => n.title === "Row");
+        expect(row?.getOwnedLabelValue("date")).toBe("2026-06-23T19:00");
+    });
+
+    it("keeps a time-less dated column on its own day, whatever the runner's timezone", async () => {
+        const dbId = "388c5eca1b8b8078a20fd18330d81306";
+        const rowId = "388c5eca1b8b80929a78da7c68154bd7";
+        // A bare `YYYY-MM-DD` is UTC to `new Date()` but local to the label, which would shift the day west
+        // of Greenwich.
+        const props = `<table class="properties"><tbody><tr class="property-row property-row-date"><th><span class="icon property-icon"><img src="x.svg"/></span>Date</th><td><time datetime="2026-06-24">24 juin 2026</time></td></tr></tbody></table>`;
+        const importRoot = await importNotion({
+            "DB 388c5eca1b8b8078a20fd18330d81306.html":
+                `<html><head><title>DB</title></head><body><div id="${dbId}"><div class="page-body"></div></div></body></html>`,
+            "DB/Row 388c5eca1b8b80929a78da7c68154bd7.html":
+                `<html><head><title>Row</title></head><body><div id="${rowId}">${props}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const db = importRoot.getChildNotes().find((n) => n.title === "DB");
+        const row = db?.getChildNotes().find((n) => n.title === "Row");
+        expect(row?.getOwnedLabelValue("date")).toBe("2026-06-24");
     });
 
     it("splits a timeless date range into separate start and end date columns", async () => {
@@ -1062,6 +1146,48 @@ describe("Notion importer — integration", () => {
         const container = importRoot.getChildNotes().find((note) => note.title === "Database");
         expect(container).toBeDefined();
         expect(container?.getChildNotes().map((note) => note.title)).toEqual(["Row"]);
+    });
+
+    it("fetches a bookmark card's icon and cover, which the export names but does not carry", async () => {
+        // The whole of a Notion bookmark: an <a class="bookmark source"> whose pictures are the
+        // origin's own addresses. The export ships no bytes for them, so unless they are fetched
+        // the card renders with placeholders — the render sinks refuse a remote address outright.
+        const bookmark = `<figure id="3b1c5eca-1b8b-8099-be42-da0f9203f06f">`
+            + `<a href="https://example.com/page" class="bookmark source"><div class="bookmark-info">`
+            + `<div class="bookmark-text"><div class="bookmark-title">A page</div>`
+            + `<div class="bookmark-description">About the page.</div></div>`
+            + `<div class="bookmark-href"><img src="https://example.com/favicon.png" class="icon bookmark-icon"/>`
+            + `https://example.com/page</div></div>`
+            + `<img src="https://cdn.example.com/cover.png" class="bookmark-image"/></a></figure>`;
+
+        const asked: string[] = [];
+        initRequest(fakeRequestProvider({
+            getImage: async (address: string) => {
+                asked.push(address);
+                return PIXEL_PNG.buffer.slice(PIXEL_PNG.byteOffset, PIXEL_PNG.byteOffset + PIXEL_PNG.byteLength) as ArrayBuffer;
+            }
+        }));
+
+        try {
+            const importRoot = await importNotion({
+                "Links 386c5eca1b8b80439520cad27a0d2749.html":
+                    `<html><head><title>Links</title></head><body>`
+                    + `<div id="386c5eca1b8b80439520cad27a0d2749" class="page"><div class="page-body">${bookmark}</div></div>`
+                    + `</body></html>`
+            });
+
+            const note = importRoot.getChildNotes().find((child) => child.title === "Links") ?? importRoot;
+            expect(asked).toEqual([ "https://example.com/favicon.png", "https://cdn.example.com/cover.png" ]);
+
+            expect(note.getAttachments().map((a) => a.role).sort()).toStrictEqual([ "coverImage", "favicon" ]);
+
+            const content = String(note.getContent());
+            expect(content).not.toContain("https://example.com/favicon.png");
+            expect(content).not.toContain("https://cdn.example.com/cover.png");
+            expect(content).toContain("api/attachments/");
+        } finally {
+            initRequest(fakeRequestProvider());
+        }
     });
 
     it("synthesizes a container named after a CSV that carries no Notion id", async () => {

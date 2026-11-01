@@ -1,0 +1,62 @@
+:where(:root) {
+    --peek-button-arrow-color: var(--muted-text-color);
+    --peek-button-arrow-color-hover: var(--item-hover-text-color);
+
+    --peek-button-expand-background-color: var(--note-split-background-color, var(--main-background-color));
+    --peek-button-expand-hover-background-color: var(--hover-item-background-color);
+
+    --peek-button-collapse-background-color: var(--right-pane-background-color);
+    --peek-button-collapse-hover-background-color: var(--hover-item-background-color);
+}
+
+/* Sits in a gutter that the pane's container reserves with padding of the same width. */
+.peek-pane-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    border: 0;
+    padding: 0;
+    width: var(--peek-pane-button-width, 12px);
+    background: transparent;
+    color: var(--peek-button-arrow-color);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 250ms ease-in, color 250ms ease-in;
+
+    &.side-start {
+        inset-inline-start: 0;
+    }
+
+    &.side-end {
+        inset-inline-end: 0;
+    }
+
+    body[dir=rtl] & {
+        transform: scaleX(-1);
+    }
+
+    &.peek-pane-button-action-expand {
+        background: var(--peek-button-expand-background-color);
+
+        &:hover {
+            background: var(--peek-button-expand-hover-background-color);
+        }
+    }
+
+    &.peek-pane-button-action-collapse {
+        background: var(--peek-button-collapse-background-color);
+
+        &:hover {
+            background: var(--peek-button-collapse-hover-background-color);
+        }
+    }
+
+    &:hover {
+        color: var(--peek-button-arrow-color-hover);
+        transition: initial;
+    }
+}

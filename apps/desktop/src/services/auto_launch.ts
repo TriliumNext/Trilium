@@ -1,4 +1,5 @@
 import { getLog, options as optionService, utils as coreUtils } from "@triliumnext/core";
+import { execFile } from "child_process";
 import electron from "electron";
 import fs from "fs";
 import os from "os";
@@ -10,8 +11,8 @@ import path from "path";
 
 // We tag the autostart command so the app can tell, at launch, that it was started
 // by the OS at login (and should hide to the tray) rather than launched manually
-// (where it must show a window). macOS has no argv hook for login items, so it uses
-// the native openAsHidden flag and reports it back via wasOpenedAsHidden instead.
+// (where it must show a window). macOS has no argv hook for login items, so
+// wasLaunchedHidden() reads `wasOpenedAtLogin` from the login item there instead.
 export const START_HIDDEN_FLAG = "--start-hidden";
 
 /**
@@ -26,15 +27,16 @@ export function applyLaunchOnStartup() {
         const enabled = optionService.getOptionBool("launchOnStartup");
         const hidden = enabled && optionService.getOptionBool("hideOnAutoStart");
 
-        if (process.platform === "linux") {
+        if (process.platform === "linux" && process.env.FLATPAK_ID) {
+            applyFlatpakAutostart(enabled, hidden);
+        } else if (process.platform === "linux") {
             applyLinuxAutostart(enabled, hidden);
         } else {
-            // macOS + Windows: handled natively by Electron. `openAsHidden` is the
-            // macOS mechanism; `args` is the Windows one. Each platform ignores the
-            // option that doesn't apply to it.
+            // macOS + Windows: handled natively by Electron. `args` is the Windows
+            // mechanism and macOS ignores it, so `hidden` reaches macOS through the
+            // `hideOnAutoStart` option that wasLaunchedHidden() reads at startup.
             electron.app.setLoginItemSettings({
                 openAtLogin: enabled,
-                openAsHidden: hidden,
                 args: hidden ? [START_HIDDEN_FLAG] : []
             });
         }
@@ -49,7 +51,9 @@ export function applyLaunchOnStartup() {
  */
 export function wasLaunchedHidden(): boolean {
     if (process.platform === "darwin") {
-        return electron.app.getLoginItemSettings().wasOpenedAsHidden;
+        // A macOS login item carries no arguments, so Electron reports only that the
+        // app was opened at login and `hideOnAutoStart` decides whether to hide it.
+        return electron.app.getLoginItemSettings().wasOpenedAtLogin && optionService.getOptionBool("hideOnAutoStart");
     }
     return process.argv.includes(START_HIDDEN_FLAG);
 }
@@ -60,6 +64,26 @@ export function wasLaunchedHidden(): boolean {
  */
 export function setupAutoLaunch() {
     electron.ipcMain.on("reapply-launch-on-startup", applyLaunchOnStartup);
+}
+
+/**
+ * A Flatpak cannot write the host's autostart directory, and its executable path only exists
+ * inside the sandbox, so the Background portal writes the entry, with a `flatpak run` command.
+ */
+function applyFlatpakAutostart(enabled: boolean, hidden: boolean) {
+    const commandline = hidden ? `['trilium', '${START_HIDDEN_FLAG}']` : "['trilium']";
+    const options = `{'autostart': <${enabled}>, 'commandline': <${commandline}>}`;
+    execFile("gdbus", [
+        "call", "--session",
+        "--dest", "org.freedesktop.portal.Desktop",
+        "--object-path", "/org/freedesktop/portal/desktop",
+        "--method", "org.freedesktop.portal.Background.RequestBackground",
+        "", options
+    ], (error) => {
+        if (error) {
+            getLog().error(`Failed to request autostart from the Background portal: ${error.message}`);
+        }
+    });
 }
 
 function applyLinuxAutostart(enabled: boolean, hidden: boolean) {
@@ -82,10 +106,10 @@ function getLinuxAutostartDir() {
 }
 
 function buildLinuxDesktopEntry(hidden: boolean) {
-    // When packaged as an AppImage, APPIMAGE points at the bundle to relaunch;
-    // otherwise fall back to the running executable.
-    const exec = process.env.APPIMAGE ?? process.execPath;
-    const execLine = hidden ? `Exec="${exec}" ${START_HIDDEN_FLAG}` : `Exec="${exec}"`;
+    // TRILIUM_LAUNCH_EXEC is a pre-quoted command set by packages that run on a system Electron;
+    // otherwise relaunch the AppImage bundle or the running executable.
+    const exec = process.env.TRILIUM_LAUNCH_EXEC || `"${process.env.APPIMAGE ?? process.execPath}"`;
+    const execLine = hidden ? `Exec=${exec} ${START_HIDDEN_FLAG}` : `Exec=${exec}`;
     return [
         "[Desktop Entry]",
         "Type=Application",

@@ -1,0 +1,26 @@
+// Maintenance scripts that regenerate committed sources (see scripts/). They are
+// Node-only and never bundled, so they get their own project rather than joining
+// tsconfig.lib.json, whose rootDir is `src` and whose `types` are deliberately empty.
+// They are typechecked all the same: a script that references a source file which
+// has since moved must fail `pnpm typecheck` rather than rot silently.
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "outDir": "./out-tsc/scripts",
+    "tsBuildInfoFile": "./out-tsc/scripts/tsconfig.scripts.tsbuildinfo",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "scripts/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
+}

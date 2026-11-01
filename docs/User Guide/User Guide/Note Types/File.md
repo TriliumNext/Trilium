@@ -12,7 +12,11 @@ Since these files come from an external source, it is not possible to create a _
 
 ### PDFs
 
-See <a class="reference-link" href="File/PDFs.md">PDFs</a>.
+PDFs can be uploaded to Trilium and they will display a live preview with full support for various features such as table of contents, annotations, as well as remembering the last page read. For more information, see the dedicated <a class="reference-link" href="File/PDFs.md">PDFs</a> page.
+
+## Office documents
+
+Trilium offers previews for Office documents such as Word (`.docx`), Excel (`.xlsx`) and PowerPoint (`.pptx`). For more information, see the dedicated <a class="reference-link" href="File/Office%20documents.md">Office documents</a>.
 
 ### Images
 
@@ -20,13 +24,11 @@ See <a class="reference-link" href="File/PDFs.md">PDFs</a>.
 
 Interaction:
 
-*   _Copy reference to clipboard_, for embedding the image within <a class="reference-link" href="Text.md">Text</a> notes.
-    *   See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
-    *   Alternatively, press the corresponding button from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
+*   An [image reference](Text/Images/Image%20references.md) can be copied by pressing the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area, which allows pasting it in a <a class="reference-link" href="Text.md">Text</a> note.
 
 ### Videos
 
-See <a class="reference-link" href="File/Videos.md">Videos</a>.
+See <a class="reference-link" href="File/Audio%20%26%20Video.md">Audio &amp; Video</a>.
 
 ### Audio
 
@@ -51,6 +53,26 @@ Note that generally text files will be [imported](../Basic%20Concepts%20and%20Fe
 
 Since one of the use cases for having files instead of notes is to display large files, the content preview is limited to a relatively small amount of characters. To view the full file, consider opening it in an external application.
 
+### GPS tracks
+
+Trilium displays information about GPS tracks in `.gpx` format, such as the distance, duration, elevation profile, tracks, markers.
+
+When a `.gpx` note is dropped in a <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a>, the track itself will also be displayed on the map.
+
+<figure class="image"><img style="aspect-ratio:1500/807;" src="4_File_image.png" width="1500" height="807"></figure>
+
+### Fonts
+
+Supported font formats will show an interactive preview of the font:
+
+*   A field to type in a custom text.
+*   A slider to change the font size of the preview.
+*   A preview of the text at the given size.
+*   A sampling of various font sizes for this font.
+*   The Latin alphabet.
+
+Additionally, enabling _In font picker_ will make the font available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ font selection. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for more information.
+
 ### Unknown file types
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>
@@ -59,18 +81,18 @@ If the file could not be identified as any of the supported file types from abov
 
 ## Interaction
 
-*   Regardless of the file type, a series of buttons will be displayed in the _Image_ or _File_ tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-    *   _Download_, which will download the file for local use.
-    *   _Open_, will will open the file with the system-default application.
-    *   Upload new revision to replace the file with a new one.
+*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
+    *   <span class="tn-icon bx bx-download"></span> (Download), which will download the file for local use.
+    *   <span class="tn-icon bx bx-link-external"></span> (Open), will will open the file with the system-default application.
+    *   <span class="tn-icon bx bx-folder-open"></span> (Upload new revision) to replace the file with a new one.
 *   It is **not** possible to change the note type of a _File_ note.
-*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md).
+*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md).
 
 ## Relation with other notes
 
 *   Files are also displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> based on their type:
     
-    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="4_File_image.png" width="853" height="315">
+    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="5_File_image.png" width="853" height="315">
 *   Non-image files can be embedded into text notes as read-only widgets via the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality.
 *   Image files can be embedded into text notes like normal images via <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a>.
 

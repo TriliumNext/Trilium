@@ -1,0 +1,83 @@
+# Treemap
+
+treemap-beta
+
+==>
+
+TreemapDiagram(DiagramName)
+
+# Trilium's sample
+
+treemap-beta
+"Section 1"
+    "Leaf 1.1": 12
+    "Section 1.2"
+      "Leaf 1.2.1": 12
+"Section 2"
+    "Leaf 2.1": 20
+    "Leaf 2.2": 25
+
+==>
+
+TreemapDiagram(DiagramName,
+  Section(String),
+  Leaf(String,":",Number),
+  Section(String),
+  Leaf(String,":",Number),
+  Section(String),
+  Leaf(String,":",Number),
+  Leaf(String,":",Number))
+
+# Classes and a comma before the value
+
+treemap
+"Root":::hot
+  "A": 10:::cold
+  'B', 1,000.5
+classDef hot fill:#f00,color:#fff;
+classDef cold
+
+==>
+
+TreemapDiagram(DiagramName,
+  Section(String,ClassSelector(":::",ClassName)),
+  Leaf(String,":",Number,ClassSelector(":::",ClassName)),
+  Leaf(String,",",Number),
+  ClassDef(Keyword,ClassName,Styles,";"),
+  ClassDef(Keyword,ClassName))
+
+# Title with a comment after it
+
+treemap-beta
+title My map %% a comment
+"A": 1
+
+==>
+
+TreemapDiagram(DiagramName,Title(Keyword,TitleText),LineComment,Leaf(String,":",Number))
+
+# Leaf on the diagram line
+
+treemap-beta "A": 1
+
+==>
+
+TreemapDiagram(DiagramName,Leaf(String,":",Number))
+
+# Negative value (invalid)
+
+treemap-beta
+"A": -1
+
+==>
+
+TreemapDiagram(DiagramName,Leaf(String,":",⚠,Number))
+
+# Value without a separator (invalid)
+
+treemap-beta
+"A" 1
+
+==>
+
+TreemapDiagram(DiagramName,Section(String,⚠(Number)))

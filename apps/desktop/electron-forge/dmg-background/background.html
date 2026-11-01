@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Trilium DMG background</title>
+<style>
+    html, body { margin: 0; padding: 0; }
+    /* 640 x 400 pt window. Finder places the real app icon + /Applications alias on top (via
+       the `contents` coords in forge.config) and draws their text captions, so no icons or
+       captions are baked here — only the surface, a drag arrow, and (nightly only) a badge under
+       the app caption. No wordmark banner: the Finder title bar and the app icon already carry
+       the brand, so a baked wordmark would just triplicate it. */
+    .bg {
+        position: relative;
+        width: 640px;
+        height: 400px;
+        overflow: hidden;
+        font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+        /* Light surface reused VERBATIM from the in-app setup screen (apps/client/src/setup.css,
+           light theme): soft indigo/purple/blue glows over the near-white left-pane base (#f2f2f2).
+           A light background keeps Finder's icon captions — which it forces to black for any DMG
+           with a background picture — legible without a baked label plate. Same gradient for both
+           channels; nightly is distinguished by the purple app icon and the Nightly badge below. */
+        background:
+            radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.25) 0%, transparent 50%),
+            radial-gradient(ellipse at 60% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
+            #f2f2f2;
+    }
+
+    /* Muted neutral arrow — a functional cue, kept quiet so the icons carry the colour.
+       Channel-agnostic. Vertically centered on the icon centers (y = 182). */
+    .arrow { position: absolute; top: 159px; left: 274px; width: 92px; height: 46px; }
+
+    /* Nightly badge, baked under the app caption on the nightly channel only. The app icon is
+       centered at x = 180, y = 182, so Finder draws its caption at ~y = 262 and the badge sits
+       just below at ~y = 282. Fine-tune the top on a macOS build, like the icon `contents`. */
+    .beta-badge {
+        display: none;
+        position: absolute;
+        left: 180px; top: 276px; transform: translateX(-50%);
+        font-size: 12px; font-weight: 600; letter-spacing: 0.01em; white-space: nowrap;
+        color: #ffffff; background: #8146b8; border-radius: 4px; padding: 2px 9px 3px;
+    }
+    .variant-nightly .beta-badge { display: block; }
+</style>
+</head>
+<body>
+<div class="bg" id="bg">
+    <svg class="arrow" viewBox="0 0 92 46" aria-hidden="true">
+        <path d="M6 23 H74 M56 7 L80 23 L56 39" fill="none" stroke="#767d88"
+              stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="beta-badge">Nightly</div>
+</div>
+<script>
+    const params = new URLSearchParams(location.search);
+    document.getElementById("bg").classList.add(params.get("variant") === "nightly" ? "variant-nightly" : "variant-stable");
+</script>
+</body>
+</html>

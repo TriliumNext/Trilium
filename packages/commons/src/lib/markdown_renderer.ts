@@ -2,6 +2,7 @@ import { Marked, type MarkedOptions, Renderer, type Token, type Tokens } from "m
 import markedFootnote from "marked-footnote";
 
 import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
+import { escapeHtml } from "./utils.js";
 
 type TaskListItem = Tokens.ListItem & { _taskState?: string };
 
@@ -83,6 +84,8 @@ import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEdit
 import {
     createCommentExtension,
     createHighlightExtension,
+    createLiteralTildeExtension,
+    createTabsExtensions,
     createTransclusionExtension,
     createWikiLinkExtension,
     transclusionExtension,
@@ -183,21 +186,14 @@ export interface RenderToHtmlOptions {
      */
     taskStates?: TaskStateDef[];
     /**
-     * Enable Obsidian-specific Markdown syntax: `==highlight==` → `<mark>` and
-     * `%% comment %%` → an HTML comment. Off by default so generic Markdown import,
-     * paste and the live editor preview are unaffected — only the Obsidian importer
-     * opts in.
+     * Enable Obsidian-specific Markdown syntax: `%% comment %%` → an HTML comment,
+     * plus Obsidian callouts. Off by default so generic Markdown import, paste and
+     * the live editor preview are unaffected — only the Obsidian importer opts in.
+     *
+     * Note that `==highlight==` is *not* gated on this: it is supported everywhere,
+     * since it is the de-facto standard highlight syntax outside of GFM.
      */
     obsidian?: boolean;
-}
-
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
 }
 
 const NAMED_ENTITIES: Record<string, string> = {
@@ -329,21 +325,40 @@ function extractFormulas(text: string): { processedText: string; placeholderMap:
     // another `$` — and the body may not contain a `$`. This mirrors GitHub: mismatched
     // runs like `$$e=mc^2$` stay literal text rather than producing a malformed formula
     // (a stray `$` inside the body would otherwise crash KaTeX with "Can't use '$'").
+    // As in Pandoc, an inline opening `$` is followed by a non-space character and the closing
+    // `$` follows a non-space character and is not followed by a digit, so prices such as
+    // `$15 and $6` stay literal text.
     let processedText = noCodeText
         .replace(/(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)/g, (_, formula: string) => {
             const key = `<!--FORMULA_BLOCK_${timestamp}_${id++}-->`;
-            formulaMap.set(key, `<span class="math-tex">\\[${formula}\\]</span>`);
+            formulaMap.set(key, `<span class="math-tex">\\[${escapeMathFormula(formula)}\\]</span>`);
             return key;
         })
-        .replace(/(?<![\\$])\$(?!\$)([^$\n]+?)\$(?!\$)/g, (_, formula: string) => {
+        .replace(/(?<![\\$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![$\d])/g, (_, formula: string) => {
             const key = `<!--FORMULA_INLINE_${timestamp}_${id++}-->`;
-            formulaMap.set(key, `<span class="math-tex">\\(${formula}\\)</span>`);
+            formulaMap.set(key, `<span class="math-tex">\\(${escapeMathFormula(formula)}\\)</span>`);
             return key;
         });
 
     processedText = restoreFromMap(processedText, codeMap);
 
     return { processedText, placeholderMap: formulaMap };
+}
+
+/**
+ * Escapes the HTML-significant characters (`&`, `<`, `>`) in a math formula body.
+ *
+ * The formula is restored into the HTML string *before* sanitization, so a raw `<`
+ * (e.g. `k<K`) would be parsed as the start of an HTML tag and the sanitizer would
+ * strip everything after it, truncating the equation (#10418). Escaping matches how
+ * CKEditor serializes the equation (a text node, so quotes are intentionally left
+ * untouched) and round-trips cleanly back into the editor.
+ */
+function escapeMathFormula(formula: string): string {
+    return formula
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 function restoreFromMap(text: string, map: Map<string, string>): string {
@@ -354,6 +369,18 @@ function restoreFromMap(text: string, map: Map<string, string>): string {
     /* v8 ignore next -- defensive: every regex match is a map key, so the ?? fallback is unreachable */
     return text.replace(new RegExp(pattern, "g"), (match) => map.get(match) ?? match);
 }
+
+/** Drops the checkbox marked's lexer unshifts among a loose task item's inline tokens. */
+function dropCheckboxes(tokens: Token[] | undefined): Token[] {
+    /* v8 ignore next -- defensive: marked always lexes a paragraph's inline tokens */
+    return (tokens ?? []).filter((token) => token.type !== "checkbox");
+}
+
+/** Matches an item whose raw text ends in a blank line, i.e. one the next item is spaced away from. */
+const BLANK_LINE_AT_END = /\n[ \t]*\n$/;
+
+/** What CKEditor downcasts for the empty paragraph that separates two lists. */
+const EMPTY_PARAGRAPH = "<p>&nbsp;</p>";
 
 /**
  * Keep renderer code up to date with https://github.com/markedjs/marked/blob/master/src/Renderer.ts.
@@ -367,9 +394,21 @@ export class CustomMarkdownRenderer extends Renderer {
     /** Whether to recognise Obsidian's extended callout types, inline titles and fold markers. */
     readonly #obsidianCallouts: boolean;
 
-    constructor(options?: MarkedOptions & { obsidianCallouts?: boolean }) {
+    /**
+     * Configured state name → definition. Consulted by {@link listitem} to attach
+     * the state's `title` (human-readable name) as an HTML `title` attribute on
+     * the emitted `<li>`, matching the CKEditor data downcast — so shared,
+     * read-only and exported HTML all show the same native tooltip on the
+     * task item ("Doing", "Cancelled", …) when hovered.
+     */
+    readonly #stateByName: Map<string, TaskStateDef>;
+
+    constructor(options?: MarkedOptions & { obsidianCallouts?: boolean; taskStates?: TaskStateDef[] }) {
         super(options);
         this.#obsidianCallouts = options?.obsidianCallouts ?? false;
+        this.#stateByName = new Map(
+            (options?.taskStates ?? DEFAULT_TASK_STATES).map((state) => [state.name, state])
+        );
     }
 
     override heading(data: Tokens.Heading): string {
@@ -396,53 +435,77 @@ export class CustomMarkdownRenderer extends Renderer {
     }
 
     override list(token: Tokens.List): string {
-        let result = super.list(token)
-            .replace("\n", "")
-            .trimEnd();
-
-        if (token.items.some((item) => item.task)) {
-            result = result.replace(/^<ul>/, '<ul class="todo-list">');
+        if (!token.ordered && token.items.some((item) => item.task)) {
+            return this.#taskLists(token);
         }
 
-        return result;
+        return super.list(token)
+            .replace("\n", "")
+            .trimEnd();
     }
 
     override checkbox({ checked }: Tokens.Checkbox): string {
         return `<input type="checkbox"${
-            checked ? 'checked="checked" ' : ""
-        }disabled="disabled">`;
+            checked ? ' checked="checked"' : ""
+        } disabled="disabled">`;
     }
 
     override listitem(item: Tokens.ListItem): string {
-        if (item.task) {
-            const taskState = (item as TaskListItem)._taskState;
-            const dataAttr = taskState ? ` data-trilium-task-state="${taskState}"` : "";
-            let itemBody = "";
-            const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
-            if (item.loose) {
-                if (item.tokens[0]?.type === "paragraph") {
-                    item.tokens[0].text = checkbox + item.tokens[0].text;
-                    if (item.tokens[0].tokens && item.tokens[0].tokens.length > 0 && item.tokens[0].tokens[0].type === "text") {
-                        item.tokens[0].tokens[0].text = checkbox + escapeHtml(item.tokens[0].tokens[0].text);
-                        item.tokens[0].tokens[0].escaped = true;
-                    }
-                } else {
-                    item.tokens.unshift({
-                        type: "text",
-                        raw: checkbox,
-                        text: checkbox,
-                        escaped: true
-                    });
-                }
-            } else {
-                itemBody += checkbox;
-            }
-
-            itemBody += `<span class="todo-list__label__description">${this.parser.parse(item.tokens.filter((t) => t.type !== "checkbox"))}</span>`;
-            return `<li${dataAttr}><label class="todo-list__label">${itemBody}</label></li>`;
+        if (!item.task) {
+            return super.listitem(item).trimEnd();
         }
 
-        return super.listitem(item).trimEnd();
+        const taskState = (item as TaskListItem)._taskState;
+        const dataAttr = taskState ? ` data-trilium-task-state="${taskState}"` : "";
+        // Native hover tooltip on the `<li>` — matches the CKEditor data
+        // downcast, so shared / read-only / exported HTML all surface the
+        // state's human-readable title when the task item is hovered.
+        // Skipped when the state has no definition in the current config.
+        const stateDef = taskState ? this.#stateByName.get(taskState) : undefined;
+        const titleText = stateDef?.title || stateDef?.name;
+        const titleAttr = titleText ? ` title="${escapeHtml(titleText)}"` : "";
+        const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
+
+        // CKEditor reads the first block as the label's description and every later block
+        // as a sibling of `</label>`. A loose item wraps that first block in a `paragraph`,
+        // whose `<p>` has to go: `todoItemInputConverter` only upcasts an `<input>` that
+        // opens the item, and `.todo-list__label > input` only styles a direct child of
+        // the label.
+        const blocks = item.tokens.filter(
+            (token) => token.type !== "checkbox" && token.type !== "space"
+        );
+        const [first, ...rest] = blocks;
+        const description = first?.type === "paragraph"
+            ? this.parser.parseInline(dropCheckboxes(first.tokens))
+            : this.parser.parse(blocks.slice(0, 1));
+
+        return `<li${dataAttr}${titleAttr}><label class="todo-list__label">${checkbox}`
+            + `<span class="todo-list__label__description">${description}</span></label>`
+            + `${rest.length > 0 ? this.parser.parse(rest) : ""}</li>`;
+    }
+
+    /**
+     * Renders an unordered list holding task items, opening a new `<ul>` at every blank
+     * line between two items. CKEditor has no loose-list form, and the Markdown export
+     * writes exactly this blank line for two todo lists separated by an empty paragraph,
+     * so importing it back rebuilds the same lists.
+     */
+    #taskLists(token: Tokens.List): string {
+        const groups: Tokens.ListItem[][] = [[]];
+        for (const item of token.items) {
+            groups[groups.length - 1].push(item);
+            if (BLANK_LINE_AT_END.test(item.raw)) {
+                groups.push([]);
+            }
+        }
+
+        return groups
+            .filter((group) => group.length > 0)
+            .map((group) => {
+                const className = group.some((item) => item.task) ? ` class="todo-list"` : "";
+                return `<ul${className}>${group.map((item) => this.listitem(item)).join("")}</ul>`;
+            })
+            .join(EMPTY_PARAGRAPH);
     }
 
     override image(token: Tokens.Image): string {
@@ -526,7 +589,7 @@ export class CustomMarkdownRenderer extends Renderer {
     }
 
     override codespan({ text }: Tokens.Codespan): string {
-        return `<code spellcheck="false">${escapeHtml(text)}</code>`;
+        return `<code>${escapeHtml(text)}</code>`;
     }
 
 }
@@ -545,14 +608,21 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
     // Order is important, especially for wikilinks.
     const extensions = [
         options.transclusion ? createTransclusionExtension(options.transclusion) : transclusionExtension,
-        options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension
+        options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension,
+        createHighlightExtension(),
+        createLiteralTildeExtension(),
+        ...createTabsExtensions()
     ];
     if (options.obsidian) {
-        extensions.push(createHighlightExtension(), createCommentExtension());
+        extensions.push(createCommentExtension());
     }
     marked.use({ extensions });
 
-    const renderer = options.renderer ?? new CustomMarkdownRenderer({ async: false, obsidianCallouts: options.obsidian });
+    const renderer = options.renderer ?? new CustomMarkdownRenderer({
+        async: false,
+        obsidianCallouts: options.obsidian,
+        taskStates: options.taskStates
+    });
     let html = marked.parse(processedText, { async: false, renderer }) as string;
 
     html = restoreFromMap(html, formulaMap);
@@ -563,8 +633,9 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
     }
     html = options.sanitize(html);
 
-    // Add a trailing semicolon to CSS styles.
-    html = html.replaceAll(/(<(img|figure|col).*?style=".*?)"/g, '$1;"');
+    // Sanitization re-serializes a `style` attribute without the trailing semicolon CKEditor
+    // writes, which would rewrite a note the first time it is saved after an import.
+    html = html.replaceAll(/(<[a-z][^<>]*\sstyle="[^"]*[^";])"/gi, '$1;"');
 
     // Remove slash for self-closing tags to match CKEditor's approach.
     html = html.replace(/<(\w+)([^>]*)\s+\/>/g, "<$1$2>");

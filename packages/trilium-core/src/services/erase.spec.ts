@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import eraseService from "./erase.js";
 import noteService from "./notes.js";
+import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
+import { dbReady } from "./sql_init.js";
 
 let counter = 0;
 
@@ -38,7 +40,7 @@ function entityChangeFor(entityName: string, entityId: string) {
 }
 
 describe("erase service (real DB)", () => {
-    describe("eraseNotesWithDeleteId", () => {
+    describe("eraseNotesWithDeleteIds", () => {
         it("erases a soft-deleted note plus its dependent branch and attribute, marking entity_changes as erased", () => {
             const note = createNote();
             const noteId = note.noteId;
@@ -57,7 +59,7 @@ describe("erase service (real DB)", () => {
             // Sanity: rows still physically present after a soft delete.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([ deleteId ]));
 
             // The physical rows are gone.
             expect(rowCount("notes", "noteId", noteId)).toBe(0);
@@ -83,7 +85,7 @@ describe("erase service (real DB)", () => {
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(1);
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([ deleteId ]));
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(0);
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
@@ -93,10 +95,36 @@ describe("erase service (real DB)", () => {
             const note = createNote();
             const noteId = note.noteId;
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId("nonexistent-delete-id"));
+            getContext().init(() =>
+                eraseService.eraseNotesWithDeleteIds([ "nonexistent-delete-id" ])
+            );
 
             // The live note is untouched.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
+        });
+
+        it("erases every deletion of a batch, and does nothing for an empty batch", () => {
+            const first = createNote();
+            const second = createNote();
+            const firstDeleteId = `del-batch-a-${counter}`;
+            const secondDeleteId = `del-batch-b-${counter}`;
+
+            getContext().init(() => {
+                first.markAsDeleted(firstDeleteId);
+                second.markAsDeleted(secondDeleteId);
+            });
+
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([]));
+            expect(rowCount("notes", "noteId", first.noteId)).toBe(1);
+
+            getContext().init(() =>
+                eraseService.eraseNotesWithDeleteIds([ firstDeleteId, secondDeleteId ])
+            );
+
+            expect(rowCount("notes", "noteId", first.noteId)).toBe(0);
+            expect(rowCount("notes", "noteId", second.noteId)).toBe(0);
+            expect(entityChangeFor("notes", first.noteId)?.isErased).toBe(1);
+            expect(entityChangeFor("notes", second.noteId)?.isErased).toBe(1);
         });
     });
 
@@ -189,6 +217,29 @@ describe("erase service (real DB)", () => {
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
         });
 
+        it("purges the content the erased attachment held, rather than leaving it for later", () => {
+            const note = createNote();
+            const content = `erase-spec-orphan-${Math.random()}`;
+            const attachment = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "orphan", content })
+            );
+            const blobId = attachment.blobId ?? "";
+            expect(rowCount("blobs", "blobId", blobId)).toBe(1);
+
+            getContext().init(() =>
+                getSql().execute(
+                    "UPDATE attachments SET utcDateScheduledForErasureSince = ? WHERE attachmentId = ?",
+                    ["2000-01-01 00:00:00.000Z", attachment.attachmentId]
+                )
+            );
+
+            getContext().init(() => eraseService.eraseUnusedAttachmentsNow());
+
+            // Dropping the row alone would leave this held by nothing and still on disk until some
+            // later sweep happened to collect it.
+            expect(rowCount("blobs", "blobId", blobId)).toBe(0);
+        });
+
         it("does not erase an attachment that is not scheduled for erasure", () => {
             const note = createNote();
             const attachment = getContext().init(() =>
@@ -215,6 +266,49 @@ describe("erase service (real DB)", () => {
             // Nothing was touched; the note (and everything else) is intact.
             expect(getBecca().notes[noteId]).toBeDefined();
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
+        });
+    });
+
+    describe("startScheduledCleanup", () => {
+        // Kept last in the file: it erases everything already soft-deleted in the shared
+        // fixture DB, which would otherwise pull the ground out from under the tests above.
+        it("erases due notes and scheduled attachments once the periodic timers fire", async () => {
+            const note = createNote();
+            const noteId = note.noteId;
+            getContext().init(() => note.deleteNote());
+
+            const attachmentOwner = createNote();
+            const attachment = getContext().init(() =>
+                attachmentOwner.saveAttachment({ role: "file", mime: "text/plain", title: "cron", content: "x" })
+            );
+            getContext().init(() =>
+                getSql().execute(
+                    "UPDATE attachments SET utcDateScheduledForErasureSince = ? WHERE attachmentId = ?",
+                    ["2000-01-01 00:00:00.000Z", attachment.attachmentId]
+                )
+            );
+
+            const previousEraseAfter = optionService.getOption("eraseEntitiesAfterTimeInSeconds");
+            getContext().init(() => optionService.setOption("eraseEntitiesAfterTimeInSeconds", "0"));
+            vi.useFakeTimers();
+
+            try {
+                eraseService.startScheduledCleanup();
+                // The timers are only registered once the DB is ready.
+                await dbReady;
+                // Long enough for both kickoff timeouts (5/6 min) and the first tick of the
+                // 4-hour note interval and the 1-hour attachment interval.
+                await vi.advanceTimersByTimeAsync(4 * 3600 * 1000);
+
+                expect(rowCount("notes", "noteId", noteId)).toBe(0);
+                expect(rowCount("attachments", "attachmentId", attachment.attachmentId)).toBe(0);
+            } finally {
+                // Dropping the fake clock also discards the intervals, so nothing keeps running.
+                vi.useRealTimers();
+                getContext().init(() =>
+                    optionService.setOption("eraseEntitiesAfterTimeInSeconds", previousEraseAfter)
+                );
+            }
         });
     });
 });

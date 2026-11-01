@@ -109,6 +109,21 @@ describe("parseObject", () => {
         expect(parseObject(page("", [textBlock("b1", "body")])).title).toBe("Untitled");
         expect(parseObject(page("   ", [])).title).toBe("Untitled");
     });
+
+    it("yields an empty page for a snapshot carrying no data at all", () => {
+        expect(parseObject({})).toEqual({
+            id: "",
+            title: "Untitled",
+            content: "",
+            linkTargetIds: [],
+            dateCreated: undefined,
+            dateModified: undefined,
+            properties: [],
+            fileRefs: [],
+            inlineFileIds: [],
+            collection: undefined
+        });
+    });
 });
 
 describe("dates", () => {
@@ -162,5 +177,7 @@ describe("single-collection export", () => {
     it("derives the root title from the export file name, dropping the extension", () => {
         expect(collectionTitleFromFileName("My custom collection.zip")).toBe("My custom collection");
         expect(collectionTitleFromFileName("noext")).toBe("noext");
+        // Nothing but an extension: keep the name rather than titling the root with an empty string.
+        expect(collectionTitleFromFileName(".zip")).toBe(".zip");
     });
 });

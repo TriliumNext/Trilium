@@ -3,8 +3,9 @@ Starting with v0.104.0, some features in Trilium are intentionally disabled in o
 
 *   <a class="reference-link" href="Backend%20scripts.md">Backend scripts</a>, which can run processes on the server, access the file system or bypass security measures.
 *   <a class="reference-link" href="../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, which can be used to exfiltrate important data such as the document secret or cause irreparable damage to the database.
+*   <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation/Network%20Access.md">Network Access</a> for the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>.
 
-To activate either one of them, there are three variants:
+To activate any of them, there are three variants:
 
 *   For the desktop app, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Security_ and toggle the desired option.
     *   This will prompt a system dialog confirming the change. Note that scripts could potentially call this confirmation dialog as well, make sure to accept it only if enabling any of these features is required.

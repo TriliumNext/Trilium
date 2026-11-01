@@ -1,26 +1,40 @@
 import "./NoteDetail.css";
 
 import clsx from "clsx";
+import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
+} from "preact/hooks";
 
-import appContext from "../components/app_context";
+import appContext, { type EventData, type EventNames } from "../components/app_context";
+import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
 import dialog from "../services/dialog";
+import froca from "../services/froca";
 import { t } from "../services/i18n";
+import { endLivePrint, getLivePrintTarget, printLiveInBrowser } from "../services/live_print";
+import { stopBackgroundMedia } from "../services/media_playback";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
-import { isElectron } from "../services/utils";
+import { isElectron, isMobile } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import Button from "./react/Button";
-import { useDelayedVisibility, useGetContextDataFrom, useNoteContext, useTriliumEvent } from "./react/hooks";
+import {
+    useDelayedVisibility,
+    useGetContextDataFrom,
+    useLegacyComponentElement,
+    useNoteContext,
+    useParentClass,
+    useTriliumEvent
+} from "./react/hooks";
 import Icon from "./react/Icon";
 import NoItems from "./react/NoItems";
 import { NoteListWithLinks } from "./react/NoteList";
-import { ContainerVisibilityContext } from "./react/react_utils";
+import { ContainerVisibilityContext, ParentComponent } from "./react/react_utils";
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
 /**
@@ -39,29 +53,12 @@ export default function NoteDetail() {
     const { note, type, mime, noteContext, parentComponent } = useNoteInfo();
     const { ntxId, viewScope } = noteContext ?? {};
     const isFullHeight = checkFullHeight(noteContext, type);
+    const fillsPane = checkFillsPane(noteContext, type);
+    useParentClass(containerRef, "detail-full-height", isFullHeight);
+    useParentClass(containerRef, "detail-fills-pane", fillsPane);
     const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
     const widgetRequestId = useRef(0);
-
-    // Defer loading for tabs that haven't been active yet (e.g. on app refresh).
-    // A tab can hold multiple splits; activating the tab makes all of them visible at once, so deferral
-    // is keyed on the whole tab (the main context) rather than the individual split. Keying it on the
-    // active split would leave the non-focused split of the active tab blank until it's clicked.
-    // Special contexts (ntxId starting with "_", e.g. popup editor) are always considered active.
-    const isSpecialContext = ntxId?.startsWith("_") ?? false;
-    const isInActiveTab = () =>
-        isContextInActiveTab(noteContext, appContext.tabManager.getActiveMainContext()?.ntxId);
-    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => isSpecialContext || isInActiveTab());
-    useEffect(() => {
-        if (!hasTabBeenActive && isInActiveTab()) {
-            setHasTabBeenActive(true);
-        }
-    }, [ noteContext, hasTabBeenActive ]); // eslint-disable-line react-hooks/exhaustive-deps
-    useTriliumEvent("activeNoteChanged", () => {
-        if (!hasTabBeenActive && isInActiveTab()) {
-            setHasTabBeenActive(true);
-        }
-    });
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -72,7 +69,7 @@ export default function NoteDetail() {
     };
 
     useEffect(() => {
-        if (!type || !hasTabBeenActive) return;
+        if (!type) return;
         const requestId = ++widgetRequestId.current;
 
         if (!noteTypesToRender[type]) {
@@ -91,14 +88,14 @@ export default function NoteDetail() {
         } else {
             setActiveNoteType(type);
         }
-    }, [ note, viewScope, type, noteTypesToRender, hasTabBeenActive ]);
+    }, [ note, viewScope, type, noteTypesToRender ]);
 
     // Detect note type changes.
     useTriliumEvent("entitiesReloaded", async ({ loadResults }) => {
         if (!note) return;
 
         // we're detecting note type change on the note_detail level, but triggering the noteTypeMimeChanged
-        // globally, so it gets also to e.g. ribbon components. But this means that the event can be generated multiple
+        // globally, so it also reaches widgets outside the note detail. But this means that the event can be generated multiple
         // times if the same note is open in several tabs.
 
         if (note.noteId
@@ -135,12 +132,20 @@ export default function NoteDetail() {
         }
     });
 
+    // A focus requested while the note is still switching (e.g. right after creating it) reaches
+    // a type widget that is hidden or not mounted yet, so it is sent again once the new one shows.
+    const isTypeWidgetShown = !!note && note.noteId === noteContext?.noteId && !!type && activeNoteType === type;
+    const requestDetailFocus = useDeferredDetailFocus(isTypeWidgetShown,
+        (data) => parentComponent.handleEventInChildren("focusOnDetail", data));
+    useTriliumEvent("focusOnDetail", (data) => {
+        if (data.ntxId === ntxId) requestDetailFocus(data);
+    });
+
     // Automatically focus the editor.
     useTriliumEvent("activeNoteChanged", ({ ntxId: eventNtxId }) => {
         if (eventNtxId != ntxId) return;
-        // Restore focus to the editor when switching tabs,
-        // but only if the note tree and the note panel (e.g., note title or note detail) are not focused.
-        if (!document.activeElement?.classList.contains("fancytree-title") && !parentComponent.$widget[0].closest(".note-split")?.contains(document.activeElement)) {
+        const noteSplit = parentComponent.$widget[0].closest(".note-split");
+        if (shouldFocusOnNoteChange(document.activeElement, noteSplit, isMobile())) {
             parentComponent.triggerCommand("focusOnDetail", { ntxId });
         }
     });
@@ -150,7 +155,8 @@ export default function NoteDetail() {
         const api = window.electronApi?.printing;
         if (!api) return;
         api.onPrintProgress(({ progress, action }) => showToast(action as "printing" | "exporting_pdf", progress));
-        api.onPrintDone((printReport) => {
+        api.onPrintDone((printReport, liveJobId) => {
+            if (liveJobId !== undefined) endLivePrint(liveJobId);
             toast.closePersistent("printing");
             handlePrintReport(printReport as PrintReport);
         });
@@ -175,42 +181,70 @@ export default function NoteDetail() {
         resolve(component);
     });
 
-    useTriliumEvent("printActiveNote", () => {
-        if (!noteContext?.isActive() || !note) return;
+    useTriliumEvent("printActiveNote", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId) || !note) return;
 
         // PDF printing is handled by the PDF viewer's own print mechanism.
         if (note.type === "file" && note.mime === "application/pdf") return;
 
+        // A render note prints from the screen, keeping its script's state.
+        const liveTarget = getLivePrintTarget(containerRef.current, type);
+
         if (isElectron() && noteContext.notePath) {
-            appContext.triggerCommand("showPrintPreview", { note, notePath: noteContext.notePath });
+            appContext.triggerCommand("showPrintPreview", { note, notePath: noteContext.notePath, liveTarget });
+            return;
+        }
+
+        if (liveTarget) {
+            void printLiveInBrowser(note, liveTarget);
             return;
         }
 
         // Browser fallback: render the print page in a hidden iframe and use window.print().
+        console.debug("[print] Opening the print page for", noteContext.notePath);
         showToast("printing");
         const iframe = document.createElement('iframe');
         iframe.src = `?print#${noteContext.notePath}`;
         iframe.className = "print-iframe";
         document.body.appendChild(iframe);
         iframe.onload = () => {
-            if (!iframe.contentWindow) {
+            const printWindow = iframe.contentWindow;
+            console.debug("[print] The print page loaded", printWindow ? "" : "without a window");
+            if (!printWindow) {
                 toast.closePersistent("printing");
                 document.body.removeChild(iframe);
                 return;
             }
 
-            iframe.contentWindow.addEventListener("note-load-progress", (e) => {
-                showToast("printing", e.detail.progress);
+            printWindow.addEventListener("error", (e) => {
+                console.error("[print] Uncaught error in the print page:", e.error ?? e.message);
+            });
+            printWindow.addEventListener("unhandledrejection", (e) => {
+                console.error("[print] Unhandled rejection in the print page:", e.reason);
             });
 
-            iframe.contentWindow.addEventListener("note-ready", (e) => {
+            // A print page that never reports leaves the toast up and prints nothing.
+            const watchdog = setTimeout(() => console.warn(
+                "[print] The print page has not reported ready; it may have failed to render.",
+                { src: iframe.src, noteType: printWindow.document.body.dataset.noteType }
+            ), 20_000);
+
+            printWindow.addEventListener("note-load-progress", (e) => {
+                console.debug("[print] Progress:", (e as CustomEvent<{ progress: number }>).detail.progress);
+                showToast("printing", (e as CustomEvent<{ progress: number }>).detail.progress);
+            });
+
+            printWindow.addEventListener("note-ready", (e) => {
+                clearTimeout(watchdog);
                 toast.closePersistent("printing");
 
-                if ("detail" in e) {
-                    handlePrintReport(e.detail as PrintReport);
-                }
+                const report = "detail" in e ? e.detail as PrintReport : undefined;
+                console.debug("[print] The print page is ready:", report);
+                handlePrintReport(report);
 
-                iframe.contentWindow?.print();
+                if (report?.type !== "error") {
+                    printWindow.print();
+                }
                 document.body.removeChild(iframe);
             });
         };
@@ -220,7 +254,8 @@ export default function NoteDetail() {
         <div
             ref={containerRef}
             class={clsx("component note-detail", {
-                "full-height": isFullHeight
+                "full-height": isFullHeight,
+                "fills-pane": fillsPane
             })}
         >
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
@@ -240,29 +275,51 @@ export default function NoteDetail() {
 }
 
 /**
- * True when the given context belongs to the active tab, identified by `activeMainNtxId` (the ntxId of
- * the active tab's main context). A tab can hold several splits, but only one of them is the "active"
- * context at a time; every split of the active tab is visible and must load eagerly, so the deferral
- * check is keyed on the tab (the main context), not the individual split.
+ * Whether a note opened in a split focuses its editor, as when switching tabs: not while the note
+ * tree or the split itself (its title or detail) has focus, and never on a phone, where focusing
+ * the editor brings up the keyboard over the note just opened from the tree.
  */
-export function isContextInActiveTab(noteContext: NoteContext | undefined, activeMainNtxId: string | null | undefined): boolean {
-    if (!noteContext || activeMainNtxId == null) {
-        return false;
-    }
+export function shouldFocusOnNoteChange(
+    focused: Element | null, noteSplit: Element | null | undefined, mobile: boolean
+) {
+    if (mobile) return false;
+    return !focused?.classList.contains("fancytree-title") && !noteSplit?.contains(focused);
+}
 
-    return activeMainNtxId === noteContext.getMainContext().ntxId;
+/**
+ * Holds a `focusOnDetail` that arrives while `isReady` is false and calls `replay` with it once
+ * `isReady` turns true. A request made while ready is left to the widgets that already received it.
+ */
+export function useDeferredDetailFocus(isReady: boolean, replay: (data: EventData<"focusOnDetail">) => void) {
+    const pendingRef = useRef<EventData<"focusOnDetail"> | undefined>(undefined);
+    const replayRef = useRef(replay);
+    replayRef.current = replay;
+
+    useEffect(() => {
+        const pending = pendingRef.current;
+        if (!isReady || !pending) return;
+        pendingRef.current = undefined;
+        replayRef.current(pending);
+    }, [ isReady ]);
+
+    return useCallback((data: EventData<"focusOnDetail">) => {
+        if (!isReady) pendingRef.current = data;
+    }, [ isReady ]);
 }
 
 /**
  * Wraps a single note type widget, in order to keep it in the DOM even after the user has switched away to another note type. This allows faster loading of the same note type again. The properties are cached, so that they are updated only
  * while the widget is visible, to avoid rendering in the background. When not visible, the DOM element is simply hidden.
  */
-function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { Element: (props: TypeWidgetProps) => VNode, type: ExtendedNoteType, isVisible: boolean, isFullHeight: boolean, props: TypeWidgetProps }) {
+export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { Element: (props: TypeWidgetProps) => VNode, type: ExtendedNoteType, isVisible: boolean, isFullHeight: boolean, props: TypeWidgetProps }) {
     // False when an enclosing dialog (e.g. the quick-edit popup) is hidden but kept in the DOM, so a widget
     // there is told it isn't displayed even though it's the context's current type — letting a media player
     // inside a closed popup stop, just like one in a navigated-away tab.
     const containerVisible = useContext(ContainerVisibilityContext);
     const [ cachedProps, setCachedProps ] = useState(props);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const eventGate = useTypeWidgetEventGate(isVisible && containerVisible);
+    useLegacyComponentElement(wrapperRef, eventGate);
 
     useEffect(() => {
         if (isVisible) {
@@ -271,17 +328,83 @@ function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { 
         // When not visible, keep the old props to avoid re-rendering in the background.
     }, [ props, isVisible ]);
 
+    // This widget stays mounted (just hidden) when the user switches note type —
+    // e.g. read-only ↔ editable text — and also when an enclosing dialog such as the quick-edit
+    // popup is closed but kept in the DOM. A hidden but still-mounted embedded player keeps playing
+    // audio/video in the background, so stop it in either case.
+    useEffect(() => {
+        if (!isVisible || !containerVisible) {
+            stopBackgroundMedia(wrapperRef.current);
+        }
+    }, [ isVisible, containerVisible ]);
+
     const typeMapping = TYPE_MAPPINGS[type];
     return (
         <div
+            ref={wrapperRef}
             className={`${typeMapping.className} ${typeMapping.printable ? "note-detail-printable" : ""} ${isVisible ? "visible" : "hidden-ext"}`}
             style={{
                 height: isFullHeight ? "100%" : ""
             }}
         >
-            <Element {...cachedProps} isVisible={isVisible && containerVisible} />
+            <ParentComponent.Provider value={eventGate}>
+                <Element
+                    {...cachedProps}
+                    parentComponent={eventGate}
+                    isVisible={isVisible && containerVisible}
+                />
+            </ParentComponent.Provider>
         </div>
     );
+}
+
+/**
+ * Events that reach a type widget while `NoteDetailWrapper` hides it. They keep its state current
+ * for when it is displayed again; every other event is meant for the displayed type widget only.
+ */
+const EVENTS_FOR_HIDDEN_TYPE_WIDGETS = new Set<EventNames>([
+    "entitiesReloaded", "frocaReloaded", "refreshEmbeddedNote", "searchRefreshed", "apiLogMessages",
+    "sqlQueryResults",
+    "themeChanged", "protectedSessionStarted", "readOnlyTemporarilyDisabled", "contextDataChanged",
+    "setNoteContext", "activeContextChanged", "activeNoteChanged", "hoistedNoteChanged",
+    "noteSwitched", "noteSwitchedAndActivated", "beforeNoteSwitch", "noteTypeMimeChanged",
+    "beforeNoteContextRemove"
+]);
+
+/**
+ * Stands between `NoteDetail`'s component and one cached type widget, and stops the events in
+ * `handleEventInChildren()` that a hidden type widget must not answer. It takes the host's
+ * `componentId`, so the type widget's saves still count as `NoteDetail`'s own.
+ */
+class TypeWidgetEventGate extends Component {
+    isDisplayed = true;
+
+    constructor(host: Component | null) {
+        super();
+        if (host) {
+            this.componentId = host.componentId;
+            this.setParent(host);
+        }
+    }
+
+    handleEventInChildren<T extends EventNames>(name: T, data: EventData<T>) {
+        if (!this.isDisplayed && !EVENTS_FOR_HIDDEN_TYPE_WIDGETS.has(name)) return null;
+        return super.handleEventInChildren(name, data);
+    }
+}
+
+function useTypeWidgetEventGate(isDisplayed: boolean) {
+    const host = useContext(ParentComponent);
+    const gate = useMemo(() => new TypeWidgetEventGate(host), [ host ]);
+    gate.isDisplayed = isDisplayed;
+
+    useLayoutEffect(() => {
+        if (!host) return;
+        host.child(gate);
+        return () => host.removeChild(gate);
+    }, [ host, gate ]);
+
+    return gate;
 }
 
 /**
@@ -320,8 +443,12 @@ function NoteDetailLoadingOverlay({ noteContext }: { noteContext: NoteContext | 
     );
 }
 
-/** Manages both note changes and changes to the widget type, which are asynchronous. */
-function useNoteInfo() {
+/**
+ * Manages both note changes and changes to the widget type, which are asynchronous.
+ *
+ * Exported for testing.
+ */
+export function useNoteInfo() {
     const { note: actualNote, noteContext, parentComponent } = useNoteContext();
     const [ note, setNote ] = useState<FNote | null | undefined>();
     const [ type, setType ] = useState<ExtendedNoteType>();
@@ -354,7 +481,9 @@ function useNoteInfo() {
         if (eventNoteContext?.ntxId !== noteContext?.ntxId) return;
         refresh();
     });
-    useTriliumEvent("noteTypeMimeChanged", refresh);
+    useTriliumEvent("noteTypeMimeChanged", ({ noteId }) => {
+        if (noteId === actualNote?.noteId) refresh();
+    });
 
     return { note, type, mime, noteContext, parentComponent };
 }
@@ -397,6 +526,8 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = "sqlConsole";
     } else if (note.isMarkdown()) {
         resultingType = "markdown";
+    } else if (note.isIconPack()) {
+        resultingType = "iconPack";
     } else if (type === "code" && (await noteContext?.isReadOnly())) {
         resultingType = "readOnlyCode";
     } else if (type === "text") {
@@ -409,12 +540,38 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = type;
     }
 
+    // A note whose blob was withheld by the sync server (device blob size limit) has empty content;
+    // route it to a placeholder rather than a content widget. This also prevents an editor from
+    // saving the empty stub back over the real content on the server. Only content-backed types are
+    // checked, so blobless notes (docs, launchers, books) don't trigger a needless blob fetch; the
+    // fetch itself is froca-cached and coalesced with the render's own blob load.
+    //
+    // The froca-cache check skips the fetch during delete teardown: when the active note is deleted, a
+    // re-render can still run with the (batched, not-yet-cleared) stale FNote reference. froca_updater
+    // removes the note from the cache before emitting entitiesReloaded, so a missing cache entry means the
+    // note is gone — don't fetch a blob for a note that no longer exists. (The 404 that surfaced this is
+    // actually issued by the still-cached modal-close render racing the delete; froca.getBlob's
+    // silentNotFound handling is what keeps that one quiet. This check just avoids the redundant later fetch.)
+    if (BLOB_BACKED_TYPES.has(resultingType) && froca.getNoteFromCache(note.noteId)) {
+        const blob = await note.getBlob();
+        if (blob?.isStubbed) {
+            resultingType = "blobStub";
+        }
+    }
+
     if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
         resultingType = "protectedSession";
     }
 
     return resultingType;
 }
+
+// Extended note types that render or edit a note's blob content, and so must fall back to the
+// "blobStub" placeholder when that content was not synced to this device.
+const BLOB_BACKED_TYPES = new Set<ExtendedNoteType>([
+    "editableText", "readOnlyText", "editableCode", "readOnlyCode", "markdown",
+    "file", "image", "mermaid", "canvas", "mindMap", "render", "spreadsheet"
+]);
 
 export function checkFullHeight(noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined) {
     if (!noteContext) return false;
@@ -433,6 +590,13 @@ export function checkFullHeight(noteContext: NoteContext | undefined, type: Exte
     return (!noteContext?.hasNoteList() && isFullHeightNoteType)
         || noteContext?.viewScope?.viewMode === "attachments"
         || isBackendNote;
+}
+
+/** Whether the note's page lays itself out across the pane and scrolls inside itself. */
+export function checkFillsPane(
+    noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined
+) {
+    return type === "contentWidget" && noteContext?.noteId === "_spaceUsage";
 }
 
 function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {

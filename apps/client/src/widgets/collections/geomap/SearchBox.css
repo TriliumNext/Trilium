@@ -1,0 +1,70 @@
+/* Top leading corner of the map, using the insets and z-index every overlay here uses (see
+   index.css). */
+.geo-map-container .geo-search-toolbar {
+    top: var(--geo-map-search-top);
+    inset-inline-start: var(--geo-map-inset-start);
+    z-index: 3;
+    gap: 6px;
+    padding-inline: 8px;
+
+    /* The surface the control groups use, rather than the menu background OverlayToolbar defaults
+       to, which stays light over a dark map. */
+    background: var(--geo-map-panel-background);
+    color: var(--geo-map-panel-text-color);
+}
+
+/* The bar is the field, icon and all, so it takes the focus outline an input group takes (see the
+   input group in theme-next/forms.css). Only Next names the colour. */
+.geo-map-container .geo-search-toolbar:focus-within {
+    outline: 3px solid var(--input-focus-outline-color, var(--main-border-color));
+    outline-offset: 0;
+}
+
+.geo-map-container .geo-search-toolbar .geo-search-icon {
+    opacity: 0.7;
+}
+
+/* The toolbar already frames the field, so drop the input's own border and focus outline. */
+.geo-map-container .geo-search-toolbar .geo-search-input {
+    width: 15rem;
+    max-width: 40vw;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.geo-map-container .geo-search-toolbar .geo-search-input:focus {
+    outline: none;
+}
+
+.geo-map-container .geo-search-toolbar .geo-search-input::placeholder {
+    color: inherit;
+    opacity: 0.6;
+}
+
+/*
+ * Sized to the field beside it rather than to a toolbar's own buttons, so the bar keeps its height.
+ *
+ * It holds its place in the bar with nothing to clear rather than leaving it, which would take the
+ * bar's width with it — hidden rather than gone, so it is out of reach of the pointer and the tab
+ * key as well as out of sight.
+ */
+.geo-map-container .geo-search-toolbar .geo-search-clear {
+    --icon-button-size: 24px;
+    width: 24px;
+    height: 24px;
+    visibility: hidden;
+}
+
+.geo-map-container .geo-search-toolbar .geo-search-clear.shown {
+    visibility: visible;
+}
+
+/* The dropdown is portalled to the body, so this is not scoped under .geo-map-container. The rest of
+   a row's shape is the shared entry's (see FormEntryAutocomplete.css). */
+.form-autocomplete-dropdown .geo-search-entry-geocode {
+    font-style: italic;
+    opacity: 0.85;
+}

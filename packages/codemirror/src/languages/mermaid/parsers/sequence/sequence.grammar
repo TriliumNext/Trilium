@@ -1,0 +1,114 @@
+@top SequenceDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName newlines? |
+  DiagramName newlines subDocument newlines? |
+  DiagramName newlines subDocument (newlines subDocument)+ newlines?
+}
+
+subDocument {
+  LineComment |
+  NodeText Arrow ArrowSuffix? newlines? NodeText ":" MessageText1 |
+  (Create | Destroy)? (Participant | Actor)? NodeText (As NodeText)? |
+  (Activate | Deactivate) NodeText |
+  Note Position NodeText ("," NodeText)? ":" MessageText1 |
+  Keyword MessageText2 |
+  Autonumber |
+  End |
+  Link NodeText ":" MessageText1
+}
+
+MessageText1 {
+  messageText
+}
+
+MessageText2 {
+  messageText
+}
+
+ArrowSuffix {
+  "+" | "-"
+}
+
+Link[group=Keyword1] {
+  link | links
+}
+
+Keyword[group=Keyword1] {
+  alt |
+  and |
+  box |
+  break |
+  critical |
+  else |
+  loop |
+  opt |
+  option |
+  par |
+  rect
+}
+
+DiagramName { kw<"sequenceDiagram"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens messageTextToken from "./tokens.js" { messageText }
+@external tokens textTokens from "./tokens.js" {
+  Activate[group=Keyword1],
+  Autonumber[group=Keyword1],
+  Create[group=Keyword1],
+  Deactivate[group=Keyword1],
+  Destroy[group=Keyword1],
+  End[group=Keyword1],
+  Note[group=Keyword1],
+  Actor[group=Keyword2],
+  As[group=Keyword2],
+  Participant[group=Keyword2],
+  NodeText,
+  Position,
+  alt,
+  and,
+  box,
+  break,
+  critical,
+  else,
+  link,
+  links
+  loop,
+  opt,
+  option,
+  par,
+  rect
+}
+
+@tokens {
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifierChar { @asciiLetter | $[$\u{a1}-\u{10ffff}] }
+  word { identifierChar (identifierChar | @digit)* }
+  identifier { word }
+  Arrow {
+    "->" |
+    "-->" |
+    "->>" |
+    "-->>" |
+    "-x" |
+    "--x" |
+    "-)" |
+    "--)"
+  }
+
+  @precedence {
+    newlines,
+    spaces,
+    Arrow,
+    identifier
+  }
+}
+
+@external propSource sequenceHighlighting from "./highlight.js"

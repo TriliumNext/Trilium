@@ -1,0 +1,69 @@
+.modal.add-provider-modal {
+    /* Sized against the three steps, which trade off one for one: every pixel of frame
+       is a pixel less scrolling in the provider list (far the tallest — four group
+       cards, seven rows) and a pixel more empty space under the connection step (the
+       shortest — a logo and one or two fields). This sits nearer the tall end because
+       the model list, whose length isn't known until it loads, is the step that most
+       wants the room. */
+    --wizard-body-height: 40rem;
+
+    .tn-card {
+        margin-bottom: 1rem;
+    }
+
+    .no-items {
+        word-break: break-word;
+        text-align: left;
+    }
+
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .tn-card.add-provider-models {
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
+
+        .tn-card-body,
+        .tn-card-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+    }
+
+    /* The picked provider's logo introducing the connection step, following the
+       setup wizard's illustrations: one large centred mark, muted so it stays
+       decoration rather than competing with the fields below it. */
+    .add-provider-illustration {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+        color: var(--muted-text-color);
+        opacity: 0.6;
+
+        .tn-icon {
+            font-size: 80px;
+        }
+    }
+
+    /* Where the notes end up — the distinction the groups exist to draw. Sits at
+       the top of its group's card, ahead of the providers it qualifies. */
+    .add-provider-group-description {
+        margin-bottom: 0.75em;
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+    }
+
+    /* Provider name + its beta badge sitting inline on the card. */
+    .add-provider-card-heading {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .add-provider-beta-badge {
+        --color: var(--link-color, var(--main-text-color));
+    }
+}

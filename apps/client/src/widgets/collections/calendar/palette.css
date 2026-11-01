@@ -1,0 +1,71 @@
+/*
+ * Trilium's palette for FullCalendar's "Forma" theme.
+ *
+ * v7 splits a theme in two: structure — the theme plugin and its theme.css, both taken from npm
+ * unchanged — and colour, which is nothing more than the variables below. So rather than importing
+ * one of the stock palettes and fighting it, we define the same names in terms of Trilium's own.
+ *
+ * That is also why there is no dark-mode branch here. Trilium swaps its whole stylesheet between
+ * light and dark (and between the legacy and Next families), so these read through to whatever is
+ * loaded and follow it on their own.
+ *
+ * Declared on :root rather than scoped to the calendar because FullCalendar portals its day
+ * popover out of the calendar's subtree, where a scoped variable would not reach it. The names are
+ * namespaced, so saying it globally costs nothing.
+ */
+:root {
+    /* Neutral surfaces and text. */
+    --fc-forma-background: var(--main-background-color);
+    --fc-forma-foreground: var(--main-text-color);
+    --fc-forma-faint-foreground: var(--muted-text-color);
+    --fc-forma-muted-foreground: var(--muted-text-color);
+
+    /*
+     * Forma's neutral ramp is a set of translucent overlays — black ones in its light palette,
+     * white ones in its dark. Mixing the text colour into transparent gets both from one
+     * declaration: that colour is already dark on a light theme and light on a dark one, so the
+     * ramp inverts with the theme instead of us keeping two copies of it in step.
+     */
+    --fc-forma-faint: color-mix(in srgb, var(--main-text-color) 3%, transparent);
+    --fc-forma-muted: color-mix(in srgb, var(--main-text-color) 7%, transparent);
+    --fc-forma-strong: color-mix(in srgb, var(--main-text-color) 12%, transparent);
+    --fc-forma-stronger: color-mix(in srgb, var(--main-text-color) 16%, transparent);
+    --fc-forma-strongest: color-mix(in srgb, var(--main-text-color) 20%, transparent);
+
+    /* Borders. The strong one is a grabbable edge (column resizers), so it is stated rather
+       than left to the ordinary border colour. */
+    --fc-forma-border: var(--main-border-color);
+    --fc-forma-muted-border: var(--main-border-color);
+    --fc-forma-strong-border: color-mix(in srgb, var(--main-text-color) 35%, transparent);
+
+    /*
+     * Primary is what Forma marks today with, and draws the now-indicator and focus rings in. The
+     * link colour is the only accent Trilium names, the rest of its palette being neutral, but
+     * spending it here would colour a day header as though it were a link — so the emphasis is
+     * carried by the text colour instead, the same black the chips already lead with.
+     *
+     * The "over" and "down" steps sit either side of it for pressed states, and the foreground is
+     * the page colour, which contrasts with the text colour by construction in either theme.
+     */
+    --fc-forma-primary: var(--main-text-color, #030712);
+    --fc-forma-primary-over: color-mix(in srgb, var(--fc-forma-primary) 85%, var(--main-background-color));
+    --fc-forma-primary-down: color-mix(in srgb, var(--fc-forma-primary) 70%, var(--main-background-color));
+    --fc-forma-primary-foreground: var(--main-background-color);
+
+    /*
+     * Events, read through the same calendar-specific variables the collection already honours so
+     * that a theme customising those keeps its say. Only the Next themes define them, hence the
+     * fallbacks for the legacy pair.
+     *
+     * The accent is the *text* colour, not the background one: Forma spends this on the solid bar
+     * down a chip's leading edge, so handing it Trilium's already-pale #eaeaea left the bar all but
+     * invisible. The body it derives from the same colour is overridden in index.css, Trilium's
+     * chip being a flat grey rather than a tint of its bar.
+     */
+    --fc-forma-event: var(--calendar-coll-event-text-color, var(--main-text-color));
+    --fc-forma-event-contrast: var(--calendar-coll-event-text-color, var(--main-text-color));
+    --fc-forma-background-event: var(--link-color);
+
+    /* The shading a range dragged out on the grid stands in. */
+    --fc-forma-highlight: color-mix(in srgb, var(--link-color) 35%, transparent);
+}

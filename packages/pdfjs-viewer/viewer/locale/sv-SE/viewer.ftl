@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Snabb webbvisning:
 pdfjs-document-properties-linearized-yes = Ja
 pdfjs-document-properties-linearized-no = Nej
 pdfjs-document-properties-close-button = Stäng
+pdfjs-digital-signature-properties-view-certificate = Visa certifikat
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Orsak: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Tidsstämpel: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Undersignatur ({ $count })
+       *[other] Undersignaturer ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +187,6 @@ pdfjs-printing-not-ready = Varning: PDF:en är inte klar för utskrift.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Visa/dölj sidofält
-pdfjs-toggle-sidebar-notification-button =
-    .title = Växla sidofält (dokumentet innehåller dokumentstruktur/bilagor/lager)
-pdfjs-toggle-sidebar-button-label = Visa/dölj sidofält
-pdfjs-document-outline-button =
-    .title = Visa dokumentdisposition (dubbelklicka för att expandera/komprimera alla objekt)
-pdfjs-document-outline-button-label = Dokumentöversikt
-pdfjs-attachments-button =
-    .title = Visa Bilagor
-pdfjs-attachments-button-label = Bilagor
-pdfjs-layers-button =
-    .title = Visa lager (dubbelklicka för att återställa alla lager till standardläge)
-pdfjs-layers-button-label = Lager
-pdfjs-thumbs-button =
-    .title = Visa miniatyrer
-pdfjs-thumbs-button-label = Miniatyrer
 pdfjs-current-outline-item-button =
     .title = Hitta aktuellt dispositionsobjekt
 pdfjs-current-outline-item-button-label = Aktuellt dispositionsobjekt
@@ -193,10 +197,6 @@ pdfjs-additional-layers = Ytterligare lager
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Sida { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Sök
     .placeholder = Sök i dokument…
+    .title = Sök
 pdfjs-find-previous-button =
     .title = Hitta föregående förekomst av frasen
 pdfjs-find-previous-button-label = Föregående
@@ -310,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Markera
 pdfjs-editor-highlight-button-label = Markera
 pdfjs-highlight-floating-button1 =
-    .title = Markera
     .aria-label = Markera
+    .title = Markera
 pdfjs-highlight-floating-button-label = Markera
 pdfjs-comment-floating-button =
-    .title = Kommentar
     .aria-label = Kommentar
+    .title = Kommentar
 pdfjs-comment-floating-button-label = Kommentar
 pdfjs-editor-comment-button =
-    .title = Kommentar
     .aria-label = Kommentar
+    .title = Kommentar
 pdfjs-editor-comment-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Lägg till signatur
@@ -392,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Kommentarer
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Stäng sidofältet
     .aria-label = Stäng sidofältet
+    .title = Stäng sidofältet
 pdfjs-editor-comments-sidebar-close-button-label = Stäng sidofältet
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Ser du något anmärkningsvärt? Markera det och lämna en kommentar.
@@ -516,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Alternativ textinställningar för
 pdfjs-editor-alt-text-settings-automatic-title = Automatisk alternativ text
 pdfjs-editor-alt-text-settings-create-model-button-label = Skapa alternativ text automatiskt
 pdfjs-editor-alt-text-settings-create-model-description = Föreslår beskrivningar för att hjälpa personer som inte kan se bilden eller när bilden inte laddas.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = AI-modell för alternativ text ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Körs lokalt på din enhet så att din data förblir privat. Krävs för automatisk alternativ text.
-pdfjs-editor-alt-text-settings-delete-model-button = Ta bort
-pdfjs-editor-alt-text-settings-download-model-button = Hämta
-pdfjs-editor-alt-text-settings-downloading-model-button = Hämtar…
 pdfjs-editor-alt-text-settings-editor-title = Alternativ textredigerare
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Visa alternativ textredigerare direkt när du lägger till en bild
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjälper dig att se till att alla dina bilder har alternativ text.
@@ -731,6 +724,74 @@ pdfjs-new-badge-content = NYTT
 pdfjs-views-manager-waiting-for-file = Överför fil…
 pdfjs-toggle-views-manager-button1 =
     .title = Hantera sidor
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Egenskaper för digital signatur
+    .title = Egenskaper för digital signatur
+pdfjs-digital-signature-properties-button-label = Egenskaper för digital signatur
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Dokumentet signerades med en giltig digital signatur
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokument signerat men { $count } digital signatur kunde inte verifieras
+       *[other] Dokument signerat men { $count } digitala signaturer kunde inte verifieras
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokument signerat med { $count } certifikat som inte är tillförlitligt
+       *[other] Dokument signerat med { $count } certifikat som inte är tillförlitliga
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokument signerat med { $count } utgånget certifikat
+       *[other] Dokument signerat med { $count } utgångna certifikat
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Dokumentet har { $count } ogiltig digital signatur
+       *[other] Dokumentet har { $count } ogiltiga digitala signaturer
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokument signerat med { $count } återkallat certifikat
+       *[other] Dokument signerat med { $count } återkallade certifikat
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Status: Signatur verifierad
+pdfjs-digital-signature-properties-status-invalid = Status: Ogiltig signatur
+pdfjs-digital-signature-properties-status-unknown = Status: Kan inte verifiera (stöds inte)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Certifikat: Tillförlitligt ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certifikat: Ej tillgänglig
+pdfjs-digital-signature-properties-certificate-untrusted = Certifikat: Otillförlitligt
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certifikat: Okänd utfärdare ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certifikat: Självsignerat ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certifikat: Otillförlitlig utfärdare ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Certifikat: Utgånget
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikat: Utgånget ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Certifikat: Återkallat
 
 ## Main menu for adding/removing signatures
 

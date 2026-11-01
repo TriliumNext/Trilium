@@ -3,12 +3,24 @@ import { join, resolve, sep } from "path";
 
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import prefresh from "@prefresh/vite";
-import { defineConfig, type Plugin } from "vite";
+import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+
+import {
+    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+} from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
+const FULL_COVERAGE = { lines: 100, functions: 100, branches: 100, statements: 100 };
+
+// The share pages resolve built-in assets against `assets/v<version>`, the same prefix the server
+// serves them under. Read from trilium-core because that is the version `assetUrlFragment` is
+// built from; `chore:update-version` keeps every package.json in step.
+const coreVersion = JSON.parse(
+    fs.readFileSync(join(__dirname, "../../packages/trilium-core/package.json"), "utf-8")
+).version;
 
 // Watch client files and trigger reload in development
 const clientWatchPlugin = () => ({
@@ -110,7 +122,81 @@ const sqliteWasmPlugin = viteStaticCopy({
     ]
 });
 
+/** Source of the in-app help's images and attachments, and the URL the app requests them under. */
+const HELP_ASSETS_SOURCE = join(__dirname, "../../docs/User Guide");
+const HELP_ASSETS_DEST = join(__dirname, "dist/server-assets/help");
+const HELP_ASSETS_URL = "/server-assets/help/";
+
+const HELP_ASSET_MIME_TYPES: Record<string, string> = {
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    svg: "image/svg+xml",
+    json: "application/json"
+};
+
+/** The guide's own files, as opposed to the content bundle that arrives with the server's assets. */
+function isHelpAsset(sourcePath: string) {
+    return !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json");
+}
+
+/**
+ * Serves the guide's images and attachments beside the content bundle that comes with the
+ * server's assets. They belong to the User Guide rather than to the server, so no other copy step
+ * brings them in, and the markdown they were built from is not needed at runtime.
+ *
+ * Both halves are needed: a build copies them into the output, and the dev server reads them
+ * straight from the guide — without that, requests fall through to the SPA fallback and every
+ * image on a help page comes back as index.html with a 200.
+ */
+function copyHelpAssetsPlugin(): Plugin {
+    return {
+        name: "trilium-copy-help-assets",
+        configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                if (!req.url?.startsWith(HELP_ASSETS_URL)) {
+                    return next();
+                }
+
+                const relativePath = decodeURIComponent(req.url.slice(HELP_ASSETS_URL.length).split("?")[0]);
+                const filePath = join(HELP_ASSETS_SOURCE, relativePath);
+
+                // Same prefix-collision guard as the PDF.js middleware above.
+                if (!resolve(filePath).startsWith(resolve(HELP_ASSETS_SOURCE) + sep) || !isHelpAsset(filePath)) {
+                    return next();
+                }
+
+                // Anything not found here — the content bundle and the tree — is copied in from
+                // the server's assets, so it belongs to the next middleware.
+                if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+                    return next();
+                }
+
+                const extension = filePath.split(".").pop()?.toLowerCase() ?? "";
+                res.setHeader("Content-Type", HELP_ASSET_MIME_TYPES[extension] ?? "application/octet-stream");
+                fs.createReadStream(filePath).pipe(res);
+            });
+        },
+        closeBundle() {
+            if (isDev) {
+                return;
+            }
+
+            fs.cpSync(HELP_ASSETS_SOURCE, HELP_ASSETS_DEST, {
+                recursive: true,
+                dereference: true,
+                filter: isHelpAsset
+            });
+        }
+    };
+}
+
 let plugins: any = [
+    stripUniverHyphenation(),
+    stripUniverEmojiData(),
+    narrowThirdPartySelectors(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
     viteStaticCopy({
@@ -130,12 +216,29 @@ let plugins: any = [
         targets: [
             {
                 src: [
-                    "../../server/src/assets/**/*",
-                    // Exclude the User Guide (~20 MB) since it's not needed in standalone mode.
-                    "!../../server/src/assets/doc_notes/en/User Guide/**"
+                    "../../server/src/assets/**/*"
                 ],
                 dest: "server-assets",
                 rename: { stripBase: 3 }
+            }
+        ]
+    }),
+    copyHelpAssetsPlugin(),
+    // What the share theme's own pages load besides its bundle: the icon-pack fonts the client ships
+    // and the logo, each at the path content_renderer.ts writes into the page. The server answers
+    // these from express.static routes it registers in routes/assets.ts; here they are copied into
+    // the build instead.
+    viteStaticCopy({
+        targets: [
+            {
+                src: "../../client/src/fonts/**/*",
+                dest: "share/assets/fonts",
+                rename: { stripBase: 3 }
+            },
+            {
+                src: "../../server/src/assets/images/**/*",
+                dest: `assets/v${coreVersion}/images`,
+                rename: { stripBase: 4 }
             }
         ]
     }),
@@ -160,7 +263,8 @@ let plugins: any = [
         prefresh(),
         clientWatchPlugin(),
         pdfjsServePlugin()
-    ] : [])
+    ] : []),
+    ...shareTheme({ stubDir: "share/assets" })
 ];
 
 if (!isDev) {
@@ -244,6 +348,47 @@ export default defineConfig(() => ({
             {
                 find: "@client",
                 replacement: join(__dirname, "../client/src")
+            },
+            // Bypass officeparser's `browser` entry — a prebuilt ~2.7 MB monolith that
+            // inlines pdfjs-dist for its PDF-parsing feature. The wrapper bundles the
+            // package's Node ESM entry instead (plus the Buffer polyfill it needs),
+            // keeping only the office-format parsers and the HTML generator (~0.4 MB).
+            // Guarded against upstream layout changes by office_preview.spec.ts.
+            {
+                find: /^officeparser$/,
+                replacement: join(__dirname, "src/stubs/officeparser_entry.ts")
+            },
+            // Heavy optional officeparser dependencies, only reachable via dynamic import
+            // on code paths office-format conversion never executes (PDF parsing, OCR,
+            // PDF generation via puppeteer). Without the stubs, Vite would either emit
+            // their multi-megabyte chunks or fail dev import-analysis on unresolvable
+            // specifiers.
+            {
+                find: /^pdfjs-dist(\/.*)?$/,
+                replacement: join(__dirname, "src/stubs/empty.ts")
+            },
+            {
+                find: /^tesseract\.js$/,
+                replacement: join(__dirname, "src/stubs/empty.ts")
+            },
+            {
+                find: /^puppeteer$/,
+                replacement: join(__dirname, "src/stubs/empty.ts")
+            },
+            // Turnish's `browser` entry parses HTML with the page's `DOMParser` or `document`, but the
+            // Web Worker that runs core has neither. Its Node entry falls back to domino, a DOM written
+            // in plain JavaScript that loads no Node built-ins.
+            {
+                find: /^turnish$/,
+                replacement: join(__dirname, "../../node_modules/turnish/dist/index.node.mjs")
+            },
+            // EJS renders the share pages. Its ESM entry imports `node:fs` and `node:path` for the
+            // file-loading it only reaches through its own `include()` without an `includer`; the
+            // share renderer resolves includes itself or passes an `includer`, so the package's own
+            // browser build serves it and resolves in this bundle.
+            {
+                find: /^ejs$/,
+                replacement: join(__dirname, "../../node_modules/ejs/ejs.min.js")
             }
         ],
         dedupe: [
@@ -286,7 +431,13 @@ export default defineConfig(() => ({
         }
     },
     optimizeDeps: {
-        exclude: ['@sqlite.org/sqlite-wasm', '@triliumnext/core']
+        exclude: ['@sqlite.org/sqlite-wasm', '@triliumnext/core'],
+        // Dynamically imported from the excluded @triliumnext/core, so the dep scanner
+        // never discovers it on its own. Pre-bundling matters beyond warm-up here: the
+        // officeparser alias resolves to CJS internals that only the dep optimizer
+        // converts to ESM in dev — without it, the dev server serves raw CJS and the
+        // import fails in the browser.
+        include: ['officeparser']
     },
     worker: {
         format: "es" as const
@@ -305,15 +456,22 @@ export default defineConfig(() => ({
                 'local-bridge': join(__dirname, 'src', 'local-bridge.ts'),
             },
             output: {
+                // Everything below `src/` carries a content hash so a deployment switches over
+                // atomically: `index.html` is served uncached and can only ever reference chunks
+                // from its own build. Without the hash, a browser holding a still-fresh copy of
+                // one chunk mixes it with newly fetched ones — and since the minifier reassigns
+                // single-letter export names every build, a cross-build import silently binds to
+                // the wrong value ("X is not a function") until the cache expires.
                 entryFileNames: (chunkInfo) => {
-                    // Service worker and other workers should be at root level
-                    if (chunkInfo.name === 'sw') {
-                        return '[name].js';
+                    // The service worker must keep a stable URL: `main.ts` registers it as
+                    // `./sw.js`, and a hash would orphan the previously registered worker.
+                    if (chunkInfo.name === "sw") {
+                        return "[name].js";
                     }
-                    return 'src/[name].js';
+                    return "src/[name]-[hash].js";
                 },
-                chunkFileNames: "src/[name].js",
-                assetFileNames: "src/[name].[ext]"
+                chunkFileNames: "src/[name]-[hash].js",
+                assetFileNames: "src/[name]-[hash].[ext]"
             }
         }
     },
@@ -328,9 +486,34 @@ export default defineConfig(() => ({
             // package dir to match the other apps and the CI upload path.
             ["junit", { outputFile: join(__dirname, "test-output/vitest/junit.xml"), addFileAttribute: true }]
         ],
-        include: [
-            "src/**/*.{test,spec}.{ts,tsx}",
-            "../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: "standalone",
+                    include: ["src/**/*.{test,spec}.{ts,tsx}"]
+                }
+            },
+            // Core runs in a dedicated Web Worker, so its specs run in a scope shaped like one, with
+            // dependencies resolved as the worker bundle resolves them. `ssr.resolve.conditions`
+            // reaches the packages Node loads itself, through `--conditions`.
+            {
+                extends: true,
+                resolve: { conditions: defaultClientConditions },
+                ssr: { resolve: { conditions: ["browser", "development|production"] } },
+                test: {
+                    name: "core",
+                    include: ["../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"],
+                    // The same timeouts as the server runner, which runs these specs too.
+                    hookTimeout: 20_000,
+                    testTimeout: 40_000,
+                    environment: join(__dirname, "src/test_environment_worker.ts"),
+                    alias: {
+                        // The specs make their test images with Jimp, whose `browser` entry is an empty stub.
+                        jimp: join(__dirname, "../../node_modules/jimp/dist/esm/index.js")
+                    }
+                }
+            }
         ],
         coverage: {
             // Absolute path for the same reason as the junit reporter above: the
@@ -358,7 +541,17 @@ export default defineConfig(() => ({
                 // core initialization; it is exercised by the Playwright e2e suite instead.
                 "**/local-server-worker.ts"
             ],
-            reporter: ["text", "html", "lcov"]
+            // Codecov resolves an lcov `SF:` path by matching it against the repo's file list.
+            // Vitest defaults the lcov reporter's `projectRoot` to the Vite `root` — here `src`,
+            // so paths would emit as bare `main.ts` / `../../../packages/trilium-core/src/…`,
+            // which are ambiguous in this monorepo and get attributed to whichever project wins
+            // the match. Anchor to the repo root so every path is unambiguous.
+            reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
+            // Threshold globs match paths relative to the root, `src`.
+            thresholds: {
+                "../../../packages/trilium-core/src/share/**": FULL_COVERAGE,
+                "lightweight/share_provider.ts": FULL_COVERAGE
+            }
         },
         server: {
             deps: {

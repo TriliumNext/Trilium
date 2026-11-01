@@ -1,0 +1,44 @@
+.search-string-editor {
+    .cm-editor {
+        background: transparent;
+        max-height: 12em;
+    }
+
+    .cm-editor.cm-focused {
+        outline: none;
+    }
+
+    .cm-scroller {
+        /* Outweighs the global `.cm-scroller` rule, which puts code notes in the monospace font. */
+        font-family: var(--main-font-family) !important;
+        font-size: inherit;
+        line-height: inherit;
+        /* The max-height above only scrolls against an overflow here. */
+        overflow: auto;
+    }
+
+    .cm-content {
+        padding: 0;
+        caret-color: var(--input-text-color);
+    }
+
+    .cm-line {
+        padding: 0;
+        /* `.search-setting-table div` sets nowrap on every descendant. */
+        white-space: pre-wrap;
+    }
+
+    /* Over a `Popup` (1200, Popup.css): the quick search's results hang off this field, and the
+       lint tooltips have to cover them. */
+    .cm-editor .cm-tooltip {
+        z-index: 1210;
+    }
+
+    .cm-placeholder {
+        /* The hint names several keys, and the field is one line tall. */
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

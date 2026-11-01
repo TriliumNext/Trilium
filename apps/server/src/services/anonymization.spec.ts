@@ -67,13 +67,16 @@ describe("getFullAnonymizationScript", () => {
         expect(script).toContain("'inbox'");
         expect(script).toContain("'archived'");
 
-        // share-specific attributes are intentionally excluded from the keep-list.
+        // Builtin names whose value is user-authored are intentionally excluded from the keep-list, so
+        // that the value gets scrubbed along with the ordinary user attributes.
         expect(script).not.toContain("'shareCredentials'");
         expect(script).not.toContain("'shareAlias'");
+        expect(script).not.toContain("'geolocation'");
+        expect(script).not.toContain("'searchString'");
 
         // Sanity: every other builtin attribute name appears in the keep-list.
         const expectedNames = BUILTIN_ATTRIBUTES
-            .filter((a) => !["shareCredentials", "shareAlias"].includes(a.name))
+            .filter((a) => !("hasUserValue" in a && a.hasUserValue))
             .map((a) => a.name);
         for (const name of expectedNames) {
             expect(script).toContain(`'${name}'`);

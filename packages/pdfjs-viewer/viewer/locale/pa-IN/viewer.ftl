@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = ਤੇਜ਼ ਵੈੱਬ ਝਲਕ:
 pdfjs-document-properties-linearized-yes = ਹਾਂ
 pdfjs-document-properties-linearized-no = ਨਹੀਂ
 pdfjs-document-properties-close-button = ਬੰਦ ਕਰੋ
+pdfjs-digital-signature-properties-view-certificate = ਸਰਟੀਫਿਕੇਟ ਨੂੰ ਵੇਖੋ
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = ਕਾਰਨ: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = ਸਮਾਂ: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] ਅਧੀਨ-ਦਸਤਖ਼ਤ ({ $count })
+       *[other] ਅਧੀਨ-ਦਸਤਖ਼ਤ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +187,6 @@ pdfjs-printing-not-ready = ਸਾਵਧਾਨ: PDF ਨੂੰ ਪਰਿੰਟ ਕ
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = ਬਾਹੀ ਬਦਲੋ
-pdfjs-toggle-sidebar-notification-button =
-    .title = ਬਾਹੀ ਨੂੰ ਬਦਲੋ (ਦਸਤਾਵੇਜ਼ ਖਾਕਾ/ਅਟੈਚਮੈਂਟ/ਪਰਤਾਂ ਰੱਖਦਾ ਹੈ)
-pdfjs-toggle-sidebar-button-label = ਬਾਹੀ ਬਦਲੋ
-pdfjs-document-outline-button =
-    .title = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ ਦਿਖਾਓ (ਸਾਰੀਆਂ ਆਈਟਮਾਂ ਨੂੰ ਫੈਲਾਉਣ/ਸਮੇਟਣ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
-pdfjs-document-outline-button-label = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ
-pdfjs-attachments-button =
-    .title = ਅਟੈਚਮੈਂਟ ਵੇਖਾਓ
-pdfjs-attachments-button-label = ਅਟੈਚਮੈਂਟਾਂ
-pdfjs-layers-button =
-    .title = ਪਰਤਾਂ ਵੇਖਾਓ (ਸਾਰੀਆਂ ਪਰਤਾਂ ਨੂੰ ਮੂਲ ਹਾਲਤ ਉੱਤੇ ਮੁੜ-ਸੈੱਟ ਕਰਨ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
-pdfjs-layers-button-label = ਪਰਤਾਂ
-pdfjs-thumbs-button =
-    .title = ਥੰਮਨੇਲ ਨੂੰ ਵੇਖਾਓ
-pdfjs-thumbs-button-label = ਥੰਮਨੇਲ
 pdfjs-current-outline-item-button =
     .title = ਮੌੌਜੂਦਾ ਖਾਕਾ ਚੀਜ਼ ਲੱਭੋ
 pdfjs-current-outline-item-button-label = ਮੌਜੂਦਾ ਖਾਕਾ ਚੀਜ਼
@@ -193,10 +197,6 @@ pdfjs-additional-layers = ਵਾਧੂ ਪਰਤਾਂ
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = ਸਫ਼ਾ { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ਲੱਭੋ
     .placeholder = …ਦਸਤਾਵੇਜ਼ 'ਚ ਲੱਭੋ
+    .title = ਲੱਭੋ
 pdfjs-find-previous-button =
     .title = ਵਾਕ ਦੀ ਪਿਛਲੀ ਮੌਜੂਦਗੀ ਲੱਭੋ
 pdfjs-find-previous-button-label = ਪਿੱਛੇ
@@ -310,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = ਹਾਈਲਾਈਟ
 pdfjs-editor-highlight-button-label = ਹਾਈਲਾਈਟ
 pdfjs-highlight-floating-button1 =
-    .title = ਹਾਈਲਾਈਟ
     .aria-label = ਹਾਈਲਾਈਟ
+    .title = ਹਾਈਲਾਈਟ
 pdfjs-highlight-floating-button-label = ਹਾਈਲਾਈਟ
 pdfjs-comment-floating-button =
-    .title = ਟਿੱਪਣੀ
     .aria-label = ਟਿੱਪਣੀ
+    .title = ਟਿੱਪਣੀ
 pdfjs-comment-floating-button-label = ਟਿੱਪਣੀ
 pdfjs-editor-comment-button =
-    .title = ਟਿੱਪਣੀ
     .aria-label = ਟਿੱਪਣੀ
+    .title = ਟਿੱਪਣੀ
 pdfjs-editor-comment-button-label = ਟਿੱਪਣੀ
 pdfjs-editor-signature-button =
     .title = ਦਸਤਖ਼ਤ ਜੋੜੋ
@@ -392,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] ਟਿੱਪਣੀਆਂ
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
     .aria-label = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
+    .title = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
 pdfjs-editor-comments-sidebar-close-button-label = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = ਕੀ ਕੁਝ ਧਿਆਨ ਦੇਣ ਯੋਗ ਵੇਖਿਆ ਹੈ? ਇਸ ਨੂੰ ਉਘਾੜੋ ਅਤੇ ਟਿੱਪਣੀ ਦਿਓ।
@@ -516,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = ਚਿੱਤਰ ਬਦਲਵੀਂ
 pdfjs-editor-alt-text-settings-automatic-title = ਆਟੋਮਮੈਟਿਕ ਬਦਲਵੀਂ ਲਿਖਤ
 pdfjs-editor-alt-text-settings-create-model-button-label = ਬਲਦਵੀਂ ਲਿਖਤ ਆਪਣੇ-ਆਪ ਬਣਾਓ
 pdfjs-editor-alt-text-settings-create-model-description = ਚਿੱਤਰ ਨਾ ਵੇਖ ਸਕਣ ਵਾਲੇ ਲੋਕਾਂ ਦੀ ਮਦਦ ਜਾਂ ਜਦ ਵੀ ਚਿੱਤਰਾਂ ਨੂੰ ਲੋਡ ਨਹੀਂ ਜਾ ਸਕਦਾ, ਉਸ ਲਈ ਛੋਟਾ ਵੇਰਵਾ ਦਿਓ।
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = ਬਦਲਵੀ ਲਿਖਤ ਲਈ AI ਮਾਡਲ ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਉੱਤੇ ਲੋਕਲ ਹੀ ਚੱਲਦਾ ਹੋਣ ਕਰਕੇ ਤੁਹਾਡਾ ਡਾਟਾ ਪ੍ਰਾਈਵੇਟ ਹੀ ਰਹਿੰਦਾ ਹੈ। ਆਟੋਮੈਟਿਕ ਬਦਲਵੀਂ ਲਿਖਤ ਲਈ ਚਾਹੀਦਾ ਹੈ।
-pdfjs-editor-alt-text-settings-delete-model-button = ਹਟਾਓ
-pdfjs-editor-alt-text-settings-download-model-button = ਡਾਊਨਲੋਡ
-pdfjs-editor-alt-text-settings-downloading-model-button = …ਨੂੰ ਡਾਊਨਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
 pdfjs-editor-alt-text-settings-editor-title = ਬਦਲਵੀਂ ਲਿਖਤ ਐਡੀਟਰ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = ਜਦੋਂ ਵਿੱਚ ਚਿੱਤਰ ਜੋੜਿਆ ਜਾਵੇ ਤਾਂ ਫ਼ੌਰਨ ਬਦਲਵੀ ਲਿਖਤ ਸੰਪਾਦਕ ਵੇਖਾਓ
 pdfjs-editor-alt-text-settings-show-dialog-description = ਤੁਹਾਡੀ ਮਦਦ ਕਰਦਾ ਹੈ ਕਿ ਤੁਹਾਡੇ ਸਾਰੇ ਚਿੱਤਰਾਂ ਲਈ ਬਦਲਵੀਂ ਲਿਖਤ ਮੌਜੂਦ ਹੋਵੇ।
@@ -731,6 +724,74 @@ pdfjs-new-badge-content = ਨਵਾਂ
 pdfjs-views-manager-waiting-for-file = …ਫ਼ਾਇਲ ਨੂੰ ਅੱਪਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
 pdfjs-toggle-views-manager-button1 =
     .title = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
+    .title = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
+pdfjs-digital-signature-properties-button-label = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = ਦਸਤਾਵੇਜ਼ ਨੂੰ ਵਾਜਬ ਡਿਜੀਟਲ ਦਸਤਖ਼ਤਾਂ ਨਾਲ ਸਾਈਨ ਕੀਤਾ ਗਿਆ ਸੀ
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] ਦਸਤਾਵੇਜ਼ ਨੂੰ ਸਾਈਨ ਤਾਂ ਕੀਤਾ ਗਿਆ ਸੀ ਪਰ { $count } ਡਿਜੀਟਲ ਦਸਤਖ਼ਤ ਨੂੰ ਤਸਦੀਕ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ
+       *[other] ਦਸਤਾਵੇਜ਼ ਨੂੰ ਸਾਈਨ ਤਾਂ ਕੀਤਾ ਗਿਆ ਸੀ ਪਰ { $count } ਡਿਜੀਟਲ ਦਸਤਖ਼ਤਾਂ ਨੂੰ ਤਸਦੀਕ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] ਦਸਤਾਵੇਜ਼ ਨੂੰ { $count } ਸਰਟੀਫਿਕੇਟ ਨਾਲ ਸਾਈਨ ਕੀਤਾ ਗਿਆ ਸੀ, ਜੋ ਭਰੋਸੇਯੋਗ ਨਹੀਂ ਹੈ
+       *[other] ਦਸਤਾਵੇਜ਼ ਨੂੰ { $count } ਸਰਟੀਫਿਕੇਟਾਂ ਨਾਲ ਸਾਈਨ ਕੀਤਾ ਗਿਆ ਸੀ, ਜੋ ਭਰੋਸੇਯੋਗ ਨਹੀਂ ਹਨ
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] ਦਸਤਾਵੇਜ਼ ਨੂੰ { $count } ਮਿਆਦ ਪੁੱਗੇ ਸਰਟੀਫਿਕੇਟ ਨਾਲ ਸਾਈਨ ਕੀਤਾ ਗਿਆ ਸੀ
+       *[other] ਦਸਤਾਵੇਜ਼ ਨੂੰ { $count } ਮਿਆਦ ਪੁੱਗੇ ਸਰਟੀਫਿਕੇਟਾਂ ਨਾਲ ਸਾਈਨ ਕੀਤਾ ਗਿਆ ਸੀ
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] ਦਸਤਾਵੇਜ਼ ਵਿੱਚ { $count } ਅਵੈਧ ਡਿਜੀਟਲ ਦਸਤਖਤ ਹਨ
+       *[other] ਦਸਤਾਵੇਜ਼ ਵਿੱਚ { $count } ਅਵੈਧ ਡਿਜੀਟਲ ਦਸਤਖਤ ਹਨ
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] ਦਸਤਾਵੇਜ਼ 'ਤੇ { $count } ਰੱਦ ਕੀਤੇ ਸਰਟੀਫਿਕੇਟ ਨਾਲ ਦਸਤਖਤ ਕੀਤੇ ਗਏ ਹਨ
+       *[other] ਦਸਤਾਵੇਜ਼ { $count } ਰੱਦ ਕੀਤੇ ਸਰਟੀਫਿਕੇਟਾਂ ਨਾਲ ਦਸਤਖਤ ਕੀਤਾ ਗਿਆ ਹੈ
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = ਸਥਿਤੀ: ਦਸਤਖਤਾਂ ਦੀ ਜਾਂਚ ਕੀਤੀ ਗਈ
+pdfjs-digital-signature-properties-status-invalid = ਸਥਿਤੀ: ਦਸਤਖਤ ਸਹੀ ਨਹੀਂ ਹਨ
+pdfjs-digital-signature-properties-status-unknown = ਸਥਿਤੀ: ਜਾਂਚ ਕਰਨ ਲਈ ਅਸਮਰੱਥ (ਗ਼ੈਰ-ਸਹਾਇਕ)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = ਸਰਟੀਫਿਕੇਟ: ਭਰੋਸਾਕਰਤਾ ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = ਸਰਟੀਫਿਕੇਟ: ਗ਼ੈਰ-ਮੌਜੂਦ
+pdfjs-digital-signature-properties-certificate-untrusted = ਸਰਟੀਫਿਕੇਟ: ਬੇਭਰੋਸੇਯੋਗ
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = ਸਰਟੀਫਿਕੇਟ: ਅਣਪਛਾਤਾ ਜਾਰੀਕਰਤਾ ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = ਸਰਟੀਫਿਕੇਟ: ਸਵੈ-ਦਸਤਖ਼ਤੀ ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = ਸਰਟੀਫਿਕੇਟ: ਬੇਭਰੋਸੇਯੋਗ ਜਾਰੀ ਕਰਤਾ ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = ਸਰਟੀਫਿਕੇਟ: ਮਿਆਦ ਪੁੱਗੀ
+pdfjs-digital-signature-properties-certificate-expired-with-date = ਸਰਟੀਫਿਕੇਟ: ਮਿਆਦ ਪੁੱਗੀ ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = ਸਰਟੀਫਿਕੇਟ: ਰੱਦ ਕੀਤਾ
 
 ## Main menu for adding/removing signatures
 

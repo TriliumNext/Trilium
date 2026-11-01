@@ -1,140 +1,37 @@
-import { getLog, options as optionService } from "@triliumnext/core";
+/**
+ * The server's Node-only contributions to the LLM stack.
+ *
+ * The stack itself lives in `@triliumnext/core`, so the browser-hosted
+ * (standalone) build can run it too. What could not follow it there is anything
+ * that needs Node: the providers that spawn the Claude Code and GitHub Copilot
+ * CLIs, Google's Antigravity ACP server and the Codex ACP adapter, and the skill
+ * sheets, whose catalog is core's while the reading is per-runtime. Core exposes
+ * a seam for each; this is where the server fills them in.
+ *
+ * Each seam is keyed rather than bespoke, so the next host-provided provider is
+ * one more line here and one more entry in core's HOST_PROVIDED_TYPES.
+ */
 
-import { AnthropicProvider } from "./providers/anthropic.js";
-import { GoogleProvider } from "./providers/google.js";
-import { OpenAiProvider } from "./providers/openai.js";
-import type { LlmProvider, ModelInfo } from "./types.js";
+import { registerHostProvider } from "@triliumnext/core/src/services/llm/host_providers.js";
+import { registerSkillReader } from "@triliumnext/core/src/services/llm/skills.js";
+
+import { loadSkillSheet } from "../../core_assets.js";
 
 /**
- * Configuration for a single LLM provider instance.
- * This matches the structure stored in the llmProviders option.
+ * Contribute those pieces to core. Called once from startup, beside the other
+ * registrations there, rather than run as an import side effect: core's own LLM
+ * routes reach the stack directly, so what a chat can use must not depend on
+ * whether some module that happens to import this one was loaded first.
+ *
+ * The providers are registered as loaders, not values: their modules carry the
+ * agent SDKs, and importing them here would put all of that in the startup path
+ * of every install. The registration
+ * seams are light on purpose — core resolves each loader on first use.
  */
-export interface LlmProviderSetup {
-    id: string;
-    name: string;
-    provider: string;
-    apiKey: string;
-    /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
-    baseURL?: string;
+export function registerServerLlmExtensions() {
+    registerHostProvider("claude-agent", async () => new (await import("./providers/claude_agent.js")).ClaudeAgentProvider());
+    registerHostProvider("copilot-agent", async () => new (await import("./providers/copilot_agent.js")).CopilotAgentProvider());
+    registerHostProvider("antigravity-agent", async () => new (await import("./providers/antigravity_agent.js")).AntigravityAgentProvider());
+    registerHostProvider("codex-agent", async () => new (await import("./providers/codex_agent.js")).CodexAgentProvider());
+    registerSkillReader(loadSkillSheet);
 }
-
-/** Factory functions for creating provider instances */
-const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
-    anthropic: (apiKey, baseURL) => new AnthropicProvider(apiKey, baseURL),
-    openai: (apiKey, baseURL) => new OpenAiProvider(apiKey, baseURL),
-    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL)
-};
-
-/** Cache of instantiated providers by their config ID */
-let cachedProviders: Record<string, LlmProvider> = {};
-
-/**
- * Get configured providers from the options.
- */
-function getConfiguredProviders(): LlmProviderSetup[] {
-    try {
-        const providersJson = optionService.getOptionOrNull("llmProviders");
-        if (!providersJson) {
-            return [];
-        }
-        return JSON.parse(providersJson) as LlmProviderSetup[];
-    } catch (e) {
-        getLog().error(`Failed to parse llmProviders option: ${e}`);
-        return [];
-    }
-}
-
-/**
- * Get a provider instance by its configuration ID.
- * If no ID is provided, returns the first configured provider.
- */
-export function getProvider(providerId?: string): LlmProvider {
-    const configs = getConfiguredProviders();
-
-    if (configs.length === 0) {
-        throw new Error("No LLM providers configured. Please add a provider in Options → AI / LLM.");
-    }
-
-    // Find the requested provider or use the first one
-    const config = providerId
-        ? configs.find(c => c.id === providerId)
-        : configs[0];
-
-    if (!config) {
-        throw new Error(`LLM provider not found: ${providerId}`);
-    }
-
-    // Check cache
-    if (cachedProviders[config.id]) {
-        return cachedProviders[config.id];
-    }
-
-    // Create new provider instance
-    const factory = providerFactories[config.provider];
-    if (!factory) {
-        throw new Error(`Unknown LLM provider type: ${config.provider}. Available: ${Object.keys(providerFactories).join(", ")}`);
-    }
-
-    const provider = factory(config.apiKey, config.baseURL);
-    cachedProviders[config.id] = provider;
-    return provider;
-}
-
-/**
- * Get the first configured provider of a specific type (e.g., "anthropic").
- */
-export function getProviderByType(providerType: string): LlmProvider {
-    const configs = getConfiguredProviders();
-    const config = configs.find(c => c.provider === providerType);
-
-    if (!config) {
-        throw new Error(`No ${providerType} provider configured. Please add one in Options → AI / LLM.`);
-    }
-
-    return getProvider(config.id);
-}
-
-/**
- * Check if any providers are configured.
- */
-export function hasConfiguredProviders(): boolean {
-    return getConfiguredProviders().length > 0;
-}
-
-/**
- * Get all models from all configured providers, tagged with their provider type.
- */
-export function getAllModels(): ModelInfo[] {
-    const configs = getConfiguredProviders();
-    const seenProviderTypes = new Set<string>();
-    const allModels: ModelInfo[] = [];
-
-    for (const config of configs) {
-        // Only include models once per provider type (not per config instance)
-        if (seenProviderTypes.has(config.provider)) {
-            continue;
-        }
-        seenProviderTypes.add(config.provider);
-
-        try {
-            const provider = getProvider(config.id);
-            const models = provider.getAvailableModels();
-            for (const model of models) {
-                allModels.push({ ...model, provider: config.provider });
-            }
-        } catch (e) {
-            getLog().error(`Failed to get models from provider ${config.provider}: ${e}`);
-        }
-    }
-
-    return allModels;
-}
-
-/**
- * Clear the provider cache. Call this when provider configurations change.
- */
-export function clearProviderCache(): void {
-    cachedProviders = {};
-}
-
-export type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing } from "./types.js";

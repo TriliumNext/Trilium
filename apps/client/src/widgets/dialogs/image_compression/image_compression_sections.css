@@ -1,0 +1,77 @@
+/* Built on the card's own option row (`.tn-card-option`), so the narrow layout, the stacking and
+   the combo styling reach these without being written again. What is left here is what a
+   compression row needs beyond an ordinary one. */
+.image-compression-section {
+    gap: 10px;
+
+    /* Takes the slack, so every control sits at the trailing edge whatever the title, and never
+       gives any back: an unwrapped title is what widens the dialog holding it. */
+    .tn-card-option-title {
+        flex: 1 0 auto;
+        white-space: nowrap;
+    }
+
+    /* Described, the sentence wraps where a label does not, and the title with it: otherwise a long
+       description pushes the control off the row. */
+    .tn-card-option-label .tn-card-option-title {
+        white-space: normal;
+    }
+
+    /* Where the slider currently is, which the slider itself cannot say. Fixed-width digits so the
+       row holds still as the value is dragged through. */
+    .image-compression-section-value {
+        flex: 0 0 auto;
+        color: var(--muted-text-color);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Wide enough for a four-digit bound and its unit, and no wider: the pair sizes itself to its
+       content otherwise, which would let the unit's translation move the field. */
+    .tn-number-unit-pair {
+        flex: 0 0 auto;
+        width: 11em;
+    }
+
+    /* Right-aligned so the digits end where the toggles below them do. */
+    .image-compression-section-number {
+        text-align: right;
+    }
+
+    .slider {
+        flex: 0 0 auto;
+        width: 140px;
+    }
+
+    .image-compression-section-choice {
+        flex: 0 0 auto;
+    }
+}
+
+.image-compression-choice-menu {
+    max-width: 22em;
+}
+
+/* Indented by the card itself; quieting the title is what marks it as qualifying the row above
+   rather than standing beside it. */
+.image-compression-section-nested .tn-card-option-title {
+    color: var(--muted-text-color);
+}
+
+/* No width left to widen into, so the title wraps rather than running past the card. The bound it
+   otherwise sets on the dialog is a desktop concern only. */
+@container (max-width: 500px) {
+    .image-compression-section .tn-card-option-title {
+        white-space: normal;
+    }
+}
+
+/* Prose rather than a row of controls, so none of the row layout applies to it. A fit-content
+   dialog takes its width from the longest unbroken line in it, and this sentence would otherwise
+   be that line; containment says the part that is true: this row's width does not depend on what
+   is written in it, so the dialog is sized by the rows that should size it. */
+.image-compression-notice {
+    contain: inline-size;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}

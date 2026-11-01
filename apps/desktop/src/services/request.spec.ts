@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const netSentinel = { request: () => ({ on() {}, end() {} }) };
+const netFetch = vi.fn(async (_url: string, _init: RequestInit) => new Response("ok"));
+const netSentinel = { request: () => ({ on() {}, end() {} }), fetch: netFetch };
+const setFetch = vi.fn();
 const isReady = vi.fn(() => true);
 const whenReady = vi.fn(() => Promise.resolve());
 
@@ -14,7 +16,9 @@ vi.mock("electron", () => ({
     }
 }));
 
-const { default: ElectronRequestProvider } = await import("./request.js");
+vi.mock("@triliumnext/server/src/services/resources.js", () => ({ default: { setFetch } }));
+
+const { default: ElectronRequestProvider, setupResourceDownloads } = await import("./request.js");
 
 // `getClient` is protected; expose it through a thin subclass for testing.
 class TestableProvider extends ElectronRequestProvider {
@@ -53,5 +57,23 @@ describe("ElectronRequestProvider", () => {
         });
         expect(client).not.toBe(netSentinel);
         expect(typeof client.request).toBe("function");
+    });
+});
+
+describe("setupResourceDownloads", () => {
+    afterEach(() => {
+        vi.clearAllMocks();
+        isReady.mockReturnValue(true);
+    });
+
+    it("downloads resources through electron.net, once the app is ready", async () => {
+        setupResourceDownloads();
+        const [ [ fetch ] ] = setFetch.mock.calls;
+        const init = { headers: { Range: "bytes=10-" } };
+
+        isReady.mockReturnValue(false);
+        await fetch("https://example.com/model.onnx", init);
+        expect(whenReady).toHaveBeenCalledOnce();
+        expect(netFetch).toHaveBeenCalledExactlyOnceWith("https://example.com/model.onnx", init);
     });
 });

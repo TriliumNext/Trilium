@@ -108,11 +108,9 @@ This might seem creepy to some, but I keep a profile on most people. It contains
 
 Naturally I have a lot of (extended) family members, friends, acquaintances etc. so I need some way to sort them. My main method is to sort them by social circle (work, high school, sports club etc.), sometimes also by their town of residence. Family _circle_ is still too large so the further organization is by _clan_ (as in "Smiths"). Some people are members of several such circles, so they are just cloned into multiple places.
 
-For family specifically it's pretty useful to create [relation map](../Note%20Types/Relation%20Map.md) to visualize relationships:
+For family specifically it's pretty useful to create a <a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a> to visualize relationships:
 
 <figure class="image"><img style="aspect-ratio:941/758;" src="Patterns of personal knowledge_relation-map-family.png" width="941" height="758"></figure>
-
-<a class="reference-link" href="#root/lQcnSv5DMSe1">[missing note]</a>
 
 ### Books
 
@@ -134,7 +132,7 @@ I sort personal diary notes directly under _day note_ (explained above), but it 
 
 I keep all my personal documents (ID, passport, education certificates ...) scanned in the knowledge base. They are [synchronized](../Installation%20%26%20Setup/Synchronization.md) across every PC which provides decent backup and makes them available everywhere.
 
-Advantage compared to e.g. keeping them in Dropbox or Google Drive is that they are not stored on some 3rd party server and they can be encrypted ([protected](../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md)).
+Advantage compared to e.g. keeping them in Dropbox or Google Drive is that they are not stored on some 3rd party server and they can be encrypted (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md">Protected Notes</a>).
 
 ### Inventory
 
@@ -146,7 +144,7 @@ This where I store hard "knowledge" - summarized topics and findings from differ
 
 ### Work knowledge base
 
-I usually keep top level note for the company I currently work at (past jobs are moved elsewhere). I track basic organization of the company (divisions, business units), who is who ([relation maps](../Note%20Types/Relation%20Map.md)) are again useful for visualization), projects I work at etc.
+I usually keep top level note for the company I currently work at (past jobs are moved elsewhere). I track basic organization of the company (divisions, business units), who is who (<a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a>) are again useful for visualization), projects I work at etc.
 
 There's a number of credentials to various company services I need to use. Companies usually have a bunch of complex processes and tools. I record meeting minutes, link to the company wiki (which is usually difficult to find relevant info). In general there's a lot of company specific information I need to know or need have them at hand in a nice structure I can understand. Often it's just copy pasting and reshuffling of existing information into something more understandable for me.
 

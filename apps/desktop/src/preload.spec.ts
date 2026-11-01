@@ -172,14 +172,6 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "close-window", args: [] });
         });
 
-        it("createExtraWindow sends correct IPC message", () => {
-            win().createExtraWindow("#root/abc123");
-            expect(ipcRendererSent).toContainEqual({
-                channel: "create-extra-window",
-                args: [{ extraWindowHash: "#root/abc123" }]
-            });
-        });
-
         it("isAlwaysOnTop uses sendSync", () => {
             ipcRendererSyncResults.set("is-always-on-top:undefined", true);
             expect(win().isAlwaysOnTop()).toBe(true);
@@ -287,6 +279,11 @@ describe("preload script", () => {
             await clip().readText();
             expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-text", args: [] });
         });
+
+        it("readHTML invokes correct IPC channel", async () => {
+            await clip().readHTML();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-html", args: [] });
+        });
     });
 
     describe("shell", () => {
@@ -304,6 +301,14 @@ describe("preload script", () => {
             await shell().openPath("/tmp/test.txt");
             expect(ipcRendererInvoked).toContainEqual({
                 channel: "open-path",
+                args: ["/tmp/test.txt"]
+            });
+        });
+
+        it("showItemInFolder sends correct IPC message", () => {
+            shell().showItemInFolder("/tmp/test.txt");
+            expect(ipcRendererSent).toContainEqual({
+                channel: "show-item-in-folder",
                 args: ["/tmp/test.txt"]
             });
         });
@@ -430,7 +435,9 @@ describe("preload script", () => {
             const listeners = ipcRendererListeners.get("print-done")!;
             expect(listeners).toHaveLength(1);
             listeners[0]({}, { success: true });
-            expect(callback).toHaveBeenCalledWith({ success: true });
+            expect(callback).toHaveBeenCalledWith({ success: true }, undefined);
+            listeners[0]({}, { type: "single-note" }, 3);
+            expect(callback).toHaveBeenLastCalledWith({ type: "single-note" }, 3);
         });
 
         it("removePrintListeners clears both print listeners", () => {
@@ -611,6 +618,40 @@ describe("preload script", () => {
         });
     });
 
+    describe("backupPassphrase", () => {
+        const backupPassphrase = () => getGroup("backupPassphrase");
+
+        it("getStatus invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().getStatus();
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-status",
+                args: []
+            });
+        });
+
+        it("set invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().set("hunter2");
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-set",
+                args: [ "hunter2" ]
+            });
+        });
+
+        it("clear invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().clear();
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-clear",
+                args: []
+            });
+        });
+
+        it("exposes no way to read the passphrase back", () => {
+            const exposed = Object.keys(backupPassphrase()).sort();
+
+            expect(exposed).toEqual([ "clear", "getStatus", "set" ]);
+        });
+    });
+
     describe("onenote", () => {
         const onenote = () => getGroup("onenote");
 
@@ -649,6 +690,84 @@ describe("preload script", () => {
             // The second file has no backing path (a script-built blob / browser drag) → getPathForFile yields "".
             await grantDroppedFiles([{ path: "/data/a.zip" }, { /* no path */ }]);
             expect(ipcRendererInvoked).toContainEqual({ channel: "import-grant-dropped", args: [["/data/a.zip"]] });
+        });
+    });
+
+    describe("dialog", () => {
+        const dialog = () => getGroup("dialog");
+
+        it("pickDirectory forwards the starting location to its IPC channel", async () => {
+            await dialog().pickDirectory({ defaultPath: "/data/backup" });
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [{ defaultPath: "/data/backup" }] });
+        });
+
+        it("pickDirectory may be called without a starting location", async () => {
+            await dialog().pickDirectory();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [undefined] });
+        });
+
+        it("confirmStartOver invokes its IPC channel, passing nothing it could steer", async () => {
+            await dialog().confirmStartOver();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-confirm-start-over", args: [] });
+        });
+    });
+
+    describe("restore", () => {
+        const restore = () => getGroup("restore");
+
+        it("pickBackup invokes the open-dialog IPC channel, passing nothing it could steer", async () => {
+            await restore().pickBackup();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "restore-pick-backup", args: [] });
+        });
+    });
+
+    describe("transcription", () => {
+        const transcription = () => getGroup("transcription");
+
+        it("isSupported, start, stop, getState, renameSpeaker and getRecordingsDirectory invoke their IPC channels", async () => {
+            await transcription().isSupported();
+            await transcription().start("meeting");
+            await transcription().stop();
+            await transcription().getState();
+            await transcription().renameSpeaker("transcript1", "system:1", "Alexandra");
+            await transcription().getRecordingsDirectory();
+            expect(ipcRendererInvoked).toEqual([
+                { channel: "transcription-is-supported", args: [] },
+                { channel: "transcription-start", args: [ "meeting" ] },
+                { channel: "transcription-stop", args: [] },
+                { channel: "transcription-get-state", args: [] },
+                {
+                    channel: "transcription-rename-speaker",
+                    args: [ "transcript1", "system:1", "Alexandra" ]
+                },
+                { channel: "transcription-get-recordings-directory", args: [] }
+            ]);
+        });
+
+        it("onStateChanged relays each state until unsubscribed", () => {
+            const callback = vi.fn();
+            const unsubscribe = transcription().onStateChanged(callback);
+
+            const listeners = ipcRendererListeners.get("transcription-state") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, { status: "recording", noteId: "meeting" });
+            expect(callback).toHaveBeenCalledExactlyOnceWith({ status: "recording", noteId: "meeting" });
+
+            unsubscribe();
+            expect(ipcRendererListeners.has("transcription-state")).toBe(false);
+        });
+
+        it("onLevel relays each source's level until unsubscribed", () => {
+            const callback = vi.fn();
+            const unsubscribe = transcription().onLevel(callback);
+
+            const listeners = ipcRendererListeners.get("transcription-level") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, "microphone", 0.25);
+            expect(callback).toHaveBeenCalledExactlyOnceWith("microphone", 0.25);
+
+            unsubscribe();
+            expect(ipcRendererListeners.has("transcription-level")).toBe(false);
         });
     });
 });

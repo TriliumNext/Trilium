@@ -1,5 +1,5 @@
 import { UpdateAttributeResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { getBecca } from "../../becca/becca.js";
 import BAttribute from "../../becca/entities/battribute.js";

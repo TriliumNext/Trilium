@@ -38,8 +38,6 @@
     "attributes-labels-and-relations": "Attributs (labels et relations)",
     "add-new-label": "Créer un nouveau label",
     "create-new-relation": "Créer une nouvelle relation",
-    "ribbon-tabs": "Onglets du ruban",
-    "toggle-link-map": "Afficher/masquer la carte des liens",
     "other": "Autre",
     "toggle-right-pane": "Afficher/masquer le volet droit, qui inclut la Table des matières et les Mises en évidence",
     "open-note-externally": "Ouvrir la note comme fichier avec l'application par défaut",
@@ -52,8 +50,6 @@
     "copy-without-formatting": "Copier le texte sélectionné sans mise en forme",
     "force-save-revision": "Forcer la création / sauvegarde d'une nouvelle version de la note active",
     "show-help": "Affiche le guide de l'utilisateur intégré",
-    "toggle-book-properties": "Afficher/masquer les Propriétés du Livre",
-    "toggle-classic-editor-toolbar": "Activer/désactiver l'onglet Mise en forme de l'éditeur avec la barre d'outils fixe",
     "show-cheatsheet": "Affiche une fenêtre modale avec des opérations de clavier courantes",
     "toggle-zen-mode": "Active/désactive le mode zen (interface réduite pour favoriser la concentration)",
     "back-in-note-history": "Naviguer à la note précédente dans l'historique",
@@ -66,7 +62,8 @@
     "create-note-into": "Créer une note enfant sous la note active",
     "find-in-text": "Afficher/Masquer le panneau de recherche",
     "toggle-archived-notes": "Afficher/masquer les notes archivées dans l'arborescence des notes",
-    "save-named-revision": "Enregistrer une révision nommée de la note active"
+    "save-named-revision": "Enregistrer une révision nommée de la note active",
+    "peek-right-pane": "Afficher le panneau de droite sous forme de panneau temporaire flottant par-dessus le contenu, qui se ferme lorsqu'il perd le focus"
   },
   "login": {
     "title": "Connexion",
@@ -305,13 +302,6 @@
     "edit-read-only-note": "Modifier une note en lecture seule",
     "add-new-label": "Ajouter une nouvelle étiquette",
     "add-new-relation": "Ajouter une nouvelle relation",
-    "toggle-ribbon-tab-classic-editor": "Basculer l'onglet Mise en forme de l'éditeur avec la barre d'outils fixe",
-    "toggle-ribbon-tab-basic-properties": "Afficher/masquer les Propriétés de base de la note",
-    "toggle-ribbon-tab-book-properties": "Afficher/masquer les Propriétés du Livre",
-    "toggle-ribbon-tab-file-properties": "Afficher/masquer les Propriétés du fichier",
-    "toggle-ribbon-tab-image-properties": "Afficher/masquer les Propriétés de l'image",
-    "toggle-ribbon-tab-owned-attributes": "Afficher/masquer les Attributs propres",
-    "toggle-ribbon-tab-inherited-attributes": "Afficher/masquer les Attributs hérités",
     "toggle-right-pane": "Afficher/Masquer le panneau de droite",
     "print-active-note": "Imprimer la note active",
     "export-active-note-as-pdf": "Exporter la note active en PDF",
@@ -328,22 +318,15 @@
     "reset-zoom-level": "Réinitilaliser le zoom",
     "copy-without-formatting": "Copier sans mise en forme",
     "force-save-revision": "Forcer la sauvegarde de la révision",
-    "toggle-ribbon-tab-promoted-attributes": "Basculer les attributs promus de l'onglet du ruban",
-    "toggle-ribbon-tab-note-map": "Afficher/masquer l’onglet “Carte des notes” du ruban",
-    "toggle-ribbon-tab-note-info": "Basculer l'onglet du ruban Note Info",
-    "toggle-ribbon-tab-note-paths": "Basculer les chemins de notes de l'onglet du ruban",
-    "toggle-ribbon-tab-similar-notes": "Basculer l'onglet du ruban Notes similaires",
     "toggle-note-hoisting": "Activer la focalisation sur la note",
     "unhoist-note": "Désactiver la focalisation sur la note",
     "toggle-archived-notes": "Afficher/Masquer les notes archivées",
-    "save-named-revision": "Enregistrer une révision nommée"
+    "save-named-revision": "Enregistrer une révision nommée",
+    "peek-right-pane": "Aperçu du panneau de droite"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
     "db_not_initialized_server": "Base de données non initialisée, veuillez visitez - http://[your-server-host]:{{port}} pour consulter les instructions d'initialisation de Trilium."
-  },
-  "desktop": {
-    "instance_already_running": "Une instance est déjà en cours d'execution, ouverture de cette instance à la place."
   },
   "weekdayNumber": "Semaine {weekNumber}",
   "quarterNumber": "Trimestre {quarterNumber}",
@@ -386,7 +369,6 @@
     "presentation_slide": "Diapositive de présentation",
     "presentation_slide_first": "Première diapositive",
     "presentation_slide_second": "Deuxième diapositive",
-    "background": "Arrière-plan",
     "markdown-snippet": "Extrait Markdown",
     "code-snippet": "Extrait de code",
     "dashboard": "Tableau de bord"
@@ -429,9 +411,25 @@
     "root-title": "Importation OneNote"
   },
   "notion_import": {
-    "root-title": "Importation Notion"
+    "root-title": "Importation Notion",
+    "markdown-export-unsupported": "Ceci ressemble à un export Notion « Markdown & CSV », que Trilium ne peut pas importer. Veuillez réexporter votre espace de travail Notion au format « HTML » et importer celui-ci à la place.",
+    "subpage-folders-disabled": "Cet export Notion a été créé sans l'option « Create folders for subpages », la hiérarchie des pages ne peut donc pas être reconstituée. Veuillez réexporter depuis Notion avec l'option « Create folders for subpages » activée et importer celui-ci à la place."
   },
   "keep_import": {
     "root-title": "Importation Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Import Anytype",
+    "protobuf-export-unsupported": "Ceci ressemble à un export Anytype « Protobuf », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place.",
+    "markdown-export-unsupported": "Ceci ressemble à un export Anytype « Markdown », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place."
+  },
+  "obsidian_import": {
+    "root-title": "Import Obsidian"
+  },
+  "export": {
+    "zip_filter": "Archive ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "La sélection de fichier a expiré ou n'est pas valide. Veuillez choisir le fichier à nouveau."
   }
 }

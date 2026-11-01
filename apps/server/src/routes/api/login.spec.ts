@@ -91,7 +91,9 @@ describe("Login (sync) API (integration)", () => {
 describe("Login (token) API", () => {
     it("rejects an incorrect password", async () => {
         const req = { body: { password: "wrongpassword" } } as unknown as Request;
-        expect(await loginApiRoute.token(req)).toEqual([401, "Incorrect credential"]);
+        expect(await loginApiRoute.token(req)).toEqual(
+            [401, { message: "Incorrect credential", factor: "password" }]
+        );
     });
 
     it("issues an ETAPI token for the correct password", async () => {
@@ -106,6 +108,8 @@ describe("Login (token) API", () => {
         });
 
         const req = { body: { password: "demo1234", totpToken: "000000" } } as unknown as Request;
-        expect(await cls.init(() => loginApiRoute.token(req))).toEqual([401, "Incorrect credential"]);
+        expect(await cls.init(() => loginApiRoute.token(req))).toEqual(
+            [401, { message: "Incorrect credential", factor: "totp" }]
+        );
     });
 });

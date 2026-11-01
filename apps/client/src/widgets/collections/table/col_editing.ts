@@ -1,22 +1,28 @@
-import { useLegacyImperativeHandlers } from "../../react/hooks";
-import { Attribute } from "../../../services/attribute_parser";
-import { RefObject } from "preact";
-import { Tabulator } from "tabulator-tables";
-import { useRef } from "preact/hooks";
-import { CommandListenerData, EventData } from "../../../components/app_context";
-import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import attributes from "../../../services/attributes";
-import FNote from "../../../entities/fnote";
-import { getAttributeFromField } from "./utils";
-import dialog from "../../../services/dialog";
+import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
 import { t } from "i18next";
+import { RefObject } from "preact";
+import { useRef } from "preact/hooks";
+import { Tabulator } from "tabulator-tables";
+
+import { CommandListenerData, EventData } from "../../../components/app_context";
+import FNote from "../../../entities/fnote";
+import { Attribute } from "../../../services/attribute_parser";
+import attributes from "../../../services/attributes";
 import { executeBulkActions } from "../../../services/bulk_action";
+import dialog from "../../../services/dialog";
+import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
+import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { getAttributeFromField } from "./utils";
 
-export default function useColTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote) {
+export default function useColTableEditing(
+    api: RefObject<Tabulator | null>,
+    attributeDetailWidget: AttributeDetailWidget,
+    parentNote: FNote,
+    newAttributePosition: RefObject<number | undefined>
+) {
 
-    const existingAttributeToEdit = useRef<Attribute>();
-    const newAttribute = useRef<Attribute>();
-    const newAttributePosition = useRef<number>();
+    const existingAttributeToEdit = useRef<Attribute | undefined>(undefined);
+    const newAttribute = useRef<Attribute | undefined>(undefined);
 
     useLegacyImperativeHandlers({
         addNewTableColumnCommand({ referenceColumn, columnToEdit, direction, type }: EventData<"addNewTableColumn">) {
@@ -55,9 +61,7 @@ export default function useColTableEditing(api: RefObject<Tabulator>, attributeD
                 allAttributes: [ attr ],
                 isOwned: true,
                 x: 0,
-                y: 150,
-                focus: "name",
-                hideMultiplicity: true
+                focus: "name"
             });
         },
         async updateAttributeListCommand({ attributes }: CommandListenerData<"updateAttributeList">) {
@@ -74,9 +78,9 @@ export default function useColTableEditing(api: RefObject<Tabulator>, attributeD
             const isRename = (existingAttributeToEdit.current && existingAttributeToEdit.current.name !== name);
             try {
                 if (isRename) {
-                    const oldName = existingAttributeToEdit.current!.name.split(":")[1];
-                    const [ type, newName ] = name.split(":");
-                    await renameColumn(parentNote.noteId, type as "label" | "relation", oldName, newName);
+                    const [ , oldName ] = extractAttributeDefinitionTypeAndName(existingAttributeToEdit.current!.name);
+                    const [ type, newName ] = extractAttributeDefinitionTypeAndName(name);
+                    await renameColumn(parentNote.noteId, type, oldName, newName);
                 }
 
                 if (existingAttributeToEdit.current && (isRename || existingAttributeToEdit.current.isInheritable !== isInheritable)) {
@@ -114,7 +118,7 @@ export default function useColTableEditing(api: RefObject<Tabulator>, attributeD
         existingAttributeToEdit.current = undefined;
     }
 
-    return { newAttributePosition, resetNewAttributePosition };
+    return { resetNewAttributePosition };
 }
 
 async function deleteColumn(parentNoteId: string, type: "label" | "relation", columnName: string) {
@@ -122,12 +126,12 @@ async function deleteColumn(parentNoteId: string, type: "label" | "relation", co
         return executeBulkActions([parentNoteId], [{
             name: "deleteLabel",
             labelName: columnName
-        }], true);
+        }], { includeDescendants: true });
     } else {
         return executeBulkActions([parentNoteId], [{
             name: "deleteRelation",
             relationName: columnName
-        }], true);
+        }], { includeDescendants: true });
     }
 }
 
@@ -137,12 +141,12 @@ async function renameColumn(parentNoteId: string, type: "label" | "relation", or
             name: "renameLabel",
             oldLabelName: originalName,
             newLabelName: newName
-        }], true);
+        }], { includeDescendants: true });
     } else {
         return executeBulkActions([parentNoteId], [{
             name: "renameRelation",
             oldRelationName: originalName,
             newRelationName: newName
-        }], true);
+        }], { includeDescendants: true });
     }
 }

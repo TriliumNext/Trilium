@@ -213,6 +213,20 @@ describe("entity_changes service (real DB)", () => {
                 expect(before).not.toContain(id);
             }
         });
+
+        // A sector is re-queued precisely when the two sides disagree about its contents, which
+        // includes the case where the sync server has lost a change it once served. Keeping the
+        // server's instance ID on the re-queued row would leave that row unpushable (pushChanges
+        // skips it as "the server has this already") and the divergence unrepairable.
+        it("takes ownership of changes stamped with another instance, so they can be pushed again", () => {
+            const foreign = buildEntityChange({ entityId: "9foreignInstance", instanceId: "SOME_OTHER_INSTANCE" });
+            getContext().init(() => entityChangesService.putEntityChange(foreign));
+            expect(readRow("notes", foreign.entityId)?.instanceId).toBe("SOME_OTHER_INSTANCE");
+
+            getContext().init(() => entityChangesService.addEntityChangesForSector("notes", "9"));
+
+            expect(readRow("notes", foreign.entityId)?.instanceId).toBe(getInstanceId());
+        });
     });
 
     describe("fillAllEntityChanges", () => {

@@ -1,0 +1,175 @@
+/**
+ * Server-specific LLM Provider types.
+ * Shared types (LlmMessage, LlmCitation, LlmStreamChunk, LlmChatConfig)
+ * should be imported from @triliumnext/commons.
+ */
+
+import type { LlmAttachmentKind, LlmChatConfig, LlmMessage, LlmReasoningEffort, LlmStreamChunk } from "@triliumnext/commons";
+import type { streamText } from "ai";
+
+import type { ToolApprovals } from "./tool_approval.js";
+import type { WebSearchSetup } from "./web_search.js";
+
+/**
+ * Extended provider config with server-specific options.
+ */
+export interface LlmProviderConfig extends LlmChatConfig {
+    maxTokens?: number;
+    temperature?: number;
+    /**
+     * The search provider named by {@link LlmChatConfig.webSearchProviderId}, resolved by
+     * `runChat()`. When set, web search goes through it instead of the model's built-in search.
+     */
+    webSearch?: WebSearchSetup;
+    /**
+     * Where the turn asks the user about each tool call, set by `runChat()`. Absent, the
+     * tools run unasked.
+     */
+    toolApprovals?: ToolApprovals;
+    /**
+     * The attachment kinds the turn's model reads natively, from its stored selection, set by
+     * `runChat()`. Absent, the provider's own `acceptsAttachment()` decides.
+     */
+    attachmentKinds?: LlmAttachmentKind[];
+}
+
+/**
+ * Result type from streamText - the AI SDK's unified streaming interface.
+ */
+export type StreamResult = ReturnType<typeof streamText>;
+
+/** The steps of a finished turn, one per request to the model. */
+export type TurnSteps = Awaited<StreamResult["steps"]>;
+
+/** What a finished turn reports about itself, in place of what the request named and the listed price. */
+export interface TurnReport {
+    /** Display name of the model that answered. */
+    model?: string;
+    /** What the provider billed for the turn, in USD. */
+    cost?: number;
+}
+
+/**
+ * Pricing per million tokens for a model.
+ */
+export interface ModelPricing {
+    /** Cost per million input tokens in USD */
+    input: number;
+    /** Cost per million output tokens in USD */
+    output: number;
+}
+
+/**
+ * Information about an available model.
+ */
+export interface ModelInfo {
+    /** Model identifier (e.g., "claude-sonnet-4-20250514") */
+    id: string;
+    /** Human-readable name (e.g., "Claude Sonnet 4") */
+    name: string;
+    /** Provider type that owns this model (e.g., "anthropic", "openai") */
+    provider?: string;
+    /** ID of the provider configuration this model was listed from */
+    providerId?: string;
+    /** User-given name of the provider configuration (e.g. "My Ollama") */
+    providerName?: string;
+    /** Pricing per million tokens. Absent for dynamically discovered models with unknown pricing. */
+    pricing?: ModelPricing;
+    /** Whether this is the default model */
+    isDefault?: boolean;
+    /** Maximum context window size in tokens */
+    contextWindow?: number;
+    /** Whether this is a legacy/older model */
+    isLegacy?: boolean;
+    /** Whether this model is pre-selected by default when adding a provider (e.g. excludes legacy and, for Gemini, preview models) */
+    recommended?: boolean;
+    /** Whether usage is covered by a subscription plan rather than metered per token */
+    isSubscription?: boolean;
+    /** The reasoning efforts the model can be run at, weakest first; see `LlmModelInfo`. */
+    reasoningEfforts?: LlmReasoningEffort[];
+    /** The effort used when a chat has not chosen one. */
+    defaultReasoningEffort?: LlmReasoningEffort;
+    /** The attachment kinds the model reads natively; see `LlmModelInfo`. */
+    attachmentKinds?: LlmAttachmentKind[];
+}
+
+export interface LlmProvider {
+    name: string;
+
+    /**
+     * Create a streaming chat completion.
+     * Returns the AI SDK StreamResult which is provider-agnostic.
+     *
+     * @param signal stops the completion and any tool call in progress when the user stops the turn
+     */
+    chat(
+        messages: LlmMessage[],
+        config: LlmProviderConfig,
+        signal?: AbortSignal
+    ): StreamResult;
+
+    /**
+     * Chunk-native alternative to {@link chat} for providers that don't go
+     * through the AI SDK (e.g. the Claude Agent provider, which runs its own
+     * agentic loop in a subprocess). When implemented, the chat route streams
+     * these chunks directly and skips the AI SDK conversion entirely.
+     *
+     * @param signal aborts the underlying agent turn when the client disconnects
+     */
+    chatChunks?(
+        messages: LlmMessage[],
+        config: LlmProviderConfig,
+        signal?: AbortSignal
+    ): AsyncIterable<LlmStreamChunk>;
+
+    /**
+     * Get pricing for a model. Returns undefined if pricing is not available.
+     */
+    getModelPricing(model: string): ModelPricing | undefined;
+
+    /**
+     * Read a finished turn's steps for the model that answered and what the turn was billed. For a
+     * router that picks the model per request, both differ from what the turn asked for.
+     *
+     * @param requestedModel the id the turn asked for
+     * @param modelName the display name of a model in the provider's stored selection, if it is there
+     */
+    describeTurn?(steps: TurnSteps, requestedModel: string, modelName: (id: string) => string | undefined): Promise<TurnReport>;
+
+    /**
+     * Get list of available models for this provider.
+     *
+     * This is the static, curated list — instant and offline-safe. Used for
+     * default-model and display-name lookups, and as the fallback when dynamic
+     * listing is unavailable or fails.
+     */
+    getAvailableModels(): ModelInfo[];
+
+    /**
+     * Dynamically list the models actually available on the provider's
+     * endpoint, merged with curated metadata (names, pricing, context windows)
+     * where known. Optional — providers with a fixed catalog (agent/subscription
+     * providers) omit it and callers fall back to {@link getAvailableModels}.
+     *
+     * Returns the curated list when dynamic listing is unsupported, but a
+     * listing *failure* (bad credentials, unreachable endpoint) rejects so the
+     * add/edit-provider screen can surface it instead of masking a bad
+     * credential as success.
+     */
+    listModels?(): Promise<ModelInfo[]>;
+
+    /**
+     * Of a listed model set, the ids pre-selected by default when the provider
+     * is added or its selection reset. Lives on the provider because the rule is
+     * provider-specific (OpenAI and Anthropic read a recency signal out of their
+     * id shapes; everything else falls back to non-preview, non-legacy), and so
+     * the model picker can stay rule-free and just honour the flag.
+     */
+    recommendedModelIds(models: ModelInfo[]): Set<string>;
+
+    /**
+     * Generate a short title summarizing a message.
+     * Used for auto-renaming chat notes. Should use a fast, cheap model.
+     */
+    generateTitle(firstMessage: string): Promise<string>;
+}

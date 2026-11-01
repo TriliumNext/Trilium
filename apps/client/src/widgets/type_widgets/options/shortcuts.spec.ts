@@ -32,6 +32,13 @@ describe("keyboardEventToShortcut", () => {
         expect(keyboardEventToShortcut(keyEvent({ key: "1", code: "Numpad1", ctrlKey: true }))).toBe("Ctrl+1");
     });
 
+    it("records the plus key as the named 'Plus' token", () => {
+        // On a German/QWERTZ layout "+" is its own key (code "BracketRight"); storing it verbatim as
+        // "Ctrl++" collides with the separator, so it is normalized to a stable "Plus" token.
+        expect(keyboardEventToShortcut(keyEvent({ key: "+", code: "BracketRight", ctrlKey: true }))).toBe("Ctrl+Plus");
+        expect(keyboardEventToShortcut(keyEvent({ key: "+", code: "NumpadAdd", ctrlKey: true }))).toBe("Ctrl+Plus");
+    });
+
     it("maps arrow and space keys to the stored names", () => {
         expect(keyboardEventToShortcut(keyEvent({ key: "ArrowLeft", code: "ArrowLeft", altKey: true }))).toBe("Alt+Left");
         expect(keyboardEventToShortcut(keyEvent({ key: "ArrowUp", code: "ArrowUp", ctrlKey: true }))).toBe("Ctrl+Up");

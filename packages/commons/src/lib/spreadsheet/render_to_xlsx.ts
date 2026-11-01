@@ -3,8 +3,9 @@
  *
  * Unlike the HTML renderer, this is a near-lossless mapping: Univer's cell model mirrors
  * OOXML, so number formats pass through verbatim, the border-style enum maps almost 1:1 to
- * Excel's, and fonts/fills/alignment/merges map directly. The heavy lifting (zip + XML) is
- * delegated to `exceljs`.
+ * Excel's, and fonts/fills/alignment/merges map directly. Data-validation rules (dropdown lists,
+ * numeric/date/text bounds) invert their import counterparts, and a cell's hyperlink becomes an
+ * Excel hyperlink. The heavy lifting (zip + XML) is delegated to `exceljs`.
  *
  * The workbook type subset, sheet selection, and style resolution live in the shared
  * `workbook_model` reader; this module only owns the Univer→OOXML translation.
@@ -12,8 +13,13 @@
 
 import ExcelJS from "exceljs";
 
+import "./exceljs_augmentation.js";
+
 import {
     BorderStyle,
+    type DataValidationRule,
+    getCellDocumentSegments,
+    getDataValidations,
     getFloatingDrawings,
     getVisibleSheets,
     HorizontalAlign,
@@ -21,6 +27,7 @@ import {
     type ICellData,
     type IDrawingCellAnchor,
     isFiniteNumber,
+    type IRange,
     type IStyleData,
     type IWorkbookData,
     type IWorksheetData,
@@ -80,6 +87,7 @@ export async function renderSpreadsheetToXlsx(jsonContent: string, opts: XlsxRen
     const usedNames = new Set<string>();
     for (const sheet of visibleSheets) {
         const ws = writeSheet(out, sheet, uniqueSheetName(sheet.name, usedNames), styles);
+        applyDataValidations(ws, workbook, sheet.id);
         if (opts.resolveImage) {
             await embedImages(out, ws, sheet, workbook, opts.resolveImage);
         }
@@ -252,6 +260,90 @@ function toFinite(value: number | undefined): number {
 
 // #endregion
 
+// #region Data validation
+
+/**
+ * Writes a sheet's Univer data-validation rules (from the SHEET_DATA_VALIDATION_PLUGIN resource)
+ * into the worksheet — the inverse of the importer's `readDataValidations`. Each rule is applied
+ * once per range, because exceljs rejects a multi-range `sqref` on write; contiguous cells are
+ * re-consolidated by exceljs when it serialises. Rules whose type Excel can't represent are skipped.
+ */
+function applyDataValidations(ws: ExcelJS.Worksheet, workbook: IWorkbookData, sheetId: string): void {
+    for (const rule of getDataValidations(workbook, sheetId)) {
+        const validation = buildExcelValidation(rule);
+        /* v8 ignore next -- defensive: an imported rule always carries at least one range */
+        if (!validation || !rule.ranges) continue;
+        for (const range of rule.ranges) {
+            ws.dataValidations.add(rangeToA1(range), validation);
+        }
+    }
+}
+
+/** exceljs's supported data-validation types; Univer types outside this set can't be exported. */
+const EXCEL_VALIDATION_TYPES: ReadonlySet<string> = new Set(["list", "whole", "decimal", "date", "textLength", "custom"]);
+
+/**
+ * Converts a Univer rule to an exceljs `DataValidation`, or null when it can't be represented: a
+ * type with no Excel equivalent (checkbox, none, time), or a list with no options. A `list`/
+ * `listMultiple` becomes an Excel `list`: literal options (a JSON array in `formula1`) are re-joined
+ * into Excel's inline `"a,b,c"` syntax, while a range/name reference is passed through as the
+ * formula. Other types carry their bounds and operator verbatim.
+ */
+function buildExcelValidation(rule: DataValidationRule): ExcelJS.DataValidation | null {
+    if (rule.type === "list" || rule.type === "listMultiple") {
+        const options = parseListOptions(rule.formula1);
+        // An option array that parses but is empty (an import of an inline list of only empty
+        // tokens, e.g. `",,"`) has no dropdown to write, and Excel rejects an empty inline list.
+        if (options) return options.length > 0 ? { type: "list", allowBlank: true, formulae: [`"${options.join(",")}"`] } : null;
+        // A range/name reference passes through; an absent/empty formula has no dropdown to write.
+        if (rule.formula1) return { type: "list", allowBlank: true, formulae: [rule.formula1] };
+        return null;
+    }
+
+    if (!EXCEL_VALIDATION_TYPES.has(rule.type)) return null;
+
+    const formulae = [rule.formula1, rule.formula2].filter((f): f is string => f != null);
+    const validation = { type: rule.type, allowBlank: true, formulae } as ExcelJS.DataValidation;
+    if (rule.operator) validation.operator = rule.operator as ExcelJS.DataValidationOperator;
+    return validation;
+}
+
+/**
+ * Reads a Univer list `formula1` back into its literal options: a JSON-encoded string array (how
+ * the list validator serialises inline options). Returns null when `formula1` is a range/name
+ * reference (not a JSON array), so the caller passes it through as a formula instead.
+ */
+function parseListOptions(formula1: string | undefined): string[] | null {
+    if (formula1 == null) return null;
+    try {
+        const parsed: unknown = JSON.parse(formula1);
+        if (Array.isArray(parsed) && parsed.every((o) => typeof o === "string")) return parsed;
+    } catch {
+        // Not JSON — a range/name reference; fall through.
+    }
+    return null;
+}
+
+/** Converts a 0-based inclusive Univer range to an A1 sqref ("D2" for a single cell, else "D2:E3"). */
+function rangeToA1(range: IRange): string {
+    const start = `${columnLetters(range.startColumn)}${range.startRow + 1}`;
+    if (range.startRow === range.endRow && range.startColumn === range.endColumn) return start;
+    return `${start}:${columnLetters(range.endColumn)}${range.endRow + 1}`;
+}
+
+/** 0-based column index to its Excel letters (0 -> "A", 25 -> "Z", 26 -> "AA"). */
+function columnLetters(index: number): string {
+    let n = index;
+    let letters = "";
+    do {
+        letters = String.fromCharCode(65 + (n % 26)) + letters;
+        n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return letters;
+}
+
+// #endregion
+
 function applyColumns(ws: ExcelJS.Worksheet, sheet: IWorksheetData): void {
     const columnData = sheet.columnData ?? {};
     for (const colStr of Object.keys(columnData)) {
@@ -272,38 +364,65 @@ function applyRows(ws: ExcelJS.Worksheet, sheet: IWorksheetData): void {
     }
 }
 
+/**
+ * The font of Excel's built-in Hyperlink cell style. Excel stores a link's appearance in the cell
+ * when the link is inserted rather than deriving it on open, so a file written from outside Excel
+ * has to carry it: without this a linked cell is clickable but looks like plain text.
+ */
+const HYPERLINK_FONT: Partial<ExcelJS.Font> = { color: { argb: "FF0563C1" }, underline: true };
+
 function writeCell(target: ExcelJS.Cell, cell: ICellData | undefined, styles: Record<string, IStyleData | null>): void {
     if (!cell) return;
 
-    setCellValue(target, cell);
-
+    const isHyperlink = setCellValue(target, cell);
     const style = resolveCellStyle(cell.s, styles);
-    if (!style) return;
 
-    if (style.n?.pattern) target.numFmt = style.n.pattern;
+    if (style) {
+        if (style.n?.pattern) target.numFmt = style.n.pattern;
 
-    const font = buildFont(style);
-    if (font) target.font = font;
+        const font = buildFont(style);
+        if (font) target.font = font;
 
-    const fill = buildFill(style);
-    if (fill) target.fill = fill;
+        const fill = buildFill(style);
+        if (fill) target.fill = fill;
 
-    const alignment = buildAlignment(style);
-    if (alignment) target.alignment = alignment;
+        const alignment = buildAlignment(style);
+        if (alignment) target.alignment = alignment;
 
-    const border = buildBorder(style.bd);
-    if (border) target.border = border;
+        const border = buildBorder(style.bd);
+        if (border) target.border = border;
+    }
+
+    if (isHyperlink) target.font = { ...target.font, ...HYPERLINK_FONT };
 }
 
-function setCellValue(target: ExcelJS.Cell, cell: ICellData): void {
+/** Writes the cell's value, reporting whether it became an Excel hyperlink. */
+function setCellValue(target: ExcelJS.Cell, cell: ICellData): boolean {
     if (cell.f) {
         // Univer stores formulas with a leading "="; exceljs wants it stripped, plus the
         // cached result so the value shows without a recalc.
         target.value = { formula: cell.f.replace(/^=/, ""), result: cell.v ?? undefined } as ExcelJS.CellFormulaValue;
-        return;
+        return false;
     }
-    if (cell.v == null) return;
+
+    // A rich-text cell (a link, mixed formatting) can carry its text only in `p`.
+    const segments = getCellDocumentSegments(cell);
+    const text = segments.map((segment) => segment.text).join("");
+
+    // Excel holds at most one hyperlink per cell, so a document with several linked runs exports
+    // the first target over the whole cell. A number keeps its own value and format instead.
+    const url = isFiniteNumber(cell.v) ? undefined : segments.find((segment) => segment.url)?.url;
+    if (url) {
+        target.value = { text, hyperlink: url } as ExcelJS.CellHyperlinkValue;
+        return true;
+    }
+
+    if (cell.v == null || cell.v === "") {
+        if (text) target.value = text;
+        return false;
+    }
     target.value = cell.v;
+    return false;
 }
 
 function buildFont(style: IStyleData): Partial<ExcelJS.Font> | null {

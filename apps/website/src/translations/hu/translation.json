@@ -31,8 +31,6 @@
         "sync_content": "Használjon saját maga által üzemeltetett vagy felhő alapu példányt, hogy könnyen szinkronizálja a jegyzeteket több eszközön keresztül, és hozzáférjen a mobiltelefonjáról egy PWA segítségével.",
         "protected_notes_title": "Védett jegyzetek",
         "protected_notes_content": "Védje az érzékeny személyes adatokat a jegyzetek titkosításával és a jelszóval védett munkamenet mögötti zárolással.",
-        "jump_to_title": "Gyors keresés és parancsok",
-        "jump_to_content": "Ugorj gyorsan a jegyzetekhez vagy a felhasználói felület parancsaihoz a hierarchia területén, keresve a címüket, a fuzzy illesztéssel, hogy megmagyarázza az elírásokat vagy az enyhe különbségeket.",
         "search_title": "Erőteljes keresés",
         "search_content": "Vagy keressen szöveget a jegyzetekben, és szűkítse le a keresést a szülői jegyzet szűrésével vagy mélységével."
     },

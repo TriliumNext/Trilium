@@ -1,8 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import becca from "../../becca/becca";
 import attributeService from "../../services/attributes";
 import config from "../../services/config";
+import { getLog } from "../../services/log";
+import { getPlatform } from "../../services/platform";
 import scriptService from "../../services/script";
+import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -20,6 +24,17 @@ async function createCodeNote(content: string): Promise<string> {
         { body: { title: "Code note", type: "code", mime: "application/javascript;env=frontend", content } }
     );
     return res.body.note.noteId;
+}
+
+/**
+ * Turns safe mode on, through the platform provider that owns it.
+ *
+ * `process.env` is not that provider on every runtime: the browser build has no `process` and takes
+ * the value from a `?safeMode` URL parameter, so a spec that set the variable directly would leave
+ * the branch untested there. Undone by the `vi.restoreAllMocks()` in `afterEach`.
+ */
+function enterSafeMode() {
+    vi.spyOn(getPlatform(), "getEnv").mockImplementation((key) => (key === "TRILIUM_SAFE_MODE" ? "1" : undefined));
 }
 
 describe("Script API (core)", () => {
@@ -104,6 +119,38 @@ describe("Script API (core)", () => {
             expect(res.body.executionResult).toBe(123);
             expect(spy).toHaveBeenCalledOnce();
         });
+
+        it("rolls back what a failing script wrote, and answers the failure in parts", async () => {
+            const noteId = await createCodeNote("return 0;");
+            const before = getSql().getValue<string>("SELECT title FROM notes WHERE noteId = ?", [noteId]);
+            vi.spyOn(scriptService, "executeNote").mockImplementation(() => {
+                const note = becca.getNoteOrThrow(noteId);
+                note.title = "written by the script";
+                note.save();
+                throw new Error("boom");
+            });
+            const logError = vi.spyOn(getLog(), "error");
+
+            const res = await api.post<{ message: string; noteId: string }>(`/api/script/run/${noteId}`);
+
+            expect(res.status).toBe(500);
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe(before);
+            expect(logError).toHaveBeenCalledWith(expect.stringContaining("boom"));
+            expect(res.body).toEqual({ message: "boom", noteId });
+        });
+
+        it("answers a disabled backend as a failure of the note", async () => {
+            const noteId = await createCodeNote("return 0;");
+            config.Security.backendScriptingEnabled = false;
+            try {
+                const res = await api.post<{ message: string; noteId: string }>(`/api/script/run/${noteId}`);
+                expect(res.status).toBe(500);
+                expect(res.body.noteId).toBe(noteId);
+                expect(res.body.message).toContain("backendScriptingEnabled");
+            } finally {
+                config.Security.backendScriptingEnabled = true;
+            }
+        });
     });
 
     describe("startup bundles", () => {
@@ -132,14 +179,15 @@ describe("Script API (core)", () => {
         });
 
         it("returns no bundles in safe mode", async () => {
-            vi.stubEnv("TRILIUM_SAFE_MODE", "1");
-            try {
-                const res = await api.get<unknown[]>("/api/script/startup");
-                expect(res.status).toBe(200);
-                expect(res.body).toEqual([]);
-            } finally {
-                vi.unstubAllEnvs();
-            }
+            // Seeded with a bundle the route would otherwise return, so an empty answer can only
+            // have come from the safe-mode branch.
+            vi.spyOn(attributeService, "getNotesWithLabel").mockReturnValue([{ noteId: "s" } as any]);
+            vi.spyOn(scriptService, "getScriptBundleForFrontend").mockReturnValue({ script: "s" } as any);
+            enterSafeMode();
+
+            const res = await api.get<unknown[]>("/api/script/startup");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([]);
         });
     });
 
@@ -154,14 +202,13 @@ describe("Script API (core)", () => {
         });
 
         it("returns no widget bundles in safe mode", async () => {
-            vi.stubEnv("TRILIUM_SAFE_MODE", "1");
-            try {
-                const res = await api.get<unknown[]>("/api/script/widgets");
-                expect(res.status).toBe(200);
-                expect(res.body).toEqual([]);
-            } finally {
-                vi.unstubAllEnvs();
-            }
+            vi.spyOn(attributeService, "getNotesWithLabel").mockReturnValue([{ noteId: "w" } as any]);
+            vi.spyOn(scriptService, "getScriptBundleForFrontend").mockReturnValue({ script: "w" } as any);
+            enterSafeMode();
+
+            const res = await api.get<unknown[]>("/api/script/widgets");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([]);
         });
     });
 

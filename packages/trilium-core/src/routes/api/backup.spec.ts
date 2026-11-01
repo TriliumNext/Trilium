@@ -11,8 +11,8 @@ import { CoreApiTester } from "../../test/api_tester";
  * backup service on both runtimes. The two filesystem-touching service calls
  * are stubbed because the underlying platform I/O cannot run against the
  * ephemeral in-memory fixture: on node, better-sqlite3's `.backup()` rejects
- * with `SQLITE_NOTADB` against the in-memory DB; on standalone (happy-dom)
- * there is no OPFS. So `backupNow` and `getBackupContent` are isolated — the
+ * with `SQLITE_NOTADB` against the in-memory DB; on standalone there is no
+ * OPFS. So `backupNow` and `getBackupContent` are isolated — the
  * route's own logic (mapping, filename extraction, headers) is what we assert.
  */
 let api: CoreApiTester;
@@ -54,6 +54,30 @@ describe("Backup API (core)", () => {
                 query: { filePath: "/backups/does-not-exist.db" }
             });
             expect(res.status).toBe(404);
+        });
+
+        it("lets the platform send the file rather than reading it into memory", async () => {
+            // Reading it first is what the route used to do, and Node refuses a file over 2 GiB
+            // outright, so every real backup failed to download with nothing shown to the user.
+            const backup = getBackup() as { sendBackup?: (filePath: string, res: unknown) => boolean };
+            const previous = backup.sendBackup;
+            const sent: string[] = [];
+            backup.sendBackup = (filePath, res) => {
+                sent.push(filePath);
+                (res as { send(body: unknown): unknown }).send("streamed");
+                return true;
+            };
+            const read = vi.spyOn(getBackup(), "getBackupContent");
+
+            const res = await api.get(`/api/database/backup/download`, {
+                query: { filePath: "/backups/Backup 2026-08-07 10-32-21.tnbackup" }
+            });
+
+            expect(res.status).toBe(200);
+            expect(sent).toEqual([ "/backups/Backup 2026-08-07 10-32-21.tnbackup" ]);
+            expect(read).not.toHaveBeenCalled();
+
+            backup.sendBackup = previous;
         });
 
         it("streams the backup content with download headers", async () => {

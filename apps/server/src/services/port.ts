@@ -1,4 +1,4 @@
-import config from "./config.js";
+import config, { DEFAULT_NETWORK_PORT } from "./config.js";
 import { isDev, isElectron } from "./utils.js";
 import dataDir from "./data_dir.js";
 
@@ -20,7 +20,7 @@ if (process.env.TRILIUM_PORT) {
 } else if (isElectron) {
     port = isDev ? 37740 : 37840;
 } else {
-    port = parseAndValidate(config["Network"]["port"] || "3000", `Network.port in ${dataDir.CONFIG_INI_PATH}`);
+    port = parseAndValidate(config["Network"]["port"] || DEFAULT_NETWORK_PORT, `Network.port in ${dataDir.CONFIG_INI_PATH}`);
 }
 
 export default port;

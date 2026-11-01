@@ -1,0 +1,130 @@
+# Kanban
+
+kanban
+
+==>
+
+KanbanDiagram(DiagramName)
+
+# Column title
+
+kanban
+  Todo
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle))
+
+# Card without id
+
+kanban
+  Todo
+    [Create Documentation]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(Node(CardText)))
+
+# Card with id
+
+kanban
+  Todo
+    docs[Create Blog about the new diagram]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(NodeId,Node(CardText)))
+
+# Column with id
+
+kanban
+  id6[In progress]
+
+==>
+
+KanbanDiagram(DiagramName,Card(NodeId,Node(CardText)))
+
+# Card with metadata
+
+kanban
+  id6[In progress]
+    id8[Design grammar]@{ assigned: 'knsv' }
+
+==>
+
+KanbanDiagram(DiagramName,Card(NodeId,Node(CardText)),Card(NodeId,Node(CardText),Metadata))
+
+# Full board
+
+kanban
+  Todo
+    [Create Documentation]
+    docs[Create Blog about the new diagram]
+  id6[In progress]
+    id8[Design grammar]
+  id9[Ready for deploy]
+    id10[Test]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(Node(CardText)),Card(NodeId,Node(CardText)),Card(NodeId,Node(CardText)),Card(NodeId,Node(CardText)),Card(NodeId,Node(CardText)),Card(NodeId,Node(CardText)))
+
+# Comment
+
+kanban
+  %% a comment
+  Todo
+
+==>
+
+KanbanDiagram(DiagramName,LineComment,Column(ColumnTitle))
+
+# Card id with a hyphen
+
+kanban
+  todo
+    my-card[Task]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(NodeId,Node("[",CardText,"]")))
+
+# Space between a card id and its text
+
+kanban
+  todo
+    id1 [Task]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(NodeId,Node("[",CardText,"]")))
+
+# Card id with a parenthesis
+
+kanban
+  todo
+    a(b)[Task]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(Node(⚠,CardText,"]")))
+
+# Empty card
+
+kanban
+  todo
+    id1[]
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(NodeId,Node("[","]")))
+
+# Unclosed metadata
+
+kanban
+  todo
+    id1[Task]@{ priority: high
+
+==>
+
+KanbanDiagram(DiagramName,Column(ColumnTitle),Card(NodeId,Node("[",CardText,"]"),Metadata))

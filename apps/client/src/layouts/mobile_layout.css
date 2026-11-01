@@ -2,6 +2,13 @@
     color: var(--main-background-color) !important;
 }
 
+@media (max-width: 991px) {
+    body.mobile:not(.ios):is(.context-menu-shown, .backdrop-open) #background-color-tracker {
+        /* `--mobile-backdrop-color` (style.css) laid over the page background. */
+        color: color-mix(in srgb, var(--main-background-color), black 50%) !important;
+    }
+}
+
 span.keyboard-shortcut,
 kbd {
     display: none;
@@ -22,8 +29,5 @@ kbd {
 }
 .quick-search {
     margin: 0;
-}
-.quick-search .dropdown-menu {
-    max-width: 350px;
 }
 

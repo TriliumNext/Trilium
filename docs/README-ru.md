@@ -1,23 +1,12 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Спонсоры GitHub](https://img.shields.io/github/sponsors/eliandoran) ![Спонсоры
+LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![Загрузки с GitHub (все ресурсы, все
+релизы)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Статус
+перевода](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -25,24 +14,29 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
-Trilium Notes – это приложение для заметок с иерархической структурой,
-ориентированное на создание больших персональных баз знаний.
+Trilium Notes – это бесплатное кроссплатформенное приложение с открытым исходным
+кодом для заметок с иерархической структурой, ориентированное на создание
+больших персональных баз знаний.
+
+Ищете "Trillium Notes"? Каноническое написание названия проекта — "Trilium
+Notes", с одной буквой `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Загрузка
 - [Последний релиз](https://github.com/TriliumNext/Trilium/releases/latest) –
   стабильная версия, подойдёт для большинства пользователей.
-- [Ночной билд](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  нестабильная разрабатываемая версия, ежедневно получает новые функции и
-  исправления.
+- [Ночной сборка](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  нестабильная разрабатываемая версия, ежедневно обновляемая с добавлением новых
+  функций и исправлений.
 
 ## 📚 Документация
 
@@ -66,8 +60,8 @@ Trilium Notes – это приложение для заметок с иера�
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Основные идеи и
   возможности](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Шаблоны Персональный Базы
-  Знаний](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Шаблоны персональной базы
+  знаний](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Возможности
 
@@ -109,9 +103,10 @@ Trilium Notes – это приложение для заметок с иера�
 * Рисование и скетчинг диаграм, при помощи [Excalidraw](https://excalidraw.com/)
   (тип заметки "холст")
 * [Карты
-  связей](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [карты заметок](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  для визуализации заметок и их связей
+  отношений](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  and [карты
+  заметок/ссылок](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  для визуализации заметок и их отношений
 * Интеллект-карты на основе [Mind Elixir](https://docs.mind-elixir.com/)
 * [Карты](https://docs.triliumnotes.org/user-guide/collections/geomap) с метками
   для мест и треками GPX
@@ -122,11 +117,13 @@ Trilium Notes – это приложение для заметок с иера�
 * Хорошо масштабируется, как по удобству использования, так и по
   производительности до 100000 заметок
 * Оптимизированный [мобильный
-  фронтенд](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+  клиент](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) для
   смартфонов и планшетов
-* [Темная тема](https://docs.triliumnotes.org/user-guide/concepts/themes)
+* Встроенная [тёмная
+  тема](https://docs.triliumnotes.org/user-guide/concepts/themes), поддержка
+  пользовательских тем
 * Импорт и экпорт
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   и данных в
   [markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
   формате
@@ -169,7 +166,7 @@ TriliumNext/Trilium](#-installation) как обычно, и он будет и�
 Приглашаем вас присоединиться к нашим официальным обсуждениям. Мы будем рады
 узнать о ваших предложениях по улучшению, идеях или проблемах!
 
-- [Матрица](https://matrix.to/#/#triliumnext:matrix.org) (Для оперативной
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Для оперативной
   коммуникации.)
   - Комната `General` в Matrix также подключена к
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
@@ -178,7 +175,7 @@ TriliumNext/Trilium](#-installation) как обычно, и он будет и�
 - [Github Issues](https://github.com/TriliumNext/Trilium/issues) (Для сообщений
   об ошибках и запросов на добавление новых функций.)
 
-## 🏗 Сборки
+## 🏗 Установка
 
 ### Windows / macOS
 
@@ -216,6 +213,8 @@ Chrome и Firefox.
 Дополнительную информацию о поддержке мобильных приложений см. в треде
 https://github.com/TriliumNext/Trilium/issues/4962.
 
+#### TriliumDroid
+
 Если вы предпочитаете нативное приложение для Android, вы можете использовать
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Сообщайте об ошибках и недостающих функциях в [их
@@ -223,6 +222,26 @@ https://github.com/TriliumNext/Trilium/issues/4962.
 использовании TriliumDroid лучше отключить автоматические обновления на вашем
 сервере (см. ниже), поскольку синхронизированные версии должны совпадать между
 Trilium и TriliumDroid.
+
+#### Pocket Trilium
+
+Если вам нужно полнофункциональное приложение для Android, ознакомьтесь с
+[Pocket Trilium](https://github.com/Nriver/pocket-trilium). Оно запускает полный
+экземпляр Trilium на вашем телефоне, поддерживает полноценное автономное
+использование и позволяет синхронизироваться с вашим сервером.
+
+#### Trinote
+
+Если вам нужно приложение для iOS, вы можете использовать
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), клиент с открытым
+исходным кодом для вашего собственного сервера Trilium / TriliumNext. Оно
+позволяет просматривать и упорядочивать дерево заметок, искать заметки на
+сервере, читать и редактировать все типы заметок (текст, код, ментальную карту,
+таблицу, карту, холст и т.д.), а также сохраняет заметки доступными для
+редактирования в автономном режиме. Вот
+[репозиторий](https://github.com/StephenArg/Trinote), если вы заинтересованы в
+участии, и вот сервер [discord](https://discord.com/invite/ghjJG56EUS), если у
+вас есть какие-либо отзывы или предложения, которые вы хотели бы обсудить.
 
 ### Сервер
 
@@ -338,6 +357,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [antoniotejada](https://github.com/nriver) за оригинальный виджет подсветки
   синтаксиса.
 * [Tabler Icons](https://tabler.io/icons) за системные иконки.
+*   Значки приложений в диалоговом окне импорта взяты из:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) для
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) для Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) для Anytype.
+*  Значки поставщиков LLM взяты из[Lobe Icons](https://lobehub.com/icons).
 
 Trilium не существовал бы без технологий, лежащих в его основе:
 
@@ -345,6 +370,10 @@ Trilium не существовал бы без технологий, лежащ
   редактор.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - редактор кода с
   поддержкой огромного количества языков.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - отображает диаграммы
+  заметок Mermaid; его парсеры служат моделью для подсветки синтаксиса.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - основа подсветки синтаксиса Mermaid.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - бесконечная белая
   доска, используемая в заметках типа "Холст".
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - обеспечивает
@@ -354,12 +383,7 @@ Trilium не существовал бы без технологий, лежащ
 * [Tabulator](https://github.com/olifolkerd/tabulator) - интерактивные таблицы,
   используемые в коллекциях.
 * [FancyTree](https://github.com/mar10/fancytree) - многофункциональная
-  библиотека деревьев, не имеющая себе равных.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - библиотека визуальных связей.
-  Используется в [картах
-  связей](https://docs.triliumnotes.org/user-guide/note-types/relation-map) и
-  [картах
-  ссылок](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+  библиотека дерева, не имеющая себе равных.
 
 ## 🤝 Поддержка
 

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - hotfix
+      - stable
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -65,6 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           filter: tree:0
           fetch-depth: 0
 
@@ -80,7 +82,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Copy test fixture database
         run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
@@ -115,6 +117,36 @@ jobs:
         if: always()
         run: pkill -f trilium || true
 
+  e2e-pdfjs-viewer:
+    runs-on: ubuntu-26.04
+    name: PDF viewer E2E tests
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: PDF viewer end-to-end tests
+        run: pnpm --filter pdfjs-viewer e2e
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfjs-viewer e2e report
+          path: packages/pdfjs-viewer/test-output
+
   e2e-standalone:
     strategy:
       fail-fast: false
@@ -132,11 +164,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'pnpm'
@@ -145,7 +178,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build standalone
         run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter standalone build

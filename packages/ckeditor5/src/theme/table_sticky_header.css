@@ -1,0 +1,77 @@
+/* Without a scroll timeline, an `animation` runs on time and ends at once. Longhands only: Lightning
+   CSS expands the `animation` shorthand with a `0s` duration, which ends a scroll-driven one too. */
+@supports (view-timeline-name: --table-header) {
+    .ck-content figure.table:not(.layout-table, .sticky-table-headers-disabled *) {
+        view-timeline: --table-header block;
+        view-timeline-inset: auto;
+
+        > table {
+            animation-name: table-header-isolate;
+            animation-duration: auto;
+            animation-timeline: --table-header;
+            animation-range: exit-crossing 0% exit-crossing 100%;
+        }
+
+        /* `StickyTableHeaders` sets `--table-header-start`, `--table-header-travel` and, in
+           Firefox, `--table-header-easing`. */
+        > table > thead {
+            position: relative;
+            overflow-anchor: none;
+            animation-name: table-header-stick, table-header-stuck;
+            animation-duration: auto;
+            animation-timing-function: var(--table-header-easing, linear);
+            animation-fill-mode: forwards;
+            animation-timeline: --table-header;
+            animation-range:
+                exit-crossing var(--table-header-start, 0px)
+                exit-crossing
+                calc(var(--table-header-start, 0px) + var(--table-header-travel, 0px));
+
+            > tr > th {
+                position: relative;
+
+                /* Collapsed borders stay at the rest position of the header rows. */
+                &::before {
+                    content: "";
+                    display: var(--table-header-borders, none);
+                    position: absolute;
+                    inset: -1px;
+                    border: inherit;
+                    pointer-events: none;
+                }
+            }
+        }
+
+        @media print {
+            > table,
+            > table > thead {
+                animation-name: none;
+            }
+        }
+    }
+}
+
+@keyframes table-header-stick {
+    from {
+        translate: 0 0;
+    }
+
+    to {
+        translate: 0 var(--table-header-travel, 0px);
+    }
+}
+
+@keyframes table-header-stuck {
+    from,
+    to {
+        z-index: 2;
+        --table-header-borders: block;
+    }
+}
+
+@keyframes table-header-isolate {
+    from,
+    to {
+        isolation: isolate;
+    }
+}

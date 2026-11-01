@@ -7,23 +7,31 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { isToolErrorResult } from "@triliumnext/commons";
 import { app_info as appInfo } from "@triliumnext/core";
-
 import { cls } from "@triliumnext/core";
-import { allToolRegistries } from "../llm/tools/index.js";
-import type { ToolDefinition } from "../llm/tools/tool_registry.js";
+
+import { allToolRegistries, resolveToolRegistries } from "@triliumnext/core/src/services/llm/tools/index.js";
+import type { ToolDefinition } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
+
 import sql from "../sql.js";
 
 /**
  * Register a tool definition on the MCP server.
  *
  * Write operations are wrapped in CLS + transaction context so that
- * Becca entity tracking works correctly.
+ * Becca entity tracking works correctly. With `toolHints`, the annotations tell
+ * the client which tools only read and which overwrite or remove, so it can
+ * decide what to ask the user about.
  */
-function registerTool(server: McpServer, name: string, def: ToolDefinition) {
+function registerTool(server: McpServer, name: string, def: ToolDefinition, toolHints: boolean) {
+    const annotations = def.mutates
+        ? { readOnlyHint: false, destructiveHint: def.additive !== true, openWorldHint: false }
+        : { readOnlyHint: true, openWorldHint: false };
     server.registerTool(name, {
         description: def.description,
-        inputSchema: def.inputSchema
+        inputSchema: def.inputSchema,
+        annotations: toolHints ? annotations : undefined
     }, (args: any): CallToolResult => {
         const result = cls.init(() => {
             cls.set("componentId", "mcp");
@@ -33,11 +41,21 @@ function registerTool(server: McpServer, name: string, def: ToolDefinition) {
                 : def.execute(args);
         });
 
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        const content: CallToolResult["content"] = [{ type: "text", text: JSON.stringify(result) }];
+        // Without `isError`, an agent (and the chat behind it) takes a failure for a success.
+        return isToolErrorResult(result) ? { content, isError: true } : { content };
     });
 }
 
-export function createMcpServer(): McpServer {
+/**
+ * Build Trilium's MCP server. An in-chat agent's server sets `toolHints: false`: the chat's
+ * approvals decide its calls, and Codex runs a tool marked read-only without asking.
+ */
+export async function createMcpServer({ toolHints = true }: { toolHints?: boolean } = {}): Promise<McpServer> {
+    // Host-registered registries (the User Guide tools) load lazily; the array
+    // is complete only after this resolves.
+    await resolveToolRegistries();
+
     const server = new McpServer({
         name: "trilium-notes",
         version: appInfo.appVersion
@@ -45,7 +63,7 @@ export function createMcpServer(): McpServer {
 
     for (const registry of allToolRegistries) {
         for (const [name, def] of registry) {
-            registerTool(server, name, def);
+            registerTool(server, name, def, toolHints);
         }
     }
 

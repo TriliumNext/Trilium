@@ -1,5 +1,11 @@
 import { type ComponentChildren, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import appContext from "../../components/app_context";
+import Component from "../../components/component";
+import { collectShortcutHints } from "../../services/shortcut_hints";
+import { ParentComponent } from "./react_utils";
 
 // Capture the props handed to the zoom library without mounting it (it needs real layout).
 const { transformWrapperSpy } = vi.hoisted(() => ({ transformWrapperSpy: vi.fn() }));
@@ -15,8 +21,12 @@ vi.mock("react-zoom-pan-pinch", () => ({
     )
 }));
 
-// Avoid pulling the real hooks module (bootstrap tooltips + app context) into the test.
-vi.mock("./hooks", () => ({ useStaticTooltip: () => {} }));
+// Keep the real hooks (useContextualShortcutHints is exercised below), but stub the bootstrap-Tooltip
+// one, which needs real layout.
+vi.mock("./hooks", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks")>()),
+    useStaticTooltip: () => {}
+}));
 
 import ImageViewer, { evaluateImageZoom } from "./ImageViewer";
 
@@ -48,6 +58,49 @@ describe("ImageViewer", () => {
         expect(img?.className).toBe("note-detail-image-view");
     });
 
+    it("registers its contextual shortcut hints on the host component", () => {
+        const host = new Component();
+        const container = document.createElement("div");
+        act(() => render(
+            <ParentComponent.Provider value={host}><ImageViewer src="x" /></ParentComponent.Provider>,
+            container
+        ));
+
+        const sections = collectShortcutHints(host);
+        expect(sections).toHaveLength(3);
+        // The first two sections are ZOOM_PAN_HINTS, shared with every other zoom/pan viewport.
+        expect(sections[0].hints.map(h => h.labelKey)).toEqual([
+            "zoom_controls.hints.zoom_in",
+            "zoom_controls.hints.zoom_out",
+            "zoom_controls.hints.reset_zoom"
+        ]);
+        expect(sections[1].hints.map(h => h.labelKey)).toEqual([
+            "zoom_controls.hints.pan_up",
+            "zoom_controls.hints.pan_down",
+            "zoom_controls.hints.pan_left",
+            "zoom_controls.hints.pan_right",
+            "zoom_controls.hints.pan_fast"
+        ]);
+        expect(sections[2].hints.map(h => h.labelKey)).toEqual([
+            "image_viewer.hints.next_image",
+            "image_viewer.hints.previous_image",
+            "image_viewer.hints.first_image",
+            "image_viewer.hints.last_image"
+        ]);
+    });
+
+    it("registers nothing on the app root, whose hints would be collected in every context", () => {
+        // A standalone Preact root mounted by the content renderer is hosted by appContext itself, and
+        // every chain the dispatcher walks ends there — so its hints would join every other widget's.
+        const container = document.createElement("div");
+        act(() => render(
+            <ParentComponent.Provider value={appContext}><ImageViewer src="x" /></ParentComponent.Provider>,
+            container
+        ));
+
+        expect(collectShortcutHints(appContext)).toEqual([]);
+    });
+
     it("wires up the interactive zoom behavior", () => {
         renderViewer({ src: "x" });
         const props = transformWrapperSpy.mock.calls[0][0];
@@ -57,7 +110,33 @@ describe("ImageViewer", () => {
         expect(props.doubleClick).toEqual({ mode: "reset" });
         // Numeric envelope is user-tunable — assert sane relationships, not exact values.
         expect(props.maxScale).toBeGreaterThan(props.minScale);
-        expect(props.wheel.step).toBeGreaterThan(0);
+        // The library cannot make a notch each way cancel, so useZoomPanWheel handles the wheel.
+        expect(props.wheel).toEqual({ disabled: true });
+    });
+
+    it("pans at any scale standalone, but only once zoomed in when embedded in a note", () => {
+        renderViewer({ src: "x" });
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+
+        // At the fitted size a drag scrolls the note.
+        renderViewer({ src: "x", environment: "embedded" });
+        const props = transformWrapperSpy.mock.lastCall?.[0];
+        expect(props.panning).toEqual({ disabled: true });
+        act(() => props.onTransform(null, { scale: 2 }));
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+    });
+
+    it("keeps the zoom controls but drops the shortcut-hints button when embedded", async () => {
+        const standalone = renderViewer({ src: "x" });
+        await vi.waitFor(() => {
+            expect(standalone.querySelector(".shortcut-hint-button-group")).not.toBeNull();
+        });
+
+        const embedded = renderViewer({ src: "x", environment: "embedded" });
+        await vi.waitFor(() => {
+            expect(embedded.querySelector(".image-viewer-controls")).not.toBeNull();
+        });
+        expect(embedded.querySelector(".shortcut-hint-button-group")).toBeNull();
     });
 
     it("lets minScale and maxScale be overridden", () => {

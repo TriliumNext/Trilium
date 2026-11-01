@@ -1,45 +1,59 @@
-body.desktop .modal.options-dialog .modal-dialog {
+/*
+ * A dialog opened from within the settings (a password prompt, say) is nested in this dialog's own
+ * markup, so a descendant selector here would lay it out like the settings themselves: full height,
+ * no padding, its header floated away. Every rule that shapes the dialog frame is therefore written
+ * against this dialog's own parts, down the child chain.
+ *
+ * The chain forks once: with a sidebar the body sits inside `.modal-main`, without one it is a direct
+ * child of `.modal-content`. Both forms are listed where it matters.
+ */
+
+body.desktop .modal.options-dialog > .modal-dialog {
     max-width: min(1300px, 75vw);
 }
 
 /* Keep the sidebar background within the rounded corners. */
-.modal.options-dialog .modal-content {
+.modal.options-dialog > .modal-dialog > .modal-content {
     overflow: hidden;
 }
 
-.modal.options-dialog .modal-body {
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-body,
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-body {
     padding: 0;
     height: 75vh;
 }
 
-.modal.options-dialog .modal-sidebar {
+/* Stated on the column itself rather than left to whichever child turns out to be the widest, so
+   that the search field takes the width it is given instead of setting it. */
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar {
+    width: 240px;
     background-color: var(--card-background-color);
 }
 
-.modal.options-dialog .modal-sidebar .settings-navigation {
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar .settings-search {
+    margin: 8px 8px 0;
+}
+
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar .settings-navigation {
     flex: 1 1 0;
     min-height: 0;
     overflow: auto;
-    width: 240px;
     padding: 8px;
 }
 
 /* The main header only carries the window (maximize/close) buttons, with the title moved into the
    sidebar. Float it over the content so it doesn't leave a tall empty band at the top. */
-body.desktop .modal.options-dialog .modal-main > .modal-header {
+body.desktop .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header {
     position: absolute;
     top: 0;
     right: 4px;
     z-index: 9999;
 }
 
-.modal.options-dialog .options-section {
-    margin: auto;
-}
-
 /* The dialog fills the full mobile page (isFullPageOnMobile), so the body stretches instead of
    using the fixed desktop height. Applies to both the master-detail and the tablet layout. */
-body.mobile .modal.options-dialog .modal-body {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-body,
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-body {
     height: auto;
     flex: 1 1 auto;
 }
@@ -47,11 +61,11 @@ body.mobile .modal.options-dialog .modal-body {
 /* On wider mobile viewports (tablets) the dialog keeps the desktop-style sidebar layout; undo the
    generic bottom-strip arrangement that style.css applies to sidebar modals on mobile. The sidebar
    only exists outside the master-detail flow, so no extra scoping is needed. */
-body.mobile .modal.options-dialog .modal-content-with-sidebar {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar {
     flex-direction: row !important;
 }
 
-body.mobile .modal.options-dialog .modal-content-with-sidebar > .modal-sidebar {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar > .modal-sidebar {
     order: 0;
     height: auto;
     border-right: 1px solid var(--main-border-color);
@@ -59,155 +73,113 @@ body.mobile .modal.options-dialog .modal-content-with-sidebar > .modal-sidebar {
 }
 
 /* On tablets, don't take up the full page height like the master-detail flow does. */
-body.mobile .modal.options-dialog:not(.mobile-master-detail) .modal-dialog {
+body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog {
     height: 90vh;
 }
 
-/* On narrow mobile viewports the dialog becomes a master-detail flow instead of the sidebar
-   layout (the `mobile-master-detail` class tracks this): the page selector is rendered as a pane
-   inside the modal body (the Modal sidebar is unused), so the list and the page can slide over
-   each other when switching between them. */
-body.mobile .modal.options-dialog.mobile-master-detail .modal-content .modal-body {
-    position: relative;
-    padding: 0;
-    /* The panes scroll themselves; this also keeps the sliding panes contained. */
-    overflow: hidden;
+/* The master-detail flow itself is the shared one (master_detail.css); what is particular here is the
+   page selector's own padding, and the settings page filling the pane it is wrapped in. */
+body.mobile .modal.options-dialog.mobile-master-detail {
+    /* What a card keeps from the edge of the screen: 16px, which is both Material's body margin for
+       a compact window and the inset iOS gives a grouped list, and which with the card's own 16px
+       starts the text 32px in, where a phone is read. Widened where a sensor housing eats into
+       the screen, which is a side of it rather than the start of a sentence: hence left and right,
+       not start and end. */
+    --options-inset-left: max(16px, var(--safe-area-inset-left, env(safe-area-inset-left)));
+    --options-inset-right: max(16px, var(--safe-area-inset-right, env(safe-area-inset-right)));
+
+    /* The room a scrolling pane keeps for its bar, held on both edges rather than the trailing one
+       alone: on one edge the cards sit off centre whenever the bar is absent, and a bar that comes
+       and goes as the page settles moves them about and reflows their text. The pane already holds
+       that much of the margin, so whatever stands inside it pads only what is left of it. */
+    --options-gutter: var(--scrollbar-thickness, 10px);
+    --options-pane-inset-left: max(0px, calc(var(--options-inset-left) - var(--options-gutter)));
+    --options-pane-inset-right: max(0px, calc(var(--options-inset-right) - var(--options-gutter)));
+
+    .tn-master-pane {
+        scrollbar-gutter: stable both-edges;
+    }
+
+    .options-mobile-nav {
+        padding-block: 8px;
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+
+        /* The list is the pane's own content here, not a menu standing over something else. */
+        .dropdown-menu.static {
+            padding-block: 0;
+        }
+
+        /* A page in this list is somewhere to go rather than a line of a menu: it is given a
+           thumb's worth of height and its name carries a little more weight. The padding is a
+           floor under a name that wraps, held in `em` so it keeps up with the reading size; the
+           row itself is centred, so on one line the height is all that is felt. */
+        .dropdown-item {
+            min-height: 40px;
+            --menu-item-vertical-padding: 0.35em;
+            font-weight: 500;
+        }
+
+        /* The row centres what it holds, so the mark wants no nudge of its own: the -2px the theme
+           gives a menu item is undone here, `FormList` carrying no `tn-dropdown-menu` class to take
+           the theme's own zero. `line-height` boxes the glyph so the centring lands on the mark
+           rather than on the leading around it. */
+        .dropdown-item .tn-icon {
+            --menu-item-icon-vert-offset: 0;
+            /* Half of the 8px wanted between the mark and the name: `FormListItem` writes an
+               `&nbsp;` after the icon, which merges into the name's own text run and so can be
+               neither selected nor removed from here. It stands for the other half. */
+            margin-inline-end: 4px;
+            font-size: 1.4em;
+            line-height: 1;
+        }
+    }
+
+    /* Held to the same margin whatever the page: its own is a desktop measure. */
+    .note-detail-content-widget-content.options {
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+    }
+
+    /* The bar above the cards keeps their margin, so the way back starts on the rail the cards
+       start on and the close button ends on the one they end on. `!important` answers the global
+       rule, which is in `rem` besides and would drift from a fixed inset as the text is resized. */
+    .modal-header {
+        padding-left: var(--options-inset-left) !important;
+        padding-right: var(--options-inset-right) !important;
+    }
+
+    /* Reaches both edges of the pane, its border with it, and takes the inset back as padding so
+       what it holds still lines up with the cards. The page's own gap above it is taken back too:
+       one bar standing at the top of the page wants one gap over its contents, not two. */
+    .options-page-header {
+        margin-top: calc(var(--default-padding, 15px) * -1);
+        margin-left: calc(var(--options-pane-inset-left) * -1);
+        margin-right: calc(var(--options-pane-inset-right) * -1);
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+    }
+
+    /* Left to scroll away with the list beneath it, as a phone's search fields do. */
+    .settings-search {
+        margin-bottom: 12px;
+    }
+
+    /* The pane already holds the results clear of its edges, so the page inside adds nothing. */
+    .options-mobile-results .options-search {
+        padding-inline: 0;
+    }
+
+    .note-detail {
+        height: 100%;
+        overflow: auto;
+        scrollbar-gutter: stable both-edges;
+    }
 }
 
-body.mobile .modal.options-dialog .options-mobile-nav {
-    height: 100%;
-    overflow: auto;
-    padding: 8px 25px;
-}
-
-body.mobile .modal.options-dialog.mobile-master-detail .note-detail {
-    height: 100%;
-    overflow: auto;
-}
-
-/* At rest only the active pane is displayed; during a transition both stay visible so the
-   outgoing pane can slide away as the incoming one slides in. */
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-view-list:not(.mobile-transition-to-list) .note-detail {
-    display: none;
-}
-
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-view-page:not(.mobile-transition-to-page) .options-mobile-nav {
-    display: none;
-}
-
-body.mobile .modal.options-dialog .modal-header  {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header,
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-header {
     border-bottom: 1px solid var(--main-border-color);
-}
-
-/* The back button + page title in the custom header replace the static "Options" title. */
-body.mobile .modal.options-dialog.mobile-master-detail .modal-header > .modal-title {
-    display: none;
-}
-
-/* Directional slide mirroring the setup wizard's page animation: opening a page, the list slides
-   out towards the start side while the page slides in from the end side; going back reverses the
-   directions. The page pane stacks above the list, and `forwards` holds the outgoing pane at its
-   off-screen position until the transition classes are removed after animationend. The global
-   `motion-disabled` rule suppresses the animations entirely; the dialog then switches views
-   directly without entering a transition. */
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page,
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
-    .options-mobile-nav,
-    .note-detail {
-        position: absolute;
-        inset: 0;
-        background-color: var(--modal-background-color);
-    }
-
-    .note-detail {
-        z-index: 1;
-    }
-}
-
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page {
-    .note-detail {
-        animation: options-slide-in-end 0.35s ease-in-out forwards;
-    }
-
-    .options-mobile-nav {
-        animation: options-slide-out-start 0.35s ease-in-out forwards;
-    }
-}
-
-body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
-    .note-detail {
-        animation: options-slide-out-end 0.35s ease-in-out forwards;
-    }
-
-    .options-mobile-nav {
-        animation: options-slide-in-start 0.35s ease-in-out forwards;
-    }
-}
-
-body[dir=rtl].mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page {
-    .note-detail {
-        animation-name: options-slide-in-start;
-    }
-
-    .options-mobile-nav {
-        animation-name: options-slide-out-end;
-    }
-}
-
-body[dir=rtl].mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
-    .note-detail {
-        animation-name: options-slide-out-start;
-    }
-
-    .options-mobile-nav {
-        animation-name: options-slide-in-end;
-    }
-}
-
-@keyframes options-slide-in-end {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes options-slide-in-start {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes options-slide-out-end {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-}
-
-@keyframes options-slide-out-start {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(-100%); opacity: 0; }
-}
-
-.options-mobile-page-header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-grow: 1;
-    min-width: 0;
-}
-
-/* Decorative settings icon shown in the list view. It borrows the `icon-action` class so it keeps
-   exactly the back button's footprint (the title doesn't shift between views), with the
-   interactive affordances neutralized. */
-.options-mobile-page-header .options-header-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    cursor: default;
-}
-
-.options-mobile-page-header .options-mobile-page-title {
-    margin: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 .modal.options-dialog .options-page-header {

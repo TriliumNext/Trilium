@@ -1,35 +1,64 @@
-import type { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { useMemo } from "preact/hooks";
+import "./Button.css";
+
+import type { Tooltip } from "bootstrap";
+import type { ButtonHTMLAttributes, ComponentChildren, CSSProperties, MouseEventHandler, RefObject } from "preact";
+import { useMemo, useRef } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
+import { t } from "../../services/i18n";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import Icon from "./Icon";
+import Dropdown from "./Dropdown";
+import { useStaticTooltip } from "./hooks";
+import Icon, { SvgIcon } from "./Icon";
+import { useCommandTrigger } from "./react_utils";
+import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
 
-export interface ButtonProps {
+export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement>,
+    "tabIndex" | "aria-pressed" | "aria-haspopup" | "aria-expanded"> {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
-    buttonRef?: RefObject<HTMLButtonElement>;
+    buttonRef?: RefObject<HTMLButtonElement | null>;
     text: string | ComponentChildren;
     className?: string;
     icon?: string;
+    /** The SVG of an icon drawn in place of {@link icon}, such as a CKEditor toolbar item's. */
+    iconSvg?: string;
     keyboardShortcut?: string;
-    /** Called when the button is clicked. If not set, the button will submit the form (if any). */
-    onClick?: () => void;
+    /**
+     * Called when the button is clicked. If not set, the button will submit the form (if any).
+     *
+     * Handed the event, which the button already forwarded before this said so: some handlers read
+     * the press's own target to know where to act — opening a note in the tab the button stands in,
+     * for one (see `openInCurrentNoteContext`).
+     */
+    onClick?: MouseEventHandler<HTMLButtonElement>;
     kind?: "primary" | "secondary" | "lowProfile";
     disabled?: boolean;
     size?: "normal" | "small" | "micro";
     style?: CSSProperties;
     triggerCommand?: CommandNames;
     title?: string;
+    /** Why the button is off, shown on hover while `disabled`. Ignored otherwise. */
+    disabledTooltip?: string;
+    /** Marks a toggle button as on or off for assistive technology. */
+    "aria-pressed"?: boolean;
 }
 
-function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, size, style, triggerCommand, ...restProps }: ButtonProps) {
+function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, iconSvg, kind, disabled, disabledTooltip, size, style, triggerCommand, ...restProps }: ButtonProps) {
+    const triggerOwnCommand = useCommandTrigger(triggerCommand);
+    const hasIcon = !!icon || !!iconSvg;
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
+
+        // Said here because a stylesheet cannot see it: the label is a text node, which no selector
+        // reaches, so the spacing meant to part an icon from it has no way of knowing there is none.
+        if (hasIcon && (text === undefined || text === null || text === "")) {
+            classList.push("tn-icon-only");
+        }
 
         switch(kind) {
             case "primary":
@@ -52,36 +81,50 @@ function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, i
             classList.push("btn-micro");
         }
         return classList.join(" ");
-    }, [kind, className, size]);
+    }, [kind, className, size, hasIcon, text]);
 
     // Memoize keyboard shortcut rendering
     const shortcutElements = useMemo(() => {
         if (!keyboardShortcut || cachedIsMobile) return null;
-        const splitShortcut = keyboardShortcut.split("+");
-        return splitShortcut.map((key, index) => (
-            <>
-                <kbd key={index}>{key.toUpperCase()}</kbd>
-                {index < splitShortcut.length - 1 ? "+" : ""}
-            </>
-        ));
+        return renderShortcutKbds(keyboardShortcut);
     }, [keyboardShortcut]);
 
-    return (
+    const button = (
         <button
             name={name}
             className={classes}
             type={onClick || triggerCommand ? "button" : "submit"}
-            onClick={onClick}
+            onClick={onClick ?? triggerOwnCommand}
             ref={buttonRef}
             disabled={disabled}
             style={style}
-            data-trigger-command={triggerCommand}
             {...restProps}
         >
-            {icon && <Icon icon={`bx ${icon}`} />}
+            {iconSvg ? <SvgIcon svg={iconSvg} /> : icon && <Icon icon={`bx ${icon}`} />}
             {text} {shortcutElements}
         </button>
     );
+
+    if (disabled && disabledTooltip) {
+        return <DisabledReason reason={disabledTooltip}>{button}</DisabledReason>;
+    }
+
+    return button;
+}
+
+/**
+ * Carries the tooltip for a disabled control. A disabled `<button>` emits no pointer events, so the
+ * explanation for why it is off has to hang off a wrapper the pointer can still reach.
+ */
+function DisabledReason({ reason, children }: { reason: string; children: ComponentChildren }) {
+    const ref = useRef<HTMLSpanElement>(null);
+
+    useStaticTooltip(ref, useMemo<Partial<Tooltip.Options>>(() => ({
+        title: reason,
+        placement: "top"
+    }), [reason]));
+
+    return <span ref={ref} class="tn-disabled-reason">{children}</span>;
 }
 
 export function ButtonGroup({ size, className, children }: { size?: "sm" | "lg"; className?: string; children: ComponentChildren }) {
@@ -92,27 +135,38 @@ export function ButtonGroup({ size, className, children }: { size?: "sm" | "lg";
     );
 }
 
-export function SplitButton({ text, icon, children, ...restProps }: {
+/** A button with the related actions in a menu beside it. */
+export function SplitButton({ text, icon, kind = "secondary", size = "normal", keyboardShortcut, children, ...restProps }: {
     text: string;
+    /** The icon's full class, as `"bx bx-search"`. */
     icon?: string;
+    kind?: "primary" | "secondary";
+    size?: "normal" | "small" | "micro";
     title?: string;
+    /** The keys that run the main action, shown after its label as a button shows them. */
+    keyboardShortcut?: string;
     /** Click handler for the main button component (not the split). */
     onClick?: () => void;
-    /** The children inside the dropdown of the split. */
+    /** The menu's rows: `FormListItem`s and the other `FormList` rows. */
     children: ComponentChildren;
 }) {
+    const look = `btn-${kind}${size === "small" ? " btn-sm" : size === "micro" ? " btn-micro" : ""}`;
+    const shortcutElements = !keyboardShortcut || cachedIsMobile ? null : renderShortcutKbds(keyboardShortcut);
     return (
-        <ButtonGroup>
-            <button type="button" class="btn btn-secondary" {...restProps}>
-                {icon && <Icon icon={`bx ${icon}`} />}
-                {text}
+        <ButtonGroup className="tn-split-button" size={size === "small" ? "sm" : undefined}>
+            <button type="button" class={`btn ${look}`} {...restProps}>
+                {icon && <Icon icon={icon} />}
+                {text} {shortcutElements}
             </button>
-            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="visually-hidden">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu">
+            <Dropdown
+                buttonClassName={`${look} dropdown-toggle-split`}
+                buttonProps={{ "aria-label": t("split_button.more_actions") }}
+                noSelectButtonStyle
+                placement="bottom-end"
+                mobileBottomSheet
+            >
                 {children}
-            </ul>
+            </Dropdown>
         </ButtonGroup>
     );
 }

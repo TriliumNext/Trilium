@@ -8,7 +8,7 @@ interface MockAgent {
     close(): void;
 }
 
-const { agentInstances, MockAgent } = vi.hoisted(() => {
+const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
     const agentInstances: MockAgent[] = [];
 
     class MockAgent {
@@ -25,10 +25,18 @@ const { agentInstances, MockAgent } = vi.hoisted(() => {
         }
     }
 
-    return { agentInstances, MockAgent };
+    return { agentInstances, MockAgent, undiciFetch: vi.fn() };
 });
 
-vi.mock("undici", () => ({ Agent: MockAgent }));
+// safeFetch calls undici's own `fetch` (not the global one) so that it and the `Agent` it passes as
+// a dispatcher come from the same undici copy — see the comment in safe_fetch.ts. undici is
+// CommonJS, so the mock carries the names under `default` as well: that is the only shape a bundled
+// ESM build can expose, and safe_fetch reads it first.
+vi.mock("undici", () => ({
+    default: { Agent: MockAgent, fetch: undiciFetch },
+    Agent: MockAgent,
+    fetch: undiciFetch
+}));
 
 import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
 
@@ -53,6 +61,12 @@ describe("validateUrl", () => {
         expect(() => validateUrl("not-a-url")).toThrow("Invalid URL");
         expect(() => validateUrl("")).toThrow("Invalid URL");
     });
+
+    it("rejects URLs carrying credentials, which must not reach the wire, the note or the log", () => {
+        expect(() => validateUrl("https://user:secret@example.com/page")).toThrow("credentials");
+        expect(() => validateUrl("https://user@example.com/page")).toThrow("credentials");
+        expect(() => validateUrl("http://:secret@example.com/page")).toThrow("credentials");
+    });
 });
 
 describe("validateHostResolution", () => {
@@ -70,6 +84,18 @@ describe("validateHostResolution", () => {
         await expect(validateHostResolution("fc00::1")).rejects.toThrow("private/internal");
         await expect(validateHostResolution("fd12::1")).rejects.toThrow("private/internal");
         await expect(validateHostResolution("fe80::1")).rejects.toThrow("private/internal");
+    });
+
+    it("reads an IPv6 literal still wrapped in the brackets URL.hostname leaves on it", async () => {
+        const lookup = vi.spyOn(dns.promises, "lookup");
+
+        await expect(validateHostResolution("[::1]")).rejects.toThrow("private/internal");
+        await expect(validateHostResolution("[fe80::1]")).rejects.toThrow("private/internal");
+        await expect(validateHostResolution("[2606:4700:4700::1111]")).resolves.toEqual([
+            { address: "2606:4700:4700::1111", family: 6 }
+        ]);
+        // Recognised as an address, so never taken for a name and looked up as one.
+        expect(lookup).not.toHaveBeenCalled();
     });
 
     it("allows public IP literals and returns validated addresses", async () => {
@@ -128,18 +154,80 @@ describe("validateHostResolution", () => {
     });
 });
 
+describe("validateHostResolution, for a destination the operator configured", () => {
+    it("allows the addresses a local service is actually served on", async () => {
+        // Where Ollama and LM Studio answer out of the box, and where either sits when it has been
+        // put on another machine. A rule that refused these would leave the local providers with
+        // nothing to talk to, which is the whole reason this policy exists.
+        await expect(validateHostResolution("127.0.0.1", true)).resolves.toEqual([{ address: "127.0.0.1", family: 4 }]);
+        await expect(validateHostResolution("::1", true)).resolves.toEqual([{ address: "::1", family: 6 }]);
+        await expect(validateHostResolution("10.0.0.1", true)).resolves.toEqual([{ address: "10.0.0.1", family: 4 }]);
+        await expect(validateHostResolution("192.168.1.50", true)).resolves.toEqual([{ address: "192.168.1.50", family: 4 }]);
+        await expect(validateHostResolution("172.16.0.1", true)).resolves.toEqual([{ address: "172.16.0.1", family: 4 }]);
+        await expect(validateHostResolution("fd12::1", true)).resolves.toEqual([{ address: "fd12::1", family: 6 }]);
+    });
+
+    it("allows a Tailscale node, whose address is carrier-grade NAT", async () => {
+        vi.spyOn(dns.promises, "lookup")
+            .mockResolvedValueOnce([{ address: "100.83.121.222", family: 4 }] as unknown as dns.LookupAddress);
+
+        await expect(validateHostResolution("100.64.0.1", true)).resolves.toEqual([{ address: "100.64.0.1", family: 4 }]);
+        await expect(validateHostResolution("::ffff:100.83.121.222", true)).resolves.toEqual([
+            { address: "::ffff:100.83.121.222", family: 6 }
+        ]);
+        await expect(validateHostResolution("ollama.tail1234.ts.net", true)).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        await expect(validateHostResolution("100.64.0.1")).rejects.toThrow("private/internal");
+    });
+
+    it("still refuses the ranges no service is served on and a metadata endpoint answers", async () => {
+        // The reason the widening is a widening rather than a switch to no checking at all.
+        await expect(validateHostResolution("169.254.169.254", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("169.254.1.1", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("100.100.100.200", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("::ffff:100.100.100.200", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("fd00:ec2::254", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("FD00:0EC2:0:0:0:0:0:0254", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("fe80::1", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("0.0.0.0", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("224.0.0.1", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("255.255.255.255", true)).rejects.toThrow("link-local");
+    });
+
+    it("refuses a name that resolves to one of them, and one that hides it behind a second address", async () => {
+        vi.spyOn(dns.promises, "lookup")
+            .mockResolvedValueOnce([{ address: "169.254.169.254", family: 4 }] as unknown as dns.LookupAddress)
+            .mockResolvedValueOnce([
+                { address: "93.184.216.34", family: 4 },
+                { address: "169.254.169.254", family: 4 }
+            ] as unknown as dns.LookupAddress);
+
+        await expect(validateHostResolution("metadata.example.com", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("dual.example.com", true)).rejects.toThrow("link-local");
+    });
+
+    it("says which rule refused the address, since one of them permits private ones", async () => {
+        // A caller told its private addresses are refused, when it is the caller that allows them,
+        // would be sent looking for the wrong thing entirely.
+        await expect(validateHostResolution("10.0.0.1")).rejects.toThrow("private/internal");
+
+        const error: Error = await validateHostResolution("169.254.169.254", true).then(() => new Error("resolved"), e => e);
+        expect(error.message).not.toContain("private/internal");
+    });
+});
+
 describe("safeFetch", () => {
     let fetchMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         agentInstances.length = 0;
-        fetchMock = vi.fn();
-        vi.stubGlobal("fetch", fetchMock);
+        fetchMock = undiciFetch;
+        fetchMock.mockReset();
         // DNS literal so no actual DNS lookup is attempted.
     });
 
     afterEach(() => {
-        vi.unstubAllGlobals();
         vi.restoreAllMocks();
     });
 
@@ -256,6 +344,39 @@ describe("safeFetch", () => {
         fetchMock.mockResolvedValue(makeResponse(null, { status: 302, headers: { location: "/loop" } }));
 
         await expect(safeFetch("http://8.8.8.8/loop")).rejects.toThrow("Too many redirects");
+    });
+
+    it("refuses a redirect outright for a caller that follows none, without fetching the target", async () => {
+        // The hop would be re-vetted as an address, but the request's own `Authorization` header
+        // would travel with it — which for a configured API endpoint means handing the user's key
+        // to whoever the base URL named. A caller carrying a credential follows no redirects.
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(null, { status: 302, headers: { location: "https://8.8.4.4/collect" } })
+        );
+
+        await expect(safeFetch("https://8.8.8.8/v1/chat", {}, { maxRedirects: 0 }))
+            .rejects.toThrow("Refusing to follow a redirect");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(agentInstances[0].closed).toBe(true);
+    });
+
+    it("imposes no deadline of its own on a caller that asked for none", async () => {
+        // A completion runs for as long as the model takes, and the five seconds a link preview is
+        // worth waiting would cut one off mid-answer.
+        fetchMock.mockResolvedValueOnce(makeResponse(null, { status: 200 }));
+
+        await safeFetch("http://8.8.8.8/v1/chat", {}, { timeoutMs: null });
+
+        const fetchOptions = fetchMock.mock.calls[0][1] as { signal: unknown };
+        expect(fetchOptions.signal).toBeUndefined();
+    });
+
+    it("reaches a loopback endpoint when the caller permits private addresses, and not otherwise", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { status: 200 }));
+
+        await expect(safeFetch("http://127.0.0.1:11434/v1/models", {}, { allowPrivateNetwork: true }))
+            .resolves.toBeDefined();
+        await expect(safeFetch("http://127.0.0.1:11434/v1/models")).rejects.toThrow("private/internal");
     });
 
     it("uses a caller-provided abort signal when present", async () => {

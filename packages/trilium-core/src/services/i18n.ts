@@ -1,13 +1,19 @@
-import { dayjs, Dayjs, Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
+import { dayjs, Dayjs, isDisplayableLocale, Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
 import sql_init from "./sql_init";
 import options from "./options";
 import i18next from "i18next";
 import hidden_subtree from "./hidden_subtree";
+import { getContext } from "./context";
 
 export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
 
-export async function initTranslations(translationProvider: TranslationProvider) {
-    const locale = getCurrentLanguage();
+/**
+ * @param preferredLocale the language to load instead of the document's own, for a start that has a
+ *                        language but no open database to read it from — see `setup_mode`. Ignored
+ *                        where it is not a language this application displays.
+ */
+export async function initTranslations(translationProvider: TranslationProvider, preferredLocale?: string) {
+    const locale = isDisplayableLocale(preferredLocale) ? preferredLocale : getCurrentLanguage();
 
     await translationProvider(i18next, locale);
 
@@ -35,6 +41,41 @@ function getCurrentLanguage(): LOCALE_IDS {
 export async function changeLanguage(locale: string) {
     await i18next.changeLanguage(locale);
     hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
+
+    // Virtual subtrees (e.g. the in-app help) build their titles with t() at injection time,
+    // so a becca reload is needed to re-render them in the new language. Deliberately load()
+    // and not reload(): the latter would push a reload-frontend message mid-request, aborting
+    // the very options call that triggered the language change — and the client performs its
+    // own frontend reload after a locale switch anyway.
+    const { load } = await import("../becca/becca_loader.js");
+    getContext().init(() => load());
+}
+
+/**
+ * Re-syncs the active i18next (and dayjs) language with the document's stored `locale` option.
+ *
+ * `initTranslations` runs before `initSql` inside `initializeCore` (options_init needs translations), so
+ * on the server/desktop boot path i18next is always initialized to the fallback "en" regardless of the
+ * stored locale — it cannot read the option before the DB is open. Call this once the DB is initialized
+ * and becca is loaded to bring i18next in line with the stored locale, so server-generated content (e.g.
+ * the hidden-subtree titles rebuilt by the scheduler) is produced in the right language.
+ *
+ * This is language-only: it does not rebuild the hidden subtree, so user-renamed system notes are left
+ * untouched (unlike {@link changeLanguage}). It is a no-op when the DB is uninitialized or the stored
+ * locale already matches the active language.
+ */
+export async function reconcileLanguageAfterDbInit() {
+    if (!sql_init.isDbInitialized()) {
+        return;
+    }
+
+    const locale = options.getOptionOrNull("locale");
+    if (!isDisplayableLocale(locale) || locale === i18next.language) {
+        return;
+    }
+
+    await i18next.changeLanguage(locale);
+    await setDayjsLocale(locale);
 }
 
 export function getCurrentLocale() {

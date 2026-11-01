@@ -1,10 +1,9 @@
 import { deferred, LOCALES } from "@triliumnext/commons";
-import { becca_loader, hidden_subtree as hiddenSubtreeService, i18n, note_service as notes } from "@triliumnext/core";
+import { becca, becca_loader, binary_utils, cls, getSql, hidden_subtree as hiddenSubtreeService, i18n, note_service as notes, TaskContext } from "@triliumnext/core";
+import protectedSessionService from "@triliumnext/core/src/services/protected_session.js";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { becca } from "@triliumnext/core";
 import branches from "./branches.js";
-import { cls } from "@triliumnext/core";
 import sql_init from "./sql_init.js";
 
 describe("Hidden Subtree", () => {
@@ -33,38 +32,36 @@ describe("Hidden Subtree", () => {
             expect(childBranches![0].parentNoteId).toStrictEqual("_lbVisibleLaunchers");
         });
 
-        it("should enforce the correct placement of help", () => {
-            // First, verify the help note exists in its original correct location
+        it("provides the help subtree as virtual notes, with no persisted rows left behind", () => {
+            // The help subtree is injected into becca from the bundled meta as virtual notes;
+            // the fixture DB carried persisted _help rows which migration 242 must have
+            // removed, entity_changes included.
+            const helpRoot = becca.getNoteOrThrow("_help");
+            expect(helpRoot.isVirtual).toBe(true);
+            expect(helpRoot.getParentNotes().map((n) => n.noteId)).toEqual(["_hidden"]);
+            expect(helpRoot.getChildNotes().length).toBeGreaterThan(0);
+
+            const page = becca.getNoteOrThrow("_help_Vc8PjrjAGuOp");
+            expect(page.isVirtual).toBe(true);
+
+            const sql = getSql();
+            expect(sql.getValue(/*sql*/`SELECT COUNT(*) FROM notes WHERE noteId LIKE '\\_help%' ESCAPE '\\'`)).toBe(0);
+            expect(sql.getValue(/*sql*/`SELECT COUNT(*) FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\'`)).toBe(0);
+            expect(sql.getValue(/*sql*/`SELECT COUNT(*) FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\'`)).toBe(0);
+            expect(sql.getValue(/*sql*/`SELECT COUNT(*) FROM entity_changes WHERE entityId LIKE '\\_help%' ESCAPE '\\'`)).toBe(0);
+        });
+
+        it("rejects moving a help note", () => {
             const originalBranch = becca.getBranchFromChildAndParent("_help_Vc8PjrjAGuOp", "_help_gh7bpGYxajRS");
-            expect(originalBranch).toBeDefined();
-            expect(originalBranch?.parentNoteId).toBe("_help_gh7bpGYxajRS");
+            expect(originalBranch?.isVirtual).toBe(true);
 
-            // Move the help note to an incorrect location (_help root instead of its proper parent)
-            cls.init(() => {
-                branches.moveBranchToNote(originalBranch!, "_help");
-            });
+            // validateParentChild rejects the move before anything is touched
+            const result = originalBranch && cls.init(() => branches.moveBranchToNote(originalBranch, "_help"));
+            expect(Array.isArray(result) ? result[1] : result).toMatchObject({ success: false });
 
-            // Verify the note was moved to the wrong location
-            const movedBranches = becca.notes["_help_Vc8PjrjAGuOp"]?.getParentBranches()
-                .filter((b) => !b.isDeleted);
-            expect(movedBranches).toBeDefined();
-            expect(movedBranches![0].parentNoteId).toBe("_help");
-
-            // Run the hidden subtree integrity check
-            cls.init(() => {
-                hiddenSubtreeService.checkHiddenSubtree(true);
-            });
-
-            // Verify that the integrity check moved the help note back to its correct location
-            const correctedBranches = becca.notes["_help_Vc8PjrjAGuOp"]?.getParentBranches()
-                .filter((b) => !b.isDeleted);
-            expect(correctedBranches).toBeDefined();
-            expect(correctedBranches![0].parentNoteId).toBe("_help_gh7bpGYxajRS");
-
-            // Ensure the note is no longer under the incorrect parent
-            const helpRootChildren = becca.notes["_help"]?.getChildNotes();
-            const incorrectChild = helpRootChildren?.find(note => note.noteId === "_help_Vc8PjrjAGuOp");
-            expect(incorrectChild).toBeUndefined();
+            // structure is unchanged
+            const parents = becca.getNoteOrThrow("_help_Vc8PjrjAGuOp").getParentNotes().map((n) => n.noteId);
+            expect(parents).toEqual(["_help_gh7bpGYxajRS"]);
         });
 
         it("enforces renames of launcher notes", () => {
@@ -97,19 +94,15 @@ describe("Hidden Subtree", () => {
             expect(updatedBoardTemplate?.title).not.toBe("My renamed board");
         });
 
-        it("enforces webviewSrc of templates", () => {
-            const apiRefNote = becca.getNote("_help_9qPsTWBorUhQ");
-            expect(apiRefNote).toBeDefined();
+        it("rejects attribute changes on virtual help notes", () => {
+            const apiRefNote = becca.getNoteOrThrow("_help_9qPsTWBorUhQ");
+            expect(apiRefNote.isVirtual).toBe(true);
 
-            cls.init(() => {
-                apiRefNote!.setAttribute("label", "webViewSrc", "foo");
-                apiRefNote!.save();
-                hiddenSubtreeService.checkHiddenSubtree(true);
-            });
+            expect(() => cls.init(() => apiRefNote.setAttribute("label", "webViewSrc", "foo"))).toThrow(/virtual/);
 
-            const updatedApiRefNote = becca.getNote("_help_9qPsTWBorUhQ");
-            expect(updatedApiRefNote).toBeDefined();
-            expect(updatedApiRefNote?.getLabelValue("webViewSrc")).not.toBe("foo");
+            // nothing was persisted; reload to shed the in-memory leftover of the failed save
+            cls.init(() => becca_loader.reload("test"));
+            expect(becca.getNoteOrThrow("_help_9qPsTWBorUhQ").getLabelValue("webViewSrc")).not.toBe("foo");
         });
 
         it("maintains launchers hidden, if they were shown by default but moved by the user", () => {
@@ -188,6 +181,38 @@ describe("Hidden Subtree", () => {
 
             llmNote = becca.getNote(noteId);
             expect(llmNote).toBeFalsy();
+        });
+
+        it("leaves the content of a protected template alone when no protected session is available (#10549)", () => {
+            const dataKey = binary_utils.encodeUtf8("0123456789abcdef"); // exactly 16 bytes
+            const note = becca.getNoteOrThrow("_template_presentation_first");
+            const originalContent = note.getContent();
+            expect(originalContent).toBeTruthy();
+
+            // Simulate a user who protected the hidden template while a protected session was active...
+            protectedSessionService.setDataKey(dataKey);
+            try {
+                cls.init(() => notes.protectNoteRecursively(note, true, false, new TaskContext("test-protect", "protectNotes", { protect: true })));
+                expect(note.isProtected).toBe(true);
+
+                // ...and then the server restarts without a protected session — the boot state of #10549.
+                protectedSessionService.resetDataKey();
+                expect(note.isContentAvailable()).toBe(false);
+
+                // The check must neither throw (it used to crash the server on startup) nor touch the content.
+                expect(() => cls.init(() => hiddenSubtreeService.checkHiddenSubtree(true))).not.toThrow();
+
+                // With the session restored, the content still decrypts to the original.
+                protectedSessionService.setDataKey(dataKey);
+                expect(note.getContent()).toBe(originalContent);
+
+                // Clean up: unprotect the note again so the remaining tests see the default state.
+                cls.init(() => notes.protectNoteRecursively(note, false, false, new TaskContext("test-unprotect", "protectNotes", { protect: false })));
+                expect(note.isProtected).toBe(false);
+                expect(note.getContent()).toBe(originalContent);
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
         });
 
         it("fixes attribute of wrong type", () => {

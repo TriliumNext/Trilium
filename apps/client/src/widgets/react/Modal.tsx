@@ -1,13 +1,18 @@
+import "./Modal.css";
+
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
-import { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { useEffect, useMemo, useRef } from "preact/hooks";
+import { ComponentChildren, createPortal, CSSProperties, RefObject } from "preact";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { openDialog } from "../../services/dialog";
 import { t } from "../../services/i18n";
+import { RENDER_SCOPE_CLASS } from "../../services/render_css_scope";
+import { onSystemBack } from "../../services/system_back";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { useSyncedRef } from "./hooks";
+import { suspendModalFocusTraps } from "./modal_focustrap";
 import { ContainerVisibilityContext } from "./react_utils";
 
 interface CustomTitleBarButton {
@@ -17,7 +22,7 @@ interface CustomTitleBarButton {
 }
 
 export interface ModalProps {
-    className: string;
+    className?: string;
     title?: string | ComponentChildren;
     customTitleBarButtons?: (CustomTitleBarButton | null)[];
     size: "xl" | "lg" | "md" | "sm";
@@ -57,11 +62,11 @@ export interface ModalProps {
      * Gives access to the underlying modal element. This is useful for manipulating the modal directly
      * or for attaching event listeners.
      */
-    modalRef?: RefObject<HTMLDivElement>;
+    modalRef?: RefObject<HTMLDivElement | null>;
     /**
      * Gives access to the underlying form element of the modal. This is only set if `onSubmit` is provided.
      */
-    formRef?: RefObject<HTMLFormElement>;
+    formRef?: RefObject<HTMLFormElement | null>;
     bodyStyle?: CSSProperties;
     /**
      * Controls whether the modal is shown. Setting it to `true` will trigger the modal to be displayed to the user, whereas setting it to `false` will hide the modal.
@@ -96,49 +101,163 @@ export interface ModalProps {
      * Indicates if the dialog will be displayed as a full page on mobile devices.
      */
     isFullPageOnMobile?: boolean;
+    /**
+     * What assistive technology announces the dialog as, for a dialog whose {@link title} is not a
+     * name it can read — one shown without a title at all, above all, which would otherwise be
+     * announced as nothing but "dialog".
+     */
+    ariaLabel?: string;
 }
 
-export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile }: ModalProps) {
+export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
-    const modalInstanceRef = useRef<BootstrapModal>();
-    const elementToFocus = useRef<Element | null>();
+    const modalInstanceRef = useRef<BootstrapModal | undefined>(undefined);
+    const elementToFocus = useRef<Element | null | undefined>(undefined);
+
+    /*
+     * Bootstrap writes classes of its own onto this element — `show` above all, which is what makes
+     * a dialog visible — and Preact sets `className` in full whenever the prop changes, which takes
+     * them off again. The rendered attribute is therefore held at what the first render gave it,
+     * and the host's own classes are added and removed by hand below: a host that names what it is
+     * showing in its class (the note's colour, say) must be able to change it without putting its
+     * own dialog out.
+     */
+    const renderedClassName = useRef(`modal fade mx-auto ${className}`);
+    const hostClasses = useRef(splitClasses(className));
+    useLayoutEffect(() => {
+        const modalElement = modalRef.current;
+        if (!modalElement) return;
+
+        const classes = splitClasses(className);
+        for (const cls of hostClasses.current) {
+            if (!classes.includes(cls)) {
+                modalElement.classList.remove(cls);
+            }
+        }
+        modalElement.classList.add(...classes);
+        hostClasses.current = classes;
+    }, [ className ]);
 
     useEffect(() => {
         const modalElement = modalRef.current;
         if (!modalElement) return;
 
-        if (onShown) {
-            modalElement.addEventListener("shown.bs.modal", onShown);
-        }
+        /*
+         * Bootstrap's modal events are native events, and native events bubble. A stacked modal is a
+         * DOM descendant of the one it opened over, so without this its opening and closing would be
+         * reported to every modal underneath as their own — closing the Options dialog the moment a
+         * dialog opened from inside it is dismissed.
+         */
+        const ownEvent = (handler: () => void) => (event: Event) => {
+            if (event.target === modalElement) {
+                handler();
+            }
+        };
 
-        function onModalHidden() {
+        const onModalShown = onShown && ownEvent(onShown);
+        const onModalHidden = ownEvent(() => {
             onHidden();
             if (elementToFocus.current && "focus" in elementToFocus.current) {
                 (elementToFocus.current as HTMLElement).focus();
             }
-        }
+        });
 
+        if (onModalShown) {
+            modalElement.addEventListener("shown.bs.modal", onModalShown);
+        }
         modalElement.addEventListener("hidden.bs.modal", onModalHidden);
         return () => {
-            if (onShown) {
-                modalElement.removeEventListener("shown.bs.modal", onShown);
+            if (onModalShown) {
+                modalElement.removeEventListener("shown.bs.modal", onModalShown);
             }
             modalElement.removeEventListener("hidden.bs.modal", onModalHidden);
         };
     }, [ onShown, onHidden ]);
+
+    // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
+    // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
+    // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
+    // Options dialog gets no cursor). Suspend the other modals' traps here and restore them on close.
+    //
+    // Must run before the effect that opens the dialog: `openDialog` focuses the new backdrop, and
+    // a trap still active at that point pulls focus into the modal underneath.
+    useEffect(() => {
+        if (!show || !modalRef.current) return;
+        return suspendModalFocusTraps(modalRef.current);
+    }, [ show ]);
+
+    useEffect(() => {
+        if (!show) return;
+        return onSystemBack(() => {
+            modalInstanceRef.current?.hide();
+            return true;
+        });
+    }, [ show ]);
 
     useEffect(() => {
         if (show && modalRef.current) {
             elementToFocus.current = document.activeElement;
             openDialog($(modalRef.current), !stackable, {
                 focus: !noFocus
-            }).then(($widget) => {
+            }, zIndex).then(($widget) => {
                 modalInstanceRef.current = BootstrapModal.getOrCreateInstance($widget[0]);
             });
         } else {
-            modalInstanceRef.current?.hide();
+            const instance = modalInstanceRef.current;
+            instance?.hide();
+
+            /*
+             * Bootstrap drops a `hide()` made while the dialog is still opening — it is guarded on
+             * an internal `_isTransitioning`, which stands for the ~300ms the opening takes — and
+             * says nothing about having dropped it. A dialog told to close within that window (a
+             * picker closing itself on the first thing tapped, say) would be left open for good,
+             * and since our own tree has already emptied it, what stays on the screen is an empty
+             * sheet and its backdrop over a page that can no longer be pressed.
+             *
+             * A `hide()` that was carried out takes the class off at once, so a dialog still
+             * wearing it is one whose closing was dropped. Say it again the moment the opening
+             * lands, which is what `shown.bs.modal` reports.
+             */
+            const modalElement = modalRef.current;
+            if (instance && modalElement?.classList.contains("show")) {
+                const hideOnceShown = () => instance.hide();
+                modalElement.addEventListener("shown.bs.modal", hideOnceShown, { once: true });
+                // Dropped in turn if the dialog is asked to open again before the first one lands.
+                return () => modalElement.removeEventListener("shown.bs.modal", hideOnceShown);
+            }
         }
-    }, [ show, modalRef.current, noFocus ]);
+        /*
+         * Not on `modalRef.current`, though the effect reads it. A ref holds nothing while the
+         * render that names the dependencies is running and the element by the time the effect
+         * runs, so listing it makes the first re-render after mounting look like a change and open
+         * the dialog a second time — and opening closes whatever dialog is active, which by then is
+         * this one (see openDialog). The dialog would put itself away on the first keystroke typed
+         * into it, telling its host it had been dismissed.
+         *
+         * A dialog that starts closed never showed it: `show` was false for those first renders, so
+         * the spurious run took the closing arm and did nothing, and by the time it opened the ref
+         * had long settled. Only one raised already open — the calendar's ghost — met it.
+         *
+         * Nothing is lost by leaving it out: the element the ref names is rendered unconditionally
+         * (see below), so it is always there by the time an effect could read it.
+         */
+    }, [ show, noFocus, zIndex ]);
+
+    /*
+     * A dialog may be taken out of the tree while it is still up — a host that closes it by ceasing
+     * to draw it rather than by turning `show` off, which is what a dialog raised for something
+     * that then goes does (the calendar's ghost, once its event is made). Bootstrap keeps the
+     * backdrop on the body rather than within the dialog, and the class that stills the page behind
+     * it likewise, so nothing would take either away: what is left is a dimmed page that cannot be
+     * pressed or scrolled, with no dialog on it to explain itself.
+     *
+     * Told to hide as it goes, Bootstrap sees its own teardown through even with the element
+     * detached — the transition it waits on has a timer behind it — and a dialog that was already
+     * hidden is told nothing, `hide()` being a no-op once it is down.
+     */
+    useEffect(() => () => {
+        modalInstanceRef.current?.hide();
+    }, []);
 
     // Memoize styles to prevent recreation on every render
     const dialogStyle = useMemo<CSSProperties>(() => {
@@ -160,9 +279,12 @@ export default function Modal({ children, className, size, title, customTitleBar
         return style;
     }, [maxWidth, minWidth]);
 
+    const [ dialogElement, setDialogElement ] = useState<HTMLDivElement | null>(null);
+    const isTall = useIsTallerThanHalfScreen(dialogElement);
+
     return (
-        <div className={`modal fade mx-auto ${className}`} tabIndex={-1} style={dialogStyle} role="dialog" ref={modalRef}>
-            {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar})} style={documentStyle} role="document">
+        <div className={renderedClassName.current} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
+            {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar, "modal-dialog-tall": isTall})} style={documentStyle} role="document" ref={setDialogElement}>
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
                     {sidebar && <div className="modal-sidebar">
                         {title && !hideSidebarHeader && <div className="modal-sidebar-header">
@@ -215,6 +337,51 @@ export default function Modal({ children, className, size, title, customTitleBar
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+}
+
+/** Mounts a script modal beside Bootstrap's body-level backdrop while retaining its source context. */
+export function ScriptModal(props: ModalProps) {
+    const [ origin, setOrigin ] = useState<HTMLTemplateElement | null>(null);
+    const ntxId = origin?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id");
+    const isRenderNote = !!origin?.closest(`.note-detail-render-content, .${RENDER_SCOPE_CLASS}`);
+
+    return <>
+        <template ref={setOrigin} />
+        {origin && createPortal(
+            <div className={clsx("script-modal-host", isRenderNote && RENDER_SCOPE_CLASS)} data-ntx-id={ntxId}>
+                <Modal {...props} />
+            </div>,
+            document.body
+        )}
+    </>;
+}
+
+/**
+ * Whether the dialog takes up more than half the screen. iOS shows such a dialog as an opaque sheet
+ * attached to the screen's edges, and a shorter one as a floating glass sheet. A tall dialog turns
+ * short again only below 45%, since the wider tall sheet can rewrap its content a little shorter.
+ */
+function useIsTallerThanHalfScreen(dialog: HTMLElement | null) {
+    const [ isTall, setIsTall ] = useState(false);
+
+    useEffect(() => {
+        if (!dialog) return;
+        const update = () => setIsTall((wasTall) => dialog.offsetHeight > window.innerHeight * (wasTall ? 0.45 : 0.5));
+        const observer = new ResizeObserver(update);
+        observer.observe(dialog);
+        window.addEventListener("resize", update);
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", update);
+        };
+    }, [ dialog ]);
+
+    return isTall;
+}
+
+/** The classes a host asked for, as `classList` takes them. */
+function splitClasses(className: string) {
+    return className.split(" ").filter((cls) => cls !== "");
 }
 
 function ModalMain({ sidebar, children }: { sidebar: boolean; children: ComponentChildren }) {

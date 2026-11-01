@@ -8,6 +8,9 @@ import { getCurrentLocale } from "./i18n";
 import attributes from "./attributes";
 import BNote from "../becca/entities/bnote";
 import { getPlatform } from "./platform";
+import { isSetupAuthRequired, isSetupSecondFactorRequired } from "./setup_auth";
+import { getSetupTargetScreen, hasExistingData, isSetupRequested } from "./setup_mode";
+import sqlInit from "./sql_init";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
     const sql = getSql();
@@ -22,6 +25,18 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         layoutOrientation: "vertical" as const,
         headingStyle: "plain" as const,
         componentId: "",
+        // Schema present but not yet initialized means a sync was started and interrupted, so the
+        // setup screen resumes it instead of starting over. A fully initialized DB is never mid-sync.
+        // Kept in the common items so both payload shapes carry the flag uniformly. An instance that
+        // was asked into setup has a finished database behind it, so its schema says nothing here.
+        syncInProgress: !dbInitialized && !isSetupRequested() && sqlInit.schemaExists(),
+        // Where the wizard should open, whether it still has anything to lose, and whether it has to
+        // be unlocked before it will act on it. Only a marker says otherwise; a first run leaves all
+        // three at their first-run answers.
+        hasExistingData: hasExistingData(),
+        setupAuthRequired: isSetupAuthRequired(),
+        setupSecondFactorRequired: isSetupSecondFactorRequired(),
+        setupTargetScreen: getSetupTargetScreen(),
         ...getIconConfig(assetPath)
     };
 
@@ -67,7 +82,7 @@ export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "ico
             ...iconPacks.map(p => generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                 : `api/attachments/download/${p.fontAttachmentId}`)),
-            generateTaskStateCss()
+            generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),
@@ -104,7 +119,7 @@ function getCustomThemeCssUrl(theme: string, themeNote: BNote | null) {
         return undefined;
     }
 
-    if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
+    if (!getPlatform().getEnv("TRILIUM_SAFE_MODE") && themeNote) {
         return `api/notes/download/${themeNote.noteId}`;
     }
 

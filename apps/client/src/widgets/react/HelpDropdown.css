@@ -1,0 +1,20 @@
+.dropdown.help-dropdown {
+    display: inline-flex;
+}
+
+.dropdown-menu.help-dropdown-content {
+    max-width: 340px;
+    padding: 12px;
+    white-space: normal;
+    font-size: var(--main-font-size);
+    line-height: 1.5;
+
+    code {
+        white-space: nowrap;
+    }
+
+    .tn-link {
+        display: inline-block;
+        margin-top: 10px;
+    }
+}

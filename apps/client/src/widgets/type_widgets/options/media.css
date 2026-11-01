@@ -1,0 +1,18 @@
+/* The choice buttons and their labels sit on one line in a dialog sized to its content; a settings
+   page is only as wide as its pane, and a narrow one has to be allowed to stack them rather than
+   push the card wider than the page. */
+.media-images .image-compression-section {
+    flex-wrap: wrap;
+}
+
+/* The width the compression sliders were given, so the two cards read as one page. */
+.media-ocr .slider {
+    width: 140px;
+}
+
+/* Wide enough for the sentence written across it, and fixed: the label beside it would otherwise
+   take the row's slack and leave the bar too narrow to read its own progress in. */
+.media-batch-ocr .media-batch-ocr-progress {
+    flex: 0 0 200px;
+    height: 24px;
+}

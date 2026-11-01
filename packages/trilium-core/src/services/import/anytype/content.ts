@@ -4,8 +4,9 @@
  * An object's `snapshot.data.blocks` is a flat list joined into a tree by each block's `childrenIds`.
  * {@link extractContent} walks that tree from the root in document order and converts each block to HTML —
  * headings (`<h2>`/`<h3>`/`<h4>`), bullet/numbered/task lists (grouped and nested), toggles, callouts,
- * quotes, dividers, tables ({@link renderTable}), Mermaid diagrams / LaTeX math ({@link renderLatexBlock})
- * and cross-page reference links — applying inline marks ({@link renderInlineText}) and rendering code
+ * quotes, dividers, tables ({@link renderTable}), Mermaid diagrams / LaTeX math ({@link renderLatexBlock}),
+ * bookmark cards ({@link renderBookmark} → link-embed previews) and cross-page reference links — applying
+ * inline marks ({@link renderInlineText}) and rendering code
  * blocks ({@link renderCodeBlock}). It returns the HTML plus the Trilium ids of every linked-to page (for
  * the `internalLink` relations). The structure importer (importer.ts) owns object selection and the note
  * tree; it calls into here. Mirrors the Notion importer's `converter.ts`.
@@ -112,6 +113,21 @@ export function extractContent(blocks: AnytypeBlock[], rootId: string, resolveLi
             }
             linkTargetIds.add(target.noteId);
             return `<p><a class="reference-link" href="#root/${target.noteId}">${escapeHtml(target.title)}</a></p>`;
+        }
+
+        // A bookmark block — Anytype's web-link card. It becomes a Trilium link-embed (open-graph preview),
+        // the same markup the Notion importer produces for its bookmark cards. The card's url/title/description
+        // are carried inline; its favicon/preview are content-addressed file CIDs, emitted as placeholders the
+        // importer resolves to inline `data:` URIs (how Trilium natively stores a link-embed favicon/image).
+        // Those file ids are surfaced (like an inline image's) so a collection-scoped export doesn't mistake
+        // them for stray members. A card still missing its url is dropped.
+        if (block.bookmark) {
+            for (const hash of [block.bookmark.faviconHash, block.bookmark.imageHash]) {
+                if (hash) {
+                    fileTargetIds.add(hash);
+                }
+            }
+            return renderBookmark(block.bookmark);
         }
 
         // A file/media block — an embedded image or attached file (PDF, audio, …). The placeholder carries
@@ -419,14 +435,45 @@ function paletteValue(covering: AppliedMark[], type: string, palette: Record<str
 }
 // #endregion
 
-// #region Code blocks
-// PrismJS language ids Anytype uses that don't line up with a Trilium markdown language code. Most ids
-// (javascript, python, go, rust, …) match directly; only the mismatches need listing here. `clike` is
-// PrismJS's generic C-family base, mapped to plain C as the closest concrete language.
-const LANGUAGE_ALIASES: Record<string, string> = {
-    clike: "c"
-};
+// #region Bookmarks
+/**
+ * Renders an Anytype bookmark block as a Trilium link-embed (`<section class="link-embed" …>`), the same
+ * open-graph-preview markup the Notion importer produces and CKEditor's LinkEmbed plugin round-trips. The
+ * card's `url`, `title` and `description` map to `data-url` / `data-title` / `data-description`. The
+ * favicon/preview are content-addressed file CIDs (`faviconHash`/`imageHash`), emitted as-is in
+ * `data-favicon` / `data-image` as placeholders — the importer saves each as an attachment of the note and
+ * rewrites the attribute to point at it (the form Trilium stores a link-embed's pictures in), or drops the
+ * attribute when the export has no usable bytes for it. Optional fields are only written when present. A
+ * card with no url (still fetching, or a broken export) is dropped.
+ */
+export function renderBookmark(bookmark: NonNullable<AnytypeBlock["bookmark"]>): string {
+    const url = (bookmark.url ?? "").trim();
+    if (!url) {
+        return "";
+    }
 
+    let attrs = `data-url="${escapeHtml(url)}" data-embed-type="opengraph"`;
+    const title = (bookmark.title ?? "").trim();
+    if (title) {
+        attrs += ` data-title="${escapeHtml(title)}"`;
+    }
+    const description = (bookmark.description ?? "").trim();
+    if (description) {
+        attrs += ` data-description="${escapeHtml(description)}"`;
+    }
+    const favicon = (bookmark.faviconHash ?? "").trim();
+    if (favicon) {
+        attrs += ` data-favicon="${escapeHtml(favicon)}"`;
+    }
+    const image = (bookmark.imageHash ?? "").trim();
+    if (image) {
+        attrs += ` data-image="${escapeHtml(image)}"`;
+    }
+    return `<section class="link-embed" ${attrs}></section>`;
+}
+// #endregion
+
+// #region Code blocks
 /**
  * Renders an Anytype `Code`-style block as a Trilium/CKEditor code block. Anytype tags the block with a
  * PrismJS language id in `fields.lang`; we map that to a Trilium MIME and emit it as the CKEditor
@@ -441,7 +488,7 @@ export function renderCodeBlock(text: string, lang: string | undefined): string 
 /** The CKEditor code-block language class value for an Anytype language id, or auto-detect when unknown. */
 function codeLanguage(lang: string | undefined): string {
     if (lang) {
-        const mimeDefinition = getMimeTypeFromMarkdownName(LANGUAGE_ALIASES[lang] ?? lang);
+        const mimeDefinition = getMimeTypeFromMarkdownName(lang);
         if (mimeDefinition) {
             return normalizeMimeTypeForCKEditor(mimeDefinition.mime);
         }
@@ -472,10 +519,12 @@ export function renderLatexBlock(text: string, processor: string | undefined): s
  * Finds the inline-math runs in a text block. Anytype carries an inline formula as literal `$…$` (inline) or
  * `$$…$$` (display) text with no mark. The delimiter rules mirror Trilium's markdown renderer: a delimiter
  * `$`/`$$` may not sit next to another `$` (so `${VAR}` and mismatched `$$x$` stay literal) and the body may
- * not contain a `$` or a blank line. Ranges are returned in document order with their original offsets.
+ * not contain a `$` or a blank line. An inline `$` pair also needs a non-space character inside each
+ * delimiter and no digit after the closing one, so prices such as `$15 and $6` stay literal. Ranges are
+ * returned in document order with their original offsets.
  */
 function splitInlineFormulas(text: string): { from: number; to: number; body: string; display: boolean }[] {
-    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?!\$)/g;
+    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![$\d])/g;
     const formulas: { from: number; to: number; body: string; display: boolean }[] = [];
     for (const match of text.matchAll(pattern)) {
         const display = match[1] !== undefined;

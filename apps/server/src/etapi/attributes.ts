@@ -35,6 +35,10 @@ function register(router: Router) {
         eu.validateAndPatch(_params, req.body, ALLOWED_PROPERTIES_FOR_CREATE_ATTRIBUTE);
         const params: AttributeRow = _params as AttributeRow;
 
+        if (params.attributeId && becca.getAttribute(params.attributeId)) {
+            throw new eu.EtapiError(409, "ATTRIBUTE_ALREADY_EXISTS", `Attribute '${params.attributeId}' already exists.`);
+        }
+
         try {
             const attr = attributeService.createAttribute(params);
 

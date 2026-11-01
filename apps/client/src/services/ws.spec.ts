@@ -7,10 +7,12 @@ import { buildNote } from "../test/easy-froca";
 // and swap behaviour per test without re-mocking.
 const toast = vi.hoisted(() => ({
     showError: vi.fn(),
+    showErrorTitleAndMessage: vi.fn(),
     showMessage: vi.fn(),
     showPersistent: vi.fn(),
     closePersistent: vi.fn()
 }));
+const showUnhandledError = vi.hoisted(() => vi.fn());
 const bundle = vi.hoisted(() => ({ getAndExecuteBundle: vi.fn() }));
 const appCtx = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
 const frocaUpdater = vi.hoisted(() => ({ processEntityChanges: vi.fn(async () => {}) }));
@@ -20,7 +22,7 @@ const utilsCtrl = vi.hoisted(() => ({
 }));
 const optionsCtrl = vi.hoisted(() => ({ is: vi.fn(() => false) }));
 
-vi.mock("./toast.js", () => ({ default: toast }));
+vi.mock("./toast.js", () => ({ default: toast, showUnhandledError }));
 vi.mock("./bundle.js", () => ({ default: bundle }));
 vi.mock("../components/app_context.js", () => ({ default: appCtx }));
 vi.mock("./froca_updater.js", () => ({ default: frocaUpdater }));
@@ -83,15 +85,28 @@ describe("dispatchMessage", () => {
         await ws.dispatchMessage({ type: "reload-frontend", reason: "x" } as WebSocketMessage);
         expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("reload"));
 
-        await ws.dispatchMessage({ type: "sync-hash-check-failed" } as any);
+        const { default: froca } = await import("./froca.js");
+        const reloadAllSpy = vi.spyOn(froca, "reloadAll").mockImplementation(async () => {});
+        utilsCtrl.reloadFrontendApp.mockClear();
+        await ws.dispatchMessage({ type: "reload-froca", reason: "consistency checks" } as WebSocketMessage);
+        expect(reloadAllSpy).toHaveBeenCalledTimes(1);
+        expect(appCtx.triggerEvent).toHaveBeenCalledWith("frocaReloaded", {});
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
+
+        await ws.dispatchMessage({ type: "sync-hash-check-failed", sectors: ["blobs/9"] } as any);
+        expect(toast.showErrorTitleAndMessage).toHaveBeenCalledTimes(1);
+
         await ws.dispatchMessage({ type: "consistency-checks-failed" } as any);
-        expect(toast.showError).toHaveBeenCalledTimes(2);
+        expect(toast.showError).toHaveBeenCalledTimes(1);
 
         await ws.dispatchMessage({ type: "api-log-messages", noteId: "n1", messages: ["a"] } as any);
         expect(appCtx.triggerEvent).toHaveBeenCalledWith("apiLogMessages", { noteId: "n1", messages: ["a"] });
 
         await ws.dispatchMessage({ type: "toast", message: "hi", timeout: 5 } as any);
         expect(toast.showMessage).toHaveBeenCalledWith("hi", 5);
+
+        await ws.dispatchMessage({ type: "unhandled-error", message: "Note 'abc' doesn't exist.", stack: "at getNoteOrThrow" } as any);
+        expect(showUnhandledError).toHaveBeenCalledWith("Note 'abc' doesn't exist.", "at getNoteOrThrow");
     });
 
     it("execute-script resolves the origin entity from froca when an id is present", async () => {
@@ -118,6 +133,27 @@ describe("dispatchMessage", () => {
             params: []
         } as any);
         expect(bundle.getAndExecuteBundle).toHaveBeenCalledWith("cur2", null, "x", []);
+    });
+
+    it("reloads when a ping reports the protected session expired on the backend", async () => {
+        const ws = await loadWs();
+        (window as any).glob.isProtectedSessionAvailable = true;
+
+        // flag absent (client->server ping shape) or still true -> no reload
+        await ws.dispatchMessage({ type: "ping" } as WebSocketMessage);
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: true } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
+
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: false } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("protected session"));
+    });
+
+    it("does not reload on expiry pings when the client never had the protected session", async () => {
+        const ws = await loadWs();
+        (window as any).glob.isProtectedSessionAvailable = false;
+
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: false } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
     });
 
     it("ignores unknown message types", async () => {
@@ -161,7 +197,7 @@ describe("frontend-update / executeFrontendUpdate", () => {
         (window as any).glob.isDev = false;
 
         await ws.dispatchMessage({ type: "frontend-update", data: { entityChanges: [{ id: 101, entityName: "notes", entityId: "nA" }] } } as any);
-        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalled();
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("boom"));
     });
 
     it("shows a toast instead of reloading when debug mode is enabled", async () => {
@@ -196,6 +232,63 @@ describe("frontend-update / executeFrontendUpdate", () => {
         // first consumer (held) processed q1; the second consumer drained q2+q3;
         // the third consumer found nothing left -> only 2 real processing calls
         expect(frocaUpdater.processEntityChanges).toHaveBeenCalledTimes(2);
+    });
+
+    it("runs a froca rebuild and entity changes one after the other, in either order", async () => {
+        const ws = await loadWs();
+        const { default: froca } = await import("./froca.js");
+        const settle = () => new Promise((res) => setTimeout(res, 0));
+        const update = (id: number) => ws.dispatchMessage({
+            type: "frontend-update", data: { entityChanges: [{ id, entityName: "notes", entityId: `r${id}` }] }
+        } as any);
+        const rebuild = () => ws.dispatchMessage({ type: "reload-froca", reason: "test" } as WebSocketMessage);
+
+        let finishRebuild = () => {};
+        const reloadAll = vi.spyOn(froca, "reloadAll")
+            .mockImplementationOnce(() => new Promise<void>((res) => { finishRebuild = res; }))
+            .mockResolvedValue(undefined);
+        const firstRebuild = rebuild();
+        await settle();
+        const updateDuringRebuild = update(301);
+        await settle();
+        expect(frocaUpdater.processEntityChanges).not.toHaveBeenCalled();
+        finishRebuild();
+        await Promise.all([ firstRebuild, updateDuringRebuild ]);
+        expect(frocaUpdater.processEntityChanges).toHaveBeenCalledTimes(1);
+
+        let finishUpdate = () => {};
+        frocaUpdater.processEntityChanges
+            .mockImplementationOnce(() => new Promise<void>((res) => { finishUpdate = res; }));
+        const heldUpdate = update(302);
+        await settle();
+        const rebuildDuringUpdate = rebuild();
+        await settle();
+        expect(reloadAll).toHaveBeenCalledTimes(1);
+        finishUpdate();
+        await Promise.all([ heldUpdate, rebuildDuringUpdate ]);
+        expect(reloadAll).toHaveBeenCalledTimes(2);
+    });
+
+    it("falls back to a full reload when a rebuild fails, and still applies the changes queued behind it", async () => {
+        const ws = await loadWs();
+        const { default: froca } = await import("./froca.js");
+        let failRebuild = (_error: Error) => {};
+        vi.spyOn(froca, "reloadAll")
+            .mockImplementationOnce(() => new Promise<void>((_res, rej) => { failRebuild = rej; }));
+
+        const failingRebuild = ws.dispatchMessage({ type: "reload-froca", reason: "test" } as WebSocketMessage);
+        await new Promise((res) => setTimeout(res, 0));
+        const queuedUpdate = ws.dispatchMessage({
+            type: "frontend-update", data: { entityChanges: [{ id: 401, entityName: "notes", entityId: "f1" }] }
+        } as any);
+        failRebuild(new Error("tree request failed"));
+
+        await expect(queuedUpdate).resolves.toBeUndefined();
+        expect(frocaUpdater.processEntityChanges).toHaveBeenCalledWith([
+            expect.objectContaining({ id: 401 })
+        ]);
+        await failingRebuild;
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("tree request failed"));
     });
 });
 

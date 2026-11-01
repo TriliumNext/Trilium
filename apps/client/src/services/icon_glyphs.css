@@ -1,0 +1,8 @@
+/* What an icon class is asked to resolve to, before it is drawn anywhere but in the page (see
+   icon_glyphs.ts). Out of sight and out of the way, but laid out: a pseudo-element of a
+   `display: none` element has no content to read. */
+.icon-glyph-probe {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+}

@@ -1,0 +1,21 @@
+/*
+ * CKEditor 48's content colors, which CKEditor 49 replaced with lighter, opaque ones that do not
+ * suit a dark theme. Imported after CKEditor's stylesheet, whose selectors these match.
+ */
+
+.ck-content blockquote {
+    border-left-color: hsl(0, 0%, 80%);
+}
+
+.ck-content[dir="rtl"] blockquote {
+    border-right-color: hsl(0, 0%, 80%);
+}
+
+.ck-content pre {
+    border-color: hsl(0, 0%, 77%);
+    background: hsla(0, 0%, 78%, .3);
+}
+
+.ck-content hr {
+    background: hsl(0, 0%, 87%);
+}

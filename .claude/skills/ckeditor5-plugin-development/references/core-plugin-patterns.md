@@ -3,7 +3,7 @@
 > **The source paths below (`packages/ckeditor5-basic-styles`, `-link`, `-image`, `-ui`, etc.)
 > point into the CKEditor 5 *library* source
 > ([github.com/ckeditor/ckeditor5](https://github.com/ckeditor/ckeditor5)) — the external
-> dependency Trilium pins at `48.2.0` — NOT into Trilium's monorepo.** They show where each idiom
+> dependency Trilium tracks at **48 or later** — NOT into Trilium's monorepo.** They show where each idiom
 > lives in the library's own source. These are the upstream library packages (basic-styles, link,
 > image, engine, ui, core, widget, typing); do **not** confuse them with Trilium's own
 > `packages/ckeditor5-*` plugins (admonition, collapsible, footnotes, keyboard-marker, math,
@@ -11,7 +11,7 @@
 > Trilium files — the symbols ship inside the `ckeditor5` npm package.
 
 Real-world idioms mined from the actual library `packages/*/src` source (verified against
-`ckeditor5@48.2.0`). These go beyond the tutorials and are the patterns the official plugins
+`ckeditor5` 48 or later). These go beyond the tutorials and are the patterns the official plugins
 actually use — and the patterns Trilium's plugins follow. Each item cites its source file in the
 CKEditor library repository.
 
@@ -69,7 +69,7 @@ untyped. (See also `tooling-and-packaging.md`.)
 
 Inline-style features don't hand-roll the command — they reuse `AttributeCommand` and tag the
 attribute as formatting so it behaves natively (copied on Enter, replicated on paste). Trilium's
-`ckeditor5-keyboard-marker` follows this exactly: it registers a built-in `AttributeCommand` for
+`keyboard_marker` follows this exactly: it registers a built-in `AttributeCommand` for
 its `$text` attribute rather than writing a custom command.
 
 ```ts
@@ -161,6 +161,48 @@ editor.editing.reconvertItem( item );   // manual full re-downcast (editingcontr
 Use when the *tag/structure* depends on an attribute (e.g. `td`↔`th`). Reconvert the parent when a
 child-count change affects the parent's rendering.
 
+### Reconversion silently drops sibling UIElements from reused child views
+
+`elementToStructure` reconverts on **every** direct-child insert/remove, and the reconversion
+reuses the children it can: `fillSlots()` → `reinsertNode()` moves each child by
+`writer.move(writer.createRangeOn(mappedViewElement), …)`. That range covers only the element the
+mapper is bound to — anything a *sibling* converter put next to it inside the same attribute
+wrapper is left behind in the discarded subtree.
+
+A to-do list item is the case that bites: its mapped element is
+`<span class="todo-list__label__description">`, while the checkbox is a UIElement sibling inside
+`<span class="todo-list__label">`. Put a to-do list in a structure slot and its checkboxes vanish
+as the body is edited. Plain lists survive only by accident — CKEditor's opt-out
+`isItemBlockInsideStructureSlot()` walks up through attribute elements named `ol`/`ul`/`li` only,
+so it reaches the slot parent from an `<li>` but stops at the to-do label. (Trilium hits this in
+`collapsible_editing.ts`; issue #11544.)
+
+The fix is to refresh those blocks so they are rebuilt rather than moved:
+
+```ts
+this.listenTo( model.document, 'change:data', () => {
+	// …collect the structure elements whose child list changed, then:
+	editor.editing.reconvertItem( block );
+} );   // NOTE: default priority — see below
+```
+
+Two things that look right and are not:
+
+- **Don't force non-reuse by adding to `refreshedItems`** from a `reduceChanges` listener. That
+  set only feeds `canReuseView()`; without the matching remove/insert differ entries the old view
+  stays bound in the mapper, and the next position lookup into it throws
+  `mapping-model-offset-not-found`. `editing.reconvertItem()` emits both — use it.
+- **Don't hook `ListEditing`'s `checkElement`.** It only fires for lists a change already
+  mentions, so a heading typed *below* the list reconverts the structure with nothing pointing at
+  the list, and every marker goes at once.
+
+**Listener priority is load-bearing here.** `change` and `change:data` listeners on
+`model.document` share one priority-ordered list, so `EditingController`'s `change` handler at
+`low` outranks anything at `lowest`. A forced reconversion must run at **default** priority: after
+`ListEditing`'s `high` handler, whose own refreshes add the insert/remove entries that trigger the
+reconversion, and before the controller's `low` handler that runs the conversion. At `high` it
+misses those entries; at `lowest` it runs after conversion and does nothing at all.
+
 ## Floating selection toolbar (BalloonToolbar)
 
 The `BalloonToolbar` plugin shows a toolbar over a non-collapsed selection (Medium-style). Items
@@ -200,6 +242,53 @@ conversion.for( 'dataDowncast' ).elementToElement( {
 `createRawElement(tag, attrs, renderFn)` — `renderFn(domElement)` gets the real DOM node for direct
 manipulation (innerHTML, listeners). `registerRawContentMatcher` preserves inner HTML through upcast
 instead of converting it. Selection can't enter a raw element.
+
+## Sanitizing untrusted HTML (CKEditor ships none)
+
+CKEditor deliberately provides **no** sanitizer — it takes one from the integrator. Two facts to
+know before designing a feature that renders untrusted HTML:
+
+- `htmlEmbed`'s built-in `sanitizeHtml` is a **pass-through** that only logs
+  `html-embed-provide-sanitize-function`. Relying on the default means no sanitization at all.
+- A **top-level** `config.sanitizeHtml` is rejected outright: the `Editor` constructor throws
+  `editor-config-sanitizehtml-not-supported`. The callback must live under the feature's own
+  config namespace.
+
+So the idiom is a host-supplied callback, keyed by feature — **required, with no fallback**:
+
+```ts
+// upstream: config.htmlEmbed.sanitizeHtml → ( html ) => ( { html, hasChanged } )
+// Trilium:  config.aiAssistant.sanitizeHtml → ( html ) => html
+//   packages/ckeditor5/src/plugins/ai_assistant/ai_assistant_config.ts
+export type AiSanitizeFunction = ( html: string ) => string;
+
+// required in the config interface (the AI assistant's only non-optional field), so a host
+// that forgets it fails to compile — and crashes rather than rendering unsanitized output
+private _sanitize( html: string ): string {
+	const sanitize = this.editor.config.get( 'aiAssistant' )?.sanitizeHtml;
+	if ( !sanitize ) {
+		throw new CKEditorError( 'ai-assistant-sanitize-html-required', { pluginName: 'AiAssistantUI' } );
+	}
+	return sanitize( html );
+}
+```
+
+In Trilium the host passes the app's DOMPurify pass — `sanitizeNoteContentHtml` from
+`apps/client/src/services/sanitize_content.ts`, wired in
+`apps/client/src/widgets/type_widgets/text/config.ts`. That is the same sanitizer used for note
+content, so it already covers what hand-rolled strip lists miss (namespaced `xlink:href`, SVG
+animation elements, `data:` URIs on non-images). Tests pass their own double (`html => html`).
+
+Do **not** hand-roll a tag/attribute deny-list, and do not add DOMPurify to `packages/ckeditor5`
+(the host already owns one). Do not keep a built-in strip "as a fallback" either: it silently
+becomes the real defence whenever a host forgets to configure one, and it reads as safe in review.
+Throwing is the correct behaviour — a missing sanitizer is a misconfiguration, not a runtime
+condition to degrade around.
+
+Note the editor's **data pipeline** is not a sanitizer either: `editor.data.toModel(...)` drops what
+the schema can't represent, which is a correctness filter, not a security boundary — and General
+HTML Support widens it. Anything reaching a raw `innerHTML` (previews, balloons, `createRawElement`
+render callbacks) needs the configured sanitizer.
 
 ## Clipboard pipeline
 
@@ -260,7 +349,7 @@ editor.editing.view.document.registerPostFixer( writer => { /* view-side cleanup
 
 Post-fixers run after each change (model) or downcast (view) and re-run until all return `false`.
 Use to guarantee structure (e.g. a required paragraph inside an editable, no two adjacent X).
-Trilium's `ckeditor5-admonition` and `ckeditor5-collapsible` register **multiple**
+Trilium's `admonition` and `collapsible` register **multiple**
 `registerPostFixer`s to keep their block structure valid (e.g. an enforced title/content region).
 
 ## Inserting content — option details

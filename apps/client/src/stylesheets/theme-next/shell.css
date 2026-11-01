@@ -25,6 +25,20 @@ body {
     --native-titlebar-darwin-y-offset: 12 !important;
 }
 
+/*
+ * The caption buttons are centred within the overlay, so its height has to be twice the centre
+ * line of the tab bar's own buttons for the two to line up. Those buttons are top-aligned
+ * (`margin: 3px ... auto ...` below), so the centre line follows the tab bar height: 3 + 30/2 = 18
+ * here, and 26 in the taller horizontal layout. Linux-only, as in the base stylesheet.
+ */
+body.platform-linux {
+    --native-titlebar-height: 36 !important;
+}
+
+body.platform-linux.layout-horizontal {
+    --native-titlebar-height: 52 !important;
+}
+
 body.layout-horizontal {
     --active-tab-background-color: var(--launcher-pane-horiz-background-color);
     --active-tab-hover-background-color: var(--active-tab-background-color);
@@ -102,43 +116,16 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 /* #endregion */
 
 #horizontal-main-container {
-    /* The default start-start and end-start border radius for the note split.
-     * Updated automatically according to the layout. */
+    /* The default start-start and end-start border radius for the note split. */
     --note-split-top-border-radius: var(--center-pane-border-radius);
     --note-split-bottom-border-radius: var(--center-pane-border-radius);
 }
 
-/* Matches when the left pane is collapsed */
-#horizontal-main-container.left-pane-hidden {
-    --note-split-top-border-radius: 0;
-    --tab-first-item-horiz-offset: 5px;
-}
-
-/* Matches when a status bar panel is open */
-body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
-    --note-split-bottom-border-radius: 0;
-}
-
-/* Add a border to the vertical launch bar if collapsed. */
-body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.vertical {
-    border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
-}
-
-/*
- * Zen mode
- */
-
-@keyframes zen-formatting-toolbar-entrance {
-    from {
-        transform: translateY(200%);
-    } to {
-        transform: translateY(0);
-    }
-}
-
-body.zen .note-split .ribbon-container .classic-toolbar-widget {
-    position: relative;
-    animation: zen-formatting-toolbar-entrance 300ms ease-out;
+/* Draws the launch bar's border in the gap between the peek button and the peeked tree. The
+   offset is physical, since the button is mirrored in RTL. */
+body.layout-vertical #horizontal-main-container > .left-pane-peek-button.peek-pane-button-action-collapse {
+    box-shadow: 2px 0 var(--left-pane-collapsed-border-color),
+        2px 0 var(--launcher-pane-vert-background-color);
 }
 
 /*
@@ -164,8 +151,27 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-body[dir=ltr] #launcher-container {
-    scrollbar-gutter: stable both-edges;
+/* Thin launcher-rail scrollbar; the padding below (set from the JS-measured
+ * `--launcher-scrollbar-size`) offsets its width so it never shifts the centred buttons. */
+#launcher-container {
+    --scrollbar-thickness: 4px;
+    --scrollbar-thumb-thickness: 4px;
+    --scrollbar-thumb-hover-thickness: 4px;
+    scrollbar-width: thin;
+}
+
+/* Style the base pseudo (forms.css styles only :vertical) so WebKit shows a persistent bar
+ * instead of an auto-hiding overlay. */
+#launcher-container::-webkit-scrollbar {
+    width: var(--scrollbar-thickness);
+    height: var(--scrollbar-thickness);
+}
+
+@supports (-webkit-box-reflect: below) {
+    /* Let ::-webkit-scrollbar win over scrollbar-width on WebKit (mirrors forms.css's :root reset). */
+    #launcher-container {
+        scrollbar-width: unset;
+    }
 }
 
 #launcher-pane.vertical {
@@ -192,6 +198,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    padding-inline-start: var(--launcher-scrollbar-size, 0px);
 }
 
 #launcher-pane.horizontal {
@@ -217,6 +224,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    padding-block-start: var(--launcher-scrollbar-size, 0px);
 }
 
 @media (max-width: 991px) {
@@ -277,12 +285,6 @@ body[dir=ltr] #launcher-container {
         box-shadow 100ms ease-in;
 }
 
-#launcher-pane div.launcher-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 #launcher-pane .launcher-button {
     font-size: var(--launcher-pane-icon-size) !important;
 }
@@ -341,7 +343,7 @@ body[dir=ltr] #launcher-container {
 
 #launcher-pane .sync-status-disconnected-with-changes {
     --pulse-color: var(--sync-status-error-pulse-color);
-    animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
+    animation: sync-status-pulse 1s steps(10, jump-none) alternate-reverse infinite;
 }
 
 #launcher-pane button.global-menu-button {
@@ -349,20 +351,6 @@ body[dir=ltr] #launcher-container {
     --update-badge-y-offset: -12%;
 
     --hover-item-background-color: transparent;
-}
-
-.tooltip .tooltip-arrow {
-    display: none;
-}
-
-.tooltip .tooltip-inner {
-    padding: var(--tooltip-padding) !important;
-    box-shadow: var(--tooltip-box-shadow) !important;
-    border: unset !important;
-    border-radius: var(--tooltip-border-radius);
-    backdrop-filter: var(--tooltip-backdrop-filter);
-    font-size: var(--tooltip-font-size);
-    color: var(--tooltip-foreground-color) !important;
 }
 
 /*
@@ -470,232 +458,88 @@ body .calendar-dropdown-widget .calendar-body a:hover {
     text-decoration: unset;
 }
 
-/*
- * Bookmarks folder popup
- */
-
-div.bookmark-folder-widget {
-    min-width: auto;
-    max-width: 40vw;
-    padding: 0;
-    font-size: 1.1em;
-}
-
-div.bookmark-folder-widget .children-notes {
-    margin: 0;
-}
-
-/* Item */
-div.bookmark-folder-widget span.note-link {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
+body .calendar-dropdown-widget .calendar-body a.calendar-date-active {
     border-radius: 6px;
-    padding: 6px 25px;
-}
-
-/* Item: the parent note */
-div.bookmark-folder-widget .parent-note .note-link {
-    padding: 6px 8px;
-    font-weight: bold;
-}
-
-div.bookmark-folder-widget .note-link:hover {
-    background: var(--hover-item-background-color);
-}
-
-div.bookmark-folder-widget .note-link a {
-    padding-inline-start: 8px;
-    color: var(--menu-text-color);
-    cursor: default;
-}
-
-div.bookmark-folder-widget .note-link:hover a {
-    color: var(--hover-item-text-color);
-}
-
-/* The item's icon */
-div.bookmark-folder-widget .note-link .tn-icon {
-    color: var(--menu-item-icon-color);
-    font-size: 1.2em;
+    background: var(--calendar-day-selected-background);
+    color: var(--calendar-day-selected-color) !important;
 }
 
 /*
  * QUICK SEARCH BOX
  */
 
-div.quick-search {
-    --padding-top: 8px;
-    --padding-inline-start: 8px;
-    --padding-inline-end: 8px;
-    --padding-bottom: 8px;
-
-    position: relative;
-    flex-direction: row-reverse;
-    align-items: center;
-    height: unset;
-    contain: unset;
-    padding: var(--padding-top) var(--padding-inline-end) var(--padding-bottom) var(--padding-inline-start);
-}
-
-div.quick-search,
-div.quick-search:hover,
-div.quick-search:focus-within {
-    /* Prevent changes to background and outline when the state of the input group changes */
-    background: transparent;
-    outline: none;
-}
-
-div.quick-search::before {
-    /* The background rectangle of the search box */
-    position: absolute;
-    content: "";
-    top: var(--padding-top);
-    inset-inline-start: var(--padding-inline-start);
-    bottom: var(--padding-bottom);
-    inset-inline-end: var(--padding-inline-end);
-    z-index: 0;
-    border: 2px solid transparent;
-    border-radius: 6px;
-    background: var(--quick-search-background);
-    transition: background-color 200ms ease-in;
-}
-
-div.quick-search:hover:before {
-    /* Hovered search box background rectangle */
-    background: var(--quick-search-hover-background);
-    transition: background-color 75ms ease-out;
-}
-
-div.quick-search:focus-within:before {
-    /* Focused search box background rectangle */
-    border-color: var(--quick-search-focus-border);
-    background: var(--quick-search-focus-background);
-    transition: background-color 100ms ease-out;
-}
-
-div.quick-search input {
-    padding-inline-start: 15px !important;
-    box-shadow: unset !important;
-    background: transparent !important;
-}
-
-div.quick-search input::placeholder {
-    color: var(--quick-search-color);
-}
-
-div.quick-search:focus-within input {
-    color: var(--quick-search-focus-color) !important;
-}
-
-div.quick-search .search-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 25px;
-    height: 25px;
-    margin-inline-end: 8px;
-    border-radius: 50%;
-    padding: 0;
-    color: var(--quick-search-color) !important;
-    transition: background-color 200ms ease-in !important;
-}
-
-div.quick-search .search-button:active {
-    transform: scale(0.85);
-}
-
-div.quick-search:focus-within:has(input:not(:placeholder-shown)) .search-button {
-    /* Matches when the input has a value and the focus is inside the search box */
-    background: var(--left-pane-item-action-button-background) !important;
-    color: var(--left-pane-item-action-button-color) !important;
-    transition: background-color 500ms ease-out !important;
-}
-
-html body .quick-search:focus-within .search-button:hover,
-div.quick-search .search-button.show {
-    /* Hover state */
-    background: var(--left-pane-item-action-button-hover-background) !important;
-    color: var(--left-pane-item-action-button-color) !important;
-    transition: background-color 100ms ease-out !important;
-}
-
-div.quick-search .dropdown-menu {
+/* The results popup is portaled to `<body>`, outside `div.quick-search`. `:root` outranks the
+   popup's own rules in quick_search.css. */
+:root .dropdown-menu.quick-search-menu {
     --quick-search-item-delimiter-color: transparent;
     --menu-item-icon-vert-offset: -.065em;
-}
 
-/*
- * TO FIX: The quick search results dropdown has a backdrop issue with the tree panel
- * when background effects are enabled in Electron.
- * As a temporary workaround, the backdrop and transparency are disabled for the
- * vertical layout.
- */
-body.layout-vertical.background-effects div.quick-search .dropdown-menu {
-    --menu-background-color: var(--menu-background-color-no-backdrop) !important;
-}
+    /* Item */
+    .dropdown-item {
+        padding: 8px 12px !important;
+    }
 
-/* Item */
-.quick-search .dropdown-menu *.dropdown-item {
-    padding: 8px 12px !important;
-}
+    .dropdown-item:not(.disabled):hover,
+    .dropdown-item:not(.disabled):focus,
+    .dropdown-item:not(.disabled):focus-visible {
+        outline: none !important;
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
 
-.quick-search .quick-search-item-icon {
-    vertical-align: text-bottom;
-}
+    .quick-search-item-icon {
+        vertical-align: text-bottom;
+    }
 
-/* Note path */
-.quick-search .dropdown-menu small {
-    display: block;
-    opacity: 0.5;
-    font-size: 0.75em;
-    overflow: hidden;
-}
+    /* Note content snippet */
+    .search-result-content {
+        background-color: var(--quick-search-result-content-background);
+        border-radius: 4px;
+    }
 
-/* Note content snippet */
-:root .quick-search .search-result-content {
-    background-color: var(--quick-search-result-content-background);
-    border-radius: 4px;
-}
-
-/* Highlighted search terms */
-:root .quick-search .search-result-title b,
-:root .quick-search .search-result-content b,
-:root .quick-search .search-result-attributes b {
-    color: var(--quick-search-result-highlight-color);
-    font-weight: 600;
-}
-
-.quick-search div.dropdown-divider {
-    margin: 8px 0;
+    /* Highlighted search terms */
+    :is(.search-result-title, .search-result-content, .search-result-attributes)
+        b:not(.search-fuzzy-match) {
+        color: var(--quick-search-result-highlight-color);
+        font-weight: 600;
+    }
 }
 
 /*
  * TREE PANE
+ *
+ * The tree popup editor's sidebar (`.tree-popup-sidebar`) hosts the same NoteTreeWidget outside
+ * `#left-pane`, so every rule in this section matches both via `:is()` — which also keeps the
+ * original id-level specificity for the popup, so these still override the base tree.css rules.
  */
 
-#left-pane div.tree {
+:is(#left-pane, .tree-popup-sidebar) div.tree {
     padding: 3px 6px 40px 6px;
     animation: fade-in 200ms ease-in;
 }
 
-#left-pane span.fancytree-node {
+#left-pane .tree.scroll-edge-fade {
+    --scroll-fade-top: 18px;
+    padding-top: 10px;
+}
+
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node {
     border: unset;
     border-radius: 6px;
     cursor: default;
 }
 
-#left-pane .ui-fancytree ul {
+:is(#left-pane, .tree-popup-sidebar) .ui-fancytree ul {
     padding-inline-start: 10px;
 }
 
 /* The root element of the tree */
-#left-pane .fancytree-container > li:first-child > span {
+:is(#left-pane, .tree-popup-sidebar) .fancytree-container > li:first-child > span {
     padding-inline-start: 12px;
 }
 
-#left-pane span.fancytree-node.fancytree-active,
-#left-pane span.fancytree-node.fancytree-active:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active:hover {
     position: relative;
     background: transparent;
     color: var(--custom-color, var(--left-pane-item-selected-color));
@@ -718,7 +562,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
  *                  element's background color, to allow alpha compositing for the hover state.
  */
 
-#left-pane span.fancytree-node.fancytree-active::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active::before {
     position: absolute;
     content: "";
     top: var(--left-pane-item-selected-shadow-size);
@@ -732,7 +576,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     z-index: -1;
 }
 
-#left-pane span.fancytree-node.fancytree-selected {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected {
     --left-pane-item-selected-shadow-size: 4px;
 
     position: relative;
@@ -740,7 +584,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     border-radius: 0;
 }
 
-#left-pane span.fancytree-node.fancytree-selected::after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected::after {
     display: block;
     position: absolute;
     z-index: -2;
@@ -750,12 +594,12 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     animation: left-pane-item-select 100ms ease-out;
 }
 
-#left-pane span.fancytree-node.protected > span.fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon {
     position: relative;
     filter: unset !important;
 }
 
-#left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon:after {
     position: absolute;
     bottom: 0;
     inset-inline-end: 0;
@@ -763,57 +607,46 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     content: "\eb4a";
     font-family: "boxicons";
     transform: translateX(25%);
+    color: var(--quick-search-result-highlight-color);
     background: var(--left-pane-background-color);
     border-radius: 50%;
 }
 
-body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon:after {
     transform: translateX(-25%);
 }
 
-@media (max-width: 991px) {
-    body.mobile #mobile-sidebar-container {
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    body.mobile #mobile-sidebar-wrapper {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-        border-inline-end: 1px solid var(--subtle-border-color);
-    }
-}
-
-#left-pane .fancytree-expander,
+:is(#left-pane, .tree-popup-sidebar) .fancytree-expander,
 .nested-note-list-item .note-expander {
     opacity: 0.65;
     transition: opacity 150ms ease-in;
 }
 
-#left-pane .fancytree-expander:hover,
+:is(#left-pane, .tree-popup-sidebar) .fancytree-expander:hover,
 .nested-note-list-item .note-expander:hover {
     opacity: 1;
     transition: opacity 300ms ease-out;
 }
 
-#left-pane .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) .fancytree-custom-icon {
     margin-top: 0; /* Use this to align the icon with the tree view item's caption */
     color: var(--custom-color, var(--left-pane-icon-color));
 }
 
-#left-pane span.fancytree-active .fancytree-title {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-active .fancytree-title {
     font-weight: normal;
 }
 
-#left-pane span.fancytree-node:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node:hover {
     background: var(--left-pane-item-hover-background);
 }
 
-#left-pane .note-indicator-icon.shared-indicator {
+:is(#left-pane, .tree-popup-sidebar) .note-indicator-icon.shared-indicator {
     opacity: 0.5;
 }
 
-#left-pane .tree-item-button,
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) .tree-item-button,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin-inline-end: 6px;
     border: unset;
     border-radius: 50%;
@@ -824,8 +657,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 200ms ease-out;
 }
 
-#left-pane .tree-item-button:hover,
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-item-button:hover,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
     background: var(--left-pane-item-action-button-hover-background);
     box-shadow: var(--left-pane-item-action-button-hover-shadow);
     transition:
@@ -833,8 +666,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 100ms ease-in;
 }
 
-#left-pane span.fancytree-node.fancytree-active .tree-item-button:hover,
-#left-pane span.fancytree-node.fancytree-active.fancytree-selected .fancytree-custom-icon:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active .tree-item-button:hover,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active.fancytree-selected .fancytree-custom-icon:hover {
     box-shadow: var(--left-pane-item-selected-action-button-hover-shadow);
 }
 
@@ -849,20 +682,20 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     }
 }
 
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin: 0;
 }
 
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon::before {
     border: 0;
     font-size: .65em;
 }
 
-#left-pane span.fancytree-node.fancytree-selected:hover .fancytree-custom-icon:not(:hover)::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected:hover .fancytree-custom-icon:not(:hover)::before {
     animation: bulk-action-button-blink 500ms linear infinite alternate;
 }
 
-#left-pane span.fancytree-node.fancytree-selected.protected .fancytree-custom-icon::after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected.protected .fancytree-custom-icon::after {
     /* Protected note indicator */
     display: none;
 }
@@ -878,7 +711,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
  */
 
 /* Toolbar container (collapsed state) */
-#left-pane .tree-actions {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions {
     max-width: var(--tree-actions-toolbar-collapsed-width);
     inset-inline-end: var(--tree-actions-toolbar-horizontal-margin);
     bottom: var(--tree-actions-toolbar-vertical-margin);
@@ -894,7 +727,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar container (expanded state) */
-#left-pane .tree-actions:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover {
     max-width: 200px;
     border-color: var(--dropdown-border-color);
     background: var(--menu-background-color);
@@ -903,7 +736,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar button (toolbar collapsed)*/
-#left-pane .tree-actions button {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions button {
     border: unset;
     color: var(--menu-item-icon-color);
     opacity: 0;
@@ -911,18 +744,18 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar button on hover */
-#left-pane .tree-actions button:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions button:hover {
     background: var(--hover-item-background-color);
 }
 
 /* Toolbar button (toolbar expanded) */
-#left-pane .tree-actions:hover button {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover button {
     opacity: 1;
     transition: opacity 250ms ease-in;
 }
 
 /* The floating expand button (toolbar collapsed) */
-#left-pane .tree-actions::after {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions::after {
     display: flex;
     content: "\eab4";
     position: absolute;
@@ -945,30 +778,11 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* The floating expand button (toolbar expanded) */
-#left-pane .tree-actions:hover::after {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover::after {
     background: transparent;
     color: var(--menu-item-icon-color);
     opacity: var(--menu-item-disabled-opacity);
     transition: color 200ms ease-out;
-}
-
-/*
- * Tree settings popup
- */
-
-#left-pane .tree-settings-popup {
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    border: 1px solid var(--dropdown-border-color);
-    padding: 25px;
-    background: var(--menu-background-color);
-    backdrop-filter: blur(10px) saturate(6);
-    color: var(--menu-text-color);
-}
-
-#left-pane .tree-settings-popup h4 {
-    margin-bottom: 0.75em;
-    font-size: 1.5em;
-    line-height: 1;
 }
 
 /*
@@ -1155,10 +969,6 @@ body.desktop:not(.background-effects) #root-widget.horizontal-layout {
     transition: none;
 }
 
-.tab-row-container .title-bar-buttons {
-    margin-top: calc((var(--tab-bar-height) - var(--tab-height)) * -1);
-}
-
 body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -1176,10 +986,6 @@ body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     inset-inline-end: 0;
     height: 3px;
     background-color: var(--workspace-tab-background-color);
-}
-
-body:not([dir=rtl]) .tab-row-widget .note-tab:nth-child(1) {
-    transform: translate3d(var(--tab-first-item-horiz-offset), 0, 0);
 }
 
 :root .tab-row-widget .note-tab .note-tab-icon {
@@ -1316,57 +1122,77 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
     background: var(--classic-toolbar-horiz-layout-background-color);
 }
 
-.classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
-    /* Remove the center panel border radius when the toolbar is visible */
-    --note-split-top-border-radius: 0;
-}
-
 /*
  * CENTER PANE
  */
 
  /* Note split */
- body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+ body.desktop .vertical-layout #center-pane .note-split {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-start-start-radius: var(--note-split-top-border-radius);
+}
 
-    body.desktop.experimental-feature-new-layout & {
-        border-end-start-radius: var(--note-split-bottom-border-radius);
+body.desktop .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
+    border-end-start-radius: var(--note-split-bottom-border-radius);
+}
 
-        > .scrolling-container {
-            /* Use clip-path to force rounded bottom corner for the note content */
-            clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
-        }
-    }
+/* Use clip-path to force rounded bottom corner for the note content */
+body.desktop .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) > .scrolling-container {
+    clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
+}
+
+.vertical-layout .classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container
+    #center-pane .note-split:not(.visible ~ .visible) {
+    border-start-start-radius: 0;
+}
+
+body.desktop.status-bar-panel-open .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) {
+    border-end-start-radius: 0;
+}
+
+body.desktop.status-bar-panel-open .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) > .scrolling-container {
+    clip-path: inset(0);
 }
 
 #center-pane .note-split {
     padding-top: 2px;
     background-color: var(--note-split-background-color, var(--main-background-color));
-    transition: border-color 150ms ease-out;
-    border: 2px solid transparent;
+}
+
+/* Mobile has no #center-pane: its splits stack inside #detail-container instead. */
+:is(#center-pane, body.mobile #detail-container) .note-split {
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid transparent;
+        border-radius: inherit;
+        pointer-events: none;
+        transition: border-color 150ms ease-out;
+        /* Above CodeMirror's gutters and panels (up to 300), below dropdowns (1000). */
+        z-index: 500;
+    }
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active {
+#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+body.mobile #detail-container > .split-note-container-widget.multiple-splits
+    > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
 }
 
 
 body:not(.background-effects) #center-pane .note-split {
     animation: note-entrance 100ms linear;
-}
-
-/*
- * Ribbon & note header
- */
-
-.ribbon-container {
-    margin-bottom: 0 !important;
 }
 
 @keyframes note-entrance {
@@ -1393,7 +1219,7 @@ body.mobile .note-title {
     margin-inline-end: 0;
 }
 
-.title-row > *:nth-child(2) {
+.title-row > .component:nth-child(2) {
     margin-inline-start: 0;
 }
 
@@ -1411,20 +1237,8 @@ body.desktop .title-row {
 
 /* The "Change note icon" button */
 
-:root .note-icon-widget button.note-icon,
-:root .note-icon-widget button.note-icon:hover {
+:root .note-icon-widget button.note-icon {
     border: none;
-    border-radius: 8px;
-}
-
-/* Dropdown open */
-:root .note-icon-widget button.note-icon.show {
-    background: var(--ck-editor-toolbar-dropdown-button-open-background);
-}
-
-:root .note-icon-widget button.note-icon:not(:disabled):hover {
-    background: var(--icon-button-hover-background);
-    color: var(--icon-button-hover-color);
 }
 
 .note-actions {
@@ -1436,7 +1250,7 @@ body.desktop .title-row {
  */
 
 .note-icon-widget .icon-list span {
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .note-icon-widget .icon-list span:hover {
@@ -1459,7 +1273,7 @@ body.desktop .title-row {
 
 #center-pane .note-split > div.alert {
     position: relative;
-    margin: 8px 0 0 0;
+    margin: 0;
     border: unset;
     border-radius: 0;
     padding: 8px 16px;
@@ -1468,10 +1282,6 @@ body.desktop .title-row {
     font-weight: normal;
     animation: alert-show 300ms ease-in;
     border-bottom: 2px solid #0000001c !important;
-}
-
-body.experimental-feature-new-layout #center-pane .note-split > div.alert {
-    margin-top: 0;
 }
 
 /*
@@ -1484,7 +1294,6 @@ body.experimental-feature-new-layout #center-pane .note-split > div.alert {
 
 /* The promoted attributes section */
 div.promoted-attributes-container {
-    display: flex;
     margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
@@ -1520,8 +1329,7 @@ div.promoted-attribute-cell {
 }
 
 /* A promoted attribute card (boolean attribute) */
-div.promoted-attribute-cell:has(input[type="checkbox"]):not(:has(.multiplicity > span)) {
-    /* Checbox attribute, without multiplicity */
+div.promoted-attribute-cell:has(input[type="checkbox"]) {
     padding-inline-end: var(--pa-card-padding-inline-start);
 }
 
@@ -1544,6 +1352,23 @@ div.promoted-attribute-cell div.input-group {
     padding: 1px 6px;
 }
 
+/*
+ * The field of a label holding several values, which in this theme sits inside a card of its own. The
+ * card is the frame — as it already is for the group around a single value's box, whose input gives up
+ * its border and background here — so the field brings none, a second rounded edge just within the
+ * first reading as two boxes where there is one.
+ *
+ * The border is kept and made invisible rather than dropped, so the chips sit where they would in a
+ * theme that does frame the field.
+ */
+div.promoted-attribute-cell div.promoted-attribute-values {
+    min-height: auto;
+
+    > .tn-field {
+        border-color: transparent;
+    }
+}
+
 div.promoted-attribute-cell input {
     padding: 2px 8px;
     font-weight: 500;
@@ -1564,244 +1389,18 @@ div.promoted-attribute-cell span.open-external-link-button {
 }
 
 div.promoted-attribute-cell .tn-checkbox {
-    --box-label-gap: 0;
+    --box-label-gap: 0px;
 
-    height: 1cap;
+    height: 1em;
+    vertical-align: calc((1cap - 1em) / 2);
+}
+
+div.promoted-attribute-cell .tn-checkbox > input[type="checkbox"] {
+    width: var(--box-size) !important;
 }
 
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
-    margin-inline-end: 1.5em;
-}
-
-/* The element containing the "new attribute" and "remove this attribute button" */
-div.promoted-attribute-cell .multiplicity:has(span) {
-    --icon-button-size: 24px;
-
-    margin-inline-start: 8px;
-    margin-inline-end: calc(var(--pa-card-padding-inline-start) - var(--pa-card-padding-inline-end));
-    font-size: 0; /* Prevent whitespaces creating a gap between buttons */
-    display: flex;
-}
-
-div.promoted-attribute-cell .multiplicity:has(span) span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-div.promoted-attribute-cell.promoted-attribute-label-color {
-    justify-content: space-between;
-}
-
-div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
-    width: auto;
-}
-
-/*
- * Floating buttons
- */
-
- /* Floating buttons container */
-.floating-buttons-children {
-    opacity: 1;
-    min-height: var(--floating-button-height);
-    transform-origin: right;
-    box-shadow: 1px 1px 1px var(--floating-button-shadow-color);
-    background: var(--floating-button-background-color);
-    backdrop-filter: blur(10px) saturate(6);
-    border-radius: 6px;
-    transition: transform 250ms ease-out,
-                opacity 250ms ease-out;
-}
-
-body[dir=rtl] .floating-buttons-children {
-    transform-origin: left;
-}
-
- /* Floating buttons container (collapsed) */
- .floating-buttons-children.temporarily-hidden {
-    display: flex !important;
-    opacity: 0;
-    transform: scaleX(0);
-    pointer-events: none;
-}
-
-/* Floating buttons */
-
-.floating-buttons-children {
-    --border-radius-size: 6px;
-}
-
-.floating-buttons-children > * {
-    margin: 0 !important;
-}
-
-div.floating-buttons-children > button,
-div.floating-buttons-children .floating-button {
-    width: var(--floating-button-width);
-    height: var(--floating-button-height);
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    font-size: var(--floating-button-icon-size);
-    align-items: center;
-    color: var(--floating-button-color);
-}
-
-div.floating-buttons-children > button:hover,
-div.floating-buttons-children .floating-button:hover {
-    background: var(--floating-button-hover-background);
-    color: var(--floating-button-hover-color);
-}
-
-div.floating-buttons-children > button:active,
-div.floating-buttons-children .floating-button:active {
-    font-size: calc(var(--floating-button-icon-size) * 0.85);
-}
-
-/* The first visible floating button */
-div.floating-buttons-children > *:first-child {
-    --border-radius: var(--border-radius-size) 0 0 var(--border-radius-size);
-    border-radius: var(--border-radius);
-}
-
- /* "Show / hide floating buttons" buttons */
-
- @keyframes floating-buttons-show-hide-button-animation {
-    from {
-        transform: rotate(180deg);
-    } to {
-        transform: rotate(0);
-    }
-}
-
-div.floating-buttons-children .close-floating-buttons-button,
-div.floating-buttons .show-floating-buttons-button {
-    margin-top: calc((var(--floating-button-height) - var(--floating-button-show-hide-button-size)) / 2);
-    width: var(--floating-button-show-hide-button-size);
-    height: var(--floating-button-show-hide-button-size);
-    padding: 0;
-    border: 0;
-    font-size: calc(var(--floating-button-show-hide-button-size) * .8);
-}
-
-div.floating-buttons-children .close-floating-buttons-button:active,
-div.floating-buttons .show-floating-buttons-button:active {
-    font-size: calc(var(--floating-button-show-hide-button-size) * .65);
-    background: transparent!important;
-}
-
-div.floating-buttons-children .close-floating-buttons-button::before,
-div.floating-buttons .show-floating-buttons-button::before {
-    display: block;
-    line-height: 1;
-}
-
-/* "Show buttons" button */
-
-div.floating-buttons .show-floating-buttons-button {
-    box-shadow: var(--floating-button-show-button-shadow);
-    background: var(--floating-button-show-button-background);
-    color: var(--floating-button-show-button-color);
-    backdrop-filter: blur(10px);
-}
-
-div.floating-buttons .show-floating-buttons-button::before {
-    animation: floating-buttons-show-hide-button-animation 400ms ease-out;
-}
-
-div.floating-buttons .show-floating-buttons-button:hover,
-div.floating-buttons .show-floating-buttons-button:active {
-    box-shadow: var(--floating-button-show-button-hover-shadow);
-    background: var(--floating-button-show-button-hover-background) !important;
-    color: var(--floating-button-show-button-color) !important;
-}
-
-/* "Hide buttons" button */
-
-div.floating-buttons-children:not(.temporarily-hidden) .close-floating-buttons-button::before {
-    animation: floating-buttons-show-hide-button-animation 400ms ease-out;
-}
-
-div.floating-buttons-children .close-floating-buttons {
-    border-radius: 0 var(--border-radius-size) var(--border-radius-size) 0;
-    overflow: hidden;
-}
-
-div.floating-buttons-children .close-floating-buttons {
-    margin-inline-start: 0 !important;
-    background: var(--floating-button-hide-button-background);
-    color: var(--floating-button-hide-button-color);
-}
-
-div.floating-buttons-children .close-floating-buttons:has(.close-floating-buttons-button:hover) {
-    background: var(--floating-button-hover-background);
-    color: var(--floating-button-hover-color);
-}
-
-/* Backlink count */
-
-.backlinks-widget .backlinks-ticker {
-    height: 100%;
-    padding: 0 10px;
-    border-radius: var(--border-radius);
-    background: transparent;
-    user-select: none;
-}
-
-.backlinks-widget .backlinks-ticker:hover {
-    background: var(--floating-button-hover-background);
-}
-
-.backlinks-widget .backlinks-items {
-    --menu-padding-size: 20px;
-}
-
-/* TODO: Restyle the path */
-.backlinks-widget .backlinks-items .note-path {
-    padding-inline-start: 8px;
-}
-
-/* Code, relation map buttons */
-
-.floating-buttons .code-buttons-widget,
-.floating-buttons .relation-map-buttons {
-    gap: 0;
-}
-
-/* The highlight animation */
-
-@keyframes floating-button-highlight {
-    from {
-        background: var(--floating-button-background);
-        color: var(--floating-button-color);
-    } to {
-        background: var(--floating-button-hover-background);
-        color: var(--floating-button-hover-color);
-    }
-}
-
-.floating-buttons .bx-tada {
-    /* The class is applied for 1700ms */
-    animation: floating-button-highlight 425ms ease-in-out alternate infinite;
-}
-
-.floating-buttons .bx-tada::before {
-    font-size: var(--floating-button-icon-size);
-}
-
-/* Button groups */
-:root .floating-buttons .btn-group {
-    --button-group-active-button-background-color: var(--low-profile-button-active-background-color);
-    --button-group-active-button-color: var(--low-profile-button-active-color);
-
-    background: transparent;
-    padding: 0;
-    
-    button.btn.floating-button.btn {
-        border-radius: 0;
-        box-shadow: unset;
-    }
+    margin-inline-end: 0.5em;
 }
 
 /*
@@ -1817,7 +1416,7 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
     padding: 8px;
 }
 
-.find-replace-widget > div + div {
+.find-replace-widget > .replace-widget-box {
     padding-top: 0;
 }
 
@@ -1913,8 +1512,8 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     background: var(--right-pane-background-color);
 }
 
-/* New layout: status bar delimiter */
-body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+/* Status bar delimiter */
+body.desktop .vertical-layout #right-pane {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 
@@ -1938,11 +1537,6 @@ body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
 #right-pane .card-header-buttons {
     align-items: center;
     top: 0;
-}
-
-#right-pane .toc-widget,
-#right-pane .highlights-list-widget {
-    padding: 0 0 0 10px;
 }
 
 #right-pane .toc li,

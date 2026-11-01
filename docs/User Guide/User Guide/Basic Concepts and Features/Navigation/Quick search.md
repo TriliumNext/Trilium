@@ -5,7 +5,7 @@ The _Quick search_ function does a full-text search (that is, it searches throug
 
 The alternative to the quick search is the <a class="reference-link" href="Search.md">Search</a> function, which opens in a dedicated tab and has support for advanced queries.
 
-For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to...</a> which will only search through the note titles instead of the content.
+For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a> which will only search through the note titles instead of the content.
 
 ## Layout
 
@@ -22,13 +22,13 @@ Quick search includes the following features:
 
 Search results now display a 200-character preview of the note content below the note title. This preview shows the context where your search terms appear, making it easier to identify the right note without opening it.
 
-### Infinite Scrolling
+### All results in one list
 
-Results are loaded progressively as you scroll:
+Quick search lists up to 200 matching notes in a single scrollable list, so the scrollbar shows how many results there are and how far through them you are.
 
-*   Initial display shows 15 results
-*   Scrolling near the bottom automatically loads 10 more results
-*   Continue scrolling to load all matching notes
+### Continuing in the full search
+
+To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query. The button stays below the list, however far the results are scrolled.
 
 ### Visual Features
 
@@ -44,70 +44,57 @@ Quick search uses progressive search:
 2.  Includes fuzzy matches when exact results are fewer than 5
 3.  Exact matches appear before fuzzy matches
 
+### Search Scope
+
+Quick search covers only the subtree you are currently working in:
+
+*   Without hoisting, it covers the whole note tree.
+*   Under a [hoisted note](Note%20Hoisting.md) or inside a [workspace](Workspaces.md), it covers only that subtree.
+*   Notes that exist only in the hidden tree, such as the built-in help pages and the launch bar configuration, are not returned. Hoist into the help to search it, or use [Jump to…](Jump%20to%20%26%20command%20palette.md), which searches titles across the hidden tree.
+
+To search the whole database while hoisted, use the full <a class="reference-link" href="Search.md">Search</a> and leave _Ancestor_ field empty.
+
 ### Keyboard Navigation
 
-*   Press `Enter` to open the first result
-*   Use arrow keys to navigate through results
-*   Press `Escape` to close the quick search
+*   Press <kbd>Enter</kbd> in the search field to search, or to refresh the results already shown.
+*   Press <kbd>Down</kbd> in the search field to move to the first result, then <kbd>Up</kbd> and <kbd>Down</kbd> to move between results. <kbd>Up</kbd> on the first result returns to the search field.
+*   Press <kbd>Page Down</kbd> and <kbd>Page Up</kbd> to move through the results a page at a time.
+*   Press <kbd>Enter</kbd> on a result to open it.
+*   Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to open the query in the full search.
+*   Press <kbd>Escape</kbd> to close the results.
+
+To see these shortcuts on screen, click the <kbd>?</kbd> button below the results, or press <kbd>Alt</kbd>+<kbd>F1</kbd> while the search field is focused.
 
 ## Using Quick Search
 
 1.  **Typo tolerance**: Search finds results despite minor typos
 2.  **Content previews**: 200-character snippets show match context
-3.  **Infinite scrolling**: Additional results load on scroll
-4.  **Specific terms**: Specific search terms return more focused results
-5.  **Match locations**: Bold text indicates where matches occur
+3.  **Specific terms**: Specific search terms return more focused results
+4.  **Match locations**: Bold text indicates where matches occur
 
 ## Quick Search - Exact Match Operator
 
-Quick Search now supports the exact match operator (`=`) at the beginning of your search query. This allows you to search for notes where the title or content exactly matches your search term, rather than just containing it.
+Quick Search shares the same search engine as the full <a class="reference-link" href="Search.md">Search</a>, so the exact match operator (`=`) behaves identically in both. Start your query with `=` (no space after it) to switch from the default "contains" behavior to exact whole-word or phrase matching.
 
-### Usage
+**What** `**=**` **actually does:** it finds notes where the title or content contains your term as a **whole word or phrase**, ignoring surrounding punctuation. It does **not** require the whole note to equal your term, and it does **not** do substring or fuzzy matching.
 
-To use exact match in Quick Search:
+| Query | Example note content | Matches? | Why |
+| --- | --- | --- | --- |
+| `sync` | `synchronize the database now` | Yes | default search matches the substring |
+| `=sync` | `see (sync) mode` | Yes | `=` matches the whole word `sync`, punctuation ignored |
+| `=sync` | `synchronize the database now` | No | `=` never matches substrings |
+| `="project plan"` | `the (project plan) is ready to share` | Yes | quote a multi-word phrase to match it exactly |
 
-1.  Start your search query with the `=` operator
-2.  Follow it immediately with your search term (no space after `=`)
-
-#### Examples
-
-*   `=example` - Finds notes with title exactly "example" or content exactly "example"
-*   `=Project Plan` - Finds notes with title exactly "Project Plan" or content exactly "Project Plan"
-*   `='hello world'` - Use quotes for multi-word exact matches
-
-#### Comparison with Regular Search
-
-| Query | Behavior |
-| --- | --- |
-| `example` | Finds all notes containing "example" anywhere in title or content |
-| `=example` | Finds only notes where the title equals "example" or content equals "example" exactly |
-
-### Technical Details
-
-When you use the `=` operator:
-
-*   The search performs an exact match on note titles
-*   For note content, it looks for exact matches of the entire content
-*   Partial word matches are excluded
-*   The search is case-insensitive
+The search is case- and diacritic-insensitive. For the complete explanation of the three matching modes, fuzzy operators and relevance ranking, see [How search matches your text](Search.md) in the full Search documentation.
 
 ### Limitations
 
-*   The `=` operator must be at the very beginning of the search query
-*   Spaces after `=` will treat it as a regular search
-*   Multiple `=` operators (like `==example`) are treated as regular text search
-
-### Use Cases
-
-This feature is particularly useful when:
-
-*   You know the exact title of a note
-*   You want to find notes with specific, complete content
-*   You need to distinguish between notes with similar but not identical titles
-*   You want to avoid false positives from partial matches
+*   The `=` operator must be at the very beginning of the search query.
+*   A space immediately after `=` is treated as a regular search.
+*   Multiple `=` operators (like `==example`) are treated as regular text search.
 
 ### Related Features
 
-*   For more complex exact matching queries, use the full [Search](Search.md) functionality
-*   For fuzzy matching (finding results despite typos), use the `~=` operator in the full search
-*   For partial matches with wildcards, use operators like `*=*`, `=*`, or `*=` in the full search
+*   For attribute, property, boolean and ordering queries, use the full [Search](Search.md) functionality.
+*   For fuzzy matching (finding results despite typos), use the `~=` or `~*` operators in the full search.
+*   For partial matches with wildcards, use operators like `*=*`, `=*`, or `*=` in the full search.

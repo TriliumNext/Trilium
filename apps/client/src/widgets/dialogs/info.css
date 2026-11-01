@@ -7,5 +7,11 @@
 
     pre {
         font-size: 0.75em;
+
+        /* Crash logs and stack traces are made of long unbreakable lines — absolute paths, minified
+           offsets — and a deep stack runs to dozens of them. Scroll both axes within the dialog so the
+           technical detail stays a dialog instead of stretching into an unusable page. */
+        max-height: 50vh;
+        overflow: auto;
     }
 }

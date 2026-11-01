@@ -153,6 +153,23 @@ pdfjs-document-properties-linearized = Xem nhanh trên web:
 pdfjs-document-properties-linearized-yes = Có
 pdfjs-document-properties-linearized-no = Không
 pdfjs-document-properties-close-button = Ðóng
+pdfjs-digital-signature-properties-view-certificate = Xem chứng chỉ
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Nguyên nhân: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Timestamp: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures = Chữ ký thành phần ({ $count })
 
 ## Print
 
@@ -166,23 +183,6 @@ pdfjs-printing-not-ready = Cảnh báo: PDF chưa được tải hết để in.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Bật/Tắt thanh lề
-pdfjs-toggle-sidebar-notification-button =
-    .title = Bật tắt thanh lề (tài liệu bao gồm bản phác thảo/tập tin đính kèm/lớp)
-pdfjs-toggle-sidebar-button-label = Bật/Tắt thanh lề
-pdfjs-document-outline-button =
-    .title = Hiển thị tài liệu phác thảo (nhấp đúp vào để mở rộng/thu gọn tất cả các mục)
-pdfjs-document-outline-button-label = Bản phác tài liệu
-pdfjs-attachments-button =
-    .title = Hiện nội dung đính kèm
-pdfjs-attachments-button-label = Nội dung đính kèm
-pdfjs-layers-button =
-    .title = Hiển thị các lớp (nhấp đúp để đặt lại tất cả các lớp về trạng thái mặc định)
-pdfjs-layers-button-label = Lớp
-pdfjs-thumbs-button =
-    .title = Hiển thị ảnh thu nhỏ
-pdfjs-thumbs-button-label = Ảnh thu nhỏ
 pdfjs-current-outline-item-button =
     .title = Tìm mục phác thảo hiện tại
 pdfjs-current-outline-item-button-label = Mục phác thảo hiện tại
@@ -193,10 +193,6 @@ pdfjs-additional-layers = Các lớp bổ sung
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Trang { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +210,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Tìm
     .placeholder = Tìm trong tài liệu…
+    .title = Tìm
 pdfjs-find-previous-button =
     .title = Tìm cụm từ ở phần trước
 pdfjs-find-previous-button-label = Trước
@@ -302,16 +298,16 @@ pdfjs-editor-highlight-button =
     .title = Đánh dấu
 pdfjs-editor-highlight-button-label = Đánh dấu
 pdfjs-highlight-floating-button1 =
-    .title = Đánh dấu
     .aria-label = Đánh dấu
+    .title = Đánh dấu
 pdfjs-highlight-floating-button-label = Đánh dấu
 pdfjs-comment-floating-button =
-    .title = Chú thích
     .aria-label = Chú thích
+    .title = Chú thích
 pdfjs-comment-floating-button-label = Chú thích
 pdfjs-editor-comment-button =
-    .title = Chú thích
     .aria-label = Chú thích
+    .title = Chú thích
 pdfjs-editor-comment-button-label = Chú thích
 pdfjs-editor-signature-button =
     .title = Thêm chữ ký
@@ -380,8 +376,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = Chú thích
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Đóng thanh lề
     .aria-label = Đóng thanh lề
+    .title = Đóng thanh lề
 pdfjs-editor-comments-sidebar-close-button-label = Đóng thanh lề
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Bạn thấy điều gì đáng chú ý? Hãy đánh dấu và để lại chú thích.
@@ -469,7 +465,7 @@ pdfjs-editor-new-alt-text-description = Mô tả ngắn gọn dành cho người
 pdfjs-editor-new-alt-text-disclaimer1 = Văn bản thay thế này được tạo tự động và có thể không chính xác.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Tìm hiểu thêm
 pdfjs-editor-new-alt-text-create-automatically-button-label = Tạo văn bản thay thế tự động
-pdfjs-editor-new-alt-text-not-now-button = Không phải bây giờ
+pdfjs-editor-new-alt-text-not-now-button = Để sau
 pdfjs-editor-new-alt-text-error-title = Không thể tạo tự động văn bản thay thế
 pdfjs-editor-new-alt-text-error-description = Vui lòng viết văn bản thay thế của riêng bạn hoặc thử lại sau.
 pdfjs-editor-new-alt-text-error-close-button = Đóng
@@ -504,13 +500,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Cài đặt văn bản thay thế 
 pdfjs-editor-alt-text-settings-automatic-title = Văn bản thay thế tự động
 pdfjs-editor-alt-text-settings-create-model-button-label = Tạo văn bản thay thế tự động
 pdfjs-editor-alt-text-settings-create-model-description = Đề xuất mô tả giúp ích cho những người không xem được ảnh hoặc khi không thể tải ảnh.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Mô hình AI văn bản khác ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Chạy cục bộ trên thiết bị của bạn để dữ liệu của bạn luôn ở chế độ riêng tư. Bắt buộc đối với văn bản thay thế tự động.
-pdfjs-editor-alt-text-settings-delete-model-button = Xóa
-pdfjs-editor-alt-text-settings-download-model-button = Tải xuống
-pdfjs-editor-alt-text-settings-downloading-model-button = Đang tải xuống…
 pdfjs-editor-alt-text-settings-editor-title = Trình soạn thảo văn bản thay thế
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Hiển thị ngay trình soạn thảo văn bản thay thế khi thêm hình ảnh
 pdfjs-editor-alt-text-settings-show-dialog-description = Giúp bạn đảm bảo tất cả hình ảnh của bạn đều có văn bản thay thế.
@@ -699,6 +688,54 @@ pdfjs-new-badge-content = MỚI
 pdfjs-views-manager-waiting-for-file = Đang tải lên tập tin…
 pdfjs-toggle-views-manager-button1 =
     .title = Quản lý trang
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Thuộc tính chữ ký điện tử
+    .title = Thuộc tính chữ ký điện tử
+pdfjs-digital-signature-properties-button-label = Thuộc tính chữ ký điện tử
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Tài liệu đã được ký bằng chữ ký điện tử hợp lệ
+pdfjs-digital-signature-properties-banner-unknown = Tài liệu đã được ký nhưng không thể xác minh { $count } chữ ký điện tử
+pdfjs-digital-signature-properties-banner-untrusted = Tài liệu được ký bằng { $count } chứng chỉ không đáng tin cậy
+pdfjs-digital-signature-properties-banner-expired = Tài liệu được ký bằng { $count } chứng chỉ đã hết hạn
+pdfjs-digital-signature-properties-banner-invalid = Tài liệu có { $count } chữ ký điện tử không hợp lệ
+pdfjs-digital-signature-properties-banner-revoked = Tài liệu được ký bằng { $count } chứng chỉ đã bị thu hồi
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Trạng thái: Chữ ký đã được xác minh
+pdfjs-digital-signature-properties-status-invalid = Trạng thái: Chữ ký không hợp lệ
+pdfjs-digital-signature-properties-status-unknown = Trạng thái: Không thể xác minh (không được hỗ trợ)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Chứng chỉ: Đáng tin cậy ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Chứng chỉ: Không khả dụng
+pdfjs-digital-signature-properties-certificate-untrusted = Chứng chỉ: Không đáng tin cậy
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Chứng chỉ: Người cấp không xác định ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Chứng chỉ: Tự ký ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Chứng chỉ: Người cấp không đáng tin cậy ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Chứng chỉ: Đã hết hạn
+pdfjs-digital-signature-properties-certificate-expired-with-date = Chứng chỉ: Đã hết hạn ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Chứng chỉ: Đã bị thu hồi
 
 ## Main menu for adding/removing signatures
 

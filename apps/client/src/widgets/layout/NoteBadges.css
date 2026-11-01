@@ -1,3 +1,32 @@
+/* On `:root` at zero specificity, so that a theme's own `:root` rule overrides them. */
+:where(:root) {
+    --badge-temporaraily-editable-background-color: #35a64c;
+    --badge-read-only-background-color: #c8302c;
+    --badge-office-preview-background-color: #566d87;
+    --badge-share-background-color: #6b6b6b;
+    --badge-snippet-background-color: #6b6b6b;
+    --badge-template-background-color: #ece0c0;
+    --badge-template-text-color: #5a4a26;
+    --badge-clipped-note-background-color: #2284c0;
+    --badge-doc-url-background-color: #2e7d5e;
+    --badge-execute-background-color: #7b47af;
+    --badge-active-content-background-color: rgb(27, 164, 168);
+}
+
+:where(:root:has(> body.dark-theme)) {
+    --badge-temporaraily-editable-background-color: #297331;
+    --badge-read-only-background-color: #af4340;
+    --badge-office-preview-background-color: #3f5470;
+    --badge-share-background-color: #4d4d4d;
+    --badge-snippet-background-color: #4d4d4d;
+    --badge-template-background-color: #7d6f52;
+    --badge-template-text-color: white;
+    --badge-clipped-note-background-color: #295773;
+    --badge-doc-url-background-color: #1e5c42;
+    --badge-execute-background-color: #604180;
+    --badge-active-content-background-color: rgb(12, 68, 70);
+}
+
 .component.note-badges {
     contain: none;
 }
@@ -18,11 +47,20 @@
     .ext-badge {
         &.temporarily-editable-badge {--color: var(--badge-temporaraily-editable-background-color)}
         &.read-only-badge {--color: var(--badge-read-only-background-color);}
+        &.office-preview-badge {--color: var(--badge-office-preview-background-color);}
         &.share-badge {--color: var(--badge-share-background-color);}
         &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
         &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
         &.snippet-badge {--color: var(--badge-snippet-background-color);}
+        &.template-badge {
+            --color: var(--badge-template-background-color);
+            color: var(--badge-template-text-color);
+        }
+        &.excerpt-badge {
+            --color: var(--main-border-color);
+            color: var(--main-text-color);
+        }
         &.save-status-badge {
             --default-opacity: 0.4;
             opacity: var(--default-opacity);
@@ -61,11 +99,47 @@
             --switch-track-width: 30px;
         }
     }
+}
 
-    .dropdown-badge {
-        &.dropdown-backlinks-badge .dropdown-menu {
-            min-width: 500px;
+
+.dropdown-menu.clipped-note-details-panel {
+    width: max-content;
+    max-width: min(420px, calc(100vw - 20px));
+    padding: 1em;
+
+    .clipped-note-source {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        overflow-wrap: anywhere;
+    }
+
+    .clipped-note-description {
+        margin: 0.75em 0 0;
+        user-select: text;
+    }
+
+    .clipped-note-fields {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.2em 2em;
+        margin: 0.75em 0 0;
+
+        > div {
+            display: contents;
+        }
+
+        dt {
+            display: flex;
+            align-items: center;
+            gap: 0.4em;
+            font-weight: normal;
+            opacity: 0.5;
+        }
+
+        dd {
+            margin: 0;
+            user-select: text;
         }
     }
 }
-

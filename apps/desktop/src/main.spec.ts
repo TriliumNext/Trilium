@@ -1,3 +1,6 @@
+import { join as pathJoin, resolve as pathResolve } from "node:path";
+
+import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (...args: unknown[]) => unknown;
@@ -38,6 +41,8 @@ const h = vi.hoisted(() => ({
     streamErrorHandlers: [] as Handler[],
     // Captured commandLine.appendSwitch calls.
     appendSwitch: vi.fn(),
+    recoverInterruptedRestore: vi.fn(),
+    onBeforeSendHeaders: vi.fn(),
     setName: vi.fn(),
     quit: vi.fn(),
     exit: vi.fn(),
@@ -45,10 +50,14 @@ const h = vi.hoisted(() => ({
     setPath: vi.fn(),
     setUserTasks: vi.fn(),
     // Controllable values.
-    squirrel: { default: false as boolean },
+    spawn: vi.fn(),
     isPrimaryInstance: true as boolean,
     allWindows: [] as unknown[],
     smoothScroll: "true" as string | null,
+    hardwareAcceleration: "true" as string | null,
+    disableHardwareAcceleration: vi.fn(),
+    // When true, reading an option throws (simulates first run before the schema exists).
+    dbUninitialized: false as boolean,
     isDbInitialized: true as boolean,
     securitySettings: {} as SecuritySettings,
     lastFocusedWindow: null as FakeWindow | null,
@@ -66,6 +75,7 @@ const h = vi.hoisted(() => ({
     createMainWindow: vi.fn((..._a: unknown[]) => Promise.resolve()),
     createSetupWindow: vi.fn((..._a: unknown[]) => Promise.resolve()),
     createExtraWindow: vi.fn((..._a: unknown[]) => {}),
+    showAndFocusWindow: vi.fn((..._a: unknown[]) => {}),
     registerGlobalShortcuts: vi.fn((..._a: unknown[]) => Promise.resolve()),
     setupAutoLaunch: vi.fn(),
     applyLaunchOnStartup: vi.fn(),
@@ -85,6 +95,7 @@ vi.mock("electron", () => {
         setName: (...a: unknown[]) => h.setName(...a),
         setUserTasks: (...a: unknown[]) => h.setUserTasks(...a),
         commandLine: { appendSwitch: (...a: unknown[]) => h.appendSwitch(...a) },
+        disableHardwareAcceleration: (...a: unknown[]) => h.disableHardwareAcceleration(...a),
         on: (event: string, cb: Handler) => h.appOn.set(event, cb),
         quit: (...a: unknown[]) => h.quit(...a),
         exit: (...a: unknown[]) => h.exit(...a),
@@ -101,18 +112,31 @@ vi.mock("electron", () => {
         on: (channel: string, fn: Handler) => h.ipcOn.set(channel, fn),
         handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
     };
+    // onReady() installs the embed-Referer hook, whose default argument reads
+    // `electron.session.defaultSession` (see services/referer.ts).
+    const session = {
+        defaultSession: {
+            webRequest: {
+                onBeforeSendHeaders: (...a: unknown[]) => h.onBeforeSendHeaders(...a)
+            }
+        }
+    };
     return {
         app: appObj,
         BrowserWindow,
         globalShortcut,
         ipcMain,
-        default: { app: appObj, BrowserWindow, globalShortcut, ipcMain }
+        session,
+        default: { app: appObj, BrowserWindow, globalShortcut, ipcMain, session }
     };
 });
 
 vi.mock("electron-debug", () => ({ default: vi.fn() }));
 vi.mock("electron-dl", () => ({ default: vi.fn() }));
-vi.mock("electron-squirrel-startup", () => ({ get default() { return h.squirrel.default; } }));
+vi.mock("child_process", async (importOriginal) => ({
+    ...await importOriginal<typeof import("child_process")>(),
+    spawn: (...a: unknown[]) => h.spawn(...a)
+}));
 
 vi.mock("fs", () => ({ default: { readFileSync: vi.fn(() => Buffer.from("zip")) } }));
 vi.mock("i18next", () => ({ t: (key: string) => key }));
@@ -127,12 +151,10 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
             return Promise.resolve();
         }),
         options: {
-            getOptionOrNull: (key: string) => {
-                if (key === "smoothScrollEnabled") return h.smoothScroll;
-                if (key === "locale") return h.locale;
-                if (key === "formattingLocale") return h.formattingLocale;
-                return null;
-            },
+            // NB: smoothScrollEnabled / locale / formattingLocale are deliberately NOT served
+            // here — they are read before core init straight from the shared provider (see the
+            // sql_provider mock), so getOptionOrNull() returns null for them, as in production.
+            getOptionOrNull: () => null,
             getOptionBool: (key: string) => (key === "disableTray" ? h.disableTray : false)
         },
         sql_init: { isDbInitialized: () => h.isDbInitialized, dbReady: Promise.resolve() },
@@ -159,8 +181,27 @@ vi.mock("@triliumnext/server/src/core_assets.js", () => ({ loadCoreSchema: vi.fn
 vi.mock("@triliumnext/server/src/crypto_provider.js", () => ({ default: class {} }));
 vi.mock("@triliumnext/server/src/in_app_help_provider.js", () => ({ default: class {} }));
 vi.mock("@triliumnext/server/src/log_provider.js", () => ({ default: class {} }));
+// readDbOption() reads the pre-`ready` switch options from this shared provider via
+// prepare().pluck().get(name). Back it with the h.* option values, and let h.dbUninitialized
+// simulate a first run where the schema (and so the options table) does not exist yet.
 vi.mock("@triliumnext/server/src/sql_provider.js", () => ({
-    default: class { loadFromFile = vi.fn(); }
+    default: class {
+        loadFromFile = vi.fn();
+        prepare() {
+            if (h.dbUninitialized) throw new Error("no such table: options");
+            const values: Record<string, string | null> = {
+                smoothScrollEnabled: h.smoothScroll,
+                hardwareAccelerationEnabled: h.hardwareAcceleration,
+                locale: h.locale,
+                formattingLocale: h.formattingLocale
+            };
+            return {
+                pluck: () => ({
+                    get: (name: string) => values[name] ?? undefined
+                })
+            };
+        }
+    }
 }));
 vi.mock("@triliumnext/server/src/zip_provider.js", () => ({ default: class {} }));
 
@@ -177,7 +218,7 @@ vi.mock("@triliumnext/server/src/services/i18n.js", () => ({ initializeTranslati
 vi.mock("@triliumnext/server/src/services/image_provider.js", () => ({ serverImageProvider: {} }));
 vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => h.startServer()) }));
 
-vi.mock("./services/request", () => ({ default: class {} }));
+vi.mock("./services/request", () => ({ default: class {}, setupResourceDownloads: vi.fn() }));
 vi.mock("./services/window", () => ({
     default: {
         getLastFocusedWindow: () => h.lastFocusedWindow,
@@ -185,6 +226,7 @@ vi.mock("./services/window", () => ({
         createExtraWindow: (...a: unknown[]) => h.createExtraWindow(...a),
         createMainWindow: (...a: unknown[]) => h.createMainWindow(...a),
         createSetupWindow: (...a: unknown[]) => h.createSetupWindow(...a),
+        showAndFocusWindow: (...a: unknown[]) => h.showAndFocusWindow(...a),
         registerGlobalShortcuts: (...a: unknown[]) => h.registerGlobalShortcuts(...a)
     },
     setupWindowing: vi.fn()
@@ -202,6 +244,11 @@ vi.mock("./services/auto_launch", () => ({
 }));
 vi.mock("./services/shell", () => ({ setupShellHandlers: vi.fn() }));
 vi.mock("./services/onenote", () => ({ setupOneNoteHandlers: vi.fn() }));
+// Reaches the server's restore session, and through it the data directory, which this spec does not have.
+vi.mock("./services/restore", () => ({ setupRestoreHandlers: vi.fn() }));
+vi.mock("@triliumnext/server/src/services/database_restore.js", () => ({
+    recoverInterruptedRestore: (...a: unknown[]) => h.recoverInterruptedRestore(...a)
+}));
 vi.mock("./services/security_settings", () => ({
     getSecuritySettings: () => h.securitySettings,
     registerSecurityIpcHandlers: vi.fn()
@@ -210,6 +257,7 @@ vi.mock("./services/startup_metrics", () => ({
     markStartupMetric: vi.fn(),
     setupStartupMetricsIpc: vi.fn()
 }));
+vi.mock("./services/transcription", () => ({ setupTranscriptionHandlers: vi.fn() }));
 
 const realPlatform = process.platform;
 function setPlatform(platform: NodeJS.Platform) {
@@ -228,10 +276,13 @@ function resetState() {
     h.quit.mockClear();
     h.exit.mockClear();
     h.setPath.mockClear();
-    h.squirrel.default = false;
+    h.spawn.mockClear();
     h.isPrimaryInstance = true;
     h.allWindows = [];
     h.smoothScroll = "true";
+    h.hardwareAcceleration = "true";
+    h.disableHardwareAcceleration.mockClear();
+    h.dbUninitialized = false;
     h.isDbInitialized = true;
     h.securitySettings = {};
     h.lastFocusedWindow = null;
@@ -248,7 +299,11 @@ function resetState() {
     h.createMainWindow.mockClear();
     h.createSetupWindow.mockClear();
     h.createExtraWindow.mockClear();
+    h.showAndFocusWindow.mockClear();
     h.registerGlobalShortcuts.mockClear();
+    h.wasLaunchedHidden.mockReset();
+    h.wasLaunchedHidden.mockReturnValue(false);
+    h.disableTray = false;
     h.unregisterAll.mockClear();
     h.startServer = () => Promise.resolve({});
 }
@@ -297,9 +352,16 @@ describe("main() bootstrap", () => {
         const { main } = await importMain();
         await main();
 
-        // Streams got an error handler; squirrel false → no exit.
+        // Streams got an error handler; no Squirrel event → no exit.
         expect(h.streamErrorHandlers.length).toBe(2);
         expect(exitSpy).not.toHaveBeenCalled();
+
+        // A restore interrupted partway through exchanging the files is undone before anything opens
+        // the database. The "lang" switch is the first thing read out of it, so it comes after.
+        expect(h.recoverInterruptedRestore).toHaveBeenCalled();
+        const langSwitch = h.appendSwitch.mock.calls.findIndex(([ name ]) => name === "lang");
+        expect(h.recoverInterruptedRestore.mock.invocationCallOrder[0])
+            .toBeLessThan(h.appendSwitch.mock.invocationCallOrder[langSwitch]);
 
         // Smooth-scroll disabled + linux switches + lang switch were appended.
         const switches = h.appendSwitch.mock.calls.map((c) => c[0]);
@@ -342,11 +404,151 @@ describe("main() bootstrap", () => {
         expect(h.setName).not.toHaveBeenCalled();
     });
 
+    // Regression for #10559: the switch is applied before core init, when
+    // options.getOptionOrNull() still returns null, so the disabled state must be
+    // read straight from the shared provider (sql_provider mock) — not core options.
+    it("appends the smooth-scroll switch from the shared provider even though core options are unavailable", async () => {
+        setPlatform("darwin");
+        h.smoothScroll = "false";
+        const { main } = await importMain();
+        await main();
+        const switches = h.appendSwitch.mock.calls.map((c) => c[0]);
+        expect(switches).toContain("disable-smooth-scrolling");
+    });
+
+    it("skips the smooth-scroll switch when the database has no schema yet (first run)", async () => {
+        setPlatform("darwin");
+        h.smoothScroll = "false";
+        h.dbUninitialized = true;
+        const { main } = await importMain();
+        await main();
+        const switches = h.appendSwitch.mock.calls.map((c) => c[0]);
+        expect(switches).not.toContain("disable-smooth-scrolling");
+    });
+
+    it("skips the smooth-scroll switch when the option row is absent from the DB", async () => {
+        setPlatform("darwin");
+        h.smoothScroll = null;
+        const { main } = await importMain();
+        await main();
+        const switches = h.appendSwitch.mock.calls.map((c) => c[0]);
+        expect(switches).not.toContain("disable-smooth-scrolling");
+    });
+
+    // #10572: hardware acceleration is disabled before `ready` from the shared provider
+    // (same reason as smooth-scroll — core options aren't wired up yet).
+    it("disables hardware acceleration when the option is off", async () => {
+        setPlatform("darwin");
+        h.hardwareAcceleration = "false";
+        const { main } = await importMain();
+        await main();
+        expect(h.disableHardwareAcceleration).toHaveBeenCalled();
+    });
+
+    it("keeps hardware acceleration when the option is on, absent, or the DB has no schema yet", async () => {
+        for (const scenario of [{ value: "true" as string | null }, { value: null }, { value: "false" as string | null, uninitialized: true }]) {
+            resetState();
+            setPlatform("darwin");
+            h.hardwareAcceleration = scenario.value;
+            if (scenario.uninitialized) h.dbUninitialized = true;
+            const { main } = await importMain();
+            await main();
+            expect(h.disableHardwareAcceleration).not.toHaveBeenCalled();
+        }
+    });
+
+    // Regression for #10559 (sibling of the smooth-scroll bug): the --lang switch is set
+    // before core init from the same provider, so it must reflect the configured locale
+    // instead of always falling back to "en".
+    it("sets the --lang switch to the configured locale read from the DB", async () => {
+        setPlatform("darwin");
+        h.locale = "de";
+        h.formattingLocale = null;
+        h.locales = [{ id: "de", rtl: false }];
+        const { main } = await importMain();
+        await main();
+        expect(h.appendSwitch).toHaveBeenCalledWith("lang", "de");
+    });
+
+    it("hands a Squirrel installer event to Update.exe and exits", async () => {
+        const originalArgv = process.argv;
+        const originalExecPath = process.execPath;
+        Object.defineProperty(process, "execPath", { value: "/opt/trilium/app-1.0.0/trilium.exe", configurable: true });
+        try {
+            for (const [ event, action ] of [
+                [ "--squirrel-install", "--createShortcut=trilium.exe" ],
+                [ "--squirrel-updated", "--createShortcut=trilium.exe" ],
+                [ "--squirrel-uninstall", "--removeShortcut=trilium.exe" ]
+            ]) {
+                setPlatform("win32");
+                process.argv = [ "trilium.exe", event ];
+                h.spawn.mockClear();
+                exitSpy.mockClear();
+                const { main } = await importMain();
+                await expect(main()).rejects.toThrow("__exit__");
+                expect(h.spawn).toHaveBeenCalledWith(
+                    pathResolve("/opt/trilium/Update.exe"), [ action ], { detached: true });
+                expect(exitSpy).toHaveBeenCalledWith(0);
+                vi.resetModules();
+            }
+
+            // An obsolete version exits without touching the shortcuts.
+            process.argv = [ "trilium.exe", "--squirrel-obsolete" ];
+            h.spawn.mockClear();
+            await expect((await importMain()).main()).rejects.toThrow("__exit__");
+            expect(h.spawn).not.toHaveBeenCalled();
+            vi.resetModules();
+
+            // The same flags mean nothing outside Windows.
+            setPlatform("linux");
+            process.argv = [ "trilium", "--squirrel-install" ];
+            exitSpy.mockClear();
+            await (await importMain()).main();
+            expect(h.spawn).not.toHaveBeenCalled();
+            expect(exitSpy).not.toHaveBeenCalled();
+        } finally {
+            process.argv = originalArgv;
+            Object.defineProperty(process, "execPath", { value: originalExecPath, configurable: true });
+        }
+    });
+
     it("exits when it is not the primary instance", async () => {
         h.isPrimaryInstance = false;
         const { main } = await importMain();
         await expect(main()).rejects.toThrow("__exit__");
         expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    // The single-instance guard runs *before* initializeCore() wires up
+    // translations, so it must log a plain, translation-independent string. It
+    // once passed the message through i18next's t(), which returns undefined
+    // when uninitialized — so a second launch printed a bare "undefined".
+    //
+    // This models that uninitialized behaviour (t() -> undefined) to guard
+    // against anyone reintroducing a `t()` call on this path — the file-level
+    // `vi.mock("i18next")` echoes the key back and the test-suite's shared,
+    // already-initialized i18next singleton would both otherwise mask it.
+    it("logs a non-empty message (never undefined) even though translations aren't initialized yet", async () => {
+        vi.doMock("i18next", () => ({ t: () => undefined }));
+        h.isPrimaryInstance = false;
+        const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+        try {
+            const { main } = await importMain();
+            await expect(main()).rejects.toThrow("__exit__");
+
+            // Regression guard: the second instance exits before initializeCore()
+            // runs, so translations are unavailable — the message must not fall
+            // through to a bare `undefined`.
+            const { initializeTranslations } = await import("@triliumnext/server/src/services/i18n.js");
+            expect(initializeTranslations).not.toHaveBeenCalled();
+            expect(infoSpy).toHaveBeenCalledTimes(1);
+            const logged = infoSpy.mock.calls[0]?.[0];
+            expect(typeof logged).toBe("string");
+            expect(logged).not.toBe("");
+        } finally {
+            infoSpy.mockRestore();
+            vi.doUnmock("i18next");
+        }
     });
 });
 
@@ -401,38 +603,43 @@ describe("app event handlers", () => {
             expect(h.createExtraWindow).toHaveBeenCalledWith("");
         });
 
-        it("restores, shows and focuses a minimized last-focused window", async () => {
-            const restore = vi.fn();
-            const show = vi.fn();
-            const focus = vi.fn();
-            h.lastFocusedWindow = { isMinimized: () => true, restore, show, focus };
+        it("reveals the last-focused window", async () => {
+            const targetWindow = {
+                isMinimized: () => true,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.lastFocusedWindow = targetWindow;
             await bootAndReady();
             const handler = h.appOn.get("second-instance");
             handler?.({}, []);
-            expect(restore).toHaveBeenCalled();
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(targetWindow);
         });
 
-        it("shows and focuses a non-minimized last-focused window without restoring", async () => {
-            const restore = vi.fn();
-            const show = vi.fn();
-            const focus = vi.fn();
-            h.lastFocusedWindow = { isMinimized: () => false, restore, show, focus };
-            await bootAndReady();
-            const handler = h.appOn.get("second-instance");
-            handler?.({}, []);
-            expect(restore).not.toHaveBeenCalled();
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
-        });
-
-        it("does nothing when there is no last-focused window", async () => {
+        it("falls back to the main window when a hidden start has no focus history", async () => {
+            const targetWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
             h.lastFocusedWindow = null;
+            h.mainWindow = targetWindow;
+            await bootAndReady();
+            const handler = h.appOn.get("second-instance");
+            handler?.({}, []);
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(targetWindow);
+        });
+
+        it("does nothing when there is no existing window", async () => {
+            h.lastFocusedWindow = null;
+            h.mainWindow = null;
             await bootAndReady();
             const handler = h.appOn.get("second-instance");
             expect(() => handler?.({}, [])).not.toThrow();
             expect(h.createExtraWindow).not.toHaveBeenCalled();
+            expect(h.showAndFocusWindow).not.toHaveBeenCalled();
         });
     });
 
@@ -463,23 +670,44 @@ describe("app event handlers", () => {
 
             // Existing windows → do not create another; instead reveal the
             // (possibly close-to-tray-hidden) last focused window.
-            const show = vi.fn();
-            const focus = vi.fn();
             h.allWindows = [{}];
-            h.lastFocusedWindow = { isMinimized: () => false, restore: vi.fn(), show, focus };
+            const lastFocusedWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.lastFocusedWindow = lastFocusedWindow;
             await activate?.();
             expect(h.createMainWindow).toHaveBeenCalledTimes(2);
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(lastFocusedWindow);
 
             // Hidden-on-autostart window was never focused → fall back to the main window.
-            const mainShow = vi.fn();
-            const mainFocus = vi.fn();
             h.lastFocusedWindow = null;
-            h.mainWindow = { isMinimized: () => false, restore: vi.fn(), show: mainShow, focus: mainFocus };
+            const mainWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.mainWindow = mainWindow;
             await activate?.();
-            expect(mainShow).toHaveBeenCalled();
-            expect(mainFocus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenLastCalledWith(mainWindow);
+        });
+
+        it("starts hidden only when the tray can reveal the window", async () => {
+            h.wasLaunchedHidden.mockReturnValue(true);
+            await bootAndReady();
+            await h.appOn.get("ready")?.();
+            expect(h.createMainWindow).toHaveBeenCalledWith(true);
+        });
+
+        it("starts visible when the tray is disabled", async () => {
+            h.wasLaunchedHidden.mockReturnValue(true);
+            h.disableTray = true;
+            await bootAndReady();
+            await h.appOn.get("ready")?.();
+            expect(h.createMainWindow).toHaveBeenCalledWith(false);
         });
 
         it("does not register activate on non-darwin even when DB is initialized", async () => {
@@ -570,6 +798,25 @@ describe("security settings override", () => {
         };
         expect(config.Security.allowLanAccess).toBe(true);
     });
+
+    it("uses an IPC-only messaging provider (no WebSocket endpoint) when LAN access is off", async () => {
+        h.securitySettings = { allowLanAccess: false };
+        const { main } = await importMain();
+        await main();
+        // An IPC-only provider is not HTTP-attachable, so www.ts binds no WS port.
+        const messaging = h.initConfig?.messaging as { attachToHttpServer?: unknown };
+        expect(messaging).toBeDefined();
+        expect(typeof messaging.attachToHttpServer).not.toBe("function");
+    });
+
+    it("adds a WebSocket transport (composite) when LAN access is on", async () => {
+        h.securitySettings = { allowLanAccess: true };
+        const { main } = await importMain();
+        await main();
+        // The composite is HTTP-attachable; www.ts binds the WS endpoint for browsers.
+        const messaging = h.initConfig?.messaging as { attachToHttpServer?: unknown };
+        expect(typeof messaging.attachToHttpServer).toBe("function");
+    });
 });
 
 describe("initializeCore dbConfig callbacks + getDemoArchive", () => {
@@ -620,17 +867,22 @@ describe("getUserData()", () => {
     it("joins appData with name-port when the env var is unset", async () => {
         delete process.env.TRILIUM_ELECTRON_DATA_DIR;
         const { getUserData } = await importMain();
-        expect(getUserData()).toBe("/appData/Trilium-37740");
+        // Use `path.join` so the assertion matches the platform-native separator
+        // — `getUserData` calls `join(app.getPath("appData"), ...)`, so on Windows
+        // it produces `\appData\Trilium-37740` and on POSIX `/appData/Trilium-37740`.
+        expect(getUserData()).toBe(pathJoin("/appData", "Trilium-37740"));
     });
 });
 
 describe("getElectronLocale()", () => {
+    // The locale options are read from the shared provider (core options are not wired up
+    // before `ready`), so each test drives them through a mocked provider instance.
     it("returns the formatting locale when its corresponding UI locale is not RTL", async () => {
         h.locale = "en";
         h.formattingLocale = "de";
         h.locales = [{ id: "en", rtl: false }];
         const { getElectronLocale } = await importMain();
-        expect(getElectronLocale()).toBe("de");
+        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("de");
     });
 
     it("falls back to the UI locale when the corresponding locale is RTL", async () => {
@@ -638,7 +890,7 @@ describe("getElectronLocale()", () => {
         h.formattingLocale = "de";
         h.locales = [{ id: "ar", rtl: true }];
         const { getElectronLocale } = await importMain();
-        expect(getElectronLocale()).toBe("ar");
+        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("ar");
     });
 
     it("returns the UI locale when there is no formatting locale", async () => {
@@ -646,7 +898,7 @@ describe("getElectronLocale()", () => {
         h.formattingLocale = null;
         h.locales = [{ id: "fr", rtl: false }];
         const { getElectronLocale } = await importMain();
-        expect(getElectronLocale()).toBe("fr");
+        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("fr");
     });
 
     it("defaults to 'en' when neither locale is set", async () => {
@@ -654,6 +906,6 @@ describe("getElectronLocale()", () => {
         h.formattingLocale = null;
         h.locales = [];
         const { getElectronLocale } = await importMain();
-        expect(getElectronLocale()).toBe("en");
+        expect(getElectronLocale(new BetterSqlite3Provider())).toBe("en");
     });
 });

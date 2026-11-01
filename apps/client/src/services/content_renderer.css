@@ -14,6 +14,23 @@
     }
 }
 
+.rendered-mermaid-diagram,
+.rendered-mermaid-diagram svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.rendered-mermaid-diagram.mermaid-error {
+    display: block;
+    white-space: pre-wrap;
+    padding: 0.75em 1em;
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    color: var(--muted-text-color);
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.85em;
+}
+
 /* An interactive embedded web view (RenderOptions.interactive) fills the height its host provides. */
 .rendered-content:has(> .note-detail-web-view) {
     height: 100%;
@@ -24,4 +41,95 @@
 .rendered-content:has(> .rendered-collection > .note-list-widget.full-height),
 .rendered-collection:has(> .note-list-widget.full-height) {
     height: 100%;
+}
+
+.rendered-content .icon-pack-rendered {
+    height: 100%;
+    min-height: 120px;
+}
+
+/* A media player fills the height its host provides — a dashboard tile is resized freely, so the player has
+   to follow it. In a content-sized host (a list row) this resolves to auto, leaving the floor below to apply. */
+.rendered-content:has(.rendered-media) {
+    height: 100%;
+}
+
+/* Fills a host of fixed height, such as a fullscreen embed; elsewhere the image sets the height. */
+.rendered-content .rendered-image-viewer {
+    height: 100%;
+
+    /* A failed image has no size, so the error message needs a floor. */
+    .image-viewer-root:has(.img-loading-error) {
+        min-height: 8rem;
+    }
+}
+
+/* The mounted media player (placeholder or full) takes the space its host gives it, above the file footer,
+   down to a floor that keeps it usable in a short host such as a collection tile. */
+.rendered-content .rendered-media {
+    flex: 1;
+    min-height: 8rem;
+}
+
+/* Office document preview — shared by this rendered-content path and the file type
+   widget (Office.tsx); this stylesheet is part of the startup bundle.
+   Mirroring the read-only text structure, the body is plain padded content while
+   scrolling happens on an unpadded ancestor (.office-preview-scroll here,
+   .note-detail-file in the type widget) — a scroller's own bottom padding is not
+   reliably part of the scrollable area across browsers. */
+.office-preview-body {
+    padding: 15px;
+
+    img {
+        max-width: 100%;
+    }
+}
+
+.office-preview-scroll {
+    overflow: auto;
+}
+
+.office-preview-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 15px;
+    opacity: 0.7;
+}
+
+.rendered-content .office-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .office-preview-scroll {
+        flex-grow: 1;
+    }
+}
+
+/* Companion styles for the native spreadsheet renderer used by XLSX previews. The renderer emits
+   classed markup (spreadsheet-table / show-gridlines / has-fill) plus a stylesheet carrying the
+   cell styling and the gridline rule; what each host supplies is the layout around it and the
+   values gridlines vary by. share-theme and print.css carry their own copies of these. */
+.office-preview-body .spreadsheet-table {
+    border-collapse: collapse;
+    width: auto;
+    margin-top: 1em;
+    table-layout: fixed;
+    /* The gridline rule itself is emitted by the renderer; a sheet with its own gridline color
+       overrides this on the table element. */
+    --spreadsheet-gridline-color: var(--main-border-color);
+}
+
+/* The context is in :where() so this stays a default: the renderer emits a cell's own styling
+   as `.spreadsheet-table .sst-*` rules, which have to win over it. */
+:where(.office-preview-body .spreadsheet-table) td {
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.office-preview-body .spreadsheet-sheet {
+    font-size: 11pt;
+    line-height: 1.2;
 }

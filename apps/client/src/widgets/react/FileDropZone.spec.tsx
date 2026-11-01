@@ -58,6 +58,61 @@ describe("FileDropZone", () => {
         });
     });
 
+    const removeButtons = () => Array.from(container.querySelectorAll<HTMLButtonElement>(".file-drop-zone-files .file-drop-zone-remove"));
+    const click = (button: HTMLButtonElement) => act(async () => {
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+    /** Simulates picking `files` through the in-page input. */
+    const pickInternal = (files: File[]) => {
+        const input = container.querySelector("input[type=file]") as HTMLInputElement;
+        Object.defineProperty(input, "files", { value: files, configurable: true });
+        return act(async () => {
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    };
+    const mustFind = <T,>(element: T | null | undefined, what: string): T => {
+        if (!element) {
+            throw new Error(`${what} not rendered`);
+        }
+        return element;
+    };
+
+    describe("per-file remove buttons", () => {
+        it("removes one internal file and reports the remaining selection, null once empty", async () => {
+            const onChange = vi.fn();
+            await act(async () => render(<FileDropZone onChange={onChange} multiple />, container));
+            const [fileA, fileB] = [new File(["a"], "a.zip"), new File(["b"], "b.zip")];
+            await pickInternal([fileA, fileB]);
+
+            await click(mustFind(removeButtons()[0], "first remove button"));
+            expect(filenames()).toEqual(["b.zip"]);
+            expect(onChange).toHaveBeenLastCalledWith([fileB]);
+
+            await click(mustFind(removeButtons()[0], "remaining remove button"));
+            expect(filenames()).toEqual([]);
+            expect(onChange).toHaveBeenLastCalledWith(null);
+        });
+
+        it("delegates removal of an external entry to onRemove with its index", async () => {
+            const onChange = vi.fn();
+            const onRemove = vi.fn();
+            const onBrowse = vi.fn();
+            await act(async () => render(
+                <FileDropZone onChange={onChange} onRemove={onRemove} onBrowse={onBrowse} displayNames={["a.zip", "b.zip"]} />,
+                container
+            ));
+            onChange.mockClear(); // drop the mount-time reset call
+
+            await click(mustFind(removeButtons()[1], "second remove button"));
+
+            expect(onRemove).toHaveBeenCalledWith(1);
+            // The external selection is the caller's — onChange only reports the internal one.
+            expect(onChange).not.toHaveBeenCalled();
+            // The click must not bubble to the label and reopen the browse dialog.
+            expect(onBrowse).not.toHaveBeenCalled();
+        });
+    });
+
     describe("onBrowse override", () => {
         it("calls the override and prevents the in-page file input from opening", async () => {
             const onBrowse = vi.fn();

@@ -12,7 +12,7 @@ import { TypeWidgetProps } from "./type_widgets/type_widget";
  * A `NoteType` altered by the note detail widget, taking into consideration whether the note is editable or not and adding special note types such as an empty one,
  * for protected session or attachment information.
  */
-export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "markdown" | "llmChat";
+export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "markdown" | "iconPack" | "llmChat" | "blobStub";
 
 export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element | undefined);
 type NoteTypeView = () => (Promise<{ default: TypeWidget } | TypeWidget> | TypeWidget);
@@ -46,6 +46,10 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         className: "protected-session-password-component",
         isFullHeight: true
     },
+    blobStub: {
+        view: () => import("./type_widgets/BlobStub"),
+        className: "note-detail-blob-stub"
+    },
     book: {
         view: () => import("./type_widgets/Book"),
         className: "note-detail-book",
@@ -76,12 +80,14 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     readOnlyCode: {
         view: async () => (await import("./type_widgets/code/Code")).ReadOnlyCode,
         className: "note-detail-readonly-code",
-        printable: true
+        printable: true,
+        isFullHeight: true
     },
     editableCode: {
         view: async () => (await import("./type_widgets/code/Code")).EditableCode,
         className: "note-detail-code",
-        printable: true
+        printable: true,
+        isFullHeight: true
     },
     mermaid: {
         view: () => import("./type_widgets/mermaid/Mermaid"),
@@ -90,7 +96,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     },
     mindMap: {
-        view: () => import("./type_widgets/MindMap"),
+        view: () => import("./type_widgets/mind_map/MindMap"),
         className: "note-detail-mind-map",
         printable: true,
         isFullHeight: true
@@ -107,7 +113,8 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     },
     readOnlyText: {
         view: () => import("./type_widgets/text/ReadOnlyText"),
-        className: "note-detail-readonly-text"
+        className: "note-detail-readonly-text",
+        printable: true
     },
     editableText: {
         view: () => import("./type_widgets/text/EditableText"),
@@ -148,6 +155,12 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         printable: true,
         isFullHeight: true
     },
+    iconPack: {
+        view: () => import("./type_widgets/icon_pack/IconPack"),
+        className: "note-detail-icon-pack",
+        printable: true,
+        isFullHeight: true
+    },
     spreadsheet: {
         view: () => import("./type_widgets/spreadsheet/Spreadsheet"),
         className: "note-detail-spreadsheet",
@@ -161,3 +174,51 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     }
 };
+
+/** The note types whose modules are fetched ahead of time by {@link preloadCommonNoteTypes}. */
+const PRELOADED_NOTE_TYPES: ExtendedNoteType[] = [ "editableText" ];
+
+let preloadRequested = false;
+
+/**
+ * Fetches ahead of time the modules of the note types most likely to be displayed, so that the first
+ * note to be displayed does not have to wait for them.
+ *
+ * The text note's are by far the largest: its editor — CKEditor together with Trilium's plugins for
+ * it — is around 1.4 MB of script (≈ 375 kB compressed), fetched and parsed only once a text note is
+ * actually shown. That is long enough to be felt as a delay when opening the first text note after a
+ * reload, or when clicking a calendar event to have it open in the popup editor. Fetching it while
+ * the application sits idle instead moves that cost away from the moment the user is waiting on it.
+ *
+ * Deliberately kept to the text note: note types are lazily loaded so that a session never pays for
+ * what it never displays, and warming more of them would erode that. Creating the editor itself is
+ * comparatively cheap (tens of milliseconds), so only the modules are fetched here — no editor is
+ * built in advance.
+ *
+ * Calling this more than once does nothing: the first call is the one that counts.
+ */
+export function preloadCommonNoteTypes() {
+    if (preloadRequested) return;
+    preloadRequested = true;
+
+    whenIdle(() => {
+        for (const noteType of PRELOADED_NOTE_TYPES) {
+            // A failure here is of no consequence: the module is fetched again, and reported on
+            // then, when the note type is actually displayed.
+            void Promise.resolve(TYPE_MAPPINGS[noteType].view()).catch(() => {});
+        }
+    });
+}
+
+/**
+ * Runs the callback once the browser is idle, or after a short delay where the browser has no notion
+ * of idleness (older Safari / WebKit). The timeout keeps the work from being put off indefinitely on
+ * a page that never goes idle.
+ */
+function whenIdle(callback: () => void) {
+    if (typeof requestIdleCallback === "function") {
+        requestIdleCallback(callback, { timeout: 5_000 });
+    } else {
+        setTimeout(callback, 1_000);
+    }
+}

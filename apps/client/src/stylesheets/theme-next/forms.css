@@ -1,201 +1,4 @@
-/*
- * Command buttons (.btn-primary / .btn-secondary / .btn-sm / .btn-success)
- */
-
-button.btn.btn-primary,
-button.btn.btn-secondary,
-button.btn.btn-sm:not(.select-button),
-button.btn.btn-success,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 120px;
-    box-shadow: 1px 1px 1px var(--cmd-button-shadow-color);
-    border: unset;
-    border-radius: 6px;
-    padding: 4px 16px;
-    background: var(--cmd-button-background-color);
-    color: var(--cmd-button-text-color);
-
-    &.dropdown-toggle-split {
-        min-width: unset;
-    }
-}
-
-button.btn.btn-primary:hover,
-button.btn.btn-secondary:hover,
-button.btn.btn-sm:not(.select-button):hover,
-button.btn.btn-success:hover,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):hover {
-    background: var(--cmd-button-hover-background-color);
-    color: var(--cmd-button-hover-text-color);
-}
-
-button.btn.btn-primary:active,
-button.btn.btn-secondary:active,
-button.btn.btn-sm:not(.select-button):active,
-button.btn.btn-success:active,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):active {
-    opacity: 0.85;
-    box-shadow: unset;
-    background: var(--cmd-button-background-color) !important;
-    color: var(--cmd-button-text-color) !important;
-    transform: scale(0.95);
-}
-
-button.btn.btn-primary:disabled,
-button.btn.btn-secondary:disabled,
-button.btn.btn-sm:not(.select-button):disabled,
-button.btn.btn-success:disabled,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text.ck-disabled {
-    opacity: var(--cmd-button-disabled-opacity);
-}
-
-button.btn.btn-primary:focus-visible,
-button.btn.btn-secondary:focus-visible,
-button.btn.btn-sm:not(.select-button):focus-visible,
-button.btn.btn-success:focus-visible,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible,
-.tn-focusable-button:focus-visible {
-    outline: 2px solid var(--input-focus-outline-color);
-}
-
-/* Button's icon */
-button.btn.btn-primary span.tn-icon,
-button.btn.btn-secondary span.tn-icon,
-button.btn.btn-sm span.tn-icon,
-button.btn.btn-success span.tn-icon {
-    color: var(--cmd-button-icon-color);
-    padding-inline-end: 0.35em;
-    font-size: 1.2em;
-}
-
-/* Button's keyboard shortcut */
-button.btn.btn-primary kbd,
-button.btn.btn-secondary kbd,
-button.btn.btn-sm kbd,
-button.btn.btn-success kbd {
-    margin-inline-start: 0.5em;
-    background: var(--cmd-button-keyboard-shortcut-background);
-    color: var(--cmd-button-keyboard-shortcut-color);
-    font-size: 0.6em;
-    text-transform: uppercase;
-    letter-spacing: 0.5pt;
-}
-
-/*
- * Low profile buttons
- */
-
-button.tn-low-profile {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: inherit;
-}
-
-button.tn-low-profile:hover {
-    background-color: var(--icon-button-hover-background);
-}
-
-/*
- * Icon buttons
- */
-
-:root .icon-action:not(.global-menu-button),
-:root .tn-tool-button,
-:root .btn-group .tn-tool-button:not(:last-child),
-:root .btn-group .tn-tool-button:last-child {
-    width: var(--icon-button-size);
-    height: var(--icon-button-size);
-    border: unset !important;
-    border-radius: 8px;
-    padding: 0;
-    text-align: center;
-    color: var(--icon-button-color);
-}
-
-.btn-group .tn-tool-button + .tn-tool-button {
-    margin-inline-start: 4px !important;
-}
-
-/* The "x" icon button */
-:root .icon-action.bx-x,
-:root .tn-tool-button.bx-x {
-    --icon-button-hover-background: var(--tab-close-button-hover-background);
-    --icon-button-hover-color: var(--tab-close-button-hover-color);
-    --icon-button-size: 24px;
-    --icon-button-icon-ratio: 0.8;
-
-    border-radius: 50%;
-}
-
-/* The icon */
-:root .icon-action:not(.global-menu-button)::before,
-:root .tn-tool-button::before {
-    display: block;
-    line-height: 1;
-    font-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
-}
-
-:root .icon-action.disabled::before {
-    opacity: .5;
-}
-
-:root .icon-action:not(.global-menu-button):hover,
-:root .icon-action:not(.global-menu-button).show,
-:root .tn-tool-button:hover,
-:root .tn-tool-button.show {
-    background: var(--icon-button-hover-background);
-    color: var(--icon-button-hover-color);
-}
-
-:root .icon-action:not(.global-menu-button):active::before,
-:root .tn-tool-button:active::before {
-    transform: scale(0.85);
-}
-
-:root .icon-action:not(.global-menu-button):focus-visible,
-:root .tn-tool-button:focus-visible {
-    outline: 2px solid var(--input-focus-outline-color);
-}
-
-/* Button groups */
-
-:root div.btn-group {
-    display: flex;
-    gap: 4px;
-    border-radius: 8px;
-    background: var(--button-group-background-color);
-    padding: 4px;
-
-    button,
-    button.btn,
-    button.btn.btn-secondary {
-        --cmd-button-background-color: transparent;
-        --cmd-button-shadow-color: transparent;
-
-        min-width: unset;
-        margin: 0;
-        box-shadow: unset;
-        border-radius: 8px;
-
-        &.active, &.active:hover {
-            background-color: var(--button-group-active-button-background-color);
-            color: var(--button-group-active-button-color);
-
-            box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
-        }
-    }
-
-    .icon-action {
-        --icon-button-size: 28px;
-        --icon-button-icon-ratio: .75;
-        width: calc(var(--icon-button-size) * 1.25);
-    }
-}
+@import url(./buttons.css);
 
 /*
  * Selectable cards (import/export pickers) — mirror the button-group look: borderless, a recessed
@@ -238,6 +41,9 @@ input:not([type]),
 input[type="text"],
 input[type="number"],
 input[type="password"],
+input[type="url"],
+input[type="email"],
+input[type="tel"],
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"],
@@ -246,6 +52,7 @@ input[type="datetime-local"],
 textarea.form-control,
 textarea,
 :root textarea.ck.ck-textarea,
+:root .ck.ck-math-input > .ck-mathlive-container,
 .tn-input-field {
     outline: 3px solid transparent;
     outline-offset: 6px;
@@ -259,6 +66,9 @@ input:not([type]):hover,
 input[type="text"]:hover,
 input[type="number"]:hover,
 input[type="password"]:hover,
+input[type="url"]:hover,
+input[type="email"]:hover,
+input[type="tel"]:hover,
 input[type="date"]:hover,
 input[type="time"]:hover,
 input[type="datetime-local"]:hover,
@@ -267,6 +77,7 @@ input[type="datetime-local"]:hover,
 textarea.form-control:hover,
 textarea:hover,
 :root textarea.ck.ck-textarea:hover,
+:root .ck.ck-math-input > .ck-mathlive-container:hover,
 .tn-input-field:hover {
     background: var(--input-hover-background);
     color: var(--input-hover-color);
@@ -276,6 +87,9 @@ input:not([type]):focus,
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
 input[type="date"]:focus,
 input[type="time"]:focus,
 input[type="datetime-local"]:focus,
@@ -284,6 +98,7 @@ input[type="datetime-local"]:focus,
 textarea.form-control:focus,
 textarea:focus,
 :root textarea.ck.ck-textarea:focus,
+:root .ck.ck-math-input > .ck-mathlive-container:focus-within,
 .tn-input-field:focus,
 .tn-input-field:focus-within {
     box-shadow: unset;
@@ -312,23 +127,36 @@ input::selection,
     opacity: 0.8;
 }
 
+.form-text.text-danger {
+    /* Bootstrap's `.text-danger` sets its color with `!important`. */
+    color: var(--form-error-text-color) !important;
+    opacity: 1;
+}
+
 /* Input groups */
 
-.input-group {
+.input-group,
+:root .ck.ck-input-color {
+    /* Named rather than written into the padding alone, so that a field drawing an indicator of its
+       own can place it against the group's edge — which is this much further out than the field's. */
+    --input-group-padding-inline-end: 8px;
+
     outline: 3px solid transparent;
     outline-offset: 6px;
     background: var(--input-background-color);
     border-radius: 6px;
-    padding-inline-end: 8px;
+    padding-inline-end: var(--input-group-padding-inline-end);
     color: var(--quick-search-color);
     flex-wrap: nowrap;
 }
 
-.input-group:hover {
+.input-group:hover,
+:root .ck.ck-input-color:hover {
     background: var(--input-hover-background);
 }
 
-.input-group:focus-within {
+.input-group:focus-within,
+:root .ck.ck-input-color:focus-within {
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
     background: var(--input-focus-background);
@@ -341,7 +169,8 @@ input::selection,
 .input-group input:focus,
 .input-group .form-control,
 .input-group .form-control:hover,
-.input-group .form-control:focus {
+.input-group .form-control:focus,
+:root .ck.ck-input-color > input.ck.ck-input-text {
     /* Ignore the focus outline for the inputs that are children of an input group */
     outline: unset;
 
@@ -404,24 +233,6 @@ input::selection,
     font-style: italic;
 }
 
-/*
-    Numeric input with measurement unit as a sufix
-
-    <label class="input-group tn-number-unit-pair">
-        <input ... >
-        <span class="input-group-text">meters</span>
-    </label>
-*/
-
-label.input-group.tn-number-unit-pair {
-    width: fit-content;
-}
-
-label.input-group.tn-number-unit-pair input {
-    width: 120px !important;
-    padding-inline-end: 0;
-}
-
 :root .input-group > pre[aria-hidden="true"] {
     margin: 0;
     padding: 0;
@@ -439,7 +250,9 @@ label.input-group.tn-number-unit-pair input {
 select,
 select.form-select,
 select.form-control,
-.select-button.dropdown-toggle.btn {
+.select-button.dropdown-toggle.btn,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown > button.ck.ck-dropdown__button,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button {
     --dropdown-arrow: var(--select-arrow-svg) right 0.75rem center/15px 20px no-repeat;
 
     outline: 3px solid transparent;
@@ -454,19 +267,28 @@ select.form-control,
 body[dir=rtl] select,
 body[dir=rtl] select.form-select,
 body[dir=rtl] select.form-control,
-body[dir=rtl] .select-button.dropdown-toggle.btn {
+body[dir=rtl] .select-button.dropdown-toggle.btn,
+:root body[dir=rtl] .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button,
+:root body[dir=rtl] .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button {
     background-position: left 0.75rem center;
 }
 
 select:hover,
 select.form-select:hover,
 select.form-control:hover,
-.select-button.dropdown-toggle.btn:hover {
+.select-button.dropdown-toggle.btn:hover,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:hover,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button:hover {
     background: var(--input-hover-background) var(--dropdown-arrow,);
     color: var(--input-hover-color);
 }
 
-button.select-button.dropdown-toggle.btn:active {
+button.select-button.dropdown-toggle.btn:active,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:active,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button:active {
     background-color: transparent;
     color: var(--select-focus-text-color);
 }
@@ -475,7 +297,11 @@ select:focus,
 select.form-select:focus,
 select.form-control:focus,
 .select-button.dropdown-toggle.btn:focus,
-.select-button.focus-outline:focus {
+.select-button.focus-outline:focus,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on),
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on) {
     box-shadow: unset;
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
@@ -484,6 +310,17 @@ select.form-control:focus,
     transition:
         outline-color 50ms linear,
         outline-offset 200ms ease-out;
+}
+
+select:disabled,
+select.form-select:disabled,
+select.form-control:disabled,
+:root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button.ck-disabled,
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button.ck-disabled {
+    background: var(--input-background-color) var(--dropdown-arrow);
+    color: var(--input-text-color);
+    opacity: 0.65;
 }
 
 option {
@@ -545,153 +382,14 @@ optgroup {
     font-family: boxicons;
 }
 
-/* Check boxes and radio buttons */
-
-@supports selector(label:has(*)) {
-    /* Check box & radio button commons */
-
-    /* The parent label */
-    label.tn-radio,
-    label.tn-checkbox {
-        --box-size: 1em;
-        --box-label-gap: 0.5em;
-
-        position: relative;
-        padding-inline-start: calc(var(--box-size) + var(--box-label-gap)) !important;
-        user-select: none;
-    }
-
-    /* The original input */
-    label.tn-radio > input[type="radio"],
-    label.tn-checkbox > input[type="checkbox"] {
-        position: absolute;
-        top: 0;
-        inset-inline-start: 0;
-        width: var(--box-size);
-        height: 100%;
-        margin: unset;
-        opacity: 0 !important;
-    }
-
-    label.tn-radio::before,
-    label.tn-radio::after,
-    label.tn-checkbox::before,
-    label.tn-checkbox::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        inset-inline-start: 0;
-        translate: 0 -50%;
-        width: var(--box-size);
-        height: var(--box-size);
-    }
-
-    label.tn-radio:has(> input[type="radio"]:focus-visible)::before,
-    label.tn-checkbox:has(> input[type="checkbox"]:focus-visible)::before {
-        outline: 2px solid var(--input-focus-outline-color);
-    }
-
-    /* Check boxes */
-
-    /* The check box background */
-    label.tn-checkbox::before {
-        border-radius: 3px;
-        background: var(--radio-checkbox-background);
-    }
-
-    label.tn-checkbox:has(> input[type="checkbox"]:not(:disabled)):hover:before {
-        background: var(--radio-checkbox-hover-background);
-    }
-
-    @keyframes checkbox-checked {
-        from {
-            transform: scale(2);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
-
-    /* The tick mark */
-    label.tn-checkbox::after {
-        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ctitle%3echeck-bold%3c/title%3e%3cpath d='M9%2c20.42L2.79%2c14.21L5.62%2c11.38L9%2c14.77L18.88%2c4.88L21.71%2c7.71L9%2c20.42Z' /%3e%3c/svg%3e");
-        mask-position: center center;
-        mask-size: 0.95em;
-        background-color: var(--radio-checkbox-indicator-color);
-        transform: scale(0);
-        opacity: 0;
-        transition:
-            transform 300ms ease-out,
-            opacity 300ms linear;
-    }
-
-    label.tn-checkbox:has(> input[type="checkbox"]:checked)::after {
-        opacity: 1;
-        transform: scale(1);
-        transition: opacity 100ms ease-in-out;
-        animation: checkbox-checked 150ms ease-out;
-    }
-
-    /* Radio buttons */
-
-    label.tn-radio::before,
-    label.tn-radio::after {
-        border-radius: 50%;
-    }
-
-    /* The outer circle */
-    label.tn-radio::before {
-        background: var(--radio-checkbox-background);
-    }
-
-    label.tn-radio:has(> input[type="radio"]:not(:disabled)):hover::before {
-        background: var(--radio-checkbox-hover-background);
-    }
-
-    @keyframes radio-checked {
-        from {
-            transform: scale(1.5);
-        }
-        to {
-            transform: scale(0.5);
-        }
-    }
-
-    /* The inner circle */
-    label.tn-radio::after {
-        background: var(--radio-checkbox-indicator-color);
-        transform: scale(0);
-        opacity: 0;
-        transition:
-            opacity 300ms linear,
-            transform 300ms ease-in;
-    }
-
-    label.tn-radio:has(> input[type="radio"]:checked)::after {
-        transform: scale(0.5);
-        opacity: 1;
-        transition: opacity 150ms linear;
-        animation: radio-checked 200ms ease-out;
-    }
-
-    /* Disabled check boxes and radio buttons */
-
-    label.tn-radio:has(> input[type="radio"]:disabled)::before,
-    label.tn-radio:has(> input[type="radio"]:disabled)::after,
-    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::before,
-    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::after {
-        opacity: 0.5;
-    }
-}
-
 /* Switches */
 
-.switch-widget.component,
-.note-language-container {
+.switch-widget.component {
     --icon-button-size: 28px;
 }
 
-div.switch-widget {
+div.switch-widget,
+:root .ck.ck-switchbutton {
     --switch-off-track-background: var(--cmd-button-background-color);
     --switch-on-track-background: var(--cmd-button-text-color);
 
@@ -699,12 +397,12 @@ div.switch-widget {
     --switch-on-thumb-background: var(--main-background-color);
 }
 
-/* Links */
+/* Links. `:where(:not(.excalidraw *))` leaves out the menus of an embedded canvas drawing. */
 
 body a.tn-link,
 body a.tn-link:visited,
-.use-tn-links a,
-.use-tn-links a:visited {
+.use-tn-links a:where(:not(.excalidraw *)),
+.use-tn-links a:visited:where(:not(.excalidraw *)) {
     --background: transparent;
 
     box-shadow: 0 0 0 0 var(--background);
@@ -721,13 +419,13 @@ body a.tn-link:visited,
 }
 
 body a.tn-link:focus-visible,
-.use-tn-links a:focus-visible {
+.use-tn-links a:focus-visible:where(:not(.excalidraw *)) {
     outline: 2px solid var(--input-focus-outline-color);
     outline-offset: 2px;
 }
 
 body a.tn-link:hover,
-.use-tn-links a:hover,
+.use-tn-links a:hover:where(:not(.excalidraw *)),
 .use-tn-links a.ck-widget_selected {
     box-shadow: 0 0 0 4px var(--link-hover-background);
     --background: var(--link-hover-background);
@@ -743,9 +441,9 @@ body a.tn-link:hover,
 a.tn-link.external:not(.no-arrow)::after,
 a.tn-link[href^="http://"]:not(.no-arrow)::after,
 a.tn-link[href^="https://"]:not(.no-arrow)::after,
-.use-tn-links a.external:not(.no-arrow)::after,
-.use-tn-links a[href^="http://"]:not(.no-arrow)::after,
-.use-tn-links a[href^="https://"]:not(.no-arrow)::after
+.use-tn-links a.external:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a[href^="http://"]:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a[href^="https://"]:not(.no-arrow):where(:not(.excalidraw *))::after
 {
     display: inline-block;
     opacity: 0.5;
@@ -763,9 +461,9 @@ a.tn-link[href^="https://"]:not(.no-arrow)::after,
 a.tn-link:hover.external:not(.no-arrow)::after,
 a.tn-link:hover[href^="http://"]:not(.no-arrow)::after,
 a.tn-link:hover[href^="https://"]:not(.no-arrow)::after,
-.use-tn-links a:hover.external:not(.no-arrow)::after,
-.use-tn-links a:hover[href^="http://"]:not(.no-arrow)::after,
-.use-tn-links a:hover[href^="https://"]:not(.no-arrow)::after
+.use-tn-links a:hover.external:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a:hover[href^="http://"]:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a:hover[href^="https://"]:not(.no-arrow):where(:not(.excalidraw *))::after
 {
     animation: link-arrow-blink 500ms linear alternate infinite;
 }
@@ -776,203 +474,6 @@ a.tn-link:hover[href^="https://"]:not(.no-arrow)::after,
 
 input[type="range"] {
     background: transparent;
-}
-
-/*
- * Sliders rendered through the shared <Slider> component (.slider). Styled to
- * match the toggle switch design language: a muted pill track that fills with
- * the accent colour, topped by a round thumb sharing the switch colour tokens.
- *
- * The filled portion is driven by --slider-fill-percent (set by the Slider
- * component) for WebKit/Blink, which has no native progress pseudo-element;
- * Firefox uses ::-moz-range-progress and ignores the variable.
- *
- * Selectors are intentionally kept at class-only specificity so that contexts
- * with their own slider styling (e.g. the note map's `.fixnodes-type-switcher`)
- * keep winning the cascade and stay untouched.
- */
-
-.slider {
-    --slider-track-height: 6px;
-    --slider-thumb-size: 16px;
-    --slider-fill-percent: 0%;
-
-    --slider-track-background: var(--cmd-button-background-color);
-    --slider-fill-background: var(--cmd-button-text-color);
-    /* Opaque foreground — the alpha-blended --cmd-button-text-color used by the
-       track would otherwise leave the handle looking semitransparent. */
-    --slider-thumb-background: var(--main-text-color);
-
-    appearance: none;
-    -webkit-appearance: none;
-    width: 200px;
-    height: var(--slider-thumb-size);
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Track — WebKit/Blink (the filled portion is painted via the gradient stop) */
-.slider::-webkit-slider-runnable-track {
-    height: var(--slider-track-height);
-    border-radius: calc(var(--slider-track-height) / 2);
-    background: linear-gradient(
-        to right,
-        var(--slider-fill-background) var(--slider-fill-percent),
-        var(--slider-track-background) var(--slider-fill-percent)
-    );
-}
-
-/* Track — Firefox */
-.slider::-moz-range-track {
-    height: var(--slider-track-height);
-    border-radius: calc(var(--slider-track-height) / 2);
-    background: var(--slider-track-background);
-}
-
-.slider::-moz-range-progress {
-    height: var(--slider-track-height);
-    border-radius: calc(var(--slider-track-height) / 2);
-    background: var(--slider-fill-background);
-}
-
-/* Thumb — WebKit/Blink */
-.slider::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: var(--slider-thumb-size);
-    height: var(--slider-thumb-size);
-    margin-top: calc((var(--slider-track-height) - var(--slider-thumb-size)) / 2);
-    border: unset;
-    border-radius: 50%;
-    background: var(--slider-thumb-background);
-    transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Thumb — Firefox */
-.slider::-moz-range-thumb {
-    width: var(--slider-thumb-size);
-    height: var(--slider-thumb-size);
-    border: unset;
-    border-radius: 50%;
-    background: var(--slider-thumb-background);
-    transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Grow the thumb slightly on hover / drag for a tactile feel */
-.slider:not(:disabled):hover::-webkit-slider-thumb,
-.slider:not(:disabled):active::-webkit-slider-thumb {
-    transform: scale(1.15);
-}
-
-.slider:not(:disabled):hover::-moz-range-thumb,
-.slider:not(:disabled):active::-moz-range-thumb {
-    transform: scale(1.15);
-}
-
-/* Focus — outline the thumb, consistent with the switch and other inputs */
-.slider:focus {
-    outline: unset;
-}
-
-.slider:focus-visible::-webkit-slider-thumb {
-    outline: 2px solid var(--input-focus-outline-color);
-    outline-offset: 2px;
-}
-
-.slider:focus-visible::-moz-range-thumb {
-    outline: 2px solid var(--input-focus-outline-color);
-    outline-offset: 2px;
-}
-
-/* Disabled (opacity is handled by the generic input:disabled rule above) */
-.slider:disabled {
-    cursor: default;
-}
-
-/*
- * WebKit scrollbars
- */
-
-:root {
-    --scrollbar-thickness: 10px;
-    --scrollbar-thumb-thickness: 3px;
-    --scrollbar-thumb-hover-thickness: 6px;
-    --scrollbar-start-end-gap: 8px;
-}
-
-/* Scrollbar's body */
-
-::-webkit-scrollbar-track {
-    background-color: var(--scrollbar-background-color);
-}
-
-::-webkit-scrollbar:vertical {
-    width: var(--scrollbar-thickness) !important;
-}
-
-::-webkit-scrollbar:horizontal {
-    height: var(--scrollbar-thickness) !important;
-}
-
-/* Scrollbar's thumb */
-
-::-webkit-scrollbar-thumb {
-    --s-thumb-thickness: var(--scrollbar-thumb-thickness);
-    --s-thumb-color: var(--scrollbar-thumb-color);
-
-    --s-gradient-angle: 90deg;
-    --s-gradient-p1: calc((var(--scrollbar-thickness) - var(--s-thumb-thickness)) / 2);
-    --s-gradient-p2: calc(var(--s-gradient-p1) + var(--s-thumb-thickness));
-
-    border: none !important;
-    background: linear-gradient(var(--s-gradient-angle),
-                                transparent, transparent var(--s-gradient-p1),
-                                var(--s-thumb-color) 0px, var(--s-thumb-color) var(--s-gradient-p2),
-                                transparent 0) !important;
-
-    border-radius: calc(var(--scrollbar-thickness) / 2) !important;
-}
-
-::-webkit-scrollbar-thumb:horizontal {
-    --s-gradient-angle: 0deg;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    --s-thumb-thickness: var(--scrollbar-thumb-hover-thickness);
-    --s-thumb-color: var(--scrollbar-thumb-hover-color);
-}
-
-/* Scrollbar's increment/decrement buttons (repurposed as a scrollbar start/end gap).
- * This gap is useful also to avoid breaking the rounded corners of a container when a
- * custom scrollbar background color is used. */
-
-::-webkit-scrollbar-button:vertical {
-    height: var(--scrollbar-start-end-gap);
-}
-
-::-webkit-scrollbar-button:horizontal {
-    width: var(--scrollbar-start-end-gap);
-}
-
-/*
- * Firefox scrollbars
- *
- * Unsupported features: --scrollbar-thumb-thickness, --scrollbar-thumb-hover-thickness,
- *                       --scrollbar-start-end-gap, --scrollbar-thumb-hover-color.
- */
-
-:root {
-    scrollbar-color: var(--scrollbar-thumb-color) transparent;
-    scrollbar-width: var(--scrollbar-thickness);
-}
-
-@supports selector(::-webkit-scrollbar) {
-    /* Prevent the scrollbar-color and scrollbar-width properties to override the custom styles
-     * defined using ::-webkit-scrollbar. */
-    :root {
-        scrollbar-color: unset;
-        scrollbar-width: unset;
-    }
 }
 
 /*

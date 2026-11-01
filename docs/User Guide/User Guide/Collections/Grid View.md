@@ -12,7 +12,7 @@ Each tile contains:
 Depending on the type of note:
 
 *   For <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes, the text can be slightly scrollable via the mouse wheel to reveal more context.
-*   For <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes, syntax highlighting is applied.
+*   For <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes, syntax highlighting is applied, with line numbers as in the editor.
 *   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, a preview is made available for audio, video and PDF notes.
 *   If the note does not have a content, a list of its child notes will be displayed instead.
 
@@ -20,7 +20,7 @@ The grid view is also used by default in the <a class="reference-link" href="..
 
 ### Creating a new table
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Grid View_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Grid View_.
 
 ## Configuration
 

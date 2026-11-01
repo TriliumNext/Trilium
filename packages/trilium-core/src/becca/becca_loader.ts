@@ -1,4 +1,4 @@
-import type { AttributeRow, BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
@@ -6,6 +6,7 @@ import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
+import type Becca from "./becca-interface.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -14,6 +15,8 @@ import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext, set as ctxSet } from "../services/context.js";
+import dateUtils from "../services/utils/date.js";
+import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.
@@ -42,30 +45,31 @@ function load() {
     // we know this is slow and the total becca load time is logged
     const sql = getSql();
     sql.disableSlowQueryLogging(() => {
-        // using a raw query and passing arrays to avoid allocating new objects,
-        // this is worth it for the becca load since it happens every run and blocks the app until finished
+        // Rows arrive as positional arrays, which the entities consume without allocating
+        // an object per row, and in one bulk read rather than a column at a time. Both
+        // matter here: the load happens every run and blocks the app until it finishes.
 
         // ownerId was added in migration 239; during the migration chain from older DBs the column
         // may not exist yet. Detect at runtime so old JS migration modules (like 0220) can still call
         // load() without crashing.
-        const hasOwnerId = notesHasOwnerIdColumn();
-        const noteQuery = hasOwnerId
-            ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId FROM notes WHERE isDeleted = 0`
-            : /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`;
-
-        for (const row of sql.getRawRows(noteQuery)) {
+        const noteColumns = notesHasOwnerIdColumn() ? [...NOTE_COLUMNS, "ownerId"] : NOTE_COLUMNS;
+        const notesFrom = /*sql*/`FROM notes WHERE isDeleted = 0`;
+        for (const row of sql.getRawRowsBulk(noteColumns, notesFrom)) {
             new BNote().update(row).init();
         }
 
-        const branchRows = sql.getRawRows<BranchRow>(/*sql*/`SELECT branchId, noteId, parentNoteId, prefix, notePosition, isExpanded, utcDateModified FROM branches WHERE isDeleted = 0`);
+        const branchesFrom = /*sql*/`FROM branches WHERE isDeleted = 0`;
+        const branchRows = sql.getRawRowsBulk(BRANCH_COLUMNS, branchesFrom);
         // in-memory sort is faster than in the DB
-        branchRows.sort((a, b) => (a.notePosition || 0) - (b.notePosition || 0));
+        const positionIdx = BRANCH_COLUMNS.indexOf("notePosition");
+        branchRows.sort((a, b) => (Number(a[positionIdx]) || 0) - (Number(b[positionIdx]) || 0));
 
         for (const row of branchRows) {
             new BBranch().update(row).init();
         }
 
-        for (const row of sql.getRawRows<AttributeRow>(/*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified FROM attributes WHERE isDeleted = 0`)) {
+        const attributesFrom = /*sql*/`FROM attributes WHERE isDeleted = 0`;
+        for (const row of sql.getRawRowsBulk(ATTRIBUTE_COLUMNS, attributesFrom)) {
             new BAttribute().update(row).init();
         }
 
@@ -79,6 +83,8 @@ function load() {
 
     });
 
+    injectVirtualSubtrees();
+
     for (const noteId in becca.notes) {
         becca.notes[noteId].sortParents();
     }
@@ -88,10 +94,191 @@ function load() {
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
 }
 
+// The order each entity's update() destructures its row in. None of these columns holds a
+// BLOB or an integer large enough for getRawRowsBulk()'s JSON round-trip to lose precision.
+const NOTE_COLUMNS = [
+    "noteId", "title", "type", "mime", "isProtected", "blobId",
+    "dateCreated", "dateModified", "utcDateCreated", "utcDateModified"
+];
+const BRANCH_COLUMNS = [
+    "branchId", "noteId", "parentNoteId", "prefix", "notePosition", "isExpanded", "utcDateModified"
+];
+const ATTRIBUTE_COLUMNS = [
+    "attributeId", "noteId", "type", "name", "value", "isInheritable", "position", "utcDateModified"
+];
+
+/**
+ * Builds the becca entities of every registered virtual note provider (see
+ * `services/virtual_notes.ts`). Runs on every load, after the persisted entities: virtual
+ * entities live only in becca, so a full reload (e.g. `becca_loader.reload()`) both refreshes
+ * them and is the way to pick up provider-side changes.
+ */
+function injectVirtualSubtrees(target: Becca = becca) {
+    const log = getLog();
+    let injectedAny = false;
+
+    for (const provider of getVirtualNoteProviders()) {
+        if (!(provider.parentNoteId in target.notes)) {
+            // E.g. the first load during initial database creation, which happens before the
+            // hidden subtree exists; the post-dbReady load will inject.
+            log.info(`Virtual note provider '${provider.namespace}': anchor note '${provider.parentNoteId}' not present, skipping injection.`);
+            continue;
+        }
+
+        try {
+            const subtree = provider.getSubtree();
+            validateVirtualSubtree(provider, subtree);
+
+            // Sort the injected roots after the anchor's persisted children so their
+            // notePositions don't collide.
+            const basePosition = target.notes[provider.parentNoteId]
+                .getChildBranches()
+                .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
+
+            // Set before injecting: should injection throw mid-subtree, the already-injected
+            // notes still need the target-relation backfill below.
+            injectedAny = true;
+
+            for (const [index, item] of subtree.entries()) {
+                injectVirtualItem(target, provider, provider.parentNoteId, item, basePosition + (index + 1) * 10);
+            }
+        } catch (e) {
+            // A broken provider must never take down the becca load.
+            log.error(`Virtual note provider '${provider.namespace}' failed, skipping: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+        }
+    }
+
+    if (injectedAny) {
+        backfillVirtualTargetRelations(target);
+    }
+}
+
+function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSubtreeItem[]) {
+    // Repeated IDs are deliberately allowed: an ID appearing in several places is a clone
+    // (multiple placements of one note), which e.g. the User Guide meta makes use of.
+    for (const item of items) {
+        if (!item.id.startsWith(provider.namespace)) {
+            throw new Error(`Item '${item.id}' is outside the provider's namespace '${provider.namespace}'.`);
+        }
+
+        validateVirtualSubtree(provider, item.children ?? []);
+    }
+}
+
+function injectVirtualItem(target: Becca, provider: VirtualNoteProvider, parentNoteId: string, item: VirtualSubtreeItem, defaultPosition: number) {
+    let note = target.notes[item.id];
+
+    if (note && !note.isVirtual && note.type !== undefined) {
+        // A persisted note still occupies this ID (e.g. rows predating the migration that
+        // removed the persisted variant of this subtree). Persisted data wins to avoid
+        // corrupting it; the conflict is surfaced instead of silently overridden.
+        getLog().error(`Virtual note provider '${provider.namespace}': a persisted note '${item.id}' already exists, skipping injection of this item and its children.`);
+        return;
+    }
+
+    // An already-virtual note means this is a repeated placement (a clone within the virtual
+    // subtree): the first occurrence defined the note and its attributes, this one only
+    // contributes an additional branch.
+    const isCloneOccurrence = !!note?.isVirtual;
+
+    if (!isCloneOccurrence) {
+        const noteRow: Partial<NoteRow> = {
+            noteId: item.id,
+            title: item.title,
+            type: item.type,
+            mime: item.mime ?? (item.type === "text" ? "text/html" : ""),
+            isProtected: false,
+            dateCreated: dateUtils.localNowDateTime(),
+            dateModified: dateUtils.localNowDateTime(),
+            utcDateCreated: dateUtils.utcNowDateTime(),
+            utcDateModified: dateUtils.utcNowDateTime()
+        };
+
+        if (note) {
+            // Skeleton created by a forward reference (e.g. a persisted branch or relation
+            // loaded before this virtual note existed) — fill it in place so those links
+            // survive.
+            note.updateFromRow(noteRow);
+        } else {
+            note = new BNote(noteRow);
+        }
+
+        note.isVirtual = true;
+    }
+
+    const branchId = `${parentNoteId}_${item.id}`;
+
+    if (!target.branches[branchId]) {
+        const branch = new BBranch({
+            branchId,
+            noteId: item.id,
+            parentNoteId,
+            prefix: null,
+            notePosition: item.notePosition ?? defaultPosition,
+            isExpanded: !!item.isExpanded
+        });
+        branch.isVirtual = true;
+    }
+
+    const attributeDefs = isCloneOccurrence ? [] : [...(item.attributes ?? [])];
+
+    if (!isCloneOccurrence && item.icon) {
+        attributeDefs.push({ type: "label", name: "iconClass", value: `bx ${item.icon}` });
+    }
+
+    for (const [index, def] of attributeDefs.entries()) {
+        // Deterministic ID, unique thanks to the note-ID prefix; the counter suffix
+        // disambiguates multiple same-named attributes on one note, probing until free so
+        // pathological names (e.g. "x" colliding with an explicit "x_1") cannot overwrite.
+        const baseAttributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
+        let attributeId = baseAttributeId;
+        for (let suffix = 1; target.attributes[attributeId]; suffix++) {
+            attributeId = `${baseAttributeId}_${suffix}`;
+        }
+
+        const attribute = new BAttribute({
+            attributeId,
+            noteId: item.id,
+            type: def.type,
+            name: def.name,
+            value: def.value ?? "",
+            isInheritable: !!def.isInheritable,
+            position: (index + 1) * 10
+        });
+        attribute.isVirtual = true;
+    }
+
+    for (const [index, child] of (item.children ?? []).entries()) {
+        injectVirtualItem(target, provider, item.id, child, (index + 1) * 10);
+    }
+}
+
+/**
+ * Relations pointing into a virtual namespace load before the virtual notes exist, so their
+ * target-relation backlinks could not be established in `BAttribute.init()` — including
+ * relations between virtual notes when the target comes later in the subtree. One pass after
+ * injection fixes both.
+ */
+function backfillVirtualTargetRelations(target: Becca) {
+    for (const attributeId in target.attributes) {
+        const attribute = target.attributes[attributeId];
+
+        if (attribute.type !== "relation" || !attribute.value) {
+            continue;
+        }
+
+        const targetNote = target.notes[attribute.value];
+
+        if (targetNote?.isVirtual && !targetNote.targetRelations.includes(attribute)) {
+            targetNote.targetRelations.push(attribute);
+        }
+    }
+}
+
 function reload(reason: string) {
     load();
 
-    ws.reloadFrontend(reason || "becca reloaded");
+    ws.reloadFroca(reason || "becca reloaded");
 }
 
 /**
@@ -174,6 +361,8 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                 new BEtapiToken(row);
             }
         });
+
+        injectVirtualSubtrees(target);
     } finally {
         ctxSet("loadingBecca", undefined);
     }
@@ -287,6 +476,20 @@ function branchDeleted(branchId: string) {
     if (branch.branchId) {
         delete becca.branches[branch.branchId];
     }
+
+    dropOrphanedSkeleton(childNote);
+    dropOrphanedSkeleton(parentNote);
+}
+
+/**
+ * Removes a skeleton note (see `BBranch.childNote`) once no branch or attribute refers to it. Its
+ * row can no longer arrive when the note was erased before becca was loaded.
+ */
+function dropOrphanedSkeleton(note: BNote | undefined) {
+    if (note && note.title === undefined && !note.parentBranches.length && !note.children.length
+        && !note.ownedAttributes.length) {
+        noteDeleted(note.noteId);
+    }
 }
 
 function noteUpdated(entityRow: NoteRow) {
@@ -296,6 +499,9 @@ function noteUpdated(entityRow: NoteRow) {
         // TODO, this wouldn't have worked in the original implementation since the variable was named __flatTextCache.
         // type / mime could have been changed, and they are present in flatTextCache
         note.__flatTextCache = null;
+        // A local rename assigns `title` and saves without going through `updateFromRow`, so this
+        // is the only point where the caches derived from the title are dropped for it.
+        note.__searchableTitleCache = null;
     }
 }
 
@@ -348,9 +554,9 @@ function attributeDeleted(attributeId: string) {
 
     const key = `${attribute.type}-${attribute.name.toLowerCase()}`;
 
-    if (key in becca.attributeIndex) {
-        becca.attributeIndex[key] = becca.attributeIndex[key].filter((attr) => attr.attributeId !== attribute.attributeId);
-    }
+    becca.attributeIndex[key]?.delete(attribute);
+
+    dropOrphanedSkeleton(note);
 }
 
 function attributeUpdated(attributeRow: BAttribute) {

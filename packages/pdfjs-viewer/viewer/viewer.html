@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <!--
 Copyright 2012 Mozilla Foundation
 
@@ -27,16 +27,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="google" content="notranslate" />
     <title>PDF.js viewer</title>
 
-    <!--
-      The print service injects an inline <style>@page { size: … }</style>
-      at print time (web/pdf_print_service.js, web/firefox_print_service.js)
-      to match the PDF's page dimensions. Since the size varies per PDF the
-      content can't be pre-hashed, so style-src-elem allows 'unsafe-inline'.
-      Inline style="…" attributes stay blocked via style-src (no fallback).
-    -->
   <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src * blob: data:; base-uri 'none'; form-action 'none';"
+      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; font-src 'self' data:; connect-src * blob: data:; base-uri 'none'; form-action 'none';"
     />
 
 <!-- This snippet is used in production (included from viewer.html) -->
@@ -357,6 +350,27 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
                 <div id="editorModeButtons" class="toolbarHorizontalGroup">
+                  <div id="signatureProperties" class="toolbarButtonWithContainer" hidden="true">
+                    <button
+                      id="signaturePropertiesButton"
+                      class="toolbarButton"
+                      type="button"
+                      tabindex="0"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="signaturePropertiesPanel"
+                      data-l10n-id="pdfjs-digital-signature-properties-button"
+                    >
+                      <span data-l10n-id="pdfjs-digital-signature-properties-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight" id="signaturePropertiesPanel" role="region">
+                      <div id="signaturePropertiesContainer" class="signaturePropertiesContainer">
+                        <div id="signaturePropertiesBanner" class="sigBanner" hidden="true" role="status"></div>
+                        <ul id="signaturePropertiesList" class="signaturePropertiesList" tabindex="-1"></ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="signaturePropertiesSeparator" class="verticalToolbarSeparator" hidden="true"></div>
                   <div id="editorComment" class="toolbarButtonWithContainer" hidden="true">
                     <button
                       id="editorCommentButton"
@@ -800,8 +814,8 @@ See https://github.com/adobe-type-tools/cmap-resources
             <input type="password" id="password" class="toolbarField" />
           </div>
           <div class="buttonRow">
-            <button id="passwordCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button"></span></button>
-            <button id="passwordSubmit" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-ok-button"></span></button>
+            <button id="passwordCancel" class="secondaryButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button"></span></button>
+            <button id="passwordSubmit" class="primaryButton" type="button"><span data-l10n-id="pdfjs-password-ok-button"></span></button>
           </div>
         </dialog>
         <dialog id="documentPropertiesDialog">
@@ -865,7 +879,9 @@ See https://github.com/adobe-type-tools/cmap-resources
             <p id="linearizedField" aria-labelledby="linearizedLabel">-</p>
           </div>
           <div class="buttonRow">
-            <button id="documentPropertiesClose" class="dialogButton" type="button"><span data-l10n-id="pdfjs-document-properties-close-button"></span></button>
+            <button id="documentPropertiesClose" class="secondaryButton" type="button">
+              <span data-l10n-id="pdfjs-document-properties-close-button"></span>
+            </button>
           </div>
         </dialog>
         <dialog class="dialog altText" id="altTextDialog" aria-labelledby="dialogLabel" aria-describedby="dialogDescription">
@@ -1109,7 +1125,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                       <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
                     </span>
                   </div>
-                  <button id="clearSignatureButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0">
+                  <button id="clearSignatureButton" class="secondaryButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0">
                     <span data-l10n-id="pdfjs-editor-add-signature-clear-button-label"></span>
                   </button>
                 </div>
@@ -1195,7 +1211,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             <span data-l10n-id="pdfjs-print-progress-percent" data-l10n-args='{ "progress": 0 }' class="relative-progress">0%</span>
           </div>
           <div class="buttonRow">
-            <button id="printCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-print-progress-close-button"></span></button>
+            <button id="printCancel" class="secondaryButton" type="button"><span data-l10n-id="pdfjs-print-progress-close-button"></span></button>
           </div>
         </dialog>
       </div>
@@ -1206,7 +1222,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div>
             <span id="editorUndoBarMessage" class="description"></span>
           </div>
-          <button id="editorUndoBarUndoButton" class="undoButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
+          <button id="editorUndoBarUndoButton" class="secondaryButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
             <span data-l10n-id="pdfjs-editor-undo-bar-undo-button-label"></span>
           </button>
           <button id="editorUndoBarCloseButton" class="closeButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-close-button">

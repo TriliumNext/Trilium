@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { byBookType, byNoteType, getHelpUrlForNote } from "./in_app_help.js";
 import fs from "fs";
-import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import type { HelpMetaItem, HiddenSubtreeItem } from "@triliumnext/commons";
 import path from "path";
 import { buildNote } from "../test/easy-froca.js";
 import type FNote from "../entities/fnote.js";
@@ -27,9 +27,7 @@ describe("Help button", () => {
             ...Object.values(byBookType)
         ].filter((noteId) => noteId) as string[];
 
-        const metaPath = path.resolve(path.join(__dirname, "../../../server/src/assets/doc_notes/en/User Guide/!!!meta.json"));
-        const meta: HiddenSubtreeItem[] = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-        const allNoteIds = new Set(getNoteIds(meta));
+        const allNoteIds = new Set(getNoteIds(readHelpMeta() as unknown as HiddenSubtreeItem[]));
 
         for (const helpNote of allHelpNotes) {
             if (!allNoteIds.has(`_help_${helpNote}`)) {
@@ -38,6 +36,12 @@ describe("Help button", () => {
         }
     });
 });
+
+/** The help tree as `edit-docs` writes it. */
+function readHelpMeta(): HelpMetaItem[] {
+    const metaPath = path.resolve(path.join(__dirname, "../../../server/src/assets/help/help_meta.json"));
+    return JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+}
 
 describe("getHelpUrlForNote", () => {
     it("returns undefined for null/undefined notes", () => {

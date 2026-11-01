@@ -1,6 +1,6 @@
 # Reviewing a CKEditor 5 plugin (Trilium)
 
-A structured checklist for reviewing Trilium CKEditor plugin code under `packages/ckeditor5-*`.
+A structured checklist for reviewing Trilium CKEditor plugin code under `packages/ckeditor5/src/plugins/`.
 Pair each item with the relevant reference file when you need the "why". Flag deviations; not
 every item applies to every plugin (e.g. a UI-only or editing-only plugin). The Trilium
 integration items at the end are specific to this monorepo.
@@ -69,13 +69,24 @@ integration items at the end are specific to this monorepo.
 
 ## Localization
 
-- [ ] All user-facing strings go through `editor.t()` with a **literal** first argument (string
-      or object literal), never a variable.
-- [ ] New strings have matching entries in the plugin's `lang/en.po` (`msgctxt` + `msgid` +
-      `msgstr`) **and** `lang/contexts.json` (message id → context). No upstream
-      `window.CKEDITOR_TRANSLATIONS` / `add()` / webpack-language wiring.
-- [ ] Plugins that accept a host `translate` config read it with the identity fallback
-      (`?? ( key => key )`) so labels degrade gracefully (see collapsible).
+- [ ] All user-facing strings go through `editor.t()` with **the English text itself** as the
+      message id — no translation keys in plugin code.
+- [ ] The translation function is **named `t`** at every call site (`t(…)`, `editor.t(…)`,
+      `this.t(…)`). A parameter or local named `translate`/`_t` is invisible to the registry scan,
+      so the string never gets translated in any locale.
+- [ ] Every first argument is a **literal**, never a variable. Labels held in a table and read as
+      `t( def.label )` are the recurring version of this; they belong in a switch
+      (`getAdmonitionTitle()`, `getLinkDisplayModeLabel()`, `getBoxSizeLabel()`).
+- [ ] Each new message has an English entry under `text-editor.ck` in
+      `apps/client/src/translations/en/translation.json`, keyed by the slug of its text — **unless**
+      CKEditor already ships that string, in which case there must be **no** entry (ours merges
+      after core and would override upstream in every locale).
+- [ ] Interpolation uses `%0`/`%1`, not a template literal and not `{{name}}`.
+- [ ] Strings that reach **no** translation function at all — the case no test can catch. Read the
+      plugin's `label:`/`tooltip:`/`title:`/`placeholder:`/`aria-label` and any text built by
+      concatenation or in a `setTemplate` children array.
+- [ ] A keystroke mentioned in a message comes from `renderShortcut( editor, SHORTCUT )`, not from
+      resolving key names inside the package.
 
 ## Conventions & hygiene
 
@@ -87,8 +98,8 @@ integration items at the end are specific to this monorepo.
       carry the CKSource header, some don't; don't add/strip wholesale).
 - [ ] **`pluginName` / `requires`** declared `as const`; type augmentation done via
       `declare module 'ckeditor5'` (config + command/plugin maps).
-- [ ] Custom SVG icons imported with `?raw` and re-exported via `export const icons = { … }`
-      from `index.ts`.
+- [ ] Custom SVG icons live in `packages/ckeditor5/src/icons/` and are imported with `?raw` by
+      the file that uses them.
 - [ ] Listeners use `this.listenTo()` (auto-cleaned); any other resources cleaned in `destroy()`.
 - [ ] `ckeditor5-metadata.json` updated for new public plugins/UI/HTML output.
 - [ ] Model is the source of truth — no view hacks standing in for model state (except genuine
@@ -106,5 +117,9 @@ integration items at the end are specific to this monorepo.
       `ClassicEditor` (Decoupled), `PopupEditor` (Balloon + `BlockToolbar`).
 - [ ] Block widgets enforce structural invariants with `registerPostFixer` (admonition,
       collapsible) rather than relying on command-side cleanup.
-- [ ] **Tests use the right environment**: happy-dom for unit/model logic; WebdriverIO
+- [ ] An added, renamed, redrawn or removed SVG icon (or a `ckeditor5` bump) comes with a
+      regenerated `cke` pack (`text-editor-icons.woff2` + `icon_pack_text_editor.json`), and no
+      page in `docs/User Guide` still uses a removed `cke-*` class. See `ui-and-localization.md`,
+      "The `cke` icon pack".
+- [ ] **Tests use the right environment**: happy-dom for unit/model logic; Playwright
       (browser) only where real DOM/layout is required.

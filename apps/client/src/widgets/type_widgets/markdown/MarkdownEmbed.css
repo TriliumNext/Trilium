@@ -1,0 +1,46 @@
+.include-note-content:has(
+    > .rendered-content > .markdown-embed > .markdown-embed-content.with-source
+) {
+    padding: var(--_include-note-content-top-inset) var(--_include-note-content-inset)
+             var(--_include-note-content-bottom-inset);
+    box-sizing: content-box;
+    max-height: none;
+}
+
+.markdown-embed-content {
+    text-align: start;
+
+    .editable-embed-preview {
+        height: 100%;
+    }
+
+    &:not(.with-source) .markdown-preview {
+        padding: 0;
+        height: auto;
+        overflow: visible;
+        background-image: none;
+    }
+}
+
+.include-note-content:fullscreen > .rendered-content > .markdown-embed {
+    height: 100%;
+}
+
+.include-note-content:not(:fullscreen) > .rendered-content > .markdown-embed
+    > .markdown-embed-content.with-source {
+    border-radius: var(--_include-note-framed-top-radius) var(--_include-note-framed-top-radius)
+                   var(--_include-note-framed-bottom-radius)
+                   var(--_include-note-framed-bottom-radius);
+    overflow: hidden;
+}
+
+.include-note[data-box-size="full"] > .include-note-wrapper > .include-note-body
+    > .include-note-content:not(:fullscreen) > .rendered-content > .markdown-embed
+    > .markdown-embed-content.with-source {
+    height: auto;
+
+    > .note-detail-split,
+    > .note-detail-split > :is(.note-detail-split-editor-col, .note-detail-split-preview-col) {
+        height: auto;
+    }
+}

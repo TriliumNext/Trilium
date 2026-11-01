@@ -1,17 +1,6 @@
 import type { Token, TokenizerAndRendererExtension } from "marked";
 
-/**
- * Escapes HTML special characters to prevent XSS attacks.
- * Used for both attribute values and text content.
- */
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
+import { escapeHtml } from "./utils.js";
 
 export interface WikiLinkOptions {
     /** Format the href for the link. Defaults to `/${noteId}` */
@@ -101,16 +90,29 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
 }
 
 /**
- * Background colour for imported highlights: CKEditor's default yellow highlight marker
- * (Obsidian highlights carry no colour of their own). Matches the `<span
- * style="background-color:…">` markup CKEditor's Font Background Color feature emits, so the
- * imported highlight round-trips as an editable highlight.
+ * Background colour for highlights: the text editor's palette Yellow (`==…==` carries no colour
+ * of its own). Matches the `<span style="background-color:…">` markup CKEditor's Font
+ * Background Color feature emits, so a highlight rendered into a text note round-trips as an
+ * editable highlight. Deliberately not `<mark>`, which General HTML Support does keep but
+ * leaves inert: there is no Highlight plugin to apply or lift one, and the allow-list is bare
+ * element names, so a colour on it never reaches the editor's model.
+ *
+ * The Markdown exporter compares against this to decide which highlights can collapse back to
+ * `==…==` and which have to keep their colour as inline HTML, so the two directions must agree
+ * on the exact value.
  */
-const HIGHLIGHT_BACKGROUND = "hsl(60, 75%, 60%)";
+export const HIGHLIGHT_BACKGROUND = "#e5e64d";
+
+/** The style of a highlight as the text editor saves it, with the theme-adaptive variable. */
+export const HIGHLIGHT_STYLE =
+    `background-color:${HIGHLIGHT_BACKGROUND};--tn-background:${HIGHLIGHT_BACKGROUND};`;
 
 /**
- * Creates an extension for Obsidian-style highlights: `==text==` → a background-coloured
- * `<span>`.
+ * Creates an extension for highlights: `==text==` → a background-coloured `<span>`.
+ *
+ * Not part of CommonMark or GFM, but the de-facto standard everywhere else (Obsidian,
+ * Typora, Bear, python-markdown), so it is enabled for all Markdown rendering rather than
+ * only for the Obsidian importer.
  *
  * Inner markdown is parsed so `==**bold**==` highlights bold text. A non-space is required
  * just inside each `==` (like emphasis), so `a == b` and `====` stay literal.
@@ -137,7 +139,8 @@ export function createHighlightExtension(): TokenizerAndRendererExtension {
         },
 
         renderer(token) {
-            return `<span style="background-color:${HIGHLIGHT_BACKGROUND};">${this.parser.parseInline(token.tokens as Token[])}</span>`;
+            const content = this.parser.parseInline(token.tokens as Token[]);
+            return `<span style="${HIGHLIGHT_STYLE}">${content}</span>`;
         }
     };
 }
@@ -178,6 +181,103 @@ export function createCommentExtension(): TokenizerAndRendererExtension {
         }
     };
 }
+
+/**
+ * Creates an extension that keeps a lone `~` literal, so only `~~text~~` strikes text through.
+ *
+ * GFM also accepts a single tilde as a strikethrough delimiter, which is a poor fit for prose
+ * where `~` overwhelmingly means "approximately". Two unrelated approximations in one paragraph
+ * ("a ~07:50 departure … the supplement (~€11–12)") otherwise pair up and strike out everything
+ * between them — a frequent and very visible mangling of AI-written text. Losing the single-tilde
+ * shorthand is the cheaper trade: the doubled form is what editors emit and what Obsidian and
+ * Notion require.
+ */
+export function createLiteralTildeExtension(): TokenizerAndRendererExtension {
+    return {
+        name: "literalTilde",
+        level: "inline",
+
+        start(src: string) {
+            return src.indexOf("~");
+        },
+
+        tokenizer(src) {
+            // Consume the tilde as text; a doubled one is left to marked's own `del` tokenizer.
+            if (src.startsWith("~") && !src.startsWith("~~")) {
+                return {
+                    type: "literalTilde",
+                    raw: "~",
+                    text: "~"
+                };
+            }
+        },
+
+        renderer() {
+            return "~";
+        }
+    };
+}
+
+/**
+ * Creates the extensions for the content tabs of `pymdownx.tabbed` (Material for MkDocs), which
+ * render consecutive tabs as one `<div class="trilium-tabs">` in the text editor's markup.
+ */
+export function createTabsExtensions(): TokenizerAndRendererExtension[] {
+    return [
+        {
+            name: "tabs",
+            level: "block",
+
+            start(src: string) {
+                return /^===!? +"/m.exec(src)?.index;
+            },
+
+            tokenizer(src) {
+                const tabs: Token[] = [];
+                let raw = "";
+                let rest = src;
+                for (;;) {
+                    const match = TAB.exec(rest);
+                    if (!match || (match[1] && tabs.length)) {
+                        break;
+                    }
+                    const content = match[3].replace(/^(?: {4}|\t)/gm, "");
+                    tabs.push({
+                        type: "tab",
+                        raw: match[0],
+                        titleTokens: this.lexer.inlineTokens(match[2]),
+                        tokens: this.lexer.blockTokens(content, [])
+                    });
+                    raw += match[0];
+                    rest = rest.slice(match[0].length);
+                }
+
+                if (tabs.length) {
+                    return { type: "tabs", raw, tokens: tabs };
+                }
+            },
+
+            renderer(token) {
+                return `<div class="trilium-tabs">${this.parser.parse(token.tokens as Token[])}</div>`;
+            }
+        },
+        {
+            name: "tab",
+            renderer(token) {
+                const title = this.parser.parseInline(token.titleTokens as Token[]) || "&nbsp;";
+                const panel = this.parser.parse(token.tokens as Token[]).trim() || "<p>&nbsp;</p>";
+                return `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
+                    `<div class="trilium-tab-panel">${panel}</div></section>`;
+            }
+        }
+    ];
+}
+
+/**
+ * One tab: the `=== "Title"` line (`===! "Title"` starts a new block; the title runs to the last
+ * quote), then its panel, the following lines that are blank or indented by four spaces or a tab.
+ */
+const TAB = /^===(!)? +"(.*)" *(?:\n|$)((?:[ \t]*\n|(?: {4}|\t).*(?:\n|$))*)/;
 
 /** Pre-configured wiki-link extension for server-side (uses /noteId format) */
 export const wikiLinkExtension = createWikiLinkExtension();

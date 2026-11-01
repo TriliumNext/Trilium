@@ -1,33 +1,26 @@
 import type { AppContext } from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
-import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
 import options from "../services/options.js";
 import utils from "../services/utils.js";
-import ApiLog from "../widgets/api_log.jsx";
-import ClosePaneButton from "../widgets/buttons/close_pane_button.js";
-import CreatePaneButton from "../widgets/buttons/create_pane_button.js";
 import GlobalMenu from "../widgets/buttons/global_menu.jsx";
-import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
-import MovePaneButton from "../widgets/buttons/move_pane_button.js";
+import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.jsx";
-import CloseZenModeButton from "../widgets/close_zen_button.jsx";
+import ShowAllNotesButton from "../widgets/buttons/show_all_notes_button.jsx";
+import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
-import ContentHeader from "../widgets/containers/content_header.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
-import RightPaneContainer from "../widgets/containers/right_pane_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
 import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
-import FloatingButtons from "../widgets/FloatingButtons.jsx";
-import { DESKTOP_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
-import HighlightsListWidget from "../widgets/highlights_list.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
+import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
+import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
@@ -36,20 +29,12 @@ import NoteTitleWidget from "../widgets/note_title.jsx";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
-import QuickSearchWidget from "../widgets/quick_search.js";
-import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
-import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
-import LazyComponent from "../widgets/react/LazyComponent.jsx";
-import NoteActions from "../widgets/ribbon/NoteActions.jsx";
+import QuickSearch from "../widgets/quick_search.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
-import SharedInfo from "../widgets/shared_info.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
-import TitleBarButtons from "../widgets/title_bar_buttons.jsx";
-import TocWidget from "../widgets/toc.js";
 import WatchedFileUpdateStatusWidget from "../widgets/watched_file_update_status.js";
 import { applyModals } from "./layout_commons.js";
 
@@ -67,17 +52,15 @@ export default class DesktopLayout {
         const launcherPaneIsHorizontal = options.get("layoutOrientation") === "horizontal";
         const launcherPane = this.#buildLauncherPane(launcherPaneIsHorizontal);
         const isElectron = utils.isElectron();
-        const isMac = window.glob.platform === "darwin";
-        const isWindows = window.glob.platform === "win32";
         const hasNativeTitleBar = window.glob.hasNativeTitleBar;
 
         /**
          * If true, the tab bar is displayed above the launcher pane with full width; if false (default), the tab bar is displayed in the rest pane.
-         * On macOS we need to force the full-width tab bar on Electron in order to allow the semaphore (window controls) enough space.
+         * We force the full-width tab bar on Electron whenever the window controls sit on the left (always on macOS, and on Linux
+         * depending on the desktop's decoration layout): the rest pane starts past the launcher pane, so a tab bar confined to it
+         * cannot give those controls room, and they end up drawn over the launcher pane instead.
          */
-        const fullWidthTabBar = launcherPaneIsHorizontal || (isElectron && !hasNativeTitleBar && isMac);
-        const customTitleBarButtons = !hasNativeTitleBar && !isMac && !isWindows;
-        const isNewLayout = isExperimentalFeatureEnabled("new-layout");
+        const fullWidthTabBar = launcherPaneIsHorizontal || (isElectron && !hasNativeTitleBar && utils.areWindowControlsOnLeft());
 
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
@@ -90,8 +73,8 @@ export default class DesktopLayout {
                     .optChild(launcherPaneIsHorizontal, <LeftPaneToggle isHorizontalLayout={true} />)
                     .child(<TabHistoryNavigationButtons />)
                     .child(new TabRowWidget().class("full-width"))
-                    .optChild(isNewLayout, <RightPaneToggle />)
-                    .optChild(customTitleBarButtons, <TitleBarButtons />)
+                    .child(<LeaveFullScreenButton />)
+                    .child(<RightPaneToggle />)
                     .css("height", "40px")
                     .css("background-color", "var(--launcher-pane-background-color)")
                     .setParent(appContext)
@@ -102,9 +85,11 @@ export default class DesktopLayout {
                     .css("flex-grow", "1")
                     .id("horizontal-main-container")
                     .optChild(!launcherPaneIsHorizontal, launcherPane)
+                    .child(<LeftPanePeekButton />)
                     .child(
-                        new LeftPaneContainer()
-                            .optChild(!launcherPaneIsHorizontal, new QuickSearchWidget())
+                        new LeftPaneContainer(launcherPaneIsHorizontal)
+                            .optChild(!launcherPaneIsHorizontal, <QuickSearch />)
+                            .child(<ShowAllNotesButton />)
                             .child(appContext.noteTreeWidget)
                             .child(...this.customWidgets.get("left-pane"))
                     )
@@ -117,12 +102,12 @@ export default class DesktopLayout {
                                     .class("tab-row-container")
                                     .child(<TabHistoryNavigationButtons />)
                                     .child(new TabRowWidget())
-                                    .optChild(isNewLayout, <RightPaneToggle />)
-                                    .optChild(customTitleBarButtons, <TitleBarButtons />)
+                                    .child(<LeaveFullScreenButton />)
+                                    .child(<RightPaneToggle />)
                                     .css("height", "40px")
                                     .css("align-items", "center")
                             )
-                            .optChild(isNewLayout, <FixedFormattingToolbar />)
+                            .child(<FixedFormattingToolbar />)
                             .child(
                                 new FlexContainer("row")
                                     .filling()
@@ -141,32 +126,20 @@ export default class DesktopLayout {
                                                             .cssBlock(".title-row > * { margin: 5px; }")
                                                             .child(<NoteIconWidget />)
                                                             .child(<NoteTitleWidget />)
-                                                            .optChild(isNewLayout, <NoteBadges />)
+                                                            .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
-                                                            .optChild(!isNewLayout, <MovePaneButton direction="left" />)
-                                                            .optChild(!isNewLayout, <MovePaneButton direction="right" />)
-                                                            .optChild(!isNewLayout, <ClosePaneButton />)
-                                                            .optChild(!isNewLayout, <CreatePaneButton />)
-                                                            .optChild(isNewLayout, <NoteActions />))
-                                                        .optChild(!isNewLayout, <LazyComponent loader={() => import("../widgets/ribbon/Ribbon.jsx")} />)
+                                                            .child(<NoteActions />))
                                                         .child(new WatchedFileUpdateStatusWidget())
-                                                        .optChild(!isNewLayout, <FloatingButtons items={DESKTOP_FLOATING_BUTTONS} />)
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
-                                                                .optChild(isNewLayout, <InlineTitle />)
-                                                                .optChild(isNewLayout, <NoteTitleActions />)
-                                                                .optChild(!isNewLayout, new ContentHeader()
-                                                                    .child(<ReadOnlyNoteInfoBar />)
-                                                                    .child(<SharedInfo />)
-                                                                )
-                                                                .optChild(!isNewLayout, <PromotedAttributes />)
+                                                                .child(<InlineTitle />)
+                                                                .child(<NoteTitleActions />)
                                                                 .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)
                                                                 .child(<ScrollPadding />)
                                                         )
-                                                        .child(<ApiLog />)
                                                         .child(new FindWidget())
                                                         .child(...this.customWidgets.get("note-detail-pane"))
                                                 )
@@ -174,18 +147,12 @@ export default class DesktopLayout {
                                             .child(...this.customWidgets.get("center-pane"))
 
                                     )
-                                    .optChild(!isNewLayout,
-                                        new RightPaneContainer()
-                                            .child(new TocWidget())
-                                            .child(new HighlightsListWidget())
-                                            .child(...this.customWidgets.get("right-pane"))
-                                    )
-                                    .optChild(isNewLayout, <RightPanelContainer widgetsByParent={this.customWidgets} />)
+                                    .child(<RightPanelContainer widgetsByParent={this.customWidgets} />)
                             )
-                            .optChild(!launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
+                            .optChild(!launcherPaneIsHorizontal, <StatusBar />)
                     )
             )
-            .optChild(launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
+            .optChild(launcherPaneIsHorizontal, <StatusBar />)
             .child(<CloseZenModeButton />)
 
             // Desktop-specific dialogs.

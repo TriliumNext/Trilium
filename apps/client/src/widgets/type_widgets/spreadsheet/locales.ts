@@ -83,6 +83,7 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
         ])
     },
     cs: null,
+    da: null,
     de: null,
     en: null,
     "en-GB": null,
@@ -100,6 +101,20 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-data-validation/locales/es-ES'),
             import('@univerjs/preset-sheets-conditional-formatting/locales/es-ES'),
             import('@univerjs/preset-sheets-hyper-link/locales/es-ES')
+        ])
+    },
+    fa: {
+        type: LocaleType.FA_IR,
+        load: () => Promise.all([
+            import('@univerjs/preset-sheets-core/locales/fa-IR'),
+            import('@univerjs/preset-sheets-drawing/locales/fa-IR'),
+            import('@univerjs/preset-sheets-find-replace/locales/fa-IR'),
+            import('@univerjs/preset-sheets-note/locales/fa-IR'),
+            import('@univerjs/preset-sheets-filter/locales/fa-IR'),
+            import('@univerjs/preset-sheets-sort/locales/fa-IR'),
+            import('@univerjs/preset-sheets-data-validation/locales/fa-IR'),
+            import('@univerjs/preset-sheets-conditional-formatting/locales/fa-IR'),
+            import('@univerjs/preset-sheets-hyper-link/locales/fa-IR')
         ])
     },
     fr: {
@@ -134,6 +149,20 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-hyper-link/locales/ja-JP')
         ])
     },
+    ko: {
+        type: LocaleType.KO_KR,
+        load: () => Promise.all([
+            import('@univerjs/preset-sheets-core/locales/ko-KR'),
+            import('@univerjs/preset-sheets-drawing/locales/ko-KR'),
+            import('@univerjs/preset-sheets-find-replace/locales/ko-KR'),
+            import('@univerjs/preset-sheets-note/locales/ko-KR'),
+            import('@univerjs/preset-sheets-filter/locales/ko-KR'),
+            import('@univerjs/preset-sheets-sort/locales/ko-KR'),
+            import('@univerjs/preset-sheets-data-validation/locales/ko-KR'),
+            import('@univerjs/preset-sheets-conditional-formatting/locales/ko-KR'),
+            import('@univerjs/preset-sheets-hyper-link/locales/ko-KR')
+        ])
+    },
     pt_br: null,
     pt: null,
     pl: null,
@@ -166,7 +195,22 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-hyper-link/locales/zh-TW')
         ])
     },
-    uk: null
+    tr: null,
+    uk: null,
+    vi: {
+        type: LocaleType.VI_VN,
+        load: () => Promise.all([
+            import("@univerjs/preset-sheets-core/locales/vi-VN"),
+            import("@univerjs/preset-sheets-drawing/locales/vi-VN"),
+            import("@univerjs/preset-sheets-find-replace/locales/vi-VN"),
+            import("@univerjs/preset-sheets-note/locales/vi-VN"),
+            import("@univerjs/preset-sheets-filter/locales/vi-VN"),
+            import("@univerjs/preset-sheets-sort/locales/vi-VN"),
+            import("@univerjs/preset-sheets-data-validation/locales/vi-VN"),
+            import("@univerjs/preset-sheets-conditional-formatting/locales/vi-VN"),
+            import("@univerjs/preset-sheets-hyper-link/locales/vi-VN")
+        ])
+    }
 };
 
 /** Resolves the Univer locale source for a Trilium UI language, falling back to {@link ENGLISH_LOCALE}. */

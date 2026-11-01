@@ -19,7 +19,6 @@ The mindmap allows for easy jotting down of ideas and storing them in a hierarch
 *   To select one or more notes, drag and drop across the map.
 *   Right click the node to bring a contextual menu with options such as creating new nodes, focusing on a particular notes or creating links between them.
 *   Use the buttons at the top-left to change the positioning of the nodes relative to the root node (to the left, to the right, or to both sides).
-*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area:
-    *   An [image reference](Text/Images/Image%20references.md) can be copied, to paste the mind map in a text note.
-    *   The diagram can be exported either as SVG (vectorial) or PNG (raster).
-    *   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md).
+*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area, an [image reference](Text/Images/Image%20references.md) can be copied by pressing the <span class="tn-icon bx bx-copy"></span> button, to paste the mind map in a text note.
+*   From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>, the diagram can be exported either as SVG (vectorial) or PNG (raster) by selecting _Export as image_.
+*   The note can be set as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) which will disable all editing features.

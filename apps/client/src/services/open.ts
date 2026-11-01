@@ -1,7 +1,9 @@
 import Component from "../components/component.js";
 import FNote from "../entities/fnote.js";
+import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
+import toast from "./toast.js";
 import utils from "./utils.js";
 
 
@@ -30,6 +32,8 @@ function getOpenFileUrl(type: string, noteId: string) {
 function download(url: string) {
     if (window.electronApi) {
         window.electronApi.shell.downloadURL(url);
+    } else if (window.standaloneApi?.save) {
+        void saveToDevice(url);
     } else {
         window.location.href = url;
     }
@@ -108,7 +112,9 @@ async function openExternally(type: string, entityId: string, mime: string) {
         if (canOpenInBrowser(mime)) {
             window.open(getOpenFileUrl(type, entityId));
         } else {
-            window.location.href = getFileUrl(type, entityId);
+            // What cannot be previewed is downloaded, which on mobile means the share sheet:
+            // navigating to the attachment response would be dropped there (see download()).
+            download(getFileUrl(type, entityId));
         }
     }
 }
@@ -137,18 +143,59 @@ async function openNoteOnServer(noteId: string) {
 }
 
 async function openDirectory(directory: string) {
+    if (!utils.isElectron()) {
+        console.error("Not running in an Electron environment.");
+        return;
+    }
+
     try {
-        if (utils.isElectron()) {
-            const res = await window.electronApi?.shell.openPath(directory);
-            if (res) {
-                console.error("Failed to open directory:", res);
-            }
-        } else {
-            console.error("Not running in an Electron environment.");
+        // Resolves to an empty string once the file manager is up, or to the reason it is not.
+        const failure = await window.electronApi?.shell.openPath(directory);
+        if (failure) {
+            reportDirectoryFailure(directory, failure);
         }
-    } catch (err: any) {
-        // Handle file system errors (e.g. path does not exist or is inaccessible)
-        console.error("Error:", err.message);
+    } catch (e) {
+        // File system errors, e.g. the path no longer exists or is inaccessible.
+        reportDirectoryFailure(directory, e instanceof Error ? e.message : String(e));
+    }
+}
+
+/**
+ * Shows a file in the file manager, selected, rather than opening it — which is what to do with a
+ * file the user has no reader for. The database is the one such file Trilium points at.
+ *
+ * Nothing comes back, so nothing can be reported: the OS is asked to bring a window forward, and
+ * whether it did is not something Electron answers.
+ */
+function revealFile(filePath: string) {
+    if (!utils.isElectron()) {
+        console.error("Not running in an Electron environment.");
+        return;
+    }
+
+    window.electronApi?.shell.showItemInFolder(filePath);
+}
+
+/** Reported to the user, not only the console: a silent failure reads as the link doing nothing at all. */
+function reportDirectoryFailure(directory: string, reason: string) {
+    console.error("Failed to open directory:", directory, reason);
+    toast.showError(t("open.directory_failed", { directory, reason }));
+}
+
+/**
+ * Saves a download through the mobile app's share sheet, which is how a file leaves the Capacitor
+ * WebView: it has no download manager, so `window.location.href` would resolve to an `attachment`
+ * response that nothing ever writes.
+ *
+ * The sheet is the confirmation, so only a failure is worth a message; dismissing it is a choice,
+ * not an error.
+ */
+async function saveToDevice(url: string) {
+    const result = await window.standaloneApi?.save?.saveUrl(url);
+
+    if (result?.status === "failed") {
+        console.error("Failed to save the download:", url, result.message);
+        toast.showError(t("open.download_failed", { reason: result.message ?? "" }));
     }
 }
 
@@ -163,5 +210,6 @@ export default {
     openNoteCustom,
     openAttachmentCustom,
     openNoteOnServer,
-    openDirectory
+    openDirectory,
+    revealFile
 };

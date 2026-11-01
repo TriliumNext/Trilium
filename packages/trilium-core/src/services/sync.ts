@@ -4,17 +4,18 @@ import { getBecca } from "../becca/becca.js";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import consistency_checks from "./consistency_checks.js";
-import contentHashService from "./content_hash.js";
+import contentHashService, { type FailedCheck } from "./content_hash.js";
 import dateUtils from "./utils/date.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
 import optionService from "./options.js";
 import setupService from "./setup.js";
 import { getSql } from "./sql/index.js";
+import sqlInit from "./sql_init.js";
 import syncMutexService from "./sync_mutex.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
-import { randomString, timeLimit } from "./utils/index.js";
+import { isStandalone, randomString, timeLimit } from "./utils/index.js";
 import ws from "./ws.js";
 import getInstanceId from "./instance_id.js";
 import request, { CookieJar, ExecOpts } from "./request.js";
@@ -27,6 +28,38 @@ let proxyToggle = true;
 
 let outstandingPullCount = 0;
 let totalPullCount: number | null = null;
+let lastSyncError: string | null = null;
+
+/**
+ * How many times the same `(entityName, sector)` pair may fail the content-hash check within a
+ * single sync run before the divergence is treated as unresolvable.
+ *
+ * A failed check re-queues the sector on both sides, and one further round is all it takes for that
+ * to have its effect: everything either side holds for the sector is pushed and pulled again before
+ * the hashes are compared. The third attempt is slack for a check that raced a concurrent edit (the
+ * outstanding-push/pull guards close most, but not all, of that window). Past that, re-queuing the
+ * same sector can only produce the same mismatch — the two databases hold something sync is unable
+ * to reconcile (a blob erased on one side only, an entity the other side keeps rejecting as older,
+ * …) — and retrying it forever is what turned this into an endlessly spinning sync.
+ */
+export const MAX_SECTOR_RESYNC_ATTEMPTS = 3;
+
+/**
+ * Hard cap on the number of login/push/pull/check rounds a single sync run may take. Every repeated
+ * round is meant to be making progress — draining outstanding pulls or pushes, or re-queuing a
+ * diverged sector — so reaching this many rounds means something is cycling without converging.
+ * Bailing out reports it as a sync error rather than looping inside `sync()` forever; the sync
+ * timer starts a fresh run a minute later regardless.
+ */
+export const MAX_SYNC_ROUNDS = 50;
+
+/**
+ * The diverged sectors of the most recent unresolvable-divergence notification, so the same toast
+ * isn't raised for the rest of the session: sync retries every minute and a divergence sync cannot
+ * fix keeps failing every time. Cleared once a sync converges, so a divergence that returns later
+ * is reported again.
+ */
+let notifiedDivergedSectors: string | null = null;
 
 interface CheckResponse {
     maxEntityChangeId: number;
@@ -56,9 +89,26 @@ async function sync() {
                 return { success: false, errorCode: "NOT_CONFIGURED", message: "Sync not configured" };
             }
 
+            // A new attempt is starting — clear the previous failure so consumers polling
+            // getLastSyncError() (the setup wizard) fall back to showing progress.
+            lastSyncError = null;
+
             let continueSync = false;
+            let rounds = 0;
+            // Attempts per `entityName:sector`, and the sectors that exhausted them. Both are
+            // per-run: a fresh sync run gets to try the whole repair sequence again.
+            const sectorAttempts = new Map<string, number>();
+            const unresolvableChecks: FailedCheck[] = [];
 
             do {
+                if (++rounds > MAX_SYNC_ROUNDS) {
+                    return reportSyncFailure(
+                        `Sync did not converge after ${MAX_SYNC_ROUNDS} rounds, giving up for now. `
+                        + `See the preceding log entries for what each round was still waiting on.`,
+                        "NOT_CONVERGING"
+                    );
+                }
+
                 const syncContext = await login();
 
                 await pushChanges(syncContext);
@@ -69,8 +119,27 @@ async function sync() {
 
                 await syncFinished(syncContext);
 
-                continueSync = await checkContentHash(syncContext);
+                const check = await checkContentHash(syncContext, sectorAttempts);
+
+                unresolvableChecks.push(...check.unresolvable);
+                continueSync = check.continueSync;
             } while (continueSync);
+
+            if (unresolvableChecks.length > 0) {
+                // Deliberately before setDbAsInitialized()/syncFinished(): this run did not
+                // converge, so it must not be reported (nor recorded) as a completed sync.
+                return reportUnresolvableDivergence(unresolvableChecks);
+            }
+
+            notifiedDivergedSectors = null;
+
+            // A converged sync (everything pushed, everything pulled, content hashes verified)
+            // is what makes an initial sync-from-server database usable. setup.triggerSync()
+            // only marks it initialized when its own sync() call succeeds — an initial sync
+            // interrupted by a crash/restart resumes through sync/now or the sync timer, which
+            // would otherwise leave the flag unset forever and the setup screen stuck on
+            // "finalizing". Idempotent no-op on already-initialized databases.
+            sqlInit.setDbAsInitialized();
 
             ws.syncFinished();
 
@@ -96,16 +165,22 @@ async function sync() {
         ) {
             ws.syncFailed();
 
-            log.info("No connection to sync server.");
+            const message = `No connection to sync server: ${e.message}`;
+
+            log.info(message);
+
+            lastSyncError = redactUrlHosts(message);
 
             return {
                 success: false,
-                message: "No connection to sync server."
+                message
             };
         }
         log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);
 
         ws.syncFailed();
+
+        lastSyncError = redactUrlHosts(e.message);
 
         return {
             success: false,
@@ -113,6 +188,69 @@ async function sync() {
         };
 
     }
+}
+
+/**
+ * Replaces the host (and any port/credentials) of every URL in the message with
+ * `[redacted]`, keeping the scheme and path. The recorded sync error is shown on the
+ * setup wizard's failure screen, which users paste as screenshots into bug reports —
+ * the private server host must not leak, while the endpoint path and status code (the
+ * diagnostically useful parts) stay visible. The full message still goes to the log.
+ */
+function redactUrlHosts(message: string) {
+    return message.replace(/(https?:\/\/)[^/\s]+/gi, "$1[redacted]");
+}
+
+/**
+ * Ends a sync run that cannot make progress: records the reason the same way a thrown sync error
+ * would (log + `lastSyncError` + a failed sync status), but without the proxy toggle, since nothing
+ * here points at the connection.
+ */
+function reportSyncFailure(message: string, errorCode: string) {
+    getLog().error(message);
+
+    lastSyncError = message;
+
+    ws.syncFailed();
+
+    return { success: false, errorCode, message };
+}
+
+/**
+ * Reports sectors whose content hash kept diverging after {@link MAX_SECTOR_RESYNC_ATTEMPTS}
+ * re-syncs. This is a state a user has to act on (the databases hold irreconcilable data, typically
+ * repaired by a consistency check or a full re-sync of the client), so on top of the recorded sync
+ * error it raises a toast — once per set of sectors, see {@link notifiedDivergedSectors}.
+ */
+function reportUnresolvableDivergence(failedChecks: FailedCheck[]) {
+    const sectors = failedChecks.map(({ entityName, sector }) => `${entityName}/${sector}`);
+    const result = reportSyncFailure(
+        `Content hash mismatch in ${sectors.join(", ")} could not be resolved by re-syncing the sector(s) `
+        + `${MAX_SECTOR_RESYNC_ATTEMPTS} times. The local database and the sync server hold data that sync `
+        + `cannot reconcile, so syncing stopped instead of retrying indefinitely.`,
+        "CONTENT_HASH_MISMATCH"
+    );
+
+    const notificationKey = sectors.join(",");
+
+    if (notifiedDivergedSectors !== notificationKey) {
+        notifiedDivergedSectors = notificationKey;
+
+        ws.syncHashCheckFailed(sectors);
+    }
+
+    return result;
+}
+
+/**
+ * The failure message of the most recent sync attempt, or null when the last attempt
+ * succeeded (or none ran yet). The sync result itself only reaches whoever *triggered*
+ * the sync — often fire-and-forget (setup, the sync timer) — so the setup wizard's
+ * progress screen polls this through `GET /api/sync/stats` to detect that the initial
+ * sync has failed instead of spinning forever (#10548).
+ */
+function getLastSyncError() {
+    return lastSyncError;
 }
 
 async function login() {
@@ -163,64 +301,183 @@ async function doLogin(): Promise<SyncContext> {
 
 async function pullChanges(syncContext: SyncContext) {
     const log = getLog();
+    const maxBatchBytes = getMaxPullBatchBytes();
+    const maxBlobContentSize = getMaxBlobContentSize();
+
+    // Download/apply pipeline: the request for the next batch's first chunk is fired just before
+    // the current batch is applied, so the network transfer overlaps the (synchronous) SQL work —
+    // the two are roughly equal halves of initial-sync wall time, so overlapping them nearly
+    // halves it. Only the first chunk of a batch can be prefetched: every subsequent chunk's URL
+    // depends on the cursor returned by the response before it.
+    let prefetchedChunk: Promise<ChangesResponse> | null = null;
 
     while (true) {
-        const lastSyncedPull = getLastSyncedPull();
-        const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
-        const changesUri = `/api/sync/changed?instanceId=${getInstanceId()}&lastEntityChangeId=${lastSyncedPull}&logMarkerId=${logMarkerId}`;
+        // Fetch phase: pull consecutive chunks (each needs its own HTTP round-trip) until we've
+        // accumulated ~maxBatchBytes worth of content, then apply them all in a single transaction.
+        // The commit itself carries a large fixed per-transaction overhead, so committing once per
+        // pulled chunk dominates initial-sync time; batching amortizes it across many chunks. The
+        // batch is bounded by bytes (not chunk count) to keep peak memory in check, since a single
+        // chunk may already carry a large blob.
+        const batch: ChangesResponse[] = [];
+        let batchBytes = 0;
+        let cursor = getLastSyncedPull();
+        let noMoreChanges = false;
+        const fetchStart = Date.now();
 
-        const startDate = Date.now();
+        do {
+            const resp = await (prefetchedChunk ?? fetchChangesChunk(syncContext, cursor, maxBlobContentSize));
+            prefetchedChunk = null;
 
-        const resp = await syncRequest<ChangesResponse>(syncContext, "GET", changesUri);
-        if (!resp) {
-            throw new Error("Request failed.");
-        }
-        const { entityChanges, lastEntityChangeId } = resp;
+            outstandingPullCount = resp.outstandingPullCount;
 
-        outstandingPullCount = resp.outstandingPullCount;
+            // Advance the cursor to whatever the server has processed — even when it returns no entity
+            // changes, since it may have skipped past changes owned by this instance. Capturing it here
+            // (before the empty-response break) lets the apply phase persist the advance, so we don't
+            // re-request the skipped range on every subsequent sync.
+            cursor = resp.lastEntityChangeId;
 
-        const hasPendingChanges = entityChanges.length > 0 || outstandingPullCount > 0;
-        if (hasPendingChanges && optionService.getOptionOrNull("syncIncomplete") !== "true") {
-            optionService.setOption("syncIncomplete", "true");
+            const hasPendingChanges = resp.entityChanges.length > 0 || outstandingPullCount > 0;
+            if (hasPendingChanges && optionService.getOptionOrNull("syncIncomplete") !== "true") {
+                optionService.setOption("syncIncomplete", "true");
 
-            getLog().info("Marking sync as incomplete — consistency checks will be deferred until sync converges.");
-        }
-
-        if (totalPullCount === null) {
-            totalPullCount = entityChanges.length + outstandingPullCount;
-        }
-
-        const pulledDate = Date.now();
-
-        getSql().transactional(() => {
-            if (syncContext.instanceId) {
-                syncUpdateService.updateEntities(entityChanges, syncContext.instanceId);
+                getLog().info("Marking sync as incomplete — consistency checks will be deferred until sync converges.");
             }
 
-            if (lastSyncedPull !== lastEntityChangeId) {
-                setLastSyncedPull(lastEntityChangeId);
+            if (totalPullCount === null) {
+                // Keep the denominator as the *grand* total so the setup progress bar doesn't reset
+                // to 0% after a restart mid initial-sync. Already-pulled changes persist in the local
+                // entity_changes table, so adding them to the remaining count reconstructs the
+                // original total — a resumed sync would otherwise only see the leftover work and
+                // rescale from zero.
+                //
+                // This only matters while the initial sync is in progress; the DB isn't marked
+                // initialized until the first sync converges (syncFinished). On an established
+                // database this COUNT would otherwise scan the full entity_changes table on every
+                // routine sync and inflate the total with every change ever pulled, so skip it there
+                // and count only this session's work.
+                const alreadyPulled = sqlInit.isDbInitialized()
+                    ? 0
+                    : getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1") ?? 0;
+                totalPullCount = alreadyPulled + resp.entityChanges.length + outstandingPullCount;
+            }
+
+            if (resp.entityChanges.length === 0) {
+                noMoreChanges = true;
+                break;
+            }
+
+            batch.push(resp);
+            batchBytes += estimatePullResponseBytes(resp);
+        } while (batchBytes < maxBatchBytes);
+
+        // Nothing to apply and the cursor didn't move → fully caught up. If the cursor DID advance (the
+        // server skipped this instance's own changes and returned nothing), fall through so the apply
+        // phase persists the advance.
+        if (batch.length === 0 && getLastSyncedPull() === cursor) {
+            break;
+        }
+
+        if (!noMoreChanges) {
+            prefetchedChunk = fetchChangesChunk(syncContext, cursor, maxBlobContentSize);
+            // If the apply phase throws, the in-flight prefetch is abandoned — pre-attach a
+            // handler so a late network failure doesn't surface as an unhandled rejection.
+            prefetchedChunk.catch(() => {});
+        }
+
+        // Apply phase: all fetched chunks in a single transaction.
+        const applyStart = Date.now();
+        let batchChanges = 0;
+
+        getSql().transactional(() => {
+            for (const resp of batch) {
+                if (syncContext.instanceId) {
+                    syncUpdateService.updateEntities(resp.entityChanges, syncContext.instanceId);
+                }
+
+                batchChanges += resp.entityChanges.length;
+
+                // Drop the applied chunk's rows (and their multi-MB content strings) right away
+                // instead of keeping the whole batch alive until the loop ends — on the WASM build
+                // the renderer is memory-capped and peak size is what kills it.
+                resp.entityChanges = [];
+            }
+
+            if (getLastSyncedPull() !== cursor) {
+                setLastSyncedPull(cursor);
             }
         });
 
-        if (entityChanges.length === 0) {
-            break;
-        } else {
-            try {
-                // https://github.com/zadam/trilium/issues/4310
-                const sizeInKb = Math.round(JSON.stringify(resp).length / 1024);
-
-                log.info(
-                    `Sync ${logMarkerId}: Pulled ${entityChanges.length} changes in ${sizeInKb} KB, starting at entityChangeId=${lastSyncedPull} in ${pulledDate - startDate}ms and applied them in ${Date.now() - pulledDate}ms, ${outstandingPullCount} outstanding pulls`
-                );
-            } catch (e: any) {
-                log.error(`Error occurred ${e.message} ${e.stack}`);
+        if (batch.length > 0) {
+            if (totalPullCount) {
+                ws.syncPullInProgress({
+                    pulled: Math.max(0, totalPullCount - outstandingPullCount),
+                    total: totalPullCount
+                });
             }
+
+            log.info(
+                `Sync: pulled ${batch.length} chunk(s) (${batchChanges} changes, ~${Math.round(batchBytes / 1_048_576)} MB) in ${applyStart - fetchStart}ms and applied them in ${Date.now() - applyStart}ms, ${outstandingPullCount} outstanding pulls`
+            );
+        }
+
+        if (noMoreChanges) {
+            break;
         }
     }
 
     log.info("Finished pull");
 
     totalPullCount = null;
+}
+
+async function fetchChangesChunk(syncContext: SyncContext, cursor: number, maxBlobContentSize: number): Promise<ChangesResponse> {
+    const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
+    const changesUri = `/api/sync/changed?instanceId=${getInstanceId()}&lastEntityChangeId=${cursor}&logMarkerId=${logMarkerId}`
+        + (maxBlobContentSize ? `&maxBlobContentSize=${maxBlobContentSize}` : "");
+
+    const resp = await syncRequest<ChangesResponse>(syncContext, "GET", changesUri);
+    if (!resp) {
+        throw new Error("Request failed.");
+    }
+
+    return resp;
+}
+
+/**
+ * Maximum accumulated content size (in bytes) to buffer across pulled chunks before applying them
+ * in a single transaction during {@link pullChanges}. Larger batches mean fewer commits (each of
+ * which carries a large fixed overhead) at the cost of higher peak memory while the batch is held
+ * in memory. The standalone build holds that batch in a browser worker, whose renderer heap is far
+ * smaller than a Node process's, so it uses a smaller budget than native desktop/server builds.
+ */
+function getMaxPullBatchBytes() {
+    if (!isStandalone()) {
+        return 32 * 1024 * 1024; // desktop
+    }
+
+    // Mobile (Capacitor) is the only client that opts into a blob size limit, i.e. the
+    // memory-constrained case. Pull roughly one server response per apply instead of stacking
+    // several, to keep the peak the mobile heap holds at once well below the OOM ceiling.
+    return getMaxBlobContentSize() > 0 ? 4 * 1024 * 1024 : 16 * 1024 * 1024;
+}
+
+/** Rough in-memory size of a pulled changes response, dominated by (base64-encoded) blob content. */
+function estimatePullResponseBytes(resp: ChangesResponse) {
+    let bytes = 0;
+
+    for (const { entity } of resp.entityChanges) {
+        const content = entity?.content;
+
+        if (typeof content === "string") {
+            bytes += content.length;
+        } else if (content) {
+            bytes += content.length; // Uint8Array
+        }
+
+        bytes += 128; // rough per-record metadata overhead
+    }
+
+    return bytes;
 }
 
 async function pushChanges(syncContext: SyncContext) {
@@ -281,7 +538,16 @@ async function syncFinished(syncContext: SyncContext) {
     await syncRequest(syncContext, "POST", "/api/sync/finished");
 }
 
-async function checkContentHash(syncContext: SyncContext) {
+/**
+ * Compares the local content hashes against the sync server's and re-queues the sectors that
+ * differ, so the next round of the sync loop exchanges them again.
+ *
+ * `sectorAttempts` counts, across the rounds of one sync run, how often each sector has been found
+ * diverged; a sector that used up {@link MAX_SECTOR_RESYNC_ATTEMPTS} is not re-queued again and is
+ * returned in `unresolvable` instead (exactly once — its counter keeps rising while other sectors
+ * are still being repaired). `continueSync` reports whether another round can achieve anything.
+ */
+async function checkContentHash(syncContext: SyncContext, sectorAttempts: Map<string, number>): Promise<{ continueSync: boolean; unresolvable: FailedCheck[] }> {
     const resp = await syncRequest<CheckResponse>(syncContext, "GET", "/api/sync/check");
     if (!resp) {
         throw new Error("Got no response.");
@@ -293,7 +559,7 @@ async function checkContentHash(syncContext: SyncContext) {
     if (lastSyncedPullId < resp.maxEntityChangeId) {
         log.info(`There are some outstanding pulls (${lastSyncedPullId} vs. ${resp.maxEntityChangeId}), skipping content check.`);
 
-        return true;
+        return { continueSync: true, unresolvable: [] };
     }
 
     const notPushedSyncs = getSql().getValue("SELECT EXISTS(SELECT 1 FROM entity_changes WHERE isSynced = 1 AND id > ?)", [getLastSyncedPush()]);
@@ -301,25 +567,43 @@ async function checkContentHash(syncContext: SyncContext) {
     if (notPushedSyncs) {
         log.info(`There's ${notPushedSyncs} outstanding pushes, skipping content check.`);
 
-        return true;
+        return { continueSync: true, unresolvable: [] };
     }
 
-    const failedChecks = contentHashService.checkContentHashes(resp.entityHashes);
+    const retryable: FailedCheck[] = [];
+    const unresolvable: FailedCheck[] = [];
 
-    if (failedChecks.length > 0) {
+    for (const failedCheck of contentHashService.checkContentHashes(resp.entityHashes)) {
+        const key = `${failedCheck.entityName}:${failedCheck.sector}`;
+        const attempts = (sectorAttempts.get(key) ?? 0) + 1;
+
+        sectorAttempts.set(key, attempts);
+
+        if (attempts < MAX_SECTOR_RESYNC_ATTEMPTS) {
+            retryable.push(failedCheck);
+        } else if (attempts === MAX_SECTOR_RESYNC_ATTEMPTS) {
+            log.error(`Content hash check for ${failedCheck.entityName} sector ${failedCheck.sector} still fails after ${attempts} attempts, giving up on re-syncing it.`);
+
+            unresolvable.push(failedCheck);
+        }
+    }
+
+    if (retryable.length > 0) {
         // before re-queuing sectors, make sure the entity changes are correct
         consistency_checks.runEntityChangesChecks();
 
         await syncRequest(syncContext, "POST", `/api/sync/check-entity-changes`);
     }
 
-    for (const { entityName, sector } of failedChecks) {
+    for (const { entityName, sector } of retryable) {
         entityChangesService.addEntityChangesForSector(entityName, sector);
 
         await syncRequest(syncContext, "POST", `/api/sync/queue-sector/${entityName}/${sector}`);
     }
 
-    return failedChecks.length > 0;
+    // Sectors that are out of attempts are reported, not retried, so they must not keep the loop
+    // running — only sectors that were actually re-queued can be fixed by another round.
+    return { continueSync: retryable.length > 0, unresolvable };
 }
 
 const PAGE_SIZE = 1000000;
@@ -359,7 +643,7 @@ async function syncRequest<T extends {}>(syncContext: SyncContext, method: strin
     return response;
 }
 
-function getEntityChangeRow(entityChange: EntityChange) {
+function getEntityChangeRow(entityChange: EntityChange, maxBlobContentSize?: number) {
     const { entityName, entityId } = entityChange;
 
     if (entityName === "note_reordering") {
@@ -383,6 +667,16 @@ function getEntityChangeRow(entityChange: EntityChange) {
             entityRow.content = binary_utils.encodeUtf8(entityRow.content);
         }
 
+        // A client that opted into a blob size limit (e.g. mobile, to bound peak memory) receives a
+        // stub for oversized blobs: the entity_change row — and crucially its hash — is sent
+        // unchanged, so the client's content-hash checks still pass, while the entity row carries an
+        // empty string (never null, which the consistency checker would "repair" and push back). The
+        // client stores an empty-content blob and shows an "open on server" placeholder. Measured on
+        // the raw (pre-base64) content, so the threshold matches the user-facing byte size.
+        if (maxBlobContentSize && entityRow.content && typeof entityRow.content !== "string" && entityRow.content.byteLength > maxBlobContentSize) {
+            entityRow.content = "";
+        }
+
         if (entityRow.content) {
             entityRow.content = binary_utils.encodeBase64(entityRow.content);
         }
@@ -393,7 +687,18 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
 }
 
-function getEntityChangeRecords(entityChanges: EntityChange[]) {
+/**
+ * Soft upper bound on the (estimated) size of a single pull response. Larger responses mean fewer
+ * HTTP round-trips, which is the dominant cost of an initial sync over a high-latency link; on a 2 GB
+ * benchmark, going from 1 MB to 8 MB cut the request count ~3x (1030 -> 333). It stays well under the
+ * tens-of-MB responses a single large blob already produces (so it is within what existing reverse
+ * proxies tolerate), and below the client's pull-batch memory budget, so it does not raise the
+ * receiver's peak memory. It is a soft cap: a response is at least one record, and the record that
+ * crosses the threshold is still included.
+ */
+export const MAX_PULL_RESPONSE_BYTES = 8 * 1024 * 1024;
+
+function getEntityChangeRecords(entityChanges: EntityChange[], maxResponseBytes = MAX_PULL_RESPONSE_BYTES, maxBlobContentSize?: number) {
     const records: EntityChangeRecord[] = [];
     let length = 0;
 
@@ -404,7 +709,7 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
             continue;
         }
 
-        const entity = getEntityChangeRow(entityChange);
+        const entity = getEntityChangeRow(entityChange, maxBlobContentSize);
         if (!entity) {
             continue;
         }
@@ -413,10 +718,9 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
 
         records.push(record);
 
-        length += JSON.stringify(record).length;
+        length += estimateEntityChangeRecordSize(record);
 
-        if (length > 1_000_000) {
-            // each sync request/response should have at most ~1 MB.
+        if (length > maxResponseBytes) {
             break;
         }
     }
@@ -424,8 +728,34 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
     return records;
 }
 
+/**
+ * Rough serialized byte size of an entity-change record, used only to bound a sync response to
+ * ~1 MB. Avoids a full `JSON.stringify(record)` here — the record's (base64-encoded) blob content
+ * would otherwise be serialized just to be measured, then serialized again when the response is
+ * sent. Blob content dominates the payload; a fixed allowance covers the entityChange plus the
+ * record's other (small) entity fields, which is precise enough for a size threshold.
+ */
+export function estimateEntityChangeRecordSize(record: EntityChangeRecord): number {
+    const content = record.entity?.content;
+    const contentLength = typeof content === "string" ? content.length : content?.length ?? 0;
+
+    return contentLength + 300;
+}
+
 function getLastSyncedPull() {
     return parseInt(optionService.getOption("lastSyncedPull"));
+}
+
+/**
+ * Per-device limit (in bytes) above which blob content is not pulled from the sync server; the
+ * server sends an empty-content stub instead. `0` (or an unset/invalid option) disables the limit,
+ * which is the default for every platform except mobile. Read with `getOptionOrNull` so databases
+ * created before this option existed do not throw.
+ */
+function getMaxBlobContentSize(): number {
+    const value = parseInt(optionService.getOptionOrNull("syncMaxBlobContentSize") ?? "0");
+
+    return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 function setLastSyncedPull(entityChangeId: number) {
@@ -492,6 +822,7 @@ export default {
     getEntityChangeRecords,
     getOutstandingPullCount,
     getTotalPullCount,
+    getLastSyncError,
     getMaxEntityChangeId,
     startSyncTimer
 };

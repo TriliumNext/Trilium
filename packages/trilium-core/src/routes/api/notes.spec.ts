@@ -1,8 +1,13 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
+import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import { getSql } from "../../services/sql/index";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
+import ws from "../../services/ws";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -44,6 +49,31 @@ describe("Notes API (core)", () => {
             });
         });
 
+        it("returns the timestamps of several notes at once, skipping the ones it cannot find", async () => {
+            const note = await createTextNote(api, { title: "Bulk metadata" });
+
+            const res = await api.post<Record<string, { utcDateCreated: string }>>(
+                "/api/notes/metadata",
+                { body: { noteIds: [ "root", note.noteId, "missingNote123" ] } });
+
+            expect(res.status).toBe(200);
+            expect(Object.keys(res.body).sort()).toEqual([ note.noteId, "root" ].sort());
+            expect(res.body[note.noteId]).toMatchObject({
+                dateCreated: expect.any(String),
+                utcDateCreated: expect.any(String),
+                dateModified: expect.any(String),
+                utcDateModified: expect.any(String)
+            });
+        });
+
+        it("400s a bulk metadata request whose noteIds are not a list of strings", async () => {
+            expect((await api.post("/api/notes/metadata", { body: {} })).status).toBe(400);
+            expect((await api.post("/api/notes/metadata", { body: { noteIds: "root" } })).status)
+                .toBe(400);
+            expect((await api.post("/api/notes/metadata", { body: { noteIds: [ 1 ] } })).status)
+                .toBe(400);
+        });
+
         it("returns the note blob", async () => {
             const res = await api.get<{ blobId: string; content: string }>("/api/notes/root/blob");
             expect(res.status).toBe(200);
@@ -72,6 +102,45 @@ describe("Notes API (core)", () => {
             expect(res.body.note.noteId).toBeTruthy();
             expect(res.body.note.title).toBe("Created via API");
             expect(res.body.branch.parentNoteId).toBe("root");
+        });
+
+        // What "cut selection into sub-note" does: the new note is handed HTML carrying the source
+        // note's pictures, and the source then drops them from its own content, scheduling those
+        // attachments for erasure. The new note has to end up owning copies, not pointing at them.
+        it("copies a foreign attachment referenced by the content it is created with", async () => {
+            const source = await createTextNote(api, { content: "<p>source</p>" });
+            const save = await api.post(`/api/notes/${source.noteId}/attachments`, {
+                body: { role: "image", mime: "image/png", title: "picture.png", content: "picture bytes" }
+            });
+            expect(save.status).toBe(204);
+
+            const [ original ] = (await api.get<{ attachmentId: string }[]>(
+                `/api/notes/${source.noteId}/attachments`
+            )).body;
+
+            const created = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                {
+                    body: {
+                        title: "Cut selection",
+                        type: "text",
+                        content: `<p><img src="api/attachments/${original.attachmentId}/image/picture.png"></p>`
+                    }
+                }
+            );
+            expect(created.status).toBe(200);
+            const { noteId } = created.body.note;
+
+            const copies = await api.get<{ attachmentId: string; ownerId: string; title: string }[]>(
+                `/api/notes/${noteId}/attachments`
+            );
+            expect(copies.body).toHaveLength(1);
+            expect(copies.body[0].ownerId).toBe(noteId);
+            expect(copies.body[0].attachmentId).not.toBe(original.attachmentId);
+
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content).toContain(`api/attachments/${copies.body[0].attachmentId}/image/`);
+            expect(blob.body.content).not.toContain(original.attachmentId);
         });
 
         it("400s when the target query param is invalid", async () => {
@@ -106,6 +175,49 @@ describe("Notes API (core)", () => {
         });
     });
 
+    describe("editing blocks", () => {
+        const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`;
+
+        it("reads and replaces the blocks of a text note", async () => {
+            const { noteId } = await createTextNote(api, {
+                content: `<p>Before</p>${blocks}<p>After</p>`
+            });
+
+            const read = await api.get<{ content: string }>(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" }
+            });
+            expect(read.status).toBe(200);
+            expect(read.body.content).toBe(blocks);
+
+            const update = await api.put(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" },
+                body: { content: `<p data-trilium-block-id="a">New</p>` }
+            });
+            expect(update.status).toBe(204);
+
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content)
+                .toBe(`<p>Before</p><p data-trilium-block-id="a">New</p><p>After</p>`);
+        });
+
+        it("rejects missing blocks and malformed requests", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const codeNote = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Code", type: "code", mime: "text/plain", content: blocks } }
+            );
+            const codeUrl = `/api/notes/${codeNote.body.note.noteId}/blocks`;
+
+            expect((await api.get(url, { query: { block: "a:x" } })).status).toBe(404);
+            expect((await api.get(url)).status).toBe(400);
+            expect((await api.get(codeUrl, { query: { block: "a" } })).status).toBe(400);
+            expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
+                .toBe(404);
+            expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+        });
+    });
+
     describe("deleting and undeleting", () => {
         it("soft-deletes a note, then undeletes it", async () => {
             const { noteId } = await createTextNote(api, { title: "To delete" });
@@ -117,9 +229,98 @@ describe("Notes API (core)", () => {
             expect(del.status).toBe(204);
             expect(noteIsDeleted(noteId)).toBe(1);
 
-            const undel = await api.put(`/api/notes/${noteId}/undelete`);
-            expect(undel.status).toBe(204);
+            const undel = await api.put<{ undeleted: boolean }>(`/api/notes/${noteId}/undelete`);
+            expect(undel.status).toBe(200);
+            expect(undel.body.undeleted).toBe(true);
             expect(noteIsDeleted(noteId)).toBe(0);
+        });
+
+        it("reports failure (and restores nothing) when the note's parent is still deleted", async () => {
+            const parent = await createTextNote(api, { title: "Deleted parent" });
+            const child = await createTextNote(api, { parentNoteId: parent.noteId, title: "Orphaned child" });
+
+            // Deleting the parent soft-deletes the whole subtree, including the child.
+            const del = await api.delete(`/api/notes/${parent.noteId}`, {
+                query: { taskId: "test-parent-delete", last: "true" }
+            });
+            expect(del.status).toBe(204);
+            expect(noteIsDeleted(child.noteId)).toBe(1);
+
+            // Undeleting the child directly can't succeed — its only parent is itself still deleted.
+            const undel = await api.put<{ undeleted: boolean }>(`/api/notes/${child.noteId}/undelete`);
+            expect(undel.status).toBe(200);
+            expect(undel.body.undeleted).toBe(false);
+            expect(noteIsDeleted(child.noteId)).toBe(1);
+        });
+
+        it("restores an orphaned note under the fallback parent when one is given", async () => {
+            const parent = await createTextNote(api, { title: "Doomed parent" });
+            const child = await createTextNote(api, { parentNoteId: parent.noteId, title: "Rehomed child" });
+            const newHome = await createTextNote(api, { title: "Inbox stand-in" });
+
+            // Deleting the parent orphans the child: its only original location is gone.
+            const del = await api.delete(`/api/notes/${parent.noteId}`, {
+                query: { taskId: "test-fallback-delete", last: "true" }
+            });
+            expect(del.status).toBe(204);
+            expect(noteIsDeleted(child.noteId)).toBe(1);
+
+            const undel = await api.put<{ undeleted: boolean; restoredToFallbackParent: boolean }>(
+                `/api/notes/${child.noteId}/undelete`,
+                { body: { fallbackParentNoteId: newHome.noteId } }
+            );
+
+            expect(undel.status).toBe(200);
+            expect(undel.body.undeleted).toBe(true);
+            expect(undel.body.restoredToFallbackParent).toBe(true);
+
+            // The child is alive again under its new home; the original parent stays deleted.
+            expect(noteIsDeleted(child.noteId)).toBe(0);
+            expect(noteIsDeleted(parent.noteId)).toBe(1);
+            expect(getBecca().getNote(child.noteId)?.getParentNotes().map((note) => note.noteId))
+                .toContain(newHome.noteId);
+        });
+
+        it("re-links an inbox-restored orphan under its original parent when that parent is later restored", async () => {
+            const parent = await createTextNote(api, { title: "Parent restored later" });
+            const child = await createTextNote(api, { parentNoteId: parent.noteId, title: "Orphan rehomed" });
+            const inbox = await createTextNote(api, { title: "Inbox stand-in 2" });
+
+            // Deleting the parent orphans the child.
+            await api.delete(`/api/notes/${parent.noteId}`, {
+                query: { taskId: "test-relink-delete", last: "true" }
+            });
+
+            // The user restores just the child, into the inbox.
+            const undelChild = await api.put<{ restoredToFallbackParent: boolean }>(
+                `/api/notes/${child.noteId}/undelete`,
+                { body: { fallbackParentNoteId: inbox.noteId } }
+            );
+            expect(undelChild.body.restoredToFallbackParent).toBe(true);
+
+            // Later, the user restores the whole parent.
+            const undelParent = await api.put<{ undeleted: boolean }>(`/api/notes/${parent.noteId}/undelete`);
+            expect(undelParent.body.undeleted).toBe(true);
+            expect(noteIsDeleted(parent.noteId)).toBe(0);
+
+            // The child is the SAME note (not a copy), now cloned under both its new home and its
+            // original parent — so restoring the parent brings back a complete subtree.
+            const parentIds = getBecca().getNote(child.noteId)?.getParentNotes().map((note) => note.noteId);
+            expect(parentIds).toContain(inbox.noteId);
+            expect(parentIds).toContain(parent.noteId);
+        });
+
+        it("reports failure (instead of crashing) when undeleting an already-erased note", async () => {
+            const { noteId } = await createTextNote(api, { title: "Erase then undelete" });
+            const del = await api.delete(`/api/notes/${noteId}`, {
+                query: { taskId: "test-erase-undelete", eraseNotes: "true", last: "true" }
+            });
+            expect(del.status).toBe(204);
+            expect(noteIsDeleted(noteId)).toBeNull(); // row is gone entirely
+
+            const undel = await api.put<{ undeleted: boolean }>(`/api/notes/${noteId}/undelete`);
+            expect(undel.status).toBe(200);
+            expect(undel.body.undeleted).toBe(false);
         });
 
         it("400s when deleting without a taskId", async () => {
@@ -137,6 +338,209 @@ describe("Notes API (core)", () => {
             expect(del.status).toBe(204);
             // Erasing removes the row entirely rather than just flagging it deleted.
             expect(noteIsDeleted(noteId)).toBeNull();
+        });
+
+        it("holds a multi-note erase back until the last request of the task group", async () => {
+            const first = await createTextNote(api, { title: "Batch erase note 1" });
+            const second = await createTextNote(api, { title: "Batch erase note 2" });
+            const taskId = "test-note-erase-batch";
+
+            const firstRes = await api.delete(`/api/notes/${first.noteId}`, {
+                query: { taskId, last: "false", eraseNotes: "true" }
+            });
+            expect(firstRes.status).toBe(204);
+
+            // Soft-deleted, but not erased: the client is still sending the rest of the batch, and
+            // an erase here would reload it out from under them.
+            expect(noteIsDeleted(first.noteId)).toBe(1);
+
+            const secondRes = await api.delete(`/api/notes/${second.noteId}`, {
+                query: { taskId, last: "true", eraseNotes: "true" }
+            });
+            expect(secondRes.status).toBe(204);
+
+            // The last request erases everything the group deleted, in one go.
+            expect(noteIsDeleted(first.noteId)).toBeNull();
+            expect(noteIsDeleted(second.noteId)).toBeNull();
+        });
+    });
+
+    describe("deleting a selection", () => {
+        it("deletes every branch of the selection, and erases them when asked", async () => {
+            const first = await createTextNote(api, { title: "Selection note 1" });
+            const second = await createTextNote(api, { title: "Selection note 2" });
+            const child = await createTextNote(api,
+                { parentNoteId: first.noteId, title: "Selection child" });
+
+            const res = await api.post("/api/delete-notes", {
+                body: {
+                    branchIdsToDelete: [ first.branchId, second.branchId ],
+                    taskId: "test-batch-delete"
+                }
+            });
+
+            expect(res.status).toBe(204);
+            expect(noteIsDeleted(first.noteId)).toBe(1);
+            expect(noteIsDeleted(second.noteId)).toBe(1);
+            // Deleting a note takes its subtree with it, as the per-note route does.
+            expect(noteIsDeleted(child.noteId)).toBe(1);
+
+            const toErase = await createTextNote(api, { title: "Selection to erase" });
+            const eraseRes = await api.post("/api/delete-notes", {
+                body: {
+                    branchIdsToDelete: [ toErase.branchId ],
+                    eraseNotes: true,
+                    taskId: "test-batch-erase"
+                }
+            });
+
+            expect(eraseRes.status).toBe(204);
+            // One request covers the whole selection, so nothing holds the erase back.
+            expect(noteIsDeleted(toErase.noteId)).toBeNull();
+        });
+
+        it("removes only the selected branch of a clone, unless all clones are asked", async () => {
+            const otherParent = await createTextNote(api, { title: "Other clone parent" });
+            const cloned = await createTextNote(api, { title: "Cloned note" });
+
+            const clone = await api.put<{ branchId: string }>(
+                `/api/notes/${cloned.noteId}/clone-to-note/${otherParent.noteId}`,
+                { body: {} }
+            );
+            expect(clone.status).toBe(200);
+
+            const res = await api.post("/api/delete-notes", {
+                body: {
+                    branchIdsToDelete: [ cloned.branchId ],
+                    taskId: "test-batch-clone-delete"
+                }
+            });
+
+            expect(res.status).toBe(204);
+            // The note outlives the branch: it still hangs under the other parent.
+            expect(noteIsDeleted(cloned.noteId)).toBe(0);
+            expect(getBecca().getNote(cloned.noteId)?.getParentNotes().map((note) => note.noteId))
+                .toEqual([ otherParent.noteId ]);
+
+            const allClones = await createTextNote(api, { title: "Cloned note, all clones" });
+            await api.put(
+                `/api/notes/${allClones.noteId}/clone-to-note/${otherParent.noteId}`, { body: {} });
+
+            const allRes = await api.post("/api/delete-notes", {
+                body: {
+                    branchIdsToDelete: [ allClones.branchId ],
+                    deleteAllClones: true,
+                    taskId: "test-batch-all-clones-delete"
+                }
+            });
+
+            expect(allRes.status).toBe(204);
+            expect(noteIsDeleted(allClones.noteId)).toBe(1);
+        });
+
+        it("skips a branch an earlier one of the selection already took down", async () => {
+            const parent = await createTextNote(api, { title: "Selection ancestor" });
+            const child = await createTextNote(api,
+                { parentNoteId: parent.noteId, title: "Selection descendant" });
+
+            // The tree only ever selects top-most nodes, but other callers (a note title menu,
+            // the table view) can name both.
+            const res = await api.post("/api/delete-notes", {
+                body: {
+                    branchIdsToDelete: [ parent.branchId, child.branchId ],
+                    taskId: "test-batch-nested-delete"
+                }
+            });
+
+            expect(res.status).toBe(204);
+            expect(noteIsDeleted(parent.noteId)).toBe(1);
+            expect(noteIsDeleted(child.noteId)).toBe(1);
+        });
+
+        it("reports the caller's total, and announces the erasing phase", async () => {
+            const progress = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+
+            try {
+                const { branchId } = await createTextNote(api, { title: "Progress-reported" });
+
+                const res = await api.post("/api/delete-notes", {
+                    body: {
+                        branchIdsToDelete: [ branchId ],
+                        eraseNotes: true,
+                        totalCount: 4,
+                        taskId: "test-batch-progress"
+                    }
+                });
+                expect(res.status).toBe(204);
+
+                const counts = progress.mock.calls
+                    .map(([ message ]) => message)
+                    .filter((message) => message.type === "taskProgressCount");
+
+                // The first message leaves the constructor before the total is known; every later
+                // one carries it, so the client can draw a bar.
+                expect(counts.length).toBeGreaterThan(1);
+                expect(counts[0].totalCount).toBeUndefined();
+                expect(counts.at(-1)).toMatchObject({ totalCount: 4, phase: "erasing" });
+            } finally {
+                progress.mockRestore();
+            }
+        });
+
+        it("tells the task system when it fails, and keeps the selection", async () => {
+            const { noteId, branchId } = await createTextNote(api, { title: "Delete that fails" });
+            const messages = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+            const erase = vi.spyOn(eraseService, "eraseNotesWithDeleteIds")
+                .mockImplementation(() => {
+                    throw new Error("erase blew up");
+                });
+
+            try {
+                const res = await api.post("/api/delete-notes", {
+                    body: {
+                        branchIdsToDelete: [ branchId ],
+                        eraseNotes: true,
+                        taskId: "test-batch-failure"
+                    }
+                });
+                expect(res.status).toBe(500);
+
+                const sent = messages.mock.calls.map(([ message ]) => message);
+
+                // Without a terminal message the client's progress toast stays up, and it has no
+                // close button of its own.
+                expect(sent.filter((message) => message.type === "taskError")).toEqual([
+                    expect.objectContaining({
+                        taskId: "test-batch-failure",
+                        taskType: "deleteNotes",
+                        message: expect.stringContaining("erase blew up")
+                    })
+                ]);
+                expect(sent.filter((message) => message.type === "taskSucceeded")).toEqual([]);
+
+                // The throw rolls the transaction back, so nothing of the selection is gone.
+                expect(noteIsDeleted(noteId)).toBe(0);
+            } finally {
+                erase.mockRestore();
+                messages.mockRestore();
+            }
+        });
+
+        it("400s without a taskId or a branch id array", async () => {
+            const { noteId, branchId } = await createTextNote(api, { title: "Needs a task id" });
+
+            const noTaskId = await api.post("/api/delete-notes", {
+                body: { branchIdsToDelete: [ branchId ] }
+            });
+            expect(noTaskId.status).toBe(400);
+
+            const noBranchIds = await api.post("/api/delete-notes", {
+                body: { taskId: "test-batch-no-branches" }
+            });
+            expect(noBranchIds.status).toBe(400);
+
+            // Neither one deleted anything.
+            expect(noteIsDeleted(noteId)).toBe(0);
         });
     });
 
@@ -217,6 +621,19 @@ describe("Notes API (core)", () => {
             expect(note.body.type).toBe("code");
             expect(note.body.mime).toBe("text/x-python");
         });
+
+        it("rejects a type outside the note type set and leaves the note unchanged", async () => {
+            const { noteId } = await createTextNote(api, { title: "Bad type" });
+            for (const type of ["EVILTYPE", "html", undefined, 42]) {
+                const res = await api.put(`/api/notes/${noteId}/type`, {
+                    body: { type, mime: "application/x-anything" }
+                });
+                expect(res.status).toBe(400);
+            }
+
+            expect(getBecca().getNoteOrThrow(noteId).type).toBe("text");
+            expect(getBecca().getNoteOrThrow(noteId).mime).toBe("text/html");
+        });
     });
 
     describe("structural operations", () => {
@@ -263,6 +680,18 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.note.noteId).not.toBe(original.noteId);
             expect(res.body.note.title).toContain("Original subtree");
+            expect(getBecca().getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(1);
+        });
+
+        it("duplicates only the note when the body asks for no children", async () => {
+            const original = await createTextNote(api, { title: "Original note only" });
+            await createTextNote(api, { parentNoteId: original.noteId, title: "Child" });
+
+            const res = await api.post<{ note: { noteId: string } }>(
+                `/api/notes/${original.noteId}/duplicate/root`, { body: { withChildren: false } }
+            );
+            expect(res.status).toBe(200);
+            expect(getBecca().getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(0);
         });
     });
 
@@ -330,6 +759,29 @@ describe("Notes API (core)", () => {
             );
             expect(res.status).toBe(200);
             expect(res.body.noteIdsToBeDeleted).toEqual([]);
+        });
+    });
+
+    describe("read-only virtual notes", () => {
+        beforeAll(() => {
+            registerVirtualNoteProvider({
+            namespace: "_vapi",
+            parentNoteId: "_hidden",
+            getSubtree: () => [{ id: "_vapiPage", title: "Page", type: "text" }],
+            getContent: () => "<p>shipped</p>"
+        });
+        getContext().init(() => load());
+        });
+
+        afterAll(() => {
+            unregisterVirtualNoteProvider("_vapi");
+            getContext().init(() => load());
+        });
+
+        it("refuses content and revision writes as a client error", async () => {
+            expect((await api.put("/api/notes/_vapiPage/data", { body: { content: "<p>edited</p>" } })).status).toBe(400);
+            expect((await api.post("/api/notes/_vapiPage/revision")).status).toBe(400);
+            expect(getBecca().getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
         });
     });
 });

@@ -1,0 +1,88 @@
+// Follows the Langium grammar of Mermaid's Wardley map (`@mermaid-js/parser`). Names can hold
+// spaces (`Cup of Tea`), so the `words` tokenizer reads a keyword where the grammar takes one and a
+// name otherwise. Newlines are skipped: a name never spans lines, so statements stay apart.
+@top WardleyDiagram { DiagramName statement* }
+
+statement {
+  Title | Size | Evolution | Anchor | Component | Link | Evolve | Pipeline | Note | Annotations |
+  Annotation | Accelerator | Deaccelerator
+}
+
+Title { titleKeyword TitleText? }
+
+Size { sizeKeyword Coordinates }
+
+Evolution { evolutionKeyword Stage (Arrow Stage)+ }
+
+Stage { name ("@" Number)? ("/" name)? }
+
+Anchor { anchorKeyword name Coordinates }
+
+Component {
+  componentKeyword name Coordinates LabelOffset? Decorator?
+  (inertiaKeyword | "(" inertiaKeyword ")")?
+}
+
+LabelOffset { labelKeyword Coordinates }
+
+Decorator { "(" Strategy ")" }
+
+Link { name Port? Arrow? name Port? LinkLabel? }
+
+Evolve { evolveKeyword name Number }
+
+Pipeline { pipelineKeyword name "{" PipelineComponent* "}" }
+
+PipelineComponent { componentKeyword name Coordinates LabelOffset? }
+
+Note { noteKeyword String Coordinates }
+
+Annotations { annotationsKeyword Coordinates }
+
+Annotation { annotationKeyword Number "," Coordinates String }
+
+Accelerator { acceleratorKeyword name Coordinates }
+
+Deaccelerator { deacceleratorKeyword name Coordinates }
+
+Coordinates { "[" Number ("," Number)? "]" }
+
+name { Name | String }
+
+DiagramName { "wardley-beta" }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@external tokens words from "./tokens.js" {
+  titleKeyword[@name=Keyword],
+  sizeKeyword[@name=Keyword],
+  evolutionKeyword[@name=Keyword],
+  anchorKeyword[@name=Keyword],
+  componentKeyword[@name=Keyword],
+  labelKeyword[@name=Keyword],
+  inertiaKeyword[@name=Keyword],
+  evolveKeyword[@name=Keyword],
+  pipelineKeyword[@name=Keyword],
+  noteKeyword[@name=Keyword],
+  annotationsKeyword[@name=Keyword],
+  annotationKeyword[@name=Keyword],
+  acceleratorKeyword[@name=Keyword],
+  deacceleratorKeyword[@name=Keyword],
+  Strategy,
+  Name
+}
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  Number { "-"? @digit+ ("." @digit+)? }
+  String { '"' (!["\\\n] | "\\" _)* '"' | "'" (!['\\\n] | "\\" _)* "'" }
+  Arrow { "->" | "-->" | "-.->" | ">" | "+'" ![']* "'" ("<>" | "<" | ">") }
+  Port { "+<>" | "+>" | "+<" }
+  LinkLabel { ";" ![\n]* }
+  LineComment { "%%" ![\n]* }
+  "[" "]" "(" ")" "{" "}" "," "@" "/"
+}
+
+@external propSource wardleyHighlighting from "./highlight.js"

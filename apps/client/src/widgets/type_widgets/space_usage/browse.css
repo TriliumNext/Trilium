@@ -1,0 +1,117 @@
+.space-usage-browse {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+
+    .space-usage-breadcrumb {
+        flex: 0 0 auto;
+        padding-block: 6px;
+    }
+
+    /* The line itself, which is what scrolls: centred while it fits, and left where it starts once it
+       does not — `safe` is what keeps the first crumb reachable, since a centred overflow pushes the
+       beginning out of the scrollport with no way back to it. */
+    .space-usage-breadcrumb-track {
+        display: flex;
+        justify-content: safe center;
+        align-items: center;
+        gap: 0.35em;
+    }
+
+    /* Names what the path leads to, so a lone root crumb still reads as a location. */
+    .space-usage-crumb-label {
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    .space-usage-crumb {
+        display: inline-block;
+        flex: 0 0 auto;
+        overflow: hidden;
+        max-width: 14em;
+        border: none;
+        background: none;
+        padding: 0;
+        color: var(--main-text-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .space-usage-crumb:hover {
+        text-decoration: underline;
+    }
+
+    .space-usage-crumb-current {
+        font-weight: 600;
+        cursor: default;
+    }
+
+    .space-usage-crumb-current:hover {
+        text-decoration: none;
+    }
+
+    .space-usage-crumb-separator {
+        flex-shrink: 0;
+        opacity: 0.6;
+    }
+
+    .space-usage-browse-chart {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding-block: 8px;
+    }
+
+    /* The way into the chosen child, for a reader who has not found the second tap that does the
+       same. Its line is held whether or not anything is chosen, so the chart above is laid out once
+       and a tap on the ring never resizes it; the height comes from the control below, which stands
+       there hidden rather than absent. One line always: the label is short enough that a narrow
+       screen should cut it rather than fold the row open. */
+    .space-usage-browse-details {
+        display: flex;
+        flex: 0 0 auto;
+        justify-content: center;
+        align-items: center;
+        /* Clear of the strip below, whose own rule would otherwise sit right under the label. */
+        margin-bottom: 1.5em;
+        padding-block: 6px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* Reads as the link it is, stripped the way the crumbs above are and wearing the colour the
+       note's name wears in the middle of the chart. No hover state: this line is only drawn where a
+       tap stands in for one, and there a hover is never anything but what the last tap left behind.
+       The block padding is the tap target, the row around it having none to give. */
+    .space-usage-details-link {
+        overflow: hidden;
+        border: none;
+        background: none;
+        padding: 6px 8px;
+        color: var(--link-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    /* Nothing to open: it keeps its place in the layout and gives up everything else, the keyboard
+       and the accessibility tree included. */
+    .space-usage-details-link-idle {
+        visibility: hidden;
+    }
+
+    /* At the root there is nowhere to go back to: the arrow disappears but keeps its box, so the
+       center text doesn't jump between levels. */
+    .space-usage-back.disabled {
+        visibility: hidden;
+    }
+
+    /* Not a note: nothing to navigate into, painted like the revisions it will one day free.
+       Repeats .donut-segment to outrank the primitive's clickable-cursor rule. */
+    .donut-segment.space-usage-segment-deleted {
+        --space-usage-donut-segment-color: var(--space-usage-revisions-color);
+        cursor: default;
+    }
+}

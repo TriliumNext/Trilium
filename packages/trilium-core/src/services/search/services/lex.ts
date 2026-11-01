@@ -1,9 +1,15 @@
 import type { TokenData } from "./types.js";
 
+/** Separates tokens outside quotes, so a query can be laid out over several lines. */
+const WHITESPACE = /\s/;
+/** Opening brackets followed by an attribute or `note.`, which make the brackets grouping. */
+const GROUP_START = /^\(+\s*(#|~|note\.)/;
+
 function lex(str: string) {
     str = str.toLowerCase();
 
     let fulltextQuery = "";
+    let fulltextQueryBeforeLastToken = "";
     const fulltextTokens: TokenData[] = [];
     const expressionTokens: TokenData[] = [];
 
@@ -18,7 +24,7 @@ function lex(str: string) {
     
     // Check if the string starts with an exact match operator
     // This allows users to use "=searchterm" for exact matching
-    if (str.startsWith("=") && str.length > 1 && str[1] !== "=" && str[1] !== " ") {
+    if (str.startsWith("=") && str.length > 1 && str[1] !== "=" && !WHITESPACE.test(str[1])) {
         leadingOperator = "=";
         str = str.substring(1); // Remove the leading operator from the string
     }
@@ -48,6 +54,7 @@ function lex(str: string) {
         } else {
             fulltextTokens.push(rec);
 
+            fulltextQueryBeforeLastToken = fulltextQuery;
             fulltextQuery = str.substr(0, endIndex + 1);
         }
 
@@ -93,7 +100,20 @@ function lex(str: string) {
                 fulltextEnded = true;
             }
 
+            // A "(" that opens a word starting with an attribute or `note.` opens the expression
+            // part, so "(#a OR #b)" groups without a leading "#".
+            if (!fulltextEnded && currentWord === "" && chr === "(" && GROUP_START.test(str.substring(i))) {
+                fulltextEnded = true;
+            }
+
             if (chr === "#" || chr === "~") {
+                // In the full-text part, # and ~ start an attribute only at the start of a word,
+                // so "c#" and "towers#book" are searched as written.
+                if (!fulltextEnded && currentWord !== "") {
+                    currentWord += chr;
+                    continue;
+                }
+
                 if (!fulltextEnded) {
                     fulltextEnded = true;
                 } else {
@@ -106,7 +126,11 @@ function lex(str: string) {
             } else if (["#", "~"].includes(currentWord) && chr === "!") {
                 currentWord += chr;
                 continue;
-            } else if (chr === " ") {
+            } else if (currentWord === "~" && (chr === "=" || chr === "*")) {
+                // ~= and ~* are fuzzy-match operators, not a relation prefix followed by an operator
+                currentWord += chr;
+                continue;
+            } else if (WHITESPACE.test(chr)) {
                 finishWord(i - 1);
                 continue;
             } else if (fulltextEnded && ["(", ")", "."].includes(chr)) {
@@ -122,7 +146,9 @@ function lex(str: string) {
             }
         }
 
-        if (chr === ",") {
+        // Commas are stripped as fulltext noise, but not inside quotes — a quoted operand
+        // (e.g. #geolocation="48.8583,2.2945") must keep the exact value the user stored.
+        if (chr === "," && !quotes) {
             continue;
         }
 
@@ -131,7 +157,17 @@ function lex(str: string) {
 
     finishWord(str.length - 1);
 
-    fulltextQuery = fulltextQuery.trim();
+    // `parse()` always joins the fulltext to the expression with AND, so an unquoted "and" between
+    // the two is that join, not a word to search for.
+    const lastFulltextToken = fulltextTokens.at(-1);
+    if (expressionTokens.length > 0 && lastFulltextToken?.token === "and" && !lastFulltextToken.inQuotes) {
+        fulltextTokens.pop();
+        fulltextQuery = fulltextQueryBeforeLastToken;
+    }
+
+    // Scoring compares the whole fulltext query against note titles, so the layout the query
+    // was typed in must not reach it.
+    fulltextQuery = fulltextQuery.replace(/\s+/g, " ").trim();
 
     return {
         fulltextQuery,

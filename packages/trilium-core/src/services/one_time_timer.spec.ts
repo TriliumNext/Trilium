@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as cls from "./context.js";
+import { getLog } from "./log.js";
 import oneTimeTimer from "./one_time_timer.js";
 
 describe("oneTimeTimer", () => {
@@ -67,6 +69,54 @@ describe("oneTimeTimer", () => {
             expect(cbB).toHaveBeenCalledTimes(1);
         });
 
+        it("contains a throwing callback and frees the name for rescheduling", () => {
+            const boom = vi.fn(() => {
+                throw new Error("callback failure");
+            });
+            const next = vi.fn();
+
+            oneTimeTimer.scheduleExecution("throwing", 100, boom);
+
+            // The throw must not escape the timer callback — an uncaught exception here
+            // would crash the whole process (#10549).
+            expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+            expect(boom).toHaveBeenCalledTimes(1);
+
+            // The failure still releases the slot so the task can run again later.
+            oneTimeTimer.scheduleExecution("throwing", 100, next);
+            vi.advanceTimersByTime(100);
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it("falls back to console.error when the log service itself throws", () => {
+            const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            const logSpy = vi.spyOn(getLog(), "error").mockImplementation(() => {
+                throw new Error("log service unavailable");
+            });
+            const stackless = new Error("stackless failure");
+            delete stackless.stack;
+
+            try {
+                // A non-Error rejection value and an Error without a stack both have to be
+                // rendered into the message without the handler throwing.
+                oneTimeTimer.scheduleExecution("log-broken-string", 100, () => {
+                    throw "plain string failure";
+                });
+                oneTimeTimer.scheduleExecution("log-broken-stackless", 100, () => {
+                    throw stackless;
+                });
+
+                expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+
+                expect(logSpy).toHaveBeenCalledTimes(2);
+                expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("plain string failure"));
+                expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("stackless failure"));
+            } finally {
+                logSpy.mockRestore();
+                consoleSpy.mockRestore();
+            }
+        });
+
         it("allows re-scheduling the same name from within the callback", () => {
             const inner = vi.fn();
             const outer = vi.fn(() => {
@@ -82,6 +132,36 @@ describe("oneTimeTimer", () => {
 
             vi.advanceTimersByTime(50);
             expect(inner).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("execution context", () => {
+        beforeEach(() => {
+            // Real timers, because what is under test is what survives an actual asynchronous
+            // hop: AsyncLocalStorage carries a scope across one, the browser context's stack
+            // has already unwound by then.
+            vi.useRealTimers();
+        });
+
+        it("runs the callback inside an execution context, so a committing write can record its entity changes", async () => {
+            let failure: unknown;
+
+            // The entity-deletion handler schedules "hidden-subtree-check" from inside the scope
+            // of the write that triggered it. checkHiddenSubtree() commits a transaction, and
+            // ws.sendTransactionEntityChangesToAllClients() then calls this on the way out.
+            cls.init(() => {
+                oneTimeTimer.scheduleExecution("context-scope", 1, () => {
+                    try {
+                        cls.getAndClearEntityChangeIds();
+                    } catch (e: unknown) {
+                        failure = e;
+                    }
+                });
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 20));
+
+            expect(failure).toBeUndefined();
         });
     });
 });

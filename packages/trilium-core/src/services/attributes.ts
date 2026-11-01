@@ -60,16 +60,26 @@ function createAttribute(attribute: AttributeRow) {
 }
 
 function getAttributeNames(type: string, nameLike: string) {
-    nameLike = nameLike.toLowerCase();
-
-    let names = getSql().getColumn<string>(
+    const names = getSql().getColumn<string>(
         /*sql*/`SELECT DISTINCT name
             FROM attributes
             WHERE isDeleted = 0
                 AND type = ?
                 AND name LIKE ?`,
-        [type, `%${nameLike}%`]
+        [type, `%${nameLike.toLowerCase()}%`]
     );
+
+    return completeAttributeNames(names, type, nameLike);
+}
+
+/**
+ * Adds to `names`, the attribute names of `type` matching `nameLike` found in notes, the built-in
+ * ones that match, leaves out the names of the links Trilium keeps itself, and lists the names
+ * starting with `nameLike` first.
+ */
+function completeAttributeNames(foundNames: string[], type: string, nameLike: string) {
+    nameLike = nameLike.toLowerCase();
+    let names = [ ...foundNames ];
 
     for (const attr of BUILTIN_ATTRIBUTES) {
         if (attr.type === type && attr.name.toLowerCase().includes(nameLike) && !names.includes(attr.name)) {
@@ -108,6 +118,7 @@ export default {
     createRelation,
     createAttribute,
     getAttributeNames,
+    completeAttributeNames,
     isAttributeType,
     isAttributeDangerous
 };

@@ -3,24 +3,47 @@ inputs:
     description: "Whether to upload the APK as a workflow artifact"
     required: false
     default: "true"
+  nightly:
+    description: >-
+      Build the signed nightly variant: .nightly application ID suffix, release build
+      type, date-based versionCode, signed with the keystore inputs below. When false
+      (default), an unsigned debug APK (.debug application ID suffix) is built.
+    required: false
+    default: "false"
+  keystore-base64:
+    description: "Base64-encoded Android keystore used to sign the nightly APK"
+    required: false
+    default: ""
+  keystore-password:
+    description: "Password of the nightly keystore"
+    required: false
+    default: ""
+  key-alias:
+    description: "Alias of the signing key inside the nightly keystore"
+    required: false
+    default: ""
+  key-password:
+    description: "Password of the signing key"
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v6
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
     - name: Set up Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: 24
         cache: "pnpm"
 
     - name: Set up JDK 21
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: 21
 
     - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v6
+      uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
     - name: Install dependencies
       shell: bash
@@ -38,16 +61,45 @@ runs:
       shell: bash
       run: pnpm --filter @triliumnext/mobile exec cap sync android
 
-    - name: Assemble debug APK
+    - name: Prepare nightly signing
+      if: ${{ inputs.nightly == 'true' }}
+      shell: bash
+      env:
+        KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
+        KEY_ALIAS: ${{ inputs.key-alias }}
+        KEY_PASSWORD: ${{ inputs.key-password }}
+      run: |
+        if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+          echo "::error::Nightly build requested but the signing inputs (keystore-base64, keystore-password, key-alias, key-password) are not all set."
+          exit 1
+        fi
+        printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/nightly.keystore"
+        {
+          echo "TRILIUM_NIGHTLY_BUILD=true"
+          echo "TRILIUM_ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/nightly.keystore"
+          echo "TRILIUM_ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+          echo "TRILIUM_ANDROID_KEY_ALIAS=$KEY_ALIAS"
+          echo "TRILIUM_ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
+          echo "TRILIUM_ANDROID_VERSION_CODE=$(date -u +%Y%m%d)"
+          echo "TRILIUM_ANDROID_VERSION_NAME=nightly-$(date -u +%Y%m%d)"
+        } >> "$GITHUB_ENV"
+
+    - name: Run Android unit tests
       shell: bash
       working-directory: apps/mobile/android
-      run: ./gradlew assembleDebug --no-daemon
+      run: ./gradlew testDebugUnitTest createDebugUnitTestCoverageReport --no-daemon
+
+    - name: Assemble APK
+      shell: bash
+      working-directory: apps/mobile/android
+      run: ./gradlew ${{ inputs.nightly == 'true' && 'assembleRelease' || 'assembleDebug' }} --no-daemon
 
     - name: Upload APK
       if: ${{ inputs.upload-artifact == 'true' }}
       uses: actions/upload-artifact@v7
       with:
-        name: trilium-mobile-debug-apk
-        path: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+        name: trilium-mobile-apk
+        path: apps/mobile/android/app/build/outputs/apk/**/*.apk
         retention-days: 14
         archive: false

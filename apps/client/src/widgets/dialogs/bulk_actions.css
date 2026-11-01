@@ -1,31 +1,9 @@
-.bulk-actions-dialog .modal-body h4:not(:first-child) {
-    margin-top: 20px;
-}
+.bulk-actions-dialog {
+    .tn-card {
+        margin-bottom: 16px;
+    }
 
-.bulk-actions-dialog .bulk-available-action-list button {
-    padding: 2px 7px;
-    margin-inline-end: 10px;
-    margin-bottom: 5px;
-}
-
-.bulk-actions-dialog .bulk-existing-action-list {
-    width: 100%;
-}
-
-.bulk-actions-dialog .bulk-existing-action-list td {
-    padding: 7px;
-}
-
-.bulk-actions-dialog .bulk-existing-action-list .button-column {
-    width: 50px;
-    white-space: nowrap;
-    text-align: end;
-}
-
-.bulk-actions-dialog .bulk-existing-action-list .button-column > * {
-    vertical-align: middle;
-}
-
-.bulk-actions-dialog .bulk-existing-action-list .button-column .help-dropdown {
-    display: inline-block !important;
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
 }

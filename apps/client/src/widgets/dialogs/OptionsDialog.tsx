@@ -7,14 +7,18 @@ import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import utils, { isElectron } from "../../services/utils";
+import utils, { isElectron, isStandalone } from "../../services/utils";
 import NoteDetail from "../NoteDetail";
-import ActionButton from "../react/ActionButton";
 import FormList, { FormListItem } from "../react/FormList";
-import { useChildNotes, useContainedLinkNavigation, useMobileMasterDetail, useNoteContext, useTriliumEvent } from "../react/hooks";
+import HelpButton from "../react/HelpButton";
+import { useChildNotes, useContainedLinkNavigation, useDetachedNoteContext, useNoteContext, useTriliumEvent } from "../react/hooks";
+import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { PageHelpSlot } from "../type_widgets/options/components/OptionsPageHeader";
 import SettingsNavigation from "../type_widgets/options/components/SettingsNavigation";
+import SettingsSearch from "../type_widgets/options/components/SettingsSearch";
+import OptionsSearchPage, { hasSearchTerms } from "../type_widgets/options/search_page";
 
 /** The settings page shown when no specific section was requested and none was viewed yet this session. */
 const DEFAULT_SECTION = "_optionsAppearance";
@@ -31,16 +35,29 @@ export default function OptionsDialog() {
     const [ shown, setShown ] = useState(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_options-dialog"));
+    useDetachedNoteContext(noteContext);
     // Remembers the page last viewed this session so reopening the dialog lands there instead of
     // always on Appearance. Kept in component state (resets on reload), not persisted.
     const [ lastSection, setLastSection ] = useState<string | null>(null);
+    // What is being looked for across the pages, and whether the search is what the dialog is
+    // showing. The two are apart because focusing the field opens the search before anything is
+    // typed, and picking a page closes it again without emptying the field.
+    const [ searchQuery, setSearchQuery ] = useState("");
+    const [ searching, setSearching ] = useState(false);
+    // Where the page on show keeps its help mark while the master-detail header carries its name.
+    const [ pageHelpUrl, setPageHelpUrl ] = useState<string>();
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
-    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef, "options-slide");
+    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef);
+    // On a phone the results take the place of the list of pages, which is where the field sits, so
+    // they wait for a search to have begun rather than for the field to have been tapped.
+    const showsMobileResults = searching && hasSearchTerms(searchQuery);
 
     useTriliumEvent("showOptions", async ({ section }) => {
         const noteContext = new NoteContext("_options-dialog");
         await noteContext.setNote(section ?? lastSection ?? DEFAULT_SECTION, { keepActiveDialog: true });
+        setSearchQuery("");
+        setSearching(false);
 
         // Events triggered at note context level (e.g. the save indicator) would not work since the note context has no parent component. Propagate events to parent component so that they can be handled properly.
         noteContext.triggerEvent = (name, data) => parentComponent?.handleEventInChildren(name, data);
@@ -55,6 +72,7 @@ export default function OptionsDialog() {
     useContainedLinkNavigation(modalRef, useCallback((notePath, viewScope) => {
         if (notePath.split("/").at(-1)?.startsWith("_options")) {
             void noteContext.setNote(notePath, { viewScope, keepActiveDialog: true });
+            setSearching(false);
             switchMobileView("page");
         } else {
             void appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath });
@@ -66,8 +84,25 @@ export default function OptionsDialog() {
             <Modal
                 modalRef={modalRef}
                 title={t("options.title")}
-                header={isMasterDetail && (mobileView === "page" ? <MobilePageHeader onBack={() => switchMobileView("list")} /> : <MobilePageHeader />)}
-                sidebar={isMasterDetail ? undefined : <SettingsSidebar />}
+                header={isMasterDetail && (
+                    <MasterDetailHeader
+                        inPage={mobileView === "page"}
+                        onBack={() => switchMobileView("list")}
+                        backTitle={t("options.back")}
+                        pageTitle={<ActivePageTitle />}
+                        listTitle={t("options.title")}
+                        listIcon="bx bx-cog"
+                        pageActions={pageHelpUrl && <HelpButton helpPage={pageHelpUrl} />}
+                    />
+                )}
+                sidebar={isMasterDetail ? undefined : (
+                    <SettingsSidebar
+                        searchQuery={searchQuery}
+                        searching={searching}
+                        onSearchChange={setSearchQuery}
+                        onSearchFocus={() => setSearching(true)}
+                    />
+                )}
                 isFullPageOnMobile
                 customTitleBarButtons={!isMobile ? [{
                     iconClassName: "bx-expand-alt",
@@ -91,18 +126,55 @@ export default function OptionsDialog() {
                 }}
             >
                 {isMasterDetail && (
-                    <div className="options-mobile-nav">
-                        <MobileSettingsList onSelect={(noteId) => {
-                            void noteContext.setNote(noteId, { keepActiveDialog: true });
-                            switchMobileView("page");
-                        }} />
-                    </div>
+                    <MasterPane className="options-mobile-nav">
+                        <SettingsSearch
+                            query={searchQuery}
+                            onChange={setSearchQuery}
+                            onFocus={() => setSearching(true)}
+                        />
+
+                        {/* The results stand in the list's place once there is something to look
+                            for, and the list comes back as soon as the field is emptied. Below that
+                            they are mounted out of sight, so the first search is as quick as the
+                            rest and the way out of the search is never anything but the field. */}
+                        <div className="options-mobile-results" hidden={!showsMobileResults}>
+                            {searching && <OptionsSearchPage query={searchQuery} />}
+                        </div>
+
+                        {!showsMobileResults && (
+                            <MobileSettingsList onSelect={(noteId) => {
+                                void noteContext.setNote(noteId, { keepActiveDialog: true });
+                                switchMobileView("page");
+                            }} />
+                        )}
+                    </MasterPane>
                 )}
-                <SettingsScrollReset modalRef={modalRef} />
-                <NoteDetail />
+                <SettingsScrollReset modalRef={modalRef} searching={searching} />
+                {/* The settings page is the detail half of the flow, and is wrapped as a pane only where
+                    there is a flow for it to be half of: the sidebar layout expects it as the body's own
+                    child. */}
+                {isMasterDetail
+                    ? (
+                        // Offered only here: elsewhere the page's banner keeps its own name, and so
+                        // has somewhere for the mark to sit.
+                        <PageHelpSlot.Provider value={setPageHelpUrl}>
+                            <DetailPane><NoteDetail /></DetailPane>
+                        </PageHelpSlot.Provider>
+                    )
+                    : (searching ? <OptionsSearchPage query={searchQuery} /> : <NoteDetail />)}
             </Modal>
         </NoteContextContext.Provider>
     );
+}
+
+/**
+ * Names the settings page on show, for the master-detail header to carry beside the way back. A
+ * component of its own rather than something the dialog reads: the dialog is what provides the note
+ * context the title comes from, so it cannot consume it itself.
+ */
+function ActivePageTitle() {
+    const { note } = useNoteContext();
+    return <>{note?.title}</>;
 }
 
 /**
@@ -117,13 +189,19 @@ export function useOptionPages() {
 
 /**
  * Whether an option page applies to the running platform. A page note in the hidden subtree (see
- * `hidden_subtree.ts`) can carry a boolean label restricting it to one platform: `#electronOnly`
- * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron) app.
- * Pages without either label apply everywhere. The page still exists in the note tree and stays
- * reachable directly; only the modal's navigation hides it.
+ * `hidden_subtree.ts`) can carry a boolean label restricting where it appears: `#electronOnly`
+ * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron)
+ * app, and `#notInStandalone` hides it in the standalone build. Pages without any of them apply
+ * everywhere. The page still exists in the note tree and stays reachable directly; only the modal's
+ * navigation hides it.
  *
- * This is the platform axis (Electron app vs. served over HTTP), distinct from the layout axis
- * (`isDesktop`/`isMobile`) that the launcher's `desktopOnly` label uses.
+ * The first two are one axis — where the stack is served from — and are written as `Only` labels
+ * because each names a single platform. Standalone is neither: its server runs in this browser, so
+ * it is Electron and server at once for some purposes and neither for others. What a page needs
+ * there is stated as the exclusion it is.
+ *
+ * All of this is the platform axis, distinct from the layout axis (`isDesktop`/`isMobile`) that the
+ * launcher's `desktopOnly` label uses.
  */
 export function isOptionPageVisibleOnPlatform(page: FNote) {
     if (!isElectron() && page.isLabelTruthy("electronOnly")) {
@@ -131,6 +209,10 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
     }
 
     if (isElectron() && page.isLabelTruthy("serverOnly")) {
+        return false;
+    }
+
+    if (isStandalone && page.isLabelTruthy("notInStandalone")) {
         return false;
     }
 
@@ -146,27 +228,45 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
  * resets both scroll containers in use: the `.modal-body` on the desktop sidebar layout and the
  * `.note-detail` pane in the mobile master-detail flow.
  */
-function SettingsScrollReset({ modalRef }: { modalRef: RefObject<HTMLDivElement> }) {
+function SettingsScrollReset(
+    { modalRef, searching }: { modalRef: RefObject<HTMLDivElement | null>, searching: boolean }
+) {
     const { noteId } = useNoteContext();
     useLayoutEffect(() => {
         const modal = modalRef.current;
         if (!modal) return;
         modal.querySelector<HTMLElement>(".modal-body")?.scrollTo({ top: 0 });
         modal.querySelector<HTMLElement>(".note-detail")?.scrollTo({ top: 0 });
-    }, [ modalRef, noteId ]);
+    }, [ modalRef, noteId, searching ]);
     return null;
 }
 
+interface SettingsSidebarProps {
+    searchQuery: string;
+    /** Whether the search is showing, in which case no page in the list is the active one. */
+    searching: boolean;
+    onSearchChange(query: string): void;
+    onSearchFocus(): void;
+}
+
 /**
- * The settings page selector shown in the dialog's sidebar. It derives the active page from
- * `useNoteContext()` (resolved against the dialog's own context via the surrounding provider) so the
- * highlighted entry tracks navigation. The link clicks themselves are handled by the dialog's
- * {@link useContainedLinkNavigation} interceptor.
+ * The dialog's sidebar: the field looking through every page, above the selector for one of them.
+ *
+ * The selector derives the active page from `useNoteContext()` (resolved against the dialog's own
+ * context via the surrounding provider) so the highlighted entry tracks navigation. The link clicks
+ * themselves are handled by the dialog's {@link useContainedLinkNavigation} interceptor.
  */
-function SettingsSidebar() {
+function SettingsSidebar({
+    searchQuery, searching, onSearchChange, onSearchFocus
+}: SettingsSidebarProps) {
     const { noteId } = useNoteContext();
-    if (!noteId) return null;
-    return <SettingsNavigation activeNoteId={noteId} />;
+
+    return (
+        <>
+            <SettingsSearch query={searchQuery} onChange={onSearchChange} onFocus={onSearchFocus} />
+            {noteId && <SettingsNavigation activeNoteId={searching ? "" : noteId} />}
+        </>
+    );
 }
 
 /**
@@ -184,6 +284,7 @@ function MobileSettingsList({ onSelect }: { onSelect: (noteId: string) => void }
                     icon={page.getIcon()}
                     value={page.noteId}
                     active={page.noteId === activeNoteId}
+                    badges={page.hasLabel("beta") ? [ { text: t("common.beta") } ] : undefined}
                 >
                     {page.title}
                 </FormListItem>
@@ -192,29 +293,3 @@ function MobileSettingsList({ onSelect }: { onSelect: (noteId: string) => void }
     );
 }
 
-/**
- * Replaces the static "Options" title on mobile. In the page view it shows just a back button
- * returning to the master list — the page title itself is rendered by the page's own
- * {@link OptionsPageHeader} below. In the list view a decorative settings icon and the dialog title
- * take its place.
- */
-function MobilePageHeader({ onBack }: { onBack?: () => void }) {
-    if (onBack) {
-        return (
-            <div className="options-mobile-page-header">
-                <ActionButton
-                    icon="bx bx-chevron-left"
-                    text={t("options.back")}
-                    onClick={onBack}
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="options-mobile-page-header">
-            <span className="options-header-icon icon-action bx bx-cog" aria-hidden="true" />
-            <h5 className="options-mobile-page-title">{t("options.title")}</h5>
-        </div>
-    );
-}

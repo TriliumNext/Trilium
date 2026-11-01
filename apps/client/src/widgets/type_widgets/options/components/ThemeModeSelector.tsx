@@ -1,7 +1,8 @@
 import { t } from "../../../../services/i18n";
-import { ButtonGroup } from "../../../react/Button";
-import Icon from "../../../react/Icon";
-import OptionsRow from "./OptionsRow";
+import { OptionCardSection } from "../../../react/Card";
+import SegmentedChoice, { SegmentedChoiceOption } from "../../../react/SegmentedChoice";
+
+type ThemeMode = "app" | "fixed";
 
 interface ThemeModeSelectorProps {
     matchesApp: boolean;
@@ -9,24 +10,19 @@ interface ThemeModeSelectorProps {
 }
 
 export default function ThemeModeSelector({ matchesApp, onMatchesAppChange }: ThemeModeSelectorProps) {
+    const modes: SegmentedChoiceOption<ThemeMode>[] = [
+        { value: "app", label: t("code_theme.match_app_appearance"), icon: "bx-brightness-half" },
+        { value: "fixed", label: t("code_theme.always_use_one_theme"), icon: "bx-pin" }
+    ];
+
     return (
-        <OptionsRow name="theme-mode" label={t("code_theme.theme_mode")}>
-            <ButtonGroup>
-                <button
-                    type="button"
-                    className={`btn btn-sm btn-secondary ${matchesApp ? "active" : ""}`}
-                    onClick={() => onMatchesAppChange(true)}
-                >
-                    <Icon icon="bx bx-brightness-half" />{" "}{t("code_theme.match_app_appearance")}
-                </button>
-                <button
-                    type="button"
-                    className={`btn btn-sm btn-secondary ${!matchesApp ? "active" : ""}`}
-                    onClick={() => onMatchesAppChange(false)}
-                >
-                    <Icon icon="bx bx-pin" />{" "}{t("code_theme.always_use_one_theme")}
-                </button>
-            </ButtonGroup>
-        </OptionsRow>
+        <OptionCardSection name="theme-mode" label={t("code_theme.theme_mode")}>
+            <SegmentedChoice
+                options={modes}
+                currentValue={matchesApp ? "app" : "fixed"}
+                onChange={(mode) => onMatchesAppChange(mode === "app")}
+                collapseOnMobile
+            />
+        </OptionCardSection>
     );
 }

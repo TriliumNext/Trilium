@@ -4,8 +4,10 @@ Trilium allows importing from OneNote. Currently the only mechanism supported is
 ## Import process
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _OneNote_.
-3.  Press the _Connect_ button, you will be redirected to Microsoft's authentication screen where you can log into your account.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-onenote"></span> _OneNote_.
+3.  Press the _Connect_ button:
+    1.  On the desktop app, you will be redirected to Microsoft's authentication screen where you can log into your account.
+    2.  On the web app, the process is slightly more involved as it requires copying the code to clipboard, accessing the link, pasting the code and then signing in once more.
 4.  After the connection is successful, you should be able to see a list of sections that can be imported. Simply check the ones to import and press the _Import selected_ button.
 5.  Wait for the import to finish.
 
@@ -13,21 +15,52 @@ Trilium allows importing from OneNote. Currently the only mechanism supported is
 
 The following features are preserved by Trilium during the import process:
 
-*   Basic formatting (bold, italic, underline, strikethrough, subscript, super script, inline code, font sizes, headings, colors, highlights).
+*   Basic formatting (bold, italic, underline, strikethrough, subscript, super script, font sizes, headings, colors, highlights).
     *   Black-colored text is intentionally stripped to allow it to work in dark themes.
+*   Inline code is automatically detected and formatted. Paragraphs that use the Code style are also converted to <a class="reference-link" href="../../../Note%20Types/Text/Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>.
+    *   Unfortunately the indentation of the code might be lost because the information is simply not present in the data from the Microsoft API.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Lists.md">Lists</a> with different bullet types.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Tables.md">Tables</a>
+    *   Cell backgrounds are preserved, including a best-effort hue correction because the colors returned by the Graph API are sometimes incorrect.
+    *   Cell widths are also preserved proportionally, with the only difference that tables in Trilium have a percentage-based width, not fixed pixel sizes.
 *   Images and <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>.
+    *   Screen clippings are also properly supported since v0.104.1, displaying their timestamp as a figure caption.
 *   To-do lists
-*   Hand-drawing is preserved and displayed as an SVG image (however there are some
+*   Hand-drawing is preserved and displayed as an SVG image inside the note
+    *   OneNote's default color (black) is special since it also renders as white for dark themes. Since v0.104.1, this is also supported by using a special SVG tweak which reacts to light/dark themes.
 *   Links between other imported pages are converted to <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> if the text of the link matches the name of the page, or plain links otherwise. If the pages are not part of the import, the original `onenote:` link is kept.
-*   Tags (apart from to-do lists) are mildly preserved by converting them to emojis. This loses their searchability. Since Trilium has no concept of inline attributes or badges, this is considered a middle-ground.
+*   Tags (apart from to-do lists) are preserved by converting them to [inline icons](../../../Note%20Types/Text/Insert%20buttons/Icons.md), which are searchable by the icon's name and can be recolored like any other icon. Some icons are turned into emojis instead.
 
 Regarding the note structure:
 
 *   The order of the pages within a section is maintained.
 *   Sub-pages and section groups are maintained by nesting notes in a hierarchical structure.
 *   Creation and modification of both notes and sections is preserved. The order of section or section groups is not preserved (see limitations).
+
+## Error management and reporting
+
+The OneNote importer uses Microsoft's Graph API which handles the HTML export (that we later post-process for Trilium use). The Graph API itself has to process the OneNote pages before sending them to us, and as such it's a time-consuming operation that is directly proportional to the number of notes and the complexity/size of the notes.
+
+The Graph API throttles access if it detects too many operations. The importer takes that into account, but sometimes this means that most of the time is spent waiting for the Graph API to unblock access rather than actually importing data.
+
+In addition, some pages may fail at the Graph API level due to an internal timeout on their side or other issues. Trilium will try to refetch pages in order to avoid that but sometimes pages cannot be retrieved even after multiple retries. In that case, the importer will still create a corresponding note in Trilium but with an error report instead of a content. This preserves <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> and makes it easy to identify and manually fix the pages that failed.
+
+At the end of the import, the top-level note called _OneNote_ _import_ will contain information about how the import went:
+
+*   The number of notes imported;
+*   The success rate;
+*   A list of notes that could not be imported, as well as the failure reason;
+*   Pages whose images/attachments failed to download
+*   How long the import spent waiting out throttling.
+
+To avoid cases in which the import is fundamentally broken (e.g. an expired sign-in), the import will error out if it fails to import 6 pages in a row.
+
+## Attributes
+
+Pages imported from OneNote have a few built-in [labels](../../../Advanced%20Usage/Attributes/Labels.md):
+
+*   `oneNotePageId`, with the corresponding page ID in OneNote. This can be used to identify the original OneNote page. Trilium doesn't use it in any way at this moment.
+*   `oneNoteImportFailed` attached to notes that couldn't be imported. This can be used to quickly <a class="reference-link" href="../../Navigation/Search.md">Search</a> for failed notes.
 
 ## Limitations
 
@@ -42,14 +75,23 @@ In addition, drawing in OneNote can be interleaved with text boxes. Text notes i
 > [!NOTE]
 > There are plans to support drawing-heavy notes that interleave with text boxes by converting them to a <a class="reference-link" href="../../../Note%20Types/Canvas.md">Canvas</a> instead.
 
+### Password-protected sections
+
+OneNote supports encryption at section level; when importing a notebook that contains these password-protection sections, Trilium will not be able to read the content of password-protected sections so they will appear empty. This is not a limitation of Trilium, the information is simply not available from the source (Graph API).
+
+The section itself is kept for reference and all the sections that could not be imported will be shown in the report (the top-level note called _OneNote import_).
+
+To unprotect a section in OneNote Desktop, right click on the protected section → _Password Protect This Section_ and press _Remove Password_ and sync. Then re-import either only the protected sections or remove everything and start the import from scratch.
+
 ## Other limitations
 
 The following are known limitations due to how the information comes from the import (Microsoft Graph API), which means that they cannot be fixed.
 
 *   The order of the sections (and section groups) is not available, the sections are ordered by creation date instead.
 *   Revision history.
-*   Paragraph indentation.
+*   Paragraph indentation, as well as code block indentation.
 *   Section colors.
+*   Drawings inside titles, the title might appear incomplete or “Untitled”.
 
 ## Reporting issues
 

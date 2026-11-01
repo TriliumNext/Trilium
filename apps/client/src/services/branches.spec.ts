@@ -69,6 +69,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     // Reset commonly-overridden collaborators back to safe defaults.
     server.put = vi.fn(async () => ({ success: true, message: "" })) as typeof server.put;
+    server.post = vi.fn(async () => ({})) as typeof server.post;
     server.remove = vi.fn(async () => ({})) as typeof server.remove;
     toastService.showError = vi.fn();
     toastService.showPersistent = vi.fn();
@@ -86,7 +87,7 @@ describe("moveBeforeBranch", () => {
         // virt- branches and root/hoisted branches are filtered out before the loop.
         makeBranch("rootBranch", "root");
 
-        await branches.moveBeforeBranch(["virt-x", "rootBranch", "a1"], "before1");
+        await expect(branches.moveBeforeBranch(["virt-x", "rootBranch", "a1"], "before1")).resolves.toBe(true);
         expect(server.put).toHaveBeenCalledTimes(1);
         expect(server.put).toHaveBeenCalledWith(`branches/a1/move-before/before1`);
         expect(beforeBranch.noteId).toBe(targetNote.noteId);
@@ -94,23 +95,23 @@ describe("moveBeforeBranch", () => {
 
         // server failure -> error toast and early return
         server.put = vi.fn(async () => ({ success: false, message: "nope" })) as typeof server.put;
-        await branches.moveBeforeBranch(["a1"], "before1");
+        await expect(branches.moveBeforeBranch(["a1"], "before1")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("nope");
     });
 
     it("returns early when before-branch is missing", async () => {
-        await branches.moveBeforeBranch(["a1"], "does-not-exist");
+        await expect(branches.moveBeforeBranch(["a1"], "does-not-exist")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving before root or launch bar config", async () => {
         makeBranch("rootDest", "root");
-        await branches.moveBeforeBranch(["a1"], "rootDest");
+        await expect(branches.moveBeforeBranch(["a1"], "rootDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
 
         const lbSpy = vi.spyOn(utils, "isLaunchBarConfig").mockReturnValue(true);
         makeBranch("lbDest", "_lbVisibleLaunchers");
-        await branches.moveBeforeBranch(["a1"], "lbDest");
+        await expect(branches.moveBeforeBranch(["a1"], "lbDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(2);
         lbSpy.mockRestore();
     });
@@ -125,26 +126,26 @@ describe("moveAfterBranch", () => {
         makeBranch("m1", n1.noteId);
         makeBranch("m2", n2.noteId);
 
-        await branches.moveAfterBranch(["m1", "m2"], "afterDest");
+        await expect(branches.moveAfterBranch(["m1", "m2"], "afterDest")).resolves.toBe(true);
         expect(server.put).toHaveBeenCalledTimes(2);
         // reversed order: m2 first, then m1
         expect((server.put as any).mock.calls[0][0]).toBe("branches/m2/move-after/afterDest");
         expect((server.put as any).mock.calls[1][0]).toBe("branches/m1/move-after/afterDest");
 
         server.put = vi.fn(async () => ({ success: false, message: "fail" })) as typeof server.put;
-        await branches.moveAfterBranch(["m1"], "afterDest");
+        await expect(branches.moveAfterBranch(["m1"], "afterDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("fail");
     });
 
     it("returns early when after-note is missing", async () => {
-        await branches.moveAfterBranch(["m1"], "missing");
+        await expect(branches.moveAfterBranch(["m1"], "missing")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving after a forbidden destination note", async () => {
         // dest note id "root" is in the forbidden list
         makeBranch("forbiddenDest", "root");
-        await branches.moveAfterBranch(["m1"], "forbiddenDest");
+        await expect(branches.moveAfterBranch(["m1"], "forbiddenDest")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
         expect(server.put).not.toHaveBeenCalled();
     });
@@ -152,24 +153,26 @@ describe("moveAfterBranch", () => {
 
 describe("moveToParentNote", () => {
     it("returns early when new parent branch is missing", async () => {
-        await branches.moveToParentNote(["m1"], "no-parent");
+        await expect(branches.moveToParentNote(["m1"], "no-parent")).resolves.toBe(false);
         expect(server.put).not.toHaveBeenCalled();
     });
 
     it("rejects moving into _lbRoot", async () => {
         makeBranch("lbRootBranch", "_lbRoot");
-        await branches.moveToParentNote(["m1"], "lbRootBranch");
+        await expect(branches.moveToParentNote(["m1"], "lbRootBranch")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledTimes(1);
         expect(server.put).not.toHaveBeenCalled();
     });
 
-    it("skips missing/hoisted/search-parent branches and moves valid ones", async () => {
+    it("skips missing/hoisted/search-parent branches and moves the valid ones in one request", async () => {
         const parentNote = buildNote({ title: "Parent" });
         makeBranch("destParent", parentNote.noteId);
 
         // a regular note under root
         const regular = buildNote({ title: "Regular" });
         makeBranch("regularBranch", regular.noteId, "root");
+        const regular2 = buildNote({ title: "Regular too" });
+        makeBranch("regularBranch2", regular2.noteId, "root");
 
         // a note whose parent is a search note -> skipped
         const searchParent = buildNote({ title: "Search", type: "search" });
@@ -181,10 +184,20 @@ describe("moveToParentNote", () => {
         const hoisted = buildNote({ id: "hoistedId", title: "Hoisted" });
         makeBranch("hoistedBranch", hoisted.noteId, "root");
 
-        await branches.moveToParentNote(["missingBranch", "hoistedBranch", "searchChildBranch", "regularBranch"], "destParent", "comp-1");
+        await expect(branches.moveToParentNote(["missingBranch", "hoistedBranch", "regularBranch", "searchChildBranch", "regularBranch2"], "destParent", "comp-1"))
+            .resolves.toBe(true);
 
         expect(server.put).toHaveBeenCalledTimes(1);
-        expect(server.put).toHaveBeenCalledWith("branches/regularBranch/move-to/destParent", undefined, "comp-1");
+        expect(server.put).toHaveBeenCalledWith("branches/move-to/destParent",
+            { branchIds: [ "regularBranch", "regularBranch2" ] }, "comp-1");
+    });
+
+    it("sends nothing when no branch can be moved", async () => {
+        const parentNote = buildNote({ title: "Parent3" });
+        makeBranch("destParent3", parentNote.noteId);
+
+        await expect(branches.moveToParentNote(["missingBranch"], "destParent3")).resolves.toBe(false);
+        expect(server.put).not.toHaveBeenCalled();
     });
 
     it("shows error and bails when the move fails", async () => {
@@ -194,7 +207,7 @@ describe("moveToParentNote", () => {
         makeBranch("regularBranch2", regular.noteId, "root");
 
         server.put = vi.fn(async () => ({ success: false, message: "boom" })) as typeof server.put;
-        await branches.moveToParentNote(["regularBranch2"], "destParent2");
+        await expect(branches.moveToParentNote(["regularBranch2"], "destParent2")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("boom");
     });
 });
@@ -227,24 +240,30 @@ describe("deleteNotes", () => {
             getActiveContext: () => ({ notePathArray: ["root", note.noteId], setNote })
         } as any;
         appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            data.callback({ proceed: true, deleteAllClones: false, eraseNotes: false });
+            data.callback({
+                proceed: true, deleteAllClones: false, eraseNotes: false, noteCountToDelete: 7
+            });
         }) as any;
 
-        // Two branches -> first iteration has last=false, second has last=true.
+        // Two branches, one request: the backend deletes the selection in a single transaction.
         const result = await branches.deleteNotes(["delBranch2", "delBranch2b"]);
         expect(result).toBe(true);
-        expect(server.remove).toHaveBeenCalledTimes(2);
-        const firstArg = (server.remove as any).mock.calls[0][0] as string;
-        const secondArg = (server.remove as any).mock.calls[1][0] as string;
-        expect(firstArg.startsWith(`branches/delBranch2?taskId=`)).toBe(true);
-        expect(firstArg).toContain("eraseNotes=false");
-        expect(firstArg).toContain("last=false");
-        expect(secondArg).toContain("last=true");
-        // navigated to the parent path ("root")
+        expect(server.post).toHaveBeenCalledTimes(1);
+        const [url, body] = (server.post as any).mock.calls[0];
+        expect(url).toBe("delete-notes");
+        expect(body).toMatchObject({
+            branchIdsToDelete: ["delBranch2", "delBranch2b"],
+            deleteAllClones: false,
+            eraseNotes: false,
+            // The dialog's own preview count, so the toast counts towards the number it showed.
+            totalCount: 7,
+            taskId: expect.any(String)
+        });
+        // root has no children registered here, so the parent path ("root") is the fallback
         expect(setNote).toHaveBeenCalledWith("root");
     });
 
-    it("deletes all clones (note endpoint), erases & reloads, and tolerates navigation errors", async () => {
+    it("asks for all clones, erases without reloading, and tolerates navigation errors", async () => {
         const note = buildNote({ title: "Del3" });
         makeBranch("delBranch3", note.noteId, "root");
 
@@ -261,11 +280,10 @@ describe("deleteNotes", () => {
 
         const result = await branches.deleteNotes(["delBranch3"], false, true, "comp-9");
         expect(result).toBe(true);
-        // deleteAllClones -> notes/<noteId> endpoint
-        const removeArg = (server.remove as any).mock.calls[0][0] as string;
-        expect(removeArg.startsWith(`notes/${note.noteId}?taskId=`)).toBe(true);
-        expect(removeArg).toContain("eraseNotes=true");
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        const [, body, componentId] = (server.post as any).mock.calls[0];
+        expect(body).toMatchObject({ deleteAllClones: true, eraseNotes: true });
+        expect(componentId).toBe("comp-9");
+        expect(reloadSpy).not.toHaveBeenCalled();
         expect(errSpy).toHaveBeenCalled();
         reloadSpy.mockRestore();
         errSpy.mockRestore();
@@ -282,31 +300,112 @@ describe("deleteNotes", () => {
 
         const result = await branches.deleteNotes(["delBranch4"], false, false);
         expect(result).toBe(true);
-        // getActiveContext only used by activateParentNotePath, which is skipped
+        // With moveToParent off, the active tab is left alone: the collection views that pass it
+        // delete a child of the note they show, so there is nothing to navigate away from.
         expect(getActiveContext).not.toHaveBeenCalled();
     });
 
-    it("handles a deleteAllClones request where the branch is no longer in froca", async () => {
-        // filterRootNote keeps non-root ids even if the branch is gone? No: filterRootNote drops
-        // unknown branches. So to exercise the `deleteAllClones && !branch` fallback we keep a real
-        // branch through filtering, then remove it from froca before the delete loop runs.
-        const note = buildNote({ title: "Del5" });
-        makeBranch("delBranch5", note.noteId, "root");
-        appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            // remove the branch right when the dialog "resolves", before the delete loop reads it
-            delete froca.branches["delBranch5"];
-            data.callback({ proceed: true, deleteAllClones: true, eraseNotes: false });
-        }) as any;
-
-        const result = await branches.deleteNotes(["delBranch5"], false, false);
-        expect(result).toBe(true);
-        // branch missing -> falls back to deleting the branch id endpoint
-        const removeArg = (server.remove as any).mock.calls[0][0] as string;
-        expect(removeArg.startsWith("branches/delBranch5?taskId=")).toBe(true);
-    });
 });
 
-describe("activateParentNotePath (via deleteNotes navigation)", () => {
+describe("activateNeighbouringNotePath (via deleteNotes navigation)", () => {
+    /** Confirms the delete dialog with the given options and captures where the tab navigates. */
+    function confirmDeletion(notePathArray: string[], deleteAllClones = false) {
+        const setNote = vi.fn(async () => {});
+        appContext.tabManager = {
+            getActiveContext: () => ({ notePathArray, setNote })
+        } as any;
+        appContext.triggerCommand = vi.fn((_name: any, data: any) => {
+            data.callback({ proceed: true, deleteAllClones, eraseNotes: false });
+        }) as any;
+        return setNote;
+    }
+
+    it("activates the next sibling, or the previous one for the last note", async () => {
+        const parent = buildNote({ title: "P", children: [
+            { id: "sibA", title: "A" },
+            { id: "sibB", title: "B" },
+            { id: "sibC", title: "C" },
+            { id: "sibD", title: "D" }
+        ] });
+        const p = parent.noteId;
+
+        let setNote = confirmDeletion(["root", p, "sibB"]);
+        await branches.deleteNotes([`${p}_sibB`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibC`);
+
+        setNote = confirmDeletion(["root", p, "sibD"]);
+        await branches.deleteNotes([`${p}_sibD`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibC`);
+
+        // The deleted note is an ancestor of the active one: its own siblings are what count.
+        buildNote({ id: "grandchild", title: "G" });
+        setNote = confirmDeletion(["root", p, "sibA", "grandchild"]);
+        await branches.deleteNotes([`${p}_sibA`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibB`);
+    });
+
+    it("skips removed and archived siblings, falling back to the parent", async () => {
+        const parent = buildNote({ title: "P2", children: [
+            { id: "arcA", title: "A", "#archived": "" },
+            { id: "selB", title: "B" },
+            { id: "selC", title: "C" }
+        ] });
+        const p = parent.noteId;
+
+        // B and C are both selected, A is archived: nothing survives, so the parent is the target.
+        let setNote = confirmDeletion(["root", p, "selB"]);
+        await branches.deleteNotes([`${p}_selB`, `${p}_selC`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}`);
+
+        // Only B is selected, so C survives.
+        setNote = confirmDeletion(["root", p, "selB"]);
+        await branches.deleteNotes([`${p}_selB`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/selC`);
+    });
+
+    it("treats a clone of a deleted note as gone only when all clones are deleted", async () => {
+        // X hangs both under P3 (right after B) and under Q; only its Q branch is selected.
+        const parent = buildNote({ title: "P3", children: [
+            { id: "clB", title: "B" }, { id: "clX", title: "X" }, { id: "clC", title: "C" }
+        ] });
+        const other = buildNote({ title: "Q" });
+        const p = parent.noteId;
+        makeBranch("Q_clX", "clX", other.noteId);
+        other.addChild("clX", "Q_clX", false);
+        froca.getNoteFromCache("clX")?.addParent(other.noteId, "Q_clX", false);
+
+        let setNote = confirmDeletion(["root", p, "clB"], false);
+        await branches.deleteNotes([`${p}_clB`, "Q_clX"]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/clX`);
+
+        setNote = confirmDeletion(["root", p, "clB"], true);
+        await branches.deleteNotes([`${p}_clB`, "Q_clX"], true);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/clC`);
+    });
+
+    it("never activates the hidden subtree when deleting the last child of root", async () => {
+        const root = froca.getNoteFromCache("root");
+        for (const noteId of ["rootFirst", "rootLast", "_hidden"]) {
+            buildNote({ id: noteId, title: noteId });
+            makeBranch(`root_${noteId}`, noteId, "root");
+            root?.addChild(noteId, `root_${noteId}`, false);
+            froca.getNoteFromCache(noteId)?.addParent("root", `root_${noteId}`, false);
+        }
+        expect(root?.getChildNoteIds()).toEqual(["rootFirst", "rootLast", "_hidden"]);
+
+        const setNote = confirmDeletion(["root", "rootLast"]);
+        await branches.deleteNotes(["root_rootLast"]);
+        expect(setNote).toHaveBeenCalledWith("root/rootFirst");
+    });
+
+    it("falls back to the parent when its children are not loaded in froca", async () => {
+        const note = buildNote({ title: "Lonely" });
+        makeBranch("lonelyBranch", note.noteId, "root");
+        const setNote = confirmDeletion(["root", note.noteId]);
+        await branches.deleteNotes(["lonelyBranch"]);
+        expect(setNote).toHaveBeenCalledWith("root");
+    });
+
     it("does not navigate when the deleted note is not on the active path", async () => {
         const note = buildNote({ title: "Off" });
         makeBranch("offBranch", note.noteId, "root");
@@ -347,8 +446,9 @@ describe("activateParentNotePath (via deleteNotes navigation)", () => {
             getActiveContext: () => ({ notePathArray: undefined, setNote })
         } as any;
         appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            // Remove the branch after filtering but before navigation, so activateParentNotePath's
-            // `froca.getBranch(...)` returns undefined and the `if (branch)` false arm is taken.
+            // Remove the branch after filtering but before navigation, so that
+            // activateNeighbouringNotePath's `froca.getBranch(...)` returns undefined and the
+            // `if (branch)` false arm is taken.
             delete froca.branches["ancBranch"];
             data.callback({ proceed: true, deleteAllClones: false, eraseNotes: false });
         }) as any;
@@ -431,6 +531,15 @@ describe("clone helpers", () => {
         await branches.cloneNoteAfter("noteN", "afterB");
         expect(toastService.showError).toHaveBeenCalledWith("e3");
     });
+
+    it("cloneNoteBefore calls server and surfaces errors", async () => {
+        await branches.cloneNoteBefore("noteN", "beforeB");
+        expect(server.put).toHaveBeenCalledWith("notes/noteN/clone-before/beforeB");
+
+        server.put = vi.fn(async () => ({ success: false, message: "e4" })) as typeof server.put;
+        await branches.cloneNoteBefore("noteN", "beforeB");
+        expect(toastService.showError).toHaveBeenCalledWith("e4");
+    });
 });
 
 describe("ws task-message subscribers", () => {
@@ -459,6 +568,42 @@ describe("ws task-message subscribers", () => {
         expect(succeededToast.id).toBe("s1");
         expect(succeededToast.timeout).toBe(5000);
         expect(succeededToast.icon).toBe("trash");
+        // The finished toast replaces the in-progress one by id, and showPersistent merges fields.
+        expect(succeededToast.progress).toBeUndefined();
+        expect(succeededToast.dismissible).toBe(true);
+    });
+
+    it("shows a delete progress bar only with a total, and drops it while erasing", async () => {
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b1", progressCount: 3, totalCount: 12
+        });
+        const withTotal = (toastService.showPersistent as any).mock.calls[0][0];
+        expect(withTotal.progress).toBeCloseTo(3 / 12);
+        expect(withTotal.dismissible).toBe(false);
+
+        // The count walks branches while the total counts notes, so a surviving clone can push the
+        // count past the total. The bar must not overflow.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b2", progressCount: 20, totalCount: 12
+        });
+        expect((toastService.showPersistent as any).mock.calls[1][0].progress).toBe(1);
+
+        // No total (a caller that never opened the dialog) -> a running count, no bar.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount", taskId: "b3", progressCount: 4
+        });
+        expect((toastService.showPersistent as any).mock.calls[2][0].progress).toBeUndefined();
+
+        // Erasing is bulk SQL with nothing to count, so the bar goes even though a total is known.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b4", progressCount: 12, totalCount: 12, phase: "erasing"
+        });
+        const erasing = (toastService.showPersistent as any).mock.calls[3][0];
+        expect(erasing.progress).toBeUndefined();
+        expect(erasing.dismissible).toBe(false);
     });
 
     it("undeleteNotes subscriber reacts to error/progress/success and ignores other task types", async () => {

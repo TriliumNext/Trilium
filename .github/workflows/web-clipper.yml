@@ -13,6 +13,8 @@ on:
     paths:
       - "apps/web-clipper/**"
 
+  workflow_dispatch:
+
 permissions:
   contents: write
   discussions: write
@@ -20,6 +22,10 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  IS_TAG: ${{ startsWith(github.ref, 'refs/tags/web-clipper-v') }}
+  IS_RC: ${{ startsWith(github.ref, 'refs/tags/web-clipper-v') && contains(github.ref, '-rc') }}
 
 jobs:
   build:
@@ -32,12 +38,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Set up node & dependencies
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --filter web-clipper --frozen-lockfile --ignore-scripts
@@ -47,9 +54,19 @@ jobs:
           pnpm --filter web-clipper zip
           pnpm --filter web-clipper zip:firefox
 
+      - name: Rebuild the Firefox extension from the sources zip
+        run: |
+          sources="$RUNNER_TEMP/sources"
+          mkdir "$sources"
+          unzip -q apps/web-clipper/.output/*-sources.zip -d "$sources"
+          cd "$sources"
+          pnpm install --filter web-clipper --frozen-lockfile --ignore-scripts
+          pnpm --filter web-clipper build:firefox
+          diff -r apps/web-clipper/.output/firefox-mv2 \
+            "$GITHUB_WORKSPACE/apps/web-clipper/.output/firefox-mv2"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
-        if: ${{ !startsWith(github.ref, 'refs/tags/web-clipper-v') }}
         with:
           name: web-clipper-extension
           path: apps/web-clipper/.output/*.zip
@@ -57,13 +74,82 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+      - name: Sign the Firefox extension
+        if: ${{ env.IS_RC == 'true' }}
+        working-directory: apps/web-clipper
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          pnpm exec web-ext sign \
+            --channel unlisted \
+            --source-dir .output/firefox-mv2 \
+            --upload-source-code .output/*-sources.zip \
+            --artifacts-dir "$RUNNER_TEMP/signed"
+          chrome_zip=$(basename .output/*-chrome.zip)
+          mv "$RUNNER_TEMP"/signed/*.xpi ".output/${chrome_zip%-chrome.zip}-firefox.xpi"
+
       - name: Release web clipper extension
-        uses: softprops/action-gh-release@v3.0.1
-        if: ${{ startsWith(github.ref, 'refs/tags/web-clipper-v') }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        if: ${{ env.IS_TAG == 'true' }}
         with:
           draft: false
+          prerelease: ${{ env.IS_RC == 'true' }}
           fail_on_unmatched_files: true
-          files: apps/web-clipper/.output/*.zip
+          files: |
+            apps/web-clipper/.output/*-chrome.zip
+            ${{ env.IS_RC == 'true' && 'apps/web-clipper/.output/*-firefox.xpi' || '' }}
           discussion_category_name: Releases
           make_latest: false
           token: ${{ secrets.RELEASE_PAT }}
+
+  publish:
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/web-clipper-v') && !contains(github.ref, '-rc')) }}
+    runs-on: ubuntu-latest
+    name: Publish to the ${{ matrix.store }}
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - store: Chrome Web Store
+            zips: --chrome-zip .output/*-chrome.zip
+          - store: Firefox Add-ons
+            zips: --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --filter web-clipper --frozen-lockfile --ignore-scripts
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-clipper-extension
+          path: apps/web-clipper/.output
+
+      - name: Submit for review
+        working-directory: apps/web-clipper
+        env:
+          DRY_RUN_FLAG: ${{ github.event_name == 'workflow_dispatch' && '--dry-run' || '' }}
+          ZIPS: ${{ matrix.zips }}
+          CHROME_API_VERSION: v2
+          CHROME_EXTENSION_ID: ofoiklieachadcaeffficgjaajojpkpi
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+          FIREFOX_EXTENSION_ID: web-clipper@triliumnotes.org
+          FIREFOX_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: pnpm exec wxt submit $DRY_RUN_FLAG $ZIPS

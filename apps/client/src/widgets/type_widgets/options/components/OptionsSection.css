@@ -1,7 +1,18 @@
+/* The header pushes its first button to the end of the title line (`margin-inline-start: auto` in
+   theme-next/pages.css, which this out-specifies as that rule reaches every button); the rest follow it
+   rather than each being pushed away from the last in turn. */
+.options-section:not(.tn-no-card) .options-section-header .icon-action ~ .icon-action {
+    margin-inline-start: 0;
+}
+
 .options-section-card {
     .admonition {
         margin: calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) 0 calc(var(--options-card-padding) * -1);
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
+    }
+
+    .collapsible {
+        margin-top: 0.5em;
     }
 }

@@ -1,6 +1,8 @@
+import { getContext } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BrowserRouter, createRouter } from "./browser_router.js";
+import { BrowserRouter, createRouter, type UploadedFile } from "./browser_router.js";
+import { dbLock } from "./db_lock.js";
 
 const RAW_RESPONSE = Symbol.for("RAW_RESPONSE");
 const encoder = new TextEncoder();
@@ -41,6 +43,26 @@ describe("BrowserRouter routing", () => {
         await router.dispatch("GET", "http://localhost/api/notes/a%20b/branches/xyz?expand=true&depth=2");
         expect(captured?.params).toEqual({ noteId: "a b", branchId: "xyz" });
         expect(captured?.query).toEqual({ expand: "true", depth: "2" });
+    });
+
+    // What `/custom/*path` needs: a splat spans slashes, where a `:param` stops at one. The two
+    // are captured in one pass so `paramNames` stays in step with the capture groups whichever
+    // order they appear in.
+    it("captures a *splat across segments, alongside a :param", async () => {
+        const router = new BrowserRouter();
+        let captured: Record<string, string> | undefined;
+        router.get("/u/:userId/files/*filePath", (req) => {
+            captured = req.params;
+            return {};
+        });
+
+        await router.dispatch("GET", "http://localhost/u/u1/files/deep/nested/report.txt");
+        expect(captured).toEqual({ userId: "u1", filePath: "deep/nested/report.txt" });
+
+        // A splat also matches nothing, so `/custom/` itself reaches the handler.
+        router.get("/custom/*path", (req) => ({ path: req.params.path }));
+        expect(decodeBody((await router.dispatch("GET", "http://localhost/custom/")).body))
+            .toBe(JSON.stringify({ path: "" }));
     });
 
     it("returns 404 text for an unmatched route", async () => {
@@ -141,6 +163,34 @@ describe("BrowserRouter body parsing", () => {
         expect(req?.file && Array.from(req.file.buffer)).toEqual([1, 2, 3]);
     });
 
+    it("takes a posted File's fields, and reads its bytes only for a route that does not read it in place", async () => {
+        const file = new File([ new Uint8Array([ 4, 5, 6 ]) ], "notes.zip", { type: "application/zip" });
+        const arrayBuffer = vi.spyOn(file, "arrayBuffer");
+        const body = { type: "upload", fields: { taskId: "t1" }, file };
+
+        const router = new BrowserRouter();
+        let buffered: { body?: unknown; file?: UploadedFile } | undefined;
+        let inPlace: { body?: unknown; file?: UploadedFile } | undefined;
+        router.post("/upload", (r) => { buffered = r; return {}; });
+        router.register("POST", "/import", (r) => { inPlace = r; return {}; }, { readsUploadsInPlace: true });
+
+        await router.dispatch("POST", "http://localhost/import", body);
+        expect(inPlace?.body).toEqual({ taskId: "t1" });
+        expect(inPlace?.file).toEqual({ originalname: "notes.zip", mimetype: "application/zip", blob: file });
+        expect(arrayBuffer).not.toHaveBeenCalled();
+
+        await router.dispatch("POST", "http://localhost/upload", body);
+        expect(buffered?.file?.buffer && Array.from(buffered.file.buffer)).toEqual([ 4, 5, 6 ]);
+
+        const untyped = new File([ new Uint8Array([ 7 ]) ], "blob");
+        await router.dispatch("POST", "http://localhost/import", { type: "upload", fields: {}, file: untyped });
+        expect(inPlace?.file?.mimetype).toBe("application/octet-stream");
+
+        await router.dispatch("POST", "http://localhost/upload", { type: "upload", fields: { taskId: "t2" } });
+        expect(buffered?.body).toEqual({ taskId: "t2" });
+        expect(buffered?.file).toBeUndefined();
+    });
+
     it("warns when multipart parsing fails", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const router = new BrowserRouter();
@@ -169,6 +219,24 @@ describe("BrowserRouter result formatting", () => {
         expect(JSON.parse(decodeBody(res.body))).toEqual({ id: "x" });
     });
 
+    it("sends a string result as-is, so an HTML fragment is not JSON-escaped", async () => {
+        const router = new BrowserRouter();
+        router.get("/preview", () => "<table><td>a</td></table>");
+        const res = await router.dispatch("GET", "http://localhost/preview");
+        expect(res.status).toBe(200);
+        expect(res.headers["content-type"]).toContain("text/html");
+        expect(decodeBody(res.body)).toBe("<table><td>a</td></table>");
+    });
+
+    it("sends an error tuple's string as plain text, not a JSON-quoted copy", async () => {
+        const router = new BrowserRouter();
+        router.get("/bad", () => [400, "Description must be a string."]);
+        const res = await router.dispatch("GET", "http://localhost/bad");
+        expect(res.status).toBe(400);
+        expect(res.headers["content-type"]).toContain("text/plain");
+        expect(decodeBody(res.body)).toBe("Description must be a string.");
+    });
+
     it("serializes a plain object as a 200 JSON response", async () => {
         const router = new BrowserRouter();
         router.get("/obj", () => ({ ok: true }));
@@ -195,6 +263,18 @@ describe("BrowserRouter result formatting", () => {
         const nullRes = await router.dispatch("GET", "http://localhost/raw-null");
         expect(nullRes.status).toBe(304);
         expect(nullRes.body).toBeNull();
+    });
+
+    it("sends only a view's own bytes, not the whole buffer behind it", async () => {
+        // How a byte range arrives: the handler slices the note's content, which leaves a view over
+        // the full blob. Handing over its `.buffer` would answer a seek with the entire file.
+        const router = new BrowserRouter();
+        const whole = encoder.encode("0123456789");
+        router.get("/raw-slice", () => ({ [RAW_RESPONSE]: true, status: 206, headers: {}, body: whole.subarray(3, 7) }));
+
+        const res = await router.dispatch("GET", "http://localhost/raw-slice");
+        expect(res.status).toBe(206);
+        expect(decodeBody(res.body)).toBe("3456");
     });
 });
 
@@ -252,5 +332,61 @@ describe("BrowserRouter error formatting", () => {
         const res = await router.dispatch("GET", "http://localhost/str");
         expect(res.status).toBe(500);
         expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "plain string" });
+    });
+});
+
+/**
+ * Every route `browser_routes.ts` registers opens its own execution context inside `dbLock`, which
+ * is what keeps one scope live at a time: a synchronous handler cannot be interleaved, and an
+ * asynchronous one holds the connection exclusively. A context opened by `dispatch` itself would
+ * sit outside that lock, so a second request in flight would cover the first — which the first
+ * reads again after its awaits.
+ */
+describe("BrowserRouter execution context", () => {
+    it("leaves a request's context to it while another request dispatches", async () => {
+        const router = new BrowserRouter();
+        const ctx = getContext();
+        let release = () => {};
+        const paused = new Promise<void>((resolve) => { release = resolve; });
+        let seenAfterAwait: string | undefined;
+
+        // Mirrors createAsyncRoute: exclusive for as long as its transaction stays open.
+        router.get("/slow", () => dbLock.runExclusive(() => ctx.init(async () => {
+            ctx.set("componentId", "slow");
+            await paused;
+            seenAfterAwait = ctx.get<string>("componentId");
+            return {};
+        })));
+
+        // Mirrors wrapHandler: shared, and synchronous once it holds the lock.
+        router.get("/quick", () => dbLock.runShared(() => ctx.init(() => {
+            ctx.set("componentId", "quick");
+            return {};
+        })));
+
+        const slow = router.dispatch("GET", "http://localhost/slow");
+        const quick = router.dispatch("GET", "http://localhost/quick");
+        release();
+        await Promise.all([slow, quick]);
+
+        expect(seenAfterAwait).toBe("slow");
+    });
+
+    it("does not open an execution context of its own", async () => {
+        const router = new BrowserRouter();
+        const ctx = getContext();
+        let scoped = true;
+        router.get("/bare", () => {
+            try {
+                ctx.set("componentId", "bare");
+            } catch {
+                scoped = false;
+            }
+            return {};
+        });
+
+        await router.dispatch("GET", "http://localhost/bare");
+
+        expect(scoped).toBe(false);
     });
 });

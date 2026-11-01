@@ -1,4 +1,11 @@
-import type { LlmCitation, LlmUsage } from "@triliumnext/commons";
+import {
+    isToolErrorResult,
+    type LlmCitation,
+    type LlmErrorDetails,
+    type LlmPermissionMode,
+    type LlmReasoningEffort,
+    type LlmUsage
+} from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -13,11 +20,22 @@ export interface ToolCall {
     inputStreaming?: string;
     result?: string;
     isError?: boolean;
+    /** `pending` while the call waits for the user to allow it, `declined` once they denied it. */
+    approval?: "pending" | "declined";
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */
 export interface TextBlock {
     type: "text";
+    content: string;
+}
+
+/**
+ * A stretch of the model's reasoning, kept in stream order among the reply's other blocks.
+ * It is shown in the timeline but never sent back to the model.
+ */
+export interface ThinkingBlock {
+    type: "thinking";
     content: string;
 }
 
@@ -71,7 +89,7 @@ export interface TextFileBlock {
 }
 
 /** An ordered content block in a chat message. */
-export type ContentBlock = TextBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
+export type ContentBlock = TextBlock | ThinkingBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
 
 /**
  * Extract the plain text from message content (works for both legacy string and block formats).
@@ -87,8 +105,36 @@ export function getMessageText(content: string | ContentBlock[]): string {
 }
 
 /**
+ * Drop leading messages until the first user turn, so the conversation sent to the LLM starts with a
+ * user message. Some providers (e.g. Anthropic) reject a leading assistant turn, which can happen
+ * after the first user message is deleted. A conversation with no user message is left untouched.
+ */
+export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]): T[] {
+    const firstUser = messages.findIndex(m => m.role === "user");
+    return firstUser <= 0 ? messages : messages.slice(firstUser);
+}
+
+/**
  * Extract tool calls from message content blocks.
  */
+/**
+ * Whether a tool call failed: flagged so by the provider, or answered with the `{ error }` a note tool
+ * returns. The result covers chats saved while a provider did not pass the flag on. A call the user
+ * denied never ran, so it did not fail.
+ */
+export function isFailedToolCall(toolCall: ToolCall): boolean {
+    return toolCall.approval !== "declined"
+        && (!!toolCall.isError || isToolErrorResult(toolCall.result));
+}
+
+/** The `llm.tools.*` key that names a tool call: `set_attribute` in add mode reads as "Add attribute". */
+export function toolCallLabelKey(toolCall: ToolCall): string {
+    const name = toolCall.toolName === "set_attribute" && toolCall.input.mode === "add"
+        ? "add_attribute"
+        : toolCall.toolName;
+    return `llm.tools.${name}`;
+}
+
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
     if (Array.isArray(message.content)) {
         return message.content
@@ -98,6 +144,29 @@ export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
     return [];
 }
 
+/**
+ * A user-created highlight over a stretch of a message's rendered prose.
+ *
+ * The message text never changes once a turn completes, so a highlight is anchored to that
+ * text rather than to the volatile rendered DOM. `start`/`end` are character offsets into the
+ * message's flattened prose (the fast, exact primary locator); `quotedText` plus its
+ * surrounding context is the robust fallback that revalidates — and, if the render pipeline
+ * ever shifts the offsets, relocates — the highlight. See {@link resolveAnchorIndices}.
+ */
+export interface HighlightAnchor {
+    id: string;
+    /** Character offset of the highlight's start in the message's flattened prose. */
+    start: number;
+    /** Character offset of the highlight's end (exclusive) in the message's flattened prose. */
+    end: number;
+    /** The highlighted prose itself — used to validate/relocate the offsets. */
+    quotedText: string;
+    /** A few characters of prose immediately before the highlight, to disambiguate repeats. */
+    prefix?: string;
+    /** A few characters of prose immediately after the highlight, to disambiguate repeats. */
+    suffix?: string;
+}
+
 export interface StoredMessage {
     id: string;
     role: "user" | "assistant" | "system";
@@ -105,17 +174,49 @@ export interface StoredMessage {
     content: string | ContentBlock[];
     createdAt: string;
     citations?: LlmCitation[];
-    /** Message type for special rendering. Defaults to "message" if omitted. */
+    /**
+     * Message type for special rendering. Defaults to "message" if omitted. `"thinking"` appears
+     * only in chats saved before reasoning moved into {@link ThinkingBlock}s.
+     */
     type?: MessageType;
+    /**
+     * For `type: "error"` messages, the failed provider call's context (HTTP status, URL,
+     * raw response body). Drives the error card's title and its "show details" section.
+     * Absent when the failure never reached a provider, and in chats saved before this existed.
+     */
+    errorDetails?: LlmErrorDetails;
     /** Token usage for this response */
     usage?: LlmUsage;
+    /** User-created text highlights over this message's rendered prose. */
+    highlights?: HighlightAnchor[];
 }
 
 export interface LlmChatContent {
     version: 1;
     messages: StoredMessage[];
     selectedModel?: string;
+    /**
+     * Provider type owning {@link selectedModel}. Disambiguates providers that
+     * expose the same model ID (e.g. an Anthropic API key and a Claude
+     * subscription both offering "claude-sonnet-5"). Absent in chats saved
+     * before this field existed — the sender falls back to resolving the
+     * provider by model ID in that case.
+     */
+    selectedProvider?: string;
+    /**
+     * ID of the provider configuration owning {@link selectedModel}. Stronger
+     * than {@link selectedProvider}: it also disambiguates multiple configs of
+     * the same type (e.g. OpenAI + a self-hosted Ollama endpoint). Absent in
+     * chats saved before this field existed.
+     */
+    selectedProviderId?: string;
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    /** The effort chosen for a model with levels; absent means the model's default. */
+    reasoningEffort?: LlmReasoningEffort;
+    /** The tools the user allowed for this chat, whose calls run without asking. */
+    allowedTools?: string[];
+    /** Which tool calls of the chat wait for the user; absent means the mode picked last. */
+    permissionMode?: LlmPermissionMode;
 }

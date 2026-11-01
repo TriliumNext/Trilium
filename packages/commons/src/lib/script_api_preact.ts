@@ -76,6 +76,16 @@ interface ButtonProps {
 }
 export declare const Button: FunctionComponent<ButtonProps>;
 
+/**
+ * Generic FullCalendar wrapper. The full FullCalendar `CalendarOptions` surface is loosened here
+ * (any option may be passed through); `calendarRef` receives the underlying calendar instance.
+ */
+interface CalendarProps {
+    calendarRef?: RefObject<unknown>;
+    [option: string]: unknown;
+}
+export declare const Calendar: FunctionComponent<CalendarProps>;
+
 interface CKEditorApi {
     focus(): void;
     setText(text: string): void;
@@ -105,12 +115,29 @@ interface CollapsibleProps {
 }
 export declare const Collapsible: FunctionComponent<CollapsibleProps>;
 
+interface ExternallyControlledCollapsibleProps {
+    title: string;
+    children?: ComponentChildren;
+    className?: string;
+    expanded: boolean | undefined;
+    setExpanded(expanded: boolean): void;
+}
+export declare const ExternallyControlledCollapsible: FunctionComponent<ExternallyControlledCollapsibleProps>;
+
+interface ColorPickerProps {
+    currentValue: string | null;
+    onChange(newValue: string | null): void;
+    presets?: string[];
+    disabled?: boolean;
+    className?: string;
+}
+export declare const ColorPicker: FunctionComponent<ColorPickerProps>;
+
 interface DropdownProps {
     id?: string;
     className?: string;
     buttonClassName?: string;
     buttonProps?: Record<string, unknown>;
-    isStatic?: boolean;
     children?: ComponentChildren;
     title?: string;
     dropdownContainerStyle?: Css;
@@ -119,19 +146,32 @@ interface DropdownProps {
     hideToggleArrow?: boolean;
     iconAction?: boolean;
     noSelectButtonStyle?: boolean;
-    noDropdownListStyle?: boolean;
     disabled?: boolean;
     text?: ComponentChildren;
-    forceShown?: boolean;
     onShown?: () => void;
     onHidden?: () => void;
-    dropdownOptions?: Record<string, unknown>;
+    /** The side of the toggle the popup prefers, as Floating UI names it: `"top"`, `"bottom-start"`, … */
+    placement?: "top" | "top-start" | "top-end" | "right" | "right-start" | "right-end"
+        | "bottom" | "bottom-start" | "bottom-end" | "left" | "left-start" | "left-end";
+    /**
+     * What closes the popup besides Escape and the toggle: `true` a click inside and a press
+     * outside, `"inside"` or `"outside"` that one alone, `false` neither.
+     */
+    autoClose?: boolean | "inside" | "outside";
     dropdownRef?: RefObject<unknown>;
     titlePosition?: "top" | "right" | "bottom" | "left";
     titleOptions?: Record<string, unknown>;
     mobileBackdrop?: boolean;
 }
+/** A menu under a toggle, whose rows are `FormListItem`s and the other `FormList` rows. */
 export declare const Dropdown: FunctionComponent<DropdownProps>;
+
+interface DropdownPanelProps extends DropdownProps {
+    /** Caps the panel to the room beside its toggle and scrolls its content inside it. */
+    scrollable?: boolean;
+}
+/** A popup under a toggle for content other than a menu's rows, such as a form or a picker. */
+export declare const DropdownPanel: FunctionComponent<DropdownPanelProps>;
 
 interface FormCheckboxProps {
     name?: string;
@@ -201,8 +241,11 @@ interface FormDropdownSubmenuProps {
     title: ComponentChildren;
     children?: ComponentChildren;
     onDropdownToggleClicked?: () => void;
-    dropStart?: boolean;
 }
+/**
+ * A row that opens its children as a submenu. Outside a `Dropdown` menu, its title is shown as a
+ * header above them.
+ */
 export declare const FormDropdownSubmenu: FunctionComponent<FormDropdownSubmenuProps>;
 
 interface FormRadioGroupProps {
@@ -278,7 +321,7 @@ export declare const LinkButton: FunctionComponent<LinkButtonProps>;
 export declare const LoadingSpinner: FunctionComponent<{}>;
 
 interface ModalProps {
-    className: string;
+    className?: string;
     title?: ComponentChildren;
     customTitleBarButtons?: ({ title: string; iconClassName: string; onClick: (e: MouseEvent) => void } | null)[];
     size: "xl" | "lg" | "md" | "sm";
@@ -324,6 +367,12 @@ interface NoteAutocompleteProps {
 }
 export declare const NoteAutocomplete: FunctionComponent<NoteAutocompleteProps>;
 
+interface NoteColorPickerProps {
+    /** The target note instance (FNote) or its ID string. */
+    note: unknown | string | null;
+}
+export declare const NoteColorPicker: FunctionComponent<NoteColorPickerProps>;
+
 interface NoteLinkProps {
     className?: string;
     containerClassName?: string;
@@ -361,6 +410,72 @@ interface SliderProps {
     title?: string;
 }
 export declare const Slider: FunctionComponent<SliderProps>;
+
+/**
+ * A card whose segments the reader can put in any order, by carrying the grip on a segment or with
+ * the keyboard. The order is the caller's: every change is reported through `onChange`, and the
+ * card draws whatever it is handed back.
+ *
+ * `items` are named by a `key` that outlives the order they stand in; `renderItem` draws a segment
+ * for a card that shows more than a name, and `itemCreationButtons` puts a row of buttons at the
+ * foot of the card that make another entry, answering with nothing where the reader backs out.
+ */
+interface SortableItem {
+    key: string;
+    caption?: ComponentChildren;
+    icon?: string;
+}
+interface ItemCreationButton<T extends SortableItem> {
+    label: string;
+    icon?: string;
+    /** Turns the button off, for a caller that cannot make an entry yet. */
+    disabled?: boolean;
+    onCreateItem: (event?: MouseEvent) => T | undefined | Promise<T | undefined>;
+}
+interface SortableCardProps<T extends SortableItem> {
+    /** See `CardProps`: the words a filter finds the card by, and whether it is filter-only. */
+    filterExtraKeywords?: string;
+    filterOnly?: boolean;
+    items: T[];
+    onChange: (items: T[]) => void;
+    renderItem?: (item: T, index: number) => ComponentChildren;
+    /** Up to three, drawn as a row of buttons at the foot of the card. */
+    itemCreationButtons?: ItemCreationButton<T>[];
+    /** Which edge of a segment the grip stands on. The trailing one by default. */
+    gripPlacement?: "start" | "end";
+    /** Whether the reader can reorder the entries. Off, the card has no grip. True by default. */
+    isReorderable?: boolean;
+    /** Called with the focused entry for a key the card does not handle itself. */
+    onItemKeyDown?: (item: T, event: KeyboardEvent) => void;
+    selectedKey?: string;
+    onSelect?: (key: string) => void;
+    heading?: string;
+    description?: ComponentChildren;
+    actions?: ComponentChildren;
+    className?: string;
+}
+// Generic, as the component itself is: the entries are the caller's own, so what `onChange` and
+// `renderItem` are handed is the caller's type and not what this card asks of it.
+export declare const SortableCard: <T extends SortableItem>(props: SortableCardProps<T>) => VNode;
+
+/**
+ * Generic Tabulator-based data grid. The full Tabulator `Options` surface is loosened here (any option
+ * may be passed through); `data` is the row array, `columns` the column definitions, `modules` the
+ * Tabulator modules to register, `events` the event handlers and `tabulatorRef` receives the instance.
+ */
+interface TableProps {
+    tabulatorRef?: RefObject<unknown>;
+    className?: string;
+    data?: unknown[];
+    columns?: unknown[];
+    modules?: unknown[];
+    events?: Record<string, unknown>;
+    index?: string;
+    footerElement?: unknown;
+    onReady?: () => void;
+    [option: string]: unknown;
+}
+export declare const Table: FunctionComponent<TableProps>;
 
 interface RightPanelWidgetProps {
     id: string;

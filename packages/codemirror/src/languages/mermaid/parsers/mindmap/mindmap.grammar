@@ -1,0 +1,96 @@
+@top MindmapDiagram {
+  newline+ | 
+  DiagramName Line*
+}
+
+@skip { spaces | newlineEmpty | LineComment | Directive }
+
+lineText {
+  LineText1 |
+  LineText2 |
+  LineText3 |
+  LineText4 |
+  LineText5
+}
+
+ShapedText {
+  square |
+  roundedSquare |
+  circle |
+  bang |
+  cloud |
+  hexagon
+}
+
+square {
+  "[" lineText "]"
+}
+
+roundedSquare {
+  "(" lineText ")"
+}
+
+circle {
+  "((" lineText "))"
+}
+
+bang {
+  "))" lineText "(("
+}
+
+cloud {
+  ")" lineText "("
+}
+
+hexagon {
+  "{{" lineText "}}"
+}
+
+IconLine {
+  "::" Icon "(" lineText ")"
+}
+
+ClassLine {
+  ":::" lineText
+}
+
+Line {
+  newline |
+  newline indent (
+    lineText |
+    IconLine |
+    ClassLine |
+    ShapedText |
+    NodeId ShapedText
+  )
+}
+
+NodeId { lineText }
+
+DiagramName { kw<"mindmap"> }
+
+Icon { kw<"icon"> }
+
+kw<term> { @specialize<word, term> }
+
+@context trackIndent from "./tokens.js"
+
+@external tokens indentation from "./tokens.js" { indent }
+@external tokens comments from "./tokens.js" { LineComment, Directive }
+@external tokens lineTextType from "./tokens.js" { 
+  LineText1,
+  LineText2,
+  LineText3,
+  LineText4,
+  LineText5
+}
+
+@tokens {
+  spaces { ($[ \t\f] | "\\" $[\n\r])+ }
+  word { @asciiLetter+ }
+  "(" ")" "((" "))" "[" "]" "{{" "}}" "::" ":::"
+}
+
+@external tokens newlines from "./tokens.js" { newline, newlineEmpty }
+
+@external propSource mindmapHighlighting from "./highlight.js"

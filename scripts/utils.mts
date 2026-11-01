@@ -51,3 +51,12 @@ export function getElectronPath() {
         return "electron";
     }
 }
+
+/**
+ * On NixOS the Nix-provided Electron is dynamically linked against libstdc++
+ * from gcc.cc.lib. Resolve that store path so callers can add it to
+ * LD_LIBRARY_PATH before launching Electron.
+ */
+export function getNixLdLibraryPath() {
+    return execSync("nix eval --raw nixpkgs#gcc.cc.lib").toString("utf-8").trimEnd() + "/lib";
+}

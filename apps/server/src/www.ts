@@ -3,39 +3,32 @@ import type { Express } from "express";
 import fs from "fs";
 import http from "http";
 import https from "https";
-import tmp from "tmp";
+import { networkInterfaces } from "os";
 
 import buildApp from "./app.js";
+import { TRILIUM_LOGO } from "./log_provider.js";
 import config from "./services/config.js";
+import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
+import { registerServerLlmExtensions } from "./services/llm/index.js";
+import { listListeningUrls } from "./services/network_addresses.js";
 import port from "./services/port.js";
+import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
+import { isElectron } from "./services/utils.js";
+import { publishHealthcheckTarget } from "./services/healthcheck.js";
 import { getDbSize } from "./services/sql_init.js";
-import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
+import { isHttpAttachableMessagingProvider } from "./services/ws_messaging_provider.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
-
-const LOGO = `\
- _____     _ _ _
-|_   _| __(_) (_)_   _ _ __ ___   | \\ | | ___ | |_ ___  ___
-  | || '__| | | | | | | '_ \` _ \\  |  \\| |/ _ \\| __/ _ \\/ __|
-  | || |  | | | | |_| | | | | | | | |\\  | (_) | ||  __/\\__ \\
-  |_||_|  |_|_|_|\\__,_|_| |_| |_| |_| \\_|\\___/ \\__\\___||___/ [version]
-`;
 
 export default async function startTriliumServer(): Promise<Express> {
     await displayStartupMessage();
 
     // setup basic error handling even before requiring dependencies, since those can produce errors as well
-    process.on("unhandledRejection", (error: Error) => {
-        // this makes sure that stacktrace of failed promise is printed out
-        console.log(error);
-
-        // but also try to log it into file
-        getLog().info(error);
-    });
+    installProcessErrorHandlers();
 
     // When TRILIUM_PROFILE is set we drive the V8 CPU profiler ourselves rather than relying on Node's
     // --cpu-prof flag: that flag flushes its file during the normal shutdown path, which the exit() handler
@@ -74,31 +67,35 @@ export default async function startTriliumServer(): Promise<Express> {
         process.exit(1);
     }
 
-    tmp.setGracefulCleanup();
-
     const app = await buildApp();
     const httpServer = startHttpServer(app);
 
-    // Only the WS provider needs the HTTP server and session parser; other
-    // providers (e.g. the Electron-IPC provider from apps/desktop) are
-    // initialised by their owning app before startup. Gating on the concrete
-    // type keeps www.ts platform-agnostic.
+    // Only providers that serve clients over the TCP listener need the HTTP server
+    // and session parser (the server's WebSocket provider, or the desktop composite
+    // when LAN access is on). A pure Electron-IPC provider isn't HTTP-attachable, so
+    // it's skipped here and no WS endpoint is bound. Gating on the capability rather
+    // than a concrete type keeps www.ts platform-agnostic.
     const messaging = getMessagingProvider();
-    if (messaging instanceof WebSocketMessagingProvider) {
+    if (isHttpAttachableMessagingProvider(messaging)) {
         const sessionParser = (await import("./routes/session_parser.js")).default;
-        messaging.init(httpServer, sessionParser);
+        messaging.attachToHttpServer(httpServer, sessionParser);
     }
 
     const { ws } = await import("@triliumnext/core");
     ws.init();
 
     registerOcrHandlers();
+    registerServerLlmExtensions();
+
+    // Everything the application needs in order to be usable is now up, so from here on an escaped error
+    // is a contained failure rather than a broken startup, and stops being fatal.
+    markAppReady();
 
     return app;
 }
 
 async function displayStartupMessage() {
-    getLog().info(`\n${LOGO.replace("[version]", appInfo.appVersion)}`);
+    getLog().info(`\n${TRILIUM_LOGO} ${appInfo.appVersion}\n`);
     getLog().info(`📦 Versions:    app=${appInfo.appVersion} db=${appInfo.dbVersion} sync=${appInfo.syncVersion} clipper=${appInfo.clipperProtocolVersion}`);
     getLog().info(`🔧 Build:       ${utils.formatUtcTime(appInfo.buildDate)} (${appInfo.buildRevision.substring(0, 10)})`);
     getLog().info(`📂 Data dir:    ${appInfo.dataDirectory}`);
@@ -114,7 +111,7 @@ async function displayStartupMessage() {
     getLog().info(`💾 DB size:     ${utils.formatSize(getDbSize() * 1024)}`);
 
     if (isScriptingEnabled()) {
-        getLog().info("WARNING: Backend script execution is ENABLED. Backend scripts have full server access including " +
+        getLog().warn("Backend script execution is ENABLED. Backend scripts have full server access including " +
                  "filesystem, network, and OS commands. Only enable in trusted environments.");
     } else {
         getLog().info("Backend script execution is DISABLED. Set [Security] backendScriptingEnabled=true in config.ini to enable.");
@@ -203,10 +200,35 @@ function startHttpServer(app: Express) {
     httpServer.on("listening", () => {
         if (listenOnTcp) {
             getLog().info(`Listening on port ${port}`);
+            printListeningUrls();
         } else {
             getLog().info(`Listening on unix socket ${host}`);
         }
+
+        publishHealthcheckTarget(
+            dataDir.TRILIUM_DATA_DIR, httpServer.address(), config.Network.https);
     });
 
     return httpServer;
+}
+
+/**
+ * Prints the URLs the server answers on. It writes to the console only, since the log file ends
+ * up in bug reports and the list can hold a public address. Desktop has no console to read, and
+ * in a container the interfaces belong to the container network rather than the host.
+ */
+function printListeningUrls() {
+    if (isElectron || fs.existsSync("/.dockerenv") || fs.existsSync("/run/.containerenv")) {
+        return;
+    }
+
+    const protocol = config["Network"]["https"] ? "https" : "http";
+    const { local, network } = listListeningUrls(protocol, host, port, networkInterfaces());
+
+    if (local) {
+        console.log(`🌐 Local:       ${local}`);
+    }
+    for (const [index, url] of network.entries()) {
+        console.log(`${index === 0 ? "🌐 Network:     " : "                "}${url}`);
+    }
 }

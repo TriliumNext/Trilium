@@ -166,13 +166,21 @@ export default class MainTreeExecutors extends Component {
     }
 
     async duplicateSubtreeCommand({ selectedOrActiveBranchIds }: CommandListenerData<"duplicateSubtree">) {
-        for (const branchId of selectedOrActiveBranchIds) {
+        await this.#duplicate(selectedOrActiveBranchIds, true);
+    }
+
+    async duplicateNoteCommand({ selectedOrActiveBranchIds }: CommandListenerData<"duplicateNote">) {
+        await this.#duplicate(selectedOrActiveBranchIds, false);
+    }
+
+    async #duplicate(branchIds: string[], withChildren: boolean) {
+        for (const branchId of branchIds) {
             const branch = froca.getBranch(branchId);
             if (!branch) continue;
             const note = await froca.getNote(branch.noteId);
             if (!note) continue;
             if (note.isProtected && !protectedSessionHolder.isProtectedSessionAvailable()) continue;
-            noteCreateService.duplicateSubtree(branch.noteId, branch.parentNoteId);
+            noteCreateService.duplicateSubtree(branch.noteId, branch.parentNoteId, { withChildren });
         }
     }
 

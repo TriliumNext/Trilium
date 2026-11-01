@@ -9,7 +9,7 @@
     display:none;
 }
 
-.toc li + ol:before {
+.toc ol > ol:before {
     content: "";
     position: absolute;
     height: 100%;
@@ -29,7 +29,7 @@
     hyphens: auto;
 }
 
-.toc li.active > .item-content {
+.toc li.active > .item-content, .toc li.collapsed:has(+ ol .active) > .item-content {
     font-weight: bold;
     color: var(--main-text-color);
 }

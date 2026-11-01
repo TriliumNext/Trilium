@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
@@ -7,8 +8,9 @@ type Handler = (event: unknown, ...args: unknown[]) => unknown;
 const h = vi.hoisted(() => ({
     on: new Map<string, Handler>(),
     handle: new Map<string, Handler>(),
-    openExternal: vi.fn(),
+    openExternal: vi.fn(() => Promise.resolve()),
     openPath: vi.fn(() => Promise.resolve("")),
+    showItemInFolder: vi.fn(),
     execFile: vi.fn()
 }));
 
@@ -20,7 +22,8 @@ vi.mock("electron", () => ({
         },
         shell: {
             openExternal: h.openExternal,
-            openPath: h.openPath
+            openPath: h.openPath,
+            showItemInFolder: h.showItemInFolder
         }
     }
 }));
@@ -39,6 +42,8 @@ const DATA_DIR = dataDirs.TRILIUM_DATA_DIR;
 const TMP_DIR = dataDirs.TMP_DIR;
 let tmpFile: string;
 let dataFile: string;
+let tmpDir: string;
+let unicodeDir: string;
 
 function setPlatform(platform: NodeJS.Platform) {
     Object.defineProperty(process, "platform", { value: platform, configurable: true });
@@ -52,12 +57,18 @@ beforeAll(() => {
     dataFile = path.join(DATA_DIR, "shell-handlers-data.txt");
     fs.writeFileSync(tmpFile, "");
     fs.writeFileSync(dataFile, "");
+    tmpDir = path.join(TMP_DIR, "shell-handlers-test-dir");
+    unicodeDir = path.join(TMP_DIR, "shell-handlers-资料");
+    fs.mkdirSync(tmpDir, { recursive: true });
+    fs.mkdirSync(unicodeDir, { recursive: true });
     setupShellHandlers();
 });
 
 afterAll(() => {
     fs.rmSync(tmpFile, { force: true });
     fs.rmSync(dataFile, { force: true });
+    fs.rmSync(tmpDir, { force: true, recursive: true });
+    fs.rmSync(unicodeDir, { force: true, recursive: true });
     setPlatform(realPlatform);
 });
 
@@ -104,6 +115,18 @@ describe("setupShellHandlers", () => {
         });
     });
 
+    describe("show-item-in-folder", () => {
+        it("reveals a file inside the sandbox", () => {
+            fireOn("show-item-in-folder", dataFile);
+            expect(h.showItemInFolder).toHaveBeenCalledWith(path.resolve(dataFile));
+        });
+
+        it("reveals nothing for a path outside the sandbox", () => {
+            fireOn("show-item-in-folder", process.platform === "win32" ? "C:\\Windows\\evil" : "/etc/passwd");
+            expect(h.showItemInFolder).not.toHaveBeenCalled();
+        });
+    });
+
     describe("open-file-url", () => {
         it("opens a valid file: URL", () => {
             const url = process.platform === "win32" ? "file:///C:/Windows/notepad.exe" : "file:///etc/hosts";
@@ -115,6 +138,36 @@ describe("setupShellHandlers", () => {
             const result = fireHandle("open-file-url", "https://example.com/x");
             expect(result).toBeTruthy();
             expect(h.openPath).not.toHaveBeenCalled();
+        });
+
+        it("opens a directory through the file: protocol handler on Windows", async () => {
+            setPlatform("win32");
+            const result = await fireHandle("open-file-url", pathToFileURL(tmpDir).href);
+            expect(h.openExternal).toHaveBeenCalledWith(pathToFileURL(tmpDir).href);
+            expect(h.openPath).not.toHaveBeenCalled();
+            expect(result).toBe("");
+        });
+
+        it("reports a failure of the protocol handler back to the renderer", async () => {
+            setPlatform("win32");
+            h.openExternal.mockRejectedValueOnce(new Error("no handler"));
+            const result = await fireHandle("open-file-url", pathToFileURL(tmpDir).href);
+            expect(result).toContain("no handler");
+        });
+
+        it("keeps openPath for a file, and for a directory whose name is not ASCII", () => {
+            setPlatform("win32");
+            fireHandle("open-file-url", pathToFileURL(tmpFile).href);
+            fireHandle("open-file-url", pathToFileURL(unicodeDir).href);
+            expect(h.openPath).toHaveBeenCalledTimes(2);
+            expect(h.openExternal).not.toHaveBeenCalled();
+        });
+
+        it("keeps openPath for a directory outside Windows", () => {
+            setPlatform("linux");
+            fireHandle("open-file-url", pathToFileURL(tmpDir).href);
+            expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpDir));
+            expect(h.openExternal).not.toHaveBeenCalled();
         });
     });
 

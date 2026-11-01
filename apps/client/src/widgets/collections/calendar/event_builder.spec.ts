@@ -1,8 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import { buildNote, buildNotes } from "../../../test/easy-froca.js";
-import { buildEvent, buildEvents } from "./event_builder.js";
-import { LOCALE_MAPPINGS } from "./index.js";
+import rrulePlugin from "@fullcalendar/rrule";
 import { LOCALES } from "@triliumnext/commons";
+import { Calendar, EventInput } from "fullcalendar";
+import dayGridPlugin from "fullcalendar/daygrid";
+import themePlugin from "fullcalendar/themes/forma";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { buildNote, buildNotes } from "../../../test/easy-froca.js";
+import { buildEvent, buildEvents, buildOccurrenceTitle, routineEventDisplay } from "./event_builder.js";
+import { LOCALE_MAPPINGS } from "./index.js";
+import { serializeRecurrence } from "./recurrence.js";
+import { isValidDuration, parseDurationSeconds } from "./utils.js";
 
 describe("Building events", () => {
     it("supports start date", async () => {
@@ -25,6 +32,16 @@ describe("Building events", () => {
         const events = await buildEvents(noteIds);
 
         expect(events).toHaveLength(0);
+    });
+
+    it("leaves out template notes, but not the events made from them", async () => {
+        const noteIds = buildNotes([
+            { id: "meeting", title: "Meeting", "#template": "", "#startDate": "2025-05-05" },
+            { title: "Standup", "~template": "meeting", "#startDate": "2025-05-07" }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events.map((event) => event.title)).toEqual([ "Standup" ]);
     });
 
     it("supports both start date and end date", async () => {
@@ -113,6 +130,19 @@ describe("Building events", () => {
         expect(events[1]).toMatchObject({ title: "Note 2", start: "2025-05-07" });
     });
 
+    it("supports events without an end time", async () => {
+        const noteIds = buildNotes([
+            { title: "Note 1", "#startDate": "2025-05-05", "#endDate": "2025-05-05", "#startTime": "13:30" },
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            title: "Note 1",
+            start: "2025-05-05T13:30:00",
+            end: "2025-05-05"
+        });
+    });
 });
 
 describe("Promoted attributes", () => {
@@ -129,8 +159,11 @@ describe("Promoted attributes", () => {
         const event = await buildEvent(note, { startDate: "2025-04-04" });
         expect(event).toHaveLength(1);
         expect(event[0]?.promotedAttributes).toMatchObject([
+            // No alias to go by, so the label says itself.
             [ "weight", "75" ],
-            [ "mood", "happy" ]
+            // Named as the definition names it, which is how the note's own promoted field is
+            // labelled — the chip would otherwise say the same value under a second name.
+            [ "Mood", "happy" ]
         ]);
     });
 
@@ -147,8 +180,92 @@ describe("Promoted attributes", () => {
         const event = await buildEvent(note, { startDate: "2025-04-04" });
         expect(event).toHaveLength(1);
         expect(event[0]?.promotedAttributes).toMatchObject([
-            [ "assignee", "Target note" ]
+            [ "Assignee", "Target note" ]
         ]);
+    });
+
+    it("says nothing for a relation whose target has no title, rather than the word for nothing", async () => {
+        const note = buildNote({
+            "title": "Hello",
+            "~assignee": buildNote({ "title": "" }).noteId,
+            "#calendar:displayedAttributes": "assignee",
+            "#relation:assignee": "promoted,alias=Assignee,single,text"
+        });
+
+        const event = await buildEvent(note, { startDate: "2025-04-04" });
+        expect(event[0]?.promotedAttributes).toMatchObject([
+            [ "Assignee", "" ]
+        ]);
+    });
+
+    it("says an attribute nobody defined by its own name, promotion being no condition of showing one", async () => {
+        const note = buildNote({
+            title: "Hello",
+            "#mood": "happy",
+            "#calendar:displayedAttributes": "mood"
+        });
+
+        const event = await buildEvent(note, { startDate: "2025-04-04" });
+        expect(event[0]?.promotedAttributes).toMatchObject([
+            [ "mood", "happy" ]
+        ]);
+    });
+
+    describe("chosen in the calendar's properties", () => {
+        let built = 0;
+
+        /** A calendar with two events, under ids of their own: froca keeps attributes across builds. */
+        function calendar() {
+            built++;
+            const note = buildNote({
+                title: "Calendar",
+                "#label:location(inheritable)": "promoted,alias=Where,single,text",
+                "#label:mood(inheritable)": "promoted,single,text",
+                "#label:weight(inheritable)": "promoted,single,text",
+                "#label:startDate(inheritable)": "promoted,single,date",
+                children: [
+                    {
+                        id: `fair${built}`, title: "Fair", "#startDate": "2025-05-05",
+                        "#location": "Park", "#mood": "good", "#weight": "70"
+                    },
+                    {
+                        id: `gym${built}`, title: "Gym", "#startDate": "2025-05-06", "#weight": "71",
+                        "#mood": "tired", "#calendar:displayedAttributes": "weight"
+                    }
+                ]
+            });
+            return { note, fair: `fair${built}`, gym: `gym${built}` };
+        }
+
+        it("shows the attributes switched on in the settings, in order, under their alias", async () => {
+            const { note, fair } = calendar();
+            const events = await buildEvents([ fair ], {
+                calendar: note,
+                settings: [ { name: "mood" }, { name: "weight", hidden: true }, { name: "location" } ]
+            });
+
+            expect(events[0]?.promotedAttributes).toEqual([ [ "mood", "good" ], [ "Where", "Park" ] ]);
+        });
+
+        it("leaves off what nobody arranged, and the dates the calendar draws itself", async () => {
+            const { note, fair } = calendar();
+            const events = await buildEvents([ fair ], {
+                calendar: note,
+                settings: [ { name: "startDate" }, { name: "mood" } ]
+            });
+
+            expect(events[0]?.promotedAttributes).toEqual([ [ "mood", "good" ] ]);
+        });
+
+        it("gives way to an event's own #calendar:displayedAttributes", async () => {
+            const { note, gym } = calendar();
+            const events = await buildEvents([ gym ], {
+                calendar: note,
+                settings: [ { name: "mood" } ]
+            });
+
+            expect(events[0]?.promotedAttributes).toEqual([ [ "weight", "71" ] ]);
+        });
     });
 
     it("supports start time and end time", async () => {
@@ -199,6 +316,28 @@ describe("Recurrence", () => {
         expect(events[0].end).toBeUndefined();
     });
 
+    it("supports recurrence spanning day boundary", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Event Spanning Day Boundary",
+                "#startDate": "2025-05-05",
+                "#startTime": "23:00",
+                "#endTime": "1:00",
+                "#recurrence": "FREQ=DAILY;COUNT=3"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            title: "Recurring Event Spanning Day Boundary",
+            start: "2025-05-05T23:00:00",
+            duration: { days: 0, hours: 2, minutes: 0 }
+        });
+        expect(events[0].rrule).toContain("DTSTART:20250505T230000");
+        expect(events[0].end).toBeUndefined();
+    });
+
     it("supports recurrence with start and end time (duration calculated)", async () => {
         const noteIds = buildNotes([
             {
@@ -215,7 +354,7 @@ describe("Recurrence", () => {
         expect(events[0]).toMatchObject({
             title: "Timed Recurring Event",
             start: "2025-05-05T13:00:00",
-            duration: "02:30"
+            duration: { days: 0, hours: 2, minutes: 30 }
         });
         expect(events[0].rrule).toContain("DTSTART:20250505T130000");
         expect(events[0].end).toBeUndefined();
@@ -237,6 +376,75 @@ describe("Recurrence", () => {
         expect(events[0].end).toBeUndefined();
     });
 
+    it("keeps a recurring event whole-day where it has no times", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Whole Day",
+                "#startDate": "2025-05-05",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            },
+            {
+                title: "Recurring Timed",
+                "#startDate": "2025-05-05",
+                "#startTime": "13:00",
+                "#endTime": "15:30",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(2);
+        // Said outright rather than left to FullCalendar to guess: the rrule plugin reads the whole
+        // of the rule for a time, and a `UNTIL=…T235959` — which the recurrence editor writes —
+        // makes it guess a timed event however the DTSTART is written.
+        expect(events[0].allDay).toBe(true);
+        expect(events[1].allDay).toBe(false);
+        // And the DTSTART says the same, no midnight invented for a day that has no hours.
+        expect(events[0].rrule).toContain("DTSTART:20250505\n");
+        expect(events[1].rrule).toContain("DTSTART:20250505T130000\n");
+    });
+
+    it("carries the length of a recurring event that runs over days", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Single Day",
+                "#startDate": "2025-05-05",
+                "#recurrence": "FREQ=WEEKLY;COUNT=3"
+            },
+            {
+                title: "Recurring Three Days",
+                "#startDate": "2025-05-05",
+                "#endDate": "2025-05-07",
+                "#recurrence": "FREQ=WEEKLY;COUNT=3"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(2);
+        // Days rather than hours: an `HH:mm` duration has nowhere to put them, so a whole-day
+        // occurrence used to come out "00:00" — no length at all.
+        expect(events[0].duration).toEqual({ days: 1, hours: 0, minutes: 0 });
+        expect(events[1].duration).toEqual({ days: 3, hours: 0, minutes: 0 });
+    });
+
+    it("gives no length to an occurrence whose event says only when it starts", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Open-Ended",
+                "#startDate": "2025-05-05",
+                "#startTime": "13:00",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        // Nothing said about how long it runs, so nothing is invented: FullCalendar gives the
+        // occurrence its default length rather than one worked out from an end that isn't there.
+        expect(events[0].duration).toBeUndefined();
+        expect(events[0].rrule).toContain("DTSTART:20250505T130000");
+    });
+
     it("writes to console on invalid recurrence rule", async () => {
         const noteIds = buildNotes([
             {
@@ -254,8 +462,340 @@ describe("Recurrence", () => {
         expect(calledWithInvalid).toBe(true);
         consoleSpy.mockRestore();
     });
+
+    it("carries the title template and the day the series starts on", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "John Smith",
+                "#startDate": "1990-05-12",
+                "#startTime": "09:00",
+                "#recurrence": "RRULE:FREQ=YEARLY",
+                "#calendar:titleTemplate": "${title} (${years})"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events[0]).toMatchObject({
+            title: "John Smith",
+            titleTemplate: "${title} (${years})",
+            seriesStart: "1990-05-12"
+        });
+    });
+
+    describe("in a time zone ahead of UTC", () => {
+        useTimeZone("Europe/Bucharest");
+
+        it.each([
+            [ "without an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU" ],
+            [ "with an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261130T235959Z" ]
+        ])("shows each occurrence at the event's local time %s", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "11:00",
+                    "#endTime": "13:00",
+                    "#recurrence": recurrence
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            const occurrences = renderOccurrences(events, "2026-10-01");
+            expect(occurrences.map(({ start }) => start)).toEqual([
+                "2026-10-04 11:00", "2026-10-11 11:00", "2026-10-18 11:00", "2026-10-25 11:00",
+                "2026-11-01 11:00", "2026-11-08 11:00"
+            ]);
+            expect(occurrences.every(({ end }) => end.endsWith(" 13:00"))).toBe(true);
+        });
+
+        it("skips the dates a UTC EXDATE names, keeping the rest at local time", async () => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "11:00",
+                    "#endTime": "13:00",
+                    "#recurrence": [
+                        "RRULE:FREQ=WEEKLY;BYDAY=SU",
+                        "EXDATE:20261011T110000Z",
+                        "EXDATE:20261025T110000Z"
+                    ].join("\n")
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-10-01").map(({ start }) => start)).toEqual([
+                "2026-10-04 11:00", "2026-10-18 11:00", "2026-11-01 11:00", "2026-11-08 11:00"
+            ]);
+        });
+
+        it.each([
+            [ "the recurrence editor writes", untilRule("2026-11-29") ],
+            [ "is stored in UTC", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261129T235959Z" ]
+        ])("ends the series on the day an UNTIL that %s names", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "11:00",
+                    "#endTime": "13:00",
+                    "#recurrence": recurrence
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-11-15").map(({ start }) => start)).toEqual([
+                "2026-11-01 11:00", "2026-11-08 11:00", "2026-11-15 11:00", "2026-11-22 11:00",
+                "2026-11-29 11:00"
+            ]);
+        });
+    });
+
+    describe("in a time zone behind UTC", () => {
+        useTimeZone("America/New_York");
+
+        it.each([
+            [ "without an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU" ],
+            [ "with an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261130T235959Z" ]
+        ])("shows a whole-day occurrence on its own day %s", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                { title: "Weekly", "#startDate": "2026-10-04", "#recurrence": recurrence }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            const occurrences = renderOccurrences(events, "2026-10-01");
+            expect(occurrences.map(({ start }) => start)).toEqual([
+                "2026-10-04 00:00", "2026-10-11 00:00", "2026-10-18 00:00", "2026-10-25 00:00",
+                "2026-11-01 00:00", "2026-11-08 00:00"
+            ]);
+        });
+
+        it.each([
+            [ "the recurrence editor writes", untilRule("2026-11-29") ],
+            [ "is stored in UTC", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261129T235959Z" ]
+        ])("keeps a late occurrence on the day an UNTIL that %s names", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "21:00",
+                    "#endTime": "22:00",
+                    "#recurrence": recurrence
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-11-15").map(({ start }) => start)).toEqual([
+                "2026-11-01 21:00", "2026-11-08 21:00", "2026-11-15 21:00", "2026-11-22 21:00",
+                "2026-11-29 21:00"
+            ]);
+        });
+    });
 });
 
+describe("Routine events", () => {
+    it("hides timed events on 4+ days a week from the month view only, and only when asked", async () => {
+        const noteIds = buildNotes([
+            { title: "Sleep", "#startDate": "2026-10-01", "#startTime": "23:00", "#endTime": "07:00", "#recurrence": "RRULE:FREQ=DAILY" },
+            { title: "Work", "#startDate": "2026-10-01", "#startTime": "09:00", "#endTime": "17:00", "#recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR" },
+            { title: "Gym", "#startDate": "2026-10-01", "#startTime": "18:00", "#recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR" },
+            { title: "Medication", "#startDate": "2026-10-01", "#recurrence": "RRULE:FREQ=DAILY" },
+            { title: "Dentist", "#startDate": "2026-10-14", "#startTime": "10:00" }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        // The titles drawn right now, counting a chip mounted and then taken away again as gone.
+        const drawn = new Map<string, number>();
+        const shown = () => [ ...drawn ].filter(([ , count ]) => count > 0).map(([ title ]) => title).sort();
+        let hideRoutineEvents = true;
+        const element = document.createElement("div");
+        document.body.append(element);
+        // Wired as `CalendarView` wires it.
+        const calendar: Calendar = new Calendar(element, {
+            plugins: [ themePlugin, dayGridPlugin, rrulePlugin ],
+            initialView: "dayGridMonth",
+            initialDate: "2026-10-12",
+            events,
+            eventDisplay: routineEventDisplay(hideRoutineEvents, "dayGridMonth"),
+            datesSet: ({ view }) =>
+                calendar.setOption("eventDisplay", routineEventDisplay(hideRoutineEvents, view.type)),
+            eventDidMount: ({ event }) => drawn.set(event.title, (drawn.get(event.title) ?? 0) + 1),
+            eventWillUnmount: ({ event }) => drawn.set(event.title, (drawn.get(event.title) ?? 0) - 1)
+        });
+        try {
+            calendar.render();
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication" ]);
+
+            calendar.changeView("dayGridWeek");
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication", "Sleep", "Work" ]);
+
+            calendar.changeView("dayGridMonth");
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication" ]);
+
+            hideRoutineEvents = false;
+            calendar.setOption("eventDisplay", routineEventDisplay(hideRoutineEvents, "dayGridMonth"));
+            expect(shown()).toEqual([ "Dentist", "Gym", "Medication", "Sleep", "Work" ]);
+        } finally {
+            calendar.destroy();
+            element.remove();
+        }
+    });
+});
+
+describe("buildOccurrenceTitle", () => {
+    /** A FullCalendar event for the occurrence that starts on `start`. */
+    function occurrence(titleTemplate: string | null, start: Date, seriesStart = "1990-05-12") {
+        return { title: "John Smith", start, extendedProps: { titleTemplate, seriesStart } };
+    }
+
+    it("leaves an event with no template under its plain title", () => {
+        expect(buildOccurrenceTitle(occurrence(null, new Date(2026, 4, 12)))).toBe("John Smith");
+    });
+
+    it("counts the whole years from the start date to the occurrence", () => {
+        expect(buildOccurrenceTitle(occurrence("${title} (${years})", new Date(2026, 4, 12))))
+            .toBe("John Smith (36)");
+        expect(buildOccurrenceTitle(occurrence("${title} turns ${years}", new Date(2027, 4, 12))))
+            .toBe("John Smith turns 37");
+        expect(buildOccurrenceTitle(occurrence("${title} (${years})", new Date(1990, 4, 12))))
+            .toBe("John Smith (0)");
+    });
+
+    it("reads both the occurrence's date and the series'", () => {
+        const template =
+            "${title}, born ${startDate.format('YYYY')}, turns ${years} in ${date.format('YYYY')}";
+        expect(buildOccurrenceTitle(occurrence(template, new Date(2026, 4, 12))))
+            .toBe("John Smith, born 1990, turns 36 in 2026");
+    });
+
+    it("falls back to the plain title for a template the evaluator rejects, saying so once", () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const broken = occurrence("${nmae} (${years})", new Date(2026, 4, 12));
+
+        expect(buildOccurrenceTitle(broken)).toBe("John Smith");
+        expect(buildOccurrenceTitle(broken)).toBe("John Smith");
+        expect(consoleSpy).toHaveBeenCalledOnce();
+        expect(consoleSpy.mock.calls[0]?.[0]).toContain("#calendar:titleTemplate");
+        consoleSpy.mockRestore();
+    });
+});
+
+/**
+ * Expands `events` through FullCalendar and its rrule plugin, the way the calendar view does, and
+ * returns the local start and end of each occurrence in the month view around `date`.
+ */
+function renderOccurrences(events: EventInput[], date: string) {
+    const element = document.createElement("div");
+    document.body.append(element);
+    const calendar = new Calendar(element, {
+        plugins: [ themePlugin, dayGridPlugin, rrulePlugin ],
+        initialView: "dayGridMonth",
+        initialDate: date,
+        events
+    });
+    calendar.render();
+
+    const occurrences = calendar.getEvents()
+        .map(({ start, end }) => ({ start: formatLocal(start), end: formatLocal(end) }))
+        .sort((a, b) => a.start.localeCompare(b.start));
+    calendar.destroy();
+    element.remove();
+    return occurrences;
+}
+
+/** Runs the specs of the enclosing `describe` with the local time zone set to `timeZone`. */
+function useTimeZone(timeZone: string) {
+    const originalTimeZone = process.env.TZ;
+    beforeAll(() => {
+        process.env.TZ = timeZone;
+    });
+    afterAll(() => {
+        if (originalTimeZone === undefined) {
+            delete process.env.TZ;
+        } else {
+            process.env.TZ = originalTimeZone;
+        }
+    });
+}
+
+/** A weekly Sunday rule ending on `date`, as the recurrence editor writes it. */
+function untilRule(date: string) {
+    return serializeRecurrence({
+        kind: "simple",
+        rule: {
+            frequency: "WEEKLY",
+            interval: 1,
+            weekdays: [ "SU" ],
+            ends: { type: "until", date }
+        }
+    }) ?? "";
+}
+
+function formatLocal(date: Date | null) {
+    if (!date) return "";
+    const pad = (value: number) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} `
+        + `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+
+describe("isValidDuration", () => {
+    it("accepts valid durations", () => {
+        expect(isValidDuration("00:01:00")).toBe(true);  // minimum: 1 minute
+        expect(isValidDuration("00:15:00")).toBe(true);
+        expect(isValidDuration("00:30:00")).toBe(true);
+        expect(isValidDuration("01:00:00")).toBe(true);
+        expect(isValidDuration("24:00:00")).toBe(true);  // maximum: 24 hours
+    });
+
+    it("rejects durations below 1 minute", () => {
+        expect(isValidDuration("00:00:00")).toBe(false);
+        expect(isValidDuration("00:00:30")).toBe(false);
+        expect(isValidDuration("00:00:59")).toBe(false);
+    });
+
+    it("rejects durations above 24 hours", () => {
+        expect(isValidDuration("25:00:00")).toBe(false);
+        expect(isValidDuration("24:01:00")).toBe(false);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(isValidDuration("00:aa:00")).toBe(false);
+        expect(isValidDuration("abc")).toBe(false);
+        expect(isValidDuration("1:0:0")).toBe(false);
+        expect(isValidDuration("")).toBe(false);
+        expect(isValidDuration(null)).toBe(false);
+        expect(isValidDuration(undefined)).toBe(false);
+    });
+
+    it("rejects out-of-range minute/second values", () => {
+        expect(isValidDuration("00:60:00")).toBe(false);
+        expect(isValidDuration("00:00:60")).toBe(false);
+    });
+});
+
+/**
+ * What the length of a slot is read by, a tap on the grid making an event of exactly one (see
+ * draftFromDateClick in index.tsx). Bounded lengths are {@link isValidDuration}'s business; this
+ * only says how long one lasts.
+ */
+describe("parseDurationSeconds", () => {
+    it("reads a duration written as hours, minutes and seconds", () => {
+        expect(parseDurationSeconds("00:15:00")).toBe(15 * 60);
+        expect(parseDurationSeconds("01:00:00")).toBe(60 * 60);
+        expect(parseDurationSeconds("00:00:30")).toBe(30);
+        expect(parseDurationSeconds("24:00:00")).toBe(24 * 60 * 60);
+    });
+
+    it("answers nothing for what is not written that way", () => {
+        expect(parseDurationSeconds("1:0:0")).toBe(null);
+        expect(parseDurationSeconds("00:60:00")).toBe(null);
+        expect(parseDurationSeconds("abc")).toBe(null);
+        expect(parseDurationSeconds("")).toBe(null);
+        expect(parseDurationSeconds(null)).toBe(null);
+        expect(parseDurationSeconds(undefined)).toBe(null);
+    });
+});
 
 describe("Building locales", () => {
     it("every language has a locale defined", async () => {

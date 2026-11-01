@@ -4,6 +4,7 @@ import appContext from "../components/app_context.js";
 import FNote from "../entities/fnote.js";
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca";
+import noteAttributeCache from "./note_attribute_cache.js";
 import server from "./server.js";
 
 // `logError` / `logInfo` are window globals referenced by froca; ensure they exist.
@@ -53,6 +54,36 @@ describe("loadInitialTree", () => {
         expect(server.get).toHaveBeenCalledWith("tree");
         expect(froca.notes[noteId]).toBeInstanceOf(FNote);
         (globalThis as any).glob.dbInitialized = false;
+    });
+});
+
+describe("reloadAll", () => {
+    it("reloads the initial tree, then every note froca held outside it", async () => {
+        const held = buildNote({ title: "Held outside the tree" });
+        const calls: string[] = [];
+        vi.spyOn(froca, "loadInitialTree").mockImplementation(async () => {
+            calls.push("loadInitialTree");
+        });
+        vi.spyOn(froca, "reloadNotes").mockImplementation(async (noteIds) => {
+            calls.push("reloadNotes");
+            expect(noteIds).toContain(held.noteId);
+        });
+
+        await froca.reloadAll();
+
+        expect(calls).toEqual([ "loadInitialTree", "reloadNotes" ]);
+    });
+
+    it("drops the attribute lists cached from the previous objects", async () => {
+        const note = buildNote({ title: "Cached", "#color": "red" });
+        expect(note.getAttributes()).toHaveLength(1);
+        expect(noteAttributeCache.attributes[note.noteId]).toHaveLength(1);
+        vi.spyOn(froca, "loadInitialTree").mockResolvedValue(undefined);
+        vi.spyOn(froca, "reloadNotes").mockResolvedValue(undefined);
+
+        await froca.reloadAll();
+
+        expect(note.noteId in noteAttributeCache.attributes).toBe(false);
     });
 });
 
@@ -303,8 +334,29 @@ describe("loadSearchNote", () => {
         expect(out).toEqual({ error: null });
         expect(search.searchResultsLoaded).toBe(true);
         expect(search.highlightedTokens).toEqual(["token"]);
+        // No highlightedTokenInfos in the response (older/rolling-upgrade server) - derive it from the legacy field.
+        expect(search.highlightedTokenInfos).toEqual([{ token: "token", type: "plain" }]);
         expect(search.children).toContain(result.noteId);
         expect(search.children).not.toContain("stale");
+        expect(appContext.triggerEvent).toHaveBeenCalledWith("notesReloaded", { noteIds: [ search.noteId ] });
+    });
+
+    it("stores the server's structured highlightedTokenInfos as-is when present", async () => {
+        const search = buildNote({ id: "ls-structured", title: "Search", type: "search" });
+
+        server.get = vi.fn(async () => ({
+            searchResultNoteIds: [],
+            highlightedTokens: ["ktory"],
+            highlightedTokenInfos: [{ token: "ktory", type: "plain" }, { token: "ba.", type: "regex" }],
+            error: null
+        })) as typeof server.get;
+
+        await froca.loadSearchNote(search.noteId);
+
+        expect(search.highlightedTokenInfos).toEqual([
+            { token: "ktory", type: "plain" },
+            { token: "ba.", type: "regex" }
+        ]);
     });
 
     it("tolerates the note disappearing from the cache mid-load", async () => {
@@ -384,6 +436,9 @@ describe("getNotes / getNote / noteExists / getNoteFromCache", () => {
 
         const note = buildNote({ id: "gn-real", title: "Real" });
         await expect(froca.getNote(note.noteId)).resolves.toBe(note);
+
+        server.post = vi.fn(async () => ({ notes: [], branches: [], attributes: [] })) as typeof server.post;
+        await expect(froca.getNote("gn-missing", true)).resolves.toBeNull();
     });
 
     it("getNoteFromCache throws on empty id and returns the cached note otherwise", () => {
@@ -474,6 +529,33 @@ describe("getAttachment / getAttachmentsForNote / processAttachmentRows", () => 
         expect(owner.attachments?.map((a) => a.attachmentId)).toContain("loaded-att");
     });
 
+    it("loads an attachment whose owner note the cache has not loaded", async () => {
+        const rows = [ attRow("orphan-att", "uncached-owner") ];
+        server.getWithSilentNotFound = vi.fn(async () => rows) as
+            typeof server.getWithSilentNotFound;
+
+        expect((await froca.getAttachment("orphan-att"))?.attachmentId).toBe("orphan-att");
+    });
+
+    it("finds an attachment only among the note's own, loading the note first", async () => {
+        const owner = buildNote({ id: "scope-owner", title: "Owner" });
+        const getNote = vi.spyOn(froca, "getNote");
+        froca.attachments["owned-att"] = {
+            attachmentId: "owned-att",
+            ownerId: owner.noteId
+        } as any;
+        froca.attachments["foreign-att"] = { attachmentId: "foreign-att", ownerId: "other" } as any;
+
+        expect(await froca.getAttachmentOfNote(owner.noteId, "owned-att"))
+            .toBe(froca.attachments["owned-att"]);
+        expect(getNote).toHaveBeenCalledWith(owner.noteId, true);
+        expect(await froca.getAttachmentOfNote(owner.noteId, "foreign-att")).toBeNull();
+
+        getNote.mockResolvedValueOnce(null);
+        expect(await froca.getAttachmentOfNote("gone-note", "owned-att")).toBeNull();
+        getNote.mockRestore();
+    });
+
     it("does not link attachments when the load returns nothing", async () => {
         server.getWithSilentNotFound = vi.fn(async () => []) as typeof server.getWithSilentNotFound;
         const att = await froca.getAttachment("empty-load-att");
@@ -509,13 +591,13 @@ describe("getAttachment / getAttachmentsForNote / processAttachmentRows", () => 
 
 describe("getBlob", () => {
     it("fetches and caches the blob promise, and serves a second call from cache", async () => {
-        server.get = vi.fn(async () => ({ blobId: "blob-1", content: "hi", contentLength: 2 })) as typeof server.get;
+        server.getWithSilentNotFound = vi.fn(async () => ({ blobId: "blob-1", content: "hi", contentLength: 2 })) as typeof server.getWithSilentNotFound;
 
         const blob1 = await froca.getBlob("notes", "blob-note");
         const blob2 = await froca.getBlob("notes", "blob-note");
 
-        expect(server.get).toHaveBeenCalledTimes(1);
-        expect(server.get).toHaveBeenCalledWith("notes/blob-note/blob");
+        expect(server.getWithSilentNotFound).toHaveBeenCalledTimes(1);
+        expect(server.getWithSilentNotFound).toHaveBeenCalledWith("notes/blob-note/blob");
         expect(blob1).not.toBeNull();
         expect(blob2).toBe(blob1);
     });
@@ -523,7 +605,7 @@ describe("getBlob", () => {
     it("clears the cached blob promise after the cleanup timeout fires", async () => {
         vi.useFakeTimers();
         try {
-            server.get = vi.fn(async () => ({ blobId: "blob-2", content: "x", contentLength: 1 })) as typeof server.get;
+            server.getWithSilentNotFound = vi.fn(async () => ({ blobId: "blob-2", content: "x", contentLength: 1 })) as typeof server.getWithSilentNotFound;
 
             await froca.getBlob("notes", "blob-cleanup");
             // The .then() that schedules the cleanup setTimeout runs on a microtask.
@@ -536,9 +618,9 @@ describe("getBlob", () => {
     });
 
     it("returns null and logs when the blob request fails", async () => {
-        server.get = vi.fn(async () => {
+        server.getWithSilentNotFound = vi.fn(async () => {
             throw new Error("blob boom");
-        }) as typeof server.get;
+        }) as typeof server.getWithSilentNotFound;
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
         const blob = await froca.getBlob("notes", "blob-fail");

@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Vista web rapide:
 pdfjs-document-properties-linearized-yes = Si
 pdfjs-document-properties-linearized-no = No
 pdfjs-document-properties-close-button = Clauder
+pdfjs-digital-signature-properties-view-certificate = Vider le certificato
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Ration: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Data e hora: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Firma secundari ({ $count })
+       *[other] Firmas secundari ({ $count })
+    }
 
 ## Print
 
@@ -166,23 +187,6 @@ pdfjs-printing-not-ready = Attention: le file PDF non es integremente cargate pr
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Monstrar/celar le barra lateral
-pdfjs-toggle-sidebar-notification-button =
-    .title = Monstrar/celar le barra lateral (le documento contine structura/attachamentos/stratos)
-pdfjs-toggle-sidebar-button-label = Monstrar/celar le barra lateral
-pdfjs-document-outline-button =
-    .title = Monstrar le schema del documento (clic duple pro expander/contraher tote le elementos)
-pdfjs-document-outline-button-label = Schema del documento
-pdfjs-attachments-button =
-    .title = Monstrar le annexos
-pdfjs-attachments-button-label = Annexos
-pdfjs-layers-button =
-    .title = Monstrar stratos (clicca duple pro remontar tote le stratos al stato predefinite)
-pdfjs-layers-button-label = Stratos
-pdfjs-thumbs-button =
-    .title = Monstrar le vignettes
-pdfjs-thumbs-button-label = Vignettes
 pdfjs-current-outline-item-button =
     .title = Trovar le elemento de structura actual
 pdfjs-current-outline-item-button-label = Elemento de structura actual
@@ -193,10 +197,6 @@ pdfjs-additional-layers = Altere stratos
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pagina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Cercar
     .placeholder = Cercar in le documento…
+    .title = Cercar
 pdfjs-find-previous-button =
     .title = Trovar le previe occurrentia del phrase
 pdfjs-find-previous-button-label = Previe
@@ -310,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Evidentia
 pdfjs-editor-highlight-button-label = Evidentia
 pdfjs-highlight-floating-button1 =
-    .title = Evidentiar
     .aria-label = Evidentiar
+    .title = Evidentiar
 pdfjs-highlight-floating-button-label = Evidentiar
 pdfjs-comment-floating-button =
-    .title = Commento
     .aria-label = Commento
+    .title = Commento
 pdfjs-comment-floating-button-label = Commento
 pdfjs-editor-comment-button =
-    .title = Commento
     .aria-label = Commento
+    .title = Commento
 pdfjs-editor-comment-button-label = Commento
 pdfjs-editor-signature-button =
     .title = Adder signatura
@@ -392,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Commentos
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Clauder le barra lateral
     .aria-label = Clauder le barra lateral
+    .title = Clauder le barra lateral
 pdfjs-editor-comments-sidebar-close-button-label = Clauder le barra lateral
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Vide tu alco notabile? Evidentia lo e lassa un commentario.
@@ -516,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Parametros del texto alternative d
 pdfjs-editor-alt-text-settings-automatic-title = Texto alternative automatic
 pdfjs-editor-alt-text-settings-create-model-button-label = Crear texto alternative automaticamente
 pdfjs-editor-alt-text-settings-create-model-description = Suggere descriptiones pro adjutar le personas qui non pote vider le imagine o quando le imagine non carga.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modello de intelligentia artificial del texto alternative ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Flue localmente sur tu apparato assi tu datos remane private. Necessari pro texto alternative automatic.
-pdfjs-editor-alt-text-settings-delete-model-button = Deler
-pdfjs-editor-alt-text-settings-download-model-button = Discargar
-pdfjs-editor-alt-text-settings-downloading-model-button = Discargante…
 pdfjs-editor-alt-text-settings-editor-title = Rediger texto alternative
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Monstrar le redactor de texto alternative a pena on adde un imagine
 pdfjs-editor-alt-text-settings-show-dialog-description = Te adjuta a verifica que tote tu imagines ha un texto alternative.
@@ -731,6 +724,74 @@ pdfjs-new-badge-content = NOVA
 pdfjs-views-manager-waiting-for-file = Cargante file…
 pdfjs-toggle-views-manager-button1 =
     .title = Gerer paginas
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Proprietates del firma digital
+    .title = Proprietates del firma digital
+pdfjs-digital-signature-properties-button-label = Proprietates del firma digital
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Le documento era firmate con un firma digital valide
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Documento firmate ma { $count } firma digital non poteva esser verificate
+       *[other] Documento firmate ma { $count } firmas digital non poteva esser verificate
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Documento firmate con { $count } certificato que non es de fiducia
+       *[other] Documento firmate con { $count } certificatos que non es de fiducia
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Documento firmate con { $count } certificato expirate
+       *[other] Documento firmate con { $count } certificatos expirate
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Le documento ha { $count } firma digital non valide
+       *[other] Le documento ha { $count } firmas digital non valide
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Documento firmate con { $count } certificato revocate
+       *[other] Documento firmate con { $count } certificatos revocate
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Stato: firma verificate
+pdfjs-digital-signature-properties-status-invalid = Stato: firma non valide
+pdfjs-digital-signature-properties-status-unknown = Stato: impossibile verificar (non supportate)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Certificato: de fiducia ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certificato: indisponibile
+pdfjs-digital-signature-properties-certificate-untrusted = Certificato: non de confidentia
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certificato: emissor incognite ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certificato: auto-firmate ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certificato: emissor non de confidentia ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Certificato: expirate
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certificato: expirate ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Certificato: revocate
 
 ## Main menu for adding/removing signatures
 

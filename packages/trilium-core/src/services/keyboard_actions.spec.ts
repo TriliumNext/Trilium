@@ -16,6 +16,7 @@ vi.mock("i18next", async (importOriginal) => {
 import * as cls from "./context.js";
 import keyboardActions from "./keyboard_actions.js";
 import options from "./options.js";
+import { getPlatform, initPlatform } from "./platform.js";
 
 function upsertOption(name: string, value: string) {
     cls.init(() => {
@@ -37,6 +38,62 @@ describe("keyboard_actions service", () => {
         const actions = keyboardActions.getDefaultKeyboardActions();
         expect(Array.isArray(actions)).toBe(true);
         expect(actions.some((a) => "actionName" in a && a.actionName === "jumpToNote")).toBe(true);
+    });
+
+    it("zoomIn is bound to the plus key as well as equals, so it works on non-US layouts", () => {
+        const actions = keyboardActions.getDefaultKeyboardActions();
+        const zoomIn = actions.find((a) => "actionName" in a && a.actionName === "zoomIn");
+        const shortcuts = (zoomIn && "defaultShortcuts" in zoomIn && zoomIn.defaultShortcuts) || [];
+
+        // Electron-only action: present with both bindings under Electron, empty otherwise.
+        if (shortcuts.length > 0) {
+            expect(shortcuts.some((s) => s.endsWith("+Plus"))).toBe(true);
+            expect(shortcuts.some((s) => s.endsWith("+="))).toBe(true);
+        }
+    });
+
+    it("ships the split actions unbound and in a section of their own", () => {
+        const actions = keyboardActions.getDefaultKeyboardActions();
+
+        const splitActions = [
+            "openNewNoteSplit", "closeActiveNoteSplit", "moveActiveNoteSplitLeft", "moveActiveNoteSplitRight",
+            "focusNoteSplitLeft", "focusNoteSplitRight"
+        ];
+
+        for (const actionName of splitActions) {
+            const action = actions.find((a) => "actionName" in a && a.actionName === actionName);
+            expect(action, actionName).toBeDefined();
+            expect(action && "defaultShortcuts" in action && action.defaultShortcuts, actionName).toEqual([]);
+        }
+
+        // The options page buckets each action under the separator preceding it, and with nothing
+        // bound by default that page is the only way to reach these -- so the six make up a section
+        // of their own, rather than trailing the two dozen tab actions.
+        const firstIndex = actions.findIndex((a) => "actionName" in a && a.actionName === splitActions[0]);
+        expect(actions[firstIndex - 1]).toHaveProperty("separator");
+        expect(actions.slice(firstIndex, firstIndex + splitActions.length)
+            .map((a) => "actionName" in a && a.actionName)).toEqual(splitActions);
+        expect(actions[firstIndex + splitActions.length]).toHaveProperty("separator");
+    });
+
+    it.each([
+        [true, { jumpToNote: ["Meta+J"], backInNoteHistory: ["Meta+["] }],
+        [false, { jumpToNote: ["Ctrl+J"], backInNoteHistory: ["Alt+Left"] }]
+    ])("resolves CommandOrControl and the history bindings for isMac=%s", (isMac, expected) => {
+        const real = getPlatform();
+        initPlatform(Object.create(real, { isMac: { value: isMac } }));
+
+        try {
+            const actions = keyboardActions.getDefaultKeyboardActions();
+
+            for (const [actionName, shortcuts] of Object.entries(expected)) {
+                const action = actions.find((a) => "actionName" in a && a.actionName === actionName);
+                expect(action, actionName).toBeDefined();
+                expect(action && "defaultShortcuts" in action && action.defaultShortcuts, actionName).toEqual(shortcuts);
+            }
+        } finally {
+            initPlatform(real);
+        }
     });
 
     it("throws if loaded before translations are available", async () => {

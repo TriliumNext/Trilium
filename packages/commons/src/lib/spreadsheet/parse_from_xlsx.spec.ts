@@ -1,10 +1,21 @@
 import ExcelJS from "exceljs";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { excelColorToRgb, parseRange, parseXlsxToWorkbook, toArrayBuffer } from "./parse_from_xlsx.js";
+import {
+    anchorToBox,
+    bytesToBase64,
+    excelColorToRgb,
+    mediaToDataUrl,
+    parseRange,
+    parseXlsxToWorkbook,
+    toArrayBuffer
+} from "./parse_from_xlsx.js";
+import { renderSpreadsheetToXlsx } from "./render_to_xlsx.js";
 import {
     BorderStyle,
     CellValueType,
+    CustomRangeType,
+    type DataValidationRule,
     HorizontalAlign,
     type ICellData,
     type IStyleData,
@@ -512,10 +523,99 @@ describe("parseXlsxToWorkbook images", () => {
             ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 90 } });
         });
 
-        const drawing = drawingsOf(workbook)?.data[drawingsOf(workbook)!.order[0]];
+        const drawings = drawingsOf(workbook);
+        const drawing = drawings?.data[drawings.order[0]];
         expect(drawing.transform.width).toBe(120);
         expect(drawing.transform.height).toBe(90);
         expect(drawing.sheetTransform.from).toMatchObject({ column: 0, row: 0 });
+    });
+
+    it("embeds jpeg and gif images with their own mime type", async () => {
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            const jpeg = wb.addImage({ base64: PNG, extension: "jpeg" });
+            const gif = wb.addImage({ base64: PNG, extension: "gif" });
+            ws.addImage(jpeg, { tl: { col: 0, row: 0 }, ext: { width: 10, height: 10 } });
+            ws.addImage(gif, { tl: { col: 2, row: 2 }, ext: { width: 10, height: 10 } });
+        });
+
+        const drawings = drawingsOf(workbook);
+        const sources = drawings?.order.map((id) => drawings.data[id].source as string) ?? [];
+        expect(sources[0]).toMatch(/^data:image\/jpeg;base64,/);
+        expect(sources[1]).toMatch(/^data:image\/gif;base64,/);
+    });
+
+    it("skips an image whose format cannot be embedded, and the resource with it", async () => {
+        // Only png/jpeg/gif survive the import; anything else (here a bmp) is dropped rather than
+        // emitted as a broken data URL. With no embeddable image left, the sheet gets no resource.
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            const id = wb.addImage({ base64: PNG, extension: "bmp" as "png" });
+            ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 10, height: 10 } });
+        });
+
+        expect(drawingsOf(workbook)).toBeNull();
+    });
+
+    it("keeps an embeddable image when a sibling image is dropped", async () => {
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            const bmp = wb.addImage({ base64: PNG, extension: "bmp" as "png" });
+            const png = wb.addImage({ base64: PNG, extension: "png" });
+            ws.addImage(bmp, { tl: { col: 0, row: 0 }, ext: { width: 10, height: 10 } });
+            ws.addImage(png, { tl: { col: 2, row: 2 }, ext: { width: 10, height: 10 } });
+        });
+
+        const drawings = drawingsOf(workbook);
+        expect(drawings?.order.length).toBe(1);
+        expect(drawings?.data[drawings.order[0]].source).toMatch(/^data:image\/png;base64,/);
+    });
+
+    it("anchors an image to its top-left cell when it has no extent", async () => {
+        // A zero-sized extent puts the bottom-right corner back on the origin, so the anchor walk
+        // gets a non-positive target and must resolve to the very first cell instead of looping.
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            const id = wb.addImage({ base64: PNG, extension: "png" });
+            ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 0, height: 0 } });
+        });
+
+        const drawings = drawingsOf(workbook);
+        const drawing = drawings?.data[drawings.order[0]];
+        expect(drawing.transform).toMatchObject({ width: 0, height: 0 });
+        expect(drawing.sheetTransform.to).toMatchObject({ row: 0, column: 0, rowOffset: 0, columnOffset: 0 });
+    });
+
+    it("skips zero-width columns while resolving an anchor", async () => {
+        // A hidden/collapsed column contributes no width, so the walk must step over it rather
+        // than consuming the image's extent on a track that occupies no space.
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            ws.getColumn(1).width = 0;
+            const id = wb.addImage({ base64: PNG, extension: "png" });
+            ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 200, height: 40 } });
+        });
+
+        const drawings = drawingsOf(workbook);
+        const drawing = drawings?.data[drawings.order[0]];
+        expect(drawing.transform.width).toBe(200);
+        // Column 0 has no width, so the right edge lands past it rather than inside it.
+        expect(drawing.sheetTransform.to.column).toBeGreaterThan(0);
+    });
+
+    it("gives up the anchor walk for an image extending beyond any addressable track", async () => {
+        // The walk is bounded so a corrupt extent cannot spin forever; past the bound the anchor
+        // falls back to the origin while the absolute transform still records the real size.
+        const workbook = await parseBuilt((wb) => {
+            const ws = wb.addWorksheet("S");
+            const id = wb.addImage({ base64: PNG, extension: "png" });
+            ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 10_000_000, height: 10 } });
+        });
+
+        const drawings = drawingsOf(workbook);
+        const drawing = drawings?.data[drawings.order[0]];
+        expect(drawing.transform.width).toBe(10_000_000);
+        expect(drawing.sheetTransform.to).toMatchObject({ column: 0, columnOffset: 0 });
     });
 
     it("preserves multiple images in order", async () => {
@@ -545,6 +645,255 @@ describe("parseXlsxToWorkbook images", () => {
         const sheet = workbook.sheets[workbook.sheetOrder[0]];
         expect(sheet.rowHeader).toEqual({ width: 46, hidden: 0 });
         expect(sheet.columnHeader).toEqual({ height: 20, hidden: 0 });
+    });
+});
+
+describe("mediaToDataUrl", () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+
+    it("encodes a supported format from either buffer representation", () => {
+        // exceljs hands back a Node Buffer when running on the server and a plain ArrayBuffer in
+        // the browser build, so both have to encode to the same data URL.
+        expect(mediaToDataUrl({ extension: "png", buffer: bytes })).toBe("data:image/png;base64,AQID");
+        expect(mediaToDataUrl({ extension: "PNG", buffer: bytes.buffer })).toBe("data:image/png;base64,AQID");
+    });
+
+    it("returns null when the format or the bytes are unusable", () => {
+        expect(mediaToDataUrl(undefined)).toBeNull();
+        // No extension at all — nothing to map onto a mime type.
+        expect(mediaToDataUrl({ buffer: bytes })).toBeNull();
+        expect(mediaToDataUrl({ extension: "tiff", buffer: bytes })).toBeNull();
+        // A known format whose payload never made it into the archive.
+        expect(mediaToDataUrl({ extension: "png" })).toBeNull();
+    });
+});
+
+describe("bytesToBase64", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("encodes via Buffer on Node and via btoa in the browser", () => {
+        // The standalone build runs this same importer in a browser worker, where `Buffer` does
+        // not exist; both runtimes must produce identical base64.
+        const bytes = new Uint8Array([0, 1, 2, 250, 251, 252]);
+        const viaBuffer = bytesToBase64(bytes);
+        expect(viaBuffer).toBe("AAEC+vv8");
+
+        vi.stubGlobal("Buffer", undefined);
+        expect(bytesToBase64(bytes)).toBe(viaBuffer);
+    });
+
+    it("chunks large inputs in the browser path", () => {
+        // The browser path spreads bytes into String.fromCharCode, which blows the argument limit
+        // past ~64k, so it walks the array in 32k slices.
+        const bytes = new Uint8Array(0x8000 * 2 + 5).fill(65);
+        const viaBuffer = bytesToBase64(bytes);
+
+        vi.stubGlobal("Buffer", undefined);
+        expect(bytesToBase64(bytes)).toBe(viaBuffer);
+    });
+});
+
+describe("anchorToBox", () => {
+    /** Sheet with uniform 100px columns and 50px rows, so anchor arithmetic is easy to read. */
+    const sheet: IWorksheetData = {
+        id: "s1",
+        name: "S",
+        cellData: {},
+        rowData: {},
+        columnData: {},
+        defaultColumnWidth: 100,
+        defaultRowHeight: 50
+    } as IWorksheetData;
+
+    it("inverts a two-cell anchor into cell anchors plus an absolute box", () => {
+        const box = anchorToBox(sheet, { tl: { col: 1, row: 2 }, br: { col: 3, row: 4 } } as ExcelJS.ImageRange);
+
+        expect(box).toMatchObject({
+            from: { column: 1, columnOffset: 0, row: 2, rowOffset: 0 },
+            to: { column: 3, columnOffset: 0, row: 4, rowOffset: 0 },
+            left: 100, top: 100, width: 200, height: 100
+        });
+    });
+
+    it("keeps the fractional part of an anchor as a px offset into its cell", () => {
+        const box = anchorToBox(sheet, { tl: { col: 1.5, row: 2.5 }, br: { col: 3, row: 4 } } as ExcelJS.ImageRange);
+
+        expect(box?.from).toMatchObject({ column: 1, columnOffset: 50, row: 2, rowOffset: 25 });
+        expect(box?.left).toBe(150);
+    });
+
+    it("derives the bottom-right corner from the extent for a one-cell anchor", () => {
+        const box = anchorToBox(sheet, { tl: { col: 0, row: 0 }, ext: { width: 250, height: 75 } } as unknown as ExcelJS.ImageRange);
+
+        expect(box).toMatchObject({ width: 250, height: 75 });
+        expect(box?.to).toMatchObject({ column: 2, columnOffset: 50, row: 1, rowOffset: 25 });
+    });
+
+    it("never reports a negative size for an inverted anchor", () => {
+        const box = anchorToBox(sheet, { tl: { col: 3, row: 4 }, br: { col: 1, row: 2 } } as ExcelJS.ImageRange);
+
+        expect(box).toMatchObject({ width: 0, height: 0 });
+    });
+
+    it("rejects an anchor with no top-left corner, or with neither a bottom-right nor an extent", () => {
+        // Both shapes come from a malformed drawing in a third-party xlsx; the image is dropped
+        // rather than placed at a guessed position.
+        expect(anchorToBox(sheet, {} as ExcelJS.ImageRange)).toBeNull();
+        expect(anchorToBox(sheet, { tl: { col: 0, row: 0 } } as unknown as ExcelJS.ImageRange)).toBeNull();
+    });
+
+    it("steps over zero-sized tracks when walking an extent to its end cell", () => {
+        // A collapsed column occupies no space, so it must not swallow any of the extent.
+        const collapsed = { ...sheet, columnData: { 0: { w: 0 }, 1: { w: 0 } } } as IWorksheetData;
+        const box = anchorToBox(collapsed, { tl: { col: 0, row: 0 }, ext: { width: 50, height: 25 } } as unknown as ExcelJS.ImageRange);
+
+        expect(box?.to.column).toBe(2);
+        expect(box?.to.columnOffset).toBe(50);
+    });
+
+    it("falls back to the built-in track sizes when the sheet declares no defaults", () => {
+        const bare = { id: "s1", name: "S", cellData: {}, rowData: {}, columnData: {} } as IWorksheetData;
+        const box = anchorToBox(bare, { tl: { col: 1, row: 1 }, br: { col: 2, row: 2 } } as ExcelJS.ImageRange);
+
+        // The built-in defaults are 88px wide and 24px tall.
+        expect(box).toMatchObject({ left: 88, top: 24, width: 88, height: 24 });
+    });
+
+    it("uses a track's own size ahead of the default", () => {
+        const mixed = { ...sheet, rowData: { 0: { h: 10 } }, columnData: { 0: { w: 20 } } } as IWorksheetData;
+        const box = anchorToBox(mixed, { tl: { col: 1, row: 1 }, br: { col: 2, row: 2 } } as ExcelJS.ImageRange);
+
+        // Row 0 is 10px and column 0 is 20px, so the second track starts there rather than at the default.
+        expect(box).toMatchObject({ left: 20, top: 10 });
+    });
+});
+
+describe("parseXlsxToWorkbook data validation", () => {
+    // Reads the SHEET_DATA_VALIDATION_PLUGIN resource for a sheet back into a typed shape.
+    function validationsOf(
+        workbook: { sheetOrder: string[]; resources?: { name: string; data: string }[] },
+        sheetIndex = 0
+    ): DataValidationRule[] | null {
+        const resource = workbook.resources?.find((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN");
+        if (!resource) return null;
+        const parsed = JSON.parse(resource.data) as Record<string, DataValidationRule[]>;
+        return parsed[workbook.sheetOrder[sheetIndex]] ?? null;
+    }
+
+    it("imports an inline dropdown list, coalescing the cell range and JSON-encoding the options", async () => {
+        // Mirrors the real file: a single sqref rectangle that exceljs expands to individual cells.
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("A1").value = "x";
+        ws.dataValidations.add("D2:E3", {
+            type: "list",
+            allowBlank: true,
+            formulae: ['"0 - Below Expectations ,1 - Meets Expectations,2 - Strong Performance"']
+        });
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rules = validationsOf(workbook);
+        expect(rules).toHaveLength(1);
+        const rule = rules?.[0];
+        expect(rule?.type).toBe("list");
+        // Univer's list validator JSON-parses formula1 (deserializeListOptions); the exporter
+        // JSON.stringifies. The inline options keep their exact text, including the trailing space.
+        expect(rule?.formula1).toBe(
+            JSON.stringify(["0 - Below Expectations ", "1 - Meets Expectations", "2 - Strong Performance"])
+        );
+        // The 2x2 block collapses back into a single rectangle, not four 1x1 ranges.
+        expect(rule?.ranges).toEqual([{ startRow: 1, endRow: 2, startColumn: 3, endColumn: 4 }]);
+        expect(rule?.uid).toBeTruthy();
+    });
+
+    it("carries the operator and both formulae for a numeric (whole between) validation", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "whole", operator: "between", formulae: [1, 10] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("whole");
+        expect(rule?.operator).toBe("between");
+        expect(rule?.formula1).toBe("1");
+        expect(rule?.formula2).toBe("10");
+        expect(rule?.ranges).toEqual([{ startRow: 1, endRow: 1, startColumn: 1, endColumn: 1 }]);
+    });
+
+    it("emits no validation resource for a sheet without any", async () => {
+        const wb = new ExcelJS.Workbook();
+        wb.addWorksheet("S").getCell("A1").value = "x";
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+        expect(workbook.resources?.some((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN")).toBeFalsy();
+    });
+
+    it("keeps distinct configs as separate rules on the same sheet", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.dataValidations.add("A1:A2", { type: "list", formulae: ['"a,b"'] });
+        ws.dataValidations.add("C1:C2", { type: "list", formulae: ['"x,y"'] });
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rules = validationsOf(workbook);
+        expect(rules).toHaveLength(2);
+        const formula1s = rules?.map((r) => r.formula1).sort();
+        expect(formula1s).toEqual([JSON.stringify(["a", "b"]), JSON.stringify(["x", "y"])]);
+    });
+
+    it("passes a range-referenced list through as the formula, not a JSON option array", async () => {
+        // A dropdown whose options come from a cell range ($A$1:$A$3) rather than inline text:
+        // there are no literal options to encode, so the reference is carried as formula1 verbatim.
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("C1").dataValidation = { type: "list", formulae: ["$A$1:$A$3"] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("list");
+        expect(rule?.formula1).toBe("$A$1:$A$3");
+    });
+
+    it("carries a single-bound numeric constraint (greaterThan) with just formula1", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "decimal", operator: "greaterThan", formulae: [5] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.operator).toBe("greaterThan");
+        expect(rule?.formula1).toBe("5");
+        expect(rule?.formula2).toBeUndefined();
+    });
+
+    it("carries a custom-formula validation (a formula, no operator)", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "custom", formulae: ["=B2>0"] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("custom");
+        expect(rule?.formula1).toBe("=B2>0");
+        expect(rule?.operator).toBeUndefined();
+    });
+
+    it("drops a list validation that carries no options", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("A1").value = "x";
+        ws.getCell("B1").dataValidation = { type: "list", formulae: [] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+        expect(workbook.resources?.some((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN")).toBeFalsy();
     });
 });
 
@@ -621,5 +970,73 @@ describe("parseRange", () => {
         expect(parseRange("zzz")).toBeNull();
         // A malformed end endpoint yields null too (covers the `!end` half of the guard).
         expect(parseRange("A1:zz")).toBeNull();
+    });
+});
+
+describe("hyperlinks", () => {
+    it("carries the link into the document Univer stores it in", async () => {
+        const sheet = await roundTrip((wb) => {
+            const ws = wb.addWorksheet("Sheet1");
+            ws.getCell("A1").value = { text: "Supplier", hyperlink: "https://example.com/pen" };
+        });
+
+        const cell = cellA1(sheet);
+        expect(cell?.v).toBe("Supplier");
+        expect(cell?.t).toBe(CellValueType.STRING);
+        expect(cell?.p?.body).toEqual({
+            dataStream: "Supplier\r\n",
+            textRuns: [{ ts: {}, st: 0, ed: 8 }],
+            paragraphs: [{ startIndex: 8 }],
+            sectionBreaks: [{ startIndex: 9 }],
+            customRanges: [{
+                rangeId: "link-A1",
+                rangeType: CustomRangeType.HYPERLINK,
+                startIndex: 0,
+                endIndex: 7,
+                properties: { url: "https://example.com/pen", refId: "link-A1" }
+            }]
+        });
+    });
+
+    it("keeps the display text alone when the target is unsafe", async () => {
+        const sheet = await roundTrip((wb) => {
+            const ws = wb.addWorksheet("Sheet1");
+            ws.getCell("A1").value = { text: "Supplier", hyperlink: "javascript:alert(1)" };
+        });
+
+        expect(cellA1(sheet)?.v).toBe("Supplier");
+        expect(cellA1(sheet)?.p).toBeUndefined();
+    });
+
+    it("survives an export and re-import of the same workbook", async () => {
+        const exported = await renderSpreadsheetToXlsx(JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                styles: {},
+                sheets: {
+                    s1: {
+                        id: "s1", name: "Sheet1", hidden: 0, mergeData: [], rowData: {}, columnData: {},
+                        cellData: {
+                            "0": {
+                                "0": {
+                                    p: {
+                                        body: {
+                                            dataStream: "Pen\r\n",
+                                            customRanges: [{ startIndex: 0, endIndex: 2, properties: { url: "https://example.com/pen" } }]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }));
+
+        const { workbook } = await parseXlsxToWorkbook(exported as ArrayBuffer);
+        const cell = cellA1(workbook.sheets[workbook.sheetOrder[0]]);
+        expect(cell?.v).toBe("Pen");
+        expect(cell?.p?.body?.customRanges?.[0]?.properties?.url).toBe("https://example.com/pen");
     });
 });

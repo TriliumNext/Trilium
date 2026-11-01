@@ -1,9 +1,9 @@
 /**
- * A zip to read: either its raw bytes, or — server/desktop only — a filesystem path the provider opens
- * and reads *in place* (no full-buffer copy, no ~2 GiB `fs.readFile` ceiling). The browser/WASM provider
- * only supports the byte form.
+ * A zip to read: its raw bytes, a filesystem path (server/desktop only) or a `Blob` (browser/WASM
+ * only). A path or a `Blob` is read in place, one byte range at a time, so the archive is never held
+ * in memory whole.
  */
-export type ZipSource = Uint8Array | { path: string };
+export type ZipSource = Uint8Array | { path: string } | { blob: Blob };
 
 export interface ZipEntry {
     fileName: string;
@@ -57,7 +57,8 @@ export interface ZipProvider {
 
     /**
      * Iterates over every entry in a ZIP, calling `processEntry` for each one. `readContent()` inside the
-     * callback reads the raw bytes of that entry on demand. If `filenameEncoding` is provided,
+     * callback reads the raw bytes of that entry on demand, and rejects with {@link entryTooLargeError}
+     * before buffering more than the provider's per-entry limit. If `filenameEncoding` is provided,
      * non-UTF-8-flagged filenames are decoded using it. Accepts raw bytes or — server/desktop only — a
      * {@link ZipSource} path, in which case the zip is read straight from disk per entry.
      */
@@ -71,6 +72,13 @@ export interface ZipProvider {
 
     /** Creates a writable file stream for the given path. */
     createFileStream(filePath: string): FileStream;
+}
+
+/** The error `readContent()` rejects with when an entry decompresses to more than `maxLength` bytes. */
+export function entryTooLargeError(fileName: string, maxLength: number): Error {
+    const mib = Math.round(maxLength / 1024 / 1024);
+    return new Error(`"${fileName}" decompresses to more than ${maxLength} bytes (~${mib} MiB), `
+        + "the most a note or attachment can hold.");
 }
 
 let zipProvider: ZipProvider | null = null;

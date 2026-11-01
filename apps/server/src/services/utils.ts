@@ -9,7 +9,12 @@ export const isMac = process.platform === "darwin";
 
 export const isWindows = process.platform === "win32";
 
-export const isWindows11 = isWindows && osVersion[0] === 10 && osVersion[2] >= 22000;
+/**
+ * Whether the OS supports Electron's `backgroundMaterial` (Mica). The underlying DWM
+ * system-backdrop API only exists on Windows 11 22H2 (build 22621) and later; on older builds
+ * Electron still stops painting the window background, compositing it to black (#10590).
+ */
+export const supportsBackgroundMaterial = isWindows && osVersion[0] === 10 && osVersion[2] >= 22621;
 
 export const isElectron = !!process.versions["electron"];
 
@@ -80,7 +85,7 @@ export function getContentDisposition(filename: string) {
 }
 
 /** @deprecated */
-export function isStringNote(type: string | undefined, mime: string) {
+export function isStringNote(type: string | undefined, mime: string | undefined) {
     return coreUtils.isStringNote(type, mime);
 }
 

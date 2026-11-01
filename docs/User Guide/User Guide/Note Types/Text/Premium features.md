@@ -1,14 +1,17 @@
 # Premium features
-The text editor we are using for <a class="reference-link" href="../Text.md">Text</a> notes is called CKEditor and it's a commercial product. The core components are open-source, however they [offer quite a few features](https://ckeditor.com/docs/trial/latest/index.html) that require a commercial license in order to be used.
+The text editor we are using is called <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a> which has an open-source core, but it's also a commercial product which offers [premium features](https://ckeditor.com/docs/trial/latest/index.html).
 
-We have reached out to the CKEditor team in order to obtain a license in order to have some of these extra features and they have agreed, based on a signed agreement.
+Prior to v0.105.0, Trilium used the following premium features as part of a signed agreement between the CKEditor and the Trilium team:
 
-## How the license works
+*   <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>
+*   <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a>
+*   <a class="reference-link" href="Format%20Painter.md">Format Painter</a>
 
-The license key is stored in the application and it enables the use of the previously described premium features. The license key has an expiration date which means that the features can become disabled if using an older version of the application for extended periods of time.
+Starting with v0.105.0, those features have been completely rewritten as custom CKEditor plugins, licensed under AGPL-3.0.
 
-## Can I opt out of these features?
+## Lookalikes
 
-At this moment there is no way to disable these features, apart from manually modifying the source code. If this is a problem, [let us know](../../Troubleshooting/Reporting%20issues.md).
+There are some premium CK features that look like Trilium's built-in functionality but they are completely different:
 
-If you have the possibility of rebuilding the source code (e.g. if a package maintainer), then modify `VITE_CKEDITOR_KEY` in `apps/client/.env` to be `GPL`.
+*   <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>
+*   <a class="reference-link" href="Math%20Equations.md">Math Equations</a> which uses a third-party plugin that has been adapted for Trilium.

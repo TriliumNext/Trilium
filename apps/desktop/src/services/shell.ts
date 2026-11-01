@@ -1,5 +1,5 @@
 import { SHELL_OPEN_EXTERNAL_PROTOCOLS } from "@triliumnext/commons";
-import { getLog, utils as coreUtils } from "@triliumnext/core";
+import { getBackup, getLog, utils as coreUtils } from "@triliumnext/core";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import { execFile } from "child_process";
 import electron from "electron";
@@ -63,25 +63,35 @@ export function validateOpenCustomPath(filePath: unknown, tmpDir: string): strin
 
 //#endregion
 
-//#region open-path — sandbox to Trilium's data dir ∪ tmp dir + existence check
+//#region open-path — sandbox to Trilium's data dir ∪ tmp dir ∪ backup dir + existence check
 
 /**
  * Validates a path for the "open-path" IPC channel (Open Note Externally,
- * Open Attachment Externally, and the "open data directory" link in the
- * About dialog). The legit callers only ever pass server-generated paths
- * either inside the tmp dir or equal to the data dir itself.
+ * Open Attachment Externally, and the "open data directory" / "open backup
+ * directory" links in the About dialog and the backup settings), and for the
+ * "show-item-in-folder" channel, which reveals a file rather than opening it.
+ * The legit callers only ever pass server-generated paths either inside the tmp
+ * dir or equal to one of the directories themselves.
+ *
+ * Beyond the data and tmp directories, each caller names the roots its own case
+ * needs: the backup directory, which the user may have moved elsewhere, and the
+ * database file, which `TRILIUM_DOCUMENT_PATH` may likewise put outside the
+ * data directory. Those come from the app's own configuration rather than from
+ * the renderer, so the sandbox still bounds the caller. A root may be a file, in
+ * which case only that exact path passes.
  *
  * UNC paths are blocked implicitly — they cannot normalise to a descendant
- * of the data/tmp dirs, so the sandbox check rejects them. This closes the
+ * of those roots, so the sandbox check rejects them. This closes the
  * NTLM-hash-leak vector that affects file:// and smb:// URLs.
  */
-export function validateOpenPath(input: unknown, dataDir: string, tmpDir: string): string {
+export function validateOpenPath(input: unknown, dataDir: string, tmpDir: string, ...extraRoots: (string | null | undefined)[]): string {
     if (typeof input !== "string" || input.length === 0 || input.includes("\0")) {
         throw new Error("open-path: invalid filePath");
     }
 
+    const roots = [dataDir, tmpDir, ...extraRoots];
     const resolved = path.resolve(input);
-    if (!isUnderOrEquals(resolved, dataDir) && !isUnderOrEquals(resolved, tmpDir)) {
+    if (!roots.some((root) => root && isUnderOrEquals(resolved, root))) {
         throw new Error(`open-path: refusing path outside data dir: ${resolved}`);
     }
 
@@ -242,7 +252,8 @@ export function setupShellHandlers() {
 
     electron.ipcMain.handle("open-path", (_event, filePath: string) => {
         try {
-            const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR);
+            const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR,
+                ...getConfiguredOpenRoots());
             return electron.shell.openPath(resolved);
         } catch (e) {
             getLog().error(`open-path failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
@@ -250,9 +261,28 @@ export function setupShellHandlers() {
         }
     });
 
+    // Nothing is returned: `showItemInFolder` reports nothing back, and a refused path is a
+    // main-process log line rather than an answer the renderer could act on.
+    electron.ipcMain.on("show-item-in-folder", (_event, filePath: string) => {
+        try {
+            const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR,
+                ...getConfiguredOpenRoots(), dataDirs.DOCUMENT_PATH);
+            electron.shell.showItemInFolder(resolved);
+        } catch (e) {
+            getLog().error(`show-item-in-folder failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
+        }
+    });
+
     electron.ipcMain.handle("open-file-url", (_event, fileUrl: string) => {
         try {
             const filePath = validateOpenFileUrl(fileUrl);
+
+            if (shouldOpenViaProtocolHandler(filePath)) {
+                return electron.shell.openExternal(url.pathToFileURL(filePath).href)
+                    .then(() => "")
+                    .catch((e) => coreUtils.safeExtractMessageAndStackFromError(e));
+            }
+
             return electron.shell.openPath(filePath);
         } catch (e) {
             getLog().error(`open-file-url failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
@@ -325,6 +355,53 @@ export function setupShellHandlers() {
             getLog().error(`open-custom failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
         }
     });
+}
+
+/**
+ * True when Windows must dispatch a directory through the `file:` protocol handler rather
+ * than `shell.openPath`.
+ *
+ * `shell.openPath` sends a directory to Chromium's `OpenFolderViaShell`, which hardcodes the
+ * `explore` verb — Explorer's own. A third-party file manager registers the default verb
+ * instead, so `explore` never reaches it and the folder always opens in Explorer.
+ * `shell.openExternal` invokes `open` on the URL, letting the shell resolve the handler the
+ * user actually configured. Files already take the default verb, so they keep `openPath`.
+ *
+ * Non-ASCII paths keep `openPath` too: `openExternal` percent-encodes the URL as UTF-8 and
+ * Windows decodes those escapes with the ANSI codepage, so the path arrives mangled. Such a
+ * directory opens in Explorer, which is what it did before this branch existed.
+ */
+function shouldOpenViaProtocolHandler(filePath: string): boolean {
+    if (process.platform !== "win32" || /[\u0080-\uffff]/.test(filePath)) {
+        return false;
+    }
+
+    try {
+        return fs.statSync(filePath).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The roots `open-path` and `show-item-in-folder` accept besides the data and tmp directories:
+ * directories the user can configure outside the data directory.
+ */
+export function getConfiguredOpenRoots() {
+    return [ getConfiguredBackupDir(), dataDirs.RESOURCES_DIR ];
+}
+
+/**
+ * The directory backups currently go to, which the user may have moved outside the data directory.
+ * Read from the backup service rather than accepted from the renderer, so it stays the app's own
+ * notion of where backups live. Null before core is initialized, leaving the other roots to apply.
+ */
+function getConfiguredBackupDir(): string | null {
+    try {
+        return getBackup().getBackupFolderPath();
+    } catch {
+        return null;
+    }
 }
 
 //#endregion
