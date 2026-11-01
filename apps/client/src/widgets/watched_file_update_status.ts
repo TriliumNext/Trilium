@@ -49,14 +49,13 @@ export default class WatchedFileUpdateStatusWidget extends NoteContextAwareWidge
 
         this.$fileUploadButton.on("click", async () => {
             const { entityType, entityId } = this.getEntity();
+            if (!entityType || !entityId) return;
 
             await server.post(`${entityType}/${entityId}/upload-modified-file`, {
-                filePath: this.$filePath.text()
+                filePath: fileWatcher.getFileModificationStatus(entityType, entityId).filePath
             });
 
-            if (entityType && entityId) {
-                fileWatcher.fileModificationUploaded(entityType, entityId);
-            }
+            fileWatcher.fileModificationUploaded(entityType, entityId);
             this.refresh();
         });
 
@@ -103,7 +102,6 @@ export default class WatchedFileUpdateStatusWidget extends NoteContextAwareWidge
     }
 
     openedFileUpdatedEvent(data: EventData<"openedFileUpdated">) {
-        console.log(data);
         const { entityType, entityId } = this.getEntity();
 
         if (data.entityType === entityType && data.entityId === entityId) {
