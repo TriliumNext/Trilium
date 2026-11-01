@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import supertest from "supertest";
 import { login } from "./utils.js";
 import config from "../../src/services/config.js";
-import { randomInt } from "crypto";
+import { newEntityId } from "../../src/services/utils.js";
 
 let app: Application;
 let token: string;
@@ -70,7 +70,7 @@ describe("etapi/delete-entities", () => {
 });
 
 async function createNote() {
-    const noteId = `forcedId${randomInt(1000)}`;
+    const noteId = `forcedId${newEntityId()}`;
     const response = await supertest(app)
         .post("/etapi/create-note")
         .auth(USER, token, { "type": "basic"})
@@ -106,7 +106,7 @@ async function createClone() {
 }
 
 async function createAttribute() {
-    const attributeId = `forcedId${randomInt(1000)}`;
+    const attributeId = `forcedId${newEntityId()}`;
     const response = await supertest(app)
         .post("/etapi/attributes")
         .auth(USER, token, { "type": "basic"})
