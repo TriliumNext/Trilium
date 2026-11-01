@@ -21,6 +21,10 @@ import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 
+/** Where the first user's avatar sits on the color wheel, a blue. */
+const AVATAR_FIRST_HUE = 210;
+const GOLDEN_ANGLE = 137.508;
+
 /** Which user the dialog is open for: a new one, or an existing one being edited. */
 type DialogTarget = { mode: "create" } | { mode: "edit"; user: UserListItem };
 
@@ -143,6 +147,7 @@ function UserList({ users, onEdit, onCreateSetupLink, onDelete }: UserListProps)
         return <NoItems icon="bx bx-group" text={t("users.no_users")} />;
     }
 
+    const hues = getAvatarHues(users);
     const admins = users.filter((user) => user.isAdmin);
     const members = users.filter((user) => !user.isAdmin);
     const groups = [
@@ -163,6 +168,7 @@ function UserList({ users, onEdit, onCreateSetupLink, onDelete }: UserListProps)
                         <UserRow
                             key={user.userId}
                             user={user}
+                            avatarHue={hues.get(user.userId) ?? 0}
                             isLastAdmin={user.isAdmin && admins.length <= 1}
                             onEdit={onEdit}
                             onCreateSetupLink={onCreateSetupLink}
@@ -177,18 +183,19 @@ function UserList({ users, onEdit, onCreateSetupLink, onDelete }: UserListProps)
 
 interface UserRowProps {
     user: UserListItem;
+    avatarHue: number;
     isLastAdmin: boolean;
     onEdit(user: UserListItem): void;
     onCreateSetupLink(user: UserListItem): void;
     onDelete(user: UserListItem): void;
 }
 
-function UserRow({ user, isLastAdmin, onEdit, onCreateSetupLink, onDelete }: UserRowProps) {
+function UserRow({ user, avatarHue, isLastAdmin, onEdit, onCreateSetupLink, onDelete }: UserRowProps) {
     const deleteBlockedReason = getDeleteBlockedReason(user, isLastAdmin);
 
     return (
         <CardSection className="user-row">
-            <UserAvatar username={user.username} />
+            <UserAvatar username={user.username} hue={avatarHue} />
 
             <div className="user-row-details">
                 <div className="user-row-name">
@@ -264,13 +271,13 @@ function SetupStatusBadge({ user }: { user: UserListItem }) {
         : <Badge className="user-badge-expired" icon="bx bx-error" text={t("users.badge_setup_expired")} tooltip={t("users.setup_expired_tooltip")} outline />;
 }
 
-/** A circle with the user's initials, tinted by a hue derived from the name so it stays stable. */
-function UserAvatar({ username }: { username: string }) {
+/** A circle with the user's initials, tinted by the hue {@link getAvatarHues} gives the user. */
+function UserAvatar({ username, hue }: { username: string; hue: number }) {
     return (
         <span
             className="user-avatar"
             aria-hidden="true"
-            style={{ "--user-avatar-hue": getUsernameHue(username) }}
+            style={{ "--user-avatar-hue": hue }}
         >
             {getInitials(username)}
         </span>
@@ -486,13 +493,14 @@ export function getInitials(username: string) {
     return letters.toUpperCase();
 }
 
-export function getUsernameHue(username: string) {
-    // FNV-1a, then stepped round the wheel by the golden angle so similar names land far apart.
-    let hash = 0x811c9dc5;
-    for (const char of username) {
-        hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193) >>> 0;
-    }
-    return Math.round((hash * 137.508) % 360);
+/**
+ * The avatar hue of each user, by `userId`: the users in the order they were added, each a golden
+ * angle round the wheel from the one before, so the first few are always far apart and a new user
+ * leaves everyone else's color alone.
+ */
+export function getAvatarHues(users: UserListItem[]) {
+    const ordered = [ ...users ].sort((a, b) => a.dateCreated.localeCompare(b.dateCreated) || a.userId.localeCompare(b.userId));
+    return new Map(ordered.map((user, index) => [ user.userId, Math.round((AVATAR_FIRST_HUE + index * GOLDEN_ANGLE) % 360) ]));
 }
 
 /** Why a user cannot be deleted, mirroring the server's checks; `undefined` when they can. */
