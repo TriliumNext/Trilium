@@ -6,7 +6,8 @@ import noteService from "../services/notes.js";
 import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
 import { getBecca } from "./becca.js";
-import beccaLoader, { load, reload } from "./becca_loader.js";
+import Becca from "./becca-interface.js";
+import beccaLoader, { load, loadBeccaForUser, reload } from "./becca_loader.js";
 import BAttribute from "./entities/battribute.js";
 import BNote from "./entities/bnote.js";
 
@@ -251,6 +252,23 @@ describe("becca_loader", () => {
             expect(loadedParent.children.map((child) => child.noteId)).toEqual(
                 [...children].reverse().map((child) => child.noteId)
             );
+        });
+    });
+
+    describe("loadBeccaForUser()", () => {
+        it("loads a member's own notes alongside the root and the system subtree", async () => {
+            const note = createNote("root");
+            getContext().init(() => {
+                getSql().execute("UPDATE notes SET ownerId = ? WHERE noteId = ?", ["loaderMember1", note.noteId]);
+            });
+
+            const memberBecca = new Becca();
+            await getContext().init(() => loadBeccaForUser(memberBecca, "loaderMember1", false));
+
+            expect(memberBecca.loaded).toBe(true);
+            expect(memberBecca.notes.root).toBeDefined();
+            expect(memberBecca.notes._hidden).toBeDefined();
+            expect(memberBecca.notes[note.noteId]).toBeDefined();
         });
     });
 
