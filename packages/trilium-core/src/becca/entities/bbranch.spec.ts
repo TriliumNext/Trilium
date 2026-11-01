@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import { getContext } from "../../services/context.js";
 import noteService from "../../services/notes.js";
 import BBranch from "./bbranch.js";
@@ -28,7 +28,7 @@ function createNote(parentNoteId: string): { note: BNote; branch: BBranch } {
 describe("BBranch (real DB)", () => {
     describe("deleteBranch", () => {
         it("refuses to delete the root branch", () => {
-            const rootBranch = becca.getBranchOrThrow("none_root");
+            const rootBranch = getBecca().getBranchOrThrow("none_root");
 
             expect(() => getContext().init(() => rootBranch.deleteBranch())).toThrow();
         });
@@ -159,8 +159,8 @@ describe("BBranch (real DB)", () => {
             // returns a falsy value. getChildBranches() will then yield an entry
             // that beforeSaving must skip.
             const key = `${existing.note.noteId}-${parent.note.noteId}`;
-            const savedBranch = becca.childParentToBranch[key];
-            delete becca.childParentToBranch[key];
+            const savedBranch = getBecca().childParentToBranch[key];
+            delete getBecca().childParentToBranch[key];
 
             try {
                 const newBranch = getContext().init(() => {
@@ -179,7 +179,7 @@ describe("BBranch (real DB)", () => {
                 expect(newBranch.notePosition).toBe(10);
             } finally {
                 // Restore the becca map so subsequent assertions/teardown are consistent.
-                becca.childParentToBranch[key] = savedBranch;
+                getBecca().childParentToBranch[key] = savedBranch;
             }
         });
     });

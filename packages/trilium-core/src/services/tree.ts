@@ -6,7 +6,7 @@ import { getLog } from "./log.js";
 import { compareSortValues } from "./utils/sort_values.js";
 import BBranch from "../becca/entities/bbranch.js";
 import entityChangesService from "./entity_changes.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getSql } from "./sql/index.js";
 
@@ -28,19 +28,19 @@ function validateParentChild(parentNoteId: string, childNoteId: string, branchId
 
     // Virtual notes (e.g. the in-app help) exist only in becca — a persisted branch
     // referencing them would dangle after upgrades and on other sync instances.
-    if (becca.getNote(childNoteId)?.isVirtual) {
+    if (getBecca().getNote(childNoteId)?.isVirtual) {
         return { branch: null, success: false, message: `Note '${childNoteId}' is a virtual note and cannot be cloned or moved.` };
     }
 
-    if (becca.getNote(parentNoteId)?.isVirtual) {
+    if (getBecca().getNote(parentNoteId)?.isVirtual) {
         return { branch: null, success: false, message: `Note '${parentNoteId}' is a virtual note and cannot receive children.` };
     }
 
-    const existingBranch = becca.getBranchFromChildAndParent(childNoteId, parentNoteId);
+    const existingBranch = getBecca().getBranchFromChildAndParent(childNoteId, parentNoteId);
 
     if (existingBranch && existingBranch.branchId !== branchId) {
-        const parentNote = becca.getNote(parentNoteId);
-        const childNote = becca.getNote(childNoteId);
+        const parentNote = getBecca().getNote(parentNoteId);
+        const childNote = getBecca().getNote(childNoteId);
 
         return {
             branch: existingBranch,
@@ -57,7 +57,7 @@ function validateParentChild(parentNoteId: string, childNoteId: string, branchId
         };
     }
 
-    if (parentNoteId !== "_lbBookmarks" && becca.getNote(parentNoteId)?.type === "launcher") {
+    if (parentNoteId !== "_lbBookmarks" && getBecca().getNote(parentNoteId)?.type === "launcher") {
         return {
             branch: null,
             success: false,
@@ -76,8 +76,8 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
         return true;
     }
 
-    const childNote = becca.getNote(childNoteId);
-    const parentNote = becca.getNote(parentNoteId);
+    const childNote = getBecca().getNote(childNoteId);
+    const parentNote = getBecca().getNote(parentNoteId);
 
     if (!childNote || !parentNote) {
         return false;
@@ -110,7 +110,7 @@ function sortNotes(
 
     const sql = getSql();
     sql.transactional(() => {
-        const note = becca.getNote(parentNoteId);
+        const note = getBecca().getNote(parentNoteId);
         if (!note) {
             throw new Error("Unable to find note");
         }
@@ -243,7 +243,7 @@ function withPinningLevels(criteria: SortCriterion[], foldersFirst: boolean, rev
 }
 
 function sortNotesIfNeeded(parentNoteId: string) {
-    const parentNote = becca.getNote(parentNoteId);
+    const parentNote = getBecca().getNote(parentNoteId);
     if (!parentNote) {
         return;
     }
@@ -266,7 +266,7 @@ function sortNotesIfNeeded(parentNoteId: string) {
  * @deprecated this will be removed in the future
  */
 function setNoteToParent(noteId: string, prefix: string, parentNoteId: string) {
-    const parentNote = becca.getNote(parentNoteId);
+    const parentNote = getBecca().getNote(parentNoteId);
 
     if (parentNoteId && !parentNote) {
         // null parentNoteId is a valid value
@@ -275,7 +275,7 @@ function setNoteToParent(noteId: string, prefix: string, parentNoteId: string) {
 
     // case where there might be more such branches is ignored. It's expected there should be just one
     const branchId = getSql().getValue<string>("SELECT branchId FROM branches WHERE isDeleted = 0 AND noteId = ? AND prefix = ?", [noteId, prefix]);
-    const branch = becca.getBranch(branchId);
+    const branch = getBecca().getBranch(branchId);
 
     if (branch) {
         if (!parentNoteId) {
@@ -289,7 +289,7 @@ function setNoteToParent(noteId: string, prefix: string, parentNoteId: string) {
             branch.markAsDeleted();
         }
     } else if (parentNoteId) {
-        const note = becca.getNote(noteId);
+        const note = getBecca().getNote(noteId);
         if (!note) {
             throw new Error(`Cannot find note '${noteId}.`);
         }
@@ -299,7 +299,7 @@ function setNoteToParent(noteId: string, prefix: string, parentNoteId: string) {
         }
 
         const branchId = getSql().getValue<string>("SELECT branchId FROM branches WHERE isDeleted = 0 AND noteId = ? AND parentNoteId = ?", [noteId, parentNoteId]);
-        const branch = becca.getBranch(branchId);
+        const branch = getBecca().getBranch(branchId);
 
         if (branch) {
             branch.prefix = prefix;

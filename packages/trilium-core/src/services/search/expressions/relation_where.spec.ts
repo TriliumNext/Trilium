@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import BAttribute from "../../../becca/entities/battribute.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
@@ -12,9 +12,9 @@ import RelationWhereExp from "./relation_where.js";
 // SearchContext-like argument is unused by execute(), so we pass an empty object.
 const dummySearchContext = {} as any;
 
-/** Build a NoteSet that contains every note currently registered in becca. */
+/** Build a NoteSet that contains every note currently registered in getBecca(). */
 function allNotesSet() {
-    return new NoteSet(Object.values(becca.notes));
+    return new NoteSet(Object.values(getBecca().notes));
 }
 
 function execute(exp: RelationWhereExp, inputNoteSet = allNotesSet()) {
@@ -52,7 +52,7 @@ let rootNote: NoteBuilder;
 
 describe("RelationWhereExp", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({
@@ -132,7 +132,7 @@ describe("RelationWhereExp", () => {
         // Build the relation against a note that is never attached to the tree and
         // then remove it from becca so attr.targetNote resolves to undefined.
         const ghostId = source.note.getRelationValue("author")!;
-        delete becca.notes[ghostId];
+        delete getBecca().notes[ghostId];
         rootNote.child(source);
 
         const exp = new RelationWhereExp("author", matchAll());

@@ -6,6 +6,7 @@ import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
+import type Becca from "./becca-interface.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -13,7 +14,7 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
-import { getContext } from "../services/context.js";
+import { getContext, set as ctxSet } from "../services/context.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -30,6 +31,13 @@ export const beccaLoaded = new Promise<void>(async (res, rej) => {
     });
 });
 
+function notesHasOwnerIdColumn(): boolean {
+    const cols = getSql().getColumn<string>(
+        "SELECT name FROM pragma_table_info('notes')"
+    );
+    return cols.includes("ownerId");
+}
+
 function load() {
     const start = Date.now();
     becca.reset();
@@ -41,8 +49,12 @@ function load() {
         // an object per row, and in one bulk read rather than a column at a time. Both
         // matter here: the load happens every run and blocks the app until it finishes.
 
+        // ownerId was added in migration 239; during the migration chain from older DBs the column
+        // may not exist yet. Detect at runtime so old JS migration modules (like 0220) can still call
+        // load() without crashing.
+        const noteColumns = notesHasOwnerIdColumn() ? [...NOTE_COLUMNS, "ownerId"] : NOTE_COLUMNS;
         const notesFrom = /*sql*/`FROM notes WHERE isDeleted = 0`;
-        for (const row of sql.getRawRowsBulk(NOTE_COLUMNS, notesFrom)) {
+        for (const row of sql.getRawRowsBulk(noteColumns, notesFrom)) {
             new BNote().update(row).init();
         }
 
@@ -101,12 +113,12 @@ const ATTRIBUTE_COLUMNS = [
  * entities live only in becca, so a full reload (e.g. `becca_loader.reload()`) both refreshes
  * them and is the way to pick up provider-side changes.
  */
-function injectVirtualSubtrees() {
+function injectVirtualSubtrees(target: Becca = becca) {
     const log = getLog();
     let injectedAny = false;
 
     for (const provider of getVirtualNoteProviders()) {
-        if (!(provider.parentNoteId in becca.notes)) {
+        if (!(provider.parentNoteId in target.notes)) {
             // E.g. the first load during initial database creation, which happens before the
             // hidden subtree exists; the post-dbReady load will inject.
             log.info(`Virtual note provider '${provider.namespace}': anchor note '${provider.parentNoteId}' not present, skipping injection.`);
@@ -119,7 +131,7 @@ function injectVirtualSubtrees() {
 
             // Sort the injected roots after the anchor's persisted children so their
             // notePositions don't collide.
-            const basePosition = becca.notes[provider.parentNoteId]
+            const basePosition = target.notes[provider.parentNoteId]
                 .getChildBranches()
                 .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
 
@@ -128,7 +140,7 @@ function injectVirtualSubtrees() {
             injectedAny = true;
 
             for (const [index, item] of subtree.entries()) {
-                injectVirtualItem(provider, provider.parentNoteId, item, basePosition + (index + 1) * 10);
+                injectVirtualItem(target, provider, provider.parentNoteId, item, basePosition + (index + 1) * 10);
             }
         } catch (e) {
             // A broken provider must never take down the becca load.
@@ -137,7 +149,7 @@ function injectVirtualSubtrees() {
     }
 
     if (injectedAny) {
-        backfillVirtualTargetRelations();
+        backfillVirtualTargetRelations(target);
     }
 }
 
@@ -153,8 +165,8 @@ function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSub
     }
 }
 
-function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, item: VirtualSubtreeItem, defaultPosition: number) {
-    let note = becca.notes[item.id];
+function injectVirtualItem(target: Becca, provider: VirtualNoteProvider, parentNoteId: string, item: VirtualSubtreeItem, defaultPosition: number) {
+    let note = target.notes[item.id];
 
     if (note && !note.isVirtual && note.type !== undefined) {
         // A persisted note still occupies this ID (e.g. rows predating the migration that
@@ -196,7 +208,7 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
 
     const branchId = `${parentNoteId}_${item.id}`;
 
-    if (!becca.branches[branchId]) {
+    if (!target.branches[branchId]) {
         const branch = new BBranch({
             branchId,
             noteId: item.id,
@@ -220,7 +232,7 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
         // pathological names (e.g. "x" colliding with an explicit "x_1") cannot overwrite.
         const baseAttributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
         let attributeId = baseAttributeId;
-        for (let suffix = 1; becca.attributes[attributeId]; suffix++) {
+        for (let suffix = 1; target.attributes[attributeId]; suffix++) {
             attributeId = `${baseAttributeId}_${suffix}`;
         }
 
@@ -237,7 +249,7 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
     }
 
     for (const [index, child] of (item.children ?? []).entries()) {
-        injectVirtualItem(provider, item.id, child, (index + 1) * 10);
+        injectVirtualItem(target, provider, item.id, child, (index + 1) * 10);
     }
 }
 
@@ -247,15 +259,15 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
  * relations between virtual notes when the target comes later in the subtree. One pass after
  * injection fixes both.
  */
-function backfillVirtualTargetRelations() {
-    for (const attributeId in becca.attributes) {
-        const attribute = becca.attributes[attributeId];
+function backfillVirtualTargetRelations(target: Becca) {
+    for (const attributeId in target.attributes) {
+        const attribute = target.attributes[attributeId];
 
         if (attribute.type !== "relation" || !attribute.value) {
             continue;
         }
 
-        const targetNote = becca.notes[attribute.value];
+        const targetNote = target.notes[attribute.value];
 
         if (targetNote?.isVirtual && !targetNote.targetRelations.includes(attribute)) {
             targetNote.targetRelations.push(attribute);
@@ -267,6 +279,102 @@ function reload(reason: string) {
     load();
 
     ws.reloadFroca(reason || "becca reloaded");
+}
+
+/**
+ * Loads notes (and branches/attributes) visible to a specific user into the given Becca instance.
+ * Admin users get the unfiltered set. Non-admin users see only notes they own or have been
+ * explicitly granted access to via note_permissions.
+ */
+export async function loadBeccaForUser(target: import("./becca-interface.js").default, userId: string, isAdmin: boolean): Promise<void> {
+    const start = Date.now();
+    target.reset();
+
+    ctxSet("loadingBecca", target);
+
+    const sql = getSql();
+    try {
+        sql.disableSlowQueryLogging(() => {
+            const noteQuery = isAdmin
+                ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
+                            FROM notes WHERE isDeleted = 0`
+                : /*sql*/`WITH RECURSIVE visible_roots(noteId) AS (
+                              SELECT noteId FROM notes
+                               WHERE isDeleted = 0 AND (ownerId = ? OR noteId = 'root' OR substr(noteId, 1, 1) = '_')
+                              UNION
+                              SELECT noteId FROM note_permissions
+                               WHERE userId = ?
+                                  OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?)
+                          ),
+                          visible_notes(noteId) AS (
+                              SELECT noteId FROM visible_roots
+                              UNION
+                              SELECT b.noteId
+                                FROM branches b
+                                JOIN visible_notes vn ON b.parentNoteId = vn.noteId
+                               WHERE b.isDeleted = 0
+                          )
+                          SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
+                            FROM notes
+                           WHERE isDeleted = 0 AND noteId IN visible_notes`;
+
+            const noteParams = isAdmin ? [] : [userId, userId, userId];
+
+            const visibleNoteIds = new Set<string>();
+
+            for (const row of sql.getRawRows(noteQuery, noteParams)) {
+                const note = new BNote().update(row);
+                visibleNoteIds.add(row[0] as string);
+                note.init();
+            }
+
+            const branchRows = sql.getRawRows(
+                /*sql*/`SELECT branchId, noteId, parentNoteId, prefix, notePosition, isExpanded, utcDateModified
+                          FROM branches WHERE isDeleted = 0`
+            );
+            branchRows.sort((a, b) => ((a[4] as number) || 0) - ((b[4] as number) || 0));
+            for (const row of branchRows) {
+                const noteId = row[1] as string;
+                const parentNoteId = row[2] as string;
+                if (visibleNoteIds.has(noteId) && (parentNoteId === "none" || parentNoteId === "root" || parentNoteId.startsWith("_") || visibleNoteIds.has(parentNoteId))) {
+                    new BBranch().update(row).init();
+                }
+            }
+
+            for (const row of sql.getRawRows(
+                /*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified
+                          FROM attributes WHERE isDeleted = 0`
+            )) {
+                if (visibleNoteIds.has(row[1] as string)) {
+                    new BAttribute().update(row).init();
+                }
+            }
+
+            // Options and ETAPI tokens are global; load them for every user.
+            for (const row of sql.getRows<OptionRow>(/*sql*/`SELECT name, value, isSynced, utcDateModified FROM options`)) {
+                new BOption(row);
+            }
+
+            for (const row of sql.getRows<EtapiTokenRow>(
+                /*sql*/`SELECT etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified FROM etapi_tokens WHERE isDeleted = 0`
+            )) {
+                new BEtapiToken(row);
+            }
+        });
+
+        injectVirtualSubtrees(target);
+
+        // Entities resolve their Becca through `getBecca()`, which finds `target` only while
+        // `loadingBecca` is set: the user's Becca is not cached until this load returns.
+        for (const noteId in target.notes) {
+            target.notes[noteId].sortParents();
+        }
+    } finally {
+        ctxSet("loadingBecca", undefined);
+    }
+
+    target.loaded = true;
+    getLog().info(`Becca user load (userId=${userId}) took ${Date.now() - start}ms`);
 }
 
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {

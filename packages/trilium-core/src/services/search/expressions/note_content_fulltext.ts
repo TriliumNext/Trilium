@@ -1,6 +1,6 @@
 import type { NoteRow, NoteType } from "@triliumnext/commons";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import { getLog } from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
 import { classifyContentMatch } from "../match_quality.js";
@@ -120,11 +120,11 @@ class NoteContentFulltextExp extends Expression {
         if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
             for (const note of inputNoteSet.notes) {
                 // Skip if already found or doesn't exist
-                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in becca.notes)) {
+                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in getBecca().notes)) {
                     continue;
                 }
 
-                const noteFromBecca = becca.notes[note.noteId];
+                const noteFromBecca = getBecca().notes[note.noteId];
                 const flatText = noteFromBecca.getFlatText();
 
                 // For flatText, only check attribute values (format: #name=value or ~name=value)
@@ -236,8 +236,8 @@ class NoteContentFulltextExp extends Expression {
      * why this pass does not change what an ordinary search finds.
      */
     findInVirtualNotes(inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext) {
-        for (const noteId in becca.notes) {
-            const note = becca.notes[noteId];
+        for (const noteId in getBecca().notes) {
+            const note = getBecca().notes[noteId];
 
             if (!note.isVirtual || !inputNoteSet.hasNoteId(noteId) || !SEARCHABLE_TYPES.includes(note.type)) {
                 continue;
@@ -255,7 +255,7 @@ class NoteContentFulltextExp extends Expression {
     }
 
     findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext) {
-        if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
+        if (!inputNoteSet.hasNoteId(noteId) || !(noteId in getBecca().notes)) {
             return;
         }
 
@@ -276,7 +276,7 @@ class NoteContentFulltextExp extends Expression {
             return;
         }
 
-        content = preprocessContent(content, type, mime, this.raw, (id) => becca.notes[id]?.title ?? null);
+        content = preprocessContent(content, type, mime, this.raw, (id) => getBecca().notes[id]?.title ?? null);
 
         // Apply content size validation and preprocessing
         const processedContent = validateAndPreprocessContent(content, noteId);
@@ -295,7 +295,7 @@ class NoteContentFulltextExp extends Expression {
             : null;
 
         if (matched || fuzzyMatchedWords) {
-            resultNoteSet.add(becca.notes[noteId]);
+            resultNoteSet.add(getBecca().notes[noteId]);
 
             if (fuzzyMatchedWords) {
                 searchContext.recordContentMatch(noteId, {
@@ -355,7 +355,7 @@ class NoteContentFulltextExp extends Expression {
                 let matches = this.containsExactWord(token, content);
                 // Also check flatText if enabled (includes attributes)
                 if (!matches && this.flatText) {
-                    matches = this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
+                    matches = this.containsExactPhrase([token], getBecca().notes[noteId].getFlatText(), true);
                 }
                 return { matched: matches, negation: false };
             }
@@ -364,7 +364,7 @@ class NoteContentFulltextExp extends Expression {
                 let matches = !this.containsExactWord(token, content);
                 // For negation, check flatText too
                 if (matches && this.flatText) {
-                    matches = !this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
+                    matches = !this.containsExactPhrase([token], getBecca().notes[noteId].getFlatText(), true);
                 }
                 return { matched: matches, negation: true };
             }
@@ -390,7 +390,7 @@ class NoteContentFulltextExp extends Expression {
             let matches = this.containsExactPhrase(this.tokens, content, false);
             // Also check flatText if enabled (includes attributes)
             if (!matches && this.flatText) {
-                matches = this.containsExactPhrase(this.tokens, becca.notes[noteId].getFlatText(), true);
+                matches = this.containsExactPhrase(this.tokens, getBecca().notes[noteId].getFlatText(), true);
             }
 
             if (this.operator === "=") {
@@ -443,7 +443,7 @@ class NoteContentFulltextExp extends Expression {
         }
 
         // Check flat text for default fulltext search
-        if (!this.flatText || !becca.notes[noteId].getFlatText().includes(token)) {
+        if (!this.flatText || !getBecca().notes[noteId].getFlatText().includes(token)) {
             return false;
         }
 
@@ -456,7 +456,7 @@ class NoteContentFulltextExp extends Expression {
     private matchesWithFuzzy(content: string, noteId: string): boolean {
         try {
             const normalizedContent = normalizeSearchText(content);
-            const flatText = this.flatText ? normalizeSearchText(becca.notes[noteId].getFlatText()) : "";
+            const flatText = this.flatText ? normalizeSearchText(getBecca().notes[noteId].getFlatText()) : "";
 
             // For phrase matching, check if tokens appear within reasonable proximity
             if (this.tokens.length > 1) {

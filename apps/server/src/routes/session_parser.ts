@@ -174,4 +174,18 @@ function revokeAllSessions() {
     }
 }
 
+/**
+ * Logs out every session of one user, and drops their open WebSocket connections, which only check
+ * the session when they open. For a user who was deleted or whose password was reset.
+ */
+export function revokeUserSessions(userId: string, reason: string) {
+    const result = sql.execute(/*sql*/`DELETE FROM sessions WHERE json_extract(data, '$.userId') = ?`, [ userId ]);
+    getLog().info(`${reason}: logged out ${result.changes} session(s) of user ${userId}.`);
+
+    const messaging = isMessagingInitialized() ? getMessagingProvider() : null;
+    if (messaging && isHttpAttachableMessagingProvider(messaging)) {
+        messaging.disconnectUserClients(userId, reason);
+    }
+}
+
 export default sessionParser;

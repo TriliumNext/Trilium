@@ -1,7 +1,7 @@
 import { type ImageCompressionOptions, isAcceptedImageMime, isImageAttachmentRole, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import type { Request, Response } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import { ValidationError } from "../../errors.js";
@@ -12,13 +12,13 @@ import imageInventoryService from "../../services/image_inventory.js";
 import { sendInlineContent, sendSanitizedSvg } from "../helpers.js";
 
 function returnImageFromNote(req: Request<{ noteId: string }>, res: Response) {
-    const image = becca.getNote(req.params.noteId);
+    const image = getBecca().getNote(req.params.noteId);
 
     return returnImageInt(image, res);
 }
 
 function returnImageFromRevision(req: Request<{ revisionId: string }>, res: Response) {
-    const image = becca.getRevision(req.params.revisionId);
+    const image = getBecca().getRevision(req.params.revisionId);
 
     return returnImageInt(image, res);
 }
@@ -80,7 +80,7 @@ export function renderPngAttachment(image: BNote | BRevision, res: Response, att
 }
 
 function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Response) {
-    const attachment = becca.getAttachment(req.params.attachmentId);
+    const attachment = getBecca().getAttachment(req.params.attachmentId);
 
     if (!attachment) {
         res.set("Content-Type", "image/png");
@@ -102,7 +102,7 @@ async function updateImage(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 
-    const _note = becca.getNoteOrThrow(noteId);
+    const _note = getBecca().getNoteOrThrow(noteId);
 
     if (!file) {
         return {

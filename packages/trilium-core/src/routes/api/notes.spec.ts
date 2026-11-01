@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
@@ -277,7 +277,7 @@ describe("Notes API (core)", () => {
             // The child is alive again under its new home; the original parent stays deleted.
             expect(noteIsDeleted(child.noteId)).toBe(0);
             expect(noteIsDeleted(parent.noteId)).toBe(1);
-            expect(becca.getNote(child.noteId)?.getParentNotes().map((note) => note.noteId))
+            expect(getBecca().getNote(child.noteId)?.getParentNotes().map((note) => note.noteId))
                 .toContain(newHome.noteId);
         });
 
@@ -305,7 +305,7 @@ describe("Notes API (core)", () => {
 
             // The child is the SAME note (not a copy), now cloned under both its new home and its
             // original parent — so restoring the parent brings back a complete subtree.
-            const parentIds = becca.getNote(child.noteId)?.getParentNotes().map((note) => note.noteId);
+            const parentIds = getBecca().getNote(child.noteId)?.getParentNotes().map((note) => note.noteId);
             expect(parentIds).toContain(inbox.noteId);
             expect(parentIds).toContain(parent.noteId);
         });
@@ -419,7 +419,7 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(204);
             // The note outlives the branch: it still hangs under the other parent.
             expect(noteIsDeleted(cloned.noteId)).toBe(0);
-            expect(becca.getNote(cloned.noteId)?.getParentNotes().map((note) => note.noteId))
+            expect(getBecca().getNote(cloned.noteId)?.getParentNotes().map((note) => note.noteId))
                 .toEqual([ otherParent.noteId ]);
 
             const allClones = await createTextNote(api, { title: "Cloned note, all clones" });
@@ -574,12 +574,12 @@ describe("Notes API (core)", () => {
 
         it("400s force-saving a revision of a protected note without a protected session", async () => {
             const { noteId } = await createTextNote(api, { title: "Protected revision" });
-            becca.notes[noteId].isProtected = true;
+            getBecca().notes[noteId].isProtected = true;
 
             const res = await api.post(`/api/notes/${noteId}/revision`, { body: {} });
             expect(res.status).toBe(400);
 
-            becca.notes[noteId].isProtected = false;
+            getBecca().notes[noteId].isProtected = false;
         });
 
         it("returns a null attachment for a note ineligible for conversion", async () => {
@@ -593,12 +593,12 @@ describe("Notes API (core)", () => {
     describe("title and type", () => {
         it("400s changing the title of a protected note without a protected session", async () => {
             const { noteId } = await createTextNote(api, { title: "Locked" });
-            becca.notes[noteId].isProtected = true;
+            getBecca().notes[noteId].isProtected = true;
 
             const res = await api.put(`/api/notes/${noteId}/title`, { body: { title: "Nope" } });
             expect(res.status).toBe(400);
 
-            becca.notes[noteId].isProtected = false;
+            getBecca().notes[noteId].isProtected = false;
         });
 
         it("leaves the note untouched when the title is unchanged", async () => {
@@ -631,8 +631,8 @@ describe("Notes API (core)", () => {
                 expect(res.status).toBe(400);
             }
 
-            expect(becca.getNoteOrThrow(noteId).type).toBe("text");
-            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/html");
+            expect(getBecca().getNoteOrThrow(noteId).type).toBe("text");
+            expect(getBecca().getNoteOrThrow(noteId).mime).toBe("text/html");
         });
     });
 
@@ -647,7 +647,7 @@ describe("Notes API (core)", () => {
             });
             expect(res.status).toBe(204);
 
-            const children = becca.notes[parent.noteId].getChildNotes();
+            const children = getBecca().notes[parent.noteId].getChildNotes();
             expect(children[0].title).toBe("Alpha");
         });
 
@@ -661,7 +661,7 @@ describe("Notes API (core)", () => {
             try {
                 const res = await api.put(`/api/notes/${noteId}/protect/1`, { query: { subtree: "1" } });
                 expect(res.status).toBe(204);
-                expect(spy).toHaveBeenCalledWith(becca.notes[noteId], true, true, expect.anything());
+                expect(spy).toHaveBeenCalledWith(getBecca().notes[noteId], true, true, expect.anything());
             } finally {
                 spy.mockRestore();
             }
@@ -680,7 +680,7 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.note.noteId).not.toBe(original.noteId);
             expect(res.body.note.title).toContain("Original subtree");
-            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(1);
+            expect(getBecca().getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(1);
         });
 
         it("duplicates only the note when the body asks for no children", async () => {
@@ -691,7 +691,7 @@ describe("Notes API (core)", () => {
                 `/api/notes/${original.noteId}/duplicate/root`, { body: { withChildren: false } }
             );
             expect(res.status).toBe(200);
-            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(0);
+            expect(getBecca().getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(0);
         });
     });
 
@@ -781,7 +781,7 @@ describe("Notes API (core)", () => {
         it("refuses content and revision writes as a client error", async () => {
             expect((await api.put("/api/notes/_vapiPage/data", { body: { content: "<p>edited</p>" } })).status).toBe(400);
             expect((await api.post("/api/notes/_vapiPage/revision")).status).toBe(400);
-            expect(becca.getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
+            expect(getBecca().getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
         });
     });
 });

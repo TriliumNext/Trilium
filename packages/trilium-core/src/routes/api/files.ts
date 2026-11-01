@@ -3,7 +3,7 @@ import {
 } from "@triliumnext/commons";
 
 import { Request, Response } from "../../http_interface";
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
 import noteService from "../../services/notes.js";
@@ -24,7 +24,7 @@ const openAttachment = (req: Request<{ attachmentId: string }>, res: Response) =
  * streams from: it seeks by asking for the range it needs instead of downloading the whole file.
  */
 function openPartialFile(req: Request<{ noteId: string }>, res: Response) {
-    const note = becca.getNote(req.params.noteId);
+    const note = getBecca().getNote(req.params.noteId);
 
     if (!note) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Note '${req.params.noteId}' doesn't exist.`);
@@ -35,7 +35,7 @@ function openPartialFile(req: Request<{ noteId: string }>, res: Response) {
 
 /** The attachment counterpart of {@link openPartialFile}. */
 function openPartialAttachment(req: Request<{ attachmentId: string }>, res: Response) {
-    const attachment = becca.getAttachment(req.params.attachmentId);
+    const attachment = getBecca().getAttachment(req.params.attachmentId);
 
     if (!attachment) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Attachment '${req.params.attachmentId}' doesn't exist.`);
@@ -50,7 +50,7 @@ function openPartialAttachment(req: Request<{ attachmentId: string }>, res: Resp
  * saving its own work, where a revision per save would bury the note in them.
  */
 function updateFile(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     const file = req.file;
     if (!file) {
@@ -80,7 +80,7 @@ function updateFile(req: Request<{ noteId: string }>) {
 
 /** The attachment counterpart of {@link updateFile}: replacing an attachment's file with another. */
 function updateAttachment(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
+    const attachment = getBecca().getAttachmentOrThrow(req.params.attachmentId);
     const file = req.file;
     if (!file) {
         return {
@@ -121,13 +121,13 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
  * showing a card rather than the document.
  */
 async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
 }
 
 async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
+    const attachment = getBecca().getAttachmentOrThrow(req.params.attachmentId);
 
     return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
 }
@@ -162,7 +162,7 @@ function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res
 }
 
 function downloadAttachmentInt(attachmentId: string, res: Response, contentDisposition = true) {
-    const attachment = becca.getAttachment(attachmentId);
+    const attachment = getBecca().getAttachment(attachmentId);
 
     if (!attachment) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Attachment '${attachmentId}' doesn't exist.`);

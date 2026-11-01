@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getContext } from "../../services/context.js";
 import noteService from "../../services/notes.js";
 import { randomString } from "../../services/utils/index.js";
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import BAttribute from "./battribute.js";
 import BNote from "./bnote.js";
 
@@ -26,7 +26,7 @@ describe("BAttribute", () => {
     describe("init", () => {
         it("creates a skeleton note when the owner noteId is not yet in becca", () => {
             const skeletonNoteId = `skeleton-${randomString(8)}`;
-            expect(skeletonNoteId in becca.notes).toBe(false);
+            expect(skeletonNoteId in getBecca().notes).toBe(false);
 
             const attr = new BAttribute({
                 attributeId: `attr-${randomString(8)}`,
@@ -38,7 +38,7 @@ describe("BAttribute", () => {
                 isInheritable: false
             });
 
-            const skeleton = becca.getNote(skeletonNoteId);
+            const skeleton = getBecca().getNote(skeletonNoteId);
             expect(skeleton).not.toBeNull();
             expect(skeleton?.ownedAttributes).toContain(attr);
         });
@@ -299,7 +299,7 @@ describe("BAttribute", () => {
                 isInheritable: false
             });
 
-            // Point the attribute at a noteId that does not exist in becca.
+            // Point the attribute at a noteId that does not exist in getBecca().
             attr.noteId = `gone-${randomString(8)}`;
 
             expect(() => attr.getNote()).toThrow();

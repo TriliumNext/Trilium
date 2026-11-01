@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init } from "@triliumnext/core";
+import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init, user_service } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -134,6 +134,7 @@ export function bootstrap(req: Request, res: Response) {
                 ssoIssuerName: openID.getSSOIssuerName(),
                 ssoIssuerIcon: openID.getSSOIssuerIcon(),
                 totpEnabled: totp.isTotpEnabled(),
+                usernameEnabled: user_service.hasUsersWithOwnPassword(),
                 ssoError,
                 ssoConnectionFailed
             },
@@ -181,7 +182,8 @@ export function bootstrap(req: Request, res: Response) {
             && isElectronRenderer
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
-        isMainWindow: view === "mobile" ? true : !req.query.extraWindow
+        isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        currentUser: user_service.getSignedInUser(req.session.userId)
     } satisfies BootstrapDefinition);
 }
 

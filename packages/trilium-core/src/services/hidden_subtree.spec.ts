@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import hiddenSubtreeService, {
@@ -45,7 +45,7 @@ describe("hidden_subtree (real DB)", () => {
 
     describe("checkHiddenSubtree structure", () => {
         it("creates the hidden root and its top-level containers under the expected parents", () => {
-            const hidden = becca.notes["_hidden"];
+            const hidden = getBecca().notes["_hidden"];
             expect(hidden).toBeDefined();
             expect(hidden.type).toBe("doc");
             // The hidden root must be parented directly under the tree root.
@@ -56,7 +56,7 @@ describe("hidden_subtree (real DB)", () => {
             // subtree owned by the in-app help provider, not by checkHiddenSubtree —
             // see in_app_help.spec.ts.)
             for (const childId of ["_search", "_options", "_taskStates", "_lbRoot"]) {
-                const child = becca.notes[childId];
+                const child = getBecca().notes[childId];
                 expect(child, `${childId} should exist`).toBeDefined();
                 expect(
                     child.getParentBranches().some((b) => b.parentNoteId === "_hidden"),
@@ -65,7 +65,7 @@ describe("hidden_subtree (real DB)", () => {
             }
 
             // Nested children are placed under their declared parent, not the root.
-            const taskStateNone = becca.notes["_taskStateNone"];
+            const taskStateNone = getBecca().notes["_taskStateNone"];
             expect(taskStateNone).toBeDefined();
             expect(taskStateNone.getParentBranches().some((b) => b.parentNoteId === "_taskStates")).toBe(true);
         });
@@ -73,7 +73,7 @@ describe("hidden_subtree (real DB)", () => {
         it("derives an iconClass label from the item icon", () => {
             // _sqlConsole declares icon "bx-data"; the recursion turns the icon
             // into an iconClass label prefixed with "bx ".
-            const sqlConsole = becca.notes["_sqlConsole"];
+            const sqlConsole = getBecca().notes["_sqlConsole"];
             expect(sqlConsole).toBeDefined();
             const iconClass = sqlConsole.getOwnedLabelValue("iconClass");
             expect(iconClass).toBeTruthy();
@@ -83,17 +83,17 @@ describe("hidden_subtree (real DB)", () => {
 
         it("applies declared labels and relations, materialising launcher templates", () => {
             // The note launcher template carries a declared launcherType label.
-            const noteLauncher = becca.notes[LBTPL_NOTE_LAUNCHER];
+            const noteLauncher = getBecca().notes[LBTPL_NOTE_LAUNCHER];
             expect(noteLauncher).toBeDefined();
             expect(noteLauncher.getOwnedLabelValue("launcherType")).toBe("note");
 
             // The command launcher template likewise advertises its launcherType.
-            const commandLauncher = becca.notes[LBTPL_COMMAND];
+            const commandLauncher = getBecca().notes[LBTPL_COMMAND];
             expect(commandLauncher).toBeDefined();
             expect(commandLauncher.getOwnedLabelValue("launcherType")).toBe("command");
 
             // Every declared launchbar template note exists under the template root.
-            const templateRoot = becca.notes[LBTPL_ROOT];
+            const templateRoot = getBecca().notes[LBTPL_ROOT];
             expect(templateRoot).toBeDefined();
             for (const tplId of [
                 LBTPL_BASE,
@@ -104,7 +104,7 @@ describe("hidden_subtree (real DB)", () => {
                 LBTPL_SPACER,
                 LBTPL_CUSTOM_WIDGET
             ]) {
-                const tpl = becca.notes[tplId];
+                const tpl = getBecca().notes[tplId];
                 expect(tpl, `${tplId} should exist`).toBeDefined();
                 expect(tpl.getParentBranches().some((b) => b.parentNoteId === LBTPL_ROOT)).toBe(true);
             }
@@ -114,16 +114,16 @@ describe("hidden_subtree (real DB)", () => {
             // The client's settings navigation reads these (isOptionPageVisibleOnPlatform); a rename
             // here would silently put the pages back rather than fail anywhere.
             for (const pageId of [ "_optionsPassword", "_optionsEtapi" ]) {
-                expect(becca.notes[pageId]?.isLabelTruthy("notInStandalone"), pageId).toBe(true);
+                expect(getBecca().notes[pageId]?.isLabelTruthy("notInStandalone"), pageId).toBe(true);
             }
             // Not a blanket mark: the pages that do apply everywhere carry nothing.
-            expect(becca.notes._optionsAppearance?.isLabelTruthy("notInStandalone")).toBe(false);
+            expect(getBecca().notes._optionsAppearance?.isLabelTruthy("notInStandalone")).toBe(false);
         });
     });
 
     describe("enforceAttributes", () => {
         it("removes attributes that are not part of the definition on an enforced note", () => {
-            const hidden = becca.notes["_hidden"];
+            const hidden = getBecca().notes["_hidden"];
             expect(hidden).toBeDefined();
 
             // Sanity: the declared docName label survives enforcement.
@@ -149,7 +149,7 @@ describe("hidden_subtree (real DB)", () => {
             // so `"" !== undefined` re-saved them on every run — and save() always emits a sync
             // entity change, which churned `entitiesReloaded` and tore down every open text editor.
             // The compare now normalizes undefined → "" to match what is actually written.
-            const snippet = becca.notes["_template_text_snippet"];
+            const snippet = getBecca().notes["_template_text_snippet"];
             expect(snippet).toBeDefined();
             const textSnippetAttr = snippet.getOwnedAttributes("label", "textSnippet")[0];
             expect(textSnippetAttr).toBeDefined();
@@ -162,7 +162,7 @@ describe("hidden_subtree (real DB)", () => {
         });
 
         it("repairs a modified value on an enforced attribute", () => {
-            const hidden = becca.notes["_hidden"];
+            const hidden = getBecca().notes["_hidden"];
             const docNameAttr = hidden.getOwnedAttributes("label", "docName")[0];
             expect(docNameAttr).toBeDefined();
 
@@ -186,7 +186,7 @@ describe("hidden_subtree (real DB)", () => {
             // enforceDeleted branch were removed.
             for (const deprecatedId of ["_optionsImages", "_optionsAi"]) {
                 materialiseDeprecatedNote(deprecatedId);
-                const note = becca.notes[deprecatedId] as BNote | undefined;
+                const note = getBecca().notes[deprecatedId] as BNote | undefined;
                 expect(note, `${deprecatedId} should have been created`).toBeDefined();
             }
 
@@ -194,7 +194,7 @@ describe("hidden_subtree (real DB)", () => {
 
             // The enforceDeleted branch must purge each materialised note.
             for (const deprecatedId of ["_optionsImages", "_optionsAi"]) {
-                const note = becca.notes[deprecatedId] as BNote | undefined;
+                const note = getBecca().notes[deprecatedId] as BNote | undefined;
                 expect(note, `${deprecatedId} should have been deleted`).toBeUndefined();
             }
         });
@@ -204,25 +204,25 @@ describe("hidden_subtree (real DB)", () => {
 
             // First reappearance: recreate the note and confirm a check deletes it.
             materialiseDeprecatedNote(deprecatedId);
-            expect(becca.notes[deprecatedId]).toBeDefined();
+            expect(getBecca().notes[deprecatedId]).toBeDefined();
 
             checkHiddenSubtree();
-            expect(becca.notes[deprecatedId]).toBeUndefined();
+            expect(getBecca().notes[deprecatedId]).toBeUndefined();
 
             // Second reappearance: the deletion path must run again, not just rely
             // on the note already being absent.
             materialiseDeprecatedNote(deprecatedId);
-            expect(becca.notes[deprecatedId]).toBeDefined();
+            expect(getBecca().notes[deprecatedId]).toBeDefined();
 
             checkHiddenSubtree();
-            expect(becca.notes[deprecatedId]).toBeUndefined();
+            expect(getBecca().notes[deprecatedId]).toBeUndefined();
         });
     });
 
     describe("the order the settings pages are held in", () => {
         /** The settings pages under `_options`, read in the order the tree holds them. */
         function pageOrder() {
-            return becca.notes["_options"].getChildBranches()
+            return getBecca().notes["_options"].getChildBranches()
                 .filter((branch) => !branch.isDeleted)
                 .sort((a, b) => a.notePosition - b.notePosition)
                 .map((branch) => branch.noteId);
@@ -234,7 +234,7 @@ describe("hidden_subtree (real DB)", () => {
             expect(before.length).toBeGreaterThan(1);
 
             // A database that already holds them in some other order: send the first page last.
-            const moved = becca.notes["_options"].getChildBranches()
+            const moved = getBecca().notes["_options"].getChildBranches()
                 .find((branch) => branch.noteId === "_optionsAppearance");
             getContext().init(() => {
                 if (moved) {
@@ -250,7 +250,7 @@ describe("hidden_subtree (real DB)", () => {
         });
 
         it("leaves a group the user arranges alone, the launcher bar declaring no order", () => {
-            const launchers = becca.notes["_lbRoot"].getChildBranches().filter((b) => !b.isDeleted);
+            const launchers = getBecca().notes["_lbRoot"].getChildBranches().filter((b) => !b.isDeleted);
             const moved = launchers[0];
             const rearranged = moved.notePosition + 5;
 
@@ -267,7 +267,7 @@ describe("hidden_subtree (real DB)", () => {
 
     describe("type and idempotency", () => {
         it("restores a note type that was changed away from the definition", () => {
-            const options = becca.notes["_options"];
+            const options = getBecca().notes["_options"];
             expect(options).toBeDefined();
             // Declared as a book.
             expect(options.type).toBe("book");
@@ -276,15 +276,15 @@ describe("hidden_subtree (real DB)", () => {
                 options.type = "text";
                 options.save();
             });
-            expect(becca.notes["_options"].type).toBe("text");
+            expect(getBecca().notes["_options"].type).toBe("text");
 
             checkHiddenSubtree();
 
-            expect(becca.notes["_options"].type).toBe("book");
+            expect(getBecca().notes["_options"].type).toBe("book");
         });
 
         it("is idempotent: a repeated forced check does not duplicate branches", () => {
-            const searchNote = becca.notes["_search"];
+            const searchNote = getBecca().notes["_search"];
             expect(searchNote).toBeDefined();
 
             const beforeParents = searchNote
@@ -296,7 +296,7 @@ describe("hidden_subtree (real DB)", () => {
             checkHiddenSubtree(true);
             checkHiddenSubtree(true);
 
-            const afterParents = becca.notes["_search"]
+            const afterParents = getBecca().notes["_search"]
                 .getParentBranches()
                 .filter((b) => !b.isDeleted)
                 .map((b) => b.parentNoteId)

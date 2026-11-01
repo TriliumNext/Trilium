@@ -1,7 +1,7 @@
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
 import { t } from "i18next";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
@@ -346,7 +346,10 @@ function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
                     
                     // Miscellaneous
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
-                    { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" }
+                    { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" },
+
+                    // Administration: `#adminOnly` pages, listed last under their own heading
+                    { id: "_optionsUsers", title: t("hidden-subtree.users-title"), type: "contentWidget", icon: "bx-group", attributes: [{ type: "label", name: "serverOnly" }, { type: "label", name: "notInStandalone" }, { type: "label", name: "adminOnly" }] }
                 ]
             },
             buildHiddenSubtreeTemplates()
@@ -370,7 +373,7 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
     }
 
     getSql().transactional(() => {
-        const taskStatesExisted = !!becca.notes["_taskStates"];
+        const taskStatesExisted = !!getBecca().notes["_taskStates"];
 
         checkHiddenSubtreeRecursively("root", hiddenSubtreeDefinition, extraOpts);
 
@@ -436,7 +439,7 @@ function checkHiddenSubtreeRecursively(
         throw new Error(`ID has to start with underscore, given '${item.id}'`);
     }
 
-    let note = becca.notes[item.id] as BNote | undefined;
+    let note = getBecca().notes[item.id] as BNote | undefined;
     let branch: BBranch | undefined;
     const log = getLog();
 

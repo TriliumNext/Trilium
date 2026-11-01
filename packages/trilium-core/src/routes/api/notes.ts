@@ -7,7 +7,7 @@ import blobService from "../../services/blob";
 import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
 import { NotFoundError, ValidationError } from "../../errors.js";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
@@ -43,7 +43,7 @@ import { randomString } from "../../services/utils/index";
  *     tags: ["data"]
  */
 function getNote(req: Request<{ noteId: string }>) {
-    return becca.getNoteOrThrow(req.params.noteId);
+    return getBecca().getNoteOrThrow(req.params.noteId);
 }
 
 /**
@@ -97,7 +97,7 @@ function getNoteBlob(req: Request<{ noteId: string }>) {
  *     tags: ["data"]
  */
 function getNoteMetadata(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     return {
         dateCreated: note.dateCreated,
@@ -148,7 +148,7 @@ function getNotesMetadata(req: Request) {
     for (const noteId of noteIds as string[]) {
         // Unknown notes are skipped rather than refused: a caller asks about the notes it holds,
         // and one of them can be deleted before the request lands.
-        const note = becca.notes[noteId];
+        const note = getBecca().notes[noteId];
         if (!note) {
             continue;
         }
@@ -239,7 +239,7 @@ function getBlockRangeRequest(req: Request<{ noteId: string }>) {
         throw new ValidationError("Missing the 'block' parameter.");
     }
 
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
     const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
     if (typeof content !== "string") {
         throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
@@ -298,7 +298,7 @@ function deleteNote(req: Request<{ noteId: string }>) {
     // note how deleteId is separate from taskId - single taskId produces separate deleteId for each "top level" deleted note
     const deleteId = randomString(10);
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     if (typeof taskId !== "string") {
         throw new ValidationError("Missing or incorrect type for task ID.");
@@ -351,7 +351,7 @@ function sortChildNotes(req: Request<{ noteId: string }>) {
 
 function protectNote(req: Request<{ noteId: string; isProtected: string }>) {
     const noteId = req.params.noteId;
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
     const protect = !!parseInt(req.params.isProtected);
     const includingSubTree = !!parseInt(req.query?.subtree as string);
 
@@ -371,7 +371,7 @@ function setNoteTypeMime(req: Request<{ noteId: string }>) {
         throw new ValidationError(`'${type}' is not a valid note type`);
     }
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
     note.type = type;
     note.mime = mime;
     note.save();
@@ -381,7 +381,7 @@ function changeTitle(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const title = req.body.title;
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     if (!note.isContentAvailable()) {
         throw new ValidationError(`Note '${noteId}' is not available for change`);
@@ -445,7 +445,7 @@ function getDeleteNotesPreview(req: Request) {
     }
 
     for (const branchId of branchIdsToDelete) {
-        const branch = becca.getBranch(branchId);
+        const branch = getBecca().getBranch(branchId);
 
         if (!branch) {
             getLog().error(`Branch ${branchId} was not found and delete preview can't be calculated for this note.`);
@@ -511,7 +511,7 @@ function deleteNotes(req: Request) {
 
     try {
         for (const branchId of branchIdsToDelete) {
-            const branch = becca.getBranch(branchId);
+            const branch = getBecca().getBranch(branchId);
 
             if (!branch) {
                 // Either a stale id, or a branch an earlier one of the selection took down with
@@ -559,7 +559,7 @@ function deleteNotes(req: Request) {
 
 function forceSaveRevision(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     if (!note.isContentAvailable()) {
         throw new ValidationError(`Note revision of a protected note cannot be created outside of a protected session.`);
@@ -575,7 +575,7 @@ function forceSaveRevision(req: Request<{ noteId: string }>) {
 
 function convertNoteToAttachment(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     return {
         attachment: note.convertToParentAttachment()
@@ -584,7 +584,7 @@ function convertNoteToAttachment(req: Request<{ noteId: string }>) {
 
 function convertNoteFormat(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     return noteFormatConversionService.convertNoteFormat(note);
 }

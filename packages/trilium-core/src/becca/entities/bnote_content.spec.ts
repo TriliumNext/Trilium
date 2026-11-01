@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { dayjs, type EraseExcessRevisionsOptions } from "@triliumnext/commons";
 
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import { getContext } from "../../services/context.js";
 import eraseService from "../../services/erase.js";
 import noteService from "../../services/notes.js";
@@ -261,7 +261,7 @@ describe("BNote content / misc getters", () => {
             const res = getContext().init(() => source.cloneTo(target.noteId));
 
             expect(res.success).toBe(true);
-            expect(becca.getBranchFromChildAndParent(source.noteId, target.noteId)).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.noteId, target.noteId)).not.toBeNull();
         });
 
         it("fails when the target parent cannot be resolved to a branch", () => {
@@ -439,16 +439,16 @@ describe("BNote content / misc getters", () => {
             note.invalidateThisCache();
 
             // Build the index while the title is still encrypted — it must not contain the plaintext yet.
-            const idxBefore = becca.getFlatTextIndex().noteIdToIdx.get(note.noteId);
+            const idxBefore = getBecca().getFlatTextIndex().noteIdToIdx.get(note.noteId);
             expect(idxBefore).toBeDefined();
-            expect(becca.getFlatTextIndex().flatTexts[idxBefore ?? -1]).not.toContain("topsecret");
+            expect(getBecca().getFlatTextIndex().flatTexts[idxBefore ?? -1]).not.toContain("topsecret");
 
             note.decrypt();
             expect(note.isDecrypted).toBe(true);
 
             // decrypt() must schedule an index refresh; after it the plaintext title is indexed.
-            const idxAfter = becca.getFlatTextIndex().noteIdToIdx.get(note.noteId);
-            expect(becca.getFlatTextIndex().flatTexts[idxAfter ?? -1]).toContain("topsecret");
+            const idxAfter = getBecca().getFlatTextIndex().noteIdToIdx.get(note.noteId);
+            expect(getBecca().getFlatTextIndex().flatTexts[idxAfter ?? -1]).toContain("topsecret");
         });
     });
 

@@ -3,7 +3,7 @@ import mimeTypes from "mime-types";
 import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BAttachment from "../../becca/entities/battachment.js";
 import type BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
@@ -433,7 +433,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return;
         }
 
-        const note = becca.getNote(noteMeta.noteId);
+        const note = getBecca().getNote(noteMeta.noteId);
         if (!note) {
             throw new Error("Unable to find note.");
         }
@@ -627,7 +627,7 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
     const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
     const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (!note) {
         throw new ValidationError(`Note ${noteId} not found.`);
@@ -646,7 +646,7 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
  * routing a potentially multi-GB archive through an in-memory HTTP response.
  */
 async function exportBranchToZipFile(branchId: string, format: ExportFormat, zipFilePath: string, taskId: string) {
-    const branch = becca.getBranch(branchId);
+    const branch = getBecca().getBranch(branchId);
     if (!branch) {
         throw new ValidationError(`Branch ${branchId} not found.`);
     }

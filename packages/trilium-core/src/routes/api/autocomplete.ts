@@ -2,7 +2,7 @@ import type { AutocompleteResult } from "@triliumnext/commons";
 
 import type { Request } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
 import { getLog } from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";
@@ -56,7 +56,7 @@ function getRecentNotes(activeNoteId: string, limit = RECENT_NOTES_LIMIT): Autoc
         params.push(`%${hoistedNoteId}%`);
     }
 
-    const recentNotes = becca.getRecentNotesFromQuery(
+    const recentNotes = getBecca().getRecentNotesFromQuery(
         `
     SELECT
         recent_notes.*

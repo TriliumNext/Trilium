@@ -184,14 +184,14 @@ describe("sync service", () => {
         // timer — NOT via setup.triggerSync(), which is the only other place that sets the flag.
         // If sync() itself doesn't set it on convergence, a resumed initial sync completes but
         // the DB stays uninitialized and the setup screen waits on "finalizing" forever.
-        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
 
         await expect(runSync()).resolves.toEqual({ success: true });
         expect(initSpy).toHaveBeenCalled();
     });
 
     it("does not mark the database as initialized when the sync fails", async () => {
-        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
         config.loginThrows = new Error("kaboom");
 
         await expect(runSync()).resolves.toMatchObject({ success: false });

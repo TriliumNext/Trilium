@@ -97,13 +97,15 @@ export { getCrypto } from "./services/encryption/crypto";
 
 export { default as attribute_formatter} from "./services/attribute_formatter";
 export { default as attributes } from "./services/attributes";
+export { default as user_service, type User as UserRecord, PrimaryAdminDeletionError, PrimaryAdminDemotionError } from "./services/user_service";
 
 // Messaging system
 export * from "./services/messaging/index";
 export type { MessagingProvider, ServerMessagingProvider, MessageClient, MessageHandler } from "./services/messaging/types";
 
-export { default as becca } from "./becca/becca";
+export { default as becca, getBecca, warmBeccaForUser } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
+export { default as permission_service } from "./services/permission_service";
 export { default as becca_service } from "./becca/becca_service";
 export { default as entity_constructor } from "./becca/entity_constructor";
 export { default as similarity } from "./becca/similarity";

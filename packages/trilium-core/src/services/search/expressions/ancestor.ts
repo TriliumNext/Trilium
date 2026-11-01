@@ -3,7 +3,7 @@
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
 import log, { getLog } from "../../log.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type SearchContext from "../search_context.js";
 
 class AncestorExp extends Expression {
@@ -21,7 +21,7 @@ class AncestorExp extends Expression {
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
-        const ancestorNote = becca.notes[this.ancestorNoteId];
+        const ancestorNote = getBecca().notes[this.ancestorNoteId];
 
         if (!ancestorNote) {
             getLog().error(`Subtree note '${this.ancestorNoteId}' was not not found.`);

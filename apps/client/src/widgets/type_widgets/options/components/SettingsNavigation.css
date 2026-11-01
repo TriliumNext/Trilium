@@ -44,3 +44,12 @@
     --color: var(--link-color, var(--main-text-color));
     flex-shrink: 0;
 }
+
+.settings-navigation .settings-navigation-heading {
+    margin-top: 12px;
+    padding: 4px 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted-text-color);
+}

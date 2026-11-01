@@ -18,7 +18,7 @@ vi.mock("../../services/utils", async (importActual) => ({
     }
 }));
 
-function fakePage(label?: "electronOnly" | "serverOnly" | "notInStandalone") {
+function fakePage(label?: "electronOnly" | "serverOnly" | "notInStandalone" | "adminOnly") {
     return {
         isLabelTruthy: (name: string) => name === label
     } as unknown as FNote;
@@ -28,6 +28,7 @@ describe("isOptionPageVisibleOnPlatform", () => {
     beforeEach(() => {
         vi.mocked(isElectron).mockReturnValue(true);
         ctrl.standalone = false;
+        window.glob = { ...window.glob, currentUser: undefined };
     });
 
     it("shows pages without a platform label on every platform", () => {
@@ -63,6 +64,18 @@ describe("isOptionPageVisibleOnPlatform", () => {
             expect(isOptionPageVisibleOnPlatform(fakePage("notInStandalone"))).toBe(false);
             // Only the labelled pages go: the rest of the settings are still there.
             expect(isOptionPageVisibleOnPlatform(fakePage())).toBe(true);
+        }
+    });
+
+    it("hides an #adminOnly page from a member, and only from a member", () => {
+        window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 0 } };
+        expect(isOptionPageVisibleOnPlatform(fakePage("adminOnly"))).toBe(false);
+        expect(isOptionPageVisibleOnPlatform(fakePage())).toBe(true);
+
+        // Desktop, standalone and a single-user server send no user; their only user is the admin.
+        for (const currentUser of [ { username: "admin", isAdmin: true, avatarHue: 0 }, undefined ]) {
+            window.glob = { ...window.glob, currentUser };
+            expect(isOptionPageVisibleOnPlatform(fakePage("adminOnly"))).toBe(true);
         }
     });
 });

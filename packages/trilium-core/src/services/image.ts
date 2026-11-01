@@ -6,7 +6,7 @@
 import { type ImageAttachmentRole, isDeduplicatedAttachmentRole } from "@triliumnext/commons";
 import sanitizeFilename from "sanitize-filename";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { getContext } from "./context.js";
 import { getLog } from "./log.js";
 import { getImageProvider, type ImageShrink } from "./image_provider.js";
@@ -97,7 +97,7 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
 
     originalName = sanitizeHtml(originalName);
 
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
     if (!note) {
         throw new Error("Unable to find note.");
     }
@@ -131,7 +131,7 @@ function saveImage(
     }
 
     const fileName = sanitizeFilename(originalName);
-    const parentNote = becca.getNote(parentNoteId);
+    const parentNote = getBecca().getNote(parentNoteId);
     if (!parentNote) {
         throw new Error("Unable to find parent note.");
     }
@@ -190,7 +190,7 @@ function saveImageToAttachment(
     }
 
     const fileName = sanitizeFilename(originalName);
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     const reusable = isDeduplicatedAttachmentRole(role)
         ? note.getAttachments().find((existing) => existing.role === role && existing.title === fileName)
@@ -221,7 +221,7 @@ function saveImageToAttachment(
                 // Demanding it exist turned that ordinary race into a process-level throw, which — coming
                 // from a timer, with no request to fail and no caller to catch it — took the whole
                 // application down (#10823).
-                const note = becca.getNote(noteId);
+                const note = getBecca().getNote(noteId);
 
                 if (!note) {
                     return;
@@ -245,7 +245,7 @@ function saveImageToAttachment(
                 // outlast the note it belongs to — in which case there is nothing left to write the
                 // result into. Same race as the post-processing timer above; here it would surface as an
                 // unhandled rejection instead of a throw.
-                const savedAttachment = becca.getAttachment(attachmentId);
+                const savedAttachment = getBecca().getAttachment(attachmentId);
 
                 if (!savedAttachment) {
                     return;

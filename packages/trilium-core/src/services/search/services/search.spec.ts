@@ -4,7 +4,7 @@ import BNote from "../../../becca/entities/bnote.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import dateUtils from "../../utils/date.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
@@ -17,7 +17,7 @@ describe("Search", () => {
     let rootNote: any;
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({
@@ -48,7 +48,7 @@ describe("Search", () => {
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery(query, searchContext);
             expect(searchContext.error).toBeNull();
-            return results.map((r) => becca.notes[r.noteId].title).sort();
+            return results.map((r) => getBecca().notes[r.noteId].title).sort();
         };
 
         expect(titles("(#a OR #b)")).toEqual([ "Alpha", "Beta" ]);
@@ -440,7 +440,7 @@ describe("Search", () => {
         const searchContext = new SearchContext();
         const literal = searchService.findResultsWithQuery("c# basics", searchContext);
         expect(searchContext.error).toBeNull();
-        expect(literal.map((r) => becca.notes[r.noteId].title)).toEqual(["Learning C# basics"]);
+        expect(literal.map((r) => getBecca().notes[r.noteId].title)).toEqual(["Learning C# basics"]);
 
         expect(searchService.findResultsWithQuery("basics#book", new SearchContext())).toEqual([]);
     });
@@ -601,7 +601,7 @@ describe("Search", () => {
         rootNote.child(tolkien).child(essay).child(book).child(fromTemplate).child(savedSearch).child(imported);
 
         const titles = (query: string) => searchService.findResultsWithQuery(query, new SearchContext())
-            .map((result) => becca.notes[result.noteId].title)
+            .map((result) => getBecca().notes[result.noteId].title)
             .sort();
 
         expect(titles("note.links.title = Tolkien")).toEqual([ "Essay", "The Hobbit" ]);
@@ -778,29 +778,29 @@ describe("Search", () => {
 
         let searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.title", searchContext);
         expect(searchResults.length).toEqual(4);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Austria");
-        expect(becca.notes[searchResults[1].noteId].title).toEqual("Italy");
-        expect(becca.notes[searchResults[2].noteId].title).toEqual("Slovakia");
-        expect(becca.notes[searchResults[3].noteId].title).toEqual("Ukraine");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Austria");
+        expect(getBecca().notes[searchResults[1].noteId].title).toEqual("Italy");
+        expect(getBecca().notes[searchResults[2].noteId].title).toEqual("Slovakia");
+        expect(getBecca().notes[searchResults[3].noteId].title).toEqual("Ukraine");
 
         searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.labels.capital", searchContext);
         expect(searchResults.length).toEqual(4);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Slovakia");
-        expect(becca.notes[searchResults[1].noteId].title).toEqual("Ukraine");
-        expect(becca.notes[searchResults[2].noteId].title).toEqual("Italy");
-        expect(becca.notes[searchResults[3].noteId].title).toEqual("Austria");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Slovakia");
+        expect(getBecca().notes[searchResults[1].noteId].title).toEqual("Ukraine");
+        expect(getBecca().notes[searchResults[2].noteId].title).toEqual("Italy");
+        expect(getBecca().notes[searchResults[3].noteId].title).toEqual("Austria");
 
         searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.labels.capital DESC", searchContext);
         expect(searchResults.length).toEqual(4);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Austria");
-        expect(becca.notes[searchResults[1].noteId].title).toEqual("Italy");
-        expect(becca.notes[searchResults[2].noteId].title).toEqual("Ukraine");
-        expect(becca.notes[searchResults[3].noteId].title).toEqual("Slovakia");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Austria");
+        expect(getBecca().notes[searchResults[1].noteId].title).toEqual("Italy");
+        expect(getBecca().notes[searchResults[2].noteId].title).toEqual("Ukraine");
+        expect(getBecca().notes[searchResults[3].noteId].title).toEqual("Slovakia");
 
         searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.labels.capital DESC limit 2", searchContext);
         expect(searchResults.length).toEqual(2);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Austria");
-        expect(becca.notes[searchResults[1].noteId].title).toEqual("Italy");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Austria");
+        expect(getBecca().notes[searchResults[1].noteId].title).toEqual("Italy");
 
         searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy #capital DESC limit 1", searchContext);
         expect(searchResults.length).toEqual(1);
@@ -846,24 +846,24 @@ describe("Search", () => {
         // would not do.
         let searchResults = searchService.findResultsWithQuery(
             `# (#run OR #disabled:run) AND note.title *=* script orderBy note.title`, searchContext);
-        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
+        expect(searchResults.map((sr) => getBecca().notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
 
         // Same results with the operands the other way round, confirming the ordering is purely an
         // optimisation rather than a semantic difference.
         searchResults = searchService.findResultsWithQuery(
             `note.title *=* script AND (#run OR #disabled:run) orderBy note.title`, searchContext);
-        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
+        expect(searchResults.map((sr) => getBecca().notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
 
         // A quoted value keeps a multi-word filter in one token.
         searchResults = searchService.findResultsWithQuery(
             `# (#run OR #disabled:run) AND note.title *=* "gamma other" orderBy note.title`, searchContext);
-        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Gamma other" ]);
+        expect(searchResults.map((sr) => getBecca().notes[sr.noteId].title)).toEqual([ "Gamma other" ]);
 
         // The filter also matches the parent's title, so a second group is AND-ed on as a whole.
         searchResults = searchService.findResultsWithQuery(
             `# (#run OR #disabled:run) AND (note.title *=* nothing OR note.parents.title *=* scripts) orderBy note.title`,
             searchContext);
-        expect(searchResults.map((sr) => becca.notes[sr.noteId].title))
+        expect(searchResults.map((sr) => getBecca().notes[sr.noteId].title))
             .toEqual([ "Alpha script", "Beta script", "Gamma other" ]);
 
         expect(searchContext.getError()).toBeFalsy();
@@ -879,11 +879,11 @@ describe("Search", () => {
 
         let searchResults = searchService.findResultsWithQuery("# not(#capital) and note.noteId != root", searchContext);
         expect(searchResults.length).toEqual(1);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Europe");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Europe");
 
         searchResults = searchService.findResultsWithQuery("#!capital and note.noteId != root", searchContext);
         expect(searchResults.length).toEqual(1);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Europe");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Europe");
     });
 
     it("test note.text *=* something", () => {
@@ -896,7 +896,7 @@ describe("Search", () => {
 
         let searchResults = searchService.findResultsWithQuery("# note.text *=* vaki and note.noteId != root", searchContext);
         expect(searchResults.length).toEqual(1);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Slovakia");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Slovakia");
     });
 
     it("test that fulltext does not match archived notes", () => {
@@ -909,7 +909,7 @@ describe("Search", () => {
 
         let searchResults = searchService.findResultsWithQuery("reddit", searchContext);
         expect(searchResults.length).toEqual(1);
-        expect(becca.notes[searchResults[0].noteId].title).toEqual("Reddit is bad");
+        expect(getBecca().notes[searchResults[0].noteId].title).toEqual("Reddit is bad");
     });
 
     it("search completes in reasonable time", () => {
@@ -953,7 +953,7 @@ describe("Search", () => {
         expect(searchResults.length).toEqual(5);
 
         // Get note titles in result order
-        const resultTitles = searchResults.map(r => becca.notes[r.noteId].title);
+        const resultTitles = searchResults.map(r => getBecca().notes[r.noteId].title);
 
         // Find all exact matches (contain "analysis")
         const exactMatchIndices = resultTitles.map((title, index) =>

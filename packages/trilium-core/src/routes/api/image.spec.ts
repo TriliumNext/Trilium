@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
 import { getSql } from "../../services/sql/index.js";
 import { unwrapStringOrBuffer } from "../../services/utils/binary.js";
@@ -44,7 +44,7 @@ async function createImageNote({
 
     cls.init(() =>
         getSql().transactional(() => {
-            const note = becca.getNoteOrThrow(noteId);
+            const note = getBecca().getNoteOrThrow(noteId);
             note.type = type as never;
             note.mime = mime;
             note.save();
@@ -118,7 +118,7 @@ describe("Image API (core)", () => {
             expect(fromNote.headers["Content-Security-Policy"]).toBe("sandbox");
             expect(fromNote.headers["X-Content-Type-Options"]).toBe("nosniff");
 
-            const [ attachment ] = becca.getNoteOrThrow(noteId).getAttachments();
+            const [ attachment ] = getBecca().getNoteOrThrow(noteId).getAttachments();
             const fromAttachment = await api.get<string>(`/api/attachments/${attachment.attachmentId}/image/file.png`);
             expect(fromAttachment.status).toBe(200);
             expect(fromAttachment.headers["Content-Security-Policy"]).toBe("sandbox");
@@ -220,7 +220,7 @@ describe("Image API (core)", () => {
             const { noteId } = await createTextNote(api);
             return cls.init(() =>
                 getSql().transactional(() => {
-                    const note = becca.getNoteOrThrow(noteId);
+                    const note = getBecca().getNoteOrThrow(noteId);
                     const attachment = note.saveAttachment(
                         { role, mime, title: "att", content: content as never },
                         "title"
@@ -311,7 +311,7 @@ describe("Image API (core)", () => {
             expect(res.body.uploaded).toBe(true);
             // The real service synchronously snapshots a revision and sets the label.
             cls.init(() => {
-                expect(becca.getNoteOrThrow(noteId).getOwnedLabelValue("originalFileName")).toBe("x.png");
+                expect(getBecca().getNoteOrThrow(noteId).getOwnedLabelValue("originalFileName")).toBe("x.png");
             });
         });
     });

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
@@ -97,11 +97,11 @@ describe("Tree API (core)", () => {
 
         it("skips a collected branch id that is missing from the cache", async () => {
             // Force a dangling branchId into the collection (via the child-branch
-            // lookup in collectEntityIds) so the `becca.branches[branchId]` lookup
+            // lookup in collectEntityIds) so the `getBecca().branches[branchId]` lookup
             // misses and the guard runs. Use `load` so getTree's own collect()
             // recursion (which needs a real childNote) isn't affected.
-            const original = becca.getBranchFromChildAndParent.bind(becca);
-            vi.spyOn(becca, "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
+            const original = getBecca().getBranchFromChildAndParent.bind(getBecca());
+            vi.spyOn(getBecca(), "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
                 const branch = original(childNoteId, parentNoteId);
                 if (branch) {
                     Object.defineProperty(branch, "branchId", { value: "ghostBranch123", configurable: true });
@@ -116,8 +116,8 @@ describe("Tree API (core)", () => {
 
         it("skips a collected attribute id that is missing from the cache", async () => {
             const { noteId } = await createTextNote(api, { title: "Note with ghost attribute" });
-            const note = becca.notes[noteId];
-            // Replace the note's owned attributes with one whose id is absent from becca.attributes.
+            const note = getBecca().notes[noteId];
+            // Replace the note's owned attributes with one whose id is absent from getBecca().attributes.
             vi.spyOn(note, "ownedAttributes", "get").mockReturnValue([
                 { attributeId: "ghostAttr123", type: "label", name: "x", targetNote: undefined } as never
             ]);

@@ -1,4 +1,4 @@
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import becca_service, { type SegmentTitleCache } from "../../becca/becca_service.js";
 import type { SearchableTitle } from "../../becca/entities/bnote.js";
 import type { ContentMatchQuality } from "./match_quality.js";
@@ -149,7 +149,7 @@ class SearchResult {
         this.score = 0;
         this.fuzzyScore = 0; // Reset fuzzy score tracking
 
-        const note = becca.notes[this.noteId];
+        const note = getBecca().notes[this.noteId];
         const scoringTerms = terms ?? precomputeScoringTerms(fulltextQuery, tokens);
         const { normalizedQuery, queryWords, normalizedTokens, pathSegmentWords } = scoringTerms;
         // normalizeSearchText already lowercases — no need for .toLowerCase() first

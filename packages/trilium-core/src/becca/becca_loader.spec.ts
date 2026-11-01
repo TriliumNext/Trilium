@@ -5,8 +5,9 @@ import eventService from "../services/events.js";
 import noteService from "../services/notes.js";
 import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
-import becca from "./becca.js";
-import beccaLoader, { load, reload } from "./becca_loader.js";
+import { getBecca } from "./becca.js";
+import Becca from "./becca-interface.js";
+import beccaLoader, { load, loadBeccaForUser, reload } from "./becca_loader.js";
 import BAttribute from "./entities/battribute.js";
 import BNote from "./entities/bnote.js";
 
@@ -26,17 +27,17 @@ function createNote(parentNoteId: string): BNote {
 
 describe("becca_loader", () => {
     afterEach(() => {
-        // The shared fixture DB is loaded (becca.loaded === true) after setup;
+        // The shared fixture DB is loaded (getBecca().loaded === true) after setup;
         // some tests flip this, so always restore it.
-        becca.loaded = true;
+        getBecca().loaded = true;
         vi.restoreAllMocks();
     });
 
     describe("ENTITY_CHANGE_SYNCED listener", () => {
         it("returns early without touching becca when becca is not loaded", () => {
-            becca.loaded = false;
+            getBecca().loaded = false;
 
-            const before = Object.keys(becca.notes).length;
+            const before = Object.keys(getBecca().notes).length;
             eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
                 entityName: "notes",
                 entityRow: {
@@ -50,8 +51,8 @@ describe("becca_loader", () => {
             });
 
             // Nothing was created since the listener bailed out.
-            expect(becca.getNote("loaderNotLoaded")).toBeNull();
-            expect(Object.keys(becca.notes).length).toBe(before);
+            expect(getBecca().getNote("loaderNotLoaded")).toBeNull();
+            expect(Object.keys(getBecca().notes).length).toBe(before);
         });
 
         it("updates an existing becca entity from the synced row", () => {
@@ -69,14 +70,14 @@ describe("becca_loader", () => {
                 }
             });
 
-            const updated = becca.getNoteOrThrow(note.noteId);
+            const updated = getBecca().getNoteOrThrow(note.noteId);
             expect(updated.title).toBe("synced-updated-title");
             expect(updated.type).toBe("code");
         });
 
         it("creates a brand-new becca entity from a synced row when not yet present", () => {
             const newNoteId = "loaderBrandNew1";
-            expect(becca.getNote(newNoteId)).toBeNull();
+            expect(getBecca().getNote(newNoteId)).toBeNull();
 
             eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
                 entityName: "notes",
@@ -90,7 +91,7 @@ describe("becca_loader", () => {
                 }
             });
 
-            const created = becca.getNoteOrThrow(newNoteId);
+            const created = getBecca().getNoteOrThrow(newNoteId);
             expect(created).toBeInstanceOf(BNote);
             expect(created.title).toBe("brand-new");
             // init() ran, so the derived collections are initialised.
@@ -111,7 +112,7 @@ describe("becca_loader", () => {
 
     describe("ENTITY_DELETED listener", () => {
         it("branchDeleted returns early for an unknown branch id", () => {
-            const branchesBefore = Object.keys(becca.branches).length;
+            const branchesBefore = Object.keys(getBecca().branches).length;
 
             expect(() =>
                 eventService.emit(eventService.ENTITY_DELETED, {
@@ -121,11 +122,11 @@ describe("becca_loader", () => {
             ).not.toThrow();
 
             // No branches were removed.
-            expect(Object.keys(becca.branches).length).toBe(branchesBefore);
+            expect(Object.keys(getBecca().branches).length).toBe(branchesBefore);
         });
 
         it("attributeDeleted returns early for an unknown attribute id", () => {
-            const attributesBefore = Object.keys(becca.attributes).length;
+            const attributesBefore = Object.keys(getBecca().attributes).length;
 
             expect(() =>
                 eventService.emit(eventService.ENTITY_DELETED, {
@@ -134,7 +135,7 @@ describe("becca_loader", () => {
                 })
             ).not.toThrow();
 
-            expect(Object.keys(becca.attributes).length).toBe(attributesBefore);
+            expect(Object.keys(getBecca().attributes).length).toBe(attributesBefore);
         });
 
         it("attributeDeleted removes an attribute from its index bucket without rebuilding it", () => {
@@ -150,24 +151,24 @@ describe("becca_loader", () => {
             const first = makeLabel("loaderShared1", "loaderSharedNote1");
             const second = makeLabel("loaderShared2", "loaderSharedNote2");
             const third = makeLabel("loaderShared3", "loaderSharedNote1");
-            const bucket = becca.attributeIndex["label-loadersharedlabel"];
+            const bucket = getBecca().attributeIndex["label-loadersharedlabel"];
 
             deleteAttribute(second);
 
             // Rebuilding the bucket per deletion makes deleting n same-named attributes O(n²).
-            expect(becca.attributeIndex["label-loadersharedlabel"]).toBe(bucket);
-            expect(becca.findAttributes("label", "loaderSharedLabel")).toEqual([ first, third ]);
-            expect(becca.getNote("loaderSharedNote2")).toBeNull();
+            expect(getBecca().attributeIndex["label-loadersharedlabel"]).toBe(bucket);
+            expect(getBecca().findAttributes("label", "loaderSharedLabel")).toEqual([ first, third ]);
+            expect(getBecca().getNote("loaderSharedNote2")).toBeNull();
 
             deleteAttribute(first);
             deleteAttribute(third);
-            expect(becca.findAttributes("label", "loaderSharedLabel")).toEqual([]);
+            expect(getBecca().findAttributes("label", "loaderSharedLabel")).toEqual([]);
         });
     });
 
     describe("ENTER_PROTECTED_SESSION listener", () => {
         it("swallows errors thrown while decrypting protected notes", () => {
-            const spy = vi.spyOn(becca, "decryptProtectedNotes").mockImplementation(() => {
+            const spy = vi.spyOn(getBecca(), "decryptProtectedNotes").mockImplementation(() => {
                 throw new Error("boom");
             });
 
@@ -196,14 +197,14 @@ describe("becca_loader", () => {
 
             // The flat-text search index serves the plaintext title (this is the #10115
             // leak surface: title-word search matching protected notes without a session).
-            expect(becca.getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(true);
+            expect(getBecca().getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(true);
 
             getContext().init(() => eventService.emit(eventService.LEAVE_PROTECTED_SESSION));
 
             // Full reload from disk: the memory-only decrypted state is discarded...
-            expect(becca.getNote("loaderLeaveProtected")).toBeNull();
+            expect(getBecca().getNote("loaderLeaveProtected")).toBeNull();
             // ...and the rebuilt search index no longer matches the plaintext.
-            expect(becca.getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(false);
+            expect(getBecca().getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(false);
         });
     });
 
@@ -222,10 +223,10 @@ describe("becca_loader", () => {
                 load();
             });
 
-            const token = becca.getEtapiToken(etapiTokenId);
+            const token = getBecca().getEtapiToken(etapiTokenId);
             expect(token).not.toBeNull();
             expect(token?.name).toBe("loader-test-token");
-            expect(becca.loaded).toBe(true);
+            expect(getBecca().loaded).toBe(true);
         });
 
         it("orders a note's children by notePosition rather than by insertion order", () => {
@@ -247,10 +248,32 @@ describe("becca_loader", () => {
                 load();
             });
 
-            const loadedParent = becca.getNoteOrThrow(parent.noteId);
+            const loadedParent = getBecca().getNoteOrThrow(parent.noteId);
             expect(loadedParent.children.map((child) => child.noteId)).toEqual(
                 [...children].reverse().map((child) => child.noteId)
             );
+        });
+    });
+
+    describe("loadBeccaForUser()", () => {
+        it("loads a member's own notes alongside the root and the system subtree", async () => {
+            const note = createNote("root");
+            getContext().init(() => {
+                note.ownerId = "loaderMember1";
+                note.save();
+            });
+
+            const memberBecca = new Becca();
+            // As in a request, where the session's `userId` is in CLS before the load.
+            await getContext().init(() => {
+                getContext().set("userId", "loaderMember1");
+                return loadBeccaForUser(memberBecca, "loaderMember1", false);
+            });
+
+            expect(memberBecca.loaded).toBe(true);
+            expect(memberBecca.notes.root).toBeDefined();
+            expect(memberBecca.notes._hidden).toBeDefined();
+            expect(memberBecca.notes[note.noteId]).toBeDefined();
         });
     });
 
@@ -261,7 +284,7 @@ describe("becca_loader", () => {
 
             getContext().init(() => reload("custom reason"));
 
-            expect(becca.loaded).toBe(true);
+            expect(getBecca().loaded).toBe(true);
             expect(refresh).toHaveBeenCalledWith("custom reason");
             expect(fullReload).not.toHaveBeenCalled();
         });

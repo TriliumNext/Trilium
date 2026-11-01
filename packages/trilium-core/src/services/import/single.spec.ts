@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import imageService from "../image.js";
 import noteService from "../notes.js";
@@ -39,7 +39,7 @@ async function testImport(fileName: string, mimetype: string, bufferOverride?: B
 
     return new Promise<{ buffer: Buffer; importedNote: BNote }>((resolve, reject) => {
         getContext().init(async () => {
-            const rootNote = becca.getNote("root");
+            const rootNote = getBecca().getNote("root");
             if (!rootNote) {
                 reject("Missing root note.");
                 return;
@@ -334,7 +334,7 @@ describe("importSingleFile dispatch", () => {
 
     it("rejects an image whose content arrived as a string", async () => {
         const taskContext = TaskContext.getInstance("import-image-string", "importNotes", {});
-        const rootNote = becca.getNoteOrThrow("root");
+        const rootNote = getBecca().getNoteOrThrow("root");
 
         await expect(
             getContext().init(() =>
@@ -349,7 +349,7 @@ describe("importAttachment", () => {
         // As in the image import test, the async processing inside saveImageToAttachment is stubbed out.
         const saveImageToAttachment = vi.spyOn(imageService, "saveImageToAttachment").mockReturnValue(undefined as never);
         const taskContext = TaskContext.getInstance("import-attachment", "importNotes", { shrinkImages: true });
-        const rootNote = becca.getNoteOrThrow("root");
+        const rootNote = getBecca().getNoteOrThrow("root");
         const imageBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 
         try {

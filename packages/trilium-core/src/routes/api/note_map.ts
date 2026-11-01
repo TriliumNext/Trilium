@@ -1,6 +1,6 @@
 import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca";
 import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 
@@ -25,7 +25,7 @@ function buildDescendantCountMap(noteIdsToCount: string[], isCounted: (noteId: s
 
     function getCount(noteId: string): number {
         if (!(noteId in noteIdToCountMap)) {
-            const note = becca.getNote(noteId);
+            const note = getBecca().getNote(noteId);
             /* v8 ignore next 3 -- defensive guard: noteIds come from real notes / their resolved children */
             if (!note) {
                 return 0;
@@ -106,7 +106,7 @@ function getNeighbors(note: BNote, depth: number): string[] {
 
 function getLinkMap(req: Request<{ noteId: string }>) {
     const toNames = (data: unknown) => (data instanceof Array ? data.map(String) : []);
-    return buildLinkMap(becca.getNoteOrThrow(req.params.noteId), {
+    return buildLinkMap(getBecca().getNoteOrThrow(req.params.noteId), {
         excludeRelations: toNames(req.body.excludeRelations),
         includeRelations: toNames(req.body.includeRelations)
     });
@@ -159,19 +159,19 @@ export function buildLinkMap(
     const noteIdsArray = Array.from(noteIds);
 
     const notes: NoteMapNote[] = noteIdsArray.map((noteId) => {
-        const note = becca.getNoteOrThrow(noteId);
+        const note = getBecca().getNoteOrThrow(noteId);
 
         return [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ];
     });
 
-    const links = Object.values(becca.attributes)
+    const links = Object.values(getBecca().attributes)
         .filter((rel) => {
             if (rel.type !== "relation" || rel.name === "relationMapLink" || rel.name === "template" || rel.name === "inherit") {
                 return false;
             } else if (!noteIds.has(rel.noteId) || !noteIds.has(rel.value)) {
                 return false;
             } else if (rel.name === "imageLink") {
-                const parentNote = becca.getNote(rel.noteId);
+                const parentNote = getBecca().getNote(rel.noteId);
                 /* v8 ignore next 3 -- defensive guard: rel.noteId is already constrained to noteIds (existing notes) */
                 if (!parentNote) {
                     return false;
@@ -201,7 +201,7 @@ export function buildLinkMap(
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {
-    return buildTreeMap(becca.getNoteOrThrow(req.params.noteId));
+    return buildTreeMap(getBecca().getNoteOrThrow(req.params.noteId));
 }
 
 /** Returns the notes of the subtree of `mapRootNote` and the branches between them. */
@@ -262,7 +262,7 @@ export function buildTreeMap(mapRootNote: BNote, isCounted: (noteId: string) => 
 
 function updateDescendantCountMapForSearch(noteIdToDescendantCountMap: Record<string, number>, relationships: { parentNoteId: string; childNoteId: string }[]) {
     for (const { parentNoteId, childNoteId } of relationships) {
-        const parentNote = becca.notes[parentNoteId];
+        const parentNote = getBecca().notes[parentNoteId];
         if (!parentNote || parentNote.type !== "search") {
             continue;
         }
@@ -283,7 +283,7 @@ function getFilteredBacklinks(note: BNote): BAttribute[] {
 
 function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
     const { noteId } = req.params;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     let backlinksWithExcerptCount = 0;
 
@@ -336,7 +336,7 @@ function findSourceExcerpts(sourceNote: BNote, referencedNoteId: string): string
 function getBacklinkCount(req: Request<{ noteId: string }>): BacklinkCountResponse {
     const { noteId } = req.params;
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     return {
         count: getFilteredBacklinks(note).length

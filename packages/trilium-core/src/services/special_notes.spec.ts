@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import attributeService from "./attributes.js";
 import { getContext } from "./context.js";
@@ -62,7 +62,7 @@ describe("special_notes (core, real DB)", () => {
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
-            expect(becca.getBranch(result.branchId!)).toBeTruthy();
+            expect(getBecca().getBranch(result.branchId!)).toBeTruthy();
 
             // After saving, the console must no longer hang off the hidden subtree.
             const liveParents = note.getParentBranches().filter((b) => !b.isDeleted);
@@ -72,7 +72,7 @@ describe("special_notes (core, real DB)", () => {
 
         it("uses an explicit #sqlConsoleHome target note when present", async () => {
             // A real, root-anchored note used as the clone target.
-            const home = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const home = getBecca().getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(home);
 
             const note = getContext().init(() => specialNotes.createSqlConsole());
@@ -133,7 +133,7 @@ describe("special_notes (core, real DB)", () => {
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
-            expect(becca.getBranch(result.branchId!)).toBeTruthy();
+            expect(getBecca().getBranch(result.branchId!)).toBeTruthy();
 
             const liveParents = note.getParentBranches().filter((b) => !b.isDeleted);
             expect(liveParents.length).toBeGreaterThan(0);
@@ -148,7 +148,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("returns the #inbox-labelled note when at the root workspace", () => {
-            const inbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const inbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(inbox);
 
             const result = specialNotes.getInboxNote("2026-05-29");
@@ -158,7 +158,7 @@ describe("special_notes (core, real DB)", () => {
         it("falls back to the day note when no #inbox label exists at the root", () => {
             // A journal has to exist, or the capture stays at the top level instead.
             vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
-                name === "calendarRoot" ? becca.getNoteOrThrow("root").getChildNotes()[0] : null);
+                name === "calendarRoot" ? getBecca().getNoteOrThrow("root").getChildNotes()[0] : null);
 
             // getDayNote may create the day note, so it needs a CLS context.
             const result = getContext().init(() => specialNotes.getInboxNote("2026-05-29"));
@@ -168,8 +168,8 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("prefers #workspaceInbox over #inbox within a non-root workspace", () => {
-            const workspaceInbox = becca.getNoteOrThrow("root").getChildNotes()[0];
-            const plainInbox = becca.getNoteOrThrow("root").getChildNotes()[1];
+            const workspaceInbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
+            const plainInbox = getBecca().getNoteOrThrow("root").getChildNotes()[1];
             const workspace = makeWorkspaceStub({
                 "#workspaceInbox": workspaceInbox,
                 "#inbox": plainInbox
@@ -224,7 +224,7 @@ describe("special_notes (core, real DB)", () => {
 
     describe("getInboxTarget", () => {
         it("names the #inbox note at the root workspace", () => {
-            const inbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const inbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(inbox);
 
             expect(specialNotes.getInboxTarget()).toEqual({
@@ -236,29 +236,29 @@ describe("special_notes (core, real DB)", () => {
 
         it("reports the day note without creating it", () => {
             vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
-                name === "calendarRoot" ? becca.getNoteOrThrow("root").getChildNotes()[0] : null);
-            const noteCountBefore = Object.keys(becca.notes).length;
+                name === "calendarRoot" ? getBecca().getNoteOrThrow("root").getChildNotes()[0] : null);
+            const noteCountBefore = Object.keys(getBecca().notes).length;
 
             // No CLS context: reaching getDayNote() would need one, so this also proves it is
             // never called.
             expect(specialNotes.getInboxTarget()).toEqual({ kind: "dayNote", noteId: undefined, title: undefined });
-            expect(Object.keys(becca.notes).length).toBe(noteCountBefore);
+            expect(Object.keys(getBecca().notes).length).toBe(noteCountBefore);
         });
 
         it("keeps a capture at the top level when the journal has been deleted, rather than rebuilding it", () => {
             // Nulls both labels this path consults, #inbox and #calendarRoot.
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
-            const noteCountBefore = Object.keys(becca.notes).length;
+            const noteCountBefore = Object.keys(getBecca().notes).length;
 
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "root", noteId: "root" });
             expect(specialNotes.getInboxNote("2026-05-29").noteId).toBe("root");
             // No calendar was built on the way.
-            expect(Object.keys(becca.notes).length).toBe(noteCountBefore);
+            expect(Object.keys(getBecca().notes).length).toBe(noteCountBefore);
         });
 
         it("distinguishes the workspace inbox, a plain inbox, the workspace calendar and the workspace root", () => {
-            const workspaceInbox = becca.getNoteOrThrow("root").getChildNotes()[0];
-            const plainInbox = becca.getNoteOrThrow("root").getChildNotes()[1];
+            const workspaceInbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
+            const plainInbox = getBecca().getNoteOrThrow("root").getChildNotes()[1];
 
             const withBoth = makeWorkspaceStub({ "#workspaceInbox": workspaceInbox, "#inbox": plainInbox });
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withBoth as any);
@@ -273,7 +273,7 @@ describe("special_notes (core, real DB)", () => {
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "workspaceRoot", noteId: withNeither.noteId });
 
             const withCalendar = makeWorkspaceStub({
-                "#workspaceCalendarRoot": becca.getNoteOrThrow("root").getChildNotes()[0]
+                "#workspaceCalendarRoot": getBecca().getNoteOrThrow("root").getChildNotes()[0]
             });
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withCalendar as any);
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dayNote" });
@@ -337,7 +337,7 @@ describe("special_notes (core, real DB)", () => {
 
             getContext().init(() => specialNotes.resetLauncher(note.noteId));
 
-            expect(becca.getNote(note.noteId)?.isDeleted ?? true).toBe(true);
+            expect(getBecca().getNote(note.noteId)?.isDeleted ?? true).toBe(true);
         });
 
         it("only resets the children (not the root note itself) for the launchbar roots", () => {
@@ -350,7 +350,7 @@ describe("special_notes (core, real DB)", () => {
                 deleteNote: vi.fn(),
                 getChildNotes: () => [childA, childB]
             };
-            vi.spyOn(becca, "getNote").mockReturnValue(rootNote as any);
+            vi.spyOn(getBecca(), "getNote").mockReturnValue(rootNote as any);
 
             getContext().init(() => specialNotes.resetLauncher("_lbRoot"));
 
@@ -366,7 +366,7 @@ describe("special_notes (core, real DB)", () => {
             getContext().init(() => specialNotes.resetLauncher(plain.noteId));
 
             // Search notes are not launchbar config, so they are left intact.
-            expect(becca.getNote(plain.noteId)?.isDeleted).toBe(false);
+            expect(getBecca().getNote(plain.noteId)?.isDeleted).toBe(false);
         });
     });
 
@@ -523,7 +523,7 @@ describe("special_notes (core, real DB)", () => {
                 const liveParents = chat.getParentBranches().filter(b => !b.isDeleted);
                 expect(liveParents.length).toBeGreaterThan(0);
                 expect(liveParents.some(b => b.parentNote?.hasAncestor("_hidden"))).toBe(false);
-                expect(result.branchId && becca.getBranch(result.branchId)).toBeTruthy();
+                expect(result.branchId && getBecca().getBranch(result.branchId)).toBeTruthy();
             });
         });
 
@@ -545,7 +545,7 @@ describe("special_notes (core, real DB)", () => {
                     }).note.noteId;
                 });
                 // What makeWorkspaceStub proxies, and therefore the last operand.
-                fallbackId = becca.getNoteOrThrow("root").getChildNotes()[0].noteId;
+                fallbackId = getBecca().getNoteOrThrow("root").getChildNotes()[0].noteId;
             });
 
             function expectClonedUnder(found: Record<string, unknown>, expectedParentId: string) {
@@ -556,7 +556,7 @@ describe("special_notes (core, real DB)", () => {
                 const result = getContext().init(() => specialNotes.saveLlmChat(chat.noteId));
 
                 expect(result.success).toBe(true);
-                expect(result.branchId && becca.getBranch(result.branchId)?.parentNoteId).toBe(expectedParentId);
+                expect(result.branchId && getBecca().getBranch(result.branchId)?.parentNoteId).toBe(expectedParentId);
                 const liveParents = chat.getParentBranches().filter(b => !b.isDeleted);
                 expect(liveParents.some(b => b.parentNote?.hasAncestor("_hidden"))).toBe(false);
             }
@@ -571,11 +571,11 @@ describe("special_notes (core, real DB)", () => {
 
             it("prefers #workspaceLlmChatHome, then #llmChatHome, then the workspace note itself", () => {
                 expectClonedUnder(
-                    { "#workspaceLlmChatHome": becca.getNoteOrThrow(workspaceHomeId) },
+                    { "#workspaceLlmChatHome": getBecca().getNoteOrThrow(workspaceHomeId) },
                     workspaceHomeId
                 );
                 vi.restoreAllMocks();
-                expectClonedUnder({ "#llmChatHome": becca.getNoteOrThrow(genericHomeId) }, genericHomeId);
+                expectClonedUnder({ "#llmChatHome": getBecca().getNoteOrThrow(genericHomeId) }, genericHomeId);
                 vi.restoreAllMocks();
                 expectClonedUnder({}, fallbackId);
             });
@@ -590,7 +590,7 @@ describe("special_notes (core, real DB)", () => {
  * searchNoteInSubtree is global, so genuine labels would collide between tests).
  */
 function makeWorkspaceStub(found: Record<string, unknown>) {
-    const real = becca.getNoteOrThrow("root").getChildNotes()[0];
+    const real = getBecca().getNoteOrThrow("root").getChildNotes()[0];
     return new Proxy(real, {
         get(target, prop) {
             if (prop === "isRoot") {

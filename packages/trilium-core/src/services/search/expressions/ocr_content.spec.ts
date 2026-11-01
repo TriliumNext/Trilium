@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import blobService from "../../blob.js";
 import { getContext } from "../../context.js";
@@ -98,9 +98,9 @@ function setTextRepresentationForBlob(blobId: string, textRepresentation: string
     ]);
 }
 
-/** Build a NoteSet that contains every note currently registered in becca. */
+/** Build a NoteSet that contains every note currently registered in getBecca(). */
 function allNotesSet() {
-    return new NoteSet(Object.values(becca.notes));
+    return new NoteSet(Object.values(getBecca().notes));
 }
 
 function execute(

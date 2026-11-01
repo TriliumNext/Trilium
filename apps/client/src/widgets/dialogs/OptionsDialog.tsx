@@ -9,14 +9,14 @@ import type FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import utils, { isElectron, isStandalone } from "../../services/utils";
 import NoteDetail from "../NoteDetail";
-import FormList, { FormListItem } from "../react/FormList";
+import FormList, { FormListHeader, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useChildNotes, useContainedLinkNavigation, useDetachedNoteContext, useNoteContext, useTriliumEvent } from "../react/hooks";
 import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { PageHelpSlot } from "../type_widgets/options/components/OptionsPageHeader";
-import SettingsNavigation from "../type_widgets/options/components/SettingsNavigation";
+import SettingsNavigation, { groupOptionPages } from "../type_widgets/options/components/SettingsNavigation";
 import SettingsSearch from "../type_widgets/options/components/SettingsSearch";
 import OptionsSearchPage, { hasSearchTerms } from "../type_widgets/options/search_page";
 
@@ -192,8 +192,8 @@ export function useOptionPages() {
  * `hidden_subtree.ts`) can carry a boolean label restricting where it appears: `#electronOnly`
  * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron)
  * app, and `#notInStandalone` hides it in the standalone build. Pages without any of them apply
- * everywhere. The page still exists in the note tree and stays reachable directly; only the modal's
- * navigation hides it.
+ * everywhere. Apart from the platform, `#adminOnly` hides a page from a signed-in member. The page
+ * still exists in the note tree and stays reachable directly; only the modal's navigation hides it.
  *
  * The first two are one axis — where the stack is served from — and are written as `Only` labels
  * because each names a single platform. Standalone is neither: its server runs in this browser, so
@@ -213,6 +213,10 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
     }
 
     if (isStandalone && page.isLabelTruthy("notInStandalone")) {
+        return false;
+    }
+
+    if (window.glob.currentUser?.isAdmin === false && page.isLabelTruthy("adminOnly")) {
         return false;
     }
 
@@ -274,21 +278,25 @@ function SettingsSidebar({
  * standard list component rather than the desktop sidebar's compact selector.
  */
 function MobileSettingsList({ onSelect }: { onSelect: (noteId: string) => void }) {
-    const pages = useOptionPages();
+    const { pages, adminPages } = groupOptionPages(useOptionPages());
     const { noteId: activeNoteId } = useNoteContext();
+    const renderItem = (page: FNote) => (
+        <FormListItem
+            key={page.noteId}
+            icon={page.getIcon()}
+            value={page.noteId}
+            active={page.noteId === activeNoteId}
+            badges={page.hasLabel("beta") ? [ { text: t("common.beta") } ] : undefined}
+        >
+            {page.title}
+        </FormListItem>
+    );
+
     return (
         <FormList onSelect={onSelect}>
-            {pages.map((page) => (
-                <FormListItem
-                    key={page.noteId}
-                    icon={page.getIcon()}
-                    value={page.noteId}
-                    active={page.noteId === activeNoteId}
-                    badges={page.hasLabel("beta") ? [ { text: t("common.beta") } ] : undefined}
-                >
-                    {page.title}
-                </FormListItem>
-            ))}
+            {pages.map(renderItem)}
+            {adminPages.length > 0 && <FormListHeader text={t("settings.administration")} />}
+            {adminPages.map(renderItem)}
         </FormList>
     );
 }
