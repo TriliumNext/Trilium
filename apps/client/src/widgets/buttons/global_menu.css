@@ -37,9 +37,8 @@
         font-size: .85em;
     }
 
-    > .btn {
+    > .icon-action {
         flex-shrink: 0;
-        white-space: nowrap;
     }
 }
 

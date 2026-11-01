@@ -376,9 +376,12 @@ describe("GlobalMenu", () => {
 
             // The account row carries the way out, so the menu has no second one.
             expect(rows(scroll)).not.toContain("global_menu.logout");
-            const logout = account?.querySelector<HTMLButtonElement>("button");
-            expect(logout?.textContent).toContain("global_menu.logout");
-            expect(logout?.tabIndex).toBe(0);
+            // An icon button, which the keys reach as the row's way in.
+            expect(account?.querySelectorAll("button")).toHaveLength(1);
+            const logout = account?.querySelector<HTMLButtonElement>("button.icon-action.bx-log-out");
+            expect(logout).not.toBeNull();
+            expect(logout?.textContent).toBe("");
+            expect(logout?.getAttribute("tabindex")).toBe("0");
             await act(async () => logout?.click());
             expect(triggerCommand).toHaveBeenCalledWith("logout");
         });

@@ -12,7 +12,7 @@ import {
 } from "../../services/color_scheme";
 import { t } from "../../services/i18n";
 import utils, { isElectron, isMobile, isStandalone } from "../../services/utils";
-import Button from "../react/Button";
+import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem } from "../react/FormList";
 import {
@@ -204,8 +204,8 @@ function AccountRow({ user }: { user: CurrentUser }) {
                         {user.isAdmin ? t("users.role_admin") : t("users.role_user")}
                     </span>
                 </div>
-                <Button
-                    size="small" icon="bx-log-out" tabIndex={0}
+                <ActionButton
+                    icon="bx bx-log-out" tabIndex={0}
                     text={t("global_menu.logout")}
                     onClick={() => void parentComponent?.triggerCommand("logout")}
                 />
