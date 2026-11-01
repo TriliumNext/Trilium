@@ -1,5 +1,5 @@
 {
-    "electronVersion": "45.0.0",
+    "electronVersion": "45.1.0",
     "linux": [
         "af.pak",
         "am.pak",
