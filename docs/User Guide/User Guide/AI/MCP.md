@@ -11,6 +11,13 @@ Only the HTTP transport is supported, the `stdio` method is not supported. If th
 
 The tools exposed to the MCP are the same tools that are supported by the internal chat (see the _Note access_ section). Notes with the `#excludeFromLlm` label are hidden from both, see <a class="reference-link" href="Privacy.md">Privacy</a>.
 
+### Read-only mode
+
+When the _Read-only mode_ option is enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI/LLM_, the MCP server only exposes read-only tools. Write operations that go through MCP are disabled, which is useful when an assistant should only read notes.
+
+> [!WARNING]
+> This option limits only the tools the MCP server exposes; it does not limit the <a class="reference-link" href="../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> token used to authenticate. That token still grants read and write access to the REST API, including endpoints such as `POST /etapi/create-note`. Anyone who has it can bypass read-only mode with a direct REST request, so treat it as a credential that can change your notes regardless of this option.
+
 ### Approving tool calls
 
 Trilium does not ask for approval of the calls an external assistant makes; that is left to the assistant's own permission settings. To help it decide, each tool tells the assistant whether it only reads your notes, only adds to them (creating a note, cloning it or appending to it), or can overwrite or remove something (editing, renaming, moving or deleting). An assistant that supports these hints can then run reads on their own and ask before changes, the way _Ask before changes_ does in Trilium's chat.
