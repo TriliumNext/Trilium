@@ -438,7 +438,8 @@
     "included-note-requires-credentials": "Это заметка защищена паролем и не может быть отображена здесь.",
     "broken-block-reference": "Поврежденная ссылка",
     "play-video": "Воспроизвести видео",
-    "content-not-available": "Это содержимое недоступно."
+    "content-not-available": "Это содержимое недоступно.",
+    "untitled-block": "Блок"
   },
   "sql_init": {
     "db_not_initialized_desktop": "База данных не инициализирована, следуйте инструкциям на экране.",
