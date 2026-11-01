@@ -365,7 +365,6 @@ body:not(.math-loaded) .math-tex {
     }
 
     &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
-        /* No gap at full width, so that the margin box fits in the column. */
         --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
             var(--ck-content-image-style-spacing, 1.5em));
 
