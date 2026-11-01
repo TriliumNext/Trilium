@@ -1,3 +1,6 @@
+// Offers to upload the files that "Open externally" and "Open with..." leave watched.
+import "./file_watcher.js";
+
 import Component from "../components/component.js";
 import FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";

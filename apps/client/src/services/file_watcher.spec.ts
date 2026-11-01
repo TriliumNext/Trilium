@@ -3,15 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Capture the callback that file_watcher registers via ws.subscribeToMessages
 // at module load. The global setup mock discards it, so we provide our own.
-// These are wrapped in vi.hoisted so they exist when the hoisted vi.mock
-// factories below reference them.
-const { wsState, triggerEvent } = vi.hoisted(() => ({
+const { wsState } = vi.hoisted(() => ({
     wsState: {
         subscribedCallback: undefined as
             | ((message: WebSocketMessage) => Promise<void> | void)
             | undefined
-    },
-    triggerEvent: vi.fn()
+    }
 }));
 
 vi.mock("./ws.js", () => ({
@@ -22,12 +19,11 @@ vi.mock("./ws.js", () => ({
     }
 }));
 
-vi.mock("../components/app_context.js", () => ({
-    default: { triggerEvent }
-}));
-
+import froca from "./froca.js";
+import server from "./server.js";
+import toast, { type ToastOptionsWithRequiredId } from "./toast.js";
 // Import AFTER the mocks are declared (vi.mock is hoisted).
-import fileWatcher from "./file_watcher.js";
+import "./file_watcher.js";
 
 function makeUpdate(entityType: string, entityId: string): WebSocketMessage {
     return {
@@ -39,67 +35,62 @@ function makeUpdate(entityType: string, entityId: string): WebSocketMessage {
     } as WebSocketMessage;
 }
 
+async function receive(message: WebSocketMessage) {
+    const callback = wsState.subscribedCallback;
+    if (!callback) throw new Error("file_watcher did not subscribe to ws messages");
+    await callback(message);
+}
+
+function lastToast(): ToastOptionsWithRequiredId {
+    const call = vi.mocked(toast.showPersistent).mock.lastCall;
+    if (!call) throw new Error("no toast shown");
+    return call[0];
+}
+
 describe("file_watcher", () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
+        vi.spyOn(toast, "showPersistent").mockImplementation(() => {});
     });
 
-    it("registers a ws message subscriber on load", () => {
-        expect(typeof wsState.subscribedCallback).toBe("function");
+    it("ignores messages other than openedFileUpdated", async () => {
+        await receive({ type: "ping" } as WebSocketMessage);
+        expect(toast.showPersistent).not.toHaveBeenCalled();
     });
 
-    it("ignores messages that are not openedFileUpdated", async () => {
-        await wsState.subscribedCallback!({ type: "ping" } as WebSocketMessage);
-        expect(triggerEvent).not.toHaveBeenCalled();
+    it("offers to upload a changed note file, one toast per note", async () => {
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        await receive(makeUpdate("notes", "noteA"));
+
+        const shown = lastToast();
+        expect(shown.id).toBe("opened-file-updated-notes-noteA");
+        expect(shown.timeout).toBeUndefined();
+        expect(shown.notes).toEqual([ "noteA" ]);
+        expect(shown.buttons).toHaveLength(2);
+
+        const [ upload, ignore ] = shown.buttons ?? [];
+        const dismissToast = vi.fn();
+        await upload.onClick({ dismissToast });
+        expect(post).toHaveBeenCalledWith("notes/noteA/upload-modified-file", { filePath: "/tmp/noteA" });
+        expect(dismissToast).toHaveBeenCalledOnce();
+
+        dismissToast.mockClear();
+        await ignore.onClick({ dismissToast });
+        expect(post).toHaveBeenCalledOnce();
+        expect(dismissToast).toHaveBeenCalledOnce();
     });
 
-    it("stores the update, triggers the event, and exposes it via getFileModificationStatus", async () => {
-        await wsState.subscribedCallback!(makeUpdate("notes", "noteA"));
+    it("links an attachment's toast to its owner note", async () => {
+        vi.spyOn(froca, "getAttachment").mockResolvedValue({ ownerId: "owner1", title: "photo.png" } as never);
+        await receive(makeUpdate("attachments", "attB"));
 
-        expect(triggerEvent).toHaveBeenCalledWith("openedFileUpdated", {
-            entityType: "notes",
-            entityId: "noteA",
-            lastModifiedMs: 1234,
-            filePath: "/tmp/noteA"
-        });
-
-        const status = fileWatcher.getFileModificationStatus("notes", "noteA");
-        expect(status).toMatchObject({ entityType: "notes", entityId: "noteA" });
+        const shown = lastToast();
+        expect(shown.id).toBe("opened-file-updated-attachments-attB");
+        expect(shown.notes).toEqual([ { noteId: "owner1", description: "photo.png" } ]);
     });
 
-    it("handles both notes and attachments entity types independently", async () => {
-        await wsState.subscribedCallback!(makeUpdate("attachments", "attB"));
-        expect(fileWatcher.getFileModificationStatus("attachments", "attB")).toMatchObject({
-            entityId: "attB"
-        });
-        // notes bucket is unaffected.
-        expect(fileWatcher.getFileModificationStatus("notes", "attB")).toBeUndefined();
-    });
-
-    it("fileModificationUploaded removes a stored status", async () => {
-        await wsState.subscribedCallback!(makeUpdate("notes", "noteC"));
-        expect(fileWatcher.getFileModificationStatus("notes", "noteC")).toBeDefined();
-
-        fileWatcher.fileModificationUploaded("notes", "noteC");
-        expect(fileWatcher.getFileModificationStatus("notes", "noteC")).toBeUndefined();
-    });
-
-    it("ignoreModification removes a stored status", async () => {
-        await wsState.subscribedCallback!(makeUpdate("attachments", "attD"));
-        expect(fileWatcher.getFileModificationStatus("attachments", "attD")).toBeDefined();
-
-        fileWatcher.ignoreModification("attachments", "attD");
-        expect(fileWatcher.getFileModificationStatus("attachments", "attD")).toBeUndefined();
-    });
-
-    it("throws on an unrecognized entity type via the public API", () => {
-        expect(() => fileWatcher.getFileModificationStatus("bogus", "x")).toThrow(/Unrecognized type 'bogus'/);
-        expect(() => fileWatcher.fileModificationUploaded("bogus", "x")).toThrow(/should be 'notes' or 'attachments'/);
-        expect(() => fileWatcher.ignoreModification("bogus", "x")).toThrow(/Unrecognized type/);
-    });
-
-    it("propagates the unrecognized-type error from the ws handler", async () => {
-        await expect(wsState.subscribedCallback!(makeUpdate("bogus", "x"))).rejects.toThrow(/Unrecognized type 'bogus'/);
-        expect(triggerEvent).not.toHaveBeenCalled();
+    it("rejects an unrecognized entity type without showing a toast", async () => {
+        await expect(receive(makeUpdate("bogus", "x"))).rejects.toThrow(/Unrecognized type 'bogus'/);
+        expect(toast.showPersistent).not.toHaveBeenCalled();
     });
 });
