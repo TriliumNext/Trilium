@@ -2,7 +2,7 @@ import { ALLOWED_NOTE_TYPES, type NoteType } from "@triliumnext/commons";
 import { basename, dirname } from "../utils/path.js";
 import { getZipProvider, type ZipSource } from "../zip_provider.js";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BAttachment from "../../becca/entities/battachment.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
@@ -277,7 +277,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         const noteId = getNoteId(noteMeta, filePath);
 
-        if (becca.getNote(noteId)) {
+        if (getBecca().getNote(noteId)) {
             return;
         }
 
@@ -567,7 +567,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         }
 
         if (noteMeta?.isClone) {
-            if (!isImportRootNote && !becca.getBranchFromChildAndParent(noteId, parentNoteId)) {
+            if (!isImportRootNote && !getBecca().getBranchFromChildAndParent(noteId, parentNoteId)) {
                 new BBranch({
                     noteId,
                     parentNoteId,
@@ -611,7 +611,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         content = processNoteContent(noteMeta, type, mime, content, noteTitle || "", filePath);
 
-        let note = becca.getNote(noteId);
+        let note = getBecca().getNote(noteId);
 
         const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
 
@@ -628,7 +628,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             note.setContent(content);
 
-            if (!isImportRootNote && !becca.getBranchFromChildAndParent(noteId, parentNoteId)) {
+            if (!isImportRootNote && !getBecca().getBranchFromChildAndParent(noteId, parentNoteId)) {
                 new BBranch({
                     noteId,
                     parentNoteId,
@@ -841,7 +841,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     taskContext.setTotalCount(createdNoteIds.size);
 
     for (const noteId of createdNoteIds) {
-        const note = becca.getNote(noteId);
+        const note = getBecca().getNote(noteId);
         if (!note) continue;
         const postStart = Date.now();
         await noteService.asyncPostProcessContent(note, note.getContent());
@@ -862,7 +862,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     // are already in the database (we don't want to have "broken" relations, not even transitionally)
     timingMark = Date.now();
     for (const attr of attributes) {
-        if (attr.type !== "relation" || attr.value in becca.notes) {
+        if (attr.type !== "relation" || attr.value in getBecca().notes) {
             new BAttribute(attr).save();
         } else {
             getLog().info(`Relation not imported since the target note doesn't exist: ${JSON.stringify(attr)}`);

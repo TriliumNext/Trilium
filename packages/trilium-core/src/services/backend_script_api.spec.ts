@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import BackendScriptApi from "./backend_script_api.js";
 import ws from "./ws.js";
 
 describe("BackendScriptApi.log", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
     });
 
@@ -34,7 +34,7 @@ describe("BackendScriptApi.log", () => {
 });
 
 describe("BackendScriptApi markdown conversion", () => {
-    beforeEach(() => becca.reset());
+    beforeEach(() => getBecca().reset());
 
     function makeApi() {
         const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });

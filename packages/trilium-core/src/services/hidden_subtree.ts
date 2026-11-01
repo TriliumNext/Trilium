@@ -1,7 +1,7 @@
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
 import { t } from "i18next";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
@@ -346,7 +346,7 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
     }
 
     getSql().transactional(() => {
-        const taskStatesExisted = !!becca.notes["_taskStates"];
+        const taskStatesExisted = !!getBecca().notes["_taskStates"];
 
         checkHiddenSubtreeRecursively("root", hiddenSubtreeDefinition, extraOpts);
 
@@ -415,7 +415,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         throw new Error(`ID has to start with underscore, given '${item.id}'`);
     }
 
-    let note = becca.notes[item.id] as BNote | undefined;
+    let note = getBecca().notes[item.id] as BNote | undefined;
     let branch: BBranch | undefined;
     const log = getLog();
 

@@ -2,7 +2,7 @@
 
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type SearchContext from "../search_context.js";
 
 type Comparator = (value: string) => boolean;
@@ -21,7 +21,7 @@ class LabelComparisonExp extends Expression {
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
-        const attrs = becca.findAttributes(this.attributeType, this.attributeName);
+        const attrs = getBecca().findAttributes(this.attributeType, this.attributeName);
         const resultNoteSet = new NoteSet();
 
         for (const attr of attrs) {

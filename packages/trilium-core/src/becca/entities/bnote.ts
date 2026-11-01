@@ -21,6 +21,20 @@ import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
 
+// ownerId exists only after migration 239. Saves that run during migrations 220-238
+// must skip it or the INSERT fails. Result is cached so the PRAGMA runs once per process.
+let ownerIdColExists: boolean | undefined;
+function ownerIdColumnExists(): boolean {
+    if (ownerIdColExists !== undefined) return ownerIdColExists;
+    try {
+        const cols = getSql().getColumn<string>("SELECT name FROM pragma_table_info('notes')");
+        ownerIdColExists = cols.includes("ownerId");
+        return ownerIdColExists;
+    } catch {
+        return false;
+    }
+}
+
 const LABEL = "label";
 const RELATION = "relation";
 
@@ -66,6 +80,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     title!: string;
     type!: NoteType;
     mime!: string;
+    ownerId!: string | null;
     /** set during the deletion operation, before it is completed (removed from becca completely). */
     isBeingDeleted!: boolean;
     isDecrypted!: boolean;
@@ -104,10 +119,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     updateFromRow(row: Partial<NoteRow>) {
-        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified]);
+        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified, row.ownerId]);
     }
 
-    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified]: any) {
+    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId]: any) {
         // ------ Database persisted attributes ------
 
         this.noteId = noteId;
@@ -120,6 +135,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.dateModified = dateModified;
         this.utcDateCreated = utcDateCreated || dateUtils.utcNowDateTime();
         this.utcDateModified = utcDateModified;
+        this.ownerId = ownerId ?? null;
         this.isBeingDeleted = false;
 
         // ------ Derived attributes ------
@@ -1709,7 +1725,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
             dateCreated: this.dateCreated,
             dateModified: this.dateModified,
             utcDateCreated: this.utcDateCreated,
-            utcDateModified: this.utcDateModified
+            utcDateModified: this.utcDateModified,
+            ownerId: this.ownerId
         };
     }
 
@@ -1723,6 +1740,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
                 // updating protected note outside of protected session means we will keep original ciphertexts
                 delete pojo.title;
             }
+        }
+
+        if (!ownerIdColumnExists()) {
+            delete pojo.ownerId;
         }
 
         return pojo;

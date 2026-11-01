@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import attributeService from "./attributes.js";
 import config from "./config.js";
@@ -54,7 +54,7 @@ describe("scheduler", () => {
     let reloadFrontend: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         vi.useFakeTimers();
         vi.spyOn(console, "log").mockImplementation(() => {});
 

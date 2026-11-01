@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
@@ -71,9 +71,9 @@ function setTextRepresentationForBlob(blobId: string, textRepresentation: string
     ]);
 }
 
-/** Build a NoteSet that contains every note currently registered in becca. */
+/** Build a NoteSet that contains every note currently registered in getBecca(). */
 function allNotesSet() {
-    return new NoteSet(Object.values(becca.notes));
+    return new NoteSet(Object.values(getBecca().notes));
 }
 
 function execute(

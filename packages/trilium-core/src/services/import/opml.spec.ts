@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
@@ -75,7 +75,7 @@ describe("importOpml (real DB)", () => {
 
         // The returned note is the first top-level outline.
         expect(returnNote.title).toBe("Parent");
-        expect(becca.notes[returnNote.noteId]).toBe(returnNote);
+        expect(getBecca().notes[returnNote.noteId]).toBe(returnNote);
 
         // v1 derives content from `text`, joining newlines into separate <p> blocks.
         expect(decodeUtf8(returnNote.getContent())).toBe("<p>line one</p><p>line two</p>");

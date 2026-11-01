@@ -12,7 +12,7 @@
  * a theme on a device and it will not affect other devices.
  */
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BOption from "../becca/entities/boption.js";
 import type { OptionRow } from "@triliumnext/commons";
 import type { FilterOptionsByType, OptionDefinitions, OptionMap, OptionNames } from "@triliumnext/commons";
@@ -21,8 +21,8 @@ import { getSql } from "./sql/index.js";
 function getOptionOrNull(name: OptionNames): string | null {
     let option;
 
-    if (becca.loaded) {
-        option = becca.getOption(name);
+    if (getBecca().loaded) {
+        option = getBecca().getOption(name);
     } else {
         // e.g. in initial sync becca is not loaded because DB is not initialized
         try {
@@ -73,7 +73,7 @@ function getOptionBool(name: FilterOptionsByType<boolean>): boolean {
 }
 
 function setOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T]) {
-    const option = becca.getOption(name);
+    const option = getBecca().getOption(name);
 
     if (option) {
         option.value = value as string;
@@ -101,13 +101,13 @@ function createOption<T extends OptionNames>(name: T, value: string | OptionDefi
 }
 
 function getOptions() {
-    return Object.values(becca.options);
+    return Object.values(getBecca().options);
 }
 
 function getOptionMap() {
     const map: Record<string, string> = {};
 
-    for (const option of Object.values(becca.options)) {
+    for (const option of Object.values(getBecca().options)) {
         map[option.name] = option.value;
     }
 

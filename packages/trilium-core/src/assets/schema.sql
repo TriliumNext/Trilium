@@ -168,6 +168,25 @@ CREATE TABLE IF NOT EXISTS "user_group_members"
     FOREIGN KEY (groupId) REFERENCES user_groups(groupId)
 );
 
+CREATE TABLE IF NOT EXISTS "note_permissions"
+(
+    permissionId    TEXT PRIMARY KEY NOT NULL,
+    noteId          TEXT NOT NULL,
+    userId          TEXT,
+    groupId         TEXT,
+    canRead         INT NOT NULL DEFAULT 1,
+    canWrite        INT NOT NULL DEFAULT 0,
+    dateCreated     TEXT NOT NULL,
+    utcDateModified TEXT NOT NULL,
+    FOREIGN KEY (noteId)   REFERENCES notes(noteId),
+    FOREIGN KEY (userId)   REFERENCES users(userId),
+    FOREIGN KEY (groupId)  REFERENCES user_groups(groupId),
+    CHECK (userId IS NOT NULL OR groupId IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS IDX_note_permissions_noteId  ON note_permissions(noteId);
+CREATE INDEX IF NOT EXISTS IDX_note_permissions_userId  ON note_permissions(userId);
+CREATE INDEX IF NOT EXISTS IDX_note_permissions_groupId ON note_permissions(groupId);
+
 -- Single-row table that holds the cryptographic OAuth enrollment for the instance owner.
 -- Separate from `users` because this data (scrypt hash, encrypted data key) is server-only
 -- and must never be synced.

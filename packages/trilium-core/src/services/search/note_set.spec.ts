@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
 import NoteSet from "./note_set.js";
@@ -11,7 +11,7 @@ describe("NoteSet", () => {
     let c: BNote;
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         a = buildNote({ id: "a", title: "A" });
         b = buildNote({ id: "b", title: "B" });
         c = buildNote({ id: "c", title: "C" });

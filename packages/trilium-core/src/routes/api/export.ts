@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import opmlExportService from "../../services/export/opml.js";
 import singleExportService from "../../services/export/single.js";
 import zipExportService from "../../services/export/zip.js";
@@ -11,7 +11,7 @@ import { NotFoundError, ValidationError } from "../../errors.js";
 
 async function exportBranch(req: Request<{ branchId: string; type: string; format: string; taskId: string }>, res: Response) {
     const { branchId, type, format, taskId } = req.params;
-    const branch = becca.getBranch(branchId);
+    const branch = getBecca().getBranch(branchId);
 
     if (!branch) {
         const message = `Cannot export branch '${branchId}' since it does not exist.`;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { NotFoundError } from "../errors.js";
 import blob from "./blob.js";
@@ -144,7 +144,7 @@ describe("blob", () => {
             expect(content).toBe("<p>blob spec body</p>");
             expect(typeof blobId).toBe("string");
             // The seeded note is the same instance retrieved by getEntity.
-            expect(becca.notes[noteId]).toBeDefined();
+            expect(getBecca().notes[noteId]).toBeDefined();
         });
 
         it("nulls out the content for a note with binary (non-string) content", () => {

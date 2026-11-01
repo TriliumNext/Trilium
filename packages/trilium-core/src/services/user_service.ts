@@ -33,6 +33,12 @@ function getUserById(userId: string): User | null {
     ) ?? null;
 }
 
+function isUserAdmin(userId: string): boolean {
+    return !!getSql().getValue<number>(
+        "SELECT isAdmin FROM users WHERE userId = ? AND isDeleted = 0", [userId]
+    );
+}
+
 function listUsers(): User[] {
     return getSql().getRows<User>(
         `SELECT userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified
@@ -62,4 +68,4 @@ function deleteUser(userId: string): void {
     );
 }
 
-export default { getAdminUserId, getUserById, listUsers, createUser, deleteUser };
+export default { getAdminUserId, getUserById, isUserAdmin, listUsers, createUser, deleteUser };

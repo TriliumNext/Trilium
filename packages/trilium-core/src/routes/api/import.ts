@@ -4,7 +4,7 @@ import type { File } from "../../services/import/common.js";
 
 type ImportRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import becca_loader from "../../becca/becca_loader.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
@@ -35,7 +35,7 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
         throw new ValidationError("No file has been uploaded");
     }
 
-    const parentNote = becca.getNoteOrThrow(parentNoteId);
+    const parentNote = getBecca().getNoteOrThrow(parentNoteId);
 
     // running all the event handlers on imported notes (and attributes) is slow
     // and may produce unintended consequences
@@ -102,7 +102,7 @@ function importAttachmentsToNote(req: ImportRequest<{ parentNoteId: string }>) {
         throw new ValidationError("No file has been uploaded");
     }
 
-    const parentNote = becca.getNoteOrThrow(parentNoteId);
+    const parentNote = getBecca().getNoteOrThrow(parentNoteId);
     const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
 
     // unlike in note import, we let the events run, because a huge number of attachments is not likely

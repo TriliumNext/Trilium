@@ -1,7 +1,7 @@
 import normalizeString from "normalize-strings";
 import striptags from "striptags";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import becca_service from "../../../becca/becca_service.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import hoistedNoteService from "../../hoisted_note.js";
@@ -139,13 +139,13 @@ function loadNeededInfoFromDatabase() {
         WHERE notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length } of noteContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
-        becca.notes[noteId].contentSize = length;
-        becca.notes[noteId].revisionCount = 0;
+        getBecca().notes[noteId].contentSize = length;
+        getBecca().notes[noteId].revisionCount = 0;
 
         noteBlobs[noteId] = { [blobId]: length };
     }
@@ -167,8 +167,8 @@ function loadNeededInfoFromDatabase() {
             AND notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length } of attachmentContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
@@ -181,7 +181,7 @@ function loadNeededInfoFromDatabase() {
     }
 
     for (const noteId in noteBlobs) {
-        becca.notes[noteId].contentAndAttachmentsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
+        getBecca().notes[noteId].contentAndAttachmentsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
     }
 
     type RevisionRow = {
@@ -213,8 +213,8 @@ function loadNeededInfoFromDatabase() {
             WHERE notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length, isNoteRevision } of revisionContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
@@ -226,7 +226,7 @@ function loadNeededInfoFromDatabase() {
         noteBlobs[noteId][blobId] = length;
 
         if (isNoteRevision) {
-            const noteRevision = becca.notes[noteId];
+            const noteRevision = getBecca().notes[noteId];
             if (noteRevision && noteRevision.revisionCount) {
                 noteRevision.revisionCount++;
             }
@@ -234,7 +234,7 @@ function loadNeededInfoFromDatabase() {
     }
 
     for (const noteId in noteBlobs) {
-        becca.notes[noteId].contentAndAttachmentsAndRevisionsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
+        getBecca().notes[noteId].contentAndAttachmentsAndRevisionsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
     }
 }
 
@@ -278,7 +278,7 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 }
 
 function performSearch(expression: Expression, searchContext: SearchContext, enableFuzzyMatching: boolean): SearchResult[] {
-    const allNoteSet = becca.getAllNoteSet();
+    const allNoteSet = getBecca().getAllNoteSet();
 
     const noteIdToNotePath: Record<string, string[]> = {};
     const executionContext = {
@@ -409,7 +409,7 @@ function parseQueryToExpression(query: string, searchContext: SearchContext) {
 function searchNotes(query: string, params: SearchParams = {}): BNote[] {
     const searchResults = findResultsWithQuery(query, new SearchContext(params));
 
-    return searchResults.map((sr) => becca.notes[sr.noteId]);
+    return searchResults.map((sr) => getBecca().notes[sr.noteId]);
 }
 
 function findResultsWithQuery(query: string, searchContext: SearchContext): SearchResult[] {
@@ -438,7 +438,7 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
 function findFirstNoteWithQuery(query: string, searchContext: SearchContext): BNote | null {
     const searchResults = findResultsWithQuery(query, searchContext);
 
-    return searchResults.length > 0 ? becca.notes[searchResults[0].noteId] : null;
+    return searchResults.length > 0 ? getBecca().notes[searchResults[0].noteId] : null;
 }
 
 /**
@@ -462,7 +462,7 @@ function getTextRepresentationForNote(note: BNote): string | null {
 }
 
 function extractContentSnippet(noteId: string, searchTokens: string[], maxLength: number = 200): string {
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
     if (!note) {
         return "";
     }
@@ -591,7 +591,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 }
 
 function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLength: number = 200): string {
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
     if (!note) {
         return "";
     }
@@ -638,7 +638,7 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
                 line = attr.value ? `#${attr.name}="${attr.value}"` : `#${attr.name}`;
             } else if (attr.type === "relation") {
                 // For relations, show the target note title if possible
-                const targetNote = attr.value ? becca.notes[attr.value] : null;
+                const targetNote = attr.value ? getBecca().notes[attr.value] : null;
                 const targetTitle = targetNote ? targetNote.title : attr.value;
                 line = `~${attr.name}="${targetTitle}"`;
             }

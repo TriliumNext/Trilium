@@ -7,7 +7,7 @@ import {
 } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
@@ -83,13 +83,13 @@ describe("task_states (real DB)", () => {
         });
 
         it("falls back to DEFAULT_TASK_STATES when the container note is missing", () => {
-            const realContainer = becca.notes[TASK_STATES_CONTAINER_ID];
+            const realContainer = getBecca().notes[TASK_STATES_CONTAINER_ID];
             try {
                 // Temporarily hide the container so the early-return branch is hit.
-                delete becca.notes[TASK_STATES_CONTAINER_ID];
+                delete getBecca().notes[TASK_STATES_CONTAINER_ID];
                 expect(getTaskStates()).toBe(DEFAULT_TASK_STATES);
             } finally {
-                becca.notes[TASK_STATES_CONTAINER_ID] = realContainer;
+                getBecca().notes[TASK_STATES_CONTAINER_ID] = realContainer;
             }
         });
     });
@@ -140,7 +140,7 @@ describe("task_states (real DB)", () => {
 
             expect(note.noteId).toBe(noteId);
             expect(note.title).toBe("Overridden title");
-            expect(becca.notes[noteId]).toBe(note);
+            expect(getBecca().notes[noteId]).toBe(note);
         });
 
         it("round-trips a created custom state through getTaskStates", () => {

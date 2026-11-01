@@ -6,7 +6,7 @@ import optionService from "./options.js";
 import syncOptions from "./sync_options.js";
 import appInfo from "./app_info.js";
 import { timeLimit } from "./utils/index.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type { SetupStatusResponse, SetupSyncFromServerResponse, SetupSyncSeedResponse } from "@triliumnext/commons";
 import request from "./request.js";
 
@@ -114,7 +114,7 @@ async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string
 }
 
 function getSyncSeedOptions() {
-    return [becca.getOption("documentId"), becca.getOption("documentSecret")];
+    return [getBecca().getOption("documentId"), getBecca().getOption("documentSecret")];
 }
 
 export default {

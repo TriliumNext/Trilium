@@ -1,6 +1,6 @@
 import type { BlobRow, EntityChange } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import dateUtils from "./utils/date.js";
 import { getLog } from "./log.js";
 import { randomString } from "./utils/index.js";
@@ -153,7 +153,7 @@ function fillEntityChanges(entityName: string, entityPrimaryKey: string, conditi
                 ec.utcDateChanged = blob.utcDateModified;
                 ec.isSynced = true; // blobs are always synced
             } else {
-                const entity = becca.getEntity(entityName, entityId);
+                const entity = getBecca().getEntity(entityName, entityId);
 
                 if (entity) {
                     ec.hash = entity.generateHash();

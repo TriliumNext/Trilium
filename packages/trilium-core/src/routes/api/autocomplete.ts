@@ -1,6 +1,6 @@
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
 import { getLog } from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";
@@ -47,7 +47,7 @@ function getRecentNotes(activeNoteId: string) {
         params.push(`%${hoistedNoteId}%`);
     }
 
-    const recentNotes = becca.getRecentNotesFromQuery(
+    const recentNotes = getBecca().getRecentNotesFromQuery(
         `
     SELECT
         recent_notes.*

@@ -1,7 +1,7 @@
 import type { BulkAction } from "@triliumnext/commons";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import bulkActionService from "./bulk_actions.js";
@@ -273,7 +273,7 @@ describe("bulk_actions service (real DB)", () => {
             );
 
             expect(target.note.getChildNotes().some((n) => n.noteId === note.note.noteId)).toBe(true);
-            expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(note.note.noteId, "root")).toBeNull();
         });
 
         it("clones (rather than moves) a note that has multiple parents", () => {
@@ -295,8 +295,8 @@ describe("bulk_actions service (real DB)", () => {
             );
 
             // A clone is created under the target while the originals remain.
-            expect(becca.getBranchFromChildAndParent(note.note.noteId, target.note.noteId)).not.toBeNull();
-            expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(note.note.noteId, target.note.noteId)).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
         });
 
         it("is a no-op when the target parent does not exist", () => {
@@ -312,7 +312,7 @@ describe("bulk_actions service (real DB)", () => {
             ).not.toThrow();
 
             // The note stays where it was.
-            expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
         });
     });
 

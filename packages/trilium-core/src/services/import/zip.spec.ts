@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { PassThrough } from "stream";
 import zip, { removeTriliumTags } from "./zip.js";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
@@ -24,7 +24,7 @@ async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData:
 
     return new Promise<{ importedNote: BNote; rootNote: BNote }>((resolve, reject) => {
         getContext().init(async () => {
-            const rootNote = becca.getNote("root");
+            const rootNote = getBecca().getNote("root");
             if (!rootNote) {
                 expect(rootNote).toBeTruthy();
                 return;
@@ -239,7 +239,7 @@ describe("processNoteContent", () => {
 
         await new Promise<void>((resolve, reject) => {
             getContext().init(async () => {
-                const rootNote = becca.getNote("root");
+                const rootNote = getBecca().getNote("root");
                 if (!rootNote) {
                     reject(new Error("missing root note"));
                     return;
@@ -272,7 +272,7 @@ describe("processNoteContent", () => {
 
         await new Promise<void>((resolve, reject) => {
             getContext().init(async () => {
-                const rootNote = becca.getNote("root");
+                const rootNote = getBecca().getNote("root");
                 if (!rootNote) {
                     reject(new Error("missing root note"));
                     return;
@@ -340,7 +340,7 @@ describe("processNoteContent", () => {
 
         // No corruption: the system root keeps its own content and gains no self-referential branch.
         expect(rootNote.getContent().toString()).not.toContain("archived root content");
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("restoreAsRoot maps the archived root onto the destination root instead of wrapping it (demo-content shape)", async () => {
@@ -381,7 +381,7 @@ describe("processNoteContent", () => {
         expect(journal?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         expect(misc?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         // And no self-referential root branch.
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("restoreAsRoot merges an archived root that has its own content into the destination root", async () => {
@@ -418,7 +418,7 @@ describe("processNoteContent", () => {
         const child = rootNote.getChildNotes().find((n) => n.title === "Restored Child");
         expect(child?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         expect(child?.getContent().toString()).toContain("child content");
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {

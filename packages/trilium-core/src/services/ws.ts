@@ -1,6 +1,6 @@
 import { type EntityChange, WebSocketMessage } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
@@ -48,19 +48,19 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
     // only when that fails, try to load from the database
     const sql = getSql();
     if (entityChange.entityName === "attributes") {
-        entityChange.entity = becca.getAttribute(entityChange.entityId);
+        entityChange.entity = getBecca().getAttribute(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM attributes WHERE attributeId = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "branches") {
-        entityChange.entity = becca.getBranch(entityChange.entityId);
+        entityChange.entity = getBecca().getBranch(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM branches WHERE branchId = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "notes") {
-        entityChange.entity = becca.getNote(entityChange.entityId);
+        entityChange.entity = getBecca().getNote(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM notes WHERE noteId = ?`, [entityChange.entityId]);
@@ -79,7 +79,7 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
     } else if (entityChange.entityName === "note_reordering") {
         entityChange.positions = {};
 
-        const parentNote = becca.getNote(entityChange.entityId);
+        const parentNote = getBecca().getNote(entityChange.entityId);
 
         if (parentNote) {
             for (const childBranch of parentNote.getChildBranches()) {
@@ -89,13 +89,13 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
             }
         }
     } else if (entityChange.entityName === "options") {
-        entityChange.entity = becca.getOption(entityChange.entityId);
+        entityChange.entity = getBecca().getOption(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM options WHERE name = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "attachments") {
-        entityChange.entity = becca.getAttachment(entityChange.entityId);
+        entityChange.entity = getBecca().getAttachment(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(
@@ -142,7 +142,7 @@ function buildFrontendUpdateMessage(entityChangeIds: number[]): WebSocketMessage
 
     // sort entity changes since froca expects "referential order", i.e. referenced entities should already exist
     // in froca.
-    // Froca needs this since it is an incomplete copy, it can't create "skeletons" like becca.
+    // Froca needs this since it is an incomplete copy, it can't create "skeletons" like getBecca().
     entityChanges.sort((a, b) => ORDERING[a.entityName] - ORDERING[b.entityName]);
 
     for (const entityChange of entityChanges) {

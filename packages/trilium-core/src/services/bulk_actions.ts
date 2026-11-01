@@ -2,7 +2,7 @@ import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons
 import branchService from "./branches";
 import eraseService from "./erase.js";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
 import { getLog } from "./log";
@@ -87,7 +87,7 @@ const ACTION_HANDLERS: ActionHandlerMap = {
         }
     },
     moveNote: (action, note) => {
-        const targetParentNote = becca.getNote(action.targetParentNoteId);
+        const targetParentNote = getBecca().getNote(action.targetParentNoteId);
 
         if (!targetParentNote) {
             getLog().info(`Cannot execute moveNote because note ${action.targetParentNoteId} doesn't exist.`);
@@ -169,7 +169,7 @@ function executeActionsFromNote(note: BNote, noteIds: string[] | Set<string>) {
 
 function executeActions(actions: BulkAction[], noteIds: string[] | Set<string>) {
     for (const resultNoteId of noteIds) {
-        const resultNote = becca.getNote(resultNoteId);
+        const resultNote = getBecca().getNote(resultNoteId);
 
         if (!resultNote) {
             continue;

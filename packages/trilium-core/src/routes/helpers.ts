@@ -1,12 +1,12 @@
 import { Response } from "express";
-import becca from "../becca/becca";
+import { getBecca } from "../becca/becca.js";
 import BNote from "../becca/entities/bnote";
 import protected_session from "../services/protected_session";
 import BAttachment from "../becca/entities/battachment";
 import { getContentDisposition } from "../services/utils/index";
 
 export function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (!note) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Note '${noteId}' doesn't exist.`);

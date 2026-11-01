@@ -1,5 +1,5 @@
 import { BlobRow } from "@triliumnext/commons";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { NotFoundError } from "../errors";
 import protectedSessionService from "./protected_session.js";
 import { decodeUtf8 } from "./utils/binary.js";
@@ -7,12 +7,12 @@ import { hash } from "./utils/index.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.
-    const entity = becca.getEntity(entityName, entityId);
+    const entity = getBecca().getEntity(entityName, entityId);
     if (!entity) {
         throw new NotFoundError(`Entity ${entityName} '${entityId}' was not found.`);
     }
 
-    const blob = becca.getBlob(entity);
+    const blob = getBecca().getBlob(entity);
     if (!blob) {
         throw new NotFoundError(`Blob ${entity.blobId} for ${entityName} '${entityId}' was not found.`);
     }

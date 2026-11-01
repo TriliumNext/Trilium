@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import BackendScriptApi from "./backend_script_api.js";
 import config from "./config.js";
@@ -19,7 +19,7 @@ describe("ScriptContext", () => {
     });
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
     });
 
     it("maps every note into the notes and apis objects keyed by noteId", () => {

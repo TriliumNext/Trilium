@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
@@ -25,7 +25,7 @@ async function testImport(fileName: string, mimetype: string, bufferOverride?: B
 
     return new Promise<{ buffer: Buffer; importedNote: BNote }>((resolve, reject) => {
         getContext().init(async () => {
-            const rootNote = becca.getNote("root");
+            const rootNote = getBecca().getNote("root");
             if (!rootNote) {
                 reject("Missing root note.");
                 return;

@@ -1,4 +1,4 @@
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 
 import { RenderMarkdownResponse, ToMarkdownResponse } from "@triliumnext/commons";
 import type { Request } from "express";
@@ -29,7 +29,7 @@ function toMarkdown(req: Request) {
 function getIconUsage() {
     const iconClassToCountMap: Record<string, number> = {};
 
-    for (const { value: iconClass, noteId } of becca.findAttributes("label", "iconClass")) {
+    for (const { value: iconClass, noteId } of getBecca().findAttributes("label", "iconClass")) {
         if (noteId.startsWith("_")) {
             continue; // ignore icons of "system" notes since they were not set by the user
         }

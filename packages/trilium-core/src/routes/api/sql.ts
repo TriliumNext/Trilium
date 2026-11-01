@@ -1,6 +1,6 @@
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import { getSql } from "../../services/sql/index.js";
 import { ValidationError } from "../../errors.js";
 import { assertSqlConsoleEnabled } from "../../services/scripting_guard.js";
@@ -29,7 +29,7 @@ function getSchema() {
 function execute(req: Request<{ noteId: string }>) {
     assertSqlConsoleEnabled();
     const sql = getSql();
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     const content = note.getContent();
     if (typeof content !== "string") {

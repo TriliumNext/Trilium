@@ -19,9 +19,14 @@ type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
  * desktop runs IpcMessagingProvider instead so the renderer↔server messaging
  * channel never crosses a TCP socket. See `apps/server/src/main.ts`.
  */
+interface ClientEntry {
+    ws: WebSocket;
+    userId?: string;
+}
+
 export default class WebSocketMessagingProvider implements MessagingProvider {
     private webSocketServer!: WebSocketServer;
-    private clientMap = new Map<string, WebSocket>();
+    private clientMap = new Map<string, ClientEntry>();
     private clientMessageHandler?: ClientMessageHandler;
 
     init(httpServer: HttpServer, sessionParser: express.RequestHandler) {
@@ -43,9 +48,10 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         this.webSocketServer.on("connection", (ws, req) => {
             const id = randomString(10);
             (ws as any).id = id;
-            this.clientMap.set(id, ws);
+            const userId: string | undefined = (req as any).session?.userId;
+            this.clientMap.set(id, { ws, userId });
 
-            console.log(`websocket client connected`);
+            console.log(`websocket client connected (clientId=${id})`);
 
             ws.on("error", (error) => {
                 // A protocol error on a single connection (e.g. WS_ERR_INVALID_CLOSE_CODE from a
@@ -107,13 +113,22 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         }
     }
 
+    sendMessageToUserClients(userId: string, message: WebSocketMessage): void {
+        const jsonStr = JSON.stringify(message);
+        for (const entry of this.clientMap.values()) {
+            if (entry.userId === userId && entry.ws.readyState === WebSocket.OPEN) {
+                entry.ws.send(jsonStr);
+            }
+        }
+    }
+
     sendMessageToClient(clientId: string, message: WebSocketMessage): boolean {
-        const client = this.clientMap.get(clientId);
-        if (!client || client.readyState !== WebSocket.OPEN) {
+        const entry = this.clientMap.get(clientId);
+        if (!entry || entry.ws.readyState !== WebSocket.OPEN) {
             return false;
         }
 
-        client.send(JSON.stringify(message));
+        entry.ws.send(JSON.stringify(message));
         return true;
     }
 

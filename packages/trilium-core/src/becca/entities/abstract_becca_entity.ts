@@ -6,7 +6,7 @@ import dateUtils from "../../services/utils/date";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import type { ConstructorData,default as Becca } from "../becca-interface.js";
 import { getSql } from "../../services/sql";
 import { concat2, encodeUtf8, unwrapStringOrBuffer, wrapStringOrBuffer } from "../../services/utils/binary";
@@ -45,7 +45,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     protected get becca(): Becca {
-        return becca;
+        return getBecca();
     }
 
     protected putEntityChange(isDeleted: boolean) {

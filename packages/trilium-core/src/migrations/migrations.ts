@@ -9,6 +9,30 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add note_permissions table (note sharing ACL, users and groups).
+    {
+        version: 240,
+        ignoreErrors: true,
+        sql: /*sql*/`
+            CREATE TABLE IF NOT EXISTS "note_permissions" (
+                permissionId    TEXT PRIMARY KEY NOT NULL,
+                noteId          TEXT NOT NULL,
+                userId          TEXT,
+                groupId         TEXT,
+                canRead         INT NOT NULL DEFAULT 1,
+                canWrite        INT NOT NULL DEFAULT 0,
+                dateCreated     TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL,
+                FOREIGN KEY (noteId)   REFERENCES notes(noteId),
+                FOREIGN KEY (userId)   REFERENCES users(userId),
+                FOREIGN KEY (groupId)  REFERENCES user_groups(groupId),
+                CHECK (userId IS NOT NULL OR groupId IS NOT NULL)
+            );
+            CREATE INDEX IF NOT EXISTS IDX_note_permissions_noteId  ON note_permissions(noteId);
+            CREATE INDEX IF NOT EXISTS IDX_note_permissions_userId  ON note_permissions(userId);
+            CREATE INDEX IF NOT EXISTS IDX_note_permissions_groupId ON note_permissions(groupId);
+        `
+    },
     // Add multi-user identity tables (users, user_groups, user_group_members)
     // and nullable ownership columns on notes/entity_changes/etapi_tokens.
     // Admin-user seeding and user_data teardown happen in sql_init.ts after

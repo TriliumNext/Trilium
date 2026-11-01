@@ -1,7 +1,7 @@
 import type { AttributeRow } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { init as clsInit } from "./context.js";
 import noteService from "./notes.js";
 import attributeService from "./attributes.js";
@@ -82,9 +82,9 @@ describe("attributes service", () => {
             expect(attr.name).toBe("myUniqueLabelOne");
             expect(attr.value).toBe("alpha");
 
-            const note = becca.getNote(noteId);
+            const note = getBecca().getNote(noteId);
             expect(note?.getOwnedLabelValue("myUniqueLabelOne")).toBe("alpha");
-            expect(becca.attributes[attr.attributeId]).toBe(attr);
+            expect(getBecca().attributes[attr.attributeId]).toBe(attr);
         });
 
         it("defaults the label value to an empty string when omitted", () => {
@@ -93,7 +93,7 @@ describe("attributes service", () => {
             const attr = clsInit(() => createLabel(noteId, "myUniqueLabelTwo"));
 
             expect(attr.value).toBe("");
-            expect(becca.getNote(noteId)?.getOwnedLabelValue("myUniqueLabelTwo")).toBe("");
+            expect(getBecca().getNote(noteId)?.getOwnedLabelValue("myUniqueLabelTwo")).toBe("");
         });
 
         it("persists a relation pointing at the target note via createRelation", () => {
@@ -106,7 +106,7 @@ describe("attributes service", () => {
             expect(attr.name).toBe("myUniqueRel");
             expect(attr.value).toBe(targetId);
 
-            const source = becca.getNote(sourceId);
+            const source = getBecca().getNote(sourceId);
             expect(source?.getRelationValue("myUniqueRel")).toBe(targetId);
             expect(source?.getRelationTarget("myUniqueRel")?.noteId).toBe(targetId);
         });
@@ -123,8 +123,8 @@ describe("attributes service", () => {
             const attr = clsInit(() => createAttribute(row));
 
             expect(attr.attributeId).toBeTruthy();
-            expect(becca.attributes[attr.attributeId]?.name).toBe("myUniqueRawAttr");
-            expect(becca.getNote(noteId)?.getOwnedLabelValue("myUniqueRawAttr")).toBe("raw");
+            expect(getBecca().attributes[attr.attributeId]?.name).toBe("myUniqueRawAttr");
+            expect(getBecca().getNote(noteId)?.getOwnedLabelValue("myUniqueRawAttr")).toBe("raw");
         });
     });
 

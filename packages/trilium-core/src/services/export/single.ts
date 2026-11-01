@@ -4,7 +4,7 @@ import type { Response } from "express";
 import html from "html";
 import mimeTypes from "mime-types";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type TaskContext from "../task_context.js";
@@ -102,7 +102,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
 
 function inlineAttachments(content: string) {
     content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/?[^"]+"/g, (match, noteId) => {
-        const note = becca.getNote(noteId);
+        const note = getBecca().getNote(noteId);
         if (!note || !note.mime.startsWith("image/")) {
             return match;
         }
@@ -119,7 +119,7 @@ function inlineAttachments(content: string) {
     });
 
     content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/?[^"]+"/g, (match, attachmentId) => {
-        const attachment = becca.getAttachment(attachmentId);
+        const attachment = getBecca().getAttachment(attachmentId);
         if (!attachment || !attachment.mime.startsWith("image/")) {
             return match;
         }
@@ -136,7 +136,7 @@ function inlineAttachments(content: string) {
     });
 
     content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, attachmentId) => {
-        const attachment = becca.getAttachment(attachmentId);
+        const attachment = getBecca().getAttachment(attachmentId);
         if (!attachment) {
             return match;
         }

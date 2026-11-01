@@ -3,7 +3,7 @@ import type { File } from "../../services/import/common.js";
 
 type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import imageService from "../../services/image.js";
@@ -11,13 +11,13 @@ import { sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../../services/utils/i
 import { unwrapStringOrBuffer } from "../../services/utils/binary.js";
 
 function returnImageFromNote(req: Request<{ noteId: string }>, res: Response) {
-    const image = becca.getNote(req.params.noteId);
+    const image = getBecca().getNote(req.params.noteId);
 
     return returnImageInt(image, res);
 }
 
 function returnImageFromRevision(req: Request<{ revisionId: string }>, res: Response) {
-    const image = becca.getRevision(req.params.revisionId);
+    const image = getBecca().getRevision(req.params.revisionId);
 
     return returnImageInt(image, res);
 }
@@ -84,7 +84,7 @@ export function renderPngAttachment(image: BNote | BRevision, res: Response, att
 }
 
 function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Response) {
-    const attachment = becca.getAttachment(req.params.attachmentId);
+    const attachment = getBecca().getAttachment(req.params.attachmentId);
 
     if (!attachment) {
         res.set("Content-Type", "image/png");
@@ -110,7 +110,7 @@ function updateImage(req: FileRequest<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 
-    const _note = becca.getNoteOrThrow(noteId);
+    const _note = getBecca().getNoteOrThrow(noteId);
 
     if (!file) {
         return {

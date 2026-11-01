@@ -2,7 +2,7 @@ import { ZipArchive } from "archiver";
 import { PassThrough } from "stream";
 import { describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import TaskContext from "../../task_context.js";
@@ -38,7 +38,7 @@ async function importNotes(files: Record<string, string | Buffer>): Promise<BNot
     return new Promise<BNote[]>((resolve, reject) => {
         void getContext().init(async () => {
             try {
-                const root = becca.getNoteOrThrow("root");
+                const root = getBecca().getNoteOrThrow("root");
                 const importRoot = await keepImporter.importKeep(taskContext, new Uint8Array(buffer), root);
                 resolve(importRoot.getChildNotes());
             } catch (e) {

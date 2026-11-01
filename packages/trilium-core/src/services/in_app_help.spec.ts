@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { getContext } from "./context.js";
 import {
     cleanUpHelp,
@@ -91,17 +91,17 @@ describe("in_app_help - cleanUpHelp", () => {
         getContext().init(() => cleanUpHelp(definition));
 
         // The stale note is gone; the kept notes (incl. nested child and root) survive.
-        expect(becca.getNote("_helpStale")?.isDeleted ?? true).toBe(true);
-        expect(becca.getNote("_helpKeep")?.isDeleted).toBe(false);
-        expect(becca.getNote("_helpKeepChild")?.isDeleted).toBe(false);
-        expect(becca.getNote("_help")?.isDeleted).toBe(false);
+        expect(getBecca().getNote("_helpStale")?.isDeleted ?? true).toBe(true);
+        expect(getBecca().getNote("_helpKeep")?.isDeleted).toBe(false);
+        expect(getBecca().getNote("_helpKeepChild")?.isDeleted).toBe(false);
+        expect(getBecca().getNote("_help")?.isDeleted).toBe(false);
     });
 
     it("is a no-op when the _help subtree does not exist", () => {
-        // Remove the whole _help subtree, so becca.getNote("_help") is null and
+        // Remove the whole _help subtree, so getBecca().getNote("_help") is null and
         // the recursive flattener hits its empty-note short-circuit.
-        getContext().init(() => becca.getNote("_help")?.deleteNote());
-        expect(becca.getNote("_help")).toBeNull();
+        getContext().init(() => getBecca().getNote("_help")?.deleteNote());
+        expect(getBecca().getNote("_help")).toBeNull();
 
         expect(() => getContext().init(() => cleanUpHelp([]))).not.toThrow();
     });

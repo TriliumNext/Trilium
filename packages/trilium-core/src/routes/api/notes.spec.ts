@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import noteService from "../../services/notes";
 import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";
@@ -170,12 +170,12 @@ describe("Notes API (core)", () => {
 
         it("400s force-saving a revision of a protected note without a protected session", async () => {
             const { noteId } = await createTextNote(api, { title: "Protected revision" });
-            becca.notes[noteId].isProtected = true;
+            getBecca().notes[noteId].isProtected = true;
 
             const res = await api.post(`/api/notes/${noteId}/revision`, { body: {} });
             expect(res.status).toBe(400);
 
-            becca.notes[noteId].isProtected = false;
+            getBecca().notes[noteId].isProtected = false;
         });
 
         it("returns a null attachment for a note ineligible for conversion", async () => {
@@ -189,12 +189,12 @@ describe("Notes API (core)", () => {
     describe("title and type", () => {
         it("400s changing the title of a protected note without a protected session", async () => {
             const { noteId } = await createTextNote(api, { title: "Locked" });
-            becca.notes[noteId].isProtected = true;
+            getBecca().notes[noteId].isProtected = true;
 
             const res = await api.put(`/api/notes/${noteId}/title`, { body: { title: "Nope" } });
             expect(res.status).toBe(400);
 
-            becca.notes[noteId].isProtected = false;
+            getBecca().notes[noteId].isProtected = false;
         });
 
         it("leaves the note untouched when the title is unchanged", async () => {
@@ -230,7 +230,7 @@ describe("Notes API (core)", () => {
             });
             expect(res.status).toBe(204);
 
-            const children = becca.notes[parent.noteId].getChildNotes();
+            const children = getBecca().notes[parent.noteId].getChildNotes();
             expect(children[0].title).toBe("Alpha");
         });
 
@@ -244,7 +244,7 @@ describe("Notes API (core)", () => {
             try {
                 const res = await api.put(`/api/notes/${noteId}/protect/1`, { query: { subtree: "1" } });
                 expect(res.status).toBe(204);
-                expect(spy).toHaveBeenCalledWith(becca.notes[noteId], true, true, expect.anything());
+                expect(spy).toHaveBeenCalledWith(getBecca().notes[noteId], true, true, expect.anything());
             } finally {
                 spy.mockRestore();
             }

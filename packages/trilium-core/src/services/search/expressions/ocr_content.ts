@@ -1,4 +1,4 @@
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import { getSql } from "../../sql/index.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
@@ -24,7 +24,7 @@ export default class OCRContentExpression extends Expression {
         const matchingNoteIds = this.findNoteIdsWithMatchingOCR();
 
         for (const noteId of matchingNoteIds) {
-            const note = becca.notes[noteId];
+            const note = getBecca().notes[noteId];
             if (note && inputNoteSet.hasNoteId(noteId)) {
                 resultNoteSet.add(note);
             }

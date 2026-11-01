@@ -1,6 +1,6 @@
 import type { NoteRow } from "@triliumnext/commons";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import { getLog } from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
 import NoteSet from "../note_set.js";
@@ -93,11 +93,11 @@ class NoteContentFulltextExp extends Expression {
         if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
             for (const note of inputNoteSet.notes) {
                 // Skip if already found or doesn't exist
-                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in becca.notes)) {
+                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in getBecca().notes)) {
                     continue;
                 }
 
-                const noteFromBecca = becca.notes[note.noteId];
+                const noteFromBecca = getBecca().notes[note.noteId];
                 const flatText = noteFromBecca.getFlatText();
 
                 // For flatText, only check attribute values (format: #name=value or ~name=value)
@@ -192,7 +192,7 @@ class NoteContentFulltextExp extends Expression {
     }
 
     findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
-        if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
+        if (!inputNoteSet.hasNoteId(noteId) || !(noteId in getBecca().notes)) {
             return;
         }
 
@@ -230,14 +230,14 @@ class NoteContentFulltextExp extends Expression {
                 matches = this.containsExactWord(token, content);
                 // Also check flatText if enabled (includes attributes)
                 if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
+                    const flatText = getBecca().notes[noteId].getFlatText();
                     matches = this.containsExactPhrase([token], flatText, true);
                 }
             } else if (this.operator === "!=") {
                 matches = !this.containsExactWord(token, content);
                 // For negation, check flatText too
                 if (matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
+                    const flatText = getBecca().notes[noteId].getFlatText();
                     matches = !this.containsExactPhrase([token], flatText, true);
                 }
             }
@@ -251,14 +251,14 @@ class NoteContentFulltextExp extends Expression {
                 (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
                 (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(content)))
             ) {
-                resultNoteSet.add(becca.notes[noteId]);
+                resultNoteSet.add(getBecca().notes[noteId]);
             }
         } else {
             // Multi-token matching with fuzzy support and phrase proximity
             if (this.operator === "~=" || this.operator === "~*") {
                 // Fuzzy phrase matching
                 if (this.matchesWithFuzzy(content, noteId)) {
-                    resultNoteSet.add(becca.notes[noteId]);
+                    resultNoteSet.add(getBecca().notes[noteId]);
                 }
             } else if (this.operator === "=" || this.operator === "!=") {
                 // Exact phrase matching for = and !=
@@ -266,13 +266,13 @@ class NoteContentFulltextExp extends Expression {
 
                 // Also check flatText if enabled (includes attributes)
                 if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
+                    const flatText = getBecca().notes[noteId].getFlatText();
                     matches = this.containsExactPhrase(this.tokens, flatText, true);
                 }
 
                 if ((this.operator === "=" && matches) ||
                     (this.operator === "!=" && !matches)) {
-                    resultNoteSet.add(becca.notes[noteId]);
+                    resultNoteSet.add(getBecca().notes[noteId]);
                 }
             } else {
                 // Other operators: check all tokens present (any order)
@@ -282,7 +282,7 @@ class NoteContentFulltextExp extends Expression {
                 );
 
                 if (!nonMatchingToken) {
-                    resultNoteSet.add(becca.notes[noteId]);
+                    resultNoteSet.add(getBecca().notes[noteId]);
                 }
             }
         }
@@ -302,7 +302,7 @@ class NoteContentFulltextExp extends Expression {
         }
 
         // Check flat text for default fulltext search
-        if (!this.flatText || !becca.notes[noteId].getFlatText().includes(token)) {
+        if (!this.flatText || !getBecca().notes[noteId].getFlatText().includes(token)) {
             return false;
         }
 
@@ -315,7 +315,7 @@ class NoteContentFulltextExp extends Expression {
     private matchesWithFuzzy(content: string, noteId: string): boolean {
         try {
             const normalizedContent = normalizeSearchText(content);
-            const flatText = this.flatText ? normalizeSearchText(becca.notes[noteId].getFlatText()) : "";
+            const flatText = this.flatText ? normalizeSearchText(getBecca().notes[noteId].getFlatText()) : "";
 
             // For phrase matching, check if tokens appear within reasonable proximity
             if (this.tokens.length > 1) {

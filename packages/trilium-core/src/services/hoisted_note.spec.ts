@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import hoistedNoteService from "./hoisted_note.js";
@@ -84,7 +84,7 @@ describe("hoisted_note service (real DB)", () => {
         it("returns the root note when hoisted on root", () => {
             withHoisted("root", () => {
                 const workspace = hoistedNoteService.getWorkspaceNote();
-                expect(workspace).toBe(becca.getRoot());
+                expect(workspace).toBe(getBecca().getRoot());
                 expect(workspace?.noteId).toBe("root");
             });
         });
@@ -105,14 +105,14 @@ describe("hoisted_note service (real DB)", () => {
 
             withHoisted(note.noteId, () => {
                 const workspace = hoistedNoteService.getWorkspaceNote();
-                expect(workspace).toBe(becca.getRoot());
+                expect(workspace).toBe(getBecca().getRoot());
                 expect(workspace?.noteId).toBe("root");
             });
         });
 
         it("falls back to the root note when the hoisted note does not exist", () => {
             withHoisted("nonExistentNote123", () => {
-                expect(hoistedNoteService.getWorkspaceNote()).toBe(becca.getRoot());
+                expect(hoistedNoteService.getWorkspaceNote()).toBe(getBecca().getRoot());
             });
         });
     });
