@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
@@ -11,7 +12,8 @@ const h = vi.hoisted(() => ({
     openExternal: vi.fn(() => Promise.resolve()),
     openPath: vi.fn(() => Promise.resolve("")),
     showItemInFolder: vi.fn(),
-    execFile: vi.fn()
+    execFile: vi.fn(),
+    spawn: vi.fn()
 }));
 
 vi.mock("electron", () => ({
@@ -28,7 +30,7 @@ vi.mock("electron", () => ({
     }
 }));
 
-vi.mock("child_process", () => ({ execFile: h.execFile }));
+vi.mock("child_process", () => ({ execFile: h.execFile, spawn: h.spawn }));
 
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
@@ -200,25 +202,42 @@ describe("setupShellHandlers", () => {
         describe("linux", () => {
             beforeEach(() => setPlatform("linux"));
 
-            it("launches the first available terminal", async () => {
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(null));
+            /** Makes the next `spawn()` emit `event` with `arg` on the following tick. */
+            function spawnEmits(event: "close" | "error", arg: unknown) {
+                h.spawn.mockImplementationOnce(() => {
+                    const child = new EventEmitter();
+                    setImmediate(() => child.emit(event, arg));
+                    return child;
+                });
+            }
+
+            it("asks the desktop portal to show its chooser for the file", async () => {
+                spawnEmits("close", 0);
                 expect(await fireHandle("open-custom", tmpFile)).toBe(true);
-                expect(h.execFile).toHaveBeenCalledTimes(1);
-                expect(h.execFile.mock.calls[0][0]).toBe("x-terminal-emulator");
+
+                expect(h.spawn).toHaveBeenCalledTimes(1);
+                const [ command, args, options ] = h.spawn.mock.calls[0];
+                expect(command).toBe("gdbus");
+                expect(args).toEqual(expect.arrayContaining([
+                    "org.freedesktop.portal.Desktop",
+                    "org.freedesktop.portal.OpenURI.OpenFile",
+                    "@h 3"
+                ]));
+                expect(args.at(-1)).toContain("'ask': <true>");
+                expect(options.stdio[3]).toEqual(expect.any(Number));
+                expect(h.execFile).not.toHaveBeenCalled();
                 expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls through to the next terminal when one fails", async () => {
-                let calls = 0;
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(calls++ === 0 ? new Error("nope") : null));
-                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
-                expect(h.execFile).toHaveBeenCalledTimes(2);
+            it("reports a failure without opening the file when the portal call fails", async () => {
+                spawnEmits("close", 1);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("reports a failure without opening the file when no terminal works", async () => {
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(new Error("nope")));
+            it("reports a failure without opening the file when gdbus is missing", async () => {
+                spawnEmits("error", Object.assign(new Error("spawn gdbus ENOENT"), { code: "ENOENT" }));
                 expect(await fireHandle("open-custom", tmpFile)).toBe(false);
-                expect(h.execFile).toHaveBeenCalledTimes(9);
                 expect(h.openPath).not.toHaveBeenCalled();
             });
         });

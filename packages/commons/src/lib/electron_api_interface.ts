@@ -367,7 +367,7 @@ export interface ElectronShellApi {
 
     /**
      * Shows the operating system's application chooser for a file: the "Open
-     * with" dialog on Windows, `mimeopen` in a terminal emulator on Linux. It
+     * with" dialog on Windows, the desktop portal's chooser on Linux. It
      * never falls back to the default application, since "Open externally"
      * already does that.
      *

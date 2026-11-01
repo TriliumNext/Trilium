@@ -1,7 +1,7 @@
 import { SHELL_OPEN_EXTERNAL_PROTOCOLS } from "@triliumnext/commons";
 import { getBackup, getLog, utils as coreUtils } from "@triliumnext/core";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
-import { execFile } from "child_process";
+import { execFile, spawn } from "child_process";
 import electron from "electron";
 import fs from "fs";
 import path from "path";
@@ -40,7 +40,7 @@ function isUnderOrEquals(resolved: string, root: string): boolean {
 
 /**
  * Validates a path for the "open-custom" IPC channel (renderer asks the main
- * process to invoke Windows' "Open With…" dialog or the Linux mimeopen flow).
+ * process to invoke Windows' "Open With…" dialog or the desktop portal's chooser on Linux).
  * The legit caller always passes a path freshly written by saveToTmpDir, so
  * the path must live under that dir and the file must exist on disk.
  */
@@ -309,7 +309,7 @@ export function setupShellHandlers() {
 
             switch (process.platform) {
                 case "linux":
-                    return await openWithTerminalMimeopen(resolved);
+                    return await openWithPortalChooser(resolved);
                 case "win32":
                     return await openWithWindowsDialog(resolved);
                 default:
@@ -323,33 +323,47 @@ export function setupShellHandlers() {
     });
 }
 
-/** Runs `mimeopen -d` in the first terminal emulator that launches; resolves `false` if none does. */
-function openWithTerminalMimeopen(resolved: string): Promise<boolean> {
-    const terminals = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm", "xfce4-terminal", "mate-terminal", "rxvt", "terminator", "terminology"];
-
-    // The terminal's `-e` argument is reparsed by the terminal's own shell,
-    // so the path must be POSIX single-quoted before interpolation.
-    const sqQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
-    const innerCommand = `mimeopen -d ${sqQuote(resolved)}`;
-
+/**
+ * Shows the application chooser of the desktop portal (`org.freedesktop.portal.OpenURI.OpenFile`),
+ * which also works inside the Flatpak sandbox. The file travels as a descriptor on fd 3 of
+ * `gdbus`, referenced by the `@h 3` handle. Resolves `false` if `gdbus` is missing or the call
+ * fails (no portal on the session bus); a chooser the user cancels still resolves `true`.
+ */
+function openWithPortalChooser(resolved: string): Promise<boolean> {
+    // The portal reads the access mode off the descriptor, so `writable` needs it opened read-write.
+    const fd = fs.openSync(resolved, "r+");
     return new Promise((resolve) => {
-        const tryTerminal = (index: number) => {
-            if (index >= terminals.length) {
-                getLog().error("open-custom: no terminal emulator found");
-                resolve(false);
+        let stderr = "";
+        let settled = false;
+        // A failed spawn can emit both `error` and `close`; the first one settles.
+        const finish = (opened: boolean) => {
+            if (settled) {
                 return;
             }
-            const terminal = terminals[index];
-            execFile(terminal, ["-e", innerCommand], (err) => {
-                if (err) {
-                    getLog().info(`open-custom: ${terminal} failed: ${err.message}`);
-                    tryTerminal(index + 1);
-                } else {
-                    resolve(true);
-                }
-            });
+            settled = true;
+            fs.closeSync(fd);
+            resolve(opened);
         };
-        tryTerminal(0);
+
+        const child = spawn("gdbus", [
+            "call", "--session",
+            "--dest", "org.freedesktop.portal.Desktop",
+            "--object-path", "/org/freedesktop/portal/desktop",
+            "--method", "org.freedesktop.portal.OpenURI.OpenFile",
+            "", "@h 3", "{'ask': <true>, 'writable': <true>}"
+        ], { stdio: [ "ignore", "ignore", "pipe", fd ] });
+
+        child.stderr?.on("data", (chunk) => { stderr += chunk; });
+        child.once("error", (err) => {
+            getLog().error(`open-custom: gdbus failed: ${err.message}`);
+            finish(false);
+        });
+        child.once("close", (code) => {
+            if (code !== 0) {
+                getLog().error(`open-custom: portal call failed (exit ${code}): ${stderr.trim()}`);
+            }
+            finish(code === 0);
+        });
     });
 }
 
