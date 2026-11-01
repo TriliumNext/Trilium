@@ -152,7 +152,7 @@ An included <a class="reference-link" href="../Markdown.md">Markdown</a> note 
 *   The _Word wrap_ and _Line numbers_ submenus of the _More actions_ menu change how the source shows, as for code (see _Editing an include in place_ above).
 *   As in a Markdown note, the preview scrolls along with the source and highlights the block where the cursor is, and <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>M</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> format the selection.
 *   In a note being edited, the view is saved with the include, so two includes of the same note can show different views. In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the view can be changed too, until the note is opened again.
-*   While the source shows, the include has the height of its box size, or the height it was resized to. A _Full_ include fits its content instead.
+*   While the source shows, and wherever the Markdown can be edited, the include has the height of its box size, or the height it was resized to, so turning _Editable_ on or off keeps its size. Otherwise, as in a read-only note, the preview fits its text up to that height. A _Full_ include fits its content instead.
 *   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Search in note</a> searches the source while it shows, and the preview otherwise.
 
 ## Drawing canvases

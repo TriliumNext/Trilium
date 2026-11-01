@@ -1355,6 +1355,8 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
         max(0px, var(--_include-note-content-top-radius) - var(--_include-note-content-top-inset));
     --_include-note-framed-bottom-radius: max(0px,
         var(--_include-note-content-bottom-radius) - var(--_include-note-content-bottom-inset));
+    /* What the frame takes from `.include-note-box-height`, set by content that draws it. */
+    --_include-note-frame-height: 0px;
 
     &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
         --_include-note-content-top-radius: var(--_include-note-top-border-radius, 8px);
@@ -1467,15 +1469,15 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 }
 
 .include-note-box-height {
-    height: var(--include-note-height, 20em);
+    height: calc(var(--include-note-height, 20em) - var(--_include-note-frame-height, 0px));
 }
 
 .include-note[data-box-size="small"] .include-note-box-height {
-    height: var(--include-note-height, 10em);
+    height: calc(var(--include-note-height, 10em) - var(--_include-note-frame-height, 0px));
 }
 
 .include-note[data-box-size="full"] .include-note-box-height {
-    height: 50em;
+    height: calc(50em - var(--_include-note-frame-height, 0px));
 }
 
 .include-note-content:fullscreen .include-note-box-height {
@@ -1738,7 +1740,10 @@ body.mobile .include-note[data-position] {
     isolation: isolate;
 }
 
-.include-note-content > .rendered-content > *:last-child {
+/* Outranks the margin that the editor themes give the last block, so that a text embed and its
+   editor end alike. */
+.include-note-content > .rendered-content > *:last-child,
+:root .include-note-content > .rendered-content .ck-content > :last-child {
     margin-bottom: 0;
 }
 

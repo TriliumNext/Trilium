@@ -240,9 +240,10 @@ editors of one note in several tabs reload each other's saves and mix up the res
    give the layout, the divider, the error card, the stale badge and a source pane that stays
    mounted behind the preview and shares the note's undo history. Delay re-rendering with `useDebouncedValue()`. Give the root
    the `include-note-box-height` class for the 10/20/50em heights per box size and full height in
-   fullscreen (content with a height of its own can fit it at Full instead, as
-   `MarkdownEmbed.css` sets `height: auto` down to the split's columns), and round it with `--_include-note-content-*-radius` (edge to edge) or
-   `--_include-note-framed-*-radius` (inside the 2px frame), all in `style.css`.
+   fullscreen, and round it with `--_include-note-content-*-radius` (edge to edge) or
+   `--_include-note-framed-*-radius` (inside the 2px frame), all in `style.css`. Content that
+   draws the frame as padding of the content box sets `--_include-note-frame-height` there
+   (`MermaidDiagram.css`), which `.include-note-box-height` subtracts.
 4. An insert command: `INSERT_INLINE_EMBED_COMMAND` with `{ language, source }` (see
    `mermaid_ui.ts` and `slash_commands.ts`). New embeds are editable, untitled and Medium.
 5. Read-only rendering needs nothing more: `applySourceEmbeds()` in `ReadOnlyText.tsx` picks up any
@@ -334,6 +335,22 @@ in-place drawings replaced the code blocks the boxes need.
 - **CKEditor hides a toolbar separator that is `:first-child`.** The leading separator of the
   content tools needs an override in `packages/ckeditor5/src/theme/content_embed_tools.css`.
   `CONTENT_EMBED_DISPLAY_MODE_SEPARATOR` separates Editable from the view buttons.
+- **Toggling Editable keeps the size of the box**, at every box size but Full. Measure both
+  modes in a browser (happy-dom has no layout), and sample every frame of the switch, not only
+  the result: four causes were found so far.
+  - An editor that loads its content after it mounts (`TextEmbedEditor`) collapses a box sized
+    by its content until then. `EditableEmbedContent` keeps the preview in place and loads the
+    editor out of sight until the editor calls `EmbedEditorShownContext` (`EditableText`'s
+    `onContentShown`), the way `CanvasDrawing` keeps the picture until Excalidraw draws.
+  - A frame drawn as padding adds to a root of the box height unless it sets
+    `--_include-note-frame-height` (above); a resized content box also needs `height: auto`
+    then, or it keeps the resized height and adds the frame.
+  - Content whose preview fits its text and whose editor takes the box height (Markdown) gives
+    the content box itself the box height while it can be edited, in both modes: the
+    `fills-box` rules in `MarkdownEmbed.css`, the way a resized box behaves.
+  - The editor themes give the last block of an editable root a bottom margin the preview does
+    not have; `style.css` zeroes the last block of `.ck-content` in an embed for both. CKEditor
+    still adds room above a leading widget for its selection handle, on purpose.
 - **Keep the Editable flag and the view separate.** Switching the view never touches `editable`
   (`contentEmbedDisplayMode` command), and a mode left unset resolves from Editable (split while
   editable, preview otherwise).
