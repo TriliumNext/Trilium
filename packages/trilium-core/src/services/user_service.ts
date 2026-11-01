@@ -1,11 +1,14 @@
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId, randomSecureToken } from "./utils/index.js";
-import { encodeBase64 } from "./utils/binary.js";
+import { decodeBase64, encodeBase64 } from "./utils/binary.js";
 import optionService from "./options.js";
 import { getCrypto } from "./encryption/crypto.js";
 import scrypt from "./encryption/scrypt.js";
 import { evictUser } from "../becca/becca_cache.js";
+
+/** Salt for the scrypt round spent on an unknown username, which only has to cost the same. */
+const UNKNOWN_USER_SALT = "unknown-user";
 
 /** How long a setup link stays usable after it is created. */
 const SETUP_LINK_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
@@ -174,6 +177,39 @@ async function completeSetup(token: string, password: string): Promise<boolean> 
     return changes > 0;
 }
 
+/**
+ * Checks the password of a user who signs in with their own (one set through a setup link), never
+ * the primary admin, who signs in with the instance password.
+ *
+ * An unknown username costs the same scrypt round as a known one, so the time taken does not tell
+ * which usernames exist.
+ *
+ * @returns the user on a match, `null` otherwise.
+ */
+async function verifyUserPassword(username: string, password: string): Promise<User | null> {
+    const row = getSql().getRowOrNull<{ userId: string; passwordHash: string; passwordSalt: string }>(
+        `SELECT userId, passwordHash, passwordSalt
+           FROM users
+          WHERE username = ? AND isDeleted = 0 AND userId != ? AND passwordHash IS NOT NULL`,
+        [username, getAdminUserId()]
+    );
+
+    const computed = await scrypt.getScryptHash(password, row?.passwordSalt ?? UNKNOWN_USER_SALT);
+    if (!row || !getCrypto().constantTimeCompare(computed, decodeBase64(row.passwordHash))) {
+        return null;
+    }
+
+    return getUserById(row.userId);
+}
+
+/** Whether anyone besides the primary admin can sign in, which is when the login screen asks who. */
+function hasUsersWithOwnPassword(): boolean {
+    return !!getSql().getValue<number>(
+        "SELECT COUNT(*) FROM users WHERE isDeleted = 0 AND passwordHash IS NOT NULL AND userId != ?",
+        [getAdminUserId()]
+    );
+}
+
 function deleteUser(userId: string): void {
     // Deleting the seeded admin breaks session propagation until the next restart reseeds it.
     if (userId === getAdminUserId()) {
@@ -188,7 +224,7 @@ function deleteUser(userId: string): void {
 
 export default {
     getAdminUserId, getUserById, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
-    createSetupLink, getUserBySetupToken, completeSetup
+    createSetupLink, getUserBySetupToken, completeSetup, verifyUserPassword, hasUsersWithOwnPassword
 };
 
 function hashSetupToken(token: string) {

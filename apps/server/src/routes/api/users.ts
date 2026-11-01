@@ -2,6 +2,8 @@ import type { CreateUserResponse, SetupLinkResponse, UserListItem } from "@trili
 import { date_utils, getSql, PrimaryAdminDeletionError, PrimaryAdminDemotionError, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
+import { revokeUserSessions } from "../session_parser.js";
+
 function getCallerUser(req: Request) {
     const userId = req.session?.userId;
     return userId ? user_service.getUserById(userId) : null;
@@ -116,6 +118,8 @@ function deleteUser(req: Request<{ userId: string }>) {
         }
         throw e;
     }
+
+    revokeUserSessions(userId, "User deleted");
 }
 
 export default { getUsers, createUser, createSetupLink, updateUser, deleteUser };

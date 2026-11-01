@@ -65,6 +65,15 @@ export function App({ token }: { token: string }) {
                     title={t("setup_account.done-heading")}
                     description={t("setup_account.done-description", { username: state.username })}
                     illustration={<Icon icon="bx bx-check-circle" className="illustration-icon" />}
+                    footer={(
+                        // Back to the root without the spent link; the `login` marker gets past a
+                        // bare-domain redirect to the share page.
+                        <Button
+                            text={t("setup_account.go-to-login")}
+                            kind="primary"
+                            onClick={() => window.location.assign("./?login")}
+                        />
+                    )}
                 />
             )}
         </div>

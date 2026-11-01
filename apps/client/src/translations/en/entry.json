@@ -13,7 +13,11 @@
     "sign_in_with_sso": "Sign in with {{ssoIssuerName}}",
     "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
     "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings.",
-    "sso-connection-failed": "Couldn't reach the authentication provider. Try again, or check the server logs for details."
+    "sso-connection-failed": "Couldn't reach the authentication provider. Try again, or check the server logs for details.",
+    "username": "Username",
+    "username-description": "Leave it empty to sign in as the administrator.",
+    "totp-token-admin-only": "Only needed when signing in as the administrator.",
+    "incorrect-username-or-password": "Username or password is incorrect. Please try again."
   },
   "set_password": {
     "heading": "Set password",
@@ -180,6 +184,7 @@
     "too-many-attempts": "Too many attempts. Wait a few minutes and try again.",
     "connection-error": "Couldn't reach the server. Check your connection and try again.",
     "done-heading": "Your password is set",
-    "done-description": "The account \"{{username}}\" is ready. Signing in as yourself isn't available on this server yet; your administrator will let you know when it is."
+    "done-description": "The account \"{{username}}\" is ready. Sign in with your username and the password you just chose.",
+    "go-to-login": "Go to sign in"
   }
 }

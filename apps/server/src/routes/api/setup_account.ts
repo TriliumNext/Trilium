@@ -7,6 +7,8 @@ import type { SetupAccountInfo } from "@triliumnext/commons";
 import { user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
+import { revokeUserSessions } from "../session_parser.js";
+
 /** Same floor as the instance password's set-password screen. */
 export const MIN_PASSWORD_LENGTH = 4;
 
@@ -35,9 +37,13 @@ async function completeSetupAccount(req: Request) {
         return [400, { message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.` }];
     }
 
-    if (!(await user_service.completeSetup(token, password1))) {
+    const user = user_service.getUserBySetupToken(token);
+    if (!user || !(await user_service.completeSetup(token, password1))) {
         return INVALID_LINK;
     }
+
+    // A link used as a reset must also end whatever a leaked old password let someone open.
+    revokeUserSessions(user.userId, "Password set through a setup link");
 }
 
 export default { getSetupAccount, completeSetupAccount };

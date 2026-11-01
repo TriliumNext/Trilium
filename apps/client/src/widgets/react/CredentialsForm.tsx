@@ -10,6 +10,8 @@ import OptionsRow, { OptionsRowWithToggle } from "../type_widgets/options/compon
 
 /** What the user answered, for the caller to do whatever it does with. */
 export interface Credentials {
+    /** Empty where the form does not ask for one, or where it was left empty. */
+    username: string;
     password: string;
     /** Empty where no second factor was asked for. */
     totpToken: string;
@@ -35,6 +37,11 @@ export interface Credentials {
 export interface CredentialsFormProps {
     title: string;
     illustration?: ComponentChildren;
+    /**
+     * Asks who is signing in, once there are users besides the primary admin. Left empty, the
+     * instance password signs in the primary admin as before.
+     */
+    usernameEnabled?: boolean;
     /** Asks for a second factor beside the password. */
     totpEnabled?: boolean;
     /** Offers to be remembered past this session. Login only; the wizard holds nothing that long. */
@@ -58,9 +65,10 @@ export interface CredentialsFormProps {
 }
 
 export default function CredentialsForm({
-    title, illustration, totpEnabled, rememberMeEnabled, submitLabel, className, formClassName,
+    title, illustration, usernameEnabled, totpEnabled, rememberMeEnabled, submitLabel, className, formClassName,
     initialError, onSubmit
 }: CredentialsFormProps) {
+    const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const totpRef = useRef<HTMLInputElement>(null);
     const [ rememberMe, setRememberMe ] = useState(false);
@@ -79,6 +87,7 @@ export default function CredentialsForm({
         setSubmitting(true);
         try {
             const message = await onSubmit({
+                username: usernameEnabled ? (usernameRef.current?.value ?? "").trim() : "",
                 password: passwordRef.current?.value ?? "",
                 totpToken: totpEnabled ? totpRef.current?.value ?? "" : "",
                 rememberMe
@@ -106,20 +115,37 @@ export default function CredentialsForm({
             >
                 <Card>
                     <CardSection>
+                        {usernameEnabled && (
+                            <OptionsRow name="username" label={t("login.username")} description={t("login.username-description")} stacked>
+                                <FormTextBox
+                                    inputRef={usernameRef} autoFocus
+                                    name="username"
+                                    autocomplete="username"
+                                    autocapitalize="none" spellcheck={false}
+                                />
+                            </OptionsRow>
+                        )}
+
                         <OptionsRow name="password" label={t("login.password")} stacked>
                             <FormTextBox
-                                inputRef={passwordRef} autoFocus
+                                inputRef={passwordRef} autoFocus={!usernameEnabled}
                                 type="password" name="password"
                                 autocomplete="current-password" required
                             />
                         </OptionsRow>
 
                         {totpEnabled && (
-                            <OptionsRow name="totpToken" label={t("login.totp-token")} stacked>
+                            <OptionsRow
+                                name="totpToken" label={t("login.totp-token")}
+                                description={usernameEnabled ? t("login.totp-token-admin-only") : undefined}
+                                stacked
+                            >
+                                {/* Other users have no second factor yet, so it can only be required
+                                    while the primary admin is the only one who signs in. */}
                                 <FormTextBox
                                     inputRef={totpRef}
                                     name="totpToken"
-                                    autocomplete="one-time-code" required
+                                    autocomplete="one-time-code" required={!usernameEnabled}
                                 />
                             </OptionsRow>
                         )}

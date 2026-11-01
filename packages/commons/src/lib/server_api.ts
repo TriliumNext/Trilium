@@ -1126,6 +1126,11 @@ export type BootstrapDefinition = {
         ssoIssuerIcon?: string;
         /** Whether a TOTP second factor is required. */
         totpEnabled: boolean;
+        /**
+         * Whether users other than the primary admin can sign in, in which case the screen asks for
+         * a username. Left empty, it still signs in the primary admin.
+         */
+        usernameEnabled?: boolean;
         /** One-shot SSO error from a failed OIDC round-trip ("wrong_account" / "not_enrolled"). */
         ssoError?: string | false;
         /**

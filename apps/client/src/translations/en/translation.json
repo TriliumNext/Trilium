@@ -5014,7 +5014,7 @@
     "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width."
   },
   "users": {
-    "description": "People who can have their own notes on this server. Every login currently signs in as the primary admin; signing in as another user is not available yet.",
+    "description": "People who can sign in to this server with their own username and password. Each new user gets a one-time link to choose their password.",
     "add_user": "Add user",
     "count_one": "{{count}} user",
     "count_other": "{{count}} users",
@@ -5024,7 +5024,7 @@
     "badge_you": "You",
     "badge_admin": "Admin",
     "badge_primary_admin": "Primary admin",
-    "primary_admin_tooltip": "Created when the server starts. Every login currently signs in as this user, so it can't be deleted or lose its admin rights.",
+    "primary_admin_tooltip": "Created when the server starts. Signs in with the instance password, leaving the username empty, so it can't be deleted or lose its admin rights.",
     "no_email": "No email",
     "created": "Added {{date}}",
     "edit_user": "Edit user",
