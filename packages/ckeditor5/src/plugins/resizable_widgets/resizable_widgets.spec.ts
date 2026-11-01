@@ -17,10 +17,11 @@ import ResizableWidgets, { type ResizableWidgetConfig } from "./resizable_widget
 
 const STYLES = `
     .ck.ck-editor__editable { width: 400px; padding: 0; font-size: 10px; }
-    .test-box { width: var(--test-width, auto); }
+    .test-box { position: relative; width: var(--test-width, auto); }
     .test-box-content { height: var(--test-height, 50px); }
     .test-rtl .test-box { direction: rtl; }
     .test-centered .test-box { margin-inline: auto; }
+    .test-box.ck-widget_resize-anchor-right { margin-left: auto; }
     .test-scroller .ck.ck-editor__main { height: 150px; overflow-y: auto; }
     .test-scroller .ck.ck-editor__editable { height: 1000px; }
 `;
@@ -279,7 +280,7 @@ describe("ResizableWidgets", () => {
 
     it("keeps the dragged edge of a centered widget under the pointer", async () => {
         document.body.classList.add("test-centered");
-        await createEditor({ isCentered: true });
+        await createEditor({ getAnchor: () => "center" });
         editor.setData("<div class=\"test-box\"></div>");
         const { left, right } = getBox().getBoundingClientRect();
 
@@ -290,6 +291,65 @@ describe("ResizableWidgets", () => {
         release();
 
         expect(getSize()).toBe("<testBox customWidth=\"30em\"></testBox>");
+    });
+
+    it("grows a widget anchored to an edge from the other edge, with the handles", async () => {
+        await createEditor({
+            getAnchor: (element) => element.getAttribute("kind") === "right" ? "right" : "left"
+        });
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box?.is("element")) {
+            throw new Error("Expected a box.");
+        }
+        /** The edges of the box that the width and corner handles are centered on. */
+        const getHandleEdges = () => {
+            const { left, right } = getBox().getBoundingClientRect();
+            return [ "width", "corner" ].map((name) => {
+                const handle = getHandle(name).getBoundingClientRect();
+                const center = Math.round(handle.left + handle.width / 2);
+                if (center === Math.round(left)) {
+                    return "left";
+                }
+                return center === Math.round(right) && "right";
+            });
+        };
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(() => getComputedStyle(getHandle("width")).display).toBe("block");
+
+        expect(getBox().classList.contains("ck-widget_resize-anchor-left")).toBe(true);
+        expect(getHandleEdges()).toEqual([ "right", "right" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nwse-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"8em\" customWidth=\"35em\"></testBox>");
+
+        editor.model.change((writer) => writer.setAttribute("kind", "right", box));
+        expect([ ...getBox().classList ]).toEqual(expect.arrayContaining([
+            "ck-widget_resizable", "ck-widget_resize-anchor-right"
+        ]));
+        expect(getBox().classList.contains("ck-widget_resize-anchor-left")).toBe(false);
+        expect(getHandleEdges()).toEqual([ "left", "left" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nesw-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        const { right } = getBox().getBoundingClientRect();
+        release();
+        expect(getSize())
+            .toBe("<testBox customHeight=\"8em\" customWidth=\"30em\" kind=\"right\"></testBox>");
+        expect(getBox().getBoundingClientRect().right).toBe(right);
+
+        // The edges are physical: right to left, a box anchored left still grows to the right.
+        document.body.classList.add("test-rtl");
+        editor.model.change((writer) => writer.removeAttribute("kind", box));
+        expect(getHandleEdges()).toEqual([ "right", "right" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nwse-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"8em\" customWidth=\"35em\"></testBox>");
     });
 
     it("cancels on Escape, pointercancel or lost capture, and ignores other pointers", async () => {

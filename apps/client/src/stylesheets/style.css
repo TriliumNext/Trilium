@@ -1333,11 +1333,11 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 }
 
 /* Includes in a series share flush edges, as link previews and collapsible blocks do. */
-.include-note + .include-note {
+.include-note:not([data-position^="wrap-"]) + .include-note:not([data-position^="wrap-"]) {
     --_include-note-top-border-radius: 0px;
 }
 
-.include-note:has(+ .include-note) {
+.include-note:not([data-position^="wrap-"]):has(+ .include-note:not([data-position^="wrap-"])) {
     --_include-note-bottom-border-radius: 0px;
     margin-bottom: 3px;
 }
@@ -1495,6 +1495,53 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 
     &:has(.include-note-content[hidden]) > .ck-widget__resize-handles
         > .ck-widget__resize-handle:not(.ck-widget__resize-handle_width) {
+        display: none;
+    }
+}
+
+.include-note {
+    clear: both;
+
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        /* No gap at full width, so that the margin box fits in the column. */
+        --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
+            var(--ck-content-image-style-spacing, 1.5em));
+
+        clear: none;
+        max-width: 100%;
+        width: var(--include-note-width, 100%);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_include-note-wrap-gap);
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-left: var(--_include-note-wrap-gap);
+    }
+}
+
+body.mobile .include-note[data-position] {
+    float: none;
+    clear: both;
+    margin-inline: 0;
+    width: auto;
+
+    > .ck-widget__resize-handles > :is(
+        .ck-widget__resize-handle_width, .ck-widget__resize-handle_corner
+    ) {
         display: none;
     }
 }

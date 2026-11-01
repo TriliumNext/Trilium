@@ -98,6 +98,28 @@
     }
 }
 
+.ck .ck-widget_resize-anchor-left > .ck-widget__resize-handles {
+    > :is(.ck-widget__resize-handle_width, .ck-widget__resize-handle_corner) {
+        inset-inline: auto;
+        right: var(--_offset);
+    }
+
+    > .ck-widget__resize-handle_corner {
+        cursor: nwse-resize;
+    }
+}
+
+.ck .ck-widget_resize-anchor-right > .ck-widget__resize-handles {
+    > :is(.ck-widget__resize-handle_width, .ck-widget__resize-handle_corner) {
+        inset-inline: auto;
+        left: var(--_offset);
+    }
+
+    > .ck-widget__resize-handle_corner {
+        cursor: nesw-resize;
+    }
+}
+
 .ck .ck-widget_resizing iframe {
     pointer-events: none;
 }

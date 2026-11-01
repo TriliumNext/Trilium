@@ -65,6 +65,8 @@ import AdmonitionTypeDropdown from "./plugins/admonition/admonition_type_dropdow
 import AdmonitionToolbar from "./plugins/admonition/admonition_toolbar.js";
 import ContentEmbedBoxSizeDropdown
     from "./plugins/content_embed/content_embed_box_size_dropdown.js";
+import ContentEmbedPositionDropdown
+    from "./plugins/content_embed/content_embed_position_dropdown.js";
 import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.js";
 import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
 import ExtendedCodeBlock from "./plugins/content_embed/extended_code_block.js";
@@ -127,6 +129,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     AdmonitionTypeDropdown,
     AdmonitionToolbar,
     ContentEmbedBoxSizeDropdown,
+    ContentEmbedPositionDropdown,
     ContentEmbedToolbar,
     ContentEmbedCaret,
     ExtendedCodeBlock,

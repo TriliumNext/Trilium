@@ -37,6 +37,7 @@ import ContentEmbed, {
     CONTENT_EMBED_MENU,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
+    POSITION_COMMAND_NAME,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -1013,7 +1014,9 @@ describe("ContentEmbed with attachments", () => {
 
         const states = [ embed, note, tiny, unsized ]
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
-        const notEditable = { isEditable: false, isEditableToggleable: false, displayMode: null };
+        const notEditable = {
+            isEditable: false, isEditableToggleable: false, displayMode: null, position: null
+        };
         expect(states).toEqual([ {
             ...notEditable, boxSize: "small", isTitleShown: true, isTitleToggleable: true,
             hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
@@ -1898,6 +1901,124 @@ describe("ContentEmbed display mode", () => {
         const command = getCommand();
         command.isEnabled = true;
         command.execute({ value: "source" });
+
+        expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed position", () => {
+    const WRAPPED = "<figure class=\"include-note\" data-attachment-id=\"a1\""
+        + " data-box-size=\"medium\" data-position=\"wrap-left\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let getContentEmbedTools: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        getContentEmbedTools = vi.fn(() => ({ hasPositions: true }));
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { getTools: getContentEmbedTools }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(POSITION_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the position command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()
+            ?.querySelector<HTMLElement>("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    /** The position of the rendered embed, and the edge that its resize handles grow from. */
+    function getRendered() {
+        const embed = getRenderedEmbed();
+        const anchor = [ "left", "right" ]
+            .find((edge) => embed.classList.contains(`ck-widget_resize-anchor-${edge}`));
+        return [ embed.getAttribute("data-position"), anchor ?? null ];
+    }
+
+    it("loads and saves the position, and drops centered or an unknown one", () => {
+        editor.setData(WRAPPED);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toContain("position=\"wrap-left\"");
+        expect(editor.getData()).toBe(WRAPPED);
+        expect(getRendered()).toEqual([ "wrap-left", "left" ]);
+
+        for (const value of [ "center", "other" ]) {
+            editor.setData(WRAPPED.replace("wrap-left", value));
+            expect(getModelData(editor.model, { withoutSelection: true }), value)
+                .not.toContain("position");
+            expect(getRendered(), value).toEqual([ null, null ]);
+        }
+    });
+
+    it("sets the position as one undo step, keeping the content, and centered removes it", () => {
+        insertContentEmbed(editor, "n1", "medium");
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+        expect([ getCommand().isEnabled, getCommand().value ]).toEqual([ true, "center" ]);
+        expect(getRendered()).toEqual([ null, null ]);
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-right" });
+        expect(getCommand().value).toBe("wrap-right");
+        expect(getRendered()).toEqual([ "wrap-right", "right" ]);
+        expect(editor.getData()).toContain("data-position=\"wrap-right\"");
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "left" });
+        expect(getRendered()).toEqual([ "left", "left" ]);
+        editor.execute(POSITION_COMMAND_NAME, { value: "right" });
+        expect(getRendered()).toEqual([ "right", "right" ]);
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "center" });
+        expect(getCommand().value).toBe("center");
+        expect(getRendered()).toEqual([ null, null ]);
+        expect(editor.getData()).not.toContain("data-position");
+
+        editor.execute("undo");
+        expect(getCommand().value).toBe("right");
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+    });
+
+    it("works at every box size, and keeps the position through a change of it", () => {
+        insertContentEmbed(editor, "n1", "medium");
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-left" });
+
+        for (const boxSize of BOX_SIZES) {
+            editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSize });
+            expect([ getCommand().isEnabled, getCommand().value ], boxSize)
+                .toEqual([ true, "wrap-left" ]);
+            expect(getRendered(), boxSize).toEqual([ "wrap-left", "left" ]);
+        }
+    });
+
+    it("is offered only for content that has positions", () => {
+        insertContentEmbed(editor, "n1", "medium");
+        const contentEmbed = editor.plugins.get(ContentEmbed);
+        expect(contentEmbed.getEmbedStateAt(getRenderedEmbed()))
+            .toMatchObject({ position: "center" });
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect([ getCommand().isEnabled, getCommand().value ]).toEqual([ false, null ]);
+        expect(contentEmbed.getEmbedStateAt(getRenderedEmbed())).toMatchObject({ position: null });
+    });
+
+    it("changes nothing when no embed is selected", () => {
+        editor.setData(WRAPPED + "<p>after</p>");
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` with no embed selected.
+        const command = getCommand();
+        command.isEnabled = true;
+        command.execute({ value: "right" });
 
         expect(editor.getData()).toBe(before);
     });

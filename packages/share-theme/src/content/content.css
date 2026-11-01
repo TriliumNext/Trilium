@@ -345,7 +345,54 @@ body:not(.math-loaded) .math-tex {
 
 /* An include with a caption: the included content, then the caption. */
 .ck-content figure.include-note {
+    clear: both;
     margin: 1em 0;
+
+    &:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"]) {
+        margin-inline: auto;
+        max-width: 100%;
+        width: var(--include-note-width, auto);
+    }
+
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        /* No gap at full width, so that the margin box fits in the column. */
+        --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
+            var(--ck-content-image-style-spacing, 1.5em));
+
+        clear: none;
+        margin-top: 0;
+        max-width: 100%;
+        width: var(--include-note-width, 100%);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_include-note-wrap-gap);
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-left: var(--_include-note-wrap-gap);
+    }
+}
+
+@media (max-width: 48em) {
+    .ck-content figure.include-note[data-position] {
+        float: none;
+        clear: both;
+        margin: 1em 0;
+        width: auto;
+    }
 }
 
 .ck-content .include-note > figcaption {

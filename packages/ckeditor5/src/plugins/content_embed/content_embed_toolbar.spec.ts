@@ -11,6 +11,7 @@ import ContentEmbed, {
     TOGGLE_TITLE_COMMAND_NAME
 } from "./content_embed.js";
 import ContentEmbedBoxSizeDropdown from "./content_embed_box_size_dropdown.js";
+import ContentEmbedPositionDropdown from "./content_embed_position_dropdown.js";
 import ContentEmbedToolbar from "./content_embed_toolbar.js";
 import ContentEmbedTools, { CONTENT_EMBED_TOOLS } from "./content_embed_tools.js";
 import ExtendedCodeBlock, { EXTENDED_CODE_BLOCK_COPY_BUTTON } from "./extended_code_block.js";
@@ -94,6 +95,7 @@ describe("ContentEmbedToolbar", () => {
         expect(requires).toContain(WidgetToolbarRepository);
         expect(requires).toContain(ContentEmbed);
         expect(requires).toContain(ContentEmbedBoxSizeDropdown);
+        expect(requires).toContain(ContentEmbedPositionDropdown);
         expect(requires).toContain(ContentEmbedTools);
         expect(requires).toContain(ExtendedCodeBlock);
     });
@@ -112,6 +114,7 @@ describe("ContentEmbedToolbar", () => {
             CONTENT_EMBED_TOOLS,
             EXTENDED_CODE_BLOCK_COPY_BUTTON,
             "contentEmbedBoxSizeDropdown",
+            "contentEmbedPositionDropdown",
             TOGGLE_TITLE_COMMAND_NAME,
             TOGGLE_CAPTION_COMMAND_NAME,
             CONVERT_EMBED_TO_LINK_COMMAND,

@@ -42,7 +42,7 @@ A _Small_, _Medium_ or _Expandable_ include can be resized to any width and heig
 *   To resize an include, select it and drag the handle in its bottom-right corner. To change only the width or only the height, drag the middle of its right or bottom edge instead, where a touch screen shows a handle too. In right-to-left text, the handle is in the bottom-left corner and the width changes from the left edge.
 *   Resizing works with a mouse, a pen or a finger.
 *   While the height changes, moving the handle near the top or the bottom of the note scrolls the note.
-*   An include narrower than the note is centered, so changing its width moves both of its sides. Making it as wide as the note returns it to the full width.
+*   An include narrower than the note is centered, so changing its width moves both of its sides. A drawing aligned to the left or the right keeps that side in place and has its handles on the other side (see _Positioning a drawing_ below). Making an include as wide as the note returns it to the full width.
 *   To cancel a resize, press <kbd>Esc</kbd> before releasing the handle.
 *   To reset the size, double-click the corner handle, or double-tap it on a touch screen. Double-clicking the right or bottom edge resets only the width or the height.
 *   Choosing a box size resets the height. Choosing _Tiny_ or _Full_ resets the width too.
@@ -91,7 +91,7 @@ Content added by a newer version of Trilium, which this version cannot show, app
 
 ## Included notes in the share functionality
 
-If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width, and a drawing its position. On a narrow screen, a drawing with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
 
 For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
 
@@ -168,11 +168,21 @@ A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-
 *   The changes to the drawing are part of the undo history of the text note (see _Editing an include in place_ above). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> and the <span class="tn-icon bx bx-undo"></span> _Undo_ and <span class="tn-icon bx bx-redo"></span> _Redo_ buttons of the canvas toolbar undo and redo the last change of the note, in the drawing or in the text.
 *   A new drawing has the background color of the note. A background chosen from the Excalidraw menu replaces it.
 *   To protect a finished drawing from accidental changes, select it and turn off the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or uncheck _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn _Editable_ back on.
-*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size, _Show title_ and _Convert to link_ to its _More actions_ menu.
+*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size, _Show title_ and _Convert to link_ to its _More actions_ menu, which also sets its position (see _Positioning a drawing_ below).
 *   In the desktop layout, Excalidraw keeps its desktop interface however small the box is. In the mobile layout, a narrow or short box switches it to a compact interface. For more room, choose _Full_, or show the title and press <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_.
 *   Pictures added to the drawing are stored in the same attachment. A converted image is kept as an image attachment of the note instead, named with a generated code.
 *   In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the drawing shows as a still picture too.
-*   On a [shared page](../../Advanced%20Usage/Sharing.md), the drawing is shown as a picture at its own size, whatever the size of its box, in light or dark colors to match the page. Each change to the drawing saves this picture as an SVG image attachment of the note, also named with a generated code.
+*   On a [shared page](../../Advanced%20Usage/Sharing.md), the drawing is shown as a picture at its own size, up to the width its box was resized to, in light or dark colors to match the page. Each change to the drawing saves this picture as an SVG image attachment of the note, also named with a generated code.
+
+### Positioning a drawing
+
+A drawing can sit on lines of its own or have the text wrap around it, as an [image](Images.md) can.
+
+*   To change the position, select the drawing, open its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu and choose an entry of its _Position_ submenu:
+    *   Under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the drawing on lines of its own, at that side of the note. _Align center_ is the default.
+    *   Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place the drawing at that side and let the text run beside it.
+*   A drawing is inserted at the full width of the note, so a new position shows once the drawing is resized narrower (see _Resizing_ above). The position is kept whatever the box size, and shows again when a _Small_, _Medium_ or _Expandable_ box is resized.
+*   In the mobile layout, a drawing with a position other than _Align center_ takes the full width, and only its height can be resized.
 
 ### Limitations
 

@@ -259,5 +259,8 @@
       "text-color": "Text colour",
       "background-color": "Background colour"
     }
+  },
+  "link_context_menu": {
+    "align_center": "Align centre"
   }
 }

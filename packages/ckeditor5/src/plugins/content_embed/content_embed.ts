@@ -33,7 +33,9 @@ import {
 	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, normalizeMimeTypeForCKEditor, parseBlockRange
 } from '@triliumnext/commons';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
-import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
+import ResizableWidgets, {
+	type ResizeAnchor, SIZE_ATTRIBUTES
+} from '../resizable_widgets/resizable_widgets.js';
 import { restoreRendererFocusOnInput } from '../widget_utils.js';
 import type { EmbedEdge } from './content_embed_caret.js';
 import EmbedHistory from './embed_history.js';
@@ -52,6 +54,7 @@ export const TOGGLE_TITLE_COMMAND_NAME = 'toggleContentEmbedTitle';
 export const TOGGLE_EDITABLE_COMMAND_NAME = 'toggleContentEmbedEditable';
 export const CODE_VIEW_COMMAND_NAME = 'setContentEmbedCodeView';
 export const CONTENT_EMBED_DISPLAY_MODE_COMMAND = 'contentEmbedDisplayMode';
+export const POSITION_COMMAND_NAME = 'contentEmbedPosition';
 /** The toolbar separator between the Editable toggle and the display modes. */
 export const CONTENT_EMBED_DISPLAY_MODE_SEPARATOR = 'contentEmbedDisplayModeSeparator';
 /** The toolbar button that opens the context menu of an embed whose title is hidden. */
@@ -84,6 +87,17 @@ const DISPLAY_MODE_ICONS: Record<DisplayModeValue, string> = {
 	split: dockLeftIcon,
 	preview: showIcon
 };
+
+/**
+ * Where an embed is placed in the text: on lines of its own, at the left, the center or the right
+ * ("Break text"), or with the text wrapped around it, at the left or the right ("Wrap text").
+ */
+export const POSITIONS = [ 'left', 'center', 'right', 'wrap-left', 'wrap-right' ] as const;
+
+export type PositionValue = typeof POSITIONS[number];
+
+/** The positions that an embed saves as `data-position`. Centered, the default, saves nothing. */
+const SAVED_POSITIONS: unknown[] = [ 'left', 'right', 'wrap-left', 'wrap-right' ];
 
 /** The box sizes that can be resized. Tiny and Full fit their content. */
 const RESIZABLE_BOX_SIZES: unknown[] = [ 'small', 'medium', 'expandable' ];
@@ -134,6 +148,8 @@ export interface ContentEmbedState {
 	/** What the content shows, for content that has display modes, otherwise `null`. */
 	displayMode: DisplayModeValue | null;
 	boxSize: BoxSizeValue | null;
+	/** Where the embed is placed in the text, for content that has positions, otherwise `null`. */
+	position: PositionValue | null;
 	/** Whether the title shows, which a Tiny or an Expandable embed always does. */
 	isTitleShown: boolean;
 	isTitleToggleable: boolean;
@@ -250,6 +266,7 @@ export default class ContentEmbed extends Plugin {
 				? getEmbedDisplayMode( editor, embed )
 				: null,
 			boxSize: embed.getAttribute( 'boxSize' ) as BoxSizeValue | undefined ?? null,
+			position: hasEmbedPositions( editor, embed ) ? getEmbedPosition( embed ) : null,
 			isTitleShown: !isTitleToggleable || !embed.getAttribute( 'hideTitle' ),
 			isTitleToggleable,
 			hasCaption: !!getCaption( embed ),
@@ -501,7 +518,7 @@ class ContentEmbedEditing extends Plugin {
 			propertyPrefix: '--include-note',
 			isWidthResizable: true,
 			isHeightResizable: true,
-			isCentered: true,
+			getAnchor: getResizeAnchor,
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
 			minHeight: MIN_EMBED_SIZE.height,
@@ -520,6 +537,7 @@ class ContentEmbedEditing extends Plugin {
 		commands.add( CODE_VIEW_COMMAND_NAME, new SetContentEmbedCodeViewCommand( editor ) );
 		commands.add(
 			CONTENT_EMBED_DISPLAY_MODE_COMMAND, new ContentEmbedDisplayModeCommand( editor ) );
+		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
 
@@ -555,7 +573,7 @@ class ContentEmbedEditing extends Plugin {
 			// `FileUploadEditing` is uploading carries the upload attributes instead of its id.
 			allowAttributes: [
 				'noteId', 'block', 'attachmentId', 'boxSize', 'hideTitle', 'editable',
-				'displayMode', 'uploadId', 'uploadStatus', 'uploadFileName',
+				'displayMode', 'position', 'uploadId', 'uploadStatus', 'uploadFileName',
 				...CODE_VIEW_ATTRIBUTES.map( ( [ setting ] ) => setting )
 			],
 
@@ -594,6 +612,7 @@ class ContentEmbedEditing extends Plugin {
 					boxSize: viewElement.getAttribute( 'data-box-size' ),
 					...getFlagsOfView( viewElement ),
 					...getDisplayModeOfView( viewElement ),
+					...getPositionOfView( viewElement ),
 					...getCodeViewOfView( viewElement )
 				} );
 			},
@@ -612,6 +631,7 @@ class ContentEmbedEditing extends Plugin {
 					'data-box-size': modelElement.getAttribute( 'boxSize' ),
 					...getFlagAttributes( modelElement ),
 					...getDisplayModeAttributes( modelElement ),
+					...getPositionAttributes( modelElement ),
 					...getCodeViewAttributes( modelElement )
 				} );
 			}
@@ -631,6 +651,7 @@ class ContentEmbedEditing extends Plugin {
 					'data-box-size': boxSize,
 					...getFlagAttributes( modelElement ),
 					...getDisplayModeAttributes( modelElement ),
+					...getPositionAttributes( modelElement ),
 					...getCodeViewAttributes( modelElement )
 				} );
 
@@ -691,10 +712,10 @@ class ContentEmbedEditing extends Plugin {
 			// Marks the view of the embed without drawing the content again. Content with an
 			// editable mode reads `data-editable` from the embed, content with display modes
 			// `data-display-mode`, a code file the `data-code-*` attributes, and an extended code
-			// block `data-language`.
+			// block `data-language`. The stylesheet places the embed by `data-position`.
 			const markedAttributes = [
 				...FLAG_ATTRIBUTES, DISPLAY_MODE_ATTRIBUTE, ...CODE_VIEW_ATTRIBUTES,
-				[ 'language', 'data-language' ] as const
+				[ 'language', 'data-language' ] as const, [ 'position', 'data-position' ] as const
 			];
 			for ( const [ attribute, dataAttribute ] of markedAttributes ) {
 				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
@@ -1036,6 +1057,43 @@ export class ContentEmbedDisplayModeCommand extends Command {
 }
 
 /**
+ * Sets where the selected embed is placed in the text, for content that has positions. Centered
+ * removes the position.
+ */
+export class ContentEmbedPositionCommand extends Command {
+	/** The position of the selected embed, or `null`. */
+	declare value: PositionValue | null;
+
+	constructor( editor: Editor ) {
+		super( editor );
+		// Content declares its positions once it renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && hasEmbedPositions( this.editor, embed );
+		this.value = embed && this.isEnabled ? getEmbedPosition( embed ) : null;
+	}
+
+	override execute( { value }: { value: PositionValue } ) {
+		const embed = getSelectedContentEmbed( this.editor );
+		if ( !embed ) {
+			return;
+		}
+
+		this.editor.model.change( writer => {
+			if ( SAVED_POSITIONS.includes( value ) ) {
+				writer.setAttribute( 'position', value, embed );
+			} else {
+				writer.removeAttribute( 'position', embed );
+			}
+		} );
+	}
+}
+
+/**
  * The model attribute to set for `language`, a MIME type: `language` for an extended code block,
  * which always has one, otherwise `codeLanguage`, the language that a code file shows in.
  */
@@ -1239,6 +1297,26 @@ export function toDisplayMode( value: unknown ): DisplayModeValue | null {
 	return DISPLAY_MODES.find( mode => mode === value ) ?? null;
 }
 
+/** Whether the content of `embed` can be positioned, which its content type opts in to. */
+function hasEmbedPositions( editor: Editor, embed: ModelElement ) {
+	return !!getEmbedTools( editor, embed )?.hasPositions;
+}
+
+/** Where `embed` is placed in the text: its saved position, or centered. */
+function getEmbedPosition( embed: ModelElement ): PositionValue {
+	const position = embed.getAttribute( 'position' );
+	return SAVED_POSITIONS.includes( position ) ? position as PositionValue : 'center';
+}
+
+/** The edge of `embed` that stays in place while it is resized, as the stylesheet places it. */
+function getResizeAnchor( embed: ModelElement ): ResizeAnchor {
+	const position = getEmbedPosition( embed );
+	if ( position === 'left' || position === 'wrap-left' ) {
+		return 'left';
+	}
+	return position === 'right' || position === 'wrap-right' ? 'right' : 'center';
+}
+
 /** Whether `embed` can have a caption. A Tiny embed has none. */
 function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
 	return embed.getAttribute( 'boxSize' ) !== 'tiny' && !isInlineSourceEmbed( embed )
@@ -1351,6 +1429,18 @@ export function getDisplayModeOfView(
 ): { displayMode?: DisplayModeValue } {
 	const mode = toDisplayMode( viewElement.getAttribute( 'data-display-mode' ) );
 	return mode ? { displayMode: mode } : {};
+}
+
+/** The `data-position` attribute of `element`, when it is not centered. */
+export function getPositionAttributes( element: ModelElement ): Record<string, string> {
+	const position = getEmbedPosition( element );
+	return position === 'center' ? {} : { 'data-position': position };
+}
+
+/** The position in the `data-position` attribute of a saved embed, when not centered. */
+export function getPositionOfView( viewElement: ViewElement ): { position?: PositionValue } {
+	const position = viewElement.getAttribute( 'data-position' );
+	return SAVED_POSITIONS.includes( position ) ? { position: position as PositionValue } : {};
 }
 
 /** Whether the content of the selected embed, whose buttons are `tools`, hides `name`. */
