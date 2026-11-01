@@ -24,7 +24,6 @@
     align-items: center;
     gap: 8px 12px;
 
-    /* Wide enough for a name and its badges; below that, the actions wrap onto a line of their own. */
     .user-row-details {
         display: flex;
         flex: 1 1 12em;
