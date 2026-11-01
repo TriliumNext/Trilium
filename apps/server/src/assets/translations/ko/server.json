@@ -356,7 +356,8 @@
     "included-note-requires-credentials": "여기에 포함된 노트는 비밀번호로 보호되어 있어 표시할 수 없습니다.",
     "broken-block-reference": "끊어진 참조",
     "play-video": "영상 재생",
-    "content-not-available": "이 콘텐츠는 사용할 수 없습니다."
+    "content-not-available": "이 콘텐츠는 사용할 수 없습니다.",
+    "untitled-block": "블록"
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",
