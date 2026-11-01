@@ -7,8 +7,8 @@
  * its spec runs against the file names a real Electron build carries rather than
  * a hand-kept list. The desktop unit tests never download Electron, so this
  * script reads the names once per Electron version and commits them as
- * `electron-locales.json`; the spec fails when that file names a version other
- * than the one `apps/desktop/package.json` pins.
+ * `electron-locales.json`; the spec fails when that file names a major version
+ * other than the one `apps/desktop/package.json` pins.
  *
  * Only the central directory at the end of each release zip is fetched, through
  * HTTP range requests, so a run transfers a few hundred kilobytes instead of

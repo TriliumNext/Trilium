@@ -31,11 +31,13 @@ afterEach(() => {
 });
 
 describe("trimElectronLocales", () => {
-    it("runs against the locale files of the pinned Electron version", () => {
+    it("runs against the locale files of the pinned Electron major version", () => {
+        // Chromium changes its locale files only with a major version, which Electron
+        // adopts only in its own majors.
         expect(
-            electronLocales.electronVersion,
+            majorVersion(electronLocales.electronVersion),
             "electron-locales.json is out of date; run `pnpm chore:update-electron-locales`"
-        ).toBe(packageJson.devDependencies.electron);
+        ).toBe(majorVersion(packageJson.devDependencies.electron));
     });
 
     it.each([
@@ -77,3 +79,7 @@ describe("trimElectronLocales", () => {
         expect(() => trimElectronLocales([ incomplete ], false)).toThrow(/was not found/);
     });
 });
+
+function majorVersion(version: string) {
+    return version.split(".")[0];
+}
