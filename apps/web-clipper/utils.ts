@@ -1,5 +1,49 @@
 export type Rect = { x: number, y: number, width: number, height: number };
 
+/** Headers the clipper sets itself, which custom headers must not replace or duplicate. */
+const RESERVED_HEADERS = new Set([
+    "accept",
+    "authorization",
+    "content-type",
+    "trilium-local-now-datetime"
+]);
+
+/** The first header in `raw` that the clipper reserves for itself, or `undefined` if none is. */
+export function findReservedHeader(raw: string): string | undefined {
+    for (const [ name ] of headerEntries(raw)) {
+        if (RESERVED_HEADERS.has(name.toLowerCase())) return name;
+    }
+    return undefined;
+}
+
+/** Parses `Header: Value` lines from storage into a headers object, ignoring reserved headers. */
+export function parseCustomHeaders(raw?: string): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (!raw) return headers;
+
+    const seen = new Map<string, string>();
+    for (const [ name, value ] of headerEntries(raw)) {
+        const lower = name.toLowerCase();
+        if (RESERVED_HEADERS.has(lower)) continue;
+        const previous = seen.get(lower);
+        if (previous) delete headers[previous];
+        seen.set(lower, name);
+        headers[name] = value;
+    }
+    return headers;
+}
+
+function* headerEntries(raw: string): Iterable<[ string, string ]> {
+    for (const line of raw.split(/\r?\n/)) {
+        const index = line.indexOf(":");
+        const name = index > 0 ? line.slice(0, index).trim() : "";
+        if (name) {
+            yield [ name, line.slice(index + 1).trim() ];
+        }
+    }
+}
+
+
 /** How long a request the extension can do without, such as a favicon, has to answer, in milliseconds. */
 export const OPTIONAL_REQUEST_TIMEOUT_MS = 3000;
 
