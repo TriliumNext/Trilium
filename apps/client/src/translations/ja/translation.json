@@ -77,8 +77,12 @@
     "title_from_url": "URL と同じ",
     "description": "説明",
     "page_description": "web ページの説明",
-    "anchors": "アンカー",
-    "target_anchor": "対象のアンカー"
+    "anchors": "見出しとアンカー",
+    "target_anchor": "アンカー",
+    "title_from_note": "設定されていない場合は、常にノートのタイトルが反映されます",
+    "headings": "見出し",
+    "no_headings_or_anchors": "このノートには、見出しやアンカーが含まれていません。",
+    "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます"
   },
   "branch_prefix": {
     "save": "保存",
@@ -432,7 +436,7 @@
     "createInternalLink": "内部リンクの作成",
     "followLink": "カーソル下のリンクをたどる",
     "insertDateTime": "カーソル位置に現在の日時を挿入",
-    "jumpToTreePane": "ツリーペインにジャンプし、アクティブなノートまでスクロール",
+    "jumpToTreePane": "ツリーペインに移動し、アクティブなノートまでスクロール",
     "markdownAutoformat": "マークダウンライクな自動フォーマット",
     "headings": "<code>##</code>, <code>###</code>, <code>####</code>  など。その後にスペースで見出しになる",
     "bulletList": "<code>*</code> または <code>-</code> その後にスペースで箇条書きになる",
@@ -445,7 +449,7 @@
     "other": "その他",
     "quickSearch": "クイック検索にフォーカス",
     "inPageSearch": "ページ内検索",
-    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">「ジャンプ先」ダイアログ</a>を表示",
+    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">「移動先」ダイアログ</a>を表示",
     "moveNoteUpDown": "ノートリストでノートを上/下に移動",
     "notSet": "未設定",
     "goUpDown": "ノートのリストで上下する",
@@ -1444,7 +1448,7 @@
     "relation": "リレーション",
     "disable_versioning": "自動バージョン管理を無効にします。例えば、容量は大きいが重要でないノートなどに便利です - 例、スクリプト作成に使用される大規模なJSライブラリなど。",
     "calendar_root": "日ノートのルートとして使用するノートをマークします。そのようにマークできるのは 1 つだけです。",
-    "archived": "このラベルの付いたノートは、デフォルトでは検索結果に表示されません (ジャンプ先、リンクの追加ダイアログなどにも表示されません)。",
+    "archived": "このラベルの付いたノートは、デフォルトでは検索結果に表示されません (移動先、リンクの追加ダイアログなどにも表示されません)。",
     "exclude_from_export": "ノート（サブツリーを含む）はノートのエクスポートには含まれません。",
     "run": "スクリプトを実行するイベントを定義します。指定可能な値は以下の通りです:\n<ul>\n<li>frontendStartup - Trilium フロントエンドの起動時（または更新時）に実行されます。モバイルでは実行されません。</li>\n<li>mobileStartup - モバイルでの Trilium フロントエンドの起動時（または更新時）に実行されます。</li>\n<li>backendStartup - Trilium バックエンドの起動時。</li>\n<li>hourly - 1時間ごとに実行。 <code>runAtHour</code> というラベルを追加することで、実行時刻を指定できます。</li>\n<li>daily - 1日に1回実行。</li>\n</ul>",
     "run_on_instance": "どの Trilium インスタンスでこれを実行するかを定義します。デフォルトはすべてのインスタンスです。",
@@ -1490,7 +1494,7 @@
     "hide_relations": "非表示にするリレーション名をカンマで区切って指定します。それ以外のリレーションは表示されます。",
     "template": "このノートは、新しいノートを作成するときに利用可能なテンプレートの選択肢に表示されます。",
     "color": "ノートツリー、リンクなどのノートの色を定義します。 'red' や #a13d5f などの有効な CSS カラー値を使用します。",
-    "keyboard_shortcut": "このノートにすぐにジャンプするキーボードショートカットを定義します。例: 「ctrl+alt+e」。変更を有効にするには、フロントエンドをリロードする必要があります。",
+    "keyboard_shortcut": "このノートにすぐに移動するキーボードショートカットを定義します。例: 「ctrl+alt+e」。変更を有効にするには、フロントエンドをリロードする必要があります。",
     "keep_current_hoisting": "このリンクを開いても、ノートが現在のホイストされたサブツリーに表示できない場合でも、ホイストは変更されません。",
     "execute_button": "現在のコードノートを実行するボタンのタイトル。",
     "execute_description": "実行ボタンと一緒に表示される現在のコードノートの詳細な説明。",
@@ -2973,7 +2977,7 @@
     "hoisted_badge": "ホイスト",
     "hoisted_badge_title": "ホイスト解除",
     "workspace_badge": "ワークスペース",
-    "scroll_to_top_title": "ノートの先頭にジャンプ",
+    "scroll_to_top_title": "ノートの先頭に移動",
     "create_new_note": "新しい子ノートを作成",
     "empty_hide_archived_notes": "アーカイブされたノートを非表示"
   },
@@ -3525,7 +3529,7 @@
     "fuzzy_matching_label": "検索時の入力ミス許容度",
     "fuzzy_matching_description": "クイック検索とフル検索に影響します。完全一致しない場合でも類似語を検索します。",
     "autocomplete_fuzzy_label": "オートコンプリート時の入力ミス許容度",
-    "autocomplete_fuzzy_description": "ノートへのジャンプとノートの選択に影響します。処理速度は低下しますが、入力ミスを許容します。"
+    "autocomplete_fuzzy_description": "ノートへの移動とノートの選択に影響します。処理速度は低下しますが、入力ミスを許容します。"
   },
   "text_editor": {
     "title": "エディター",
@@ -3990,7 +3994,12 @@
       "create-a-new-child-note": "新しい子ノートを作成",
       "create-a-new-child-note-and-insert-a-link-to-it": "新しい子ノートを作成し、そのリンクを挿入",
       "open-note": "ノートを開く",
-      "open-attachment": "添付ファイルを開く"
+      "open-attachment": "添付ファイルを開く",
+      "table-size": "表のサイズ",
+      "table-headers": "表のヘッダー",
+      "jump-to-heading": "見出しへ移動",
+      "jump-to-anchor": "アンカーへ移動",
+      "jump-to-block": "ブロックへ移動"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4725,7 +4734,8 @@
     "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
     "edit_excerpt": "抜粋を編集",
     "copy_tab": "このタブへのリンクをコピー",
-    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー"
+    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー",
+    "delete_other": "{{count}} 個のブロックを削除"
   },
   "record_meeting": {
     "note_title": "ミーティング {{date}}",
