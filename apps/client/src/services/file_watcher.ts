@@ -47,10 +47,6 @@ async function showUploadToast({ entityType, entityId, filePath, lastModifiedMs 
                     await server.post(`${entityType}/${entityId}/upload-modified-file`, { filePath });
                     dismissToast();
                 }
-            },
-            {
-                text: t("watched_file_update_status.ignore_this_change"),
-                onClick: ({ dismissToast }) => dismissToast()
             }
         ]
     });

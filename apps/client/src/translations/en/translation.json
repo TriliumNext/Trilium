@@ -2973,8 +2973,7 @@
   "watched_file_update_status": {
     "title": "File changed outside Trilium",
     "message": "The file opened externally was saved at {{time}}. Uploading it replaces the content in Trilium; the current version is kept as a revision.",
-    "upload_modified_file": "Upload",
-    "ignore_this_change": "Ignore"
+    "upload_modified_file": "Upload"
   },
   "app_context": {
     "please_wait_for_save": "Please wait for a couple of seconds for the save to finish, then you can try again."

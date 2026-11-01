@@ -67,17 +67,12 @@ describe("file_watcher", () => {
         expect(shown.id).toBe("opened-file-updated-notes-noteA");
         expect(shown.timeout).toBeUndefined();
         expect(shown.notes).toEqual([ "noteA" ]);
-        expect(shown.buttons).toHaveLength(2);
+        expect(shown.buttons).toHaveLength(1);
 
-        const [ upload, ignore ] = shown.buttons ?? [];
+        const [ upload ] = shown.buttons ?? [];
         const dismissToast = vi.fn();
         await upload.onClick({ dismissToast });
         expect(post).toHaveBeenCalledWith("notes/noteA/upload-modified-file", { filePath: "/tmp/noteA" });
-        expect(dismissToast).toHaveBeenCalledOnce();
-
-        dismissToast.mockClear();
-        await ignore.onClick({ dismissToast });
-        expect(post).toHaveBeenCalledOnce();
         expect(dismissToast).toHaveBeenCalledOnce();
     });
 
