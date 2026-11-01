@@ -94,6 +94,7 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
 
 *   On Windows, the system's _Open with_ dialog lists the installed applications.
 *   On Linux, the application chooser comes from the desktop portal (`xdg-desktop-portal`), so it works in the Flatpak as well.
+*   In the Flathub version, _Open externally_ also goes through the desktop portal, which can show the application chooser the first few times a file type is opened, as the system's policy decides; _Open with..._ always shows it.
 *   On macOS, a file picker opens in the _Applications_ folder; the note opens in the application you select there, as with _Open With_ → _Other…_ in Finder.
 
 If the application chooser cannot be shown (such as when no desktop portal is running on Linux), Trilium reports an error instead of opening the file. _Open externally_ still opens it in the default application.
