@@ -30,14 +30,15 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 
 const createdTemporaryFiles = new Set<string>();
 /** The latest temp file of each entity, keyed by `entityType/entityId`. */
-const latestTemporaryFiles = new Map<string, string>();
+const latestTemporaryFiles = new Map<string, { tmpFilePath: string; fileName: string }>();
 
 function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
-    // Opening an entity again reuses its temp file and watcher, unless the file holds edits that are not uploaded yet.
+    // Opening an entity again reuses its temp file and watcher, unless the file holds edits that are not uploaded yet
+    // or the entity's file name, and so its extension, has changed.
     const entityKey = `${entityType}/${entityId}`;
     const latest = latestTemporaryFiles.get(entityKey);
-    if (latest && holdsContent(latest, content)) {
-        return { tmpFilePath: latest };
+    if (latest && latest.fileName === fileName && holdsContent(latest.tmpFilePath, content)) {
+        return { tmpFilePath: latest.tmpFilePath };
     }
 
     const tmpFileName = `tmp-${process.pid}-${utils.randomString(12)}-${fileName}`;
@@ -48,7 +49,7 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
         process.once("exit", removeTemporaryFiles);
     }
     createdTemporaryFiles.add(tmpFilePath);
-    latestTemporaryFiles.set(entityKey, tmpFilePath);
+    latestTemporaryFiles.set(entityKey, { tmpFilePath, fileName });
 
     getLog().info(`Saved temporary file ${tmpFilePath}`);
 

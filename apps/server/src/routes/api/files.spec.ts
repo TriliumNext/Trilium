@@ -183,6 +183,18 @@ describe("Files API", () => {
             expect(h.watchers.map((watcher) => watcher.path)).toEqual([ first, second ]);
         });
 
+        it("starts a new temp file when the note's file name changes", () => {
+            const first = save();
+            cls.init(() => {
+                const note = becca.getNoteOrThrow(watchedNoteId);
+                note.title = "Renamed note";
+                note.save();
+            });
+            const second = save();
+            expect(second).not.toBe(first);
+            expect(path.basename(second)).toMatch(/-Renamed note\.txt$/);
+        });
+
         it("reports the modification time of a changed file", () => {
             const tmpFilePath = save();
             const [ watcher ] = h.watchers;
