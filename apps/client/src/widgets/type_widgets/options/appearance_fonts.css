@@ -167,7 +167,7 @@ body.mobile .modal.font-picker-modal {
         flex: 1;
     }
 
-    /* The pair sizes itself (see `theme-next/forms.css`), so the slider takes what is left. */
+    /* The pair sizes itself (see FormTextBox.css), so the slider takes what is left. */
     .tn-number-unit-pair {
         flex: 0 0 auto;
     }

@@ -187,29 +187,6 @@ html body .dropdown-item[disabled] {
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
-/* Menu item arrow */
-body.mobile .dropdown-submenu .dropdown-toggle::after,
-body.desktop .dropdown-submenu .dropdown-toggle::after {
-    content: "\ed3b" !important;
-    position: absolute;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    top: 0;
-    inset-inline-end: 0;
-    margin: unset !important;
-    border: unset !important;
-    padding: 0 4px;
-    font-family: boxicons;
-    font-size: 1.2em;
-    color: var(--menu-item-arrow-color) !important;
-}
-
-/* Right to left, the end side is the left, so the arrow points the other way. */
-body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
-    content: "\ea4d" !important;
-}
-
 /* Menu item group heading */
 
 /* The heading body */

@@ -59,3 +59,19 @@
     padding: 0 8px;
     min-width: unset !important;
 }
+
+/*
+ * Low profile buttons
+ */
+
+button.tn-low-profile {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: inherit;
+}
+
+button.tn-low-profile:hover {
+    background-color: var(--icon-button-hover-background);
+}

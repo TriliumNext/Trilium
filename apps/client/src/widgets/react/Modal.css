@@ -72,3 +72,9 @@
         transition: none;
     }
 }
+
+/* Modal header */
+.modal .modal-header {
+    --bs-modal-header-border-width: 0;
+    user-select: none;
+}

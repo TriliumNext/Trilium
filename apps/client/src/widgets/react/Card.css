@@ -288,12 +288,18 @@ body[dir=rtl] .tn-card-option::after {
         max-width: none;
         /* Room at the end for the mark standing over it, so the value stops short of it. */
         padding-inline: 0 calc(var(--card-option-mark-size) + 8px);
+        border: 0;
         background: none;
         color: var(--muted-text-color);
         overflow: hidden;
         text-align: end;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* The row's chevron stands in for the toggle's own caret. */
+    .tn-card .tn-card-option > .dropdown > .btn::after {
+        content: none;
     }
 
     /* Each state the theme gives a combo box would put the frame and the arrow back, so all of them

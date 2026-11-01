@@ -55,9 +55,9 @@
   --board-selection-wedge-color: var(--main-border-color);
   /* The overlay on a carried card while it would drop at one end of a column, painted in the hue
      the card itself is. */
-  --board-drop-hint-background-saturation: 35%;
-  --board-drop-hint-background-lightness: 25%;
-  --board-drop-hint-color: #ffffff;
+  --board-drop-hint-background-saturation: 50%;
+  --board-drop-hint-background-lightness: 75%;
+  --board-drop-hint-color: #000000bf;
   /* Dims the board while a card is being named. Kept light: it draws the eye to the field rather
      than hiding what is behind it. */
   --board-edit-backdrop: rgba(0, 0, 0, 0.15);
@@ -68,15 +68,41 @@
   --board-column-header-muted-text-color: var(--muted-text-color);
   /* Saturation and lightness of the heading colors on a column with a hue. Only the hue comes from
      the note's color, and the theme sets the lightness, so a colored board is as light as a plain one. */
-  --board-column-header-text-saturation: 30%;
-  --board-column-header-text-lightness: 8%;
+  --board-column-header-text-saturation: 40%;
+  --board-column-header-text-lightness: 28%;
   --board-column-header-muted-text-saturation: 20%;
   --board-column-header-muted-text-lightness: 40%;
 
-  --board-focus-outline-saturation: 55%;
-  --board-focus-outline-lightness: 45%;
+  --board-focus-outline-saturation: 50%;
+  --board-focus-outline-lightness: 34%;
   /* Follows the theme of its own accord, so neither theme has to name it again. */
   --board-focus-outline-plain-color: var(--link-color);
+}
+
+/* The same defaults for a dark theme. On `:root` so that a theme's own `:root` rule overrides them. */
+:where(:root:has(> body.dark-theme)) {
+  --board-limit-exceeded-background: #e57373;
+  --board-limit-exceeded-outline: #e5737380;
+  --board-column-background: #3b3b3b;
+  --board-column-background-saturation: 14%;
+  --board-column-background-lightness: 23%;
+
+  --board-drop-hint-background-saturation: 20%;
+  --board-drop-hint-background-lightness: 45%;
+  --board-drop-hint-color: #ffffffc9;
+
+  --board-edit-backdrop: rgba(0, 0, 0, 0.3);
+
+  --board-drop-placeholder-background: rgba(255, 255, 255, 0.1);
+  --board-column-drop-placeholder-background: rgba(255, 255, 255, 0.06);
+
+  --board-column-header-text-saturation: 67%;
+  --board-column-header-text-lightness: 81%;
+  --board-column-header-muted-text-saturation: 18%;
+  --board-column-header-muted-text-lightness: 73%;
+
+  --board-focus-outline-saturation: 60%;
+  --board-focus-outline-lightness: 70%;
 }
 
 .board-view {

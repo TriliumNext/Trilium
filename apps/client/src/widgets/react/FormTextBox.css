@@ -1,0 +1,8 @@
+label.input-group.tn-number-unit-pair {
+    width: fit-content;
+}
+
+label.input-group.tn-number-unit-pair input {
+    width: 120px !important;
+    padding-inline-end: 0;
+}

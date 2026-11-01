@@ -219,9 +219,8 @@ body.desktop.background-effects.last-split-bgfx #center-pane ~ .right-pane-peek-
     /* Several cards open at once share the pane between them instead of being laid out one under the
        next, where the one section a note has dozens of rows in (a template's definitions, say) is
        laid out in full and pushes everything after it off the pane. Each card gives up room and
-       scrolls within itself instead — as little as it can, which is the rule below; this much is
-       what every engine can be counted on for, and it crops each card a little rather than any one
-       of them badly.
+       scrolls within itself instead, which crops each card a little rather than any one of them
+       badly.
 
        Every card but the growing one, which keeps both its claim on the room the others leave over
        and the floor it stops at (see `.card.grow` above). Company is no reason to take that away: a
@@ -252,25 +251,6 @@ body.desktop.background-effects.last-split-bgfx #center-pane ~ .right-pane-peek-
                so that measuring a card by its content below is measuring what is in it rather than
                the height the card happens to have been given. */
             height: auto;
-        }
-    }
-
-    /* Where a card can be capped at its own content, the room is shared by need rather than in
-       equal parts: every card is offered the same share of the pane, hands back whatever it has
-       nothing to put there (`max-content`), and what is handed back is offered again to the cards
-       still short. So the sections with a row or two in them are shown whole and the long one takes
-       everything left over — instead of each section being cropped a little for the sake of a
-       section that had room to spare.
-
-       Firefox parses `max-height: max-content` but does not cap a box's height with it, which would
-       leave every card at an equal share. `-moz-orient` is a Firefox-only property, so Firefox takes
-       the content-height fallback above instead. */
-    @supports (max-height: max-content) and (not (-moz-orient: inline)) {
-        .right-pane-tab-body:has(> .card:not(.collapsed) ~ .card:not(.collapsed)) > .card:not(.collapsed):not(.grow) {
-            /* Offered from nothing rather than from its content: a card asking for its content up
-               front leaves the pane over-subscribed, and nothing to hand back out. */
-            flex: 1 1 0;
-            max-height: max-content;
         }
     }
 
