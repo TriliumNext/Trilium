@@ -67,9 +67,7 @@
     "fix_link": "修复链接",
     "button_fix_link": "修复链接",
     "web_link": "网页链接",
-    "url": "URL",
-    "mirror_title": "跟随笔记标题",
-    "mirror_title_description": "链接显示笔记当前的标题，笔记重命名时会随之变化。"
+    "url": "URL"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -3739,7 +3737,6 @@
       "download-image": "下载图片",
       "drag-to-reposition-the-collapsible-block": "拖动以重新定位可折叠块",
       "edit-task-states": "编辑任务状态",
-      "edit-title": "编辑标题",
       "embed": "嵌入",
       "inline": "行内",
       "insert-a-0-mermaid-diagram-template": "插入一个“%0”类型的 Mermaid 图表模板",
@@ -3758,11 +3755,9 @@
       "select-collapsible-block": "选择可折叠块",
       "summary": "摘要",
       "task-state": "任务状态：",
-      "title": "标题",
       "toggle-collapsible-block": "切换可折叠块",
       "type-the-content-here": "在此输入内容..",
       "undefined-custom-task-state": "未定义的自定义任务状态",
-      "url": "URL",
       "admonition": "警示框",
       "anchor": "锚点",
       "anchor-name": "锚点名称",

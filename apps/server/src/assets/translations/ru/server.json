@@ -390,7 +390,6 @@
     "board_note_third": "Третья заметка",
     "board_status_todo": "Сделать",
     "board_status_progress": "В процессе",
-    "background": "Фон",
     "presentation_slide_second": "Второй слайд",
     "presentation_slide_first": "Первый слайд",
     "presentation": "Презентация",
@@ -438,7 +437,9 @@
     "note-cannot-be-displayed": "Этот тип заметки не может быть отображен.",
     "included-note-requires-credentials": "Это заметка защищена паролем и не может быть отображена здесь.",
     "broken-block-reference": "Поврежденная ссылка",
-    "play-video": "Воспроизвести видео"
+    "play-video": "Воспроизвести видео",
+    "content-not-available": "Это содержимое недоступно.",
+    "untitled-block": "Блок"
   },
   "sql_init": {
     "db_not_initialized_desktop": "База данных не инициализирована, следуйте инструкциям на экране.",

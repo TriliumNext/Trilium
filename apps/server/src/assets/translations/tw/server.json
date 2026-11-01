@@ -345,8 +345,7 @@
     "presentation": "簡報",
     "presentation_slide": "簡報投影片",
     "presentation_slide_first": "第一張投影片",
-    "presentation_slide_second": "第二張投影片",
-    "background": "背景"
+    "presentation_slide_second": "第二張投影片"
   },
   "sql_init": {
     "db_not_initialized_desktop": "資料庫尚未初始化，請依螢幕指示操作。",

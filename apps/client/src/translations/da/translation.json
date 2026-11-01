@@ -67,9 +67,7 @@
     "button_edit_link": "Gem link",
     "button_fix_link": "Ret link",
     "web_link": "Weblink",
-    "url": "URL",
-    "mirror_title": "Spejl notens titel",
-    "mirror_title_description": "Linket viser notens aktuelle titel og ændrer sig, når noten omdøbes."
+    "url": "URL"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Rediger grenpræfiks",
@@ -4468,7 +4466,6 @@
       "drag-to-reposition-the-collapsible-block": "Træk for at flytte den sammenfoldelige blok",
       "edit-anchor": "Rediger anker",
       "edit-task-states": "Rediger opgavetilstande",
-      "edit-title": "Rediger titel",
       "embed": "Indlejre",
       "enter-caption": "Indtast billedtekst",
       "enter-the-anchor-name-without-spaces": "Indtast ankernavnet uden mellemrum.",
@@ -4547,7 +4544,6 @@
       "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "Filen er for stor til at blive uploadet (HTTP 413). Hvis Trilium er bag en omvendt proxy, skal du øge dens grænse for anmodningstekststørrelse.",
       "the-server-responded-with-http-0": "Serveren svarede med HTTP %0.",
       "tip": "Tip",
-      "title": "Titel",
       "to-do-list": "Opgaveliste",
       "toggle-collapsible-block": "Slå sammenfoldelig blok til/fra",
       "tokens": "tokens",
@@ -4556,7 +4552,6 @@
       "turn-the-current-block-into-a-paragraph": "Ændr den aktuelle blok til et afsnit.",
       "type-the-content-here": "Skriv indholdet her...",
       "undefined-custom-task-state": "Udefineret brugerdefineret opgavetilstand",
-      "url": "URL",
       "upload-an-image-from-your-device": "Upload et billede fra din enhed.",
       "upload-files-as-attachments-and-insert-embeds": "Upload filer som vedhæftninger, og indsæt indlejringer.",
       "upload-files-as-attachments-and-insert-links": "Upload filer som vedhæftninger, og indsæt links.",

@@ -362,10 +362,11 @@ Trilium sẽ không thể tồn tại nếu không có các công nghệ đằng
   quan cho các ghi chú văn bản.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - trình soạn thảo mã
   nguồn hỗ trợ một lượng lớn ngôn ngữ.
-* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
-  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - hiển thị sơ đồ của các ghi
+  chú Mermaid; các trình phân tích cú pháp của nó là mô hình cho việc tô sáng cú
+  pháp của chúng.
 * [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
-  - the base of the Mermaid syntax highlighting.
+  - nền tảng của tính năng tô sáng cú pháp Mermaid.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - bảng trắng vô hạn
   được sử dụng trong các ghi chú Canvas.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - cung cấp chức
