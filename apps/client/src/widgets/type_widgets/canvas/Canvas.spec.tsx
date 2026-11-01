@@ -75,16 +75,20 @@ describe("CanvasEditor", () => {
         }
     }
 
-    it("reads its position again before pointer input once the drawing moved", async () => {
+    it("reads its position again before pointer input or a drop, not on scroll", async () => {
         const excalidraw = await mount({ isEmbedded: true });
         point(excalidraw);
         expect(refresh).not.toHaveBeenCalled();
 
         // The note scrolled, so the position that Excalidraw read last is out of date.
-        offsets = { offsetLeft: 0, offsetTop: 120 };
-        point(excalidraw);
-        expect(refresh).toHaveBeenCalledTimes(1);
-        expect(excalidrawProps).toHaveBeenLastCalledWith(expect.objectContaining({ detectScroll: true }));
+        for (const type of [ "pointerover", "pointermove", "pointerdown", "dragover" ]) {
+            offsets = { offsetLeft: 0, offsetTop: 120 };
+            excalidraw?.dispatchEvent(new Event(type, { bubbles: true }));
+        }
+        expect(refresh).toHaveBeenCalledTimes(4);
+        expect(excalidrawProps).toHaveBeenLastCalledWith(
+            expect.objectContaining({ detectScroll: false })
+        );
     });
 
     it("leaves the position to Excalidraw in a canvas note, which does not move", async () => {

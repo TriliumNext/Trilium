@@ -109,8 +109,7 @@
     "search_note": "search for note by its name",
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)",
-    "button_add_link": "Add link"
+    "anchor_none": "None (link to note)"
   },
   "delete_notes": {
     "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
@@ -259,5 +258,8 @@
       "text-color": "Text colour",
       "background-color": "Background colour"
     }
+  },
+  "link_context_menu": {
+    "align_center": "Align centre"
   }
 }

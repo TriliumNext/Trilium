@@ -55,6 +55,8 @@ describe("MarkdownEmbed", () => {
             hasDisplayModes: true, hasEditableFlag: true, boxSizeIcon: moveVerticalIcon
         });
         expect(moveVerticalIcon).toContain("<svg");
+        // The box keeps the height of the split that Editable shows.
+        expect(isFillingBox(figure)).toBe(true);
 
         const readOnly = buildNote({
             title: "Fixed", type: "code", mime: "text/x-markdown", content: "", "#readOnly": ""
@@ -68,6 +70,9 @@ describe("MarkdownEmbed", () => {
             expect(getContentEmbedTools(locked)).toMatchObject({
                 hasDisplayModes: true, hasEditableFlag: false, boxSizeIcon: moveVerticalIcon
             });
+            expect(isFillingBox(locked)).toBe(false);
+            await showDisplayMode(locked, "split");
+            expect(isFillingBox(locked)).toBe(true);
         }
     });
 
@@ -125,6 +130,7 @@ describe("MarkdownEmbed", () => {
         expect(editor.release).toHaveBeenCalledOnce();
         expect(figure.querySelector(".cm-editor")).toBeNull();
         expect(figure.querySelector(".note-detail-split.split-read-only")).not.toBeNull();
+        expect(isFillingBox(figure)).toBe(true);
     });
 
     it("searches and takes the caret into the source only while it shows", async () => {
@@ -202,6 +208,13 @@ describe("MarkdownEmbed", () => {
         expect(getEmbedMenuItems(locked)).toEqual([]);
     });
 });
+
+/** Whether the content in `figure` takes the height of its box. */
+function isFillingBox(figure: HTMLElement) {
+    const content = figure.querySelector(".markdown-embed-content");
+    expect(content).not.toBeNull();
+    return !!content?.classList.contains("fills-box");
+}
 
 /** Picks the display mode `mode` on the embed `figure`. */
 async function showDisplayMode(figure: HTMLElement, mode: string) {

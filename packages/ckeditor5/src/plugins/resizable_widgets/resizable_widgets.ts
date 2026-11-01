@@ -10,7 +10,11 @@ import {
     WidgetToolbarRepository
 } from "ckeditor5";
 
-import { type ResizeAxes, type ResizeSize, startResizeGesture } from "./resize_gesture.js";
+import {
+    type ResizeAnchor, type ResizeAxes, type ResizeSize, startResizeGesture
+} from "./resize_gesture.js";
+
+export type { ResizeAnchor } from "./resize_gesture.js";
 
 /** How the widgets of a model element are resized. */
 export interface ResizableWidgetConfig {
@@ -21,8 +25,11 @@ export interface ResizableWidgetConfig {
     propertyPrefix: string;
     isWidthResizable?: boolean;
     isHeightResizable?: boolean;
-    /** Whether the widget's stylesheet centers it, so that its width changes on both sides. */
-    isCentered?: boolean;
+    /**
+     * The edge of `element` that stays in place while its width changes, as its stylesheet places
+     * the widget. The inline start by default. The handles go on the opposite edge.
+     */
+    getAnchor?: (element: ModelElement) => ResizeAnchor;
     /** A selector for the element inside the widget whose height changes, or the widget. */
     heightTarget?: string;
     /** The smallest width, in `em`. */
@@ -48,6 +55,11 @@ const HANDLES: Record<string, ResizeAxes> = {
 };
 
 const RESIZABLE_CLASS = "ck-widget_resizable";
+/** The classes of a widget anchored to its left or right edge, which place its handles. */
+const ANCHOR_CLASSES = {
+    left: "ck-widget_resize-anchor-left",
+    right: "ck-widget_resize-anchor-right"
+} as const;
 const RESIZING_CLASS = "ck-widget_resizing";
 const TOOLBAR_LOCK = "ResizableWidgets";
 const DEFAULT_MIN_SIZE = 2;
@@ -55,8 +67,9 @@ const DOUBLE_TAP_MS = 400;
 const EM_PATTERN = /^\d+(\.\d+)?em$/;
 
 /**
- * Lets the user resize widgets by dragging handles on their inline-end edge, bottom edge and
- * corner, with a mouse, a pen or a finger. Double-clicking a handle resets its size.
+ * Lets the user resize widgets by dragging handles on the edge opposite their anchor, their bottom
+ * edge and the corner between them, with a mouse, a pen or a finger. Double-clicking a handle
+ * resets its size.
  */
 export default class ResizableWidgets extends Plugin {
 
@@ -103,10 +116,10 @@ export default class ResizableWidgets extends Plugin {
                 const subject = { element: item, viewElement, config };
                 const handles = this.createHandles(api.writer, subject, axes);
                 api.writer.insert(api.writer.createPositionAt(viewElement, "end"), handles);
-                updateResizableClass(api.writer, viewElement, item, config);
+                updateWidgetClasses(api.writer, viewElement, item, config);
             }, { priority: "low" });
 
-            if (config.isResizable) {
+            if (config.isResizable || config.getAnchor) {
                 dispatcher.on<DowncastAttributeEvent>("attribute", (_evt, { item }, api) => {
                     if (!item.is("element", modelName)) {
                         return;
@@ -118,7 +131,7 @@ export default class ResizableWidgets extends Plugin {
                         return;
                     }
 
-                    updateResizableClass(api.writer, viewElement, item, config);
+                    updateWidgetClasses(api.writer, viewElement, item, config);
                 }, { priority: "low" });
             }
         });
@@ -193,7 +206,7 @@ export default class ResizableWidgets extends Plugin {
             handle,
             axes,
             widthTarget: targets.width,
-            isCentered: !!config.isCentered,
+            anchor: config.getAnchor?.(element) ?? "start",
             heightTarget: targets.height,
             minWidth: toPixels(config.minWidth ?? DEFAULT_MIN_SIZE, targets.width),
             minHeight: toPixels(config.minHeight ?? DEFAULT_MIN_SIZE, targets.height),
@@ -291,16 +304,30 @@ function getAxes(config: ResizableWidgetConfig) {
     return axes;
 }
 
-function updateResizableClass(
+/** Sets the resizable and anchor classes of the widget from the state of `element`. */
+function updateWidgetClasses(
     writer: ViewDowncastWriter,
     viewElement: ViewElement,
     element: ModelElement,
     config: ResizableWidgetConfig
 ) {
-    if (config.isResizable?.(element) ?? true) {
-        writer.addClass(RESIZABLE_CLASS, viewElement);
+    const anchor = config.getAnchor?.(element);
+    toggleClass(writer, viewElement, RESIZABLE_CLASS, config.isResizable?.(element) ?? true);
+    for (const [ name, className ] of Object.entries(ANCHOR_CLASSES)) {
+        toggleClass(writer, viewElement, className, name === anchor);
+    }
+}
+
+function toggleClass(
+    writer: ViewDowncastWriter,
+    viewElement: ViewElement,
+    className: string,
+    isSet: boolean
+) {
+    if (isSet) {
+        writer.addClass(className, viewElement);
     } else {
-        writer.removeClass(RESIZABLE_CLASS, viewElement);
+        writer.removeClass(className, viewElement);
     }
 }
 

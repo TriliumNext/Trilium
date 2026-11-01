@@ -563,6 +563,7 @@ describe("EditLinkDialog", () => {
         expect(field("text")).toBeNull();
         expect(container.querySelector(".no-items")?.textContent)
             .toBe("add_link.no_headings_or_anchors");
+        expect(container.querySelector(".no-items .bx-bookmark")).not.toBeNull();
     });
 
     it("lists the headings as a tree above the anchors, and links one mirroring it", async () => {
@@ -576,6 +577,12 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
         expect(container.querySelector(".edit-link-targets")?.firstElementChild
             ?.matches(".edit-link-headings")).toBe(true);
+        // Sub-headings start collapsed.
+        expect(headingRows().map((row) => row.textContent)).toStrictEqual([ "Intro", "Usage" ]);
+        await toggleHeading(0);
+        expect(headingRows().map((row) => row.textContent))
+            .toStrictEqual([ "Intro", "Setup", "Usage" ]);
+        await toggleHeading(1);
         expect(headingRows().map((row) => [
             row.textContent,
             row.getAttribute("style") ?? "",
@@ -659,6 +666,24 @@ describe("EditLinkDialog", () => {
         expect(field("text")?.value).toBe("");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", null);
+
+        // A sub-heading opens with the headings above it expanded, and no others.
+        const linux = createHeading("Linux", 4);
+        await open({
+            anchors: [],
+            headings: [
+                createHeading("Intro", 2), createHeading("Setup", 3), linux,
+                createHeading("Usage", 2), createHeading("Examples", 3)
+            ],
+            currentHeading: linux
+        });
+        expect(headingRows().map((row) => row.textContent))
+            .toStrictEqual([ "Intro", "Setup", "Linux", "Usage" ]);
+        expect(checkedHeading()).toBe("Linux");
+        // Scrolled by `fillAndFocus()`, once Bootstrap reports the dialog shown.
+        await vi.waitFor(() => {
+            expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
+        });
     });
 });
 

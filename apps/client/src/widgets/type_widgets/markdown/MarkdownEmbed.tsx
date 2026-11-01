@@ -77,7 +77,10 @@ export default function MarkdownEmbed({
         <div
             ref={rootRef}
             className={clsx(
-                "markdown-embed-content", isSourceShown && "with-source include-note-box-height"
+                "markdown-embed-content",
+                isSourceShown && "with-source",
+                // Takes the height of the split whether Editable is on or off.
+                (isSourceShown || canEdit) && "fills-box"
             )}
         >
             <SplitLayout

@@ -23,6 +23,7 @@ import {
     IconTodoList,
     IconImage
 } from "@ckeditor/ckeditor5-icons";
+import youtubeIcon from "boxicons/svg/logos/bxl-youtube.svg?raw";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
@@ -65,6 +66,7 @@ import { insertMermaidDiagram, type MermaidSample } from "../mermaid/mermaid_ui.
 import { getDefaultRatios, MAX_COLUMNS, MIN_COLUMNS } from "../multicolumn/constants.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import SnippetsEditing from "../snippets/snippetsediting.js";
+import { COMMAND_NAME as YOUTUBE_VIDEO_COMMAND } from "../youtube_video.js";
 import { registerHostedMentionFeed } from "./register_feed.js";
 import type { MentionHostedList } from "./types.js";
 
@@ -405,6 +407,14 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             aliases: [ "internal link", "trilium link", "reference link" ],
             icon: internalLinkIcon,
             commandName: INTERNAL_LINK_COMMAND
+        },
+        {
+            id: "youtube-video",
+            title: t("Insert YouTube video"),
+            description: t("Insert a YouTube video that can be watched straight within the note"),
+            aliases: [ "youtube", "video", "embed" ],
+            icon: youtubeIcon,
+            commandName: YOUTUBE_VIDEO_COMMAND
         },
         {
             id: "link-preview",

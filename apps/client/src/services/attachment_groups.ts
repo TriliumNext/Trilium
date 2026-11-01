@@ -1,4 +1,7 @@
-import type { AttachmentRole } from "@triliumnext/commons";
+import {
+    type AttachmentRole, CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle,
+    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
+} from "@triliumnext/commons";
 
 /**
  * Which half of the attachment list an attachment belongs in.
@@ -55,18 +58,56 @@ export function attachmentGroupForRole(role: string | undefined | null): Attachm
 }
 
 /**
- * Splits attachments into the two groups, each keeping the order it arrived in.
+ * Splits the attachments of a note of type `noteType` into the two groups, each keeping the order
+ * it arrived in.
  *
  * Both halves are always returned, empty ones included, so a caller can count what it is not showing
  * — which is how the list knows whether to offer the app's own attachments at all, and how the row
  * that offers them says how much is behind it without unfolding.
+ *
+ * The pictures that the canvas saves of a canvas note and of each canvas drawing go in `system`.
+ * They have the `image` role, so their titles identify them.
  */
-export function partitionAttachmentsByGroup<T extends { role: string }>(attachments: readonly T[]): Record<AttachmentGroup, T[]> {
+export function partitionAttachmentsByGroup<T extends GroupedAttachment>(
+    attachments: readonly T[],
+    noteType: NoteType
+): Record<AttachmentGroup, T[]> {
     const groups: Record<AttachmentGroup, T[]> = { user: [], system: [] };
+    const canvasPictureTitles = getCanvasPictureTitles(attachments, noteType);
 
     for (const attachment of attachments) {
-        groups[attachmentGroupForRole(attachment.role)].push(attachment);
+        const isCanvasPicture = attachment.role === "image"
+            && canvasPictureTitles.has(attachment.title);
+        const group = isCanvasPicture ? "system" : attachmentGroupForRole(attachment.role);
+        groups[group].push(attachment);
     }
 
     return groups;
+}
+
+/** The fields of an attachment that {@link partitionAttachmentsByGroup} reads. */
+interface GroupedAttachment {
+    attachmentId: string;
+    role: string;
+    mime: string;
+    title: string;
+}
+
+/**
+ * The titles of the canvas pictures among `attachments`: `canvas-export.svg` on a canvas note, and
+ * the title from `getDrawingPictureTitle()` for each canvas drawing.
+ */
+function getCanvasPictureTitles(attachments: readonly GroupedAttachment[], noteType: NoteType) {
+    const titles = new Set<string>();
+    if (noteType === "canvas") {
+        titles.add(NOTE_TYPE_IMAGE_ATTACHMENTS.canvas);
+    }
+
+    for (const { attachmentId, mime } of attachments) {
+        if (mime === CANVAS_ATTACHMENT_MIME) {
+            titles.add(getDrawingPictureTitle(attachmentId));
+        }
+    }
+
+    return titles;
 }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { ATTACHMENT_ROLES } from "@triliumnext/commons";
+import {
+    ATTACHMENT_ROLES, CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, getDrawingPictureTitle,
+    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
+} from "@triliumnext/commons";
 
 import { ATTACHMENT_ROLE_GROUPS, attachmentGroupForRole, partitionAttachmentsByGroup } from "./attachment_groups.js";
 
@@ -41,27 +44,74 @@ describe("attachmentGroupForRole", () => {
 
 describe("partitionAttachmentsByGroup", () => {
     it("splits in two, keeping each side in the order it arrived", () => {
-        const attachments = [
-            { role: "favicon", id: 1 },
-            { role: "image", id: 2 },
-            { role: "coverImage", id: 3 },
-            { role: "file", id: 4 },
-            { role: "image", id: 5 }
-        ];
+        const attachments = [ "favicon", "image", "coverImage", "file", "image" ]
+            .map((role, index) => attachment(`att${index}`, role));
 
-        expect(partitionAttachmentsByGroup(attachments)).toStrictEqual({
-            user: [ { role: "image", id: 2 }, { role: "file", id: 4 }, { role: "image", id: 5 } ],
-            system: [ { role: "favicon", id: 1 }, { role: "coverImage", id: 3 } ]
+        expect(groupIds(attachments, "text")).toStrictEqual({
+            user: [ "att1", "att3", "att4" ],
+            system: [ "att0", "att2" ]
         });
     });
 
     it("always returns both halves, so an empty one can still be counted", () => {
         // What the switcher reads to say a second group exists at all — an absent key would leave it
         // unable to tell "no system attachments" from "not looked yet".
-        expect(partitionAttachmentsByGroup([])).toStrictEqual({ user: [], system: [] });
-        expect(partitionAttachmentsByGroup([ { role: "image" } ])).toStrictEqual({
-            user: [ { role: "image" } ],
+        const image = attachment("att1", "image");
+        expect(partitionAttachmentsByGroup([], "text")).toStrictEqual({ user: [], system: [] });
+        expect(partitionAttachmentsByGroup([ image ], "text")).toStrictEqual({
+            user: [ image ],
+            system: []
+        });
+    });
+
+    it("puts the pictures of a canvas note and of its drawings with the app's own", () => {
+        const attachments = [
+            attachment("notePicture", "image", NOTE_TYPE_IMAGE_ATTACHMENTS.canvas, SVG_MIME),
+            attachment("canvasImage", "image", "5d8f3a0c9b", "image/png"),
+            attachment("drawing", "file", CANVAS_ATTACHMENT_TITLE, CANVAS_ATTACHMENT_MIME),
+            attachment("drawingPicture", "image", getDrawingPictureTitle("drawing"), SVG_MIME)
+        ];
+
+        expect(groupIds(attachments, "canvas")).toStrictEqual({
+            user: [ "canvasImage", "drawing" ],
+            system: [ "notePicture", "drawingPicture" ]
+        });
+    });
+
+    it("keeps an attachment titled like a canvas picture with the user's own", () => {
+        const attachments = [
+            // A canvas note's picture title on a note of another type.
+            attachment("exportTitle", "image", NOTE_TYPE_IMAGE_ATTACHMENTS.canvas, SVG_MIME),
+            // A drawing picture title naming no drawing of the note.
+            attachment("noDrawing", "image", getDrawingPictureTitle("missing"), SVG_MIME),
+            attachment("drawing", "file", CANVAS_ATTACHMENT_TITLE, CANVAS_ATTACHMENT_MIME),
+            // A drawing picture title on a file rather than an image.
+            attachment("file", "file", getDrawingPictureTitle("drawing"), SVG_MIME)
+        ];
+
+        expect(groupIds(attachments, "text")).toStrictEqual({
+            user: [ "exportTitle", "noDrawing", "drawing", "file" ],
             system: []
         });
     });
 });
+
+const SVG_MIME = "image/svg+xml";
+
+function attachment(
+    attachmentId: string,
+    role: string,
+    title = `${attachmentId}.dat`,
+    mime = "application/octet-stream"
+) {
+    return { attachmentId, role, title, mime };
+}
+
+/** The IDs of `attachments` in each group, for a note of type `noteType`. */
+function groupIds(attachments: ReturnType<typeof attachment>[], noteType: NoteType) {
+    const { user, system } = partitionAttachmentsByGroup(attachments, noteType);
+    return {
+        user: user.map(({ attachmentId }) => attachmentId),
+        system: system.map(({ attachmentId }) => attachmentId)
+    };
+}

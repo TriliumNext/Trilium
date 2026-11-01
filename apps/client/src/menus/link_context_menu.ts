@@ -1,4 +1,4 @@
-import type { CKTextEditor, ContentEmbedState } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, ContentEmbedState, PositionValue } from "@triliumnext/ckeditor5";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
@@ -33,6 +33,40 @@ interface MenuEmbed {
 }
 
 const CHECK_ICON = "bx bx-check";
+
+/** The positions of an embed under one heading of its menu. */
+interface PositionGroup {
+    titleKey: string;
+    positions: { value: PositionValue; titleKey: string }[];
+}
+
+/** The positions of an embed, under how the text runs around it, as its toolbar lists them. */
+const POSITION_GROUPS: PositionGroup[] = [
+    {
+        titleKey: "link_context_menu.break_text",
+        positions: [
+            { value: "left", titleKey: "link_context_menu.align_left" },
+            { value: "center", titleKey: "link_context_menu.align_center" },
+            { value: "right", titleKey: "link_context_menu.align_right" }
+        ]
+    },
+    {
+        titleKey: "link_context_menu.wrap_text",
+        positions: [
+            { value: "wrap-left", titleKey: "link_context_menu.align_left" },
+            { value: "wrap-right", titleKey: "link_context_menu.align_right" }
+        ]
+    }
+];
+
+/** The icons of the positions, from the editor's icon font. */
+const POSITION_ICONS: Record<PositionValue, string> = {
+    left: "cke cke-object-left",
+    center: "cke cke-object-center",
+    right: "cke cke-object-right",
+    "wrap-left": "cke cke-object-inline-left",
+    "wrap-right": "cke cke-object-inline-right"
+};
 
 let lastMenuRequest = 0;
 
@@ -315,6 +349,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             title: t("link_context_menu.include_size"),
             uiIcon: "bx bx-expand-vertical"
         }, sizeItems),
+        ...getPositionItems(embed),
         {
             title: t("link_context_menu.show_title"),
             uiIcon: "bx bx-window-alt",
@@ -332,6 +367,31 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             })
         }
     ];
+}
+
+/**
+ * The submenu that sets where the embed is placed in the text, with the icon of its position, for
+ * content that has positions.
+ */
+function getPositionItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
+    const position = embed.state.position;
+    if (!position) {
+        return [];
+    }
+
+    const items = POSITION_GROUPS.flatMap((group): MenuItem<CommandNames>[] => [
+        { kind: "header", title: t(group.titleKey) },
+        ...group.positions.map(({ value, titleKey }): MenuItem<CommandNames> => ({
+            title: t(titleKey),
+            uiIcon: POSITION_ICONS[value],
+            checked: value === position,
+            handler: () => runEmbedCommand(embed, "contentEmbedPosition", { value })
+        }))
+    ]);
+    return [ submenuItem({
+        title: t("link_context_menu.include_position"),
+        uiIcon: POSITION_ICONS[position]
+    }, items) ];
 }
 
 /** Runs `command` on the embed, which the commands act on once it is selected. */

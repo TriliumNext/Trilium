@@ -1,0 +1,32 @@
+.youtube-video-balloon {
+    padding: 8px;
+    /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
+    width: 34rem;
+    max-width: calc(100vw - 2rem);
+    font-size: var(--main-font-size);
+    line-height: var(--bs-body-line-height);
+    white-space: normal;
+    text-align: start;
+
+    .youtube-video-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+}
+
+:is(.modal.youtube-video-dialog, .youtube-video-balloon) {
+    @container (min-width: 501px) {
+        .youtube-video-url {
+            > .tn-card-option-label {
+                flex: 0 0 8em;
+                min-width: max-content;
+            }
+
+            > .form-control {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+        }
+    }
+}

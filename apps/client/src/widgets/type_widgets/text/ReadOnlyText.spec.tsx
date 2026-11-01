@@ -509,6 +509,7 @@ describe("ReadOnlyText embeds of an unknown kind", () => {
 describe("ReadOnlyText Mermaid diagrams", () => {
     const html = `<pre data-box-size="small" data-display-mode="source" data-hide-title="true"`
         + ` data-trilium-block-id="b1" data-code-wrap-lines="true" data-code-line-numbers="false"`
+        + ` data-position="wrap-right"`
         + ` style="--include-note-height:12em;">`
         + `<code class="language-mermaid">graph TD;</code></pre>`
         + `<pre><code class="language-mermaid" data-trilium-display-mode="split"`
@@ -560,7 +561,8 @@ describe("ReadOnlyText Mermaid diagrams", () => {
                 options: { isFocused: false }, isInPage: true,
                 data: {
                     boxSize: "small", displayMode: "source", hideTitle: "true", language: "mermaid",
-                    triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false"
+                    triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false",
+                    position: "wrap-right"
                 },
                 height: "12em"
             },

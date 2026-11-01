@@ -4,6 +4,12 @@ export interface ResizeAxes {
     height: boolean;
 }
 
+/**
+ * The edge of a widget that stays in place while its width changes: its inline start, its left or
+ * right edge, or neither for a centered widget, whose width changes on both sides.
+ */
+export type ResizeAnchor = "start" | "center" | "left" | "right";
+
 /** A size in pixels. An axis that is left out does not change, and a `null` width is full. */
 export interface ResizeSize {
     width?: number | null;
@@ -16,8 +22,8 @@ export interface ResizeGestureOptions {
     axes: ResizeAxes;
     /** The element whose width changes. Its width is full once it reaches its parent's. */
     widthTarget: HTMLElement;
-    /** Whether the width target is centered, so that its width changes on both sides. */
-    isCentered: boolean;
+    /** The edge of the width target that stays in place. */
+    anchor: ResizeAnchor;
     /** The element whose height changes. */
     heightTarget: HTMLElement;
     /** The smallest width, in pixels. */
@@ -44,8 +50,8 @@ const AUTO_SCROLL_EDGE = 40;
 const AUTO_SCROLL_STEP = 16;
 
 /**
- * Resizes until the pointer pressed in `event` is released. The width grows towards the inline
- * end, or on both sides when centered, the height towards the bottom, and the scroll container
+ * Resizes until the pointer pressed in `event` is released. The width grows away from the anchor,
+ * or on both sides when centered, the height towards the bottom, and the scroll container
  * scrolls near its edges. Returns a function that cancels the gesture as Escape does, while it is
  * under way.
  */
@@ -55,8 +61,7 @@ export function startResizeGesture(event: PointerEvent, options: ResizeGestureOp
     const startWidth = parseFloat(getComputedStyle(widthTarget).width);
     const startHeight = parseFloat(getComputedStyle(heightTarget).height);
     const maxWidth = getContainerWidth(widthTarget);
-    const inlineDirection = getComputedStyle(widthTarget).direction === "rtl" ? -1 : 1;
-    const widthFactor = inlineDirection * (options.isCentered ? 2 : 1);
+    const widthFactor = getWidthFactor(options.anchor, widthTarget);
     const scroller = findScrollContainer(heightTarget);
     const startScrollTop = scroller.scrollTop;
 
@@ -159,6 +164,19 @@ export function startResizeGesture(event: PointerEvent, options: ResizeGestureOp
             options.onCancel();
         }
     };
+}
+
+/** The change in width of `element` per pixel that the pointer moves to the right. */
+function getWidthFactor(anchor: ResizeAnchor, element: HTMLElement) {
+    if (anchor === "left") {
+        return 1;
+    }
+    if (anchor === "right") {
+        return -1;
+    }
+
+    const inlineDirection = getComputedStyle(element).direction === "rtl" ? -1 : 1;
+    return anchor === "center" ? 2 * inlineDirection : inlineDirection;
 }
 
 /** The width inside the padding of the parent of `element`. */

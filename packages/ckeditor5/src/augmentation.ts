@@ -51,8 +51,8 @@ declare global {
 
     /** An item of the embed toolbar that the content of an embed can hide. */
     type ContentEmbedToolbarItem =
-        "contentEmbedBoxSizeDropdown" | "toggleContentEmbedTitle" | "convertEmbedToLink"
-        | "toggleContentEmbedEditable";
+        "contentEmbedBoxSizeDropdown" | "contentEmbedPositionDropdown" | "toggleContentEmbedTitle"
+        | "convertEmbedToLink" | "toggleContentEmbedEditable";
 
     /** The buttons that the content of an embed, such as a canvas drawing, adds to its toolbar. */
     interface ContentEmbedToolProvider {
@@ -79,6 +79,11 @@ declare global {
          * menu of the embed then switch. The embed carries the mode as `data-display-mode`.
          */
         hasDisplayModes?: boolean;
+        /**
+         * Whether the content can be positioned in the text, which the toolbar and the menu of the
+         * embed then set. The embed saves a position other than centered as `data-position`.
+         */
+        hasPositions?: boolean;
     }
 }
 

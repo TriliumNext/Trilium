@@ -636,6 +636,37 @@ describe("openContextMenu", () => {
             ]);
         });
 
+        it("offers the positions after the size, for content that has them", async () => {
+            state = { ...state, position: "wrap-left" };
+            const items = await openOn(editable.querySelector("a"));
+            const option = (key: string, icon: string, checked = false) => ({
+                title: `link_context_menu.${key}`, uiIcon: `cke cke-object-${icon}`, checked
+            });
+
+            expect(items.slice(7, 9)).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                {
+                    title: "link_context_menu.include_position",
+                    uiIcon: "cke cke-object-inline-left",
+                    enabled: true,
+                    items: [
+                        { kind: "header", title: "link_context_menu.break_text" },
+                        option("align_left", "left"),
+                        option("align_center", "center"),
+                        option("align_right", "right"),
+                        { kind: "header", title: "link_context_menu.wrap_text" },
+                        option("align_left", "inline-left", true),
+                        option("align_right", "inline-right")
+                    ]
+                }
+            ]);
+            expect(items).toHaveLength(14);
+            expect(pick(items[8].items[2]))
+                .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
+            expect(pick(items[8].items[6]))
+                .toEqual([ [ "contentEmbedPosition", { value: "wrap-right" } ] ]);
+        });
+
         it("offers the items of its content after Editable, in a group of their own", async () => {
             state = { ...state, isEditable: true, isEditableToggleable: true };
             const content = embed().querySelector<HTMLElement>(".include-note-content");

@@ -31,7 +31,7 @@ A link preview can be displayed in one of three modes:
 
 ## Inserting a link preview
 
-There are three ways to create one:
+There are four ways to create one:
 
 ### 1\. By pasting a URL
 
@@ -56,13 +56,17 @@ Since v0.107.0, a link preview is created from the same _Add link_ dialog as any
 *   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web link_.
 *   Type or paste the address, then pick the preview in _Display as_: _Inline_, _Card_ or, for a YouTube video, _YouTube embed_. _Plain link_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
 *   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
-*   Press <kbd>Enter</kbd> or _Add link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
+*   Press <kbd>Enter</kbd> or _Insert link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
 
 Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_). It opens the same dialog with a preview already picked: a _YouTube embed_ for a YouTube video, a _Card_ for any other page.
 
 To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 
-### 3\. By saving browser tabs from the Web Clipper
+### 3\. From the Insert menu, for a YouTube video
+
+Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu, or _Insert YouTube video_ from the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of the video and press _Insert video_ or <kbd>Enter</kbd> to insert it as an _Embed_.
+
+### 4\. By saving browser tabs from the Web Clipper
 
 When the <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> saves the tabs of a window, each tab becomes an _inline_ link preview showing the title and favicon the browser displays for it. Because this data comes from the browser, pages behind a login keep their real title, and the Trilium server does not contact the saved pages.
 

@@ -285,7 +285,8 @@ function applySourceEmbeds(container: HTMLDivElement) {
         const figure = document.createElement("figure");
         figure.className = clsx("include-note", isCodeBlock && EXTENDED_CODE_BLOCK_CLASS);
         const {
-            boxSize, displayMode, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
+            boxSize, displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth,
+            codeIndentWithTabs
         } = pre.dataset;
         const defaultBoxSize = isCodeBlock ? "full" : "medium";
         figure.dataset.boxSize = boxSize === "small" || boxSize === "medium" || boxSize === "full"
@@ -293,7 +294,7 @@ function applySourceEmbeds(container: HTMLDivElement) {
             : defaultBoxSize;
         figure.dataset.language = language;
         const views = {
-            displayMode, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
+            displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
         };
         for (const [ name, value ] of Object.entries(views)) {
             if (value) {

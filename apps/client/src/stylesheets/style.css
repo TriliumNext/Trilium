@@ -1333,11 +1333,11 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 }
 
 /* Includes in a series share flush edges, as link previews and collapsible blocks do. */
-.include-note + .include-note {
+.include-note:not([data-position^="wrap-"]) + .include-note:not([data-position^="wrap-"]) {
     --_include-note-top-border-radius: 0px;
 }
 
-.include-note:has(+ .include-note) {
+.include-note:not([data-position^="wrap-"]):has(+ .include-note:not([data-position^="wrap-"])) {
     --_include-note-bottom-border-radius: 0px;
     margin-bottom: 3px;
 }
@@ -1355,6 +1355,8 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
         max(0px, var(--_include-note-content-top-radius) - var(--_include-note-content-top-inset));
     --_include-note-framed-bottom-radius: max(0px,
         var(--_include-note-content-bottom-radius) - var(--_include-note-content-bottom-inset));
+    /* What the frame takes from `.include-note-box-height`, set by content that draws it. */
+    --_include-note-frame-height: 0px;
 
     &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
         --_include-note-content-top-radius: var(--_include-note-top-border-radius, 8px);
@@ -1467,15 +1469,15 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 }
 
 .include-note-box-height {
-    height: var(--include-note-height, 20em);
+    height: calc(var(--include-note-height, 20em) - var(--_include-note-frame-height, 0px));
 }
 
 .include-note[data-box-size="small"] .include-note-box-height {
-    height: var(--include-note-height, 10em);
+    height: calc(var(--include-note-height, 10em) - var(--_include-note-frame-height, 0px));
 }
 
 .include-note[data-box-size="full"] .include-note-box-height {
-    height: 50em;
+    height: calc(50em - var(--_include-note-frame-height, 0px));
 }
 
 .include-note-content:fullscreen .include-note-box-height {
@@ -1495,6 +1497,52 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 
     &:has(.include-note-content[hidden]) > .ck-widget__resize-handles
         > .ck-widget__resize-handle:not(.ck-widget__resize-handle_width) {
+        display: none;
+    }
+}
+
+.include-note {
+    clear: both;
+
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
+            var(--ck-content-image-style-spacing, 1.5em));
+
+        clear: none;
+        max-width: 100%;
+        width: var(--include-note-width, 100%);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_include-note-wrap-gap);
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-left: var(--_include-note-wrap-gap);
+    }
+}
+
+body.mobile .include-note[data-position] {
+    float: none;
+    clear: both;
+    margin-inline: 0;
+    width: auto;
+
+    > .ck-widget__resize-handles > :is(
+        .ck-widget__resize-handle_width, .ck-widget__resize-handle_corner
+    ) {
         display: none;
     }
 }
@@ -1691,7 +1739,10 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     isolation: isolate;
 }
 
-.include-note-content > .rendered-content > *:last-child {
+/* Outranks the margin that the editor themes give the last block, so that a text embed and its
+   editor end alike. */
+.include-note-content > .rendered-content > *:last-child,
+:root .include-note-content > .rendered-content .ck-content > :last-child {
     margin-bottom: 0;
 }
 
