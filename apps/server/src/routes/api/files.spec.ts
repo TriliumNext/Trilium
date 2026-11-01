@@ -195,6 +195,29 @@ describe("Files API", () => {
             expect(path.basename(second)).toMatch(/-Renamed note\.txt$/);
         });
 
+        it("reuses the temp file of an unchanged canvas drawing", () => {
+            const drawing = cls.init(() => {
+                const { note } = noteService.createNewNote({
+                    parentNoteId: "root", title: "Watched drawing", type: "text", content: "<p>x</p>"
+                });
+                note.saveAttachment({ role: "image", mime: "image/png", title: "f1.png", content: "abc" });
+                return note.saveAttachment({
+                    role: "file",
+                    mime: CANVAS_ATTACHMENT_MIME,
+                    title: "Canvas.excalidraw",
+                    content: JSON.stringify({ elements: [ { type: "image", fileId: "f1.png" } ] })
+                });
+            });
+            const req = fileReq({ attachmentId: drawing.attachmentId ?? "" }) as unknown as Request<{ attachmentId: string }>;
+            const first = cls.init(() => filesRoute.saveAttachmentToTmpDir(req)).tmpFilePath;
+            const now = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            try {
+                expect(cls.init(() => filesRoute.saveAttachmentToTmpDir(req)).tmpFilePath).toBe(first);
+            } finally {
+                now.mockRestore();
+            }
+        });
+
         it("reports the modification time of a changed file", () => {
             const tmpFilePath = save();
             const [ watcher ] = h.watchers;

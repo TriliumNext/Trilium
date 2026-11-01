@@ -793,6 +793,7 @@ function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAt
 /**
  * The content of `entity` for a copy outside its note, such as a download: a canvas drawing gets
  * the images that it refers to by file ID inline, from the image attachments of its owner.
+ * The output depends only on the stored entities, so an unchanged drawing yields the same bytes.
  */
 function getPortableContent(entity: BNote | BAttachment) {
     const content = entity.getContent();
@@ -825,7 +826,7 @@ function getPortableContent(entity: BNote | BAttachment) {
             id: image.title,
             mimeType: image.mime,
             dataURL: `data:${image.mime};base64,${encodeBase64(image.getContent())}`,
-            created: Date.now()
+            created: dayjs(image.getUtcDateChanged()).valueOf()
         };
     }
     return JSON.stringify({ ...scene, files });
