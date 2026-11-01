@@ -68,6 +68,26 @@ describe("SettingsNavigation", () => {
             .toEqual([ null, null, "common.beta" ]);
     });
 
+    it("lists #adminOnly pages last, under an Administration heading", () => {
+        mocks.pages = [
+            PAGES[0],
+            { noteId: "_optionsUsers", title: "Users", getIcon: () => "bx bx-group", hasLabel: (name) => name === "adminOnly" },
+            PAGES[1]
+        ];
+        const nav = renderInto(<SettingsNavigation activeNoteId="_optionsAppearance" />).querySelector(".settings-navigation");
+
+        expect([ ...nav?.children ?? [] ].map((child) => child.textContent))
+            .toEqual([ "Appearance", "Shortcuts", "settings.administration", "Users" ]);
+        expect(nav?.querySelector(".settings-navigation-heading")?.textContent).toBe("settings.administration");
+    });
+
+    it("leaves the heading out when no page is admin-only", () => {
+        mocks.pages = PAGES;
+        const container = renderInto(<SettingsNavigation activeNoteId="_optionsAppearance" />);
+
+        expect(container.querySelector(".settings-navigation-heading")).toBeNull();
+    });
+
     it("draws an empty list rather than failing when the subtree has nothing to show", () => {
         mocks.pages = [];
         const container = renderInto(<SettingsNavigation activeNoteId="_optionsAppearance" />);

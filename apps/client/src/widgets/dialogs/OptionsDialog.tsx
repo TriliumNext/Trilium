@@ -9,14 +9,14 @@ import type FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import utils, { isElectron, isStandalone } from "../../services/utils";
 import NoteDetail from "../NoteDetail";
-import FormList, { FormListItem } from "../react/FormList";
+import FormList, { FormListHeader, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useChildNotes, useContainedLinkNavigation, useDetachedNoteContext, useNoteContext, useTriliumEvent } from "../react/hooks";
 import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { PageHelpSlot } from "../type_widgets/options/components/OptionsPageHeader";
-import SettingsNavigation from "../type_widgets/options/components/SettingsNavigation";
+import SettingsNavigation, { groupOptionPages } from "../type_widgets/options/components/SettingsNavigation";
 import SettingsSearch from "../type_widgets/options/components/SettingsSearch";
 import OptionsSearchPage, { hasSearchTerms } from "../type_widgets/options/search_page";
 
@@ -278,21 +278,25 @@ function SettingsSidebar({
  * standard list component rather than the desktop sidebar's compact selector.
  */
 function MobileSettingsList({ onSelect }: { onSelect: (noteId: string) => void }) {
-    const pages = useOptionPages();
+    const { pages, adminPages } = groupOptionPages(useOptionPages());
     const { noteId: activeNoteId } = useNoteContext();
+    const renderItem = (page: FNote) => (
+        <FormListItem
+            key={page.noteId}
+            icon={page.getIcon()}
+            value={page.noteId}
+            active={page.noteId === activeNoteId}
+            badges={page.hasLabel("beta") ? [ { text: t("common.beta") } ] : undefined}
+        >
+            {page.title}
+        </FormListItem>
+    );
+
     return (
         <FormList onSelect={onSelect}>
-            {pages.map((page) => (
-                <FormListItem
-                    key={page.noteId}
-                    icon={page.getIcon()}
-                    value={page.noteId}
-                    active={page.noteId === activeNoteId}
-                    badges={page.hasLabel("beta") ? [ { text: t("common.beta") } ] : undefined}
-                >
-                    {page.title}
-                </FormListItem>
-            ))}
+            {pages.map(renderItem)}
+            {adminPages.length > 0 && <FormListHeader text={t("settings.administration")} />}
+            {adminPages.map(renderItem)}
         </FormList>
     );
 }

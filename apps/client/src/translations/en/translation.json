@@ -3987,7 +3987,8 @@
   },
   "settings": {
     "related_settings": "Related settings",
-    "related_actions": "Related actions"
+    "related_actions": "Related actions",
+    "administration": "Administration"
   },
   "settings_appearance": {
     "related_code_blocks": "Color scheme for code blocks in text notes",
