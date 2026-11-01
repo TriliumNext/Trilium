@@ -329,9 +329,9 @@ describe("preload script", () => {
             });
         });
 
-        it("openCustom sends correct IPC message", () => {
-            shell().openCustom("/tmp/test.txt");
-            expect(ipcRendererSent).toContainEqual({
+        it("openCustom invokes correct IPC channel", async () => {
+            await shell().openCustom("/tmp/test.txt");
+            expect(ipcRendererInvoked).toContainEqual({
                 channel: "open-custom",
                 args: ["/tmp/test.txt"]
             });

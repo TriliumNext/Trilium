@@ -2268,6 +2268,7 @@
     "mismatch": "The passwords do not match."
   },
   "open": {
+    "custom_failed": "Could not show the application chooser.\n\nUse \"Open externally\" to open the file in its default application.",
     "directory_failed": "Could not open {{- directory}}: {{- reason}}",
     "download_failed": "Could not save the download: {{- reason}}"
   },

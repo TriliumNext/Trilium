@@ -145,8 +145,8 @@ contextBridge.exposeInMainWorld("electronApi", {
         downloadURL(url: string) {
             ipcRenderer.send("download-url", url);
         },
-        openCustom(filePath: string) {
-            ipcRenderer.send("open-custom", filePath);
+        openCustom(filePath: string): Promise<boolean> {
+            return ipcRenderer.invoke("open-custom", filePath);
         }
     },
 

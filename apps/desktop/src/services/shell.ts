@@ -299,61 +299,76 @@ export function setupShellHandlers() {
         }
     });
 
-    electron.ipcMain.on("open-custom", (_event, filePath: string) => {
+    electron.ipcMain.handle("open-custom", async (_event, filePath: string) => {
         // Defense in depth: validate the path is one the server itself wrote into
         // Trilium's tmp dir via /api/.../save-to-tmp-dir, and that it exists.
         // Without this, a compromised renderer (e.g. via XSS) could ask us to
-        // launch arbitrary local files. The try/catch is essential — the
-        // validator throws on hostile input, and an unhandled throw inside an
-        // ipcMain.on handler would crash the main process.
+        // launch arbitrary local files.
         try {
             const resolved = validateOpenCustomPath(filePath, dataDirs.TMP_DIR);
 
-            const platform = process.platform;
-
-            if (platform === "linux") {
-                const terminals = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm", "xfce4-terminal", "mate-terminal", "rxvt", "terminator", "terminology"];
-
-                // The terminal's `-e` argument is reparsed by the terminal's own shell,
-                // so the path must be POSIX single-quoted before interpolation.
-                const sqQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
-                const innerCommand = `mimeopen -d ${sqQuote(resolved)}`;
-
-                const tryTerminal = (index: number) => {
-                    if (index >= terminals.length) {
-                        getLog().error("open-custom: no terminal emulator found");
-                        electron.shell.openPath(resolved);
-                        return;
-                    }
-                    const terminal = terminals[index];
-                    execFile(terminal, ["-e", innerCommand], (err) => {
-                        if (err) {
-                            getLog().info(`open-custom: ${terminal} failed: ${err.message}`);
-                            tryTerminal(index + 1);
-                        }
-                    });
-                };
-                tryTerminal(0);
-            } else if (platform === "win32") {
-                const winPath = resolved.replace(/\//g, "\\");
-                // OpenAs_RunDLL doesn't strip surrounding quotes from its arg, so we
-                // must NOT let Node quote the path on our behalf. windowsVerbatimArguments
-                // is safe here: CreateProcess passes the command line to rundll32 without
-                // any shell interpretation (so `&` is inert), and the path is validated
-                // above to live inside dataDirs.TMP_DIR with a sanitize-filename'd basename
-                // (so it cannot contain quotes or other rundll32-confusing characters).
-                execFile("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", winPath], { windowsVerbatimArguments: true }, (err) => {
-                    if (err) {
-                        getLog().error(`open-custom: rundll32 failed: ${err.message}`);
-                        electron.shell.openPath(resolved);
-                    }
-                });
-            } else {
-                electron.shell.openPath(resolved);
+            switch (process.platform) {
+                case "linux":
+                    return await openWithTerminalMimeopen(resolved);
+                case "win32":
+                    return await openWithWindowsDialog(resolved);
+                default:
+                    getLog().error(`open-custom: no application chooser on ${process.platform}`);
+                    return false;
             }
         } catch (e) {
             getLog().error(`open-custom failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
+            return false;
         }
+    });
+}
+
+/** Runs `mimeopen -d` in the first terminal emulator that launches; resolves `false` if none does. */
+function openWithTerminalMimeopen(resolved: string): Promise<boolean> {
+    const terminals = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm", "xfce4-terminal", "mate-terminal", "rxvt", "terminator", "terminology"];
+
+    // The terminal's `-e` argument is reparsed by the terminal's own shell,
+    // so the path must be POSIX single-quoted before interpolation.
+    const sqQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+    const innerCommand = `mimeopen -d ${sqQuote(resolved)}`;
+
+    return new Promise((resolve) => {
+        const tryTerminal = (index: number) => {
+            if (index >= terminals.length) {
+                getLog().error("open-custom: no terminal emulator found");
+                resolve(false);
+                return;
+            }
+            const terminal = terminals[index];
+            execFile(terminal, ["-e", innerCommand], (err) => {
+                if (err) {
+                    getLog().info(`open-custom: ${terminal} failed: ${err.message}`);
+                    tryTerminal(index + 1);
+                } else {
+                    resolve(true);
+                }
+            });
+        };
+        tryTerminal(0);
+    });
+}
+
+/** Shows the Windows "Open with" dialog; resolves `false` if `rundll32` fails. */
+function openWithWindowsDialog(resolved: string): Promise<boolean> {
+    const winPath = resolved.replace(/\//g, "\\");
+    return new Promise((resolve) => {
+        // OpenAs_RunDLL doesn't strip surrounding quotes from its arg, so we
+        // must NOT let Node quote the path on our behalf. windowsVerbatimArguments
+        // is safe here: CreateProcess passes the command line to rundll32 without
+        // any shell interpretation (so `&` is inert), and the path is validated
+        // to live inside dataDirs.TMP_DIR with a sanitize-filename'd basename
+        // (so it cannot contain quotes or other rundll32-confusing characters).
+        execFile("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", winPath], { windowsVerbatimArguments: true }, (err) => {
+            if (err) {
+                getLog().error(`open-custom: rundll32 failed: ${err.message}`);
+            }
+            resolve(!err);
+        });
     });
 }
 

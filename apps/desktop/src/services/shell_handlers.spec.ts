@@ -184,60 +184,59 @@ describe("setupShellHandlers", () => {
     });
 
     describe("open-custom", () => {
-        it("swallows invalid paths", () => {
-            fireOn("open-custom", "/etc/passwd");
+        it("reports an invalid path as a failure without opening anything", async () => {
+            expect(await fireHandle("open-custom", "/etc/passwd")).toBe(false);
             expect(h.execFile).not.toHaveBeenCalled();
             expect(h.openPath).not.toHaveBeenCalled();
         });
 
-        it("opens directly via the shell on macOS/other platforms", () => {
+        it("reports a failure on platforms without an application chooser", async () => {
             setPlatform("darwin");
-            fireOn("open-custom", tmpFile);
-            expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+            expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+            expect(h.openPath).not.toHaveBeenCalled();
             expect(h.execFile).not.toHaveBeenCalled();
         });
 
         describe("linux", () => {
             beforeEach(() => setPlatform("linux"));
 
-            it("launches the first available terminal", () => {
+            it("launches the first available terminal", async () => {
                 h.execFile.mockImplementation((_cmd, _args, cb) => cb(null));
-                fireOn("open-custom", tmpFile);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
                 expect(h.execFile).toHaveBeenCalledTimes(1);
                 expect(h.execFile.mock.calls[0][0]).toBe("x-terminal-emulator");
                 expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls through to the next terminal when one fails", () => {
+            it("falls through to the next terminal when one fails", async () => {
                 let calls = 0;
                 h.execFile.mockImplementation((_cmd, _args, cb) => cb(calls++ === 0 ? new Error("nope") : null));
-                fireOn("open-custom", tmpFile);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
                 expect(h.execFile).toHaveBeenCalledTimes(2);
             });
 
-            it("falls back to shell.openPath when no terminal works", () => {
+            it("reports a failure without opening the file when no terminal works", async () => {
                 h.execFile.mockImplementation((_cmd, _args, cb) => cb(new Error("nope")));
-                fireOn("open-custom", tmpFile);
-                // 9 terminals are tried before giving up.
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
                 expect(h.execFile).toHaveBeenCalledTimes(9);
-                expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+                expect(h.openPath).not.toHaveBeenCalled();
             });
         });
 
         describe("win32", () => {
             beforeEach(() => setPlatform("win32"));
 
-            it("launches rundll32 for the OpenAs dialog", () => {
+            it("launches rundll32 for the OpenAs dialog", async () => {
                 h.execFile.mockImplementation((_cmd, _args, _opts, cb) => cb(null));
-                fireOn("open-custom", tmpFile);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
                 expect(h.execFile.mock.calls[0][0]).toBe("rundll32.exe");
                 expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls back to shell.openPath when rundll32 fails", () => {
+            it("reports a failure without opening the file when rundll32 fails", async () => {
                 h.execFile.mockImplementation((_cmd, _args, _opts, cb) => cb(new Error("boom")));
-                fireOn("open-custom", tmpFile);
-                expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.openPath).not.toHaveBeenCalled();
             });
         });
     });

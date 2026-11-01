@@ -66,7 +66,9 @@ async function openCustom(type: string, entityId: string, mime: string) {
     }
 
     const resp = await server.post<TmpResponse>(`${type}/${entityId}/save-to-tmp-dir`);
-    window.electronApi.shell.openCustom(resp.tmpFilePath);
+    if (!await window.electronApi.shell.openCustom(resp.tmpFilePath)) {
+        toast.showError(t("open.custom_failed"));
+    }
 }
 
 const openNoteCustom = async (noteId: string, mime: string) => await openCustom("notes", noteId, mime);
