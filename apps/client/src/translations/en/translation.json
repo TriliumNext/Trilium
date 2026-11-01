@@ -5025,7 +5025,7 @@
     "badge_you": "You",
     "badge_admin": "Admin",
     "badge_primary_admin": "Primary admin",
-    "primary_admin_tooltip": "Created when the server starts. Signs in with the instance password, leaving the username empty, so it can't be deleted or lose its admin rights.",
+    "primary_admin_tooltip": "Created when the server starts. Signs in with the instance password, so it can't be deleted or lose its admin rights.",
     "no_email": "No email",
     "created": "Added {{date}}",
     "edit_user": "Edit user",
@@ -5044,10 +5044,8 @@
     "email_description": "Optional. Shown only to admins.",
     "email_placeholder": "name@example.com",
     "role": "Role",
-    "role_member": "Member",
-    "role_member_description": "sees their own notes and the ones shared with them.",
-    "role_admin": "Admin",
-    "role_admin_description": "sees every note and can manage users.",
+    "role_admin": "Administrator",
+    "role_admin_description": "Sees every note and can manage users. Without it, the user sees only their own notes and the ones shared with them.",
     "role_locked_primary": "The primary admin always keeps admin rights.",
     "role_locked_self": "You can't change your own role.",
     "error_username_required": "Enter a username.",
@@ -5065,6 +5063,7 @@
     "setup_link_copy": "Copy link",
     "setup_link_copied": "Setup link copied to the clipboard.",
     "setup_link_done": "Done",
-    "setup_link_blocked_primary": "The primary admin signs in with the instance password"
+    "setup_link_blocked_primary": "The primary admin signs in with the instance password",
+    "account": "Account"
   }
 }

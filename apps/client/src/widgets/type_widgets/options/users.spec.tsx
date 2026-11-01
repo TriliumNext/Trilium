@@ -106,7 +106,8 @@ async function open() {
 
 const rows = () => [ ...host.querySelectorAll<HTMLElement>(".user-row") ];
 const dialog = () => document.querySelector(".user-dialog");
-const textBoxes = () => [ ...(dialog()?.querySelectorAll<HTMLInputElement>("input:not([type='radio'])") ?? []) ];
+const textBoxes = () => [ ...(dialog()?.querySelectorAll<HTMLInputElement>("input:not([type='checkbox'])") ?? []) ];
+const adminToggle = () => dialog()?.querySelector<HTMLInputElement>("input[type='checkbox']");
 
 async function typeInto(input: HTMLInputElement | undefined, value: string) {
     await act(async () => {
@@ -191,10 +192,15 @@ describe("the user dialog", () => {
         await open();
         await act(async () => host.querySelector<HTMLButtonElement>("button[name='create-user-button']")?.click());
 
+        // The fields sit in cards, and the role is a single toggle rather than a choice of two.
+        expect(dialog()?.querySelectorAll(".tn-card")).toHaveLength(2);
+        expect(dialog()?.querySelector("input[type='radio']")).toBeNull();
+
         const [ username, email ] = textBoxes();
         await typeInto(username, "  bob ");
         await typeInto(email, " ");
-        await act(async () => dialog()?.querySelector<HTMLInputElement>("input[value='admin']")?.click());
+        expect(adminToggle()?.checked).toBe(false);
+        await act(async () => adminToggle()?.click());
         await submit();
 
         expect(mocks.post).toHaveBeenCalledWith("users", { username: "bob", email: null, isAdmin: true });
@@ -229,7 +235,8 @@ describe("the user dialog", () => {
         expect(mocks.patch).toHaveBeenLastCalledWith("users/alice", { username: "alice", email: "new@example.com", isAdmin: false });
 
         await act(async () => edit(rows()[0])?.click());
-        expect(dialog()?.querySelector("input[type='radio']")).toBeNull();
+        expect(adminToggle()?.checked).toBe(true);
+        expect(adminToggle()?.disabled).toBe(true);
         expect(dialog()?.textContent).toContain("users.role_locked_primary");
         await submit();
         expect(mocks.patch).toHaveBeenLastCalledWith("users/admin", { username: "admin", email: null, isAdmin: undefined });

@@ -14,12 +14,11 @@ import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
-import FormGroup from "../../react/FormGroup";
-import FormRadioGroup from "../../react/FormRadioGroup";
 import FormTextBox from "../../react/FormTextBox";
 import Modal from "../../react/Modal";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 
 /** Which user the dialog is open for: a new one, or an existing one being edited. */
 type DialogTarget = { mode: "create" } | { mode: "edit"; user: UserListItem };
@@ -330,7 +329,7 @@ function UserDialog({ target, users, onSaved, onClose, onHidden }: UserDialogPro
             onHidden={onHidden}
             onSubmit={handleSubmit}
             title={editedUser ? t("users.edit_title", { username: editedUser.username }) : t("users.create_title")}
-            size="md"
+            size="lg"
             stackable
             footer={
                 <>
@@ -343,48 +342,49 @@ function UserDialog({ target, users, onSaved, onClose, onHidden }: UserDialogPro
                 </>
             }
         >
-            <FormGroup
-                name="user-username"
-                label={t("users.username")}
-                error={touched && usernameError ? usernameError : undefined}
-            >
-                <FormTextBox
-                    currentValue={username}
-                    onChange={setUsername}
-                    onBlur={() => setTouched(true)}
-                    autoComplete="off"
-                    autoFocus
-                />
-            </FormGroup>
+            <Card heading={t("users.account")}>
+                <CardSection>
+                    <OptionsRow
+                        name="user-username" label={t("users.username")}
+                        description={touched && usernameError ? <span className="text-danger">{usernameError}</span> : undefined}
+                    >
+                        <FormTextBox
+                            className={touched && usernameError ? "is-invalid" : undefined}
+                            currentValue={username}
+                            onChange={setUsername}
+                            onBlur={() => setTouched(true)}
+                            autoComplete="off"
+                            autoFocus
+                        />
+                    </OptionsRow>
+                </CardSection>
+                <CardSection>
+                    <OptionsRow name="user-email" label={t("users.email")} description={t("users.email_description")}>
+                        <FormTextBox
+                            type="email"
+                            currentValue={email}
+                            onChange={setEmail}
+                            placeholder={t("users.email_placeholder")}
+                            autoComplete="off"
+                        />
+                    </OptionsRow>
+                </CardSection>
+            </Card>
 
-            <FormGroup name="user-email" label={t("users.email")} description={t("users.email_description")}>
-                <FormTextBox
-                    type="email"
-                    currentValue={email}
-                    onChange={setEmail}
-                    placeholder={t("users.email_placeholder")}
-                    autoComplete="off"
-                />
-            </FormGroup>
-
-            <div className="user-dialog-role">
-                <div className="user-dialog-role-label">{t("users.role")}</div>
-                {roleLocked ? (
-                    <p className="user-dialog-role-locked">
-                        {editedUser?.isPrimaryAdmin ? t("users.role_locked_primary") : t("users.role_locked_self")}
-                    </p>
-                ) : (
-                    <FormRadioGroup
-                        name="user-role"
-                        currentValue={isAdmin ? "admin" : "member"}
-                        onChange={(value) => setIsAdmin(value === "admin")}
-                        values={[
-                            { value: "member", label: t("users.role_member"), inlineDescription: t("users.role_member_description") },
-                            { value: "admin", label: t("users.role_admin"), inlineDescription: t("users.role_admin_description") }
-                        ]}
+            <Card heading={t("users.role")}>
+                <CardSection>
+                    <OptionsRowWithToggle
+                        name="user-admin"
+                        label={t("users.role_admin")}
+                        description={roleLocked
+                            ? (editedUser?.isPrimaryAdmin ? t("users.role_locked_primary") : t("users.role_locked_self"))
+                            : t("users.role_admin_description")}
+                        currentValue={isAdmin}
+                        onChange={setIsAdmin}
+                        disabled={roleLocked}
                     />
-                )}
-            </div>
+                </CardSection>
+            </Card>
         </Modal>
     );
 }

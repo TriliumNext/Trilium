@@ -96,16 +96,8 @@
     --color: var(--admonition-note-accent-color, #1e88e5);
 }
 
-.modal.user-dialog {
-    .user-dialog-role-label {
-        margin-bottom: 6px;
-    }
-
-    .user-dialog-role-locked {
-        margin: 0;
-        color: var(--muted-text-color);
-        font-size: .9em;
-    }
+.modal.user-dialog .tn-card + .tn-card {
+    margin-top: 16px;
 }
 
 .ext-badge.user-badge-pending {
