@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { exportToSvg } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { type ComponentChildren, type RefObject, render, toChildArray, type VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type { ContentEditor } from "../../../services/content_renderer";
@@ -176,10 +179,12 @@ describe("useSidePanels", () => {
         useSidePanels(rootRef, isEnabled);
         return (
             <div className="scrolling-container">
-                <div className="include-note-body active">
-                    <div ref={rootRef} className="drawing">
-                        {hasLibrary && <div className="Island sidebar default-sidebar" />}
-                        <div className="App-menu__left" />
+                <div className="ck-editor__editable">
+                    <div className="include-note-body active">
+                        <div ref={rootRef} className="drawing">
+                            {hasLibrary && <div className="Island sidebar default-sidebar" />}
+                            <div className="App-menu__left" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -197,7 +202,7 @@ describe("useSidePanels", () => {
         rects.drawing = { left: 340, top: 200, right: 840, bottom: 520 };
         vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
             .mockImplementation(function (this: HTMLElement) {
-                const { left, top, right, bottom } = rects[this.className] ?? rects.drawing;
+                const { left, top, right, bottom } = rects[this.classList[0]] ?? rects.drawing;
                 const size = { width: right - left, height: bottom - top };
                 return { left, top, right, bottom, ...size } as DOMRect;
             });
@@ -223,16 +228,23 @@ describe("useSidePanels", () => {
         Reflect.deleteProperty(document, "fullscreenElement");
     });
 
-    async function mount(panelHeight: number, hasLibrary = false) {
+    /** Mounts the probe, in a text editor whose contextual balloon is `balloon`, if given. */
+    async function mount(panelHeight: number, hasLibrary = false, balloon?: HTMLElement) {
         await act(async () => {
             render(<SidePanelProbe isEnabled={false} hasLibrary={hasLibrary} />, container);
         });
         const viewport = container.querySelector(".scrolling-container");
+        const editable = container.querySelector(".ck-editor__editable");
         const body = container.querySelector(".include-note-body");
         const panel = container.querySelector<HTMLElement>(".App-menu__left");
         const library = container.querySelector<HTMLElement>(".default-sidebar");
-        if (!viewport || !body || !panel) {
+        if (!viewport || !editable || !body || !panel) {
             throw new Error("Expected the probe.");
+        }
+        if (balloon) {
+            Object.assign(editable, {
+                ckeditorInstance: { plugins: { get: () => ({ view: { element: balloon } }) } }
+            });
         }
         Object.defineProperties(viewport, {
             clientWidth: { value: 750 },
@@ -258,6 +270,28 @@ describe("useSidePanels", () => {
         expect(panel?.getAttribute("popover") ?? null).toBe(isPlaced ? "manual" : null);
         return isPlaced && [ "left", "top", "max-height" ]
             .map((name) => panel?.style.getPropertyValue(`--side-panel-${name}`));
+    }
+
+    /** A contextual balloon of the text editor, hidden until `showBalloon()`. */
+    function createBalloon() {
+        const balloon = document.createElement("div");
+        balloon.className = "ck-balloon-panel";
+        document.body.append(balloon);
+        onTestFinished(() => balloon.remove());
+        return balloon;
+    }
+
+    /** Shows `balloon` at `rect`, or hides it, as CKEditor does. */
+    async function showBalloon(
+        balloon: HTMLElement,
+        rect: (typeof rects)[string],
+        isVisible = true
+    ) {
+        rects["ck-balloon-panel"] = rect;
+        await act(async () => {
+            balloon.style.top = `${rect.top}px`;
+            balloon.classList.toggle("ck-balloon-panel_visible", isVisible);
+        });
     }
 
     it("places the panel level with the drawing's top, on its right or else its left", async () => {
@@ -305,6 +339,77 @@ describe("useSidePanels", () => {
         Object.defineProperty(panel, "offsetHeight", { value: 1000 });
         viewport.dispatchEvent(new Event("scroll"));
         expect(getPlacement(panel)).toEqual([ "848px", "8px", "884px" ]);
+    });
+
+    it("keeps the panel above or below the toolbar of the embed that reaches over it", async () => {
+        const balloon = createBalloon();
+        const { panel } = await mount(300, false, balloon);
+
+        // Above a drawing at the bottom of the window, with the panel below it and shorter.
+        rects.drawing = { left: 340, top: 700, right: 840, bottom: 1020 };
+        await showBalloon(balloon, { left: 500, top: 650, right: 1100, bottom: 690 });
+        expect(getPlacement(panel)).toEqual([ "848px", "698px", "194px" ]);
+
+        // Below a drawing at the top of the window, with the panel above it.
+        rects.drawing = { left: 340, top: 200, right: 840, bottom: 520 };
+        Object.defineProperty(panel, "offsetHeight", { value: 600 });
+        await showBalloon(balloon, { left: 500, top: 530, right: 1100, bottom: 570 });
+        expect(getPlacement(panel)).toEqual([ "848px", "8px", "514px" ]);
+
+        // At the top of the window, over a drawing that starts above it.
+        rects.drawing = { left: 340, top: -300, right: 840, bottom: 800 };
+        Object.defineProperty(panel, "offsetHeight", { value: 300 });
+        await showBalloon(balloon, { left: 500, top: 100, right: 1100, bottom: 140 });
+        expect(getPlacement(panel)).toEqual([ "848px", "148px", "744px" ]);
+
+        await showBalloon(balloon, { left: 340, top: 101, right: 840, bottom: 141 });
+        expect(getPlacement(panel)).toEqual([ "848px", "8px", "884px" ]);
+
+        await showBalloon(balloon, { left: 500, top: 100, right: 1100, bottom: 140 }, false);
+        expect(getPlacement(panel)).toEqual([ "848px", "8px", "884px" ]);
+    });
+
+    it("keeps the height of the panel while the note scrolls, and fits it after", async () => {
+        const balloon = createBalloon();
+        const { viewport, panel } = await mount(600, false, balloon);
+
+        // A toolbar above a drawing at the bottom of the window leaves the panel 194px.
+        rects.drawing = { left: 340, top: 700, right: 840, bottom: 1020 };
+        await showBalloon(balloon, { left: 500, top: 650, right: 1100, bottom: 690 });
+        expect(getPlacement(panel)).toEqual([ "848px", "698px", "194px" ]);
+
+        // Scrolled up by 300px, they leave it 494px.
+        rects.drawing = { left: 340, top: 400, right: 840, bottom: 720 };
+        rects["ck-balloon-panel"] = { left: 500, top: 350, right: 1100, bottom: 390 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(getPlacement(panel)).toEqual([ "848px", "400px", "194px" ]);
+
+        viewport.dispatchEvent(new Event("scrollend"));
+        expect(getPlacement(panel)).toEqual([ "848px", "398px", "494px" ]);
+
+        // Without `scrollend`, a scroll ends once no scroll event comes for a while.
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        onTestFinished(() => {
+            vi.useRealTimers();
+        });
+        rects.drawing = { left: 340, top: 700, right: 840, bottom: 1020 };
+        rects["ck-balloon-panel"] = { left: 500, top: 650, right: 1100, bottom: 690 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(getPlacement(panel)).toEqual([ "848px", "698px", "494px" ]);
+
+        vi.advanceTimersByTime(150);
+        expect(getPlacement(panel)).toEqual([ "848px", "698px", "194px" ]);
+    });
+
+    it("declares the properties that place a panel as not inherited", () => {
+        const styles = readFileSync(join(__dirname, "CanvasDrawing.css"), "utf8");
+        const used = new Set(styles.match(/(?<=var\()--side-panel-[\w-]+/g));
+        const declared = [ ...styles.matchAll(/@property (--side-panel-[\w-]+) \{([^}]*)\}/g) ]
+            .filter(([ , , body ]) => /inherits:\s*false/.test(body))
+            .map(([ , name ]) => name);
+
+        expect(used.size).toBe(4);
+        expect(new Set(declared)).toEqual(used);
     });
 
     it("keeps the panel in the drawing without room beside it or out of view", async () => {

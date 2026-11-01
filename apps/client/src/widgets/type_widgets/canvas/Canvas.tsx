@@ -71,9 +71,10 @@ export function CanvasEditor({
     const noteDrop = useCanvasNoteDrop(apiRef, isReadOnly);
 
     // Excalidraw maps the pointer with the container position it read last. An embedded editor
-    // moves with the note, so it reads the position again before the pointer acts. `refresh()`
-    // renders all of Excalidraw, so it runs only once the position changed.
-    const refreshPosition = useCallback((e: PointerEvent) => {
+    // moves with the note, so it reads the position again before the pointer acts or something
+    // drops, and not on each scroll as `detectScroll` would. `refresh()` renders all of
+    // Excalidraw, the drawing included, so it runs only once the position changed.
+    const refreshPosition = useCallback((e: Event) => {
         const api = apiRef.current;
         const container = (e.currentTarget as HTMLElement).querySelector(".excalidraw-container");
         if (!api || !container) return;
@@ -126,6 +127,8 @@ export function CanvasEditor({
             onWheel={onWheel}
             onPointerOverCapture={isEmbedded ? refreshPosition : undefined}
             onPointerMoveCapture={isEmbedded ? refreshPosition : undefined}
+            onPointerDownCapture={isEmbedded ? refreshPosition : undefined}
+            onDragOverCapture={isEmbedded ? refreshPosition : undefined}
         >
             <div className="excalidraw-wrapper" {...noteDrop}>
                 <Excalidraw
@@ -133,7 +136,7 @@ export function CanvasEditor({
                     viewModeEnabled={isReadOnly || options.is("databaseReadonly")}
                     zenModeEnabled={false}
                     isCollaborating={false}
-                    detectScroll={isEmbedded}
+                    detectScroll={false}
                     handleKeyboardGlobally={false}
                     autoFocus={false}
                     langCode={LANGUAGE_MAPPINGS[locale as DISPLAYABLE_LOCALE_IDS] ?? undefined}

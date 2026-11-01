@@ -19,7 +19,7 @@ import {
 } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
 import { useContentEmbedEvent } from "../text/content_embed_tools";
-import { useEditableEmbed } from "../text/editable_embed";
+import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
 import CanvasEmbedTools, { CanvasTools } from "./CanvasEmbedTools";
@@ -496,6 +496,8 @@ export function useIsToolbarOverPanel(rootRef: RefObject<HTMLElement | null>) {
 const WINDOW_GAP_REM = 0.5;
 /** The least height of a panel as tall as the drawing, in rem. */
 const SIDE_PANEL_MIN_HEIGHT_REM = 20;
+/** The time without scroll events after which a scroll ends where `scrollend` does not fire. */
+const SCROLL_END_DELAY_MS = 150;
 
 /** The panels of Excalidraw that go beside the drawing, in the order in which they take a side. */
 const SIDE_PANELS = [
@@ -508,8 +510,9 @@ type Side = "left" | "right";
 
 /**
  * Shows Excalidraw's library and properties panel beside the drawing while the drawing has the
- * focus, in the top layer so that no clip or stacking of the note covers them. A panel there has
- * `data-side-panel`, and its position in `--side-panel-*`.
+ * focus, in the top layer so that no clip or stacking of the note covers them, and clear of the
+ * toolbar of the embed. A panel there has `data-side-panel`, and its position in
+ * `--side-panel-*`.
  */
 export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled: boolean) {
     useEffect(() => {
@@ -519,31 +522,62 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
         if (!root || !viewport || !embedBody || !isEnabled) return;
 
         const panels = new Map<string, HTMLElement>();
+        const balloon = findEditorBalloon(root);
+        // The max height of each placed panel, which it keeps while the note scrolls.
+        const maxHeights = new Map<HTMLElement, number>();
+        let isScrolling = false;
+        let scrollEndTimeout = 0;
 
         const update = () => {
             // `ContentEmbed` marks the body active while the drawing has the focus.
             const isShown = embedBody.classList.contains("active")
                 && !document.fullscreenElement?.contains(root);
-            const layout = isShown ? getSideLayout(root, viewport) : null;
+            const layout = isShown ? getSideLayout(root, viewport, balloon) : null;
             const takenSides = new Set<Side>();
             for (const { selector, hasDrawingHeight } of SIDE_PANELS) {
                 const panel = panels.get(selector);
                 if (!panel) continue;
 
-                const position = layout
-                    && getSidePanelPosition(layout, panel, hasDrawingHeight, takenSides);
+                const heldMaxHeight = isScrolling ? maxHeights.get(panel) : undefined;
+                const position = layout && getSidePanelPosition(
+                    layout, panel, hasDrawingHeight, takenSides, heldMaxHeight
+                );
                 if (position) {
                     takenSides.add(position.side);
+                    maxHeights.set(panel, position.maxHeight);
+                } else {
+                    maxHeights.delete(panel);
                 }
                 placePanel(panel, position || null);
             }
+        };
+        // A panel that changes height lays out and paints its contents again, so while the note
+        // scrolls, the panels only move.
+        const onScroll = () => {
+            isScrolling = true;
+            clearTimeout(scrollEndTimeout);
+            scrollEndTimeout = window.setTimeout(onScrollEnd, SCROLL_END_DELAY_MS);
+            update();
+        };
+        const onScrollEnd = () => {
+            clearTimeout(scrollEndTimeout);
+            isScrolling = false;
+            update();
         };
 
         const resizeObserver = new ResizeObserver(update);
         resizeObserver.observe(root);
         resizeObserver.observe(viewport);
-        const activeObserver = new MutationObserver(update);
-        activeObserver.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        const attributeObserver = new MutationObserver(update);
+        attributeObserver.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        // CKEditor shows, hides and moves the balloon by its classes and its inline position.
+        if (balloon) {
+            resizeObserver.observe(balloon);
+            attributeObserver.observe(balloon, {
+                attributes: true,
+                attributeFilter: [ "class", "style" ]
+            });
+        }
 
         // The panels mount when they open, and the properties panel takes the height of the
         // properties of the selection.
@@ -567,16 +601,19 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
         };
         const mutationObserver = new MutationObserver(watchPanels);
         mutationObserver.observe(root, { childList: true, subtree: true });
-        viewport.addEventListener("scroll", update, { passive: true });
+        viewport.addEventListener("scroll", onScroll, { passive: true });
+        viewport.addEventListener("scrollend", onScrollEnd);
         document.addEventListener("fullscreenchange", update);
         watchPanels();
         update();
 
         return () => {
+            clearTimeout(scrollEndTimeout);
             resizeObserver.disconnect();
-            activeObserver.disconnect();
+            attributeObserver.disconnect();
             mutationObserver.disconnect();
-            viewport.removeEventListener("scroll", update);
+            viewport.removeEventListener("scroll", onScroll);
+            viewport.removeEventListener("scrollend", onScrollEnd);
             document.removeEventListener("fullscreenchange", update);
             for (const panel of panels.values()) {
                 placePanel(panel, null);
@@ -585,17 +622,31 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
     }, [ rootRef, isEnabled ]);
 }
 
+/**
+ * The contextual balloon of the text editor around `element`, which shows the toolbar of its
+ * embed.
+ */
+function findEditorBalloon(element: HTMLElement) {
+    return findTextEditorAround(element)?.plugins.get("ContextualBalloon").view.element ?? null;
+}
+
 interface SideLayout {
     drawing: DOMRect;
     /** The window, which the panels stay inside. */
     area: VisibleArea;
+    /** The balloon of the text editor while it shows, which the panels keep clear of. */
+    balloon: DOMRect | null;
     gap: number;
     /** The least height of a panel as tall as the drawing. */
     minHeight: number;
 }
 
 /** The layout of the panels beside `root`, or `null` while it is scrolled out of `viewport`. */
-function getSideLayout(root: HTMLElement, viewport: HTMLElement): SideLayout | null {
+function getSideLayout(
+    root: HTMLElement,
+    viewport: HTMLElement,
+    balloon: HTMLElement | null
+): SideLayout | null {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const drawing = root.getBoundingClientRect();
     const noteArea = getVisibleArea(viewport);
@@ -606,6 +657,9 @@ function getSideLayout(root: HTMLElement, viewport: HTMLElement): SideLayout | n
     return {
         drawing,
         area: getWindowArea(),
+        balloon: balloon?.classList.contains("ck-balloon-panel_visible")
+            ? balloon.getBoundingClientRect()
+            : null,
         gap: WINDOW_GAP_REM * rem,
         minHeight: SIDE_PANEL_MIN_HEIGHT_REM * rem
     };
@@ -613,27 +667,56 @@ function getSideLayout(root: HTMLElement, viewport: HTMLElement): SideLayout | n
 
 /**
  * The position of `panel` beside the drawing: on its right when the window has room there and
- * no other panel took that side, otherwise on its left, level with the top of the drawing and
- * inside the window. `null` when no free side has room.
+ * no other panel took that side, otherwise on its left, level with the top of the drawing, inside
+ * the window and clear of the balloon. `null` when no free side has room. A `heldMaxHeight`
+ * replaces the room that the window and the balloon leave, so the panel can reach past the window.
  */
 function getSidePanelPosition(
-    { drawing, area, gap, minHeight }: SideLayout,
+    layout: SideLayout,
     panel: HTMLElement,
     hasDrawingHeight: boolean,
-    takenSides: ReadonlySet<Side>
+    takenSides: ReadonlySet<Side>,
+    heldMaxHeight?: number
 ) {
-    const placement = getSidePanelLeft(drawing, area, panel.offsetWidth, gap, takenSides);
+    const { drawing, area, gap, minHeight } = layout;
+    const width = panel.offsetWidth;
+    const placement = getSidePanelLeft(drawing, area, width, gap, takenSides);
     if (!placement) {
         return null;
     }
 
-    const maxHeight = area.bottom - area.top - 2 * gap;
+    const range = getSidePanelRange(layout, placement.left, width);
+    const maxHeight = heldMaxHeight ?? range.bottom - range.top;
     const contentHeight = hasDrawingHeight
         ? Math.max(drawing.height, minHeight)
         : panel.offsetHeight;
     const height = Math.min(contentHeight, maxHeight);
-    const top = Math.max(area.top + gap, Math.min(drawing.top, area.bottom - gap - height));
+    const top = Math.max(range.top, Math.min(drawing.top, range.bottom - height));
     return { ...placement, top, maxHeight, height: hasDrawingHeight ? height : null };
+}
+
+/**
+ * The top and bottom of the part of the window that holds a panel at `left`, `width` wide. While
+ * the balloon reaches over the panel's column, that part is on the side of the balloon where the
+ * drawing shows.
+ */
+function getSidePanelRange(
+    { drawing, area, balloon, gap }: SideLayout,
+    left: number,
+    width: number
+) {
+    let top = area.top + gap;
+    let bottom = area.bottom - gap;
+    if (balloon && balloon.left < left + width && balloon.right > left) {
+        const drawingMiddle = (Math.max(drawing.top, area.top)
+            + Math.min(drawing.bottom, area.bottom)) / 2;
+        if (drawingMiddle > (balloon.top + balloon.bottom) / 2) {
+            top = Math.max(top, balloon.bottom + gap);
+        } else {
+            bottom = Math.min(bottom, balloon.top - gap);
+        }
+    }
+    return { top, bottom: Math.max(top, bottom) };
 }
 
 type SidePanelPosition = NonNullable<ReturnType<typeof getSidePanelPosition>>;

@@ -518,7 +518,7 @@ class ContentEmbedEditing extends Plugin {
 			propertyPrefix: '--include-note',
 			isWidthResizable: true,
 			isHeightResizable: true,
-			getAnchor: getResizeAnchor,
+			getAnchor: getEmbedAnchor,
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
 			minHeight: MIN_EMBED_SIZE.height,
@@ -1308,8 +1308,11 @@ function getEmbedPosition( embed: ModelElement ): PositionValue {
 	return SAVED_POSITIONS.includes( position ) ? position as PositionValue : 'center';
 }
 
-/** The edge of `embed` that stays in place while it is resized, as the stylesheet places it. */
-function getResizeAnchor( embed: ModelElement ): ResizeAnchor {
+/**
+ * The edge that the stylesheet places `embed` against, which stays in place while it is resized
+ * and which its toolbar is level with.
+ */
+export function getEmbedAnchor( embed: ModelElement ): ResizeAnchor {
 	const position = getEmbedPosition( embed );
 	if ( position === 'left' || position === 'wrap-left' ) {
 		return 'left';

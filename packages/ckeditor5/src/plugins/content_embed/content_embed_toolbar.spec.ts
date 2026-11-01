@@ -1,4 +1,7 @@
-import { ClassicEditor, Essentials, Paragraph, Plugin, toWidget, Widget, WidgetToolbarRepository, _setModelData as setModelData } from "ckeditor5";
+import {
+    ClassicEditor, Essentials, Paragraph, Plugin, type PositioningFunction, Rect, toWidget, Widget,
+    WidgetToolbarRepository, _setModelData as setModelData
+} from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -59,17 +62,22 @@ class SectionNoClassWidget extends Plugin {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getRelatedElementFn(ed: ClassicEditor): (selection: unknown) => unknown {
+function getToolbarDefinition(ed: ClassicEditor) {
     const repository = ed.plugins.get(WidgetToolbarRepository) as unknown as {
         _toolbarDefinitions: Map<string, {
             getRelatedElement: (selection: unknown) => unknown;
+            positions: PositioningFunction[];
         }>;
     };
     const def = repository._toolbarDefinitions.get("contentEmbed");
     if (!def) {
         throw new Error("ContentEmbed toolbar definition not found in WidgetToolbarRepository.");
     }
-    return def.getRelatedElement;
+    return def;
+}
+
+function getRelatedElementFn(ed: ClassicEditor): (selection: unknown) => unknown {
+    return getToolbarDefinition(ed).getRelatedElement;
 }
 
 /** A selection on nothing, standing in for the view selection. */
@@ -120,6 +128,40 @@ describe("ContentEmbedToolbar", () => {
             CONVERT_EMBED_TO_LINK_COMMAND,
             CONTENT_EMBED_MENU
         ]);
+    });
+
+    it("is level with the edge that the embed is placed against, else centered", () => {
+        const { positions } = getToolbarDefinition(editor);
+        const target = new Rect({
+            left: 100, top: 300, right: 400, bottom: 500, width: 300, height: 200
+        });
+        const balloon = new Rect({
+            left: 0, top: 0, right: 200, bottom: 40, width: 200, height: 40
+        });
+        const viewport = new Rect(window);
+        const getFirstPositions = (data: string) => {
+            editor.setData(data);
+            editor.model.change((writer) => {
+                const embed = editor.model.document.getRoot()?.getChild(0);
+                if (embed?.is("element", "contentEmbed")) {
+                    writer.setSelection(embed, "on");
+                }
+            });
+            return positions
+                .map((position) => position(target, balloon, viewport))
+                .filter((position) => position !== null)
+                .slice(0, 2)
+                .map(({ name, left }) => `${name} ${left}`);
+        };
+        const embed = (attributes: string) => "<figure class=\"include-note\" data-note-id=\"n1\""
+            + ` data-box-size="medium"${attributes}></figure>`;
+
+        expect(getFirstPositions(embed(" data-position=\"wrap-left\"")))
+            .toEqual([ "arrow_sw 100", "arrow_nw 100" ]);
+        expect(getFirstPositions(embed(" data-position=\"right\"")))
+            .toEqual([ "arrow_se 200", "arrow_ne 200" ]);
+        expect(getFirstPositions(embed(""))).toEqual([ "arrow_s 150", "arrow_sw 225" ]);
+        expect(getFirstPositions("<p>Text</p>")).toEqual([ "arrow_s 150", "arrow_sw 225" ]);
     });
 
     describe("getRelatedElement", () => {
