@@ -59,7 +59,7 @@ function downloadAttachment(attachmentId: string) {
     download(url);
 }
 
-async function openCustom(type: string, entityId: string, mime: string) {
+async function openCustom(type: string, entityId: string) {
     checkType(type);
     if (!window.electronApi || utils.isMac()) {
         return;
@@ -71,8 +71,8 @@ async function openCustom(type: string, entityId: string, mime: string) {
     }
 }
 
-const openNoteCustom = async (noteId: string, mime: string) => await openCustom("notes", noteId, mime);
-const openAttachmentCustom = async (attachmentId: string, mime: string) => await openCustom("attachments", attachmentId, mime);
+const openNoteCustom = async (noteId: string) => await openCustom("notes", noteId);
+const openAttachmentCustom = async (attachmentId: string) => await openCustom("attachments", attachmentId);
 
 function downloadRevision(noteId: string, revisionId: string) {
     const url = getUrlForDownload(`api/revisions/${revisionId}/download`);

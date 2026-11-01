@@ -159,7 +159,7 @@ describe("open service", () => {
     describe("openCustom", () => {
         it("does nothing in the browser (no electronApi)", async () => {
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/x" })) as typeof server.post;
-            await open.openNoteCustom("n1", "image/png");
+            await open.openNoteCustom("n1");
             expect(server.post).not.toHaveBeenCalled();
         });
 
@@ -167,7 +167,7 @@ describe("open service", () => {
             const shell = installElectronApi();
             vi.spyOn(utils, "isMac").mockReturnValue(true);
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/x" })) as typeof server.post;
-            await open.openAttachmentCustom("a1", "image/png");
+            await open.openAttachmentCustom("a1");
             expect(server.post).not.toHaveBeenCalled();
             expect(shell.openCustom).not.toHaveBeenCalled();
         });
@@ -176,7 +176,7 @@ describe("open service", () => {
             const shell = installElectronApi();
             const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/file.png" })) as typeof server.post;
-            await open.openNoteCustom("n2", "image/png");
+            await open.openNoteCustom("n2");
             expect(server.post).toHaveBeenCalledWith("notes/n2/save-to-tmp-dir");
             expect(shell.openCustom).toHaveBeenCalledWith("/tmp/file.png");
             expect(toastSpy).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe("open service", () => {
             shell.openCustom.mockResolvedValue(false);
             const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/file.png" })) as typeof server.post;
-            await open.openAttachmentCustom("a2", "image/png");
+            await open.openAttachmentCustom("a2");
             expect(shell.openCustom).toHaveBeenCalledWith("/tmp/file.png");
             expect(toastSpy).toHaveBeenCalledOnce();
         });
