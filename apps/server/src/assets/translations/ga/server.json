@@ -348,7 +348,9 @@
     "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint.",
     "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo.",
     "broken-block-reference": "Tagairt bhriste",
-    "play-video": "Seinn físeán"
+    "play-video": "Seinn físeán",
+    "content-not-available": "Níl an t-ábhar seo ar fáil.",
+    "untitled-block": "Bloc"
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",
