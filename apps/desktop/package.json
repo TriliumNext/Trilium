@@ -52,7 +52,7 @@
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "@types/pngjs": "6.0.5",
-    "electron": "45.0.0",
+    "electron": "45.1.0",
     "gifenc": "1.0.3",
     "node-mocks-http": "1.18.1",
     "pngjs": "7.0.0"
