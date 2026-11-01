@@ -579,30 +579,30 @@ importers:
   apps/mobile:
     dependencies:
       '@capacitor/android':
-        specifier: 8.5.3
-        version: 8.5.3(@capacitor/core@8.5.3)
+        specifier: 8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
       '@capacitor/core':
-        specifier: 8.5.3
-        version: 8.5.3
+        specifier: 8.6.0
+        version: 8.6.0
       '@capacitor/filesystem':
         specifier: ^8.1.3
-        version: 8.1.5(@capacitor/core@8.5.3)
+        version: 8.1.5(@capacitor/core@8.6.0)
       '@capacitor/ios':
-        specifier: 8.5.3
-        version: 8.5.3(@capacitor/core@8.5.3)
+        specifier: 8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
       '@capacitor/keyboard':
         specifier: 8.0.6
-        version: 8.0.6(@capacitor/core@8.5.3)
+        version: 8.0.6(@capacitor/core@8.6.0)
       '@capacitor/share':
         specifier: ^8.0.1
-        version: 8.0.3(@capacitor/core@8.5.3)
+        version: 8.0.3(@capacitor/core@8.6.0)
       '@capacitor/splash-screen':
         specifier: 8.0.2
-        version: 8.0.2(@capacitor/core@8.5.3)
+        version: 8.0.2(@capacitor/core@8.6.0)
     devDependencies:
       '@capacitor/cli':
-        specifier: 8.5.3
-        version: 8.5.3(supports-color@10.2.2)
+        specifier: 8.6.0
+        version: 8.6.0(supports-color@10.2.2)
 
   apps/script-deployer:
     devDependencies:
@@ -1763,28 +1763,28 @@ packages:
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
-  '@capacitor/android@8.5.3':
-    resolution: {integrity: sha512-ilH4gSSz3DrketMkzDVAvY9JsWJ//rCQnECLTdcFRO7xXDogwAbUvQAnIAbiqefwV/D1xfjEL4Gw1MJXEcaA9g==}
+  '@capacitor/android@8.6.0':
+    resolution: {integrity: sha512-6IJS0TCfV/F/8+324CCwYd3xL6r+TH0W7zzaxYzPz9IV3YWCNvsZDuCCPHUIBC5iASb9od827ddSJ6rz+9Pu1Q==}
     peerDependencies:
-      '@capacitor/core': ^8.5.0
+      '@capacitor/core': ^8.6.0
 
-  '@capacitor/cli@8.5.3':
-    resolution: {integrity: sha512-/G6xwna+p4GS3lthSdWN3OThCH2F85O0Ukdy8rv3oAXvgEMeyFgPEIA3PMAS++IkHwUuBYBAKOQJnZfcrh1n0w==}
+  '@capacitor/cli@8.6.0':
+    resolution: {integrity: sha512-TyLo1v6AqK39inlB5Edm7eFc+dyk4r+Du5bbyD+cRm/u/3b+LkNIeyp5wwYp3ToO3rWiLs4T/PabXGADO0Rlxg==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
-  '@capacitor/core@8.5.3':
-    resolution: {integrity: sha512-oBE1oGuYE4ZzYYrulC75OuHdSsD6zLUy7d5o1tFwDLG4govGoubY15cxpiI5l0+q87Lm5p0bhbehMdzJg4aFag==}
+  '@capacitor/core@8.6.0':
+    resolution: {integrity: sha512-9F2zzuGYTJu+wqmQSEmqnFBfGrhC/njjMCfmxbvg9mq8xJT4wNh5pxbMFZxvW/yDhYJWPEBFQxeqzfo1gKrvxg==}
 
   '@capacitor/filesystem@8.1.5':
     resolution: {integrity: sha512-m1RkI8L83NJeppEKyRWioK3MDp2vjlA+QfUQcF8/xRlcXNC2HYxqoyYJ+K4M0EcVovy+g+4F24S05+bhK4Vgdg==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capacitor/ios@8.5.3':
-    resolution: {integrity: sha512-HnnV92Jl8+3x0JUloXUMjFcUsQI8wHFVsKwkLn72DfRZXYGZW11tQbmNOWOnRTljaU18FdI1b9ipT09SzzPDNw==}
+  '@capacitor/ios@8.6.0':
+    resolution: {integrity: sha512-Y2PE4zoBqMrSTWoVMJmX2byBznjn6egmATzoEUJiGVbVubkNpAvkF/tl0SBKDyP67ngyedTx1tQq5IGYIhby1A==}
     peerDependencies:
-      '@capacitor/core': ^8.5.0
+      '@capacitor/core': ^8.6.0
 
   '@capacitor/keyboard@8.0.6':
     resolution: {integrity: sha512-Bbe+9V0qaT6dzEFJEK7BUWR01l2+vZE8FM5ITF/WgKtx+G6eGZ6d5+YiSMRJBAK0VGjdO59v8yiQ10Doa5KyvQ==}
@@ -4839,9 +4839,6 @@ packages:
 
   '@types/node@24.19.0':
     resolution: {integrity: sha512-zY+5tKxXdhGh1PYI0ac+7juvEu4OI6vWtVVoj5i2m42jxAY1U+zHGt6QCyOFwykdP62sM3MJ9stoYYUw5aCWew==}
-
-  '@types/node@24.19.1':
-    resolution: {integrity: sha512-aS3/DG0oM05K0RIXXP+hKjinGG5IgSSVGzswZxW3O0sS3pH4/fycXundUC9XsszgKCk4gHXylTEK6hyFxVxnoQ==}
 
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
@@ -11287,11 +11284,6 @@ packages:
     resolution: {integrity: sha512-xZe/16rV4aa+HGSOCiY2YeLT1OybRLrrkL/Rqaq7p7GMVXjFh+6wN4oMYgjFmnSnhY8t6Xpdl2l9qmnHYuMHwQ==}
     hasBin: true
 
-  uuid@7.0.3:
-    resolution: {integrity: sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
-    hasBin: true
-
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
@@ -11643,9 +11635,9 @@ packages:
       web-ext:
         optional: true
 
-  xcode@3.0.1:
-    resolution: {integrity: sha512-kCz5k7J7XbJtjABOvkc5lJmkiDh8VhjVCGNiqdKCscmVpdVUpEAyXv1xmCLkQJ5dsHqx3IPO4XW+NTDhU/fatA==}
-    engines: {node: '>=10.0.0'}
+  xcode@4.0.0:
+    resolution: {integrity: sha512-dDaoWzc9EP2fp9FS9PVZUkyvFxY4y1TOV9pcKaKLk++Ei/qb97XDFEVP7GnW7Osii/TzVABJ0jq2F+9/lq0TVA==}
+    engines: {node: '>=14.17.0'}
 
   xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
@@ -12113,11 +12105,11 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@capacitor/android@8.5.3(@capacitor/core@8.5.3)':
+  '@capacitor/android@8.6.0(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
 
-  '@capacitor/cli@8.5.3(supports-color@10.2.2)':
+  '@capacitor/cli@8.6.0(supports-color@10.2.2)':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8(supports-color@10.2.2)
       '@ionic/utils-subprocess': 3.0.1(supports-color@10.2.2)
@@ -12135,35 +12127,35 @@ snapshots:
       semver: 7.8.5
       tar: 7.5.22
       tslib: 2.8.1
-      xcode: 3.0.1
+      xcode: 4.0.0
       xml2js: 0.6.2
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@8.5.3':
+  '@capacitor/core@8.6.0':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/filesystem@8.1.5(@capacitor/core@8.5.3)':
+  '@capacitor/filesystem@8.1.5(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
       '@capacitor/synapse': 1.0.4
 
-  '@capacitor/ios@8.5.3(@capacitor/core@8.5.3)':
+  '@capacitor/ios@8.6.0(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
 
-  '@capacitor/keyboard@8.0.6(@capacitor/core@8.5.3)':
+  '@capacitor/keyboard@8.0.6(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
 
-  '@capacitor/share@8.0.3(@capacitor/core@8.5.3)':
+  '@capacitor/share@8.0.3(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
 
-  '@capacitor/splash-screen@8.0.2(@capacitor/core@8.5.3)':
+  '@capacitor/splash-screen@8.0.2(@capacitor/core@8.6.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.0
 
   '@capacitor/synapse@1.0.4': {}
 
@@ -15700,7 +15692,7 @@ snapshots:
 
   '@types/fs-extra@8.1.5':
     dependencies:
-      '@types/node': 24.19.1
+      '@types/node': 24.19.2
 
   '@types/fs-extra@9.0.13':
     dependencies:
@@ -15753,10 +15745,6 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
     optional: true
-
-  '@types/node@24.19.1':
-    dependencies:
-      undici-types: 7.24.6
 
   '@types/node@24.19.2':
     dependencies:
@@ -23636,8 +23624,6 @@ snapshots:
 
   uuid@14.0.2: {}
 
-  uuid@7.0.3: {}
-
   uuid@8.3.2: {}
 
   value-equal@1.0.1: {}
@@ -24026,10 +24012,9 @@ snapshots:
       - unloader
       - webpack
 
-  xcode@3.0.1:
+  xcode@4.0.0:
     dependencies:
       simple-plist: 1.3.1
-      uuid: 7.0.3
 
   xdg-basedir@5.1.0: {}
 
