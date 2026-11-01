@@ -64,7 +64,7 @@
     "@playwright/test": "1.64.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.6",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/browser-playwright": "5.0.5",
     "@vitest/coverage-v8": "5.0.5",
