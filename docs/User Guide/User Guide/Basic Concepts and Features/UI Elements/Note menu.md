@@ -74,7 +74,7 @@ The following entries only appear on some notes:
 The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the actions that are needed less often:
 
 *   <span class="tn-icon bx bx-file-find"></span>_Open externally_ (desktop application only) saves the note to a temporary file and opens it in the application that the operating system associates with it. Trilium watches the file, and offers to upload the modified version back into the note. It is unavailable on <a class="reference-link" href="../../Collections.md">Collections</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
-*   <span class="tn-icon bx bx-customize"></span>_Open with..._ (desktop application only, Windows and Linux) works like _Open externally_, but lets you pick the application to open the file with. On Linux, the choice is offered by the desktop portal (`xdg-desktop-portal`), so it works in the Flatpak as well. If the application chooser cannot be shown, Trilium reports an error instead of opening the file.
+*   <span class="tn-icon bx bx-customize"></span>_Open with..._ (desktop application only, Windows and Linux) works like _Open externally_, but lets you pick the application to open the file with. See [Open with](#open-with) below.
 *   <span class="tn-icon bx bx-code"></span>_Note source_ shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>, the content of the note exactly as it is stored.
 *   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown note_ (on text notes) and _Convert to text note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">Converting between note types</a>.
 *   <span class="tn-icon bx bx-collapse-alt"></span>_Compress images_ opens a dialog that reduces the size of the images in the note. It lists the images found and how much space they take, and offers to:
@@ -87,6 +87,28 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
     Compressing cannot be undone. Images can also be compressed automatically on upload, see <a class="reference-link" href="../../Note%20Types/Text/Images.md">Images</a>.
 *   <span class="tn-icon bx bx-text"></span>_View OCR text_ (on image and file notes) shows the text extracted from the note via <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>. If the note has not been processed yet, the dialog offers to _Process OCR_.
 *   <span class="tn-icon bx bx-world"></span>_Open note on server_ (desktop application only, listed when <a class="reference-link" href="../../Installation%20%26%20Setup/Synchronization.md">Synchronization</a> is configured) opens the same note on the sync server, in the web browser.
+
+## Open with
+
+<span class="tn-icon bx bx-customize"></span>_Open with..._ in the _Advanced_ submenu opens the note in an application you choose, instead of the one the operating system associates with its type. As with _Open externally_, Trilium saves the note to a temporary file, watches it, and offers to upload the modified version back into the note. The entry is available only in the desktop application, on Windows and Linux; attachments offer the same action.
+
+*   On Windows, the system's _Open with_ dialog lists the installed applications.
+*   On Linux, the application chooser comes from the desktop portal (`xdg-desktop-portal`), so it works in the Flatpak as well.
+
+If the application chooser cannot be shown (such as when no desktop portal is running on Linux), Trilium reports an error instead of opening the file. _Open externally_ still opens it in the default application.
+
+### Adding an application to the chooser on Linux
+
+The portal lists only the applications registered for the file's type. Text editors generally register for plain text but not for HTML, so they are missing when opening a text note, which is saved as an HTML file.
+
+To make an editor appear without changing the default application, add it under `[Added Associations]` in `~/.config/mimeapps.list`, using the name of the editor's `.desktop` file:
+
+```toml
+[Added Associations]
+text/html=org.gnome.TextEditor.desktop;
+```
+
+The _Open with other application_ entry of most file managers adds the same line.
 
 ## Deleting the note
 
