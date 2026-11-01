@@ -4,6 +4,7 @@ import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import { execFile, spawn } from "child_process";
 import electron from "electron";
 import fs from "fs";
+import { t } from "i18next";
 import path from "path";
 import url from "url";
 
@@ -40,7 +41,8 @@ function isUnderOrEquals(resolved: string, root: string): boolean {
 
 /**
  * Validates a path for the "open-custom" IPC channel (renderer asks the main
- * process to invoke Windows' "Open With…" dialog or the desktop portal's chooser on Linux).
+ * process to invoke Windows' "Open With…" dialog, the desktop portal's chooser on Linux, or an
+ * application picker on macOS).
  * The legit caller always passes a path freshly written by saveToTmpDir, so
  * the path must live under that dir and the file must exist on disk.
  */
@@ -299,7 +301,7 @@ export function setupShellHandlers() {
         }
     });
 
-    electron.ipcMain.handle("open-custom", async (_event, filePath: string) => {
+    electron.ipcMain.handle("open-custom", async (event, filePath: string) => {
         // Defense in depth: validate the path is one the server itself wrote into
         // Trilium's tmp dir via /api/.../save-to-tmp-dir, and that it exists.
         // Without this, a compromised renderer (e.g. via XSS) could ask us to
@@ -312,6 +314,8 @@ export function setupShellHandlers() {
                     return await openWithPortalChooser(resolved);
                 case "win32":
                     return await openWithWindowsDialog(resolved);
+                case "darwin":
+                    return await openWithApplicationPicker(resolved, electron.BrowserWindow.fromWebContents(event.sender));
                 default:
                     getLog().error(`open-custom: no application chooser on ${process.platform}`);
                     return false;
@@ -380,6 +384,36 @@ function openWithWindowsDialog(resolved: string): Promise<boolean> {
         execFile("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", winPath], { windowsVerbatimArguments: true }, (err) => {
             if (err) {
                 getLog().error(`open-custom: rundll32 failed: ${err.message}`);
+            }
+            resolve(!err);
+        });
+    });
+}
+
+/**
+ * Lets the user pick an application from `/Applications` and opens the file in it with `open -a`,
+ * as Finder's "Open With > Other…" does: macOS has no chooser an app can show for a file. A canceled
+ * picker resolves `true`, like a canceled chooser on Linux; a failed `open` resolves `false`.
+ */
+async function openWithApplicationPicker(resolved: string, window: Electron.BrowserWindow | null): Promise<boolean> {
+    const options: Electron.OpenDialogOptions = {
+        message: t("open_custom.choose_application"),
+        defaultPath: "/Applications",
+        properties: [ "openFile" ],
+        filters: [ { name: t("open_custom.applications_filter"), extensions: [ "app" ] } ]
+    };
+    const { canceled, filePaths } = window
+        ? await electron.dialog.showOpenDialog(window, options)
+        : await electron.dialog.showOpenDialog(options);
+    const appPath = canceled ? undefined : filePaths[0];
+    if (!appPath) {
+        return true;
+    }
+
+    return new Promise((resolve) => {
+        execFile("open", [ "-a", appPath, resolved ], (err) => {
+            if (err) {
+                getLog().error(`open-custom: open -a failed: ${err.message}`);
             }
             resolve(!err);
         });

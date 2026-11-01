@@ -38,7 +38,6 @@ describe("open service", () => {
         removeStandaloneApi();
         // Default: behave like a plain web browser.
         vi.spyOn(utils, "isElectron").mockReturnValue(false);
-        vi.spyOn(utils, "isMac").mockReturnValue(false);
         // window.open / location.href are used as side effects; stub open, track href.
         vi.spyOn(window, "open").mockReturnValue(null);
     });
@@ -166,16 +165,7 @@ describe("open service", () => {
             expect(server.post).not.toHaveBeenCalled();
         });
 
-        it("does nothing under Electron on macOS", async () => {
-            const shell = installElectronApi();
-            vi.spyOn(utils, "isMac").mockReturnValue(true);
-            server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/x" })) as typeof server.post;
-            await open.openAttachmentCustom("a1");
-            expect(server.post).not.toHaveBeenCalled();
-            expect(shell.openCustom).not.toHaveBeenCalled();
-        });
-
-        it("saves to tmp dir and opens the file under Electron on non-Mac", async () => {
+        it("saves to tmp dir and opens the file under Electron", async () => {
             const shell = installElectronApi();
             const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/file.png" })) as typeof server.post;

@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
     showItemInFolder: vi.fn(),
     execFile: vi.fn(),
     spawn: vi.fn(),
+    showOpenDialog: vi.fn<(...args: unknown[]) => Promise<{ canceled: boolean; filePaths: string[] }>>(),
     logError: vi.fn()
 }));
 
@@ -23,6 +24,8 @@ vi.mock("electron", () => ({
             on: (channel: string, fn: Handler) => h.on.set(channel, fn),
             handle: (channel: string, fn: Handler) => h.handle.set(channel, fn)
         },
+        BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
+        dialog: { showOpenDialog: h.showOpenDialog },
         shell: {
             openExternal: h.openExternal,
             openPath: h.openPath,
@@ -194,10 +197,43 @@ describe("setupShellHandlers", () => {
         });
 
         it("reports a failure on platforms without an application chooser", async () => {
-            setPlatform("darwin");
+            setPlatform("freebsd");
             expect(await fireHandle("open-custom", tmpFile)).toBe(false);
             expect(h.openPath).not.toHaveBeenCalled();
             expect(h.execFile).not.toHaveBeenCalled();
+        });
+
+        describe("darwin", () => {
+            beforeEach(() => setPlatform("darwin"));
+
+            it("opens the file in the application picked from /Applications", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [ "/Applications/TextEdit.app" ] });
+                h.execFile.mockImplementation((_cmd, _args, cb) => cb(null));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+
+                const [ window, options ] = h.showOpenDialog.mock.calls[0] as [ unknown, { defaultPath: string; properties: string[]; filters: { extensions: string[] }[] } ];
+                expect(window).toEqual({ id: 1 });
+                expect(options.defaultPath).toBe("/Applications");
+                expect(options.properties).toEqual([ "openFile" ]);
+                expect(options.filters[0].extensions).toEqual([ "app" ]);
+                expect(h.execFile).toHaveBeenCalledWith("open", [ "-a", "/Applications/TextEdit.app", tmpFile ], expect.any(Function));
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("opens nothing when the picker is canceled", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: [] });
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+                expect(h.execFile).not.toHaveBeenCalled();
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("reports a failure when the application cannot open the file", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [ "/Applications/Broken.app" ] });
+                h.execFile.mockImplementation((_cmd, _args, cb) => cb(new Error("LSOpenURLsWithRole() failed")));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.logError).toHaveBeenCalledWith(expect.stringContaining("LSOpenURLsWithRole"));
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
         });
 
         describe("linux", () => {

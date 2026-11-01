@@ -62,7 +62,7 @@ function downloadAttachment(attachmentId: string) {
 
 async function openCustom(type: string, entityId: string) {
     checkType(type);
-    if (!window.electronApi || utils.isMac()) {
+    if (!window.electronApi) {
         return;
     }
 

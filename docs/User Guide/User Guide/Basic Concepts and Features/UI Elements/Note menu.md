@@ -74,7 +74,7 @@ The following entries only appear on some notes:
 The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the actions that are needed less often:
 
 *   <span class="tn-icon bx bx-file-find"></span>_Open externally_ (desktop application only) saves the note to a temporary file and opens it in the application that the operating system associates with it. Trilium watches the file: each time it is saved, a notification in the window it was opened from offers to upload the modified version back into the note, keeping the current content as a revision. It is unavailable on <a class="reference-link" href="../../Collections.md">Collections</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
-*   <span class="tn-icon bx bx-customize"></span>_Open with..._ (desktop application only, Windows and Linux) works like _Open externally_, but lets you pick the application to open the file with. See [Open with](#open-with) below.
+*   <span class="tn-icon bx bx-customize"></span>_Open with..._ (desktop application only) works like _Open externally_, but lets you pick the application to open the file with. See [Open with](#open-with) below.
 *   <span class="tn-icon bx bx-code"></span>_Note source_ shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>, the content of the note exactly as it is stored.
 *   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown note_ (on text notes) and _Convert to text note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">Converting between note types</a>.
 *   <span class="tn-icon bx bx-collapse-alt"></span>_Compress images_ opens a dialog that reduces the size of the images in the note. It lists the images found and how much space they take, and offers to:
@@ -90,10 +90,11 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
 
 ## Open with
 
-<span class="tn-icon bx bx-customize"></span>_Open with..._ in the _Advanced_ submenu opens the note in an application you choose, instead of the one the operating system associates with its type. As with _Open externally_, Trilium saves the note to a temporary file, watches it, and offers to upload the modified version back into the note. The entry is available only in the desktop application, on Windows and Linux; attachments offer the same action.
+<span class="tn-icon bx bx-customize"></span>_Open with..._ in the _Advanced_ submenu opens the note in an application you choose, instead of the one the operating system associates with its type. As with _Open externally_, Trilium saves the note to a temporary file, watches it, and offers to upload the modified version back into the note. The entry is available only in the desktop application; attachments offer the same action.
 
 *   On Windows, the system's _Open with_ dialog lists the installed applications.
 *   On Linux, the application chooser comes from the desktop portal (`xdg-desktop-portal`), so it works in the Flatpak as well.
+*   On macOS, a file picker opens in the _Applications_ folder; the note opens in the application you select there, as with _Open With_ → _Other…_ in Finder.
 
 If the application chooser cannot be shown (such as when no desktop portal is running on Linux), Trilium reports an error instead of opening the file. _Open externally_ still opens it in the default application.
 

@@ -367,8 +367,9 @@ export interface ElectronShellApi {
 
     /**
      * Shows the operating system's application chooser for a file: the "Open
-     * with" dialog on Windows, the desktop portal's chooser on Linux. It
-     * never falls back to the default application, since "Open externally"
+     * with" dialog on Windows, the desktop portal's chooser on Linux, and on
+     * macOS a picker of the applications in `/Applications`, which then opens
+     * the file in the one chosen. It never falls back to the default application, since "Open externally"
      * already does that.
      *
      * **Security:** the path must resolve to a strict descendant of Trilium's
