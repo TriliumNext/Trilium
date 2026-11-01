@@ -77,8 +77,12 @@
     "title_from_url": "URL과 동일하게",
     "description": "설명",
     "page_description": "웹페이지 설명",
-    "anchors": "앵커",
-    "target_anchor": "대상 앵커"
+    "anchors": "제목 및 앵커",
+    "target_anchor": "앵커",
+    "title_from_note": "설정하지 않으면 항상 노트 제목이 반영됩니다",
+    "headings": "제목",
+    "no_headings_or_anchors": "이 노트에는 제목이나 앵커가 없습니다.",
+    "title_from_heading": "설정하지 않으면 항상 제목의 텍스트가 반영됩니다"
   },
   "branch_prefix": {
     "save": "저장",
@@ -2431,7 +2435,8 @@
     "clone-tooltip": "노트 트리의 다른 위치에 복제본으로 붙여넣거나 노트 안에 링크로 붙여넣을 수 있도록 복사",
     "delete-short": "삭제",
     "paste-into-tooltip_other": "이 노트에 붙여넣기\n노트가 복제본으로 붙여넣어집니다. 즉, 별도의 노트가 만들어지는 것이 아니라 동일한 노트가 여러 위치에 표시됩니다.",
-    "paste-after-tooltip_other": "이 노트 뒤에 붙여넣기\n노트가 복제본으로 붙여넣어집니다. 즉, 별도의 노트가 만들어지는 것이 아니라 동일한 노트가 여러 위치에 표시됩니다."
+    "paste-after-tooltip_other": "이 노트 뒤에 붙여넣기\n노트가 복제본으로 붙여넣어집니다. 즉, 별도의 노트가 만들어지는 것이 아니라 동일한 노트가 여러 위치에 표시됩니다.",
+    "open": "열기"
   },
   "read-only-info": {
     "edit-note": "노트 편집"
@@ -2696,7 +2701,8 @@
     "children_hidden": "하위 노트가 트리에서 숨겨져 있습니다",
     "workspaces": "작업 공간",
     "bookmarks": "북마크",
-    "forward": "노트로 돌아가기"
+    "forward": "노트로 돌아가기",
+    "open": "열기"
   },
   "title_bar_buttons": {
     "window-on-top": "항상 위에 표시"
@@ -4413,7 +4419,12 @@
       "create-a-new-child-note": "새 하위 노트 만들기",
       "create-a-new-child-note-and-insert-a-link-to-it": "새 하위 노트를 만들고 해당 노트의 링크 삽입",
       "open-note": "노트 열기",
-      "open-attachment": "첨부 파일 열기"
+      "open-attachment": "첨부 파일 열기",
+      "table-size": "표 크기",
+      "table-headers": "표 머리글",
+      "jump-to-heading": "제목으로 이동",
+      "jump-to-anchor": "앵커로 이동",
+      "jump-to-block": "블록으로 이동"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4723,7 +4734,8 @@
     "edit_excerpt": "발췌 편집",
     "copy_other": "이 {{count}}개 블록의 참조 복사",
     "copy_tab": "이 탭의 링크 복사",
-    "copy_share_link_other": "이 {{count}}개 블록의 공개 링크 복사"
+    "copy_share_link_other": "이 {{count}}개 블록의 공개 링크 복사",
+    "delete_other": "블록 {{count}}개 삭제"
   },
   "record_meeting": {
     "note_title": "회의 {{date}}",
