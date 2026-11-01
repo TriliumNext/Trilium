@@ -74,7 +74,6 @@
     }
 }
 
-/* A submenu row's arrow, pinned to the row's end. */
 body.mobile .dropdown-submenu .dropdown-toggle::after,
 body.desktop .dropdown-submenu .dropdown-toggle::after {
     content: "\ed3b" !important;
