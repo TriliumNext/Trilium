@@ -203,7 +203,9 @@ class ContextMenu {
         const request = ++this.lastShowRequest;
         // Loaded here rather than imported: the core services that import this module would
         // otherwise reach the widget tree through the rows `Menu` draws, in a cycle.
-        const { default: Menu } = await import("../widgets/react/Menu");
+        // `closeOpenPopups()` during the import cancels this menu before it opens.
+        const cancelPending = registerOpenPopup(() => this.lastShowRequest++);
+        const { default: Menu } = await import("../widgets/react/Menu").finally(cancelPending);
         // A later `show()` made during the import replaces this one.
         if (request !== this.lastShowRequest) return;
 

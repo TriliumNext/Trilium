@@ -132,6 +132,22 @@ describe("contextMenu", () => {
         expect(onHide).toHaveBeenCalledTimes(1);
     });
 
+    it("cancels a menu still loading `Menu` for `closeOpenPopups()`", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const onShow = vi.fn();
+
+        const shown = contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onShow });
+        closeOpenPopups();
+        await shown;
+
+        expect(onShow).not.toHaveBeenCalled();
+        expect(menuElement()).toBeNull();
+        expect(contextMenu.isShown).toBe(false);
+        expect(document.body.innerHTML).toBe(`<div id="app"></div>`);
+    });
+
     it("shows only the last of two menus asked for while `Menu` still loads, and hides it", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();
