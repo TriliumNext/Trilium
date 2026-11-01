@@ -142,7 +142,9 @@ CREATE TABLE IF NOT EXISTS "users"
     isAdmin         INT NOT NULL DEFAULT 0,
     isDeleted       INT NOT NULL DEFAULT 0,
     dateCreated     TEXT NOT NULL,
-    utcDateModified TEXT NOT NULL
+    utcDateModified TEXT NOT NULL,
+    setupTokenHash  TEXT DEFAULT NULL,
+    setupTokenExpiresAt TEXT DEFAULT NULL
 );
 -- Soft-delete: deleted usernames can be reused. The partial index enforces
 -- uniqueness only among active (non-deleted) accounts.

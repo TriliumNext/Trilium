@@ -204,7 +204,26 @@ export interface UserListItem {
     isPrimaryAdmin: boolean;
     /** Whether this is the user the request was made as. */
     isCurrentUser: boolean;
+    /** Whether the user has chosen a password through a setup link. */
+    hasPassword: boolean;
+    /** When the user's current setup link stops working; `null` when there is none. */
+    setupLinkExpiresAt: string | null;
     dateCreated: string;
+}
+
+/**
+ * A one-time link letting a user choose their password. The token is only ever shown when the link
+ * is created; the server keeps a hash of it.
+ */
+export interface SetupLinkResponse {
+    token: string;
+    expiresAt: string;
+}
+
+/** What `POST /api/setup-account/check` tells the setup screen about a valid link. */
+export interface SetupAccountInfo {
+    username: string;
+    expiresAt: string;
 }
 
 /** The fields `POST /api/users` and `PATCH /api/users/:userId` accept. */
@@ -216,6 +235,7 @@ export interface UserInput {
 
 export interface CreateUserResponse {
     userId: string;
+    setupLink: SetupLinkResponse;
 }
 
 export interface BackupDatabaseNowResponse {

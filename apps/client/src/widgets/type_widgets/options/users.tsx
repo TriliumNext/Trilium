@@ -1,9 +1,10 @@
 import "./users.css";
 
-import type { CreateUserResponse, UserInput, UserListItem } from "@triliumnext/commons";
+import type { CreateUserResponse, SetupLinkResponse, UserInput, UserListItem } from "@triliumnext/commons";
 import { createPortal } from "preact";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { copyText } from "../../../services/clipboard_ext";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
@@ -23,9 +24,19 @@ import OptionsPageHeader from "./components/OptionsPageHeader";
 /** Which user the dialog is open for: a new one, or an existing one being edited. */
 type DialogTarget = { mode: "create" } | { mode: "edit"; user: UserListItem };
 
+/** A setup link just created, shown once for the admin to pass on. */
+interface ShownSetupLink {
+    username: string;
+    link: SetupLinkResponse;
+}
+
 export default function UserSettings() {
     const [ users, setUsers ] = useState<UserListItem[]>([]);
     const [ dialogTarget, setDialogTarget ] = useState<DialogTarget | null>(null);
+    const [ shownSetupLink, setShownSetupLink ] = useState<ShownSetupLink | null>(null);
+    // A new user's link waits for the user dialog to finish closing: two Bootstrap modals changing
+    // over at once leave the backdrop behind.
+    const pendingSetupLink = useRef<ShownSetupLink | null>(null);
 
     // Users are not entities, so no entitiesReloaded announces a change: the page refetches after
     // each one it makes itself.
@@ -44,6 +55,30 @@ export default function UserSettings() {
         toast.showMessage(t("users.deleted", { username: user.username }));
         refreshUsers();
     }, [ refreshUsers ]);
+
+    const createSetupLink = useCallback(async (user: UserListItem) => {
+        const confirmation = user.hasPassword ? "users.create_reset_link_confirmation" : "users.create_setup_link_confirmation";
+        if (!(await dialog.confirm(t(confirmation, { username: user.username })))) {
+            return;
+        }
+
+        const link = await server.post<SetupLinkResponse>(`users/${user.userId}/setup-link`);
+        setShownSetupLink({ username: user.username, link });
+        refreshUsers();
+    }, [ refreshUsers ]);
+
+    const onUserSaved = useCallback((created?: ShownSetupLink) => {
+        pendingSetupLink.current = created ?? null;
+        refreshUsers();
+    }, [ refreshUsers ]);
+
+    const onUserDialogHidden = useCallback(() => {
+        setDialogTarget(null);
+        if (pendingSetupLink.current) {
+            setShownSetupLink(pendingSetupLink.current);
+            pendingSetupLink.current = null;
+        }
+    }, []);
 
     const openCreateDialog = useCallback(() => setDialogTarget({ mode: "create" }), []);
 
@@ -67,6 +102,7 @@ export default function UserSettings() {
             <UserList
                 users={users}
                 onEdit={(user) => setDialogTarget({ mode: "edit", user })}
+                onCreateSetupLink={createSetupLink}
                 onDelete={deleteUser}
             />
 
@@ -77,14 +113,18 @@ export default function UserSettings() {
                 </OptionCardSection>
             </Card>
 
-            {/* On the body, out of the note pane, which would otherwise clip and displace it. */}
+            {/* On the body, out of the note pane, which would otherwise clip and displace them. */}
             {createPortal(
-                <UserDialog
-                    target={dialogTarget}
-                    users={users}
-                    onSaved={refreshUsers}
-                    onHidden={() => setDialogTarget(null)}
-                />,
+                <>
+                    <UserDialog
+                        target={dialogTarget}
+                        users={users}
+                        onSaved={onUserSaved}
+                        onClose={() => setDialogTarget(null)}
+                        onHidden={onUserDialogHidden}
+                    />
+                    <SetupLinkDialog shown={shownSetupLink} onHidden={() => setShownSetupLink(null)} />
+                </>,
                 document.body
             )}
         </>
@@ -94,10 +134,11 @@ export default function UserSettings() {
 interface UserListProps {
     users: UserListItem[];
     onEdit(user: UserListItem): void;
+    onCreateSetupLink(user: UserListItem): void;
     onDelete(user: UserListItem): void;
 }
 
-function UserList({ users, onEdit, onDelete }: UserListProps) {
+function UserList({ users, onEdit, onCreateSetupLink, onDelete }: UserListProps) {
     if (!users.length) {
         return <NoItems icon="bx bx-group" text={t("users.no_users")} />;
     }
@@ -117,6 +158,7 @@ function UserList({ users, onEdit, onDelete }: UserListProps) {
                     user={user}
                     isLastAdmin={user.isAdmin && adminCount <= 1}
                     onEdit={onEdit}
+                    onCreateSetupLink={onCreateSetupLink}
                     onDelete={onDelete}
                 />
             ))}
@@ -128,10 +170,11 @@ interface UserRowProps {
     user: UserListItem;
     isLastAdmin: boolean;
     onEdit(user: UserListItem): void;
+    onCreateSetupLink(user: UserListItem): void;
     onDelete(user: UserListItem): void;
 }
 
-function UserRow({ user, isLastAdmin, onEdit, onDelete }: UserRowProps) {
+function UserRow({ user, isLastAdmin, onEdit, onCreateSetupLink, onDelete }: UserRowProps) {
     const deleteBlockedReason = getDeleteBlockedReason(user, isLastAdmin);
 
     return (
@@ -150,6 +193,7 @@ function UserRow({ user, isLastAdmin, onEdit, onDelete }: UserRowProps) {
                             tooltip={user.isPrimaryAdmin ? t("users.primary_admin_tooltip") : undefined}
                         />
                     )}
+                    {!user.isPrimaryAdmin && <SetupStatusBadge user={user} />}
                 </div>
 
                 <small className="user-row-meta">
@@ -170,6 +214,13 @@ function UserRow({ user, isLastAdmin, onEdit, onDelete }: UserRowProps) {
                 />
 
                 <ActionButton
+                    icon="bx bx-link"
+                    text={user.isPrimaryAdmin ? t("users.setup_link_blocked_primary") : t("users.create_setup_link")}
+                    disabled={user.isPrimaryAdmin}
+                    onClick={() => onCreateSetupLink(user)}
+                />
+
+                <ActionButton
                     className="destructive-action-icon"
                     icon="bx bx-trash"
                     text={deleteBlockedReason ?? t("users.delete_user")}
@@ -179,6 +230,21 @@ function UserRow({ user, isLastAdmin, onEdit, onDelete }: UserRowProps) {
             </span>
         </CardSection>
     );
+}
+
+/** Where the user stands with their password: nothing is shown once they have one and no link is out. */
+function SetupStatusBadge({ user }: { user: UserListItem }) {
+    const expiry = user.setupLinkExpiresAt && formatDateTime(user.setupLinkExpiresAt, "medium", "short");
+
+    if (user.hasPassword) {
+        return expiry
+            ? <Badge className="user-badge-pending" icon="bx bx-time-five" text={t("users.badge_reset_pending")} tooltip={t("users.setup_pending_tooltip", { date: expiry })} />
+            : null;
+    }
+
+    return expiry
+        ? <Badge className="user-badge-pending" icon="bx bx-time-five" text={t("users.badge_setup_pending")} tooltip={t("users.setup_pending_tooltip", { date: expiry })} />
+        : <Badge className="user-badge-expired" icon="bx bx-error" text={t("users.badge_setup_expired")} tooltip={t("users.setup_expired_tooltip")} outline />;
 }
 
 /** A circle with the user's initials, tinted by a hue derived from the name so it stays stable. */
@@ -197,11 +263,15 @@ function UserAvatar({ username }: { username: string }) {
 interface UserDialogProps {
     target: DialogTarget | null;
     users: UserListItem[];
-    onSaved(): void;
+    /** Handed the setup link when a user was just created. */
+    onSaved(created?: ShownSetupLink): void;
+    /** Asks for the dialog to close. */
+    onClose(): void;
+    /** Called once the dialog has finished closing, however it was closed. */
     onHidden(): void;
 }
 
-function UserDialog({ target, users, onSaved, onHidden }: UserDialogProps) {
+function UserDialog({ target, users, onSaved, onClose, onHidden }: UserDialogProps) {
     const editedUser = target?.mode === "edit" ? target.user : undefined;
     const [ username, setUsername ] = useState("");
     const [ email, setEmail ] = useState("");
@@ -238,9 +308,11 @@ function UserDialog({ target, users, onSaved, onHidden }: UserDialogProps) {
             if (editedUser) {
                 await server.patch(`users/${editedUser.userId}`, roleLocked ? { ...input, isAdmin: undefined } : input);
                 toast.showMessage(t("users.updated", { username: input.username }));
+                onSaved();
             } else {
-                await server.post<CreateUserResponse>("users", input);
+                const { setupLink } = await server.post<CreateUserResponse>("users", input);
                 toast.showMessage(t("users.created_toast", { username: input.username }));
+                onSaved({ username: input.username, link: setupLink });
             }
         } catch {
             // The server's message has already been shown; keep the dialog open to correct it.
@@ -248,8 +320,7 @@ function UserDialog({ target, users, onSaved, onHidden }: UserDialogProps) {
             return;
         }
 
-        onSaved();
-        onHidden();
+        onClose();
     }
 
     return (
@@ -263,7 +334,7 @@ function UserDialog({ target, users, onSaved, onHidden }: UserDialogProps) {
             stackable
             footer={
                 <>
-                    <Button text={t("common.cancel")} onClick={onHidden} />
+                    <Button text={t("common.cancel")} onClick={onClose} />
                     <Button
                         text={editedUser ? t("common.save") : t("users.add_user")}
                         kind="primary"
@@ -316,6 +387,68 @@ function UserDialog({ target, users, onSaved, onHidden }: UserDialogProps) {
             </div>
         </Modal>
     );
+}
+
+interface SetupLinkDialogProps {
+    shown: ShownSetupLink | null;
+    onHidden(): void;
+}
+
+/** Shows a just-created setup link, the only time it can be seen, with a way to copy it. */
+function SetupLinkDialog({ shown, onHidden }: SetupLinkDialogProps) {
+    const url = shown ? buildSetupUrl(shown.link.token, window.location) : "";
+
+    function copy() {
+        if (copyText(url)) {
+            toast.showMessage(t("users.setup_link_copied"));
+        } else {
+            toast.showError(t("clipboard.copy_failed"));
+        }
+    }
+
+    return (
+        <Modal
+            className="setup-link-dialog"
+            show={!!shown}
+            onHidden={onHidden}
+            title={shown ? t("users.setup_link_title", { username: shown.username }) : ""}
+            size="md"
+            stackable
+            footer={<Button text={t("users.setup_link_done")} kind="primary" onClick={onHidden} />}
+        >
+            {shown && (
+                <>
+                    <p className="setup-link-description">
+                        {t("users.setup_link_description", {
+                            username: shown.username,
+                            date: formatDateTime(shown.link.expiresAt, "medium", "short")
+                        })}
+                    </p>
+
+                    <div className="setup-link-row">
+                        <FormTextBox
+                            currentValue={url}
+                            readOnly
+                            aria-label={t("users.setup_link_title", { username: shown.username })}
+                            onFocus={(e) => (e.currentTarget as HTMLInputElement).select()}
+                        />
+                        <Button icon="bx bx-copy" text={t("users.setup_link_copy")} onClick={copy} />
+                    </div>
+                </>
+            )}
+        </Modal>
+    );
+}
+
+/**
+ * The address a setup link opens: the instance's root, as the admin reaches it, carrying the token.
+ * Built from the admin's own location so that a subpath or reverse proxy in front of the server
+ * comes out right; the server cannot know the public address.
+ */
+export function buildSetupUrl(token: string, location: Pick<Location, "origin" | "pathname">) {
+    const url = new URL(".", location.origin + location.pathname);
+    url.searchParams.set("setupAccount", token);
+    return url.toString();
 }
 
 export function validateUsername(username: string, users: UserListItem[], exceptUserId?: string) {

@@ -1,5 +1,5 @@
-import type { CreateUserResponse, UserListItem } from "@triliumnext/commons";
-import { getSql, PrimaryAdminDeletionError, PrimaryAdminDemotionError, user_service } from "@triliumnext/core";
+import type { CreateUserResponse, SetupLinkResponse, UserListItem } from "@triliumnext/commons";
+import { date_utils, getSql, PrimaryAdminDeletionError, PrimaryAdminDemotionError, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
 function getCallerUser(req: Request) {
@@ -19,6 +19,8 @@ function getUsers(req: Request) {
         isAdmin: !!user.isAdmin,
         isPrimaryAdmin: user.userId === adminUserId,
         isCurrentUser: user.userId === caller.userId,
+        hasPassword: !!user.hasPassword,
+        setupLinkExpiresAt: isSetupLinkValid(user.setupTokenExpiresAt) ? user.setupTokenExpiresAt : null,
         dateCreated: user.dateCreated
     }));
 }
@@ -36,7 +38,24 @@ function createUser(req: Request) {
     }
 
     const userId = user_service.createUser(username, email ?? null, isAdmin === true);
-    return { userId } satisfies CreateUserResponse;
+    const setupLink = user_service.createSetupLink(userId);
+    return { userId, setupLink } satisfies CreateUserResponse;
+}
+
+/** Issues a new setup link for a user, replacing any earlier one; for a user with a password, a reset. */
+function createSetupLink(req: Request<{ userId: string }>) {
+    const caller = getCallerUser(req);
+    if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
+
+    const { userId } = req.params;
+    if (!user_service.getUserById(userId)) return [404, { message: "User not found." }];
+
+    // The primary admin signs in with the instance password, which has its own way of being changed.
+    if (userId === user_service.getAdminUserId()) {
+        return [400, { message: "The primary admin signs in with the instance password." }];
+    }
+
+    return user_service.createSetupLink(userId) satisfies SetupLinkResponse;
 }
 
 function updateUser(req: Request<{ userId: string }>) {
@@ -99,7 +118,7 @@ function deleteUser(req: Request<{ userId: string }>) {
     }
 }
 
-export default { getUsers, createUser, updateUser, deleteUser };
+export default { getUsers, createUser, createSetupLink, updateUser, deleteUser };
 
 interface ParsedUserInput {
     username?: string;
@@ -146,6 +165,10 @@ function isUsernameTaken(username: string, exceptUserId?: string) {
         "SELECT COUNT(*) FROM users WHERE username = ? AND isDeleted = 0 AND userId != ?",
         [username, exceptUserId ?? ""]
     );
+}
+
+function isSetupLinkValid(expiresAt: string | null) {
+    return !!expiresAt && expiresAt > date_utils.utcNowDateTime();
 }
 
 function countActiveAdmins() {

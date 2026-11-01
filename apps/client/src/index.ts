@@ -260,6 +260,12 @@ function importEntry(): Promise<{ ready?: Promise<unknown> }> {
         return import("./set_password.js");
     }
 
+    // A user's setup link: shown whether or not this browser holds a session, since whoever opens
+    // it is the person the link was made for.
+    if (new URLSearchParams(window.location.search).has("setupAccount")) {
+        return import("./setup_account.js");
+    }
+
     if (glob.loggedIn === false) {
         return import("./login.js");
     }

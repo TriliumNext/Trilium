@@ -30,6 +30,7 @@ import permissionsApiRoute from "./api/permissions.js";
 import recoveryCodes from './api/recovery_codes.js';
 import resourcesRoute from "./api/resources.js";
 import senderRoute from "./api/sender.js";
+import setupAccountRoute from "./api/setup_account.js";
 import setupRestoreRoute from "./api/setup_restore.js";
 import shareTargetRoute from "./api/share_target.js";
 import systemInfoRoute from "./api/system_info.js";
@@ -58,6 +59,11 @@ function register(app: express.Application) {
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     asyncRoute(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword, null);
     route(GET, "/setup", [], setupRoute.setupPage);
+
+    // A user's setup link, opened before they have a password and so without a session. Both take
+    // the token in the body, which, unlike the URL, stays out of the request log.
+    asyncRoute(PST, "/api/setup-account/check", [loginRateLimiter], setupAccountRoute.getSetupAccount, apiResultHandler);
+    asyncRoute(PST, "/api/setup-account", [loginRateLimiter], setupAccountRoute.completeSetupAccount, apiResultHandler);
 
     // Restoring a backup, which only the setup screen offers: `checkAppNotInitialized` is what keeps
     // it from ever running against a live database, since before the database exists there is no
@@ -136,6 +142,7 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/users",             usersApiRoute.getUsers);
     apiRoute(PST, "/api/users",             usersApiRoute.createUser);
     apiRoute(PATCH, "/api/users/:userId",   usersApiRoute.updateUser);
+    apiRoute(PST, "/api/users/:userId/setup-link", usersApiRoute.createSetupLink);
     apiRoute(DEL, "/api/users/:userId",     usersApiRoute.deleteUser);
 
     apiRoute(GET,  "/api/notes/:noteId/permissions",        permissionsApiRoute.listPermissions);

@@ -164,5 +164,22 @@
     "restore-stage-migrating": "Opening the database",
     "restore-do-not-close": "Do not close this window.",
     "backup-saved-to": "The backup has been saved to {{- location}}. Press \"Finish\" to return to the application."
+  },
+  "setup_account": {
+    "checking": "Checking your setup link...",
+    "invalid-heading": "This link doesn't work",
+    "invalid-description": "The setup link is invalid, has expired or was already used. Ask your administrator for a new one.",
+    "heading": "Welcome, {{username}}",
+    "description": "Choose a password for your account. This link works until {{date}}, and only once.",
+    "username": "Username",
+    "password": "Password",
+    "password-confirmation": "Password confirmation",
+    "button": "Set password",
+    "password-too-short": "Password must be at least {{length}} characters long.",
+    "passwords-dont-match": "The entered passwords don't match.",
+    "too-many-attempts": "Too many attempts. Wait a few minutes and try again.",
+    "connection-error": "Couldn't reach the server. Check your connection and try again.",
+    "done-heading": "Your password is set",
+    "done-description": "The account \"{{username}}\" is ready. Signing in as yourself isn't available on this server yet; your administrator will let you know when it is."
   }
 }

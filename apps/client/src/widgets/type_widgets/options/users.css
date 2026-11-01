@@ -107,3 +107,35 @@
         font-size: .9em;
     }
 }
+
+.ext-badge.user-badge-pending {
+    --color: var(--admonition-warning-accent-color, #e8a33d);
+}
+
+.ext-badge.user-badge-expired {
+    --color: var(--admonition-caution-accent-color, #e53935);
+}
+
+.modal.setup-link-dialog {
+    .setup-link-description {
+        margin-bottom: 12px;
+    }
+
+    .setup-link-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        > input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-family: var(--monospace-font-family, monospace);
+            font-size: .85em;
+        }
+
+        > .btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+    }
+}

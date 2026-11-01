@@ -1,4 +1,4 @@
-import type { UserListItem } from "@triliumnext/commons";
+import type { CreateUserResponse, UserListItem } from "@triliumnext/commons";
 import { cls, getSql, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -117,10 +117,31 @@ describe("Users API", () => {
             expect(Array.isArray(result) && result[0]).toBe(409);
         });
 
-        it("creates a user and returns a userId", () => {
+        it("creates a user with a setup link, which the list then reports as pending", () => {
             const sess = adminSession();
             const result = cls.init(() => usersRoute.createUser(req({ username: "new-spec-user", email: "spec@example.com", isAdmin: false }, {}, sess)));
-            expect(result).toHaveProperty("userId");
+            expect(result).toMatchObject({ setupLink: { token: expect.any(String), expiresAt: expect.any(String) } });
+
+            const { userId, setupLink } = result as CreateUserResponse;
+            const listed = (cls.init(() => usersRoute.getUsers(req({}, {}, sess))) as UserListItem[])
+                .find((user) => user.userId === userId);
+            expect(listed).toMatchObject({ hasPassword: false, setupLinkExpiresAt: setupLink.expiresAt });
+        });
+    });
+
+    describe("createSetupLink", () => {
+        const statusOf = (result: unknown) => (Array.isArray(result) ? result[0] : undefined);
+
+        it("issues a new link for a user, but not for the primary admin, nor for non-admins", () => {
+            const sess = adminSession();
+            const memberId = cls.init(() => user_service.createUser("setup-link-spec", null, false));
+
+            expect(cls.init(() => usersRoute.createSetupLink(req({}, { userId: memberId }, sess)))).toHaveProperty("token");
+            expect(statusOf(cls.init(() => usersRoute.createSetupLink(req({}, { userId: sess.userId as string }, sess))))).toBe(400);
+            expect(statusOf(cls.init(() => usersRoute.createSetupLink(req({}, { userId: "does-not-exist" }, sess))))).toBe(404);
+            expect(statusOf(cls.init(() => usersRoute.createSetupLink(req({}, { userId: memberId }, { userId: memberId }))))).toBe(403);
+
+            cls.init(() => user_service.deleteUser(memberId));
         });
     });
 

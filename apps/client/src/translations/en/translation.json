@@ -5050,6 +5050,20 @@
     "role_locked_primary": "The primary admin always keeps admin rights.",
     "role_locked_self": "You can't change your own role.",
     "error_username_required": "Enter a username.",
-    "error_username_taken": "Another user already has this username."
+    "error_username_taken": "Another user already has this username.",
+    "badge_setup_pending": "Setup pending",
+    "badge_setup_expired": "Setup link expired",
+    "setup_pending_tooltip": "The setup link works until {{date}}.",
+    "setup_expired_tooltip": "This user hasn't chosen a password and their setup link no longer works. Create a new one.",
+    "badge_reset_pending": "Reset pending",
+    "create_setup_link": "Create new setup link",
+    "create_setup_link_confirmation": "Create a new setup link for \"{{username}}\"? Any earlier link stops working.",
+    "create_reset_link_confirmation": "Create a password reset link for \"{{username}}\"? Their current password keeps working until they use it, and any earlier link stops working.",
+    "setup_link_title": "Setup link for \"{{username}}\"",
+    "setup_link_description": "Send this link to {{username}} so they can choose their password. It works once, until {{date}}. It won't be shown again.",
+    "setup_link_copy": "Copy link",
+    "setup_link_copied": "Setup link copied to the clipboard.",
+    "setup_link_done": "Done",
+    "setup_link_blocked_primary": "The primary admin signs in with the instance password"
   }
 }
