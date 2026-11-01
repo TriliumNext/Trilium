@@ -31,7 +31,7 @@ A link preview can be displayed in one of three modes:
 
 ## Inserting a link preview
 
-There are three ways to create one:
+There are four ways to create one:
 
 ### 1\. By pasting a URL
 
@@ -62,7 +62,11 @@ Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Co
 
 To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 
-### 3\. By saving browser tabs from the Web Clipper
+### 3\. From the Insert menu, for a YouTube video
+
+Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu, or _Insert YouTube video_ from the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of the video and press _Insert video_ or <kbd>Enter</kbd> to insert it as an _Embed_.
+
+### 4\. By saving browser tabs from the Web Clipper
 
 When the <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> saves the tabs of a window, each tab becomes an _inline_ link preview showing the title and favicon the browser displays for it. Because this data comes from the browser, pages behind a login keep their real title, and the Trilium server does not contact the saved pages.
 

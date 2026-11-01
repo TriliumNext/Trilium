@@ -25,6 +25,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["jumpToNote", "commandPalette"]} loader={() => import("../widgets/dialogs/jump_to_note.js")} />)
         .child(<LazyDialog triggerEvents={["showEditLinkDialog"]} loader={() => import("../widgets/dialogs/edit_link.js")} />)
         .child(<LazyDialog triggerEvents={["showIconPickerDialog"]} loader={() => import("../widgets/dialogs/icon_picker.js")} />)
+        .child(<LazyDialog triggerEvents={["showYouTubeVideoDialog"]} loader={() => import("../widgets/dialogs/youtube_video.js")} />)
         .child(<LazyDialog triggerEvents={["cloneNoteIdsTo"]} loader={() => import("../widgets/dialogs/clone_to.js")} />)
         .child(<LazyDialog triggerEvents={["moveBranchIdsTo"]} loader={() => import("../widgets/dialogs/move_to.js")} />)
         .child(<LazyDialog triggerEvents={["showImportDialog"]} loader={() => import("../widgets/dialogs/import/import_dialog.js")} />)

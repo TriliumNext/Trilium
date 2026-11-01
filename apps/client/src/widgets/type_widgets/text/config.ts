@@ -1,7 +1,7 @@
 import {
     type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale,
     type IconPickerRequest, type LinkDialogRequest, type LinkEmbedHost, SnippetDefinition,
-    type TextTransformationConfig
+    type TextTransformationConfig, type YouTubeVideoRequest
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
@@ -81,6 +81,8 @@ export interface BuildEditorOptions {
     showIconPicker?: (request: IconPickerRequest) => (() => void) | null;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Asks for the address of a YouTube video, as `youtubeVideo.showPrompt` does. */
+    showYouTubeVideoPrompt?: (request: YouTubeVideoRequest) => (() => void) | null;
     /** The note that the block and tab references the editor copies point to. */
     referenceSource?: ReferenceSource;
     /**
@@ -285,6 +287,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },
+        youtubeVideo: { showPrompt: (request) => opts.showYouTubeVideoPrompt?.(request) ?? null },
         ...(opts.referenceSource && buildReferenceConfig(opts.referenceSource)),
         imageToDrawing: {
             async convert(src) {

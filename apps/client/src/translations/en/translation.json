@@ -4735,7 +4735,10 @@
       "jump-to-heading": "Jump to heading",
       "jump-to-anchor": "Jump to anchor",
       "jump-to-block": "Jump to block",
-      "box-position": "Box position"
+      "box-position": "Box position",
+      "youtube-video": "YouTube video",
+      "insert-youtube-video": "Insert YouTube video",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Insert a YouTube video that can be watched straight within the note"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -5019,5 +5022,10 @@
   "canvas": {
     "thin_stroke": "Thin pen stroke",
     "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width."
+  },
+  "youtube_video": {
+    "title": "Insert YouTube video",
+    "button_insert": "Insert video",
+    "not_a_video": "This is not the address of a YouTube video."
   }
 }
