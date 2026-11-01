@@ -15,7 +15,7 @@ import { t } from "../../services/i18n";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import { isElectron as getIsElectron, isMac as getIsMac, isMobile as getIsMobile } from "../../services/utils";
+import { isElectron as getIsElectron, isMobile as getIsMobile } from "../../services/utils";
 import ws from "../../services/ws";
 import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
@@ -91,7 +91,6 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
         (noteType === "file" && note.mime === "application/pdf")
     );
     const isElectron = getIsElectron();
-    const isMac = getIsMac();
     const isMobile = getIsMobile();
     const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType) || note.isSvg();
     const isSearchOrBook = ["search", "book"].includes(noteType);
@@ -235,7 +234,7 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
 
                 <FormDropdownSubmenu icon="bx bx-wrench" title={t("note_actions.advanced")}>
                     <CommandItem command="openNoteExternally" icon="bx bx-file-find" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_externally")} title={t("note_actions.open_note_externally_title")} />
-                    <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || isMac || !isElectron} text={t("note_actions.open_note_custom")} />
+                    <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_custom")} />
                     <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
                     {(note.type === "text" || note.isMarkdown()) && isContentAvailable && !isInOptionsOrHelp &&
                         <ConvertNoteFormat note={note} />}

@@ -35,7 +35,6 @@ import SearchResult from "../widgets/search_result.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
-import WatchedFileUpdateStatusWidget from "../widgets/watched_file_update_status.js";
 import { applyModals } from "./layout_commons.js";
 
 export default class DesktopLayout {
@@ -129,7 +128,6 @@ export default class DesktopLayout {
                                                             .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
                                                             .child(<NoteActions />))
-                                                        .child(new WatchedFileUpdateStatusWidget())
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()

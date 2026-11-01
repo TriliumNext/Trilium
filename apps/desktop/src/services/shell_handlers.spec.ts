@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
@@ -11,7 +12,10 @@ const h = vi.hoisted(() => ({
     openExternal: vi.fn(() => Promise.resolve()),
     openPath: vi.fn(() => Promise.resolve("")),
     showItemInFolder: vi.fn(),
-    execFile: vi.fn()
+    execFile: vi.fn(),
+    spawn: vi.fn(),
+    showOpenDialog: vi.fn<(...args: unknown[]) => Promise<{ canceled: boolean; filePaths: string[] }>>(),
+    logError: vi.fn()
 }));
 
 vi.mock("electron", () => ({
@@ -20,6 +24,8 @@ vi.mock("electron", () => ({
             on: (channel: string, fn: Handler) => h.on.set(channel, fn),
             handle: (channel: string, fn: Handler) => h.handle.set(channel, fn)
         },
+        BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
+        dialog: { showOpenDialog: h.showOpenDialog },
         shell: {
             openExternal: h.openExternal,
             openPath: h.openPath,
@@ -28,11 +34,11 @@ vi.mock("electron", () => ({
     }
 }));
 
-vi.mock("child_process", () => ({ execFile: h.execFile }));
+vi.mock("child_process", () => ({ execFile: h.execFile, spawn: h.spawn }));
 
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
-    return { ...actual, getLog: () => ({ info: vi.fn(), error: vi.fn() }) };
+    return { ...actual, getLog: () => ({ info: vi.fn(), error: h.logError }) };
 });
 
 const { setupShellHandlers } = await import("./shell.js");
@@ -184,60 +190,126 @@ describe("setupShellHandlers", () => {
     });
 
     describe("open-custom", () => {
-        it("swallows invalid paths", () => {
-            fireOn("open-custom", "/etc/passwd");
+        it("reports an invalid path as a failure without opening anything", async () => {
+            expect(await fireHandle("open-custom", "/etc/passwd")).toBe(false);
             expect(h.execFile).not.toHaveBeenCalled();
             expect(h.openPath).not.toHaveBeenCalled();
         });
 
-        it("opens directly via the shell on macOS/other platforms", () => {
-            setPlatform("darwin");
-            fireOn("open-custom", tmpFile);
-            expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+        it("reports a failure on platforms without an application chooser", async () => {
+            setPlatform("freebsd");
+            expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+            expect(h.openPath).not.toHaveBeenCalled();
             expect(h.execFile).not.toHaveBeenCalled();
+        });
+
+        describe("darwin", () => {
+            beforeEach(() => setPlatform("darwin"));
+
+            it("opens the file in the application picked from /Applications", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [ "/Applications/TextEdit.app" ] });
+                h.execFile.mockImplementation((_cmd, _args, cb) => cb(null));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+
+                const [ window, options ] = h.showOpenDialog.mock.calls[0] as [ unknown, { defaultPath: string; properties: string[]; filters: { extensions: string[] }[] } ];
+                expect(window).toEqual({ id: 1 });
+                expect(options.defaultPath).toBe("/Applications");
+                expect(options.properties).toEqual([ "openFile" ]);
+                expect(options.filters[0].extensions).toEqual([ "app" ]);
+                expect(h.execFile).toHaveBeenCalledWith("open", [ "-a", "/Applications/TextEdit.app", tmpFile ], expect.any(Function));
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("opens nothing when the picker is canceled", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: [] });
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+                expect(h.execFile).not.toHaveBeenCalled();
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("reports a failure when the application cannot open the file", async () => {
+                h.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [ "/Applications/Broken.app" ] });
+                h.execFile.mockImplementation((_cmd, _args, cb) => cb(new Error("LSOpenURLsWithRole() failed")));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.logError).toHaveBeenCalledWith(expect.stringContaining("LSOpenURLsWithRole"));
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
         });
 
         describe("linux", () => {
             beforeEach(() => setPlatform("linux"));
 
-            it("launches the first available terminal", () => {
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(null));
-                fireOn("open-custom", tmpFile);
-                expect(h.execFile).toHaveBeenCalledTimes(1);
-                expect(h.execFile.mock.calls[0][0]).toBe("x-terminal-emulator");
+            /** Makes the next `spawn()` emit `event` with `arg` on the following tick. */
+            function spawnEmits(event: "close" | "error", arg: unknown) {
+                h.spawn.mockImplementationOnce(() => {
+                    const child = new EventEmitter();
+                    setImmediate(() => child.emit(event, arg));
+                    return child;
+                });
+            }
+
+            it("asks the desktop portal to show its chooser for the file", async () => {
+                spawnEmits("close", 0);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+
+                expect(h.spawn).toHaveBeenCalledTimes(1);
+                const [ command, args, options ] = h.spawn.mock.calls[0];
+                expect(command).toBe("gdbus");
+                expect(args).toEqual(expect.arrayContaining([
+                    "org.freedesktop.portal.Desktop",
+                    "org.freedesktop.portal.OpenURI.OpenFile",
+                    "@h 3"
+                ]));
+                expect(args.at(-1)).toContain("'ask': <true>");
+                expect(options.stdio[3]).toEqual(expect.any(Number));
+                expect(h.execFile).not.toHaveBeenCalled();
                 expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls through to the next terminal when one fails", () => {
-                let calls = 0;
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(calls++ === 0 ? new Error("nope") : null));
-                fireOn("open-custom", tmpFile);
-                expect(h.execFile).toHaveBeenCalledTimes(2);
+            it("reports a failure without opening the file when the portal call fails", async () => {
+                spawnEmits("close", 1);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls back to shell.openPath when no terminal works", () => {
-                h.execFile.mockImplementation((_cmd, _args, cb) => cb(new Error("nope")));
-                fireOn("open-custom", tmpFile);
-                // 9 terminals are tried before giving up.
-                expect(h.execFile).toHaveBeenCalledTimes(9);
-                expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+            it("reports a failure without opening the file when gdbus is missing", async () => {
+                spawnEmits("error", Object.assign(new Error("spawn gdbus ENOENT"), { code: "ENOENT" }));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("settles once and logs the portal's stderr when a failed spawn emits both error and close", async () => {
+                const closeSync = vi.spyOn(fs, "closeSync");
+                h.spawn.mockImplementationOnce(() => {
+                    const child = Object.assign(new EventEmitter(), { stderr: new EventEmitter() });
+                    setImmediate(() => {
+                        child.stderr.emit("data", "No such interface\n");
+                        child.emit("close", 1);
+                        child.emit("error", new Error("late"));
+                    });
+                    return child;
+                });
+
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(closeSync).toHaveBeenCalledOnce();
+                expect(h.logError).toHaveBeenCalledWith(expect.stringContaining("No such interface"));
             });
         });
 
         describe("win32", () => {
             beforeEach(() => setPlatform("win32"));
 
-            it("launches rundll32 for the OpenAs dialog", () => {
+            it("launches rundll32 for the OpenAs dialog", async () => {
                 h.execFile.mockImplementation((_cmd, _args, _opts, cb) => cb(null));
-                fireOn("open-custom", tmpFile);
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
                 expect(h.execFile.mock.calls[0][0]).toBe("rundll32.exe");
                 expect(h.openPath).not.toHaveBeenCalled();
             });
 
-            it("falls back to shell.openPath when rundll32 fails", () => {
+            it("reports a failure without opening the file when rundll32 fails", async () => {
                 h.execFile.mockImplementation((_cmd, _args, _opts, cb) => cb(new Error("boom")));
-                fireOn("open-custom", tmpFile);
-                expect(h.openPath).toHaveBeenCalledWith(path.resolve(tmpFile));
+                expect(await fireHandle("open-custom", tmpFile)).toBe(false);
+                expect(h.openPath).not.toHaveBeenCalled();
             });
         });
     });

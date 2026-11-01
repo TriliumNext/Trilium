@@ -754,6 +754,12 @@ describe("notes service (real DB)", () => {
             });
             const { elements } = JSON.parse(sceneOf([ PNG.title, "inline" ]));
             expect(portable.elements).toEqual(elements);
+            const now = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            try {
+                expect(JSON.parse(decodeUtf8(noteService.getPortableContent(drawing)))).toEqual(portable);
+            } finally {
+                now.mockRestore();
+            }
 
             const json = getContext().init(() => note.saveAttachment({
                 role: "file",

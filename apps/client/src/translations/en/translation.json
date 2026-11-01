@@ -1066,7 +1066,7 @@
   "attachments_actions": {
     "open_externally": "Open externally",
     "open_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
-    "open_custom": "Open custom...",
+    "open_custom": "Open with...",
     "open_custom_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "download": "Download",
     "rename_attachment": "Rename attachment...",
@@ -1248,9 +1248,9 @@
     "note_attributes": "Note attributes...",
     "note_attributes_title": "Note attributes",
     "view_ocr_text": "View OCR text",
-    "open_note_externally": "Open note externally",
+    "open_note_externally": "Open externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
-    "open_note_custom": "Open note custom...",
+    "open_note_custom": "Open with...",
     "open_note_on_server": "Open note on server",
     "import_files": "Import files...",
     "export_note": "Export note...",
@@ -2268,6 +2268,7 @@
     "mismatch": "The passwords do not match."
   },
   "open": {
+    "custom_failed": "Could not show the application chooser.\n\nUse \"Open externally\" to open the file in its default application.",
     "directory_failed": "Could not open {{- directory}}: {{- reason}}",
     "download_failed": "Could not save the download: {{- reason}}"
   },
@@ -2970,9 +2971,9 @@
     "no_headings": "No headings."
   },
   "watched_file_update_status": {
-    "file_last_modified": "File <code class=\"file-path\"></code> has been last modified on <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Upload modified file",
-    "ignore_this_change": "Ignore this change"
+    "title": "File changed outside Trilium",
+    "message": "The file opened externally was saved at {{time}}. Uploading it replaces the content in Trilium; the current version is kept as a revision.",
+    "upload_modified_file": "Upload"
   },
   "app_context": {
     "please_wait_for_save": "Please wait for a couple of seconds for the save to finish, then you can try again."

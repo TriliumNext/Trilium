@@ -366,8 +366,11 @@ export interface ElectronShellApi {
     downloadURL(url: string): void;
 
     /**
-     * Opens a file with a Trilium-specific custom handler (configured via the
-     * "Open With" option), falling back to the OS default if none is set.
+     * Shows the operating system's application chooser for a file: the "Open
+     * with" dialog on Windows, the desktop portal's chooser on Linux, and on
+     * macOS a picker of the applications in `/Applications`, which then opens
+     * the file in the one chosen. It never falls back to the default application, since "Open externally"
+     * already does that.
      *
      * **Security:** the path must resolve to a strict descendant of Trilium's
      * tmp directory and the file must exist on disk. The legitimate caller
@@ -376,8 +379,10 @@ export interface ElectronShellApi {
      * strings) is rejected.
      *
      * @param filePath A file in Trilium's tmp directory, as written by `saveToTmpDir`.
+     * @returns `true` once the chooser is shown; `false` if the path is rejected or no
+     *   chooser is available on this platform.
      */
-    openCustom(filePath: string): void;
+    openCustom(filePath: string): Promise<boolean>;
 }
 
 /** Bridge for the native context menu shown over web contents. */

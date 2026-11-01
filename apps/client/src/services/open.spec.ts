@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
+import { watchOpenedFile } from "./file_watcher.js";
 import open, { checkType, downloadFileNote, getUrlForDownload, openNoteExternally } from "./open.js";
 import options from "./options.js";
 import server from "./server.js";
 import toast from "./toast.js";
 import utils from "./utils.js";
+
+vi.mock("./file_watcher.js", () => ({ watchOpenedFile: vi.fn() }));
 
 const realWindow = window as any;
 
@@ -13,7 +16,7 @@ const realWindow = window as any;
 function installElectronApi() {
     const shell = {
         downloadURL: vi.fn(),
-        openCustom: vi.fn(),
+        openCustom: vi.fn(async () => true) as ReturnType<typeof vi.fn>,
         openPath: vi.fn(async () => "") as ReturnType<typeof vi.fn>
     };
     realWindow.electronApi = { shell };
@@ -35,7 +38,6 @@ describe("open service", () => {
         removeStandaloneApi();
         // Default: behave like a plain web browser.
         vi.spyOn(utils, "isElectron").mockReturnValue(false);
-        vi.spyOn(utils, "isMac").mockReturnValue(false);
         // window.open / location.href are used as side effects; stub open, track href.
         vi.spyOn(window, "open").mockReturnValue(null);
     });
@@ -159,25 +161,29 @@ describe("open service", () => {
     describe("openCustom", () => {
         it("does nothing in the browser (no electronApi)", async () => {
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/x" })) as typeof server.post;
-            await open.openNoteCustom("n1", "image/png");
+            await open.openNoteCustom("n1");
             expect(server.post).not.toHaveBeenCalled();
         });
 
-        it("does nothing under Electron on macOS", async () => {
+        it("saves to tmp dir and opens the file under Electron", async () => {
             const shell = installElectronApi();
-            vi.spyOn(utils, "isMac").mockReturnValue(true);
-            server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/x" })) as typeof server.post;
-            await open.openAttachmentCustom("a1", "image/png");
-            expect(server.post).not.toHaveBeenCalled();
-            expect(shell.openCustom).not.toHaveBeenCalled();
-        });
-
-        it("saves to tmp dir and opens the file under Electron on non-Mac", async () => {
-            const shell = installElectronApi();
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
             server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/file.png" })) as typeof server.post;
-            await open.openNoteCustom("n2", "image/png");
+            await open.openNoteCustom("n2");
             expect(server.post).toHaveBeenCalledWith("notes/n2/save-to-tmp-dir");
             expect(shell.openCustom).toHaveBeenCalledWith("/tmp/file.png");
+            expect(watchOpenedFile).toHaveBeenCalledWith("/tmp/file.png");
+            expect(toastSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows an error when the application chooser cannot be shown", async () => {
+            const shell = installElectronApi();
+            shell.openCustom.mockResolvedValue(false);
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
+            server.post = vi.fn(async () => ({ tmpFilePath: "/tmp/file.png" })) as typeof server.post;
+            await open.openAttachmentCustom("a2");
+            expect(shell.openCustom).toHaveBeenCalledWith("/tmp/file.png");
+            expect(toastSpy).toHaveBeenCalledOnce();
         });
     });
 
@@ -221,6 +227,7 @@ describe("open service", () => {
             await openNoteExternally("n4", "application/octet-stream");
             expect(server.post).toHaveBeenCalledWith("notes/n4/save-to-tmp-dir");
             expect(shell.openPath).toHaveBeenCalledWith("/tmp/a.bin");
+            expect(watchOpenedFile).toHaveBeenCalledWith("/tmp/a.bin");
             expect(window.open).not.toHaveBeenCalled();
         });
 

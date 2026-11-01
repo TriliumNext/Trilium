@@ -64,7 +64,7 @@ export default class RootCommandExecutor extends Component {
     openNoteCustomCommand({ ntxId }: CommandListenerData<"openNoteCustom">) {
         const note = appContext.tabManager.getCommandContext(ntxId)?.note;
         if (note) {
-            openService.openNoteCustom(note.noteId, note.mime);
+            openService.openNoteCustom(note.noteId);
         }
     }
 
