@@ -105,6 +105,19 @@ async function open() {
 }
 
 const rows = () => [ ...host.querySelectorAll<HTMLElement>(".user-row") ];
+/** The rows of the "..." menu opened last by {@link openMenu}. */
+const menuItems = () => [ ...[ ...document.querySelectorAll(".tn-popup:not([data-closing])") ].at(-1)?.querySelectorAll<HTMLElement>("li.dropdown-item") ?? [] ];
+
+async function openMenu(row: HTMLElement | undefined) {
+    await act(async () => row?.querySelector<HTMLButtonElement>("button.user-row-menu-button")?.click());
+}
+
+/** Opens the row's menu and runs its `index`th action: edit, new setup link, delete. */
+async function runMenuItem(row: HTMLElement | undefined, index: number) {
+    await openMenu(row);
+    await act(async () => menuItems()[index]?.click());
+    await act(async () => {});
+}
 const dialog = () => document.querySelector(".user-dialog");
 const textBoxes = () => [ ...(dialog()?.querySelectorAll<HTMLInputElement>("input:not([type='checkbox'])") ?? []) ];
 const adminToggle = () => dialog()?.querySelector<HTMLInputElement>("input[type='checkbox']");
@@ -123,27 +136,49 @@ async function submit() {
 }
 
 describe("the user list", () => {
-    it("shows each user with their initials, badges and email", async () => {
+    it("shows each user with their initials, badges and email, admins and users apart", async () => {
+        mocks.users.current = [ ALICE, ADMIN, { ...ALICE, userId: "bob", username: "bob", isAdmin: true } ];
         await open();
 
-        expect(rows()).toHaveLength(2);
-        const [ adminRow, aliceRow ] = rows();
+        const cards = [ ...host.querySelectorAll<HTMLElement>(".users-list") ];
+        expect(cards.map((card) => card.querySelector(".tn-card-heading")?.textContent)).toEqual([ "users.admins_heading", "users.users_heading" ]);
+        expect(cards.map((card) => [ ...card.querySelectorAll(".user-row-username") ].map((name) => name.textContent)))
+            .toEqual([ [ "admin", "bob" ], [ "alice" ] ]);
+
+        const [ adminRow, , aliceRow ] = rows();
         expect(adminRow.querySelector(".user-avatar")?.textContent).toBe("AD");
         expect(adminRow.querySelector(".user-badge-you")).not.toBeNull();
         expect(adminRow.querySelector(".user-badge-admin")?.textContent).toContain("users.badge_primary_admin");
         expect(adminRow.querySelector(".user-row-email-none")?.textContent).toBe("users.no_email");
 
         expect(aliceRow.querySelector(".user-badge-admin")).toBeNull();
-        expect(aliceRow.querySelector(".user-row-email")?.textContent).toBe("alice@example.com");
+        // The email and the date are one line, set apart by a bullet as the backup list does.
+        expect(aliceRow.querySelector(".user-row-meta")?.textContent).toMatch(/^alice@example\.com • users\.created$/);
     });
 
-    it("blocks deleting yourself, and deletes another user after confirming", async () => {
+    it("leaves out a group with nobody in it", async () => {
+        mocks.users.current = [ ADMIN ];
         await open();
-        const deleteButton = (row: HTMLElement) => row.querySelector<HTMLButtonElement>(".destructive-action-icon");
 
-        expect(deleteButton(rows()[0])?.disabled).toBe(true);
+        expect([ ...host.querySelectorAll(".users-list .tn-card-heading") ].map((heading) => heading.textContent))
+            .toEqual([ "users.admins_heading" ]);
+    });
 
-        await act(async () => deleteButton(rows()[1])?.click());
+    it("puts the actions in one menu, and blocks deleting yourself", async () => {
+        await open();
+
+        expect(rows()[0].querySelectorAll("button")).toHaveLength(1);
+        await openMenu(rows()[0]);
+        expect(menuItems().map((item) => item.textContent)).toEqual([
+            "users.edit_user", "users.create_setup_link", "users.delete_user"
+        ]);
+        expect(menuItems().map((item) => item.querySelector(".tn-icon")?.className.match(/bx-[\w-]+/)?.[0]))
+            .toEqual([ "bx-edit-alt", "bx-link", "bx-trash" ]);
+        expect(menuItems()[2].classList.contains("disabled")).toBe(true);
+        await act(async () => menuItems()[2].click());
+        expect(mocks.confirm).not.toHaveBeenCalled();
+
+        await runMenuItem(rows()[1], 2);
         expect(mocks.confirm).toHaveBeenCalled();
         expect(mocks.remove).toHaveBeenCalledWith("users/alice");
         expect(mocks.get.mock.calls.filter(([ url ]) => url === "users")).toHaveLength(2);
@@ -173,13 +208,11 @@ describe("setup links", () => {
 
     it("creates a new link after confirming, but never for the primary admin", async () => {
         await open();
-        // Edit, new setup link, delete: the link is the middle one.
-        const linkButton = (row: HTMLElement) => row.querySelectorAll<HTMLButtonElement>(".tn-card-option-actions > button")[1];
 
-        expect(linkButton(rows()[0]).disabled).toBe(true);
+        await openMenu(rows()[0]);
+        expect(menuItems()[1].classList.contains("disabled")).toBe(true);
 
-        await act(async () => linkButton(rows()[1]).click());
-        await act(async () => {});
+        await runMenuItem(rows()[1], 1);
         expect(mocks.confirm).toHaveBeenCalledWith("users.create_setup_link_confirmation");
         expect(mocks.post).toHaveBeenCalledWith("users/alice/setup-link");
         expect(document.querySelector<HTMLInputElement>(".setup-link-dialog input")?.value)
@@ -226,15 +259,14 @@ describe("the user dialog", () => {
 
     it("edits a user, but leaves the role of the primary admin alone", async () => {
         await open();
-        const edit = (row: HTMLElement) => row.querySelector<HTMLButtonElement>(".tn-card-option-actions button:not(.destructive-action-icon)");
 
-        await act(async () => edit(rows()[1])?.click());
+        await runMenuItem(rows()[1], 0);
         expect(textBoxes()[0]?.value).toBe("alice");
         await typeInto(textBoxes()[1], "new@example.com");
         await submit();
         expect(mocks.patch).toHaveBeenLastCalledWith("users/alice", { username: "alice", email: "new@example.com", isAdmin: false });
 
-        await act(async () => edit(rows()[0])?.click());
+        await runMenuItem(rows()[0], 0);
         expect(adminToggle()?.checked).toBe(true);
         expect(adminToggle()?.disabled).toBe(true);
         expect(dialog()?.textContent).toContain("users.role_locked_primary");

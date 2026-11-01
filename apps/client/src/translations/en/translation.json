@@ -5017,10 +5017,6 @@
   "users": {
     "description": "People who can sign in to this server with their own username and password. Each new user gets a one-time link to choose their password.",
     "add_user": "Add user",
-    "count_one": "{{count}} user",
-    "count_other": "{{count}} users",
-    "admin_count_one": "{{count}} of them is an admin.",
-    "admin_count_other": "{{count}} of them are admins.",
     "no_users": "There are no users yet.",
     "badge_you": "You",
     "badge_admin": "Admin",
@@ -5028,8 +5024,8 @@
     "primary_admin_tooltip": "Created when the server starts. Signs in with the instance password, so it can't be deleted or lose its admin rights.",
     "no_email": "No email",
     "created": "Added {{date}}",
-    "edit_user": "Edit user",
-    "delete_user": "Delete user",
+    "edit_user": "Edit user...",
+    "delete_user": "Delete user...",
     "delete_blocked_self": "You can't delete your own account",
     "delete_blocked_primary": "The primary admin can't be deleted",
     "delete_blocked_last_admin": "The last admin can't be deleted",
@@ -5055,7 +5051,7 @@
     "setup_pending_tooltip": "The setup link works until {{date}}.",
     "setup_expired_tooltip": "This user hasn't chosen a password and their setup link no longer works. Create a new one.",
     "badge_reset_pending": "Reset pending",
-    "create_setup_link": "Create new setup link",
+    "create_setup_link": "Create new setup link...",
     "create_setup_link_confirmation": "Create a new setup link for \"{{username}}\"? Any earlier link stops working.",
     "create_reset_link_confirmation": "Create a password reset link for \"{{username}}\"? Their current password keeps working until they use it, and any earlier link stops working.",
     "setup_link_title": "Setup link for \"{{username}}\"",
@@ -5064,6 +5060,9 @@
     "setup_link_copied": "Setup link copied to the clipboard.",
     "setup_link_done": "Done",
     "setup_link_blocked_primary": "The primary admin signs in with the instance password",
-    "account": "Account"
+    "account": "Account",
+    "admins_heading": "Administrators",
+    "users_heading": "Users",
+    "actions": "Actions"
   }
 }

@@ -10,10 +10,11 @@ import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { formatDateTime } from "../../../utils/formatters";
-import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
+import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
 import Modal from "../../react/Modal";
 import NoItems from "../../react/NoItems";
@@ -142,26 +143,35 @@ function UserList({ users, onEdit, onCreateSetupLink, onDelete }: UserListProps)
         return <NoItems icon="bx bx-group" text={t("users.no_users")} />;
     }
 
-    const adminCount = users.filter((user) => user.isAdmin).length;
+    const admins = users.filter((user) => user.isAdmin);
+    const members = users.filter((user) => !user.isAdmin);
+    const groups = [
+        { heading: t("users.admins_heading"), users: admins },
+        { heading: t("users.users_heading"), users: members }
+    ].filter((group) => group.users.length > 0);
 
     return (
-        <Card
-            className="users-list"
-            heading={t("users.count", { count: users.length })}
-            description={t("users.admin_count", { count: adminCount })}
-            filterExtraKeywords={`${t("users.description")} ${users.map((user) => user.username).join(" ")}`}
-        >
-            {users.map((user) => (
-                <UserRow
-                    key={user.userId}
-                    user={user}
-                    isLastAdmin={user.isAdmin && adminCount <= 1}
-                    onEdit={onEdit}
-                    onCreateSetupLink={onCreateSetupLink}
-                    onDelete={onDelete}
-                />
+        <>
+            {groups.map((group) => (
+                <Card
+                    key={group.heading}
+                    className="users-list"
+                    heading={group.heading}
+                    filterExtraKeywords={`${t("users.description")} ${group.users.map((user) => user.username).join(" ")}`}
+                >
+                    {group.users.map((user) => (
+                        <UserRow
+                            key={user.userId}
+                            user={user}
+                            isLastAdmin={user.isAdmin && admins.length <= 1}
+                            onEdit={onEdit}
+                            onCreateSetupLink={onCreateSetupLink}
+                            onDelete={onDelete}
+                        />
+                    ))}
+                </Card>
             ))}
-        </Card>
+        </>
     );
 }
 
@@ -199,34 +209,42 @@ function UserRow({ user, isLastAdmin, onEdit, onCreateSetupLink, onDelete }: Use
                     <span className={user.email ? "user-row-email" : "user-row-email user-row-email-none"}>
                         {user.email ?? t("users.no_email")}
                     </span>
+                    {" • "}
                     <span className="user-row-created">
                         {t("users.created", { date: formatDateTime(user.dateCreated, "medium", "none") })}
                     </span>
                 </small>
             </div>
 
-            <span className="tn-card-option-actions">
-                <ActionButton
-                    icon="bx bx-edit-alt"
-                    text={t("users.edit_user")}
-                    onClick={() => onEdit(user)}
-                />
+            <Dropdown
+                className="user-row-menu"
+                buttonClassName="user-row-menu-button bx bx-dots-vertical-rounded"
+                hideToggleArrow noSelectButtonStyle iconAction
+                mobileBottomSheet
+                title={t("users.actions")}
+            >
+                <FormListItem icon="bx bx-edit-alt" onClick={() => onEdit(user)}>
+                    {t("users.edit_user")}
+                </FormListItem>
 
-                <ActionButton
+                <FormListItem
                     icon="bx bx-link"
-                    text={user.isPrimaryAdmin ? t("users.setup_link_blocked_primary") : t("users.create_setup_link")}
                     disabled={user.isPrimaryAdmin}
+                    disabledTooltip={t("users.setup_link_blocked_primary")}
                     onClick={() => onCreateSetupLink(user)}
-                />
+                >
+                    {t("users.create_setup_link")}
+                </FormListItem>
 
-                <ActionButton
-                    className="destructive-action-icon"
-                    icon="bx bx-trash"
-                    text={deleteBlockedReason ?? t("users.delete_user")}
+                <FormListItem
+                    icon="bx bx-trash destructive-action-icon"
                     disabled={!!deleteBlockedReason}
+                    disabledTooltip={deleteBlockedReason}
                     onClick={() => onDelete(user)}
-                />
-            </span>
+                >
+                    {t("users.delete_user")}
+                </FormListItem>
+            </Dropdown>
         </CardSection>
     );
 }

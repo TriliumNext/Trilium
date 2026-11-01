@@ -66,9 +66,6 @@
     }
 
     .user-row-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 12px;
         color: var(--muted-text-color);
     }
 
@@ -76,14 +73,8 @@
         overflow-wrap: anywhere;
     }
 
-    .user-row-email-none {
-        font-style: italic;
-    }
-
-    .tn-card-option-actions {
-        display: flex;
+    .user-row-menu {
         flex-shrink: 0;
-        gap: 4px;
         margin-inline-start: auto;
     }
 }
