@@ -11,7 +11,7 @@
     "creating-and-moving-notes": "ノートの作成と移動",
     "create-note-after": "アクティブなノートの後にノートを作成する",
     "create-note-into": "アクティブなノートの子ノートを作成する",
-    "edit-note-title": "ツリーからノートの詳細にジャンプして、タイトルを編集",
+    "edit-note-title": "ツリーからノートの詳細に移動して、タイトルを編集",
     "clone-notes-to": "選択したノートを複製",
     "move-notes-to": "選択したノートを移動",
     "copy-notes-to-clipboard": "選択したノートをクリップボードにコピー",
@@ -155,7 +155,7 @@
     "reset-zoom-level": "ズームレベルのリセット",
     "zoom-out": "ズームアウト",
     "zoom-in": "ズームイン",
-    "jump-to-note": "ジャンプ先…",
+    "jump-to-note": "移動先…",
     "edit-branch-prefix": "ブランチ接頭辞の編集",
     "show-revisions": "変更履歴を表示",
     "add-new-label": "ラベルを追加",
@@ -281,7 +281,7 @@
     "go-to-previous-note-title": "前のノートに移動",
     "go-to-next-note-title": "次のノートに移動",
     "search-notes-title": "検索ノート",
-    "jump-to-note-title": "ジャンプ先…",
+    "jump-to-note-title": "移動先…",
     "calendar-title": "カレンダー",
     "protected-session-title": "保護されたセッション",
     "sync-status-title": "同期状態",
@@ -337,7 +337,8 @@
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
     "broken-block-reference": "参照が壊れています",
     "play-video": "動画を再生",
-    "content-not-available": "このコンテンツは利用できません。"
+    "content-not-available": "このコンテンツは利用できません。",
+    "untitled-block": "ブロック"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
