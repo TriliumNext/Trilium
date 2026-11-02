@@ -94,6 +94,14 @@ describe("user homes", () => {
         expect(memberBecca.notes[USERS_NOTE_ID]).toBeUndefined();
         expect(memberBecca.notes[getHomeNoteId(otherId)]).toBeUndefined();
         expect(memberBecca.notes[adminNote.noteId]).toBeUndefined();
+
+        // An admin's Becca holds every note, the homes in their stored place under the Users note.
+        const adminId = cls.init(() => userService.getAdminUserId());
+        const adminBecca = new Becca();
+        await cls.init(() => loadBeccaForUser(adminBecca, adminId, true));
+        expect(adminBecca.notes[memberHome.noteId]?.getParentNotes().map((parent) => parent.noteId)).toEqual([ USERS_NOTE_ID ]);
+        expect(adminBecca.notes[adminNote.noteId]).toBeDefined();
+        expect(adminBecca.notes[SHARED_WITH_ME_NOTE_ID]).toBeUndefined();
     });
 
     it("creates a user's top-level notes in their home, but the primary admin's under root", async () => {
@@ -113,6 +121,13 @@ describe("user homes", () => {
             parentNoteId: "root", title: "admin into root", content: "", type: "text"
         }).note);
         expect(adminNote.getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
+
+        // A user who has no home yet keeps root.
+        const homelessId = cls.init(() => userService.createUser("home-create-homeless-spec", null, false));
+        const homelessNote = await asUser(homelessId, () => noteService.createNewNote({
+            parentNoteId: "root", ownerId: homelessId, title: "homeless into root", content: "", type: "text"
+        }).note);
+        expect(homelessNote.getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
     });
 
     it("refuses to move or clone a user's note to the top level", async () => {

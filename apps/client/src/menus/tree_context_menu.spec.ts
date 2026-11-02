@@ -121,6 +121,16 @@ describe("buildTreeContextMenuItems", () => {
         child.isProtected = true;
         expect(await protection()).toStrictEqual([ "unprotectSubtree", both ]);
     });
+
+    it("offers Access... only on a note whose access can be managed", async () => {
+        const { child, build } = setUp();
+        const hasAccess = async () => (await build()).some((item) => "command" in item && item.command === "showNoteAccess");
+
+        const manageable = vi.spyOn(child, "isAccessManageable").mockReturnValue(false);
+        expect(await hasAccess()).toBe(false);
+        manageable.mockReturnValue(true);
+        expect(await hasAccess()).toBe(true);
+    });
 });
 
 describe("buildTreeContextMenuItems on system notes", () => {

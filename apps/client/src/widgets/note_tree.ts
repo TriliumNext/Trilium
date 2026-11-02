@@ -1838,7 +1838,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
 }
 
-function buildEnhanceTitle() {
+export function buildEnhanceTitle() {
     const createChildTemplate = document.createElement("span");
     createChildTemplate.className = "tree-item-button tn-icon add-note-button bx bx-plus";
     createChildTemplate.title = t("note_tree.create-child-note");

@@ -2,7 +2,7 @@ import type { NoteAccessResponse } from "@triliumnext/commons";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import appContext from "../../components/app_context";
+import appContext, { type ContextMenuCommandData } from "../../components/app_context";
 import Component from "../../components/component";
 import froca from "../../services/froca";
 import server from "../../services/server";
@@ -27,13 +27,14 @@ const access: NoteAccessResponse = {
 
 describe("NoteAccessDialog", () => {
     let container: HTMLElement;
+    let host: Component;
     let get: ReturnType<typeof vi.spyOn>;
     let put: ReturnType<typeof vi.spyOn>;
     let remove: ReturnType<typeof vi.spyOn>;
     let reloadNotes: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
-        const host = new Component();
+        host = new Component();
         get = vi.spyOn(server, "get").mockResolvedValue(access);
         put = vi.spyOn(server, "put").mockResolvedValue(undefined);
         remove = vi.spyOn(server, "remove").mockResolvedValue(undefined);
@@ -45,10 +46,16 @@ describe("NoteAccessDialog", () => {
                 <NoteAccessDialog />
             </ParentComponent.Provider>
         );
-        await act(async () => {
-            void host.handleEventInChildren("showNoteAccess", { noteId: "project", selectedOrActiveBranchIds: [] });
-        });
+        await show({ noteId: "project" });
     });
+
+    async function show(target: Omit<ContextMenuCommandData, "selectedOrActiveBranchIds">) {
+        await act(async () => {
+            void host.handleEventInChildren("showNoteAccess", { ...target, selectedOrActiveBranchIds: [] });
+        });
+    }
+
+    const isShown = () => !!container.querySelector(".note-access-dialog .modal-dialog");
 
     async function click(element: Element | null | undefined) {
         if (!element) throw new Error("Nothing to click.");
@@ -117,5 +124,42 @@ describe("NoteAccessDialog", () => {
         // The tree's access icon follows each change.
         expect(reloadNotes).toHaveBeenCalledTimes(3);
         expect(reloadNotes).toHaveBeenLastCalledWith([ "project" ]);
+    });
+
+    it("opens from a tree node, says when nobody is left to add, and closes", async () => {
+        expect(isShown()).toBe(true);
+        await click(buttonLabeled(container, "note_access.close"));
+        expect(isShown()).toBe(false);
+
+        get.mockResolvedValue({
+            owner: null,
+            grants: [ { userId: "bob", username: "bob", avatarHue: 20, canWrite: true } ],
+            users: [ { userId: "bob", username: "bob", avatarHue: 20 } ]
+        } satisfies NoteAccessResponse);
+        await show({ node: { data: { noteId: "fromNode" } } as unknown as Fancytree.FancytreeNode });
+        expect(get).toHaveBeenLastCalledWith("notes/fromNode/access");
+        expect(isShown()).toBe(true);
+        expect(container.querySelectorAll(".note-access-row")).toHaveLength(1);
+        expect(buttonLabeled(container.querySelector(".note-access-row"), "note_access.can_edit")?.getAttribute("aria-pressed"))
+            .toBe("true");
+        expect(container.querySelector(".note-access-add-none")).not.toBeNull();
+
+        const dialog = container.querySelector(".note-access-dialog");
+        await act(async () => {
+            dialog?.dispatchEvent(new Event("hidden.bs.modal", { bubbles: true }));
+        });
+        expect(isShown()).toBe(false);
+
+        // Without a note there is nothing to open.
+        get.mockClear();
+        await show({});
+        expect(get).not.toHaveBeenCalled();
+        expect(isShown()).toBe(false);
+
+        // The server shows its own message when the access can't be read, and the dialog closes.
+        get.mockRejectedValue(new Error("403"));
+        await show({ noteId: "private" });
+        expect(get).toHaveBeenCalledWith("notes/private/access");
+        expect(isShown()).toBe(false);
     });
 });

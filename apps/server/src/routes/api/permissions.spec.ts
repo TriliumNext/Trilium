@@ -165,6 +165,7 @@ describe("Permissions API", () => {
             expect(statusOf(getAccess(noteId, {}))).toBe(403);
             expect(statusOf(getAccess(noteId, { userId: guestId }))).toBe(403);
             expect(statusOf(setAccess(noteId, guestId, false, { userId: guestId }))).toBe(403);
+            expect(statusOf(removeAccess(noteId, guestId, { userId: guestId }))).toBe(403);
             expect(statusOf(getAccess("noSuchNoteAccess", adminSession()))).toBe(404);
             expect(statusOf(getAccess("root", adminSession()))).toBe(400);
             expect(statusOf(getAccess("_hidden", adminSession()))).toBe(400);
@@ -174,6 +175,28 @@ describe("Permissions API", () => {
             expect(statusOf(setAccess(noteId, ownerId, false, adminSession()))).toBe(400);
             expect(statusOf(setAccess(noteId, adminSession().userId as string, false, adminSession()))).toBe(400);
             expect(statusOf(setAccess(noteId, guestId, "yes", adminSession()))).toBe(400);
+        });
+
+        it("lists only grants to users who still exist, and no owner for a note without one", () => {
+            const noteId = `noteAccessUnowned${Date.now()}`;
+            insertNote(noteId, null);
+            const groupId = `accessGroup${Date.now()}`;
+            const goneId = cls.init(() => user_service.createUser(`access-gone-${Date.now()}`, null, false));
+            cls.init(() => {
+                const now = new Date().toISOString();
+                getSql().execute(
+                    "INSERT INTO user_groups (groupId, name, dateCreated, utcDateModified) VALUES (?, ?, ?, ?)",
+                    [ groupId, groupId, now, now ]
+                );
+                permission_service.grantPermission(noteId, null, groupId, false);
+                permission_service.setUserAccess(noteId, goneId, false);
+                permission_service.setUserAccess(noteId, guestId, true);
+                user_service.deleteUser(goneId);
+            });
+
+            const access = getAccess(noteId, adminSession()) as NoteAccessResponse;
+            expect(access.owner).toBeNull();
+            expect(access.grants.map((grant) => grant.userId)).toEqual([ guestId ]);
         });
 
         it("refuses access to a whole home and to the Users note, but not to a note in a home", () => {

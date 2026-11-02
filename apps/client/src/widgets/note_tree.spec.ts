@@ -13,7 +13,7 @@ import server from "../services/server.js";
 import treeService from "../services/tree.js";
 import ws from "../services/ws.js";
 import { buildNote } from "../test/easy-froca.js";
-import NoteTreeWidget, { publishDropMarkerShift } from "./note_tree.js";
+import NoteTreeWidget, { buildEnhanceTitle, publishDropMarkerShift } from "./note_tree.js";
 
 vi.mock("../services/import.js", () => ({ uploadFiles: vi.fn() }));
 vi.mock("../services/i18n.js", async (importOriginal) => ({
@@ -160,6 +160,34 @@ describe("NoteTreeWidget", () => {
             expect(member.canActivate("_hidden")).toBe(false);
         } finally {
             delete window.glob.currentUser;
+        }
+
+        // Hoisted in the hidden subtree, the tree keeps out of the rest instead.
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("_hidden");
+        expect(admin.canActivate("root")).toBe(false);
+        expect(admin.canActivate("_hidden")).toBe(true);
+    });
+
+    it("marks a note other users were given access to", async () => {
+        buildNote({ title: "Parent", children: [ { id: "granted", title: "Granted" }, { id: "private", title: "Private" } ] });
+        const granted = froca.notes["granted"];
+        if (!granted) throw new Error("expected the note");
+        granted.accessUsernames = [ "bob", "carol" ];
+        const tabManager = appContext.tabManager;
+        appContext.tabManager = { getActiveContext: () => null } as unknown as TabManager;
+        const enhanceTitle = buildEnhanceTitle();
+
+        try {
+            const indicatorOf = async (noteId: string) => {
+                const span = $("<span><span class=\"fancytree-title\"></span></span>")[0];
+                const node = { data: { noteId }, span, extraClasses: "" } as unknown as Fancytree.FancytreeNode;
+                await enhanceTitle(new Event("enhanceTitle"), { node, noteId });
+                return span.querySelector(".access-indicator");
+            };
+            expect((await indicatorOf("granted"))?.getAttribute("title")).toBe("note_tree.access-indicator-tooltip");
+            expect(await indicatorOf("private")).toBeNull();
+        } finally {
+            appContext.tabManager = tabManager;
         }
     });
 

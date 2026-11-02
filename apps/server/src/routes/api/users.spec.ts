@@ -93,6 +93,10 @@ describe("Users API", () => {
             expect(update(memberId, { username: "renamed-spec", isAdmin: false })).toBeUndefined();
             expect(cls.init(() => user_service.isUserAdmin(memberId))).toBe(false);
 
+            // A change that leaves the username out leaves the home's title alone.
+            expect(update(memberId, { email: "new@example.com" })).toBeUndefined();
+            expect(getBecca().getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
+
             cls.init(() => user_service.deleteUser(memberId));
         });
     });
