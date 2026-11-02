@@ -237,7 +237,9 @@
     "note-cannot-be-displayed": "此笔记类型无法显示。",
     "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。",
     "broken-block-reference": "引用已损坏",
-    "play-video": "播放视频"
+    "play-video": "播放视频",
+    "content-not-available": "此内容不可用。",
+    "untitled-block": "块"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
