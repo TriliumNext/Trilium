@@ -51,6 +51,11 @@ interface MergeUndo {
     utcDate: string;
     sourceTitle: string;
     sourceNoteId: string;
+    /**
+     * Set once this original is forgotten. It leaves the history, and its copied branches and
+     * attributes stay claimed so restoring another original does not take them off the merged note.
+     */
+    forgotten?: boolean;
     /** Branches created for this note's children, so they can move back with it. */
     createdBranchIds: string[];
     prefixRestores: { branchId: string; prefix: string | null }[];
@@ -227,7 +232,7 @@ function undoMerge(mergedNoteId: string, entryId?: string) {
     const merged = becca.getNoteOrThrow(mergedNoteId);
     const stack = readUndoStack(merged);
     const index = entryId
-        ? stack.findIndex((entry) => entry.id === entryId)
+        ? stack.findIndex((entry) => entry.id === entryId && !entry.forgotten)
         : newestRestorableIndex(stack);
     const record = index >= 0 ? stack[index] : undefined;
     if (!record) {
@@ -256,7 +261,7 @@ function getMergeHistory(mergedNoteId: string) {
     for (let index = stack.length - 1; index >= 0; index--) {
         const entry = stack[index];
         /* v8 ignore next 3 -- the journal is a dense array */
-        if (!entry) {
+        if (!entry || entry.forgotten) {
             continue;
         }
         entries.push({
@@ -274,17 +279,24 @@ function getMergeHistory(mergedNoteId: string) {
  * Forgets `entryId` only.
  *
  * The note stays deleted, and every other note that can still be restored stays available.
- * Deleting the merged note itself is left to the user.
+ * Branches and attributes it shared with those notes stay claimed, so restoring one of them
+ * leaves the shared copies on the merged note. Deleting the merged note itself is left to the user.
  */
 function forgetMerges(mergedNoteId: string, entryId: string) {
     const merged = becca.getNoteOrThrow(mergedNoteId);
     const stack = readUndoStack(merged);
-    const index = stack.findIndex((entry) => entry.id === entryId);
-    if (index < 0) {
+    const index = stack.findIndex((entry) => entry.id === entryId && !entry.forgotten);
+    const record = index >= 0 ? stack[index] : undefined;
+    if (!record) {
         throw new ValidationError(t("merge.unknown-entry"));
     }
 
-    stack.splice(index, 1);
+    record.forgotten = true;
+    record.prefixRestores = [];
+    record.inheritableReverts = [];
+    record.relationRestores = [];
+    record.deletedRelations = [];
+    record.linkPatches = [];
     writeUndoStack(merged, stack);
 }
 
@@ -817,7 +829,7 @@ function escapeRegExp(value: string) {
 function newestRestorableIndex(stack: MergeUndo[]) {
     for (let index = stack.length - 1; index >= 0; index--) {
         const entry = stack[index];
-        if (entry && sourceNoteRemains(entry.sourceNoteId)) {
+        if (entry && !entry.forgotten && sourceNoteRemains(entry.sourceNoteId)) {
             return index;
         }
     }
@@ -958,7 +970,7 @@ function restoreMergedNote(merged: BNote, record: MergeUndo, stack: MergeUndo[])
                 isExpanded: branch.isExpanded
             }).save();
         }
-        // Another original that is still merged also supplied this child, so the child stays.
+        // Another original that is still merged, or was forgotten, also supplied this child.
         if (anotherEntryClaims(stack, record, "createdBranchIds", branchId)) {
             continue;
         }
@@ -1107,7 +1119,8 @@ function readUndoStack(target: BNote): MergeUndo[] {
 
 function writeUndoStack(target: BNote, stack: MergeUndo[]) {
     const existing = target.getAttachments().find((item) => item.role === MERGE_UNDO_ROLE);
-    if (stack.length === 0) {
+    // Forgotten entries only exist to keep shared copies. With nothing left to restore they go too.
+    if (!stack.some((entry) => !entry.forgotten)) {
         if (existing) {
             existing.markAsDeleted();
         }

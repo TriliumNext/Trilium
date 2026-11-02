@@ -978,6 +978,67 @@ describe("Merging notes", () => {
             .not.toContain(mergedId);
     });
 
+    it("keeps a shared label and child when one original is forgotten", async () => {
+        const first = await createTextNote(api, { title: "First", content: "<p>first</p>" });
+        const second = await createTextNote(api, { title: "Second", content: "<p>second</p>" });
+        const child = await createTextNote(api, {
+            parentNoteId: first.noteId, title: "Shared child", content: "<p>child</p>"
+        });
+        expect((await api.put(`/api/notes/${child.noteId}/clone-to-note/${second.noteId}`, {
+            body: {}
+        })).status).toBe(200);
+        expect((await api.post(`/api/notes/${first.noteId}/attributes`, {
+            body: { type: "label", name: "shared", value: "yes" }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${second.noteId}/attributes`, {
+            body: { type: "label", name: "shared", value: "yes" }
+        })).status).toBe(204);
+
+        const mergedId = await mergeNotes(first.noteId, [ second.noteId ]);
+        const history = await api.get<{
+            entries: { id: string; sourceNoteId: string }[];
+        }>(`/api/notes/${mergedId}/merge-history`);
+        const firstEntry = history.body.entries.find((entry) => entry.sourceNoteId === first.noteId);
+        const secondEntry = history.body.entries.find((entry) => entry.sourceNoteId === second.noteId);
+        expect(firstEntry && secondEntry).toBeTruthy();
+        if (!firstEntry || !secondEntry) {
+            return;
+        }
+        expect((await api.post(`/api/notes/${mergedId}/merge-history/forget`, {
+            body: { entryId: firstEntry.id }
+        })).status).toBe(200);
+        const forgotten = await api.post<{ message: string }>(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: firstEntry.id }
+        });
+        expect(forgotten.status).toBe(400);
+        expect(forgotten.body.message).toContain("no longer in the history");
+
+        const third = await createTextNote(api, { title: "Third", content: "<p>third</p>" });
+        const laterId = await mergeNotes(mergedId, [ third.noteId ]);
+        const laterHistory = await api.get<{
+            entries: { id: string; sourceNoteId: string }[];
+        }>(`/api/notes/${laterId}/merge-history`);
+        expect(laterHistory.body.entries.map((entry) => entry.sourceNoteId)).toEqual([
+            third.noteId, mergedId, second.noteId
+        ]);
+        const carriedSecond = laterHistory.body.entries
+            .find((entry) => entry.sourceNoteId === second.noteId);
+        expect(carriedSecond).toBeTruthy();
+        if (!carriedSecond) {
+            return;
+        }
+        expect((await api.post(`/api/notes/${laterId}/merge-undo`, {
+            body: { entryId: carriedSecond.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(laterId).getOwnedAttributes("label", "shared", "yes"))
+            .toHaveLength(1);
+        const parents = becca.getNoteOrThrow(child.noteId).getParentNotes()
+            .map((note) => note.noteId);
+        expect(parents.sort()).toEqual([ laterId, second.noteId ].sort());
+        expect(noteIsDeleted(first.noteId)).toBe(1);
+        expect(noteIsDeleted(second.noteId)).toBe(0);
+    });
+
     it("moves a child and a label back from the note a later merge produced", async () => {
         const alpha = await createTextNote(api, { title: "Alpha", content: "<p>alpha</p>" });
         const child = await createTextNote(api, {
