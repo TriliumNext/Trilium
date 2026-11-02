@@ -19,6 +19,8 @@ Agreed deferrals from #4956: attributes inherit their note's visibility (no per-
 - `export default adminBecca` in `becca.ts` lets unconverted call sites read unfiltered data: ETAPI (`apps/server/src/etapi/*`), LLM tools and chat title (`packages/trilium-core/src/services/llm/`), share (`packages/trilium-core/src/share/`, `services/export/zip/share_*`), board/spreadsheet/database_info/OCR routes, image services, `routes/custom.ts`, OneNote import, `space_usage.ts`. Fix: drop the default export and convert what the compiler flags. Run `grep -rlE "import becca from" apps/server/src packages/trilium-core/src` for the current list.
 - Search, note map, similar notes, recent changes etc. run over whatever `getBecca()` returns, so they're only as filtered as the Becca is.
 
+**Inheritance stops at a grant.** A member's Becca holds a shared note and its subtree but not its ancestors, so for the recipient the owner's inheritable labels from above (`#iconClass`, `#cssClass`, `#sorted`, `#readOnly`, …), `child:` labels on the hidden parent, and `~template` targets they cannot see do not apply: promoted attributes from such a template show as plain attributes. Nothing is lost or leaked, only rendering differs. Deferred deliberately: with a single Becca and a per-user visibility filter it comes for free, so it waits on the open Becca decision below. A cheaper spot fix, if needed first, is loading the template notes that shared notes point to.
+
 **No write enforcement.** `permission_service.canUserWriteNote()` is not called anywhere; a user with read access (or any note in their Becca) can modify it through normal routes.
 
 **No admin gate on dangerous routes.** Script exec/run, SQL console, backup download, options, password change, ETAPI token management, and similar are reachable by any authenticated user. Planned fix: a non-admin route allowlist in `route_api.ts` rather than per-handler checks.
@@ -29,7 +31,7 @@ Agreed deferrals from #4956: attributes inherit their note's visibility (no per-
 
 **Not synced.** `note_permissions`, `users`, `user_groups` are plain tables, not Becca entities, so they produce no `EntityChange` and don't replicate to sync peers/desktop clients.
 
-**Login is still single-identity.** Both password and SSO login map to `adminUserId`; `users.passwordHash` is unused; no per-user password/SSO binding, no user/group management UI, no group API.
+**Login.** Members sign in with a username and the password they chose through a one-time setup link (#12423); the primary admin keeps the instance password, and SSO still signs in only as the primary admin. No per-user SSO binding, no group API or UI.
 
 **`entity_changes.userId` is only backfilled**, not written for new changes, until phase 3.
 
