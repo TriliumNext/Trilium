@@ -1101,4 +1101,75 @@ describe("Merging notes", () => {
         expect(noteIsDeleted(older.noteId)).toBe(0);
         expect(noteIsDeleted(newer.noteId)).toBeNull();
     });
+
+    it("carries a prefix and an inheritable label, and skips a file's links", async () => {
+        const earlier = await createTextNote(api, { title: "Earlier", content: "<p>earlier</p>" });
+        const later = await createTextNote(api, { title: "Later", content: "<p>later</p>" });
+        const host = await mergeNotes(earlier.noteId, [ later.noteId ]);
+        const kid = await createTextNote(api, {
+            parentNoteId: host, title: "Kid", content: "<p>kid</p>"
+        });
+        const next = await createTextNote(api, { title: "Next", content: "<p>next</p>" });
+        expect((await api.put(`/api/notes/${kid.noteId}/clone-to-note/${next.noteId}`, {
+            body: { prefix: "" }
+        })).status).toBe(200);
+        const hostBranch = becca.getNoteOrThrow(kid.noteId).getParentBranches()
+            .find((branch) => branch.parentNoteId === host);
+        expect(hostBranch?.branchId).toBeTruthy();
+        expect((await api.put(`/api/branches/${hostBranch?.branchId}/set-prefix`, {
+            body: { prefix: "Pre" }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${host}/attributes`, {
+            body: { type: "label", name: "tone", value: "red", isInheritable: true }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${next.noteId}/attributes`, {
+            body: { type: "label", name: "tone", value: "red", isInheritable: false }
+        })).status).toBe(204);
+
+        const journal = becca.getNoteOrThrow(host).getAttachments()
+            .find((item) => item.role === "mergeUndo");
+        const stack = JSON.parse(decodeUtf8(journal?.getContent() ?? "[]")) as {
+            sourceNoteId: string;
+            createdBranchIds: string[];
+            linkPatches: { noteId: string; indices: number[] }[];
+        }[];
+        if (stack[0]) {
+            stack[0].createdBranchIds.push("same-branch", "same-branch");
+        }
+        const fileNote = await createTypedNote(
+            "root", "File note", "file", "application/octet-stream", ""
+        );
+        cls.init(() => {
+            becca.getNoteOrThrow(fileNote).setContent(new Uint8Array([ 1 ]), { forceSave: true });
+        });
+        const earlierRecord = stack.find((item) => item.sourceNoteId === earlier.noteId);
+        earlierRecord?.linkPatches.push({ noteId: fileNote, indices: [ 0 ] });
+        writeJournal(host, JSON.stringify(stack));
+
+        const carried = await mergeNotes(next.noteId, [ host ]);
+        expect(becca.getNoteOrThrow(carried).getOwnedAttributes("label", "tone", "red")
+            .some((attr) => attr.isInheritable)).toBe(true);
+        expect(becca.getNoteOrThrow(kid.noteId).getParentBranches()
+            .some((branch) => branch.prefix === "Pre")).toBe(true);
+
+        const carriedHistory = await api.get<{ entries: { id: string; sourceNoteId: string }[] }>(
+            `/api/notes/${carried}/merge-history`
+        );
+        const earlierEntry = carriedHistory.body.entries
+            .find((item) => item.sourceNoteId === earlier.noteId);
+        expect(earlierEntry).toBeTruthy();
+        expect((await api.post(`/api/notes/${carried}/merge-undo`, {
+            body: { entryId: earlierEntry?.id }
+        })).status).toBe(200);
+
+        cls.init(() => {
+            becca.getNoteOrThrow(kid.noteId).markAsDeleted();
+        });
+        const hostEntry = carriedHistory.body.entries
+            .find((item) => item.sourceNoteId === host);
+        expect(hostEntry).toBeTruthy();
+        expect((await api.post(`/api/notes/${carried}/merge-undo`, {
+            body: { entryId: hostEntry?.id }
+        })).status).toBe(200);
+    });
 });

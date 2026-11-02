@@ -470,6 +470,27 @@ describe("Revisions API (core)", () => {
             expect(journal && unwrapStringOrBuffer(journal.getContent())).toBe("[]");
         });
 
+        it("does not copy merge history out of a revision", async () => {
+            const { noteId, revisionId } = await createNoteWithRevision({ title: "Old history" });
+            getSql().execute(`
+                INSERT INTO attachments (
+                    attachmentId, ownerId, role, mime, title, isProtected, position,
+                    dateModified, utcDateModified, isDeleted
+                ) VALUES (
+                    'revMergeUndo', ?, 'mergeUndo', 'application/json', 'Merge undo',
+                    0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 0
+                )`, [ revisionId ]);
+
+            expect((await api.post(`/api/revisions/${revisionId}/restore`)).status).toBe(204);
+            const roles = becca.getNoteOrThrow(noteId).getAttachments().map((item) => item.role);
+            expect(roles).not.toContain("mergeUndo");
+            const stillThere = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM attachments WHERE attachmentId = ? AND isDeleted = 0",
+                [ "revMergeUndo" ]
+            );
+            expect(stillThere).toBe(1);
+        });
+
         it("restores a revision whose snapshot referenced attachments", async () => {
             const { noteId } = await createTextNote(api, { title: "Has attachment" });
 

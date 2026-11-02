@@ -6,6 +6,7 @@ import NoteContext from "../components/note_context";
 import froca from "../services/froca";
 import protectedSessionHolder from "../services/protected_session_holder";
 import server from "../services/server";
+import { flushPendingNoteSaves } from "../services/spaced_update";
 import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import NoteTitleWidget from "./note_title";
@@ -94,5 +95,43 @@ describe("NoteTitleWidget", () => {
             await parent.handleEvent("beforeNoteSwitch", { noteContext } as never);
         });
         expect(put).not.toHaveBeenCalled();
+    });
+
+    it("saves a pending title when a merge flushes that note", async () => {
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined as never);
+        const note = buildNote({ title: "Draft" });
+        const noteContext = new NoteContext("ntx-title");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        const parent = new Component();
+
+        let container: HTMLElement | undefined;
+        await act(async () => {
+            container = renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <NoteContextContext.Provider value={noteContext}>
+                        <NoteTitleWidget />
+                    </NoteContextContext.Provider>
+                </ParentComponent.Provider>
+            );
+        });
+        const input = container?.querySelector<HTMLInputElement>("input.note-title");
+        act(() => {
+            if (!input) return;
+            input.value = "Renamed";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        await act(async () => {
+            await flushPendingNoteSaves([ "other" ]);
+        });
+        expect(put).not.toHaveBeenCalled();
+
+        await act(async () => {
+            await flushPendingNoteSaves([ note.noteId ]);
+        });
+        expect(put).toHaveBeenCalledWith(
+            `notes/${note.noteId}/title`, { title: "Renamed" }, parent.componentId
+        );
     });
 });

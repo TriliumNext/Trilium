@@ -588,4 +588,43 @@ describe("SpacedUpdate", () => {
         unregister();
         unregisterOther();
     });
+
+    it("waits for a snapshot already running, then saves the note that snapshot belongs to", async () => {
+        let resolvePrepare: (value: string) => void = () => {};
+        const commits: string[] = [];
+        const spacedUpdate = new SpacedUpdate<string>({
+            key: "note-a",
+            prepare: () => new Promise((resolve) => {
+                resolvePrepare = resolve;
+            }),
+            commit: async (data) => {
+                commits.push(data);
+            }
+        }, 1000);
+        spacedUpdate.scheduleUpdate();
+        spacedUpdate.rebind("note-b", () => "next", async () => {
+            commits.push("next");
+        });
+
+        const flushing = spacedUpdate.flushNotes(new Set([ "note-a" ]));
+        resolvePrepare("saved-a");
+        await flushing;
+
+        expect(commits).toEqual([ "saved-a" ]);
+    });
+
+    it("does nothing for a note that has no pending change", async () => {
+        const updater = vi.fn(async () => {});
+        const spacedUpdate = new SpacedUpdate(updater, 50);
+        await spacedUpdate.flushNotes(new Set([ "note-a" ]));
+        expect(updater).not.toHaveBeenCalled();
+
+        const keyed = new SpacedUpdate<string>({
+            key: "note-a",
+            prepare: () => "saved",
+            commit: async () => {}
+        }, 50);
+        await keyed.flushNotes(new Set([ "note-a" ]));
+        expect(keyed.hasUnsavedChanges()).toBe(false);
+    });
 });

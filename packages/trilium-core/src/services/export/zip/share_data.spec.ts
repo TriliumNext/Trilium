@@ -24,6 +24,10 @@ describe("buildShareData", () => {
                     {
                         id: "canvasSvg", title: "canvas-export.svg", role: "image",
                         mime: "image/svg+xml"
+                    },
+                    {
+                        id: "canvasUndo", title: "Merge undo", role: "mergeUndo",
+                        mime: "application/json"
                     }
                 ] },
                 { id: "image", type: "image", mime: "image/png" },
@@ -93,8 +97,10 @@ describe("buildShareData", () => {
         expect(rows.links.event).toBe("pages/event.html");
         expect(rows.attributes.some((attribute: { name: string }) => attribute.name === "related"))
             .toBe(false);
-        expect(rows.attachments.canvas[0])
-            .toMatchObject({ attachmentId: "canvasSvg", ownerId: "canvas" });
+        expect(rows.attachments.canvas).toEqual([
+            expect.objectContaining({ attachmentId: "canvasSvg", ownerId: "canvas" })
+        ]);
+        expect(files.has("data/blobs/attachments/canvasUndo.json")).toBe(false);
         expect(rows.attachmentPaths).toEqual({ canvasSvg: "pages/canvasSvg.svg" });
         expect(rows.images)
             .toEqual({ image: "data/images/image.png", canvas: "pages/canvasSvg.svg" });

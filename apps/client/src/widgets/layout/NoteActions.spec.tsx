@@ -2,8 +2,10 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import FNote from "../../entities/fnote";
+import * as noteMerge from "../../services/note_merge";
 import froca from "../../services/froca";
 import NoteContext from "../../components/note_context";
 import Dropdown from "../react/Dropdown";
@@ -397,5 +399,40 @@ describe("NoteContextMenu", () => {
 
         await act(async () => { await parent.handleEvent("toggleRibbonTabBasicProperties", { ntxId: "ntx-split-2" }); });
         await vi.waitFor(() => expect(popup()).not.toBeNull());
+    });
+
+    it("undoes a merge, opens its history, and merges another note in", async () => {
+        const note = buildNote({ title: "Text", type: "text", content: "<p>Hi</p>" });
+        vi.spyOn(note, "getAttachments").mockResolvedValue([
+            { role: "mergeUndo" }, { role: "file" }
+        ] as never);
+        const undo = vi.spyOn(noteMerge, "undoMerge").mockResolvedValue();
+        const merge = vi.spyOn(noteMerge, "mergeNoteFrom").mockResolvedValue();
+        const trigger = vi.spyOn(appContext, "triggerCommand").mockImplementation(() => undefined);
+        const noteContext = new NoteContext("ntx-merge");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        render((
+            <ParentComponent.Provider value={new Component()}>
+                <NoteContextContext.Provider value={noteContext}>
+                    <NoteContextMenu note={note} noteContext={noteContext} />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        ), host);
+
+        const row = (text: string) => [ ...document.querySelectorAll(".tn-popup li") ]
+            .find((item) => item.textContent?.includes(text));
+        const open = async (text: string) => {
+            host.querySelector<HTMLButtonElement>("button")?.click();
+            await vi.waitFor(() => expect(row(text)).toBeTruthy());
+            row(text)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        };
+
+        await open("note_actions.undo_merge");
+        expect(undo).toHaveBeenCalledWith(note.noteId);
+        await open("note_actions.merge_history");
+        expect(trigger).toHaveBeenCalledWith("showMergeHistory", { noteId: note.noteId });
+        await open("note_actions.merge_note_from");
+        expect(merge).toHaveBeenCalledWith(note.noteId);
     });
 });

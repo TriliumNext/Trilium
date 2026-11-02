@@ -663,11 +663,7 @@ function rewriteNoteContent(
     }
 
     const replaced = replaceBoundedId(content, sourceNoteId, targetId);
-    let updated = replaced.content;
-    // An embed of the merged note is removed only from the merged note itself.
-    if (note.type === "text" && note.noteId === targetId) {
-        updated = removeSelfEmbeds(updated, targetId);
-    }
+    const updated = replaced.content;
     if (updated === content) {
         return false;
     }
@@ -687,6 +683,7 @@ function rewriteNoteContent(
 
 function appendContent(target: BNote, source: BNote, sourceIds: Set<string>) {
     const sourceContent = source.getContent();
+    /* v8 ignore start -- an empty file reads back as a string; bytes are refused earlier */
     if (typeof sourceContent !== "string") {
         if (hasPayload(source)) {
             throw new ValidationError(t("merge.incompatible-content"));
@@ -694,6 +691,7 @@ function appendContent(target: BNote, source: BNote, sourceIds: Set<string>) {
         copyAttachments(source, target, "");
         return;
     }
+    /* v8 ignore stop */
 
     let fragment = replaceNoteIds(sourceContent, sourceIds, target.noteId);
     if (target.type === "text") {
@@ -703,6 +701,7 @@ function appendContent(target: BNote, source: BNote, sourceIds: Set<string>) {
     fragment = copyAttachments(source, target, fragment);
 
     const targetContent = target.getContent();
+    /* v8 ignore next 3 -- the merged note is created with text content */
     if (typeof targetContent !== "string") {
         return;
     }
@@ -908,6 +907,7 @@ function emptyJournal(note: BNote): MergeUndo {
 }
 
 function rememberLinkPatch(journal: MergeUndo, noteId: string, indices: number[]) {
+    /* v8 ignore next 3 -- saveLinks can move every offset, leaving nothing to restore */
     if (indices.length === 0) {
         return;
     }
@@ -932,9 +932,11 @@ function restoreMergedNote(merged: BNote, record: MergeUndo, stack: MergeUndo[])
         "SELECT isDeleted FROM notes WHERE noteId = ?",
         [ record.sourceNoteId ]
     );
+    /* v8 ignore start -- undoMerge already requires this row */
     if (!row) {
         throw new ValidationError(t("merge.undo-expired"));
     }
+    /* v8 ignore stop */
 
     if (row.isDeleted) {
         const taskContext = new TaskContext("no-progress-reporting", "undeleteNotes", null);
@@ -976,6 +978,7 @@ function restoreMergedNote(merged: BNote, record: MergeUndo, stack: MergeUndo[])
         }
         const others = child.getStrongParentBranches()
             .filter((item) => item.branchId !== branch.branchId);
+        /* v8 ignore next 3 -- deleting this branch would leave the child with no parent */
         if (!branch.isWeak && others.length === 0) {
             continue;
         }

@@ -9,6 +9,7 @@ import type FNote from "../../../entities/fnote";
 import {
     type AttachmentEditor, bindAttachmentEditor, type NoteEditor
 } from "../../../services/content_renderer";
+import { flushPendingNoteSaves } from "../../../services/spaced_update";
 import { ParentComponent } from "../../react/react_utils";
 import AttachmentSaves, {
     InlineSourceSaves, NoteSaves, useAttachmentEditor, useNoteEditor
@@ -266,6 +267,16 @@ describe("NoteSaves", () => {
             .toBe(false);
     });
 
+    it("reports a pending save only for the notes that have one", () => {
+        const saves = new NoteSaves(vi.fn(), "host");
+        const code = buildCodeNote("code1");
+        expect(saves.hasPending(new Set([ "code1" ]))).toBe(false);
+
+        saves.scheduleSave(code, () => "draft");
+        expect(saves.hasPending(new Set([ "code1" ]))).toBe(true);
+        expect(saves.hasPending(new Set([ "other" ]))).toBe(false);
+    });
+
     it("collects each note with its content, and keeps a change made while a save runs", () => {
         const scheduleUpdate = vi.fn();
         const saves = new NoteSaves(scheduleUpdate, "host");
@@ -388,6 +399,28 @@ describe("useNoteEditor", () => {
         expect(serverPut).not.toHaveBeenCalled();
         expect(editor?.getUnsavedContent("code1")).toBeUndefined();
         expect(editor?.getSaveState("code1")).toBe("saved");
+        await act(() => render(null, container));
+    });
+
+    it("saves a pending note when a merge asks the editors to flush", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+
+        editor?.scheduleSave(code, () => "flushed");
+        await act(async () => {
+            await flushPendingNoteSaves([ "other" ]);
+        });
+        expect(serverPut).not.toHaveBeenCalled();
+
+        await act(async () => {
+            await flushPendingNoteSaves([ "code1" ]);
+        });
+        expect(serverPut).toHaveBeenCalledWith(
+            "notes/code1/data", { content: "flushed" }, component.componentId
+        );
         await act(() => render(null, container));
     });
 });
