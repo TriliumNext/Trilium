@@ -5,6 +5,7 @@ import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
+import { menuName } from "../../menus/context_menu_utils";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import LoadResults from "../../services/load_results";
@@ -14,7 +15,6 @@ import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { Card, CardSection } from "../react/Card";
 import Dropdown from "../react/Dropdown";
-import { FormListItem } from "../react/FormList";
 import { useNoteTitle, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
@@ -139,19 +139,14 @@ function UserPicker({ users, currentUserId, onChange }: {
             title={t("note_access.user")}
             text={current && <UserLabel user={current} />}
             mobileBottomSheet
-        >
-            {users.map((user) => (
-                <FormListItem
-                    key={user.userId}
-                    leading={<UserAvatar username={user.username} hue={user.avatarHue} />}
-                    active={user.userId === currentUserId}
-                    selected={user.userId === currentUserId}
-                    onClick={() => onChange(user.userId)}
-                >
-                    <span className="note-access-user-name">{user.username}</span>
-                </FormListItem>
-            ))}
-        </Dropdown>
+            filterable
+            items={users.map((user) => ({
+                title: menuName(user.username),
+                leading: <UserAvatar username={user.username} hue={user.avatarHue} />,
+                checked: user.userId === currentUserId,
+                handler: () => onChange(user.userId)
+            }))}
+        />
     );
 }
 

@@ -64,8 +64,14 @@ describe("NoteAccessDialog", () => {
     /** The rows of the user picker, which opens as a menu in the page's body. */
     async function openUserPicker() {
         await click(container.querySelector(".note-access-add-user .dropdown-toggle"));
+        return pickerRows();
+    }
+
+    function pickerRows() {
         return [ ...document.body.querySelectorAll(".note-access-user-menu .dropdown-item") ];
     }
+
+    const nameOf = (row: Element) => row.querySelector(".tn-menu-name")?.textContent;
 
     it("lists the owner and the grants, offering only users without one", async () => {
         expect(get).toHaveBeenCalledWith("notes/project/access");
@@ -79,8 +85,18 @@ describe("NoteAccessDialog", () => {
         expect(toggle?.querySelector(".user-avatar")).not.toBeNull();
 
         const rowsOffered = await openUserPicker();
-        expect(rowsOffered.map((row) => row.querySelector(".note-access-user-name")?.textContent)).toEqual([ "carol", "dave" ]);
+        expect(rowsOffered.map(nameOf)).toEqual([ "carol", "dave" ]);
         expect(rowsOffered.every((row) => row.querySelector(".user-avatar"))).toBe(true);
+
+        // Typing filters the users, keeping their avatars.
+        const filter = document.body.querySelector<HTMLInputElement>(".note-access-user-menu input.tn-menu-filter-input");
+        if (!filter) throw new Error("The picker has no filter.");
+        await act(async () => {
+            filter.value = "d";
+            filter.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await vi.waitFor(() => expect(pickerRows().map(nameOf)).toEqual([ "dave" ]));
+        expect(pickerRows()[0].querySelector(".user-avatar")).not.toBeNull();
     });
 
     it("grants, changes and removes access", async () => {
