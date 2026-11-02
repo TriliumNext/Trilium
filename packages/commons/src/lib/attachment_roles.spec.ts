@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES, isDeduplicatedAttachmentRole, isEmbeddedAttachmentRole, isImageAttachmentRole } from "./attachment_roles.js";
+import {
+    ATTACHMENT_ROLES,
+    attachmentIcon,
+    attachmentRoleTraits,
+    IMAGE_ATTACHMENT_ROLES,
+    isDeduplicatedAttachmentRole,
+    isEmbeddedAttachmentRole,
+    isImageAttachmentRole,
+    isMergeHistoryRole
+} from "./attachment_roles.js";
 import { getNoteIcon } from "./notes.js";
 
 describe("isImageAttachmentRole", () => {
@@ -168,6 +177,20 @@ describe("attachmentIcon", () => {
         for (const [ role, traits ] of Object.entries(ATTACHMENT_ROLES)) {
             expect(attachmentIcon(role, "application/pdf"), role).toBe(traits.icon ?? "bx bxs-file-pdf");
         }
+    });
+});
+
+describe("isMergeHistoryRole", () => {
+    it("recognises only the two records of a merge that can still be undone", () => {
+        expect(isMergeHistoryRole("mergeUndo")).toBe(true);
+        expect(isMergeHistoryRole("mergeUndoBlob")).toBe(true);
+
+        for (const role of [ "file", "image", "viewConfig", "" ]) {
+            expect(isMergeHistoryRole(role), role).toBe(false);
+        }
+
+        expect(isMergeHistoryRole(undefined)).toBe(false);
+        expect(isMergeHistoryRole(null)).toBe(false);
     });
 });
 
