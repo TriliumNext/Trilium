@@ -20,6 +20,10 @@ describe("getAvatarHues", () => {
         // A user added later leaves everyone else's color alone.
         const more = getAvatarHues([ ...users, user("erin", 5) ]);
         expect([ "alice", "bob", "carol", "dave" ].map((userId) => more.get(userId))).toEqual(ordered);
+
+        // Users added at the same moment are ordered by ID.
+        const tied = getAvatarHues([ user("zed", 1), user("amy", 1) ]);
+        expect([ tied.get("amy"), tied.get("zed") ]).toEqual([ 210, Math.round((210 + 137.508) % 360) ]);
     });
 });
 
