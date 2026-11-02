@@ -14,8 +14,9 @@ Agreed deferrals from #4956: attributes inherit their note's visibility (no per-
 
 ## Known gaps (do not rediscover as new bugs)
 
-**Isolation is not effective yet.**
-- `loadBeccaForUser()` seeds `visible_roots` with `noteId = 'root'` and every `_`-prefixed note, then recurses down branches — so the CTE reaches the entire tree and every non-admin sees every note. The `_hidden` subtree (options, launchers, LLM chats, …) is shared by design but needs per-user variants or explicit carve-outs.
+**Isolation is incomplete.**
+- `loadBeccaForUser()` still starts from every `_`-prefixed note, so the `_hidden` subtree (options, launchers, LLM chats, …) is shared; it needs per-user variants or explicit carve-outs.
+- A member can still create notes directly under `root` (they stay visible to them as owner). The plan is that top-level creation lands in their home instead.
 - `export default adminBecca` in `becca.ts` lets unconverted call sites read unfiltered data: ETAPI (`apps/server/src/etapi/*`), LLM tools and chat title (`packages/trilium-core/src/services/llm/`), share (`packages/trilium-core/src/share/`, `services/export/zip/share_*`), board/spreadsheet/database_info/OCR routes, image services, `routes/custom.ts`, OneNote import, `space_usage.ts`. Fix: drop the default export and convert what the compiler flags. Run `grep -rlE "import becca from" apps/server/src packages/trilium-core/src` for the current list.
 - Search, note map, similar notes, recent changes etc. run over whatever `getBecca()` returns, so they're only as filtered as the Becca is.
 
