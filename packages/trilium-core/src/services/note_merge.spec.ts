@@ -11,6 +11,18 @@ import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 
 let api: CoreApiTester;
 
+function noteIdsMissingFromDatabase() {
+    const stored = new Set(getSql().getColumn<string>("SELECT noteId FROM notes"));
+    const missing: string[] = [];
+    for (const noteId of Object.keys(becca.notes)) {
+        if (noteId.startsWith("_") || stored.has(noteId)) {
+            continue;
+        }
+        missing.push(noteId);
+    }
+    return missing;
+}
+
 function noteIsDeleted(noteId: string): number | null {
     const row = getSql().getRowOrNull<{ isDeleted: number }>(
         "SELECT isDeleted FROM notes WHERE noteId = ?",
@@ -567,6 +579,7 @@ describe("Merging notes", () => {
         expect(stranded.status).toBe(400);
         expect(stranded.body.message).toContain("Kid");
         expect(noteIsDeleted(leaf.noteId)).toBe(0);
+        expect(noteIdsMissingFromDatabase()).toEqual([]);
 
         protectedSessionService.setDataKey(PROTECTED_KEY);
         try {
@@ -747,6 +760,7 @@ describe("Merging notes", () => {
         const expiredId = await mergeNotes(kept.noteId, [ gone.noteId ]);
         cls.init(() => {
             getSql().execute("DELETE FROM notes WHERE noteId = ?", [ gone.noteId ]);
+            getSql().execute("DELETE FROM notes WHERE noteId = ?", [ kept.noteId ]);
         });
         const expired = await api.post<{ message: string }>(`/api/notes/${expiredId}/merge-undo`);
         expect(expired.status).toBe(400);
@@ -882,5 +896,148 @@ describe("Merging notes", () => {
         expect(roles).toContain("file");
         expect(roles).not.toContain("mergeUndo");
         expect(roles).not.toContain("mergeUndoBlob");
+    });
+
+    it("keeps an outside embed and a blank note's files, and refuses a binary note first", async () => {
+        const source = await createTextNote(api, { title: "Source", content: "<p>source</p>" });
+        const other = await createTextNote(api, { title: "Other", content: "<p>other</p>" });
+        const host = await createTextNote(api, {
+            title: "Host",
+            content: `<figure class="include-note" data-note-id="${source.noteId}">`
+                + "<h4>Included</h4></figure>"
+        });
+        const mergedId = await mergeNotes(source.noteId, [ other.noteId ]);
+        const hostContent = String(becca.getNoteOrThrow(host.noteId).getContent());
+        expect(hostContent).toContain("include-note");
+        expect(hostContent).toContain(mergedId);
+        expect(hostContent).not.toContain(source.noteId);
+
+        const keeper = await createTextNote(api, { title: "Keeper", content: "<p>keeper</p>" });
+        const blank = await createTextNote(api, { title: "Blank", content: "" });
+        expect((await api.post(`/api/notes/${blank.noteId}/attachments`, {
+            body: { role: "file", mime: "text/plain", title: "notes.txt", content: "attached" }
+        })).status).toBe(204);
+        const withFile = await mergeNotes(keeper.noteId, [ blank.noteId ]);
+        expect(becca.getNoteOrThrow(withFile).getAttachments().some((item) => item.title === "notes.txt"))
+            .toBe(true);
+
+        const fileId = await createTypedNote("root", "Blob", "file", "application/octet-stream", "");
+        cls.init(() => {
+            becca.getNoteOrThrow(fileId).setContent(new Uint8Array([ 1, 2, 3 ]));
+        });
+        const empty = await createTextNote(api, { title: "Empty", content: "" });
+        const refused = await api.post<{ message: string }>(`/api/notes/${fileId}/merge`, {
+            body: { sourceNoteIds: [ empty.noteId ] }
+        });
+        expect(refused.status).toBe(400);
+        expect(refused.body.message).toContain("cannot be combined");
+        expect(noteIsDeleted(fileId)).toBe(0);
+        expect(noteIsDeleted(empty.noteId)).toBe(0);
+    });
+
+    it("keeps a shared label and a shared child until every original is restored", async () => {
+        const first = await createTextNote(api, { title: "First", content: "<p>first</p>" });
+        const second = await createTextNote(api, { title: "Second", content: "<p>second</p>" });
+        const child = await createTextNote(api, {
+            parentNoteId: first.noteId, title: "Shared child", content: "<p>child</p>"
+        });
+        expect((await api.put(`/api/notes/${child.noteId}/clone-to-note/${second.noteId}`, {
+            body: {}
+        })).status).toBe(200);
+        expect((await api.post(`/api/notes/${first.noteId}/attributes`, {
+            body: { type: "label", name: "shared", value: "yes" }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${second.noteId}/attributes`, {
+            body: { type: "label", name: "shared", value: "yes" }
+        })).status).toBe(204);
+
+        const mergedId = await mergeNotes(first.noteId, [ second.noteId ]);
+        const history = await api.get<{
+            entries: { id: string; sourceNoteId: string }[];
+        }>(`/api/notes/${mergedId}/merge-history`);
+        const firstEntry = history.body.entries.find((entry) => entry.sourceNoteId === first.noteId);
+        const secondEntry = history.body.entries.find((entry) => entry.sourceNoteId === second.noteId);
+        expect(firstEntry && secondEntry).toBeTruthy();
+        if (!firstEntry || !secondEntry) {
+            return;
+        }
+
+        expect((await api.post(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: firstEntry.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(mergedId).getOwnedAttributes("label", "shared", "yes"))
+            .toHaveLength(1);
+        expect(becca.getNoteOrThrow(child.noteId).getParentNotes().map((note) => note.noteId))
+            .toEqual(expect.arrayContaining([ mergedId, first.noteId ]));
+
+        expect((await api.post(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: secondEntry.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(mergedId).getOwnedAttributes("label", "shared")).toHaveLength(0);
+        expect(becca.getNoteOrThrow(child.noteId).getParentNotes().map((note) => note.noteId))
+            .not.toContain(mergedId);
+    });
+
+    it("moves a child and a label back from the note a later merge produced", async () => {
+        const alpha = await createTextNote(api, { title: "Alpha", content: "<p>alpha</p>" });
+        const child = await createTextNote(api, {
+            parentNoteId: alpha.noteId, title: "Kid", content: "<p>kid</p>"
+        });
+        expect((await api.post(`/api/notes/${alpha.noteId}/attributes`, {
+            body: { type: "label", name: "carried", value: "1" }
+        })).status).toBe(204);
+        const beta = await createTextNote(api, { title: "Beta", content: "<p>beta</p>" });
+        const firstMerge = await mergeNotes(alpha.noteId, [ beta.noteId ]);
+        const gamma = await createTextNote(api, { title: "Gamma", content: "<p>gamma</p>" });
+        const secondMerge = await mergeNotes(firstMerge, [ gamma.noteId ]);
+        expect(becca.getNoteOrThrow(child.noteId).getParentNotes().map((note) => note.noteId))
+            .toEqual([ secondMerge ]);
+        expect(becca.getNoteOrThrow(secondMerge).getOwnedAttributes("label", "carried", "1"))
+            .toHaveLength(1);
+
+        const history = await api.get<{
+            entries: { id: string; sourceNoteId: string }[];
+        }>(`/api/notes/${secondMerge}/merge-history`);
+        const alphaEntry = history.body.entries.find((entry) => entry.sourceNoteId === alpha.noteId);
+        expect(alphaEntry).toBeTruthy();
+        if (!alphaEntry) {
+            return;
+        }
+        expect((await api.post(`/api/notes/${secondMerge}/merge-undo`, {
+            body: { entryId: alphaEntry.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(child.noteId).getParentNotes().map((note) => note.noteId))
+            .toEqual([ alpha.noteId ]);
+        expect(becca.getNoteOrThrow(secondMerge).getOwnedAttributes("label", "carried")).toHaveLength(0);
+        expect(becca.getNoteOrThrow(alpha.noteId).getOwnedAttributes("label", "carried", "1"))
+            .toHaveLength(1);
+    });
+
+    it("skips an erased original and restores an older note that is still there", async () => {
+        const older = await createTextNote(api, { title: "Older", content: "<p>older</p>" });
+        const newer = await createTextNote(api, { title: "Newer", content: "<p>newer</p>" });
+        const mergedId = await mergeNotes(older.noteId, [ newer.noteId ]);
+        cls.init(() => {
+            getSql().execute("DELETE FROM notes WHERE noteId = ?", [ newer.noteId ]);
+        });
+
+        const history = await api.get<{
+            entries: { id: string; sourceNoteId: string; undoable: boolean }[];
+        }>(`/api/notes/${mergedId}/merge-history`);
+        expect(history.body.entries.map((entry) => entry.undoable)).toEqual([ false, true ]);
+        const newerEntry = history.body.entries.find((entry) => entry.sourceNoteId === newer.noteId);
+        expect(newerEntry).toBeTruthy();
+        if (!newerEntry) {
+            return;
+        }
+        const expired = await api.post<{ message: string }>(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: newerEntry.id }
+        });
+        expect(expired.status).toBe(400);
+        expect(expired.body.message).toContain("no longer be undone");
+
+        expect((await api.post(`/api/notes/${mergedId}/merge-undo`)).status).toBe(200);
+        expect(noteIsDeleted(older.noteId)).toBe(0);
+        expect(noteIsDeleted(newer.noteId)).toBeNull();
     });
 });

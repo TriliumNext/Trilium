@@ -1,4 +1,9 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import {
+    type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow,
+    CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle,
+    isEmbeddedAttachmentRole, isImageAttachmentRole, isMergeHistoryRole, type NoteRow,
+    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink
+} from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -147,7 +152,7 @@ function copyAttachments(origNote: BNote, newNote: BNote) {
     for (const attachment of origNote.getAttachments()) {
         // A merge is undone on the note it was merged into. A note created from a template does not
         // inherit that record, nor the text copies it keeps.
-        if (attachment.role === "mergeUndo" || attachment.role === "mergeUndoBlob") {
+        if (isMergeHistoryRole(attachment.role)) {
             continue;
         }
         if (isImageAttachmentRole(attachment.role)) {

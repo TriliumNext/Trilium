@@ -7,7 +7,7 @@ import type { AttachmentEditor, NoteEditor } from "../../../services/content_ren
 import froca from "../../../services/froca";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
-import SpacedUpdate from "../../../services/spaced_update";
+import SpacedUpdate, { registerNoteSaveFlusher } from "../../../services/spaced_update";
 import { type SavedData, useSaveBeforeLeaving } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 
@@ -81,6 +81,15 @@ abstract class PendingSaves<T, I extends object> {
                 sent.onSaved?.(sent.content);
             }
         }
+    }
+
+    hasPending(ids: ReadonlySet<string>) {
+        for (const id of this.pending.keys()) {
+            if (ids.has(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected schedule(
@@ -342,6 +351,12 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
 
     useSaveBeforeLeaving(spacedUpdate, noteContext);
     useSaveOnUnmount(spacedUpdate);
+    useEffect(() => registerNoteSaveFlusher(async (noteIds) => {
+        if (!saves.hasPending(noteIds)) {
+            return;
+        }
+        await spacedUpdate.updateNowIfNecessary();
+    }), [ saves, spacedUpdate ]);
 
     return saves;
 }

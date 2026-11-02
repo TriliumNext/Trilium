@@ -13,7 +13,9 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
+import * as cls from "../services/context.js";
 import { getContext } from "../services/context.js";
+import entityChanges from "../services/entity_changes.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -80,6 +82,21 @@ function load() {
     becca.loaded = true;
 
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
+}
+
+/**
+ * Reloads becca after a transaction rolls back, when that transaction changed entities.
+ *
+ * The database no longer has those rows. Without a reload, becca still does, and the next request
+ * can read a note that has no row. A rollback that wrote nothing leaves the cache as it is.
+ */
+function restoreBeccaAfterRollback() {
+    const entityChangeIds = cls.getAndClearEntityChangeIds();
+    if (entityChangeIds.length > 0) {
+        getLog().info("Transaction rollback dirtied the becca, forcing reload.");
+        load();
+    }
+    entityChanges.recalculateMaxEntityChangeId();
 }
 
 // The order each entity's update() destructures its row in. None of these columns holds a
@@ -495,10 +512,11 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
 
 eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, load);
 
-export { load, reload };
+export { load, reload, restoreBeccaAfterRollback };
 
 export default {
     load,
     reload,
+    restoreBeccaAfterRollback,
     beccaLoaded
 };

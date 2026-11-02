@@ -1,5 +1,6 @@
 import {
-    getImageAttachmentTitle, getNoteMapDataKey, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES
+    getImageAttachmentTitle, getNoteMapDataKey, isMergeHistoryRole, SHARE_HOSTED_NOTE_TYPES,
+    SHARE_HOSTED_VIEW_TYPES
 } from "@triliumnext/commons";
 import mimeTypes from "mime-types";
 
@@ -45,7 +46,8 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
     const attachmentPaths: Record<string, string> = {};
     const images: Record<string, string> = {};
     for (const note of notes) {
-        const owned = note.getAttachments();
+        const owned = note.getAttachments()
+            .filter((attachment) => !isMergeHistoryRole(attachment.role));
         attachments[note.noteId] = owned.map(getAttachmentRow);
         for (const attachment of owned) {
             const path = paths.getAttachmentPath(attachment.attachmentId ?? "");
@@ -63,6 +65,9 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
     for (const note of getNotesReadByViews(notes)) {
         writeJson(`data/blobs/notes/${note.noteId}.json`, getBlobRow(note));
         for (const attachment of note.getAttachments()) {
+            if (isMergeHistoryRole(attachment.role)) {
+                continue;
+            }
             if (attachment.hasStringContent()) {
                 writeJson(`data/blobs/attachments/${attachment.attachmentId}.json`,
                     getBlobRow(attachment));

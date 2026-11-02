@@ -41,6 +41,16 @@ export interface RevisionItem {
     mime: string;
 }
 
+/** One note that can still be restored from a merged note. Newest first in the history response. */
+export interface MergeHistoryEntry {
+    id: string;
+    utcDate: string;
+    sourceTitle: string;
+    sourceNoteId: string;
+    /** False once the original note has been erased and can no longer be restored. */
+    undoable: boolean;
+}
+
 export interface RevisionPojo {
     revisionId?: string;
     noteId: string;

@@ -364,7 +364,7 @@ async function initialize(): Promise<void> {
                         coreModule?.ws.sendTransactionEntityChangesToAllClients();
                     },
                     onTransactionRollback: () => {
-                        // No-op for now
+                        coreModule?.becca_loader.restoreBeccaAfterRollback();
                     }
                 }
             });

@@ -1,8 +1,11 @@
+import { isMergeHistoryRole } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
 import dialog from "./dialog.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import server from "./server.js";
+import { flushPendingNoteSaves } from "./spaced_update.js";
 import toast from "./toast.js";
 
 /**
@@ -11,11 +14,8 @@ import toast from "./toast.js";
  */
 export const MERGE_UNDO_ROLE = "mergeUndo";
 
-/** Role of one pre-merge text copy. Hidden from the attachment list, like the history itself. */
-const MERGE_UNDO_BLOB_ROLE = "mergeUndoBlob";
-
 export function isMergeUndoAttachment(attachment: { role: string }) {
-    return attachment.role === MERGE_UNDO_ROLE || attachment.role === MERGE_UNDO_BLOB_ROLE;
+    return isMergeHistoryRole(attachment.role);
 }
 
 /** Ordinary user notes. The root, system notes, search notes and launchers are left out. */
@@ -235,6 +235,9 @@ async function postMerge(
 
     let mergedNoteId: string;
     try {
+        // The originals are deleted by the request. A save still in flight would then be dropped,
+        // so the editor's latest text has to land first.
+        await flushPendingNoteSaves([ targetNoteId, ...sourceNoteIds ]);
         const result = await server.post<{ noteId: string }>(
             `notes/${targetNoteId}/merge`, { sourceNoteIds, title }
         );

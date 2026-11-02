@@ -1,4 +1,6 @@
-import { escapeHtml, isMarkdownMime } from "@triliumnext/commons";
+import {
+    escapeHtml, isMarkdownMime, isMergeHistoryRole, type MergeHistoryEntry
+} from "@triliumnext/commons";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
@@ -63,15 +65,6 @@ interface MergeUndo {
     linkPatches: { noteId: string; indices: number[] }[];
 }
 
-/** One note that can still be restored from the merged note. Newest first. */
-export interface MergeHistoryEntry {
-    id: string;
-    utcDate: string;
-    sourceTitle: string;
-    sourceNoteId: string;
-    undoable: boolean;
-}
-
 interface Placement {
     parentNoteId: string;
     prefix: string | null;
@@ -80,6 +73,12 @@ interface Placement {
 }
 
 type PlaceOutcome = "placed" | "exists" | "skipped" | "rejected";
+
+/** Ids of branches and attributes a previous merge copied, rewritten onto this merge's copies. */
+interface CarriedIds {
+    attributes: Map<string, string>;
+    branches: Map<string, string>;
+}
 
 /**
  * Replaces `targetNoteId` and every source with a new note whose text is theirs, appended in order.
@@ -129,6 +128,7 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
     });
 
     const journals = new Map<string, MergeUndo>();
+    const carriedIds: CarriedIds = { attributes: new Map(), branches: new Map() };
     for (const note of notes) {
         journals.set(note.noteId, emptyJournal(note));
     }
@@ -168,15 +168,32 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
         if (!journal) {
             continue;
         }
-        reparentChildren(merged, note, noteIds, journal);
-        copyAttributes(merged, note, noteIds, journal);
+        reparentChildren(merged, note, noteIds, journal, carriedIds);
+        copyAttributes(merged, note, noteIds, journal, carriedIds);
         retargetIncoming(note, merged, noteIds, revised, journal);
         appendContent(merged, note, noteIds);
     }
 
     const carried: MergeUndo[] = [];
     for (const note of notes) {
-        carried.push(...readUndoStack(note));
+        const journal = journals.get(note.noteId);
+        /* v8 ignore next 3 -- `journals` is filled for every note above */
+        if (!journal) {
+            continue;
+        }
+        for (const entry of readUndoStack(note)) {
+            remapCarriedEntry(entry, carriedIds);
+            // The copies now belong to the note that was merged earlier, not to this note's record.
+            journal.createdBranchIds = journal.createdBranchIds
+                .filter((id) => !entry.createdBranchIds.includes(id));
+            journal.createdAttributeIds = journal.createdAttributeIds
+                .filter((id) => !entry.createdAttributeIds.includes(id));
+            journal.inheritableReverts = journal.inheritableReverts
+                .filter((id) => !entry.inheritableReverts.includes(id));
+            journal.prefixRestores = journal.prefixRestores.filter((change) =>
+                !entry.prefixRestores.some((carried) => carried.branchId === change.branchId));
+            carried.push(entry);
+        }
     }
     for (const note of notes) {
         const journal = journals.get(note.noteId);
@@ -203,19 +220,29 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
  *
  * The note returns with its own text, clones, children, links and attributes. The merged note's
  * text and title stay as they are, and the merged note itself is left in place. With no `entryId`,
- * the most recently merged note is the one restored. A note that has been erased can no longer be
- * restored.
+ * the most recently merged note that still exists is the one restored. A note that has been erased
+ * can no longer be restored.
  */
 function undoMerge(mergedNoteId: string, entryId?: string) {
     const merged = becca.getNoteOrThrow(mergedNoteId);
     const stack = readUndoStack(merged);
-    const index = entryId ? stack.findIndex((entry) => entry.id === entryId) : stack.length - 1;
+    const index = entryId
+        ? stack.findIndex((entry) => entry.id === entryId)
+        : newestRestorableIndex(stack);
     const record = index >= 0 ? stack[index] : undefined;
     if (!record) {
-        throw new ValidationError(entryId ? t("merge.unknown-entry") : t("merge.nothing-to-undo"));
+        if (entryId) {
+            throw new ValidationError(t("merge.unknown-entry"));
+        }
+        throw new ValidationError(stack.length > 0
+            ? t("merge.undo-expired")
+            : t("merge.nothing-to-undo"));
+    }
+    if (!sourceNoteRemains(record.sourceNoteId)) {
+        throw new ValidationError(t("merge.undo-expired"));
     }
 
-    restoreMergedNote(merged, record);
+    restoreMergedNote(merged, record, stack);
     stack.splice(index, 1);
     writeUndoStack(merged, stack);
     getLog().info(`Restored '${record.sourceNoteId}' from '${merged.noteId}'.`);
@@ -237,7 +264,7 @@ function getMergeHistory(mergedNoteId: string) {
             utcDate: entry.utcDate,
             sourceTitle: entry.sourceTitle,
             sourceNoteId: entry.sourceNoteId,
-            undoable: true
+            undoable: sourceNoteRemains(entry.sourceNoteId)
         });
     }
     return { entries };
@@ -308,6 +335,12 @@ function assertMergeNote(first: BNote, note: BNote, noteIds: Set<string>) {
 
     if (!!first.isProtected !== !!note.isProtected) {
         throw new ValidationError(t("merge.protection-mismatch"));
+    }
+
+    // A file or image that still holds bytes cannot be the note the merge starts from. The check
+    // below misses that when every other note is blank, and the new note would already exist.
+    if (note.noteId === first.noteId && hasPayload(note) && typeof note.getContent() !== "string") {
+        throw new ValidationError(t("merge.incompatible-content"));
     }
 
     // A note that still holds content of a different kind is refused even when the first note is
@@ -415,6 +448,9 @@ function placeNote(
                 validation.branch.prefix = placement.prefix;
                 validation.branch.save();
             }
+            if (recordBranch && journal && validation.branch.branchId) {
+                rememberId(journal.createdBranchIds, validation.branch.branchId);
+            }
             return "exists";
         }
         return "rejected";
@@ -428,7 +464,7 @@ function placeNote(
         isExpanded: placement.isExpanded
     }).save();
     if (recordBranch && journal && branch.branchId) {
-        journal.createdBranchIds.push(branch.branchId);
+        rememberId(journal.createdBranchIds, branch.branchId);
     }
     return "placed";
 }
@@ -437,7 +473,8 @@ function reparentChildren(
     target: BNote,
     source: BNote,
     sourceIds: Set<string>,
-    journal: MergeUndo
+    journal: MergeUndo,
+    carriedIds: CarriedIds
 ) {
     for (const childBranch of source.getChildBranches()) {
         if (!childBranch) {
@@ -448,6 +485,7 @@ function reparentChildren(
             continue;
         }
 
+        const marked = journal.createdBranchIds.length;
         const underTarget = placeNote(child.noteId, {
             parentNoteId: target.noteId,
             prefix: childBranch.prefix,
@@ -455,6 +493,10 @@ function reparentChildren(
             isExpanded: childBranch.isExpanded
         }, journal, true);
         if (underTarget === "placed" || underTarget === "exists") {
+            const createdId = journal.createdBranchIds[marked];
+            if (childBranch.branchId && createdId) {
+                carriedIds.branches.set(childBranch.branchId, createdId);
+            }
             continue;
         }
 
@@ -479,7 +521,13 @@ function reparentChildren(
     }
 }
 
-function copyAttributes(target: BNote, source: BNote, sourceIds: Set<string>, journal: MergeUndo) {
+function copyAttributes(
+    target: BNote,
+    source: BNote,
+    sourceIds: Set<string>,
+    journal: MergeUndo,
+    carriedIds: CarriedIds
+) {
     for (const attr of source.getOwnedAttributes()) {
         // Auto links are rebuilt from the appended content. A relation aimed at a note in this
         // merge would point at the note that remains.
@@ -494,10 +542,15 @@ function copyAttributes(target: BNote, source: BNote, sourceIds: Set<string>, jo
         const existing = target.getOwnedAttributes(attr.type, attr.name, attr.value);
         if (existing.length > 0) {
             const kept = existing[0];
-            if (kept && attr.isInheritable && !existing.some((item) => item.isInheritable)) {
-                journal.inheritableReverts.push(kept.attributeId);
-                kept.isInheritable = true;
-                kept.save();
+            if (kept) {
+                // Every original that supplied the attribute has to be restored before it goes.
+                rememberId(journal.createdAttributeIds, kept.attributeId);
+                carriedIds.attributes.set(attr.attributeId, kept.attributeId);
+                if (attr.isInheritable && !existing.some((item) => item.isInheritable)) {
+                    journal.inheritableReverts.push(kept.attributeId);
+                    kept.isInheritable = true;
+                    kept.save();
+                }
             }
             continue;
         }
@@ -505,7 +558,8 @@ function copyAttributes(target: BNote, source: BNote, sourceIds: Set<string>, jo
         const created = target.addAttribute(
             attr.type, attr.name, attr.value, attr.isInheritable, attr.position
         );
-        journal.createdAttributeIds.push(created.attributeId);
+        rememberId(journal.createdAttributeIds, created.attributeId);
+        carriedIds.attributes.set(attr.attributeId, created.attributeId);
     }
 }
 
@@ -598,7 +652,8 @@ function rewriteNoteContent(
 
     const replaced = replaceBoundedId(content, sourceNoteId, targetId);
     let updated = replaced.content;
-    if (note.type === "text") {
+    // An embed of the merged note is removed only from the merged note itself.
+    if (note.type === "text" && note.noteId === targetId) {
         updated = removeSelfEmbeds(updated, targetId);
     }
     if (updated === content) {
@@ -619,23 +674,25 @@ function rewriteNoteContent(
 }
 
 function appendContent(target: BNote, source: BNote, sourceIds: Set<string>) {
-    if (!hasPayload(source)) {
-        return;
-    }
-
-    const targetContent = target.getContent();
     const sourceContent = source.getContent();
-    /* v8 ignore next 3 -- only string content reaches this point */
-    if (typeof targetContent !== "string" || typeof sourceContent !== "string") {
-        throw new ValidationError(t("merge.incompatible-content"));
+    if (typeof sourceContent !== "string") {
+        if (hasPayload(source)) {
+            throw new ValidationError(t("merge.incompatible-content"));
+        }
+        copyAttachments(source, target, "");
+        return;
     }
 
     let fragment = replaceNoteIds(sourceContent, sourceIds, target.noteId);
     if (target.type === "text") {
         fragment = removeSelfEmbeds(fragment, target.noteId);
     }
-    if (!isBlankStringContent(fragment, source.type)) {
-        fragment = copyAttachments(source, target, fragment);
+    // A blank note can still hold files. Copy them even when there is no text to append.
+    fragment = copyAttachments(source, target, fragment);
+
+    const targetContent = target.getContent();
+    if (typeof targetContent !== "string") {
+        return;
     }
 
     let base = replaceNoteIds(targetContent, sourceIds, target.noteId);
@@ -674,7 +731,7 @@ function copyAttachments(source: BNote, target: BNote, fragment: string) {
     for (const attachment of source.getAttachments()) {
         // The history belongs to the merged note. A note created from this one does not inherit it,
         // and the copy the merged text points at stays even after the original note is restored.
-        if (attachment.role === MERGE_UNDO_ROLE || attachment.role === MERGE_UNDO_BLOB_ROLE) {
+        if (isMergeHistoryRole(attachment.role)) {
             continue;
         }
         const copy = attachment.copy();
@@ -756,6 +813,72 @@ function escapeRegExp(value: string) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** The newest history entry whose original note still has a row, or -1 when none do. */
+function newestRestorableIndex(stack: MergeUndo[]) {
+    for (let index = stack.length - 1; index >= 0; index--) {
+        const entry = stack[index];
+        if (entry && sourceNoteRemains(entry.sourceNoteId)) {
+            return index;
+        }
+    }
+    return -1;
+}
+
+/** A soft-deleted note can be restored. An erased one, whose row is gone, cannot. */
+function sourceNoteRemains(noteId: string) {
+    return !!getSql().getRowOrNull<{ noteId: string }>(
+        "SELECT noteId FROM notes WHERE noteId = ?",
+        [ noteId ]
+    );
+}
+
+function anotherEntryClaims(
+    stack: MergeUndo[],
+    record: MergeUndo,
+    field: "createdBranchIds" | "createdAttributeIds",
+    id: string
+) {
+    for (const entry of stack) {
+        if (entry === record) {
+            continue;
+        }
+        if (entry[field].includes(id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function rememberId(ids: string[], id: string) {
+    if (!ids.includes(id)) {
+        ids.push(id);
+    }
+}
+
+function remapCarriedEntry(entry: MergeUndo, carriedIds: CarriedIds) {
+    entry.createdBranchIds = remapIdList(entry.createdBranchIds, carriedIds.branches);
+    entry.createdAttributeIds = remapIdList(entry.createdAttributeIds, carriedIds.attributes);
+    entry.inheritableReverts = remapIdList(entry.inheritableReverts, carriedIds.attributes);
+    entry.prefixRestores = entry.prefixRestores.map((change) => ({
+        branchId: carriedIds.branches.get(change.branchId) ?? change.branchId,
+        prefix: change.prefix
+    }));
+}
+
+function remapIdList(ids: string[], map: Map<string, string>) {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const id of ids) {
+        const next = map.get(id) ?? id;
+        if (seen.has(next)) {
+            continue;
+        }
+        seen.add(next);
+        result.push(next);
+    }
+    return result;
+}
+
 function emptyJournal(note: BNote): MergeUndo {
     return {
         id: randomString(12),
@@ -792,7 +915,7 @@ function rememberLinkPatch(journal: MergeUndo, noteId: string, indices: number[]
  * the restored note move back with it. A copied attachment stays, because the merged text still
  * points at it.
  */
-function restoreMergedNote(merged: BNote, record: MergeUndo) {
+function restoreMergedNote(merged: BNote, record: MergeUndo, stack: MergeUndo[]) {
     const row = getSql().getRowOrNull<{ isDeleted: number }>(
         "SELECT isDeleted FROM notes WHERE noteId = ?",
         [ record.sourceNoteId ]
@@ -835,6 +958,10 @@ function restoreMergedNote(merged: BNote, record: MergeUndo) {
                 isExpanded: branch.isExpanded
             }).save();
         }
+        // Another original that is still merged also supplied this child, so the child stays.
+        if (anotherEntryClaims(stack, record, "createdBranchIds", branchId)) {
+            continue;
+        }
         const others = child.getStrongParentBranches()
             .filter((item) => item.branchId !== branch.branchId);
         if (!branch.isWeak && others.length === 0) {
@@ -853,6 +980,9 @@ function restoreMergedNote(merged: BNote, record: MergeUndo) {
     }
 
     for (const attributeId of record.createdAttributeIds) {
+        if (anotherEntryClaims(stack, record, "createdAttributeIds", attributeId)) {
+            continue;
+        }
         const attribute = becca.getAttribute(attributeId);
         if (attribute && !attribute.isDeleted) {
             attribute.markAsDeleted();

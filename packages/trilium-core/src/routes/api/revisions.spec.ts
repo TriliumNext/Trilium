@@ -444,6 +444,32 @@ describe("Revisions API (core)", () => {
     });
 
     describe("restoring with attachments", () => {
+        it("keeps merge history when a revision is restored", async () => {
+            const { noteId } = await createTextNote(api, { title: "Merged once", content: "<p>body</p>" });
+            expect((await api.post(`/api/notes/${noteId}/attachments`, {
+                body: {
+                    role: "mergeUndo",
+                    mime: "application/json",
+                    title: "Merge undo",
+                    content: "[]"
+                }
+            })).status).toBe(204);
+            const snapshot = await api.post<{ revisionId: string }>(`/api/notes/${noteId}/revision`, {
+                body: {}
+            });
+            expect(snapshot.status).toBe(200);
+            expect((await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: "<p>changed</p>" }
+            })).status).toBe(204);
+
+            expect((await api.post(`/api/revisions/${snapshot.body.revisionId}/restore`)).status).toBe(204);
+            const roles = becca.getNoteOrThrow(noteId).getAttachments().map((item) => item.role);
+            expect(roles).toContain("mergeUndo");
+            const journal = becca.getNoteOrThrow(noteId).getAttachments()
+                .find((item) => item.role === "mergeUndo");
+            expect(journal && unwrapStringOrBuffer(journal.getContent())).toBe("[]");
+        });
+
         it("restores a revision whose snapshot referenced attachments", async () => {
             const { noteId } = await createTextNote(api, { title: "Has attachment" });
 

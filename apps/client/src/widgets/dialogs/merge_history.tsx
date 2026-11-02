@@ -1,6 +1,6 @@
 import "./merge_history.css";
 
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, type MergeHistoryEntry } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -12,15 +12,7 @@ import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 
-interface MergeHistoryEntry {
-    id: string;
-    utcDate: string;
-    sourceTitle: string;
-    sourceNoteId: string;
-    undoable: boolean;
-}
-
-/** Lists the merges that can still be undone on one note, newest first. */
+/** Lists every merge recorded on one note, newest first. */
 export default function MergeHistoryDialog() {
     const [ shown, setShown ] = useState(false);
     const [ noteId, setNoteId ] = useState<string>();

@@ -157,6 +157,17 @@ export function attachmentIcon(role: string | undefined | null, mime: string | u
 }
 
 /**
+ * Whether `role` is the record of a merge that can still be undone.
+ *
+ * That record names notes and relations from outside the merged note, so it is not note content:
+ * a revision does not snapshot it, a copy of the note does not inherit it, and a shared page does
+ * not serve it. It is deliberately absent from {@link ATTACHMENT_ROLES}.
+ */
+export function isMergeHistoryRole(role: string | undefined | null) {
+    return role === "mergeUndo" || role === "mergeUndoBlob";
+}
+
+/**
  * What the app knows about this role, or nothing at all for one it does not recognise — a script's
  * own, or a role from a newer version reached over sync.
  *

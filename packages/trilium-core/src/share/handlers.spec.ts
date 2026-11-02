@@ -391,7 +391,8 @@ describe("share handlers", () => {
                 "attachments": [
                     { id: "pngAttachment", role: "image", mime: "image/png", title: "picture.png" },
                     { id: "svgAttachment", role: "image", mime: "image/svg+xml", title: "drawing.svg" },
-                    { id: "fileAttachment", role: "file", mime: "application/pdf", title: "report.pdf" }
+                    { id: "fileAttachment", role: "file", mime: "application/pdf", title: "report.pdf" },
+                    { id: "historyAttachment", role: "mergeUndo", mime: "application/json", title: "Merge undo" }
                 ]
             },
             {
@@ -449,6 +450,13 @@ describe("share handlers", () => {
             "Cache-Control": "no-cache, no-store, must-revalidate"
         });
         expect(pdf.headers["Content-Disposition"]).toContain("report.pdf");
+
+        expect(download("historyAttachment").status).toBe(404);
+        expect(readJson("/share/api/notes/:noteId/attachments", {
+            params: { noteId: "attachmentOwner" }
+        }).map((item: { attachmentId: string }) => item.attachmentId)).toEqual([
+            "pngAttachment", "svgAttachment", "fileAttachment"
+        ]);
 
         for (const route of [ image, download ]) {
             const missing = route("noSuchAttachment");

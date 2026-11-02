@@ -1,5 +1,5 @@
 import type { AttachmentRow, AttributeType, CloneResponse, EraseExcessRevisionsOptions, NoteRow, NoteType, RevisionRow, RevisionSource } from "@triliumnext/commons";
-import { dayjs, getNoteIcon, isMarkdownMime } from "@triliumnext/commons";
+import { dayjs, getNoteIcon, isMarkdownMime, isMergeHistoryRole } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date.js";
@@ -1345,10 +1345,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
             revision.save(); // to generate revisionId, which is then used to save attachments
 
             for (const noteAttachment of this.getAttachments()) {
-                // The merge history and the text it keeps are the merge's own record, not content of
-                // the note, so a revision does not snapshot them. Restoring the revision would
-                // otherwise bring the record back after the merge had already been undone.
-                if (noteAttachment.role === "mergeUndo" || noteAttachment.role === "mergeUndoBlob") {
+                // The merge history is the merge's own record, not content of the note.
+                // A revision does not snapshot it. Restoring leaves the current record in place.
+                if (isMergeHistoryRole(noteAttachment.role)) {
                     continue;
                 }
 
