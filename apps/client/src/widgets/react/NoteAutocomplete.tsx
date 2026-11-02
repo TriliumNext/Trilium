@@ -237,9 +237,6 @@ export default function NoteAutocomplete({
      * a host can close, as Jump to Note does.
      */
     function showInFullSearch(searchString: string) {
-        // A scope the user chose, including the whole tree, is the saved search's ancestor. While
-        // the search still follows the tree, the command leaves the ancestor out and the search
-        // follows the hoist.
         void appContext.triggerCommand("searchNotes", chosenScopeId
             ? { searchString, ancestorNoteId: chosenScopeId }
             : { searchString });
