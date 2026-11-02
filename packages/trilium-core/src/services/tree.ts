@@ -9,6 +9,7 @@ import entityChangesService from "./entity_changes.js";
 import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getSql } from "./sql/index.js";
+import { getActingUserHomeNoteId } from "./user_homes.js";
 
 export interface ValidationResponse {
     branch: BBranch | null;
@@ -24,6 +25,10 @@ function validateParentChild(parentNoteId: string, childNoteId: string, branchId
     if (parentNoteId === "none") {
         // this shouldn't happen
         return { branch: null, success: false, message: `Cannot move anything into 'none' parent.` };
+    }
+
+    if (parentNoteId === "root" && getActingUserHomeNoteId()) {
+        return { branch: null, success: false, message: "Notes can only be moved or cloned into your home note, not next to it." };
     }
 
     // Virtual notes (e.g. the in-app help) exist only in becca — a persisted branch

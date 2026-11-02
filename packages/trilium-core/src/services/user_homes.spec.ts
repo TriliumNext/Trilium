@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { getBecca } from "../becca/becca.js";
+import { getBecca, warmBeccaForUser } from "../becca/becca.js";
 import Becca from "../becca/becca-interface.js";
 import { loadBeccaForUser } from "../becca/becca_loader.js";
+import cloningService from "./cloning.js";
 import * as cls from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
+import treeService from "./tree.js";
 import userHomes, { getHomeNoteId, USERS_NOTE_ID } from "./user_homes.js";
 import userService from "./user_service.js";
 
@@ -77,4 +79,50 @@ describe("user homes", () => {
         expect(memberBecca.notes[getHomeNoteId(otherId)]).toBeUndefined();
         expect(memberBecca.notes[adminNote.noteId]).toBeUndefined();
     });
+
+    it("creates a user's top-level notes in their home, but the primary admin's under root", async () => {
+        const memberId = cls.init(() => userService.createUser("home-create-spec", null, false));
+        const memberHome = cls.init(() => userHomes.ensureUserHome(memberId, "home-create-spec"));
+
+        const [ intoRoot, afterHome ] = await asUser(memberId, () => [
+            noteService.createNewNote({ parentNoteId: "root", title: "into root", content: "", type: "text" }).note,
+            noteService.createNewNoteWithTarget("after", `root_${memberHome.noteId}`, {
+                parentNoteId: "root", title: "after home", content: ""
+            }).note
+        ]);
+        expect(intoRoot.getParentNotes().map((parent) => parent.noteId)).toEqual([ memberHome.noteId ]);
+        expect(afterHome.getParentNotes().map((parent) => parent.noteId)).toEqual([ memberHome.noteId ]);
+
+        const adminNote = cls.init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "admin into root", content: "", type: "text"
+        }).note);
+        expect(adminNote.getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
+    });
+
+    it("refuses to move or clone a user's note to the top level", async () => {
+        const memberId = cls.init(() => userService.createUser("home-move-spec", null, false));
+        const memberHome = cls.init(() => userHomes.ensureUserHome(memberId, "home-move-spec"));
+        const note = cls.init(() => noteService.createNewNote({
+            parentNoteId: memberHome.noteId, ownerId: memberId, title: "movable", content: "", type: "text"
+        }).note);
+
+        const [ move, clone ] = await asUser(memberId, () => [
+            treeService.validateParentChild("root", note.noteId),
+            cloningService.cloneNoteToParentNote(note.noteId, "root")
+        ]);
+        expect(move.success).toBe(false);
+        expect(clone.success).toBe(false);
+        expect(note.getParentNotes().map((parent) => parent.noteId)).toEqual([ memberHome.noteId ]);
+
+        expect(cls.init(() => treeService.validateParentChild("root", note.noteId).success)).toBe(true);
+    });
 });
+
+/** Runs `fn` as a request by the user would: with their `userId` in CLS and their Becca warmed. */
+function asUser<T>(userId: string, fn: () => T): Promise<T> {
+    return cls.init(async () => {
+        cls.set("userId", userId);
+        await warmBeccaForUser(userId);
+        return fn();
+    });
+}

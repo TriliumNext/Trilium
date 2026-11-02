@@ -23,6 +23,7 @@ import { evaluateTemplateSafe } from "./safe_template.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
+import { getActingUserHomeNoteId } from "./user_homes.js";
 import { decodeBase64, decodeUtf8, encodeBase64 } from "./utils/binary.js";
 import date_utils from "./utils/date.js";
 import { isValidEntityId, newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
@@ -265,6 +266,10 @@ function createNewNote(params: NoteParams): {
     note: BNote;
     branch: BBranch;
 } {
+    if (params.parentNoteId === "root") {
+        params.parentNoteId = getActingUserHomeNoteId() ?? "root";
+    }
+
     const parentNote = getAndValidateParent(params);
 
     const isTitleDefaulted = params.title === null || params.title === undefined;
@@ -421,6 +426,12 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
     }
 
     const params = rawParams as NoteParams;
+
+    // A position next to a top-level note is a position among `root`'s children, which the home
+    // replaces as the parent; the note goes to the end of the home instead.
+    if (params.parentNoteId === "root" && getActingUserHomeNoteId()) {
+        target = "into";
+    }
 
     if (target === "into") {
         return createNewNote(params);

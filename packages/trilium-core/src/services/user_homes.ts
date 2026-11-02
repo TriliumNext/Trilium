@@ -2,6 +2,7 @@ import { t } from "i18next";
 
 import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
+import { getUserId } from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
@@ -16,6 +17,19 @@ export const USERS_NOTE_ID = "users";
 /** The ID of a user's home note, derived from the user so that no column has to store it. */
 export function getHomeNoteId(userId: string) {
     return `home_${userId}`;
+}
+
+/**
+ * The home of the user in CLS, which stands in for `root` as the parent of their top-level notes.
+ * Returns `null` for the primary admin and for work without a user in CLS, which both keep `root`.
+ */
+export function getActingUserHomeNoteId(): string | null {
+    const userId = getUserId();
+    if (!userId || userId === userService.getAdminUserId()) {
+        return null;
+    }
+
+    return getBecca().getNote(getHomeNoteId(userId))?.noteId ?? null;
 }
 
 /** Returns the user's home note, creating it (and the Users note) when missing. */
