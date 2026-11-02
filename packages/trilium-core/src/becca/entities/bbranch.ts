@@ -9,7 +9,10 @@ import TaskContext from "../../services/task_context.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
 import { getHoistedNoteId } from "../../services/context";
+import { getSql } from "../../services/sql/index.js";
 import { randomString } from "../../services/utils";
+
+const WEAK_PARENT_NOTE_IDS = [ "_share", "_lbBookmarks" ];
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple
@@ -128,7 +131,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
      * of deletion should not act as a clone.
      */
     get isWeak() {
-        return ["_share", "_lbBookmarks"].includes(this.parentNoteId);
+        return WEAK_PARENT_NOTE_IDS.includes(this.parentNoteId);
     }
 
     /**
@@ -168,7 +171,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
         const notDeletedBranches = note.getStrongParentBranches();
 
-        if (notDeletedBranches.length === 0) {
+        if (notDeletedBranches.length === 0 && !hasStrongParentInDatabase(note.noteId)) {
             for (const weakBranch of note.getParentBranches()) {
                 weakBranch.markAsDeleted(deleteId);
             }
@@ -297,3 +300,13 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 }
 
 export default BBranch;
+
+/**
+ * A member's Becca holds only the parents they can see, so a note without parents there can still
+ * have one in the database, which keeps the note from being deleted.
+ */
+function hasStrongParentInDatabase(noteId: string): boolean {
+    return getSql()
+        .getColumn<string>("SELECT parentNoteId FROM branches WHERE noteId = ? AND isDeleted = 0", [noteId])
+        .some((parentNoteId) => !WEAK_PARENT_NOTE_IDS.includes(parentNoteId));
+}

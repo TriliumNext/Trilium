@@ -28,7 +28,7 @@ A note that others have access to shows a <span class="tn-icon bx bx-group"></sp
 
 A note someone gave you access to appears under _Shared with me_ at the top of your tree, together with the notes below it. Trilium updates the tree of everyone affected right away.
 
-*   To keep a shared note among your own notes, [clone](../../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) it into _My notes_. It then leaves _Shared with me_.
+*   To keep a shared note among your own notes, [clone](../../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) it into _My notes_. It then leaves _Shared with me_. Deleting that clone removes it from _My notes_ only: the note stays with its owner.
 *   A note you create inside a shared note belongs to you.
 *   When your access is taken away, the shared note disappears from your tree, along with any clone of it. The notes you created inside it stay, under _Shared with me_.
 

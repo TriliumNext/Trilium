@@ -7,7 +7,7 @@ import entityConstructor from "../becca/entity_constructor.js";
 import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
-import becca from "./becca.js";
+import becca, { getBecca } from "./becca.js";
 import type Becca from "./becca-interface.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
@@ -528,36 +528,41 @@ function postProcessEntityUpdate(entityName: string, entityRow: any) {
     }
 }
 
+// A member's request deletes from their own Becca, which holds the entity, and from the admin's.
 eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENTITY_DELETE_SYNCED], ({ entityName, entityId }) => {
-    if (!becca.loaded) {
-        return;
-    }
-
-    if (entityName === "notes") {
-        noteDeleted(entityId);
-    } else if (entityName === "branches") {
-        branchDeleted(entityId);
-    } else if (entityName === "attributes") {
-        attributeDeleted(entityId);
-    } else if (entityName === "etapi_tokens") {
-        etapiTokenDeleted(entityId);
+    for (const target of new Set([ becca, getBecca() ])) {
+        if (target.loaded) {
+            applyDeletion(target, entityName, entityId);
+        }
     }
 });
 
-function noteDeleted(noteId: string) {
-    delete becca.notes[noteId];
-
-    becca.dirtyNoteSetCache();
+function applyDeletion(target: Becca, entityName: string, entityId: string) {
+    if (entityName === "notes") {
+        noteDeleted(target, entityId);
+    } else if (entityName === "branches") {
+        branchDeleted(target, entityId);
+    } else if (entityName === "attributes") {
+        attributeDeleted(target, entityId);
+    } else if (entityName === "etapi_tokens") {
+        etapiTokenDeleted(target, entityId);
+    }
 }
 
-function branchDeleted(branchId: string) {
-    const branch = becca.branches[branchId];
+function noteDeleted(target: Becca, noteId: string) {
+    delete target.notes[noteId];
+
+    target.dirtyNoteSetCache();
+}
+
+function branchDeleted(target: Becca, branchId: string) {
+    const branch = target.branches[branchId];
 
     if (!branch) {
         return;
     }
 
-    const childNote = becca.notes[branch.noteId];
+    const childNote = target.notes[branch.noteId];
 
     if (childNote) {
         childNote.parents = childNote.parents.filter((parent) => parent.noteId !== branch.parentNoteId);
@@ -569,29 +574,29 @@ function branchDeleted(branchId: string) {
         }
     }
 
-    const parentNote = becca.notes[branch.parentNoteId];
+    const parentNote = target.notes[branch.parentNoteId];
 
     if (parentNote) {
         parentNote.children = parentNote.children.filter((child) => child.noteId !== branch.noteId);
     }
 
-    delete becca.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
+    delete target.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
     if (branch.branchId) {
-        delete becca.branches[branch.branchId];
+        delete target.branches[branch.branchId];
     }
 
-    dropOrphanedSkeleton(childNote);
-    dropOrphanedSkeleton(parentNote);
+    dropOrphanedSkeleton(target, childNote);
+    dropOrphanedSkeleton(target, parentNote);
 }
 
 /**
  * Removes a skeleton note (see `BBranch.childNote`) once no branch or attribute refers to it. Its
  * row can no longer arrive when the note was erased before becca was loaded.
  */
-function dropOrphanedSkeleton(note: BNote | undefined) {
+function dropOrphanedSkeleton(target: Becca, note: BNote | undefined) {
     if (note && note.title === undefined && !note.parentBranches.length && !note.children.length
         && !note.ownedAttributes.length) {
-        noteDeleted(note.noteId);
+        noteDeleted(target, note.noteId);
     }
 }
 
@@ -627,14 +632,14 @@ function branchUpdated(branchRow: BranchRow) {
     }
 }
 
-function attributeDeleted(attributeId: string) {
-    const attribute = becca.attributes[attributeId];
+function attributeDeleted(target: Becca, attributeId: string) {
+    const attribute = target.attributes[attributeId];
 
     if (!attribute) {
         return;
     }
 
-    const note = becca.notes[attribute.noteId];
+    const note = target.notes[attribute.noteId];
 
     if (note) {
         // first invalidate and only then remove the attribute (otherwise invalidation wouldn't be complete)
@@ -653,13 +658,13 @@ function attributeDeleted(attributeId: string) {
         }
     }
 
-    delete becca.attributes[attribute.attributeId];
+    delete target.attributes[attribute.attributeId];
 
     const key = `${attribute.type}-${attribute.name.toLowerCase()}`;
 
-    becca.attributeIndex[key]?.delete(attribute);
+    target.attributeIndex[key]?.delete(attribute);
 
-    dropOrphanedSkeleton(note);
+    dropOrphanedSkeleton(target, note);
 }
 
 function attributeUpdated(attributeRow: BAttribute) {
@@ -689,8 +694,8 @@ function noteReorderingUpdated(branchIdList: number[]) {
     }
 }
 
-function etapiTokenDeleted(etapiTokenId: string) {
-    delete becca.etapiTokens[etapiTokenId];
+function etapiTokenDeleted(target: Becca, etapiTokenId: string) {
+    delete target.etapiTokens[etapiTokenId];
 }
 
 

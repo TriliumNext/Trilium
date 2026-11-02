@@ -202,6 +202,55 @@ describe("user homes", () => {
         }
     });
 
+    it("deletes a member's notes and notes inside a shared one, but only their copy of a shared note", async () => {
+        const aliceId = cls.init(() => userService.createUser("unclone-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("unclone-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "unclone-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "unclone-bob-spec"));
+        const draft = createOwnedNote(aliceHome.noteId, aliceId, "alice draft");
+        const project = createOwnedNote(bobHome.noteId, bobId, "uncloned project");
+        const spec = createOwnedNote(project.noteId, bobId, "uncloned spec");
+        const event = createOwnedNote(project.noteId, bobId, "uncloned event");
+        cls.init(() => {
+            permissionService.setUserAccess(project.noteId, aliceId, true);
+            cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
+        });
+        const reload = vi.spyOn(ws, "reloadFrocaForUser").mockImplementation(() => {});
+
+        try {
+            const [ draftDeleted, eventDeleted, projectDeleted, remaining ] = await asUser(aliceId, () => {
+                const copy = getBecca().getBranchFromChildAndParent(project.noteId, aliceHome.noteId);
+                expect(getBecca().notes[project.noteId]?.getParentBranches()).toEqual([ copy ]);
+                return [
+                    getBecca().getBranchFromChildAndParent(draft.noteId, aliceHome.noteId)?.deleteBranch(),
+                    getBecca().getBranchFromChildAndParent(event.noteId, project.noteId)?.deleteBranch(),
+                    copy?.deleteBranch(),
+                    [ draft.noteId, event.noteId, project.noteId ].filter((noteId) => getBecca().notes[noteId])
+                ];
+            });
+            expect(draftDeleted).toBe(true);
+            expect(eventDeleted).toBe(true);
+            expect(projectDeleted).toBe(false);
+            expect(remaining).toEqual([ project.noteId ]);
+        } finally {
+            reload.mockRestore();
+        }
+        const deletedNoteIds = cls.init(() => getSql().getColumn<string>(
+            "SELECT noteId FROM notes WHERE noteId IN (?, ?) AND isDeleted = 1", [ draft.noteId, event.noteId ]
+        ));
+        expect(deletedNoteIds.sort()).toEqual([ draft.noteId, event.noteId ].sort());
+
+        const live = cls.init(() => getSql().getColumn<string>(
+            "SELECT noteId || ' in ' || parentNoteId FROM branches WHERE noteId IN (?, ?) AND isDeleted = 0 ORDER BY noteId",
+            [ project.noteId, spec.noteId ]
+        ));
+        expect(live).toEqual([
+            `${project.noteId} in ${bobHome.noteId}`, `${spec.noteId} in ${project.noteId}`
+        ].sort());
+        expect(cls.init(() => getSql().getValue("SELECT isDeleted FROM notes WHERE noteId = ?", [ project.noteId ])))
+            .toBe(0);
+    });
+
     it("refuses a member's new note that reuses the ID of a note they cannot see", async () => {
         const aliceId = cls.init(() => userService.createUser("forced-alice-spec", null, false));
         const bobId = cls.init(() => userService.createUser("forced-bob-spec", null, false));
