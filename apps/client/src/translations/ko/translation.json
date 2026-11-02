@@ -59,7 +59,7 @@
     "search_note": "이름으로 노트 검색하기",
     "help_on_links": "링크 관련 도움말",
     "link_title": "링크 제목",
-    "button_add_link": "링크 추가",
+    "button_add_link": "링크 삽입",
     "anchor": "앵커(선택)",
     "anchor_none": "없음(노트 전체 링크)",
     "edit_link": "링크 편집",
@@ -2935,7 +2935,13 @@
     "line_numbers_auto": "자동",
     "line_numbers_on": "켜기",
     "line_numbers_off": "끄기",
-    "line_numbers_auto_description": "전역 설정 따르기"
+    "line_numbers_auto_description": "전역 설정 따르기",
+    "include_position": "위치",
+    "break_text": "텍스트 줄 바꿈",
+    "wrap_text": "텍스트 감싸기",
+    "align_left": "왼쪽 정렬",
+    "align_center": "가운데 정렬",
+    "align_right": "오른쪽 정렬"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -4424,7 +4430,11 @@
       "table-headers": "표 머리글",
       "jump-to-heading": "제목으로 이동",
       "jump-to-anchor": "앵커로 이동",
-      "jump-to-block": "블록으로 이동"
+      "jump-to-block": "블록으로 이동",
+      "box-position": "상자 위치",
+      "youtube-video": "YouTube 동영상",
+      "insert-youtube-video": "YouTube 동영상 삽입",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "노트에서 바로 시청할 수 있는 YouTube 동영상 삽입"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4923,5 +4933,10 @@
   "canvas": {
     "thin_stroke": "얇은 펜 선",
     "thin_stroke_description": "손글씨에 적합하도록 펜 선을 더 얇게 그립니다. 이미 그린 선의 두께는 유지됩니다."
+  },
+  "youtube_video": {
+    "title": "YouTube 동영상 삽입",
+    "button_insert": "동영상 삽입",
+    "not_a_video": "YouTube 동영상 주소가 아닙니다."
   }
 }
