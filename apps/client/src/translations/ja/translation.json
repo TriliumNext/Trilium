@@ -57,7 +57,7 @@
     "add_link": "リンクを追加",
     "note": "ノート",
     "link_title": "リンクタイトル",
-    "button_add_link": "リンクを追加",
+    "button_add_link": "リンクを挿入",
     "help_on_links": "リンクに関するヘルプ",
     "search_note": "ノート名で検索",
     "anchor": "アンカー（任意）",
@@ -1718,7 +1718,13 @@
     "line_numbers_auto": "自動",
     "line_numbers_on": "オン",
     "line_numbers_off": "オフ",
-    "line_numbers_auto_description": "グローバル設定に従う"
+    "line_numbers_auto_description": "グローバル設定に従う",
+    "include_position": "位置",
+    "break_text": "テキストを上下に配置",
+    "wrap_text": "テキストを回り込ませる",
+    "align_left": "左揃え",
+    "align_center": "中央揃え",
+    "align_right": "右揃え"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -3999,7 +4005,11 @@
       "table-headers": "表のヘッダー",
       "jump-to-heading": "見出しへ移動",
       "jump-to-anchor": "アンカーへ移動",
-      "jump-to-block": "ブロックへ移動"
+      "jump-to-block": "ブロックへ移動",
+      "box-position": "ボックスの位置",
+      "youtube-video": "YouTube 動画",
+      "insert-youtube-video": "YouTube 動画を挿入",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4923,5 +4933,10 @@
     "sort_rows": "行を並べ替え",
     "ascending": "昇順",
     "descending": "降順"
+  },
+  "youtube_video": {
+    "title": "YouTube 動画を挿入",
+    "button_insert": "動画を挿入",
+    "not_a_video": "これは YouTube 動画のアドレスではありません。"
   }
 }
