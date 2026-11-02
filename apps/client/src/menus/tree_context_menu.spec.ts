@@ -156,6 +156,37 @@ describe("buildTreeContextMenuItems on system notes", () => {
         expect(await enabledState("_optionsParent", "_optionsPage")).toMatchObject({ exportNote: false, importIntoNote: false });
     });
 
+    it("puts nothing into a virtual note and moves no virtual branch, whatever its ID", async () => {
+        vi.spyOn(noteTypesService, "loadNoteTypeData")
+            .mockResolvedValue({ builtInTemplateNotes: [], userTemplateNotes: [], newTemplates: new Set() });
+        vi.spyOn(clipboard, "getContents").mockReturnValue({ mode: "copy", noteIds: [ "other" ] });
+        buildNote({ id: "vGrand", title: "Grand", children: [ { id: "vParent", title: "Virtual", children: [ { id: "vChild", title: "Child" } ] } ] });
+        const virtual = froca.notes["vParent"];
+        if (!virtual) throw new Error("expected the virtual note");
+        virtual.isVirtual = true;
+
+        const enabledFor = async (noteId: string, parentId: string) => {
+            const note = froca.notes[noteId];
+            const branch = note?.getParentBranches().find((candidate) => candidate.parentNoteId === parentId);
+            if (!note || !branch) throw new Error("expected the note and its branch");
+            const items = await buildTreeContextMenuItems({
+                note, branch, notePath: `${parentId}/${noteId}`, component: {} as Component
+            });
+            const rows = items.flatMap((item) => ("kind" in item && item.kind === "actions" ? item.items : [ item ]));
+            return Object.fromEntries(rows.flatMap((row) => ("command" in row && row.command ? [ [ row.command, row.enabled ] ] : [])));
+        };
+
+        expect(await enabledFor("vParent", "vGrand")).toMatchObject({
+            insertChildNote: false, pasteNotesFromClipboard: false,
+            cutNotesToClipboard: false, copyNotesToClipboard: false, moveNotesTo: false, cloneNotesTo: false, deleteNotes: false
+        });
+        expect(await enabledFor("vChild", "vParent")).toMatchObject({
+            insertNoteAfter: false, pasteNotesAfterFromClipboard: false,
+            cutNotesToClipboard: false, moveNotesTo: false, deleteNotes: false,
+            insertChildNote: true, copyNotesToClipboard: true, cloneNotesTo: true
+        });
+    });
+
     it("does not cut, clone or move a help page, which is virtual, but does an options page", async () => {
         expect((await enabledState("_helpParent", "_helpPage")).branchCommands).toStrictEqual([ false, false, false, false ]);
         expect((await enabledState("_optionsParent", "_optionsPage")).branchCommands).toStrictEqual([ true, true, true, true ]);

@@ -1892,6 +1892,7 @@ function buildEnhanceTitle() {
             && !note.isOptions()
             && !note.isLaunchBarConfig()
             && !note.noteId.startsWith("_help")
+            && !note.isVirtual
             && !isSubtreeHidden
             && !node.extraClasses.includes("spotlighted-node")
         ) {

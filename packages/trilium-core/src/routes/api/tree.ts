@@ -54,7 +54,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         collectEntityIds(note);
     }
 
-    const notes: (NoteRow & { isContentWritable?: false; accessUsernames?: string[] })[] = [];
+    const notes: (NoteRow & { isContentWritable?: false; isVirtual?: true; accessUsernames?: string[] })[] = [];
     const accessUsernamesByNote = permissionService.getAccessUsernamesByNote();
 
     for (const noteId of collectedNoteIds) {
@@ -70,6 +70,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
             blobId: note.blobId,
             ownerId: note.ownerId,
             ...(note.isContentWritable() ? {} : { isContentWritable: false }),
+            ...(note.isVirtual ? { isVirtual: true } : {}),
             ...(accessUsernames ? { accessUsernames } : {})
         });
     }

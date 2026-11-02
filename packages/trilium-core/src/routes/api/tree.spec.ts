@@ -68,14 +68,15 @@ describe("Tree API (core)", () => {
         getContext().init(() => load());
 
         try {
-            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean }[] }>("/api/tree/load", {
+            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean; isVirtual?: boolean }[] }>("/api/tree/load", {
                 body: { noteIds: [ "root", "_vtreePage" ] }
             });
             const byId = new Map(res.body.notes.map((note) => [ note.noteId, note ]));
-            expect(byId.get("_vtreePage")?.isContentWritable).toBe(false);
+            expect(byId.get("_vtreePage")).toMatchObject({ isContentWritable: false, isVirtual: true });
             const root = byId.get("root");
             expect(root).toBeTruthy();
             expect(Object.hasOwn(root ?? {}, "isContentWritable")).toBe(false);
+            expect(Object.hasOwn(root ?? {}, "isVirtual")).toBe(false);
         } finally {
             unregisterVirtualNoteProvider("_vtree");
             getContext().init(() => load());
