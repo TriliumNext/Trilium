@@ -1,5 +1,5 @@
 import { USERS_NOTE_ID } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { getBecca, warmBeccaForUser } from "../becca/becca.js";
 import Becca from "../becca/becca-interface.js";
@@ -12,6 +12,7 @@ import { getSql } from "./sql/index.js";
 import treeService from "./tree.js";
 import userHomes, { getHomeNoteId, SHARED_WITH_ME_NOTE_ID } from "./user_homes.js";
 import userService from "./user_service.js";
+import ws from "./ws.js";
 
 describe("user homes", () => {
     it("creates nothing while the primary admin is the only user", () => {
@@ -173,23 +174,32 @@ describe("user homes", () => {
         expect(aliceBecca.notes[SHARED_WITH_ME_NOTE_ID]?.getChildNotes().map((child) => child.noteId)).toEqual([ aliceDraft.noteId ]);
     });
 
-    it("pastes a note into a member's home", async () => {
+    it("takes a note off Shared with me once a member pastes it into their home", async () => {
         const aliceId = cls.init(() => userService.createUser("paste-alice-spec", null, false));
         const bobId = cls.init(() => userService.createUser("paste-bob-spec", null, false));
         const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "paste-alice-spec"));
         const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "paste-bob-spec"));
         const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
         cls.init(() => permissionService.setUserAccess(project.noteId, aliceId, false));
+        const reload = vi.spyOn(ws, "reloadFrocaForUser").mockImplementation(() => {});
 
-        const result = await asUser(aliceId, () => cloningService.cloneNoteToBranch(
-            project.noteId, `root_${aliceHome.noteId}`
-        ));
-        expect(result.success).toBe(true);
-        const placed = cls.init(() => getSql().getValue(
-            "SELECT 1 FROM branches WHERE noteId = ? AND parentNoteId = ? AND isDeleted = 0",
-            [ project.noteId, aliceHome.noteId ]
-        ));
-        expect(placed).toBe(1);
+        try {
+            const result = await asUser(aliceId, () => {
+                expect(getBecca().notes[SHARED_WITH_ME_NOTE_ID]).toBeDefined();
+                return cloningService.cloneNoteToBranch(project.noteId, `root_${aliceHome.noteId}`);
+            });
+            expect(result.success).toBe(true);
+
+            const [ sharedWithMe, parentNoteIds ] = await asUser(aliceId, () => [
+                getBecca().notes[SHARED_WITH_ME_NOTE_ID],
+                getBecca().notes[project.noteId]?.getParentNotes().map((parent) => parent.noteId)
+            ]);
+            expect(sharedWithMe).toBeUndefined();
+            expect(parentNoteIds).toEqual([ aliceHome.noteId ]);
+            expect(reload).toHaveBeenCalledWith(aliceId, expect.any(String));
+        } finally {
+            reload.mockRestore();
+        }
     });
 
     it("refuses a member's new note that reuses the ID of a note they cannot see", async () => {

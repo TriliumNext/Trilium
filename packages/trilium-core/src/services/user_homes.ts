@@ -2,11 +2,14 @@ import { HOME_NOTE_ID_PREFIX, USERS_NOTE_ID } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import { getBecca } from "../becca/becca.js";
+import { evictUser } from "../becca/becca_cache.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getUserId } from "./context.js";
+import eventService from "./events.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
+import ws from "./ws.js";
 
 /**
  * The virtual note at the top of a member's tree that lists the notes they can see but not reach:
@@ -125,3 +128,17 @@ function getOrCreateUsersNote(): BNote {
         attributes: [{ type: "label", name: "iconClass", value: "bx bx-group" }]
     }).note;
 }
+
+
+// A note the member places in their own tree leaves Shared with me, which only a load of their
+// Becca builds, so the Becca is dropped and their clients reload it.
+eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => {
+    const userId = getUserId();
+    if (entityName !== "branches" || !userId
+            || !getBecca().getBranchFromChildAndParent(entity.noteId, SHARED_WITH_ME_NOTE_ID)) {
+        return;
+    }
+
+    evictUser(userId);
+    ws.reloadFrocaForUser(userId, "shared note placed");
+});
