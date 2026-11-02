@@ -8,10 +8,10 @@
     "update-model-prices": "tsx ./scripts/update-model-prices.ts"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "4.0.91",
-    "@ai-sdk/deepseek": "3.0.75",
-    "@ai-sdk/google": "4.0.107",
-    "@ai-sdk/openai": "4.0.104",
+    "@ai-sdk/anthropic": "4.0.92",
+    "@ai-sdk/deepseek": "3.0.76",
+    "@ai-sdk/google": "4.0.108",
+    "@ai-sdk/openai": "4.0.105",
     "@braintree/sanitize-url": "7.1.2",
     "@openrouter/ai-sdk-provider": "3.1.0",
     "@triliumnext/codemirror": "workspace:*",
@@ -19,7 +19,7 @@
     "@triliumnext/highlightjs": "workspace:*",
     "@triliumnext/share-theme": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
-    "ai": "7.0.156",
+    "ai": "7.0.157",
     "chardet": "2.2.0",
     "color": "5.0.3",
     "ejs": "7.0.2",
