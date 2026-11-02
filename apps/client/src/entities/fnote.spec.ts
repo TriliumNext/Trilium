@@ -61,6 +61,24 @@ describe("FNote title", () => {
     });
 });
 
+describe("FNote access", () => {
+    it("can have its access managed once others can sign in, except root, system notes and the home", () => {
+        const row = (noteId: string) => ({ noteId, title: noteId, type: "text", mime: "text/html", isProtected: false, blobId: "" }) as FNoteRow;
+        const project = new FNote(froca, row("project"));
+        expect(project.isAccessManageable()).toBe(false);
+
+        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        try {
+            expect(project.isAccessManageable()).toBe(true);
+            expect(new FNote(froca, row("root")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("_hidden")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("home_alice")).isAccessManageable()).toBe(false);
+        } finally {
+            delete window.glob.currentUser;
+        }
+    });
+});
+
 describe("FNote tree wiring", () => {
     it("addParent ignores 'none', skips duplicates, and records the branch", () => {
         const note = buildNote({ title: "child" });

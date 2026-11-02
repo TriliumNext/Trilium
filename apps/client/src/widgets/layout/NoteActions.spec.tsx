@@ -295,7 +295,7 @@ describe("NoteContextMenu", () => {
         expect(submenu?.querySelector("li.dropdown-item:has(.bx-purchase-tag)")).toBeTruthy();
     });
 
-    it("offers the access dialog once others can sign in, but not for system notes", async () => {
+    it("offers the access dialog once others can sign in, but not for system notes or the home", async () => {
         const accessItem = async (note: FNote) => {
             const parentComponent = new Component();
             const triggerCommand = vi.spyOn(parentComponent, "triggerCommand").mockImplementation(() => Promise.resolve());
@@ -322,8 +322,10 @@ describe("NoteContextMenu", () => {
             expect((await accessItem(note)).item).toBeNull();
             render(null, host);
 
-            window.glob.currentUser = { username: "olivia", isAdmin: false, avatarHue: 0 };
+            window.glob.currentUser = { username: "olivia", isAdmin: false, avatarHue: 0, homeNoteId: "home_olivia" };
             expect((await accessItem(buildNote({ id: "_optionsAccess", title: "Options" }))).item).toBeNull();
+            render(null, host);
+            expect((await accessItem(buildNote({ id: "home_olivia", title: "olivia" }))).item).toBeNull();
             render(null, host);
 
             const { item, triggerCommand } = await accessItem(note);

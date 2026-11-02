@@ -1,5 +1,5 @@
 import type { NoteAccessResponse } from "@triliumnext/commons";
-import { cls, getSql, permission_service, user_service } from "@triliumnext/core";
+import { cls, getSql, note_service, permission_service, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -174,6 +174,24 @@ describe("Permissions API", () => {
             expect(statusOf(setAccess(noteId, ownerId, false, adminSession()))).toBe(400);
             expect(statusOf(setAccess(noteId, adminSession().userId as string, false, adminSession()))).toBe(400);
             expect(statusOf(setAccess(noteId, guestId, "yes", adminSession()))).toBe(400);
+        });
+
+        it("refuses access to a whole home and to the Users note, but not to a note in a home", () => {
+            const memberId = cls.init(() => user_service.createUser(`access-home-${Date.now()}`, null, false));
+            const home = cls.init(() => user_homes.ensureUserHome(memberId, "access-home"));
+            const inHome = cls.init(() => note_service.createNewNote({
+                parentNoteId: home.noteId, ownerId: memberId, title: "in home", content: "", type: "text"
+            }).note);
+            const member = { userId: memberId };
+
+            expect(statusOf(getAccess(home.noteId, member))).toBe(400);
+            expect(statusOf(setAccess(home.noteId, guestId, false, member))).toBe(400);
+            expect(statusOf(setAccess(home.noteId, guestId, false, adminSession()))).toBe(400);
+            expect(statusOf(setAccess("users", guestId, false, adminSession()))).toBe(400);
+            expect(statusOf(cls.init(() => permissionsRoute.createPermission(req({ noteId: home.noteId, userId: guestId }, {}, adminSession()))))).toBe(400);
+            expect(cls.init(() => permission_service.canUserAccessNote(home.noteId, guestId))).toBe(false);
+
+            expect(setAccess(inHome.noteId, guestId, false, member)).toBeUndefined();
         });
     });
 });

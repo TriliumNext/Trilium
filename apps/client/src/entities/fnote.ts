@@ -104,6 +104,19 @@ export default class FNote {
         this.storedTitle = title;
     }
 
+    /**
+     * Whether "Access..." is offered for the note. `currentUser` is set only once someone besides the
+     * primary admin can sign in; `root`, system notes and the member's own home cannot be shared, as
+     * the server refuses them.
+     */
+    isAccessManageable() {
+        const currentUser = window.glob?.currentUser;
+        return !!currentUser
+            && this.noteId !== "root"
+            && !this.noteId.startsWith("_")
+            && this.noteId !== currentUser.homeNoteId;
+    }
+
     update(row: FNoteRow) {
         this.noteId = row.noteId;
         this.isProtected = !!row.isProtected;

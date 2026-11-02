@@ -1,5 +1,5 @@
 import { getAvatarHues, type NoteAccessGrant, type NoteAccessResponse, type NoteAccessUser } from "@triliumnext/commons";
-import { getSql, permission_service, type UserRecord, user_service } from "@triliumnext/core";
+import { getSql, permission_service, user_homes, type UserRecord, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
 function callerIsAdmin(req: Request): boolean {
@@ -36,6 +36,9 @@ function createPermission(req: Request) {
     }
     if (groupId !== undefined && groupId !== null && (typeof groupId !== "string" || groupId.trim() === "")) {
         return [400, { message: "groupId must be a non-empty string." }];
+    }
+    if (user_homes.isHomeOrUsersNote(noteId.trim())) {
+        return [400, { message: "Access to this note cannot be changed." }];
     }
 
     const permissionId = permission_service.grantPermission(
@@ -112,7 +115,10 @@ export default {
     getNoteAccess, setNoteAccess, removeNoteAccess
 };
 
-/** Access to a note is managed by its owner and by admins; `root` and system notes have none to manage. */
+/**
+ * Access to a note is managed by its owner and by admins; `root`, system notes, homes and the Users
+ * note have none to manage.
+ */
 function checkCanManageAccess(req: Request<{ noteId: string }>):
     | { error: [number, { message: string }]; noteId?: undefined; ownerId?: undefined }
     | { error?: undefined; noteId: string; ownerId: string | null } {
@@ -120,7 +126,7 @@ function checkCanManageAccess(req: Request<{ noteId: string }>):
     if (!callerId) return { error: [403, { message: "Sign-in required." }] };
 
     const { noteId } = req.params;
-    if (noteId === "root" || noteId.startsWith("_")) {
+    if (noteId === "root" || noteId.startsWith("_") || user_homes.isHomeOrUsersNote(noteId)) {
         return { error: [400, { message: "Access to this note cannot be changed." }] };
     }
 

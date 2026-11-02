@@ -93,7 +93,17 @@ function getTopLevelHomeNoteId(userId: string): string | undefined {
     ) ?? undefined;
 }
 
-export default { ensureUserHome, ensureUserHomes, renameUserHome, getTopLevelHomeNoteId };
+/**
+ * Whether the note is the Users note or a user's home. Access to them cannot be given: a grant covers
+ * everything below, so it would hand over a user's notes, or everyone's, including those yet to come.
+ */
+function isHomeOrUsersNote(noteId: string): boolean {
+    return noteId === USERS_NOTE_ID || !!getSql().getValue<number>(
+        "SELECT 1 FROM users WHERE ? = 'home_' || userId", [noteId]
+    );
+}
+
+export default { ensureUserHome, ensureUserHomes, renameUserHome, getTopLevelHomeNoteId, isHomeOrUsersNote };
 
 function getOrCreateUsersNote(): BNote {
     const existing = getBecca().getNote(USERS_NOTE_ID);

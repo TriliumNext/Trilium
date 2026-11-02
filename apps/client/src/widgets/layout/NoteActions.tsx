@@ -330,8 +330,7 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
         disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
         itemRef={itemToFocusRef}
     />;
-    // `currentUser` is set only once someone besides the primary admin can sign in.
-    const access = window.glob.currentUser && note.noteId !== "root" && !note.noteId.startsWith("_") && (
+    const access = note.isAccessManageable() && (
         <CommandItem icon="bx bx-user-plus" text={t("note_actions.access")}
             command={() => parentComponent?.triggerCommand("showNoteAccess", {
                 noteId: note.noteId,
