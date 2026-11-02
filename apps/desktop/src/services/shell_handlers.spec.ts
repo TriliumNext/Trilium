@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
     showItemInFolder: vi.fn(),
     execFile: vi.fn(),
     spawn: vi.fn(),
+    fromWebContents: vi.fn<() => { id: number } | null>(() => ({ id: 1 })),
     showOpenDialog: vi.fn<(...args: unknown[]) => Promise<{ canceled: boolean; filePaths: string[] }>>(),
     logError: vi.fn()
 }));
@@ -24,7 +25,7 @@ vi.mock("electron", () => ({
             on: (channel: string, fn: Handler) => h.on.set(channel, fn),
             handle: (channel: string, fn: Handler) => h.handle.set(channel, fn)
         },
-        BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
+        BrowserWindow: { fromWebContents: h.fromWebContents },
         dialog: { showOpenDialog: h.showOpenDialog },
         shell: {
             openExternal: h.openExternal,
@@ -218,6 +219,13 @@ describe("setupShellHandlers", () => {
                 expect(options.filters[0].extensions).toEqual([ "app" ]);
                 expect(h.execFile).toHaveBeenCalledWith("open", [ "-a", "/Applications/TextEdit.app", tmpFile ], expect.any(Function));
                 expect(h.openPath).not.toHaveBeenCalled();
+            });
+
+            it("shows the picker without a parent when the sender has no window", async () => {
+                h.fromWebContents.mockReturnValueOnce(null);
+                h.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: [] });
+                expect(await fireHandle("open-custom", tmpFile)).toBe(true);
+                expect(h.showOpenDialog).toHaveBeenCalledWith(expect.objectContaining({ defaultPath: "/Applications" }));
             });
 
             it("opens nothing when the picker is canceled", async () => {
