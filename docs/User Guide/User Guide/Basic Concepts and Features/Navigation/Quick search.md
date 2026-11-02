@@ -28,7 +28,7 @@ Quick search lists up to 200 matching notes in a single scrollable list, so the 
 
 ### Continuing in the full search
 
-To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query. The button stays below the list, however far the results are scrolled.
+To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query and the same scope: a note this search was limited to, or the whole tree when it was widened. The button stays below the list, however far the results are scrolled.
 
 ### Visual Features
 

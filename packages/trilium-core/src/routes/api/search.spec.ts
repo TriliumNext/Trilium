@@ -2,9 +2,10 @@ import { dayjs, type NoteMimeCount, type SearchResultDetailsResponse, type Searc
 import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
+import { ValidationError } from "../../errors.js";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
-import { isNewTemplate } from "./search";
+import searchApi, { isNewTemplate } from "./search";
 
 let api: CoreApiTester;
 const UNIQUE_TOKEN = "ZzUniqueSearchTokenQwerty";
@@ -168,6 +169,44 @@ describe("Search API (core)", () => {
         expect(inHidden.status).toBe(200);
         expect(inHidden.body.searchResultNoteIds).toContain(hidden.noteId);
         expect(inHidden.body.searchResultNoteIds).not.toContain(outside.noteId);
+    });
+
+    it("limits a quick search to a named ancestor, and treats a blank ancestor as the hoist", async () => {
+        const token = `ZzNamedAncestor${Date.now()}`;
+        const shelf = await createTextNote(api, { title: `Shelf ${token}` });
+        const inside = await createTextNote(api, { parentNoteId: shelf.noteId, title: `${token} inside` });
+        const outside = await createTextNote(api, { title: `${token} outside` });
+        const ids = async (ancestorNoteId: string, hoistedNoteId?: string) => {
+            const res = await api.get<{ searchResultNoteIds: string[] }>("/api/quick-search", {
+                query: { searchString: token, ancestorNoteId },
+                headers: hoistedNoteId ? { "trilium-hoisted-note-id": hoistedNoteId } : undefined
+            });
+            expect(res.status).toBe(200);
+            return res.body.searchResultNoteIds;
+        };
+
+        const named = await ids(shelf.noteId, "root");
+        expect(named).toContain(inside.noteId);
+        expect(named).not.toContain(outside.noteId);
+
+        const everywhere = await ids("root", shelf.noteId);
+        expect(everywhere).toContain(outside.noteId);
+
+        const padded = await ids(`  ${shelf.noteId}  `, "root");
+        expect(padded).toContain(inside.noteId);
+        expect(padded).not.toContain(outside.noteId);
+
+        const blank = await ids("   ", shelf.noteId);
+        expect(blank).toContain(inside.noteId);
+        expect(blank).not.toContain(outside.noteId);
+
+        const empty = await ids("", shelf.noteId);
+        expect(empty).toContain(inside.noteId);
+        expect(empty).not.toContain(outside.noteId);
+
+        expect(() => searchApi.quickSearch({
+            query: { searchString: token, ancestorNoteId: [ shelf.noteId, "root" ] }
+        } as never)).toThrow(ValidationError);
     });
 
     it("omits hidden notes from an unhoisted quick search", async () => {

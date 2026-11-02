@@ -121,7 +121,7 @@ export default function NoteAutocomplete({
     const { isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks } = opts ?? {};
     // Every search for a note carries the scope. A host sets `hoistFocus` to false to leave it out.
     const hoistFocus = opts?.hoistFocus !== false;
-    const { searchFocusId, setSearchFocus } = useSearchFocus(hoistFocus, true);
+    const { searchFocusId, setSearchFocus, chosenScopeId } = useSearchFocus(hoistFocus, true);
 
     const source = useCallback(async (query: string) => {
         if (isCommandPalette && query.startsWith(">")) {
@@ -237,7 +237,12 @@ export default function NoteAutocomplete({
      * a host can close, as Jump to Note does.
      */
     function showInFullSearch(searchString: string) {
-        void appContext.triggerCommand("searchNotes", { searchString });
+        // A scope the user chose, including the whole tree, is the saved search's ancestor. While
+        // the search still follows the tree, the command leaves the ancestor out and the search
+        // follows the hoist.
+        void appContext.triggerCommand("searchNotes", chosenScopeId
+            ? { searchString, ancestorNoteId: chosenScopeId }
+            : { searchString });
         onChange?.({ action: "search-notes", noteTitle: searchString });
     }
 

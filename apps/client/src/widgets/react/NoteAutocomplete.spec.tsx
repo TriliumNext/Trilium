@@ -22,6 +22,7 @@ vi.mock("../../services/i18n", async (importOriginal) => ({
 
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
+import hoistedNoteService from "../../services/hoisted_note";
 import type { NoteSuggestionOptions, Suggestion } from "../../services/note_autocomplete";
 import { collectShortcutHints } from "../../services/shortcut_hints";
 import { buildNote } from "../../test/easy-froca";
@@ -260,6 +261,138 @@ describe("NoteAutocomplete's suggestion list", () => {
         } finally {
             appContext.tabManager = previousTabManager;
             triggerCommand.mockRestore();
+        }
+    });
+
+    it("leaves the scope out of a field that opts out, including the full search", async () => {
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const host = document.createElement("div");
+        document.body.append(host);
+        try {
+            const input = await mount({
+                container: { current: host },
+                searchFooter: true,
+                opts: { hoistFocus: false, allowJumpToSearchNotes: true }
+            });
+            await type(input, "al");
+            expect(getNoteSuggestions.mock.lastCall?.[1]?.ancestorNoteId).toBeUndefined();
+            expect(host.querySelector(".note-suggestion-focus")).toBeNull();
+            await act(async () => { host.querySelector<HTMLButtonElement>(".show-in-full-search")?.click(); });
+            expect(triggerCommand).toHaveBeenCalledWith("searchNotes", { searchString: "al" });
+        } finally {
+            host.remove();
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("opens the full search on a scope the user chose, including the whole tree", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const host = document.createElement("div");
+        document.body.append(host);
+        getNoteSuggestions.mockResolvedValue([
+            { notePath: "root/shelf/inside", noteTitle: "Inside", highlightedNotePathTitle: "Inside" }
+        ]);
+
+        try {
+            const input = await mount({
+                container: { current: host },
+                searchFooter: true,
+                opts: { allowJumpToSearchNotes: true }
+            });
+            await type(input, "al");
+            const openFullSearch = () => host.querySelector<HTMLButtonElement>(".show-in-full-search")?.click();
+
+            // Still following the tree, so the saved search follows the hoist.
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", { searchString: "al" });
+
+            await act(async () => { host.querySelector<HTMLButtonElement>(".note-suggestion-hoist")?.click(); });
+            await settle();
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", {
+                searchString: "al", ancestorNoteId: "inside"
+            });
+
+            await act(async () => { host.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click(); });
+            await settle();
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", {
+                searchString: "al", ancestorNoteId: "root"
+            });
+        } finally {
+            host.remove();
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("searches the whole tree when the hoist is inside the hidden subtree", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "_hidden", title: "Hidden", children: [ { id: "help", title: "Help" } ] },
+                { id: "shelf", title: "Work" }
+            ]
+        });
+        const checks: ((hidden: boolean) => void)[] = [];
+        const hiddenCheck = vi.spyOn(hoistedNoteService, "isHoistedInHiddenSubtree")
+            .mockImplementation(() => new Promise((resolve) => { checks.push(resolve); }));
+        const host = new Component();
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "root", ntxId: "ntx1" })
+        } as never;
+        const hoist = (noteId: string) => act(async () => {
+            host.handleEventInChildren("hoistedNoteChanged", { noteId, ntxId: "ntx1" });
+        });
+        try {
+            let input: HTMLInputElement | null = null;
+            await act(async () => {
+                input = renderInto(
+                    <ParentComponent.Provider value={host}>
+                        <NoteAutocomplete opts={{ hoistFocus: true }} />
+                    </ParentComponent.Provider>
+                ).querySelector("input");
+            });
+            if (!input) throw new Error("no input rendered");
+            const field = input as HTMLInputElement;
+            await act(async () => { field.focus(); });
+            await settle();
+            expect(hiddenCheck).not.toHaveBeenCalled();
+
+            await hoist("help");
+            await hoist("shelf");
+            checks[0]?.(true);
+            checks[1]?.(false);
+            await settle();
+            // The check for Help was cancelled by the move to Work, so the search stays there.
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+
+            await hoist("help");
+            checks[2]?.(true);
+            await settle();
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "root" });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+        } finally {
+            hiddenCheck.mockRestore();
+            appContext.tabManager = previousTabManager;
         }
     });
 

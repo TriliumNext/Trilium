@@ -325,10 +325,6 @@
  * descriptions, and given more height than a list usually is: it is long, and the query only
  * narrows it.
  */
-/*
- * The hoist the search is focused on. It stays put while the results scroll, and its background is
- * opaque because the rows pass under it.
- */
 .note-suggestion-focus {
     position: sticky;
     top: 0;
@@ -357,10 +353,6 @@
     }
 }
 
-/*
- * Hoist, at the end of a note's row. A workspace keeps it visible; any other note shows it while
- * the row is highlighted. Hidden, it takes no clicks, so the row still opens the note.
- */
 .note-autocomplete-menu .note-suggestion-hoist,
 .note-suggestion-list .note-suggestion-hoist,
 .quick-search-menu .note-suggestion-hoist,

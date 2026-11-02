@@ -3,7 +3,7 @@ Hoisting is a standard outliner feature which allows you to focus on (or "zoom i
 
 ![](Note%20Hoisting_note-hoisting.gif)
 
-In addition to showing only this subtree, hoisting narrows [full text search](Search.md) and [quick search](Quick%20search.md) to that subtree. Every search for a note starts in the same place: [Jump to note](Jump%20to%20%26%20command%20palette.md), typing `@`, a relation's target, quick search, and the other fields that look up a note. The note is named above the results, even when the field is empty. A result can limit that search to itself, and widening it looks through the whole tree without unhoisting. A saved search still follows the hoist, unless the search sets its own ancestor.
+In addition to showing only this subtree, hoisting narrows [full text search](Search.md) and [quick search](Quick%20search.md) to that subtree. Every search for a note starts in the same place: [Jump to note](Jump%20to%20%26%20command%20palette.md), typing `@`, a relation's target, quick search, and the other fields that look up a note. The note is named above the results, even when the field is empty. A result can limit that search to itself, and widening it looks through the whole tree without unhoisting. A saved search still follows the hoist, unless the search sets its own ancestor. _Show in full search_ sets that ancestor to the scope the search was using, including the whole tree.
 
 ## Showing all notes again
 

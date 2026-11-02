@@ -72,12 +72,14 @@ export default function QuickSearch() {
     scopeRef.current = chosenScopeId;
 
     useTriliumEvent("quickSearch", () => editorRef.current?.focus());
-    const followedScope = useRef(chosenScopeId);
+    // Open results follow the scope the bar names. While the search still follows the tree, that
+    // scope is the hoist, which `chosenScopeId` does not record.
+    const followedFocus = useRef(searchFocusId);
     useEffect(() => {
-        if (followedScope.current === chosenScopeId) return;
-        followedScope.current = chosenScopeId;
+        if (followedFocus.current === searchFocusId) return;
+        followedFocus.current = searchFocusId;
         if (searchStringRef.current.trim()) void search();
-    }, [ chosenScopeId ]);
+    }, [ searchFocusId ]);
     useResultNavigation(popupRef, open, {
         focusField: () => editorRef.current?.focus(),
         onMoved: () => setKeyboardDriven(true),
@@ -114,7 +116,10 @@ export default function QuickSearch() {
     function showInFullSearch() {
         close();
         const searchString = searchStringRef.current.trim();
-        void appContext.triggerCommand("searchNotes", { searchString });
+        const ancestorNoteId = scopeRef.current;
+        void appContext.triggerCommand("searchNotes", ancestorNoteId
+            ? { searchString, ancestorNoteId }
+            : { searchString });
     }
 
     function close() {
