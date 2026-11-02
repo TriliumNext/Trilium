@@ -4,7 +4,10 @@ import type { NoteAccessResponse, NoteAccessUser } from "@triliumnext/commons";
 import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import ActionButton from "../react/ActionButton";
 import { Badge } from "../react/Badge";
@@ -49,12 +52,12 @@ export default function NoteAccessDialog() {
 
     async function setLevel(userId: string, level: AccessLevel) {
         await server.put(`notes/${noteId}/access/${userId}`, { canWrite: level === "write" });
-        await refresh();
+        await Promise.all([ refresh(), noteId && reloadInTree(noteId) ]);
     }
 
     async function removeAccess(userId: string) {
         await server.remove(`notes/${noteId}/access/${userId}`);
-        await refresh();
+        await Promise.all([ refresh(), noteId && reloadInTree(noteId) ]);
     }
 
     const levelOptions: SegmentedChoiceOption<AccessLevel>[] = [
@@ -126,6 +129,14 @@ export default function NoteAccessDialog() {
             </>}
         </Modal>
     );
+}
+
+/** No entity change carries a grant, so the tree's access icon is refreshed by reloading the note. */
+async function reloadInTree(noteId: string) {
+    await froca.reloadNotes([ noteId ]);
+    const loadResults = new LoadResults([]);
+    loadResults.addNote(noteId);
+    await appContext.triggerEvent("entitiesReloaded", { loadResults });
 }
 
 function AccessRow({ user, children }: { user: NoteAccessUser; children: ComponentChildren }) {

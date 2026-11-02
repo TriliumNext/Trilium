@@ -4,6 +4,7 @@ import type { Request } from "../../http_interface";
 import { getBecca } from "../../becca/becca.js";
 import { NotFoundError } from "../../errors.js";
 import { getLog } from "../../services/log.js";
+import permissionService from "../../services/permission_service.js";
 import type BNote from "../../becca/entities/bnote.js";
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
@@ -53,10 +54,12 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         collectEntityIds(note);
     }
 
-    const notes: (NoteRow & { isContentWritable?: false })[] = [];
+    const notes: (NoteRow & { isContentWritable?: false; accessUsernames?: string[] })[] = [];
+    const accessUsernamesByNote = permissionService.getAccessUsernamesByNote();
 
     for (const noteId of collectedNoteIds) {
         const note = getBecca().notes[noteId];
+        const accessUsernames = accessUsernamesByNote.get(noteId);
 
         notes.push({
             noteId: note.noteId,
@@ -65,7 +68,8 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
             type: note.type,
             mime: note.mime,
             blobId: note.blobId,
-            ...(note.isContentWritable() ? {} : { isContentWritable: false })
+            ...(note.isContentWritable() ? {} : { isContentWritable: false }),
+            ...(accessUsernames ? { accessUsernames } : {})
         });
     }
 

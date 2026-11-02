@@ -171,6 +171,24 @@ function revokeUserAccess(noteId: string, userId: string): void {
     evictUser(userId);
 }
 
+/** The usernames of the users with a grant on each note, for every note that has one. */
+function getAccessUsernamesByNote(): Map<string, string[]> {
+    const rows = getSql().getRows<{ noteId: string; username: string }>(
+        `SELECT DISTINCT p.noteId, u.username
+           FROM note_permissions p
+           JOIN users u ON u.userId = p.userId AND u.isDeleted = 0
+          ORDER BY u.username`
+    );
+
+    const byNote = new Map<string, string[]>();
+    for (const { noteId, username } of rows) {
+        const usernames = byNote.get(noteId) ?? [];
+        usernames.push(username);
+        byNote.set(noteId, usernames);
+    }
+    return byNote;
+}
+
 function getPermissionsForNote(noteId: string): PermissionRow[] {
     return getSql().getRows<PermissionRow>(
         `SELECT ${PERMISSION_COLS}
@@ -191,6 +209,7 @@ export default {
     revokePermission,
     setUserAccess,
     revokeUserAccess,
+    getAccessUsernamesByNote,
     getPermissionsForNote,
     clearPermissionCache
 };

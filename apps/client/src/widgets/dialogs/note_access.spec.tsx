@@ -2,7 +2,9 @@ import type { NoteAccessResponse } from "@triliumnext/commons";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
+import froca from "../../services/froca";
 import server from "../../services/server";
 import tree from "../../services/tree";
 import { renderInto } from "../../test/render";
@@ -27,6 +29,7 @@ describe("NoteAccessDialog", () => {
     let get: ReturnType<typeof vi.spyOn>;
     let put: ReturnType<typeof vi.spyOn>;
     let remove: ReturnType<typeof vi.spyOn>;
+    let reloadNotes: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
         const host = new Component();
@@ -34,6 +37,8 @@ describe("NoteAccessDialog", () => {
         put = vi.spyOn(server, "put").mockResolvedValue(undefined);
         remove = vi.spyOn(server, "remove").mockResolvedValue(undefined);
         vi.spyOn(tree, "getNoteTitle").mockResolvedValue("Project");
+        reloadNotes = vi.spyOn(froca, "reloadNotes").mockResolvedValue(undefined);
+        vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
         container = renderInto(
             <ParentComponent.Provider value={host}>
                 <NoteAccessDialog />
@@ -79,5 +84,8 @@ describe("NoteAccessDialog", () => {
         await click(bobRow.querySelector(".note-access-remove"));
         expect(remove).toHaveBeenCalledWith("notes/project/access/bob");
         expect(get).toHaveBeenCalledTimes(4);
+        // The tree's access icon follows each change.
+        expect(reloadNotes).toHaveBeenCalledTimes(3);
+        expect(reloadNotes).toHaveBeenLastCalledWith([ "project" ]);
     });
 });

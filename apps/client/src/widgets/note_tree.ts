@@ -1906,6 +1906,12 @@ function buildEnhanceTitle() {
             $span.find(".fancytree-title").append($sharedIndicator);
         }
 
+        if (note.accessUsernames.length > 0) {
+            const $accessIndicator = $(`<span class="note-indicator-icon access-indicator"></span>`);
+            $accessIndicator.attr("title", t("note_tree.access-indicator-tooltip", { usernames: note.accessUsernames.join(", ") }));
+            $span.find(".fancytree-title").append($accessIndicator);
+        }
+
         // Add a badge with the number of items if it hides children.
         const count = note.getChildNoteIds().length;
         if (isSubtreeHidden && count > 0) {

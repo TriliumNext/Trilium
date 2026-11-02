@@ -150,6 +150,10 @@ class FrocaImpl implements Froca {
             } else {
                 this.notes[noteId] = new FNote(this, noteRow);
             }
+
+            // Only the tree load sends the field, so `FNote.update()`, which also takes the rows of
+            // entity changes, leaves it alone.
+            this.notes[noteId].accessUsernames = noteRow.accessUsernames ?? [];
         }
 
         for (const branchRow of branchRows) {

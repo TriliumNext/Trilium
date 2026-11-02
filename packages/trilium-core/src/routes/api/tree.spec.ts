@@ -3,6 +3,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getBecca } from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import permissionService from "../../services/permission_service";
+import userService from "../../services/user_service";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -78,6 +80,19 @@ describe("Tree API (core)", () => {
             unregisterVirtualNoteProvider("_vtree");
             getContext().init(() => load());
         }
+    });
+
+    it("names the users with access to a note, and only on that note", async () => {
+        const note = await createTextNote(api, { title: "tree-access-spec" });
+        const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
+        getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
+
+        const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[] }[] }>("/api/tree/load", {
+            body: { noteIds: [ "root", note.noteId ] }
+        });
+        const byId = new Map(res.body.notes.map((row) => [ row.noteId, row ]));
+        expect(byId.get(note.noteId)?.accessUsernames).toEqual([ "tree-access-user" ]);
+        expect(Object.hasOwn(byId.get("root") ?? {}, "accessUsernames")).toBe(false);
     });
 
     describe("edge cases", () => {

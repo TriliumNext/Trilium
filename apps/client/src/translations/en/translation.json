@@ -2879,7 +2879,8 @@
     "back-to-tree": "Note tree",
     "display-density": "Display density",
     "display-density-relaxed": "Relaxed",
-    "display-density-dense": "Dense"
+    "display-density-dense": "Dense",
+    "access-indicator-tooltip": "Access given to {{usernames}}"
   },
   "mobile_note_navigator": {
     "back": "Go up one level",

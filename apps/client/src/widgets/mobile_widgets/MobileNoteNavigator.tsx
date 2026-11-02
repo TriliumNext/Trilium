@@ -722,7 +722,7 @@ function NavigatorRow({ note, parentNoteId, childNotePath, isActive, isPending, 
 }
 
 /**
- * A note's title followed by the clone and share icons the desktop tree shows. The title
+ * A note's title followed by the clone, share and access icons the desktop tree shows. The title
  * shortens with an ellipsis, so the icons stay visible next to it. Until the protected session
  * starts, a protected note shows a placeholder after its branch prefix instead of its title.
  */
@@ -754,6 +754,14 @@ export function TitleWithIndicators({ note, parentNoteId, title, className }: {
                     className="mobile-navigator-indicator shared-indicator"
                     role="img"
                     aria-label={t("note_tree.shared-indicator-tooltip")}
+                />
+            )}
+            {note.accessUsernames.length > 0 && (
+                <Icon
+                    icon="bx bx-group"
+                    className="mobile-navigator-indicator access-indicator"
+                    role="img"
+                    aria-label={t("note_tree.access-indicator-tooltip", { usernames: note.accessUsernames.join(", ") })}
                 />
             )}
         </span>

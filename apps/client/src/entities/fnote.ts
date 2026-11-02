@@ -29,6 +29,8 @@ export interface FNoteRow {
     blobId: string;
     /** Sent only as `false`, for a virtual note whose provider cannot save content. */
     isContentWritable?: boolean;
+    /** Sent only by the tree load, and only for a note with grants. */
+    accessUsernames?: string[];
 }
 
 export interface NoteMetaData {
@@ -53,6 +55,8 @@ export default class FNote {
     blobId!: string;
     /** `false` for a note that no editing mode can unlock, such as a page of the in-app help. */
     isContentWritable!: boolean;
+    /** The users given access to this note itself, by username; set by `froca.addResp()`. */
+    accessUsernames: string[] = [];
 
     attributes: string[];
     targetRelations: string[];
