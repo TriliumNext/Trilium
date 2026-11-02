@@ -13,7 +13,8 @@ import ActionButton from "../react/ActionButton";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { Card, CardSection } from "../react/Card";
-import FormSelect from "../react/FormSelect";
+import Dropdown from "../react/Dropdown";
+import { FormListItem } from "../react/FormList";
 import { useNoteTitle, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
@@ -107,14 +108,7 @@ export default function NoteAccessDialog() {
                 <Card heading={t("note_access.add_heading")}>
                     {selectedUserId ? (
                         <CardSection className="note-access-add">
-                            <FormSelect
-                                className="note-access-add-user"
-                                values={candidates}
-                                keyProperty="userId"
-                                titleProperty="username"
-                                currentValue={selectedUserId}
-                                onChange={setNewUserId}
-                            />
+                            <UserPicker users={candidates} currentUserId={selectedUserId} onChange={setNewUserId} />
                             <SegmentedChoice options={levelOptions} currentValue={newLevel} onChange={setNewLevel} />
                             <Button
                                 icon="bx bx-plus"
@@ -128,6 +122,45 @@ export default function NoteAccessDialog() {
                 </Card>
             </>}
         </Modal>
+    );
+}
+
+function UserPicker({ users, currentUserId, onChange }: {
+    users: NoteAccessUser[];
+    currentUserId: string;
+    onChange(userId: string): void;
+}) {
+    const current = users.find((user) => user.userId === currentUserId);
+
+    return (
+        <Dropdown
+            className="note-access-add-user"
+            dropdownContainerClassName="note-access-user-menu"
+            title={t("note_access.user")}
+            text={current && <UserLabel user={current} />}
+            mobileBottomSheet
+        >
+            {users.map((user) => (
+                <FormListItem
+                    key={user.userId}
+                    leading={<UserAvatar username={user.username} hue={user.avatarHue} />}
+                    active={user.userId === currentUserId}
+                    selected={user.userId === currentUserId}
+                    onClick={() => onChange(user.userId)}
+                >
+                    <span className="note-access-user-name">{user.username}</span>
+                </FormListItem>
+            ))}
+        </Dropdown>
+    );
+}
+
+function UserLabel({ user }: { user: NoteAccessUser }) {
+    return (
+        <span className="note-access-user-label">
+            <UserAvatar username={user.username} hue={user.avatarHue} />
+            <span className="note-access-user-name">{user.username}</span>
+        </span>
     );
 }
 

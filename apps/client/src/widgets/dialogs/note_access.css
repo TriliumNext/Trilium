@@ -28,11 +28,38 @@
 
     .note-access-add-user {
         flex: 1 1 10em;
-        width: auto;
         min-width: 0;
+
+        > .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
     }
 
     .note-access-add-none {
         color: var(--muted-text-color);
     }
+}
+
+.note-access-user-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+
+    .user-avatar {
+        --user-avatar-size: 22px;
+    }
+
+    .note-access-user-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.note-access-user-menu .user-avatar {
+    --user-avatar-size: 22px;
 }

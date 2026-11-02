@@ -5081,6 +5081,7 @@
     "add_heading": "Give access",
     "add": "Add",
     "no_more_users": "Everyone who can be given access already has it.",
-    "close": "Close"
+    "close": "Close",
+    "user": "User"
   }
 }

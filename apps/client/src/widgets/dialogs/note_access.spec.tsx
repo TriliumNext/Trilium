@@ -20,7 +20,8 @@ const access: NoteAccessResponse = {
     grants: [ { userId: "bob", username: "bob", avatarHue: 20, canWrite: false } ],
     users: [
         { userId: "bob", username: "bob", avatarHue: 20 },
-        { userId: "carol", username: "carol", avatarHue: 30 }
+        { userId: "carol", username: "carol", avatarHue: 30 },
+        { userId: "dave", username: "dave", avatarHue: 40 }
     ]
 };
 
@@ -60,22 +61,35 @@ describe("NoteAccessDialog", () => {
         return [ ...scope?.querySelectorAll("button") ?? [] ].find((button) => button.textContent?.trim() === text);
     }
 
-    it("lists the owner and the grants, offering only users without one", () => {
+    /** The rows of the user picker, which opens as a menu in the page's body. */
+    async function openUserPicker() {
+        await click(container.querySelector(".note-access-add-user .dropdown-toggle"));
+        return [ ...document.body.querySelectorAll(".note-access-user-menu .dropdown-item") ];
+    }
+
+    it("lists the owner and the grants, offering only users without one", async () => {
         expect(get).toHaveBeenCalledWith("notes/project/access");
 
         const rows = [ ...container.querySelectorAll(".note-access-row") ];
         expect(rows.map((row) => row.querySelector(".note-access-username")?.textContent)).toEqual([ "olivia", "bob" ]);
         expect(rows[0].querySelector(".note-access-owner-badge")).not.toBeNull();
 
-        const options = [ ...container.querySelectorAll(".note-access-add-user option") ];
-        expect(options.map((option) => option.textContent)).toEqual([ "carol" ]);
+        const toggle = container.querySelector(".note-access-add-user .dropdown-toggle");
+        expect(toggle?.querySelector(".note-access-user-name")?.textContent).toBe("carol");
+        expect(toggle?.querySelector(".user-avatar")).not.toBeNull();
+
+        const rowsOffered = await openUserPicker();
+        expect(rowsOffered.map((row) => row.querySelector(".note-access-user-name")?.textContent)).toEqual([ "carol", "dave" ]);
+        expect(rowsOffered.every((row) => row.querySelector(".user-avatar"))).toBe(true);
     });
 
     it("grants, changes and removes access", async () => {
         const add = container.querySelector(".note-access-add");
+        await click((await openUserPicker()).find((row) => row.textContent?.includes("dave")));
+        expect(container.querySelector(".note-access-add-user .note-access-user-name")?.textContent).toBe("dave");
         await click(buttonLabeled(add, "note_access.can_edit"));
         await click(buttonLabeled(add, "note_access.add"));
-        expect(put).toHaveBeenLastCalledWith("notes/project/access/carol", { canWrite: true });
+        expect(put).toHaveBeenLastCalledWith("notes/project/access/dave", { canWrite: true });
 
         const bobRow = container.querySelectorAll(".note-access-row")[1];
         await click(buttonLabeled(bobRow, "note_access.can_edit"));
