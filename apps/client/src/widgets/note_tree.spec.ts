@@ -145,6 +145,24 @@ describe("NoteTreeWidget", () => {
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
     });
 
+    it("hides root for a member, whose tree starts at their home and Shared with me", async () => {
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
+        const admin = await renderWidget();
+        expect(admin.$widget.find(".tree").hasClass("tree-roots-at-top")).toBe(false);
+        expect(admin.canActivate("root")).toBe(true);
+
+        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        try {
+            const member = await renderWidget();
+            expect(member.$widget.find(".tree").hasClass("tree-roots-at-top")).toBe(true);
+            expect(member.canActivate("root")).toBe(false);
+            expect(member.canActivate("home_alice")).toBe(true);
+            expect(member.canActivate("_hidden")).toBe(false);
+        } finally {
+            delete window.glob.currentUser;
+        }
+    });
+
     it("follows the display density option, also when it changes", async () => {
         options.set("treeDensity", "dense");
         const widget = await renderWidget();

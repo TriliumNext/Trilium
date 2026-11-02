@@ -45,6 +45,19 @@ describe("user homes", () => {
         expect(usersNote.getChildNotes()).toHaveLength(childCount);
     });
 
+    it("names the home at the top of the tree for members only", () => {
+        const memberId = cls.init(() => userService.createUser("home-top-member-spec", null, false));
+        const adminId = cls.init(() => userService.createUser("home-top-admin-spec", null, true));
+        cls.init(() => userHomes.ensureUserHome(memberId, "home-top-member-spec"));
+        cls.init(() => userHomes.ensureUserHome(adminId, "home-top-admin-spec"));
+        const homelessId = cls.init(() => userService.createUser("home-top-homeless-spec", null, false));
+
+        expect(cls.init(() => userHomes.getTopLevelHomeNoteId(memberId))).toBe(getHomeNoteId(memberId));
+        // An admin sees the whole tree, where their home sits under the Users note.
+        expect(cls.init(() => userHomes.getTopLevelHomeNoteId(adminId))).toBeUndefined();
+        expect(cls.init(() => userHomes.getTopLevelHomeNoteId(homelessId))).toBeUndefined();
+    });
+
     it("renames a home along with its user", () => {
         const memberId = cls.init(() => userService.createUser("home-rename-spec", null, false));
         cls.init(() => userHomes.ensureUserHome(memberId, "home-rename-spec"));

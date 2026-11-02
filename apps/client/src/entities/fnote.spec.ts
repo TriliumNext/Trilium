@@ -2,6 +2,7 @@ import type { NoteType } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import froca from "../services/froca.js";
+import { t } from "../services/i18n.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import search from "../services/search.js";
@@ -12,6 +13,10 @@ import FAttribute from "./fattribute.js";
 import FBlob from "./fblob.js";
 import FBranch from "./fbranch.js";
 import FNote, { type FNoteRow } from "./fnote.js";
+
+vi.mock("../services/i18n.js", () => ({
+    t: vi.fn((key: string) => key)
+}));
 
 vi.mock("../services/search.js", () => ({
     default: {
@@ -33,6 +38,27 @@ vi.mock("../services/protected_session_holder.js", () => ({
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe("FNote title", () => {
+    it("shows the signed-in member's home as My notes, and other homes by their own title", () => {
+        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        try {
+            const home = new FNote(froca, { noteId: "home_alice", title: "alice", type: "text", mime: "text/html", isProtected: false, blobId: "" } as FNoteRow);
+            const otherHome = new FNote(froca, { noteId: "home_bob", title: "bob", type: "text", mime: "text/html", isProtected: false, blobId: "" } as FNoteRow);
+
+            expect(home.title).toBe("note_tree.my_notes");
+            expect(otherHome.title).toBe("bob");
+
+            // froca can load notes before the translations, when `t()` still returns nothing.
+            vi.mocked(t).mockReturnValue(undefined as unknown as string);
+            const loadedEarly = new FNote(froca, { noteId: "home_alice", title: "alice", type: "text", mime: "text/html", isProtected: false, blobId: "" } as FNoteRow);
+            vi.mocked(t).mockImplementation(((key: string) => key) as typeof t);
+            expect(loadedEarly.title).toBe("note_tree.my_notes");
+        } finally {
+            delete window.glob.currentUser;
+        }
+    });
 });
 
 describe("FNote tree wiring", () => {

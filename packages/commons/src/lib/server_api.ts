@@ -200,6 +200,11 @@ export interface CurrentUser {
     isAdmin: boolean;
     /** The user's avatar hue, from `getAvatarHues()`, so it matches the one on the Users page. */
     avatarHue: number;
+    /**
+     * The member's home note, which tops their tree as "My notes" in place of `root`. Admins have
+     * none: they see the whole tree.
+     */
+    homeNoteId?: string;
 }
 
 /** A row of `GET /api/users`. */

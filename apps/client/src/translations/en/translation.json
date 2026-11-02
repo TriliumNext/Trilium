@@ -2881,7 +2881,8 @@
     "display-density": "Display density",
     "display-density-relaxed": "Relaxed",
     "display-density-dense": "Dense",
-    "access-indicator-tooltip": "Access given to {{usernames}}"
+    "access-indicator-tooltip": "Access given to {{usernames}}",
+    "my_notes": "My notes"
   },
   "mobile_note_navigator": {
     "back": "Go up one level",

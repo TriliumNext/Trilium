@@ -97,6 +97,15 @@ const TPL = /*html*/`
     .tree .hidden-node-is-hidden {
         display: none;
     }
+
+    .tree.tree-roots-at-top > .ui-fancytree > li:first-child > span.fancytree-node {
+        display: none;
+    }
+
+    .tree.tree-roots-at-top > .ui-fancytree > li:first-child > ul,
+    :is(#left-pane, .tree-popup-sidebar) .tree.tree-roots-at-top > .ui-fancytree > li:first-child > ul {
+        padding-inline-start: 0;
+    }
     </style>
 
     <div class="tree scroll-edge-fade"></div>
@@ -170,6 +179,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         this.$widget = $(TPL);
         this.$tree = this.$widget.find(".tree");
         this.$treeActions = this.$widget.find(".tree-actions");
+
+        // A member's tree starts at their home and Shared with me, so `root` stays loaded but unseen.
+        this.$tree.toggleClass("tree-roots-at-top", !!window.glob.currentUser?.homeNoteId);
 
         this.$tree.on("mousedown", (e: JQuery.MouseDownEvent) => {
             const target = e.target as HTMLElement;
@@ -380,21 +392,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             beforeActivate: (event, data) => {
                 const { node } = data;
 
-                // hidden subtree is hidden hackily - we want it to be present in the tree so that we can switch to it
-                // without reloading the whole tree, but we want it to be hidden when hoisted to root. FancyTree allows
-                // filtering the display only by ascendant - i.e. if the root is visible, all the descendants are as well.
-                // We solve it by hiding the hidden subtree via CSS (class "hidden-node-is-hidden"),
-                // but then we need to prevent activating it, e.g. by keyboard
-
-                if (hoistedNoteService.getHoistedNoteId() === "_hidden") {
-                    // if we're hoisted in hidden subtree, we want to avoid crossing to "visible" tree,
-                    // which could happen via UP key from hidden root
-
-                    if (node.data.noteId === "root") return false;
-                } else {
-                    // we're not hoisted to hidden subtree, the only way to cross is via DOWN key to the hidden root
-                    if (node.data.noteId === "_hidden") return false;
-                }
+                if (!this.canActivate(node.data.noteId)) return false;
 
                 // Synchronously disable fancytree's activeVisible before it checks it in nodeSetActive,
                 // preventing the automatic makeVisible/scrollIntoView call on direct tree interaction.
@@ -672,6 +670,31 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 treeContextMenu.show(e);
             });
         }
+    }
+
+    /**
+     * Whether keyboard navigation can land on the note: the CSS-hidden nodes stay in the tree but must
+     * not become active.
+     */
+    canActivate(noteId: string) {
+        // hidden subtree is hidden hackily - we want it to be present in the tree so that we can switch to it
+        // without reloading the whole tree, but we want it to be hidden when hoisted to root. FancyTree allows
+        // filtering the display only by ascendant - i.e. if the root is visible, all the descendants are as well.
+        // We solve it by hiding the hidden subtree via CSS (class "hidden-node-is-hidden"),
+        // but then we need to prevent activating it, e.g. by keyboard
+        if (hoistedNoteService.getHoistedNoteId() === "_hidden") {
+            // if we're hoisted in hidden subtree, we want to avoid crossing to "visible" tree,
+            // which could happen via UP key from hidden root
+            return noteId !== "root";
+        }
+
+        // A member's root row is hidden as well (`tree-roots-at-top`), reachable by the LEFT or UP key.
+        if (noteId === "root" && this.$tree.hasClass("tree-roots-at-top")) {
+            return false;
+        }
+
+        // we're not hoisted to hidden subtree, the only way to cross is via DOWN key to the hidden root
+        return noteId !== "_hidden";
     }
 
     prepareRootNode() {

@@ -1,6 +1,7 @@
 import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime, type NoteType } from "@triliumnext/commons";
 
 import cssClassManager from "../services/css_class_manager.js";
+import { t } from "../services/i18n.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
@@ -47,7 +48,7 @@ export default class FNote {
     private froca: Froca;
 
     noteId!: string;
-    title!: string;
+    private storedTitle = "";
     isProtected!: boolean;
     type!: NoteType;
     mime!: string;
@@ -87,6 +88,20 @@ export default class FNote {
         this.attachments = null; // lazy loaded
 
         this.update(row);
+    }
+
+    /**
+     * The signed-in member's home reads "My notes"; it is stored under their username, which the
+     * Users note lists. Looked up on each read, since froca loads notes before the translations.
+     */
+    get title(): string {
+        return this.noteId === window.glob?.currentUser?.homeNoteId
+            ? t("note_tree.my_notes")
+            : this.storedTitle;
+    }
+
+    set title(title: string) {
+        this.storedTitle = title;
     }
 
     update(row: FNoteRow) {

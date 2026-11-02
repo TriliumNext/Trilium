@@ -79,7 +79,21 @@ function renameUserHome(userId: string, username: string) {
     }
 }
 
-export default { ensureUserHome, ensureUserHomes, renameUserHome };
+/**
+ * The home at the top of the user's tree, which their client shows as "My notes": only members have
+ * one, since an admin sees the whole tree, with their home under the Users note.
+ */
+function getTopLevelHomeNoteId(userId: string): string | undefined {
+    if (userService.isUserAdmin(userId)) {
+        return undefined;
+    }
+
+    return getSql().getValue<string>(
+        "SELECT noteId FROM notes WHERE noteId = ? AND isDeleted = 0", [getHomeNoteId(userId)]
+    ) ?? undefined;
+}
+
+export default { ensureUserHome, ensureUserHomes, renameUserHome, getTopLevelHomeNoteId };
 
 function getOrCreateUsersNote(): BNote {
     const existing = getBecca().getNote(USERS_NOTE_ID);
