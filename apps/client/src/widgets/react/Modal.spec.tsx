@@ -301,6 +301,28 @@ describe("Modal", () => {
         expect(mocks.hide).not.toHaveBeenCalled();
     });
 
+    it("closes once it has opened when told to close while its backdrop is still fading in", async () => {
+        await act(async () => {
+            render(<DialogWithTypedInto show onHidden={() => {}} />, container);
+        });
+        const modal = container.querySelector<HTMLElement>(".test-dialog");
+        if (!modal) throw new Error("expected the dialog");
+        // Bootstrap puts `show` on the dialog only once the backdrop is in, so it has none yet.
+        expect(modal.classList.contains("show")).toBe(false);
+
+        await act(async () => {
+            render(<DialogWithTypedInto show={false} onHidden={() => {}} />, container);
+        });
+        expect(mocks.hide).toHaveBeenCalledTimes(1);
+
+        // Bootstrap dropped that hide, as it was still opening; the opening now lands.
+        fire(modal, "shown.bs.modal");
+        expect(mocks.hide).toHaveBeenCalledTimes(2);
+
+        fire(modal, "shown.bs.modal");
+        expect(mocks.hide).toHaveBeenCalledTimes(2);
+    });
+
     it("opens a dialog that starts closed only once it is asked to show", async () => {
         const onHidden = vi.fn();
 
