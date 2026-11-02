@@ -137,6 +137,19 @@ describe("TitleWithIndicators", () => {
         expect(container.querySelector(".shared-indicator")).not.toBeNull();
     });
 
+    it("marks a note other users were given access to", () => {
+        buildNote({ title: "Parent", children: [ { id: "granted", title: "Granted" }, { id: "private", title: "Private" } ] });
+        const granted = froca.notes["granted"];
+        const unshared = froca.notes["private"];
+        if (!granted || !unshared) throw new Error("expected the notes");
+        granted.accessUsernames = [ "bob", "carol" ];
+
+        const indicator = mount(granted).container.querySelector(".access-indicator");
+        expect(indicator).not.toBeNull();
+        expect(indicator?.getAttribute("aria-label")).toContain("bob, carol");
+        expect(mount(unshared).container.querySelector(".access-indicator")).toBeNull();
+    });
+
     it("replaces a protected note's title but not its prefix while the protected session is closed", () => {
         buildNote({ id: "vault", title: "Vault", children: [ { id: "secret", title: "Secret" } ] });
         const note = froca.notes["secret"];

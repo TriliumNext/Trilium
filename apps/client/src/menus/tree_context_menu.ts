@@ -130,7 +130,10 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
     const notHelp = !note.noteId.startsWith("_help");
     const notOptionsOrHelp = notOptions && notHelp;
     const parentNotSearch = !parentNote || parentNote.type !== "search";
-    const insertNoteAfterEnabled = isNotRoot && !isHoisted && parentNotSearch;
+    // The server takes no children into a virtual note, nor saves a branch to or from one.
+    const notVirtual = !note.isVirtual;
+    const branchNotVirtual = notVirtual && !parentNote?.isVirtual;
+    const insertNoteAfterEnabled = isNotRoot && !isHoisted && parentNotSearch && !parentNote?.isVirtual;
     const clipboardContents = clipboard.getContents();
     // Pasting copied notes clones them; pasting cut notes moves them.
     const pasteTooltip = (key: string) => clipboardContents?.mode === "copy"
@@ -160,9 +163,9 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                     command: "cutNotesToClipboard",
                     keyboardShortcut: "cutNotesToClipboard",
                     uiIcon: "bx bx-cut",
-                    enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp
+                    enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp && branchNotVirtual
                 },
-                { title: t("tree-context-menu.clone"), tooltip: t("tree-context-menu.clone-tooltip"), command: "copyNotesToClipboard", keyboardShortcut: "copyNotesToClipboard", uiIcon: "bx bx-copy", enabled: isNotRoot && !isHoisted && notHelp },
+                { title: t("tree-context-menu.clone"), tooltip: t("tree-context-menu.clone-tooltip"), command: "copyNotesToClipboard", keyboardShortcut: "copyNotesToClipboard", uiIcon: "bx bx-copy", enabled: isNotRoot && !isHoisted && notHelp && notVirtual },
                 // Shown only while something is cut or copied, which is when they are looked for.
                 ...(!clipboardContents ? [] : [
                     {
@@ -172,7 +175,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                         keyboardShortcut: "pasteNotesFromClipboard",
                         uiIcon: "bx bx-clipboard",
                         uiIconBadge: "bx bx-subdirectory-right",
-                        enabled: notSearch && noSelectedNotes && notHelp
+                        enabled: notSearch && noSelectedNotes && notHelp && notVirtual
                     },
                     {
                         title: t("tree-context-menu.paste-after"),
@@ -180,7 +183,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                         command: "pasteNotesAfterFromClipboard",
                         uiIcon: "bx bx-clipboard",
                         uiIconBadge: "bx bx-down-arrow-alt",
-                        enabled: isNotRoot && !isHoisted && parentNotSearch && noSelectedNotes && notHelp
+                        enabled: isNotRoot && !isHoisted && parentNotSearch && noSelectedNotes && notHelp && !parentNote?.isVirtual
                     }
                 ] satisfies MenuCommandItem<TreeCommandNames>[]),
                 {
@@ -188,7 +191,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                     command: "deleteNotes",
                     keyboardShortcut: "deleteNotes",
                     uiIcon: "bx bx-trash destructive-action-icon",
-                    enabled: isNotRoot && !isHoisted && parentNotSearch && notOptionsOrHelp
+                    enabled: isNotRoot && !isHoisted && parentNotSearch && notOptionsOrHelp && branchNotVirtual
                 }
             ]
         },
@@ -246,7 +249,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             uiIcon: "bx bx-subdirectory-right",
             items: insertChildNoteItems,
             filterable: true,
-            enabled: notSearch && noSelectedNotes && notOptionsOrHelp && !hasSubtreeHidden && !isSpotlighted
+            enabled: notSearch && noSelectedNotes && notOptionsOrHelp && notVirtual && !hasSubtreeHidden && !isSpotlighted
         },
 
         { kind: "separator" },
@@ -256,10 +259,10 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             command: "moveNotesTo",
             keyboardShortcut: "moveNotesTo",
             uiIcon: "bx bx-transfer",
-            enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp
+            enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp && branchNotVirtual
         },
 
-        { title: t("tree-context-menu.clone-to"), command: "cloneNotesTo", keyboardShortcut: "cloneNotesTo", uiIcon: "bx bx-duplicate", enabled: isNotRoot && !isHoisted && notHelp },
+        { title: t("tree-context-menu.clone-to"), command: "cloneNotesTo", keyboardShortcut: "cloneNotesTo", uiIcon: "bx bx-duplicate", enabled: isNotRoot && !isHoisted && notHelp && notVirtual },
 
         {
             title: t("tree-context-menu.duplicate"),
@@ -305,6 +308,13 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             ...(note.isProtected ? unprotectItem : protectItem),
             items: [ protectItem, unprotectItem ]
         },
+
+        note.isAccessManageable() ? {
+            title: t("tree-context-menu.access"),
+            command: "showNoteAccess",
+            uiIcon: "bx bx-user-plus",
+            enabled: noSelectedNotes
+        } : null,
 
         { kind: "separator" },
 

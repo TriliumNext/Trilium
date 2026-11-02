@@ -1,11 +1,13 @@
 import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import { t } from "i18next";
+
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
 import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
-import becca from "./becca.js";
+import becca, { getBecca } from "./becca.js";
 import type Becca from "./becca-interface.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
@@ -15,6 +17,7 @@ import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext, set as ctxSet } from "../services/context.js";
+import { getHomeNoteId, SHARED_WITH_ME_NOTE_ID } from "../services/user_homes.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -295,12 +298,16 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
     const sql = getSql();
     try {
         sql.disableSlowQueryLogging(() => {
+            // A member's Becca holds `root` without descending into it, the notes they own, and the
+            // subtrees below their grants and the `_`-prefixed system notes. Like
+            // `permission_service`, it does not descend from owned notes: a clone into one does not
+            // grant access to someone else's note.
             const noteQuery = isAdmin
                 ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes WHERE isDeleted = 0`
                 : /*sql*/`WITH RECURSIVE visible_roots(noteId) AS (
                               SELECT noteId FROM notes
-                               WHERE isDeleted = 0 AND (ownerId = ? OR noteId = 'root' OR substr(noteId, 1, 1) = '_')
+                               WHERE isDeleted = 0 AND substr(noteId, 1, 1) = '_'
                               UNION
                               SELECT noteId FROM note_permissions
                                WHERE userId = ?
@@ -316,7 +323,7 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                           )
                           SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes
-                           WHERE isDeleted = 0 AND noteId IN visible_notes`;
+                           WHERE isDeleted = 0 AND (noteId IN visible_notes OR ownerId = ? OR noteId = 'root')`;
 
             const noteParams = isAdmin ? [] : [userId, userId, userId];
 
@@ -339,6 +346,11 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                 if (visibleNoteIds.has(noteId) && (parentNoteId === "none" || parentNoteId === "root" || parentNoteId.startsWith("_") || visibleNoteIds.has(parentNoteId))) {
                     new BBranch().update(row).init();
                 }
+            }
+
+            if (!isAdmin) {
+                injectHomeBranch(target, userId);
+                injectSharedWithMe(target, userId, visibleNoteIds);
             }
 
             for (const row of sql.getRawRows(
@@ -375,6 +387,95 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
 
     target.loaded = true;
     getLog().info(`Becca user load (userId=${userId}) took ${Date.now() - start}ms`);
+}
+
+/**
+ * Places the member's home note directly under `root`. Its stored parent is the Users note, which a
+ * member cannot see, so the branch is virtual: it is never saved, and cannot be moved or deleted.
+ */
+function injectHomeBranch(target: Becca, userId: string) {
+    const homeNoteId = getHomeNoteId(userId);
+    if (!target.notes[homeNoteId] || target.getBranchFromChildAndParent(homeNoteId, "root")) {
+        return;
+    }
+
+    const branch = new BBranch({
+        branchId: `root_${homeNoteId}`,
+        noteId: homeNoteId,
+        parentNoteId: "root",
+        prefix: null,
+        notePosition: 0,
+        isExpanded: true
+    });
+    branch.isVirtual = true;
+}
+
+/**
+ * Lists the notes a member can see but not reach from their tree under a virtual Shared with me
+ * note: notes shared with them whose parents they cannot see, and notes they own whose parents are
+ * no longer shared with them.
+ */
+function injectSharedWithMe(target: Becca, userId: string, visibleNoteIds: Set<string>) {
+    const homeNoteId = getHomeNoteId(userId);
+    const unreachable: BNote[] = [];
+    for (const noteId of visibleNoteIds) {
+        const note = target.notes[noteId];
+        if (noteId !== "root" && noteId !== homeNoteId && !noteId.startsWith("_") && !note.getParentBranches().length) {
+            unreachable.push(note);
+        }
+    }
+
+    if (!unreachable.length) {
+        return;
+    }
+
+    const now = dateUtils.utcNowDateTime();
+    const container = new BNote({
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        title: t("user_homes.shared-with-me-title"),
+        type: "book",
+        mime: "",
+        isProtected: false,
+        dateCreated: dateUtils.localNowDateTime(),
+        dateModified: dateUtils.localNowDateTime(),
+        utcDateCreated: now,
+        utcDateModified: now
+    });
+    container.isVirtual = true;
+
+    const containerBranch = new BBranch({
+        branchId: `root_${SHARED_WITH_ME_NOTE_ID}`,
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        parentNoteId: "root",
+        prefix: null,
+        notePosition: 1,
+        isExpanded: true
+    });
+    containerBranch.isVirtual = true;
+
+    const icon = new BAttribute({
+        attributeId: `v_${SHARED_WITH_ME_NOTE_ID}_liconClass`,
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        type: "label",
+        name: "iconClass",
+        value: "bx bx-share-alt",
+        isInheritable: false,
+        position: 10
+    });
+    icon.isVirtual = true;
+
+    unreachable.sort((a, b) => a.title.localeCompare(b.title));
+    for (const [index, note] of unreachable.entries()) {
+        const branch = new BBranch({
+            branchId: `${SHARED_WITH_ME_NOTE_ID}_${note.noteId}`,
+            noteId: note.noteId,
+            parentNoteId: SHARED_WITH_ME_NOTE_ID,
+            prefix: null,
+            notePosition: (index + 1) * 10,
+            isExpanded: false
+        });
+        branch.isVirtual = true;
+    }
 }
 
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {
@@ -427,36 +528,41 @@ function postProcessEntityUpdate(entityName: string, entityRow: any) {
     }
 }
 
+// A member's request deletes from their own Becca, which holds the entity, and from the admin's.
 eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENTITY_DELETE_SYNCED], ({ entityName, entityId }) => {
-    if (!becca.loaded) {
-        return;
-    }
-
-    if (entityName === "notes") {
-        noteDeleted(entityId);
-    } else if (entityName === "branches") {
-        branchDeleted(entityId);
-    } else if (entityName === "attributes") {
-        attributeDeleted(entityId);
-    } else if (entityName === "etapi_tokens") {
-        etapiTokenDeleted(entityId);
+    for (const target of new Set([ becca, getBecca() ])) {
+        if (target.loaded) {
+            applyDeletion(target, entityName, entityId);
+        }
     }
 });
 
-function noteDeleted(noteId: string) {
-    delete becca.notes[noteId];
-
-    becca.dirtyNoteSetCache();
+function applyDeletion(target: Becca, entityName: string, entityId: string) {
+    if (entityName === "notes") {
+        noteDeleted(target, entityId);
+    } else if (entityName === "branches") {
+        branchDeleted(target, entityId);
+    } else if (entityName === "attributes") {
+        attributeDeleted(target, entityId);
+    } else if (entityName === "etapi_tokens") {
+        etapiTokenDeleted(target, entityId);
+    }
 }
 
-function branchDeleted(branchId: string) {
-    const branch = becca.branches[branchId];
+function noteDeleted(target: Becca, noteId: string) {
+    delete target.notes[noteId];
+
+    target.dirtyNoteSetCache();
+}
+
+function branchDeleted(target: Becca, branchId: string) {
+    const branch = target.branches[branchId];
 
     if (!branch) {
         return;
     }
 
-    const childNote = becca.notes[branch.noteId];
+    const childNote = target.notes[branch.noteId];
 
     if (childNote) {
         childNote.parents = childNote.parents.filter((parent) => parent.noteId !== branch.parentNoteId);
@@ -468,29 +574,29 @@ function branchDeleted(branchId: string) {
         }
     }
 
-    const parentNote = becca.notes[branch.parentNoteId];
+    const parentNote = target.notes[branch.parentNoteId];
 
     if (parentNote) {
         parentNote.children = parentNote.children.filter((child) => child.noteId !== branch.noteId);
     }
 
-    delete becca.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
+    delete target.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
     if (branch.branchId) {
-        delete becca.branches[branch.branchId];
+        delete target.branches[branch.branchId];
     }
 
-    dropOrphanedSkeleton(childNote);
-    dropOrphanedSkeleton(parentNote);
+    dropOrphanedSkeleton(target, childNote);
+    dropOrphanedSkeleton(target, parentNote);
 }
 
 /**
  * Removes a skeleton note (see `BBranch.childNote`) once no branch or attribute refers to it. Its
  * row can no longer arrive when the note was erased before becca was loaded.
  */
-function dropOrphanedSkeleton(note: BNote | undefined) {
+function dropOrphanedSkeleton(target: Becca, note: BNote | undefined) {
     if (note && note.title === undefined && !note.parentBranches.length && !note.children.length
         && !note.ownedAttributes.length) {
-        noteDeleted(note.noteId);
+        noteDeleted(target, note.noteId);
     }
 }
 
@@ -526,14 +632,14 @@ function branchUpdated(branchRow: BranchRow) {
     }
 }
 
-function attributeDeleted(attributeId: string) {
-    const attribute = becca.attributes[attributeId];
+function attributeDeleted(target: Becca, attributeId: string) {
+    const attribute = target.attributes[attributeId];
 
     if (!attribute) {
         return;
     }
 
-    const note = becca.notes[attribute.noteId];
+    const note = target.notes[attribute.noteId];
 
     if (note) {
         // first invalidate and only then remove the attribute (otherwise invalidation wouldn't be complete)
@@ -552,13 +658,13 @@ function attributeDeleted(attributeId: string) {
         }
     }
 
-    delete becca.attributes[attribute.attributeId];
+    delete target.attributes[attribute.attributeId];
 
     const key = `${attribute.type}-${attribute.name.toLowerCase()}`;
 
-    becca.attributeIndex[key]?.delete(attribute);
+    target.attributeIndex[key]?.delete(attribute);
 
-    dropOrphanedSkeleton(note);
+    dropOrphanedSkeleton(target, note);
 }
 
 function attributeUpdated(attributeRow: BAttribute) {
@@ -588,8 +694,8 @@ function noteReorderingUpdated(branchIdList: number[]) {
     }
 }
 
-function etapiTokenDeleted(etapiTokenId: string) {
-    delete becca.etapiTokens[etapiTokenId];
+function etapiTokenDeleted(target: Becca, etapiTokenId: string) {
+    delete target.etapiTokens[etapiTokenId];
 }
 
 

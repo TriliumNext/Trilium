@@ -1,10 +1,11 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId } from "./utils/index.js";
 import permissionService from "./permission_service.js";
+import ws from "./ws.js";
 
 function now() {
     return dateUtils.utcNowDateTime();
@@ -259,6 +260,27 @@ describe("permission_service", () => {
 
             cls.init(() => permissionService.revokePermission(permId));
             expect(cls.init(() => permissionService.canUserAccessNote(childId, guestId))).toBe(false);
+        });
+    });
+
+    describe("setUserAccess / revokeUserAccess", () => {
+        it("tells the user's open clients to reload whenever their access changes", () => {
+            const reload = vi.spyOn(ws, "reloadFrocaForUser").mockImplementation(() => {});
+            const noteId = newEntityId();
+            insertNote(noteId, adminId);
+
+            cls.init(() => permissionService.setUserAccess(noteId, userId, false));
+            expect(reload).toHaveBeenLastCalledWith(userId, expect.any(String));
+            expect(cls.init(() => permissionService.canUserWriteNote(noteId, userId))).toBe(false);
+
+            cls.init(() => permissionService.setUserAccess(noteId, userId, true));
+            expect(cls.init(() => permissionService.canUserWriteNote(noteId, userId))).toBe(true);
+
+            reload.mockClear();
+            cls.init(() => permissionService.revokeUserAccess(noteId, userId));
+            expect(reload).toHaveBeenCalledWith(userId, expect.any(String));
+            expect(cls.init(() => permissionService.canUserAccessNote(noteId, userId))).toBe(false);
+            reload.mockRestore();
         });
     });
 });

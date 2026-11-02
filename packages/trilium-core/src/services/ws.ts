@@ -222,6 +222,11 @@ function reloadFroca(reason: string) {
     sendMessageToAllClients({ type: "reload-froca", reason });
 }
 
+/** Has the user's open clients reload froca, after something changed what their Becca holds. */
+function reloadFrocaForUser(userId: string, reason: string) {
+    messagingProvider?.sendMessageToUserClients?.(userId, { type: "reload-froca", reason });
+}
+
 function setLastSyncedPush(entityChangeId: number) {
     lastSyncedPush = entityChangeId;
 }
@@ -237,5 +242,6 @@ export default {
     sendTransactionEntityChangesToAllClients,
     setLastSyncedPush,
     reloadFrontend,
-    reloadFroca
+    reloadFroca,
+    reloadFrocaForUser
 };

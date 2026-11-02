@@ -253,6 +253,10 @@
     "search_prefix": "Search:",
     "llm_chat_prefix": "Chat:"
   },
+  "user_homes": {
+    "users-title": "Users",
+    "shared-with-me-title": "Shared with me"
+  },
   "test_sync": {
     "not-configured": "Sync server host is not configured. Please configure sync first.",
     "successful": "Sync server handshake has been successful, sync has been started."

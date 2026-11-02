@@ -23,6 +23,7 @@ import { evaluateTemplateSafe } from "./safe_template.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
+import { getActingUserHomeNoteId } from "./user_homes.js";
 import { decodeBase64, decodeUtf8, encodeBase64 } from "./utils/binary.js";
 import date_utils from "./utils/date.js";
 import { isValidEntityId, newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
@@ -41,6 +42,8 @@ interface Attachment {
 export interface NoteParams {
     /** Forces a specific noteId: 4 to 128 letters, digits or underscores. */
     noteId?: string;
+    /** The user who owns the note; defaults to the user in CLS, else the primary admin. */
+    ownerId?: string;
     branchId?: string;
     parentNoteId: string;
     templateNoteId?: string;
@@ -263,6 +266,10 @@ function createNewNote(params: NoteParams): {
     note: BNote;
     branch: BBranch;
 } {
+    if (params.parentNoteId === "root") {
+        params.parentNoteId = getActingUserHomeNoteId() ?? "root";
+    }
+
     const parentNote = getAndValidateParent(params);
 
     const isTitleDefaulted = params.title === null || params.title === undefined;
@@ -292,7 +299,10 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
-    if (typeof forcedNoteId === "string" && forcedNoteId && getBecca().notes[forcedNoteId]) {
+    // Becca holds the virtual notes, which have no row, and the database the notes a member's Becca
+    // leaves out.
+    if (typeof forcedNoteId === "string" && forcedNoteId && (getBecca().notes[forcedNoteId]
+            || getSql().getValue("SELECT 1 FROM notes WHERE noteId = ? AND isDeleted = 0", [forcedNoteId]))) {
         throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
     }
 
@@ -327,7 +337,7 @@ function createNewNote(params: NoteParams): {
                 mime: deriveMime(params.type, params.mime),
                 dateCreated: params.dateCreated,
                 utcDateCreated: params.utcDateCreated,
-                ownerId: cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
+                ownerId: params.ownerId ?? cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
             }).save();
 
             // Create attributes atomically.
@@ -419,6 +429,12 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
     }
 
     const params = rawParams as NoteParams;
+
+    // A position next to a top-level note is a position among `root`'s children, which the home
+    // replaces as the parent; the note goes to the end of the home instead.
+    if (params.parentNoteId === "root" && getActingUserHomeNoteId()) {
+        target = "into";
+    }
 
     if (target === "into") {
         return createNewNote(params);

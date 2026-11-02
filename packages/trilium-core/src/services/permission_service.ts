@@ -4,6 +4,7 @@ import { newEntityId } from "./utils/index.js";
 import dateUtils from "./utils/date.js";
 import userService from "./user_service.js";
 import { evictUser } from "../becca/becca_cache.js";
+import ws from "./ws.js";
 
 export interface PermissionRow {
     permissionId: string;
@@ -102,16 +103,22 @@ function canUserWriteNote(noteId: string, userId: string): boolean {
 
 function evictAffectedUsers(userId: string | null, groupId: string | null): void {
     if (userId) {
-        evictUser(userId);
+        refreshUser(userId);
     }
     if (groupId) {
         const members = getSql().getColumn<string>(
             "SELECT userId FROM user_group_members WHERE groupId = ?", [groupId]
         );
         for (const memberId of members) {
-            evictUser(memberId);
+            refreshUser(memberId);
         }
     }
+}
+
+/** Drops the user's cached Becca and has their open clients load the notes they can now see. */
+function refreshUser(userId: string): void {
+    evictUser(userId);
+    ws.reloadFrocaForUser(userId, "access changed");
 }
 
 function grantPermission(
@@ -156,6 +163,39 @@ function revokePermission(permissionId: string): void {
     evictAffectedUsers(row.userId, row.groupId);
 }
 
+/** Gives the user read access to the note, plus write access when `canWrite`, replacing their earlier grants on it. */
+function setUserAccess(noteId: string, userId: string, canWrite: boolean): void {
+    getSql().transactional(() => {
+        getSql().execute("DELETE FROM note_permissions WHERE noteId = ? AND userId = ?", [noteId, userId]);
+        grantPermission(noteId, userId, null, canWrite);
+    });
+}
+
+/** Removes the user's grants on the note itself; access inherited from an ancestor stays. */
+function revokeUserAccess(noteId: string, userId: string): void {
+    getSql().execute("DELETE FROM note_permissions WHERE noteId = ? AND userId = ?", [noteId, userId]);
+    clearPermissionCache();
+    refreshUser(userId);
+}
+
+/** The usernames of the users with a grant on each note, for every note that has one. */
+function getAccessUsernamesByNote(): Map<string, string[]> {
+    const rows = getSql().getRows<{ noteId: string; username: string }>(
+        `SELECT DISTINCT p.noteId, u.username
+           FROM note_permissions p
+           JOIN users u ON u.userId = p.userId AND u.isDeleted = 0
+          ORDER BY u.username`
+    );
+
+    const byNote = new Map<string, string[]>();
+    for (const { noteId, username } of rows) {
+        const usernames = byNote.get(noteId) ?? [];
+        usernames.push(username);
+        byNote.set(noteId, usernames);
+    }
+    return byNote;
+}
+
 function getPermissionsForNote(noteId: string): PermissionRow[] {
     return getSql().getRows<PermissionRow>(
         `SELECT ${PERMISSION_COLS}
@@ -174,6 +214,9 @@ export default {
     getEffectivePermission,
     grantPermission,
     revokePermission,
+    setUserAccess,
+    revokeUserAccess,
+    getAccessUsernamesByNote,
     getPermissionsForNote,
     clearPermissionCache
 };

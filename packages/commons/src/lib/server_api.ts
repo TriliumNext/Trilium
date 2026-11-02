@@ -196,11 +196,26 @@ export interface PostTokensResponse {
 
 /** The signed-in user, as the global menu shows them. */
 export interface CurrentUser {
+    userId: string;
     username: string;
     isAdmin: boolean;
     /** The user's avatar hue, from `getAvatarHues()`, so it matches the one on the Users page. */
     avatarHue: number;
+    /**
+     * The member's home note, which tops their tree as "My notes" in place of `root`. Admins have
+     * none: they see the whole tree.
+     */
+    homeNoteId?: string;
 }
+
+/**
+ * The note that holds one home note per user, seen only by admins. It has no `_` prefix, which
+ * would make it a system note, because the homes below it hold user content.
+ */
+export const USERS_NOTE_ID = "users";
+
+/** What a home's note ID starts with, followed by the user's ID. */
+export const HOME_NOTE_ID_PREFIX = "home_";
 
 /** A row of `GET /api/users`. */
 export interface UserListItem {
@@ -217,6 +232,28 @@ export interface UserListItem {
     /** When the user's current setup link stops working; `null` when there is none. */
     setupLinkExpiresAt: string | null;
     dateCreated: string;
+}
+
+/** A user as the access dialog shows them. */
+export interface NoteAccessUser {
+    userId: string;
+    username: string;
+    /** From `getAvatarHues()`, so it matches the one on the Users page. */
+    avatarHue: number;
+}
+
+/** A user's grant on the note itself; access inherited from an ancestor is not listed. */
+export interface NoteAccessGrant extends NoteAccessUser {
+    canWrite: boolean;
+}
+
+/** The response of `GET /api/notes/:noteId/access`. */
+export interface NoteAccessResponse {
+    /** `null` when the owner was deleted. */
+    owner: NoteAccessUser | null;
+    grants: NoteAccessGrant[];
+    /** The users who can be given access: everyone except admins, who see every note, and the owner. */
+    users: NoteAccessUser[];
 }
 
 /**

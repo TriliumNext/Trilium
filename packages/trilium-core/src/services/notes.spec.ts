@@ -221,6 +221,13 @@ describe("notes service (real DB)", () => {
             expect(() => createNote("root", { noteId: "root", title: "spec-root" })).toThrow(/already exists/);
             expect(getBecca().getNoteOrThrow("root").title).not.toBe("spec-root");
             expect(getBecca().getBranch("root_root")).toBeNull();
+
+            // A virtual note, such as an in-app help page, has no row in the database.
+            const virtualNote = Object.values(getBecca().notes).find((candidate) => candidate.isVirtual);
+            expect(virtualNote).toBeDefined();
+            const virtualNoteId = virtualNote?.noteId ?? "";
+            expect(() => createNote("root", { noteId: virtualNoteId, title: "spec-virtual" })).toThrow(/already exists/);
+            expect(getBecca().getNoteOrThrow(virtualNoteId).isVirtual).toBe(true);
         });
 
         it("inherits the template's mime and adds a template relation when creating from a template", () => {

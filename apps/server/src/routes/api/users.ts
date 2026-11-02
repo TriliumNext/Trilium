@@ -1,5 +1,5 @@
 import type { CreateUserResponse, SetupLinkResponse, UserListItem } from "@triliumnext/commons";
-import { date_utils, getSql, PrimaryAdminDeletionError, PrimaryAdminDemotionError, user_service } from "@triliumnext/core";
+import { date_utils, getSql, PrimaryAdminDeletionError, PrimaryAdminDemotionError, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
 import { revokeUserSessions } from "../session_parser.js";
@@ -40,6 +40,7 @@ function createUser(req: Request) {
     }
 
     const userId = user_service.createUser(username, email ?? null, isAdmin === true);
+    user_homes.ensureUserHome(userId, username);
     const setupLink = user_service.createSetupLink(userId);
     return { userId, setupLink } satisfies CreateUserResponse;
 }
@@ -86,6 +87,9 @@ function updateUser(req: Request<{ userId: string }>) {
 
     try {
         user_service.updateUser(userId, input);
+        if (input.username !== undefined) {
+            user_homes.renameUserHome(userId, input.username);
+        }
     } catch (e: unknown) {
         if (e instanceof PrimaryAdminDemotionError) {
             return [400, { message: e.message }];

@@ -16,7 +16,11 @@ The branch is shared with an external contributor (SashankBhamidi) whose next ph
 
 ## Mental model in one paragraph
 
-Every authenticated request carries `session.userId`. `route_api.ts` copies it into CLS and, before the handler runs, calls `warmBeccaForUser(userId)`, which resolves either the global **admin Becca** (admins) or a **filtered per-user Becca** (non-admins) loaded by `loadBeccaForUser()` and cached for 30 min idle in `becca_cache.ts`. From then on, every `getBecca()` call in that request — including the `this.becca` getter on every entity — returns that resolved instance. No `userId` in CLS (ETAPI, desktop/Electron without login, schedulers, `cls.init()` blocks, startup) means **admin Becca**. Intended visibility = notes the user owns (`notes.ownerId`) plus anything reachable below a `note_permissions` grant (direct or via group). **In practice phase 2 does not isolate yet**: the loader also seeds `root`, so every user still sees every note — see the gaps file.
+Every authenticated request carries `session.userId`. `route_api.ts` copies it into CLS and, before the handler runs, calls `warmBeccaForUser(userId)`, which resolves either the global **admin Becca** (admins) or a **filtered per-user Becca** (non-admins) loaded by `loadBeccaForUser()` and cached for 30 min idle in `becca_cache.ts`. From then on, every `getBecca()` call in that request — including the `this.becca` getter on every entity — returns that resolved instance. No `userId` in CLS (ETAPI, desktop/Electron without login, schedulers, `cls.init()` blocks, startup) means **admin Becca**. Visibility = notes the user owns (`notes.ownerId`) plus anything reachable below a `note_permissions` grant (direct or via group), plus the shared `_`-prefixed system notes. `root` is loaded but not descended into, and neither are owned notes: as in `permission_service`, owning an ancestor grants nothing, so a member's clone of a shared note does not outlive the grant. A note created in a member's home by someone else (the admin, a `cls.init()` job) is therefore invisible to the member.
+
+**Shared with me.** `injectSharedWithMe()` lists, under a virtual `_sharedWithMe` note below `root` (`SHARED_WITH_ME_NOTE_ID`), every note in the member's Becca that has no loaded parent: grants whose parents they cannot see, and their own notes left under a revoked grant. It exists only when non-empty. Cloning an entry into the home takes it off the list. Grant changes call `ws.reloadFrocaForUser()`, so the member's open tabs reload.
+
+**Homes.** Every user except the primary admin has a home note `home_<userId>` (`getHomeNoteId()`), owned by them, under the admin-only Users note (`USERS_NOTE_ID = "users"`, no `_` prefix because it holds user content). `user_homes.ensureUserHome()` runs when the Users API creates a user and `ensureUserHomes()` at startup; the Users note appears only once a second user exists, so single-user instances never see it. A member cannot see the Users note, so `loadBeccaForUser()` injects a virtual `root → home` branch (`injectHomeBranch()`), which cannot be saved, moved or deleted. The primary admin's notes stay directly under `root`; for everyone else `createNewNote()` swaps a `root` parent for the home (`getActingUserHomeNoteId()`, an after/before target becomes "into"), and `validateParentChild()` refuses moves and clones to `root`. There is no relocation of older top-level notes: multi-user is unreleased, so only development databases have any.
 
 ## Data model (schema.sql + migrations 239/240)
 
@@ -40,7 +44,8 @@ Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/
 |---|---|
 | Becca selection (`getBecca`, `warmBeccaForUser`, `adminBecca`) | `packages/trilium-core/src/becca/becca.ts` |
 | Per-user Becca cache (30 min idle TTL, `evictUser`, `evictIdle` every 5 min) | `packages/trilium-core/src/becca/becca_cache.ts` |
-| Filtered load (`loadBeccaForUser`, recursive CTE) | `packages/trilium-core/src/becca/becca_loader.ts` |
+| Filtered load (`loadBeccaForUser`, recursive CTE, `injectHomeBranch`) | `packages/trilium-core/src/becca/becca_loader.ts` |
+| Users note and per-user homes | `packages/trilium-core/src/services/user_homes.ts` |
 | Permission resolution / grant / revoke | `packages/trilium-core/src/services/permission_service.ts` |
 | User CRUD, `isUserAdmin`, `getAdminUserId` | `packages/trilium-core/src/services/user_service.ts` |
 | CLS `getUserId()` | `packages/trilium-core/src/services/context.ts` |

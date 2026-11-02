@@ -1,5 +1,5 @@
-import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init, user_service } from "@triliumnext/core";
+import type { BootstrapDefinition, CurrentUser } from "@triliumnext/commons";
+import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init, user_homes, user_service } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -183,8 +183,13 @@ export function bootstrap(req: Request, res: Response) {
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
-        currentUser: user_service.getSignedInUser(req.session.userId)
+        currentUser: getCurrentUser(req.session.userId)
     } satisfies BootstrapDefinition);
+}
+
+function getCurrentUser(userId: string | undefined): CurrentUser | undefined {
+    const user = user_service.getSignedInUser(userId);
+    return user && userId ? { ...user, homeNoteId: user_homes.getTopLevelHomeNoteId(userId) } : user;
 }
 
 export function getView(req: Request): View {
