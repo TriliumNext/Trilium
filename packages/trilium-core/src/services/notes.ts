@@ -41,6 +41,8 @@ interface Attachment {
 export interface NoteParams {
     /** Forces a specific noteId: 4 to 128 letters, digits or underscores. */
     noteId?: string;
+    /** The user who owns the note; defaults to the user in CLS, else the primary admin. */
+    ownerId?: string;
     branchId?: string;
     parentNoteId: string;
     templateNoteId?: string;
@@ -327,7 +329,7 @@ function createNewNote(params: NoteParams): {
                 mime: deriveMime(params.type, params.mime),
                 dateCreated: params.dateCreated,
                 utcDateCreated: params.utcDateCreated,
-                ownerId: cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
+                ownerId: params.ownerId ?? cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
             }).save();
 
             // Create attributes atomically.

@@ -15,6 +15,7 @@ import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext, set as ctxSet } from "../services/context.js";
+import { getHomeNoteId } from "../services/user_homes.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -295,12 +296,14 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
     const sql = getSql();
     try {
         sql.disableSlowQueryLogging(() => {
+            // A member's Becca holds `root` without descending into it: below it, only their own
+            // notes, their grants and the `_`-prefixed system notes.
             const noteQuery = isAdmin
                 ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes WHERE isDeleted = 0`
                 : /*sql*/`WITH RECURSIVE visible_roots(noteId) AS (
                               SELECT noteId FROM notes
-                               WHERE isDeleted = 0 AND (ownerId = ? OR noteId = 'root' OR substr(noteId, 1, 1) = '_')
+                               WHERE isDeleted = 0 AND (ownerId = ? OR substr(noteId, 1, 1) = '_')
                               UNION
                               SELECT noteId FROM note_permissions
                                WHERE userId = ?
@@ -316,7 +319,7 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                           )
                           SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes
-                           WHERE isDeleted = 0 AND noteId IN visible_notes`;
+                           WHERE isDeleted = 0 AND (noteId IN visible_notes OR noteId = 'root')`;
 
             const noteParams = isAdmin ? [] : [userId, userId, userId];
 
@@ -339,6 +342,10 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                 if (visibleNoteIds.has(noteId) && (parentNoteId === "none" || parentNoteId === "root" || parentNoteId.startsWith("_") || visibleNoteIds.has(parentNoteId))) {
                     new BBranch().update(row).init();
                 }
+            }
+
+            if (!isAdmin) {
+                injectHomeBranch(target, userId);
             }
 
             for (const row of sql.getRawRows(
@@ -375,6 +382,27 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
 
     target.loaded = true;
     getLog().info(`Becca user load (userId=${userId}) took ${Date.now() - start}ms`);
+}
+
+/**
+ * Places the member's home note directly under `root`. Its stored parent is the Users note, which a
+ * member cannot see, so the branch is virtual: it is never saved, and cannot be moved or deleted.
+ */
+function injectHomeBranch(target: Becca, userId: string) {
+    const homeNoteId = getHomeNoteId(userId);
+    if (!target.notes[homeNoteId] || target.getBranchFromChildAndParent(homeNoteId, "root")) {
+        return;
+    }
+
+    const branch = new BBranch({
+        branchId: `root_${homeNoteId}`,
+        noteId: homeNoteId,
+        parentNoteId: "root",
+        prefix: null,
+        notePosition: 0,
+        isExpanded: true
+    });
+    branch.isVirtual = true;
 }
 
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {
