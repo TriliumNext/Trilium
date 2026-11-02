@@ -2458,8 +2458,6 @@
     "content_load_stalled": "ノートの内容を読み込み中…"
   },
   "watched_file_update_status": {
-    "ignore_this_change": "この変更を無視する",
-    "file_last_modified": "ファイル <code class=\"file-path\"></code> は <span class=\"file-last-modified\"></span> に最後に変更されました。",
     "upload_modified_file": "変更したファイルをアップロード"
   },
   "image": {

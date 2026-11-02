@@ -2159,9 +2159,7 @@
     "no_headings": "Gan ceannteidil."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Rinneadh an comhad <code class=\"file-path\"></code> a mhodhnú go deireanach ar <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Uaslódáil comhad modhnaithe",
-    "ignore_this_change": "Déan neamhaird den athrú seo"
+    "upload_modified_file": "Uaslódáil comhad modhnaithe"
   },
   "app_context": {
     "please_wait_for_save": "Fan cúpla soicind le go mbeidh an sábháil críochnaithe, ansin is féidir leat iarracht eile a dhéanamh."

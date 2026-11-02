@@ -2353,9 +2353,7 @@
     "no_headings": "Tidak ada heading."
   },
   "watched_file_update_status": {
-    "file_last_modified": "File <code class=\"file-path\"></code> terakhir diubah pada <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Unggah file yang telah diubah",
-    "ignore_this_change": "Abaikan perubahan ini"
+    "upload_modified_file": "Unggah file yang telah diubah"
   },
   "app_context": {
     "please_wait_for_save": "Harap tunggu beberapa detik sampai penyimpanan selesai, lalu Anda dapat mencoba lagi."

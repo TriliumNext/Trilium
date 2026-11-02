@@ -2882,9 +2882,7 @@
     "no_headings": "عنوانی وجود ندارد."
   },
   "watched_file_update_status": {
-    "file_last_modified": "فایل <code class=\"file-path\"></code> آخرین بار در <span class=\"file-last-modified\"></span> تغییر یافته است.",
-    "upload_modified_file": "بارگذاری فایل تغییریافته",
-    "ignore_this_change": "نادیده گرفتن این تغییر"
+    "upload_modified_file": "بارگذاری فایل تغییریافته"
   },
   "app_context": {
     "please_wait_for_save": "لطفاً چند ثانیه برای پایان ذخیره صبر کنید، سپس می‌توانید دوباره تلاش کنید."

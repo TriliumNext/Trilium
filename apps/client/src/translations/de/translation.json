@@ -1806,9 +1806,7 @@
     "no_headings": "Keine Überschriften."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Datei <code class=\"file-path\"></code> wurde zuletzt geändert am <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Modifizierte Datei hochladen",
-    "ignore_this_change": "Diese Änderung ignorieren"
+    "upload_modified_file": "Modifizierte Datei hochladen"
   },
   "app_context": {
     "please_wait_for_save": "Bitte warte ein paar Sekunden, bis das Speichern abgeschlossen ist, und versuche es dann erneut."

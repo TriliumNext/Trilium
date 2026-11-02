@@ -2907,9 +2907,7 @@
     "no_headings": "Không có tiêu đề mục."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Tệp <code class=\"file-path\"></code> đã được sửa đổi lần cuối vào <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Tải lên tệp đã sửa đổi",
-    "ignore_this_change": "Bỏ qua thay đổi này"
+    "upload_modified_file": "Tải lên tệp đã sửa đổi"
   },
   "app_context": {
     "please_wait_for_save": "Vui lòng đợi vài giây để quá trình lưu hoàn tất, sau đó bạn có thể thử lại."

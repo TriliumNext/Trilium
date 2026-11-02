@@ -1594,9 +1594,7 @@
     "no_headings": "Aucun titre défini."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Le fichier <code class=\"file-path\"></code> a été modifié pour la dernière fois le <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Téléverser le fichier modifié",
-    "ignore_this_change": "Ignorer ce changement"
+    "upload_modified_file": "Téléverser le fichier modifié"
   },
   "app_context": {
     "please_wait_for_save": "Veuillez patienter quelques secondes la fin de la sauvegarde, puis réessayer."

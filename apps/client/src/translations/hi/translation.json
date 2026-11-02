@@ -1670,9 +1670,7 @@
     "no_headings": "कोई हेडिंग नहीं मिली।"
   },
   "watched_file_update_status": {
-    "file_last_modified": "फ़ाइल <code class=\"file-path\"></code> आखिरी बार <span class=\"file-last-modified\"></span> को बदली गई थी।",
-    "upload_modified_file": "बदली हुई फ़ाइल अपलोड करें",
-    "ignore_this_change": "इस बदलाव को छोड़ें"
+    "upload_modified_file": "बदली हुई फ़ाइल अपलोड करें"
   },
   "app_context": {
     "please_wait_for_save": "कृपया सेव होने के लिए कुछ सेकंड रुकें, फिर से कोशिश करें।"

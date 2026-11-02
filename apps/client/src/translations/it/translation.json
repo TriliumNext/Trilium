@@ -2352,9 +2352,7 @@
     "execute_now": "Esegui ora"
   },
   "watched_file_update_status": {
-    "file_last_modified": "Il file <code class=\"file-path\"></code> è stato modificato l'ultima volta il <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Carica il file modificato",
-    "ignore_this_change": "Ignora questa modifica"
+    "upload_modified_file": "Carica il file modificato"
   },
   "app_context": {
     "please_wait_for_save": "Attendi qualche secondo affinché il salvataggio venga completato, quindi potrai riprovare."

@@ -2116,9 +2116,7 @@
     "no_headings": "Sin encabezados."
   },
   "watched_file_update_status": {
-    "file_last_modified": "El archivo <code class=\"file-path\"></code> ha sido modificado por última vez en <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Subir archivo modificado",
-    "ignore_this_change": "Ignorar este cambio"
+    "upload_modified_file": "Subir archivo modificado"
   },
   "app_context": {
     "please_wait_for_save": "Por favor espere algunos segundos a que se termine de guardar, después intente de nuevo."

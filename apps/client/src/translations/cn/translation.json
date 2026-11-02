@@ -2163,9 +2163,7 @@
     "no_headings": "无标题。"
   },
   "watched_file_update_status": {
-    "file_last_modified": "文件 <code class=\"file-path\"></code> 最后修改时间为 <span class=\"file-last-modified\"></span>。",
-    "upload_modified_file": "上传修改的文件",
-    "ignore_this_change": "忽略此更改"
+    "upload_modified_file": "上传修改的文件"
   },
   "app_context": {
     "please_wait_for_save": "请等待几秒钟以完成保存，然后你可以尝试再操作一次。"

@@ -1669,9 +1669,7 @@
     "integrity_check_succeeded": "نجح فحص سلامة البيانات — لم يتم العثور على أي مشاكل."
   },
   "watched_file_update_status": {
-    "upload_modified_file": "رفع الملف المعدل",
-    "ignore_this_change": "اهمل هذا التغيير",
-    "file_last_modified": "تم تعديل الملف <code class=\"file-path\"></code> آخر مرة في <span class=\"file-last-modified\"></span>."
+    "upload_modified_file": "رفع الملف المعدل"
   },
   "clipboard": {
     "copy_success": "تم النسخ للحافظة.",

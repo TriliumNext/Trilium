@@ -1875,8 +1875,6 @@
     "no_headings": "Niciun titlu."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Fișierul <code class=\"file-path\"></code> a fost ultima oară modificat la data de <span class=\"file-last-modified\"></span>.",
-    "ignore_this_change": "Ignoră această schimbare",
     "upload_modified_file": "Încarcă fișier modificat"
   },
   "clipboard": {

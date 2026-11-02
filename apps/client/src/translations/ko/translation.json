@@ -2777,9 +2777,7 @@
     "no_headings": "제목이 없습니다."
   },
   "watched_file_update_status": {
-    "file_last_modified": "파일 <code class=\"file-path\"></code> 의 마지막 수정 시각은 <span class=\"file-last-modified\"></span> 입니다.",
-    "upload_modified_file": "수정된 파일 업로드",
-    "ignore_this_change": "이 변경 무시"
+    "upload_modified_file": "수정된 파일 업로드"
   },
   "app_context": {
     "please_wait_for_save": "저장이 끝날 때까지 몇 초만 기다렸다가 다시 시도해 주세요."
