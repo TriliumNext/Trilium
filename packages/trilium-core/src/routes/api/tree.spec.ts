@@ -87,11 +87,13 @@ describe("Tree API (core)", () => {
         const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
         getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
 
-        const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[] }[] }>("/api/tree/load", {
+        const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[]; ownerId?: string | null }[] }>("/api/tree/load", {
             body: { noteIds: [ "root", note.noteId ] }
         });
         const byId = new Map(res.body.notes.map((row) => [ row.noteId, row ]));
         expect(byId.get(note.noteId)?.accessUsernames).toEqual([ "tree-access-user" ]);
+        // The owner tells the client whether the signed-in user can manage the access.
+        expect(byId.get(note.noteId)?.ownerId).toBe(getContext().init(() => userService.getAdminUserId()));
         expect(Object.hasOwn(byId.get("root") ?? {}, "accessUsernames")).toBe(false);
     });
 

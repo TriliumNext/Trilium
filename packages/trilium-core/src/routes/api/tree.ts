@@ -68,6 +68,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
             type: note.type,
             mime: note.mime,
             blobId: note.blobId,
+            ownerId: note.ownerId,
             ...(note.isContentWritable() ? {} : { isContentWritable: false }),
             ...(accessUsernames ? { accessUsernames } : {})
         });

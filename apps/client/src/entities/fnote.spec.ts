@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe("FNote title", () => {
     it("shows the signed-in member's home as My notes, and other homes by their own title", () => {
-        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        window.glob.currentUser = { userId: "alice", username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
         try {
             const home = new FNote(froca, { noteId: "home_alice", title: "alice", type: "text", mime: "text/html", isProtected: false, blobId: "" } as FNoteRow);
             const otherHome = new FNote(froca, { noteId: "home_bob", title: "bob", type: "text", mime: "text/html", isProtected: false, blobId: "" } as FNoteRow);
@@ -62,27 +62,42 @@ describe("FNote title", () => {
 });
 
 describe("FNote access", () => {
+    const row = (noteId: string, ownerId?: string) => ({ noteId, title: noteId, type: "text", mime: "text/html", isProtected: false, blobId: "", ownerId }) as FNoteRow;
+
     it("can have its access managed once others can sign in, except root, system notes, homes and the Users note", () => {
-        const row = (noteId: string) => ({ noteId, title: noteId, type: "text", mime: "text/html", isProtected: false, blobId: "" }) as FNoteRow;
-        const project = new FNote(froca, row("project"));
+        const project = new FNote(froca, row("project", "alice"));
         expect(project.isAccessManageable()).toBe(false);
 
-        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        window.glob.currentUser = { userId: "alice", username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
         try {
             expect(project.isAccessManageable()).toBe(true);
-            expect(new FNote(froca, row("root")).isAccessManageable()).toBe(false);
-            expect(new FNote(froca, row("_hidden")).isAccessManageable()).toBe(false);
-            expect(new FNote(froca, row("home_alice")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("root", "alice")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("_hidden", "alice")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("home_alice", "alice")).isAccessManageable()).toBe(false);
         } finally {
             delete window.glob.currentUser;
         }
 
         // An admin sees every home and the Users note, none of which can be shared either.
-        window.glob.currentUser = { username: "olivia", isAdmin: true, avatarHue: 0 };
+        window.glob.currentUser = { userId: "olivia", username: "olivia", isAdmin: true, avatarHue: 0 };
         try {
             expect(project.isAccessManageable()).toBe(true);
-            expect(new FNote(froca, row("home_alice")).isAccessManageable()).toBe(false);
-            expect(new FNote(froca, row("users")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("home_alice", "alice")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("users", "olivia")).isAccessManageable()).toBe(false);
+        } finally {
+            delete window.glob.currentUser;
+        }
+    });
+
+    it("leaves the access of a note shared with a member to its owner", () => {
+        const shared = new FNote(froca, row("shared", "bob"));
+        window.glob.currentUser = { userId: "alice", username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        try {
+            expect(shared.isAccessManageable()).toBe(false);
+
+            // A row the client rebuilds itself carries no owner, which leaves the known one standing.
+            shared.update({ noteId: "shared", title: "renamed", type: "text", mime: "text/html", isProtected: false, blobId: "" });
+            expect(shared.ownerId).toBe("bob");
         } finally {
             delete window.glob.currentUser;
         }

@@ -196,6 +196,7 @@ export interface PostTokensResponse {
 
 /** The signed-in user, as the global menu shows them. */
 export interface CurrentUser {
+    userId: string;
     username: string;
     isAdmin: boolean;
     /** The user's avatar hue, from `getAvatarHues()`, so it matches the one on the Users page. */

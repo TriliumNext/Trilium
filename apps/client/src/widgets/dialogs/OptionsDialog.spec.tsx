@@ -68,12 +68,12 @@ describe("isOptionPageVisibleOnPlatform", () => {
     });
 
     it("hides an #adminOnly page from a member, and only from a member", () => {
-        window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 0 } };
+        window.glob = { ...window.glob, currentUser: { userId: "alice", username: "alice", isAdmin: false, avatarHue: 0 } };
         expect(isOptionPageVisibleOnPlatform(fakePage("adminOnly"))).toBe(false);
         expect(isOptionPageVisibleOnPlatform(fakePage())).toBe(true);
 
         // Desktop, standalone and a single-user server send no user; their only user is the admin.
-        for (const currentUser of [ { username: "admin", isAdmin: true, avatarHue: 0 }, undefined ]) {
+        for (const currentUser of [ { userId: "admin", username: "admin", isAdmin: true, avatarHue: 0 }, undefined ]) {
             window.glob = { ...window.glob, currentUser };
             expect(isOptionPageVisibleOnPlatform(fakePage("adminOnly"))).toBe(true);
         }

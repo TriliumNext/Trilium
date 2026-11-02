@@ -363,7 +363,7 @@ describe("GlobalMenu", () => {
         }
 
         it("heads the menu with the user's avatar, name and role, and logs out from there", async () => {
-            window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 120 } };
+            window.glob = { ...window.glob, currentUser: { userId: "alice", username: "alice", isAdmin: false, avatarHue: 120 } };
             const scroll = await openMenu();
 
             const account = scroll?.firstElementChild;
@@ -387,7 +387,7 @@ describe("GlobalMenu", () => {
         });
 
         it("stays open when the account row is clicked anywhere but its button", async () => {
-            window.glob = { ...window.glob, currentUser: { username: "alice", isAdmin: false, avatarHue: 120 } };
+            window.glob = { ...window.glob, currentUser: { userId: "alice", username: "alice", isAdmin: false, avatarHue: 120 } };
             const scroll = await openMenu();
 
             for (const selector of [ ".global-menu-account", ".user-avatar", ".global-menu-account-name", ".global-menu-account-role" ]) {
@@ -399,7 +399,7 @@ describe("GlobalMenu", () => {
         });
 
         it("names an admin's role, and shows no account row on a single-user instance", async () => {
-            window.glob = { ...window.glob, currentUser: { username: "admin", isAdmin: true, avatarHue: 210 } };
+            window.glob = { ...window.glob, currentUser: { userId: "admin", username: "admin", isAdmin: true, avatarHue: 210 } };
             expect((await openMenu())?.querySelector(".global-menu-account-role")?.textContent).toBe("users.role_admin");
             render(null, container ?? document.body);
 

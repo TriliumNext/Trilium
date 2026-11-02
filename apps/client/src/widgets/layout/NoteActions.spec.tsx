@@ -316,13 +316,14 @@ describe("NoteContextMenu", () => {
         };
 
         const note = buildNote({ title: "Project" });
+        note.ownerId = "olivia";
         const { currentUser } = window.glob;
         try {
             window.glob.currentUser = undefined;
             expect((await accessItem(note)).item).toBeNull();
             render(null, host);
 
-            window.glob.currentUser = { username: "olivia", isAdmin: false, avatarHue: 0, homeNoteId: "home_olivia" };
+            window.glob.currentUser = { userId: "olivia", username: "olivia", isAdmin: false, avatarHue: 0, homeNoteId: "home_olivia" };
             expect((await accessItem(buildNote({ id: "_optionsAccess", title: "Options" }))).item).toBeNull();
             render(null, host);
             expect((await accessItem(buildNote({ id: "home_olivia", title: "olivia" }))).item).toBeNull();

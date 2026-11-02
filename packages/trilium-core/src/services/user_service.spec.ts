@@ -18,8 +18,8 @@ describe("getSignedInUser", () => {
 
         const admin = cls.init(() => userService.getSignedInUser(adminId));
         const member = cls.init(() => userService.getSignedInUser(memberId));
-        expect(admin).toMatchObject({ isAdmin: true });
-        expect(member).toMatchObject({ username: "signed-in-spec", isAdmin: false });
+        expect(admin).toMatchObject({ userId: adminId, isAdmin: true });
+        expect(member).toMatchObject({ userId: memberId, username: "signed-in-spec", isAdmin: false });
         expect(member?.avatarHue).toBeGreaterThanOrEqual(0);
         expect(member?.avatarHue).not.toBe(admin?.avatarHue);
 

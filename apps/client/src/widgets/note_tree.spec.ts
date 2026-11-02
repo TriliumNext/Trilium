@@ -151,7 +151,7 @@ describe("NoteTreeWidget", () => {
         expect(admin.$widget.find(".tree").hasClass("tree-roots-at-top")).toBe(false);
         expect(admin.canActivate("root")).toBe(true);
 
-        window.glob.currentUser = { username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
+        window.glob.currentUser = { userId: "alice", username: "alice", isAdmin: false, avatarHue: 0, homeNoteId: "home_alice" };
         try {
             const member = await renderWidget();
             expect(member.$widget.find(".tree").hasClass("tree-roots-at-top")).toBe(true);

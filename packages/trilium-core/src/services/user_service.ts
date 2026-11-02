@@ -228,6 +228,7 @@ function getSignedInUser(userId: string | undefined): CurrentUser | undefined {
     }
 
     return {
+        userId,
         username: user.username,
         isAdmin: !!user.isAdmin,
         avatarHue: getAvatarHues(users).get(userId) ?? 0

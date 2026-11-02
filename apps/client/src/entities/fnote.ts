@@ -30,8 +30,12 @@ export interface FNoteRow {
     blobId: string;
     /** Sent only as `false`, for a virtual note whose provider cannot save content. */
     isContentWritable?: boolean;
+    /** Sent only as `true`, for a note that exists only in the server's cache. */
+    isVirtual?: boolean;
     /** Sent only by the tree load, and only for a note with grants. */
     accessUsernames?: string[];
+    /** Left out of the rows the client rebuilds from its own cache. */
+    ownerId?: string | null;
 }
 
 export interface NoteMetaData {
@@ -56,8 +60,12 @@ export default class FNote {
     blobId!: string;
     /** `false` for a note that no editing mode can unlock, such as a page of the in-app help. */
     isContentWritable!: boolean;
+    /** For a note such as a help page, which takes no children and cannot be moved or cloned. */
+    isVirtual!: boolean;
     /** The users given access to this note itself, by username; set by `froca.addResp()`. */
     accessUsernames: string[] = [];
+    /** The user who owns the note, who manages access to it along with the admins. */
+    ownerId: string | null = null;
 
     attributes: string[];
     targetRelations: string[];
@@ -106,9 +114,10 @@ export default class FNote {
 
     /**
      * Whether "Access..." is offered for the note. `currentUser` is set only once someone besides the
-     * primary admin can sign in; `root`, system notes, homes and the Users note cannot be shared, as
-     * the server refuses them. The server looks a home up among the users, while this only reads the
-     * ID: a note given a `home_` ID of its own just loses the menu entry.
+     * primary admin can sign in. Only admins and the note's owner manage its access, and `root`,
+     * system notes, homes and the Users note cannot be shared, as the server refuses them. The server
+     * looks a home up among the users, while this only reads the ID: a note given a `home_` ID of its
+     * own just loses the menu entry.
      */
     isAccessManageable() {
         const currentUser = window.glob?.currentUser;
@@ -116,7 +125,8 @@ export default class FNote {
             && this.noteId !== "root"
             && !this.noteId.startsWith("_")
             && !this.noteId.startsWith(HOME_NOTE_ID_PREFIX)
-            && this.noteId !== USERS_NOTE_ID;
+            && this.noteId !== USERS_NOTE_ID
+            && (currentUser.isAdmin || this.ownerId === currentUser.userId);
     }
 
     update(row: FNoteRow) {
@@ -131,8 +141,13 @@ export default class FNote {
         this.title = row.title ?? "";
         this.mime = row.mime ?? "";
 
+        if (row.ownerId !== undefined) {
+            this.ownerId = row.ownerId;
+        }
+
         this.blobId = row.blobId;
         this.isContentWritable = row.isContentWritable ?? true;
+        this.isVirtual = row.isVirtual ?? false;
     }
 
     addParent(parentNoteId: string, branchId: string, sort = true) {
