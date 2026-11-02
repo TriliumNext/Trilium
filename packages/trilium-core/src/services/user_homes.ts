@@ -92,12 +92,22 @@ function getTopLevelHomeNoteId(userId: string): string | undefined {
  * everything below, so it would hand over a user's notes, or everyone's, including those yet to come.
  */
 function isHomeOrUsersNote(noteId: string): boolean {
-    return noteId === USERS_NOTE_ID || !!getSql().getValue<number>(
+    return noteId === USERS_NOTE_ID || isHomeNote(noteId);
+}
+
+/**
+ * Whether the note is a user's home, looked up among the users since a note ID can be forced. Its
+ * title follows the username (`renameUserHome()`), so it cannot be renamed by hand.
+ */
+function isHomeNote(noteId: string): boolean {
+    return !!getSql().getValue<number>(
         "SELECT 1 FROM users WHERE ? = ? || userId", [noteId, HOME_NOTE_ID_PREFIX]
     );
 }
 
-export default { ensureUserHome, ensureUserHomes, renameUserHome, getTopLevelHomeNoteId, isHomeOrUsersNote };
+export default {
+    ensureUserHome, ensureUserHomes, renameUserHome, getTopLevelHomeNoteId, isHomeOrUsersNote, isHomeNote
+};
 
 function getOrCreateUsersNote(): BNote {
     const existing = getBecca().getNote(USERS_NOTE_ID);

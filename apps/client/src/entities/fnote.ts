@@ -294,6 +294,11 @@ export default class FNote {
             || this.noteId.startsWith("_options");
     }
 
+    /** Whether the title cannot be edited: a user's home follows its user's name, as the server enforces. */
+    get isTitleReadOnly() {
+        return this.isMetadataReadOnly || this.noteId.startsWith(HOME_NOTE_ID_PREFIX);
+    }
+
     getChildNoteIds() {
         return this.children;
     }

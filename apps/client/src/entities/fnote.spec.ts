@@ -1240,13 +1240,17 @@ describe("FNote target relations, blob alias, toString, dto", () => {
 });
 
 describe("FNote system-note predicates", () => {
-    it("isArchived / isMetadataReadOnly / isOptions / isLaunchBarConfig", () => {
+    it("isArchived / isMetadataReadOnly / isTitleReadOnly / isOptions / isLaunchBarConfig", () => {
         expect(buildNote({ title: "arch", "#archived": "" }).isArchived).toBe(true);
 
         expect(makeNote({ noteId: "_lbRoot" }).isMetadataReadOnly).toBe(true);
         expect(makeNote({ noteId: "_help_xyz" }).isMetadataReadOnly).toBe(true);
         expect(makeNote({ noteId: "_optionsAppearance" }).isMetadataReadOnly).toBe(true);
         expect(makeNote({ noteId: "regularNote" }).isMetadataReadOnly).toBe(false);
+        expect(makeNote({ noteId: "home_alice" }).isMetadataReadOnly).toBe(false);
+        expect(makeNote({ noteId: "home_alice" }).isTitleReadOnly).toBe(true);
+        expect(makeNote({ noteId: "_lbRoot" }).isTitleReadOnly).toBe(true);
+        expect(makeNote({ noteId: "regularNote" }).isTitleReadOnly).toBe(false);
 
         expect(makeNote({ noteId: "_optionsX" }).isOptions()).toBe(true);
         expect(makeNote({ noteId: "plain" }).isOptions()).toBe(false);
