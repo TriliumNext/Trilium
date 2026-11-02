@@ -219,6 +219,28 @@ export interface UserListItem {
     dateCreated: string;
 }
 
+/** A user as the access dialog shows them. */
+export interface NoteAccessUser {
+    userId: string;
+    username: string;
+    /** From `getAvatarHues()`, so it matches the one on the Users page. */
+    avatarHue: number;
+}
+
+/** A user's grant on the note itself; access inherited from an ancestor is not listed. */
+export interface NoteAccessGrant extends NoteAccessUser {
+    canWrite: boolean;
+}
+
+/** The response of `GET /api/notes/:noteId/access`. */
+export interface NoteAccessResponse {
+    /** `null` when the owner was deleted. */
+    owner: NoteAccessUser | null;
+    grants: NoteAccessGrant[];
+    /** The users who can be given access: everyone except admins, who see every note, and the owner. */
+    users: NoteAccessUser[];
+}
+
 /**
  * A one-time link letting a user choose their password. The token is only ever shown when the link
  * is created; the server keeps a hash of it.

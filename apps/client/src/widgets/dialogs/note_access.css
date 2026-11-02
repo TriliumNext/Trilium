@@ -1,0 +1,38 @@
+.modal.note-access-dialog {
+    .tn-card + .tn-card {
+        margin-top: 16px;
+    }
+
+    .note-access-row,
+    .note-access-add {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+    }
+
+    .note-access-username {
+        flex: 1 1 8em;
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .note-access-controls {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 8px;
+        margin-inline-start: auto;
+    }
+
+    .note-access-add-user {
+        flex: 1 1 10em;
+        width: auto;
+        min-width: 0;
+    }
+
+    .note-access-add-none {
+        color: var(--muted-text-color);
+    }
+}

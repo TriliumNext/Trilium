@@ -1,3 +1,4 @@
+import type { NoteAccessResponse } from "@triliumnext/commons";
 import { cls, getSql, permission_service, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -111,6 +112,68 @@ describe("Permissions API", () => {
 
             const perms = cls.init(() => permission_service.getPermissionsForNote(noteId));
             expect(perms.length).toBe(0);
+        });
+    });
+
+    describe("note access", () => {
+        const statusOf = (result: unknown) => (Array.isArray(result) ? result[0] : undefined);
+
+        function getAccess(noteId: string, session: Record<string, unknown>) {
+            return cls.init(() => permissionsRoute.getNoteAccess(req({}, { noteId }, session)));
+        }
+
+        function setAccess(noteId: string, userId: string, canWrite: unknown, session: Record<string, unknown>) {
+            return cls.init(() => permissionsRoute.setNoteAccess(req({ canWrite }, { noteId, userId }, session)));
+        }
+
+        function removeAccess(noteId: string, userId: string, session: Record<string, unknown>) {
+            return cls.init(() => permissionsRoute.removeNoteAccess(req({}, { noteId, userId }, session)));
+        }
+
+        it("lets the owner grant, change and revoke one grant per user", () => {
+            const ownerId = cls.init(() => user_service.createUser(`access-owner-${Date.now()}`, null, false));
+            const noteId = `noteAccessOwned${Date.now()}`;
+            insertNote(noteId, ownerId);
+            const owner = { userId: ownerId };
+
+            expect(getAccess(noteId, owner)).toMatchObject({
+                owner: { userId: ownerId },
+                grants: [],
+                users: expect.arrayContaining([ expect.objectContaining({ userId: guestId }) ])
+            });
+            const candidates = (getAccess(noteId, owner) as NoteAccessResponse).users.map((user) => user.userId);
+            expect(candidates).not.toContain(ownerId);
+            expect(candidates).not.toContain(adminSession().userId);
+
+            expect(setAccess(noteId, guestId, false, owner)).toBeUndefined();
+            expect(setAccess(noteId, guestId, true, owner)).toBeUndefined();
+            expect((getAccess(noteId, owner) as NoteAccessResponse).grants).toEqual([
+                expect.objectContaining({ userId: guestId, canWrite: true, avatarHue: expect.any(Number) })
+            ]);
+            expect(cls.init(() => permission_service.canUserWriteNote(noteId, guestId))).toBe(true);
+
+            expect(removeAccess(noteId, guestId, owner)).toBeUndefined();
+            expect((getAccess(noteId, owner) as NoteAccessResponse).grants).toEqual([]);
+            expect(cls.init(() => permission_service.canUserAccessNote(noteId, guestId))).toBe(false);
+        });
+
+        it("lets only the owner and admins manage access", () => {
+            const ownerId = cls.init(() => user_service.createUser(`access-owner2-${Date.now()}`, null, false));
+            const noteId = `noteAccessGuarded${Date.now()}`;
+            insertNote(noteId, ownerId);
+
+            expect(statusOf(getAccess(noteId, {}))).toBe(403);
+            expect(statusOf(getAccess(noteId, { userId: guestId }))).toBe(403);
+            expect(statusOf(setAccess(noteId, guestId, false, { userId: guestId }))).toBe(403);
+            expect(statusOf(getAccess("noSuchNoteAccess", adminSession()))).toBe(404);
+            expect(statusOf(getAccess("root", adminSession()))).toBe(400);
+            expect(statusOf(getAccess("_hidden", adminSession()))).toBe(400);
+
+            expect(getAccess(noteId, adminSession())).toHaveProperty("grants");
+            expect(statusOf(setAccess(noteId, "noSuchUser", false, adminSession()))).toBe(404);
+            expect(statusOf(setAccess(noteId, ownerId, false, adminSession()))).toBe(400);
+            expect(statusOf(setAccess(noteId, adminSession().userId as string, false, adminSession()))).toBe(400);
+            expect(statusOf(setAccess(noteId, guestId, "yes", adminSession()))).toBe(400);
         });
     });
 });

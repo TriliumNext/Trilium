@@ -45,6 +45,7 @@ import setupRoute from "./setup.js";
 
 const GET = "get",
     PST = "post",
+    PUT = "put",
     PATCH = "patch",
     DEL = "delete";
 
@@ -148,6 +149,9 @@ function register(app: express.Application) {
     apiRoute(GET,  "/api/notes/:noteId/permissions",        permissionsApiRoute.listPermissions);
     apiRoute(PST,  "/api/permissions",                      permissionsApiRoute.createPermission);
     apiRoute(DEL,  "/api/permissions/:permissionId",        permissionsApiRoute.deletePermission);
+    apiRoute(GET,  "/api/notes/:noteId/access",             permissionsApiRoute.getNoteAccess);
+    apiRoute(PUT,  "/api/notes/:noteId/access/:userId",     permissionsApiRoute.setNoteAccess);
+    apiRoute(DEL,  "/api/notes/:noteId/access/:userId",     permissionsApiRoute.removeNoteAccess);
 
     // in case of local electron, local calls are allowed unauthenticated, for server they need auth
     const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];

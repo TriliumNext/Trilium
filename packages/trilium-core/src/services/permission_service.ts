@@ -156,6 +156,21 @@ function revokePermission(permissionId: string): void {
     evictAffectedUsers(row.userId, row.groupId);
 }
 
+/** Gives the user read access to the note, plus write access when `canWrite`, replacing their earlier grants on it. */
+function setUserAccess(noteId: string, userId: string, canWrite: boolean): void {
+    getSql().transactional(() => {
+        getSql().execute("DELETE FROM note_permissions WHERE noteId = ? AND userId = ?", [noteId, userId]);
+        grantPermission(noteId, userId, null, canWrite);
+    });
+}
+
+/** Removes the user's grants on the note itself; access inherited from an ancestor stays. */
+function revokeUserAccess(noteId: string, userId: string): void {
+    getSql().execute("DELETE FROM note_permissions WHERE noteId = ? AND userId = ?", [noteId, userId]);
+    clearPermissionCache();
+    evictUser(userId);
+}
+
 function getPermissionsForNote(noteId: string): PermissionRow[] {
     return getSql().getRows<PermissionRow>(
         `SELECT ${PERMISSION_COLS}
@@ -174,6 +189,8 @@ export default {
     getEffectivePermission,
     grantPermission,
     revokePermission,
+    setUserAccess,
+    revokeUserAccess,
     getPermissionsForNote,
     clearPermissionCache
 };

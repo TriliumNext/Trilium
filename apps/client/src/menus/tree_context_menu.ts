@@ -306,6 +306,14 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             items: [ protectItem, unprotectItem ]
         },
 
+        // `currentUser` is set only once someone besides the primary admin can sign in.
+        (window.glob.currentUser && isNotRoot && !note.noteId.startsWith("_")) ? {
+            title: t("tree-context-menu.access"),
+            command: "showNoteAccess",
+            uiIcon: "bx bx-user-plus",
+            enabled: noSelectedNotes
+        } : null,
+
         { kind: "separator" },
 
         (notOptionsOrHelp && selectedNotes.length === 1) ? {
