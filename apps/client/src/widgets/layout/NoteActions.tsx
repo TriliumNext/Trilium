@@ -12,6 +12,9 @@ import type { MenuCommandItem } from "../../menus/context_menu";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
+import {
+    canMergeNote, isMergeUndoAttachment, mergeNoteFrom, undoMerge
+} from "../../services/note_merge";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import toast from "../../services/toast";
@@ -25,7 +28,7 @@ import { showImageCompressionDialog } from "../dialogs/image_compression/image_c
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import { useAttachments, useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import { ParentComponent, POPUP_EDITOR_NTX_ID, useCommandTrigger } from "../react/react_utils";
 import { getWordWrapMenu } from "./code_menus";
@@ -74,6 +77,7 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
     const [viewType] = useNoteLabel(note, "viewType");
     const [renderNote] = useNoteRelation(note, "renderNote");
     const canBeConvertedToAttachment = note?.isEligibleForConversionToAttachment();
+    const canUndoMerge = useAttachments(note).some((attachment) => isMergeUndoAttachment(attachment));
     const isSourceView = noteContext?.viewScope?.viewMode === "source";
     const isSearchable = isSourceView
         || ["text", "code", "book", "mindMap", "doc", "spreadsheet"].includes(noteType)
@@ -252,6 +256,24 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
                 </FormDropdownSubmenu>
 
                 <FormDropdownDivider />
+
+                <CommandItem icon="bx bx-undo" text={t("note_actions.undo_merge")}
+                    disabled={isInOptionsOrHelp || !canUndoMerge}
+                    command={() => {
+                        void undoMerge(note.noteId);
+                    }} />
+
+                <CommandItem icon="bx bx-history" text={t("note_actions.merge_history")}
+                    disabled={isInOptionsOrHelp}
+                    command={() => appContext.triggerCommand(
+                        "showMergeHistory", { noteId: note.noteId }
+                    )} />
+
+                <CommandItem icon="bx bx-merge" text={t("note_actions.merge_note_from")}
+                    disabled={isInOptionsOrHelp || !canMergeNote(note)}
+                    command={() => {
+                        void mergeNoteFrom(note.noteId);
+                    }} />
 
                 <CommandItem icon="bx bx-trash destructive-action-icon" text={t("note_actions.delete_note")} destructive
                     disabled={isInOptionsOrHelp}

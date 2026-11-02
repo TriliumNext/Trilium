@@ -611,5 +611,25 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium runs as a Flatpak, so it cannot start programs installed outside its sandbox, such as {{- cli}}. To use {{- cli}}:\n\n1. Install it on this computer and sign in to it from a terminal.\n2. Allow Trilium to start programs outside its sandbox by running this in a terminal:\n\n{{- grantCommand}}\n\n3. Restart Trilium.\n\nThis gives Trilium the same access to your computer as an installation outside Flatpak. To take it back, run:\n\n{{- revokeCommand}}"
+  },
+  "merge": {
+    "bad-request": "The merge request is missing the notes to merge.",
+    "no-sources": "Choose a note to merge.",
+    "system-note": "System notes cannot be merged.",
+    "unsupported-type": "Search notes and launchers cannot be merged.",
+    "protected": "Unlock protected notes before merging them.",
+    "protection-mismatch": "A protected note cannot be merged with a note that is not protected.",
+    "incompatible-content": "These notes cannot be merged because their content cannot be combined. Text notes merge with text notes, and code notes merge when they use the same language.",
+    "protected-reference": "\"{{- title}}\" links to a note being merged and is protected. Unlock protected notes and try again.",
+    "cannot-place": "\"{{- note}}\" cannot be placed into \"{{- parent}}\".",
+    "child-stranded": "\"{{- title}}\" would be deleted by this merge because it cannot be moved onto the remaining note.",
+    "target-lost": "This merge would delete the note that should remain, because every place it lives is inside a note being merged.",
+    "empty-title": "The title cannot be empty.",
+    "hoisted": "The note the tree is narrowed to cannot be merged away.",
+    "revision-description": "Before merging notes",
+    "nothing-to-undo": "There is no merge to undo.",
+    "undo-expired": "This merge can no longer be undone.",
+    "undo-revision-description": "Merged notes",
+    "unknown-entry": "That merge is no longer in the history."
   }
 }

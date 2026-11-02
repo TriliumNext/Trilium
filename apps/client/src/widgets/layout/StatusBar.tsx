@@ -17,6 +17,7 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { ATTRIBUTE_HELP_PAGE } from "../../services/in_app_help";
 import { ViewScope } from "../../services/link";
+import { isMergeUndoAttachment } from "../../services/note_merge";
 import { NOTE_TYPES } from "../../services/note_types";
 import server from "../../services/server";
 import { openInAppHelpFromUrl } from "../../services/utils";
@@ -416,7 +417,7 @@ function BacklinksBadge({ note, viewScope }: StatusBarContext) {
 //#region Attachment count
 function AttachmentCount({ note }: StatusBarContext) {
     const attachments = useAttachments(note);
-    const count = attachments.length;
+    const count = attachments.filter((attachment) => !isMergeUndoAttachment(attachment)).length;
 
     return (note && count > 0 &&
         <StatusBarButton

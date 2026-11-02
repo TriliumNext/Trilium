@@ -68,6 +68,10 @@ The rest of the menu lists its options one per row:
         *   _This note only_ copies the note with its content and attributes, but without any of its child notes. Links and relations to the original children keep pointing at them.
     *   This process is different from <a class="reference-link" href="../../Notes/Cloning%20Notes.md">Cloning Notes</a> since the duplicated note can be edited independently from the original.
     *   An alternative to this, if done regularly, would be <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a>.
+*   **Merge note with…** / **Merge notes…**
+    *   On one note, _Merge note with…_ asks for another note and replaces both with a new note. See <a class="reference-link" href="../../Notes/Merging%20Notes.md">Merging Notes</a>.
+    *   With several notes selected, the item reads _Merge notes…_. You are asked for the title of the new note. The content is appended in the order the notes appear in the tree.
+    *   The merge runs straight away. _Undo merge_, on the new note, brings back the most recently merged note. _Merge history_ can restore or forget any one of them.
 *   **Archive/Unarchive**
     *   Marks a note as [archived](../../Notes/Archived%20Notes.md).
     *   If the note is already archived, it will be unarchived instead.

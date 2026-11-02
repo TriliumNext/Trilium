@@ -1,0 +1,38 @@
+.modal.merge-history-dialog {
+    .merge-history-intro {
+        margin-bottom: 1em;
+    }
+
+    .merge-history {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75em;
+    }
+
+    .merge-history-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+    }
+
+    .merge-history-summary {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .merge-history-when,
+    .merge-history-size {
+        color: var(--muted-text-color);
+    }
+
+    .merge-history-actions {
+        display: flex;
+        flex-shrink: 0;
+        gap: 0.5em;
+    }
+}

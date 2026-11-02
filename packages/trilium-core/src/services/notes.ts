@@ -145,6 +145,11 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulte
 
 function copyAttachments(origNote: BNote, newNote: BNote) {
     for (const attachment of origNote.getAttachments()) {
+        // A merge is undone on the note it was merged into. A note created from a template does not
+        // inherit that record, nor the text copies it keeps.
+        if (attachment.role === "mergeUndo" || attachment.role === "mergeUndoBlob") {
+            continue;
+        }
         if (isImageAttachmentRole(attachment.role)) {
             // Handled separately, see `checkImageAttachments`.
             continue;

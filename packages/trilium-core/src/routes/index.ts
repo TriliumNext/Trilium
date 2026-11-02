@@ -114,6 +114,10 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/type", notesApiRoute.setNoteTypeMime);
     apiRoute(PUT, "/api/notes/:noteId/title", notesApiRoute.changeTitle);
     apiRoute(PST, "/api/notes/:noteId/duplicate/:parentNoteId", notesApiRoute.duplicateSubtree);
+    apiRoute(PST, "/api/notes/:noteId/merge", notesApiRoute.mergeNotes);
+    apiRoute(PST, "/api/notes/:noteId/merge-undo", notesApiRoute.undoMerge);
+    apiRoute(GET, "/api/notes/:noteId/merge-history", notesApiRoute.getMergeHistory);
+    apiRoute(PST, "/api/notes/:noteId/merge-history/forget", notesApiRoute.forgetMerge);
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
     apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);

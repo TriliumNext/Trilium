@@ -1345,6 +1345,13 @@ class BNote extends AbstractBeccaEntity<BNote> {
             revision.save(); // to generate revisionId, which is then used to save attachments
 
             for (const noteAttachment of this.getAttachments()) {
+                // The merge history and the text it keeps are the merge's own record, not content of
+                // the note, so a revision does not snapshot them. Restoring the revision would
+                // otherwise bring the record back after the merge had already been undone.
+                if (noteAttachment.role === "mergeUndo" || noteAttachment.role === "mergeUndoBlob") {
+                    continue;
+                }
+
                 const revisionAttachment = noteAttachment.copy();
 
                 /* v8 ignore next 3 -- defensive: revision.save() above always assigns revisionId */

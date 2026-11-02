@@ -2872,6 +2872,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "JIRlDJpCFD6E",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "BFs8mudNFgCS",
+                                        "JIRlDJpCFD6E"
+                                    ],
+                                    "title": "Merging Notes",
+                                    "notePosition": 80,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "merging-notes",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-merge",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Merging Notes.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "bwg0e8ewQMak",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -2880,7 +2915,7 @@
                                         "bwg0e8ewQMak"
                                     ],
                                     "title": "Protected Notes",
-                                    "notePosition": 80,
+                                    "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2924,7 +2959,7 @@
                                         "MKmLg5x6xkor"
                                     ],
                                     "title": "Archived Notes",
-                                    "notePosition": 90,
+                                    "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2968,7 +3003,7 @@
                                         "vZWERwf8U3nx"
                                     ],
                                     "title": "Note Revisions",
-                                    "notePosition": 100,
+                                    "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3012,7 +3047,7 @@
                                         "aGlEvb9hyDhS"
                                     ],
                                     "title": "Sorting Notes",
-                                    "notePosition": 110,
+                                    "notePosition": 120,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3047,7 +3082,7 @@
                                         "NRnIZmSMc5sj"
                                     ],
                                     "title": "Printing & Exporting as PDF",
-                                    "notePosition": 130,
+                                    "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3091,7 +3126,7 @@
                                         "CoFPLs3dRlXc"
                                     ],
                                     "title": "Read-Only Notes",
-                                    "notePosition": 140,
+                                    "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3126,7 +3161,7 @@
                                         "0ESUbbAxVnoK"
                                     ],
                                     "title": "Note List",
-                                    "notePosition": 150,
+                                    "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3170,7 +3205,7 @@
                                         "S0Fos78ZfcY7"
                                     ],
                                     "title": "Note Inbox",
-                                    "notePosition": 160,
+                                    "notePosition": 170,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3205,7 +3240,7 @@
                                         "5Ct4MAJTS4tQ"
                                     ],
                                     "title": "Restoring Deleted Notes",
-                                    "notePosition": 170,
+                                    "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3240,7 +3275,7 @@
                                         "m3VlURMSeOrd"
                                     ],
                                     "title": "New note type switcher",
-                                    "notePosition": 180,
+                                    "notePosition": 190,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3284,7 +3319,7 @@
                                         "B5dihXRDksTk"
                                     ],
                                     "title": "Note badges",
-                                    "notePosition": 190,
+                                    "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -3328,7 +3363,7 @@
                                         "Bsm4fyzPJkSc"
                                     ],
                                     "title": "Save status indicator",
-                                    "notePosition": 210,
+                                    "notePosition": 220,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

@@ -144,6 +144,9 @@ export type CommandMappings = {
     showRevisions: CommandData & {
         noteId?: string | null;
     };
+    showMergeHistory: CommandData & {
+        noteId: string;
+    };
     showOptions: CommandData & {
         section?: string;
     };

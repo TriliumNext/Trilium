@@ -94,6 +94,16 @@ describe("partitionAttachmentsByGroup", () => {
             system: []
         });
     });
+
+    it("leaves the merge undo journal out of both halves", () => {
+        const journal = attachment("undo", "mergeUndo", "Merge undo", "application/json");
+        const payload = attachment("payload", "mergeUndoBlob", "Merge undo content", "text/plain");
+        const file = attachment("file", "file");
+        expect(groupIds([ journal, payload, file ], "text")).toStrictEqual({
+            user: [ "file" ],
+            system: []
+        });
+    });
 });
 
 const SVG_MIME = "image/svg+xml";

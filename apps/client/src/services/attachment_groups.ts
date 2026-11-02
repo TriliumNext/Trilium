@@ -3,6 +3,8 @@ import {
     NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
 } from "@triliumnext/commons";
 
+import { isMergeUndoAttachment } from "./note_merge";
+
 /**
  * Which half of the attachment list an attachment belongs in.
  *
@@ -76,6 +78,10 @@ export function partitionAttachmentsByGroup<T extends GroupedAttachment>(
     const canvasPictureTitles = getCanvasPictureTitles(attachments, noteType);
 
     for (const attachment of attachments) {
+        // The merge undo journal holds pre-merge content. It is not a file of the note.
+        if (isMergeUndoAttachment(attachment)) {
+            continue;
+        }
         const isCanvasPicture = attachment.role === "image"
             && canvasPictureTitles.has(attachment.title);
         const group = isCanvasPicture ? "system" : attachmentGroupForRole(attachment.role);

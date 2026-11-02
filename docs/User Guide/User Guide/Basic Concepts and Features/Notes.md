@@ -34,3 +34,4 @@ After the 7 days (configurable) the notes will be "erased" - their title, conten
 ## See also
 
 *   <a class="reference-link" href="Notes/Read-Only%20Notes.md">Read-Only Notes</a>
+*   <a class="reference-link" href="Notes/Merging%20Notes.md">Merging Notes</a>

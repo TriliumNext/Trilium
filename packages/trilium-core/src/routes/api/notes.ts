@@ -11,6 +11,7 @@ import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
+import noteMergeService from "../../services/note_merge.js";
 import noteService from "../../services/notes.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
@@ -589,6 +590,47 @@ function convertNoteFormat(req: Request<{ noteId: string }>) {
     return noteFormatConversionService.convertNoteFormat(note);
 }
 
+function mergeNotes(req: Request<{ noteId: string }>) {
+    const rawIds = req.body?.sourceNoteIds;
+    const rawTitle = req.body?.title;
+    const title: string | undefined = typeof rawTitle === "string" ? rawTitle : undefined;
+    if (!Array.isArray(rawIds) || (rawTitle !== undefined && title === undefined)) {
+        throw new ValidationError(t("merge.bad-request"));
+    }
+
+    const sourceNoteIds: string[] = [];
+    for (const id of rawIds) {
+        if (typeof id !== "string") {
+            throw new ValidationError(t("merge.bad-request"));
+        }
+        sourceNoteIds.push(id);
+    }
+
+    return noteMergeService.mergeNotes(req.params.noteId, sourceNoteIds, title);
+}
+
+function undoMerge(req: Request<{ noteId: string }>) {
+    const entryId = req.body?.entryId;
+    if (entryId !== undefined && typeof entryId !== "string") {
+        throw new ValidationError(t("merge.bad-request"));
+    }
+    noteMergeService.undoMerge(req.params.noteId, entryId);
+    return {};
+}
+
+function getMergeHistory(req: Request<{ noteId: string }>) {
+    return noteMergeService.getMergeHistory(req.params.noteId);
+}
+
+function forgetMerge(req: Request<{ noteId: string }>) {
+    const entryId = req.body?.entryId;
+    if (typeof entryId !== "string" || !entryId) {
+        throw new ValidationError(t("merge.bad-request"));
+    }
+    noteMergeService.forgetMerges(req.params.noteId, entryId);
+    return {};
+}
+
 export default {
     getNote,
     getNoteBlob,
@@ -611,5 +653,9 @@ export default {
     deleteNotes,
     forceSaveRevision,
     convertNoteToAttachment,
-    convertNoteFormat
+    convertNoteFormat,
+    mergeNotes,
+    undoMerge,
+    getMergeHistory,
+    forgetMerge
 };
