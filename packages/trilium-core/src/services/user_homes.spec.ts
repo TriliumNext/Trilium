@@ -172,6 +172,22 @@ describe("user homes", () => {
         expect(aliceBecca.notes[project.noteId]).toBeUndefined();
         expect(aliceBecca.notes[SHARED_WITH_ME_NOTE_ID]?.getChildNotes().map((child) => child.noteId)).toEqual([ aliceDraft.noteId ]);
     });
+
+    it("refuses a member's new note that reuses the ID of a note they cannot see", async () => {
+        const aliceId = cls.init(() => userService.createUser("forced-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("forced-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "forced-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "forced-bob-spec"));
+        const secret = createOwnedNote(bobHome.noteId, bobId, "bob secret");
+
+        await expect(asUser(aliceId, () => noteService.createNewNote({
+            noteId: secret.noteId, parentNoteId: aliceHome.noteId, title: "taken", content: "", type: "text"
+        }))).rejects.toThrow(`Note '${secret.noteId}' already exists.`);
+        const row = cls.init(() => getSql().getRow(
+            "SELECT title, ownerId FROM notes WHERE noteId = ?", [ secret.noteId ]
+        ));
+        expect(row).toEqual({ title: "bob secret", ownerId: bobId });
+    });
 });
 
 /** Loads a fresh Becca for the user, as the first request of their session does. */

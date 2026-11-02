@@ -299,7 +299,9 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
-    if (typeof forcedNoteId === "string" && forcedNoteId && getBecca().notes[forcedNoteId]) {
+    // A member's Becca holds only the notes they can see, so the check reads the database.
+    if (typeof forcedNoteId === "string" && forcedNoteId
+            && getSql().getValue("SELECT 1 FROM notes WHERE noteId = ? AND isDeleted = 0", [forcedNoteId])) {
         throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
     }
 
