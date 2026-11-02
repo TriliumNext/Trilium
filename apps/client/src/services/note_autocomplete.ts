@@ -40,6 +40,12 @@ export interface Options {
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
+    /**
+     * Focus a search on a note, and widen it again, without hoisting the tree. A search starts
+     * inside the current hoist. Widening it lists matches from the whole tree, and an empty field
+     * lists the recent notes of whichever scope the search is on.
+     */
+    hoistFocus?: boolean;
 }
 
 export interface NoteSuggestionOptions {
@@ -58,20 +64,30 @@ export interface NoteSuggestionOptions {
      * notes it matches are listed instead of the recent ones.
      */
     filter?: string;
+    /**
+     * The note the search is limited to, in place of the real hoist. `root` searches the whole tree.
+     * An empty term lists the recent notes inside it.
+     */
+    ancestorNoteId?: string;
 }
 
 /**
  * Returns the notes matching `term`, or the recently visited notes when `term` is blank, with the
  * action rows the options ask for.
  */
-export async function getNoteSuggestions(term: string, { allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks, fastSearch = true, limit, filter }: NoteSuggestionOptions = {}): Promise<Suggestion[]> {
+export async function getNoteSuggestions(term: string, { allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks, fastSearch = true, limit, filter, ancestorNoteId }: NoteSuggestionOptions = {}): Promise<Suggestion[]> {
     const activeNoteId = appContext.tabManager.getActiveContextNoteId();
     const hasTerm = term.trim().length >= 1;
 
     // Runs concurrently with the search, so naming the destination costs a request but no wait.
     const pendingInboxTarget = hasTerm && allowCreatingNotes ? getInboxTarget() : null;
 
-    const results: Suggestion[] = await server.get<AutocompleteResult[]>(`autocomplete?query=${encodeURIComponent(term)}&activeNoteId=${activeNoteId}&fastSearch=${fastSearch}${limit ? `&limit=${limit}` : ""}${filter ? `&filter=${encodeURIComponent(filter)}` : ""}`);
+    const ancestor = ancestorNoteId ? `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}` : "";
+    const results: Suggestion[] = await server.get<AutocompleteResult[]>(
+        `autocomplete?query=${encodeURIComponent(term)}&activeNoteId=${activeNoteId}`
+        + `&fastSearch=${fastSearch}${limit ? `&limit=${limit}` : ""}`
+        + `${filter ? `&filter=${encodeURIComponent(filter)}` : ""}${ancestor}`
+    );
     const before: Suggestion[] = [];
     const after: Suggestion[] = [];
 

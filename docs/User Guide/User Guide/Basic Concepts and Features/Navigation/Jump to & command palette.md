@@ -14,7 +14,9 @@ In addition to searching for notes, it is also possible to search for commands. 
 
 ### Interaction
 
-*   By default, when there is no text entered it will display the most recent notes.
+*   By default, when there is no text entered it will display the most recent notes inside the current <a class="reference-link" href="Note%20Hoisting.md">hoist</a>. With nothing hoisted, that is the whole tree. The bar naming that note stays above the list while the field is empty, including when the note has no recent notes.
+*   A result can limit this search to that note, which does not hoist it in the tree. The <span class="tn-icon bx bxs-chevrons-up"></span> button on the row does it, and so does <kbd>Alt</kbd>+<kbd>Enter</kbd> on the highlighted note. A workspace shows the button all the time; any other note shows it while its row is highlighted. A search note cannot limit the search. A bar above the results names the note the search is limited to. Its <span class="tn-icon bx bx-door-open"></span> button searches the whole tree instead, and the note you are hoisted into stays hoisted. With the field empty, that also changes which recent notes are listed.
+*   A search lists only the matches inside the note it is limited to. Once it is widened, it lists matches from the whole tree.
 *   Using the keyboard, use the up or down arrow keys to navigate between items. Press <kbd>Enter</kbd> to open the desired note.
 *   If the note doesn't exist, it's possible to create it by typing the desired note title and selecting one of two options:
     *   _Create note_ places it in the <a class="reference-link" href="../Notes/Note%20Inbox.md">Note Inbox</a>: the note labelled `#inbox`, today's <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> if there is none, or the top level if there is no journal either. While hoisted into a <a class="reference-link" href="Workspaces.md">Workspaces</a>, the workspace's own inbox is used, then today's day note if the workspace has a `#workspaceCalendarRoot`, otherwise the workspace root itself. The option names the destination, so it is always visible before the note is created.
@@ -30,7 +32,7 @@ In addition to searching for notes, it is also possible to search for commands. 
 
 Jump to note also has the ability to show the list of recently viewed / edited notes and quickly jump to it.
 
-To access this functionality, click on `Jump to` button on the top. By default, (when nothing is entered into autocomplete), this dialog will show the list of recent notes.
+To access this functionality, click on `Jump to` button on the top. By default, (when nothing is entered into autocomplete), this dialog will show the list of recent notes inside the current hoist. Widening the search, from the bar above the results, lists the recent notes of the whole tree instead, and leaves the hoist itself as it is.
 
 The recent notes are grouped by when they were last visited: _Today_, _Yesterday_, _Past 7 days_, _Past 30 days_ and _Older_. The other note fields, such as the one in the _Move to_ dialog, show the same list when empty: press the <span class="tn-icon bx bx-chevron-down"></span> button at the end of the field, or <kbd>↓</kbd>. Typing at least two characters lists the matching notes instead.
 

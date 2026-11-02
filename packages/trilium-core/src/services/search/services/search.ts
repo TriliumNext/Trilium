@@ -864,19 +864,38 @@ const AUTOCOMPLETE_RESULT_LIMIT = 25;
  * @param filter a search query the notes must also match, such as `note.type = image`. It is run as
  *               a search of its own rather than joined to `query`, so what is typed cannot change
  *               what the filter means.
+ * @param ancestorNoteId the note this search is limited to. `root` is the whole tree, and the real
+ *                       hoist is ignored either way. Left out, the search uses the real hoist, and
+ *                       a hoist inside the hidden subtree is widened to the root, as link
+ *                       autocompletion does.
  */
 function searchNotesForAutocomplete(
-    query: string, fastSearch: boolean = true, limit = AUTOCOMPLETE_RESULT_LIMIT, filter?: string
+    query: string, fastSearch: boolean = true, limit = AUTOCOMPLETE_RESULT_LIMIT, filter?: string,
+    ancestorNoteId?: string
 ) {
-    const ancestorNoteId = hoistedNoteService.isHoistedInHiddenSubtree()
+    const cap = Math.min(limit, AUTOCOMPLETE_RESULT_LIMIT);
+    // A hoist into the hidden subtree searches from the root, so there is no further tree to add.
+    const focusId = ancestorNoteId ?? (hoistedNoteService.isHoistedInHiddenSubtree()
         ? "root"
-        : hoistedNoteService.getHoistedNoteId();
+        : hoistedNoteService.getHoistedNoteId());
+
+    const focused = runAutocompleteSearch(query, fastSearch, filter, focusId);
+    return buildSearchResultDetails(focused.results.slice(0, cap), focused.searchContext);
+}
+
+/**
+ * The notes `query` matches under `ancestorNoteId`, best first, and the context that highlighted
+ * them. `ancestorNoteId` of `root` is the whole tree. The hoist is ignored, so a pass over the
+ * whole tree is not put back under it.
+ */
+function runAutocompleteSearch(query: string, fastSearch: boolean, filter: string | undefined, ancestorNoteId: string) {
     const searchContext = new SearchContext({
         fastSearch,
         includeArchivedNotes: false,
         includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
+        ignoreHoistedNote: true,
         ancestorNoteId,
         // Typo tolerance is opt-in here: `searchEnableFuzzyMatching` covers quick search and the
         // search screen, and `searchAutocompleteFuzzy` decides it for the jump-to-note and note
@@ -893,6 +912,7 @@ function searchNotesForAutocomplete(
             fastSearch,
             includeArchivedNotes: false,
             includeHiddenNotes: true,
+            ignoreHoistedNote: true,
             ancestorNoteId
         });
         const allowed = new Set(
@@ -900,9 +920,7 @@ function searchNotesForAutocomplete(
         results = results.filter((result) => allowed.has(result.noteId));
     }
 
-    const trimmed = results.slice(0, Math.min(limit, AUTOCOMPLETE_RESULT_LIMIT));
-
-    return buildSearchResultDetails(trimmed, searchContext);
+    return { results, searchContext };
 }
 
 /**

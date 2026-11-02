@@ -60,6 +60,7 @@ function DesktopNoteSearch({ ntxId }: { ntxId: string | null }) {
                         hideGoToSelectedNoteButton: true,
                         allowCreatingNotes: true,
                         allowJumpToSearchNotes: true,
+                        hoistFocus: true
                     }}
                     onChange={suggestion => {
                         if (!suggestion?.notePath) {

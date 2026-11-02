@@ -21,6 +21,9 @@ function getAutocomplete(req: Request): AutocompleteResult[] {
     const fastSearch = String(req.query.fastSearch).toLowerCase() !== "false";
     const limit = parseLimit(req.query.limit);
     const filter = parseFilter(req.query.filter);
+    // The note this search is limited to. It stands in for the real hoist, so a search can look
+    // through the whole tree while the tree itself stays hoisted.
+    const ancestorNoteId = parseAncestorNoteId(req.query.ancestorNoteId);
 
     const activeNoteId = req.query.activeNoteId || "none";
 
@@ -30,11 +33,11 @@ function getAutocomplete(req: Request): AutocompleteResult[] {
 
     if (query.length === 0 && filter) {
         // The recent notes would mostly not match, so the filter's own matches are listed instead.
-        results = searchService.searchNotesForAutocomplete(filter, fastSearch, limit);
+        results = searchService.searchNotesForAutocomplete(filter, fastSearch, limit, undefined, ancestorNoteId);
     } else if (query.length === 0 && typeof activeNoteId === "string") {
-        results = getRecentNotes(activeNoteId, limit);
+        results = getRecentNotes(activeNoteId, limit, ancestorNoteId);
     } else {
-        results = searchService.searchNotesForAutocomplete(query, fastSearch, limit, filter);
+        results = searchService.searchNotesForAutocomplete(query, fastSearch, limit, filter, ancestorNoteId);
     }
 
     const msTaken = Date.now() - timestampStarted;
@@ -43,14 +46,35 @@ function getAutocomplete(req: Request): AutocompleteResult[] {
         getLog().info(`Slow autocomplete took ${msTaken}ms`);
     }
 
-    return results;
+    return annotateAutocompleteResults(results);
 }
 
-function getRecentNotes(activeNoteId: string, limit = RECENT_NOTES_LIMIT): AutocompleteResult[] {
+/**
+ * Adds the note's type, and marks a workspace, from the note the path ends at. A note the cache no
+ * longer holds is left as it is.
+ */
+function annotateAutocompleteResults(results: AutocompleteResult[]): AutocompleteResult[] {
+    return results.map((result) => {
+        const noteId = result.notePath.split("/").at(-1);
+        const note = noteId ? becca.notes[noteId] : undefined;
+        if (!note) {
+            return result;
+        }
+
+        return {
+            ...result,
+            noteType: note.type,
+            ...(note.hasOwnedLabel("workspace") ? { workspace: true as const } : {})
+        };
+    });
+}
+
+function getRecentNotes(activeNoteId: string, limit = RECENT_NOTES_LIMIT, scopeNoteId?: string): AutocompleteResult[] {
     let extraCondition = "";
     const params = [activeNoteId];
 
-    const hoistedNoteId = cls.getHoistedNoteId();
+    // A search names its own scope. Without one, the recent notes follow the real hoist.
+    const hoistedNoteId = scopeNoteId ?? cls.getHoistedNoteId();
     if (hoistedNoteId !== "root") {
         extraCondition = `AND recent_notes.notePath LIKE ?`;
         params.push(`%${hoistedNoteId}%`);
@@ -114,6 +138,20 @@ function parseLimit(limit: unknown): number | undefined {
  * The `filter` query parameter: a search query every suggestion must also match, such as
  * `note.type = image`. Left out or blank, nothing is filtered.
  */
+/**
+ * The `ancestorNoteId` query parameter: the note a search is limited to, in place of the real hoist.
+ * `root` is the whole tree. Left out or blank, the search uses the real hoist.
+ */
+function parseAncestorNoteId(ancestor: unknown): string | undefined {
+    if (ancestor === undefined || ancestor === "") {
+        return undefined;
+    }
+    if (typeof ancestor !== "string") {
+        throw new ValidationError("Invalid ancestor note.");
+    }
+    return ancestor.trim() || undefined;
+}
+
 function parseFilter(filter: unknown): string | undefined {
     if (filter === undefined) {
         return undefined;

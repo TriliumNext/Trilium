@@ -28,7 +28,7 @@ In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/
 *   To create a relation called `myRelation`:
     1.  Click the input box to focus it.
     2.  Type `~myRelation=@` .
-    3.  After this, an autocompletion box should appear.
+    3.  After this, an autocompletion box should appear, limited to the current hoist, with that note named above the results.
     4.  Type the title of the note to point to and press <kbd>Enter</kbd> to confirm (or click the desired note).
     5.  Alternatively copy a note from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and paste it after the `=` sign (without the `@` , in this case).
 *   To create an inheritable relation, follow the same steps as previously described but instead of `~myRelation` write `~myRelation(inheritable)`.

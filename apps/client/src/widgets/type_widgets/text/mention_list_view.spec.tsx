@@ -43,7 +43,7 @@ describe("createNoteMentionList", () => {
     it("lists the notes for the query, and mentions the one picked by its path", async () => {
         const { list, commit, setActiveDescendant } = await open();
 
-        expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", { allowCreatingNotes: true, limit: 10 });
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", { allowCreatingNotes: true, limit: 10, ancestorNoteId: "root" });
         expect(list.element?.textContent).toContain("Alpha");
         // The editor is pointed at the row the list opens on.
         const active = list.element?.querySelector("[aria-selected=true]");

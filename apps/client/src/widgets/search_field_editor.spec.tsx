@@ -47,7 +47,7 @@ describe("createSearchFieldEditor", () => {
         const rows = () => menuRows(".note-autocomplete-menu");
         await vi.waitFor(() => expect(rows()).toEqual([ "Alpha", "Alpine" ]));
         // At most ten notes, and no rows creating one: a query names notes that exist.
-        expect(getNoteSuggestions).toHaveBeenLastCalledWith("Al", { allowCreatingNotes: undefined, limit: 10 });
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith("Al", { allowCreatingNotes: undefined, limit: 10, ancestorNoteId: "root" });
 
         // The first note is highlighted, so Enter takes it rather than running the search.
         await press("Enter");

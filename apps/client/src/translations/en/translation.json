@@ -3238,7 +3238,8 @@
     "hints": {
       "title": "Note search results",
       "move": "Move through the results",
-      "open": "Open the highlighted result"
+      "open": "Open the highlighted result",
+      "hoist": "Search inside the highlighted note"
     },
     "recent": {
       "today": "Today",
@@ -3246,7 +3247,11 @@
       "past_week": "Past 7 days",
       "past_month": "Past 30 days",
       "older": "Older"
-    }
+    },
+    "searching_in": "Searching in",
+    "search_everywhere": "Search everywhere",
+    "search_inside_note": "Search inside this note",
+    "search_inside_workspace": "Search inside this workspace"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",

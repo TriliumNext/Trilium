@@ -3,7 +3,7 @@ Hoisting is a standard outliner feature which allows you to focus on (or "zoom i
 
 ![](Note%20Hoisting_note-hoisting.gif)
 
-In addition to showing only this subtree, this also narrows both full text search and [“jump to note”](Note%20Navigation.md) to just notes present in hoisted subtree.
+In addition to showing only this subtree, hoisting narrows [full text search](Search.md) and [quick search](Quick%20search.md) to that subtree. [Jump to note](Jump%20to%20%26%20command%20palette.md) uses the hoist as where a search starts: with nothing typed it lists the recent notes inside the hoist, and a search lists only the matches inside it. Typing `@` to link a note starts in the same place, and names the hoist above the results even when nothing follows the `@`. Widening that search looks through the whole tree without unhoisting the note, and the recent notes change with it.
 
 ## Showing all notes again
 
