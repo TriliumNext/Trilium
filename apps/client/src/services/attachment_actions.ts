@@ -49,7 +49,7 @@ function getViewActions(
     attachment: FAttachment,
     copyReference: AttachmentActionOptions["copyReference"]
 ): AttachmentAction[] {
-    const { attachmentId, mime } = attachment;
+    const { attachmentId } = attachment;
 
     return [
         getOpenExternallyAction(attachment),
@@ -60,7 +60,7 @@ function getViewActions(
             disabledReason: utils.isElectron()
                 ? undefined
                 : t("attachments_actions.open_custom_client_only"),
-            run: () => open.openAttachmentCustom(attachmentId, mime)
+            run: () => open.openAttachmentCustom(attachmentId)
         },
         getDownloadAction(attachment),
         ...(copyReference ? [ {

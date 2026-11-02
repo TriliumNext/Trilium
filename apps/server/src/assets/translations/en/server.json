@@ -413,6 +413,10 @@
   "import": {
     "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
+  "open_custom": {
+    "choose_application": "Choose an application to open the file with.",
+    "applications_filter": "Applications"
+  },
   "restore": {
     "pick_backup_title": "Choose a backup to restore",
     "backup_filter": "Trilium backup (*.db, *.tnbackup)",

@@ -158,12 +158,6 @@ export type CommandMappings = {
         forceDeleteAllClones: boolean;
     };
     showConfirmDeleteNoteBoxWithNoteDialog: ConfirmWithTitleOptions;
-    openedFileUpdated: CommandData & {
-        entityType: string;
-        entityId: string;
-        lastModifiedMs?: number;
-        filePath: string;
-    };
     focusAndSelectTitle: CommandData & {
         isNewNote?: boolean;
     };

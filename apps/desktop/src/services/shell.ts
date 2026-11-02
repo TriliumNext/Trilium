@@ -1,9 +1,10 @@
 import { SHELL_OPEN_EXTERNAL_PROTOCOLS } from "@triliumnext/commons";
 import { getBackup, getLog, utils as coreUtils } from "@triliumnext/core";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
-import { execFile } from "child_process";
+import { execFile, spawn } from "child_process";
 import electron from "electron";
 import fs from "fs";
+import { t } from "i18next";
 import path from "path";
 import url from "url";
 
@@ -40,7 +41,8 @@ function isUnderOrEquals(resolved: string, root: string): boolean {
 
 /**
  * Validates a path for the "open-custom" IPC channel (renderer asks the main
- * process to invoke Windows' "Open With…" dialog or the Linux mimeopen flow).
+ * process to invoke Windows' "Open With…" dialog, the desktop portal's chooser on Linux, or an
+ * application picker on macOS).
  * The legit caller always passes a path freshly written by saveToTmpDir, so
  * the path must live under that dir and the file must exist on disk.
  */
@@ -299,61 +301,122 @@ export function setupShellHandlers() {
         }
     });
 
-    electron.ipcMain.on("open-custom", (_event, filePath: string) => {
+    electron.ipcMain.handle("open-custom", async (event, filePath: string) => {
         // Defense in depth: validate the path is one the server itself wrote into
         // Trilium's tmp dir via /api/.../save-to-tmp-dir, and that it exists.
         // Without this, a compromised renderer (e.g. via XSS) could ask us to
-        // launch arbitrary local files. The try/catch is essential — the
-        // validator throws on hostile input, and an unhandled throw inside an
-        // ipcMain.on handler would crash the main process.
+        // launch arbitrary local files.
         try {
             const resolved = validateOpenCustomPath(filePath, dataDirs.TMP_DIR);
 
-            const platform = process.platform;
-
-            if (platform === "linux") {
-                const terminals = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm", "xfce4-terminal", "mate-terminal", "rxvt", "terminator", "terminology"];
-
-                // The terminal's `-e` argument is reparsed by the terminal's own shell,
-                // so the path must be POSIX single-quoted before interpolation.
-                const sqQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
-                const innerCommand = `mimeopen -d ${sqQuote(resolved)}`;
-
-                const tryTerminal = (index: number) => {
-                    if (index >= terminals.length) {
-                        getLog().error("open-custom: no terminal emulator found");
-                        electron.shell.openPath(resolved);
-                        return;
-                    }
-                    const terminal = terminals[index];
-                    execFile(terminal, ["-e", innerCommand], (err) => {
-                        if (err) {
-                            getLog().info(`open-custom: ${terminal} failed: ${err.message}`);
-                            tryTerminal(index + 1);
-                        }
-                    });
-                };
-                tryTerminal(0);
-            } else if (platform === "win32") {
-                const winPath = resolved.replace(/\//g, "\\");
-                // OpenAs_RunDLL doesn't strip surrounding quotes from its arg, so we
-                // must NOT let Node quote the path on our behalf. windowsVerbatimArguments
-                // is safe here: CreateProcess passes the command line to rundll32 without
-                // any shell interpretation (so `&` is inert), and the path is validated
-                // above to live inside dataDirs.TMP_DIR with a sanitize-filename'd basename
-                // (so it cannot contain quotes or other rundll32-confusing characters).
-                execFile("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", winPath], { windowsVerbatimArguments: true }, (err) => {
-                    if (err) {
-                        getLog().error(`open-custom: rundll32 failed: ${err.message}`);
-                        electron.shell.openPath(resolved);
-                    }
-                });
-            } else {
-                electron.shell.openPath(resolved);
+            switch (process.platform) {
+                case "linux":
+                    return await openWithPortalChooser(resolved);
+                case "win32":
+                    return await openWithWindowsDialog(resolved);
+                case "darwin":
+                    return await openWithApplicationPicker(resolved, electron.BrowserWindow.fromWebContents(event.sender));
+                default:
+                    getLog().error(`open-custom: no application chooser on ${process.platform}`);
+                    return false;
             }
         } catch (e) {
             getLog().error(`open-custom failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
+            return false;
         }
+    });
+}
+
+/**
+ * Shows the application chooser of the desktop portal (`org.freedesktop.portal.OpenURI.OpenFile`),
+ * which also works inside the Flatpak sandbox. The file travels as a descriptor on fd 3 of
+ * `gdbus`, referenced by the `@h 3` handle. Resolves `false` if `gdbus` is missing or the call
+ * fails (no portal on the session bus); a chooser the user cancels still resolves `true`.
+ */
+function openWithPortalChooser(resolved: string): Promise<boolean> {
+    // The portal reads the access mode off the descriptor, so `writable` needs it opened read-write.
+    const fd = fs.openSync(resolved, "r+");
+    return new Promise((resolve) => {
+        let stderr = "";
+        let settled = false;
+        // A failed spawn can emit both `error` and `close`; the first one settles.
+        const finish = (opened: boolean) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            fs.closeSync(fd);
+            resolve(opened);
+        };
+
+        const child = spawn("gdbus", [
+            "call", "--session",
+            "--dest", "org.freedesktop.portal.Desktop",
+            "--object-path", "/org/freedesktop/portal/desktop",
+            "--method", "org.freedesktop.portal.OpenURI.OpenFile",
+            "", "@h 3", "{'ask': <true>, 'writable': <true>}"
+        ], { stdio: [ "ignore", "ignore", "pipe", fd ] });
+
+        child.stderr?.on("data", (chunk) => { stderr += chunk; });
+        child.once("error", (err) => {
+            getLog().error(`open-custom: gdbus failed: ${err.message}`);
+            finish(false);
+        });
+        child.once("close", (code) => {
+            if (code !== 0) {
+                getLog().error(`open-custom: portal call failed (exit ${code}): ${stderr.trim()}`);
+            }
+            finish(code === 0);
+        });
+    });
+}
+
+/** Shows the Windows "Open with" dialog; resolves `false` if `rundll32` fails. */
+function openWithWindowsDialog(resolved: string): Promise<boolean> {
+    const winPath = resolved.replace(/\//g, "\\");
+    return new Promise((resolve) => {
+        // OpenAs_RunDLL doesn't strip surrounding quotes from its arg, so we
+        // must NOT let Node quote the path on our behalf. windowsVerbatimArguments
+        // is safe here: CreateProcess passes the command line to rundll32 without
+        // any shell interpretation (so `&` is inert), and the path is validated
+        // to live inside dataDirs.TMP_DIR with a sanitize-filename'd basename
+        // (so it cannot contain quotes or other rundll32-confusing characters).
+        execFile("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", winPath], { windowsVerbatimArguments: true }, (err) => {
+            if (err) {
+                getLog().error(`open-custom: rundll32 failed: ${err.message}`);
+            }
+            resolve(!err);
+        });
+    });
+}
+
+/**
+ * Lets the user pick an application from `/Applications` and opens the file in it with `open -a`,
+ * as Finder's "Open With > Other…" does: macOS has no chooser an app can show for a file. A canceled
+ * picker resolves `true`, like a canceled chooser on Linux; a failed `open` resolves `false`.
+ */
+async function openWithApplicationPicker(resolved: string, window: Electron.BrowserWindow | null): Promise<boolean> {
+    const options: Electron.OpenDialogOptions = {
+        message: t("open_custom.choose_application"),
+        defaultPath: "/Applications",
+        properties: [ "openFile" ],
+        filters: [ { name: t("open_custom.applications_filter"), extensions: [ "app" ] } ]
+    };
+    const { canceled, filePaths } = window
+        ? await electron.dialog.showOpenDialog(window, options)
+        : await electron.dialog.showOpenDialog(options);
+    const appPath = canceled ? undefined : filePaths[0];
+    if (!appPath) {
+        return true;
+    }
+
+    return new Promise((resolve) => {
+        execFile("open", [ "-a", appPath, resolved ], (err) => {
+            if (err) {
+                getLog().error(`open-custom: open -a failed: ${err.message}`);
+            }
+            resolve(!err);
+        });
     });
 }
 
