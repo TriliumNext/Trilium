@@ -13,6 +13,13 @@ const PRIORITIES = {
 
 export type HighlightName = keyof typeof PRIORITIES;
 
+/**
+ * Marks the elements that ranges are found in. The `::highlight()` rules apply only under it,
+ * because a document-wide `::highlight()` rule crashes Chromium's renderer at some page zoom
+ * levels (#12021).
+ */
+export const HIGHLIGHT_ROOT_ATTRIBUTE = "data-highlight-root";
+
 export interface MatchOptions {
     /** Selectors of the elements whose own text is not searched. */
     exclude?: string[];
@@ -116,6 +123,7 @@ function findRanges(root: HTMLElement, options: MatchOptions, getOffsets: (text:
     const excluded = [ ...ALWAYS_EXCLUDED, ...options.exclude ?? [] ].join(",");
     const limit = options.limit ?? Infinity;
     const ranges: Range[] = [];
+    root.setAttribute(HIGHLIGHT_ROOT_ATTRIBUTE, "");
 
     for (const node of getTextNodes(root, excluded)) {
         for (const [ start, end ] of getOffsets(node.data).slice(0, limit - ranges.length)) {

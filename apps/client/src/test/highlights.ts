@@ -17,10 +17,17 @@ export function stubHighlightApi() {
     Object.defineProperty(Object.getPrototypeOf(globalThis.CSS), "highlights", { value: new Map() });
 }
 
-/** The ranges of the highlight `name` that start under `root`, in the order they were added. */
+/**
+ * The ranges of the highlight `name` that start under `root`, in the order they were added. Only
+ * ranges inside an element carrying `HIGHLIGHT_ROOT_ATTRIBUTE` count, since the `::highlight()`
+ * rules draw no others. The attribute name is repeated because importing `highlight_matches.ts`
+ * here loads `utils.ts` ahead of the specs' mocks.
+ */
 export function highlightedRanges(name: string, root: Node = document.body) {
     return [ ...CSS.highlights.get(name) ?? [] ]
-        .filter((range): range is Range => range instanceof Range && root.contains(range.startContainer));
+        .filter((range): range is Range => range instanceof Range
+            && root.contains(range.startContainer)
+            && !!range.startContainer.parentElement?.closest("[data-highlight-root]"));
 }
 
 /** The text of {@link highlightedRanges}. */
