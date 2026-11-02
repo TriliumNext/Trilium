@@ -56,24 +56,6 @@ const TPL = /*html*/`
         .find-widget-spacer {
             flex-grow: 1;
         }
-
-        /* The highlights of FindInHtml, in the colors CKEditor gives .ck-find-result and
-           .ck-find-result_selected in an editable text note. */
-        [data-highlight-root]::highlight(find-result),
-        [data-highlight-root] *::highlight(find-result) {
-            background-color: var(--ck-color-highlight-background);
-            color: var(--ck-color-text);
-        }
-
-        [data-highlight-root]::highlight(find-result-selected),
-        [data-highlight-root] *::highlight(find-result-selected) {
-            background-color: var(--ck-color-find-result-selected);
-        }
-
-        [data-highlight-root]::highlight(find-result-secondary),
-        [data-highlight-root] *::highlight(find-result-secondary) {
-            background-color: color-mix(in srgb, var(--ck-color-find-result-background, #66ff99) 40%, transparent);
-        }
     </style>
 
     <div class="find-widget-box">

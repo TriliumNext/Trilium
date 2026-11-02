@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import { join, relative } from "path";
 import { describe, expect, it } from "vitest";
 
-import { findSlowSelectors } from "../test/css_invalidation";
+import { findDocumentWideHighlights, findSlowSelectors } from "../test/css_invalidation";
 
 const ROOT = join(__dirname, "../../../..");
 const SOURCES = [ "apps/client/src", "packages/ckeditor5/src" ];
@@ -70,27 +70,66 @@ describe("findSlowSelectors", () => {
     });
 });
 
+describe("findDocumentWideHighlights", () => {
+    it("finds a ::highlight() rule that names no class, id or attribute", () => {
+        const found = (css: string) => findDocumentWideHighlights(css, "test.css");
+
+        expect(found([
+            "::highlight(a)",
+            "*::highlight(b)",
+            ":root ::highlight(c)",
+            "body::highlight(d)"
+        ].map((selector) => `${selector} { color: red }`).join("\n"))).toEqual([
+            "::highlight(a)",
+            "::highlight(b)",
+            ":root ::highlight(c)",
+            "body::highlight(d)"
+        ]);
+        expect(found(".chat { &::highlight(e), & *::highlight(e) { color: red } }")).toEqual([]);
+        expect(found([
+            "[data-highlight-root] *::highlight(f)",
+            "#note::highlight(g)",
+            "::selection"
+        ].map((selector) => `${selector} { color: red }`).join("\n"))).toEqual([]);
+    });
+});
+
 describe("Stylesheets", () => {
     it("have no selector that restyles a whole container on an insert or a focus change", () => {
         const found: string[] = [];
-        for (const dir of SOURCES) {
-            for (const file of cssFiles(join(ROOT, dir))) {
-                const path = relative(ROOT, file).replace(/\\/g, "/");
-                if (SEPARATE_PAGES.has(path)) {
-                    continue;
-                }
-                const code = readFileSync(file, "utf8");
-                for (const { shape, selector } of findSlowSelectors(code, file)) {
-                    if (!ACCEPTED[path]?.includes(selector)) {
-                        found.push(`${path} :: ${selector} (${shape})`);
-                    }
+        for (const { path, code, file } of stylesheets()) {
+            for (const { shape, selector } of findSlowSelectors(code, file)) {
+                if (!ACCEPTED[path]?.includes(selector)) {
+                    found.push(`${path} :: ${selector} (${shape})`);
                 }
             }
         }
 
         expect(found).toEqual([]);
     });
+
+    it("scope every ::highlight() rule to the elements that hold its ranges", () => {
+        const found: string[] = [];
+        for (const { path, code, file } of stylesheets()) {
+            for (const selector of findDocumentWideHighlights(code, file)) {
+                found.push(`${path} :: ${selector}`);
+            }
+        }
+
+        expect(found).toEqual([]);
+    });
 });
+
+function* stylesheets() {
+    for (const dir of SOURCES) {
+        for (const file of cssFiles(join(ROOT, dir))) {
+            const path = relative(ROOT, file).replace(/\\/g, "/");
+            if (!SEPARATE_PAGES.has(path)) {
+                yield { path, file, code: readFileSync(file, "utf8") };
+            }
+        }
+    }
+}
 
 function* cssFiles(dir: string): Generator<string> {
     for (const name of readdirSync(dir)) {
