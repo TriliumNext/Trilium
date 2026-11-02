@@ -41,9 +41,10 @@ export interface Options {
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
     /**
-     * Focus a search on a note, and widen it again, without hoisting the tree. A search starts
-     * inside the current hoist. Widening it lists matches from the whole tree, and an empty field
-     * lists the recent notes of whichever scope the search is on.
+     * Focus a search on a note, and widen it again, without hoisting the tree. On unless set to
+     * false: every search for a note starts inside the current hoist. Widening it lists matches
+     * from the whole tree, and an empty field lists the recent notes of whichever scope the search
+     * is on.
      */
     hoistFocus?: boolean;
 }

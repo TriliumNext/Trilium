@@ -4,6 +4,7 @@ import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
+import hoistedNoteService from "../../services/hoisted_note.js";
 import { getLog } from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";
 import { escapeHtml } from "../../services/utils/index.js";
@@ -73,8 +74,13 @@ function getRecentNotes(activeNoteId: string, limit = RECENT_NOTES_LIMIT, scopeN
     let extraCondition = "";
     const params = [activeNoteId];
 
-    // A search names its own scope. Without one, the recent notes follow the real hoist.
-    const hoistedNoteId = scopeNoteId ?? cls.getHoistedNoteId();
+    // A search names its own scope. Without one, the recent notes follow the real hoist. A hoist
+    // into the hidden subtree lists the recent notes of the whole tree, as the search does.
+    const realHoist = cls.getHoistedNoteId();
+    const requested = scopeNoteId ?? realHoist;
+    const hoistedNoteId = requested !== "root" && requested === realHoist && hoistedNoteService.isHoistedInHiddenSubtree()
+        ? "root"
+        : requested;
     if (hoistedNoteId !== "root") {
         extraCondition = `AND recent_notes.notePath LIKE ?`;
         params.push(`%${hoistedNoteId}%`);

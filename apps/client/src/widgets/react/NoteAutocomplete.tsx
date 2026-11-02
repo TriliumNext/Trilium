@@ -11,6 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import appContext from "../../components/app_context";
 import froca from "../../services/froca";
+import hoistedNoteService from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import { createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions, type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion } from "../../services/note_autocomplete";
 import { escapeHtml, isMobile } from "../../services/utils";
@@ -117,8 +118,10 @@ export default function NoteAutocomplete({
     const hasSearchFooter = !!container && !!searchFooter;
     const [ includeContents, setIncludeContents ] = useState(false);
 
-    const { isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks, hoistFocus } = opts ?? {};
-    const { searchFocusId, setSearchFocus } = useSearchFocus(!!hoistFocus);
+    const { isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks } = opts ?? {};
+    // Every search for a note carries the scope. A host sets `hoistFocus` to false to leave it out.
+    const hoistFocus = opts?.hoistFocus !== false;
+    const { searchFocusId, setSearchFocus } = useSearchFocus(hoistFocus, true);
 
     const source = useCallback(async (query: string) => {
         if (isCommandPalette && query.startsWith(">")) {
@@ -543,7 +546,7 @@ export function NoteMentionList({
     const inputRef = useRef<HTMLInputElement>(null);
     // The same scope as Jump to Note: `@` starts inside the current hoist, and widening it searches
     // the whole tree without hoisting the note the editor is in.
-    const { searchFocusId, setSearchFocus } = useSearchFocus(true);
+    const { searchFocusId, setSearchFocus } = useSearchFocus(true, true);
     const source = useCallback((term: string) =>
         getNoteSuggestions(term, {
             allowCreatingNotes,
@@ -1137,21 +1140,36 @@ function noteToHoist(suggestion: Suggestion | undefined, searchFocusId: string) 
  * widening it to the whole tree, changes only the search: the tree stays where it is, and a later
  * hoist of the tree no longer moves a search that has chosen its own scope.
  */
-function useSearchFocus(enabled: boolean) {
+export function useSearchFocus(enabled: boolean, widenHidden = false) {
     const realHoistId = useHoistedNoteId();
     const detached = useRef(false);
     const [ searchFocusId, setSearchFocusId ] = useState(realHoistId);
     useEffect(() => {
         if (!enabled || detached.current) return;
         setSearchFocusId(realHoistId);
-    }, [ enabled, realHoistId ]);
+        if (!widenHidden || realHoistId === "root") return;
+        // A hoist into the hidden subtree is not a place to look for notes, so the search starts
+        // over the whole tree. Choosing a scope afterwards still limits it.
+        let cancelled = false;
+        void hoistedNoteService.isHoistedInHiddenSubtree(realHoistId).then((hidden) => {
+            if (!cancelled && !detached.current && hidden) setSearchFocusId("root");
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [ enabled, realHoistId, widenHidden ]);
 
     const setSearchFocus = useCallback((noteId: string) => {
         detached.current = true;
         setSearchFocusId(noteId);
     }, []);
 
-    return { searchFocusId, setSearchFocus };
+    return {
+        searchFocusId,
+        setSearchFocus,
+        /** Set once the user has chosen a scope. Absent while the search still follows the tree. */
+        chosenScopeId: enabled && detached.current ? searchFocusId : undefined
+    };
 }
 
 /** The active context's hoisted note, read again when the hoist or the active context changes. */
@@ -1176,7 +1194,7 @@ function useHoistedNoteId() {
  * widens the search to the whole tree. The tree's own hoist stays as it is. Widening lists
  * different recent notes when the field is empty.
  */
-function SearchFocusBar({ noteId, onSearchEverywhere }: { noteId: string; onSearchEverywhere(): void }) {
+export function SearchFocusBar({ noteId, onSearchEverywhere }: { noteId: string; onSearchEverywhere(): void }) {
     const note = useNote(noteId, true);
 
     return (

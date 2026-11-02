@@ -865,22 +865,33 @@ const AUTOCOMPLETE_RESULT_LIMIT = 25;
  *               a search of its own rather than joined to `query`, so what is typed cannot change
  *               what the filter means.
  * @param ancestorNoteId the note this search is limited to. `root` is the whole tree, and the real
- *                       hoist is ignored either way. Left out, the search uses the real hoist, and
- *                       a hoist inside the hidden subtree is widened to the root, as link
- *                       autocompletion does.
+ *                       hoist is ignored either way. Left out, the search uses the real hoist. A
+ *                       hoist inside the hidden subtree is widened to the root, including when the
+ *                       caller names that hoist.
  */
 function searchNotesForAutocomplete(
     query: string, fastSearch: boolean = true, limit = AUTOCOMPLETE_RESULT_LIMIT, filter?: string,
     ancestorNoteId?: string
 ) {
     const cap = Math.min(limit, AUTOCOMPLETE_RESULT_LIMIT);
-    // A hoist into the hidden subtree searches from the root, so there is no further tree to add.
-    const focusId = ancestorNoteId ?? (hoistedNoteService.isHoistedInHiddenSubtree()
-        ? "root"
-        : hoistedNoteService.getHoistedNoteId());
+    const focusId = autocompleteScope(ancestorNoteId);
 
     const focused = runAutocompleteSearch(query, fastSearch, filter, focusId);
     return buildSearchResultDetails(focused.results.slice(0, cap), focused.searchContext);
+}
+
+/**
+ * The note an autocomplete search is limited to. Left unset, that is the real hoist. `root` is the
+ * whole tree. A hoist into the hidden subtree searches from the root, including when the caller
+ * names that hoist: it is not a place to look for notes.
+ */
+function autocompleteScope(ancestorNoteId?: string) {
+    const realHoist = hoistedNoteService.getHoistedNoteId();
+    const requested = ancestorNoteId ?? realHoist;
+    if (requested !== "root" && requested === realHoist && hoistedNoteService.isHoistedInHiddenSubtree()) {
+        return "root";
+    }
+    return requested;
 }
 
 /**

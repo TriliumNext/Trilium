@@ -4,7 +4,7 @@ Workspace is a concept built up on top of [note hoisting](Note%20Hoisting.md). I
 So far workspace consists of these features:
 
 *   [note hoisting](Note%20Hoisting.md) - you can "zoom" into a workspace subtree to focus only on the relevant notes
-*   easy entering of workspace, from the button in the note tree. In <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to note</a> the same button limits the search to that note instead of entering it. A workspace keeps the button visible, and any other note shows it while its row is highlighted. Widening that search looks through the whole tree and leaves the workspace you are in. 
+*   easy entering of workspace, from the button in the note tree. In a search for a note the same button limits the search to that note instead of entering it. A workspace keeps the button visible, and any other note shows it while its row is highlighted. Widening that search looks through the whole tree and leaves the workspace you are in. 
     
     ![](1_Workspaces_image.jpg)
 *   opening a workspace in a new tab: right-click the <span class="tn-icon bx bx-plus"></span> button of the <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a> bar and select the workspace.

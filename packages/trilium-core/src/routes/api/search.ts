@@ -126,17 +126,18 @@ function lintSearchString(req: Request): SearchLintResponse {
     return { error: searchService.validateSearchQuery(searchString) };
 }
 
-function quickSearch(req: Request<{}, { searchString?: string }>): QuickSearchResponse {
+function quickSearch(req: Request<{}, { searchString?: string; ancestorNoteId?: string }>): QuickSearchResponse {
     const searchString = getSearchString(req);
+    // Left out, the search covers the hoist, including one into the hidden subtree. Named, it
+    // covers that note, and `root` covers the whole tree, leaving the hoist where it is.
+    const ancestorNoteId = parseAncestorNoteId(req.query.ancestorNoteId) ?? hoistedNoteService.getHoistedNoteId();
 
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: false,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
-        // Quick search covers the subtree the user is looking at, so a hoist into the hidden
-        // subtree scopes it there too. Only link autocomplete widens to root, for link targets.
-        ancestorNoteId: hoistedNoteService.getHoistedNoteId()
+        ancestorNoteId
     });
 
     const trimmed = searchService.findResultsWithQuery(searchString, searchContext).slice(0, 200);
@@ -194,6 +195,20 @@ function search(
         highlightedTokens: searchContext.getHighlightedTokenInfos(),
         error: searchContext.getError()
     };
+}
+
+/**
+ * The `ancestorNoteId` query parameter: the note a search is limited to, in place of the real hoist.
+ * `root` is the whole tree. Left out or blank, the search uses the real hoist.
+ */
+function parseAncestorNoteId(ancestor: unknown): string | undefined {
+    if (ancestor === undefined || ancestor === "") {
+        return undefined;
+    }
+    if (typeof ancestor !== "string") {
+        throw new ValidationError("Invalid ancestor note.");
+    }
+    return ancestor.trim() || undefined;
 }
 
 function getSearchString(req: Request<{}, { searchString?: string }>): string {

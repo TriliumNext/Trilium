@@ -129,8 +129,7 @@ export default function JumpToNoteDialogComponent() {
                         allowCreatingNotes: true,
                         hideGoToSelectedNoteButton: true,
                         allowJumpToSearchNotes: true,
-                        isCommandPalette: true,
-                        hoistFocus: true
+                        isCommandPalette: true
                     }}
                     onTextChange={(text) => {
                         actualText.current = text;

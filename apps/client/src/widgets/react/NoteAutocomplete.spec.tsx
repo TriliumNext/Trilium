@@ -209,8 +209,11 @@ describe("NoteAutocomplete's suggestion list", () => {
     }
 
     it("focuses a search on a result, and widens it, without hoisting the tree", async () => {
-        buildNote({ id: "shelf", title: "Work" });
-        buildNote({ id: "inside", title: "Inside" });
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
         const previousTabManager = appContext.tabManager;
         appContext.tabManager = {
             getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
@@ -261,7 +264,7 @@ describe("NoteAutocomplete's suggestion list", () => {
     });
 
     it("lists the recent notes of the hoist again when the hoist is removed", async () => {
-        buildNote({ id: "shelf", title: "Work" });
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
         const host = new Component();
         const previousTabManager = appContext.tabManager;
         appContext.tabManager = {
@@ -300,7 +303,7 @@ describe("NoteAutocomplete's suggestion list", () => {
     });
 
     it("keeps the note a search is limited to above the list when nothing is listed", async () => {
-        buildNote({ id: "shelf", title: "Work" });
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
         const previousTabManager = appContext.tabManager;
         appContext.tabManager = {
             getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
@@ -936,7 +939,10 @@ describe("NoteAutocomplete's suggestion list", () => {
             await type(input, "al");
 
             expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", {
-                allowCreatingNotes: true, allowJumpToSearchNotes: true, allowExternalLinks: true
+                allowCreatingNotes: true,
+                allowJumpToSearchNotes: true,
+                allowExternalLinks: true,
+                ancestorNoteId: "root"
             });
         });
 
@@ -1087,9 +1093,9 @@ describe("NoteAutocomplete's suggestion list", () => {
 
             const host = document.createElement("div");
             expect(await keysFor({ container: { current: host }, opts: { allowJumpToSearchNotes: true }, searchFooter: true }))
-                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Ctrl+Enter" ]);
+                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Ctrl+Enter", "Alt+Enter" ]);
             expect(await keysFor({ container: { current: host }, searchFooter: true }))
-                .toEqual([ "Up Down", "Enter", "Shift+Enter" ]);
+                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Alt+Enter" ]);
             expect(await keysFor({ container: { current: host } })).toEqual([]);
             expect(await keysFor({})).toEqual([]);
         });
@@ -1430,8 +1436,11 @@ describe("NoteMentionList", () => {
     });
 
     it("limits an @ search to the hoist, and widens only that search", async () => {
-        buildNote({ id: "shelf", title: "Work" });
-        buildNote({ id: "inside", title: "Inside" });
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
         const previousTabManager = appContext.tabManager;
         appContext.tabManager = {
             getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })

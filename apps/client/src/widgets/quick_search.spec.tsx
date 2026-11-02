@@ -5,6 +5,7 @@ import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../components/app_context";
+import { buildNote } from "../test/easy-froca";
 import Component from "../components/component";
 import { calculateHash } from "../services/link";
 import server from "../services/server";
@@ -86,6 +87,49 @@ describe("QuickSearch", () => {
         pressEnter(editor);
 
         expect(get).toHaveBeenCalledWith(`quick-search?searchString=${encodeURIComponent("中/英")}`);
+    });
+
+    it("limits a search to the hoist, and widens only that search", async () => {
+        buildNote({ id: "shelf", title: "Work" });
+        buildNote({ id: "note0", title: "Note 0" });
+        const previous = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const get = vi.spyOn(server, "get").mockResolvedValue(response(1, [ "hello" ]));
+        try {
+            const { editor } = await mount();
+            typeQuery(editor, "hello");
+            pressEnter(editor);
+            await waitForResults(1);
+
+            expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello");
+            await vi.waitFor(() => {
+                expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            });
+
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".note-suggestion-hoist")?.click();
+            });
+            await vi.waitFor(() => {
+                expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello&ancestorNoteId=note0");
+            });
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click();
+            });
+            await vi.waitFor(() => {
+                expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello&ancestorNoteId=root");
+            });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+            expect(triggerCommand).not.toHaveBeenCalled();
+        } finally {
+            appContext.tabManager = previous;
+            triggerCommand.mockRestore();
+        }
     });
 
     it("links to the plain note path when the search highlighted nothing", async () => {
