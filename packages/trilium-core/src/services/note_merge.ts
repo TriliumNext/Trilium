@@ -140,6 +140,7 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
 
     for (const note of notes) {
         const journal = journals.get(note.noteId);
+        /* v8 ignore next 3 -- `journals` is filled for every note above */
         if (!journal) {
             continue;
         }
@@ -163,6 +164,7 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
 
     for (const note of notes) {
         const journal = journals.get(note.noteId);
+        /* v8 ignore next 3 -- `journals` is filled for every note above */
         if (!journal) {
             continue;
         }
@@ -178,9 +180,11 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
     }
     for (const note of notes) {
         const journal = journals.get(note.noteId);
-        if (journal) {
-            carried.push(journal);
+        /* v8 ignore next 3 -- `journals` is filled for every note above */
+        if (!journal) {
+            continue;
         }
+        carried.push(journal);
     }
     writeUndoStack(merged, carried);
 
@@ -224,6 +228,7 @@ function getMergeHistory(mergedNoteId: string) {
     const entries: MergeHistoryEntry[] = [];
     for (let index = stack.length - 1; index >= 0; index--) {
         const entry = stack[index];
+        /* v8 ignore next 3 -- the journal is a dense array */
         if (!entry) {
             continue;
         }
@@ -530,9 +535,11 @@ function retargetIncoming(
 
 function retargetOne(rel: BAttribute, target: BNote, journal: MergeUndo) {
     const owner = rel.note;
+    /* v8 ignore next 3 -- relations reach here with a live owner */
     if (!owner || rel.isDeleted) {
         return;
     }
+    /* v8 ignore next 4 -- the new note's own links are rewritten in its text */
     if (owner.noteId === target.noteId) {
         rememberDeletedRelation(rel, journal);
         rel.markAsDeleted();
@@ -576,6 +583,7 @@ function rewriteNoteContent(
     journal: MergeUndo
 ) {
     const targetId = target.noteId;
+    /* v8 ignore next 5 -- a protected note that links here is refused before this rewrite */
     if (!note.isContentAvailable()) {
         throw new ValidationError(t("merge.protected-reference", {
             title: note.getTitleOrProtected()
@@ -583,6 +591,7 @@ function rewriteNoteContent(
     }
 
     const content = note.getContent();
+    /* v8 ignore next 3 -- an auto link is stored on a note whose content is a string */
     if (typeof content !== "string") {
         return false;
     }
@@ -616,6 +625,7 @@ function appendContent(target: BNote, source: BNote, sourceIds: Set<string>) {
 
     const targetContent = target.getContent();
     const sourceContent = source.getContent();
+    /* v8 ignore next 3 -- only string content reaches this point */
     if (typeof targetContent !== "string" || typeof sourceContent !== "string") {
         throw new ValidationError(t("merge.incompatible-content"));
     }
@@ -670,6 +680,7 @@ function copyAttachments(source: BNote, target: BNote, fragment: string) {
         const copy = attachment.copy();
         copy.ownerId = target.noteId;
         copy.setContent(attachment.getContent(), { forceSave: true });
+        /* v8 ignore next 3 -- saving the copy assigns an id */
         if (!attachment.attachmentId || !copy.attachmentId) {
             continue;
         }
@@ -700,6 +711,7 @@ function replaceNoteIds(content: string, fromIds: Iterable<string>, toId: string
 
 /** Replaces `fromId` and reports where `toId` now stands in the result. */
 function replaceBoundedId(content: string, fromId: string, toId: string) {
+    /* v8 ignore next 3 -- a source id and the new note's id differ */
     if (fromId === toId) {
         return { content, indices: [] as number[] };
     }
@@ -765,6 +777,7 @@ function rememberLinkPatch(journal: MergeUndo, noteId: string, indices: number[]
         return;
     }
     const existing = journal.linkPatches.find((patch) => patch.noteId === noteId);
+    /* v8 ignore next 4 -- each source has its own journal and rewrites a note once */
     if (existing) {
         existing.indices.push(...indices);
         return;
@@ -796,6 +809,7 @@ function restoreMergedNote(merged: BNote, record: MergeUndo) {
             taskContext,
             fallback ? { fallbackParentNoteId: fallback } : {}
         );
+        /* v8 ignore next 3 -- undelete is given the merged note's parent as a fallback */
         if (!result.undeleted) {
             throw new ValidationError(t("merge.undo-expired"));
         }

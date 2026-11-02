@@ -1,10 +1,13 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../becca/becca.js";
+import BBranch from "../becca/entities/bbranch.js";
 import { createTextNote } from "../test/api_fixtures.js";
 import { CoreApiTester } from "../test/api_tester.js";
+import * as cls from "./context.js";
+import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
-import { decodeUtf8 } from "./utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 
 let api: CoreApiTester;
 
@@ -23,6 +26,52 @@ async function createCodeNote(parentNoteId: string, title: string, mime: string,
     );
     expect(res.status).toBe(200);
     return res.body.note.noteId;
+}
+
+const PROTECTED_KEY = encodeUtf8("0123456789abcdef");
+
+async function createTypedNote(
+    parentNoteId: string, title: string, type: string, mime: string, content: string
+) {
+    const res = await api.post<{ note: { noteId: string } }>(
+        `/api/notes/${parentNoteId}/children?target=into`,
+        { body: { title, type, mime, content } }
+    );
+    expect(res.status).toBe(200);
+    return res.body.note.noteId;
+}
+
+/** Leaves `noteId` cloned only under `parentNoteId`, including a weak or search parent. */
+function leaveOnlyUnder(noteId: string, parentNoteId: string) {
+    cls.init(() => {
+        const note = becca.getNoteOrThrow(noteId);
+        new BBranch({
+            noteId,
+            parentNoteId,
+            notePosition: 10,
+            isExpanded: false
+        }).save();
+        for (const branch of note.parentBranches) {
+            if (branch.parentNoteId === parentNoteId || !branch.branchId) {
+                continue;
+            }
+            getSql().execute("DELETE FROM branches WHERE branchId = ?", [ branch.branchId ]);
+            delete becca.branches[branch.branchId];
+        }
+        note.parentBranches = note.parentBranches
+            .filter((branch) => branch.parentNoteId === parentNoteId);
+    });
+}
+
+function writeJournal(noteId: string, content: string) {
+    cls.init(() => {
+        const journal = becca.getNoteOrThrow(noteId).getAttachments()
+            .find((item) => item.role === "mergeUndo");
+        if (!journal) {
+            throw new Error(`Note ${noteId} has no merge journal.`);
+        }
+        journal.setContent(content, { forceSave: true });
+    });
 }
 
 async function mergeNotes(noteId: string, sourceNoteIds: string[], title?: string) {
@@ -255,6 +304,31 @@ describe("Merging notes", () => {
         });
         expect(emptyTitle.status).toBe(400);
 
+        const badId = await api.post(`/api/notes/${note.noteId}/merge`, {
+            body: { sourceNoteIds: [ 1 ] }
+        });
+        expect(badId.status).toBe(400);
+
+        const badTitle = await api.post(`/api/notes/${note.noteId}/merge`, {
+            body: { sourceNoteIds: [ note.noteId ], title: 1 }
+        });
+        expect(badTitle.status).toBe(400);
+
+        const badUndo = await api.post(`/api/notes/${note.noteId}/merge-undo`, {
+            body: { entryId: 1 }
+        });
+        expect(badUndo.status).toBe(400);
+
+        const blankForget = await api.post(`/api/notes/${note.noteId}/merge-history/forget`, {
+            body: { entryId: "" }
+        });
+        expect(blankForget.status).toBe(400);
+
+        const missingForget = await api.post(`/api/notes/${note.noteId}/merge-history/forget`, {
+            body: {}
+        });
+        expect(missingForget.status).toBe(400);
+
         const noUndo = await api.post<{ message: string }>(`/api/notes/${note.noteId}/merge-undo`);
         expect(noUndo.status).toBe(400);
         expect(noUndo.body.message).toContain("no merge to undo");
@@ -414,5 +488,399 @@ describe("Merging notes", () => {
         expect(noteIsDeleted(alpha.noteId)).toBe(0);
         expect(noteIsDeleted(beta.noteId)).toBe(1);
         expect(noteIsDeleted(later.noteId)).toBe(1);
+    });
+
+    it("refuses notes that cannot be merged or placed", async () => {
+        const anchor = await createTextNote(api, { title: "Anchor", content: "<p>anchor</p>" });
+        const extra = await createTextNote(api, { title: "Extra", content: "<p>extra</p>" });
+
+        const hoisted = await api.post<{ message: string }>(`/api/notes/${anchor.noteId}/merge`, {
+            headers: { "trilium-hoisted-note-id": anchor.noteId },
+            body: { sourceNoteIds: [ extra.noteId ] }
+        });
+        expect(hoisted.status).toBe(400);
+        expect(hoisted.body.message).toContain("narrowed");
+        expect(noteIsDeleted(anchor.noteId)).toBe(0);
+
+        const search = await createTypedNote(
+            "root", "Saved search", "search", "application/json", ""
+        );
+        const launcher = await createTypedNote("root", "Launcher", "launcher", "text/html", "");
+        for (const noteId of [ search, launcher ]) {
+            const refused = await api.post<{ message: string }>(`/api/notes/${noteId}/merge`, {
+                body: { sourceNoteIds: [ extra.noteId ] }
+            });
+            expect(refused.status).toBe(400);
+            expect(refused.body.message).toContain("Search notes and launchers");
+        }
+
+        const repeated = await api.post<{ mergedCount: number }>(`/api/notes/${anchor.noteId}/merge`, {
+            body: { sourceNoteIds: [ extra.noteId, extra.noteId ] }
+        });
+        expect(repeated.status).toBe(200);
+        expect(repeated.body.mergedCount).toBe(2);
+
+        const binary = await createTypedNote(
+            "root", "Blob", "file", "application/octet-stream", ""
+        );
+        cls.init(() => {
+            becca.getNoteOrThrow(binary).setContent(new Uint8Array([ 1, 2, 3 ]));
+        });
+        const text = await createTextNote(api, { title: "Plain", content: "<p>plain</p>" });
+        const binaryRefused = await api.post<{ message: string }>(`/api/notes/${text.noteId}/merge`, {
+            body: { sourceNoteIds: [ binary ] }
+        });
+        expect(binaryRefused.status).toBe(400);
+        expect(binaryRefused.body.message).toContain("cannot be combined");
+
+        const parked = await createTextNote(api, { title: "Parked", content: "<p>parked</p>" });
+        const beside = await createTextNote(api, { title: "Beside", content: "<p>beside</p>" });
+        leaveOnlyUnder(parked.noteId, "_lbBookmarks");
+        leaveOnlyUnder(beside.noteId, "_lbBookmarks");
+        const lost = await api.post<{ message: string }>(`/api/notes/${parked.noteId}/merge`, {
+            body: { sourceNoteIds: [ beside.noteId ] }
+        });
+        expect(lost.status).toBe(400);
+        expect(lost.body.message).toContain("should remain");
+
+        const home = await createTextNote(api, { title: "Home", content: "<p>home</p>" });
+        const guest = await createTextNote(api, { title: "Guest", content: "<p>guest</p>" });
+        leaveOnlyUnder(guest.noteId, launcher);
+        const misplaced = await api.post<{ message: string }>(`/api/notes/${home.noteId}/merge`, {
+            body: { sourceNoteIds: [ guest.noteId ] }
+        });
+        expect(misplaced.status).toBe(400);
+        expect(misplaced.body.message).toContain("cannot be placed");
+        expect(noteIsDeleted(home.noteId)).toBe(0);
+
+        const grand = await createTextNote(api, { title: "Grand", content: "<p>grand</p>" });
+        const kid = await createTextNote(api, {
+            parentNoteId: grand.noteId, title: "Kid", content: "<p>kid</p>"
+        });
+        const leaf = await createTextNote(api, {
+            parentNoteId: kid.noteId, title: "Leaf", content: "<p>leaf</p>"
+        });
+        leaveOnlyUnder(grand.noteId, search);
+        const stranded = await api.post<{ message: string }>(`/api/notes/${leaf.noteId}/merge`, {
+            body: { sourceNoteIds: [ grand.noteId ] }
+        });
+        expect(stranded.status).toBe(400);
+        expect(stranded.body.message).toContain("Kid");
+        expect(noteIsDeleted(leaf.noteId)).toBe(0);
+
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        try {
+            const locked = await createTextNote(api, { title: "Locked", content: "<p>secret</p>" });
+            const open = await createTextNote(api, { title: "Open", content: "<p>open</p>" });
+            expect((await api.put(`/api/notes/${locked.noteId}/protect/1`)).status).toBe(204);
+            const mismatch = await api.post<{ message: string }>(`/api/notes/${locked.noteId}/merge`, {
+                body: { sourceNoteIds: [ open.noteId ] }
+            });
+            expect(mismatch.status).toBe(400);
+            expect(mismatch.body.message).toContain("not protected");
+
+            protectedSessionService.resetDataKey();
+            const stillLocked = await api.post<{ message: string }>(`/api/notes/${locked.noteId}/merge`, {
+                body: { sourceNoteIds: [ open.noteId ] }
+            });
+            expect(stillLocked.status).toBe(400);
+            expect(stillLocked.body.message).toContain("Unlock protected notes");
+
+            const linked = await createTextNote(api, { title: "Linked", content: "<p>linked</p>" });
+            const other = await createTextNote(api, { title: "Other", content: "<p>other</p>" });
+            const holder = await createTextNote(api, {
+                title: "Holder",
+                content: `<p>See <a class="reference-link" href="#root/${linked.noteId}">it</a>.</p>`
+            });
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            expect((await api.put(`/api/notes/${holder.noteId}/protect/1`)).status).toBe(204);
+            protectedSessionService.resetDataKey();
+            const referenced = await api.post<{ message: string }>(`/api/notes/${linked.noteId}/merge`, {
+                body: { sourceNoteIds: [ other.noteId ] }
+            });
+            expect(referenced.status).toBe(400);
+            expect(referenced.body.message).toContain("links to a note being merged");
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
+    });
+
+    it("joins code, adopts a prefix, and moves relations without touching the merged text", async () => {
+        const left = await createCodeNote("root", "Left", "text/plain", "alpha line");
+        const right = await createCodeNote("root", "Right", "text/plain", "beta line");
+        const joinedId = await mergeNotes(left, [ right ]);
+        expect(String(becca.getNoteOrThrow(joinedId).getContent())).toBe("alpha line\n\nbeta line");
+
+        const labeled = await createTextNote(api, { title: "Labeled", content: "<p>labeled</p>" });
+        expect((await api.post(`/api/notes/${labeled.noteId}/attributes`, {
+            body: { type: "label", name: "disableVersioning" }
+        })).status).toBe(204);
+        const emptyFile = await createTypedNote("root", "Empty file", "file", "text/plain", "");
+        const emptyImage = await createTextNote(api, { title: "Empty image", content: "" });
+        expect((await api.put(`/api/notes/${emptyImage.noteId}/type`, {
+            body: { type: "image", mime: "image/png" }
+        })).status).toBe(204);
+        const keptId = await mergeNotes(labeled.noteId, [ emptyFile, emptyImage.noteId ]);
+        expect(String(becca.getNoteOrThrow(keptId).getContent())).toContain("labeled");
+        const revisions = getSql().getRows<{ description: string | null }>(
+            "SELECT description FROM revisions WHERE noteId = ?",
+            [ labeled.noteId ]
+        );
+        expect(revisions.some((row) => row.description === "Before merging notes")).toBe(false);
+
+        const first = await createTextNote(api, { title: "First", content: "<p>first body</p>" });
+        const second = await createTextNote(api, { title: "Second", content: "<p>second body</p>" });
+        const bystander = await createTextNote(api, { title: "Bystander", content: "<p></p>" });
+        cls.init(() => {
+            becca.getNoteOrThrow(first.noteId).children.push(becca.getNoteOrThrow(bystander.noteId));
+        });
+        const onlyInclude = await createTextNote(api, {
+            title: "Only include",
+            content: `<figure class="include-note" data-note-id="${first.noteId}">`
+                + "<h4>Included</h4></figure>"
+        });
+        expect((await api.put(`/api/branches/${second.branchId}/set-prefix`, {
+            body: { prefix: "Pre" }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${first.noteId}/attributes`, {
+            body: { type: "label", name: "tone", value: "red", isInheritable: true }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${second.noteId}/attributes`, {
+            body: { type: "label", name: "tone", value: "red", isInheritable: true }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${first.noteId}/attributes`, {
+            body: { type: "label", name: "plain", value: "yes", isInheritable: true }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${second.noteId}/attributes`, {
+            body: { type: "label", name: "plain", value: "yes", isInheritable: false }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${first.noteId}/attributes`, {
+            body: { type: "relation", name: "see", value: second.noteId }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${bystander.noteId}/attributes`, {
+            body: { type: "relation", name: "internalLink", value: first.noteId }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${bystander.noteId}/attributes`, {
+            body: { type: "relation", name: "internalLink", value: second.noteId, isInheritable: true }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${bystander.noteId}/attributes`, {
+            body: { type: "relation", name: "cites", value: first.noteId }
+        })).status).toBe(204);
+
+        const mergedId = await mergeNotes(first.noteId, [ second.noteId, onlyInclude.noteId ]);
+        const merged = becca.getNoteOrThrow(mergedId);
+        expect(merged.getParentBranches().some((branch) => branch.prefix === "Pre")).toBe(true);
+        expect(merged.getOwnedAttributes("label", "tone", "red")
+            .every((attr) => attr.isInheritable)).toBe(true);
+        expect(merged.getOwnedRelations("see")).toHaveLength(0);
+        expect(String(merged.getContent())).toContain("first body");
+        expect(String(merged.getContent())).not.toContain("include-note");
+        expect(becca.getNoteOrThrow(bystander.noteId).getOwnedRelations("cites")
+            .map((attr) => attr.value)).toEqual([ mergedId ]);
+
+        const history = await api.get<{
+            entries: { id: string; sourceNoteId: string }[];
+        }>(`/api/notes/${mergedId}/merge-history`);
+        const secondEntry = history.body.entries.find((entry) => entry.sourceNoteId === second.noteId);
+        const firstEntry = history.body.entries.find((entry) => entry.sourceNoteId === first.noteId);
+        expect(secondEntry && firstEntry).toBeTruthy();
+        if (!secondEntry || !firstEntry) {
+            return;
+        }
+
+        expect((await api.post(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: secondEntry.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(mergedId).getParentBranches()
+            .some((branch) => branch.prefix === "Pre")).toBe(false);
+        expect(becca.getNoteOrThrow(bystander.noteId).getOwnedRelations("internalLink")
+            .some((attr) => attr.value === second.noteId)).toBe(true);
+
+        expect((await api.post(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: firstEntry.id }
+        })).status).toBe(200);
+        expect(becca.getNoteOrThrow(bystander.noteId).getOwnedRelations("cites")
+            .map((attr) => attr.value)).toEqual([ first.noteId ]);
+        expect(String(becca.getNoteOrThrow(mergedId).getContent())).toContain("first body");
+
+        const grand = await createTextNote(api, { title: "Grand", content: "<p>grand</p>" });
+        const kid = await createTextNote(api, {
+            parentNoteId: grand.noteId, title: "Kid", content: "<p>kid</p>"
+        });
+        const leaf = await createTextNote(api, {
+            parentNoteId: kid.noteId, title: "Leaf", content: "<p>leaf</p>"
+        });
+        const both = await createTextNote(api, {
+            title: "Both",
+            content: `<p><a class="reference-link" href="#root/${grand.noteId}">g</a>`
+                + `<a class="reference-link" href="#root/${leaf.noteId}">l</a></p>`
+        });
+        const movedId = await mergeNotes(grand.noteId, [ leaf.noteId ]);
+        expect(becca.getNoteOrThrow(kid.noteId).getParentNotes().map((note) => note.noteId))
+            .toContain("root");
+        const bothContent = String(becca.getNoteOrThrow(both.noteId).getContent());
+        expect(bothContent).toContain(movedId);
+        expect(bothContent).not.toContain(grand.noteId);
+        expect(bothContent).not.toContain(leaf.noteId);
+    });
+
+    it("ignores a broken history record and restores around missing pieces", async () => {
+        const first = await createTextNote(api, { title: "One", content: "<p>one</p>" });
+        const second = await createTextNote(api, { title: "Two", content: "<p>two</p>" });
+        const mergedId = await mergeNotes(first.noteId, [ second.noteId ]);
+
+        const unknown = await api.post<{ message: string }>(`/api/notes/${mergedId}/merge-undo`, {
+            body: { entryId: "missing-entry" }
+        });
+        expect(unknown.status).toBe(400);
+        expect(unknown.body.message).toContain("no longer in the history");
+
+        for (const content of [ "not-json", "{\"ok\":true}", "[{}]", "[null]" ]) {
+            writeJournal(mergedId, content);
+            const undone = await api.post<{ message: string }>(`/api/notes/${mergedId}/merge-undo`);
+            expect(undone.status).toBe(400);
+            expect(undone.body.message).toContain("no merge to undo");
+        }
+
+        const kept = await createTextNote(api, { title: "Kept", content: "<p>kept</p>" });
+        const gone = await createTextNote(api, { title: "Gone", content: "<p>gone</p>" });
+        const expiredId = await mergeNotes(kept.noteId, [ gone.noteId ]);
+        cls.init(() => {
+            getSql().execute("DELETE FROM notes WHERE noteId = ?", [ gone.noteId ]);
+        });
+        const expired = await api.post<{ message: string }>(`/api/notes/${expiredId}/merge-undo`);
+        expect(expired.status).toBe(400);
+        expect(expired.body.message).toContain("no longer be undone");
+
+        const alpha = await createTextNote(api, { title: "Alpha", content: "<p>alpha</p>" });
+        const beta = await createTextNote(api, { title: "Beta", content: "<p>beta</p>" });
+        const child = await createTextNote(api, {
+            parentNoteId: beta.noteId, title: "Child", content: "<p>child</p>"
+        });
+        const linker = await createTextNote(api, {
+            title: "Linker",
+            content: `<p>See <a class="reference-link" href="#root/${beta.noteId}">beta</a>.</p>`
+        });
+        const sealed = await createTextNote(api, {
+            title: "Sealed",
+            content: `<p>See <a class="reference-link" href="#root/${alpha.noteId}">alpha</a>.</p>`
+        });
+        const decoy = await createTextNote(api, { title: "Decoy", content: "<p>decoy</p>" });
+        const restoredId = await mergeNotes(alpha.noteId, [ beta.noteId ]);
+        expect((await api.put(`/api/notes/${linker.noteId}/data`, {
+            body: { content: "<p>rewritten</p>" }
+        })).status).toBe(204);
+        cls.init(() => {
+            getSql().execute(
+                "UPDATE notes SET isProtected = 1 WHERE noteId = ?",
+                [ sealed.noteId ]
+            );
+            const sealedNote = becca.getNote(sealed.noteId);
+            if (sealedNote) {
+                sealedNote.isProtected = true;
+            }
+            const journal = becca.getNoteOrThrow(restoredId).getAttachments()
+                .find((item) => item.role === "mergeUndo");
+            if (!journal) {
+                throw new Error("missing merge journal");
+            }
+            const kid = becca.getNoteOrThrow(child.noteId);
+            for (const branch of kid.parentBranches) {
+                if (branch.parentNoteId !== beta.noteId || !branch.branchId) {
+                    continue;
+                }
+                getSql().execute("DELETE FROM branches WHERE branchId = ?", [ branch.branchId ]);
+                delete becca.branches[branch.branchId];
+            }
+            kid.parentBranches = kid.parentBranches
+                .filter((branch) => branch.parentNoteId !== beta.noteId);
+            const decoyNote = becca.getNoteOrThrow(decoy.noteId);
+            decoyNote.isBeingDeleted = true;
+            const stack = JSON.parse(decodeUtf8(journal.getContent())) as {
+                createdBranchIds: string[];
+                prefixRestores: { branchId: string; prefix: string | null }[];
+                inheritableReverts: string[];
+                relationRestores: { attributeId: string; value: string }[];
+                deletedRelations: {
+                    noteId: string;
+                    name: string;
+                    value: string;
+                    isInheritable: boolean;
+                    position: number;
+                }[];
+                linkPatches: { noteId: string; indices: number[] }[];
+            }[];
+            const newest = stack[stack.length - 1];
+            if (newest) {
+                newest.createdBranchIds.push("missing-branch", decoy.branchId);
+                newest.prefixRestores.push({ branchId: "missing-prefix-branch", prefix: "x" });
+                newest.inheritableReverts.push("missing-attribute");
+                newest.relationRestores.push({ attributeId: "missing-relation", value: "root" });
+                newest.deletedRelations.push({
+                    noteId: "missing-owner",
+                    name: "gone",
+                    value: "root",
+                    isInheritable: false,
+                    position: 0
+                });
+                newest.linkPatches.push({ noteId: restoredId, indices: [ 0 ] });
+                newest.linkPatches.push({ noteId: "missing-note", indices: [ 0 ] });
+            }
+            journal.setContent(JSON.stringify(stack), { forceSave: true });
+        });
+        expect((await api.post(`/api/notes/${restoredId}/merge-undo`)).status).toBe(200);
+        expect(String(becca.getNoteOrThrow(linker.noteId).getContent())).toBe("<p>rewritten</p>");
+        expect(noteIsDeleted(beta.noteId)).toBe(0);
+        expect(becca.getNoteOrThrow(child.noteId).getParentNotes()
+            .some((note) => note.noteId === beta.noteId)).toBe(true);
+        expect(String(becca.getNoteOrThrow(restoredId).getContent())).toContain("alpha");
+
+        const present = await createTextNote(api, { title: "Present", content: "<p>present</p>" });
+        const absent = await createTextNote(api, { title: "Absent", content: "<p>absent</p>" });
+        const presentId = await mergeNotes(present.noteId, [ absent.noteId ]);
+        cls.init(() => {
+            getSql().execute("UPDATE notes SET isDeleted = 0 WHERE noteId = ?", [ absent.noteId ]);
+        });
+        expect((await api.post(`/api/notes/${presentId}/merge-undo`)).status).toBe(200);
+        expect(String(becca.getNoteOrThrow(presentId).getContent())).toContain("present");
+
+        cls.init(() => {
+            getSql().execute(
+                "UPDATE attachments SET isProtected = 1 WHERE ownerId = ? AND role = ?",
+                [ restoredId, "mergeUndo" ]
+            );
+        });
+        const protectedJournal = await api.post<{ message: string }>(
+            `/api/notes/${restoredId}/merge-undo`
+        );
+        expect(protectedJournal.status).toBe(400);
+        expect(protectedJournal.body.message).toContain("Unlock protected notes");
+
+        const origin = await createTextNote(api, { title: "Origin", content: "<p>origin</p>" });
+        const follow = await createTextNote(api, { title: "Follow", content: "<p>follow</p>" });
+        const templateId = await mergeNotes(origin.noteId, [ follow.noteId ]);
+        expect((await api.post(`/api/notes/${templateId}/attachments`, {
+            body: { role: "file", mime: "text/plain", title: "keep.txt", content: "kept" }
+        })).status).toBe(204);
+        expect((await api.post(`/api/notes/${templateId}/attachments`, {
+            body: { role: "mergeUndoBlob", mime: "text/plain", title: "old copy", content: "old" }
+        })).status).toBe(204);
+        const created = await api.post<{ note: { noteId: string } }>(
+            "/api/notes/root/children?target=into",
+            {
+                body: {
+                    title: "From template",
+                    type: "text",
+                    content: "<p></p>",
+                    templateNoteId: templateId
+                }
+            }
+        );
+        expect(created.status).toBe(200);
+        const roles = becca.getNoteOrThrow(created.body.note.noteId).getAttachments()
+            .map((item) => item.role);
+        expect(roles).toContain("file");
+        expect(roles).not.toContain("mergeUndo");
+        expect(roles).not.toContain("mergeUndoBlob");
     });
 });
