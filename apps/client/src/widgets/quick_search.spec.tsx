@@ -190,12 +190,21 @@ describe("QuickSearch", () => {
             expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello");
             expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
 
+            pressKey(editor.contentDOM, "Escape");
+            await vi.waitFor(() => expect(menu()).toBeNull());
+            await hoist("desk");
+            expect(get).toHaveBeenCalledTimes(2);
+            expect(menu()).toBeNull();
+
+            pressEnter(editor);
+            await waitForResults(1);
+            expect(get).toHaveBeenCalledTimes(3);
             await act(async () => {
                 document.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click();
             });
-            await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(3));
+            await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(4));
             await hoist("desk");
-            expect(get).toHaveBeenCalledTimes(3);
+            expect(get).toHaveBeenCalledTimes(4);
             expect(document.querySelector(".note-suggestion-focus")).toBeNull();
         } finally {
             appContext.tabManager = previous;

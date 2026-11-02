@@ -73,12 +73,15 @@ export default function QuickSearch() {
 
     useTriliumEvent("quickSearch", () => editorRef.current?.focus());
     // Open results follow the scope the bar names. While the search still follows the tree, that
-    // scope is the hoist, which `chosenScopeId` does not record.
+    // scope is the hoist, which `chosenScopeId` does not record. A closed search keeps its query,
+    // and refreshing it would open the popup again.
+    const openRef = useRef(false);
+    openRef.current = open;
     const followedFocus = useRef(searchFocusId);
     useEffect(() => {
         if (followedFocus.current === searchFocusId) return;
         followedFocus.current = searchFocusId;
-        if (searchStringRef.current.trim()) void search();
+        if (openRef.current && searchStringRef.current.trim()) void search();
     }, [ searchFocusId ]);
     useResultNavigation(popupRef, open, {
         focusField: () => editorRef.current?.focus(),
