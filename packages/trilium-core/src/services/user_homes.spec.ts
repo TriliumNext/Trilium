@@ -173,6 +173,25 @@ describe("user homes", () => {
         expect(aliceBecca.notes[SHARED_WITH_ME_NOTE_ID]?.getChildNotes().map((child) => child.noteId)).toEqual([ aliceDraft.noteId ]);
     });
 
+    it("pastes a note into a member's home", async () => {
+        const aliceId = cls.init(() => userService.createUser("paste-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("paste-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "paste-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "paste-bob-spec"));
+        const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
+        cls.init(() => permissionService.setUserAccess(project.noteId, aliceId, false));
+
+        const result = await asUser(aliceId, () => cloningService.cloneNoteToBranch(
+            project.noteId, `root_${aliceHome.noteId}`
+        ));
+        expect(result.success).toBe(true);
+        const placed = cls.init(() => getSql().getValue(
+            "SELECT 1 FROM branches WHERE noteId = ? AND parentNoteId = ? AND isDeleted = 0",
+            [ project.noteId, aliceHome.noteId ]
+        ));
+        expect(placed).toBe(1);
+    });
+
     it("refuses a member's new note that reuses the ID of a note they cannot see", async () => {
         const aliceId = cls.init(() => userService.createUser("forced-alice-spec", null, false));
         const bobId = cls.init(() => userService.createUser("forced-bob-spec", null, false));
