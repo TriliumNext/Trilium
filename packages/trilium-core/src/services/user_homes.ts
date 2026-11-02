@@ -1,3 +1,4 @@
+import { HOME_NOTE_ID_PREFIX, USERS_NOTE_ID } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import { getBecca } from "../becca/becca.js";
@@ -8,13 +9,6 @@ import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
 
 /**
- * The note that holds one home note per user. Only admins see it; a member sees their own home at
- * the top of their tree instead (see `loadBeccaForUser()`). The ID has no `_` prefix: code treats
- * `_`-prefixed notes as system notes, and the homes hold user content.
- */
-export const USERS_NOTE_ID = "users";
-
-/**
  * The virtual note at the top of a member's tree that lists the notes they can see but not reach:
  * notes shared with them whose parents they cannot see. It exists only in their Becca.
  */
@@ -22,7 +16,7 @@ export const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
 
 /** The ID of a user's home note, derived from the user so that no column has to store it. */
 export function getHomeNoteId(userId: string) {
-    return `home_${userId}`;
+    return `${HOME_NOTE_ID_PREFIX}${userId}`;
 }
 
 /**
@@ -99,7 +93,7 @@ function getTopLevelHomeNoteId(userId: string): string | undefined {
  */
 function isHomeOrUsersNote(noteId: string): boolean {
     return noteId === USERS_NOTE_ID || !!getSql().getValue<number>(
-        "SELECT 1 FROM users WHERE ? = 'home_' || userId", [noteId]
+        "SELECT 1 FROM users WHERE ? = ? || userId", [noteId, HOME_NOTE_ID_PREFIX]
     );
 }
 

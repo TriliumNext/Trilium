@@ -207,6 +207,15 @@ export interface CurrentUser {
     homeNoteId?: string;
 }
 
+/**
+ * The note that holds one home note per user, seen only by admins. It has no `_` prefix, which
+ * would make it a system note, because the homes below it hold user content.
+ */
+export const USERS_NOTE_ID = "users";
+
+/** What a home's note ID starts with, followed by the user's ID. */
+export const HOME_NOTE_ID_PREFIX = "home_";
+
 /** A row of `GET /api/users`. */
 export interface UserListItem {
     userId: string;

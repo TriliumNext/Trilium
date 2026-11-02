@@ -62,7 +62,7 @@ describe("FNote title", () => {
 });
 
 describe("FNote access", () => {
-    it("can have its access managed once others can sign in, except root, system notes and the home", () => {
+    it("can have its access managed once others can sign in, except root, system notes, homes and the Users note", () => {
         const row = (noteId: string) => ({ noteId, title: noteId, type: "text", mime: "text/html", isProtected: false, blobId: "" }) as FNoteRow;
         const project = new FNote(froca, row("project"));
         expect(project.isAccessManageable()).toBe(false);
@@ -73,6 +73,16 @@ describe("FNote access", () => {
             expect(new FNote(froca, row("root")).isAccessManageable()).toBe(false);
             expect(new FNote(froca, row("_hidden")).isAccessManageable()).toBe(false);
             expect(new FNote(froca, row("home_alice")).isAccessManageable()).toBe(false);
+        } finally {
+            delete window.glob.currentUser;
+        }
+
+        // An admin sees every home and the Users note, none of which can be shared either.
+        window.glob.currentUser = { username: "olivia", isAdmin: true, avatarHue: 0 };
+        try {
+            expect(project.isAccessManageable()).toBe(true);
+            expect(new FNote(froca, row("home_alice")).isAccessManageable()).toBe(false);
+            expect(new FNote(froca, row("users")).isAccessManageable()).toBe(false);
         } finally {
             delete window.glob.currentUser;
         }

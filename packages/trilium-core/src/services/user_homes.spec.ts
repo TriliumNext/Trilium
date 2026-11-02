@@ -1,3 +1,4 @@
+import { USERS_NOTE_ID } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import { getBecca, warmBeccaForUser } from "../becca/becca.js";
@@ -9,7 +10,7 @@ import noteService from "./notes.js";
 import permissionService from "./permission_service.js";
 import { getSql } from "./sql/index.js";
 import treeService from "./tree.js";
-import userHomes, { getHomeNoteId, SHARED_WITH_ME_NOTE_ID, USERS_NOTE_ID } from "./user_homes.js";
+import userHomes, { getHomeNoteId, SHARED_WITH_ME_NOTE_ID } from "./user_homes.js";
 import userService from "./user_service.js";
 
 describe("user homes", () => {

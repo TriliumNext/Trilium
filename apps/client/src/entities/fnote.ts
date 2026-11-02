@@ -1,4 +1,4 @@
-import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime, type NoteType } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo, HOME_NOTE_ID_PREFIX, isMarkdownMime, type NoteType, USERS_NOTE_ID } from "@triliumnext/commons";
 
 import cssClassManager from "../services/css_class_manager.js";
 import { t } from "../services/i18n.js";
@@ -106,15 +106,17 @@ export default class FNote {
 
     /**
      * Whether "Access..." is offered for the note. `currentUser` is set only once someone besides the
-     * primary admin can sign in; `root`, system notes and the member's own home cannot be shared, as
-     * the server refuses them.
+     * primary admin can sign in; `root`, system notes, homes and the Users note cannot be shared, as
+     * the server refuses them. The server looks a home up among the users, while this only reads the
+     * ID: a note given a `home_` ID of its own just loses the menu entry.
      */
     isAccessManageable() {
         const currentUser = window.glob?.currentUser;
         return !!currentUser
             && this.noteId !== "root"
             && !this.noteId.startsWith("_")
-            && this.noteId !== currentUser.homeNoteId;
+            && !this.noteId.startsWith(HOME_NOTE_ID_PREFIX)
+            && this.noteId !== USERS_NOTE_ID;
     }
 
     update(row: FNoteRow) {
