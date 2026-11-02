@@ -6,9 +6,10 @@ import { loadBeccaForUser } from "../becca/becca_loader.js";
 import cloningService from "./cloning.js";
 import * as cls from "./context.js";
 import noteService from "./notes.js";
+import permissionService from "./permission_service.js";
 import { getSql } from "./sql/index.js";
 import treeService from "./tree.js";
-import userHomes, { getHomeNoteId, USERS_NOTE_ID } from "./user_homes.js";
+import userHomes, { getHomeNoteId, SHARED_WITH_ME_NOTE_ID, USERS_NOTE_ID } from "./user_homes.js";
 import userService from "./user_service.js";
 
 describe("user homes", () => {
@@ -62,7 +63,7 @@ describe("user homes", () => {
             parentNoteId: "root", title: "home-view-admin-note", content: "", type: "text"
         }).note);
         const memberNote = cls.init(() => noteService.createNewNote({
-            parentNoteId: memberHome.noteId, title: "home-view-member-note", content: "", type: "text"
+            parentNoteId: memberHome.noteId, ownerId: memberId, title: "home-view-member-note", content: "", type: "text"
         }).note);
 
         const memberBecca = new Becca();
@@ -116,7 +117,62 @@ describe("user homes", () => {
 
         expect(cls.init(() => treeService.validateParentChild("root", note.noteId).success)).toBe(true);
     });
+
+    it("lists notes shared with a member that they cannot otherwise reach under Shared with me", async () => {
+        const aliceId = cls.init(() => userService.createUser("shared-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("shared-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "shared-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "shared-bob-spec"));
+        const project = createOwnedNote(bobHome.noteId, bobId, "shared project");
+        const spec = createOwnedNote(project.noteId, bobId, "shared spec");
+
+        expect((await loadFor(aliceId)).notes[SHARED_WITH_ME_NOTE_ID]).toBeUndefined();
+
+        cls.init(() => {
+            permissionService.setUserAccess(project.noteId, aliceId, false);
+            // A grant inside an already shared subtree adds nothing to the list.
+            permissionService.setUserAccess(spec.noteId, aliceId, false);
+        });
+        const aliceDraft = createOwnedNote(project.noteId, aliceId, "alice draft");
+        let aliceBecca = await loadFor(aliceId);
+        const sharedWithMe = aliceBecca.notes[SHARED_WITH_ME_NOTE_ID];
+        expect(sharedWithMe?.isVirtual).toBe(true);
+        expect(sharedWithMe?.getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
+        expect(sharedWithMe?.getChildNotes().map((child) => child.noteId)).toEqual([ project.noteId ]);
+        expect(aliceBecca.getBranchFromChildAndParent(project.noteId, SHARED_WITH_ME_NOTE_ID)?.isVirtual).toBe(true);
+        expect(aliceBecca.notes[spec.noteId]?.getParentNotes().map((parent) => parent.noteId)).toEqual([ project.noteId ]);
+        expect((await loadFor(bobId)).notes[SHARED_WITH_ME_NOTE_ID]).toBeUndefined();
+
+        // Placing the note in her own tree takes it off the list.
+        cls.init(() => cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId));
+        aliceBecca = await loadFor(aliceId);
+        expect(aliceBecca.notes[SHARED_WITH_ME_NOTE_ID]).toBeUndefined();
+        expect(aliceBecca.notes[project.noteId]?.getParentNotes().map((parent) => parent.noteId)).toEqual([ aliceHome.noteId ]);
+
+        // Once the access is gone, her own note under it stays within reach.
+        cls.init(() => {
+            permissionService.revokeUserAccess(project.noteId, aliceId);
+            permissionService.revokeUserAccess(spec.noteId, aliceId);
+        });
+        aliceBecca = await loadFor(aliceId);
+        expect(aliceBecca.notes[project.noteId]).toBeUndefined();
+        expect(aliceBecca.notes[SHARED_WITH_ME_NOTE_ID]?.getChildNotes().map((child) => child.noteId)).toEqual([ aliceDraft.noteId ]);
+    });
 });
+
+/** Loads a fresh Becca for the user, as the first request of their session does. */
+async function loadFor(userId: string): Promise<Becca> {
+    const userBecca = new Becca();
+    await cls.init(() => {
+        cls.set("userId", userId);
+        return loadBeccaForUser(userBecca, userId, false);
+    });
+    return userBecca;
+}
+
+function createOwnedNote(parentNoteId: string, ownerId: string, title: string) {
+    return cls.init(() => noteService.createNewNote({ parentNoteId, ownerId, title, content: "", type: "text" }).note);
+}
 
 /** Runs `fn` as a request by the user would: with their `userId` in CLS and their Becca warmed. */
 function asUser<T>(userId: string, fn: () => T): Promise<T> {

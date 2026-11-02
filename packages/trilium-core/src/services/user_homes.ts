@@ -14,6 +14,12 @@ import userService from "./user_service.js";
  */
 export const USERS_NOTE_ID = "users";
 
+/**
+ * The virtual note at the top of a member's tree that lists the notes they can see but not reach:
+ * notes shared with them whose parents they cannot see. It exists only in their Becca.
+ */
+export const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
+
 /** The ID of a user's home note, derived from the user so that no column has to store it. */
 export function getHomeNoteId(userId: string) {
     return `home_${userId}`;

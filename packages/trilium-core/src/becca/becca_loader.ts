@@ -1,4 +1,6 @@
 import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import { t } from "i18next";
+
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
@@ -15,7 +17,7 @@ import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext, set as ctxSet } from "../services/context.js";
-import { getHomeNoteId } from "../services/user_homes.js";
+import { getHomeNoteId, SHARED_WITH_ME_NOTE_ID } from "../services/user_homes.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -296,14 +298,16 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
     const sql = getSql();
     try {
         sql.disableSlowQueryLogging(() => {
-            // A member's Becca holds `root` without descending into it: below it, only their own
-            // notes, their grants and the `_`-prefixed system notes.
+            // A member's Becca holds `root` without descending into it, the notes they own, and the
+            // subtrees below their grants and the `_`-prefixed system notes. Like
+            // `permission_service`, it does not descend from owned notes: a clone into one does not
+            // grant access to someone else's note.
             const noteQuery = isAdmin
                 ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes WHERE isDeleted = 0`
                 : /*sql*/`WITH RECURSIVE visible_roots(noteId) AS (
                               SELECT noteId FROM notes
-                               WHERE isDeleted = 0 AND (ownerId = ? OR substr(noteId, 1, 1) = '_')
+                               WHERE isDeleted = 0 AND substr(noteId, 1, 1) = '_'
                               UNION
                               SELECT noteId FROM note_permissions
                                WHERE userId = ?
@@ -319,7 +323,7 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
                           )
                           SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                             FROM notes
-                           WHERE isDeleted = 0 AND (noteId IN visible_notes OR noteId = 'root')`;
+                           WHERE isDeleted = 0 AND (noteId IN visible_notes OR ownerId = ? OR noteId = 'root')`;
 
             const noteParams = isAdmin ? [] : [userId, userId, userId];
 
@@ -346,6 +350,7 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
 
             if (!isAdmin) {
                 injectHomeBranch(target, userId);
+                injectSharedWithMe(target, userId, visibleNoteIds);
             }
 
             for (const row of sql.getRawRows(
@@ -403,6 +408,74 @@ function injectHomeBranch(target: Becca, userId: string) {
         isExpanded: true
     });
     branch.isVirtual = true;
+}
+
+/**
+ * Lists the notes a member can see but not reach from their tree under a virtual Shared with me
+ * note: notes shared with them whose parents they cannot see, and notes they own whose parents are
+ * no longer shared with them.
+ */
+function injectSharedWithMe(target: Becca, userId: string, visibleNoteIds: Set<string>) {
+    const homeNoteId = getHomeNoteId(userId);
+    const unreachable: BNote[] = [];
+    for (const noteId of visibleNoteIds) {
+        const note = target.notes[noteId];
+        if (noteId !== "root" && noteId !== homeNoteId && !noteId.startsWith("_") && !note.getParentBranches().length) {
+            unreachable.push(note);
+        }
+    }
+
+    if (!unreachable.length) {
+        return;
+    }
+
+    const now = dateUtils.utcNowDateTime();
+    const container = new BNote({
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        title: t("user_homes.shared-with-me-title"),
+        type: "book",
+        mime: "",
+        isProtected: false,
+        dateCreated: dateUtils.localNowDateTime(),
+        dateModified: dateUtils.localNowDateTime(),
+        utcDateCreated: now,
+        utcDateModified: now
+    });
+    container.isVirtual = true;
+
+    const containerBranch = new BBranch({
+        branchId: `root_${SHARED_WITH_ME_NOTE_ID}`,
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        parentNoteId: "root",
+        prefix: null,
+        notePosition: 1,
+        isExpanded: true
+    });
+    containerBranch.isVirtual = true;
+
+    const icon = new BAttribute({
+        attributeId: `v_${SHARED_WITH_ME_NOTE_ID}_liconClass`,
+        noteId: SHARED_WITH_ME_NOTE_ID,
+        type: "label",
+        name: "iconClass",
+        value: "bx bx-share-alt",
+        isInheritable: false,
+        position: 10
+    });
+    icon.isVirtual = true;
+
+    unreachable.sort((a, b) => a.title.localeCompare(b.title));
+    for (const [index, note] of unreachable.entries()) {
+        const branch = new BBranch({
+            branchId: `${SHARED_WITH_ME_NOTE_ID}_${note.noteId}`,
+            noteId: note.noteId,
+            parentNoteId: SHARED_WITH_ME_NOTE_ID,
+            prefix: null,
+            notePosition: (index + 1) * 10,
+            isExpanded: false
+        });
+        branch.isVirtual = true;
+    }
 }
 
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {
