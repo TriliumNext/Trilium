@@ -641,6 +641,7 @@ describe("EditLinkDialog", () => {
             return { top: isChecked ? 400 - (list?.scrollTop ?? 0) : 0 } as DOMRect;
         });
         vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(240);
+        vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(640);
         vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(40);
         onTestFinished(() => {
             vi.restoreAllMocks();
@@ -657,7 +658,11 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.headings" ]);
         expect(checkedHeading()).toBe("Usage");
         expect(field("text")?.value).toBe("See usage");
-        expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
+        const list = container.querySelector(".edit-link-targets");
+        expect(list?.scrollTop).toBe(300);
+        // Rows lie past both edges of the list, so both edges fade.
+        expect([ "scroll-fade", "scroll-fade-start", "scroll-fade-end" ]
+            .map((name) => list?.classList.contains(name))).toStrictEqual([ true, true, true ]);
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", "See usage");
 

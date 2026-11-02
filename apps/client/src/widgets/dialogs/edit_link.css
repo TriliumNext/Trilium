@@ -56,7 +56,7 @@
     }
 
     .edit-link-targets {
-        height: 240px;
+        max-height: 240px;
         overflow-y: auto;
 
         .tn-card-choice {

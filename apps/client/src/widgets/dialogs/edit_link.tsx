@@ -3,6 +3,7 @@ import "./edit_link.css";
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
+import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
@@ -23,6 +24,7 @@ import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoItems from "../react/NoItems";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
+import { useScrollFade } from "../react/scroll_fade";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 /**
@@ -212,6 +214,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const titleRef = useRef<HTMLInputElement>(null);
     // The scrolling box around the Headings and Anchors cards.
     const linkTargetsRef = useRef<HTMLDivElement>(null);
+    const linkTargetsFade = useScrollFade(linkTargetsRef);
     const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
     const initialBookmarkRef = useRef("");
     // The title of the link preview being edited, while the title field still shows it.
@@ -537,7 +540,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const anchorPage = topHeadings.length > 0 || anchors.length > 0 ? (<>
         {showsTitle && <Card>{titleSection}</Card>}
 
-        <div ref={linkTargetsRef} className="edit-link-targets">
+        <div
+            ref={linkTargetsRef}
+            className={clsx("edit-link-targets", linkTargetsFade.className)}
+            style={linkTargetsFade.style}
+        >
             {topHeadings.length > 0 && (
                 <Card className="edit-link-headings" heading={t("add_link.headings")}>
                     {topHeadings.map(renderHeadingChoice)}
