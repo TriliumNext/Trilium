@@ -139,7 +139,7 @@ function useYouTubeVideoForm() {
                     className="youtube-video-url"
                     name="youtube-video-url"
                     label={t("add_link.url")}
-                    description={text.trim() && !url ? t("youtube_video.not_a_video") : undefined}
+                    error={text.trim() && !url ? t("youtube_video.not_a_video") : undefined}
                 >
                     <FormTextBox
                         inputRef={inputRef}

@@ -174,6 +174,8 @@ export function CardSection(props: {children: ComponentChildren} & CardSectionPr
 export interface OptionCardSectionProps extends CardSectionProps {
     label: ComponentChildren;
     description?: ComponentChildren;
+    /** A validation message shown after the control, styled by `.form-field-error`. */
+    error?: ComponentChildren;
     /**
      * Binds the label to the control, so that clicking the text operates it. Only a single element
      * child can be bound, which covers the usual case of one toggle or one input per option.
@@ -210,7 +212,7 @@ export interface OptionCardSectionProps extends CardSectionProps {
  */
 export function OptionCardSection(props: OptionCardSectionProps) {
     const {
-        label, description, name, stacked, inline, children, className, subSections,
+        label, description, error, name, stacked, inline, children, className, subSections,
         filterExtraKeywords, ...rest
     } = props;
     const matched = useFilterMatch(label, description, filterExtraKeywords);
@@ -251,6 +253,7 @@ export function OptionCardSection(props: OptionCardSectionProps) {
         </label>
 
         {bound ? cloneElement(children, { id }) : children}
+        {error && <small className="form-field-error" role="alert">{error}</small>}
     </CardSection>;
 }
 

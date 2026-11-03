@@ -82,17 +82,20 @@ describe("YouTubeVideoBalloon", () => {
         if (!form || !field) throw new Error("The balloon has no form.");
         expect(document.activeElement).toBe(field);
         expect(insertButton(container)?.disabled).toBe(true);
-        expect(description(container)).toBeUndefined();
+        expect(errorOf(container)).toBeUndefined();
 
         await type(field, "https://example.com");
         expect(insertButton(container)?.disabled).toBe(true);
-        expect(description(container)).toBe("youtube_video.not_a_video");
+        expect(errorOf(container)).toBe("youtube_video.not_a_video");
+        expect(container.querySelector(".youtube-video-url .tn-card-option-description"))
+            .toBeNull();
+        expect(document.activeElement).toBe(field);
         await submit(form);
         expect(onInsert).not.toHaveBeenCalled();
 
         await type(field, "youtu.be/dQw4w9WgXcQ");
         expect(insertButton(container)?.disabled).toBe(false);
-        expect(description(container)).toBeUndefined();
+        expect(errorOf(container)).toBeUndefined();
         await submit(form);
         expect(onInsert).toHaveBeenCalledExactlyOnceWith("https://youtu.be/dQw4w9WgXcQ");
     });
@@ -189,9 +192,9 @@ function insertButton(container: HTMLElement) {
     return container.querySelector<HTMLButtonElement>("button[type=submit]");
 }
 
-/** The text under the label of the URL field, if any. */
-function description(container: HTMLElement) {
-    return container.querySelector(".youtube-video-url .tn-card-option-description")
+/** The error shown under the URL field, if any. */
+function errorOf(container: HTMLElement) {
+    return container.querySelector(".youtube-video-url > input + .form-field-error")
         ?.textContent ?? undefined;
 }
 

@@ -225,6 +225,11 @@ textarea,
     color: var(--muted-text-color);
 }
 
+.form-field-error {
+    color: var(--dropdown-item-icon-destructive-color);
+    font-size: 0.7em;
+}
+
 .form-group.disabled {
     opacity: 0.5;
     pointer-events: none;
