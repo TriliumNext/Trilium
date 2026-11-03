@@ -41,10 +41,12 @@ export function enhanceLinkPreviews(container: ParentNode) {
 
 /**
  * Loads the YouTube player under a video facade, which fades out once the player has loaded. The
- * click was the play command, hence `autoplay=1`. `origin` is valid only for a web origin: YouTube
- * rejects the desktop app's `trilium-app://` one.
+ * player takes the focus of the facade. The click was the play command, hence `autoplay=1`.
+ * `origin` is valid only for a web origin: YouTube rejects the desktop app's `trilium-app://` one.
  */
 function playVideo(facade: HTMLButtonElement) {
+    // Safari and Firefox on macOS leave a clicked button unfocused.
+    facade.focus({ preventScroll: true });
     const videoId = encodeURIComponent(String(facade.dataset.videoId));
     const origin = location.protocol.startsWith("http")
         ? `&origin=${encodeURIComponent(location.origin)}`
@@ -57,7 +59,13 @@ function playVideo(facade: HTMLButtonElement) {
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
     iframe.allowFullscreen = true;
     iframe.setAttribute("frameborder", "0");
-    iframe.addEventListener("load", () => revealPlayer(facade), { once: true });
+    iframe.addEventListener("load", () => {
+        // Keeps the focus in the player, as removing the focused facade drops it to the page.
+        if (facade.matches(":focus")) {
+            iframe.focus();
+        }
+        revealPlayer(facade);
+    }, { once: true });
     facade.classList.add("link-embed-video-facade-loading");
     facade.before(iframe);
 }

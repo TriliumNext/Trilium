@@ -1,6 +1,8 @@
 import {
 	ButtonView,
 	Command,
+	type DomEmitter,
+	DomEmitterMixin,
 	type DowncastConversionApi,
 	type Editor,
 	enableViewPlaceholder,
@@ -519,6 +521,9 @@ class ContentEmbedEditing extends Plugin {
 	/** The embeds whose saved caption a Tiny box size removed. */
 	private readonly tinyEmbeds = new WeakSet<ModelElement>();
 
+	/** Listens to the window for frames in embeds that take or give back the focus. */
+	private readonly windowEmitter = new ( DomEmitterMixin() )();
+
 	init() {
 		this._defineSchema();
 		this._defineConverters();
@@ -553,6 +558,12 @@ class ContentEmbedEditing extends Plugin {
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
 
 		restoreRendererFocusOnInput( this );
+		fireFrameFocusEvents( editor, this.windowEmitter );
+	}
+
+	override destroy() {
+		this.windowEmitter.stopListening();
+		super.destroy();
 	}
 
 	/** Keeps a copy of `caption`, for `embed` to show again. */
@@ -1776,6 +1787,39 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
         //@ts-expect-error: We are accessing a private field.
 		editor.editing.view._renderer.isFocused = false;
 	}
+}
+
+/**
+ * Fires `focus` at a frame in an embed of `editor`, such as a video player, that a click focuses,
+ * and `blur` once the page has the focus back. Chromium fires them only for a frame that a script
+ * focuses. The listeners of the embed then select it, and the editor stays focused.
+ */
+function fireFrameFocusEvents( editor: Editor, windowEmitter: DomEmitter ) {
+	let focusedFrame: Element | null = null;
+	const focusFrame = () => {
+		focusedFrame = getFocusedEmbedFrame( editor );
+		focusedFrame?.dispatchEvent( new FocusEvent( 'focus' ) );
+		return !!focusedFrame;
+	};
+
+	windowEmitter.listenTo( window, 'blur', () => {
+		// Firefox makes the frame the active element only after the window blurs.
+		if ( !focusFrame() ) {
+			setTimeout( focusFrame );
+		}
+	} );
+	windowEmitter.listenTo( window, 'focus', () => {
+		focusedFrame?.dispatchEvent( new FocusEvent( 'blur' ) );
+		focusedFrame = null;
+	} );
+}
+
+/** The `<iframe>` or `<webview>` in the content of an embed of `editor` that has the focus. */
+function getFocusedEmbedFrame( editor: Editor ) {
+	const active = document.activeElement;
+	const isEmbedFrame = !!active?.matches( 'iframe, webview' ) && isInEmbedContent( active )
+		&& [ ...editor.editing.view.domRoots.values() ].some( root => root.contains( active ) );
+	return isEmbedFrame ? active : null;
 }
 
 /** Whether `target` is in the content box of an embed, rather than in its title row. */

@@ -481,7 +481,7 @@ const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
 const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
 
 /** The content types that take the first click themselves, with no backdrop over them. */
-const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock" ]);
+const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock", "videoEmbed" ]);
 
 /** The content types with a fullscreen control of their own, such as a video player. */
 const OWN_FULLSCREEN_CONTENT_TYPES = new Set([ "videoEmbed" ]);

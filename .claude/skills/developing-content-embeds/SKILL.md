@@ -76,6 +76,12 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
   `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮.
   `ReadOnlyText`'s `applyVideoEmbeds()` swaps the section for the same box.
+  The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
+  facade takes the focus on click and `playVideo()` hands it to the player once loaded:
+  Chromium blurs the editor when a focused element is removed. A click into a frame fires no
+  focus event in the page, so `fireFrameFocusEvents()` in `content_embed.ts` fires `focus` at a
+  frame in an embed that a window `blur` leaves focused, and `blur` on the next window `focus`;
+  the embed's own `focus` listener and `FocusTracker` do the rest.
   `createLinkPreview()` in `link_embed_commands.ts` is the one place that picks `linkMention`,
   `linkEmbed` or a video embed for a display mode.
 - **Legacy blocks** — a `<pre>` without `data-box-size` predates the embed (the old Mermaid

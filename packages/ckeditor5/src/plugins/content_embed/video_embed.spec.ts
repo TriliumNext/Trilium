@@ -1,5 +1,6 @@
 import { type ClassicEditor, Essentials, getLabel, Paragraph, Undo, Widget } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { registerTestCleanup } from "../../../test/globals-test-kit.js";
@@ -21,6 +22,12 @@ const PREVIEW_ATTRIBUTES = `data-url="${VIDEO_URL}" data-embed-type="youtube"`
     + ` data-title="A video" data-image="${THUMBNAIL}"`;
 /** A video saved before videos were embeds. */
 const SAVED_PREVIEW = `<section class="link-embed" ${PREVIEW_ATTRIBUTES}>&nbsp;</section>`;
+const OTHER_HOST = location.hostname === "localhost" ? "127.0.0.1" : "localhost";
+/** A page of another site, which a click focuses with no focus event in this page. */
+const PLAYER_URL = `${location.protocol}//${OTHER_HOST}:${location.port}/package.json`;
+
+/** Lets `FocusTracker` report a blur, which it does a task later. */
+const nextTask = () => new Promise((resolve) => setTimeout(resolve));
 
 describe("ContentEmbedVideo", () => {
     let editor: ClassicEditor;
@@ -53,6 +60,20 @@ describe("ContentEmbedVideo", () => {
 
     function selectBlock(index: number) {
         editor.model.change((writer) => writer.setSelection(getBlock(index), "on"));
+    }
+
+    /** Inserts a paragraph and a video whose player is a frame of `src`, and returns the frame. */
+    function insertPlayer(src: string) {
+        loadVideo.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
+            wrapper.innerHTML = `<div class="include-note-content">`
+                + `<iframe src="${src}"></iframe></div>`;
+        });
+        editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
+        const player = getFigure().querySelector("iframe");
+        if (!player) {
+            throw new Error("Expected the player.");
+        }
+        return player;
     }
 
     it("loads the link preview of a video as a Full untitled embed, and saves its box", () => {
@@ -130,6 +151,41 @@ describe("ContentEmbedVideo", () => {
             title: "A video",
             image: THUMBNAIL
         }, figure.querySelector(":scope > .include-note-wrapper"));
+    });
+
+    it("is selected, and keeps the editor focused, after a click in its player", async () => {
+        const player = insertPlayer(PLAYER_URL);
+        await new Promise((resolve) => player.addEventListener("load", resolve, { once: true }));
+        editor.editing.view.focus();
+
+        await userEvent.click(player);
+        await nextTask();
+        expect(document.activeElement).toBe(player);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(getBlock(1));
+        expect(editor.ui.focusTracker.isFocused).toBe(true);
+        expect(editor.editing.view.getDomRoot()?.classList.contains("ck-focused")).toBe(true);
+
+        // The focus leaves the player for the page outside the editor.
+        const input = document.createElement("input");
+        document.body.append(input);
+        registerTestCleanup(() => input.remove());
+        await userEvent.click(input);
+        await nextTask();
+        expect(editor.ui.focusTracker.isFocused).toBe(false);
+    });
+
+    it("is selected when its player becomes the focused element after the window blurs", async () => {
+        const player = insertPlayer("about:blank");
+        editor.editing.view.focus();
+
+        // The order of Firefox.
+        const activeElement = vi.spyOn(document, "activeElement", "get")
+            .mockReturnValue(document.body);
+        registerTestCleanup(() => activeElement.mockRestore());
+        window.dispatchEvent(new FocusEvent("blur"));
+        activeElement.mockReturnValue(player);
+        await nextTask();
+        expect(editor.model.document.selection.getSelectedElement()).toBe(getBlock(1));
     });
 
     it("has the Medium and Full sizes, a title, a position and no caption", () => {

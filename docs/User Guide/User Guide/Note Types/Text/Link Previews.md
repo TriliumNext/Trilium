@@ -84,7 +84,7 @@ Click on an inserted _Inline_ or _Card_ link preview to select it, and a small t
 
 ### Videos
 
-A YouTube video shown as an _Embed_ has a size, a position and a title, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, the first click on the video selects it and the next one plays it. The toolbar of a selected video offers:
+A YouTube video shown as an _Embed_ has a size, a position and a title, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player. The toolbar of a selected video offers:
 
 *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
 *   The _Display_ menu, which turns the video into an _Inline_ or _Card_ link preview, or a _Plain link_.
