@@ -741,7 +741,11 @@ class ContentEmbedEditing extends Plugin {
 					// directly from the converter (rather than observing the DOM attribute) so the
 					// content is only rebuilt on a genuine box-size change — not whenever CKEditor
 					// re-applies unrelated attributes (e.g. `draggable` while selecting the widget).
-					reloadEmbeddedContent( editor, viewElement, data.item as ModelElement, newBoxSize );
+					// A player takes its size from the stylesheet, and a redraw stops the video.
+					const embed = data.item as ModelElement;
+					if ( !isVideoEmbed( embed ) ) {
+						reloadEmbeddedContent( editor, viewElement, embed, newBoxSize );
+					}
 				}
 			} );
 
@@ -1964,29 +1968,57 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 	}
 }
 
+/** How often `frameFocusChecks` run while a frame has the focus, in milliseconds. */
+const FRAME_FOCUS_CHECK_INTERVAL = 200;
+
+/** The check of each editor for the frame in its embeds that has the focus. */
+const frameFocusChecks = new Set<() => void>();
+let frameFocusTimer: ReturnType<typeof setInterval> | undefined;
+
 /**
  * Fires `focus` at a frame in an embed of `editor`, such as a video player, that a click focuses,
- * and `blur` once the page has the focus back. Chromium fires them only for a frame that a script
+ * and `blur` once the focus leaves it. Chromium fires them only for a frame that a script
  * focuses. The listeners of the embed then select it, and the editor stays focused.
  */
 function fireFrameFocusEvents( editor: Editor, windowEmitter: DomEmitter ) {
 	let focusedFrame: Element | null = null;
-	const focusFrame = () => {
-		focusedFrame = getFocusedEmbedFrame( editor );
-		focusedFrame?.dispatchEvent( new FocusEvent( 'focus' ) );
-		return !!focusedFrame;
-	};
-
-	windowEmitter.listenTo( window, 'blur', () => {
-		// Firefox makes the frame the active element only after the window blurs.
-		if ( !focusFrame() ) {
-			setTimeout( focusFrame );
+	const setFocusedFrame = ( frame: Element | null ) => {
+		if ( frame !== focusedFrame ) {
+			focusedFrame?.dispatchEvent( new FocusEvent( 'blur' ) );
+			focusedFrame = frame;
+			frame?.dispatchEvent( new FocusEvent( 'focus' ) );
 		}
+	};
+	const checkFocusedFrame = () => setFocusedFrame( getFocusedEmbedFrame( editor ) );
+
+	frameFocusChecks.add( checkFocusedFrame );
+	editor.on( 'destroy', () => frameFocusChecks.delete( checkFocusedFrame ) );
+	windowEmitter.listenTo( window, 'blur', () => {
+		checkFocusedFrame();
+		// Firefox makes the frame the active element only after the window blurs.
+		setTimeout( checkFocusedFrame );
+		watchFrameFocus();
 	} );
 	windowEmitter.listenTo( window, 'focus', () => {
-		focusedFrame?.dispatchEvent( new FocusEvent( 'blur' ) );
-		focusedFrame = null;
+		clearInterval( frameFocusTimer );
+		setFocusedFrame( null );
 	} );
+}
+
+/**
+ * Runs `frameFocusChecks` while a frame has the focus. A click moves the focus from one frame to
+ * another with no event in this page.
+ */
+function watchFrameFocus() {
+	clearInterval( frameFocusTimer );
+	frameFocusTimer = setInterval( () => {
+		for ( const check of frameFocusChecks ) {
+			check();
+		}
+		if ( !document.activeElement?.matches( 'iframe, webview' ) ) {
+			clearInterval( frameFocusTimer );
+		}
+	}, FRAME_FOCUS_CHECK_INTERVAL );
 }
 
 /** The `<iframe>` or `<webview>` in the content of an embed of `editor` that has the focus. */

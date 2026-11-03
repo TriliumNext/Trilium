@@ -84,7 +84,8 @@ widgets inside the selection.
   (`VIDEO_EMBED_BOX_SIZES`); `readVideoEmbedBox()` reads a video saved before as Full and
   untitled, and `createVideoEmbed()` makes a new one Medium at `getVideoMediumWidth()` (20em
   high), which the box size command sets again. Height follows width (`isHeightResizable` is
-  per element). A caption is saved in the captioned figure (above). The video toolbar also
+  per element). A size change only restyles the figure: the `attribute:boxSize` converter
+  skips `reloadEmbeddedContent()` for a video, since a new player stops the playback. A caption is saved in the captioned figure (above). The video toolbar also
   shows while the caret is in the caption (`findRelatedVideo()`), and its Copy URL and Display
   act on the video through `ChangeLinkDisplayCommand._getTarget()`: the selected preview, else,
   unless the caret is on a link, the video of the caption (`getCaptionedEmbed()`).
@@ -114,7 +115,13 @@ widgets inside the selection.
   Chromium blurs the editor when a focused element is removed. A click into a frame fires no
   focus event in the page, so `fireFrameFocusEvents()` in `content_embed.ts` fires `focus` at a
   frame in an embed that a window `blur` leaves focused, and `blur` on the next window `focus`;
-  the embed's own `focus` listener and `FocusTracker` do the rest.
+  the embed's own `focus` listener and `FocusTracker` do the rest. A click from one frame into
+  another fires no window event either, so after a window `blur` one shared interval
+  (`watchFrameFocus()`, 200 ms, for every editor's check in `frameFocusChecks`) reads
+  `document.activeElement` until no frame has the focus or the window has it back. These
+  synthetic events neither bubble nor fire `focusin`/`focusout`, so the box's
+  `useFocusWithin()`, which draws the `.include-note-body.active` outline, also listens to
+  `focus`/`blur` in the capture phase.
   `createLinkPreview()` in `link_embed_commands.ts` is the one place that picks `linkMention`,
   `linkEmbed` or a video embed for a display mode. The YouTube video prompt (`youtube_video.ts`)
   inserts the player only once `fetchMetadata()` has returned, with no link meanwhile: its

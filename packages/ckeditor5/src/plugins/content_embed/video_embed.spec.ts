@@ -85,6 +85,14 @@ describe("ContentEmbedVideo", () => {
         return player;
     }
 
+    function getPlayer(index: number) {
+        const player = editor.editing.view.getDomRoot()?.querySelectorAll("iframe")[index];
+        if (!player) {
+            throw new Error(`Expected the player at ${index}.`);
+        }
+        return player;
+    }
+
     it("loads the link preview of a video as a Full untitled embed, and saves its box", () => {
         editor.setData(SAVED_PREVIEW);
 
@@ -197,6 +205,41 @@ describe("ContentEmbedVideo", () => {
         expect(editor.model.document.selection.getSelectedElement()).toBe(getBlock(1));
     });
 
+    it("follows the focus from player to player, which fires no event in this page", () => {
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout", "setInterval", "clearInterval" ] });
+        registerTestCleanup(() => vi.useRealTimers());
+        loadVideo.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
+            wrapper.innerHTML = `<div class="include-note-content"><iframe></iframe></div>`;
+        });
+        editor.setData(`<p>Text</p>${SAVED_PREVIEW}${SAVED_PREVIEW}`);
+        const outside = document.createElement("iframe");
+        document.body.append(outside);
+        registerTestCleanup(() => outside.remove());
+        editor.editing.view.focus();
+        const getSelected = () => editor.model.document.selection.getSelectedElement();
+
+        const activeElement = vi.spyOn(document, "activeElement", "get")
+            .mockReturnValue(getPlayer(0));
+        registerTestCleanup(() => activeElement.mockRestore());
+        window.dispatchEvent(new FocusEvent("blur"));
+        expect(getSelected()).toBe(getBlock(1));
+
+        activeElement.mockReturnValue(getPlayer(1));
+        vi.advanceTimersByTime(200);
+        expect(getSelected()).toBe(getBlock(2));
+        expect(editor.ui.focusTracker.isFocused).toBe(true);
+
+        // A frame outside the editor takes the focus, then none has it and the checks stop.
+        activeElement.mockReturnValue(outside);
+        vi.advanceTimersByTime(200);
+        vi.advanceTimersToNextTimer();
+        expect(getSelected()).toBe(getBlock(2));
+        expect(editor.ui.focusTracker.isFocused).toBe(false);
+        activeElement.mockReturnValue(null);
+        vi.runAllTimers();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
     it("has the Medium and Full sizes, a title, a position and a caption", () => {
         editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
         selectBlock(1);
@@ -222,6 +265,19 @@ describe("ContentEmbedVideo", () => {
 
         editor.execute(POSITION_COMMAND_NAME, { value: "right" });
         expect(editor.getData()).toContain(` data-position="right"`);
+    });
+
+    it("keeps its player, and the video playing, when it changes size", () => {
+        editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
+        selectBlock(1);
+        expect(loadVideo).toHaveBeenCalledOnce();
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        expect(getFigure().dataset.boxSize).toBe("medium");
+        expect(getFigure().classList).toContain("box-size-medium");
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        expect(getFigure().classList).toContain("box-size-full");
+        expect(loadVideo).toHaveBeenCalledOnce();
     });
 
     it("saves a caption in a figure around its section, which goes away with the caption", () => {

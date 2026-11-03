@@ -129,6 +129,27 @@ describe("YouTubeVideoPlugin", () => {
         })).toBe("<paragraph>one</paragraph>[<video/>]<paragraph>two</paragraph>");
     });
 
+    it("inserts nothing once the editor has other content or is destroyed", async () => {
+        const { resolveFetch } = useDeferredFetch(linkEmbed.fetchMetadata);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        const insertAfter = async (change: () => Promise<void>) => {
+            const inserted = openPrompt().onInsert(VIDEO_URL);
+            await flushFetch();
+            await change();
+            resolveFetch({ ...META, url: VIDEO_URL });
+            await inserted;
+        };
+
+        // Another note loads into the editor, which removes the place of the video.
+        await insertAfter(async () => editor.setData("<p>Another note</p>"));
+        expect(getData()).toBe("<paragraph>[]Another note</paragraph>");
+        expect(release).toHaveBeenCalledOnce();
+        expect(focus).not.toHaveBeenCalled();
+
+        await insertAfter(() => editor.destroy());
+        expect(focus).not.toHaveBeenCalled();
+    });
+
     it("closes the balloon again for a host that shows the prompt its own way", () => {
         showPrompt.mockReturnValue(null);
 

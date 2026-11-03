@@ -14,8 +14,8 @@ import { suspendModalFocusTraps } from "../react/modal_focustrap";
 
 export interface YouTubeVideoOpts {
     /**
-     * Inserts a player of the YouTube video at `url` once it is ready, and rejects when it cannot
-     * be loaded.
+     * Inserts a player of the YouTube video at `url` once it is ready, unless the editor holds
+     * other content by then, and rejects when it cannot be loaded.
      */
     onInsert(url: string): Promise<void>;
 }

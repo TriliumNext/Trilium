@@ -207,6 +207,32 @@ describe("useFocusWithin", () => {
 
         activeElement.mockRestore();
     });
+
+    it("follows a frame inside that the editor reports focused or blurred", async () => {
+        const frame = container.querySelector("iframe");
+        const otherFrame = document.createElement("iframe");
+        document.body.appendChild(otherFrame);
+        const activeElement = vi.spyOn(document, "activeElement", "get");
+        /** Fires `type` at the frame, as `fireFrameFocusEvents()` does, with no window event. */
+        async function fireOnFrame(type: "blur" | "focus", active: Element | null) {
+            activeElement.mockReturnValue(active);
+            await act(async () => {
+                frame?.dispatchEvent(new FocusEvent(type));
+                await vi.runAllTimersAsync();
+            });
+        }
+
+        expect(frame).not.toBeNull();
+        await fireOnFrame("focus", frame);
+        expect(isFocusWithin).toBe(true);
+
+        // The focus moves on to a frame outside.
+        await fireOnFrame("blur", otherFrame);
+        expect(isFocusWithin).toBe(false);
+
+        activeElement.mockRestore();
+        otherFrame.remove();
+    });
 });
 
 describe("useParentClass", () => {

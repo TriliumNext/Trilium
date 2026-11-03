@@ -62,9 +62,11 @@ export default class YouTubeVideoPlugin extends Plugin {
         this.prompt.show((container) => editor.config.get("youtubeVideo")?.showPrompt({
             container,
             onInsert: async (url) => {
-                await insertVideo(editor, url);
+                const isInserted = await insertVideo(editor, url);
                 this.prompt.hide();
-                editor.editing.view.focus();
+                if (isInserted) {
+                    editor.editing.view.focus();
+                }
             }
         }) ?? null);
     }
@@ -72,7 +74,9 @@ export default class YouTubeVideoPlugin extends Plugin {
 
 /**
  * Inserts a player of the YouTube video at `url` at the selection, once the video's metadata has
- * arrived, and selects it. Rejects, inserting nothing, when the metadata cannot be read.
+ * arrived, and selects it. Resolves to whether it inserted the video, which it does not once the
+ * editor holds other content, such as another note, or is destroyed. Rejects, inserting nothing,
+ * when the metadata cannot be read.
  */
 async function insertVideo(editor: Editor, url: string) {
     const model = editor.model;
@@ -84,8 +88,16 @@ async function insertVideo(editor: Editor, url: string) {
 
     // Tracked while the metadata arrives, so that edits made meanwhile do not shift it.
     const place = ModelLiveRange.fromRange(range);
+    let isReplaced = false;
+    const onReplace = () => {
+        isReplaced = true;
+    };
+    editor.data.on("set", onReplace);
     try {
         const metadata = await getLinkEmbedHost(editor).fetchMetadata(url);
+        if (isReplaced || editor.state === "destroyed") {
+            return false;
+        }
         if (metadata.unresolved) {
             throw new Error("The metadata of the video could not be read.");
         }
@@ -97,7 +109,9 @@ async function insertVideo(editor: Editor, url: string) {
             model.insertContent(video, isRemoved ? model.document.selection : place.toRange());
             writer.setSelection(video, "on");
         });
+        return true;
     } finally {
+        editor.data.off("set", onReplace);
         place.detach();
     }
 }
@@ -126,8 +140,9 @@ export interface YouTubeVideoRequest {
     container: HTMLElement;
     /**
      * Inserts a player of the YouTube video at `url` once its metadata and thumbnail are ready,
-     * then closes the balloon. Rejects, inserting nothing and leaving the balloon open, when they
-     * cannot be loaded.
+     * then closes the balloon. Inserts nothing once the editor holds other content or is
+     * destroyed. Rejects, inserting nothing and leaving the balloon open, when they cannot be
+     * loaded.
      */
     onInsert(url: string): Promise<void>;
 }
