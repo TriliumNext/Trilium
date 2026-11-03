@@ -15,7 +15,8 @@ import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import {
     EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewVideoId,
-    readLinkPreviewData, readVideoEmbedBox, VIDEO_EMBED_CLASS
+    getVideoAspectRatio, readLinkPreviewData, readVideoEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY,
+    VIDEO_EMBED_CLASS
 } from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
@@ -289,6 +290,10 @@ function applyVideoEmbeds(container: HTMLDivElement) {
         const style = section.getAttribute("style");
         if (style) {
             figure.setAttribute("style", style);
+        }
+        const aspectRatio = getVideoAspectRatio(preview);
+        if (aspectRatio) {
+            figure.style.setProperty(VIDEO_ASPECT_RATIO_PROPERTY, String(aspectRatio));
         }
         section.replaceWith(figure);
         loadVideoEmbed(preview, figure);

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getLinkPreviewVideoId, LINK_EMBED_CARD_IMAGE_PLACEHOLDER, LINK_PREVIEW_DATA_ATTRIBUTES,
-    readLinkPreviewData, readVideoEmbedBox, renderLinkEmbedHtml, renderLinkMentionHtml
+    getLinkPreviewVideoId, getVideoAspectRatio, LINK_EMBED_CARD_IMAGE_PLACEHOLDER,
+    LINK_PREVIEW_DATA_ATTRIBUTES, readLinkPreviewData, readVideoEmbedBox, renderLinkEmbedHtml,
+    renderLinkMentionHtml
 } from "./link_embed_markup.js";
 
 const OPTIONS = { playVideoLabel: "Play \"video\"" };
@@ -61,6 +62,16 @@ describe("getLinkPreviewVideoId", () => {
     });
 });
 
+describe("getVideoAspectRatio", () => {
+    it("reads a width and a height in whole numbers, and nothing else", () => {
+        expect([ "9/16", "16/9", "4/3" ].map((aspectRatio) => getVideoAspectRatio({ aspectRatio })))
+            .toEqual([ 9 / 16, 16 / 9, 4 / 3 ]);
+        expect([ undefined, null, "", "1.5", "0/9", "9/0", "9 / 16", "1/2/3", "12345/1", "-9/16" ]
+            .map((aspectRatio) => getVideoAspectRatio({ aspectRatio })))
+            .toEqual(Array(10).fill(null));
+    });
+});
+
 describe("renderLinkMentionHtml", () => {
     it("links the favicon and title, escaped, in a new tab unless editable", () => {
         expect(renderLinkMentionHtml({
@@ -106,6 +117,16 @@ describe("renderLinkEmbedHtml", () => {
             + ` loading="lazy" draggable="false">`
             + `<span class="link-embed-video-play" aria-hidden="true">`
             + `</span></button></div>`);
+    });
+
+    it("gives the player the shape of its video, when the preview stores a valid one", () => {
+        const render = (aspectRatio: string) => renderLinkEmbedHtml({
+            url: VIDEO_URL, embedType: "youtube", aspectRatio
+        }, OPTIONS);
+
+        expect(render("9/16")).toMatch(
+            /^<div class="link-embed-video" style="--video-aspect-ratio:0\.5625"><button /);
+        expect(render("9/16\"><script>")).toMatch(/^<div class="link-embed-video"><button /);
     });
 
     it("draws a card for a video URL stored as a card, and for an embed that is no video", () => {

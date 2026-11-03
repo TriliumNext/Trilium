@@ -11,8 +11,10 @@ import ContentEmbed, {
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
 } from "./content_embed.js";
-import { isVideoEmbed, VIDEO_MEDIUM_WIDTH } from "./video_embed.js";
+import { isVideoEmbed } from "./video_embed.js";
 
+/** The width of a 16:9 video at Medium, 20em high. */
+const VIDEO_MEDIUM_WIDTH = "35.6em";
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 const THUMBNAIL = "api/attachments/abc123/image/youtube-dQw4w9WgXcQ.jpg";
 const PREVIEW_ATTRIBUTES = `data-url="${VIDEO_URL}" data-embed-type="youtube"`
@@ -98,11 +100,12 @@ describe("ContentEmbedVideo", () => {
 
     it("keeps the box, the position and the width on the section, and drops what it holds", () => {
         const attributes = `class="link-embed" style="--include-note-width:30em;"`
-            + ` data-url="${VIDEO_URL}" data-embed-type="youtube" data-box-size="medium"`
-            + ` data-position="wrap-left"`;
+            + ` data-url="${VIDEO_URL}" data-embed-type="youtube" data-aspect-ratio="9/16"`
+            + ` data-box-size="medium" data-position="wrap-left"`;
         editor.setData(`<section ${attributes}><a href="${VIDEO_URL}">A video</a></section>`);
 
         const embed = getBlock();
+        expect(embed.getAttribute("aspectRatio")).toBe("9/16");
         expect(embed.getAttribute("boxSize")).toBe("medium");
         expect(embed.getAttribute("hideTitle")).toBeUndefined();
         expect(embed.getAttribute("position")).toBe("wrap-left");
@@ -176,6 +179,19 @@ describe("ContentEmbedVideo", () => {
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
         expect(getBlock(1).hasAttribute(SIZE_ATTRIBUTES.width)).toBe(false);
         expect(classes()).not.toContain("ck-widget_resizable");
+    });
+
+    it("has the shape of its video, and at Medium the width of that shape 20em high", () => {
+        const vertical = SAVED_PREVIEW.replace(">", ` data-aspect-ratio="9/16">`);
+        editor.setData(`<p>Text</p>${SAVED_PREVIEW}${vertical}`);
+        const figures = editor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLElement>("figure.include-note") ?? [];
+        expect([ ...figures ].map((figure) => figure.style.getPropertyValue("--video-aspect-ratio")))
+            .toEqual([ "", "0.5625" ]);
+
+        selectBlock(2);
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        expect(getBlock(2).getAttribute(SIZE_ATTRIBUTES.width)).toBe("11.3em");
     });
 
     it("takes a new width from its corner at Medium, its only handle", () => {

@@ -61,9 +61,18 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   link preview, so released versions still play it, and adds `data-box-size`, `data-hide-title`,
   `data-position` and `--include-note-width`. Its sizes are Medium and Full
   (`VIDEO_EMBED_BOX_SIZES`); `readVideoEmbedBox()` reads a video saved before as Full and
-  untitled, and `createVideoEmbed()` makes a new one Medium at `VIDEO_MEDIUM_WIDTH`, which the
-  box size command sets again. Height follows width (`isHeightResizable` is per element). No
-  caption. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
+  untitled, and `createVideoEmbed()` makes a new one Medium at `getVideoMediumWidth()` (20em
+  high), which the box size command sets again. Height follows width (`isHeightResizable` is
+  per element). No caption.
+  The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
+  server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short
+  answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
+  editing figure, `applyVideoEmbeds()`, `renderLinkEmbedHtml()`) writes it as
+  `--video-aspect-ratio`, which the player's `aspect-ratio` and the 70vh cap of Full read. A
+  preview without one is 16:9. A new link preview field goes into `LINK_PREVIEW_DATA_ATTRIBUTES`
+  and `readLinkPreviewData()`, both `LinkEmbedMetadata` types (commons and the editor's
+  `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the
+  converters follow the map. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
   opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
   `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮.
   `ReadOnlyText`'s `applyVideoEmbeds()` swaps the section for the same box.

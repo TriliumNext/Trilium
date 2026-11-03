@@ -18,6 +18,7 @@ export interface EmbedMetadata {
     favicon?: string;
     siteName?: string;
     image?: string;
+    aspectRatio?: string;
     /** See {@link LinkEmbedMetadata.unresolved}. Not persisted into the note's HTML. */
     unresolved?: boolean;
 }
@@ -53,6 +54,7 @@ export async function fetchMetadata(url: string, ownerNoteId: string): Promise<E
             favicon: metadata.favicon,
             siteName: metadata.siteName,
             image: metadata.image,
+            aspectRatio: metadata.aspectRatio,
             unresolved: metadata.unresolved
         };
     } catch {

@@ -1,4 +1,6 @@
-import { getLinkPreviewVideoId, isHttpUrl } from '@triliumnext/commons';
+import {
+    getLinkPreviewVideoId, isHttpUrl, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData
+} from '@triliumnext/commons';
 import {
     Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
     type ModelWriter
@@ -53,10 +55,15 @@ export function getLinkDisplayModeLabel(t: (message: string) => string, mode: Li
  */
 export const EMBEDDABLE_URL_REGEX = /^https?:\/\/\S+$/;
 
-/** Every piece of fetched metadata a linkEmbed/linkMention element stores as a model attribute. */
-export const META_KEYS = ['url', 'embedType', 'title', 'description', 'favicon', 'siteName', 'image'] as const;
+export type MetaKey = keyof LinkPreviewData;
 
-export type MetaKey = (typeof META_KEYS)[number];
+/** Every piece of fetched metadata a linkEmbed/linkMention element stores as a model attribute. */
+export const META_KEYS = Object.keys(LINK_PREVIEW_DATA_ATTRIBUTES) as MetaKey[];
+
+/** The model attributes of a link preview made from the fetched `metadata`. */
+export function getMetadataAttributes(metadata: LinkEmbedMetadata): Record<string, unknown> {
+    return Object.fromEntries(META_KEYS.map((key) => [ key, metadata[key] ]));
+}
 
 /**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
@@ -279,15 +286,12 @@ async function replaceLinkWithPreview(
             if (!linkStillThere) return;
 
             const element = createLinkPreview(writer, mode, {
-                url: metadata.url,
+                ...getMetadataAttributes(metadata),
                 embedType: mode === 'embed'
                     ? getLinkEmbedHost(editor).detectEmbedType(href)
                     : metadata.embedType,
                 title: title || metadata.title,
-                description: description || metadata.description,
-                favicon: metadata.favicon,
-                siteName: metadata.siteName,
-                image: metadata.image
+                description: description || metadata.description
             });
 
             model.insertContent(element, currentRange);

@@ -1,6 +1,6 @@
 import {
-    getLinkPreviewVideoId, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData, readLinkPreviewData,
-    readVideoEmbedBox
+    getLinkPreviewVideoId, getVideoAspectRatio, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData,
+    readLinkPreviewData, readVideoEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import {
     type DowncastConversionApi,
@@ -16,8 +16,10 @@ import {
 import { SIZE_ATTRIBUTES } from "../resizable_widgets/resizable_widgets.js";
 import { getPositionAttributes, getPositionOfView } from "./content_embed.js";
 
-/** The width of a Medium video: 20em high, as a Medium embed is. */
-export const VIDEO_MEDIUM_WIDTH = "35.6em";
+/** The height of a Medium video, in em, as a Medium embed is high. */
+const VIDEO_MEDIUM_HEIGHT = 20;
+/** The shape of the player of a video that stores none. */
+const DEFAULT_ASPECT_RATIO = 16 / 9;
 
 /** The fields of a link preview, which a video embed keeps as attributes of the same names. */
 const PREVIEW_FIELDS = Object.keys(LINK_PREVIEW_DATA_ATTRIBUTES) as (keyof LinkPreviewData)[];
@@ -62,8 +64,20 @@ export function createVideoEmbed(writer: ModelWriter, attributes: Record<string,
         ...attributes,
         boxSize: "medium",
         hideTitle: true,
-        [SIZE_ATTRIBUTES.width]: VIDEO_MEDIUM_WIDTH
+        [SIZE_ATTRIBUTES.width]: getVideoMediumWidth(attributes as Partial<LinkPreviewData>)
     });
+}
+
+/** The width of the video of `preview` at Medium: 20em high, in the shape of the video. */
+export function getVideoMediumWidth(preview: Pick<LinkPreviewData, "aspectRatio">) {
+    const aspectRatio = getVideoAspectRatio(preview) ?? DEFAULT_ASPECT_RATIO;
+    return `${Math.round(VIDEO_MEDIUM_HEIGHT * aspectRatio * 10) / 10}em`;
+}
+
+/** The style that gives the view of `embed` the shape of its video, when it stores one. */
+export function getVideoShapeAttributes(embed: ModelElement): Record<string, string> {
+    const aspectRatio = isVideoEmbed(embed) ? getVideoAspectRatio(getVideoPreview(embed)) : null;
+    return aspectRatio ? { style: `${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}` } : {};
 }
 
 /** Whether `embed` plays the video of a link preview. */

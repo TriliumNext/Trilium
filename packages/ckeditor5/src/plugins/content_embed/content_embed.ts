@@ -45,7 +45,9 @@ import ContentEmbedInlineSource, {
 } from './inline_source.js';
 import './nested_editor_events.js';
 import UnknownContentEmbed from './unknown_embed.js';
-import ContentEmbedVideo, { isVideoEmbed, VIDEO_MEDIUM_WIDTH } from './video_embed.js';
+import ContentEmbedVideo, {
+	getVideoMediumWidth, getVideoPreview, getVideoShapeAttributes, isVideoEmbed
+} from './video_embed.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
@@ -658,7 +660,8 @@ class ContentEmbedEditing extends Plugin {
 					...getFlagAttributes( modelElement ),
 					...getDisplayModeAttributes( modelElement ),
 					...getPositionAttributes( modelElement ),
-					...getCodeViewAttributes( modelElement )
+					...getCodeViewAttributes( modelElement ),
+					...getVideoShapeAttributes( modelElement )
 				} );
 
 				const embedWrapper = viewWriter.createUIElement( 'div', {
@@ -885,7 +888,8 @@ class ContentEmbedBoxSizeCommand extends Command {
 				if ( !RESIZABLE_BOX_SIZES.includes( options.value ) ) {
 					writer.removeAttribute( SIZE_ATTRIBUTES.width, embedElement );
 				} else if ( isVideoEmbed( embedElement ) ) {
-					writer.setAttribute( SIZE_ATTRIBUTES.width, VIDEO_MEDIUM_WIDTH, embedElement );
+					writer.setAttribute( SIZE_ATTRIBUTES.width,
+						getVideoMediumWidth( getVideoPreview( embedElement ) ), embedElement );
 				}
 
 				if ( options.value === 'tiny' ) {

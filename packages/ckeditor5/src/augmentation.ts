@@ -9,6 +9,7 @@ declare global {
         favicon?: string;
         siteName?: string;
         image?: string;
+        aspectRatio?: string;
         /**
          * True when the host could not read the page (network error, bot challenge, non-HTML
          * response, or a page with no title of its own) and the fields above hold nothing but a

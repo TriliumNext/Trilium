@@ -1,7 +1,7 @@
 import { chooseLinkPreviewKind, isUrlAloneInBlock, type BlockChildLike } from '@triliumnext/commons';
 import { Plugin } from 'ckeditor5';
 import {
-    createLinkPreview, EMBEDDABLE_URL_REGEX, getLinkEmbedHost
+    createLinkPreview, EMBEDDABLE_URL_REGEX, getLinkEmbedHost, getMetadataAttributes
 } from './link_embed_commands.js';
 
 /**
@@ -135,15 +135,7 @@ export default class AutoLinkToMention extends Plugin {
                             caretLeftBlock: this._caretLeftBlock(parentEl)
                         });
 
-                        const attributes = {
-                            url: metadata.url,
-                            embedType: metadata.embedType,
-                            title: metadata.title,
-                            description: metadata.description,
-                            favicon: metadata.favicon,
-                            siteName: metadata.siteName,
-                            image: metadata.image
-                        };
+                        const attributes = getMetadataAttributes(metadata);
 
                         if (kind === 'mention') {
                             // The URL's own range is passed to insertContent rather than selected

@@ -70,7 +70,7 @@ html.theme-light .link-embed-favicon-light {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     position: relative;
-    max-width: var(--include-note-width, 640px);
+    max-width: min(var(--include-note-width, 640px), 70vh * var(--video-aspect-ratio, 16 / 9));
     margin: auto;
     border-radius: 8px;
     overflow: hidden;
@@ -84,7 +84,7 @@ html.theme-light .link-embed-favicon-light {
 
 .link-embed-video iframe {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     border: none;
     display: block;
 }
@@ -97,7 +97,7 @@ html.theme-light .link-embed-favicon-light {
     position: relative;
     display: block;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     padding: 0;
     border: none;
     background: #000;

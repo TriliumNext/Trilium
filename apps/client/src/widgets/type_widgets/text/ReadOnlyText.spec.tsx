@@ -605,7 +605,8 @@ describe("ReadOnlyText videos", () => {
     const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     const html = `<section class="link-embed" style="--include-note-width:30em;"`
         + ` data-url="${url}" data-embed-type="youtube" data-title="A video"`
-        + ` data-box-size="medium" data-position="wrap-left" data-trilium-block-id="b1">`
+        + ` data-aspect-ratio="9/16" data-box-size="medium" data-position="wrap-left"`
+        + ` data-trilium-block-id="b1">`
         + `&nbsp;</section>`
         + `<section class="link-embed" data-url="${url}" data-embed-type="youtube"></section>`
         + `<section class="link-embed" data-url="https://example.com/"`
@@ -641,7 +642,8 @@ describe("ReadOnlyText videos", () => {
                 isInPage: figure.isConnected,
                 className: figure.className,
                 data: { ...figure.dataset },
-                width: figure.style.getPropertyValue("--include-note-width")
+                width: figure.style.getPropertyValue("--include-note-width"),
+                shape: figure.style.getPropertyValue("--video-aspect-ratio")
             };
         });
         const box = {
@@ -649,10 +651,13 @@ describe("ReadOnlyText videos", () => {
         };
         expect(videos).toEqual([
             {
-                ...box, title: "A video", width: "30em",
+                ...box, title: "A video", width: "30em", shape: "0.5625",
                 data: { boxSize: "medium", position: "wrap-left", triliumBlockId: "b1" }
             },
-            { ...box, title: null, width: "", data: { boxSize: "full", hideTitle: "true" } }
+            {
+                ...box, title: null, width: "", shape: "",
+                data: { boxSize: "full", hideTitle: "true" }
+            }
         ]);
         expect(container.querySelector("section.link-embed > a.link-embed-card")).not.toBeNull();
         await unmount();

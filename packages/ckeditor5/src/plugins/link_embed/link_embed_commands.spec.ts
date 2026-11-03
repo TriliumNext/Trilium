@@ -11,7 +11,6 @@ import {
     type LinkEmbedHostMocks,
     useDeferredFetch
 } from "../../../test/link-embed-kit.js";
-import { VIDEO_MEDIUM_WIDTH } from "../content_embed/video_embed.js";
 import {
     CHANGE_LINK_DISPLAY_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND
 } from "./link_embed_commands.js";
@@ -333,10 +332,17 @@ describe("LinkEmbed commands", () => {
             const embed = findElement(editor, "contentEmbed");
             expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
                 url, embedType: "youtube", title: "T",
-                boxSize: "medium", hideTitle: true, customWidth: VIDEO_MEDIUM_WIDTH
+                boxSize: "medium", hideTitle: true, customWidth: "35.6em"
             });
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
             expect(findElement(editor, "linkMention")).toBeUndefined();
+
+            setModelData(editor.model, `<paragraph>[<linkMention url="${url}" embedType="youtube"`
+                + ` aspectRatio="9/16"></linkMention>]</paragraph>`);
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+            const vertical = findElement(editor, "contentEmbed");
+            expect([ vertical?.getAttribute("aspectRatio"), vertical?.getAttribute("customWidth") ])
+                .toEqual([ "9/16", "11.3em" ]);
 
             setModelData(editor.model, `<paragraph>[<linkMention url="https://youtube.com/watch"`
                 + ` embedType="youtube"></linkMention>]</paragraph>`);
