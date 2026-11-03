@@ -85,7 +85,10 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   frame in an embed that a window `blur` leaves focused, and `blur` on the next window `focus`;
   the embed's own `focus` listener and `FocusTracker` do the rest.
   `createLinkPreview()` in `link_embed_commands.ts` is the one place that picks `linkMention`,
-  `linkEmbed` or a video embed for a display mode.
+  `linkEmbed` or a video embed for a display mode. The YouTube video prompt (`youtube_video.ts`)
+  inserts the player only once `fetchMetadata()` has returned, with no link meanwhile: its
+  `onInsert()` rejects on unresolved metadata, and the host's prompt keeps Insert disabled while
+  it waits and shows an error toast when it rejects.
 - **Legacy blocks** — a `<pre>` without `data-box-size` predates the embed (the old Mermaid
   plugin). `getModeOfSavedView()` loads it editable, in the view of its
   `data-trilium-display-mode` or split, at Medium. A saved embed keeps exactly what it has.

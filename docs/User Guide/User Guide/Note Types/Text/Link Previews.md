@@ -65,7 +65,7 @@ To turn an existing link into a preview, open its _Edit link_ dialog and change 
 
 ### 3\. From the Insert menu, for a YouTube video
 
-Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu, or _Insert YouTube video_ from the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of the video and press _Insert video_ or <kbd>Enter</kbd> to insert it as an _Embed_.
+Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu, or _Insert YouTube video_ from the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of the video and press _Insert video_ or <kbd>Enter</kbd> to insert it as an _Embed_. The video is inserted once its title and thumbnail have loaded, which can take a few seconds. When they cannot be loaded, an error is shown and the prompt stays open.
 
 ### 4\. By saving browser tabs from the Web Clipper
 

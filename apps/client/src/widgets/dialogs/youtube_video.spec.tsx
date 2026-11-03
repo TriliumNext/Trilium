@@ -1,12 +1,24 @@
+import { Modal as BootstrapModal } from "bootstrap";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import Component from "../../components/component";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import YouTubeVideoDialog, { getYouTubeVideoUrl, YouTubeVideoBalloon } from "./youtube_video";
 
+const { showError } = vi.hoisted(() => ({ showError: vi.fn() }));
+
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/toast", () => ({ default: { showError } }));
+// Raises the modal at once, so that it has the Bootstrap instance it closes through.
+vi.mock("../../services/dialog", () => ({
+    openDialog: async (dialog: JQuery<HTMLElement>) => dialog
+}));
+
+beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+});
 
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
@@ -28,10 +40,36 @@ describe("getYouTubeVideoUrl", () => {
 });
 
 describe("YouTubeVideoBalloon", () => {
-    const onInsert = vi.fn();
+    const onInsert = vi.fn(async (_url: string) => {});
 
     beforeEach(() => {
         vi.clearAllMocks();
+        onInsert.mockReset();
+    });
+
+    it("disables Insert while the video loads, and shows a toast when it fails", async () => {
+        const insertion = deferInsertion(onInsert);
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+        });
+        const form = container.querySelector("form");
+        if (!form) throw new Error("The balloon has no form.");
+        await type(container.querySelector(".youtube-video-url input"), VIDEO_URL);
+
+        await submit(form);
+        expect(insertButton(container)?.disabled).toBe(true);
+        await submit(form);
+        expect(onInsert).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+
+        await insertion.fail();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        expect(insertButton(container)?.disabled).toBe(false);
+
+        await submit(form);
+        await insertion.succeed();
+        expect(onInsert).toHaveBeenCalledTimes(2);
+        expect(showError).toHaveBeenCalledOnce();
     });
 
     it("focuses the field, and inserts only the address of a video", async () => {
@@ -61,12 +99,14 @@ describe("YouTubeVideoBalloon", () => {
 });
 
 describe("YouTubeVideoDialog", () => {
-    const onInsert = vi.fn();
+    const onInsert = vi.fn(async (_url: string) => {});
     let host: Component;
     let container: HTMLElement;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        onInsert.mockReset();
+        vi.spyOn(BootstrapModal.prototype, "hide").mockImplementation(() => {});
         host = new Component();
         container = renderInto(
             <ParentComponent.Provider value={host}>
@@ -91,16 +131,27 @@ describe("YouTubeVideoDialog", () => {
         });
     }
 
-    it("inserts the video once the modal is gone, and opens again on an empty field", async () => {
+    it("closes once the video is inserted, and stays open with a toast when it fails", async () => {
+        const insertion = deferInsertion(onInsert);
         await open();
         const form = container.querySelector("form");
         if (!form) throw new Error("The dialog has no form.");
 
         await type(field(), VIDEO_URL);
         await submit(form);
-        expect(onInsert).not.toHaveBeenCalled();
-        await hide();
         expect(onInsert).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+        expect(insertButton(container)?.disabled).toBe(true);
+        await insertion.fail();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        expect(insertButton(container)?.disabled).toBe(false);
+        expect(BootstrapModal.prototype.hide).not.toHaveBeenCalled();
+
+        await submit(form);
+        expect(onInsert).toHaveBeenCalledTimes(2);
+        expect(BootstrapModal.prototype.hide).not.toHaveBeenCalled();
+        await insertion.succeed();
+        expect(BootstrapModal.prototype.hide).toHaveBeenCalledOnce();
+        await hide();
 
         await open();
         expect(field()?.value).toBe("");
@@ -114,6 +165,25 @@ describe("YouTubeVideoDialog", () => {
         expect(onInsert).not.toHaveBeenCalled();
     });
 });
+
+/**
+ * Makes each call of `onInsert` wait until `succeed()` or `fail()` settles it. Both wait a task,
+ * so that what the component does after the insertion renders before they return.
+ */
+function deferInsertion(onInsert: Mock<(url: string) => Promise<void>>) {
+    let settle: (error?: Error) => void = () => {};
+    onInsert.mockImplementation(() => new Promise<void>((resolve, reject) => {
+        settle = (error) => error ? reject(error) : resolve();
+    }));
+    const settleWith = (error?: Error) => act(async () => {
+        settle(error);
+        await new Promise((resolve) => setTimeout(resolve));
+    });
+    return {
+        succeed: () => settleWith(),
+        fail: () => settleWith(new Error("Offline"))
+    };
+}
 
 function insertButton(container: HTMLElement) {
     return container.querySelector<HTMLButtonElement>("button[type=submit]");

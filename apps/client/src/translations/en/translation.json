@@ -5029,6 +5029,7 @@
   "youtube_video": {
     "title": "Insert YouTube video",
     "button_insert": "Insert video",
-    "not_a_video": "This is not the address of a YouTube video."
+    "not_a_video": "This is not the address of a YouTube video.",
+    "insert_failed": "The video could not be loaded. Check the address and the connection, then try again."
   }
 }

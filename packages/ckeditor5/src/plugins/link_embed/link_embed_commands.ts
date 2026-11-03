@@ -66,6 +66,24 @@ export function getMetadataAttributes(metadata: LinkEmbedMetadata): Record<strin
 }
 
 /**
+ * The model attributes of a preview of the `mode` shape of the page at `href`, made from its
+ * fetched `metadata`. `title` and `description` replace the page's own.
+ */
+export function getPreviewAttributes(
+    editor: Editor, mode: Exclude<LinkDisplayMode, 'plain'>, href: string,
+    metadata: LinkEmbedMetadata, title?: string, description?: string
+): Record<string, unknown> {
+    return {
+        ...getMetadataAttributes(metadata),
+        embedType: mode === 'embed'
+            ? getLinkEmbedHost(editor).detectEmbedType(href)
+            : metadata.embedType,
+        title: title || metadata.title,
+        description: description || metadata.description
+    };
+}
+
+/**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
  * is in, and turns it into a preview of the `mode` shape once the page's metadata arrives. `title`
  * replaces the page's own title, and is the text of a plain link. `description` replaces the page's
@@ -285,14 +303,8 @@ async function replaceLinkWithPreview(
             }
             if (!linkStillThere) return;
 
-            const element = createLinkPreview(writer, mode, {
-                ...getMetadataAttributes(metadata),
-                embedType: mode === 'embed'
-                    ? getLinkEmbedHost(editor).detectEmbedType(href)
-                    : metadata.embedType,
-                title: title || metadata.title,
-                description: description || metadata.description
-            });
+            const element = createLinkPreview(writer, mode,
+                getPreviewAttributes(editor, mode, href, metadata, title, description));
 
             model.insertContent(element, currentRange);
             // The widget toolbar, with its Display dropdown, takes over from the link balloon.
