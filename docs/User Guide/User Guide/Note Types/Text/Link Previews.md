@@ -84,7 +84,7 @@ Click on an inserted _Inline_ or _Card_ link preview to select it, and a small t
 
 ### Videos
 
-A YouTube video shown as an _Embed_ has a size, a position and a title, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player. The toolbar of a selected video offers:
+A YouTube video shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player. The toolbar of a selected video offers:
 
 *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
 *   The _Display_ menu, which turns the video into an _Inline_ or _Card_ link preview, or a _Plain link_.
@@ -93,11 +93,12 @@ A YouTube video shown as an _Embed_ has a size, a position and a title, like an 
     *   _Size_: a _Medium_ video can be resized, a _Full_ video takes the width of the note, or less when it would be taller than most of the window. A new video is _Medium_. A video inserted in an earlier version is _Full_.
     *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default.
     *   _Show title_ shows the title of the video above it, as a link to the video. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
+    *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
     *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
 
 To resize a _Medium_ video, select it and drag the handle in its bottom-right corner, or its bottom-left corner for a video aligned to the right. The height follows the width. Choosing _Medium_ again returns the video to its first size.
 
-On a [shared page](../../Advanced%20Usage/Sharing.md), the video keeps its width and position, but not its title. In the mobile layout, a video with a position other than _Align center_ takes the full width.
+On a [shared page](../../Advanced%20Usage/Sharing.md), the video keeps its width, position and caption, but not its title. In the mobile layout, a video with a position other than _Align center_ takes the full width.
 
 ## Where the preview data comes from
 

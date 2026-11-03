@@ -608,7 +608,9 @@ describe("ReadOnlyText videos", () => {
         + ` data-aspect-ratio="9/16" data-box-size="medium" data-position="wrap-left"`
         + ` data-trilium-block-id="b1">`
         + `&nbsp;</section>`
+        + `<figure class="captioned-content-embed">`
         + `<section class="link-embed" data-url="${url}" data-embed-type="youtube"></section>`
+        + `<figcaption>A caption</figcaption></figure>`
         + `<section class="link-embed" data-url="https://example.com/"`
         + ` data-embed-type="opengraph" data-title="A card"></section>`;
 
@@ -643,7 +645,8 @@ describe("ReadOnlyText videos", () => {
                 className: figure.className,
                 data: { ...figure.dataset },
                 width: figure.style.getPropertyValue("--include-note-width"),
-                shape: figure.style.getPropertyValue("--video-aspect-ratio")
+                shape: figure.style.getPropertyValue("--video-aspect-ratio"),
+                caption: figure.querySelector(":scope > figcaption")?.textContent ?? null
             };
         });
         const box = {
@@ -651,14 +654,15 @@ describe("ReadOnlyText videos", () => {
         };
         expect(videos).toEqual([
             {
-                ...box, title: "A video", width: "30em", shape: "0.5625",
+                ...box, title: "A video", width: "30em", shape: "0.5625", caption: null,
                 data: { boxSize: "medium", position: "wrap-left", triliumBlockId: "b1" }
             },
             {
-                ...box, title: null, width: "", shape: "",
+                ...box, title: null, width: "", shape: "", caption: "A caption",
                 data: { boxSize: "full", hideTitle: "true" }
             }
         ]);
+        expect(container.querySelector(".captioned-content-embed")).toBeNull();
         expect(container.querySelector("section.link-embed > a.link-embed-card")).not.toBeNull();
         await unmount();
     });

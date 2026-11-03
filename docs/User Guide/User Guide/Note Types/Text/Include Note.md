@@ -52,7 +52,7 @@ A _Small_, _Medium_ or _Expandable_ include can be resized to any width and heig
 
 An include can have a caption, shown centered at the bottom of its box. The caption is part of the text note, so it can be formatted like the rest of the text, for example in bold or with a link.
 
-*   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption.
+*   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption. While the cursor is in the caption, the include stays selected and keeps its toolbar.
 *   To remove the caption, press the same button again. Pressing it once more brings back the text it had, as long as the note stays open.
 *   A _Tiny_ include has no caption. Switching an include to _Tiny_ removes its caption, and switching it back to a larger size restores the caption, as long as the note stays open.
 *   An _Expandable_ include shows its caption under the title while the content is collapsed, and under the content once it is expanded.

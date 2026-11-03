@@ -1093,6 +1093,26 @@ describe("content_renderer", () => {
                 ]);
         });
 
+        it("places a video saved with a caption by the figure that holds both", () => {
+            const note = buildShareNote({
+                content: `<figure class="captioned-content-embed"><section class="link-embed"`
+                    + ` style="--include-note-width:30em;"`
+                    + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                    + ` data-embed-type="youtube" data-box-size="medium"`
+                    + ` data-position="wrap-right">&nbsp;</section>`
+                    + `<figcaption>A caption</figcaption></figure>`
+            });
+
+            const figure = parse(String(getContent(note).content)).querySelector("figure");
+            const section = figure?.querySelector("section.link-embed");
+            const box = (element: typeof section) => [ "style", "data-box-size", "data-position" ]
+                .map((name) => element?.getAttribute(name));
+            expect(box(figure)).toEqual([ "--include-note-width:30em;", "medium", "wrap-right" ]);
+            expect(box(section)).toEqual([ undefined, undefined, undefined ]);
+            expect(section?.querySelector(".link-embed-video-facade")).not.toBeNull();
+            expect(figure?.querySelector("figcaption")?.textContent).toBe("A caption");
+        });
+
         it("neuters a hostile scheme in the stored URL, on a page served to anyone", () => {
             // `data-*` values pass through the save-time sanitizer verbatim, so a note that arrives
             // by import, ETAPI or sync can carry `data-url="javascript:…"`. It must not become a

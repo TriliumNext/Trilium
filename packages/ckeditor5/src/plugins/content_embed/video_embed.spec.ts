@@ -8,6 +8,7 @@ import LinkEmbed from "../link_embed/link_embed.js";
 import { SIZE_ATTRIBUTES } from "../resizable_widgets/resizable_widgets.js";
 import ContentEmbed, {
     BOX_SIZE_COMMAND_NAME,
+    getCaption,
     POSITION_COMMAND_NAME,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -60,6 +61,14 @@ describe("ContentEmbedVideo", () => {
 
     function selectBlock(index: number) {
         editor.model.change((writer) => writer.setSelection(getBlock(index), "on"));
+    }
+
+    function getCaptionOf(index: number) {
+        const caption = getCaption(getBlock(index));
+        if (!caption) {
+            throw new Error(`Expected a caption on the block at ${index}.`);
+        }
+        return caption;
     }
 
     /** Inserts a paragraph and a video whose player is a frame of `src`, and returns the frame. */
@@ -188,7 +197,7 @@ describe("ContentEmbedVideo", () => {
         expect(editor.model.document.selection.getSelectedElement()).toBe(getBlock(1));
     });
 
-    it("has the Medium and Full sizes, a title, a position and no caption", () => {
+    it("has the Medium and Full sizes, a title, a position and a caption", () => {
         editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
         selectBlock(1);
 
@@ -197,13 +206,14 @@ describe("ContentEmbedVideo", () => {
             POSITION_COMMAND_NAME
         ];
         expect(commands.map((name) => editor.commands.get(name)?.isEnabled))
-            .toEqual([ true, true, false, true ]);
+            .toEqual([ true, true, true, true ]);
         const contentEmbed = editor.plugins.get(ContentEmbed);
         expect(contentEmbed.getBoxSizes(getFigure()))
             .toEqual([ { value: "medium", label: "Medium" }, { value: "full", label: "Full" } ]);
         expect(contentEmbed.getEmbedStateAt(getFigure())).toMatchObject({
             boxSize: "full", position: "center", isTitleSupported: true, isTitleShown: false,
-            isTitleToggleable: true, isCaptionSupported: false, url: VIDEO_URL
+            isTitleToggleable: true, isCaptionSupported: true, isCaptionToggleable: true,
+            hasCaption: false, url: VIDEO_URL
         });
 
         editor.execute(TOGGLE_TITLE_COMMAND_NAME);
@@ -212,6 +222,59 @@ describe("ContentEmbedVideo", () => {
 
         editor.execute(POSITION_COMMAND_NAME, { value: "right" });
         expect(editor.getData()).toContain(` data-position="right"`);
+    });
+
+    it("saves a caption in a figure around its section, which goes away with the caption", () => {
+        editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
+        selectBlock(1);
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME, { focusCaptionOnShow: true });
+        editor.model.change((writer) => writer.insertText("A caption", getCaptionOf(1), 0));
+
+        const caption = getFigure().querySelector(":scope > .include-note-wrapper + figcaption");
+        expect(caption?.textContent).toBe("A caption");
+        const section = `<section class="link-embed" ${PREVIEW_ATTRIBUTES}`
+            + ` data-box-size="full" data-hide-title="true">&nbsp;</section>`;
+        expect(editor.getData()).toBe(`<p>Text</p><figure class="captioned-content-embed">`
+            + `${section}<figcaption>A caption</figcaption></figure>`);
+
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+        expect(editor.getData()).toBe(`<p>Text</p>${section}`);
+    });
+
+    it("loads a caption saved in a figure around its section, and saves it the same way", () => {
+        const saved = `<figure class="captioned-content-embed"><section class="link-embed"`
+            + ` style="--include-note-width:30em;" ${PREVIEW_ATTRIBUTES} data-box-size="medium"`
+            + ` data-position="wrap-right">&nbsp;</section><figcaption>A caption</figcaption>`
+            + `</figure>`;
+        editor.setData(`<p>Text</p>${saved}<p>After</p>`);
+
+        const embed = getBlock(1);
+        expect(isVideoEmbed(embed)).toBe(true);
+        expect([ embed.getAttribute(SIZE_ATTRIBUTES.width), embed.getAttribute("position") ])
+            .toEqual([ "30em", "wrap-right" ]);
+        expect([ ...getCaptionOf(1).getChildren() ]
+            .map((child) => child.is("$text") ? child.data : child.name)).toEqual([ "A caption" ]);
+        expect(editor.model.document.getRoot()?.childCount).toBe(3);
+        expect(editor.getData()).toBe(`<p>Text</p>${saved}<p>After</p>`);
+    });
+
+    it("keeps the caption of a figure whose content takes none as a paragraph after it", () => {
+        editor.setData(`<figure class="captioned-content-embed"><section class="link-embed"`
+            + ` data-url="https://example.com/" data-embed-type="opengraph">&nbsp;</section>`
+            + `<figcaption>A caption</figcaption></figure>`);
+
+        expect([ getBlock(0).name, getBlock(1).name ]).toEqual([ "linkEmbed", "paragraph" ]);
+        expect(editor.getData()).toMatch(/<\/section><p>A caption<\/p>$/);
+    });
+
+    it("drops a figure around its section with no caption, and keeps one with no content", () => {
+        editor.setData(`<figure class="captioned-content-embed">${SAVED_PREVIEW}</figure>`
+            + `<figure class="captioned-content-embed"><figcaption>Text</figcaption></figure>`);
+
+        expect([ isVideoEmbed(getBlock(0)), getBlock(0).childCount ]).toEqual([ true, 0 ]);
+        expect(getBlock(1).name).toBe("paragraph");
+        expect(editor.getData()).toBe(`<section class="link-embed" ${PREVIEW_ATTRIBUTES}`
+            + ` data-box-size="full" data-hide-title="true">&nbsp;</section><p>Text</p>`);
     });
 
     it("is resized in width at Medium, which a box size sets to its own width", () => {

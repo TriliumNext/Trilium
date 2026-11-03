@@ -1345,7 +1345,11 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     border-bottom: 2px solid var(--main-background-color);
 }
 
-.include-note > figcaption {
+figure.captioned-content-embed {
+    margin: 0;
+}
+
+:is(.include-note, .captioned-content-embed) > figcaption {
     padding: 6px 1rem;
     font-size: .8em;
     text-align: center;

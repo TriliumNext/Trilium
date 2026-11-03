@@ -753,7 +753,10 @@ describe("openContextMenu", () => {
 
         it("opens a video externally first in its menu, and deletes it last", async () => {
             const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-            state = { ...state, url, isCaptionSupported: false, isConvertibleToLink: false };
+            state = {
+                ...state, url, isCaptionSupported: true, isCaptionToggleable: true,
+                hasCaption: false, isConvertibleToLink: false
+            };
             const openMenu = async () => {
                 await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
                 return mocks.show.mock.lastCall?.[0].items;
@@ -765,19 +768,20 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title" },
+                { title: "link_context_menu.show_caption", enabled: true, checked: false },
                 { kind: "separator" },
                 {
                     title: "link_context_menu.delete",
                     uiIcon: "bx bx-trash destructive-action-icon"
                 }
             ]);
-            expect(items).toHaveLength(6);
+            expect(items).toHaveLength(7);
             items[0].handler();
             expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
-            expect(pick(items[5])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(items[6])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
 
-            // An embed of a source has neither.
-            state = { ...state, url: null };
+            // An embed of a source has neither, nor a caption.
+            state = { ...state, url: null, isCaptionSupported: false };
             expect(await openMenu()).toMatchObject([
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title" }

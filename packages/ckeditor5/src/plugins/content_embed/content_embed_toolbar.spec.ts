@@ -151,6 +151,14 @@ describe("ContentEmbedToolbar", () => {
 
         setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
         expect(definition?.getRelatedElement(editor.editing.view.document.selection)).toBeNull();
+
+        // The caption of a video keeps its toolbar, as its player does.
+        setModelData(editor.model, `<contentEmbed embedType="youtube"`
+            + ` url="https://youtube.com/watch?v=abc12345678"><caption>A [] caption</caption>`
+            + `</contentEmbed>`);
+        expect(definition?.getRelatedElement(selection))
+            .toBe(editor.editing.view.document.getRoot()?.getChild(0));
+        expect(getRelatedElementFn(editor)(selection)).toBeNull();
     });
 
     it("offers Editable, the display modes, the content's tools, then the embed's items", () => {

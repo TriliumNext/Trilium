@@ -27,7 +27,7 @@ import FNote from "../../../entities/fnote";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import {
-    applyInlineMermaid, emptyUnknownEmbeds, rewriteMermaidDiagramsInContainer
+    applyInlineMermaid, emptyUnknownEmbeds, replaceWithEmbedBox, rewriteMermaidDiagramsInContainer
 } from "../../../services/content_renderer_text";
 import { t } from "../../../services/i18n";
 import { applyNoteImageVersions } from "../../../services/image_urls";
@@ -266,7 +266,7 @@ function applyContentEmbeds(container: HTMLDivElement) {
 
 /**
  * Shows each video of a link preview in the embed box the editor shows it in, with its title row
- * and without the menu of the editor.
+ * and caption, and without the menu of the editor.
  */
 function applyVideoEmbeds(container: HTMLDivElement) {
     for (const section of container.querySelectorAll<HTMLElement>("section.link-embed")) {
@@ -295,7 +295,7 @@ function applyVideoEmbeds(container: HTMLDivElement) {
         if (aspectRatio) {
             figure.style.setProperty(VIDEO_ASPECT_RATIO_PROPERTY, String(aspectRatio));
         }
-        section.replaceWith(figure);
+        replaceWithEmbedBox(section, figure);
         loadVideoEmbed(preview, figure);
     }
 }

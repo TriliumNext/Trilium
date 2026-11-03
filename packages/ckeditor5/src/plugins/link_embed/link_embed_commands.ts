@@ -6,6 +6,7 @@ import {
     type ModelWriter
 } from 'ckeditor5';
 
+import { getCaptionedEmbed } from '../content_embed/content_embed.js';
 import { createVideoEmbed, isVideoEmbed } from '../content_embed/video_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
@@ -158,7 +159,7 @@ export class ChangeLinkDisplayCommand extends Command {
 
     override async execute(options: { value: LinkDisplayMode }) {
         const model = this.editor.model;
-        const selected = getSelectedLinkWidget(this.editor);
+        const selected = this._getTarget();
 
         // No widget selected means the dropdown sits in the link balloon, over a native link.
         if (!selected) {
@@ -190,7 +191,7 @@ export class ChangeLinkDisplayCommand extends Command {
     }
 
     override refresh() {
-        const selected = getSelectedLinkWidget(this.editor);
+        const selected = this._getTarget();
 
         if (selected) {
             this.isEnabled = true;
@@ -240,6 +241,21 @@ export class ChangeLinkDisplayCommand extends Command {
 
         const range = findAttributeRange(position, 'linkHref', href, model);
         await replaceLinkWithPreview(this.editor, range, href, targetMode);
+    }
+
+    /**
+     * The link preview that the command acts on: the selected one, else, unless the caret is on a
+     * link, the video whose caption has the selection, which keeps its toolbar there.
+     */
+    private _getTarget(): ModelElement | null {
+        const selection = this.editor.model.document.selection;
+        const selected = getSelectedLinkWidget(this.editor);
+        if (selected || selection.hasAttribute('linkHref')) {
+            return selected;
+        }
+
+        const video = getCaptionedEmbed(selection.getFirstPosition());
+        return video && isVideoEmbed(video) ? video : null;
     }
 
     /** Delegates to the host to avoid duplicating URL detection logic. */
@@ -341,11 +357,16 @@ function rebuildLinkWidget(
 
     // Replaced rather than given new attributes: the editing downcast is elementToElement, which
     // does not re-render on attribute changes. A preview that keeps its shape keeps its other
-    // attributes, such as the box of a video.
+    // attributes, such as the box of a video, and its children, such as the caption of a video.
     const ownAttributes = Object.fromEntries(element.getAttributes());
-    const replacement = getLinkPreviewName(mode, attrs) === element.name
+    const keepsShape = getLinkPreviewName(mode, attrs) === element.name;
+    const replacement = keepsShape
         ? writer.createElement(element.name, { ...ownAttributes, ...attrs })
         : createLinkPreview(writer, mode, attrs);
+    // The only child of a link preview is the caption of a video.
+    for (const caption of keepsShape ? element.getChildren() : []) {
+        writer.append(writer.cloneElement(caption as ModelElement), replacement);
+    }
     editor.model.insertContent(replacement, writer.createRangeOn(element));
     return replacement;
 }

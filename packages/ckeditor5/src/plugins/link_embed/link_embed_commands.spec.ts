@@ -368,9 +368,10 @@ describe("LinkEmbed commands", () => {
             expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
         });
 
-        it("keeps the box, title and position of a video retitled in the dialog", async () => {
+        it("keeps the box, title, position and caption of a retitled video", async () => {
             setModelData(editor.model, `[<contentEmbed boxSize="full" embedType="youtube"`
-                + ` position="right" title="T" url="${url}"></contentEmbed>]`);
+                + ` position="right" title="T" url="${url}"><caption>Note</caption>`
+                + `</contentEmbed>]`);
 
             await editor.execute(LINK_EMBED_COMMAND, { url, mode: "embed", title: "Mine" });
 
@@ -379,7 +380,26 @@ describe("LinkEmbed commands", () => {
             expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
                 url, embedType: "youtube", title: "Mine", boxSize: "full", position: "right"
             });
+            expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("acts on a video from its caption, and on a link in the caption from that link", () => {
+            const caption = (text: string) => `<contentEmbed embedType="youtube" title="T"`
+                + ` url="${url}"><caption>${text}</caption></contentEmbed>`;
+            const link = "https://example.com/";
+            setModelData(editor.model, caption("A [] caption"));
+            const command = changeCommand(editor);
+            expect([ command.isEnabled, command.value, command.url ])
+                .toEqual([ true, "embed", url ]);
+
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+            expect(findElement(editor, "contentEmbed")).toBeUndefined();
+            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
+
+            setModelData(editor.model, caption(`<$text linkHref="${link}">a[]b</$text>`));
+            expect([ command.isEnabled, command.value, command.url ])
+                .toEqual([ true, "plain", link ]);
         });
 
         it("leaves other embeds alone", () => {

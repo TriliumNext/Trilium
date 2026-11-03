@@ -48,6 +48,27 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
 `--include-note-width` / `--include-note-height` in `style`. The figure keeps an optional
 `<figcaption>`.
 
+**Captions of an embed whose element is not a `<figure>`** (`_defineCaptionedEmbedConverters()`
+in `content_embed.ts`). While such an embed has a caption, the note saves its element in a
+`<figure class="captioned-content-embed">` (`CAPTIONED_CONTENT_EMBED_CLASS`), followed by the
+`<figcaption>`, and without a caption it saves the bare element again. Every kind gets this
+without code of its own: a `low` data downcast listener wraps whatever element the kind's
+converter bound, a data mapper hook puts the caption after that element, and an upcast at
+`high` converts the element and turns the `<figcaption>` into the `caption` of the embed
+(`isEmbedCaptionToggleable()`), or into text after content that takes none. The figure is bound
+to the embed as well, view to model only, so the mapper counts it as one node; the embed still
+maps to its element, where the attribute converters (width, position) write. A kind opts in
+through `hasCaptionSupport()`; only inline source embeds stay out. Read-only views replace the
+figure with the box and move the caption into it (`replaceWithEmbedBox()` in
+`content_renderer_text.ts`); share pages move `style`, `data-box-size` and `data-position` from
+the element to the figure (`moveBoxToCaptionedFigure()`), which the share CSS places; Markdown
+export keeps the figure as raw HTML.
+
+**An embed whose caption has the selection looks selected**, as one whose player or editor has
+the focus (which selects it): `markEmbedOfSelectedCaption()` adds `ck-widget_selected` after
+`Widget` marks the selection and takes it away on `cleanSelection`. `Widget` itself marks only
+widgets inside the selection.
+
 - **Inline source** (`inline_source.ts`, `ContentEmbedInlineSource`) keeps the document readable
   elsewhere: the note exports to Markdown as a fenced `mermaid` block, other apps render it, and
   undo in the note undoes source edits through the shared undo history (see _Undo history_ below).
@@ -63,7 +84,13 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   (`VIDEO_EMBED_BOX_SIZES`); `readVideoEmbedBox()` reads a video saved before as Full and
   untitled, and `createVideoEmbed()` makes a new one Medium at `getVideoMediumWidth()` (20em
   high), which the box size command sets again. Height follows width (`isHeightResizable` is
-  per element). No caption.
+  per element). A caption is saved in the captioned figure (above). The video toolbar also
+  shows while the caret is in the caption (`findRelatedVideo()`), and its Copy URL and Display
+  act on the video through `ChangeLinkDisplayCommand._getTarget()`: the selected preview, else,
+  unless the caret is on a link, the video of the caption (`getCaptionedEmbed()`).
+  `getSelectedLinkWidget()` itself reads only the selected element, as the link balloon shares
+  the command and Ctrl+K in a caption must edit the caption's own link. `rebuildLinkWidget()`
+  copies the caption into a preview that keeps its shape.
   The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
   server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short
   answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
@@ -76,7 +103,8 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the
   converters follow the map. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
   opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
-  `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮. Its ⋮ menu
+  `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮. The caption
+  is toggled from ⋮ only. Its ⋮ menu
   (`getVideoItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
   (`openUrlExternally()` in `services/open.ts`) above the embed's commands and _Delete_ below.
   `ReadOnlyText`'s `applyVideoEmbeds()` swaps the section for the same box.

@@ -38,6 +38,7 @@ import ContentEmbed, {
     DELETE_COMMAND_NAME,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
+    getCaption,
     POSITION_COMMAND_NAME,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
@@ -1285,6 +1286,34 @@ describe("ContentEmbed captions", () => {
         editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
         expect(editor.getData()).toContain("<figcaption>Caption</figcaption>");
         expect(isSelectionInCaption()).toBe(false);
+    });
+
+    it("looks selected while its caption has the selection, as while it is selected", () => {
+        editor.setData(`<p>Text</p>${CAPTIONED}`);
+        const isMarked = () => !!editor.editing.view.getDomRoot()
+            ?.querySelector("figure.include-note")?.classList.contains("ck-widget_selected");
+        const embed = findContentEmbed(editor);
+        const caption = embed && getCaption(embed);
+        const paragraph = editor.model.document.getRoot()?.getChild(0);
+        if (!caption || !paragraph) {
+            throw new Error("Expected a paragraph and a captioned embed.");
+        }
+        expect(isMarked()).toBe(false);
+
+        editor.model.change((writer) => writer.setSelection(caption, 2));
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(caption, "end"));
+        expect(isMarked()).toBe(true);
+
+        editor.model.change((writer) => writer.setSelection(paragraph, 0));
+        expect(isMarked()).toBe(false);
+
+        selectEmbed();
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(caption, 0));
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(paragraph, 0));
+        expect(isMarked()).toBe(false);
     });
 
     it("keeps the rendered content while the caption is toggled and edited", () => {

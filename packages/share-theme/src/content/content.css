@@ -344,20 +344,23 @@ body:not(.math-loaded) .math-tex {
 }
 
 /* An include, or the video of a link preview, placed and sized as the editor saved it. */
-.ck-content :is(figure.include-note, section.link-embed:where([data-embed-type="youtube"])) {
+.ck-content :is(
+    figure.include-note, figure.captioned-content-embed,
+    section.link-embed:where([data-embed-type="youtube"])
+) {
     clear: both;
     margin: 1em 0;
 
     &:is(
         [data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"],
-        .link-embed
+        .link-embed, .captioned-content-embed
     ) {
         margin-inline: auto;
         max-width: 100%;
         width: var(--include-note-width, auto);
     }
 
-    &.link-embed[data-box-size="full"] {
+    &:is(.link-embed, :has(> .link-embed))[data-box-size="full"] {
         max-width: min(100%, 70vh * var(--video-aspect-ratio, 16 / 9));
     }
 
@@ -392,8 +395,15 @@ body:not(.math-loaded) .math-tex {
     }
 }
 
+.ck-content figure.captioned-content-embed > section.link-embed {
+    margin: 0;
+    width: auto;
+}
+
 @media (max-width: 48em) {
-    .ck-content :is(figure.include-note, section.link-embed)[data-position] {
+    .ck-content :is(
+        figure.include-note, figure.captioned-content-embed, section.link-embed
+    )[data-position] {
         float: none;
         clear: both;
         margin: 1em 0;
@@ -401,7 +411,7 @@ body:not(.math-loaded) .math-tex {
     }
 }
 
-.ck-content .include-note > figcaption {
+.ck-content :is(.include-note, .captioned-content-embed) > figcaption {
     margin-top: .5em;
     border-top: 1px solid var(--background-active);
     padding-top: .5em;

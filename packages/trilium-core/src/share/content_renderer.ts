@@ -1,6 +1,7 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
     getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewVideoId,
     getNestedEmbedOptions, getNoteEmbedHref, getVideoAspectRatio, isHttpUrl, isImageAttachmentRole,
     MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData,
@@ -642,6 +643,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
             if (getLinkPreviewVideoId(data)) {
                 setVideoBox(embedEl, getVideoAspectRatio(data));
+                moveBoxToCaptionedFigure(embedEl);
             }
         }
     }
@@ -802,6 +804,29 @@ function setVideoBox(section: HTMLElement, aspectRatio: number | null) {
         const style = section.getAttribute("style")?.replace(/;\s*$/, "");
         const shape = `${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}`;
         section.setAttribute("style", style ? `${style};${shape}` : shape);
+    }
+}
+
+/** The attributes that size and place the box of an embed. */
+const EMBED_BOX_ATTRIBUTES = [ "style", "data-box-size", "data-position" ];
+
+/**
+ * Moves the box of `element`, an embed saved with a caption, onto the
+ * `<figure class="captioned-content-embed">` that holds both, which the share theme then places
+ * and sizes as it does the embed.
+ */
+function moveBoxToCaptionedFigure(element: HTMLElement) {
+    const figure = element.parentNode;
+    if (figure?.tagName !== "FIGURE" || !figure.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS)) {
+        return;
+    }
+
+    for (const name of EMBED_BOX_ATTRIBUTES) {
+        const value = element.getAttribute(name);
+        if (value !== undefined) {
+            figure.setAttribute(name, value);
+            element.removeAttribute(name);
+        }
     }
 }
 

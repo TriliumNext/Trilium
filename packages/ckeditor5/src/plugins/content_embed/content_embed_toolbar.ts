@@ -80,14 +80,26 @@ export default class ContentEmbedToolbar extends Plugin {
 
 /** The embed that the toolbar shows for: the selected one, or the one whose caption is edited. */
 function findRelatedEmbed(selection: ViewDocumentSelection) {
+    return findRelatedWidget(selection, isContentEmbedWidget);
+}
+
+/** The video embed that the selection is on or in the caption of, with a toolbar of its own. */
+function findRelatedVideo(selection: ViewDocumentSelection) {
+    return findRelatedWidget(selection, isVideoEmbedWidget);
+}
+
+/** The widget that `matches()` and that `selection` is on or inside, or `null`. */
+function findRelatedWidget(
+    selection: ViewDocumentSelection, matches: (element: ViewElement) => boolean
+) {
     const selectedElement = selection.getSelectedElement();
 
-    if (selectedElement && isContentEmbedWidget(selectedElement)) {
+    if (selectedElement && matches(selectedElement)) {
         return selectedElement;
     }
 
     for (const ancestor of selection.getFirstPosition()?.getAncestors() ?? []) {
-        if (ancestor.is("element") && isContentEmbedWidget(ancestor)) {
+        if (ancestor.is("element") && matches(ancestor)) {
             return ancestor;
         }
     }
@@ -95,15 +107,13 @@ function findRelatedEmbed(selection: ViewDocumentSelection) {
     return null;
 }
 
-/** The video embed that the selection is on, which has a toolbar of its own. */
-function findRelatedVideo(selection: ViewDocumentSelection) {
-    const selected = selection.getSelectedElement();
-    return selected && isWidget(selected) && selected.hasClass(VIDEO_EMBED_CLASS) ? selected : null;
-}
-
 function isContentEmbedWidget(element: ViewElement): boolean {
     return isWidget(element) && element.hasClass("include-note")
         && !element.hasClass(VIDEO_EMBED_CLASS);
+}
+
+function isVideoEmbedWidget(element: ViewElement): boolean {
+    return isWidget(element) && element.hasClass(VIDEO_EMBED_CLASS);
 }
 
 /**

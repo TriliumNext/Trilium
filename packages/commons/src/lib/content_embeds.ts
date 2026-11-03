@@ -40,6 +40,13 @@ export const EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE = "text-plain";
 export const VIDEO_EMBED_CLASS = "video-embed";
 
 /**
+ * The class of the `<figure>` that holds an embed saved as an element other than a `<figure>`,
+ * such as the `<section>` of a video, and its `<figcaption>`. An embed without a caption is saved
+ * without it.
+ */
+export const CAPTIONED_CONTENT_EMBED_CLASS = "captioned-content-embed";
+
+/**
  * The attribute that marks a `<section>` as a content embed and names its kind, for kinds added
  * after include notes and source embeds. A version that does not know the kind keeps the section
  * unchanged: its `class` and `data-*` attributes, and its content as a fallback for readers.

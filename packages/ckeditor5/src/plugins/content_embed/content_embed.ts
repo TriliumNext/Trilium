@@ -3,7 +3,10 @@ import {
 	Command,
 	type DomEmitter,
 	DomEmitterMixin,
+	type DowncastCleanSelectionEvent,
 	type DowncastConversionApi,
+	type DowncastInsertEvent,
+	type DowncastSelectionEvent,
 	type Editor,
 	enableViewPlaceholder,
 	IconCaption,
@@ -14,15 +17,19 @@ import {
 	ModelElement,
 	type ModelNode,
 	type ModelDocumentFragment,
+	type ModelPosition,
 	type ModelWriter,
 	type PlaceholderableViewElement,
 	Plugin,
 	toWidget,
 	toWidgetEditable,
+	type UpcastElementEvent,
 	View,
 	type ViewEditableElement,
 	type ViewElement,
+	ViewPosition,
 	Widget,
+	WIDGET_SELECTED_CLASS_NAME,
 	type Observable
 } from 'ckeditor5';
 import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
@@ -32,8 +39,9 @@ import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
-	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, type LinkPreviewData,
-	normalizeMimeTypeForCKEditor, parseBlockRange, VIDEO_EMBED_BOX_SIZES, VIDEO_EMBED_CLASS
+	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
+	type LinkPreviewData, normalizeMimeTypeForCKEditor, parseBlockRange, VIDEO_EMBED_BOX_SIZES,
+	VIDEO_EMBED_CLASS
 } from '@triliumnext/commons';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, {
@@ -162,7 +170,7 @@ export interface ContentEmbedState {
 	/** Whether the title shows, which a Tiny or an Expandable embed always does. */
 	isTitleShown: boolean;
 	isTitleToggleable: boolean;
-	/** Whether the embed can have a caption, which an embed of a source or a video cannot. */
+	/** Whether the embed can have a caption, which an embed of a source cannot. */
 	isCaptionSupported: boolean;
 	hasCaption: boolean;
 	isCaptionToggleable: boolean;
@@ -561,6 +569,7 @@ class ContentEmbedEditing extends Plugin {
 		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
+		this.markEmbedOfSelectedCaption();
 
 		restoreRendererFocusOnInput( this );
 		fireFrameFocusEvents( editor, this.windowEmitter );
@@ -799,7 +808,8 @@ class ContentEmbedEditing extends Plugin {
 		conversion.for( 'editingDowncast' ).elementToElement( {
 			model: 'caption',
 			view: ( modelElement, { writer: viewWriter } ) => {
-				if ( !isContentEmbed( modelElement.parent ) ) {
+				const embed = modelElement.parent;
+				if ( !isContentEmbed( embed ) ) {
 					return null;
 				}
 
@@ -813,10 +823,13 @@ class ContentEmbedEditing extends Plugin {
 				} );
 
 				return toWidgetEditable( figcaption, viewWriter, {
-					label: t( 'Caption for the included note' )
+					label: isVideoEmbed( embed )
+						? t( 'Caption for the video' )
+						: t( 'Caption for the included note' )
 				} );
 			}
 		} );
+		this._defineCaptionedEmbedConverters();
 
 		// The default mapping places model offset 0 before the content wrapper, which has no model
 		// length. The caption goes after it.
@@ -836,6 +849,120 @@ class ContentEmbedEditing extends Plugin {
 					viewElement, Math.min( offset, viewElement.childCount ) );
 			}
 		);
+	}
+
+	/**
+	 * Saves an embed whose own element is not a `<figure>`, such as the `<section>` of a video,
+	 * in a `<figure class="captioned-content-embed">` while it has a caption, with the
+	 * `<figcaption>` after the element, and loads it back.
+	 */
+	_defineCaptionedEmbedConverters() {
+		const editor = this.editor;
+		const { downcastDispatcher, mapper, upcastDispatcher } = editor.data;
+
+		// Runs after the converter of the embed's kind draws its element, and before the default
+		// converter of the `lowest` priority converts the caption.
+		downcastDispatcher.on<DowncastInsertEvent<ModelElement>>( 'insert:contentEmbed',
+			( _evt, { item }, api ) => {
+				const element = api.mapper.toViewElement( item );
+				if ( !element || element.is( 'element', 'figure' ) || !getCaption( item ) ) {
+					return;
+				}
+
+				const writer = api.writer;
+				const figure = writer.createContainerElement( 'figure', {
+					class: CAPTIONED_CONTENT_EMBED_CLASS
+				} );
+				writer.insert( writer.createPositionBefore( element ), figure );
+				writer.move( writer.createRangeOn( element ),
+					writer.createPositionAt( figure, 0 ) );
+				// The figure maps to the embed, so the mapper counts it as one model node. The
+				// embed still maps to its element, which the attribute converters write to.
+				api.mapper.bindElements( item, figure );
+				api.mapper.bindElements( item, element );
+			}, { priority: 'low' } );
+
+		// The children of such an embed, its caption, go after its element in the figure.
+		mapper.on<MapperModelToViewPositionEvent>( 'modelToViewPosition', ( _evt, data ) => {
+			const embed = data.modelPosition.parent;
+			const element = isContentEmbed( embed )
+				? data.mapper.toViewElement( embed )
+				: undefined;
+			const figure = element?.parent;
+			if ( !element || !figure?.is( 'element' ) || !isCaptionedEmbedView( figure ) ) {
+				return;
+			}
+
+			const offset = figure.getChildIndex( element ) + 1 + data.modelPosition.offset;
+			data.viewPosition = new ViewPosition( figure, offset );
+		} );
+
+		upcastDispatcher.on<UpcastElementEvent>( 'element:figure', ( _evt, data, api ) => {
+			const figure = data.viewItem;
+			if ( !isCaptionedEmbedView( figure )
+				|| !api.consumable.test( figure, { name: true } ) ) {
+				return;
+			}
+
+			const children = [ ...figure.getChildren() ]
+				.filter( ( child ): child is ViewElement => child.is( 'element' ) );
+			const figcaption = children.find( child => child.name === 'figcaption' );
+			const element = children.find( child => child !== figcaption );
+			if ( !element ) {
+				return;
+			}
+
+			api.consumable.consume( figure, {
+				name: true, classes: CAPTIONED_CONTENT_EMBED_CLASS
+			} );
+			const converted = api.convertItem( element, data.modelCursor );
+			const modelRange = converted.modelRange;
+			/* v8 ignore next 3 -- the default element converter gives every element a range */
+			if ( !modelRange ) {
+				return;
+			}
+
+			const embed = modelRange.start.nodeAfter;
+			let modelCursor = converted.modelCursor;
+			if ( figcaption && isContentEmbed( embed )
+				&& isEmbedCaptionToggleable( editor, embed ) ) {
+				const caption = api.writer.createElement( 'caption' );
+				api.writer.append( caption, embed );
+				api.consumable.consume( figcaption, { name: true } );
+				api.convertChildren( figcaption, caption );
+			} else if ( figcaption ) {
+				// Content that takes no caption keeps the text of the caption after it.
+				modelCursor = api.convertItem( figcaption, modelCursor ).modelCursor;
+			}
+
+			data.modelRange = api.writer.createRange( modelRange.start, modelCursor );
+			data.modelCursor = modelCursor;
+		}, { priority: 'high' } );
+	}
+
+	/**
+	 * Marks the embed whose caption has the selection as selected, as `Widget` marks the embed
+	 * that the selection is on, such as one whose player has the focus.
+	 */
+	private markEmbedOfSelectedCaption() {
+		const dispatcher = this.editor.editing.downcastDispatcher;
+		let marked: ViewElement | null = null;
+
+		dispatcher.on<DowncastCleanSelectionEvent>( 'cleanSelection', ( _evt, _data, api ) => {
+			if ( marked ) {
+				api.writer.removeClass( WIDGET_SELECTED_CLASS_NAME, marked );
+				marked = null;
+			}
+		} );
+		// After `Widget` marks the widgets in the selection.
+		dispatcher.on<DowncastSelectionEvent>( 'selection', ( _evt, { selection }, api ) => {
+			const embed = getCaptionedEmbed( selection.getFirstPosition() );
+			const view = embed && api.mapper.toViewElement( embed );
+			if ( view ) {
+				api.writer.addClass( WIDGET_SELECTED_CLASS_NAME, view );
+				marked = view;
+			}
+		}, { priority: 'lowest' } );
 	}
 
 	/**
@@ -1334,9 +1461,9 @@ function hasTitleRow( embed: ModelElement ) {
 	return !isInlineSourceEmbed( embed );
 }
 
-/** Whether `embed` can have a caption: an embed of a source or of a video has none. */
+/** Whether `embed` can have a caption: an embed of a source has none. */
 function hasCaptionSupport( embed: ModelElement ) {
-	return !isInlineSourceEmbed( embed ) && !isVideoEmbed( embed );
+	return !isInlineSourceEmbed( embed );
 }
 
 /** Whether the content of `embed` has an editable mode, which its content type opts in to. */
@@ -1414,6 +1541,12 @@ function isEmbedConvertibleToLink( editor: Editor, embed: ModelElement ) {
 		&& editor.model.schema.isRegistered( 'reference' );
 }
 
+/** The embed whose caption holds `position`, or `null`. */
+export function getCaptionedEmbed( position: ModelPosition | null ): ModelElement | null {
+	const embed = position?.findAncestor( 'caption' )?.parent ?? null;
+	return isContentEmbed( embed ) ? embed : null;
+}
+
 /** The caption of `embed`, or `null`. */
 export function getCaption( embed: ModelElement ) {
 	return Array.from( embed.getChildren() )
@@ -1425,6 +1558,11 @@ function isContentEmbedCaptionView( element: ViewElement ) {
 	const parent = element.parent;
 	return element.name === 'figcaption' && !!parent?.is( 'element' )
 		&& parent.hasClass( 'include-note' );
+}
+
+/** Whether `element` is the `<figure>` that holds an embed saved with its caption. */
+function isCaptionedEmbedView( element: ViewElement ) {
+	return element.name === 'figure' && element.hasClass( CAPTIONED_CONTENT_EMBED_CLASS );
 }
 
 /** The index of the content wrapper among the children of an embed's view, or `-1`. */
