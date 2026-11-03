@@ -48,7 +48,8 @@ describe("ResizableWidgets", () => {
 
     async function createEditor(
         config: Partial<ResizableWidgetConfig> = {},
-        extraPlugins: Array<typeof Plugin> = []
+        extraPlugins: Array<typeof Plugin> = [],
+        editorConfig: Record<string, unknown> = {}
     ) {
         class ResizableTestBox extends Plugin {
             static get requires() {
@@ -81,7 +82,7 @@ describe("ResizableWidgets", () => {
 
         editor = await createTestEditor([
             Essentials, Paragraph, Undo, ResizableTestBox, ...extraPlugins
-        ]);
+        ], editorConfig);
         return editor;
     }
 
@@ -499,6 +500,62 @@ describe("ResizableWidgets", () => {
         expect(getSize()).toBe("<testBox></testBox>");
     });
 
+    it("shows a hint while the pointer rests on the corner, until it leaves or presses", async () => {
+        const getHint = () => document
+            .querySelector(".tooltip.content-hint.text-editor-content-tooltip")?.textContent ?? null;
+        const enter = (name: string) => getHandle(name)
+            .dispatchEvent(new PointerEvent("pointerenter"));
+        await createEditor();
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box) {
+            throw new Error("Expected a box.");
+        }
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(() => getComputedStyle(getHandle("corner")).display).toBe("block");
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        registerTestCleanup(() => vi.useRealTimers());
+
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).toBe("Click and drag to resize the block. "
+            + "Double-click to reset to the default size.");
+        editor.editing.view.forceRender();
+        vi.advanceTimersByTime(60_000);
+        expect(getHint()).not.toBeNull();
+        press(getHandle("corner"));
+        expect(getHint()).toBeNull();
+        release();
+
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        getHandle("corner").dispatchEvent(new PointerEvent("pointerleave"));
+        expect(getHint()).toBeNull();
+
+        // A touch presses during the dwell, and only the corner has a hint.
+        enter("corner");
+        press(getHandle("corner"));
+        release();
+        enter("width");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).toBeNull();
+
+        // A removed handle gets no `pointerleave`.
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).not.toBeNull();
+        editor.setData("<p>text</p>");
+        expect(getHint()).toBeNull();
+
+        vi.useRealTimers();
+        await createEditor({}, [], { contentHintsEnabled: false });
+        editor.setData(RESIZED);
+        enter("corner");
+        await sleep(300);
+        expect(getHint()).toBeNull();
+    });
+
     it("resizes the height of the widget itself without a height target", async () => {
         await createEditor({ heightTarget: undefined });
         editor.setData("<div class=\"test-box\"></div>");
@@ -631,4 +688,8 @@ function tap(target: Element) {
 
 function nextFrame() {
     return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

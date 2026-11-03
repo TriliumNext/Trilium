@@ -10,6 +10,7 @@ import {
     WidgetToolbarRepository
 } from "ckeditor5";
 
+import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
 import {
     type ResizeAnchor, type ResizeAxes, type ResizeSize, startResizeGesture
 } from "./resize_gesture.js";
@@ -72,6 +73,7 @@ const RESIZING_CLASS = "ck-widget_resizing";
 const TOOLBAR_LOCK = "ResizableWidgets";
 const DEFAULT_MIN_SIZE = 2;
 const DOUBLE_TAP_MS = 400;
+const HINT_DWELL_MS = 200;
 const EM_PATTERN = /^\d+(\.\d+)?em$/;
 
 /**
@@ -84,9 +86,29 @@ export default class ResizableWidgets extends Plugin {
     private lastTap: { handle: Element; time: number } | null = null;
     /** Cancels the resize under way, if any. */
     private cancelResize: (() => void) | null = null;
+    /** Shows the hints of the corner handles, or `null` while content hints are switched off. */
+    private hintManager: ContentHintManager | null = null;
+    /** The corner handle that the pointer rests on, and its hint. */
+    private hoveredHint: { handle: HTMLElement; hint: HintHandle } | null = null;
 
     static get pluginName() {
         return "ResizableWidgets" as const;
+    }
+
+    init() {
+        if (this.editor.config.get("contentHintsEnabled") !== false) {
+            this.hintManager = new ContentHintManager({
+                tooltipOptions: { customClass: "text-editor-content-tooltip" }
+            });
+            // The editor can hide or remove the hovered handle without a `pointerleave`.
+            this.listenTo(this.editor.editing.view, "render", () => {
+                const hovered = this.hoveredHint;
+                if (hovered && !hovered.handle.checkVisibility()) {
+                    hovered.hint.hide();
+                    this.hoveredHint = null;
+                }
+            });
+        }
     }
 
     /** Makes the widgets of `modelName` resizable. Call it from `init()` of the widget's plugin. */
@@ -147,6 +169,7 @@ export default class ResizableWidgets extends Plugin {
 
     override destroy() {
         this.cancelResize?.();
+        this.hintManager?.destroy();
         super.destroy();
     }
 
@@ -155,6 +178,7 @@ export default class ResizableWidgets extends Plugin {
         const startResize = (event: PointerEvent, handle: HTMLElement, name: string) => {
             this.startResize(event, handle, HANDLES[name], subject);
         };
+        const addHint = (handle: HTMLElement) => this.addCornerHint(handle);
 
         return writer.createUIElement("div", {
             class: "ck-widget__resize-handles",
@@ -166,10 +190,36 @@ export default class ResizableWidgets extends Plugin {
                 const handle = domDocument.createElement("div");
                 handle.className = `ck-widget__resize-handle ck-widget__resize-handle_${name}`;
                 handle.addEventListener("pointerdown", (event) => startResize(event, handle, name));
+                if (name === "corner") {
+                    addHint(handle);
+                }
                 domElement.append(handle);
             }
             return domElement;
         });
+    }
+
+    /** Shows the hint of `handle` while the pointer rests on it, until it is pressed. */
+    private addCornerHint(handle: HTMLElement) {
+        const t = this.editor.t;
+        const hint = this.hintManager?.createHandle(handle, t(
+            "Click and drag to resize the block. Double-click to reset to the default size."
+        ));
+        if (!hint) {
+            return;
+        }
+
+        const hide = () => {
+            this.hoveredHint = null;
+            hint.hide();
+        };
+        // A tap enters before its `pointerdown` cancels the dwell; its `mouseenter` comes after.
+        handle.addEventListener("pointerenter", () => {
+            this.hoveredHint = { handle, hint };
+            hint.showAfter(HINT_DWELL_MS);
+        });
+        handle.addEventListener("pointerleave", hide);
+        handle.addEventListener("pointerdown", hide);
     }
 
     private startResize(
