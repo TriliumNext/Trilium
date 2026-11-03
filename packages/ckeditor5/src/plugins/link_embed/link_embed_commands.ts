@@ -6,7 +6,7 @@ import {
     type ModelWriter
 } from 'ckeditor5';
 
-import { getCaptionedEmbed } from '../content_embed/content_embed.js';
+import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
 import { createVideoEmbed, isVideoEmbed } from '../content_embed/video_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
@@ -180,6 +180,7 @@ export class ChangeLinkDisplayCommand extends Command {
         if (targetMode === 'plain') {
             model.change(writer => {
                 const text = isHttpUrl(url) ? writer.createText(url, { linkHref: url }) : writer.createText(url);
+                keepCaptionText(writer, selected);
                 model.insertContent(text, writer.createRangeOn(selected));
             });
             return;
@@ -359,16 +360,34 @@ function rebuildLinkWidget(
     // does not re-render on attribute changes. A preview that keeps its shape keeps its other
     // attributes, such as the box of a video, and its children, such as the caption of a video.
     const ownAttributes = Object.fromEntries(element.getAttributes());
-    const keepsShape = getLinkPreviewName(mode, attrs) === element.name;
-    const replacement = keepsShape
-        ? writer.createElement(element.name, { ...ownAttributes, ...attrs })
-        : createLinkPreview(writer, mode, attrs);
-    // The only child of a link preview is the caption of a video.
-    for (const caption of keepsShape ? element.getChildren() : []) {
-        writer.append(writer.cloneElement(caption as ModelElement), replacement);
+    let replacement: ModelElement;
+    if (getLinkPreviewName(mode, attrs) === element.name) {
+        replacement = writer.createElement(element.name, { ...ownAttributes, ...attrs });
+        // The only child of a link preview is the caption of a video.
+        for (const caption of element.getChildren()) {
+            writer.append(writer.cloneElement(caption as ModelElement), replacement);
+        }
+    } else {
+        replacement = createLinkPreview(writer, mode, attrs);
+        keepCaptionText(writer, element);
     }
     editor.model.insertContent(replacement, writer.createRangeOn(element));
     return replacement;
+}
+
+/**
+ * Moves the content of the caption of `element`, a video that a shape without a caption replaces,
+ * into a paragraph after it.
+ */
+function keepCaptionText(writer: ModelWriter, element: ModelElement) {
+    const caption = isContentEmbed(element) ? getCaption(element) : null;
+    if (!caption || caption.isEmpty) {
+        return;
+    }
+
+    const paragraph = writer.createElement('paragraph');
+    writer.insert(paragraph, writer.createPositionAfter(element));
+    writer.move(writer.createRangeIn(caption), writer.createPositionAt(paragraph, 0));
 }
 
 /**

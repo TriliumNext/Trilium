@@ -1083,34 +1083,45 @@ describe("content_renderer", () => {
                 content: `<p>Videos</p>`
                     + `${video} data-aspect-ratio="9/16" data-box-size="medium" style="--include-note-width:11.3em;"></section>`
                     + `${video}></section>`
+                    + `${video} data-aspect-ratio="9/16"></section>`
             });
 
             const sections = parse(String(getContent(note).content)).querySelectorAll("section");
             expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
                 .toEqual([
                     [ "medium", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
-                    [ "full", undefined ]
+                    [ "full", undefined ],
+                    [ "full", "--video-aspect-ratio:0.5625" ]
                 ]);
         });
 
         it("places a video saved with a caption by the figure that holds both", () => {
+            const video = `<section class="link-embed"`
+                + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const captioned = (section: string) => `<figure class="captioned-content-embed">`
+                + `${section}&nbsp;</section><figcaption>A caption</figcaption></figure>`;
             const note = buildShareNote({
-                content: `<figure class="captioned-content-embed"><section class="link-embed"`
-                    + ` style="--include-note-width:30em;"`
-                    + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
-                    + ` data-embed-type="youtube" data-box-size="medium"`
-                    + ` data-position="wrap-right">&nbsp;</section>`
-                    + `<figcaption>A caption</figcaption></figure>`
+                content: captioned(`${video} style="--include-note-width:30em;"`
+                    + ` data-box-size="medium" data-position="wrap-right">`)
+                    + captioned(`${video}>`)
             });
 
-            const figure = parse(String(getContent(note).content)).querySelector("figure");
-            const section = figure?.querySelector("section.link-embed");
-            const box = (element: typeof section) => [ "style", "data-box-size", "data-position" ]
-                .map((name) => element?.getAttribute(name));
-            expect(box(figure)).toEqual([ "--include-note-width:30em;", "medium", "wrap-right" ]);
-            expect(box(section)).toEqual([ undefined, undefined, undefined ]);
-            expect(section?.querySelector(".link-embed-video-facade")).not.toBeNull();
-            expect(figure?.querySelector("figcaption")?.textContent).toBe("A caption");
+            const figures = parse(String(getContent(note).content)).querySelectorAll("figure");
+            const box = (element: ReturnType<typeof parse> | null | undefined) => [
+                "style", "data-box-size", "data-position"
+            ].map((name) => element?.getAttribute(name));
+            expect(figures.map((figure) => [
+                box(figure), box(figure.querySelector("section.link-embed"))
+            ])).toEqual([
+                [
+                    [ "--include-note-width:30em;", "medium", "wrap-right" ],
+                    [ undefined, undefined, undefined ]
+                ],
+                [ [ undefined, "full", undefined ], [ undefined, undefined, undefined ] ]
+            ]);
+            expect(figures[0]?.querySelector(".link-embed-video-facade")).not.toBeNull();
+            expect(figures[0]?.querySelector("figcaption")?.textContent).toBe("A caption");
         });
 
         it("neuters a hostile scheme in the stored URL, on a page served to anyone", () => {

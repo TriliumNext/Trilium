@@ -384,6 +384,24 @@ describe("LinkEmbed commands", () => {
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
         });
 
+        it("keeps the caption of a video given another display as a paragraph after it", () => {
+            const captioned = (caption: string) => `<paragraph>Before</paragraph>[<contentEmbed`
+                + ` embedType="youtube" title="T" url="${url}"><caption>${caption}</caption>`
+                + `</contentEmbed>]`;
+            const kept = /<p>A <a href="https:\/\/example\.com\/">note<\/a><\/p>$/;
+            for (const value of [ "card", "inline", "plain" ] as const) {
+                setModelData(editor.model,
+                    captioned(`A <$text linkHref="https://example.com/">note</$text>`));
+                editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value });
+                expect(findElement(editor, "contentEmbed")).toBeUndefined();
+                expect(editor.getData()).toMatch(kept);
+            }
+
+            setModelData(editor.model, captioned(""));
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+            expect(editor.getData()).toMatch(/<\/section>$/);
+        });
+
         it("acts on a video from its caption, and on a link in the caption from that link", () => {
             const caption = (text: string) => `<contentEmbed embedType="youtube" title="T"`
                 + ` url="${url}"><caption>${text}</caption></contentEmbed>`;

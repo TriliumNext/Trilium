@@ -817,7 +817,7 @@ const EMBED_BOX_ATTRIBUTES = [ "style", "data-box-size", "data-position" ];
  */
 function moveBoxToCaptionedFigure(element: HTMLElement) {
     const figure = element.parentNode;
-    if (figure?.tagName !== "FIGURE" || !figure.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS)) {
+    if (!figure?.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS)) {
         return;
     }
 
