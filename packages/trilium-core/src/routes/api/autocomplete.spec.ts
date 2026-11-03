@@ -121,6 +121,17 @@ describe("Autocomplete API (core)", () => {
             expect(inside.body.map(noteIdOf)).toEqual([ insideId ]);
             expect(inside.body[0].workspace).toBe(true);
             expect(inside.body[0].noteType).toBe("text");
+            // A note under the hoist leads with its own title. The hoist's title is not a prefix.
+            expect(inside.body[0].highlightedNoteTitle).toContain("Inside");
+            expect(inside.body[0].highlightedParentPathTitle ?? "").not.toContain("Shelf");
+
+            // The hoisted note itself still has a title. The path stops at it, so nothing follows.
+            const shelf = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Shelf ${stamp}` }
+            });
+            const shelfRow = shelf.body.find((result) => noteIdOf(result) === shelfId);
+            expect(shelfRow?.highlightedNoteTitle).toContain(`Shelf`);
+            expect(shelfRow?.highlightedNoteTitle).toContain(stamp);
 
             // Naming the root searches the whole tree while the real hoist stays on the shelf.
             const everywhere = await api.get<AutocompleteResult[]>("/api/autocomplete", {
