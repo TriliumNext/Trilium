@@ -1034,7 +1034,7 @@
   "attachments_actions": {
     "open_externally": "외부에서 열기",
     "open_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_custom": "사용자 지정 앱으로 열기...",
+    "open_custom": "다른 앱으로 열기...",
     "open_custom_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
     "download": "다운로드",
     "rename_attachment": "첨부 파일 이름 변경...",
@@ -1215,9 +1215,9 @@
     "note_attachments": "노트 첨부 파일",
     "note_attributes": "노트 속성...",
     "view_ocr_text": "OCR 텍스트 보기",
-    "open_note_externally": "노트를 외부에서 열기",
+    "open_note_externally": "외부에서 열기",
     "open_note_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_note_custom": "사용자 지정 앱으로 노트 열기...",
+    "open_note_custom": "다른 앱으로 열기...",
     "open_note_on_server": "서버에서 노트 열기",
     "import_files": "파일 가져오기...",
     "export_note": "노트 내보내기...",
@@ -2777,7 +2777,9 @@
     "no_headings": "제목이 없습니다."
   },
   "watched_file_update_status": {
-    "upload_modified_file": "수정된 파일 업로드"
+    "upload_modified_file": "업로드",
+    "title": "Trilium 외부에서 파일이 변경되었습니다",
+    "message": "외부에서 연 파일이 {{time}}에 저장되었습니다. 업로드하면 Trilium의 기존 콘텐츠가 교체되며, 현재 버전은 수정 이력으로 보관됩니다."
   },
   "app_context": {
     "please_wait_for_save": "저장이 끝날 때까지 몇 초만 기다렸다가 다시 시도해 주세요."
@@ -4513,7 +4515,8 @@
   },
   "open": {
     "directory_failed": "{{- directory}} 열기 실패: {{- reason}}",
-    "download_failed": "다운로드를 저장할 수 없습니다: {{- reason}}"
+    "download_failed": "다운로드를 저장할 수 없습니다: {{- reason}}",
+    "custom_failed": "애플리케이션 선택 창을 표시할 수 없습니다.\n\n\"외부에서 열기\"를 사용하여 기본 애플리케이션으로 파일을 여세요."
   },
   "embedded_note": {
     "open-note": "노트 열기",
