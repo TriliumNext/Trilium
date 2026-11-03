@@ -203,7 +203,7 @@ describe("ContentEmbedVideo", () => {
             .toEqual([ { value: "medium", label: "Medium" }, { value: "full", label: "Full" } ]);
         expect(contentEmbed.getEmbedStateAt(getFigure())).toMatchObject({
             boxSize: "full", position: "center", isTitleSupported: true, isTitleShown: false,
-            isTitleToggleable: true, isCaptionSupported: false
+            isTitleToggleable: true, isCaptionSupported: false, url: VIDEO_URL
         });
 
         editor.execute(TOGGLE_TITLE_COMMAND_NAME);

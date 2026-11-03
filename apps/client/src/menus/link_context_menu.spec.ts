@@ -21,7 +21,8 @@ const mocks = vi.hoisted(() => ({
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getEmbedBoxSize: vi.fn()
+    getEmbedBoxSize: vi.fn(),
+    openUrlExternally: vi.fn()
 }));
 
 vi.mock("./text_editor_context_menu", async (importOriginal) => ({
@@ -49,6 +50,8 @@ vi.mock("../services/attachment_actions", () => ({
 }));
 
 vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
+
+vi.mock("../services/open", () => ({ openUrlExternally: mocks.openUrlExternally }));
 
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
@@ -746,6 +749,39 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.include_position" }
             ]);
             expect(items).toHaveLength(7);
+        });
+
+        it("opens a video externally first in its menu, and deletes it last", async () => {
+            const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            state = { ...state, url, isCaptionSupported: false, isConvertibleToLink: false };
+            const openMenu = async () => {
+                await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+                return mocks.show.mock.lastCall?.[0].items;
+            };
+
+            const items = await openMenu();
+            expect(items).toMatchObject([
+                { title: "link_context_menu.open_externally", uiIcon: "bx bx-link-external" },
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash destructive-action-icon"
+                }
+            ]);
+            expect(items).toHaveLength(6);
+            items[0].handler();
+            expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
+            expect(pick(items[5])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+
+            // An embed of a source has neither.
+            state = { ...state, url: null };
+            expect(await openMenu()).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" }
+            ]);
         });
 
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {

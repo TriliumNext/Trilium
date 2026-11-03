@@ -127,6 +127,18 @@ async function openExternally(type: string, entityId: string, mime: string) {
 export const openNoteExternally = async (noteId: string, mime: string) => await openExternally("notes", noteId, mime);
 const openAttachmentExternally = async (attachmentId: string, mime: string) => await openExternally("attachments", attachmentId, mime);
 
+/**
+ * Opens `url` outside Trilium, with the browser or the app that handles it, such as the YouTube app
+ * on Android, where the WebView hands the new window to the system.
+ */
+export function openUrlExternally(url: string) {
+    if (window.electronApi) {
+        window.electronApi.shell.openExternal(url);
+    } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+}
+
 function getHost() {
     const url = new URL(window.location.href);
     return `${url.protocol}//${url.hostname}:${url.port}`;
@@ -212,6 +224,7 @@ export default {
     getUrlForDownload,
     openNoteExternally,
     openAttachmentExternally,
+    openUrlExternally,
     openNoteCustom,
     openAttachmentCustom,
     openNoteOnServer,

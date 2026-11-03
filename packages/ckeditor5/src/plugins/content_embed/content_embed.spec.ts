@@ -35,6 +35,7 @@ import ContentEmbed, {
     CONTENT_EMBED_DISPLAY_MODE_COMMAND,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     CONTENT_EMBED_MENU,
+    DELETE_COMMAND_NAME,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
     POSITION_COMMAND_NAME,
@@ -757,6 +758,33 @@ describe("ContentEmbed", () => {
             .toBe("noteMenu");
     });
 
+    it("deletes the selected embed, with the caret in the block after it, else before it", () => {
+        const embed = "<contentEmbed noteId=\"n1\"></contentEmbed>";
+        const command = editor.commands.get(DELETE_COMMAND_NAME);
+        setModelData(editor.model, `<paragraph>before[]</paragraph>${embed}`);
+        expect(command?.isEnabled).toBe(false);
+
+        setModelData(editor.model,
+            `<paragraph>before</paragraph>[${embed}]<paragraph>after</paragraph>`);
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model))
+            .toBe("<paragraph>before</paragraph><paragraph>[]after</paragraph>");
+
+        // A next embed is selected, and a last embed leaves the caret in the block before it.
+        setModelData(editor.model, `[${embed}]${embed}`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe(`[${embed}]`);
+        setModelData(editor.model, `<paragraph>before</paragraph>[${embed}]`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe("<paragraph>before[]</paragraph>");
+
+        // An embed alone leaves an empty paragraph behind.
+        setModelData(editor.model, `[${embed}]`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+    });
+
     it("falls back gracefully in the button factory when the insert command is absent", () => {
         // Exercise the falsy `if (command)` branch in ContentEmbedUI: when the command lookup
         // returns undefined, the button must still be created (just without the binding).
@@ -1016,7 +1044,7 @@ describe("ContentEmbed with attachments", () => {
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
         const notEditable = {
             isEditable: false, isEditableToggleable: false, displayMode: null, position: null,
-            isTitleSupported: true, isCaptionSupported: true
+            isTitleSupported: true, isCaptionSupported: true, url: null
         };
         expect(states).toEqual([ {
             ...notEditable, boxSize: "small", isTitleShown: true, isTitleToggleable: true,

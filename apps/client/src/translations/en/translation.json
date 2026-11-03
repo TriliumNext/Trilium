@@ -3181,7 +3181,9 @@
     "wrap_text": "Wrap text",
     "align_left": "Align left",
     "align_center": "Align center",
-    "align_right": "Align right"
+    "align_right": "Align right",
+    "open_externally": "Open externally",
+    "delete": "Delete"
   },
   "electron_integration": {
     "desktop-application": "Desktop Application",

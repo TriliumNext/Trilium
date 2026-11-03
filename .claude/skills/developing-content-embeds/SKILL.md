@@ -74,7 +74,9 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the
   converters follow the map. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
   opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
-  `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮.
+  `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮. Its ⋮ menu
+  (`getVideoItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
+  (`openUrlExternally()` in `services/open.ts`) above the embed's commands and _Delete_ below.
   `ReadOnlyText`'s `applyVideoEmbeds()` swaps the section for the same box.
   The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
   facade takes the focus on click and `playVideo()` hands it to the player once loaded:
@@ -128,7 +130,9 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
 1. **Editor plugin** (`packages/ckeditor5/src/plugins/content_embed/`). `content_embed.ts` owns the
    model, the converters, the commands (`contentEmbedBoxSize`, `toggleContentEmbedTitle`,
    `toggleContentEmbedCaption`, `toggleContentEmbedEditable`, `contentEmbedDisplayMode`,
-   `convertEmbedToLink`), the box-size rules and observables such as `isSelectedEmbedInline`.
+   `convertEmbedToLink`, `deleteContentEmbed`), the box-size rules and observables such as
+   `isSelectedEmbedInline`. `deleteContentEmbed` serves any kind: a ⋮ menu offers it through
+   `getDeleteEmbedItem()` in `menus/link_context_menu.ts`, which only the video menu uses so far.
    `content_embed_toolbar.ts` lists the toolbar items; `content_embed_tools.ts` turns the
    content's tools into buttons; `content_embed_box_size_dropdown.ts` the size menu. The editing
    view renders an `.include-note-wrapper` and asks the **host** to fill it.

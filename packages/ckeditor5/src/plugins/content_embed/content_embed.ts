@@ -61,6 +61,7 @@ export const TOGGLE_EDITABLE_COMMAND_NAME = 'toggleContentEmbedEditable';
 export const CODE_VIEW_COMMAND_NAME = 'setContentEmbedCodeView';
 export const CONTENT_EMBED_DISPLAY_MODE_COMMAND = 'contentEmbedDisplayMode';
 export const POSITION_COMMAND_NAME = 'contentEmbedPosition';
+export const DELETE_COMMAND_NAME = 'deleteContentEmbed';
 /** The toolbar separator between the Editable toggle and the display modes. */
 export const CONTENT_EMBED_DISPLAY_MODE_SEPARATOR = 'contentEmbedDisplayModeSeparator';
 /** The toolbar button that opens the context menu of an embed whose title is hidden. */
@@ -166,6 +167,8 @@ export interface ContentEmbedState {
 	hasCaption: boolean;
 	isCaptionToggleable: boolean;
 	isConvertibleToLink: boolean;
+	/** The address of the video that the embed plays, otherwise `null`. */
+	url: string | null;
 }
 
 /**
@@ -283,7 +286,8 @@ export default class ContentEmbed extends Plugin {
 			isCaptionSupported: hasCaptionSupport( embed ),
 			hasCaption: !!getCaption( embed ),
 			isCaptionToggleable: isEmbedCaptionToggleable( editor, embed ),
-			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed )
+			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed ),
+			url: embed.getAttribute( 'url' ) as string | undefined ?? null
 		};
 	}
 
@@ -554,6 +558,7 @@ class ContentEmbedEditing extends Plugin {
 		commands.add(
 			CONTENT_EMBED_DISPLAY_MODE_COMMAND, new ContentEmbedDisplayModeCommand( editor ) );
 		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
+		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
 
@@ -1210,6 +1215,38 @@ class ConvertEmbedToLinkCommand extends Command {
 			writer.insert( paragraph, writer.createPositionBefore( embed ) );
 			writer.remove( embed );
 			writer.setSelection( reference, 'after' );
+		} );
+	}
+}
+
+/**
+ * Deletes the selected embed, and puts the caret at the start of the block after it, else at the
+ * end of the block before it. A parent left empty, such as a table cell, gets an empty paragraph.
+ */
+export class DeleteContentEmbedCommand extends Command {
+	override refresh() {
+		this.isEnabled = !!getSelectedContentEmbed( this.editor );
+	}
+
+	override execute() {
+		const embed = getSelectedContentEmbed( this.editor );
+		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
+		if ( !embed ) {
+			return;
+		}
+
+		const model = this.editor.model;
+		model.change( writer => {
+			const position = writer.createPositionBefore( embed );
+			writer.remove( embed );
+
+			const parent = position.parent as ModelElement;
+			if ( parent.isEmpty && model.schema.checkChild( parent, 'paragraph' ) ) {
+				writer.insertElement( 'paragraph', position );
+			}
+
+			writer.setSelection( model.schema.getNearestSelectionRange( position, 'forward' )
+				?? model.schema.getNearestSelectionRange( position, 'backward' ) );
 		} );
 	}
 }
@@ -1884,6 +1921,7 @@ declare module 'ckeditor5' {
 		toggleContentEmbedEditable: ToggleContentEmbedEditableCommand;
 		setContentEmbedCodeView: SetContentEmbedCodeViewCommand;
 		contentEmbedDisplayMode: ContentEmbedDisplayModeCommand;
+		deleteContentEmbed: DeleteContentEmbedCommand;
 	}
 
 	interface EditorConfig {

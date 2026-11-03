@@ -8,6 +8,7 @@ import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
+import { openUrlExternally } from "../services/open.js";
 import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
 import { DISPLAY_MODE_OPTIONS } from "../widgets/type_widgets/helpers/split_editor_mode.js";
 import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools.js";
@@ -100,7 +101,7 @@ async function openContextMenu(
 
 /**
  * Opens the menu of the embed at `e` with its own commands only, for an embed that shows no note or
- * attachment, such as one that keeps its source in the note.
+ * attachment, such as one that keeps its source in the note or one that plays a video.
  */
 async function openEmbedContextMenu(e: LinkMenuOrigin) {
     const request = ++lastMenuRequest;
@@ -110,13 +111,41 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
         return;
     }
 
+    const { url } = embed.state;
     contextMenu.show({
         x: e.pageX,
         y: e.pageY,
-        items: getEmbedItems(embed),
+        items: url ? getVideoItems(embed, url) : getEmbedItems(embed),
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
+}
+
+/**
+ * The menu of an embed that plays the video at `url`: opening the video outside Trilium, the
+ * commands of the embed, and deleting it, each in a group of its own.
+ */
+function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
+    return [
+        {
+            title: t("link_context_menu.open_externally"),
+            uiIcon: "bx bx-link-external",
+            handler: () => openUrlExternally(url)
+        },
+        { kind: "separator" },
+        ...getEmbedItems(embed),
+        { kind: "separator" },
+        getDeleteEmbedItem(embed)
+    ];
+}
+
+/** "Delete", which removes the embed from the note. */
+function getDeleteEmbedItem(embed: MenuEmbed): MenuItem<CommandNames> {
+    return {
+        title: t("link_context_menu.delete"),
+        uiIcon: "bx bx-trash destructive-action-icon",
+        handler: () => runEmbedCommand(embed, "deleteContentEmbed")
+    };
 }
 
 /** The origin of a menu that opens below `anchor` and acts from `target`. */

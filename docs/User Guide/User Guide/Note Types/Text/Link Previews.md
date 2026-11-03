@@ -89,9 +89,11 @@ A YouTube video shown as an _Embed_ has a size, a position and a title, like an 
 *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
 *   The _Display_ menu, which turns the video into an _Inline_ or _Card_ link preview, or a _Plain link_.
 *   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
+    *   <span class="tn-icon bx bx-link-external"></span> _Open externally_ opens the video outside Trilium: in the browser, or in the app that handles the link, such as the YouTube app on Android.
     *   _Size_: a _Medium_ video can be resized, a _Full_ video takes the width of the note, or less when it would be taller than most of the window. A new video is _Medium_. A video inserted in an earlier version is _Full_.
     *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default.
     *   _Show title_ shows the title of the video above it, as a link to the video. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
+    *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
 
 To resize a _Medium_ video, select it and drag the handle in its bottom-right corner, or its bottom-left corner for a video aligned to the right. The height follows the width. Choosing _Medium_ again returns the video to its first size.
 
