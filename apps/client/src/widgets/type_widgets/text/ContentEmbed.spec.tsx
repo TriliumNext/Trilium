@@ -177,13 +177,14 @@ const EDITABLE_TOOLS = {
  */
 function placeInHostEditor() {
     const selectEmbedAt = vi.fn((_element: Element) => true);
+    const setEmbedCollapsedAt = vi.fn((_element: Element, _isCollapsed: boolean) => {});
     const execute = vi.fn();
     const focus = vi.fn();
     const editable = document.createElement("div");
     editable.className = "ck-editor__editable";
     Object.assign(editable, {
         ckeditorInstance: {
-            plugins: { get: () => ({ selectEmbedAt }) },
+            plugins: { get: () => ({ selectEmbedAt, setEmbedCollapsedAt }) },
             execute,
             editing: { view: { focus } }
         }
@@ -195,7 +196,7 @@ function placeInHostEditor() {
     document.body.append(editable);
     onTestFinished(() => editable.remove());
 
-    return { editor: { selectEmbedAt, execute, focus }, embed };
+    return { editor: { selectEmbedAt, setEmbedCollapsedAt, execute, focus }, embed };
 }
 
 /** Tools of content with display modes, which the title row of its embed switches. */
@@ -385,6 +386,25 @@ describe("ContentEmbed", () => {
         renderBox({ boxSize: "expandable" });
         click(titleRow().row);
         expect(contentBox().hidden).toBe(true);
+    });
+
+    it("marks a collapsed expandable box in the text editor until it opens or leaves", () => {
+        const { editor } = placeInHostEditor();
+        const marks = () => editor.setEmbedCollapsedAt.mock.calls
+            .map(([ target, isCollapsed ]) => [ target === contentBox(), isCollapsed ]);
+        renderBox({ boxSize: "full" });
+        expect(marks()).toEqual([]);
+
+        act(() => render(null, container));
+        renderBox({ boxSize: "expandable" });
+        expect(marks()).toEqual([ [ true, true ] ]);
+        click(button("include-note-toggle"));
+        expect(marks()).toEqual([ [ true, true ], [ true, false ] ]);
+        click(button("include-note-toggle"));
+        const box = contentBox();
+        act(() => render(null, container));
+        expect(editor.setEmbedCollapsedAt).toHaveBeenLastCalledWith(box, false);
+        expect(editor.setEmbedCollapsedAt).toHaveBeenCalledTimes(4);
     });
 
     it("opens the note in a new tab, and its context menu, from the title row", () => {

@@ -88,6 +88,7 @@ export default function ContentEmbed({
     const isOpen = isExpanded || isRevealed;
     const focusContentAfterRender = useFocusAfterRender(contentRef);
     const isExpandable = boxSize === "expandable" && !!title && !!notePath;
+    const isCollapsed = isExpandable && !isOpen;
     const hasBackdrop = !isContentActive && !isDraggedOver
         && !DIRECT_CONTENT_TYPES.has(contentType);
     const hasFullscreen = !isExcerpt && !OWN_FULLSCREEN_CONTENT_TYPES.has(contentType)
@@ -111,6 +112,16 @@ export default function ContentEmbed({
         if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return;
         return registerEmbedFindTarget(content, new HtmlFindTarget(content));
     }, [ content, contentType ]);
+
+    // The stylesheet hides the corner resize handle of an embed that the text editor marks.
+    useEffect(() => {
+        const box = contentRef.current;
+        if (!isCollapsed || !box) return;
+
+        const plugin = findTextEditorAround(box)?.plugins.get("ContentEmbed");
+        plugin?.setEmbedCollapsedAt(box, true);
+        return () => plugin?.setEmbedCollapsedAt(box, false);
+    }, [ isCollapsed ]);
 
     useLayoutEffect(() => {
         // The box mounts after an upload, by which time the focus can have left the editor.

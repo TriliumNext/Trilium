@@ -120,6 +120,9 @@ const RESIZABLE_BOX_SIZES: unknown[] = [ 'small', 'medium', 'expandable' ];
 /** The least size that an embed can be resized to, in `em`. */
 export const MIN_EMBED_SIZE = { width: 10, height: 3 };
 
+/** The class of an Expandable embed that shows only its title row. */
+const COLLAPSED_EMBED_CLASS = 'include-note_collapsed';
+
 /** The flags of an embed, each saved as `"true"` in a `data-*` attribute while it is on. */
 const FLAG_ATTRIBUTES = [
 	[ 'hideTitle', 'data-hide-title' ],
@@ -297,6 +300,27 @@ export default class ContentEmbed extends Plugin {
 			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed ),
 			url: embed.getAttribute( 'url' ) as string | undefined ?? null
 		};
+	}
+
+	/**
+	 * Marks the embed that `domElement` is part of as collapsed while `isCollapsed` is `true`, as
+	 * an Expandable embed that shows only its title row.
+	 */
+	setEmbedCollapsedAt( domElement: Element, isCollapsed: boolean ) {
+		const editor = this.editor;
+		const embed = editor.state === 'ready' ? getContentEmbedAt( editor, domElement ) : null;
+		const view = embed && editor.editing.mapper.toViewElement( embed );
+		if ( !view ) {
+			return;
+		}
+
+		editor.editing.view.change( writer => {
+			if ( isCollapsed ) {
+				writer.addClass( COLLAPSED_EMBED_CLASS, view );
+			} else {
+				writer.removeClass( COLLAPSED_EMBED_CLASS, view );
+			}
+		} );
 	}
 
 	/** Whether `domElement` is a reference link that `convertLinkToEmbed` turns into an embed. */

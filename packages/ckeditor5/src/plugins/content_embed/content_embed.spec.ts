@@ -759,6 +759,32 @@ describe("ContentEmbed", () => {
             .toBe("noteMenu");
     });
 
+    it("marks the embed that a DOM element is part of as collapsed, until destroyed", async () => {
+        editor.setData("<p>foo</p>"
+            + "<figure class=\"include-note\" data-note-id=\"noteC\" data-box-size=\"expandable\">"
+            + "</figure>");
+        const domRoot = editor.editing.view.getDomRoot();
+        const figure = domRoot?.querySelector("figure.include-note");
+        const wrapper = figure?.querySelector("div.include-note-wrapper");
+        const paragraph = domRoot?.querySelector("p");
+        if (!figure || !wrapper || !paragraph) {
+            throw new Error("Expected a rendered embed and paragraph.");
+        }
+        const plugin = editor.plugins.get("ContentEmbed");
+        const isCollapsed = () => figure.classList.contains("include-note_collapsed");
+
+        plugin.setEmbedCollapsedAt(wrapper, true);
+        expect(isCollapsed()).toBe(true);
+        plugin.setEmbedCollapsedAt(paragraph, false);
+        expect(isCollapsed()).toBe(true);
+        plugin.setEmbedCollapsedAt(wrapper, false);
+        expect(isCollapsed()).toBe(false);
+
+        await editor.destroy();
+        expect(() => plugin.setEmbedCollapsedAt(wrapper, true)).not.toThrow();
+        expect(isCollapsed()).toBe(false);
+    });
+
     it("deletes the selected embed, with the caret in the block after it, else before it", () => {
         const embed = "<contentEmbed noteId=\"n1\"></contentEmbed>";
         const command = editor.commands.get(DELETE_COMMAND_NAME);

@@ -110,6 +110,10 @@ body.light-theme .link-embed-favicon-light {
     --ck-color-focus-border: var(--link-color);
 }
 
+.ck-widget.link-embed > .ck-widget__selection-handle {
+    margin-inline-start: var(--_link-embed-top-border-radius, 8px);
+}
+
 .link-embed-preview-wrapper {
     display: block;
 }
