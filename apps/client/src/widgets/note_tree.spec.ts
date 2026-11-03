@@ -243,6 +243,7 @@ describe("NoteTreeWidget", () => {
             data: { noteId: string; branchId: string };
             setActive: ReturnType<typeof vi.fn>;
             setSelected: ReturnType<typeof vi.fn>;
+            hasFocus: () => boolean;
         }
 
         function fakeNode(noteId: string, branchId: string): FakeNode {
@@ -258,7 +259,7 @@ describe("NoteTreeWidget", () => {
             const widget = await renderWidget();
             vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
             vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
-            vi.spyOn(treeService, "getNotePath").mockReturnValue(null);
+            vi.spyOn(treeService, "getNotePath").mockReturnValue("");
             const active = { current: null as FakeNode | null };
             vi.spyOn(widget, "getActiveNode").mockImplementation(
                 () => active.current as unknown as Fancytree.FancytreeNode

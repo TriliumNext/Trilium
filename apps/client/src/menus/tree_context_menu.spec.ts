@@ -160,7 +160,10 @@ describe("buildTreeContextMenuItems", () => {
         const both = await mergeRow([ child.noteId, sibling.noteId ]);
         expect(both.enabled).toBe(true);
         expect(both.title).toBe("tree-context-menu.merge-notes");
-        both.handler?.();
+        both.handler?.(
+            both as Parameters<NonNullable<typeof both.handler>>[0],
+            new MouseEvent("click")
+        );
         expect(mergeNotes).toHaveBeenCalledWith([ child.noteId, sibling.noteId ]);
 
         const one = await mergeRow([ child.noteId ], [ child ]);

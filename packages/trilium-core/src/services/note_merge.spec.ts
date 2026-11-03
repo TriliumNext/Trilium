@@ -1131,10 +1131,18 @@ describe("Merging notes", () => {
         const stack = JSON.parse(decodeUtf8(journal?.getContent() ?? "[]")) as {
             sourceNoteId: string;
             createdBranchIds: string[];
+            prefixRestores: { branchId: string; prefix: string | null }[];
             linkPatches: { noteId: string; indices: number[] }[];
         }[];
         if (stack[0]) {
             stack[0].createdBranchIds.push("same-branch", "same-branch");
+            const kept = hostBranch?.branchId;
+            if (kept) {
+                stack[0].prefixRestores.push(
+                    { branchId: kept, prefix: "Old" },
+                    { branchId: "unmapped-branch", prefix: null }
+                );
+            }
         }
         const fileNote = await createTypedNote(
             "root", "File note", "file", "application/octet-stream", ""
