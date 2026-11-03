@@ -76,8 +76,16 @@ runs:
     if: ${{ inputs.os == 'linux' }}
     shell: ${{ inputs.shell }}
     run: |
-      APPIMAGETOOL_ARCH=$(if [[ ${{ inputs.arch }} = 'arm64' ]]; then echo 'aarch64'; else echo 'x86_64'; fi)
-      wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage" -O /usr/local/bin/appimagetool
+      APPIMAGETOOL_VERSION='1.9.1'
+      if [[ ${{ inputs.arch }} = 'arm64' ]]; then
+        APPIMAGETOOL_ARCH='aarch64'
+        APPIMAGETOOL_SHA256='f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158'
+      else
+        APPIMAGETOOL_ARCH='x86_64'
+        APPIMAGETOOL_SHA256='ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0'
+      fi
+      wget -q "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-${APPIMAGETOOL_ARCH}.AppImage" -O /usr/local/bin/appimagetool
+      echo "${APPIMAGETOOL_SHA256}  /usr/local/bin/appimagetool" | sha256sum -c -
       chmod +x /usr/local/bin/appimagetool
 
   # See the equivalent step in build-server: substitute an addon built against an
